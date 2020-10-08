@@ -23,12 +23,12 @@ from bentoml.types import InferenceTask
 from bentoml.utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
-imageio = LazyLoader("imageio", globals(), "imageio")
-numpy = LazyLoader("numpy", globals(), "numpy")
+imageio = LazyLoader('imageio', globals(), 'imageio')
+numpy = LazyLoader('numpy', globals(), 'numpy')
 
 
 ApiFuncArgs = Tuple[
-    Sequence["numpy.ndarray"],
+    Sequence['numpy.ndarray'],
 ]
 
 
@@ -36,7 +36,7 @@ class ImageInput(FileInput):
     """Convert incoming image data from http request, cli or lambda event into numpy
     array and pass down to user defined API functions
 
-    ** To operate raw files or PIL.Image obj, use the low level :class:`.FileInput`. **
+    ** To operate raw files or PIL.Image obj, use the lowlevel :class:`.FileInput`. **
 
     Parameters
     ----------
@@ -128,7 +128,7 @@ class ImageInput(FileInput):
         assert imageio, "`imageio` dependency can be imported"
 
         super().__init__(**base_kwargs)
-        if "input_names" in base_kwargs:
+        if 'input_names' in base_kwargs:
             raise TypeError(
                 "ImageInput doesn't take input_names as parameters since bentoml 0.8."
                 "Update your Service definition "

@@ -14,15 +14,15 @@ import os
 import sys
 
 # Adding BentoML source directory for accessing BentoML version
-sys.path.insert(0, os.path.abspath("../.."))
+sys.path.insert(0, os.path.abspath('../..'))
 import bentoml
 
 
 # -- Project information -----------------------------------------------------
 
-project = "BentoML"
-copyright = "2020, bentoml.org"
-author = "bentoml.org"
+project = 'BentoML'
+copyright = '2020, bentoml.org'
+author = 'bentoml.org'
 version = bentoml.__version__
 
 
@@ -32,7 +32,7 @@ version = bentoml.__version__
 # readthedocs.org by default will reset this to the old default value "contents"
 # which breaks the build. Hence explicitly setting it here to "index".
 # See https://github.com/readthedocs/readthedocs.org/issues/2149
-master_doc = "index"
+master_doc = 'index'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -46,7 +46,7 @@ extensions = [
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

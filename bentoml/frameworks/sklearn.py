@@ -78,7 +78,7 @@ class SklearnModelArtifact(BentoServiceArtifact):
         joblib = _import_joblib_module()
 
         model_file_path = self._model_file_path(path)
-        sklearn_model = joblib.load(model_file_path, mmap_mode="r")
+        sklearn_model = joblib.load(model_file_path, mmap_mode='r')
         return self.pack(sklearn_model)
 
     def get(self):
@@ -90,4 +90,4 @@ class SklearnModelArtifact(BentoServiceArtifact):
         joblib.dump(self._model, self._model_file_path(dst))
 
     def set_dependencies(self, env):
-        env.add_pip_packages(["scikit-learn"])
+        env.add_pip_packages(['scikit-learn'])

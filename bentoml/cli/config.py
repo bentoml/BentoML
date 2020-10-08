@@ -33,12 +33,12 @@ from bentoml.exceptions import CLIException
 
 logger = logging.getLogger(__name__)
 
-EXAMPLE_CONFIG_USAGE = """
+EXAMPLE_CONFIG_USAGE = '''
 Example usage for `bentoml config`:
   bentoml config set usage_tracking=false
   bentoml config set apiserver.default_port=9000
   bentoml config unset apiserver.default_port
-"""
+'''
 
 
 def create_local_config_file_if_not_found():
@@ -85,22 +85,22 @@ def get_configuration_sub_command():
 
         try:
             for update in updates:
-                item, value = update.split("=")
-                if "." in item:
-                    sec, opt = item.split(".")
+                item, value = update.split('=')
+                if '.' in item:
+                    sec, opt = item.split('.')
                 else:
-                    sec = "core"  # default section
+                    sec = 'core'  # default section
                     opt = item
 
                 if not local_config.has_section(sec):
                     local_config.add_section(sec)
                 local_config.set(sec.strip(), opt.strip(), value.strip())
 
-            local_config.write(open(local_config_file, "w"))
+            local_config.write(open(local_config_file, 'w'))
             return
         except ValueError:
             raise CLIException(
-                f"Wrong config format: {str(updates)}{EXAMPLE_CONFIG_USAGE}"
+                f'Wrong config format: {str(updates)}{EXAMPLE_CONFIG_USAGE}'
             )
 
     @config.command(
@@ -115,21 +115,21 @@ def get_configuration_sub_command():
 
         try:
             for update in updates:
-                if "." in update:
-                    sec, opt = update.split(".")
+                if '.' in update:
+                    sec, opt = update.split('.')
                 else:
-                    sec = "core"  # default section
+                    sec = 'core'  # default section
                     opt = update
 
                 if not local_config.has_section(sec):
                     local_config.add_section(sec)
                 local_config.remove_option(sec.strip(), opt.strip())
 
-            local_config.write(open(local_config_file, "w"))
+            local_config.write(open(local_config_file, 'w'))
             return
         except ValueError:
             raise CLIException(
-                f"Wrong config format: {str(updates)}{EXAMPLE_CONFIG_USAGE}"
+                f'Wrong config format: {str(updates)}{EXAMPLE_CONFIG_USAGE}'
             )
 
     @config.command(help="Reset all local BentoML configs to default")

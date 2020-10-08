@@ -197,9 +197,9 @@ class InferenceAPI(object):
         :return: the HTTP API request schema in OpenAPI/Swagger format
         """
         schema = self.input_adapter.request_schema
-        if schema.get("application/json"):
-            schema.get("application/json")[
-                "example"
+        if schema.get('application/json'):
+            schema.get('application/json')[
+                'example'
             ] = self.input_adapter._http_input_example
         return schema
 

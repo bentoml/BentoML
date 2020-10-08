@@ -69,13 +69,13 @@ BENTOML_HOME = DEFAULT_BENTOML_HOME
 # development branches of BentoML
 BENTOML_VERSION = __version__
 # e.g. from '0.4.2+5.g6cac97f.dirty' to '0.4.2'
-LAST_PYPI_RELEASE_VERSION = __version__.split("+")[0]
+LAST_PYPI_RELEASE_VERSION = __version__.split('+')[0]
 
 
 def _is_pip_installed_bentoml():
-    is_installed_package = hasattr(version_mod, "version_json")
-    is_tagged = not __version__.startswith("0+untagged")
-    is_clean = not version_mod.get_versions()["dirty"]
+    is_installed_package = hasattr(version_mod, 'version_json')
+    is_tagged = not __version__.startswith('0+untagged')
+    is_clean = not version_mod.get_versions()['dirty']
     return is_installed_package and is_tagged and is_clean
 
 
@@ -166,7 +166,7 @@ def get_bentoml_deploy_version():
 
     bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{branch}
     """
-    bentoml_deploy_version = config("core").get("bentoml_deploy_version")
+    bentoml_deploy_version = config('core').get('bentoml_deploy_version')
 
     if bentoml_deploy_version != LAST_PYPI_RELEASE_VERSION:
         logger.info(f"Setting BentoML deploy version to '{bentoml_deploy_version}'")
@@ -191,11 +191,11 @@ def get_bentoml_deploy_version():
 
 
 def get_debug_mode():
-    return config().getboolean("core", "debug")
+    return config().getboolean('core', 'debug')
 
 
 def set_debug_mode(debug_mode_on: bool):
-    config().set("core", "debug", str(debug_mode_on))
+    config().set('core', 'debug', str(debug_mode_on))
 
     from bentoml.utils.log import configure_logging
 

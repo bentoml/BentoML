@@ -43,12 +43,12 @@ BATCH_HEADER = config("apiserver").get("batch_request_header")
 
 # For non latin1 characters: https://tools.ietf.org/html/rfc8187
 # Also https://github.com/benoitc/gunicorn/issues/1778
-HEADER_CHARSET = "latin1"
+HEADER_CHARSET = 'latin1'
 
-JSON_CHARSET = "utf-8"
+JSON_CHARSET = 'utf-8'
 
 
-@json_serializer(fields=["uri", "name"], compat=True)
+@json_serializer(fields=['uri', 'name'], compat=True)
 @dataclass(frozen=False)
 class FileLike:
     """
@@ -90,7 +90,7 @@ class FileLike:
 
     @property
     def path(self):
-        r"""
+        r'''
         supports:
 
         /home/user/file
@@ -99,7 +99,7 @@ class FileLike:
         \\networkstorage\homes\user
 
         https://stackoverflow.com/a/61922504/3089381
-        """
+        '''
         parsed = urllib.parse.urlparse(self.uri)
         raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))
         host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
@@ -166,15 +166,15 @@ class HTTPHeaders(CIMultiDict):
 
     @property
     def content_type(self) -> str:
-        return parse_options_header(self.get("content-type"))[0].lower()
+        return parse_options_header(self.get('content-type'))[0].lower()
 
     @property
     def charset(self) -> Optional[str]:
-        return parse_options_header(self.get("content-type"))[1].get("charset", None)
+        return parse_options_header(self.get('content-type'))[1].get('charset', None)
 
     @property
     def content_encoding(self) -> str:
-        return parse_options_header(self.get("content-encoding"))[0].lower()
+        return parse_options_header(self.get('content-encoding'))[0].lower()
 
     @property
     def is_batch_input(self) -> bool:
@@ -223,10 +223,10 @@ class HTTPRequest:
         if not self.body:
             return None, None, {}
         environ = {
-            "wsgi.input": io.BytesIO(self.body),
-            "CONTENT_LENGTH": len(self.body),
-            "CONTENT_TYPE": self.headers.get("content-type", ""),
-            "REQUEST_METHOD": "POST",
+            'wsgi.input': io.BytesIO(self.body),
+            'CONTENT_LENGTH': len(self.body),
+            'CONTENT_TYPE': self.headers.get('content-type', ''),
+            'REQUEST_METHOD': 'POST',
         }
         stream, form, files = parse_form_data(environ, silent=False)
         wrapped_files = {
@@ -299,7 +299,7 @@ class InferenceResult(Generic[Output]):
 
     # payload
     data: Output = None
-    err_msg: str = ""
+    err_msg: str = ''
 
     # meta
     task_id: Optional[str] = None
@@ -320,8 +320,8 @@ class InferenceResult(Generic[Output]):
 
     @classmethod
     def complete_discarded(
-        cls, tasks: Iterable["InferenceTask"], results: Iterable["InferenceResult"],
-    ) -> Iterator["InferenceResult"]:
+        cls, tasks: Iterable['InferenceTask'], results: Iterable['InferenceResult'],
+    ) -> Iterator['InferenceResult']:
         """
         Generate InferenceResults based on successful inference results and
         fallback results of discarded tasks.
@@ -336,7 +336,7 @@ class InferenceResult(Generic[Output]):
                     yield next(iterable_results)
         except StopIteration:
             raise StopIteration(
-                "The results does not match the number of tasks"
+                'The results does not match the number of tasks'
             ) from None
 
 

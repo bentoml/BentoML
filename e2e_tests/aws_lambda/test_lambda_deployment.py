@@ -10,23 +10,23 @@ from e2e_tests.aws_lambda.utils import (
 )
 from e2e_tests.cli_operations import delete_deployment
 
-logger = logging.getLogger("bentoml.test")
+logger = logging.getLogger('bentoml.test')
 
 
 def test_aws_lambda_deployment(iris_clf_service):
     random_hash = uuid.uuid4().hex[:6]
-    deployment_name = f"tests-lambda-e2e-{random_hash}"
+    deployment_name = f'tests-lambda-e2e-{random_hash}'
 
     create_deployment_command = [
-        "bentoml",
-        "lambda",
-        "deploy",
+        'bentoml',
+        'lambda',
+        'deploy',
         deployment_name,
-        "-b",
+        '-b',
         iris_clf_service,
-        "--region",
-        "us-west-2",
-        "--verbose",
+        '--region',
+        'us-west-2',
+        '--verbose',
     ]
     try:
         deployment_success, deployment_endpoint = run_lambda_create_or_update_command(
@@ -41,6 +41,6 @@ def test_aws_lambda_deployment(iris_clf_service):
             deployment_endpoint, json.dumps(sample_data.tolist())
         )
         assert status_code == 200, "prediction request should success"
-        assert content == "[0]", "prediction result mismatch"
+        assert content == '[0]', "prediction result mismatch"
     finally:
-        delete_deployment("lambda", deployment_name)
+        delete_deployment('lambda', deployment_name)

@@ -25,7 +25,7 @@ class TextFileArtifact(BentoServiceArtifact):
     def _text_file_path(self, base_path):
         return os.path.join(
             base_path,
-            re.sub("[^-a-zA-Z0-9_.() ]+", "", self.name) + self._file_extension,
+            re.sub('[^-a-zA-Z0-9_.() ]+', '', self.name) + self._file_extension,
         )
 
     def load(self, path):

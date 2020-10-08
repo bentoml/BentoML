@@ -47,7 +47,7 @@ class TempDirectory(object):
         return self.path
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if config("core").getboolean("debug"):
+        if config('core').getboolean('debug'):
             logger.debug(
                 'BentoML in debug mode, keeping temp directory "%s"', self.path
             )

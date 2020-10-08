@@ -15,10 +15,10 @@ def _is_path_like(p):
 
 
 class _TensorflowFunctionWrapper:
-    """
+    '''
     TensorflowFunctionWrapper
     transform input tensor following function input signature
-    """
+    '''
 
     def __init__(self, origin_func, fullargspec):
         self.origin_func = origin_func
@@ -56,9 +56,9 @@ class _TensorflowFunctionWrapper:
 
     @staticmethod
     def _transform_input_by_tensorspec(_input, tensorspec):
-        """
+        '''
         transform dtype & shape following tensorspec
-        """
+        '''
         try:
             import tensorflow as tf
         except ImportError:
@@ -93,7 +93,7 @@ def _load_tf_saved_model(path):
         import tensorflow as tf
         from tensorflow.python.training.tracking.tracking import AutoTrackable
 
-        TF2 = tf.__version__.startswith("2")
+        TF2 = tf.__version__.startswith('2')
     except ImportError:
         raise MissingDependencyException(
             "Tensorflow package is required to use TfSavedModelArtifact"
@@ -105,7 +105,7 @@ def _load_tf_saved_model(path):
         loaded = tf.compat.v2.saved_model.load(path)
         if isinstance(loaded, AutoTrackable) and not hasattr(loaded, "__call__"):
             logger.warning(
-                """Importing SavedModels from TensorFlow 1.x.
+                '''Importing SavedModels from TensorFlow 1.x.
                 `outputs = imported(inputs)` is not supported in bento service due to
                 tensorflow API.
 
@@ -122,7 +122,7 @@ def _load_tf_saved_model(path):
 
                 See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
                 details.
-                """
+                '''
             )
         return loaded
 
@@ -189,10 +189,10 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         self._wrapper = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_packages(["tensorflow"])
+        env.add_pip_packages(['tensorflow'])
 
     def _saved_model_path(self, base_path):
-        return os.path.join(base_path, self.name + "_saved_model")
+        return os.path.join(base_path, self.name + '_saved_model')
 
     def pack(
         self, obj, signatures=None, options=None
@@ -256,7 +256,7 @@ class _TensorflowSavedModelArtifactWrapper:
         try:
             import tensorflow as tf
 
-            TF2 = tf.__version__.startswith("2")
+            TF2 = tf.__version__.startswith('2')
         except ImportError:
             raise MissingDependencyException(
                 "Tensorflow package is required to use TfSavedModelArtifact."

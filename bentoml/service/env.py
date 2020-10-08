@@ -114,7 +114,7 @@ class CondaEnv(object):
                 logger.debug(f"Conda channel {channel_name} already added")
 
     def write_to_yaml_file(self, filepath):
-        with open(filepath, "wb") as output_yaml:
+        with open(filepath, 'wb') as output_yaml:
             self._yaml.dump(self._conda_env, output_yaml)
 
 
@@ -187,14 +187,14 @@ class BentoServiceEnv(object):
                 f"{PYTHON_MINOR_VERSION} or conda installed."
             )
             self._docker_base_image = docker_base_image
-        elif config("core").get("default_docker_base_image"):
+        elif config('core').get('default_docker_base_image'):
             logger.info(
                 f"Using default docker base image: `{docker_base_image}` specified in"
                 f"BentoML config file or env var. User must make sure that the docker "
                 f"base image either has Python {PYTHON_MINOR_VERSION} or conda "
                 f"installed."
             )
-            self._docker_base_image = config("core").get("default_docker_base_image")
+            self._docker_base_image = config('core').get('default_docker_base_image')
         else:
             if PYTHON_MINOR_VERSION not in PYTHON_SUPPORTED_VERSIONS:
                 self._docker_base_image = (
@@ -291,7 +291,7 @@ class BentoServiceEnv(object):
             raise BentoMLException(
                 f"requirement txt file not found at '{requirements_txt_file}'"
             )
-        with open(requirements_txt_file, "rb") as f:
+        with open(requirements_txt_file, 'rb') as f:
             content = f.read().decode()
             for req in parse_requirements(content):
                 self._add_pip_package_requirement(req)
@@ -333,7 +333,7 @@ class BentoServiceEnv(object):
                 f.write(
                     f"--extra-index-url={self._pip_extra_index_url}\n".encode("utf-8")
                 )
-            pip_content = "\n".join(
+            pip_content = '\n'.join(
                 [str(pkg_req) for pkg_req in self._pip_packages.values()]
             ).encode("utf-8")
             f.write(pip_content)

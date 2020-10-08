@@ -47,7 +47,7 @@ class BentoMLConfigParser(ConfigParser):
         """
         if key is None:
             key = section
-            section = "core"
+            section = 'core'
         section = str(section).lower()
         key = str(key).lower()
 

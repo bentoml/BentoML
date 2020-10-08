@@ -7,23 +7,23 @@ from e2e_tests.aws_lambda.utils import (
 )
 from e2e_tests.cli_operations import delete_deployment
 
-logger = logging.getLogger("bentoml.test")
+logger = logging.getLogger('bentoml.test')
 
 
 def test_aws_lambda_update_deployment(basic_bentoservice_v1, basic_bentoservice_v2):
     random_hash = uuid.uuid4().hex[:6]
-    deployment_name = f"tests-lambda-update-{random_hash}"
+    deployment_name = f'tests-lambda-update-{random_hash}'
 
     create_deployment_command = [
-        "bentoml",
-        "lambda",
-        "deploy",
+        'bentoml',
+        'lambda',
+        'deploy',
         deployment_name,
-        "-b",
+        '-b',
         basic_bentoservice_v1,
-        "--region",
-        "us-west-2",
-        "--verbose",
+        '--region',
+        'us-west-2',
+        '--verbose',
     ]
     try:
         deployment_success, deployment_endpoint = run_lambda_create_or_update_command(
@@ -36,13 +36,13 @@ def test_aws_lambda_update_deployment(basic_bentoservice_v1, basic_bentoservice_
         assert content == '"cat"', "prediction result mismatch"
 
         update_deployment_command = [
-            "bentoml",
-            "lambda",
-            "update",
+            'bentoml',
+            'lambda',
+            'update',
             deployment_name,
-            "-b",
+            '-b',
             basic_bentoservice_v2,
-            "--verbose",
+            '--verbose',
         ]
 
         (
@@ -58,4 +58,4 @@ def test_aws_lambda_update_deployment(basic_bentoservice_v1, basic_bentoservice_
         assert status_code == 200, "Updated prediction request should success"
         assert content == '"dog"', "Updated prediction result mismatch"
     finally:
-        delete_deployment("lambda", deployment_name)
+        delete_deployment('lambda', deployment_name)

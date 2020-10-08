@@ -129,7 +129,7 @@ class FileInput(BaseInputAdapter):
 
     @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> InferenceTask[FileLike]:
-        if req.headers.content_type == "multipart/form-data":
+        if req.headers.content_type == 'multipart/form-data':
             _, _, files = HTTPRequest.parse_form_data(req)
             if len(files) != 1:
                 task = InferenceTask(data=None)
@@ -150,13 +150,13 @@ class FileInput(BaseInputAdapter):
             task = InferenceTask(data=None)
             task.discard(
                 http_status=400,
-                err_msg=f"BentoML#{self.__class__.__name__} unexpected HTTP request"
-                " format",
+                err_msg=f'BentoML#{self.__class__.__name__} unexpected HTTP request'
+                ' format',
             )
         return task
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[FileLike]:
-        f = FileLike(bytes_=base64.decodebytes(event.get("body", "")))
+        f = FileLike(bytes_=base64.decodebytes(event.get('body', "")))
         return InferenceTask(aws_lambda_event=event, data=f)
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[FileLike]]:

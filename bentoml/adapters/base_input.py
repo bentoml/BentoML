@@ -100,8 +100,7 @@ class BaseInputAdapter:
         return iter(zip(*batch_args))
 
 
-COLOR_FAIL = "\033[91m"
-
+COLOR_FAIL = '\033[91m'
 
 def exit_cli(err_msg: str = "", exit_code: int = None):
     if exit_code is None:
@@ -150,19 +149,19 @@ class CliInputParser(NamedTuple):
 
         if any(inputs) and any(file_inputs):
             exit_cli(
-                """
+                '''
                 Conflict arguments:
                 --input* and --input-file* should not be provided at same time
-                """
+                '''
             )
         if not all(inputs) and not all(file_inputs):
             exit_cli(
-                f"""
+                f'''
                 Insufficient arguments:
                 ({' '.join(self.arg_strs)}) or
                 ({' '.join(self.file_arg_strs)})
                 are required
-                """
+                '''
             )
 
         if all(inputs):
@@ -171,11 +170,11 @@ class CliInputParser(NamedTuple):
                     yield tuple(FileLike(bytes_=i.encode()) for i in input_)
             else:
                 exit_cli(
-                    f"""
+                    f'''
                     Arguments length mismatch:
                     Each ({' '.join(self.arg_strs)})
                     should have same amount of inputs
-                    """
+                    '''
                 )
 
         if all(file_inputs):
@@ -185,41 +184,41 @@ class CliInputParser(NamedTuple):
                     yield tuple(FileLike(uri=uri) for uri in uris)
             else:
                 exit_cli(
-                    f"""
+                    f'''
                     Arguments length mismatch:
                     Each ({' '.join(self.file_arg_strs)})
                     should have same amount of inputs
-                    """
+                    '''
                 )
 
 
 def parse_cli_inputs(
     args: Sequence[str], input_names: Sequence[str] = None
 ) -> Iterator[Tuple[FileLike]]:
-    """
+    '''
     Parse CLI args and iter each pair of inputs in bytes.
 
     >>> parse_cli_inputs("--input-x '1' '2' --input-y 'a' 'b'".split(' '), ('x', 'y'))
     >>> parse_cli_inputs(
     >>>     "--input-file-x 1.jpg 2.jpg --input-file-y 1.label 2.label".split(' '),
     >>>     ('x', 'y'))
-    """
+    '''
     parser = CliInputParser.get(tuple(input_names))
     return parser.parse(args)
 
 
 def parse_cli_input(cli_args: Iterable[str]) -> Iterator[FileLike]:
-    """
+    '''
     Parse CLI args and iter each input in bytes.
 
     >>> parse_cli_input('--input {"input":1} {"input":2}'.split(' '))
     OR
     >>> parse_cli_inputs("--input-file 1.jpg 2.jpg 3.jpg".split(' '))
-    """
+    '''
     parser = argparse.ArgumentParser()
     input_g = parser.add_mutually_exclusive_group(required=True)
-    input_g.add_argument("--input", nargs="+", type=str)
-    input_g.add_argument("--input-file", nargs="+")
+    input_g.add_argument('--input', nargs="+", type=str)
+    input_g.add_argument('--input-file', nargs="+")
 
     parsed_args, _ = parser.parse_known_args(list(cli_args))
 

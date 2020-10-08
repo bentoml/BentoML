@@ -17,30 +17,30 @@ class InstrumentMiddleware:
         from prometheus_client import Histogram, Counter, Gauge, CollectorRegistry
 
         service_name = self.bento_service.name
-        namespace = config("instrument").get("default_namespace")
+        namespace = config('instrument').get('default_namespace')
         # Use local registry instead of the global one to avoid duplicated metrics
         # register
         self.collector_registry = CollectorRegistry()
 
         self.metrics_request_duration = Histogram(
-            name=service_name + "_request_duration_seconds",
+            name=service_name + '_request_duration_seconds',
             documentation=service_name + " API HTTP request duration in seconds",
             namespace=namespace,
-            labelnames=["endpoint", "service_version", "http_response_code"],
+            labelnames=['endpoint', 'service_version', 'http_response_code'],
             registry=self.collector_registry,
         )
         self.metrics_request_total = Counter(
             name=service_name + "_request_total",
-            documentation="Total number of HTTP requests",
+            documentation='Total number of HTTP requests',
             namespace=namespace,
-            labelnames=["endpoint", "service_version", "http_response_code"],
+            labelnames=['endpoint', 'service_version', 'http_response_code'],
             registry=self.collector_registry,
         )
         self.metrics_request_in_progress = Gauge(
             name=service_name + "_request_in_progress",
-            documentation="Total number of HTTP requests in progress now",
+            documentation='Total number of HTTP requests in progress now',
             namespace=namespace,
-            labelnames=["endpoint", "service_version"],
+            labelnames=['endpoint', 'service_version'],
             registry=self.collector_registry,
         )
 
@@ -89,7 +89,7 @@ def setup_prometheus_multiproc_dir(lock: multiprocessing.Lock = None):
         lock.acquire()
 
     try:
-        prometheus_multiproc_dir = config("instrument").get("prometheus_multiproc_dir")
+        prometheus_multiproc_dir = config('instrument').get('prometheus_multiproc_dir')
         logger.debug(
             "Setting up prometheus_multiproc_dir: %s", prometheus_multiproc_dir
         )
@@ -99,7 +99,7 @@ def setup_prometheus_multiproc_dir(lock: multiprocessing.Lock = None):
         shutil.rmtree(prometheus_multiproc_dir, ignore_errors=True)
         os.makedirs(prometheus_multiproc_dir, exist_ok=True)
 
-        os.environ["prometheus_multiproc_dir"] = prometheus_multiproc_dir
+        os.environ['prometheus_multiproc_dir'] = prometheus_multiproc_dir
     finally:
         if lock is not None:
             lock.release()

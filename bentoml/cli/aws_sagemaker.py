@@ -32,10 +32,10 @@ from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.exceptions import CLIException
 from bentoml.utils import status_pb_to_error_code_and_message
 
-yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
+yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
-DEFAULT_SAGEMAKER_INSTANCE_TYPE = "ml.m4.xlarge"
+DEFAULT_SAGEMAKER_INSTANCE_TYPE = 'ml.m4.xlarge'
 DEFAULT_SAGEMAKER_INSTANCE_COUNT = 1
 
 
@@ -43,78 +43,78 @@ def get_aws_sagemaker_sub_command():
     # pylint: disable=unused-variable
 
     @click.group(
-        name="sagemaker",
-        help="Commands for AWS Sagemaker BentoService deployments",
+        name='sagemaker',
+        help='Commands for AWS Sagemaker BentoService deployments',
         cls=BentoMLCommandGroup,
     )
     def aws_sagemaker():
         pass
 
-    @aws_sagemaker.command(help="Deploy BentoService to AWS Sagemaker")
-    @click.argument("name", type=click.STRING)
+    @aws_sagemaker.command(help='Deploy BentoService to AWS Sagemaker')
+    @click.argument('name', type=click.STRING)
     @click.option(
-        "-b",
-        "--bento",
-        "--bento-service-bundle",
+        '-b',
+        '--bento',
+        '--bento-service-bundle',
         type=click.STRING,
         required=True,
         callback=parse_bento_tag_callback,
-        help="Target BentoService to be deployed, referenced by its name and version "
+        help='Target BentoService to be deployed, referenced by its name and version '
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        "-n",
-        "--namespace",
+        '-n',
+        '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
-        "-l",
-        "--labels",
+        '-l',
+        '--labels',
         type=click.STRING,
         callback=parse_labels_callback,
-        help='Key:value pairs that are attached to deployments and intended to be used '
+        help='Key:value pairs that are attached to deployments and intended to be used'
         'to specify identifying attributes of the deployments that are meaningful to '
         'users. Multiple labels are separated with `,`',
     )
-    @click.option("--region", help="AWS region name for deployment")
+    @click.option('--region', help='AWS region name for deployment')
     @click.option(
-        "--api-name",
-        help="User defined API function will be used for inference.",
+        '--api-name',
+        help='User defined API function will be used for inference.',
         required=True,
     )
     @click.option(
-        "--instance-type",
+        '--instance-type',
         help='Type of instance will be used for inference. Default to "m1.m4.xlarge"',
         type=click.STRING,
         default=DEFAULT_SAGEMAKER_INSTANCE_TYPE,
     )
     @click.option(
-        "--instance-count",
-        help="Number of instance will be used. Default value is 1",
+        '--instance-count',
+        help='Number of instance will be used. Default value is 1',
         type=click.INT,
         default=DEFAULT_SAGEMAKER_INSTANCE_COUNT,
     )
     @click.option(
-        "--num-of-gunicorn-workers-per-instance",
-        help="Number of gunicorn worker will be used per instance. Default value for "
-        "gunicorn worker is based on the instance' cpu core counts.  "
-        "The formula is num_of_cpu/2 + 1",
+        '--num-of-gunicorn-workers-per-instance',
+        help='Number of gunicorn worker will be used per instance. Default value for '
+        'gunicorn worker is based on the instance\' cpu core counts.  '
+        'The formula is num_of_cpu/2 + 1',
         type=click.INT,
     )
     @click.option(
-        "--timeout",
+        '--timeout',
         help="The amount of time Sagemaker will wait before return response",
         type=click.INT,
         default=60,
     )
-    @click.option("-o", "--output", type=click.Choice(["json", "yaml"]), default="json")
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
-        "--wait/--no-wait",
+        '--wait/--no-wait',
         default=True,
-        help="Wait for apply action to complete or encounter an error."
-        "If set to no-wait, CLI will return immediately. The default value is wait",
+        help='Wait for apply action to complete or encounter an error.'
+        'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def deploy(
         name,
@@ -131,9 +131,9 @@ def get_aws_sagemaker_sub_command():
         wait,
     ):
         # use the DeploymentOperator name in proto to be consistent with amplitude
-        bento_name, bento_version = bento.split(":")
+        bento_name, bento_version = bento.split(':')
         yatai_client = get_default_yatai_client()
-        with Spinner("Deploying Sagemaker deployment "):
+        with Spinner('Deploying Sagemaker deployment '):
             result = yatai_client.deployment.create_sagemaker_deployment(
                 name=name,
                 namespace=namespace,
@@ -152,62 +152,62 @@ def get_aws_sagemaker_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIException(f"{error_code}:{error_message}")
+            raise CLIException(f'{error_code}:{error_message}')
         _echo(
-            f"Successfully created AWS Sagemaker deployment {name}", CLI_COLOR_SUCCESS,
+            f'Successfully created AWS Sagemaker deployment {name}', CLI_COLOR_SUCCESS,
         )
         _print_deployment_info(result.deployment, output)
 
-    @aws_sagemaker.command(help="Update existing AWS Sagemaker deployment")
-    @click.argument("name", type=click.STRING)
+    @aws_sagemaker.command(help='Update existing AWS Sagemaker deployment')
+    @click.argument('name', type=click.STRING)
     @click.option(
-        "-b",
-        "--bento",
-        "--bento-service-bundle",
+        '-b',
+        '--bento',
+        '--bento-service-bundle',
         type=click.STRING,
         callback=parse_bento_tag_callback,
-        help="Target BentoService to be deployed, referenced by its name and version "
+        help='Target BentoService to be deployed, referenced by its name and version '
         'in format of name:version. For example: "iris_classifier:v1.2.0"',
     )
     @click.option(
-        "-n",
-        "--namespace",
+        '-n',
+        '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration file',
     )
     @click.option(
-        "--instance-type",
+        '--instance-type',
         help='Type of instance will be used for inference. Default to "m1.m4.xlarge"',
         type=click.STRING,
     )
     @click.option(
-        "--instance-count",
-        help="Number of instance will be used. Default value is 1",
+        '--instance-count',
+        help='Number of instance will be used. Default value is 1',
         type=click.INT,
     )
     @click.option(
-        "--num-of-gunicorn-workers-per-instance",
-        help="Number of gunicorn worker will be used per instance. Default value for "
-        "gunicorn worker is based on the instance' cpu core counts.  "
-        "The formula is num_of_cpu/2 + 1",
+        '--num-of-gunicorn-workers-per-instance',
+        help='Number of gunicorn worker will be used per instance. Default value for '
+        'gunicorn worker is based on the instance\' cpu core counts.  '
+        'The formula is num_of_cpu/2 + 1',
         type=click.INT,
     )
     @click.option(
-        "--api-name", help="User defined API function will be used for inference.",
+        '--api-name', help='User defined API function will be used for inference.',
     )
     @click.option(
-        "--timeout",
+        '--timeout',
         help="The amount of time Sagemaker will wait before return response",
         type=click.INT,
         default=60,
     )
-    @click.option("-o", "--output", type=click.Choice(["json", "yaml"]), default="json")
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     @click.option(
-        "--wait/--no-wait",
+        '--wait/--no-wait',
         default=True,
-        help="Wait for apply action to complete or encounter an error."
-        "If set to no-wait, CLI will return immediately. The default value is wait",
+        help='Wait for apply action to complete or encounter an error.'
+        'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def update(
         name,
@@ -223,11 +223,11 @@ def get_aws_sagemaker_sub_command():
     ):
         yatai_client = get_default_yatai_client()
         if bento:
-            bento_name, bento_version = bento.split(":")
+            bento_name, bento_version = bento.split(':')
         else:
             bento_name = None
             bento_version = None
-        with Spinner("Updating Sagemaker deployment "):
+        with Spinner('Updating Sagemaker deployment '):
             result = yatai_client.deployment.update_sagemaker_deployment(
                 namespace=namespace,
                 deployment_name=name,
@@ -244,26 +244,26 @@ def get_aws_sagemaker_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIException(f"{error_code}:{error_message}")
+            raise CLIException(f'{error_code}:{error_message}')
         _echo(
-            f"Successfully updated AWS Sagemaker deployment {name}", CLI_COLOR_SUCCESS,
+            f'Successfully updated AWS Sagemaker deployment {name}', CLI_COLOR_SUCCESS,
         )
         _print_deployment_info(result.deployment, output)
 
-    @aws_sagemaker.command(help="Delete AWS Sagemaker deployment")
-    @click.argument("name", type=click.STRING)
+    @aws_sagemaker.command(help='Delete AWS Sagemaker deployment')
+    @click.argument('name', type=click.STRING)
     @click.option(
-        "-n",
-        "--namespace",
+        '-n',
+        '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
-        "--force",
+        '--force',
         is_flag=True,
-        help="force delete the deployment record in database and "
-        "ignore errors when deleting cloud resources",
+        help='force delete the deployment record in database and '
+        'ignore errors when deleting cloud resources',
     )
     def delete(name, namespace, force):
         yatai_client = get_default_yatai_client()
@@ -272,29 +272,29 @@ def get_aws_sagemaker_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_deployment_result.status
             )
-            raise CLIException(f"{error_code}:{error_message}")
+            raise CLIException(f'{error_code}:{error_message}')
         result = yatai_client.deployment.delete(name, namespace, force)
         if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise CLIException(f"{error_code}:{error_message}")
+            raise CLIException(f'{error_code}:{error_message}')
         _echo(
             f'Successfully deleted AWS Sagemaker deployment "{name}"',
             CLI_COLOR_SUCCESS,
         )
 
-    @aws_sagemaker.command(help="Get AWS Sagemaker deployment information")
-    @click.argument("name", type=click.STRING)
+    @aws_sagemaker.command(help='Get AWS Sagemaker deployment information')
+    @click.argument('name', type=click.STRING)
     @click.option(
-        "-n",
-        "--namespace",
+        '-n',
+        '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
-        "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="json"
+        '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='json'
     )
     def get(name, namespace, output):
         yatai_client = get_default_yatai_client()
@@ -303,53 +303,53 @@ def get_aws_sagemaker_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 get_result.status
             )
-            raise CLIException(f"{error_code}:{error_message}")
+            raise CLIException(f'{error_code}:{error_message}')
         describe_result = yatai_client.deployment.describe(namespace, name)
         if describe_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 describe_result.status
             )
-            raise CLIException(f"{error_code}:{error_message}")
+            raise CLIException(f'{error_code}:{error_message}')
         get_result.deployment.state.CopyFrom(describe_result.state)
         _print_deployment_info(get_result.deployment, output)
 
     @aws_sagemaker.command(
-        name="list", help="List AWS Sagemaker deployment information"
+        name='list', help='List AWS Sagemaker deployment information'
     )
     @click.option(
-        "-n",
-        "--namespace",
+        '-n',
+        '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which '
+        help='Deployment namespace managed by BentoML, default value is "dev" which'
         'can be changed in BentoML configuration yatai_service/default_namespace',
         default=ALL_NAMESPACE_TAG,
     )
     @click.option(
-        "--limit",
+        '--limit',
         type=click.INT,
-        help="The maximum amount of AWS Sagemaker deployments to be listed at once",
+        help='The maximum amount of AWS Sagemaker deployments to be listed at once',
     )
     @click.option(
-        "-l",
-        "--labels",
+        '-l',
+        '--labels',
         type=click.STRING,
         help="Label query to filter Sagemaker deployments, supports '=', '!=', 'IN', "
         "'NotIn', 'Exists', and 'DoesNotExist'. (e.g. key1=value1, "
         "key2!=value2, key3 In (value3, value3a), key4 DoesNotExist)",
     )
     @click.option(
-        "--order-by", type=click.Choice(["created_at", "name"]), default="created_at",
+        '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
     )
     @click.option(
-        "--asc/--desc",
+        '--asc/--desc',
         default=False,
-        help="Ascending or descending order for list deployments",
+        help='Ascending or descending order for list deployments',
     )
     @click.option(
-        "-o",
-        "--output",
-        type=click.Choice(["json", "yaml", "table", "wide"]),
-        default="table",
+        '-o',
+        '--output',
+        type=click.Choice(['json', 'yaml', 'table', 'wide']),
+        default='table',
     )
     def list_deployment(namespace, limit, labels, order_by, asc, output):
         yatai_client = get_default_yatai_client()
@@ -364,7 +364,7 @@ def get_aws_sagemaker_sub_command():
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_result.status
             )
-            raise CLIException(f"{error_code}:{error_message}")
+            raise CLIException(f'{error_code}:{error_message}')
         _print_deployments_info(list_result.deployments, output)
 
     return aws_sagemaker

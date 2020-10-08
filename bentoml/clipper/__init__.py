@@ -141,7 +141,7 @@ def deploy_bentoml(
         tuple: Model name and model version that deployed to clipper
 
     """
-    track("clipper-deploy", {"bento_service_bundle_path": bundle_path})
+    track("clipper-deploy", {'bento_service_bundle_path': bundle_path})
 
     build_envs = {} if build_envs is None else build_envs
     # docker is required to build clipper model image
@@ -231,5 +231,5 @@ def deploy_bentoml(
         labels=labels,
     )
 
-    track("clipper-deploy-success", {"bento_service_bundle_path": bundle_path})
+    track("clipper-deploy-success", {'bento_service_bundle_path': bundle_path})
     return model_name, model_version

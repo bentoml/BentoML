@@ -4,7 +4,7 @@ from bentoml.frameworks.sklearn import SklearnModelArtifact
 
 
 @env(infer_pip_packages=True)
-@artifacts([SklearnModelArtifact("clf")])
+@artifacts([SklearnModelArtifact('clf')])
 class IrisClassifier(BentoService):
     @api(input=DataframeInput(), batch=True)
     def predict(self, df):

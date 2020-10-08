@@ -96,7 +96,7 @@ class BentoServiceArtifact:
         return self.__class__(self.name)
 
     def __getattribute__(self, item):
-        if item == "pack":
+        if item == 'pack':
             original = object.__getattribute__(self, item)
 
             def wrapped_pack(*args, **kwargs):
@@ -112,7 +112,7 @@ class BentoServiceArtifact:
 
             return wrapped_pack
 
-        elif item == "load":
+        elif item == 'load':
             original = object.__getattribute__(self, item)
 
             def wrapped_load(*args, **kwargs):
@@ -132,7 +132,7 @@ class BentoServiceArtifact:
 
             return wrapped_load
 
-        elif item == "save":
+        elif item == 'save':
 
             def wrapped_save(*args, **kwargs):
                 if not self.is_ready:
@@ -145,7 +145,7 @@ class BentoServiceArtifact:
 
             return wrapped_save
 
-        elif item == "get":
+        elif item == 'get':
 
             def wrapped_get(*args, **kwargs):
                 if not self.is_ready:

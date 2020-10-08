@@ -53,9 +53,9 @@ def _resolve_remote_bundle_path(bundle_path):
 
         parsed_url = urlparse(bundle_path)
         bucket_name = parsed_url.netloc
-        object_name = parsed_url.path.lstrip("/")
+        object_name = parsed_url.path.lstrip('/')
 
-        s3 = boto3.client("s3")
+        s3 = boto3.client('s3')
         fileobj = io.BytesIO()
         s3.download_fileobj(bucket_name, object_name, fileobj)
         fileobj.seek(0, 0)

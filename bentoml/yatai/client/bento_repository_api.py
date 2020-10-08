@@ -84,8 +84,8 @@ class BentoRepositoryAPIClient:
             )
         elif get_bento_response.status.status_code != status_pb2.Status.NOT_FOUND:
             raise BentoMLException(
-                "Failed accessing YataiService. {error_code}:"
-                "{error_message}".format(
+                'Failed accessing YataiService. {error_code}:'
+                '{error_message}'.format(
                     error_code=Status.Name(get_bento_response.status.status_code),
                     error_message=get_bento_response.status.error_message,
                 )
@@ -121,7 +121,7 @@ class BentoRepositoryAPIClient:
             # Return URI to saved bento in repository storage
             return response.uri.uri
         elif response.uri.type == BentoUri.S3 or response.uri.type == BentoUri.GCS:
-            uri_type = "S3" if response.uri.type == BentoUri.S3 else "GCS"
+            uri_type = 'S3' if response.uri.type == BentoUri.S3 else 'GCS'
             self._update_bento_upload_progress(
                 bento_service_metadata, UploadStatus.UPLOADING, 0
             )

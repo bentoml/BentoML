@@ -90,26 +90,26 @@ class KerasModelArtifact(BentoServiceArtifact):
         # Note that keras module is not required, user can use tf.keras as an
         # replacement for the keras module. Although tensorflow module is required to
         #  be used as the default Keras backend
-        pip_deps = ["tensorflow"]
-        if self._keras_module_name == "keras":
-            pip_deps.append("keras")
+        pip_deps = ['tensorflow']
+        if self._keras_module_name == 'keras':
+            pip_deps.append('keras')
         env.add_pip_packages(pip_deps)
 
     def _keras_module_name_path(self, base_path):
         # The name of the keras module used, can be 'keras' or 'tensorflow.keras'
-        return os.path.join(base_path, self.name + "_keras_module_name.txt")
+        return os.path.join(base_path, self.name + '_keras_module_name.txt')
 
     def _custom_objects_path(self, base_path):
-        return os.path.join(base_path, self.name + "_custom_objects.pkl")
+        return os.path.join(base_path, self.name + '_custom_objects.pkl')
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)
 
     def _model_weights_path(self, base_path):
-        return os.path.join(base_path, self.name + "_weights.hdf5")
+        return os.path.join(base_path, self.name + '_weights.hdf5')
 
     def _model_json_path(self, base_path):
-        return os.path.join(base_path, self.name + "_json.json")
+        return os.path.join(base_path, self.name + '_json.json')
 
     def bind_keras_backend_session(self):
         try:
@@ -146,10 +146,10 @@ class KerasModelArtifact(BentoServiceArtifact):
             )
 
         if isinstance(data, dict):
-            model = data["model"]
+            model = data['model']
             custom_objects = (
-                data["custom_objects"]
-                if "custom_objects" in data
+                data['custom_objects']
+                if 'custom_objects' in data
                 else self._default_custom_objects
             )
         else:
@@ -198,14 +198,14 @@ class KerasModelArtifact(BentoServiceArtifact):
             self._custom_objects_path(path)
         ):
             self._default_custom_objects = cloudpickle.load(
-                open(self._custom_objects_path(path), "rb")
+                open(self._custom_objects_path(path), 'rb')
             )
 
         with self.graph.as_default():
             with self.sess.as_default():
                 # load keras model via json and weights if requested
                 if self._store_as_json_and_weights:
-                    with open(self._model_json_path(path), "r") as json_file:
+                    with open(self._model_json_path(path), 'r') as json_file:
                         model_json = json_file.read()
                     model = keras_module.models.model_from_json(
                         model_json, custom_objects=self._default_custom_objects

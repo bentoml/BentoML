@@ -14,7 +14,7 @@ def df_orient(request):
 async def test_api_server_dataframe(host, df_orient):
     import pandas as pd  # noqa # pylint: disable=unused-import
 
-    df = pd.DataFrame([[10], [20]], columns=["col1"])
+    df = pd.DataFrame([[10], [20]], columns=['col1'])
     data = df.to_json(orient=df_orient)
 
     await pytest.assert_request(
@@ -99,7 +99,7 @@ async def test_api_server_json(host):
             f"http://{host}/predict_json",
             headers=(("Content-Type", "application/json"),),
             data=json.dumps({"in": i}),
-            assert_data=bytes('{"in": %s}' % i, "ascii"),
+            assert_data=bytes('{"in": %s}' % i, 'ascii'),
         )
         for i in range(req_count)
     )

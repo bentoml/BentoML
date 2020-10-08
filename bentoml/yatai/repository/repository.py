@@ -31,7 +31,7 @@ class Repository(BaseRepository):
         """
 
         if base_url is None:
-            base_url = config().get("default_repository_base_url")
+            base_url = config().get('default_repository_base_url')
 
         if is_s3_url(base_url):
             self._repo = S3Repository(base_url, s3_endpoint_url)

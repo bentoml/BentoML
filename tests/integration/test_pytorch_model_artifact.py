@@ -38,12 +38,12 @@ test_df = pandas.DataFrame([[1, 1, 1, 1, 1]])
 def test_pytorch_artifact_pack(pytorch_classifier_class):
     svc = pytorch_classifier_class()
     model = PytorchModel()
-    svc.pack("model", model)
-    assert svc.predict(test_df) == 5.0, "Run inference before save the artifact"
+    svc.pack('model', model)
+    assert svc.predict(test_df) == 5.0, 'Run inference before save the artifact'
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
-    assert loaded_svc.predict(test_df) == 5.0, "Run inference from saved artifact"
+    assert loaded_svc.predict(test_df) == 5.0, 'Run inference from saved artifact'
 
     # clean up saved bundle
     yc = YataiClient()

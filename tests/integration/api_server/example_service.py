@@ -19,7 +19,7 @@ from bentoml.service.artifacts.pickle import PickleArtifact
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact("sk_model")])
+@bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact('sk_model')])
 class ExampleBentoService(bentoml.BentoService):
     """
     Example BentoService class made for testing purpose
@@ -39,7 +39,7 @@ class ExampleBentoService(bentoml.BentoService):
         return self.artifacts.model.predict_dataframe(df)
 
     @bentoml.api(
-        input=MultiImageInput(input_names=("original", "compared")), batch=True
+        input=MultiImageInput(input_names=('original', 'compared')), batch=True
     )
     def predict_multi_images(self, originals, compareds):
         return self.artifacts.model.predict_multi_images(originals, compareds)
@@ -65,20 +65,20 @@ class ExampleBentoService(bentoml.BentoService):
     @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000, batch=True)
     def echo_with_delay(self, input_datas):
         data = input_datas[0]
-        time.sleep(data["b"] + data["a"] * len(input_datas))
+        time.sleep(data['b'] + data['a'] * len(input_datas))
         return input_datas
 
 
 # pylint: disable=arguments-differ
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact("sk_model")])
+@bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact('sk_model')])
 class ExampleBentoServiceSingle(ExampleBentoService):
     """
     Example BentoService class made for testing purpose
     """
 
     @bentoml.api(
-        input=MultiImageInput(input_names=("original", "compared")), batch=False
+        input=MultiImageInput(input_names=('original', 'compared')), batch=False
     )
     def predict_multi_images(self, original, compared):
         return self.artifacts.model.predict_multi_images([original], [compared])[0]
@@ -104,7 +104,7 @@ class ExampleBentoServiceSingle(ExampleBentoService):
 
 class PickleModel(object):
     def predict_dataframe(self, df):
-        return df["col1"] * 2
+        return df['col1'] * 2
 
     def predict_image(self, input_datas):
         return [input_data.shape for input_data in input_datas]
@@ -134,14 +134,14 @@ def gen_test_bundle(tmpdir, batch_mode=True):
     test_svc = svc_cls()
 
     pickle_model = PickleModel()
-    test_svc.pack("model", pickle_model)
+    test_svc.pack('model', pickle_model)
 
     sklearn_model = RandomForestRegressor(n_estimators=2)
     sklearn_model.fit(
         [[i] for _ in range(100) for i in range(10)],
         [i for _ in range(100) for i in range(10)],
     )
-    test_svc.pack("sk_model", sklearn_model)
+    test_svc.pack('sk_model', sklearn_model)
 
     save_to_dir(test_svc, tmpdir, silent=True)
     return tmpdir

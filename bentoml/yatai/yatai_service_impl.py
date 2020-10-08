@@ -57,8 +57,8 @@ def track_deployment_delete(deployment_operator, created_at, force_delete=False)
     operator_name = DeploymentSpec.DeploymentOperator.Name(deployment_operator)
     up_time = int((datetime.utcnow() - created_at.ToDatetime()).total_seconds())
     track(
-        f"deployment-{operator_name}-stop",
-        {"up_time": up_time, "force_delete": force_delete},
+        f'deployment-{operator_name}-stop',
+        {'up_time': up_time, 'force_delete': force_delete},
     )
 
 
@@ -74,11 +74,11 @@ class YataiService(YataiServicer):
         s3_endpoint_url=None,
         default_namespace=None,
     ):
-        cfg = config("yatai_service")
-        repo_base_url = repo_base_url or cfg.get("repository_base_url")
-        db_url = db_url or cfg.get("db_url")
-        s3_endpoint_url = s3_endpoint_url or cfg.get("s3_endpoint_url") or None
-        default_namespace = default_namespace or cfg.get("default_namespace")
+        cfg = config('yatai_service')
+        repo_base_url = repo_base_url or cfg.get('repository_base_url')
+        db_url = db_url or cfg.get('db_url')
+        s3_endpoint_url = s3_endpoint_url or cfg.get('s3_endpoint_url') or None
+        default_namespace = default_namespace or cfg.get('default_namespace')
 
         self.default_namespace = default_namespace
         self.repo = Repository(repo_base_url, s3_endpoint_url)
@@ -102,7 +102,7 @@ class YataiService(YataiServicer):
             validation_errors = validate_deployment_pb(request.deployment)
             if validation_errors:
                 raise InvalidArgument(
-                    "Failed to validate deployment. {errors}".format(
+                    'Failed to validate deployment. {errors}'.format(
                         errors=validation_errors
                     )
                 )
@@ -122,7 +122,6 @@ class YataiService(YataiServicer):
             if previous_deployment:
                 response = operator.update(request.deployment, previous_deployment)
             else:
-                print("operator is ", operator)
                 response = operator.add(request.deployment)
 
             if response.status.status_code == status_pb2.Status.OK:
@@ -159,7 +158,6 @@ class YataiService(YataiServicer):
             logger.error("RPC ERROR ApplyDeployment: %s", e)
             return ApplyDeploymentResponse(status=e.status_proto)
         except Exception as e:
-            raise (e)
             logger.error("URPC ERROR ApplyDeployment: %s", e)
             return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
 
@@ -201,10 +199,10 @@ class YataiService(YataiServicer):
 
                 if response.status.status_code == status_pb2.Status.NOT_FOUND:
                     modified_message = (
-                        "Cloud resources not found, error: {} - it may have been "
-                        "deleted manually. Try delete deployment "
+                        'Cloud resources not found, error: {} - it may have been '
+                        'deleted manually. Try delete deployment '
                         'with "--force" option to ignore this error '
-                        "and force deleting the deployment record".format(
+                        'and force deleting the deployment record'.format(
                             response.status.error_message
                         )
                     )
@@ -258,8 +256,10 @@ class YataiService(YataiServicer):
             deployment_pb = self.deployment_store.get(
                 request.deployment_name, request.namespace
             )
+
             if deployment_pb:
                 operator = get_deployment_operator(self, deployment_pb)
+
                 response = operator.describe(deployment_pb)
 
                 if response.status.status_code == status_pb2.Status.OK:
@@ -367,7 +367,7 @@ class YataiService(YataiServicer):
                 return DangerouslyDeleteBentoResponse(status=Status.ABORTED(msg))
 
             logger.debug(
-                "Deleting BentoService %s:%s", request.bento_name, request.bento_version
+                'Deleting BentoService %s:%s', request.bento_name, request.bento_version
             )
             self.bento_metadata_store.dangerously_delete(
                 request.bento_name, request.bento_version
@@ -388,9 +388,9 @@ class YataiService(YataiServicer):
                 request.bento_name, request.bento_version
             )
             if bento_pb:
-                if request.bento_version.lower() == "latest":
+                if request.bento_version.lower() == 'latest':
                     logger.info(
-                        "Getting latest version %s:%s",
+                        'Getting latest version %s:%s',
                         request.bento_name,
                         bento_pb.version,
                     )

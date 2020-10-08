@@ -24,9 +24,9 @@ def enable_microbatch(request):
     return request.param
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=True, scope='session')
 def image(tmpdir_factory, batch_mode):
-    bundle_dir = tmpdir_factory.mktemp("test_bundle")
+    bundle_dir = tmpdir_factory.mktemp('test_bundle')
     bundle_path = str(bundle_dir)
     gen_test_bundle(bundle_path, batch_mode)
 
@@ -45,7 +45,7 @@ def _wait_until_api_server_ready(host_url, timeout, container, check_interval=1)
     while time.time() - start_time < timeout:
         try:
             if (
-                urllib.request.urlopen(f"http://{host_url}/healthz", timeout=1).status
+                urllib.request.urlopen(f'http://{host_url}/healthz', timeout=1).status
                 == 200
             ):
                 break
@@ -59,7 +59,7 @@ def _wait_until_api_server_ready(host_url, timeout, container, check_interval=1)
             container_logs = container.logs()
             if container_logs:
                 logger.info(f"Container {container.id} logs:")
-                for log_record in container_logs.decode().split("\r\n"):
+                for log_record in container_logs.decode().split('\r\n'):
                     logger.info(f">>> {log_record}")
     else:
         raise AssertionError(
@@ -88,7 +88,7 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
             command=command_args,
             auto_remove=True,
             tty=True,
-            ports={"5000/tcp": port},
+            ports={'5000/tcp': port},
             detach=True,
         )
         host_url = f"127.0.0.1:{port}"
@@ -114,6 +114,6 @@ def build_api_server_docker_image(saved_bundle_path, image_tag):
         client.images.remove(image.id)
     except docker.errors.BuildError as e:
         for line in e.build_log:
-            if "stream" in line:
-                print(line["stream"].strip())
+            if 'stream' in line:
+                print(line['stream'].strip())
         raise

@@ -24,30 +24,30 @@ logger = logging.getLogger(__name__)
 
 
 def download_extra_resources():
-    s3_bucket = os.environ.get("BENTOML_S3_BUCKET")
-    s3_prefix = os.environ.get("BENTOML_DEPLOYMENT_PATH_PREFIX")
-    additional_pkg_dir = "/tmp/requirements"
+    s3_bucket = os.environ.get('BENTOML_S3_BUCKET')
+    s3_prefix = os.environ.get('BENTOML_DEPLOYMENT_PATH_PREFIX')
+    additional_pkg_dir = '/tmp/requirements'
 
     if not os.path.exists(additional_pkg_dir) or not os.listdir(additional_pkg_dir):
         # Using print instead of logger.info, because this ran before bentoml is loaded.
-        print("Additional required modules are not present. Downloading from s3")
-        s3_file_path = os.path.join(s3_prefix, "requirements.tar")
+        print('Additional required modules are not present. Downloading from s3')
+        s3_file_path = os.path.join(s3_prefix, 'requirements.tar')
 
-        s3_client = boto3.client("s3")
-        print(f"requirement.tar does not exist, downloading from {s3_bucket}")
+        s3_client = boto3.client('s3')
+        print(f'requirement.tar does not exist, downloading from {s3_bucket}')
         try:
             obj = s3_client.get_object(Bucket=s3_bucket, Key=s3_file_path)
-            bytestream = io.BytesIO(obj["Body"].read())
-            print("Extracting required modules from tar file")
-            tar = tarfile.open(fileobj=bytestream, mode="r:*")
-            tar.extractall(path="/tmp")
-            print("Appending /tmp/requirements to PYTHONPATH")
+            bytestream = io.BytesIO(obj['Body'].read())
+            print('Extracting required modules from tar file')
+            tar = tarfile.open(fileobj=bytestream, mode='r:*')
+            tar.extractall(path='/tmp')
+            print('Appending /tmp/requirements to PYTHONPATH')
             sys.path.append(additional_pkg_dir)
         except ClientError as e:
-            if e.response["Error"]["Code"] == "404":
-                print(f"File {s3_bucket}/{s3_file_path} does not exists")
-                logger.error("File %s/%s does not exists", s3_bucket, s3_file_path)
+            if e.response['Error']['Code'] == "404":
+                print(f'File {s3_bucket}/{s3_file_path} does not exists')
+                logger.error('File %s/%s does not exists', s3_bucket, s3_file_path)
             else:
                 raise
     else:
-        print("Additional required modules already present, skipping download from s3")
+        print('Additional required modules already present, skipping download from s3')

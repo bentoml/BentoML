@@ -64,10 +64,10 @@ def test_artifact_states(tmp_path):
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
     # Model Training
-    clf = svm.SVC(gamma="scale")
+    clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
 
-    artifact_name = "test_model"
+    artifact_name = 'test_model'
     a1 = SklearnModelArtifact(artifact_name)
 
     # verify initial states
@@ -80,7 +80,7 @@ def test_artifact_states(tmp_path):
         a1.get()
     # verify that save will fail
     with pytest.raises(FailedPrecondition):
-        a1.save("anywhere")
+        a1.save('anywhere')
 
     # verify states after pack
     a1.pack(clf)

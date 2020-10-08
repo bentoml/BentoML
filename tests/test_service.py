@@ -87,7 +87,6 @@ def test_image_input_pip_dependencies():
             return images
 
     service = TestImageService()
-
     assert 'imageio' in service.env._pip_packages
 
 

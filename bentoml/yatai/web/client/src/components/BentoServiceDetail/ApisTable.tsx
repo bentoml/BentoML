@@ -3,8 +3,8 @@ import Table from "../../ui/Table";
 import { Section } from "../../ui/Layout";
 
 const inputConfigToTableContent = (
-  input_config
-): Array<string> | null | undefined => {
+  input_config: any
+): string | null | undefined | Array<any> => {
   if (!input_config) {
     return ["None"];
   }
@@ -22,14 +22,14 @@ const inputConfigToTableContent = (
     }
     */
 
-  const displayInputList = [];
+  const displayInputList : React.ReactNode[]= [];
   const configureKeys = Object.keys(config);
   for (let index = 0; index < configureKeys.length; index++) {
     const key = configureKeys[index];
     const valueObject = config[key];
     const valueType = Object.keys(valueObject)[0];
     let value = Object.values(valueObject)[0];
-    if (valueType == "nullValue") {
+    if (valueType === "nullValue") {
       value = "null";
     }
 

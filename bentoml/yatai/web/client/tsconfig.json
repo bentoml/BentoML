@@ -1,29 +1,27 @@
 {
   "compilerOptions": {
-    "target": "es2017",
-    "module": "ESNext",
-    "lib": ["dom", "es5", "es6", "es2017"],
-    "experimentalDecorators": true,
-    "sourceMap": true,
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
-    "jsx": "react",
-    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react",
+    "strict": true,
+    "noImplicitAny": false
   },
-  "exclude": [
-    "build",
-    "scripts",
-    "acceptance-tests",
-    "webpack",
-    "jest",
-    "coverage",
-    "stories",
-    "src/setupTests.ts",
-    "test-setup.ts",
-    "**/*.spec.*",
-    "**/*.test.*",
-    "**/__testes__/*"
+  "include": [
+    "src"
   ]
-
 }

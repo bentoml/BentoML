@@ -10,7 +10,6 @@ import {
   Classes,
 } from "@blueprintjs/core";
 
-// @ts-ignore
 import logo from "../assets/bentoml-logo.png";
 
 const NavigationBar = () => {
@@ -27,7 +26,7 @@ const NavigationBar = () => {
       <NavbarGroup align={Alignment.LEFT}>
         <NavbarHeading>
           <Link to="/">
-            <img src={`/${logo}`} width={150}  alt={""}/>{" "}
+            <img src={logo} width={150}  alt={""}/>{" "}
           </Link>
         </NavbarHeading>
         <NavbarDivider />

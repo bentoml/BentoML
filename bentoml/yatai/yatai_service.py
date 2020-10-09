@@ -64,7 +64,7 @@ def get_yatai_service(
 
 
 def start_yatai_service_grpc_server(
-    db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url
+    db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url, base_url
 ):
     from bentoml.yatai.yatai_service_impl import YataiService
 
@@ -101,7 +101,7 @@ def start_yatai_service_grpc_server(
         ensure_node_available_or_raise()
         yatai_grpc_server_address = f'localhost:{grpc_port}'
         async_start_yatai_service_web_ui(
-            yatai_grpc_server_address, ui_port, web_ui_log_path, debug_mode
+            yatai_grpc_server_address, ui_port, web_ui_log_path, debug_mode, base_url
         )
 
     # We don't import _echo function from click_utils because of circular dep
@@ -135,7 +135,7 @@ def _is_web_server_debug_tools_available(root_dir):
 
 
 def async_start_yatai_service_web_ui(
-    yatai_server_address, ui_port, base_log_path, debug_mode
+    yatai_server_address, ui_port, base_log_path, debug_mode, base_url
 ):
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
@@ -153,6 +153,7 @@ def async_start_yatai_service_web_ui(
                 yatai_server_address,
                 ui_port,
                 base_log_path,
+                base_url,
             ]
         else:
             web_ui_command = [
@@ -161,6 +162,7 @@ def async_start_yatai_service_web_ui(
                 yatai_server_address,
                 ui_port,
                 base_log_path,
+                base_url,
             ]
     else:
         if not os.path.exists(os.path.join(web_ui_dir, 'dist', 'bundle.js')):
@@ -175,6 +177,7 @@ def async_start_yatai_service_web_ui(
             yatai_server_address,
             ui_port,
             base_log_path,
+            base_url,
         ]
 
     web_proc = subprocess.Popen(

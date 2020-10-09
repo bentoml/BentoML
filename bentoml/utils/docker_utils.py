@@ -1,20 +1,6 @@
 import click
-import sys
-import os
-import json
 import re
-import psutil
-from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.cli.utils import Spinner, echo_docker_api_result
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
-from bentoml.utils import resolve_bundle_path
-from bentoml.cli.click_utils import (
-    CLI_COLOR_WARNING,
-    CLI_COLOR_SUCCESS,
-    _echo,
-    BentoMLCommandGroup,
-    conditional_argument,
-)
 
 
 def to_valid_docker_image_name(name):
@@ -56,23 +42,19 @@ def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
     )
 
     if not valid_name_pattern.match(name):
-        raise click.BadParameter(
+        raise YataiDeploymentException(
             f"Provided Docker Image tag {tag} is invalid. "
             "Name components may contain lowercase letters, digits "
             "and separators. A separator is defined as a period, "
-            "one or two underscores, or one or more dashes.",
-            ctx=ctx,
-            param=param,
+            "one or two underscores, or one or more dashes."
         )
     if version and not valid_version_pattern.match(version):
-        raise click.BadParameter(
+        raise YataiDeploymentException(
             f"Provided Docker Image tag {tag} is invalid. "
             "A tag name must be valid ASCII and may contain "
             "lowercase and uppercase letters, digits, underscores, "
             "periods and dashes. A tag name may not start with a period "
-            "or a dash and may contain a maximum of 128 characters.",
-            ctx=ctx,
-            param=param,
+            "or a dash and may contain a maximum of 128 characters."
         )
     return tag
 

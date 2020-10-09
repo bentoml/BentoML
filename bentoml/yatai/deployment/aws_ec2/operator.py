@@ -65,8 +65,6 @@ def _create_ecr_repo(repo_name, region):
     except ecr_client.exceptions.RepositoryAlreadyExistsException:
         all_repositories = ecr_client.describe_repositories(repositoryNames=[repo_name])
         registry_id = all_repositories["repositories"][0]["registryId"]
-    except Exception as error:  # pylint: disable=broad-except
-        raise BentoMLException(str(error))
 
     return registry_id
 
@@ -85,8 +83,8 @@ def _get_ecr_password(registry_id, region):
             and error.response["Error"]["Code"] == "InvalidParameterException"
         ):
             raise BentoMLException(
-                "Could not get token for registry {},{error}".format(
-                    registry_id, error.response["Error"]["Message"]
+                "Could not get token for registry {registry_id},{error}".format(
+                    registry_id=registry_id, error=error.response["Error"]["Message"]
                 )
             )
 
@@ -256,7 +254,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             registry_domain = registry_url.replace("https://", "")
             tag = f"{registry_domain}/{repo_name}"
 
-            """containerize_bento_service(
+            containerize_bento_service(
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
                 saved_bundle_path=bento_path,
@@ -265,7 +263,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 build_arg={},
                 username=registry_username,
                 password=registry_password,
-            )"""
+            )
 
             encoded_user_data = _make_user_data(
                 registry_username, registry_password, registry_url, tag
@@ -295,12 +293,12 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 s3_bucket_name, project_path, aws_ec2_deployment_config.region
             )
 
-            """deploy_template(
+            deploy_template(
                 deployment_stack_name,
                 s3_bucket_name,
                 project_path,
                 aws_ec2_deployment_config.region,
-            )"""
+            )
 
     def add(self, deployment_pb):
         try:

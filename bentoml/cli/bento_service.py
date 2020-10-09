@@ -33,7 +33,6 @@ from bentoml.saved_bundle import (
     load_bento_service_metadata,
 )
 from bentoml.utils.docker_utils import (
-    containerize_bento_service,
     validate_tag,
     to_valid_docker_image_name,
     to_valid_docker_image_version,

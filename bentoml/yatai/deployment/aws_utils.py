@@ -134,3 +134,20 @@ def validate_sam_template(template_file, aws_region, sam_project_path):
         raise BentoMLException(
             "Failed to validate lambda template. {}".format(error_message)
         )
+
+
+def cleanup_s3_bucket_if_exist(bucket_name, region):
+    s3_client = boto3.client('s3', region)
+    s3 = boto3.resource('s3')
+    try:
+        logger.debug('Removing all objects inside bucket %s', bucket_name)
+        s3.Bucket(bucket_name).objects.all().delete()
+        logger.debug('Deleting bucket %s', bucket_name)
+        s3_client.delete_bucket(Bucket=bucket_name)
+    except ClientError as e:
+        if e.response and e.response['Error']['Code'] == 'NoSuchBucket':
+            # If there is no bucket, we just let it silently fail, dont have to do
+            # any thing
+            return
+        else:
+            raise e

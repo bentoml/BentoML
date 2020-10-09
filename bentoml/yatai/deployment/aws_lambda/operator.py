@@ -35,6 +35,7 @@ from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.aws_utils import (
     validate_sam_template,
     FAILED_CLOUDFORMATION_STACK_STATUS,
+    cleanup_s3_bucket_if_exist,
 )
 from bentoml.yatai.deployment.aws_lambda.utils import (
     init_sam_project,
@@ -153,23 +154,6 @@ amazonaws.com/Prod"
 """
         )
     return template_file_path
-
-
-def _cleanup_s3_bucket_if_exist(bucket_name, region):
-    s3_client = boto3.client('s3', region)
-    s3 = boto3.resource('s3')
-    try:
-        logger.debug('Removing all objects inside bucket %s', bucket_name)
-        s3.Bucket(bucket_name).objects.all().delete()
-        logger.debug('Deleting bucket %s', bucket_name)
-        s3_client.delete_bucket(Bucket=bucket_name)
-    except ClientError as e:
-        if e.response and e.response['Error']['Code'] == 'NoSuchBucket':
-            # If there is no bucket, we just let it silently fail, dont have to do
-            # any thing
-            return
-        else:
-            raise e
 
 
 def _deploy_lambda_function(
@@ -361,7 +345,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
         except BentoMLException as error:
             if lambda_s3_bucket and lambda_deployment_config:
-                _cleanup_s3_bucket_if_exist(
+                cleanup_s3_bucket_if_exist(
                     lambda_s3_bucket, lambda_deployment_config.region
                 )
             raise error

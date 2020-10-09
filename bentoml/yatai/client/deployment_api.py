@@ -149,6 +149,7 @@ class DeploymentAPIClient:
         apply_result = self.yatai_service.ApplyDeployment(
             ApplyDeploymentRequest(deployment=deployment_pb)
         )
+        print("got error in deploy api", apply_result)
         if apply_result.status.status_code != status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 apply_result.status

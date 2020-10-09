@@ -2,9 +2,9 @@ import os
 import boto3
 from pathlib import Path
 from uuid import uuid4
-import docker
 import base64
 import json
+from botocore.exceptions import ClientError
 
 from bentoml.utils.tempdir import TempDirectory
 
@@ -29,6 +29,7 @@ from bentoml.yatai.deployment.aws_utils import (
     validate_sam_template,
     SUCCESS_CLOUDFORMATION_STACK_STATUS,
     FAILED_CLOUDFORMATION_STACK_STATUS,
+    cleanup_s3_bucket_if_exist,
 )
 from bentoml.utils.docker_utils import (
     to_valid_docker_image_name,
@@ -53,37 +54,47 @@ yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 SAM_TEMPLATE_NAME = "template.yml"
 
 
-def _create_ecr_repo(repo_name):
+def _create_ecr_repo(repo_name, region):
     try:
-        ecr_client = boto3.client("ecr")
+        ecr_client = boto3.client("ecr", region)
         repository = ecr_client.create_repository(
             repositoryName=repo_name, imageScanningConfiguration={"scanOnPush": False}
         )
         registry_id = repository["repository"]["registryId"]
+
     except ecr_client.exceptions.RepositoryAlreadyExistsException:
         all_repositories = ecr_client.describe_repositories(repositoryNames=[repo_name])
         registry_id = all_repositories["repositories"][0]["registryId"]
+    except Exception as error:  # pylint: disable=broad-except
+        raise BentoMLException(str(error))
+
     return registry_id
 
 
-def _get_ecr_password(registry_id):
-    ecr_client = boto3.client("ecr")
-    token_data = ecr_client.get_authorization_token(registryIds=[registry_id])
-    token = token_data["authorizationData"][0]["authorizationToken"]
-    registry_endpoint = token_data["authorizationData"][0]["proxyEndpoint"]
-    return token, registry_endpoint
+def _get_ecr_password(registry_id, region):
+    ecr_client = boto3.client("ecr", region)
+    try:
+        token_data = ecr_client.get_authorization_token(registryIds=["registry_id"])
+        token = token_data["authorizationData"][0]["authorizationToken"]
+        registry_endpoint = token_data["authorizationData"][0]["proxyEndpoint"]
+        return token, registry_endpoint
+
+    except ClientError as error:
+        if (
+            error.response
+            and error.response["Error"]["Code"] == "InvalidParameterException"
+        ):
+            raise BentoMLException(
+                "Could not get token for registry {},{error}".format(
+                    registry_id, error.response["Error"]["Message"]
+                )
+            )
 
 
 def _get_creds_from_token(token):
     cred_string = base64.b64decode(token).decode("ascii")
     username, password = str(cred_string).split(":")
     return username, password
-
-
-def _login_docker(username, password, registry_url):
-    docker_api = docker.APIClient()
-    docker_api.login(username=username, password=password, registry=registry_url)
-    return docker_api
 
 
 def _make_user_data(username, password, registry, tag):
@@ -127,9 +138,18 @@ def _make_cloudformation_template(
     autoscaling_max_size,
 ):
     """
-    TODO: Template should return ec2 public address
     NOTE: SSH ACCESS TO INSTANCE MAY NOT BE REQUIRED
     """
+    if (
+        autoscaling_min_size <= 0
+        or autoscaling_max_size < autoscaling_min_size
+        or autoscaling_desired_size < autoscaling_min_size
+        or autoscaling_desired_size > autoscaling_max_size
+    ):
+        raise BentoMLException(
+            "Wrong autoscaling capacity specified.It should be min_size <= desired_size <= max_size"
+        )
+
     template_file_path = os.path.join(project_dir, sam_template_name)
     yaml = YAML()
     sam_config = {
@@ -212,6 +232,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         bento_path,
         aws_ec2_deployment_config,
         s3_bucket_name,
+        region,
     ):
         sam_template_name = "template.yml"
 
@@ -228,14 +249,14 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         )
 
         with TempDirectory() as project_path:
-            registry_id = _create_ecr_repo(repo_name)
-            registry_token, registry_url = _get_ecr_password(registry_id)
+            registry_id = _create_ecr_repo(repo_name, region)
+            registry_token, registry_url = _get_ecr_password(registry_id, region)
             registry_username, registry_password = _get_creds_from_token(registry_token)
 
             registry_domain = registry_url.replace("https://", "")
             tag = f"{registry_domain}/{repo_name}"
 
-            containerize_bento_service(
+            """containerize_bento_service(
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
                 saved_bundle_path=bento_path,
@@ -244,7 +265,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 build_arg={},
                 username=registry_username,
                 password=registry_password,
-            )
+            )"""
 
             encoded_user_data = _make_user_data(
                 registry_username, registry_password, registry_url, tag
@@ -274,132 +295,174 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 s3_bucket_name, project_path, aws_ec2_deployment_config.region
             )
 
-            deploy_template(
+            """deploy_template(
                 deployment_stack_name,
                 s3_bucket_name,
                 project_path,
                 aws_ec2_deployment_config.region,
-            )
+            )"""
 
     def add(self, deployment_pb):
-
-        deployment_spec = deployment_pb.spec
-        deployment_spec.aws_ec2_operator_config.region = (
-            deployment_spec.aws_ec2_operator_config.region or get_default_aws_region()
-        )
-        if not deployment_spec.aws_ec2_operator_config.region:
-            raise InvalidArgument("AWS region is missing")
-
-        ensure_sam_available_or_raise()
-        ensure_docker_available_or_raise()
-
-        bento_pb = self.yatai_service.GetBento(
-            GetBentoRequest(
-                bento_name=deployment_spec.bento_name,
-                bento_version=deployment_spec.bento_version,
+        try:
+            deployment_spec = deployment_pb.spec
+            deployment_spec.aws_ec2_operator_config.region = (
+                deployment_spec.aws_ec2_operator_config.region
+                or get_default_aws_region()
             )
-        )
+            if not deployment_spec.aws_ec2_operator_config.region:
+                raise InvalidArgument("AWS region is missing")
 
-        if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
-            raise BentoMLException(
-                "BentoML currently not support {} repository".format(
-                    BentoUri.StorageType.Name(bento_pb.bento.uri.type)
+            ensure_sam_available_or_raise()
+            ensure_docker_available_or_raise()
+
+            bento_pb = self.yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
                 )
             )
-        bento_path = bento_pb.bento.uri.uri
 
-        return self._add(deployment_pb, bento_pb, bento_path)
+            if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
+                raise BentoMLException(
+                    "BentoML currently not support {} repository".format(
+                        BentoUri.StorageType.Name(bento_pb.bento.uri.type)
+                    )
+                )
+            bento_path = bento_pb.bento.uri.uri
+
+            return self._add(deployment_pb, bento_pb, bento_path)
+        except BentoMLException as error:
+            # raise error
+            deployment_pb.state.state = DeploymentState.ERROR
+            print("error is ", error)
+            print("proto ", error.status_proto)
+            deployment_pb.state.error_message = f"Error: {str(error)}"
+            print("deployment pb ", deployment_pb)
+            return ApplyDeploymentResponse(
+                status=error.status_proto, deployment=deployment_pb
+            )
 
     def _add(self, deployment_pb, bento_pb, bento_path):
-        if loader._is_remote_path(bento_path):
-            with loader._resolve_remote_bundle_path(bento_path) as local_path:
-                return self._add(deployment_pb, bento_pb, local_path)
+        try:
+            if loader._is_remote_path(bento_path):
+                with loader._resolve_remote_bundle_path(bento_path) as local_path:
+                    return self._add(deployment_pb, bento_pb, local_path)
 
-        deployment_spec = deployment_pb.spec
-        aws_ec2_deployment_config = deployment_spec.aws_ec2_operator_config
+            deployment_spec = deployment_pb.spec
+            aws_ec2_deployment_config = deployment_spec.aws_ec2_operator_config
 
-        artifact_s3_bucket_name = generate_aws_compatible_string(
-            "btml-{namespace}-{name}-{random_string}".format(
-                namespace=deployment_pb.namespace,
-                name=deployment_pb.name,
-                random_string=uuid4().hex[:6].lower(),
+            artifact_s3_bucket_name = generate_aws_compatible_string(
+                "btml-{namespace}-{name}-{random_string}".format(
+                    namespace=deployment_pb.namespace,
+                    name=deployment_pb.name,
+                    random_string=uuid4().hex[:6].lower(),
+                )
             )
-        )
-        create_s3_bucket_if_not_exists(
-            artifact_s3_bucket_name, aws_ec2_deployment_config.region
-        )
+            create_s3_bucket_if_not_exists(
+                artifact_s3_bucket_name, aws_ec2_deployment_config.region
+            )
 
-        self.deploy_service(
-            deployment_pb,
-            deployment_spec,
-            bento_path,
-            aws_ec2_deployment_config,
-            artifact_s3_bucket_name,
-        )
-
+            self.deploy_service(
+                deployment_pb,
+                deployment_spec,
+                bento_path,
+                aws_ec2_deployment_config,
+                artifact_s3_bucket_name,
+                aws_ec2_deployment_config.region,
+            )
+        except BentoMLException as error:
+            if artifact_s3_bucket_name and aws_ec2_deployment_config.region:
+                cleanup_s3_bucket_if_exist(
+                    artifact_s3_bucket_name, aws_ec2_deployment_config.region
+                )
+            raise error
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
     def delete(self, deployment_pb):
-        deployment_spec = deployment_pb.spec
-        ec2_deployment_config = deployment_spec.aws_ec2_operator_config
-        ec2_deployment_config.region = (
-            ec2_deployment_config.region or get_default_aws_region()
-        )
-        if not ec2_deployment_config.region:
-            raise InvalidArgument("AWS region is missing")
-
-        # delete stack
-        deployment_spec = deployment_pb
-        deployment_stack_name = generate_aws_compatible_string(
-            "btml-stack-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
+        try:
+            deployment_spec = deployment_pb.spec
+            ec2_deployment_config = deployment_spec.aws_ec2_operator_config
+            ec2_deployment_config.region = (
+                ec2_deployment_config.region or get_default_aws_region()
             )
-        )
+            if not ec2_deployment_config.region:
+                raise InvalidArgument("AWS region is missing")
 
-        cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
-        cf_client.delete_stack(StackName=deployment_stack_name)
-
-        # delete repo from ecr
-        repository_name = generate_aws_compatible_string(
-            "btml-repo-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            )
-        )
-        ecr_client = boto3.client("ecr", ec2_deployment_config.region)
-        ecr_client.delete_repository(repositoryName=repository_name)
-        return DeleteDeploymentResponse(status=Status.OK())
-
-    def update(self, deployment_pb, previous_deployment):
-        ensure_sam_available_or_raise()
-        ensure_docker_available_or_raise()
-        deployment_spec = deployment_pb.spec
-        bento_pb = self.yatai_service.GetBento(
-            GetBentoRequest(
-                bento_name=deployment_spec.bento_name,
-                bento_version=deployment_spec.bento_version,
-            )
-        )
-
-        if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
-            raise BentoMLException(
-                "BentoML currently not support {} repository".format(
-                    BentoUri.StorageType.Name(bento_pb.bento.uri.type)
+            # delete stack
+            deployment_spec = deployment_pb
+            deployment_stack_name = generate_aws_compatible_string(
+                "btml-stack-{namespace}-{name}".format(
+                    namespace=deployment_pb.namespace, name=deployment_pb.name
                 )
             )
-        return self._update(
-            deployment_pb, previous_deployment, bento_pb, bento_pb.bento.uri.uri
-        )
 
-    def _update(self, deployment_pb, previous_deployment_pb, bento_pb, bento_path):
+            cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
+            cf_client.delete_stack(StackName=deployment_stack_name)
+
+            # delete repo from ecr
+            repository_name = generate_aws_compatible_string(
+                "btml-repo-{namespace}-{name}".format(
+                    namespace=deployment_pb.namespace, name=deployment_pb.name
+                )
+            )
+            ecr_client = boto3.client("ecr", ec2_deployment_config.region)
+            ecr_client.delete_repository(repositoryName=repository_name)
+            return DeleteDeploymentResponse(status=Status.OK())
+        except BentoMLException as error:
+            return DeleteDeploymentResponse(status=error.status_proto)
+
+    def update(self, deployment_pb, previous_deployment):
+        try:
+            ensure_sam_available_or_raise()
+            ensure_docker_available_or_raise()
+            deployment_spec = deployment_pb.spec
+            ec2_deployment_config = deployment_spec.aws_ec2_operator_config
+            ec2_deployment_config.region = (
+                ec2_deployment_config.region or get_default_aws_region()
+            )
+            if not ec2_deployment_config.region:
+                raise InvalidArgument("AWS region is missing")
+
+            bento_pb = self.yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
+            )
+
+            if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
+                raise BentoMLException(
+                    "BentoML currently not support {} repository".format(
+                        BentoUri.StorageType.Name(bento_pb.bento.uri.type)
+                    )
+                )
+
+            return self._update(
+                deployment_pb,
+                previous_deployment,
+                bento_pb.bento.uri.uri,
+                ec2_deployment_config.region,
+            )
+        except BentoMLException as error:
+            # raise error
+            deployment_pb.state.state = DeploymentState.ERROR
+            print("error is ", error)
+            print("proto ", error.status_proto)
+            deployment_pb.state.error_message = f"Error: {str(error)}"
+            print("deployment pb ", deployment_pb)
+            return ApplyDeploymentResponse(
+                status=error.status_proto, deployment=deployment_pb
+            )
+
+    def _update(self, deployment_pb, previous_deployment_pb, bento_path, region):
         if loader._is_remote_path(bento_path):
             with loader._resolve_remote_bundle_path(bento_path) as local_path:
                 return self._update(
-                    deployment_pb, previous_deployment_pb, bento_pb, local_path
+                    deployment_pb, previous_deployment_pb, local_path, region
                 )
 
         updated_deployment_spec = deployment_pb.spec
         updated_deployment_config = updated_deployment_spec.aws_ec2_operator_config
-        # updated_bento_service_metadata = bento_pb.bento_service_metadata
 
         describe_result = self.describe(deployment_pb)
         if describe_result.status.status_code != status_pb2.Status.OK:
@@ -424,9 +487,12 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         self.deploy_service(
             deployment_pb,
             updated_deployment_spec,
+            bento_path,
             updated_deployment_config,
             s3_bucket_name,
+            region,
         )
+
         return ApplyDeploymentResponse(status=Status.OK(), deployment=deployment_pb)
 
     def describe(self, deployment_pb):

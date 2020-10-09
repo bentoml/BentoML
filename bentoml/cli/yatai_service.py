@@ -68,11 +68,18 @@ def add_yatai_service_sub_command(cli):
         'compatible with Amazon S3, such as MinIO',
         envvar='BENTOML_S3_ENDPOINT_URL',
     )
+    @click.option(
+        '--base-url',
+        type=click.STRING,
+        default='/',
+        help='Add a location prefix to the URL when running YataiService behind a reverse proxy server',
+        envvar='BENTOML_BASE_URL'
+    )
     def yatai_service_start(
-        db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url
+        db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, base_url
     ):
         from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 
         start_yatai_service_grpc_server(
-            db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url
+            db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, base_url
         )

@@ -1,6 +1,6 @@
 import re
 import logging
-from bentoml.exceptions import BentoMLException, YataiDeploymentException
+from bentoml.exceptions import YataiDeploymentException
 
 logger = logging.getLogger(__name__)
 

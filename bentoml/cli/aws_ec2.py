@@ -35,6 +35,8 @@ yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 
 def get_aws_ec2_sub_command():
+    # pylint: disable=unused-variable
+
     @click.group(name="ec2", cls=BentoMLCommandGroup, help="commandas for ec2")
     def aws_ec2():
         pass
@@ -73,7 +75,8 @@ def get_aws_ec2_sub_command():
         type=click.INT,
         default=1,
         help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
-        "the number of instances as needed to handle an increase in demand.Default is 1",
+        "the number of instances as needed to handle an increase in demand. "
+        "Default is 1",
     )
     @click.option(
         "--instance_type",
@@ -81,7 +84,7 @@ def get_aws_ec2_sub_command():
         default="t2.micro",
         help="Instance type of ec2 container.Default is t2.micro",
     )
-    @click.option(  # pylint: disable=unused-variable
+    @click.option(
         "--ami_id",
         type=click.STRING,
         default="/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
@@ -132,7 +135,7 @@ def get_aws_ec2_sub_command():
     )
     @click.option(
         "--force",
-        is_flag=True,  # pylint: disable=unused-variable
+        is_flag=True,
         help="force delete the deployment record in database and "
         "ignore errors when deleting cloud resources",
     )

@@ -1,5 +1,8 @@
 import re
+import logging
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
+
+logger = logging.getLogger(__name__)
 
 
 def to_valid_docker_image_name(name):
@@ -108,9 +111,11 @@ def containerize_bento_service(
 
     docker_api = docker.APIClient()
     try:
-        docker_api.build(
+        logger.info("Building image")
+        for line in docker_api.build(
             path=saved_bundle_path, tag=tag, decode=True, buildargs=docker_build_args,
-        )
+        ):
+            logger.debug(line)
     except docker.errors.APIError as error:
         raise YataiDeploymentException(f"Could not build Docker image: {error}")
 
@@ -122,12 +127,14 @@ def containerize_bento_service(
         )
 
         try:
-            docker_api.push(
+            logger.info("Pushing image")
+            for line in docker_api.push(
                 repository=tag,
                 stream=True,
                 decode=True,
                 auth_config=auth_config_payload,
-            )
-        except (docker.errors.APIError, BentoMLException) as error:
+            ):
+                logger.debug(line)
+        except docker.errors.APIError as error:
             raise YataiDeploymentException(f"Could not push Docker image: {error}")
     return tag

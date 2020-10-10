@@ -4,6 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 import base64
 import json
+import logging
 from botocore.exceptions import ClientError
 
 from bentoml.utils.tempdir import TempDirectory
@@ -44,6 +45,8 @@ from bentoml.yatai.deployment.aws_ec2.utils import (
     package_template,
     deploy_template,
 )
+
+logger = logging.getLogger(__name__)
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 SAM_TEMPLATE_NAME = "template.yml"
@@ -228,7 +231,11 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         s3_bucket_name,
         region,
     ):
-        sam_template_name = "template.yml"
+        sam_template_name = generate_aws_compatible_string(
+            "btml-template-{namespace}-{name}".format(
+                namespace=deployment_pb.namespace, name=deployment_pb.name
+            )
+        )
 
         deployment_stack_name = generate_aws_compatible_string(
             "btml-stack-{namespace}-{name}".format(
@@ -250,6 +257,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             registry_domain = registry_url.replace("https://", "")
             tag = f"{registry_domain}/{repo_name}"
 
+            logger.info("Containerizing service")
             containerize_bento_service(
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
@@ -261,10 +269,12 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 password=registry_password,
             )
 
+            logger.info("Generating user data")
             encoded_user_data = _make_user_data(
                 registry_username, registry_password, registry_url, tag
             )
 
+            logger.info("Making template")
             template_file_path = _make_cloudformation_template(
                 project_path,
                 encoded_user_data,
@@ -281,14 +291,17 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 sam_template_name, aws_ec2_deployment_config.region, project_path
             )
 
+            logger.info("Building service")
             build_template(
                 template_file_path, project_path, aws_ec2_deployment_config.region
             )
 
+            logger.info("Packaging service")
             package_template(
                 s3_bucket_name, project_path, aws_ec2_deployment_config.region
             )
 
+            logger.info("Deploying service")
             deploy_template(
                 deployment_stack_name,
                 s3_bucket_name,
@@ -326,12 +339,8 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
 
             return self._add(deployment_pb, bento_pb, bento_path)
         except BentoMLException as error:
-            # raise error
             deployment_pb.state.state = DeploymentState.ERROR
-            print("error is ", error)
-            print("proto ", error.status_proto)
             deployment_pb.state.error_message = f"Error: {str(error)}"
-            print("deployment pb ", deployment_pb)
             return ApplyDeploymentResponse(
                 status=error.status_proto, deployment=deployment_pb
             )

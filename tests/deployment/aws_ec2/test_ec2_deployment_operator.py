@@ -68,12 +68,12 @@ def generate_ec2_deployment_pb():
     test_deployment_pb.spec.bento_version = 'v1.0.0'
     # DeploymentSpec.DeploymentOperator.AWS_LAMBDA
     test_deployment_pb.spec.operator = 3
-    test_deployment_pb.spec.aws_lambda_operator_config.region = 'us-west-2'
-    test_deployment_pb.spec.aws_lambda_operator_config.instance_type = "t2.micro"
-    test_deployment_pb.spec.aws_lambda_operator_config.ami_id = "test-ami-id"
-    test_deployment_pb.spec.aws_lambda_operator_config.autoscale_min_capacity = 1
-    test_deployment_pb.spec.aws_lambda_operator_config.autoscale_desired_capacity = 1
-    test_deployment_pb.spec.aws_lambda_operator_config.autoscale_max_capacity = 1
+    test_deployment_pb.spec.aws_ec2_operator_config.region = 'us-west-2'
+    test_deployment_pb.spec.aws_ec2_operator_config.instance_type = "t2.micro"
+    test_deployment_pb.spec.aws_ec2_operator_config.ami_id = "test-ami-id"
+    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_min_capacity = 1
+    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = 1
+    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_max_capacity = 1
 
     return test_deployment_pb
 
@@ -172,6 +172,112 @@ def test_make_cloudformation_template(tmpdir):
         )
 
 
-# mock bucket operations with moto
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.ensure_sam_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.ensure_docker_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.create_s3_bucket_if_not_exists",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.deploy_service",
+    MagicMock(),
+)
 def test_ec2_add_success():
-    pass
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_ec2_deployment_pb()
+    operator = AwsEc2DeploymentOperator(yatai_service_mock)
+
+    result_pb = operator.add(test_deployment_pb)
+
+    assert result_pb.status.status_code == status_pb2.Status.OK
+    assert result_pb.deployment.state.state == DeploymentState.PENDING
+
+
+def test_ec2_delete_success():
+    def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "DeleteStack":
+            return {}
+        elif op_name == "DeleteRepository":
+            return {}
+
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_ec2_deployment_pb()
+    operator = AwsEc2DeploymentOperator(yatai_service_mock)
+
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_boto_client):
+        result_pb = operator.delete(test_deployment_pb)
+        assert result_pb.status.status_code == status_pb2.Status.OK
+
+
+def test_ec2_describe_success():
+    def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "DescribeStacks":
+            return {
+                "Stacks": [
+                    {
+                        "StackStatus": "CREATE_COMPLETE",
+                        "Outputs": [
+                            {
+                                "OutputKey": "S3Bucket",
+                                "OutputValue": mock_s3_bucket_name,
+                            }
+                        ],
+                    }
+                ]
+            }
+
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_ec2_deployment_pb()
+    operator = AwsEc2DeploymentOperator(yatai_service_mock)
+
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_boto_client):
+        result_pb = operator.describe(test_deployment_pb)
+        print(result_pb)
+        assert result_pb.status.status_code == status_pb2.Status.OK
+        assert result_pb.state.state == DeploymentState.RUNNING
+
+
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.ensure_sam_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.ensure_docker_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.deploy_service",
+    MagicMock(),
+)
+def test_ec2_update_success():
+    def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "DescribeStacks":
+            return {
+                "Stacks": [
+                    {
+                        "StackStatus": "CREATE_COMPLETE",
+                        "Outputs": [
+                            {
+                                "OutputKey": "S3Bucket",
+                                "OutputValue": mock_s3_bucket_name,
+                            }
+                        ],
+                    }
+                ]
+            }
+
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_ec2_deployment_pb()
+    operator = AwsEc2DeploymentOperator(yatai_service_mock)
+
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_boto_client):
+        result_pb = operator.update(test_deployment_pb, test_deployment_pb)
+
+    assert result_pb.status.status_code == status_pb2.Status.OK
+    assert result_pb.deployment.state.state == DeploymentState.PENDING

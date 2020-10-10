@@ -442,12 +442,8 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 ec2_deployment_config.region,
             )
         except BentoMLException as error:
-            # raise error
             deployment_pb.state.state = DeploymentState.ERROR
-            print("error is ", error)
-            print("proto ", error.status_proto)
             deployment_pb.state.error_message = f"Error: {str(error)}"
-            print("deployment pb ", deployment_pb)
             return ApplyDeploymentResponse(
                 status=error.status_proto, deployment=deployment_pb
             )
@@ -508,10 +504,8 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                     namespace=deployment_pb.namespace, name=deployment_pb.name
                 )
             )
-            # deployment_stack_name = "mutract-stack"  # TODO: DELETE THIHS
             try:
                 cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
-
                 cloudformation_stack_result = cf_client.describe_stacks(
                     StackName=deployment_stack_name
                 )

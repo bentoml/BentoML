@@ -460,6 +460,11 @@ and Google KNative.
 ``DataframeInput`` and ``TfTensorInput`` are special input types that only support
 accepting a batch of input at one time.
 
+.. note::
+
+    For ``TfTensorInput``, the batched input data is ``tf.Tensor`` instead of
+    ``List[tf.Tensor]``.
+
 **Input data validation while handling batch input**
 
 When the API function received a list of input, it is now possible to reject a subset

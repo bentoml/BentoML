@@ -14,11 +14,7 @@
 
 import json
 import logging
-import re
 import subprocess
-
-import boto3
-from botocore.exceptions import ClientError
 
 from bentoml.exceptions import (
     BentoMLException,

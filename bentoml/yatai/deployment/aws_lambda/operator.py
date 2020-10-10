@@ -20,7 +20,6 @@ import logging
 from pathlib import Path
 
 import boto3
-from botocore.exceptions import ClientError
 
 from bentoml.utils.ruamel_yaml import YAML
 from bentoml.exceptions import (
@@ -39,7 +38,6 @@ from bentoml.yatai.deployment.aws_utils import (
 )
 from bentoml.yatai.deployment.aws_lambda.utils import (
     init_sam_project,
-    cleanup_build_files,
     lambda_deploy,
     lambda_package,
     reduce_bundle_size_and_upload_extra_resources_to_s3,
@@ -439,7 +437,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 deployment_info_json = json.loads(deployment_pb.state.info_json)
                 bucket_name = deployment_info_json.get('s3_bucket')
                 if bucket_name:
-                    _cleanup_s3_bucket_if_exist(
+                    cleanup_s3_bucket_if_exist(
                         bucket_name, lambda_deployment_config.region
                     )
 

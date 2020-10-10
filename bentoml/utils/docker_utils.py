@@ -1,4 +1,3 @@
-import click
 import re
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
 

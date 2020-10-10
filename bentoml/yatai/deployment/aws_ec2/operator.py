@@ -31,12 +31,7 @@ from bentoml.yatai.deployment.aws_utils import (
     FAILED_CLOUDFORMATION_STACK_STATUS,
     cleanup_s3_bucket_if_exist,
 )
-from bentoml.utils.docker_utils import (
-    to_valid_docker_image_name,
-    to_valid_docker_image_version,
-    validate_tag,
-    containerize_bento_service,
-)
+from bentoml.utils.docker_utils import containerize_bento_service
 from bentoml.exceptions import (
     BentoMLException,
     InvalidArgument,

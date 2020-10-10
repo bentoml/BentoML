@@ -14,7 +14,6 @@
 
 import os
 import shutil
-import subprocess
 import logging
 import re
 import tarfile
@@ -23,7 +22,7 @@ from pathlib import Path
 import boto3
 from botocore.exceptions import ClientError
 
-from bentoml.exceptions import BentoMLException, MissingDependencyException
+from bentoml.exceptions import BentoMLException
 from bentoml.yatai.deployment.aws_utils import call_sam_command
 
 logger = logging.getLogger(__name__)

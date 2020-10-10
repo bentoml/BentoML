@@ -1,21 +1,18 @@
 import click
 import sys
-import os
+
 import json
 import re
 import psutil
 
 from bentoml import __version__
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.utils.s3 import is_s3_url
-from bentoml.utils.gcs import is_gcs_url
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.exceptions import BentoMLException, CLIException
 from bentoml.server import start_dev_server, start_prod_server
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import (
     ProtoMessageToDict,
-    status_pb_to_error_code_and_message,
     resolve_bundle_path,
 )
 from bentoml.cli.click_utils import (
@@ -26,7 +23,6 @@ from bentoml.cli.click_utils import (
     conditional_argument,
 )
 from bentoml.cli.utils import echo_docker_api_result, Spinner
-from bentoml.utils import get_default_yatai_client
 from bentoml.saved_bundle import (
     load,
     load_bento_service_api,

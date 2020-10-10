@@ -2,19 +2,8 @@ import os
 
 import boto3
 import pytest
-from mock import MagicMock, Mock, patch
-from moto import mock_s3
-from ruamel.yaml import YAML
+from mock import MagicMock, patch
 
-from bentoml.yatai.deployment.aws_lambda.operator import (
-    AwsLambdaDeploymentOperator,
-    _create_aws_lambda_cloudformation_template_file,
-)
-from bentoml.yatai.deployment.aws_lambda.utils import (
-    init_sam_project,
-    LAMBDA_FUNCTION_LIMIT,
-    LAMBDA_FUNCTION_MAX_LIMIT,
-)
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentState
 from bentoml.yatai.proto.repository_pb2 import (
@@ -26,8 +15,6 @@ from bentoml.yatai.proto.repository_pb2 import (
 from bentoml.yatai.deployment.aws_ec2.operator import (
     _create_ecr_repo,
     _get_ecr_password,
-    _get_creds_from_token,
-    _make_user_data,
     _make_cloudformation_template,
     AwsEc2DeploymentOperator,
 )
@@ -111,7 +98,9 @@ def test_existing_ecr_repo():
 
 
 def test_get_ecr_password():
-    def mock_ecr_client_auth_token(self, op_name, args):
+    def mock_ecr_client_auth_token(
+        self, op_name, args
+    ):  # pylint: disable=unused-argument
         if op_name == "GetAuthorizationToken":
             return {
                 "authorizationData": [

@@ -2,16 +2,11 @@ import logging
 import re
 import subprocess
 import os
-import shutil
 
 import boto3
 from botocore.exceptions import ClientError
 
-from bentoml.exceptions import (
-    BentoMLException,
-    MissingDependencyException,
-    InvalidArgument,
-)
+from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 

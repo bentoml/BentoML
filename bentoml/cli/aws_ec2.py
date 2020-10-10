@@ -23,7 +23,6 @@ from bentoml.cli.click_utils import (
     parse_bento_tag_callback,
     _echo,
     CLI_COLOR_SUCCESS,
-    parse_labels_callback,
 )
 from bentoml.cli.deployment import (
     _print_deployment_info,
@@ -82,12 +81,13 @@ def get_aws_ec2_sub_command():
         default="t2.micro",
         help="Instance type of ec2 container.Default is t2.micro",
     )
-    @click.option(
+    @click.option(  # pylint: disable=unused-variable
         "--ami_id",
         type=click.STRING,
         default="/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
         help="AMI id.Default is Amazon Linux 2",
     )
+    @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
     def deploy(
         name,
         bento,
@@ -97,6 +97,7 @@ def get_aws_ec2_sub_command():
         max_capacity,
         instance_type,
         ami_id,
+        output,
     ):
         yatai_client = get_default_yatai_client()
         bento_name, bento_version = bento.split(":")
@@ -111,8 +112,13 @@ def get_aws_ec2_sub_command():
             instance_type=instance_type,
             ami_id=ami_id,
         )
-
-        _echo(f"Successfully created AWS EC2 deployment ", CLI_COLOR_SUCCESS)
+        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
+            )
+            raise CLIException(f'{error_code}:{error_message}')
+        _echo("Successfully created AWS EC2 deployment", CLI_COLOR_SUCCESS)
+        _print_deployment_info(result.deployment, output)
 
     @aws_ec2.command(help="Delete AWS EC2 deployment")
     @click.argument("name", type=click.STRING)
@@ -125,7 +131,7 @@ def get_aws_ec2_sub_command():
     )
     @click.option(
         "--force",
-        is_flag=True,
+        is_flag=True,  # pylint: disable=unused-variable
         help="force delete the deployment record in database and "
         "ignore errors when deleting cloud resources",
     )
@@ -163,7 +169,7 @@ def get_aws_ec2_sub_command():
         help='Deployment namespace managed by BentoML, default value is "dev" which '
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
-    @click.option(
+    @click.option(  # pylint: disable=unused-variable
         "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="json"
     )
     def get(name, namespace, output):
@@ -205,7 +211,7 @@ def get_aws_ec2_sub_command():
     )
     @click.option(
         "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="json"
-    )
+    )  # pylint: disable=unused-variable
     @click.option(
         "--wait/--no-wait",
         default=True,
@@ -268,7 +274,7 @@ def get_aws_ec2_sub_command():
     )
     @click.option(
         "--asc/--desc",
-        default=False,
+        default=False,  # pylint: disable=unused-variable
         help="Ascending or descending order for list deployments",
     )
     @click.option(

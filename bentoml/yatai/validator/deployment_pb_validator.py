@@ -112,9 +112,21 @@ deployment_schema = {
                     "region": {"type": "string"},
                     "instance_type": {"type": "string"},
                     "ami_id": {"type": "string"},
-                    "autoscale_min_capacity": {"type": "integer", "min": 1, "required" : True},
-                    "autoscale_desired_capacity": {"type": "integer", "min": 1, "required":True},
-                    "autoscale_max_capacity": {"type": "integer", "min":1, "required":True},
+                    "autoscale_min_capacity": {
+                        "type": "integer",
+                        "min": 1,
+                        "required": True,
+                    },
+                    "autoscale_desired_capacity": {
+                        "type": "integer",
+                        "min": 1,
+                        "required": True,
+                    },
+                    "autoscale_max_capacity": {
+                        "type": "integer",
+                        "min": 1,
+                        "required": True,
+                    },
                 },
             },
         },
@@ -196,6 +208,7 @@ class YataiDeploymentValidator(Validator):
                     'must be being and end with an alphanumeric character '
                     '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
                 )
+
 
 def validate_deployment_pb(pb):
     pb_dict = ProtoMessageToDict(pb)

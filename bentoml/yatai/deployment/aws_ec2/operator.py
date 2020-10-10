@@ -248,7 +248,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
 
             registry_domain = registry_url.replace("https://", "")
             tag = f"{registry_domain}/{repo_name}"
-            
+
             containerize_bento_service(
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
@@ -287,7 +287,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             package_template(
                 s3_bucket_name, project_path, aws_ec2_deployment_config.region
             )
-            
+
             deploy_template(
                 deployment_stack_name,
                 s3_bucket_name,

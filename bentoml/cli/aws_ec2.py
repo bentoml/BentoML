@@ -101,17 +101,18 @@ def get_aws_ec2_sub_command():
     ):
         yatai_client = get_default_yatai_client()
         bento_name, bento_version = bento.split(":")
-        result = yatai_client.deployment.create_ec2_deployment(
-            name=name,
-            bento_name=bento_name,
-            bento_version=bento_version,
-            region=region,
-            min_capacity=min_capacity,
-            desired_capacity=desired_capacity,
-            max_capacity=max_capacity,
-            instance_type=instance_type,
-            ami_id=ami_id,
-        )
+        with Spinner(f"Deploying {bento} to AWS EC2"):
+            result = yatai_client.deployment.create_ec2_deployment(
+                name=name,
+                bento_name=bento_name,
+                bento_version=bento_version,
+                region=region,
+                min_capacity=min_capacity,
+                desired_capacity=desired_capacity,
+                max_capacity=max_capacity,
+                instance_type=instance_type,
+                ami_id=ami_id,
+            )
         if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status

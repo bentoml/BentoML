@@ -58,22 +58,22 @@ def get_aws_ec2_sub_command():
         "--min_capacity",
         type=click.INT,
         default=1,
-        help="The minimum limit helps ensure that you always have a certain number of instances running at all times.\
-            Default is 1",
+        help="The minimum limit helps ensure that you always have a "
+        "certain number of instances running at all times.Default is 1",
     )
     @click.option(
         "--desired_capacity",
         type=click.INT,
         default=1,
-        help="Desired number of instances capacity to run bentoservice on.Should be between minimum and maximum capacities.\
-            Default is 1",
+        help="Desired number of instances capacity to run bentoservice on "
+        "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
         "--max_capacity",
         type=click.INT,
         default=1,
-        help="The maximum limit lets Amazon EC2 Auto Scaling scale out the number of instances as needed to handle an increase in demand\
-            Default is 1",
+        help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
+        "the number of instances as needed to handle an increase in demand.Default is 1",
     )
     @click.option(
         "--instance_type",

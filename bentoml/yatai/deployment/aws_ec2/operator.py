@@ -140,7 +140,8 @@ def _make_cloudformation_template(
         or autoscaling_desired_size > autoscaling_max_size
     ):
         raise BentoMLException(
-            "Wrong autoscaling capacity specified.It should be min_size <= desired_size <= max_size"
+            "Wrong autoscaling capacity specified. "
+            "It should be min_size <= desired_size <= max_size"
         )
 
     template_file_path = os.path.join(project_dir, sam_template_name)
@@ -189,7 +190,7 @@ Resources:
                 UserData: "{user_data}"
                 SecurityGroupIds:
                 - !GetAtt SecurityGroupResource.GroupId
-    
+
     AutoScalingGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
         Properties:
@@ -197,10 +198,10 @@ Resources:
             MaxSize: {autoscaling_max_size}
             DesiredCapacity: {autoscaling_desired_size}
             AvailabilityZones: !GetAZs
-            LaunchTemplate: 
+            LaunchTemplate:
                 LaunchTemplateId: !Ref LaunchTemplateResource
                 Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
-Outputs: 
+Outputs:
     S3Bucket:
         Value: {s3_bucket_name},
         Description: 'S3 Bucket for saving artifacts and lambda bundle'

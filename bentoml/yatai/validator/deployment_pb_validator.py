@@ -112,9 +112,9 @@ deployment_schema = {
                     "region": {"type": "string"},
                     "instance_type": {"type": "string"},
                     "ami_id": {"type": "string"},
-                    "autoscale_min_capacity": {"type": "integer", "min": 1},
-                    "autoscale_desired_capacity": {"type": "integer", "min": 1},
-                    "autoscale_max_capacity": {"type": "integer"},
+                    "autoscale_min_capacity": {"type": "integer", "min": 1, "required" : True},
+                    "autoscale_desired_capacity": {"type": "integer", "min": 1, "required":True},
+                    "autoscale_max_capacity": {"type": "integer", "min":1, "required":True},
                 },
             },
         },
@@ -151,10 +151,6 @@ class YataiDeploymentValidator(Validator):
                     'AWS Lambda memory must be between 128 MB to 3,008 MB, '
                     'in 64 MB increments.',
                 )
-
-    def _validate_aws_ec2_capacity(self):
-        # TODO: check min_capacity </= desired_capacity < max_capacity if possible to accept multiple variables here.
-        pass
 
     def _validate_bento_service_version(self, bento_service_version, field, value):
         """ Test the given BentoService version is not "latest"
@@ -200,7 +196,6 @@ class YataiDeploymentValidator(Validator):
                     'must be being and end with an alphanumeric character '
                     '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
                 )
-
 
 def validate_deployment_pb(pb):
     pb_dict = ProtoMessageToDict(pb)

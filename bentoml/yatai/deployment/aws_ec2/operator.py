@@ -67,7 +67,7 @@ def _create_ecr_repo(repo_name, region):
 def _get_ecr_password(registry_id, region):
     ecr_client = boto3.client("ecr", region)
     try:
-        token_data = ecr_client.get_authorization_token(registryIds=["registry_id"])
+        token_data = ecr_client.get_authorization_token(registryIds=[registry_id])
         token = token_data["authorizationData"][0]["authorizationToken"]
         registry_endpoint = token_data["authorizationData"][0]["proxyEndpoint"]
         return token, registry_endpoint
@@ -248,7 +248,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
 
             registry_domain = registry_url.replace("https://", "")
             tag = f"{registry_domain}/{repo_name}"
-
+            
             containerize_bento_service(
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
@@ -287,7 +287,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             package_template(
                 s3_bucket_name, project_path, aws_ec2_deployment_config.region
             )
-
+            
             deploy_template(
                 deployment_stack_name,
                 s3_bucket_name,

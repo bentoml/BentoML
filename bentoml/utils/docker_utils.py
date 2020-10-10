@@ -1,7 +1,6 @@
 import re
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
 
-
 def to_valid_docker_image_name(name):
     # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     return name.lower().strip("._-")

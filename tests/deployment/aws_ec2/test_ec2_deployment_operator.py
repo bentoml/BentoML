@@ -31,9 +31,6 @@ mock_registry_endpoint = (
     "https://752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris"
 )
 
-ecr_client = boto3.client("ecr", mock_region)
-
-
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
     bento_pb = Bento(name='bento_test_name', version='version1.1.1')
     if repo_storage_type == BentoUri.LOCAL:
@@ -80,6 +77,7 @@ def test_create_ecr_repo():
 
 # Need to patch 2 operation create_repository and describe_repositories
 def test_existing_ecr_repo():
+    ecr_client = boto3.client("ecr", mock_region)
     def mock_ecr_client_raise_exception(
         self, op_name, args
     ):  # pylint: disable=unused-argument

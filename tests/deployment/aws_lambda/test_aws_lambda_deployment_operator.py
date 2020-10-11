@@ -244,6 +244,10 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
     MagicMock(),
 )
 @patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    MagicMock(),
+)
+@patch(
     'bentoml.yatai.deployment.aws_lambda.operator.cleanup_s3_bucket_if_exist',
     MagicMock(),
 )

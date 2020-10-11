@@ -103,8 +103,8 @@ def get_aws_lambda_sub_command():
     )
     def deploy(
         name,
-        namespace,
         bento,
+        namespace,
         labels,
         region,
         api_name,

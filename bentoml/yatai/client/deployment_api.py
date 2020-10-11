@@ -371,6 +371,7 @@ class DeploymentAPIClient:
     def create_ec2_deployment(
         self,
         name,
+        namespace,
         bento_name,
         bento_version,
         region,
@@ -382,11 +383,12 @@ class DeploymentAPIClient:
         wait=None,
     ):
 
-        deployment_pb = Deployment(name=name)
+        deployment_pb = Deployment(name=name, namespace=namespace)
         deployment_pb.spec.bento_name = bento_name
         deployment_pb.spec.bento_version = bento_version
+        if region:
+            deployment_pb.spec.aws_ec2_operator_config.region = region
         deployment_pb.spec.operator = DeploymentSpec.AWS_EC2
-        deployment_pb.spec.aws_ec2_operator_config.region = region
         deployment_pb.spec.aws_ec2_operator_config.autoscale_min_capacity = min_capacity
         deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = (
             desired_capacity
@@ -397,7 +399,18 @@ class DeploymentAPIClient:
         return self.create(deployment_pb, wait)
 
     def update_ec2_deployment(
-        self, deployment_name, bento_name, bento_version, namespace, wait
+        self,
+        deployment_name,
+        bento_name,
+        bento_version,
+        namespace,
+        region,
+        min_capacity,
+        desired_capacity,
+        max_capacity,
+        instance_type,
+        ami_id,
+        wait,
     ):
         get_deployment_result = self.get(namespace=namespace, name=deployment_name)
         if get_deployment_result.status.status_code != status_pb2.Status.OK:
@@ -411,12 +424,22 @@ class DeploymentAPIClient:
             )
         # new deloyment info with updated configs
         deployment_pb = get_deployment_result.deployment
-        print("existing deployment pb is ", deployment_pb)
 
         if bento_name:
             deployment_pb.spec.bento_name = bento_name
         if bento_version:
             deployment_pb.spec.bento_version = bento_version
+        if region:
+            deployment_pb.spec.aws_ec2_operator_config.region = region
+
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_min_capacity = min_capacity
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = (
+            desired_capacity
+        )
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_max_capacity = max_capacity
+        deployment_pb.spec.aws_ec2_operator_config.instance_type = instance_type
+        deployment_pb.spec.aws_ec2_operator_config.ami_id = ami_id
+
         logger.debug("Updated configuration for Lambda deployment %s", deployment_name)
 
         return self.apply(deployment_pb, wait)

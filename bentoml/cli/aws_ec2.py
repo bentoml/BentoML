@@ -29,6 +29,13 @@ from bentoml.cli.deployment import (
     _print_deployments_info,
 )
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
+from bentoml.yatai.deployment.aws_ec2.constants import (
+    MIN_CAPACITY,
+    DESIRED_CAPACITY,
+    MAX_CAPACITY,
+    INSTANCE_TYPE,
+    AMI_ID,
+)
 from bentoml.exceptions import CLIException
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
@@ -51,49 +58,56 @@ def get_aws_ec2_sub_command():
         callback=parse_bento_tag_callback,
     )
     @click.option(
-        "--region",
-        type=click.STRING,
-        default="ap-south-1",
-        help="Region to deploy service in",
+        "-n", "--namespace", type=click.STRING, callback=parse_bento_tag_callback,
     )
     @click.option(
-        "--min_capacity",
+        "--region", type=click.STRING, help="Region to deploy service in",
+    )
+    @click.option(
+        "--min-capacity",
         type=click.INT,
-        default=1,
+        default=MIN_CAPACITY,
         help="The minimum limit helps ensure that you always have a "
         "certain number of instances running at all times.Default is 1",
     )
     @click.option(
-        "--desired_capacity",
+        "--desired-capacity",
         type=click.INT,
-        default=1,
+        default=DESIRED_CAPACITY,
         help="Desired number of instances capacity to run bentoservice on "
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
         "--max_capacity",
         type=click.INT,
-        default=1,
+        default=MAX_CAPACITY,
         help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
         "the number of instances as needed to handle an increase in demand. "
         "Default is 1",
     )
     @click.option(
-        "--instance_type",
+        "--instance-type",
         type=click.STRING,
-        default="t2.micro",
+        default=INSTANCE_TYPE,
         help="Instance type of ec2 container.Default is t2.micro",
     )
     @click.option(
-        "--ami_id",
+        "--ami-id",
         type=click.STRING,
-        default="/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
+        default=AMI_ID,
         help="AMI id.Default is Amazon Linux 2",
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
+    @click.option(
+        '--wait/--no-wait',
+        default=True,
+        help='Wait for apply action to complete or encounter an error.'
+        'If set to no-wait, CLI will return immediately. The default value is wait',
+    )
     def deploy(
         name,
         bento,
+        namespace,
         region,
         min_capacity,
         desired_capacity,
@@ -101,12 +115,14 @@ def get_aws_ec2_sub_command():
         instance_type,
         ami_id,
         output,
+        wait,
     ):
         yatai_client = get_default_yatai_client()
         bento_name, bento_version = bento.split(":")
         with Spinner(f"Deploying {bento} to AWS EC2"):
             result = yatai_client.deployment.create_ec2_deployment(
                 name=name,
+                namespace=namespace,
                 bento_name=bento_name,
                 bento_version=bento_version,
                 region=region,
@@ -115,14 +131,15 @@ def get_aws_ec2_sub_command():
                 max_capacity=max_capacity,
                 instance_type=instance_type,
                 ami_id=ami_id,
+                wait=wait,
             )
         if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
             raise CLIException(f'{error_code}:{error_message}')
-        _echo("Successfully created AWS EC2 deployment", CLI_COLOR_SUCCESS)
         _print_deployment_info(result.deployment, output)
+        _echo("Successfully created AWS EC2 deployment", CLI_COLOR_SUCCESS)
 
     @aws_ec2.command(help="Delete AWS EC2 deployment")
     @click.argument("name", type=click.STRING)
@@ -214,6 +231,43 @@ def get_aws_ec2_sub_command():
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
+        "--region", type=click.STRING, help="Region to deploy service in",
+    )
+    @click.option(
+        "--min-capacity",
+        type=click.INT,
+        default=MIN_CAPACITY,
+        help="The minimum limit helps ensure that you always have a "
+        "certain number of instances running at all times.Default is 1",
+    )
+    @click.option(
+        "--desired-capacity",
+        type=click.INT,
+        default=DESIRED_CAPACITY,
+        help="Desired number of instances capacity to run bentoservice on "
+        "Should be between minimum and maximum capacities.Default is 1",
+    )
+    @click.option(
+        "--max_capacity",
+        type=click.INT,
+        default=MAX_CAPACITY,
+        help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
+        "the number of instances as needed to handle an increase in demand. "
+        "Default is 1",
+    )
+    @click.option(
+        "--instance-type",
+        type=click.STRING,
+        default=INSTANCE_TYPE,
+        help="Instance type of ec2 container.Default is t2.micro",
+    )
+    @click.option(
+        "--ami-id",
+        type=click.STRING,
+        default=AMI_ID,
+        help="AMI id.Default is Amazon Linux 2",
+    )
+    @click.option(
         "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="json"
     )  # pylint: disable=unused-variable
     @click.option(
@@ -222,7 +276,19 @@ def get_aws_ec2_sub_command():
         help="Wait for apply action to complete or encounter an error."
         "If set to no-wait, CLI will return immediately. The default value is wait",
     )
-    def update(name, namespace, bento, output, wait):
+    def update(
+        name,
+        bento,
+        namespace,
+        region,
+        min_capacity,
+        desired_capacity,
+        max_capacity,
+        instance_type,
+        ami_id,
+        output,
+        wait,
+    ):
         yatai_client = get_default_yatai_client()
         if bento:
             bento_name, bento_version = bento.split(":")
@@ -236,6 +302,12 @@ def get_aws_ec2_sub_command():
                 bento_name=bento_name,
                 bento_version=bento_version,
                 namespace=namespace,
+                region=region,
+                min_capacity=min_capacity,
+                desired_capacity=desired_capacity,
+                max_capacity=max_capacity,
+                instance_type=instance_type,
+                ami_id=ami_id,
                 wait=wait,
             )
             if update_result.status.status_code != yatai_proto.status_pb2.Status.OK:
@@ -245,6 +317,7 @@ def get_aws_ec2_sub_command():
                 raise CLIException(f"{error_code}:{error_message}")
 
         _print_deployment_info(update_result.deployment, output)
+        _echo(f"Successfiully updated AWS EC2 deployment '{name}'", CLI_COLOR_SUCCESS)
 
     @aws_ec2.command(name="list", help="List AWS Lambda deployments")
     @click.option(

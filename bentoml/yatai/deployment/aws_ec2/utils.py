@@ -9,7 +9,7 @@ def build_template(template_file_path, project_directory, region):
 
     if status_code != 0:
         error_message = stderr if stderr else stdout
-        raise BentoMLException("Failed to deploy ec2 service {}".format(error_message))
+        raise BentoMLException("Failed to build ec2 service {}".format(error_message))
 
     return status_code, stdout, stderr
 
@@ -26,6 +26,9 @@ def package_template(s3_bucket_name, project_directory, region):
         project_directory,
         region,
     )
+    if status_code != 0:
+        error_message = stderr if stderr else stdout
+        raise BentoMLException("Failed to package ec2 service {}".format(error_message))
     return status_code, stdout, stderr
 
 
@@ -45,4 +48,7 @@ def deploy_template(stack_name, s3_bucket_name, project_directory, region):
         project_directory,
         region,
     )
+    if status_code != 0:
+        error_message = stderr if stderr else stdout
+        raise BentoMLException("Failed to deploy ec2 service {}".format(error_message))
     return status_code, stdout, stderr

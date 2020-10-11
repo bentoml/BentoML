@@ -206,7 +206,7 @@ Resources:
                 Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
 Outputs:
     S3Bucket:
-        Value: {s3_bucket_name},
+        Value: {s3_bucket_name}
         Description: 'S3 Bucket for saving artifacts and lambda bundle'
 """.format(
                 template_name=sam_template_name,

@@ -227,7 +227,6 @@ def test_ec2_describe_success():
 
     with patch("botocore.client.BaseClient._make_api_call", new=mock_boto_client):
         result_pb = operator.describe(test_deployment_pb)
-        print(result_pb)
         assert result_pb.status.status_code == status_pb2.Status.OK
         assert result_pb.state.state == DeploymentState.RUNNING
 

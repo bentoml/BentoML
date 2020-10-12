@@ -162,7 +162,10 @@ class InferenceAPI(object):
                 span_name="user defined inference api callback function",
             ):
                 if append_arg and append_arg in kwargs:
-                    tasks = kwargs.pop(append_arg)
+                    if _sig.parameters.get(append_arg) is not None:
+                        tasks = kwargs[append_arg]
+                    else:
+                        tasks = kwargs.pop(append_arg)
                 elif append_arg in kwargs:
                     tasks = kwargs[append_arg]
                 else:

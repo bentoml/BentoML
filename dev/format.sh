@@ -3,6 +3,7 @@
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 
 black -S "$GIT_ROOT"
+isort "$GIT_ROOT"/bentoml/.
 
 # format docker directory format.
 DOCKER_DIR="$GIT_ROOT"/docker

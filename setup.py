@@ -69,6 +69,7 @@ test_requires = [
     "pytest>=5.4.0",
     "pytest-asyncio",
     "scikit-learn",
+    "isort>=5.0.0",
 ]
 
 dev_requires = [

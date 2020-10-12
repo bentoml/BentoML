@@ -162,6 +162,9 @@ class InferenceAPI(object):
                 span_name="user defined inference api callback function",
             ):
                 if append_arg and append_arg in kwargs:
+                    # If user defined function signature include the
+                    # append_arg(tasks/task), then keep it in the kwargs instead of pop
+                    # it.
                     if _sig.parameters.get(append_arg) is not None:
                         tasks = kwargs[append_arg]
                     else:

@@ -5,7 +5,11 @@ import pytest
 from mock import MagicMock, patch
 
 from bentoml.yatai.proto import status_pb2
-from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentState
+from bentoml.yatai.proto.deployment_pb2 import (
+    Deployment,
+    DeploymentState,
+    DescribeDeploymentResponse,
+)
 from bentoml.yatai.proto.repository_pb2 import (
     Bento,
     BentoServiceMetadata,
@@ -18,7 +22,8 @@ from bentoml.yatai.deployment.aws_ec2.operator import (
     _make_cloudformation_template,
     AwsEc2DeploymentOperator,
 )
-from bentoml.exceptions import BentoMLException
+from bentoml.yatai.deployment.aws_utils import FAILED_CLOUDFORMATION_STACK_STATUS
+from bentoml.exceptions import BentoMLException, YataiDeploymentException
 
 mock_s3_bucket_name = 'test_deployment_bucket'
 mock_s3_prefix = 'prefix'
@@ -231,6 +236,75 @@ def test_ec2_describe_success():
         assert result_pb.state.state == DeploymentState.RUNNING
 
 
+def test_ec2_describe_pending():
+    def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "DescribeStacks":
+            return {
+                "Stacks": [
+                    {
+                        "StackStatus": "STACK_UPDATING",
+                        "Outputs": [
+                            {
+                                "OutputKey": "S3Bucket",
+                                "OutputValue": mock_s3_bucket_name,
+                            }
+                        ],
+                    }
+                ]
+            }
+
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_ec2_deployment_pb()
+    operator = AwsEc2DeploymentOperator(yatai_service_mock)
+
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_boto_client):
+        result_pb = operator.describe(test_deployment_pb)
+        assert result_pb.status.status_code == status_pb2.Status.OK
+        assert result_pb.state.state == DeploymentState.PENDING
+
+
+def test_ec2_describe_stack_failure():
+    def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "DescribeStacks":
+            return {
+                "Stacks": [
+                    {
+                        "StackStatus": FAILED_CLOUDFORMATION_STACK_STATUS[0],
+                        "Outputs": [
+                            {
+                                "OutputKey": "S3Bucket",
+                                "OutputValue": mock_s3_bucket_name,
+                            }
+                        ],
+                    }
+                ]
+            }
+
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_ec2_deployment_pb()
+    operator = AwsEc2DeploymentOperator(yatai_service_mock)
+
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_boto_client):
+        result_pb = operator.describe(test_deployment_pb)
+        assert result_pb.status.status_code == status_pb2.Status.OK
+        assert result_pb.state.state == DeploymentState.FAILED
+
+
+def test_ec2_describe_no_bucket_failure():
+    def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "DescribeStacks":
+            return {"Stacks": [{"StackStatus": "CREATE_COMPLETE"}]}
+
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_ec2_deployment_pb()
+    operator = AwsEc2DeploymentOperator(yatai_service_mock)
+
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_boto_client):
+        result_pb = operator.describe(test_deployment_pb)
+        assert result_pb.status.status_code == status_pb2.Status.ABORTED
+        assert result_pb.state.state == DeploymentState.ERROR
+
+
 @patch(
     "bentoml.yatai.deployment.aws_ec2.operator.ensure_sam_available_or_raise",
     MagicMock(),
@@ -269,3 +343,63 @@ def test_ec2_update_success():
 
     assert result_pb.status.status_code == status_pb2.Status.OK
     assert result_pb.deployment.state.state == DeploymentState.PENDING
+
+
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.ensure_sam_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.ensure_docker_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.deploy_service",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.describe",
+    MagicMock(
+        return_value=DescribeDeploymentResponse(
+            status=status_pb2.Status(
+                status_code=status_pb2.Status.INTERNAL, error_message="failed"
+            )
+        )
+    ),
+)
+def test_ec2_update_describe_failure():
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_ec2_deployment_pb()
+    operator = AwsEc2DeploymentOperator(yatai_service_mock)
+
+    result_pb = operator.update(test_deployment_pb, test_deployment_pb)
+    assert result_pb.status.status_code == status_pb2.Status.INTERNAL
+    assert result_pb.deployment.state.state == DeploymentState.ERROR
+
+
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.ensure_sam_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.ensure_docker_available_or_raise",
+    MagicMock(),
+)
+@patch(
+    "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.deploy_service",
+    MagicMock(),
+)
+def test_ec2_update_no_bucket_failure():
+    def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "DescribeStacks":
+            return {"Stacks": [{"StackStatus": "CREATE_COMPLETE"}]}
+
+    yatai_service_mock = create_yatai_service_mock()
+    test_deployment_pb = generate_ec2_deployment_pb()
+    operator = AwsEc2DeploymentOperator(yatai_service_mock)
+
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_boto_client):
+        result_pb = operator.update(test_deployment_pb, test_deployment_pb)
+
+    assert result_pb.status.status_code == status_pb2.Status.INTERNAL
+    assert result_pb.deployment.state.state == DeploymentState.ERROR

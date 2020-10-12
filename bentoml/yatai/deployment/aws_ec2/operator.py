@@ -469,7 +469,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 describe_result.status
             )
             raise YataiDeploymentException(
-                f"Failed fetching Lambda deployment current status - "
+                f"Failed fetching ec2 deployment current status - "
                 f"{error_code}:{error_message}"
             )
 
@@ -479,7 +479,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             s3_bucket_name = previous_deployment_state["s3_bucket"]
         else:
             raise BentoMLException(
-                "S3 Bucket is missing in the AWS Lambda deployment, please make sure "
+                "S3 Bucket is missing in the AWS EC2 deployment, please make sure "
                 "it exists and try again"
             )
 

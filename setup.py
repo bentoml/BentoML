@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import setuptools
+
 import versioneer
 
 with open("README.md", "r", encoding="utf8") as f:
@@ -48,11 +49,12 @@ install_requires = [
     "tabulate",
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
-    "multidict",
     "chardet",
 ]
 
 test_requires = [
+    "idna<=2.8",  # for moto
+    "ecdsa==0.14",  # for moto
     "black==19.10b0",
     "codecov",
     "coverage>=4.4",

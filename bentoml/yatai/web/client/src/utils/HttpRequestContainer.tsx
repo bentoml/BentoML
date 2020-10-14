@@ -42,6 +42,10 @@ const DisplayHttpError = ({ error }) => {
   );
 };
 
+const instance = axios.create({
+  baseURL: '/yatai'
+});
+
 const fetch = (options = {}, props, callback) => {
   const { url, data, method, headers, params } = Object.assign(
     {},
@@ -49,7 +53,7 @@ const fetch = (options = {}, props, callback) => {
     options
   );
 
-  return axios({ method, url, data, headers, params })
+  return instance({ method, url, data, headers, params })
     .then((response) => {
       callback({ data: response.data, isLoading: false, error: false });
     })

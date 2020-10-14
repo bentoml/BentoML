@@ -74,7 +74,7 @@ def get_aws_ec2_sub_command():
         "--desired-capacity",
         type=click.INT,
         default=DEFAULT_DESIRED_CAPACITY,
-        help="Desired number of instances capacity to run bentoservice on "
+        help="Desired number of instances capacity to run bentoservice on."
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
@@ -244,7 +244,7 @@ def get_aws_ec2_sub_command():
         "--desired-capacity",
         type=click.INT,
         default=DEFAULT_DESIRED_CAPACITY,
-        help="Desired number of instances capacity to run bentoservice on "
+        help="Desired number of instances capacity to run bentoservice on."
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(

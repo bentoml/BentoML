@@ -23,7 +23,7 @@ from bentoml.yatai.deployment.aws_ec2.operator import (
     AwsEc2DeploymentOperator,
 )
 from bentoml.yatai.deployment.aws_utils import FAILED_CLOUDFORMATION_STACK_STATUS
-from bentoml.exceptions import BentoMLException, YataiDeploymentException
+from bentoml.exceptions import BentoMLException
 
 mock_s3_bucket_name = 'test_deployment_bucket'
 mock_s3_prefix = 'prefix'

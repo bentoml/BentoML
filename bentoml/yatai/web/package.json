@@ -67,7 +67,8 @@
     "typescript": "^3.8.3",
     "url-loader": "^4.1.0",
     "webpack": "4.42.0",
-    "webpack-cli": "^3.3.11"
+    "webpack-cli": "^3.3.11",
+    "cookie-parser": "^1.4.4"
   },
   "jest": {
     "moduleFileExtensions": [

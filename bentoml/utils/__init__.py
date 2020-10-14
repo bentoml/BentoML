@@ -24,11 +24,7 @@ from werkzeug.utils import cached_property
 
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
-
-# from bentoml.cli.utils import get_default_yatai_client
 from bentoml.utils.lazy_loader import LazyLoader
-
-# from bentoml.yatai import proto as yatai_proto
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")

@@ -106,17 +106,13 @@ runcmd:
 - sudo amazon-linux-extras install docker -y
 - sudo service docker start
 - sudo usermod -a -G docker ec2-user
-- curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'
-- unzip awscliv2.zip
-- sudo ./aws/install
-- ln -s /usr/bin/aws aws
-- docker login --username {0} --password {1} {2}
-- sudo docker pull {3}
-- sudo docker run -p 5000:5000 {3}
+- docker login --username {username} --password {password} {registry}
+- sudo docker pull {tag}
+- sudo docker run -p 5000:5000 {tag}
 
 --==MYBOUNDARY==--
 """.format(
-        username, password, registry, tag
+        username=username, password=password, registry=registry, tag=tag
     )
     encoded = base64.b64encode(base_format.encode("ascii")).decode("ascii")
     return encoded
@@ -135,6 +131,7 @@ def _make_cloudformation_template(
 ):
     """
     NOTE: SSH ACCESS TO INSTANCE MAY NOT BE REQUIRED
+    TODO: Port taken from cli
     """
     if (
         autoscaling_min_size <= 0
@@ -152,7 +149,7 @@ def _make_cloudformation_template(
     sam_config = {
         "AWSTemplateFormatVersion": "2010-09-09",
         "Transform": "AWS::Serverless-2016-10-31",
-        "Description": "BentoML load balanced template template",
+        "Description": "BentoML load balanced template",
         "Parameters": {
             "AmazonLinux2LatestAmiId": {
                 "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
@@ -186,7 +183,6 @@ Resources:
         Type: AWS::EC2::LaunchTemplate
         Properties:
             LaunchTemplateName: {template_name}
-            #Key and security gorups remainign for logging in
             LaunchTemplateData:
                 ImageId: !Ref AmazonLinux2LatestAmiId
                 InstanceType: {instance_type}
@@ -207,7 +203,7 @@ Resources:
 Outputs:
     S3Bucket:
         Value: {s3_bucket_name}
-        Description: 'S3 Bucket for saving artifacts and lambda bundle'
+        Description: 'S3 Bucket for saving packaged artifacts'
 """.format(
                 template_name=sam_template_name,
                 instance_type=instance_type,
@@ -255,7 +251,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             registry_username, registry_password = _get_creds_from_token(registry_token)
 
             registry_domain = registry_url.replace("https://", "")
-            tag = f"{registry_domain}/{repo_name}"
+            push_tag = f"{registry_domain}/{repo_name}"
 
             logger.info("Containerizing service")
             containerize_bento_service(
@@ -263,15 +259,16 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 bento_version=deployment_spec.bento_version,
                 saved_bundle_path=bento_path,
                 push=True,
-                tag=tag,
+                tag=push_tag,
                 build_arg={},
                 username=registry_username,
                 password=registry_password,
             )
 
+            pull_tag = push_tag + f":{deployment_spec.bento_version}"
             logger.info("Generating user data")
             encoded_user_data = _make_user_data(
-                registry_username, registry_password, registry_url, tag
+                registry_username, registry_password, registry_url, pull_tag
             )
 
             logger.info("Making template")
@@ -364,7 +361,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             create_s3_bucket_if_not_exists(
                 artifact_s3_bucket_name, aws_ec2_deployment_config.region
             )
-
             self.deploy_service(
                 deployment_pb,
                 deployment_spec,
@@ -391,6 +387,9 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             if not ec2_deployment_config.region:
                 raise InvalidArgument("AWS region is missing")
 
+            ecr_client = boto3.client("ecr", ec2_deployment_config.region)
+            cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
+
             # delete stack
             deployment_spec = deployment_pb
             deployment_stack_name = generate_aws_compatible_string(
@@ -399,7 +398,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 )
             )
 
-            cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
             cf_client.delete_stack(StackName=deployment_stack_name)
 
             # delete repo from ecr
@@ -408,8 +406,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                     namespace=deployment_pb.namespace, name=deployment_pb.name
                 )
             )
-            ecr_client = boto3.client("ecr", ec2_deployment_config.region)
-            ecr_client.delete_repository(repositoryName=repository_name)
+            ecr_client.delete_repository(repositoryName=repository_name, force=True)
             return DeleteDeploymentResponse(status=Status.OK())
         except BentoMLException as error:
             return DeleteDeploymentResponse(status=error.status_proto)

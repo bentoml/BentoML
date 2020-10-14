@@ -30,11 +30,11 @@ from bentoml.cli.deployment import (
 )
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.deployment.aws_ec2.constants import (
-    MIN_CAPACITY,
-    DESIRED_CAPACITY,
-    MAX_CAPACITY,
-    INSTANCE_TYPE,
-    AMI_ID,
+    DEFAULT_MIN_CAPACITY,
+    DEFAULT_DESIRED_CAPACITY,
+    DEFAULT_MAX_CAPACITY,
+    DEFAULT_INSTANCE_TYPE,
+    DEFAULT_AMI_ID,
 )
 from bentoml.exceptions import CLIException
 
@@ -66,21 +66,21 @@ def get_aws_ec2_sub_command():
     @click.option(
         "--min-capacity",
         type=click.INT,
-        default=MIN_CAPACITY,
+        default=DEFAULT_MIN_CAPACITY,
         help="The minimum limit helps ensure that you always have a "
         "certain number of instances running at all times.Default is 1",
     )
     @click.option(
         "--desired-capacity",
         type=click.INT,
-        default=DESIRED_CAPACITY,
+        default=DEFAULT_DESIRED_CAPACITY,
         help="Desired number of instances capacity to run bentoservice on "
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
         "--max_capacity",
         type=click.INT,
-        default=MAX_CAPACITY,
+        default=DEFAULT_MAX_CAPACITY,
         help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
         "the number of instances as needed to handle an increase in demand. "
         "Default is 1",
@@ -88,13 +88,13 @@ def get_aws_ec2_sub_command():
     @click.option(
         "--instance-type",
         type=click.STRING,
-        default=INSTANCE_TYPE,
+        default=DEFAULT_INSTANCE_TYPE,
         help="Instance type of ec2 container.Default is t2.micro",
     )
     @click.option(
         "--ami-id",
         type=click.STRING,
-        default=AMI_ID,
+        default=DEFAULT_AMI_ID,
         help="AMI id.Default is Amazon Linux 2",
     )
     @click.option('-o', '--output', type=click.Choice(['json', 'yaml']), default='json')
@@ -147,7 +147,7 @@ def get_aws_ec2_sub_command():
         "-n",
         "--namespace",
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which'
+        help='Deployment namespace managed by BentoML, default value is "dev" which '
         "can be changed in BentoML configuration yatai_service/default_namespace",
     )
     @click.option(
@@ -236,21 +236,21 @@ def get_aws_ec2_sub_command():
     @click.option(
         "--min-capacity",
         type=click.INT,
-        default=MIN_CAPACITY,
+        default=DEFAULT_MIN_CAPACITY,
         help="The minimum limit helps ensure that you always have a "
         "certain number of instances running at all times.Default is 1",
     )
     @click.option(
         "--desired-capacity",
         type=click.INT,
-        default=DESIRED_CAPACITY,
+        default=DEFAULT_DESIRED_CAPACITY,
         help="Desired number of instances capacity to run bentoservice on "
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
         "--max_capacity",
         type=click.INT,
-        default=MAX_CAPACITY,
+        default=DEFAULT_MAX_CAPACITY,
         help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
         "the number of instances as needed to handle an increase in demand. "
         "Default is 1",
@@ -258,13 +258,13 @@ def get_aws_ec2_sub_command():
     @click.option(
         "--instance-type",
         type=click.STRING,
-        default=INSTANCE_TYPE,
+        default=DEFAULT_INSTANCE_TYPE,
         help="Instance type of ec2 container.Default is t2.micro",
     )
     @click.option(
         "--ami-id",
         type=click.STRING,
-        default=AMI_ID,
+        default=DEFAULT_AMI_ID,
         help="AMI id.Default is Amazon Linux 2",
     )
     @click.option(

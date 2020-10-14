@@ -195,15 +195,14 @@ const createRoutes = (app, yataiClient) => {
   });
 };
 
-export const getExpressApp = (grpcAddress: string | null) => {
+export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
   const app = express();
-
   const cookieParser = require('cookie-parser');
   app.use(cookieParser());
   app.use(function (req, res, next) {
     var cookie = req.cookies.cookieName;
     if (cookie === undefined) {
-      var baseURL="/yatai/";
+      //var baseURL="/yatai/";
       res.cookie('baseURLCookie',baseURL, { maxAge: 900000, httpOnly: false });
       console.log('cookie created successfully');
     } else {

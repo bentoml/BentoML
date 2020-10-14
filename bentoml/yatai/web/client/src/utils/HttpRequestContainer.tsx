@@ -42,18 +42,20 @@ const DisplayHttpError = ({ error }) => {
   );
 };
 
-const instance = axios.create({
-  baseURL: '/yatai'
-});
+
+export const setBaseUrl = (baseURL: string) => {
+    axios.defaults.baseURL = baseURL;
+}
 
 const fetch = (options = {}, props, callback) => {
+  
   const { url, data, method, headers, params } = Object.assign(
     {},
     props,
     options
   );
 
-  return instance({ method, url, data, headers, params })
+  return axios({ method, url, data, headers, params })
     .then((response) => {
       callback({ data: response.data, isLoading: false, error: false });
     })

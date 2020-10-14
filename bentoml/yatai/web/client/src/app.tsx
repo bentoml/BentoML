@@ -10,10 +10,15 @@ import BentoServiceDetail from "./pages/BentoServiceDetail";
 import Layout from "./ui/Layout";
 import Breadcrumbs from "./components/Breadcrumbs";
 import NavigationBar from "./components/NavigationBar";
-
-export const App = () => (
-  <BrowserRouter>
-    <NavigationBar />
+import {setBaseUrl} from './utils/HttpRequestContainer';
+import {useCookies} from 'react-cookie';
+export const App = () => {
+  const [cookies] = useCookies();
+  const baseURL = cookies["baseURLCookie"];
+  setBaseUrl(baseURL);
+  return (
+  <BrowserRouter basename={baseURL}>
+    <NavigationBar baseURL = {baseURL} />
     <Layout>
       <Breadcrumbs />
       <div>
@@ -39,4 +44,4 @@ export const App = () => (
       </div>
     </Layout>
   </BrowserRouter>
-);
+  )};

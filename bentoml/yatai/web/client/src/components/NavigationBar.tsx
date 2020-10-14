@@ -26,8 +26,8 @@ const NavigationBar = (props) => {
     <Navbar style={{ paddingLeft: "10%", marginLeft: 0 }}>
       <NavbarGroup align={Alignment.LEFT}>
         <NavbarHeading>
-          <Link to="/">
-            <img src={logo} width={150}  alt={""}/>{" "}
+          <Link to={baseURL}>
+            <img src={baseURL + `/${logo}`} width={150}  alt={""}/>{" "}
           </Link>
         </NavbarHeading>
         <NavbarDivider />

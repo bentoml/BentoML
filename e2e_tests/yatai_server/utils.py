@@ -35,6 +35,25 @@ def execute_bentoml_run_command(bento_tag, data, api="predict"):
     return stdout
 
 
+def execute_bentoml_retrieve_command(bento_tag):
+    dir_name = uuid.uuid4().hex[:8]
+    with TempDirectory() as temp_dir:
+        command = [
+            'bentoml',
+            'retrieve',
+            bento_tag,
+            '--target_dir',
+            f'{temp_dir}/{dir_name}',
+        ]
+        proc = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ
+        )
+        stdout = proc.stdout.read().decode('utf-8')
+        print(stdout)
+        print(proc.stderr.read().decode('utf-8'))
+        return stdout
+
+
 @contextlib.contextmanager
 def modified_environ(*remove, **update):
     """

@@ -259,8 +259,11 @@ class DeploymentAPIClient:
         deployment_pb.spec.sagemaker_operator_config.instance_count = instance_count
         deployment_pb.spec.sagemaker_operator_config.instance_type = instance_type
         deployment_pb.spec.sagemaker_operator_config.timeout = timeout
-        deployment_pb.spec.sagemaker_operator_config.data_capture_s3_prefix = data_capture_s3_prefix
-        deployment_pb.spec.sagemaker_operator_config.data_capture_sample_percent = data_capture_sample_percent
+
+        if data_capture_s3_prefix:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_s3_prefix = data_capture_s3_prefix
+        if data_capture_sample_percent:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_sample_percent = data_capture_sample_percent
 
         if region:
             deployment_pb.spec.sagemaker_operator_config.region = region

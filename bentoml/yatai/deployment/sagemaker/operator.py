@@ -377,21 +377,29 @@ def _create_sagemaker_model(
 def _create_sagemaker_endpoint_config(
     sagemaker_client, sagemaker_model_name, endpoint_config_name, sagemaker_config
 ):
-    production_variants = [
-        {
-            "VariantName": sagemaker_model_name,
-            "ModelName": sagemaker_model_name,
-            "InitialInstanceCount": sagemaker_config.instance_count,
-            "InstanceType": sagemaker_config.instance_type,
-        }
-    ]
+    create_endpoint_config_arguments = {
+        "EndpointConfigName": endpoint_config_name,
+        "ProductionVariants": [
+            {
+                "VariantName": sagemaker_model_name,
+                "ModelName": sagemaker_model_name,
+                "InitialInstanceCount": sagemaker_config.instance_count,
+                "InstanceType": sagemaker_config.instance_type,
+            }
+        ]
+    }
 
     if sagemaker_config.data_capture_s3_prefix:
         logger.debug("data_capture_s3_prefix %s found, creating data capture config", sagemaker_config.data_capture_s3_prefix)
-        data_capture_config = {
+
+        if not sagemaker_config.data_capture_sample_percent:
+            logger.debug("data_capture_sample_percent not found, using default 100%")
+            sagemaker_config.data_capture_sample_percent = 100
+
+        create_endpoint_config_arguments["DataCaptureConfig"] = {
             "EnableCapture": True,
-            "InitialSamplingPercentage": sagemaker_config.data_capture_s3_prefix,
-            "DestinationS3Uri": sagemaker_config.data_capture_sample_percent,
+            "DestinationS3Uri": sagemaker_config.data_capture_s3_prefix,
+            "InitialSamplingPercentage": sagemaker_config.data_capture_sample_percent,
             "CaptureOptions": [
                 {
                     "CaptureMode": "Input",
@@ -401,17 +409,11 @@ def _create_sagemaker_endpoint_config(
                 },
             ]
         }
-    else:
-        data_capture_config = None
-
-    raise Exception("SUCCESS")
 
     logger.debug("Creating Sagemaker endpoint %s configuration", endpoint_config_name)
     try:
         create_config_response = sagemaker_client.create_endpoint_config(
-            EndpointConfigName=endpoint_config_name,
-            ProductionVariants=production_variants,
-            DataCaptureConfig=data_capture_config,
+            **create_endpoint_config_arguments
         )
     except ClientError as e:
         raise _aws_client_error_to_bentoml_exception(

@@ -7,6 +7,7 @@ from e2e_tests.yatai_server.utils import (
     local_yatai_server,
     get_bento_service_info,
     execute_bentoml_run_command,
+    execute_bentoml_retrieve_command,
 )
 
 logger = logging.getLogger('bentoml.test')
@@ -32,6 +33,10 @@ def test_yatai_server_with_sqlite_and_s3():
         assert (
             get_svc_result.bento.uri.type == BentoUri.S3
         ), 'BentoService storage type mismatched, expect S3'
+        retrieve_svc_result = execute_bentoml_retrieve_command(
+            f'{svc.name}:{svc.version}'
+        )
+        assert retrieve_svc_result.startswith(f'Service {svc.name} artifact directory')
 
         logger.info('Validate BentoService prediction result')
         run_result = execute_bentoml_run_command(bento_tag, '[]')

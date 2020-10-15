@@ -71,7 +71,7 @@ def add_yatai_service_sub_command(cli):
     @click.option(
         '--base-url',
         type=click.STRING,
-        default='/',
+        default='',
         help='Add a location prefix to the URL when running YataiService behind a reverse proxy server',
         envvar='BENTOML_BASE_URL'
     )

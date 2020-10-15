@@ -404,7 +404,6 @@ class DeploymentAPIClient:
         bento_name,
         bento_version,
         namespace,
-        region,
         min_capacity,
         desired_capacity,
         max_capacity,
@@ -429,8 +428,6 @@ class DeploymentAPIClient:
             deployment_pb.spec.bento_name = bento_name
         if bento_version:
             deployment_pb.spec.bento_version = bento_version
-        if region:
-            deployment_pb.spec.aws_ec2_operator_config.region = region
 
         deployment_pb.spec.aws_ec2_operator_config.autoscale_min_capacity = min_capacity
         deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = (

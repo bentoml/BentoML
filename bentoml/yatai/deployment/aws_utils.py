@@ -146,3 +146,47 @@ def cleanup_s3_bucket_if_exist(bucket_name, region):
             return
         else:
             raise e
+
+
+def delete_cloudformation_stack(stack_name, region):
+    cf_client = boto3.client("cloudformation", region)
+    cf_client.delete_stack(StackName=stack_name)
+
+
+def delete_ecr_repository(repository_name, region):
+    ecr_client = boto3.client("ecr", region)
+    ecr_client.delete_repository(repositoryName=repository_name, force=True)
+
+
+def get_instance_public_ip(instance_id, region):
+    ec2_client = boto3.client("ec2", region)
+    response = ec2_client.describe_instances(InstanceIds=[instance_id])
+    all_instances = response["Reservations"][0]["Instances"]
+    if all_instances:
+        if "PublicIpAddress" in all_instances[0]:
+            return all_instances[0]["PublicIpAddress"]
+    return ""
+
+
+def get_instance_ip_from_scaling_group(autoscaling_group_names, region):
+    asg_client = boto3.client("autoscaling", region)
+    response = asg_client.describe_auto_scaling_groups(
+        AutoScalingGroupNames=autoscaling_group_names
+    )
+    all_autoscaling_group_info = response["AutoScalingGroups"]
+
+    all_instances = []
+    if all_autoscaling_group_info:
+        for group in all_autoscaling_group_info:
+            for instance in group["Instances"]:
+                endpoint = get_instance_public_ip(instance["InstanceId"], region)
+                all_instances.append(
+                    {
+                        "instance_id": instance["InstanceId"],
+                        "endpoint": endpoint,
+                        "state": instance["LifecycleState"],
+                        "health_status": instance["HealthStatus"],
+                    }
+                )
+
+    return all_instances

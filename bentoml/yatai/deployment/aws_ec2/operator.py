@@ -31,6 +31,9 @@ from bentoml.yatai.deployment.aws_utils import (
     SUCCESS_CLOUDFORMATION_STACK_STATUS,
     FAILED_CLOUDFORMATION_STACK_STATUS,
     cleanup_s3_bucket_if_exist,
+    delete_cloudformation_stack,
+    delete_ecr_repository,
+    get_instance_ip_from_scaling_group,
 )
 from bentoml.utils.docker_utils import containerize_bento_service
 from bentoml.exceptions import (
@@ -203,7 +206,10 @@ Resources:
 Outputs:
     S3Bucket:
         Value: {s3_bucket_name}
-        Description: 'S3 Bucket for saving packaged artifacts'
+        Description: "bucket to store sam artifacts"
+    AutoScalingGroup:
+        Value: !Ref AutoScalingGroup
+        Description: "autoscaling group name"                
 """.format(
                 template_name=sam_template_name,
                 instance_type=instance_type,
@@ -283,7 +289,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 aws_ec2_deployment_config.autoscale_desired_capacity,
                 aws_ec2_deployment_config.autoscale_max_capacity,
             )
-
             validate_sam_template(
                 sam_template_name, aws_ec2_deployment_config.region, project_path
             )
@@ -387,9 +392,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             if not ec2_deployment_config.region:
                 raise InvalidArgument("AWS region is missing")
 
-            ecr_client = boto3.client("ecr", ec2_deployment_config.region)
-            cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
-
             # delete stack
             deployment_spec = deployment_pb
             deployment_stack_name = generate_aws_compatible_string(
@@ -397,8 +399,9 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                     namespace=deployment_pb.namespace, name=deployment_pb.name
                 )
             )
-
-            cf_client.delete_stack(StackName=deployment_stack_name)
+            delete_cloudformation_stack(
+                deployment_stack_name, ec2_deployment_config.region
+            )
 
             # delete repo from ecr
             repository_name = generate_aws_compatible_string(
@@ -406,7 +409,17 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                     namespace=deployment_pb.namespace, name=deployment_pb.name
                 )
             )
-            ecr_client.delete_repository(repositoryName=repository_name, force=True)
+            delete_ecr_repository(repository_name, ec2_deployment_config.region)
+
+            # remove bucket
+            if deployment_pb.state.info_json:
+                deployment_info_json = json.loads(deployment_pb.state.info_json)
+                bucket_name = deployment_info_json.get('S3Bucket')
+                if bucket_name:
+                    cleanup_s3_bucket_if_exist(
+                        bucket_name, ec2_deployment_config.region
+                    )
+
             return DeleteDeploymentResponse(status=Status.OK())
         except BentoMLException as error:
             return DeleteDeploymentResponse(status=error.status_proto)
@@ -471,9 +484,8 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             )
 
         previous_deployment_state = json.loads(describe_result.state.info_json)
-
-        if "s3_bucket" in previous_deployment_state:
-            s3_bucket_name = previous_deployment_state["s3_bucket"]
+        if "S3Bucket" in previous_deployment_state:
+            s3_bucket_name = previous_deployment_state.get("S3Bucket")
         else:
             raise BentoMLException(
                 "S3 Bucket is missing in the AWS EC2 deployment, please make sure "
@@ -541,12 +553,14 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                     status=Status.INTERNAL(str(error)), state=state
                 )
 
-            outputs = {o["OutputKey"]: o["OutputValue"] for o in outputs}
             info_json = {}
-
+            outputs = {o["OutputKey"]: o["OutputValue"] for o in outputs}
+            if "AutoScalingGroup" in outputs:
+                info_json["InstanceDetails"] = get_instance_ip_from_scaling_group(
+                    [outputs["AutoScalingGroup"]], ec2_deployment_config.region
+                )
             if "S3Bucket" in outputs:
-                info_json["s3_bucket"] = outputs["S3Bucket"]
-
+                info_json["S3Bucket"] = outputs["S3Bucket"]
             state = DeploymentState(
                 state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
             )

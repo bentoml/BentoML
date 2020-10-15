@@ -78,7 +78,7 @@ def get_aws_ec2_sub_command():
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
-        "--max_capacity",
+        "--max-capacity",
         type=click.INT,
         default=DEFAULT_MAX_CAPACITY,
         help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
@@ -231,9 +231,6 @@ def get_aws_ec2_sub_command():
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
-        "--region", type=click.STRING, help="Region to deploy service in",
-    )
-    @click.option(
         "--min-capacity",
         type=click.INT,
         default=DEFAULT_MIN_CAPACITY,
@@ -248,7 +245,7 @@ def get_aws_ec2_sub_command():
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
-        "--max_capacity",
+        "--max-capacity",
         type=click.INT,
         default=DEFAULT_MAX_CAPACITY,
         help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
@@ -280,7 +277,6 @@ def get_aws_ec2_sub_command():
         name,
         bento,
         namespace,
-        region,
         min_capacity,
         desired_capacity,
         max_capacity,
@@ -302,7 +298,6 @@ def get_aws_ec2_sub_command():
                 bento_name=bento_name,
                 bento_version=bento_version,
                 namespace=namespace,
-                region=region,
                 min_capacity=min_capacity,
                 desired_capacity=desired_capacity,
                 max_capacity=max_capacity,

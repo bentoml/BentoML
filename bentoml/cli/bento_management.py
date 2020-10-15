@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import click
-import os
 from tabulate import tabulate
 
 from bentoml.utils.lazy_loader import LazyLoader
@@ -24,11 +23,14 @@ from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
     _format_labels_for_print,
 )
-from bentoml.utils import get_default_yatai_client
-from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
-from bentoml.saved_bundle import safe_retrieve
-from bentoml.exceptions import CLIException
-from bentoml.yatai import yatai
+from bentoml.utils import pb_to_yaml
+from bentoml.service.management import (
+    pull,
+    push,
+    get_bento,
+    list_bentos,
+    delete as delete_bento,
+)
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
@@ -113,14 +115,14 @@ def add_bento_sub_command(cli):
     )
     def get(bento, limit, ascending_order, print_location, labels, yatai_url, output):
         if ':' in bento:
-            result = yatai.get(bento, yatai_url)
+            result = get_bento(bento, yatai_url)
             if print_location:
                 _echo(result.uri.rui)
             else:
                 _print_bentos_info(result.bento, output)
         else:
             output = output or 'table'
-            result = yatai.list(
+            result = list_bentos(
                 bento_name=bento,
                 limit=limit,
                 ascending_order=ascending_order,
@@ -154,10 +156,10 @@ def add_bento_sub_command(cli):
         type=click.Choice(['json', 'yaml', 'table', 'wide']),
         default='table',
     )
-    def list_bentos(
+    def list_bentos_command(
         limit, offset, labels, order_by, ascending_order, yatai_url, output
     ):
-        result = yatai.list(
+        result = list_bentos(
             limit=limit,
             offset=offset,
             labels=labels,
@@ -172,7 +174,8 @@ def add_bento_sub_command(cli):
     @click.option(
         '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
     )
-    def delete(bentos, yes):
+    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
+    def delete(bentos, yes, yatai_url):
         """Delete saved BentoService.
 
         BENTO is the target BentoService to be deleted, referenced by its name and
@@ -183,48 +186,35 @@ def add_bento_sub_command(cli):
 
         `bentoml delete iris_classifier:v1.2.0,my_svc:v1,my_svc2:v3`
         """
-        yatai_client = get_default_yatai_client()
         for bento in bentos:
-            name, version = bento.split(':')
-            if not name and not version:
-                raise CLIException(
-                    'BentoService name or version is missing. Please provide in the '
-                    'format of name:version'
-                )
             if not yes and not click.confirm(
                 f'Are you sure about delete {bento}? This will delete the BentoService '
                 f'saved bundle files permanently'
             ):
                 return
-            result = yatai_client.repository.dangerously_delete_bento(
-                name=name, version=version
-            )
-            if result.status.status_code != yatai_proto.status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    result.status
-                )
-                raise CLIException(f'{error_code}:{error_message}')
-            _echo(f'BentoService {name}:{version} deleted')
+            delete_bento(bento, yatai_url=yatai_url)
+            _echo(f'BentoService {bento} deleted')
 
     @cli.command(
+        name='pull',
         help='Pull BentoService from remote yatai server',
         short_help="pull BentoService from remote yatai server",
     )
     @click.argument("bento", type=click.STRING)
     @click.option('--yatai-url', required=True, help='Yatai server URL')
-    def pull(bento, yatai_url):
+    def pull_bento(bento, yatai_url):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
-        yatai.pull(bento=bento, yatai_url=yatai_url)
+        pull(bento=bento, yatai_url=yatai_url)
         _echo(f'Pulled {bento} from {yatai_url}')
 
-    @cli.command(help='Push BentoService to remote yatai server')
+    @cli.command(help='Push BentoService to remote yatai server', name='push')
     @click.argument("bento", type=click.STRING)
     @click.option('--yatai-url', required=True, help='Yatai server URL')
-    def push(bento, yatai_url):
+    def push_bento(bento, yatai_url):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
-        yatai.push(bento=bento, yatai_url=yatai_url)
+        push(bento=bento, yatai_url=yatai_url)
         _echo(f'Pushed {bento} to {yatai_url}')

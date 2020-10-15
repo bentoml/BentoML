@@ -24,7 +24,7 @@ from bentoml.utils.log import configure_logging
 # Configuring logging properly before loading other modules
 configure_logging()
 
-from bentoml.saved_bundle import load, save_to_dir
+from bentoml.saved_bundle import load_from_bundle_path, save_to_dir
 from bentoml.service import (
     BentoService,
     api_decorator as api,
@@ -32,7 +32,16 @@ from bentoml.service import (
     web_static_content_decorator as web_static_content,
     artifacts_decorator as artifacts,
     ver_decorator as ver,
+)
+from bentoml.service.management import (
     save,
+    load,
+    delete,
+    prune,
+    push,
+    pull,
+    get_bento,
+    list_bentos,
 )
 
 __all__ = [
@@ -44,8 +53,15 @@ __all__ = [
     "web_static_content",
     "ver",
     "BentoService",
-    "load",
     "save",
+    "load",
+    "load_from_bundle_path",
+    'delete',
+    "prune",
+    "push",
+    "pull",
+    "get_bento",
+    "list_bentos",
     "save_to_dir",
     "handlers",
     "adapters",

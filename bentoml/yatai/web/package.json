@@ -66,7 +66,7 @@
     "tslint-plugin-prettier": "^2.2.0",
     "typescript": "^3.8.3",
     "url-loader": "^4.1.0",
-    "webpack": "^4.42.0",
+    "webpack": "4.42.0",
     "webpack-cli": "^3.3.11"
   },
   "jest": {

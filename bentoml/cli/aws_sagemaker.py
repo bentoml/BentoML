@@ -115,6 +115,19 @@ def get_aws_sagemaker_sub_command():
         help='Wait for apply action to complete or encounter an error.'
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
+    @click.option(
+        '--data-capture-s3-prefix',
+        help="To enable data capture (Input and Output), provide a denstination s3 prefix for the captured data. "
+        "Currently sagemaker only allows data capture to be enabled on new deploys.",
+        type=click.STRING,
+        default=None,
+    )
+    @click.option(
+        '--data-capture-sample-percent',
+        help="When data capture is enabled, the sampling percentage. Default 100%. No effect without ata-capture-s3-prefix.",
+        type=click.IntRange(1, 100),
+        default=100,
+    )
     def deploy(
         name,
         bento,
@@ -128,6 +141,8 @@ def get_aws_sagemaker_sub_command():
         timeout,
         output,
         wait,
+        data_capture_s3_prefix,
+        data_capture_sample_percent,
     ):
         # use the DeploymentOperator name in proto to be consistent with amplitude
         bento_name, bento_version = bento.split(':')
@@ -146,6 +161,8 @@ def get_aws_sagemaker_sub_command():
                 timeout=timeout,
                 region=region,
                 wait=wait,
+                data_capture_s3_prefix=data_capture_s3_prefix,
+                data_capture_sample_percent=data_capture_sample_percent,
             )
         if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(

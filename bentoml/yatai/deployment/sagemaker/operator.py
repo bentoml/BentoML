@@ -386,11 +386,32 @@ def _create_sagemaker_endpoint_config(
         }
     ]
 
+    if sagemaker_config.data_capture_s3_prefix:
+        logger.debug("data_capture_s3_prefix %s found, creating data capture config", sagemaker_config.data_capture_s3_prefix)
+        data_capture_config = {
+            "EnableCapture": True,
+            "InitialSamplingPercentage": sagemaker_config.data_capture_s3_prefix,
+            "DestinationS3Uri": sagemaker_config.data_capture_sample_percent,
+            "CaptureOptions": [
+                {
+                    "CaptureMode": "Input",
+                },
+                {
+                    "CaptureMode": "Output",
+                },
+            ]
+        }
+    else:
+        data_capture_config = None
+
+    raise Exception("SUCCESS")
+
     logger.debug("Creating Sagemaker endpoint %s configuration", endpoint_config_name)
     try:
         create_config_response = sagemaker_client.create_endpoint_config(
             EndpointConfigName=endpoint_config_name,
             ProductionVariants=production_variants,
+            DataCaptureConfig=data_capture_config,
         )
     except ClientError as e:
         raise _aws_client_error_to_bentoml_exception(

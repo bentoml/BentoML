@@ -27,6 +27,7 @@ class BentoServiceArtifact:
         self._name = name
         self._packed = False
         self._loaded = False
+        self._metadata = dict()
 
     @property
     def packed(self):
@@ -35,6 +36,10 @@ class BentoServiceArtifact:
     @property
     def loaded(self):
         return self._loaded
+
+    @property
+    def metadata(self):
+        return self._metadata
 
     @property
     def is_ready(self):
@@ -48,12 +53,18 @@ class BentoServiceArtifact:
         """
         return self._name
 
-    def pack(self, model):
+    def pack(self, model, metadata=None):
         """
         Pack the in-memory trained model object to this BentoServiceArtifact
 
         Note: add "# pylint:disable=arguments-differ" to child class's pack method
         """
+        if metadata:
+            if not isinstance(metadata, dict):
+                logger.warning(
+                    "Setting a non-dictionary metadata may cause marshaling problems. Proceed with caution."
+                )
+            self._metadata = metadata
 
     def load(self, path):
         """

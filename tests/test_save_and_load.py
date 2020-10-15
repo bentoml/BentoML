@@ -47,7 +47,7 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
     assert model_service.predict(1) == 2
 
 
-def test_warning_when_save_without_decalred_artifact(
+def test_warning_when_save_without_declared_artifact(
     tmpdir, example_bento_service_class
 ):
     svc = example_bento_service_class()

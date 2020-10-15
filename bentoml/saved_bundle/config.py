@@ -62,7 +62,11 @@ def _get_artifacts_list(bento_service):
     result = []
     for artifact_name, artifact in bento_service.artifacts.items():
         result.append(
-            {'name': artifact_name, 'artifact_type': artifact.__class__.__name__}
+            {
+                'name': artifact_name,
+                'artifact_type': artifact.__class__.__name__,
+                'metadata': artifact.metadata,
+            }
         )
     return result
 

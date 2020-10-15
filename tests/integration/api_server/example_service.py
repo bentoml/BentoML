@@ -75,6 +75,19 @@ class ExampleBentoService(bentoml.BentoService):
                 filtered_jsons.append(j)
         return self.artifacts.model.predict_json(filtered_jsons)
 
+    @bentoml.api(input=JsonInput(), batch=True)
+    def predict_direct_json(self, input_datas, tasks: Sequence[InferenceTask] = None):
+        filtered_jsons = []
+        for j, t in zip(input_datas, tasks):
+            if t.http_headers.content_type != "application/json":
+                t.discard(http_status=400, err_msg="application/json only")
+            else:
+                filtered_jsons.append(j)
+        rets = self.artifacts.model.predict_json(filtered_jsons)
+        return [
+            InferenceResult(http_status=200, data=json.dumps(result)) for result in rets
+        ]
+
     @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000, batch=True)
     def echo_with_delay(self, input_datas):
         data = input_datas[0]
@@ -116,6 +129,14 @@ class ExampleBentoServiceSingle(ExampleBentoService):
 
     @bentoml.api(input=JsonInput(), batch=False)
     def predict_strict_json(self, input_data, task: InferenceTask = None):
+        if task.http_headers.content_type != "application/json":
+            task.discard(http_status=400, err_msg="application/json only")
+            return
+        result = self.artifacts.model.predict_json([input_data])[0]
+        return result
+
+    @bentoml.api(input=JsonInput(), batch=False)
+    def predict_direct_json(self, input_data, task: InferenceTask = None):
         if task.http_headers.content_type != "application/json":
             return InferenceError(http_status=400, err_msg="application/json only")
         result = self.artifacts.model.predict_json([input_data])[0]

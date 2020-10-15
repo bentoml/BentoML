@@ -20,7 +20,7 @@ export const App = () => {
   <BrowserRouter basename={baseURL}>
     <NavigationBar baseURL = {baseURL} />
     <Layout>
-      <Breadcrumbs />
+      <Breadcrumbs baseURL = {baseURL}/>
       <div>
         <Switch>
           <Route

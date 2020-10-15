@@ -8,19 +8,21 @@ import {
 } from "@blueprintjs/core";
 import { Section } from "../ui/Layout";
 
-const HOME_CRUMB: IBreadcrumbProps = {
-  text: "Home",
-  href: "/",
-};
 
-const Breadcrumbs: React.FC = () => {
+const Breadcrumbs: React.FC = (props) => {
   const [breadcrumbs, setBreadcrumbs] = React.useState<Array<IBreadcrumbProps>>(
     []
   );
   const location = useLocation();
+  const {baseURL} = props;
+  console.log(baseURL)
+  const HOME_CRUMB: IBreadcrumbProps = {
+    text: "Home",
+    href: baseURL + '/'
+  };
 
   React.useEffect(() => {
-    const parsedBreadcrumbs = getBreadcrumbs(location.pathname);
+    const parsedBreadcrumbs = getBreadcrumbs(baseURL,location.pathname);
     setBreadcrumbs(parsedBreadcrumbs);
   }, [location]);
 
@@ -35,7 +37,7 @@ const Breadcrumbs: React.FC = () => {
   );
 };
 
-const getBreadcrumbs = (pathname: string): Array<IBreadcrumbProps> => {
+const getBreadcrumbs = (baseURL: string, pathname: string): Array<IBreadcrumbProps> => {
   const pathSnippets = pathname.split("/").filter((i) => i);
 
   return pathSnippets.map((name, index) => {
@@ -48,7 +50,7 @@ const getBreadcrumbs = (pathname: string): Array<IBreadcrumbProps> => {
     }
     return isLastOne
       ? { text: formattedName }
-      : { text: formattedName, href: url };
+      : { text: formattedName, href: baseURL + url };
   });
 };
 

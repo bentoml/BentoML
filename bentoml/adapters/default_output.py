@@ -65,6 +65,9 @@ class DefaultOutput(BaseOutputAdapter):
     def __init__(self, **kwargs):
         super(DefaultOutput, self).__init__(**kwargs)
         self.actual_adapter = None
+        from .json_output import JsonOutput
+
+        self.backup_adapter = JsonOutput()
 
     def pack_user_func_return_value(
         self, return_result: ApiFuncReturnValue, tasks: Tuple[InferenceTask],
@@ -79,10 +82,16 @@ class DefaultOutput(BaseOutputAdapter):
         raise NotImplementedError()
 
     def to_http_response(self, result) -> HTTPResponse:
-        return self.actual_adapter.to_http_response(result)
+        if self.actual_adapter:
+            return self.actual_adapter.to_http_response(result)
+        return self.backup_adapter.to_http_response(result)
 
     def to_cli(self, results) -> int:
-        return self.actual_adapter.to_cli(results)
+        if self.actual_adapter:
+            return self.actual_adapter.to_cli(results)
+        return self.backup_adapter.to_cli(results)
 
     def to_aws_lambda_event(self, result) -> AwsLambdaEvent:
-        return self.actual_adapter.to_aws_lambda_event(result)
+        if self.actual_adapter:
+            return self.actual_adapter.to_aws_lambda_event(result)
+        return self.backup_adapter.to_aws_lambda_event(result)

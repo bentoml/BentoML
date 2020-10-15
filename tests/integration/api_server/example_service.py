@@ -1,5 +1,7 @@
 import functools
+import json
 import time
+from typing import Sequence
 
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
@@ -16,6 +18,7 @@ from bentoml.frameworks.sklearn import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.saved_bundle import save_to_dir
 from bentoml.service.artifacts.pickle import PickleArtifact
+from bentoml.types import InferenceError, InferenceResult, InferenceTask
 
 
 @bentoml.env(infer_pip_packages=True)
@@ -62,6 +65,16 @@ class ExampleBentoService(bentoml.BentoService):
     def predict_json(self, input_datas):
         return self.artifacts.model.predict_json(input_datas)
 
+    @bentoml.api(input=JsonInput(), batch=True)
+    def predict_strict_json(self, input_datas, tasks: Sequence[InferenceTask] = None):
+        filtered_jsons = []
+        for j, t in zip(input_datas, tasks):
+            if t.http_headers.content_type != "application/json":
+                t.discard(http_status=400, err_msg="application/json only")
+            else:
+                filtered_jsons.append(j)
+        return self.artifacts.model.predict_json(filtered_jsons)
+
     @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000, batch=True)
     def echo_with_delay(self, input_datas):
         data = input_datas[0]
@@ -100,6 +113,13 @@ class ExampleBentoServiceSingle(ExampleBentoService):
     @bentoml.api(input=JsonInput(), batch=False)
     def predict_json(self, input_data):
         return self.artifacts.model.predict_json([input_data])[0]
+
+    @bentoml.api(input=JsonInput(), batch=False)
+    def predict_strict_json(self, input_data, task: InferenceTask = None):
+        if task.http_headers.content_type != "application/json":
+            return InferenceError(http_status=400, err_msg="application/json only")
+        result = self.artifacts.model.predict_json([input_data])[0]
+        return InferenceResult(http_status=200, data=json.dumps(result))
 
 
 class PickleModel(object):
@@ -145,3 +165,7 @@ def gen_test_bundle(tmpdir, batch_mode=True):
 
     save_to_dir(test_svc, tmpdir, silent=True)
     return tmpdir
+
+
+if __name__ == "__main__":
+    gen_test_bundle(".test_bundle", False)

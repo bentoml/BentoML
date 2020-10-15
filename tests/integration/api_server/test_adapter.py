@@ -104,3 +104,29 @@ async def test_api_server_json(host):
         for i in range(req_count)
     )
     await asyncio.gather(*tasks)
+
+
+@pytest.mark.asyncio
+async def test_api_server_strict_json(host):
+    req_count = 2 if pytest.enable_microbatch else 1
+    tasks = tuple(
+        pytest.assert_request(
+            "POST",
+            f"http://{host}/predict_strict_json",
+            headers=(("Content-Type", "application/json"),),
+            data=json.dumps({"in": i}),
+            assert_status=200,
+            assert_data=bytes('{"in": %s}' % i, 'ascii'),
+        )
+        for i in range(req_count)
+    )
+    tasks += tuple(
+        pytest.assert_request(
+            "POST",
+            f"http://{host}/predict_strict_json",
+            data=json.dumps({"in": i}),
+            assert_status=400,
+        )
+        for i in range(req_count)
+    )
+    await asyncio.gather(*tasks)

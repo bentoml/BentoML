@@ -14,6 +14,7 @@
 
 import logging
 import os
+from google.protobuf.struct_pb2 import Struct
 from datetime import datetime
 from pathlib import Path
 from sys import version_info
@@ -222,6 +223,10 @@ class SavedBundleConfig(object):
                     artifact_metadata.name = artifact_config["name"]
                 if "artifact_type" in artifact_config:
                     artifact_metadata.artifact_type = artifact_config["artifact_type"]
+                if "metadata" in artifact_config:
+                    s = Struct()
+                    s.update(artifact_config["metadata"])
+                    artifact_metadata.metadata.CopyFrom(s)
                 bento_service_metadata.artifacts.extend([artifact_metadata])
 
         return bento_service_metadata

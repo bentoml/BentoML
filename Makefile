@@ -17,6 +17,10 @@ install-test-deps: ## Install all test dependencies
 	@echo Ensuring test dependencies...
 	@pip install -e ".[test]" --quiet
 
+# Protos
+gen-protos: ## Build protobufs for Python and Node
+	@./protos/generate-docker.sh
+
 # Docs
 watch: ## Build and watch documentation
 	@./docs/watch.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)

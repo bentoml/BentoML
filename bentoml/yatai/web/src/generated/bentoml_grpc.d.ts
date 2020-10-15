@@ -2636,6 +2636,9 @@ export namespace bentoml {
 
             /** BentoArtifact artifact_type */
             artifact_type?: (string|null);
+
+            /** BentoArtifact metadata */
+            metadata?: (google.protobuf.IStruct|null);
         }
 
         /** Represents a BentoArtifact. */
@@ -2652,6 +2655,9 @@ export namespace bentoml {
 
             /** BentoArtifact artifact_type. */
             public artifact_type: string;
+
+            /** BentoArtifact metadata. */
+            public metadata?: (google.protobuf.IStruct|null);
 
             /**
              * Creates a new BentoArtifact instance using the specified properties.

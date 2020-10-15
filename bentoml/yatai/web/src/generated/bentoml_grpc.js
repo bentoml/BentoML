@@ -6670,6 +6670,7 @@ export const bentoml = $root.bentoml = (() => {
              * @interface IBentoArtifact
              * @property {string|null} [name] BentoArtifact name
              * @property {string|null} [artifact_type] BentoArtifact artifact_type
+             * @property {google.protobuf.IStruct|null} [metadata] BentoArtifact metadata
              */
 
             /**
@@ -6704,6 +6705,14 @@ export const bentoml = $root.bentoml = (() => {
             BentoArtifact.prototype.artifact_type = "";
 
             /**
+             * BentoArtifact metadata.
+             * @member {google.protobuf.IStruct|null|undefined} metadata
+             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
+             * @instance
+             */
+            BentoArtifact.prototype.metadata = null;
+
+            /**
              * Creates a new BentoArtifact instance using the specified properties.
              * @function create
              * @memberof bentoml.BentoServiceMetadata.BentoArtifact
@@ -6731,6 +6740,8 @@ export const bentoml = $root.bentoml = (() => {
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
                 if (message.artifact_type != null && Object.hasOwnProperty.call(message, "artifact_type"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.artifact_type);
+                if (message.metadata != null && Object.hasOwnProperty.call(message, "metadata"))
+                    $root.google.protobuf.Struct.encode(message.metadata, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
 
@@ -6770,6 +6781,9 @@ export const bentoml = $root.bentoml = (() => {
                         break;
                     case 2:
                         message.artifact_type = reader.string();
+                        break;
+                    case 3:
+                        message.metadata = $root.google.protobuf.Struct.decode(reader, reader.uint32());
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -6812,6 +6826,11 @@ export const bentoml = $root.bentoml = (() => {
                 if (message.artifact_type != null && message.hasOwnProperty("artifact_type"))
                     if (!$util.isString(message.artifact_type))
                         return "artifact_type: string expected";
+                if (message.metadata != null && message.hasOwnProperty("metadata")) {
+                    let error = $root.google.protobuf.Struct.verify(message.metadata);
+                    if (error)
+                        return "metadata." + error;
+                }
                 return null;
             };
 
@@ -6831,6 +6850,11 @@ export const bentoml = $root.bentoml = (() => {
                     message.name = String(object.name);
                 if (object.artifact_type != null)
                     message.artifact_type = String(object.artifact_type);
+                if (object.metadata != null) {
+                    if (typeof object.metadata !== "object")
+                        throw TypeError(".bentoml.BentoServiceMetadata.BentoArtifact.metadata: object expected");
+                    message.metadata = $root.google.protobuf.Struct.fromObject(object.metadata);
+                }
                 return message;
             };
 
@@ -6850,11 +6874,14 @@ export const bentoml = $root.bentoml = (() => {
                 if (options.defaults) {
                     object.name = "";
                     object.artifact_type = "";
+                    object.metadata = null;
                 }
                 if (message.name != null && message.hasOwnProperty("name"))
                     object.name = message.name;
                 if (message.artifact_type != null && message.hasOwnProperty("artifact_type"))
                     object.artifact_type = message.artifact_type;
+                if (message.metadata != null && message.hasOwnProperty("metadata"))
+                    object.metadata = $root.google.protobuf.Struct.toObject(message.metadata, options);
                 return object;
             };
 

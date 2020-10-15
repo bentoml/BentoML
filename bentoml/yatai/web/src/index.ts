@@ -7,9 +7,9 @@ const grpcServerAddress = args[0];
 const port = args[1];
 const base_log_path = args[2];
 const base_url = args[3];
-if (!grpcServerAddress || !port || !base_log_path || !base_url) {
+if (!grpcServerAddress || !port || !base_log_path) {
   throw Error(
-    "Required field grpc server address, port, base log path or base url is missing"
+    "Required field grpc server address, port or base log path is missing"
   );
 }
 

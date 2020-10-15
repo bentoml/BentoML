@@ -57,7 +57,7 @@ class XgboostModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)
 
-    def pack(self, model):  # pylint:disable=arguments-differ
+    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
         try:
             import xgboost as xgb
         except ImportError:
@@ -70,6 +70,7 @@ class XgboostModelArtifact(BentoServiceArtifact):
                 "Expect `model` argument to be a `xgboost.core.Booster` instance"
             )
 
+        super().pack(model, metadata=metadata)
         self._model = model
         return self
 

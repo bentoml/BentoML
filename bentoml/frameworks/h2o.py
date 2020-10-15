@@ -57,7 +57,8 @@ class H2oModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)
 
-    def pack(self, model):  # pylint:disable=arguments-differ
+    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
+        super().pack(model, metadata=metadata)
         self._model = model
         return self
 

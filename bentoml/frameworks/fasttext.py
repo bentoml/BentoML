@@ -51,13 +51,15 @@ class FasttextModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)
 
-    def pack(self, fasttext_model):  # pylint:disable=arguments-differ
+    def pack(self, fasttext_model, metadata=None):  # pylint:disable=arguments-differ
         try:
             import fasttext  # noqa # pylint: disable=unused-import
         except ImportError:
             raise MissingDependencyException(
                 "fasttext package is required to use FasttextModelArtifact"
             )
+
+        super().pack(fasttext_model, metadata=metadata)
         self._model = fasttext_model
         return self
 

@@ -33,7 +33,8 @@ class TextFileArtifact(BentoServiceArtifact):
             content = f.read().decode(self._encoding)
         return self.pack(content)
 
-    def pack(self, content):  # pylint:disable=arguments-differ
+    def pack(self, content, metadata=None):  # pylint:disable=arguments-differ
+        super().pack(content, metadata=metadata)
         self._content = content
         return self
 

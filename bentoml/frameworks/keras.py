@@ -136,7 +136,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.sess = tf.compat.v1.Session(graph=self.graph)
         tf.compat.v1.keras.backend.set_session(self.sess)
 
-    def pack(self, data):  # pylint:disable=arguments-differ
+    def pack(self, data, metadata=None):  # pylint:disable=arguments-differ
         try:
             import tensorflow as tf
         except ImportError:
@@ -175,6 +175,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.bind_keras_backend_session()
         model._make_predict_function()
 
+        super().pack(model, metadata=metadata)
         self._model = model
         self._custom_objects = custom_objects
         self._model_wrapper = _KerasModelWrapper(self._model, self.graph, self.sess)

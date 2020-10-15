@@ -69,7 +69,6 @@ class CoreMLModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + self._file_extension)
 
     def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
-        BentoServiceArtifact.pack(model, metadata)
         try:
             import coremltools
         except ImportError:
@@ -82,6 +81,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
                 "CoreMLModelArtifact can only pack type 'coremltools.models.MLModel'"
             )
 
+        super().pack(model, metadata=metadata)
         self._model = model
         return self
 

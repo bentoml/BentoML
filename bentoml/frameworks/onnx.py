@@ -105,15 +105,17 @@ class OnnxModelArtifact(BentoServiceArtifact):
     def _saved_model_file_path(self, base_path):
         return os.path.join(base_path, self.name + ".onnx")
 
-    def pack(self, path_or_model_proto):  # pylint:disable=arguments-differ
+    def pack(self, path_or_model_proto, metadata=None):  # pylint:disable=arguments-differ
         if _is_onnx_model_file(path_or_model_proto):
             self._onnx_model_path = path_or_model_proto
+            super().pack(self._onnx_model_path, metadata=metadata)
         else:
             try:
                 import onnx
 
                 if isinstance(path_or_model_proto, onnx.ModelProto):
                     self._model_proto = path_or_model_proto
+                    super().pack(self._model_proto, metadata=metadata)
                 else:
                     raise InvalidArgument(
                         "onnx.ModelProto or a .onnx model file path is required to "

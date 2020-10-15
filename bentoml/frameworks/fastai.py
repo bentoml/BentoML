@@ -82,7 +82,7 @@ class Fastai1ModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self._file_name)
 
-    def pack(self, model):  # pylint:disable=arguments-differ
+    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
         fastai_module = _import_fastai1_module()
 
         if not isinstance(model, fastai_module.basic_train.Learner):
@@ -90,6 +90,7 @@ class Fastai1ModelArtifact(BentoServiceArtifact):
                 "Expect `model` argument to be `fastai.basic_train.Learner` instance"
             )
 
+        super().pack(model, metadata=metadata)
         self._model = model
         return self
 

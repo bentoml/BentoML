@@ -104,7 +104,7 @@ class TransformersModelArtifact(BentoServiceArtifact):
         tokenizer = getattr(
             import_module("transformers"), self._tokenizer_type
         ).from_pretrained(path)
-        self._model = {"model": transformers_model, "tokenizer": tokenizer}
+        return {"model": transformers_model, "tokenizer": tokenizer}
 
     def _load_from_dict(self, model):
         if not model.get("model"):
@@ -134,7 +134,7 @@ class TransformersModelArtifact(BentoServiceArtifact):
                 )
             )
         # success
-        self._model = model
+        return model
 
     def _load_from_string(self, model_name):
         try:
@@ -142,7 +142,7 @@ class TransformersModelArtifact(BentoServiceArtifact):
                 import_module("transformers"), self._model_type
             ).from_pretrained(model_name)
             tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
-            self._model = {"model": transformers_model, "tokenizer": tokenizer}
+            return {"model": transformers_model, "tokenizer": tokenizer}
         except EnvironmentError:
             raise NotFound(
                 "model with the name {} is not present "
@@ -153,20 +153,23 @@ class TransformersModelArtifact(BentoServiceArtifact):
                 "transformers has no model type called {}".format(self._model_type)
             )
 
-    def pack(self, model):
+    def pack(self, model, metadata=None):
+        model = None
         if isinstance(model, str):
             if os.path.isdir(model):
-                self._load_from_directory(model)
+                model = self._load_from_directory(model)
             else:
-                self._load_from_string(model)
+                model = self._load_from_string(model)
         elif isinstance(model, dict):
-            self._load_from_dict(model)
+            model = self._load_from_dict(model)
         else:
             raise InvalidArgument(
                 "Expecting a Dictionary of format "
                 "{'model':<transformers model object>,'tokenizer':<tokenizer object> }"
             )
 
+        super().pack(model, metadata=metadata)
+        self._model = model
         return self
 
     def load(self, path):

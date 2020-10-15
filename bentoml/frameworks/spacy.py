@@ -62,7 +62,7 @@ class SpacyModelArtifact(BentoServiceArtifact):
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name)
 
-    def pack(self, model):  # pylint:disable=arguments-differ
+    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
         try:
             import spacy
         except ImportError:
@@ -75,6 +75,7 @@ class SpacyModelArtifact(BentoServiceArtifact):
                 "SpacyModelArtifact can only pack type 'spacy.language.Language'"
             )
 
+        super().pack(sklearn_model, metadata=metadata)
         self._model = model
         return self
 

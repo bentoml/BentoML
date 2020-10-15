@@ -195,7 +195,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '_saved_model')
 
     def pack(
-        self, obj, signatures=None, options=None
+        self, obj, signatures=None, options=None, metadata=None,
     ):  # pylint:disable=arguments-differ
         """
 
@@ -213,6 +213,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
                 self, obj, signatures, options
             )
 
+        super().pack(obj, metadata=metadata)
         return self
 
     def load(self, path):

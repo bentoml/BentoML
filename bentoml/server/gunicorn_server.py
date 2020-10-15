@@ -18,7 +18,7 @@ from flask import Response
 from gunicorn.app.base import Application
 
 from bentoml import config
-from bentoml.saved_bundle import load
+from bentoml.saved_bundle import load_from_bundle_path
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
 
@@ -91,7 +91,7 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
             self.cfg.set(key.lower(), value)
 
     def load(self):
-        bento_service = load(self.bento_service_bundle_path)
+        bento_service = load_from_bundle_path(self.bento_service_bundle_path)
         api_server = GunicornBentoAPIServer(bento_service, port=self.port)
         return api_server.app
 

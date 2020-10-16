@@ -119,7 +119,7 @@ def add_bento_sub_command(cli):
             if print_location:
                 _echo(result.uri.rui)
             else:
-                _print_bentos_info(result.bento, output)
+                _print_bento_info(result, output)
         else:
             output = output or 'table'
             result = list_bentos(

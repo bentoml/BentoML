@@ -42,7 +42,7 @@ def save(bento_service, yatai_url=None, version=None, labels=None):
 
 def load(bento, yatai_url=None):
     """
-    Load a BentoService instance base on the BentoService tag (key:version). By default,
+    Load a BentoService instance base on the BentoService tag (key:version) or path. By default,
     it will load_from_bundle_path from the local yatai service.
 
     Args:

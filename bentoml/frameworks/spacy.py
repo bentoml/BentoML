@@ -75,7 +75,7 @@ class SpacyModelArtifact(BentoServiceArtifact):
                 "SpacyModelArtifact can only pack type 'spacy.language.Language'"
             )
 
-        super().pack(sklearn_model, metadata=metadata)
+        super().pack(model, metadata=metadata)
         self._model = model
         return self
 

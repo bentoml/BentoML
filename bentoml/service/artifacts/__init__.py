@@ -53,7 +53,7 @@ class BentoServiceArtifact:
         """
         return self._name
 
-    def pack(self, model, metadata=None):
+    def pack(self, model, metadata=None):  # pylint: disable=unused-argument
         """
         Pack the in-memory trained model object to this BentoServiceArtifact
 
@@ -62,7 +62,9 @@ class BentoServiceArtifact:
         if metadata:
             if not isinstance(metadata, dict):
                 logger.warning(
-                    "Setting a non-dictionary metadata may cause marshaling problems. Proceed with caution."
+                    """Setting a non-dictionary metadata
+                    may cause marshaling problems.
+                    Proceed with caution."""
                 )
             self._metadata = metadata
 

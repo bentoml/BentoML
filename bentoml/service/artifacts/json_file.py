@@ -45,7 +45,9 @@ class JSONArtifact(BentoServiceArtifact):
             content = self.json_module.loads(fp.read())
         return self.pack(content)
 
-    def pack(self, content, metadata=None, **json_dumps_kwargs):  # pylint:disable=arguments-differ
+    def pack(
+        self, content, metadata=None, **json_dumps_kwargs
+    ):  # pylint:disable=arguments-differ
         super().pack(content, metadata=metadata)
         self._content = content
         self._json_dumps_kwargs = json_dumps_kwargs

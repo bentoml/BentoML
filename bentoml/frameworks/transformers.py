@@ -154,22 +154,22 @@ class TransformersModelArtifact(BentoServiceArtifact):
             )
 
     def pack(self, model, metadata=None):
-        model = None
+        loaded_model = None
         if isinstance(model, str):
             if os.path.isdir(model):
-                model = self._load_from_directory(model)
+                loaded_model = self._load_from_directory(model)
             else:
-                model = self._load_from_string(model)
+                loaded_model = self._load_from_string(model)
         elif isinstance(model, dict):
-            model = self._load_from_dict(model)
+            loaded_model = self._load_from_dict(model)
         else:
             raise InvalidArgument(
                 "Expecting a Dictionary of format "
                 "{'model':<transformers model object>,'tokenizer':<tokenizer object> }"
             )
 
-        super().pack(model, metadata=metadata)
-        self._model = model
+        super().pack(loaded_model, metadata=metadata)
+        self._model = loaded_model
         return self
 
     def load(self, path):

@@ -71,7 +71,6 @@ def send_test_data_to_endpoint(deployment_endpoints, sample_data=None):
     sample_data = sample_data or '"{}"'
     all_results = []
     for endpoint in deployment_endpoints:
-        print("sending to ", endpoint)
         request_result = requests.post(
             "http://" + endpoint,
             data=sample_data,

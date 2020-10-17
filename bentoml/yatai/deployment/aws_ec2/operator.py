@@ -259,11 +259,10 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
 
             registry_domain = registry_url.replace("https://", "")
             push_tag = f"{registry_domain}/{repo_name}"
-            # pull_tag = push_tag + f":{deployment_spec.bento_version}"
-            pull_tag = "752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris:latest"  # TODO: REMOVE THIS
+            pull_tag = push_tag + f":{deployment_spec.bento_version}"
 
             logger.info("Containerizing service")
-            """containerize_bento_service(
+            containerize_bento_service(
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
                 saved_bundle_path=bento_path,
@@ -272,7 +271,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 build_arg={},
                 username=registry_username,
                 password=registry_password,
-            )"""
+            )
 
             logger.info("Generating user data")
             encoded_user_data = _make_user_data(

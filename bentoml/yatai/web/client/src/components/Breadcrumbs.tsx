@@ -8,8 +8,11 @@ import {
 } from "@blueprintjs/core";
 import { Section } from "../ui/Layout";
 
+export interface IBreadcrumbsProps {
+  baseURL: string;
+}
 
-const Breadcrumbs: React.FC = (props) => {
+const Breadcrumbs: React.FC<IBreadcrumbsProps> = (props) => {
   const [breadcrumbs, setBreadcrumbs] = React.useState<Array<IBreadcrumbProps>>(
     []
   );

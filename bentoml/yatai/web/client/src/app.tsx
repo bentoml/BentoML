@@ -14,7 +14,7 @@ import {setBaseUrl} from './utils/HttpRequestContainer';
 import {useCookies} from 'react-cookie';
 export const App = () => {
   const [cookies] = useCookies();
-  const baseURL = cookies["baseURLCookie"];
+  const baseURL = "/" + cookies["baseURLCookie"];
   setBaseUrl(baseURL);
   return (
   <BrowserRouter basename={baseURL}>

@@ -1,3 +1,7 @@
+from bentoml.yatai.deployment.aws_ec2.constants import (
+    BENTOSERVICE_PORT,
+    AWS_EC2_IN_SERVICE_STATE,
+)
 from bentoml.yatai.deployment.aws_utils import call_sam_command
 from bentoml.exceptions import BentoMLException
 
@@ -52,3 +56,17 @@ def deploy_template(stack_name, s3_bucket_name, project_directory, region):
         error_message = stderr if stderr else stdout
         raise BentoMLException("Failed to deploy ec2 service {}".format(error_message))
     return status_code, stdout, stderr
+
+
+def get_endpoints_from_instance_address(instances, api_names):
+    all_endpoints = []
+    for instance in instances:
+        if instance["state"] == AWS_EC2_IN_SERVICE_STATE:
+            for api in api_names:
+                all_endpoints.append(
+                    "{ep}:{port}/{api}".format(
+                        ep=instance["endpoint"], port=BENTOSERVICE_PORT, api=api
+                    )
+                )
+
+    return all_endpoints

@@ -209,7 +209,7 @@ def test_ec2_delete_success():
         assert result_pb.status.status_code == status_pb2.Status.OK
 
 
-def test_ec2_describe_success():
+def test_ec2_describe_no_scaling_success():
     def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
         if op_name == "DescribeStacks":
             return {

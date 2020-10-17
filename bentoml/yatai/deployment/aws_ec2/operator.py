@@ -47,6 +47,7 @@ from bentoml.yatai.deployment.aws_ec2.utils import (
     build_template,
     package_template,
     deploy_template,
+    get_endpoints_from_instance_address,
 )
 
 logger = logging.getLogger(__name__)
@@ -513,6 +514,15 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             if not ec2_deployment_config.region:
                 raise InvalidArgument("AWS region is missing")
 
+            bento_pb = self.yatai_service.GetBento(
+                GetBentoRequest(
+                    bento_name=deployment_spec.bento_name,
+                    bento_version=deployment_spec.bento_version,
+                )
+            )
+            bento_service_metadata = bento_pb.bento.bento_service_metadata
+            api_names = [api.name for api in bento_service_metadata.apis]
+
             deployment_stack_name = generate_aws_compatible_string(
                 "btml-stack-{namespace}-{name}".format(
                     namespace=deployment_pb.namespace, name=deployment_pb.name
@@ -558,6 +568,9 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             if "AutoScalingGroup" in outputs:
                 info_json["InstanceDetails"] = get_instance_ip_from_scaling_group(
                     [outputs["AutoScalingGroup"]], ec2_deployment_config.region
+                )
+                info_json["Endpoints"] = get_endpoints_from_instance_address(
+                    info_json["InstanceDetails"], api_names
                 )
             if "S3Bucket" in outputs:
                 info_json["S3Bucket"] = outputs["S3Bucket"]

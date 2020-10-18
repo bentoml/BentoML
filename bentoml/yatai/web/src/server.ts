@@ -221,9 +221,13 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
   createRoutes(app, yataiClient);
 
   app.get("/*", (req, res) => {
-    if (/.js$|.css$|.png$/.test(req.path)) {
-      let directory = req.path.split("/").slice(-2, -1);
-      let filename = req.path.split("/").pop();
+    let directory = req.path.split("/").slice(-2, -1);
+    let filename = req.path.split("/").pop();
+    if (/.js$|.css$/.test(req.path)) {
+      res.sendFile(path.join(__dirname, `../dist/client/static/${directory}/${filename}`));
+    } else if (/favicon.png$|logo192.png$/.test(req.path)) {
+      res.sendFile(path.join(__dirname, `../dist/client/${filename}`));
+    } else if (/.png/.test(req.path)) {
       res.sendFile(path.join(__dirname, `../dist/client/static/${directory}/${filename}`));
     } else {
       res.sendFile(path.join(__dirname, "../dist/client/index.html"));

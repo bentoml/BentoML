@@ -403,7 +403,7 @@ def _create_sagemaker_endpoint_config(
             "EnableCapture": True,
             "DestinationS3Uri": sagemaker_config.data_capture_s3_prefix,
             "InitialSamplingPercentage": sagemaker_config.data_capture_sample_percent,
-            "CaptureOptions": [{"CaptureMode": "Input",}, {"CaptureMode": "Output",},],
+            "CaptureOptions": [{"CaptureMode": "Input"}, {"CaptureMode": "Output"}],
         }
 
     logger.debug("Creating Sagemaker endpoint %s configuration", endpoint_config_name)

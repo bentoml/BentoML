@@ -117,14 +117,13 @@ def get_aws_sagemaker_sub_command():
     )
     @click.option(
         '--data-capture-s3-prefix',
-        help="To enable data capture (Input and Output), provide a denstination s3 prefix for the captured data. "
-        "Currently sagemaker only allows data capture to be enabled on new deploys.",
+        help="To enable data capture (Input and Output), provide a denstination s3 prefix for the captured data.",
         type=click.STRING,
         default=None,
     )
     @click.option(
         '--data-capture-sample-percent',
-        help="When data capture is enabled, the sampling percentage. Default 100%. No effect without ata-capture-s3-prefix.",
+        help="When data capture is enabled, the sampling percentage. Default 100%. No effect without data-capture-s3-prefix.",
         type=click.IntRange(1, 100),
         default=100,
     )
@@ -225,6 +224,19 @@ def get_aws_sagemaker_sub_command():
         help='Wait for apply action to complete or encounter an error.'
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
+    @click.option(
+        '--data-capture-s3-prefix',
+        help="To enable data capture (Input and Output), provide a denstination s3 prefix for the captured data."
+        "To disable data capture, leave this blank.",
+        type=click.STRING,
+        default=None,
+    )
+    @click.option(
+        '--data-capture-sample-percent',
+        help="When data capture is enabled, the sampling percentage. Default 100%. No effect without data-capture-s3-prefix.",
+        type=click.IntRange(1, 100),
+        default=100,
+    )
     def update(
         name,
         namespace,
@@ -236,6 +248,8 @@ def get_aws_sagemaker_sub_command():
         timeout,
         output,
         wait,
+        data_capture_s3_prefix,
+        data_capture_sample_percent,
     ):
         yatai_client = get_default_yatai_client()
         if bento:
@@ -255,6 +269,8 @@ def get_aws_sagemaker_sub_command():
                 timeout=timeout,
                 api_name=api_name,
                 wait=wait,
+                data_capture_s3_prefix=data_capture_s3_prefix,
+                data_capture_sample_percent=data_capture_sample_percent,
             )
         if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(

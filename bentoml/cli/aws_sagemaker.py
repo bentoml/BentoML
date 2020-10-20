@@ -117,8 +117,8 @@ def get_aws_sagemaker_sub_command():
     )
     @click.option(
         '--data-capture-s3-prefix',
-        help="To enable data capture (Input and Output), provide a denstination s3 prefix (of the format s3://bucket-name/optional/prefix)"
-        "for the captured data. To disable data capture, leave this blank.",
+        help="To enable data capture (input and output), provide a denstination s3 prefix (of the format `s3://bucket-name/optional/prefix`)"
+        " for the captured data. To disable data capture, leave this blank.",
         type=click.STRING,
         default=None,
     )
@@ -227,8 +227,8 @@ def get_aws_sagemaker_sub_command():
     )
     @click.option(
         '--data-capture-s3-prefix',
-        help="To enable data capture (Input and Output), provide a denstination s3 prefix (of the format s3://bucket-name/optional/prefix)"
-        "for the captured data. To disable data capture, leave this blank.",
+        help="To enable data capture (input and output), provide a denstination s3 prefix (of the format `s3://bucket-name/optional/prefix`)"
+        " for the captured data. To disable data capture, leave this blank.",
         type=click.STRING,
         default=None,
     )

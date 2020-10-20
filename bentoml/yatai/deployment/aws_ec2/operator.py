@@ -118,6 +118,7 @@ runcmd:
 """.format(
         username=username, password=password, registry=registry, tag=tag
     )
+    print(base_format)
     encoded = base64.b64encode(base_format.encode("ascii")).decode("ascii")
     return encoded
 
@@ -193,24 +194,116 @@ Resources:
                 UserData: "{user_data}"
                 SecurityGroupIds:
                 - !GetAtt SecurityGroupResource.GroupId
+    
+    ContainerInstance:
+        Type: AWS::EC2::Instance
+        Properties:
+            LaunchTemplate: 
+                LaunchTemplateId: !Ref LaunchTemplateResource
+                Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
 
+    TargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            Name: target-group-cf-1
+            VpcId: vpc-59878031
+            Protocol: HTTP
+            Port: 5000
+            TargetType: instance
+            HealthCheckEnabled: true
+            HealthCheckIntervalSeconds: 30
+            HealthCheckPath: /healthz
+            HealthCheckPort: 5000
+            HealthCheckProtocol: HTTP
+            HealthCheckTimeoutSeconds: 5
+            HealthyThresholdCount: 5
+            Targets: 
+                -   Id: !Ref ContainerInstance
+                    Port: 5000
+
+    LoadBalancerSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: "security group for loadbalancing"
+            VpcId: vpc-59878031
+            SecurityGroupIngress:
+                -
+                    IpProtocol: tcp
+                    CidrIp: 0.0.0.0/0
+                    FromPort: 80
+                    ToPort: 80
+    #Vpc1:
+    #    Type: AWS::EC2::VPC
+    #    Properties:
+    #        CidrBlock: 0.0.0.0/0
+
+    #Subnet1:
+    #    Type: AWS::EC2::Subnet
+    #    Properties:
+    #        VpcId: vpc-59878031
+    #        AvailabilityZone: ap-south-1a
+    #        CidrBlock: 172.31.16.0/20
+
+    #Subnet2:
+    #    Type: AWS::EC2::Subnet
+    #    Properties:
+    #        VpcId: vpc-59878031
+    #        AvailabilityZone: ap-south-1b
+    #        CidrBlock: 172.31.16.0/20
+
+    LoadBalancer:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties:
+            IpAddressType: ipv4
+            Name: load-balancer-cf-1
+            Scheme: internet-facing
+            SecurityGroups: [!Ref LoadBalancerSecurityGroup]
+            
+            #SubnetMapping: 
+            Subnets:
+                - subnet-a3ebc7cb
+                - subnet-4c8d1000
+                - subnet-1316b268
+            Type: application
+    
+    Listener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            LoadBalancerArn: !Ref LoadBalancer
+            Protocol: HTTP
+            Port: 80
+            DefaultActions:
+                -   Type: forward
+                    TargetGroupArn: !Ref TargetGroup
+            
     AutoScalingGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
         Properties:
-            MinSize: {autoscaling_min_size}
-            MaxSize: {autoscaling_max_size}
-            DesiredCapacity: {autoscaling_desired_size}
+            MinSize: 1
+            MaxSize: 1
+            DesiredCapacity: 1
             AvailabilityZones: !GetAZs
             LaunchTemplate:
                 LaunchTemplateId: !Ref LaunchTemplateResource
                 Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
+            TargetGroupARNs:
+                - !Ref TargetGroup
+
+        UpdatePolicy:
+            AutoScalingReplacingUpdate:
+                WillReplace: true
+
 Outputs:
     S3Bucket:
         Value: {s3_bucket_name}
         Description: "bucket to store sam artifacts"
     AutoScalingGroup:
         Value: !Ref AutoScalingGroup
-        Description: "autoscaling group name"                
+        Description: "autoscaling group name"  
+    URL:
+        Value: !Join ['', ['http://', !GetAtt [LoadBalancer, DNSName]]]
+        Description: URL of the service
+        
 """.format(
                 template_name=sam_template_name,
                 instance_type=instance_type,
@@ -253,6 +346,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         )
 
         with TempDirectory() as project_path:
+            project_path = "/home/mayur/bentoml/sample-stacks"
             registry_id = _create_ecr_repo(repo_name, region)
             registry_token, registry_url = _get_ecr_password(registry_id, region)
             registry_username, registry_password = _get_creds_from_token(registry_token)
@@ -260,9 +354,10 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             registry_domain = registry_url.replace("https://", "")
             push_tag = f"{registry_domain}/{repo_name}"
             pull_tag = push_tag + f":{deployment_spec.bento_version}"
+            pull_tag = "752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris:latest" #TODO: REMOVE THIS
 
             logger.info("Containerizing service")
-            containerize_bento_service(
+            """containerize_bento_service(
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
                 saved_bundle_path=bento_path,
@@ -271,7 +366,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 build_arg={},
                 username=registry_username,
                 password=registry_password,
-            )
+            )"""
 
             logger.info("Generating user data")
             encoded_user_data = _make_user_data(

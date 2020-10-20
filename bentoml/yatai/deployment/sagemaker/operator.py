@@ -687,13 +687,17 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 sagemaker_endpoint_name,
                 updated_sagemaker_endpoint_config_name,
             )
-            logger.debug(
-                'Delete old sagemaker endpoint config %s',
-                current_sagemaker_endpoint_config_name,
-            )
-            _delete_sagemaker_endpoint_config_if_exist(
-                sagemaker_client, current_sagemaker_endpoint_config_name
-            )
+            if not (
+                current_sagemaker_endpoint_config_name
+                == updated_sagemaker_endpoint_config_name
+            ):
+                logger.debug(
+                    'Delete old sagemaker endpoint config %s',
+                    current_sagemaker_endpoint_config_name,
+                )
+                _delete_sagemaker_endpoint_config_if_exist(
+                    sagemaker_client, current_sagemaker_endpoint_config_name
+                )
         except AWSServiceError as e:
             delete_sagemaker_deployment_resources_if_exist(deployment_pb)
             raise e

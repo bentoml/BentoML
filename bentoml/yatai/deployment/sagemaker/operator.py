@@ -386,11 +386,14 @@ def _create_sagemaker_endpoint_config(
                 "InitialInstanceCount": sagemaker_config.instance_count,
                 "InstanceType": sagemaker_config.instance_type,
             }
-        ]
+        ],
     }
 
     if sagemaker_config.data_capture_s3_prefix:
-        logger.debug("data_capture_s3_prefix %s found, creating data capture config", sagemaker_config.data_capture_s3_prefix)
+        logger.debug(
+            "data_capture_s3_prefix %s found, creating data capture config",
+            sagemaker_config.data_capture_s3_prefix,
+        )
 
         if not sagemaker_config.data_capture_sample_percent:
             logger.debug("data_capture_sample_percent not found, using default 100%")
@@ -400,14 +403,7 @@ def _create_sagemaker_endpoint_config(
             "EnableCapture": True,
             "DestinationS3Uri": sagemaker_config.data_capture_s3_prefix,
             "InitialSamplingPercentage": sagemaker_config.data_capture_sample_percent,
-            "CaptureOptions": [
-                {
-                    "CaptureMode": "Input",
-                },
-                {
-                    "CaptureMode": "Output",
-                },
-            ]
+            "CaptureOptions": [{"CaptureMode": "Input",}, {"CaptureMode": "Output",},],
         }
 
     logger.debug("Creating Sagemaker endpoint %s configuration", endpoint_config_name)

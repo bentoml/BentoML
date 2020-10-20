@@ -117,14 +117,17 @@ def get_aws_sagemaker_sub_command():
     )
     @click.option(
         '--data-capture-s3-prefix',
-        help="To enable data capture (input and output), provide a denstination s3 prefix (of the format `s3://bucket-name/optional/prefix`)"
+        help="To enable data capture (input and output), "
+        "provide a denstination s3 prefix "
+        "(of the format `s3://bucket-name/optional/prefix`)"
         " for the captured data. To disable data capture, leave this blank.",
         type=click.STRING,
         default=None,
     )
     @click.option(
         '--data-capture-sample-percent',
-        help="When data capture is enabled, the sampling percentage. Default 100%. No effect without data-capture-s3-prefix.",
+        help="When data capture is enabled, the sampling percentage. Default 100%. "
+        "No effect without data-capture-s3-prefix.",
         type=click.IntRange(1, 100),
         default=100,
     )
@@ -227,14 +230,17 @@ def get_aws_sagemaker_sub_command():
     )
     @click.option(
         '--data-capture-s3-prefix',
-        help="To enable data capture (input and output), provide a denstination s3 prefix (of the format `s3://bucket-name/optional/prefix`)"
+        help="To enable data capture (input and output), "
+        "provide a denstination s3 prefix "
+        "(of the format `s3://bucket-name/optional/prefix`)"
         " for the captured data. To disable data capture, leave this blank.",
         type=click.STRING,
         default=None,
     )
     @click.option(
         '--data-capture-sample-percent',
-        help="When data capture is enabled, the sampling percentage. Default 100%. No effect without data-capture-s3-prefix.",
+        help="When data capture is enabled, the sampling percentage. Default 100%. "
+        "No effect without data-capture-s3-prefix.",
         type=click.IntRange(1, 100),
         default=100,
     )

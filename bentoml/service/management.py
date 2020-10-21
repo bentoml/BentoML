@@ -13,7 +13,6 @@ from bentoml.utils.usage_stats import (
 from bentoml.yatai.client import YataiClient
 from bentoml.yatai.yatai_service import get_yatai_service
 from bentoml.saved_bundle.loader import load_from_bundle_path, _is_remote_path
-from bentoml.saved_bundle import load_bento_service_metadata
 
 logger = logging.getLogger(__name__)
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
@@ -49,7 +48,7 @@ def load(bento, yatai_url=None):
     Load a BentoService instance base on the BentoService tag (key:version) or path.
 
     Args:
-        bento: a BentoService identifier in the format of NAME:VERSION or a path like string
+        bento: a BentoService identifier in the format of NAME:VERSION or a path like.
         yatai_url: optional. a YataiService URL address.
     Returns:
         BentoService instance

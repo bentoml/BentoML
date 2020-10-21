@@ -40,8 +40,8 @@ def wait_until_container_ready(container_name, check_message, timeout_seconds=60
             break
 
 
-@pytest.fixture(scope='module')
-def yatai_server_container():
+@pytest.fixture(scope='module', name='yatai_service_container')
+def create_yatai_server_container():
     ensure_docker_available_or_raise()
 
     yatai_docker_image_tag = f'bentoml/yatai-service:{LAST_PYPI_RELEASE_VERSION}'

@@ -1,3 +1,4 @@
+import argparse
 import click
 import sys
 
@@ -74,8 +75,11 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.argument("api_name", type=click.STRING)
     @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
     def run(api_name, run_args, bento=None):
-        # run_args to yatai_url
-        yatai_url = None
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--yatai-uri', type=str, default=None)
+        parsed_args, _ = parser.parse_known_args(run_args)
+
+        yatai_url = parsed_args.yatai_url
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )

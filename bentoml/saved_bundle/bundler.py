@@ -28,7 +28,6 @@ from bentoml.saved_bundle.templates import (
     MODEL_SERVER_DOCKERFILE_CPU,
     INIT_PY_TEMPLATE,
 )
-from bentoml.utils.usage_stats import track_save
 from bentoml.saved_bundle.config import SavedBundleConfig
 
 

@@ -29,7 +29,7 @@ from bentoml.service.management import (
     push,
     get_bento,
     list_bentos,
-    delete as delete_bento,
+    delete,
 )
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
@@ -169,13 +169,17 @@ def add_bento_sub_command(cli):
         )
         _print_bentos_info(result, output)
 
-    @cli.command()
+    @cli.command(
+        name='delete',
+        help='Delete bento. To delete multiple bentos provide the name '
+        'version tag separated by "," for example "bentoml delete name:v1,name:v2',
+    )
     @click.argument("bentos", type=click.STRING, callback=parse_bento_tag_list_callback)
+    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
     @click.option(
         '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
     )
-    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
-    def delete(bentos, yes, yatai_url):
+    def delete_bento(bentos, yatai_url, yes):
         """Delete saved BentoService.
 
         BENTO is the target BentoService to be deleted, referenced by its name and
@@ -192,13 +196,11 @@ def add_bento_sub_command(cli):
                 f'saved bundle files permanently'
             ):
                 return
-            delete_bento(bento, yatai_url=yatai_url)
+            delete(bento, yatai_url=yatai_url)
             _echo(f'BentoService {bento} deleted')
 
     @cli.command(
-        name='pull',
-        help='Pull BentoService from remote yatai server',
-        short_help="pull BentoService from remote yatai server",
+        name='pull', help='Pull BentoService from remote yatai server',
     )
     @click.argument("bento", type=click.STRING)
     @click.option('--yatai-url', required=True, help='Yatai server URL')

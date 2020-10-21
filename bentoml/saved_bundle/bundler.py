@@ -53,7 +53,8 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     :param version (str): Override the service version with given version string
     :param silent (boolean): whether to hide the log message showing target save path
     """
-    track_save(bento_service)
+    # TODO add new metrics, save to dir
+    # track_save(bento_service)
 
     from bentoml.service import BentoService
 

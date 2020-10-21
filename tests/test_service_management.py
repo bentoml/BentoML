@@ -95,9 +95,7 @@ def test_save_load(yatai_server_container, example_bento_service_class):
     saved_path = save(svc, yatai_url=yatai_server_container)
     assert saved_path
 
-    bento_service = load(
-        f'{svc.name}:{svc.version}', yatai_url=yatai_server_container
-    )
+    bento_service = load(f'{svc.name}:{svc.version}', yatai_url=yatai_server_container)
     assert bento_service.predict(1) == 2
 
 
@@ -111,9 +109,7 @@ def test_push(yatai_server_container, example_bento_service_class):
     svc.pack('model', test_model)
     saved_path = save(svc)
 
-    pushed_path = push(
-        f'{svc.name}:{svc.version}', yatai_url=yatai_server_container
-    )
+    pushed_path = push(f'{svc.name}:{svc.version}', yatai_url=yatai_server_container)
     assert pushed_path != saved_path
 
 
@@ -142,11 +138,9 @@ def test_get(yatai_server_container, example_bento_service_class):
     svc = example_bento_service_class()
     svc.pack('model', test_model)
     save(svc, yatai_url=yatai_server_container)
-    svc_metadata = get_bento(
-        f'{svc.name}:{svc.version}', yatai_url=yatai_server_container
-    )
-    assert svc_metadata.name == svc.name
-    assert svc_metadata.version == svc.version
+    svc_pb = get_bento(f'{svc.name}:{svc.version}', yatai_url=yatai_server_container)
+    assert svc_pb.bento_service_metadata.name == svc.name
+    assert svc_pb.bento_service_metadata.version == svc.version
 
 
 def test_list(yatai_server_container, example_bento_service_class):

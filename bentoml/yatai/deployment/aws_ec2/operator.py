@@ -97,7 +97,7 @@ def _get_creds_from_token(token):
     return username, password
 
 
-def _make_user_data(username, password, registry, tag, region):
+def _make_user_data(registry, tag, region):
     base_format = """MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary=\"==MYBOUNDARY==\"
 
@@ -128,7 +128,6 @@ runcmd:
 
 def _make_cloudformation_template(
     project_dir,
-    deployment_name,
     user_data,
     s3_bucket_name,
     sam_template_name,
@@ -245,12 +244,12 @@ Resources:
             Port: 5000
             TargetType: instance
             HealthCheckEnabled: true
-            HealthCheckIntervalSeconds: 30
+            HealthCheckIntervalSeconds: 5
             HealthCheckPath: /healthz
             HealthCheckPort: 5000
             HealthCheckProtocol: HTTP
-            HealthCheckTimeoutSeconds: 5
-            HealthyThresholdCount: 5
+            HealthCheckTimeoutSeconds: 3
+            HealthyThresholdCount: 2
             Targets: 
                 -   Id: !Ref ContainerInstance
                     Port: 5000
@@ -381,13 +380,16 @@ Resources:
 Outputs:
     S3Bucket:
         Value: {s3_bucket_name}
-        Description: "bucket to store sam artifacts"
+        Description: Bucket to store sam artifacts
     AutoScalingGroup:
         Value: !Ref AutoScalingGroup
-        Description: "autoscaling group name"  
-    URL:
+        Description: Autoscaling group name
+    TargetGroup:
+        Value: !Ref TargetGroup
+        Description: Target group for load balancer
+    Url:
         Value: !Join ['', ['http://', !GetAtt [LoadBalancer, DNSName]]]
-        Description: URL of the service
+        Description: URL of the bento service
         
 """.format(
                 template_name=sam_template_name,
@@ -397,7 +399,6 @@ Outputs:
                 autoscaling_desired_size=autoscaling_desired_size,
                 autoscaling_max_size=autoscaling_max_size,
                 s3_bucket_name=s3_bucket_name,
-                deployment_name=deployment_name,
             )
         )
     return template_file_path
@@ -454,14 +455,11 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             )
 
             logger.info("Generating user data")
-            encoded_user_data = _make_user_data(
-                registry_username, registry_password, registry_url, pull_tag, region
-            )
+            encoded_user_data = _make_user_data(registry_url, pull_tag, region)
 
             logger.info("Making template")
             template_file_path = _make_cloudformation_template(
                 project_path,
-                deployment_pb.name,
                 encoded_user_data,
                 s3_bucket_name,
                 sam_template_name,
@@ -755,6 +753,11 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 )
             if "S3Bucket" in outputs:
                 info_json["S3Bucket"] = outputs["S3Bucket"]
+            if "TargetGroup" in outputs:
+                info_json["TargetGroup"] = outputs["TargetGroup"]
+            if "Url" in outputs:
+                info_json["Url"] = outputs["Url"]
+
             state = DeploymentState(
                 state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
             )

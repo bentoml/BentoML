@@ -7,6 +7,7 @@ import subprocess
 import time
 import uuid
 
+import psutil  # noqa # pylint: disable=unused-import
 import pytest
 
 import docker

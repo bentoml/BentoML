@@ -113,6 +113,23 @@ class AnnotatedImageInput(MultiFileInput):
             <input type="submit">
         </form>
 
+    OR by python requests:
+
+    .. code-block:: python
+
+        import requests
+
+        with open("test.jpg", "rb") as f:
+            image_bytes = f.read()
+        with open("anno.json", "rb") as f:
+            anno_bytes = f.read()
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+            "annotations": ("test.json", anno_bytes),
+        }
+        response = requests.post(your_url, files=files)
+
     Query with CLI command::
 
         bentoml run PyTorchFashionClassifier:latest predict \\

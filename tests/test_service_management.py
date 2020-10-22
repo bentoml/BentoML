@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 import os
+import sys
 import logging
 import signal
 import subprocess
@@ -84,6 +85,11 @@ class TestModel(object):
         return int(input_data) * 2
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="Requires docker, skipping test for Mac OS"
+)
+@pytest.mark.skipif('not psutil.POSIX')
 def test_save_load(yatai_server_container, example_bento_service_class):
     example_bento_service_class = bentoml.ver(major=2, minor=1)(
         example_bento_service_class
@@ -100,6 +106,11 @@ def test_save_load(yatai_server_container, example_bento_service_class):
     assert bento_service.predict(1) == 2
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="Requires docker, skipping test for Mac OS"
+)
+@pytest.mark.skipif('not psutil.POSIX')
 def test_push(yatai_server_container, example_bento_service_class):
     example_bento_service_class = bentoml.ver(major=2, minor=2)(
         example_bento_service_class
@@ -114,6 +125,11 @@ def test_push(yatai_server_container, example_bento_service_class):
     assert pushed_path != saved_path
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="Requires docker, skipping test for Mac OS"
+)
+@pytest.mark.skipif('not psutil.POSIX')
 def test_pull(yatai_server_container, example_bento_service_class):
     example_bento_service_class = bentoml.ver(major=2, minor=3)(
         example_bento_service_class
@@ -130,6 +146,11 @@ def test_pull(yatai_server_container, example_bento_service_class):
     assert pulled_local_path != saved_path
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="Requires docker, skipping test for Mac OS"
+)
+@pytest.mark.skipif('not psutil.POSIX')
 def test_get(yatai_server_container, example_bento_service_class):
     example_bento_service_class = bentoml.ver(major=2, minor=4)(
         example_bento_service_class
@@ -144,6 +165,11 @@ def test_get(yatai_server_container, example_bento_service_class):
     assert svc_pb.bento_service_metadata.version == svc.version
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="Requires docker, skipping test for Mac OS"
+)
+@pytest.mark.skipif('not psutil.POSIX')
 def test_list(yatai_server_container, example_bento_service_class):
     example_bento_service_class = bentoml.ver(major=2, minor=5)(
         example_bento_service_class

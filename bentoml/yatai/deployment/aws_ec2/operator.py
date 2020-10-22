@@ -365,9 +365,10 @@ Resources:
                 - Fn::Select:
                     - 1
                     - Fn::GetAZs: ""
-            LaunchTemplate:
-                LaunchTemplateId: !Ref LaunchTemplateResource
-                Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
+            #LaunchTemplate:
+            #    LaunchTemplateId: !Ref LaunchTemplateResource
+            #    Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
+            InstanceId: !Ref ContainerInstance #NOTE: This is not attaching instance in this group,need a workaround.
             TargetGroupARNs:
                 - !Ref TargetGroup
             VPCZoneIdentifier:
@@ -433,7 +434,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         )
 
         with TempDirectory() as project_path:
-            project_path = "/home/mayur/bentoml/sample-stacks"
             registry_id = _create_ecr_repo(repo_name, region)
             registry_token, registry_url = _get_ecr_password(registry_id, region)
             registry_username, registry_password = _get_creds_from_token(registry_token)

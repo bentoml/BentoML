@@ -79,26 +79,27 @@ ENV EXTRA_PIP_INSTALL_ARGS $EXTRA_PIP_INSTALL_ARGS
 COPY environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* /bento/
 WORKDIR /bento
 
-# Execute permission for bentoml-init.sh
-RUN chmod +x /bento/bentoml-init.sh
+# copy over entrypoint scripts
+COPY docker-entrypoint.sh /usr/local/bin/
+
+# Execute permission for scripts
+RUN chmod +x /bento/bentoml-init.sh /usr/local/bin/docker-entrypoint.sh
 
 # Install conda, pip dependencies and run user defined setup script
 RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
 
-# copy over model files
-COPY . /bento
+# copy over bundled_pip_dependencies
+COPY environment.yml bundled_pip_dependencies* /bento/
 
 # Install bundled bentoml if it exists (used for development)
 RUN if [ -d /bento/bundled_pip_dependencies ]; then pip install -U bundled_pip_dependencies/* ;fi
 
+# copy over model files
+COPY . /bento
+
 # the env var $PORT is required by heroku container runtime
 ENV PORT 5000
 EXPOSE $PORT
-
-COPY docker-entrypoint.sh /usr/local/bin/
-
-# Execute permission for docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENTRYPOINT [ "docker-entrypoint.sh" ]
 CMD ["bentoml", "serve-gunicorn", "/bento"]

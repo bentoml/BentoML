@@ -22,22 +22,22 @@ def wait_for_instance_spawn(name, namespace, region):
     stack_result = cloudformation_stack_result.get("Stacks")[0]
     outputs = stack_result.get("Outputs")
     if not outputs:
-        return False, None
+        return None
     outputs = {o["OutputKey"]: o["OutputValue"] for o in outputs}
 
     autoscaling_group = outputs.get("AutoScalingGroup", None)
     if not autoscaling_group:
-        return False, None
+        return None
 
     while max_spawn_wait_retry > 0:
         addresses = get_instance_ip_from_scaling_group([autoscaling_group], region)
         endpoints = get_endpoints_from_instance_address(addresses, ["predict"])
         if endpoints:
-            return True, endpoints
+            return endpoints
         max_spawn_wait_retry -= 1
         sleep(10)
 
-    return False, None
+    return None
 
 
 def run_aws_ec2_create_command(deploy_command):
@@ -66,7 +66,7 @@ def run_aws_ec2_create_command(deploy_command):
     return False, None
 
 
-def send_test_data_to_endpoint(deployment_endpoints, sample_data=None):
+def send_test_data_to_multiple_endpoint(deployment_endpoints, sample_data=None):
     logger.info('Test deployment with sample request')
     sample_data = sample_data or '"{}"'
     all_results = []

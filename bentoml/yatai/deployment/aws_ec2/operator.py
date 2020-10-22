@@ -97,7 +97,7 @@ def _get_creds_from_token(token):
     return username, password
 
 
-def _make_user_data(username, password, registry, tag):
+def _make_user_data(username, password, registry, tag, region):
     base_format = """MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary=\"==MYBOUNDARY==\"
 
@@ -110,21 +110,25 @@ runcmd:
 - sudo amazon-linux-extras install docker -y
 - sudo service docker start
 - sudo usermod -a -G docker ec2-user
-- docker login --username {username} --password {password} {registry}
-- sudo docker pull {tag}
-- sudo docker run -p 5000:5000 {tag}
+- curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+- unzip awscliv2.zip
+- sudo ./aws/install
+- ln -s /usr/bin/aws aws
+- aws ecr get-login-password --region {region} | docker login --username AWS --password-stdin {registry}
+- docker pull {tag}
+- docker run -p 5000:5000 {tag}
 
 --==MYBOUNDARY==--
 """.format(
-        username=username, password=password, registry=registry, tag=tag
+        registry=registry, tag=tag, region=region
     )
-    print(base_format)
     encoded = base64.b64encode(base_format.encode("ascii")).decode("ascii")
     return encoded
 
 
 def _make_cloudformation_template(
     project_dir,
+    deployment_name,
     user_data,
     s3_bucket_name,
     sam_template_name,
@@ -139,7 +143,7 @@ def _make_cloudformation_template(
     TODO: Port taken from cli
     """
     if (
-        autoscaling_min_size <= 0
+        autoscaling_min_size < 0
         or autoscaling_max_size < autoscaling_min_size
         or autoscaling_desired_size < autoscaling_min_size
         or autoscaling_desired_size > autoscaling_max_size
@@ -183,12 +187,42 @@ Resources:
                     CidrIp: 0.0.0.0/0
                     FromPort: 22
                     ToPort: 22
+            VpcId: !Ref Vpc1
+
+    Ec2InstanceECRProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties:
+            Path: /
+            Roles: [!Ref EC2Role]
+    
+    EC2Role:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    -   Effect: Allow
+                        Principal:
+                            Service: [ec2.amazonaws.com]
+                        Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                -   PolicyName: ecs-service
+                    PolicyDocument:
+                        Statement:
+                            -   Effect: Allow
+                                Action:
+                                    -   'ecr:GetAuthorizationToken'
+                                    -   'ecr:BatchGetImage'
+                                    -   'ecr:GetDownloadUrlForLayer'
+                                Resource: '*'
 
     LaunchTemplateResource:
         Type: AWS::EC2::LaunchTemplate
         Properties:
             LaunchTemplateName: {template_name}
             LaunchTemplateData:
+                IamInstanceProfile:
+                    Arn: !GetAtt Ec2InstanceECRProfile.Arn
                 ImageId: !Ref AmazonLinux2LatestAmiId
                 InstanceType: {instance_type}
                 UserData: "{user_data}"
@@ -201,12 +235,12 @@ Resources:
             LaunchTemplate: 
                 LaunchTemplateId: !Ref LaunchTemplateResource
                 Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
+            SubnetId: !Ref Subnet1
 
     TargetGroup:
         Type: AWS::ElasticLoadBalancingV2::TargetGroup
         Properties:
-            Name: target-group-cf-1
-            VpcId: vpc-59878031
+            VpcId: !Ref Vpc1
             Protocol: HTTP
             Port: 5000
             TargetType: instance
@@ -225,70 +259,121 @@ Resources:
         Type: AWS::EC2::SecurityGroup
         Properties:
             GroupDescription: "security group for loadbalancing"
-            VpcId: vpc-59878031
+            VpcId: !Ref Vpc1
             SecurityGroupIngress:
                 -
                     IpProtocol: tcp
                     CidrIp: 0.0.0.0/0
                     FromPort: 80
                     ToPort: 80
-    #Vpc1:
-    #    Type: AWS::EC2::VPC
-    #    Properties:
-    #        CidrBlock: 0.0.0.0/0
 
-    #Subnet1:
-    #    Type: AWS::EC2::Subnet
-    #    Properties:
-    #        VpcId: vpc-59878031
-    #        AvailabilityZone: ap-south-1a
-    #        CidrBlock: 172.31.16.0/20
+    InternetGateway:
+        Type: AWS::EC2::InternetGateway
 
-    #Subnet2:
-    #    Type: AWS::EC2::Subnet
-    #    Properties:
-    #        VpcId: vpc-59878031
-    #        AvailabilityZone: ap-south-1b
-    #        CidrBlock: 172.31.16.0/20
+    Gateway:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            InternetGatewayId: !Ref InternetGateway
+            VpcId: !Ref Vpc1
+
+    PublicRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties:
+            VpcId: !Ref Vpc1
+
+    PublicRoute:
+        Type: AWS::EC2::Route
+        DependsOn: Gateway
+        Properties:
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InternetGateway
+            RouteTableId: !Ref PublicRouteTable
+
+    RouteTableSubnetTwoAssociationOne:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+          RouteTableId: !Ref PublicRouteTable
+          SubnetId: !Ref Subnet1
+    RouteTableSubnetTwoAssociationTwo:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+          RouteTableId: !Ref PublicRouteTable
+          SubnetId: !Ref Subnet2
+
+    Vpc1:
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: 172.31.0.0/16
+            EnableDnsHostnames: true
+            EnableDnsSupport: true
+            InstanceTenancy: default
+
+    Subnet1:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc1
+            AvailabilityZone:
+                Fn::Select:
+                    - 0
+                    - Fn::GetAZs: ""
+            CidrBlock: 172.31.16.0/20
+            MapPublicIpOnLaunch: true
+
+    Subnet2:
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref Vpc1
+            AvailabilityZone:
+                Fn::Select:
+                    - 1
+                    - Fn::GetAZs: ""
+            CidrBlock: 172.31.0.0/20
+            MapPublicIpOnLaunch: true
 
     LoadBalancer:
         Type: AWS::ElasticLoadBalancingV2::LoadBalancer
         Properties:
             IpAddressType: ipv4
-            Name: load-balancer-cf-1
             Scheme: internet-facing
-            SecurityGroups: [!Ref LoadBalancerSecurityGroup]
-            
-            #SubnetMapping: 
+            SecurityGroups: 
+                - !Ref LoadBalancerSecurityGroup
             Subnets:
-                - subnet-a3ebc7cb
-                - subnet-4c8d1000
-                - subnet-1316b268
+                - !Ref Subnet1
+                - !Ref Subnet2
             Type: application
     
     Listener:
         Type: AWS::ElasticLoadBalancingV2::Listener
         Properties:
-            LoadBalancerArn: !Ref LoadBalancer
-            Protocol: HTTP
-            Port: 80
             DefaultActions:
                 -   Type: forward
                     TargetGroupArn: !Ref TargetGroup
-            
+            LoadBalancerArn: !Ref LoadBalancer
+            Port: 80
+            Protocol: HTTP
+           
     AutoScalingGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
+        DependsOn: Gateway
         Properties:
-            MinSize: 1
-            MaxSize: 1
-            DesiredCapacity: 1
-            AvailabilityZones: !GetAZs
+            MinSize: {autoscaling_min_size}
+            MaxSize: {autoscaling_max_size}
+            DesiredCapacity: {autoscaling_desired_size}
+            AvailabilityZones:
+                - Fn::Select:
+                    - 0
+                    - Fn::GetAZs: ""
+                - Fn::Select:
+                    - 1
+                    - Fn::GetAZs: ""
             LaunchTemplate:
                 LaunchTemplateId: !Ref LaunchTemplateResource
                 Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
             TargetGroupARNs:
                 - !Ref TargetGroup
-
+            VPCZoneIdentifier:
+            - !Ref Subnet1
+            - !Ref Subnet2
         UpdatePolicy:
             AutoScalingReplacingUpdate:
                 WillReplace: true
@@ -312,6 +397,7 @@ Outputs:
                 autoscaling_desired_size=autoscaling_desired_size,
                 autoscaling_max_size=autoscaling_max_size,
                 s3_bucket_name=s3_bucket_name,
+                deployment_name=deployment_name,
             )
         )
     return template_file_path
@@ -354,10 +440,9 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             registry_domain = registry_url.replace("https://", "")
             push_tag = f"{registry_domain}/{repo_name}"
             pull_tag = push_tag + f":{deployment_spec.bento_version}"
-            pull_tag = "752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris:latest" #TODO: REMOVE THIS
 
             logger.info("Containerizing service")
-            """containerize_bento_service(
+            containerize_bento_service(
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
                 saved_bundle_path=bento_path,
@@ -366,16 +451,17 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 build_arg={},
                 username=registry_username,
                 password=registry_password,
-            )"""
+            )
 
             logger.info("Generating user data")
             encoded_user_data = _make_user_data(
-                registry_username, registry_password, registry_url, pull_tag
+                registry_username, registry_password, registry_url, pull_tag, region
             )
 
             logger.info("Making template")
             template_file_path = _make_cloudformation_template(
                 project_path,
+                deployment_pb.name,
                 encoded_user_data,
                 s3_bucket_name,
                 sam_template_name,

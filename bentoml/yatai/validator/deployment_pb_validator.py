@@ -114,17 +114,17 @@ deployment_schema = {
                     "ami_id": {"type": "string"},
                     "autoscale_min_capacity": {
                         "type": "integer",
-                        "min": 1,
+                        "min": 0,
                         "required": True,
                     },
                     "autoscale_desired_capacity": {
                         "type": "integer",
-                        "min": 1,
+                        "min": 0,
                         "required": True,
                     },
                     "autoscale_max_capacity": {
                         "type": "integer",
-                        "min": 1,
+                        "min": 0,
                         "required": True,
                     },
                 },

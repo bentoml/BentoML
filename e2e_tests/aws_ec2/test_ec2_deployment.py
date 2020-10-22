@@ -38,13 +38,12 @@ def test_aws_ec2_deployment(iris_clf_service):
     try:
         deployment_success = run_aws_ec2_create_command(create_deployment_command)
 
-        spawned, deployment_endpoints = wait_for_instance_spawn(
+        deployment_endpoints = wait_for_instance_spawn(
             name=deployment_name,
             namespace=deployment_namespace,
             region=deployment_region,
         )
         assert deployment_success, "AWS Lambda deployment creation should success"
-        assert spawned, "AWS EC2 deployment should create ec2 instances"
         assert deployment_endpoints, "AWS EC2 deployment should have endpoint"
 
         iris = datasets.load_iris()

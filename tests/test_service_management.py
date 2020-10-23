@@ -87,8 +87,7 @@ class TestModel(object):
 
 
 @pytest.mark.skipif(
-    sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS"
+    sys.platform == "darwin", reason="Requires docker, skipping test for Mac OS"
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_save_load(yatai_server_container, example_bento_service_class):
@@ -108,8 +107,7 @@ def test_save_load(yatai_server_container, example_bento_service_class):
 
 
 @pytest.mark.skipif(
-    sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS"
+    sys.platform == "darwin", reason="Requires docker, skipping test for Mac OS"
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_push(yatai_server_container, example_bento_service_class):
@@ -127,8 +125,7 @@ def test_push(yatai_server_container, example_bento_service_class):
 
 
 @pytest.mark.skipif(
-    sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS"
+    sys.platform == "darwin", reason="Requires docker, skipping test for Mac OS"
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_pull(yatai_server_container, example_bento_service_class):
@@ -148,8 +145,7 @@ def test_pull(yatai_server_container, example_bento_service_class):
 
 
 @pytest.mark.skipif(
-    sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS"
+    sys.platform == "darwin", reason="Requires docker, skipping test for Mac OS"
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_get(yatai_server_container, example_bento_service_class):
@@ -167,8 +163,7 @@ def test_get(yatai_server_container, example_bento_service_class):
 
 
 @pytest.mark.skipif(
-    sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS"
+    sys.platform == "darwin", reason="Requires docker, skipping test for Mac OS"
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_list(yatai_server_container, example_bento_service_class):

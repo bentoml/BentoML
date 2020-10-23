@@ -187,7 +187,7 @@ def get_bento(bento, yatai_url=None):
         yatai_url:  a YataiService URL address
 
     Returns:
-        BentoService Metadata - bentoml.yatai.proto.repository_pb2.BentoServiceMetadata
+        BentoService - bentoml.yatai.proto.repository_pb2.Bento
     """
     track('get-bento-info')
     if ':' not in bento:

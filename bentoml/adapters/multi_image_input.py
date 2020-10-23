@@ -113,6 +113,23 @@ class MultiImageInput(MultiFileInput):
         }
         response = requests.post(your_url, files=files)
 
+    .. code-block:: python
+
+        import requests
+        import PIL
+
+        pil_image_x = PIL.Image.open('testx.jpg')
+        pil_image_y = PIL.Image.open('testy.jpg')
+
+        image_bytes1 = pil_image_x.tobytes()  # from PIL.Image
+        image_bytes1 = pil_image_y.tobytes()
+
+        files = {
+            "imageX": ("testx.jpg", image_bytes1),
+            "imageY": ("testy.jpg", image_bytes2),
+        }
+        response = requests.post(your_url, files=files)
+
     Query with CLI command::
 
         bentoml run PyTorchFashionClassifier:latest predict \\

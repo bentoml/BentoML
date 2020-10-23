@@ -130,6 +130,23 @@ class AnnotatedImageInput(MultiFileInput):
         }
         response = requests.post(your_url, files=files)
 
+    .. code-block:: python
+
+        import requests
+        import PIL
+
+        pil_image = PIL.Image.open('test.jpg')
+        annotations = { "age": 10, "bar": "foo" }
+
+        image_bytes = pil_image.tobytes()
+        anno_bytes = json.dumps(annotations).encode('utf-8')
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+            "annotations": ("test.json", anno_bytes),
+        }
+        response = requests.post(your_url, files=files)
+
     Query with CLI command::
 
         bentoml run PyTorchFashionClassifier:latest predict \\

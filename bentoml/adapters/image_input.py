@@ -122,7 +122,21 @@ class ImageInput(FileInput):
         import requests
 
         with open("test.jpg", "rb") as f:
-            image_bytes = f.read()
+            image_bytes = f.read()  # from file path
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+        }
+        response = requests.post(your_url, files=files)
+
+    .. code-block:: python
+
+        import requests
+        import PIL
+
+        pil_image = PIL.Image.open('test.jpg')
+
+        image_bytes = pil_image.tobytes()  # from PIL.Image
 
         files = {
             "image": ("test.jpg", image_bytes),

@@ -674,7 +674,7 @@ class BentoService:
         return save_to_dir(self, path, version)
 
     @hybridmethod
-    def pack(self, name, *args, metadata=None, **kwargs):
+    def pack(self, name, *args, **kwargs):
         """
         BentoService#pack method is used for packing trained model instances with a
         BentoService instance and make it ready for BentoService#save.
@@ -686,7 +686,7 @@ class BentoService:
         :param kwargs: kwargs passing to the target model artifact to be packed
         :return: this BentoService instance
         """
-        self.artifacts.get(name).pack(metadata=metadata, *args, **kwargs)
+        self.artifacts.get(name).pack(*args, **kwargs)
         return self
 
     @pack.classmethod

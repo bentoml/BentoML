@@ -224,9 +224,15 @@ class SavedBundleConfig(object):
                 if "artifact_type" in artifact_config:
                     artifact_metadata.artifact_type = artifact_config["artifact_type"]
                 if "metadata" in artifact_config:
-                    s = Struct()
-                    s.update(artifact_config["metadata"])
-                    artifact_metadata.metadata.CopyFrom(s)
+                    if isinstance(artifact_config["metadata"], dict):
+                        s = Struct()
+                        s.update(artifact_config["metadata"])
+                        artifact_metadata.metadata.CopyFrom(s)
+                    else:
+                        logger.warning(
+                            f"Tried to get non-dictionary metadata for artifact"
+                            f"{artifact_metadata.name}. Ignoring metadata..."
+                        )
                 bento_service_metadata.artifacts.extend([artifact_metadata])
 
         return bento_service_metadata

@@ -62,9 +62,8 @@ class BentoServiceArtifact:
         if metadata:
             if not isinstance(metadata, dict):
                 logger.warning(
-                    """Setting a non-dictionary metadata
-                    may cause marshaling problems.
-                    Proceed with caution."""
+                    "Setting a non-dictionary metadata \
+                    is not supported. Ignoring metadata..
                 )
             self._metadata = metadata
 

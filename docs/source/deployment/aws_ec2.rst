@@ -2,7 +2,7 @@ Deploying to AWS Lambda
 =======================
 
 
-AWS EC2 is a great service to deploy continerized and load balanced services to the cloud.
+AWS EC2 is a great service to deploy containerized and load balanced services to the cloud.
 It's ability to auto scale and automated health checking features make it attractive to
 user who want to save cost and want to scale base on usage without administrative overhead.
 

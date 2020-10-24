@@ -161,7 +161,7 @@ def test_make_cloudformation_template(tmpdir):
 def test_ec2_add_success():
     def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
         if op_name == "GetCallerIdentity":
-            return {"Account" : mock_user_id}
+            return {"Account": mock_user_id}
 
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_ec2_deployment_pb()

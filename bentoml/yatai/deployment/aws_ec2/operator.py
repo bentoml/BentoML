@@ -218,14 +218,6 @@ Resources:
                 SecurityGroupIds:
                 - !GetAtt SecurityGroupResource.GroupId
 
-    ContainerInstance:
-        Type: AWS::EC2::Instance
-        Properties:
-            LaunchTemplate:
-                LaunchTemplateId: !Ref LaunchTemplateResource
-                Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
-            SubnetId: !Ref Subnet1
-
     TargetGroup:
         Type: AWS::ElasticLoadBalancingV2::TargetGroup
         Properties:
@@ -240,9 +232,6 @@ Resources:
             HealthCheckProtocol: HTTP
             HealthCheckTimeoutSeconds: 3
             HealthyThresholdCount: 2
-            Targets:
-                -   Id: !Ref ContainerInstance
-                    Port: 5000
 
     LoadBalancerSecurityGroup:
         Type: AWS::EC2::SecurityGroup
@@ -355,13 +344,9 @@ Resources:
                 - Fn::Select:
                     - 1
                     - Fn::GetAZs: ""
-            #LaunchTemplate:
-            #enable this if want to launch from template.
-            #    LaunchTemplateId: !Ref LaunchTemplateResource
-            #    Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
-            InstanceId: !Ref ContainerInstance
-            #NOTE: This is not attaching instance in this group,need a workaround.
-
+            LaunchTemplate:
+                LaunchTemplateId: !Ref LaunchTemplateResource
+                Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
             TargetGroupARNs:
                 - !Ref TargetGroup
             VPCZoneIdentifier:

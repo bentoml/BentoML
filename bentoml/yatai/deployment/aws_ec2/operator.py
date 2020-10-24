@@ -48,7 +48,7 @@ from bentoml.yatai.deployment.aws_ec2.utils import (
     get_healthy_target,
 )
 from bentoml.yatai.deployment.aws_ec2.constants import (
-    TARGET_HEALTH_CHECK_INTERVAL_SECONDS,
+    TARGET_HEALTH_CHECK_INTERVAL,
     TARGET_HEALTH_CHECK_PATH,
     TARGET_HEALTH_CHECK_PORT,
     TARGET_HEALTH_CHECK_TIMEOUT_SECONDS,
@@ -403,19 +403,19 @@ Outputs:
         Description: URL of the bento service
 
 """.format(
-            ami_id=ami_id,
-            template_name=sam_template_name,
-            instance_type=instance_type,
-            user_data=user_data,
-            autoscaling_min_size=autoscaling_min_size,
-            autoscaling_desired_size=autoscaling_desired_size,
-            autoscaling_max_size=autoscaling_max_size,
-            s3_bucket_name=s3_bucket_name,
-            target_health_check_interval_seconds=TARGET_HEALTH_CHECK_INTERVAL_SECONDS,
-            target_health_check_path=TARGET_HEALTH_CHECK_PATH,
-            target_health_check_port=TARGET_HEALTH_CHECK_PORT,
-            target_health_check_timeout_seconds=TARGET_HEALTH_CHECK_TIMEOUT_SECONDS,
-            target_health_check_threshold_count=TARGET_HEALTH_CHECK_THRESHOLD_COUNT,
+                ami_id=ami_id,
+                template_name=sam_template_name,
+                instance_type=instance_type,
+                user_data=user_data,
+                autoscaling_min_size=autoscaling_min_size,
+                autoscaling_desired_size=autoscaling_desired_size,
+                autoscaling_max_size=autoscaling_max_size,
+                s3_bucket_name=s3_bucket_name,
+                target_health_check_interval_seconds=TARGET_HEALTH_CHECK_INTERVAL,
+                target_health_check_path=TARGET_HEALTH_CHECK_PATH,
+                target_health_check_port=TARGET_HEALTH_CHECK_PORT,
+                target_health_check_timeout_seconds=TARGET_HEALTH_CHECK_TIMEOUT_SECONDS,
+                target_health_check_threshold_count=TARGET_HEALTH_CHECK_THRESHOLD_COUNT,
             )
         )
     return template_file_path

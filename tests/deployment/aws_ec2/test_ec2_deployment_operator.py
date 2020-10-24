@@ -1,7 +1,6 @@
 import os
 
 import boto3
-import pytest
 from mock import MagicMock, patch
 
 from bentoml.yatai.proto import status_pb2
@@ -23,7 +22,6 @@ from bentoml.yatai.deployment.aws_ec2.operator import (
     AwsEc2DeploymentOperator,
 )
 from bentoml.yatai.deployment.aws_utils import FAILED_CLOUDFORMATION_STACK_STATUS
-from bentoml.exceptions import BentoMLException
 
 mock_s3_bucket_name = 'test_deployment_bucket'
 mock_s3_prefix = 'prefix'
@@ -38,6 +36,7 @@ mock_registry_endpoint = (
 mock_target_group_arn = "target-us-east-1-aws"
 mock_url = "http://mock-url.com"
 mock_port_number = 123
+mock_user_id = 1234567891
 
 
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
@@ -160,11 +159,16 @@ def test_make_cloudformation_template(tmpdir):
     MagicMock(),
 )
 def test_ec2_add_success():
+    def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "GetCallerIdentity":
+            return {"Account" : mock_user_id}
+
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_ec2_deployment_pb()
     operator = AwsEc2DeploymentOperator(yatai_service_mock)
 
-    result_pb = operator.add(test_deployment_pb)
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_boto_client):
+        result_pb = operator.add(test_deployment_pb)
 
     assert result_pb.status.status_code == status_pb2.Status.OK
     assert result_pb.deployment.state.state == DeploymentState.PENDING

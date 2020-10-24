@@ -114,12 +114,12 @@ runcmd:
 - unzip awscliv2.zip
 - sudo ./aws/install
 - ln -s /usr/bin/aws aws
-- aws ecr get-login-password --region {region} | docker login --username AWS --password-stdin {registry}
+- aws ecr get-login-password --region {region}|docker login --username AWS --password-stdin {registry}
 - docker pull {tag}
 - docker run -p 5000:5000 {tag}
 
 --==MYBOUNDARY==--
-""".format(
+""".format(  # noqa: E501
         registry=registry, tag=tag, region=region
     )
     encoded = base64.b64encode(base_format.encode("ascii")).decode("ascii")
@@ -183,7 +183,7 @@ Resources:
         Properties:
             Path: /
             Roles: [!Ref EC2Role]
-    
+
     EC2Role:
         Type: AWS::IAM::Role
         Properties:
@@ -217,11 +217,11 @@ Resources:
                 UserData: "{user_data}"
                 SecurityGroupIds:
                 - !GetAtt SecurityGroupResource.GroupId
-    
+
     ContainerInstance:
         Type: AWS::EC2::Instance
         Properties:
-            LaunchTemplate: 
+            LaunchTemplate:
                 LaunchTemplateId: !Ref LaunchTemplateResource
                 Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
             SubnetId: !Ref Subnet1
@@ -240,7 +240,7 @@ Resources:
             HealthCheckProtocol: HTTP
             HealthCheckTimeoutSeconds: 3
             HealthyThresholdCount: 2
-            Targets: 
+            Targets:
                 -   Id: !Ref ContainerInstance
                     Port: 5000
 
@@ -324,13 +324,13 @@ Resources:
         Properties:
             IpAddressType: ipv4
             Scheme: internet-facing
-            SecurityGroups: 
+            SecurityGroups:
                 - !Ref LoadBalancerSecurityGroup
             Subnets:
                 - !Ref Subnet1
                 - !Ref Subnet2
             Type: application
-    
+
     Listener:
         Type: AWS::ElasticLoadBalancingV2::Listener
         Properties:
@@ -340,7 +340,7 @@ Resources:
             LoadBalancerArn: !Ref LoadBalancer
             Port: 80
             Protocol: HTTP
-           
+
     AutoScalingGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
         DependsOn: Gateway
@@ -356,9 +356,12 @@ Resources:
                     - 1
                     - Fn::GetAZs: ""
             #LaunchTemplate:
+            #enable this if want to launch from template.
             #    LaunchTemplateId: !Ref LaunchTemplateResource
             #    Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
-            InstanceId: !Ref ContainerInstance #NOTE: This is not attaching instance in this group,need a workaround.
+            InstanceId: !Ref ContainerInstance
+            #NOTE: This is not attaching instance in this group,need a workaround.
+
             TargetGroupARNs:
                 - !Ref TargetGroup
             VPCZoneIdentifier:
@@ -381,7 +384,7 @@ Outputs:
     Url:
         Value: !Join ['', ['http://', !GetAtt [LoadBalancer, DNSName]]]
         Description: URL of the bento service
-        
+
 """.format(
                 template_name=sam_template_name,
                 instance_type=instance_type,

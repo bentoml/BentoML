@@ -82,5 +82,11 @@ def add_yatai_service_sub_command(cli):
         from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 
         start_yatai_service_grpc_server(
-            db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, web_prefix_path
+            db_url,
+            repo_base_url,
+            grpc_port,
+            ui_port,
+            ui,
+            s3_endpoint_url,
+            web_prefix_path,
         )

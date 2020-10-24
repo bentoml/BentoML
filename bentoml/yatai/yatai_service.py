@@ -109,6 +109,7 @@ def start_yatai_service_grpc_server(
         f'* Starting BentoML YataiService gRPC Server\n'
         f'* Debug mode: { "on" if debug_mode else "off"}\n'
         f'* Web UI: {f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'
+        f'* Web Prefix Path: {f"expecting to be hosted with prefix: {base_url}"}\n'
         f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
         f'* Usage:\n'
         f'*  Set config: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`\n'
@@ -135,7 +136,7 @@ def _is_web_server_debug_tools_available(root_dir):
 
 
 def async_start_yatai_service_web_ui(
-    yatai_server_address, ui_port, base_log_path, debug_mode, base_url
+    yatai_server_address, ui_port, base_log_path, debug_mode, web_prefix_path
 ):
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
@@ -153,7 +154,7 @@ def async_start_yatai_service_web_ui(
                 yatai_server_address,
                 ui_port,
                 base_log_path,
-                base_url,
+                web_prefix_path,
             ]
         else:
             web_ui_command = [
@@ -162,7 +163,7 @@ def async_start_yatai_service_web_ui(
                 yatai_server_address,
                 ui_port,
                 base_log_path,
-                base_url,
+                web_prefix_path,
             ]
     else:
         if not os.path.exists(os.path.join(web_ui_dir, 'dist', 'bundle.js')):
@@ -177,7 +178,7 @@ def async_start_yatai_service_web_ui(
             yatai_server_address,
             ui_port,
             base_log_path,
-            base_url,
+            web_prefix_path,
         ]
 
     web_proc = subprocess.Popen(

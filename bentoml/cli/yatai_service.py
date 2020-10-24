@@ -69,18 +69,18 @@ def add_yatai_service_sub_command(cli):
         envvar='BENTOML_S3_ENDPOINT_URL',
     )
     @click.option(
-        '--base-url',
+        '--web-prefix-path',
         type=click.STRING,
         default='.',
         help='Add a location prefix to the URL when running YataiService'
         'behind a reverse proxy server',
-        envvar='BENTOML_BASE_URL',
+        envvar='BENTOML_YATAI_WEB_PREFIX_PATH',
     )
     def yatai_service_start(
-        db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, base_url
+        db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, web_prefix_path
     ):
         from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 
         start_yatai_service_grpc_server(
-            db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, base_url
+            db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, web_prefix_path
         )

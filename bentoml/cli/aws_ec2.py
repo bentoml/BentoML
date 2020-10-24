@@ -44,11 +44,11 @@ yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 def get_aws_ec2_sub_command():
     # pylint: disable=unused-variable
 
-    @click.group(name="ec2", cls=BentoMLCommandGroup, help="commands for ec2")
+    @click.group(name="ec2", cls=BentoMLCommandGroup, help="commands for EC2")
     def aws_ec2():
         pass
 
-    @aws_ec2.command(help="Deploy BentoServide to ec2")
+    @aws_ec2.command(help="Deploy BentoService to EC2")
     @click.argument("name", type=click.STRING)
     @click.option(
         "-b",

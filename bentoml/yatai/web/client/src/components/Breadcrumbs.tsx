@@ -25,7 +25,7 @@ const Breadcrumbs: React.FC<IBreadcrumbsProps> = (props) => {
   };
 
   React.useEffect(() => {
-    const parsedBreadcrumbs = getBreadcrumbs(baseURL,location.pathname);
+    const parsedBreadcrumbs = getBreadcrumbs(baseURL, location.pathname);
     setBreadcrumbs(parsedBreadcrumbs);
   }, [location]);
 

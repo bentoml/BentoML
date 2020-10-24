@@ -202,13 +202,12 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
   app.use(function (req, res, next) {
     var cookie = req.cookies.cookieName;
     if (cookie === undefined) {
-      //var baseURL="/yatai/";
       res.cookie('baseURLCookie',baseURL, { maxAge: 900000, httpOnly: false });
       console.log('cookie created successfully');
     } else {
       console.log('cookie exists', cookie);
     } 
-    next(); // <-- important!
+    next(); 
   });
 
   app.use(express.json());

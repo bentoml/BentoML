@@ -1,6 +1,5 @@
 import os
 import boto3
-from pathlib import Path
 import base64
 import json
 import logging
@@ -20,7 +19,6 @@ from bentoml.yatai.proto.deployment_pb2 import (
 from bentoml.yatai.status import Status
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
-from bentoml.utils.ruamel_yaml import YAML
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
@@ -49,6 +47,13 @@ from bentoml.yatai.deployment.aws_ec2.utils import (
     get_endpoints_from_instance_address,
     get_healthy_target,
 )
+from bentoml.yatai.deployment.aws_ec2.constants import (
+    TARGET_HEALTH_CHECK_INTERVAL_SECONDS,
+    TARGET_HEALTH_CHECK_PATH,
+    TARGET_HEALTH_CHECK_PORT,
+    TARGET_HEALTH_CHECK_TIMEOUT_SECONDS,
+    TARGET_HEALTH_CHECK_THRESHOLD_COUNT,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +62,12 @@ SAM_TEMPLATE_NAME = "template.yml"
 
 
 def _create_ecr_repo(repo_name, region):
+    """
+    Create ecr repository,in given region
+    args:
+        repo_name: repository name to create
+        region: aws region
+    """
     try:
         ecr_client = boto3.client("ecr", region)
         repository = ecr_client.create_repository(
@@ -72,6 +83,9 @@ def _create_ecr_repo(repo_name, region):
 
 
 def _get_ecr_password(registry_id, region):
+    """
+    Get authentication token for registry to authenticate docker agent with ecr.
+    """
     ecr_client = boto3.client("ecr", region)
     try:
         token_data = ecr_client.get_authorization_token(registryIds=[registry_id])
@@ -92,12 +106,23 @@ def _get_ecr_password(registry_id, region):
 
 
 def _get_creds_from_token(token):
+    """
+    Decode ecr token into username and password.
+    """
     cred_string = base64.b64decode(token).decode("ascii")
     username, password = str(cred_string).split(":")
     return username, password
 
 
 def _make_user_data(registry, tag, region):
+    """
+    Create init script for EC2 containers to download docker image and run container on startup.
+    args:
+        registry: ECR registry domain
+        tag: bento tag
+        region: AWS region
+    """
+
     base_format = """MIME-Version: 1.0
 Content-Type: multipart/mixed; boundary=\"==MYBOUNDARY==\"
 
@@ -138,28 +163,34 @@ def _make_cloudformation_template(
     autoscaling_max_size,
 ):
     """
+    Create and save cloudformation template for deployment
+    args:
+        project_dir: path to save template file
+        user_data: base64 encoded user data for cloud-init script
+        s3_bucket_name: AWS S3 bucket name
+        sam_template_name: template name to save
+        ami_id: ami id for EC2 container to use
+        instance_type: EC2 instance type
+        autocaling_min_size: autoscaling group minimum size
+        autocaling_desired_size: autoscaling group desired size
+        autocaling_min_size: autoscaling group maximum size
+
+
     NOTE: SSH ACCESS TO INSTANCE MAY NOT BE REQUIRED
     TODO: Port taken from cli
     """
 
     template_file_path = os.path.join(project_dir, sam_template_name)
-    yaml = YAML()
-    sam_config = {
-        "AWSTemplateFormatVersion": "2010-09-09",
-        "Transform": "AWS::Serverless-2016-10-31",
-        "Description": "BentoML load balanced template",
-        "Parameters": {
-            "AmazonLinux2LatestAmiId": {
-                "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
-                "Default": ami_id,
-            },
-        },
-    }
-    yaml.dump(sam_config, Path(template_file_path))
-
     with open(template_file_path, "a") as f:
         f.write(
             """\
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: BentoML load balanced template
+Parameters:
+    AmazonLinux2LatestAmiId:
+        Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+        Default: {ami_id}
 Resources:
     SecurityGroupResource:
         Type: AWS::EC2::SecurityGroup
@@ -226,12 +257,12 @@ Resources:
             Port: 5000
             TargetType: instance
             HealthCheckEnabled: true
-            HealthCheckIntervalSeconds: 5
-            HealthCheckPath: /healthz
-            HealthCheckPort: 5000
+            HealthCheckIntervalSeconds: {target_health_check_interval_seconds}
+            HealthCheckPath: {target_health_check_path}
+            HealthCheckPort: {target_health_check_port}
             HealthCheckProtocol: HTTP
-            HealthCheckTimeoutSeconds: 3
-            HealthyThresholdCount: 2
+            HealthCheckTimeoutSeconds: {target_health_check_timeout_seconds}
+            HealthyThresholdCount: {target_health_check_threshold_count}
 
     LoadBalancerSecurityGroup:
         Type: AWS::EC2::SecurityGroup
@@ -371,6 +402,7 @@ Outputs:
         Description: URL of the bento service
 
 """.format(
+                ami_id=ami_id,
                 template_name=sam_template_name,
                 instance_type=instance_type,
                 user_data=user_data,
@@ -378,6 +410,11 @@ Outputs:
                 autoscaling_desired_size=autoscaling_desired_size,
                 autoscaling_max_size=autoscaling_max_size,
                 s3_bucket_name=s3_bucket_name,
+                target_health_check_interval_seconds=TARGET_HEALTH_CHECK_INTERVAL_SECONDS,
+                target_health_check_path=TARGET_HEALTH_CHECK_PATH,
+                target_health_check_port=TARGET_HEALTH_CHECK_PORT,
+                target_health_check_timeout_seconds=TARGET_HEALTH_CHECK_TIMEOUT_SECONDS,
+                target_health_check_threshold_count=TARGET_HEALTH_CHECK_THRESHOLD_COUNT,
             )
         )
     return template_file_path

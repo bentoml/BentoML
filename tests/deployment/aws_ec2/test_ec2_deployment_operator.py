@@ -35,6 +35,9 @@ mock_registry_auth_token = "riqpoweripqwreweropi"
 mock_registry_endpoint = (
     "https://752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris"
 )
+mock_target_group_arn = "target-us-east-1-aws"
+mock_url = "http://mock-url.com"
+mock_port_number = 123
 
 
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
@@ -139,33 +142,6 @@ def test_make_cloudformation_template(tmpdir):
     )
     assert os.path.isfile(os.path.join(tmpdir, mock_template_name))
 
-    with pytest.raises(BentoMLException):
-        _make_cloudformation_template(
-            tmpdir,
-            "test_user_data",
-            mock_s3_bucket_name,
-            mock_template_name,
-            "test_ami",
-            "t2.micro",
-            2,
-            2,
-            1,
-        )
-
-    with pytest.raises(BentoMLException):
-        _make_cloudformation_template(
-            tmpdir,
-            "test_user_data",
-            mock_s3_bucket_name,
-            mock_template_name,
-            "test_ami",
-            "t2.micro",
-            1,
-            3,
-            2,
-        )
-
-
 @patch(
     "bentoml.yatai.deployment.aws_ec2.operator.ensure_sam_available_or_raise",
     MagicMock(),
@@ -220,9 +196,34 @@ def test_ec2_describe_no_scaling_success():
                             {
                                 "OutputKey": "S3Bucket",
                                 "OutputValue": mock_s3_bucket_name,
-                            }
+                            },
+                            {
+                                "OutputKey": "TargetGroup",
+                                "OutputValue": mock_target_group_arn,
+                            },
+                            {
+                                "OutputKey": "Url",
+                                "OutputValue": mock_url,
+                            },
                         ],
                     }
+                ]
+            }
+        if op_name == "DescribeTargetHealth":
+            return {
+                'TargetHealthDescriptions': [
+                    {
+                        'Target': {
+                            'Id': 'id-instance-1',
+                            'Port': mock_port_number,
+                            'AvailabilityZone': 'us-east-1a'
+                        },
+                        'HealthCheckPort': 'string',
+                        'TargetHealth': {
+                            'State': 'healthy',
+                            'Description': 'mock-string'
+                        }
+                    },
                 ]
             }
 
@@ -247,9 +248,34 @@ def test_ec2_describe_pending():
                             {
                                 "OutputKey": "S3Bucket",
                                 "OutputValue": mock_s3_bucket_name,
-                            }
+                            },
+                            {
+                                "OutputKey": "TargetGroup",
+                                "OutputValue": mock_target_group_arn,
+                            },
+                            {
+                                "OutputKey": "Url",
+                                "OutputValue": mock_url,
+                            },
                         ],
                     }
+                ]
+            }
+        if op_name == "DescribeTargetHealth":
+            return {
+                'TargetHealthDescriptions': [
+                    {
+                        'Target': {
+                            'Id': 'id-instance-1',
+                            'Port': mock_port_number,
+                            'AvailabilityZone': 'us-east-1a'
+                        },
+                        'HealthCheckPort': 'string',
+                        'TargetHealth': {
+                            'State': 'unhealthy',
+                            'Description': 'mock-string'
+                        }
+                    },
                 ]
             }
 
@@ -274,9 +300,34 @@ def test_ec2_describe_stack_failure():
                             {
                                 "OutputKey": "S3Bucket",
                                 "OutputValue": mock_s3_bucket_name,
-                            }
+                            },
+                            {
+                                "OutputKey": "TargetGroup",
+                                "OutputValue": mock_target_group_arn,
+                            },
+                            {
+                                "OutputKey": "Url",
+                                "OutputValue": mock_url,
+                            },
                         ],
                     }
+                ]
+            }
+        if op_name == "DescribeTargetHealth":
+            return {
+                'TargetHealthDescriptions': [
+                    {
+                        'Target': {
+                            'Id': 'id-instance-1',
+                            'Port': mock_port_number,
+                            'AvailabilityZone': 'us-east-1a'
+                        },
+                        'HealthCheckPort': 'string',
+                        'TargetHealth': {
+                            'State': 'healthy',
+                            'Description': 'mock-string'
+                        }
+                    },
                 ]
             }
 
@@ -328,9 +379,34 @@ def test_ec2_update_success():
                             {
                                 "OutputKey": "S3Bucket",
                                 "OutputValue": mock_s3_bucket_name,
-                            }
+                            },
+                            {
+                                "OutputKey": "TargetGroup",
+                                "OutputValue": mock_target_group_arn,
+                            },
+                            {
+                                "OutputKey": "Url",
+                                "OutputValue": mock_url,
+                            },
                         ],
                     }
+                ]
+            }
+        if op_name == "DescribeTargetHealth":
+            return {
+                'TargetHealthDescriptions': [
+                    {
+                        'Target': {
+                            'Id': 'id-instance-1',
+                            'Port': mock_port_number,
+                            'AvailabilityZone': 'us-east-1a'
+                        },
+                        'HealthCheckPort': 'string',
+                        'TargetHealth': {
+                            'State': 'healthy',
+                            'Description': 'mock-string'
+                        }
+                    },
                 ]
             }
 

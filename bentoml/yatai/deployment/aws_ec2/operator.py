@@ -147,7 +147,7 @@ runcmd:
 
 --==MYBOUNDARY==--
 """.format(  # noqa: E501
-        registry=registry, tag=tag, region=region
+        registry=registry, tag=tag, region=region, bentoservice_port=BENTOSERVICE_PORT
     )
     encoded = base64.b64encode(base_format.encode("ascii")).decode("ascii")
     return encoded
@@ -412,7 +412,6 @@ Outputs:
                 autoscaling_desired_size=autoscaling_desired_size,
                 autoscaling_max_size=autoscaling_max_size,
                 s3_bucket_name=s3_bucket_name,
-                bentoservice_port = BENTOSERVICE_PORT,
                 target_health_check_interval_seconds=TARGET_HEALTH_CHECK_INTERVAL,
                 target_health_check_path=TARGET_HEALTH_CHECK_PATH,
                 target_health_check_port=TARGET_HEALTH_CHECK_PORT,

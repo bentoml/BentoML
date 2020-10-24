@@ -44,7 +44,7 @@ yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 def get_aws_ec2_sub_command():
     # pylint: disable=unused-variable
 
-    @click.group(name="ec2", cls=BentoMLCommandGroup, help="commandas for ec2")
+    @click.group(name="ec2", cls=BentoMLCommandGroup, help="commands for ec2")
     def aws_ec2():
         pass
 
@@ -74,7 +74,7 @@ def get_aws_ec2_sub_command():
         "--desired-capacity",
         type=click.INT,
         default=DEFAULT_DESIRED_CAPACITY,
-        help="Desired number of instances capacity to run bentoservice on."
+        help="Desired number of instances capacity to run BentoService on."
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
@@ -89,7 +89,7 @@ def get_aws_ec2_sub_command():
         "--instance-type",
         type=click.STRING,
         default=DEFAULT_INSTANCE_TYPE,
-        help="Instance type of ec2 container.Default is t2.micro",
+        help="Instance type of EC2 container.Default is t2 micro",
     )
     @click.option(
         "--ami-id",
@@ -241,7 +241,7 @@ def get_aws_ec2_sub_command():
         "--desired-capacity",
         type=click.INT,
         default=DEFAULT_DESIRED_CAPACITY,
-        help="Desired number of instances capacity to run bentoservice on."
+        help="Desired number of instances capacity to run BentoService on."
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
@@ -256,7 +256,7 @@ def get_aws_ec2_sub_command():
         "--instance-type",
         type=click.STRING,
         default=DEFAULT_INSTANCE_TYPE,
-        help="Instance type of ec2 container.Default is t2.micro",
+        help="Instance type of EC2 container.Default is t2 micro",
     )
     @click.option(
         "--ami-id",
@@ -266,7 +266,7 @@ def get_aws_ec2_sub_command():
     )
     @click.option(
         "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="json"
-    )  # pylint: disable=unused-variable
+    )
     @click.option(
         "--wait/--no-wait",
         default=True,

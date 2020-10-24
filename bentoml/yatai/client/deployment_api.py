@@ -224,6 +224,8 @@ class DeploymentAPIClient:
         labels=None,
         annotations=None,
         wait=None,
+        data_capture_s3_prefix=None,
+        data_capture_sample_percent=None,
     ):
         """Create SageMaker deployment
 
@@ -241,6 +243,8 @@ class DeploymentAPIClient:
             labels:
             annotations:
             wait:
+            data_capture_s3_prefix:
+            data_capture_sample_percent:
 
         Returns:
             ApplyDeploymentResponse
@@ -258,6 +262,16 @@ class DeploymentAPIClient:
         deployment_pb.spec.sagemaker_operator_config.instance_count = instance_count
         deployment_pb.spec.sagemaker_operator_config.instance_type = instance_type
         deployment_pb.spec.sagemaker_operator_config.timeout = timeout
+
+        if data_capture_s3_prefix:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_s3_prefix = (
+                data_capture_s3_prefix
+            )
+        if data_capture_sample_percent:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_sample_percent = (
+                data_capture_sample_percent
+            )
+
         if region:
             deployment_pb.spec.sagemaker_operator_config.region = region
         if num_of_gunicorn_workers_per_instance:
@@ -279,6 +293,8 @@ class DeploymentAPIClient:
         bento_name=None,
         bento_version=None,
         wait=None,
+        data_capture_s3_prefix=None,
+        data_capture_sample_percent=None,
     ):
         """ Update current sagemaker deployment
 
@@ -293,6 +309,8 @@ class DeploymentAPIClient:
             bento_name:
             bento_version:
             wait:
+            data_capture_s3_prefix:
+            data_capture_sample_percent:
 
         Returns:
             Protobuf message
@@ -328,6 +346,14 @@ class DeploymentAPIClient:
             deployment_pb.spec.bento_name = bento_name
         if bento_version:
             deployment_pb.spec.bento_version = bento_version
+        if data_capture_s3_prefix:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_s3_prefix = (
+                data_capture_s3_prefix
+            )
+        if data_capture_sample_percent:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_sample_percent = (
+                data_capture_sample_percent
+            )
 
         logger.debug(
             'Updated configuration for sagemaker deployment %s', deployment_pb.name

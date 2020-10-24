@@ -12,7 +12,7 @@ const displayTimestampForDeployment = (seconds: number) => {
 
 const InfoTable = ({ deployment }) => {
   let endpointValues = "Not Available";
-  if (deployment.state.state == "RUNNING" && deployment.state.info_json) {
+  if (deployment.state.state === "RUNNING" && deployment.state.info_json) {
     const infoJson = JSON.parse(deployment.state.info_json);
     endpointValues = infoJson.endpoints.join("\n");
   }

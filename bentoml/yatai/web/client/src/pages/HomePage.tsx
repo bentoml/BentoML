@@ -20,7 +20,11 @@ const HomePage = () => (
           );
         } else {
           deploymentDisplay = (
-            <a href="https://docs.bentoml.org/en/latest" target="_blank">
+            <a
+              href="https://docs.bentoml.org/en/latest"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Learn about managing model serving deployments with BentoML 🔗
             </a>
           );
@@ -51,7 +55,11 @@ const HomePage = () => (
           return (
             <Section>
               <h2>No model found</h2>
-              <a href="https://docs.bentoml.org/en/latest" target="_blank">
+              <a
+                href="https://docs.bentoml.org/en/latest"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Learn about packaging ML model for serving with BentoML 🔗
               </a>
             </Section>

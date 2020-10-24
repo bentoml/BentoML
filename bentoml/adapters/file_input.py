@@ -101,6 +101,20 @@ class FileInput(BaseInputAdapter):
             <input type="submit">
         </form>
 
+    OR by python requests:
+
+    .. code-block:: python
+
+        import requests
+
+        with open("test.jpg", "rb") as f:
+            image_bytes = f.read()
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+        }
+        response = requests.post(your_url, files=files)
+
     Query with CLI command::
 
         bentoml run PyTorchFashionClassifier:latest predict --input-file test.jpg

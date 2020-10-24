@@ -259,7 +259,7 @@ def add_bento_sub_command(cli):
 
         if get_bento_result.bento.uri.s3_presigned_url:
             bento_service_bundle_path = get_bento_result.bento.uri.s3_presigned_url
-        if get_bento_result.bento.uri.gcs_presigned_url:
+        elif get_bento_result.bento.uri.gcs_presigned_url:
             bento_service_bundle_path = get_bento_result.bento.uri.gcs_presigned_url
         else:
             bento_service_bundle_path = get_bento_result.bento.uri.uri

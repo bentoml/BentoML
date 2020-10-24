@@ -11,7 +11,7 @@ const getActiveDeploymentCount = (deployments) => {
       (deployment) =>
         deployment.state &&
         deployment.state.state &&
-        deployment.state.state == "RUNNING"
+        deployment.state.state === "RUNNING"
     ).length || 0
   );
 };
@@ -39,7 +39,11 @@ const DeploymentsList = (props) => {
           );
         } else {
           deploymentDisplay = (
-            <a href="https://docs.bentoml.org/en/latest" target="_blank">
+            <a
+              href="https://docs.bentoml.org/en/latest"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Learn more about managing model serving deployments with BentoML
             </a>
           );

@@ -150,7 +150,7 @@ class InferenceAPI(object):
         else:
             append_arg = "task"
         try:
-            _sig.bind(**{append_arg: None})
+            _sig.bind_partial(**{append_arg: None})
             append_arg = None
         except TypeError:
             pass
@@ -224,13 +224,16 @@ class InferenceAPI(object):
 
         # call user function
         if not self.batch:  # For single inputs
-            user_return = tuple(
-                self.user_func(*legacy_user_args, task=task)
-                for task, legacy_user_args in zip(
-                    filtered_tasks,
-                    self.input_adapter.iter_batch_args(user_args, tasks=filtered_tasks),
-                )
-            )
+            user_return = []
+            for task, legacy_user_args in zip(
+                filtered_tasks,
+                self.input_adapter.iter_batch_args(user_args, tasks=filtered_tasks),
+            ):
+                ret = self.user_func(*legacy_user_args, task=task)
+                if task.is_discarded:
+                    continue
+                else:
+                    user_return.append(ret)
             if (
                 isinstance(user_return, (list, tuple))
                 and len(user_return)
@@ -239,6 +242,7 @@ class InferenceAPI(object):
                 inf_results = user_return
             else:
                 # pack return value
+                filtered_tasks = tuple(t for t in inf_tasks if not t.is_discarded)
                 inf_results = self.output_adapter.pack_user_func_return_value(
                     user_return, tasks=filtered_tasks
                 )
@@ -252,6 +256,7 @@ class InferenceAPI(object):
                 inf_results = user_return
             else:
                 # pack return value
+                filtered_tasks = tuple(t for t in inf_tasks if not t.is_discarded)
                 inf_results = self.output_adapter.pack_user_func_return_value(
                     user_return, tasks=filtered_tasks
                 )

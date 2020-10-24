@@ -1,7 +1,6 @@
 import os
 import boto3
 from pathlib import Path
-from uuid import uuid4
 import base64
 import json
 import logging
@@ -28,7 +27,6 @@ from bentoml.yatai.deployment.aws_utils import (
     get_default_aws_region,
     ensure_sam_available_or_raise,
     validate_sam_template,
-    SUCCESS_CLOUDFORMATION_STACK_STATUS,
     FAILED_CLOUDFORMATION_STACK_STATUS,
     cleanup_s3_bucket_if_exist,
     delete_cloudformation_stack,

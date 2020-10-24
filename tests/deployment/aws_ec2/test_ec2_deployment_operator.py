@@ -142,6 +142,7 @@ def test_make_cloudformation_template(tmpdir):
     )
     assert os.path.isfile(os.path.join(tmpdir, mock_template_name))
 
+
 @patch(
     "bentoml.yatai.deployment.aws_ec2.operator.ensure_sam_available_or_raise",
     MagicMock(),
@@ -201,10 +202,7 @@ def test_ec2_describe_no_scaling_success():
                                 "OutputKey": "TargetGroup",
                                 "OutputValue": mock_target_group_arn,
                             },
-                            {
-                                "OutputKey": "Url",
-                                "OutputValue": mock_url,
-                            },
+                            {"OutputKey": "Url", "OutputValue": mock_url,},
                         ],
                     }
                 ]
@@ -216,13 +214,13 @@ def test_ec2_describe_no_scaling_success():
                         'Target': {
                             'Id': 'id-instance-1',
                             'Port': mock_port_number,
-                            'AvailabilityZone': 'us-east-1a'
+                            'AvailabilityZone': 'us-east-1a',
                         },
                         'HealthCheckPort': 'string',
                         'TargetHealth': {
                             'State': 'healthy',
-                            'Description': 'mock-string'
-                        }
+                            'Description': 'mock-string',
+                        },
                     },
                 ]
             }
@@ -253,10 +251,7 @@ def test_ec2_describe_pending():
                                 "OutputKey": "TargetGroup",
                                 "OutputValue": mock_target_group_arn,
                             },
-                            {
-                                "OutputKey": "Url",
-                                "OutputValue": mock_url,
-                            },
+                            {"OutputKey": "Url", "OutputValue": mock_url,},
                         ],
                     }
                 ]
@@ -268,13 +263,13 @@ def test_ec2_describe_pending():
                         'Target': {
                             'Id': 'id-instance-1',
                             'Port': mock_port_number,
-                            'AvailabilityZone': 'us-east-1a'
+                            'AvailabilityZone': 'us-east-1a',
                         },
                         'HealthCheckPort': 'string',
                         'TargetHealth': {
                             'State': 'unhealthy',
-                            'Description': 'mock-string'
-                        }
+                            'Description': 'mock-string',
+                        },
                     },
                 ]
             }
@@ -305,10 +300,7 @@ def test_ec2_describe_stack_failure():
                                 "OutputKey": "TargetGroup",
                                 "OutputValue": mock_target_group_arn,
                             },
-                            {
-                                "OutputKey": "Url",
-                                "OutputValue": mock_url,
-                            },
+                            {"OutputKey": "Url", "OutputValue": mock_url,},
                         ],
                     }
                 ]
@@ -320,13 +312,13 @@ def test_ec2_describe_stack_failure():
                         'Target': {
                             'Id': 'id-instance-1',
                             'Port': mock_port_number,
-                            'AvailabilityZone': 'us-east-1a'
+                            'AvailabilityZone': 'us-east-1a',
                         },
                         'HealthCheckPort': 'string',
                         'TargetHealth': {
                             'State': 'healthy',
-                            'Description': 'mock-string'
-                        }
+                            'Description': 'mock-string',
+                        },
                     },
                 ]
             }
@@ -384,10 +376,7 @@ def test_ec2_update_success():
                                 "OutputKey": "TargetGroup",
                                 "OutputValue": mock_target_group_arn,
                             },
-                            {
-                                "OutputKey": "Url",
-                                "OutputValue": mock_url,
-                            },
+                            {"OutputKey": "Url", "OutputValue": mock_url,},
                         ],
                     }
                 ]
@@ -399,13 +388,13 @@ def test_ec2_update_success():
                         'Target': {
                             'Id': 'id-instance-1',
                             'Port': mock_port_number,
-                            'AvailabilityZone': 'us-east-1a'
+                            'AvailabilityZone': 'us-east-1a',
                         },
                         'HealthCheckPort': 'string',
                         'TargetHealth': {
                             'State': 'healthy',
-                            'Description': 'mock-string'
-                        }
+                            'Description': 'mock-string',
+                        },
                     },
                 ]
             }

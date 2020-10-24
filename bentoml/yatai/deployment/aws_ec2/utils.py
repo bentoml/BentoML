@@ -1,6 +1,9 @@
+import boto3
+
 from bentoml.yatai.deployment.aws_ec2.constants import (
     BENTOSERVICE_PORT,
     AWS_EC2_IN_SERVICE_STATE,
+    TARGET_HEALTHY_STATUS,
 )
 from bentoml.yatai.deployment.aws_utils import call_sam_command
 from bentoml.exceptions import BentoMLException
@@ -70,3 +73,13 @@ def get_endpoints_from_instance_address(instances, api_names):
                 )
 
     return all_endpoints
+
+
+def get_healthy_target(target_group_arn, region):
+    eb_client = boto3.client("elbv2", region)
+
+    all_targets = eb_client.describe_target_health(TargetGroupArn=target_group_arn)
+    for instance in all_targets["TargetHealthDescriptions"]:
+        if instance["TargetHealth"]["State"] == TARGET_HEALTHY_STATUS:
+            return instance
+    return None

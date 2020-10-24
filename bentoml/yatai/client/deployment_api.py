@@ -133,7 +133,6 @@ class DeploymentAPIClient:
                 f'Failed to validate deployment {deployment_pb.name}: '
                 f'{validation_errors}'
             )
-
         # Make sure there is no active deployment with the same deployment name
         get_deployment_pb = self.yatai_service.GetDeployment(
             GetDeploymentRequest(

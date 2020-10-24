@@ -190,3 +190,7 @@ def get_instance_ip_from_scaling_group(autoscaling_group_names, region):
                 )
 
     return all_instances
+
+
+def get_aws_user_id():
+    return boto3.client("sts").get_caller_identity().get("Account")

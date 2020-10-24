@@ -7,3 +7,4 @@ DEFAULT_AMI_ID = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 BENTOSERVICE_PORT = 5000
 
 AWS_EC2_IN_SERVICE_STATE = "InService"
+TARGET_HEALTHY_STATUS = "healthy"

@@ -34,6 +34,7 @@ from bentoml.yatai.deployment.aws_utils import (
     delete_cloudformation_stack,
     delete_ecr_repository,
     get_instance_ip_from_scaling_group,
+    get_aws_user_id,
 )
 from bentoml.utils.docker_utils import containerize_bento_service
 from bentoml.exceptions import (
@@ -48,6 +49,7 @@ from bentoml.yatai.deployment.aws_ec2.utils import (
     package_template,
     deploy_template,
     get_endpoints_from_instance_address,
+    get_healthy_target,
 )
 
 logger = logging.getLogger(__name__)
@@ -141,16 +143,6 @@ def _make_cloudformation_template(
     NOTE: SSH ACCESS TO INSTANCE MAY NOT BE REQUIRED
     TODO: Port taken from cli
     """
-    if (
-        autoscaling_min_size < 0
-        or autoscaling_max_size < autoscaling_min_size
-        or autoscaling_desired_size < autoscaling_min_size
-        or autoscaling_desired_size > autoscaling_max_size
-    ):
-        raise BentoMLException(
-            "Wrong autoscaling capacity specified. "
-            "It should be min_size <= desired_size <= max_size"
-        )
 
     template_file_path = os.path.join(project_dir, sam_template_name)
     yaml = YAML()
@@ -536,11 +528,10 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             deployment_spec = deployment_pb.spec
             aws_ec2_deployment_config = deployment_spec.aws_ec2_operator_config
 
+            user_id = get_aws_user_id()
             artifact_s3_bucket_name = generate_aws_compatible_string(
-                "btml-{namespace}-{name}-{random_string}".format(
-                    namespace=deployment_pb.namespace,
-                    name=deployment_pb.name,
-                    random_string=uuid4().hex[:6].lower(),
+                "btml-{user_id}-{namespace}".format(
+                    user_id=user_id, namespace=deployment_pb.namespace,
                 )
             )
             create_s3_bucket_if_not_exists(
@@ -714,24 +705,19 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 )
                 stack_result = cloudformation_stack_result.get("Stacks")[0]
 
-                if stack_result["StackStatus"] in SUCCESS_CLOUDFORMATION_STACK_STATUS:
-                    if stack_result.get("Outputs"):
-                        outputs = stack_result.get("Outputs")
-                    else:
-                        return DescribeDeploymentResponse(
-                            status=Status.ABORTED('"Outputs" field is not present'),
-                            state=DeploymentState(
-                                state=DeploymentState.ERROR,
-                                error_message='"Outputs" field is not present',
-                            ),
-                        )
-
-                elif stack_result["StackStatus"] in FAILED_CLOUDFORMATION_STACK_STATUS:
-                    state = DeploymentState(state=DeploymentState.FAILED)
-                    return DescribeDeploymentResponse(status=Status.OK(), state=state)
-
+                if stack_result.get("Outputs"):
+                    outputs = stack_result.get("Outputs")
                 else:
-                    state = DeploymentState(state=DeploymentState.PENDING)
+                    return DescribeDeploymentResponse(
+                        status=Status.ABORTED('"Outputs" field is not present'),
+                        state=DeploymentState(
+                            state=DeploymentState.ERROR,
+                            error_message='"Outputs" field is not present',
+                        ),
+                    )
+
+                if stack_result["StackStatus"] in FAILED_CLOUDFORMATION_STACK_STATUS:
+                    state = DeploymentState(state=DeploymentState.FAILED)
                     return DescribeDeploymentResponse(status=Status.OK(), state=state)
 
             except Exception as error:  # pylint: disable=broad-except
@@ -758,8 +744,15 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             if "Url" in outputs:
                 info_json["Url"] = outputs["Url"]
 
+            healthy_target = get_healthy_target(
+                outputs["TargetGroup"], ec2_deployment_config.region
+            )
+            if healthy_target:
+                deployment_state = DeploymentState.RUNNING
+            else:
+                deployment_state = DeploymentState.PENDING
             state = DeploymentState(
-                state=DeploymentState.RUNNING, info_json=json.dumps(info_json)
+                state=deployment_state, info_json=json.dumps(info_json)
             )
             return DescribeDeploymentResponse(status=Status.OK(), state=state)
 

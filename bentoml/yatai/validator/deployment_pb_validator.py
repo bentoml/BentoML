@@ -108,6 +108,7 @@ deployment_schema = {
             },
             "aws_ec2_operator_config": {
                 "type": "dict",
+                "aws_ec2_operator_configurations": True,
                 "schema": {
                     "region": {"type": "string"},
                     "instance_type": {"type": "string"},
@@ -207,6 +208,30 @@ class YataiDeploymentValidator(Validator):
                     'Valid label key and value must be 63 characters or less and '
                     'must be being and end with an alphanumeric character '
                     '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
+                )
+
+    def _validate_aws_ec2_operator_configurations(
+        self, aws_ec2_operator_configurations, field, value
+    ):
+        """ Test label key value schema
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        if aws_ec2_operator_configurations:
+            if (
+                value.get("autoscale_min_capacity") < 0
+                or value.get("autoscale_max_capacity")
+                < value.get("autoscale_min_capacity")
+                or value.get("autoscale_desired_capacity")
+                < value.get("autoscale_min_capacity")
+                or value.get("autoscale_desired_capacity")
+                > value.get("autoscale_max_capacity")
+            ):
+                self._error(
+                    field,
+                    "Wrong autoscaling capacity specified. "
+                    "It should be min_size <= desired_size <= max_size",
                 )
 
 

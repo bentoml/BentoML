@@ -170,6 +170,11 @@ class BentoAPIServer:
         """
         return Response(response="\n", status=200, mimetype="text/plain")
 
+    @staticmethod
+    def metadata_json_func(bento_service):
+        bento_service_metadata = bento_service.get_bento_service_metadata_pb()
+        return jsonify(bento_service_metadata)
+
     def metrics_view_func(self):
         # noinspection PyProtectedMember
         from prometheus_client import generate_latest
@@ -204,6 +209,7 @@ class BentoAPIServer:
         /healthz        Health check ping
         /feedback       Submitting feedback
         /metrics        Prometheus metrics endpoint
+        /metadata       BentoService Artifact Metadata
 
         And user defined InferenceAPI list into flask routes, e.g.:
         /classify
@@ -242,6 +248,8 @@ class BentoAPIServer:
             "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
         )
         self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
+        self.app.add_url_rule("/metadata", "metadata",
+                              partial(self.metadata_json_func, self.bento_service))
 
         if config("apiserver").getboolean("enable_metrics"):
             self.app.add_url_rule("/metrics", "metrics", self.metrics_view_func)

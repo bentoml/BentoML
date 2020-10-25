@@ -27,6 +27,7 @@ from flask import (
     send_from_directory,
 )
 from werkzeug.exceptions import BadRequest, NotFound
+from google.protobuf.json_format import MessageToJson
 
 from bentoml import BentoService, config
 from bentoml.configuration import get_debug_mode
@@ -173,7 +174,7 @@ class BentoAPIServer:
     @staticmethod
     def metadata_json_func(bento_service):
         bento_service_metadata = bento_service.get_bento_service_metadata_pb()
-        return jsonify(bento_service_metadata)
+        return jsonify(MessageToJson(bento_service_metadata))
 
     def metrics_view_func(self):
         # noinspection PyProtectedMember

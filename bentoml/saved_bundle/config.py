@@ -230,7 +230,7 @@ class SavedBundleConfig(object):
                         artifact_metadata.metadata.CopyFrom(s)
                     else:
                         logger.warning(
-                            f"Tried to get non-dictionary metadata for artifact"
+                            "Tried to get non-dictionary metadata for artifact "
                             f"{artifact_metadata.name}. Ignoring metadata..."
                         )
                 bento_service_metadata.artifacts.extend([artifact_metadata])

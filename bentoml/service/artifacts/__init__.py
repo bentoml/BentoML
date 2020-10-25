@@ -60,12 +60,13 @@ class BentoServiceArtifact:
         Note: add "# pylint:disable=arguments-differ" to child class's pack method
         """
         if metadata:
-            if not isinstance(metadata, dict):
-                logger.warning(
-                    "Setting a non-dictionary metadata \
-                    is not supported. Ignoring metadata..
-                )
-            self._metadata = metadata
+            if isinstance(metadata, dict):
+                self._metadata = metadata
+                return
+            logger.warning(
+                "Setting a non-dictionary metadata "
+                "is not supported. Ignoring metadata..."
+            )
 
     def load(self, path):
         """

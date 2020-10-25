@@ -88,6 +88,22 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
     assert model_service.predict(1) == 2
 
 
+def test_pack_metadata_invalid(tmpdir, example_bento_service_class):
+    example_bento_service_class = bentoml.ver(major=2, minor=10)(
+        example_bento_service_class
+    )
+    test_model = TestModel()
+    svc = example_bento_service_class()
+
+    # assert empty metadata before packing
+    assert svc.artifacts.get('model').metadata == {}
+
+    # try packing invalid
+    model_metadata = "non-dictionary metadata"
+    svc.pack("model", test_model, metadata=model_metadata)
+    assert svc.artifacts.get('model').metadata == {}
+
+
 def test_pack_metadata(tmpdir, example_bento_service_class):
     example_bento_service_class = bentoml.ver(major=2, minor=10)(
         example_bento_service_class
@@ -99,6 +115,10 @@ def test_pack_metadata(tmpdir, example_bento_service_class):
         'k1': 'v1',
         'job_id': 'ABC',
         'score': 0.84,
+        'datasets': [
+            'A',
+            'B',
+        ],
     }
     svc.pack("model", test_model, metadata=model_metadata)
 
@@ -109,8 +129,7 @@ def test_pack_metadata(tmpdir, example_bento_service_class):
     model_service = bentoml.load(str(tmpdir))
 
     # check loaded metadata is correct
-    assert(model_service.artifacts.get('model').metadata == model_metadata)
-
+    assert model_service.artifacts.get('model').metadata == model_metadata
 
 class TestBentoWithOutArtifact(bentoml.BentoService):
     __test__ = False

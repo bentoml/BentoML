@@ -206,7 +206,7 @@ def test_ec2_describe_no_scaling_success():
                                 "OutputKey": "TargetGroup",
                                 "OutputValue": mock_target_group_arn,
                             },
-                            {"OutputKey": "Url", "OutputValue": mock_url,},
+                            {"OutputKey": "Url", "OutputValue": mock_url},
                         ],
                     }
                 ]
@@ -255,7 +255,7 @@ def test_ec2_describe_pending():
                                 "OutputKey": "TargetGroup",
                                 "OutputValue": mock_target_group_arn,
                             },
-                            {"OutputKey": "Url", "OutputValue": mock_url,},
+                            {"OutputKey": "Url", "OutputValue": mock_url},
                         ],
                     }
                 ]
@@ -304,7 +304,7 @@ def test_ec2_describe_stack_failure():
                                 "OutputKey": "TargetGroup",
                                 "OutputValue": mock_target_group_arn,
                             },
-                            {"OutputKey": "Url", "OutputValue": mock_url,},
+                            {"OutputKey": "Url", "OutputValue": mock_url},
                         ],
                     }
                 ]
@@ -380,7 +380,7 @@ def test_ec2_update_success():
                                 "OutputKey": "TargetGroup",
                                 "OutputValue": mock_target_group_arn,
                             },
-                            {"OutputKey": "Url", "OutputValue": mock_url,},
+                            {"OutputKey": "Url", "OutputValue": mock_url},
                         ],
                     }
                 ]

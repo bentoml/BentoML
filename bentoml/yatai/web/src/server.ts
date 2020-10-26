@@ -5,11 +5,11 @@ import express from "express";
 import { bentoml } from "./generated/bentoml_grpc";
 import { createYataiClient } from "./yatai_client";
 import { getLogger } from "./logger";
-
 const logger = getLogger();
 
 const createRoutes = (app, yataiClient) => {
-  app.get("/api/ListBento", async (req: Request, res: Response) => {
+  let router = express.Router();
+  router.get("/api/ListBento", async (req: Request, res: Response) => {
     const requestQuery: any = Object.assign({}, req.query);
     if (req.query.limit && typeof req.query.limit == "string") {
       requestQuery.limit = Number(req.query.limit);
@@ -40,7 +40,7 @@ const createRoutes = (app, yataiClient) => {
     }
   });
 
-  app.get("/api/GetBento", async (req: Request, res: Response) => {
+  router.get("/api/GetBento", async (req: Request, res: Response) => {
     let verifyError = bentoml.GetBentoRequest.verify(req.query);
     if (verifyError) {
       logger.error({ request: "GetBento", error: verifyError });
@@ -64,7 +64,7 @@ const createRoutes = (app, yataiClient) => {
     }
   });
 
-  app.get("/api/GetDeployment", async (req: Request, res: Response) => {
+  router.get("/api/GetDeployment", async (req: Request, res: Response) => {
     let verifyError = bentoml.GetDeploymentRequest.verify(req.query);
     if (verifyError) {
       logger.error({ request: "GetDeployment", error: verifyError });
@@ -88,7 +88,7 @@ const createRoutes = (app, yataiClient) => {
     }
   });
 
-  app.get("/api/ListDeployments", async (req: Request, res: Response) => {
+  router.get("/api/ListDeployments", async (req: Request, res: Response) => {
     const requestQuery: any = Object.assign({}, req.query);
     if (req.query.limit && typeof req.query.limit == "string") {
       requestQuery.limit = Number(req.query.limit);
@@ -116,7 +116,7 @@ const createRoutes = (app, yataiClient) => {
     }
   });
 
-  app.post("/api/DeleteDeployment", async (req: Request, res: Response) => {
+  router.post("/api/DeleteDeployment", async (req: Request, res: Response) => {
     let verifyError = bentoml.DeleteDeploymentRequest.verify(req.body);
     if (verifyError) {
       logger.error({ request: "DeleteDeployment", error: verifyError });
@@ -143,7 +143,7 @@ const createRoutes = (app, yataiClient) => {
     }
   });
 
-  app.post("/api/DeleteBento", async (req: Request, res: Response) => {
+  router.post("/api/DeleteBento", async (req: Request, res: Response) => {
     let verifyError = bentoml.DangerouslyDeleteBentoRequest.verify(req.body);
     if (verifyError) {
       logger.error({ request: "DeleteBento", error: verifyError });
@@ -167,7 +167,7 @@ const createRoutes = (app, yataiClient) => {
     }
   });
 
-  app.post("/api/ApplyDeployment", async (req: Request, res: Response) => {
+  router.post("/api/ApplyDeployment", async (req: Request, res: Response) => {
     let verifyError = bentoml.ApplyDeploymentRequest.verify(req.body);
     if (verifyError) {
       logger.error({ request: "ApplyDeployment", error: verifyError });
@@ -193,6 +193,8 @@ const createRoutes = (app, yataiClient) => {
       return res.status(500).json(error);
     }
   });
+
+  return router;
 };
 
 export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
@@ -217,7 +219,9 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
     })
   );
   const yataiClient = createYataiClient(grpcAddress);
-  createRoutes(app, yataiClient);
+  const router = createRoutes(app, yataiClient);
+  const apiUrlPrefix = (baseURL=="." ? '/' : '/' + baseURL);
+  app.use(apiUrlPrefix, router);
 
   app.get("/*", (req, res) => {
     let directory = req.path.split("/").slice(-2, -1);

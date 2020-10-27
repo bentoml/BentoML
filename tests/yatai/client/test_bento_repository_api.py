@@ -1,8 +1,13 @@
+import uuid
+import logging
+
 import pytest
 
 from bentoml.exceptions import InvalidArgument
+from bentoml.yatai.client import YataiClient
 from bentoml.yatai.label_store import _validate_labels
 
+logger = logging.getLogger('bentoml.test')
 
 def test_validate_labels_fails():
     with pytest.raises(InvalidArgument):
@@ -25,3 +30,17 @@ def test_validate_labels_pass():
     _validate_labels({'long_key_title': 'some_value', 'another_key': "value"})
     _validate_labels({'long_key-title': 'some_value-inside.this'})
     _validate_labels({'create_by': 'admin', 'py.version': '3.6.8'})
+
+
+def test_dangerously_delete(example_bento_service_class):
+    yc = YataiClient()
+    svc = example_bento_service_class()
+    version = f"test_{uuid.uuid4().hex}"
+    svc.set_version(version_str=version)
+    svc.save()
+    result = yc.repository.dangerously_delete_bento(svc.name, svc.version)
+    assert result.status.status_code == 0
+    logger.debug('Saving the bento service again with the same name:version')
+    svc.save()
+    second_delete_result = yc.repository.dangerously_delete_bento(svc.name, svc.version)
+    assert second_delete_result.status.status_code == 0

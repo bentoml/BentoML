@@ -9,6 +9,7 @@ from bentoml.yatai.label_store import _validate_labels
 
 logger = logging.getLogger('bentoml.test')
 
+
 def test_validate_labels_fails():
     with pytest.raises(InvalidArgument):
         _validate_labels(

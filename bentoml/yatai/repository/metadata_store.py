@@ -156,7 +156,7 @@ class BentoMetadataStore(object):
             try:
                 bento_obj = (
                     sess.query(Bento)
-                    .filter_by(name=bento_name, version=bento_version)
+                    .filter_by(name=bento_name, version=bento_version, deleted=False)
                     .one()
                 )
                 if bento_obj.deleted:
@@ -215,7 +215,7 @@ class BentoMetadataStore(object):
             try:
                 bento_obj = (
                     sess.query(Bento)
-                    .filter_by(name=bento_name, version=bento_version)
+                    .filter_by(name=bento_name, version=bento_version, deleted=False)
                     .one()
                 )
                 if bento_obj.deleted:

@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 BENTO_SERVICE_SAGEMAKER_DOCKERFILE = """\
 FROM {docker_base_image}
 
-# the env var $PORT is required by heroku container runtime
+# the env var $PORT is required by Sagemaker
 ENV PORT 8080
 EXPOSE $PORT
 
@@ -56,6 +56,9 @@ COPY . /bento
 WORKDIR /bento
 
 RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
+
+# Install bundled bentoml if it exists (used for development)
+RUN if [ -d /bento/bundled_pip_dependencies ]; then pip install -U bundled_pip_dependencies/* ;fi
 
 ENV PATH="/bento:$PATH"
 """  # noqa: E501

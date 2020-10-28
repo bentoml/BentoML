@@ -14,7 +14,7 @@ from bentoml.service.env import BentoServiceEnv
 logger = logging.getLogger(__name__)
 
 
-SUPPORTED_ONNX_BACKEND = ["onnxruntime"]
+SUPPORTED_ONNX_BACKEND = ["onnxruntime", "onnxruntime-gpu"]
 
 
 def _is_path_like(path):
@@ -138,15 +138,17 @@ class OnnxModelArtifact(BentoServiceArtifact):
     def set_dependencies(self, env: BentoServiceEnv):
         if self.backend == "onnxruntime":
             env.add_pip_packages(["onnxruntime"])
+        elif self.backend == "onnxruntime-gpu":
+            env.add_pip_packages(["onnxruntime-gpu"])
 
     def _get_onnx_inference_session(self):
-        if self.backend == "onnxruntime":
+        if self.backend == "onnxruntime" or self.backend == "onnxruntime-gpu":
             try:
                 import onnxruntime
             except ImportError:
                 raise MissingDependencyException(
-                    '"onnxruntime" package is required for inference with onnx '
-                    "runtime as backend"
+                    f'"{self.backend}" package is required for inference with '
+                    f'"{self.backend}" as backend"'
                 )
 
             if self._model_proto:

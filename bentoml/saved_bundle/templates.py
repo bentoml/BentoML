@@ -82,17 +82,18 @@ WORKDIR /bento
 # copy over entrypoint scripts
 COPY docker-entrypoint.sh /usr/local/bin/
 
+# Copy environment.yml, because bundled_pip_dependencies might not exist. This
+# prevent COPY command from failing.
+COPY environment.yml bundled_pip_dependencies*  /bento/bundled_pip_dependencies/
+
+# Remove environment.yml from bundled_pip_dependencies directory
+RUN rm /bento/bundled_pip_dependencies/environment.yml
+
 # Execute permission for scripts
 RUN chmod +x /bento/bentoml-init.sh /usr/local/bin/docker-entrypoint.sh
 
 # Install conda, pip dependencies and run user defined setup script
 RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
-
-# copy over bundled_pip_dependencies
-COPY environment.yml bundled_pip_dependencies* /bento/
-
-# Install bundled bentoml if it exists (used for development)
-RUN if [ -d /bento/bundled_pip_dependencies ]; then pip install -U bundled_pip_dependencies/* ;fi
 
 # copy over model files
 COPY . /bento

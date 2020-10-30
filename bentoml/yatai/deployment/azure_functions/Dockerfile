@@ -8,6 +8,3 @@ COPY . /home/site/wwwroot
 
 # Install pip dependencies
 RUN if [ -f /home/site/wwwroot/bentoml-init.sh ]; then /bin/bash -c /home/site/wwwroot/bentoml-init.sh; fi
-
-# Install bundled bundled_pip_dependencies
-RUN if [ -d /home/site/wwwroot/bundled_pip_dependencies ]; then pip install -U /home/site/wwwroot/bundled_pip_dependencies/* ;fi

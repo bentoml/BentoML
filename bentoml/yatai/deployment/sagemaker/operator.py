@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 BENTO_SERVICE_SAGEMAKER_DOCKERFILE = """\
 FROM {docker_base_image}
 
-# the env var $PORT is required by Sagemaker
+# the env var $PORT is required by heroku container runtime
 ENV PORT 8080
 EXPOSE $PORT
 

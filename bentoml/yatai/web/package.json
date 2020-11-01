@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "start": "node dist/bundle.js",
-    "dev": "bash -c 'concurrently \"nodemon -- ${0} ${1} ${2}\" \"npm run watch:client\"'",
+    "dev": "bash -c 'concurrently \"nodemon -- ${0} ${1} ${2} ${3}\" \"npm run watch:client\"'",
     "watch": "concurrently \"npm:watch:*\"",
     "watch:server": "nodemon",
     "watch:client": "cd client && yarn start",

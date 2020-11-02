@@ -8,7 +8,8 @@ logger = logging.getLogger('bentoml.test')
 
 
 def get_instance_ip_from_id(instance_id, api, region):
-    """get instance ip address from instance_id,and append bentoservice docker port and api_name"""
+    """get instance ip address from instance_id,
+    and append bentoservice docker port and api_name"""
 
     ec2_client = boto3.client("ec2", region)
     response = ec2_client.describe_instances(InstanceIds=[instance_id])

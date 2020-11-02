@@ -1,4 +1,4 @@
-Deploying to AWS Lambda
+Deploying to AWS EC2
 =======================
 
 
@@ -36,7 +36,7 @@ This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide
     pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
-Use `bento list` to get the BentoService name:version tag.
+Use `bentoml list` to get the BentoService name:version tag.
 
 
 .. code-block:: bash
@@ -96,35 +96,54 @@ Verify the deployed resources with AWS CLI tool:
     {
         "Stacks": [
             {
-                "StackId": "arn:aws:cloudformation:us-west-2:192023623294:stack/dev-my-first-lambda-deployment/dd2a7cf0-3c9e-11ea-8654-02f6ffa9fe66",
-                "StackName": "dev-my-first-lambda-deployment",
-                "ChangeSetId": "arn:aws:cloudformation:us-west-2:192023623294:changeSet/samcli-deploy1579646359/f9c876ca-ade0-4623-93e9-870ef6e7e1b5",
-                "CreationTime": "2020-01-21T22:39:20.156Z",
-                "LastUpdatedTime": "2020-01-21T22:39:25.602Z",
-                "RollbackConfiguration": {},
-                "StackStatus": "CREATE_COMPLETE",
-                "DisableRollback": false,
-                "NotificationARNs": [],
-                "Capabilities": [
-                    "CAPABILITY_IAM"
-                ],
-                "Outputs": [
-                    {
-                        "OutputKey": "S3Bucket",
-                        "OutputValue": "btml-dev-my-first-lambda-deployment-a4a791",
-                        "Description": "S3 Bucket for saving artifacts and lambda bundle"
-                    },
-                    {
-                        "OutputKey": "Url",
-                        "OutputValue": "https://ps6f0sizt8.execute-api.us-west-2.amazonaws.com/",
-                        "Description": "URL for endpoint"
-                    }
-                ],
-                "Tags": [],
-                "DriftInformation": {
-                    "StackDriftStatus": "NOT_CHECKED"
-                }
-            }
+              "StackId": "arn:aws:cloudformation:ap-south-1:752014255238:stack/btml-stack-dev-my-first-ec2-deployment/a9d08770-1d10-11eb-bc31-028b9ab9a492",
+              "StackName": "btml-stack-dev-my-first-ec2-deployment",
+              "ChangeSetId": "arn:aws:cloudformation:ap-south-1:752014255238:changeSet/samcli-deploy1604324294/ac735ad1-6080-43d2-9e9f-2484563d31c8",
+              "Description": "BentoML load balanced template",
+              "Parameters": [
+                  {
+                      "ParameterKey": "AmazonLinux2LatestAmiId",
+                      "ParameterValue": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
+                      "ResolvedValue": "ami-0e306788ff2473ccb"
+                  }
+              ],
+              "CreationTime": "2020-11-02T13:38:17.257000+00:00",
+              "LastUpdatedTime": "2020-11-02T13:38:22.926000+00:00",
+              "RollbackConfiguration": {},
+              "StackStatus": "CREATE_COMPLETE",
+              "DisableRollback": false,
+              "NotificationARNs": [],
+              "Capabilities": [
+                  "CAPABILITY_IAM"
+              ],
+              "Outputs": [
+                  {
+                      "OutputKey": "AutoScalingGroup",
+                      "OutputValue": "btml-stack-dev-my-first-ec2-deployment-AutoScalingGroup-GTO3DXSAZSWK",
+                      "Description": "Autoscaling group name"
+                  },
+                  {
+                      "OutputKey": "S3Bucket",
+                      "OutputValue": "btml-752014255238-dev",
+                      "Description": "Bucket to store sam artifacts"
+                  },
+                  {
+                      "OutputKey": "TargetGroup",
+                      "OutputValue": "arn:aws:elasticloadbalancing:ap-south-1:752014255238:targetgroup/btml-Targe-1PBR6D87075CO/b3f6c6296ee51758",
+                      "Description": "Target group for load balancer"
+                  },
+                  {
+                      "OutputKey": "Url",
+                      "OutputValue": "http://btml-LoadB-1QA80SD51INOM-516888199.ap-south-1.elb.amazonaws.com",
+                      "Description": "URL of the bento service"
+                  }
+              ],
+              "Tags": [],
+              "DriftInformation": {
+                  "StackDriftStatus": "NOT_CHECKED"
+              }
+          },
+
         ]
     }
 
@@ -200,14 +219,14 @@ using `bentoml lambda get` command
         }
 
 
-Use `bentoml lambda list` to have a quick glance of all of the AWS EC2 deployments
+Use `bentoml ec2 list` to have a quick glance of all of the AWS EC2 deployments
 
 .. code-block:: bash
 
-    > bentoml EC2 list
+    > bentoml ec2 list
 
-    NAME                        NAMESPACE    LABELS    PLATFORM    STATUS    AGE
-    my-first-ec2-deployment  dev                    aws-ec2  running   8 minutes and 49.6 seconds
+    NAME                        NAMESPACE    LABELS    PLATFORM                               STATUS    AGE
+    my-first-ec2-deployment     dev          aws-ec2   IrisClassifier:20201015064204_282D00   running   10 minutes and 3.72 seconds
 
 
 Removing a EC2 deployment is also very easy.  Calling `bentoml ec2 delete` command will delete the all resources from aws.
@@ -252,7 +271,7 @@ yatai service address with `bentoml config set`
 
 
 ========================================================
-Deploy and manage AWS Lambda deployments with Kubernetes
+Deploy and manage AWS EC2 deployments with Kubernetes
 ========================================================
 
 Create a Kubernetes secret with the the AWS credentials.

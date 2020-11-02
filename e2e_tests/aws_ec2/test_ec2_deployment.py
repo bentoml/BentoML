@@ -8,7 +8,7 @@ from bentoml.yatai.deployment.aws_utils import get_default_aws_region
 from e2e_tests.cli_operations import delete_deployment
 from e2e_tests.aws_ec2.utils import (
     run_aws_ec2_create_command,
-    wait_for_healthy_targets,
+    wait_for_healthy_targets_from_stack,
     send_test_data_to_multiple_endpoint,
 )
 
@@ -37,7 +37,7 @@ def test_aws_ec2_deployment(iris_clf_service):
 
     try:
         deployment_endpoint = run_aws_ec2_create_command(create_deployment_command)
-        instance_adresses = wait_for_healthy_targets(
+        instance_adresses = wait_for_healthy_targets_from_stack(
             name=deployment_name,
             namespace=deployment_namespace,
             region=deployment_region,

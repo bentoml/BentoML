@@ -8,6 +8,8 @@ logger = logging.getLogger('bentoml.test')
 
 
 def get_instance_ip_from_id(instance_id, api, region):
+    """get instance ip address from instance_id,and append bentoservice docker port and api_name"""
+
     ec2_client = boto3.client("ec2", region)
     response = ec2_client.describe_instances(InstanceIds=[instance_id])
     ip_address = response["Reservations"][0]["Instances"][0]["PublicIpAddress"]
@@ -16,6 +18,9 @@ def get_instance_ip_from_id(instance_id, api, region):
 
 
 def get_addresses_from_target_group(target_group_arn, api, region):
+    """Get addresses of all healthy ec2 targets of target group.
+    If any target is not healthy (health checks failing) return None"""
+
     healthy_target_status = "healthy"
     eb_client = boto3.client("elbv2", region)
 
@@ -31,7 +36,10 @@ def get_addresses_from_target_group(target_group_arn, api, region):
     return all_addresses
 
 
-def wait_for_healthy_targets(name, namespace, region):
+def wait_for_healthy_targets_from_stack(name, namespace, region):
+    """From target group of stack,wait for all targets to be healthy.
+    Then return their '/predict' api url"""
+
     max_spawn_wait_retry = 30
     cf_client = boto3.client("cloudformation", region)
 
@@ -61,6 +69,8 @@ def wait_for_healthy_targets(name, namespace, region):
 
 
 def get_url_from_deploy_stdout(stdout):
+    """Return ELB url from deployment stdout"""
+
     loadbalancer_endpoint = None
     for index, message in enumerate(stdout):
         if '"Url":' in message:
@@ -91,6 +101,8 @@ def run_aws_ec2_create_command(deploy_command):
 
 
 def send_test_data_to_multiple_endpoint(deployment_endpoints, sample_data=None):
+    """Post to multiple endpoints and return aggregated results"""
+
     logger.info('Test deployment with sample request')
     sample_data = sample_data or '"{}"'
     all_results = []

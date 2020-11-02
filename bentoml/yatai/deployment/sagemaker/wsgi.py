@@ -14,10 +14,10 @@
 
 import os
 
-from bentoml.saved_bundle import load_from_bundle_path
+from bentoml.saved_bundle import load_from_dir
 from bentoml.yatai.deployment.sagemaker.model_server import BentomlSagemakerServer
 
 api_name = os.environ.get('API_NAME', None)
-model_service = load_from_bundle_path('/bento')
+model_service = load_from_dir('/bento')
 server = BentomlSagemakerServer(model_service, api_name)
 app = server.app

@@ -4,15 +4,10 @@ import os
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.utils.usage_stats import (
-    track,
-    track_load_start,
-    track_load_finish,
-    track_save,
-)
+from bentoml.utils.usage_stats import track
 from bentoml.yatai.client import YataiClient
 from bentoml.yatai.yatai_service import get_yatai_service
-from bentoml.saved_bundle.loader import load_from_bundle_path, _is_remote_path
+from bentoml.saved_bundle.loader import load_from_dir, _is_remote_path
 
 logger = logging.getLogger(__name__)
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
@@ -39,7 +34,6 @@ def save(bento_service, yatai_url=None, version=None, labels=None):
     else:
         yatai_client = YataiClient()
 
-    track_save(bento_service)
     return yatai_client.repository.upload(bento_service, version, labels)
 
 
@@ -53,12 +47,10 @@ def load(bento, yatai_url=None):
     Returns:
         BentoService instance
     """
-    track_load_start()
     if _is_remote_path(bento) or os.path.isdir(bento):
         if yatai_url:
             logger.info('Path to BentoService is provided, ignoring the yatai url.')
-        svc = load_from_bundle_path(bento)
-        track_load_finish(svc)
+        svc = load_from_dir(bento)
         return svc
     else:
         if ':' not in bento:
@@ -88,8 +80,7 @@ def load(bento, yatai_url=None):
             saved_bundle_path = get_bento_result.bento.uri.gcs_presigned_url
         else:
             saved_bundle_path = get_bento_result.bento.uri.uri
-        svc = load_from_bundle_path(saved_bundle_path)
-        track_load_finish(svc)
+        svc = load_from_dir(saved_bundle_path)
         return svc
 
 
@@ -212,14 +203,6 @@ def get_bento(bento, yatai_url=None):
             f'{error_code}:{error_message}'
         )
     return get_bento_result.bento
-    # if get_bento_result.bento.uri.s3_presigned_url:
-    #     # Use s3 presigned URL for downloading the repository if it is presented
-    #     saved_bundle_path = get_bento_result.bento.uri.s3_presigned_url
-    # elif get_bento_result.bento.uri.gcs_presigned_url:
-    #     saved_bundle_path = get_bento_result.bento.uri.gcs_presigned_url
-    # else:
-    #     saved_bundle_path = get_bento_result.bento.uri.uri
-    # return load_bento_service_metadata(saved_bundle_path)
 
 
 def list_bentos(

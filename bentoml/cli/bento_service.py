@@ -25,7 +25,7 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.cli.utils import echo_docker_api_result, Spinner
 from bentoml.saved_bundle import (
-    load_from_bundle_path,
+    load_from_dir,
     load_bento_service_api,
     load_bento_service_metadata,
 )
@@ -119,7 +119,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             bento, pip_installed_bundle_path, yatai_url
         )
 
-        bento_service = load_from_bundle_path(saved_bundle_path)
+        bento_service = load_from_dir(saved_bundle_path)
 
         _echo(json.dumps(get_open_api_spec_json(bento_service), indent=2))
 

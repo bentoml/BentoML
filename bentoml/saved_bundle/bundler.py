@@ -28,6 +28,7 @@ from bentoml.saved_bundle.templates import (
     MODEL_SERVER_DOCKERFILE_CPU,
     INIT_PY_TEMPLATE,
 )
+from bentoml.utils.usage_stats import track_save
 from bentoml.saved_bundle.config import SavedBundleConfig
 
 
@@ -52,8 +53,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     :param version (str): Override the service version with given version string
     :param silent (boolean): whether to hide the log message showing target save path
     """
-    # TODO add new metrics, save to dir
-    # track_save(bento_service)
+    track_save(bento_service)
 
     from bentoml.service import BentoService
 

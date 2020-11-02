@@ -24,7 +24,7 @@ from bentoml.utils.log import configure_logging
 # Configuring logging properly before loading other modules
 configure_logging()
 
-from bentoml.saved_bundle import load_from_bundle_path, save_to_dir  # noqa: E402
+from bentoml.saved_bundle import load_from_dir, save_to_dir  # noqa: E402
 from bentoml.service import (  # noqa: E402
     BentoService,
     api_decorator as api,
@@ -55,7 +55,7 @@ __all__ = [
     "BentoService",
     "save",
     "load",
-    "load_from_bundle_path",
+    "load_from_dir",
     'delete',
     "prune",
     "push",

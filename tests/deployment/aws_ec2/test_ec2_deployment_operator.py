@@ -65,7 +65,7 @@ def generate_ec2_deployment_pb():
     test_deployment_pb.spec.aws_ec2_operator_config.instance_type = "t2.micro"
     test_deployment_pb.spec.aws_ec2_operator_config.ami_id = "test-ami-id"
     test_deployment_pb.spec.aws_ec2_operator_config.autoscale_min_size = 1
-    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_size = 1
+    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = 1
     test_deployment_pb.spec.aws_ec2_operator_config.autoscale_max_size = 1
 
     return test_deployment_pb

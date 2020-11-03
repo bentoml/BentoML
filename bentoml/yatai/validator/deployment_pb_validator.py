@@ -124,7 +124,7 @@ deployment_schema = {
                         "min": 0,
                         "required": True,
                     },
-                    "autoscale_desired_size": {
+                    "autoscale_desired_capacity": {
                         "type": "integer",
                         "min": 0,
                         "required": True,
@@ -228,13 +228,15 @@ class YataiDeploymentValidator(Validator):
             if (
                 value.get("autoscale_min_size") < 0
                 or value.get("autoscale_max_size") < value.get("autoscale_min_size")
-                or value.get("autoscale_desired_size") < value.get("autoscale_min_size")
-                or value.get("autoscale_desired_size") > value.get("autoscale_max_size")
+                or value.get("autoscale_desired_capacity")
+                < value.get("autoscale_min_size")
+                or value.get("autoscale_desired_capacity")
+                > value.get("autoscale_max_size")
             ):
                 self._error(
                     field,
                     "Wrong autoscaling size specified. "
-                    "It should be min_size <= desired_size <= max_size",
+                    "It should be min_size <= desired_capacity <= max_size",
                 )
 
 

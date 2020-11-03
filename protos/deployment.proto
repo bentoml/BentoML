@@ -71,7 +71,7 @@ message DeploymentSpec {
     string instance_type=2;
     string ami_id=6;
     int32 autoscale_min_size=7;
-    int32 autoscale_desired_size=8;
+    int32 autoscale_desired_capacity=8;
     int32 autoscale_max_size=9;
   }
 

@@ -31,7 +31,7 @@ from bentoml.cli.deployment import (
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.deployment.aws_ec2.constants import (
     DEFAULT_MIN_SIZE,
-    DEFAULT_DESIRED_SIZE,
+    DEFAULT_DESIRED_CAPACITY,
     DEFAULT_MAX_SIZE,
     DEFAULT_INSTANCE_TYPE,
     DEFAULT_AMI_ID,
@@ -71,9 +71,9 @@ def get_aws_ec2_sub_command():
         "certain number of instances running at all times.Default is 1",
     )
     @click.option(
-        "--desired-size",
+        "--desired-capacity",
         type=click.INT,
-        default=DEFAULT_DESIRED_SIZE,
+        default=DEFAULT_DESIRED_CAPACITY,
         help="Desired number of instances size to run BentoService on."
         "Should be between minimum and maximum capacities.Default is 1",
     )
@@ -110,7 +110,7 @@ def get_aws_ec2_sub_command():
         namespace,
         region,
         min_size,
-        desired_size,
+        desired_capacity,
         max_size,
         instance_type,
         ami_id,
@@ -127,7 +127,7 @@ def get_aws_ec2_sub_command():
                 bento_version=bento_version,
                 region=region,
                 min_size=min_size,
-                desired_size=desired_size,
+                desired_capacity=desired_capacity,
                 max_size=max_size,
                 instance_type=instance_type,
                 ami_id=ami_id,
@@ -238,9 +238,9 @@ def get_aws_ec2_sub_command():
         "certain number of instances running at all times.Default is 1",
     )
     @click.option(
-        "--desired-size",
+        "--desired-capacity",
         type=click.INT,
-        default=DEFAULT_DESIRED_SIZE,
+        default=DEFAULT_DESIRED_CAPACITY,
         help="Desired number of instances to run BentoService on."
         "Should be between minimum and maximum capacities.Default is 1",
     )
@@ -278,7 +278,7 @@ def get_aws_ec2_sub_command():
         bento,
         namespace,
         min_size,
-        desired_size,
+        desired_capacity,
         max_size,
         instance_type,
         ami_id,
@@ -299,7 +299,7 @@ def get_aws_ec2_sub_command():
                 bento_version=bento_version,
                 namespace=namespace,
                 min_size=min_size,
-                desired_size=desired_size,
+                desired_capacity=desired_capacity,
                 max_size=max_size,
                 instance_type=instance_type,
                 ami_id=ami_id,

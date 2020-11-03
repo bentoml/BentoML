@@ -162,7 +162,7 @@ def _make_cloudformation_template(
     ami_id,
     instance_type,
     autoscaling_min_size,
-    autoscaling_desired_size,
+    autoscaling_desired_capacity,
     autoscaling_max_size,
 ):
     """
@@ -175,7 +175,7 @@ def _make_cloudformation_template(
         ami_id: ami id for EC2 container to use
         instance_type: EC2 instance type
         autocaling_min_size: autoscaling group minimum size
-        autocaling_desired_size: autoscaling group desired size
+        autocaling_desired_capacity: autoscaling group desired size
         autocaling_min_size: autoscaling group maximum size
 
 
@@ -371,7 +371,7 @@ Resources:
         Properties:
             MinSize: {autoscaling_min_size}
             MaxSize: {autoscaling_max_size}
-            DesiredCapacity: {autoscaling_desired_size}
+            DesiredCapacity: {autoscaling_desired_capacity}
             AvailabilityZones:
                 - Fn::Select:
                     - 0
@@ -412,7 +412,7 @@ Outputs:
                 user_data=user_data,
                 elb_name=elb_name,
                 autoscaling_min_size=autoscaling_min_size,
-                autoscaling_desired_size=autoscaling_desired_size,
+                autoscaling_desired_capacity=autoscaling_desired_capacity,
                 autoscaling_max_size=autoscaling_max_size,
                 s3_bucket_name=s3_bucket_name,
                 target_health_check_interval_seconds=TARGET_HEALTH_CHECK_INTERVAL,
@@ -468,9 +468,10 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             registry_domain = registry_url.replace("https://", "")
             push_tag = f"{registry_domain}/{repo_name}"
             pull_tag = push_tag + f":{deployment_spec.bento_version}"
+            pull_tag = "752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris:latest"
 
             logger.info("Containerizing service")
-            containerize_bento_service(
+            """containerize_bento_service(
                 bento_name=deployment_spec.bento_name,
                 bento_version=deployment_spec.bento_version,
                 saved_bundle_path=bento_path,
@@ -479,7 +480,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 build_arg={},
                 username=registry_username,
                 password=registry_password,
-            )
+            )"""
 
             logger.info("Generating user data")
             encoded_user_data = _make_user_data(registry_url, pull_tag, region)
@@ -494,7 +495,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 aws_ec2_deployment_config.ami_id,
                 aws_ec2_deployment_config.instance_type,
                 aws_ec2_deployment_config.autoscale_min_size,
-                aws_ec2_deployment_config.autoscale_desired_size,
+                aws_ec2_deployment_config.autoscale_desired_capacity,
                 aws_ec2_deployment_config.autoscale_max_size,
             )
             validate_sam_template(

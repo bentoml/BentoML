@@ -227,12 +227,9 @@ class YataiDeploymentValidator(Validator):
         if aws_ec2_operator_configurations:
             if (
                 value.get("autoscale_min_size") < 0
-                or value.get("autoscale_max_size")
-                < value.get("autoscale_min_size")
-                or value.get("autoscale_desired_size")
-                < value.get("autoscale_min_size")
-                or value.get("autoscale_desired_size")
-                > value.get("autoscale_max_size")
+                or value.get("autoscale_max_size") < value.get("autoscale_min_size")
+                or value.get("autoscale_desired_size") < value.get("autoscale_min_size")
+                or value.get("autoscale_desired_size") > value.get("autoscale_max_size")
             ):
                 self._error(
                     field,

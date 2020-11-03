@@ -410,7 +410,7 @@ Outputs:
                 template_name=sam_template_name,
                 instance_type=instance_type,
                 user_data=user_data,
-                elb_name = elb_name,
+                elb_name=elb_name,
                 autoscaling_min_size=autoscaling_min_size,
                 autoscaling_desired_size=autoscaling_desired_size,
                 autoscaling_max_size=autoscaling_max_size,
@@ -456,7 +456,8 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         elb_name = generate_aws_compatible_string(
             "{namespace}-{name}".format(
                 namespace=deployment_pb.namespace, name=deployment_pb.name
-            ), max_length = 32
+            ),
+            max_length=32,
         )
 
         with TempDirectory() as project_path:

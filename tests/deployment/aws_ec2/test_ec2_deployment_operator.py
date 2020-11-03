@@ -28,6 +28,7 @@ mock_s3_prefix = 'prefix'
 mock_s3_path = 's3://{}/{}'.format(mock_s3_bucket_name, mock_s3_prefix)
 mock_registry_name = "test_registry"
 mock_registry_id = "7520142243238"
+mock_elb_name = "elb-test"
 mock_region = "us-east-1"
 mock_registry_auth_token = "riqpoweripqwreweropi"
 mock_registry_endpoint = (
@@ -63,9 +64,9 @@ def generate_ec2_deployment_pb():
     test_deployment_pb.spec.aws_ec2_operator_config.region = 'us-west-2'
     test_deployment_pb.spec.aws_ec2_operator_config.instance_type = "t2.micro"
     test_deployment_pb.spec.aws_ec2_operator_config.ami_id = "test-ami-id"
-    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_min_capacity = 1
-    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = 1
-    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_max_capacity = 1
+    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_min_size = 1
+    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_size = 1
+    test_deployment_pb.spec.aws_ec2_operator_config.autoscale_max_size = 1
 
     return test_deployment_pb
 
@@ -133,6 +134,7 @@ def test_make_cloudformation_template(tmpdir):
         "test_user_data",
         mock_s3_bucket_name,
         mock_template_name,
+        mock_elb_name,
         "test_ami",
         "t2.micro",
         1,

@@ -482,9 +482,9 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 sam_template_name,
                 aws_ec2_deployment_config.ami_id,
                 aws_ec2_deployment_config.instance_type,
-                aws_ec2_deployment_config.autoscale_min_capacity,
-                aws_ec2_deployment_config.autoscale_desired_capacity,
-                aws_ec2_deployment_config.autoscale_max_capacity,
+                aws_ec2_deployment_config.autoscale_min_size,
+                aws_ec2_deployment_config.autoscale_desired_size,
+                aws_ec2_deployment_config.autoscale_max_size,
             )
             validate_sam_template(
                 sam_template_name, aws_ec2_deployment_config.region, project_path

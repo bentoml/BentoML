@@ -400,9 +400,9 @@ class DeploymentAPIClient:
         bento_name,
         bento_version,
         region,
-        min_capacity,
-        desired_capacity,
-        max_capacity,
+        min_size,
+        desired_size,
+        max_size,
         instance_type,
         ami_id,
         wait=None,
@@ -414,11 +414,11 @@ class DeploymentAPIClient:
         if region:
             deployment_pb.spec.aws_ec2_operator_config.region = region
         deployment_pb.spec.operator = DeploymentSpec.AWS_EC2
-        deployment_pb.spec.aws_ec2_operator_config.autoscale_min_capacity = min_capacity
-        deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = (
-            desired_capacity
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_min_size = min_size
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_size = (
+            desired_size
         )
-        deployment_pb.spec.aws_ec2_operator_config.autoscale_max_capacity = max_capacity
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_max_size = max_size
         deployment_pb.spec.aws_ec2_operator_config.instance_type = instance_type
         deployment_pb.spec.aws_ec2_operator_config.ami_id = ami_id
         return self.create(deployment_pb, wait)
@@ -429,9 +429,9 @@ class DeploymentAPIClient:
         bento_name,
         bento_version,
         namespace,
-        min_capacity,
-        desired_capacity,
-        max_capacity,
+        min_size,
+        desired_size,
+        max_size,
         instance_type,
         ami_id,
         wait,
@@ -454,11 +454,11 @@ class DeploymentAPIClient:
         if bento_version:
             deployment_pb.spec.bento_version = bento_version
 
-        deployment_pb.spec.aws_ec2_operator_config.autoscale_min_capacity = min_capacity
-        deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = (
-            desired_capacity
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_min_size = min_size
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_size = (
+            desired_size
         )
-        deployment_pb.spec.aws_ec2_operator_config.autoscale_max_capacity = max_capacity
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_max_size = max_size
         deployment_pb.spec.aws_ec2_operator_config.instance_type = instance_type
         deployment_pb.spec.aws_ec2_operator_config.ami_id = ami_id
 

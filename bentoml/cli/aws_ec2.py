@@ -30,9 +30,9 @@ from bentoml.cli.deployment import (
 )
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.deployment.aws_ec2.constants import (
-    DEFAULT_MIN_CAPACITY,
-    DEFAULT_DESIRED_CAPACITY,
-    DEFAULT_MAX_CAPACITY,
+    DEFAULT_MIN_SIZE,
+    DEFAULT_DESIRED_SIZE,
+    DEFAULT_MAX_SIZE,
     DEFAULT_INSTANCE_TYPE,
     DEFAULT_AMI_ID,
 )
@@ -64,23 +64,23 @@ def get_aws_ec2_sub_command():
         "--region", type=click.STRING, help="Region to deploy service in",
     )
     @click.option(
-        "--min-capacity",
+        "--min-size",
         type=click.INT,
-        default=DEFAULT_MIN_CAPACITY,
+        default=DEFAULT_MIN_SIZE,
         help="The minimum limit helps ensure that you always have a "
         "certain number of instances running at all times.Default is 1",
     )
     @click.option(
-        "--desired-capacity",
+        "--desired-size",
         type=click.INT,
-        default=DEFAULT_DESIRED_CAPACITY,
-        help="Desired number of instances capacity to run BentoService on."
+        default=DEFAULT_DESIRED_SIZE,
+        help="Desired number of instances size to run BentoService on."
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
-        "--max-capacity",
+        "--max-size",
         type=click.INT,
-        default=DEFAULT_MAX_CAPACITY,
+        default=DEFAULT_MAX_SIZE,
         help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
         "the number of instances as needed to handle an increase in demand. "
         "Default is 1",
@@ -109,9 +109,9 @@ def get_aws_ec2_sub_command():
         bento,
         namespace,
         region,
-        min_capacity,
-        desired_capacity,
-        max_capacity,
+        min_size,
+        desired_size,
+        max_size,
         instance_type,
         ami_id,
         output,
@@ -126,9 +126,9 @@ def get_aws_ec2_sub_command():
                 bento_name=bento_name,
                 bento_version=bento_version,
                 region=region,
-                min_capacity=min_capacity,
-                desired_capacity=desired_capacity,
-                max_capacity=max_capacity,
+                min_size=min_size,
+                desired_size=desired_size,
+                max_size=max_size,
                 instance_type=instance_type,
                 ami_id=ami_id,
                 wait=wait,
@@ -231,23 +231,23 @@ def get_aws_ec2_sub_command():
         'can be changed in BentoML configuration yatai_service/default_namespace',
     )
     @click.option(
-        "--min-capacity",
+        "--min-size",
         type=click.INT,
-        default=DEFAULT_MIN_CAPACITY,
+        default=DEFAULT_MIN_SIZE,
         help="The minimum limit helps ensure that you always have a "
         "certain number of instances running at all times.Default is 1",
     )
     @click.option(
-        "--desired-capacity",
+        "--desired-size",
         type=click.INT,
-        default=DEFAULT_DESIRED_CAPACITY,
-        help="Desired number of instances capacity to run BentoService on."
+        default=DEFAULT_DESIRED_SIZE,
+        help="Desired number of instances to run BentoService on."
         "Should be between minimum and maximum capacities.Default is 1",
     )
     @click.option(
-        "--max-capacity",
+        "--max-size",
         type=click.INT,
-        default=DEFAULT_MAX_CAPACITY,
+        default=DEFAULT_MAX_SIZE,
         help="The maximum limit lets Amazon EC2 Auto Scaling scale out "
         "the number of instances as needed to handle an increase in demand. "
         "Default is 1",
@@ -277,9 +277,9 @@ def get_aws_ec2_sub_command():
         name,
         bento,
         namespace,
-        min_capacity,
-        desired_capacity,
-        max_capacity,
+        min_size,
+        desired_size,
+        max_size,
         instance_type,
         ami_id,
         output,
@@ -298,9 +298,9 @@ def get_aws_ec2_sub_command():
                 bento_name=bento_name,
                 bento_version=bento_version,
                 namespace=namespace,
-                min_capacity=min_capacity,
-                desired_capacity=desired_capacity,
-                max_capacity=max_capacity,
+                min_size=min_size,
+                desired_size=desired_size,
+                max_size=max_size,
                 instance_type=instance_type,
                 ami_id=ami_id,
                 wait=wait,

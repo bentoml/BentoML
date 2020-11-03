@@ -1,7 +1,24 @@
+# pylint: disable=redefined-outer-name
+
+import os
 import pytest
+
+from bentoml import load
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.frameworks.sklearn import SklearnModelArtifact
 from bentoml.exceptions import FailedPrecondition
+from tests.bento_service_examples.iris_classifier_additional_attr import IrisClassifier
+from tests.conftest import delete_saved_bento_service
+
+
+@pytest.fixture()
+def iris_classifier_class():
+    # When the ExampleBentoService got saved and loaded again in the test, the two class
+    # attribute below got set to the loaded BentoService class. Resetting it here so it
+    # does not effect other tests
+    IrisClassifier._bento_service_bundle_path = None
+    IrisClassifier._bento_service_bundle_version = None
+    return IrisClassifier
 
 
 def test_valid_artifact_name():
@@ -104,3 +121,25 @@ def test_artifact_states(tmp_path):
     # Sklearn artifact, the `load` method invokes `pack` internally
     assert isinstance(a2.get(), svm.SVC)
     assert all(a1.get().predict(X) == a2.get().predict(X))
+
+
+def test_save_load_artifact_with_additional_attribute(iris_classifier_class):
+    from sklearn import svm
+    from sklearn import datasets
+
+    # Load training data
+    iris = datasets.load_iris()
+    X, y = iris.data, iris.target
+    # Model Training
+    clf = svm.SVC(gamma='scale')
+    clf.fit(X, y)
+    svc = iris_classifier_class()
+    svc.pack('model', clf)
+    saved_path = svc.save()
+
+    assert os.path.exists(
+        os.path.join(saved_path, 'IrisClassifier', 'artifacts', 'model.test')
+    )
+    loaded_svc = load(saved_path)
+    assert loaded_svc.predict([[5, 4, 3, 2]]) == [[1]]
+    delete_saved_bento_service(svc.name, svc.version)

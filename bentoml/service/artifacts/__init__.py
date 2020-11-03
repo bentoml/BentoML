@@ -89,11 +89,21 @@ class BentoServiceArtifact:
         """
 
     def _copy(self):
-        """Create a new empty artifact instance with the same name, this is only used
-        internally for BentoML to create new artifact instances when create a new
-        BentoService instance
+        """Create a new empty artifact instance with the same name and other attributes,
+        this is only used internally for BentoML to create new artifact instances when
+        create a new BentoService instance
         """
-        return self.__class__(self.name)
+        artifact_attributes = dict(self.__dict__)
+        #  omit internal attributes for the new empty artifact
+        del artifact_attributes['_loaded']
+        del artifact_attributes['_packed']
+        del artifact_attributes['_model']
+
+        # Rename attributes from '_KEY' to 'KEY'
+        artifact_attributes = {
+            key[1:]: artifact_attributes[key] for key in artifact_attributes
+        }
+        return self.__class__(**artifact_attributes)
 
     def __getattribute__(self, item):
         if item == 'pack':

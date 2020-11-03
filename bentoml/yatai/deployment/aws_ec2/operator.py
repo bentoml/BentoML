@@ -158,6 +158,7 @@ def _make_cloudformation_template(
     user_data,
     s3_bucket_name,
     sam_template_name,
+    elb_name,
     ami_id,
     instance_type,
     autoscaling_min_size,
@@ -345,6 +346,7 @@ Resources:
         Type: AWS::ElasticLoadBalancingV2::LoadBalancer
         Properties:
             IpAddressType: ipv4
+            Name: {elb_name}
             Scheme: internet-facing
             SecurityGroups:
                 - !Ref LoadBalancerSecurityGroup
@@ -408,6 +410,7 @@ Outputs:
                 template_name=sam_template_name,
                 instance_type=instance_type,
                 user_data=user_data,
+                elb_name = elb_name,
                 autoscaling_min_size=autoscaling_min_size,
                 autoscaling_desired_size=autoscaling_desired_size,
                 autoscaling_max_size=autoscaling_max_size,
@@ -450,6 +453,12 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             )
         )
 
+        elb_name = generate_aws_compatible_string(
+            "{namespace}-{name}".format(
+                namespace=deployment_pb.namespace, name=deployment_pb.name
+            ), max_length = 32
+        )
+
         with TempDirectory() as project_path:
             registry_id = _create_ecr_repo(repo_name, region)
             registry_token, registry_url = _get_ecr_password(registry_id, region)
@@ -480,6 +489,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 encoded_user_data,
                 s3_bucket_name,
                 sam_template_name,
+                elb_name,
                 aws_ec2_deployment_config.ami_id,
                 aws_ec2_deployment_config.instance_type,
                 aws_ec2_deployment_config.autoscale_min_size,

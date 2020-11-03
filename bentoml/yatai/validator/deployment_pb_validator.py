@@ -119,17 +119,17 @@ deployment_schema = {
                     "region": {"type": "string"},
                     "instance_type": {"type": "string"},
                     "ami_id": {"type": "string"},
-                    "autoscale_min_capacity": {
+                    "autoscale_min_size": {
                         "type": "integer",
                         "min": 0,
                         "required": True,
                     },
-                    "autoscale_desired_capacity": {
+                    "autoscale_desired_size": {
                         "type": "integer",
                         "min": 0,
                         "required": True,
                     },
-                    "autoscale_max_capacity": {
+                    "autoscale_max_size": {
                         "type": "integer",
                         "min": 0,
                         "required": True,
@@ -226,17 +226,17 @@ class YataiDeploymentValidator(Validator):
         """
         if aws_ec2_operator_configurations:
             if (
-                value.get("autoscale_min_capacity") < 0
-                or value.get("autoscale_max_capacity")
-                < value.get("autoscale_min_capacity")
-                or value.get("autoscale_desired_capacity")
-                < value.get("autoscale_min_capacity")
-                or value.get("autoscale_desired_capacity")
-                > value.get("autoscale_max_capacity")
+                value.get("autoscale_min_size") < 0
+                or value.get("autoscale_max_size")
+                < value.get("autoscale_min_size")
+                or value.get("autoscale_desired_size")
+                < value.get("autoscale_min_size")
+                or value.get("autoscale_desired_size")
+                > value.get("autoscale_max_size")
             ):
                 self._error(
                     field,
-                    "Wrong autoscaling capacity specified. "
+                    "Wrong autoscaling size specified. "
                     "It should be min_size <= desired_size <= max_size",
                 )
 

@@ -400,3 +400,5 @@ Run `kubectl apply` command to deploy Yatai service to the Kubernetes cluster
 .. spelling::
 
     analytics
+    SSM
+    GetParameters

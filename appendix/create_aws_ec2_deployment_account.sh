@@ -22,7 +22,7 @@ DIR="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 aws iam create-group --group-name $GROUP_NAME
 
-POLICY_ARN=$(aws iam create-policy --policy-name ssm-policy-9 --policy-document file://"$DIR"/ssm_policy.json | jq '.Policy.Arn' | sed -e 's/^"//' -e 's/"$//')
+POLICY_ARN=$(aws iam create-policy --policy-name ssm-policy --policy-document file://"$DIR"/ssm_policy.json | jq '.Policy.Arn' | sed -e 's/^"//' -e 's/"$//')
 aws iam attach-group-policy --policy-arn $POLICY_ARN --group-name $GROUP_NAME
 
 aws iam attach-group-policy --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess --group-name $GROUP_NAME

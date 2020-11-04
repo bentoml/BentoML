@@ -237,7 +237,20 @@ Removing a EC2 deployment is also very easy.  Calling `bentoml ec2 delete` comma
 
     Successfully deleted AWS EC2 deployment "my-first-ec2-deployment"
 
+=================================================================
+Permissions required on AWS for deployment
+=================================================================
 
+    * SSM:GetParameters
+    * AmazonEC2FullAccess
+    * AmazonEC2ContainerRegistryFullAccess 
+    * AmazonS3FullAccess
+    * IAMFullAccess
+    * AmazonVPCFullAccess
+    * AWSCloudFormationFullAccess 
+    * CloudWatchFullAccess
+    * ElasticLoadBalancingFullAccess 
+    * AutoScalingFullAccess  
 
 =================================================================
 Deploy and manage AWS EC2 deployments with remote YataiService

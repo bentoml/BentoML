@@ -635,9 +635,10 @@ class BentoService:
         :param labels: optional - labels dictionary
         :return: saved_path: file path to where the BentoService is saved
         """
-        from .management import save
+        from bentoml.yatai.client import get_yatai_client
+        yc = get_yatai_client(yatai_url)
 
-        return save(self, yatai_url, version, labels)
+        return yc.repository.upload(self, version, labels)
 
     def save_to_dir(self, path, version=None):
         """Save this BentoService along with all its artifacts, source code and

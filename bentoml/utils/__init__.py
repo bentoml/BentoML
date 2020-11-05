@@ -25,6 +25,7 @@ from werkzeug.utils import cached_property
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
 from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.yatai.client import get_yatai_client
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -114,7 +115,7 @@ class catch_exceptions(object):
         return _
 
 
-def resolve_bundle_path(bento, pip_installed_bundle_path):
+def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
     from bentoml.exceptions import BentoMLException
 
     if pip_installed_bundle_path:
@@ -129,24 +130,15 @@ def resolve_bundle_path(bento, pip_installed_bundle_path):
 
     elif ":" in bento:
         # assuming passing in BentoService in the form of Name:Version tag
-        yatai_client = get_default_yatai_client()
-        name, version = bento.split(":")
-        get_bento_result = yatai_client.repository.get(name, version)
-        if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                get_bento_result.status
-            )
-            raise BentoMLException(
-                f"BentoService {name}:{version} not found - "
-                f"{error_code}:{error_message}"
-            )
-        if get_bento_result.bento.uri.s3_presigned_url:
+        yatai_client = get_yatai_client(yatai_url)
+        bento_pb = yatai_client.repository.get(bento)
+        if bento_pb.uri.s3_presigned_url:
             # Use s3 presigned URL for downloading the repository if it is presented
-            return get_bento_result.bento.uri.s3_presigned_url
-        if get_bento_result.bento.uri.gcs_presigned_url:
-            return get_bento_result.bento.uri.gcs_presigned_url
+            return bento_pb.uri.s3_presigned_url
+        if bento_pb.uri.gcs_presigned_url:
+            return bento_pb.uri.gcs_presigned_url
         else:
-            return get_bento_result.bento.uri.uri
+            return bento_pb.uri.uri
     else:
         raise BentoMLException(
             f'BentoService "{bento}" not found - either specify the file path of '

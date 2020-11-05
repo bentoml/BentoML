@@ -24,13 +24,7 @@ from bentoml.cli.utils import (
     _format_labels_for_print,
 )
 from bentoml.utils import pb_to_yaml
-from bentoml.service.management import (
-    pull,
-    push,
-    get_bento,
-    list_bentos,
-    delete,
-)
+from bentoml.yatai.client import get_yatai_client
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
@@ -114,15 +108,16 @@ def add_bento_sub_command(cli):
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
     )
     def get(bento, limit, ascending_order, print_location, labels, yatai_url, output):
+        yc = get_yatai_client(yatai_url)
         if ':' in bento:
-            result = get_bento(bento, yatai_url)
+            result = yc.repository.get(bento)
             if print_location:
-                _echo(result.uri.rui)
+                _echo(result.uri.uri)
             else:
                 _print_bento_info(result, output)
         else:
             output = output or 'table'
-            result = list_bentos(
+            result = yc.repository.list(
                 bento_name=bento,
                 limit=limit,
                 ascending_order=ascending_order,
@@ -159,7 +154,8 @@ def add_bento_sub_command(cli):
     def list_bentos_command(
         limit, offset, labels, order_by, ascending_order, yatai_url, output
     ):
-        result = list_bentos(
+        yc = get_yatai_client(yatai_url)
+        result = yc.repository.list(
             limit=limit,
             offset=offset,
             labels=labels,
@@ -196,7 +192,8 @@ def add_bento_sub_command(cli):
                 f'saved bundle files permanently'
             ):
                 return
-            delete(bento, yatai_url=yatai_url)
+            yc = get_yatai_client(yatai_url)
+            yc.repository.delete(bento)
             _echo(f'BentoService {bento} deleted')
 
     @cli.command(
@@ -208,7 +205,8 @@ def add_bento_sub_command(cli):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
-        pull(bento=bento, yatai_url=yatai_url)
+        yc = get_yatai_client(yatai_url)
+        yc.repository.pull(bento=bento, yatai_url=yatai_url)
         _echo(f'Pulled {bento} from {yatai_url}')
 
     @cli.command(help='Push BentoService to remote yatai server', name='push')
@@ -218,5 +216,6 @@ def add_bento_sub_command(cli):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
-        push(bento=bento, yatai_url=yatai_url)
+        yc = get_yatai_client(yatai_url)
+        yc.repository.push(bento=bento, yatai_url=yatai_url)
         _echo(f'Pushed {bento} to {yatai_url}')

@@ -33,16 +33,8 @@ from bentoml.service import (  # noqa: E402
     artifacts_decorator as artifacts,
     ver_decorator as ver,
 )
-from bentoml.service.management import (  # noqa: E402
-    save,
-    load,
-    delete,
-    prune,
-    push,
-    pull,
-    get_bento,
-    list_bentos,
-)
+
+load = load_from_dir
 
 __all__ = [
     "__version__",
@@ -53,15 +45,9 @@ __all__ = [
     "web_static_content",
     "ver",
     "BentoService",
-    "save",
+    # backward compatible
     "load",
     "load_from_dir",
-    'delete',
-    "prune",
-    "push",
-    "pull",
-    "get_bento",
-    "list_bentos",
     "save_to_dir",
     "handlers",
     "adapters",

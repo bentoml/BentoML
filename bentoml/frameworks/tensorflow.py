@@ -221,7 +221,10 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         """
 
         if not _is_path_like(obj):
-            self._tmpdir = tempfile.TemporaryDirectory()
+            if self._tmpdir is not None:
+                self._tmpdir.cleanup()
+            else:
+                self._tmpdir = tempfile.TemporaryDirectory()
 
             try:
                 import tensorflow as tf
@@ -233,8 +236,8 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
                 )
 
             if TF2:
-                return tf.saved_model.save(
-                    self.obj, self._tmpdir.name, signatures=signatures, options=options,
+                tf.saved_model.save(
+                    obj, self._tmpdir.name, signatures=signatures, options=options,
                 )
             else:
                 if self.options:
@@ -244,29 +247,30 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
                         str(options),
                     )
 
-                return tf.saved_model.save(
-                    self.obj, self._tmpdir.name, signatures=signatures,
+                tf.saved_model.save(
+                    obj, self._tmpdir.name, signatures=signatures,
                 )
             self._path = self._tmpdir.name
         else:
             self._path = obj
+
         return self
+
+    def get(self):
+        if self.model is None:
+            loaded_model = _load_tf_saved_model(self._path)
+            _TensorflowFunctionWrapper.hook_loaded_model(loaded_model)
+            self.model = loaded_model
+
+        return self.model
 
     def load(self, path):
         saved_model_path = self._saved_model_path(path)
-        loaded_model = _load_tf_saved_model(saved_model_path)
-        _TensorflowFunctionWrapper.hook_loaded_model(loaded_model)
-        return self.pack(loaded_model)
+        return self.pack(saved_model_path)
 
     def save(self, dst):
         # Copy exported SavedModel model directory to BentoML saved artifact directory
         shutil.copytree(self._path, self._saved_model_path(dst))
-
-    def get(self):
-        if self.model is None:
-            self.model = _load_tf_saved_model(self.path)
-
-        return self.model
 
     def __del__(self):
         if self._tmpdir is not None:

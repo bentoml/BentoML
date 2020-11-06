@@ -2,6 +2,7 @@ import logging
 import os
 import pathlib
 import shutil
+import tempfile
 
 from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
@@ -12,6 +13,23 @@ logger = logging.getLogger(__name__)
 
 def _is_path_like(p):
     return isinstance(p, (str, bytes, pathlib.PurePath, os.PathLike))
+
+
+def _transform_input_by_tensorspec(_input, tensorspec):
+    '''
+    transform dtype & shape following tensorspec
+    '''
+    try:
+        import tensorflow as tf
+    except ImportError:
+        raise MissingDependencyException(
+            "Tensorflow package is required to use TfSavedModelArtifact"
+        )
+
+    if _input.dtype != tensorspec.dtype:
+        # may raise TypeError
+        _input = tf.dtypes.cast(_input, tensorspec.dtype)
+    return _input
 
 
 class _TensorflowFunctionWrapper:
@@ -40,11 +58,11 @@ class _TensorflowFunctionWrapper:
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
 
         transformed_args = tuple(
-            self._transform_input_by_tensorspec(arg, signatures[i])
+            _transform_input_by_tensorspec(arg, signatures[i])
             for i, arg in enumerate(args)
         )
         transformed_kwargs = {
-            k: self._transform_input_by_tensorspec(arg, signatures_by_kw[k])
+            k: _transform_input_by_tensorspec(arg, signatures_by_kw[k])
             for k, arg in kwargs.items()
         }
         if not self.concrete_func:
@@ -54,28 +72,11 @@ class _TensorflowFunctionWrapper:
     def __getattr__(self, k):
         return getattr(self.origin_func, k)
 
-    @staticmethod
-    def _transform_input_by_tensorspec(_input, tensorspec):
-        '''
-        transform dtype & shape following tensorspec
-        '''
-        try:
-            import tensorflow as tf
-        except ImportError:
-            raise MissingDependencyException(
-                "Tensorflow package is required to use TfSavedModelArtifact"
-            )
-
-        if _input.dtype != tensorspec.dtype:
-            # may raise TypeError
-            _input = tf.dtypes.cast(_input, tensorspec.dtype)
-        return _input
-
     @classmethod
     def hook_loaded_model(cls, loaded_model):
         try:
-            from tensorflow.python.util import tf_inspect
             from tensorflow.python.eager import def_function
+            from tensorflow.python.util import tf_inspect
         except ImportError:
             raise MissingDependencyException(
                 "Tensorflow package is required to use TfSavedModelArtifact"
@@ -186,7 +187,9 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     def __init__(self, name):
         super(TensorflowSavedModelArtifact, self).__init__(name)
 
-        self._wrapper = None
+        self.model = None
+        self._tmpdir = None
+        self._path = None
 
     def set_dependencies(self, env: BentoServiceEnv):
         env.add_pip_packages(['tensorflow'])
@@ -198,21 +201,55 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         self, obj, signatures=None, options=None
     ):  # pylint:disable=arguments-differ
         """
-
+        Pack the TensorFlow Trackable object `obj` to [SavedModel format].
         Args:
-            obj: Either a path(str/byte/os.PathLike) containing exported
-                `tf.saved_model` files, or a Trackable object mapping to the `obj`
-                parameter of `tf.saved_model.save`
-            signatures:
-            options:
-        """
-        if _is_path_like(obj):
-            self._wrapper = _ExportedTensorflowSavedModelArtifactWrapper(self, obj)
-        else:
-            self._wrapper = _TensorflowSavedModelArtifactWrapper(
-                self, obj, signatures, options
-            )
+          obj: A trackable object to export.
+          signatures: Optional, either a `tf.function` with an input signature
+            specified or the result of `f.get_concrete_function` on a
+            `@tf.function`-decorated function `f`, in which case `f` will be used to
+            generate a signature for the SavedModel under the default serving
+            signature key. `signatures` may also be a dictionary, in which case it
+            maps from signature keys to either `tf.function` instances with input
+            signatures or concrete functions. The keys of such a dictionary may be
+            arbitrary strings, but will typically be from the
+            `tf.saved_model.signature_constants` module.
+          options: Optional, `tf.saved_model.SaveOptions` object that specifies
+            options for saving.
 
+        Raises:
+          ValueError: If `obj` is not trackable.
+        """
+
+        if not _is_path_like(obj):
+            self._tmpdir = tempfile.TemporaryDirectory()
+
+            try:
+                import tensorflow as tf
+
+                TF2 = tf.__version__.startswith('2')
+            except ImportError:
+                raise MissingDependencyException(
+                    "Tensorflow package is required to use TfSavedModelArtifact."
+                )
+
+            if TF2:
+                return tf.saved_model.save(
+                    self.obj, self._tmpdir.name, signatures=signatures, options=options,
+                )
+            else:
+                if self.options:
+                    logger.warning(
+                        "Parameter 'options: %s' is ignored when using Tensorflow "
+                        "version 1",
+                        str(options),
+                    )
+
+                return tf.saved_model.save(
+                    self.obj, self._tmpdir.name, signatures=signatures,
+                )
+            self._path = self._tmpdir.name
+        else:
+            self._path = obj
         return self
 
     def load(self, path):
@@ -222,66 +259,15 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         return self.pack(loaded_model)
 
     def save(self, dst):
-        return self._wrapper.save(dst)
-
-    def get(self):
-        return self._wrapper.get()
-
-
-class _ExportedTensorflowSavedModelArtifactWrapper:
-    def __init__(self, tf_artifact, path):
-        self.tf_artifact = tf_artifact
-        self.path = path
-        self.model = None
-
-    def save(self, dst):
         # Copy exported SavedModel model directory to BentoML saved artifact directory
-        shutil.copytree(self.path, self.tf_artifact._saved_model_path(dst))
+        shutil.copytree(self._path, self._saved_model_path(dst))
 
     def get(self):
-        if not self.model:
+        if self.model is None:
             self.model = _load_tf_saved_model(self.path)
 
         return self.model
 
-
-class _TensorflowSavedModelArtifactWrapper:
-    def __init__(self, tf_artifact, obj, signatures=None, options=None):
-        self.tf_artifact = tf_artifact
-        self.obj = obj
-        self.signatures = signatures
-        self.options = options
-
-    def save(self, dst):
-        try:
-            import tensorflow as tf
-
-            TF2 = tf.__version__.startswith('2')
-        except ImportError:
-            raise MissingDependencyException(
-                "Tensorflow package is required to use TfSavedModelArtifact."
-            )
-
-        if TF2:
-            return tf.saved_model.save(
-                self.obj,
-                self.tf_artifact._saved_model_path(dst),
-                signatures=self.signatures,
-                options=self.options,
-            )
-        else:
-            if self.options:
-                logger.warning(
-                    "Parameter 'options: %s' is ignored when using Tensorflow "
-                    "version 1",
-                    str(self.options),
-                )
-
-            return tf.saved_model.save(
-                self.obj,
-                self.tf_artifact._saved_model_path(dst),
-                signatures=self.signatures,
-            )
-
-    def get(self):
-        return self.obj
+    def __del__(self):
+        if self._tmpdir is not None:
+            self._tmpdir.cleanup()

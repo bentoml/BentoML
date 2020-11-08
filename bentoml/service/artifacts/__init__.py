@@ -1,5 +1,7 @@
 import os
+import re
 import logging
+import yaml
 from typing import List
 
 from bentoml.exceptions import InvalidArgument, FailedPrecondition
@@ -72,6 +74,17 @@ class BentoServiceArtifact:
         """
         Load artifact assuming it was 'self.save' on the same `path`
         """
+        # load metadata if exists
+        meta_path = self._metadata_path(path)
+        if os.path.isfile(meta_path):
+            with open(meta_path) as file:
+                self._metadata = yaml.full_load(file)
+
+    def _metadata_path(self, base_path):
+        return os.path.join(
+            base_path,
+            re.sub("[^-a-zA-Z0-9_.() ]+", "", self.name) + ".yml",
+        )
 
     def save(self, dst):
         """
@@ -88,6 +101,9 @@ class BentoServiceArtifact:
         is use the name as the prefix(or part of the file name), e.g.
          f"{artifact.name}-config.json"
         """
+        if self.metadata:
+            with open(self._metadata_path(dst), "w", encoding="utf-8") as fp:
+                yaml.dump(self.metadata, fp)
 
     def get(self):
         """

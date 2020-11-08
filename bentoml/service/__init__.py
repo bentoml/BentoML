@@ -486,6 +486,8 @@ class BentoService:
 
             self.artifacts.load_all(artifacts_path)
 
+        # print(self.get_bento_service_metadata_pb())
+
     @property
     def inference_apis(self):
         """Return a list of user defined API functions

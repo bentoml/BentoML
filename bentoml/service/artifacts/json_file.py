@@ -41,6 +41,7 @@ class JSONArtifact(BentoServiceArtifact):
         )
 
     def load(self, path):
+        super().load(path)
         with open(self._file_path(path), "rt", encoding=self._encoding) as fp:
             content = self.json_module.loads(fp.read())
         return self.pack(content)
@@ -57,5 +58,6 @@ class JSONArtifact(BentoServiceArtifact):
         return self._content
 
     def save(self, dst):
+        super().save(dst)
         with open(self._file_path(dst), "wt", encoding=self._encoding) as fp:
             fp.write(self.json_module.dumps(self._content, **self._json_dumps_kwargs))

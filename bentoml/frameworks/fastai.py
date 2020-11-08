@@ -182,6 +182,9 @@ class FastaiModelArtifact(BentoServiceArtifact):
         fastai2_module = _import_fastai2_module()
 
         model = fastai2_module.basics.load_learner(path + '/' + self._file_name)
+
+        # load metadata
+        super().load(path)
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
@@ -196,6 +199,9 @@ class FastaiModelArtifact(BentoServiceArtifact):
 
     def save(self, dst):
         self._model.export(fname=self._file_name)
+
+        # save metadata
+        super().save(dst)
 
         shutil.copyfile(
             os.path.join(self._model.path, self._file_name), self._model_file_path(dst),

@@ -76,6 +76,9 @@ class SklearnModelArtifact(BentoServiceArtifact):
         return self
 
     def load(self, path):
+        # load metadata
+        super().load(path)
+
         joblib = _import_joblib_module()
 
         model_file_path = self._model_file_path(path)
@@ -86,6 +89,9 @@ class SklearnModelArtifact(BentoServiceArtifact):
         return self._model
 
     def save(self, dst):
+        # save metadata
+        super().save(dst)
+
         joblib = _import_joblib_module()
 
         joblib.dump(self._model, self._model_file_path(dst))

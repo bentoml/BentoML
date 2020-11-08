@@ -70,6 +70,9 @@ class H2oModelArtifact(BentoServiceArtifact):
                 "h2o package is required to use H2oModelArtifact"
             )
 
+        # load metadata
+        super().load(path)
+        
         h2o.init()
         model = h2o.load_model(self._model_file_path(path))
         self._model = model
@@ -82,6 +85,9 @@ class H2oModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "h2o package is required to use H2oModelArtifact"
             )
+
+        # save metadata
+        super().save(dst)
 
         h2o_saved_path = h2o.save_model(model=self._model, path=dst, force=True)
         shutil.move(h2o_saved_path, self._model_file_path(dst))

@@ -81,12 +81,19 @@ class XgboostModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "xgboost package is required to use XgboostModelArtifact"
             )
+
+        # load metadata
+        super().load(path)
+
         bst = xgb.Booster()
         bst.load_model(self._model_file_path(path))
 
         return self.pack(bst)
 
     def save(self, dst):
+        # save metadata
+        super().save(dst)
+
         return self._model.save_model(self._model_file_path(dst))
 
     def get(self):

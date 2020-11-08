@@ -123,7 +123,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.sess = tf.compat.v1.keras.backend.get_session()
         self.graph = self.sess.graph
 
-    def creat_session(self):
+    def create_session(self):
         try:
             import tensorflow as tf
         except ImportError:
@@ -193,7 +193,10 @@ class KerasModelArtifact(BentoServiceArtifact):
                         "KerasModelArtifact".format(keras_module_name)
                     )
 
-        self.creat_session()
+        self.create_session()
+
+        # load metadata
+        super().load(path)
 
         if self._default_custom_objects is None and os.path.isfile(
             self._custom_objects_path(path)
@@ -221,6 +224,9 @@ class KerasModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
     def save(self, dst):
+        # save metadata
+        super().save(dst)
+
         # save the keras module name to be used when loading
         with open(self._keras_module_name_path(dst), "wb") as text_file:
             text_file.write(self._keras_module_name.encode(MODULE_NAME_FILE_ENCODING))

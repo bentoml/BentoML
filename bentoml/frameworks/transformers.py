@@ -173,6 +173,9 @@ class TransformersModelArtifact(BentoServiceArtifact):
         return self
 
     def load(self, path):
+        # load metadata
+        super().load(path)
+
         path = self._file_path(path)
         with open(os.path.join(path, "_model_type.txt"), "r") as f:
             self._model_type = f.read().strip()
@@ -187,6 +190,9 @@ class TransformersModelArtifact(BentoServiceArtifact):
             f.write(self._tokenizer_type)
 
     def save(self, dst):
+        # save metadata
+        super().save(dst)
+
         path = self._file_path(dst)
         self._model_type = self._model.get("model").__class__.__name__
         self._tokenizer_type = self._model.get("tokenizer").__class__.__name__

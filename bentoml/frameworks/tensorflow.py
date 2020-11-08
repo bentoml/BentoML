@@ -217,12 +217,18 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         return self
 
     def load(self, path):
+        # load metadata
+        super().load(path)
+
         saved_model_path = self._saved_model_path(path)
         loaded_model = _load_tf_saved_model(saved_model_path)
         _TensorflowFunctionWrapper.hook_loaded_model(loaded_model)
         return self.pack(loaded_model)
 
     def save(self, dst):
+        # save metadata
+        super().save(dst)
+        
         return self._wrapper.save(dst)
 
     def get(self):

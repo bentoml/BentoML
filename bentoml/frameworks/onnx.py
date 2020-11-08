@@ -137,6 +137,9 @@ class OnnxModelArtifact(BentoServiceArtifact):
         return self
 
     def load(self, path):
+        # load metadata
+        super().load(path)
+        
         return self.pack(self._saved_model_file_path(path))
 
     def set_dependencies(self, env: BentoServiceEnv):
@@ -181,6 +184,9 @@ class OnnxModelArtifact(BentoServiceArtifact):
         return self._inference_session
 
     def save(self, dst):
+        # save metadata
+        super().save(dst)
+
         if self._onnx_model_path:
             shutil.copyfile(self._onnx_model_path, self._saved_model_file_path(dst))
         elif self._model_proto:

@@ -87,6 +87,9 @@ class SpacyModelArtifact(BentoServiceArtifact):
                 "spacy package is required to use SpacyModelArtifact"
             )
 
+        # load metadata
+        super().load(path)
+
         model = spacy.util.load_model(self._file_path(path))
 
         if not isinstance(model, spacy.language.Language):
@@ -104,5 +107,8 @@ class SpacyModelArtifact(BentoServiceArtifact):
         return self._model
 
     def save(self, dst):
+        # save metadata
+        super().save(dst)
+
         path = self._file_path(dst)
         return self._model.to_disk(path)

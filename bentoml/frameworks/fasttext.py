@@ -70,6 +70,10 @@ class FasttextModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "fasttext package is required to use FasttextModelArtifact"
             )
+
+        # load metadat
+        super().load(path)
+        
         model = fasttext.load_model(self._model_file_path(path))
         return self.pack(model)
 
@@ -77,4 +81,7 @@ class FasttextModelArtifact(BentoServiceArtifact):
         return self._model
 
     def save(self, dst):
+        # save metadata
+        super().save(dst)
+
         self._model.save_model(self._model_file_path(dst))

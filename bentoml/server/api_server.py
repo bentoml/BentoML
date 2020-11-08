@@ -249,8 +249,11 @@ class BentoAPIServer:
             "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
         )
         self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
-        self.app.add_url_rule("/metadata", "metadata",
-                              partial(self.metadata_json_func, self.bento_service))
+        self.app.add_url_rule(
+            "/metadata",
+            "metadata",
+            partial(self.metadata_json_func, self.bento_service),
+        )
 
         if config("apiserver").getboolean("enable_metrics"):
             self.app.add_url_rule("/metrics", "metrics", self.metrics_view_func)

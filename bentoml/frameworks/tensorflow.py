@@ -228,7 +228,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     def save(self, dst):
         # save metadata
         super().save(dst)
-        
+
         return self._wrapper.save(dst)
 
     def get(self):

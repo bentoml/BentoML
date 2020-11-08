@@ -139,7 +139,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
     def load(self, path):
         # load metadata
         super().load(path)
-        
+
         return self.pack(self._saved_model_file_path(path))
 
     def set_dependencies(self, env: BentoServiceEnv):

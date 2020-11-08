@@ -1,11 +1,12 @@
 import os
 import re
 import logging
-import yaml
 from typing import List
+from pathlib import Path
 
 from bentoml.exceptions import InvalidArgument, FailedPrecondition
 from bentoml.service.env import BentoServiceEnv
+from bentoml.utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 
@@ -78,12 +79,13 @@ class BentoServiceArtifact:
         meta_path = self._metadata_path(path)
         if os.path.isfile(meta_path):
             with open(meta_path) as file:
-                self._metadata = yaml.full_load(file)
+                yaml = YAML()
+                yaml_content = file.read()
+                self._metadata = yaml.load(yaml_content)
 
     def _metadata_path(self, base_path):
         return os.path.join(
-            base_path,
-            re.sub("[^-a-zA-Z0-9_.() ]+", "", self.name) + ".yml",
+            base_path, re.sub("[^-a-zA-Z0-9_.() ]+", "", self.name) + ".yml",
         )
 
     def save(self, dst):
@@ -102,8 +104,8 @@ class BentoServiceArtifact:
          f"{artifact.name}-config.json"
         """
         if self.metadata:
-            with open(self._metadata_path(dst), "w", encoding="utf-8") as fp:
-                yaml.dump(self.metadata, fp)
+            yaml = YAML()
+            yaml.dump(self.metadata, Path(self._metadata_path(dst)))
 
     def get(self):
         """

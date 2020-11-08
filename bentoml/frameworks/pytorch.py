@@ -92,7 +92,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
 
         # load metadata
         super().load(path)
-        
+
         model = cloudpickle.load(open(self._file_path(path), 'rb'))
 
         if not isinstance(model, torch.nn.Module):

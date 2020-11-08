@@ -73,7 +73,7 @@ class FasttextModelArtifact(BentoServiceArtifact):
 
         # load metadat
         super().load(path)
-        
+
         model = fasttext.load_model(self._model_file_path(path))
         return self.pack(model)
 

@@ -95,7 +95,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
 
         # load metadata
         super().load(path)
-        
+
         model = coremltools.models.MLModel(self._file_path(path))
 
         if not isinstance(model, coremltools.models.MLModel):

@@ -72,7 +72,7 @@ class H2oModelArtifact(BentoServiceArtifact):
 
         # load metadata
         super().load(path)
-        
+
         h2o.init()
         model = h2o.load_model(self._model_file_path(path))
         self._model = model

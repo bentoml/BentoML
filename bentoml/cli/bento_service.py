@@ -406,7 +406,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
         import docker
 
-        docker_api = docker.APIClient()
+        docker_api = docker.from_env().api
         try:
             with Spinner(f"Building Docker image {tag} from {bento} \n"):
                 for line in echo_docker_api_result(

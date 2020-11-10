@@ -258,6 +258,12 @@ export namespace bentoml {
 
             /** SageMakerOperatorConfig timeout */
             timeout?: (number|null);
+
+            /** SageMakerOperatorConfig data_capture_s3_prefix */
+            data_capture_s3_prefix?: (string|null);
+
+            /** SageMakerOperatorConfig data_capture_sample_percent */
+            data_capture_sample_percent?: (number|null);
         }
 
         /** Represents a SageMakerOperatorConfig. */
@@ -286,6 +292,12 @@ export namespace bentoml {
 
             /** SageMakerOperatorConfig timeout. */
             public timeout: number;
+
+            /** SageMakerOperatorConfig data_capture_s3_prefix. */
+            public data_capture_s3_prefix: string;
+
+            /** SageMakerOperatorConfig data_capture_sample_percent. */
+            public data_capture_sample_percent: number;
 
             /**
              * Creates a new SageMakerOperatorConfig instance using the specified properties.

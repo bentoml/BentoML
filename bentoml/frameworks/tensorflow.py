@@ -198,7 +198,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '_saved_model')
 
     def pack(
-        self, obj, signatures=None, options=None
+        self, obj, metadata=None, signatures=None, options=None
     ):  # pylint:disable=arguments-differ
         """
         Pack the TensorFlow Trackable object `obj` to [SavedModel format].
@@ -254,7 +254,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         else:
             self._path = obj
 
-        super().pack(model, metadata=metadata)
+        super().pack(obj, metadata=metadata)
         return self
 
     def get(self):
@@ -268,7 +268,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     def load(self, path):
         # load metadata
         super().load(path)
-        
+
         saved_model_path = self._saved_model_path(path)
         return self.pack(saved_model_path)
 

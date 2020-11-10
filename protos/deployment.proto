@@ -41,6 +41,8 @@ message DeploymentSpec {
     // current system's cpu core count and set worker equal to half of that plus 1.
     int32 num_of_gunicorn_workers_per_instance = 5;
     int32 timeout = 6;
+    string data_capture_s3_prefix = 7;
+    int32 data_capture_sample_percent = 8;
   }
 
   message AwsLambdaOperatorConfig {

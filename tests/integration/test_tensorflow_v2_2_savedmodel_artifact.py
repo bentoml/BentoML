@@ -2,9 +2,9 @@
 import json
 
 import pytest
+import tensorflow as tf
 
 import bentoml
-import tensorflow as tf
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
 from tests.integration.api_server.conftest import (
     build_api_server_docker_image,
@@ -41,6 +41,7 @@ def tf2_svc():
 
     svc = Tensorflow2Classifier()
     model = Tensorflow2Model()
+    model.predict(test_data)
     svc.pack('model', model)
 
     return svc

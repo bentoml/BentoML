@@ -26,7 +26,7 @@ def _import_fastai2_module():
     except ImportError:
         raise MissingDependencyException(
             "fastai2 package is required to use "
-            "bentoml.artifacts.Fastai2ModelArtifact"
+            "bentoml.artifacts.FastaiModelArtifact"
         )
 
     return fastai
@@ -135,7 +135,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
 
     Example usage:
 
-    >>> from fastai2.vision.learner import cnn_learner
+    >>> from fastai.vision.learner import cnn_learner
     >>>
     >>> learner = cnn_learner(...)
     >>> # train model
@@ -190,7 +190,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
     def set_dependencies(self, env: BentoServiceEnv):
         logger.warning(
             "BentoML by default does not include spacy and torchvision package when "
-            "using Fastai2ModelArtifact. To make sure BentoML bundle those packages if "
+            "using FastaiModelArtifact. To make sure BentoML bundle those packages if "
             "they are required for your model, either import those packages in "
             "BentoService definition file or manually add them via "
             "`@env(pip_packages=['torchvision'])` when defining a BentoService"

@@ -25,7 +25,7 @@ above, install with :code:`pip` command:
 
     pip install bentoml
 
-When referring the the latest documentation instead of the stable release doc, it is
+When referring the latest documentation instead of the stable release doc, it is
 required to install the preview release of BentoML:
 
 .. code-block:: bash

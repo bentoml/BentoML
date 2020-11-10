@@ -66,6 +66,12 @@ deployment_schema = {
                         'min': 1,
                     },
                     'timeout': {'type': 'integer', 'min': 1},
+                    'data_capture_s3_prefix': {'type': 'string'},
+                    'data_capture_sample_percent': {
+                        'type': 'integer',
+                        'min': 1,
+                        'max': 100,
+                    },
                 },
             },
             'aws_lambda_operator_config': {

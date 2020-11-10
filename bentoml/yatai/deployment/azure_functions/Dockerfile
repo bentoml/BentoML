@@ -6,5 +6,5 @@ FROM bentoml/azure-functions:$BENTOML_VERSION-py$PYTHON_VERSION
 # Copying BentoService to Azure function specific directory
 COPY . /home/site/wwwroot
 
-# Install additional pip dependencies inside bundled_pip_dependencies dir
+# Install pip dependencies
 RUN if [ -f /home/site/wwwroot/bentoml-init.sh ]; then /bin/bash -c /home/site/wwwroot/bentoml-init.sh; fi

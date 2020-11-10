@@ -112,14 +112,6 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.fasttext.FasttextModelArtifact
 
-===========
-Statsmodels
-===========
-
-Example Projects:
-
-* Shampoo Sales prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`_ | `nbviewer <https://nbviewer.jupyter.org/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`_ | `source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`_
-
 ===
 H2O
 ===
@@ -186,3 +178,4 @@ Example Projects:
     nn
     fasttext
     onnx
+    Statsmodels

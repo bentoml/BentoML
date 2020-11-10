@@ -97,7 +97,8 @@ class BentoServiceArtifact:
         #  omit internal attributes for the new empty artifact
         del artifact_attributes['_loaded']
         del artifact_attributes['_packed']
-        del artifact_attributes['_model']
+        if artifact_attributes.get('_model', None):
+            del artifact_attributes['_model']
 
         # Rename attributes from '_KEY' to 'KEY'
         artifact_attributes = {

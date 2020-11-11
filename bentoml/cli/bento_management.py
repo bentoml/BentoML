@@ -22,9 +22,9 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
-    get_default_yatai_client,
     _format_labels_for_print,
 )
+from bentoml.utils import get_default_yatai_client
 from bentoml.utils import pb_to_yaml, status_pb_to_error_code_and_message
 from bentoml.saved_bundle import safe_retrieve
 from bentoml.exceptions import CLIException

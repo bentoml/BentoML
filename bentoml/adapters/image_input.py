@@ -37,7 +37,7 @@ class ImageInput(FileInput):
     array (a subclass of numpy.ndarray that has a meta attribute) and pass down to
     user defined API functions.
 
-    ** To operate raw files or PIL.Image obj, use the low level :class:`.FileInput`. **
+    ** To operate raw files or PIL.Image obj, use the low-level :class:`.FileInput`. **
 
     Parameters
     ----------

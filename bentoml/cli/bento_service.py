@@ -1,21 +1,19 @@
 import click
 import sys
-import os
+
 import json
 import re
 import psutil
 
 from bentoml import __version__
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.utils.s3 import is_s3_url
-from bentoml.utils.gcs import is_gcs_url
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.exceptions import BentoMLException, CLIException
 from bentoml.server import start_dev_server, start_prod_server
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import (
     ProtoMessageToDict,
-    status_pb_to_error_code_and_message,
+    resolve_bundle_path,
 )
 from bentoml.cli.click_utils import (
     CLI_COLOR_WARNING,
@@ -24,15 +22,16 @@ from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     conditional_argument,
 )
-from bentoml.cli.utils import (
-    echo_docker_api_result,
-    Spinner,
-    get_default_yatai_client,
-)
+from bentoml.cli.utils import echo_docker_api_result, Spinner
 from bentoml.saved_bundle import (
     load,
     load_bento_service_api,
     load_bento_service_metadata,
+)
+from bentoml.utils.docker_utils import (
+    validate_tag,
+    to_valid_docker_image_name,
+    to_valid_docker_image_version,
 )
 
 try:
@@ -50,108 +49,9 @@ yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
 def escape_shell_params(param):
-    k, v = param.split('=')
-    v = re.sub(r'([^a-zA-Z0-9])', r'\\\1', v)
-    return '{}={}'.format(k, v)
-
-
-def to_valid_docker_image_name(name):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return name.lower().strip("._-")
-
-
-def to_valid_docker_image_version(version):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
-
-
-def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
-    if tag is None:
-        return tag
-
-    if ":" in tag:
-        name, version = tag.split(":")[:2]
-    else:
-        name, version = tag, None
-
-    valid_name_pattern = re.compile(
-        r"""
-        ^(
-        [a-z0-9]+      # alphanumeric
-        (.|_{1,2}|-+)? # seperators
-        )*$
-        """,
-        re.VERBOSE,
-    )
-    valid_version_pattern = re.compile(
-        r"""
-        ^
-        [a-zA-Z0-9] # cant start with .-
-        [ -~]{,127} # ascii match rest, cap at 128
-        $
-        """,
-        re.VERBOSE,
-    )
-
-    if not valid_name_pattern.match(name):
-        raise click.BadParameter(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "Name components may contain lowercase letters, digits "
-            "and separators. A separator is defined as a period, "
-            "one or two underscores, or one or more dashes.",
-            ctx=ctx,
-            param=param,
-        )
-    if version and not valid_version_pattern.match(version):
-        raise click.BadParameter(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "A tag name must be valid ASCII and may contain "
-            "lowercase and uppercase letters, digits, underscores, "
-            "periods and dashes. A tag name may not start with a period "
-            "or a dash and may contain a maximum of 128 characters.",
-            ctx=ctx,
-            param=param,
-        )
-    return tag
-
-
-def resolve_bundle_path(bento, pip_installed_bundle_path):
-    if pip_installed_bundle_path:
-        assert (
-            bento is None
-        ), "pip installed BentoService commands should not have Bento argument"
-        return pip_installed_bundle_path
-
-    if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
-        # saved_bundle already support loading local, s3 path and gcs path
-        return bento
-
-    elif ":" in bento:
-        # assuming passing in BentoService in the form of Name:Version tag
-        yatai_client = get_default_yatai_client()
-        name, version = bento.split(':')
-        get_bento_result = yatai_client.repository.get(name, version)
-        if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                get_bento_result.status
-            )
-            raise BentoMLException(
-                f'BentoService {name}:{version} not found - '
-                f'{error_code}:{error_message}'
-            )
-        if get_bento_result.bento.uri.s3_presigned_url:
-            # Use s3 presigned URL for downloading the repository if it is presented
-            return get_bento_result.bento.uri.s3_presigned_url
-        if get_bento_result.bento.uri.gcs_presigned_url:
-            return get_bento_result.bento.uri.gcs_presigned_url
-        else:
-            return get_bento_result.bento.uri.uri
-    else:
-        raise BentoMLException(
-            f'BentoService "{bento}" not found - either specify the file path of '
-            f'the BentoService saved bundle, or the BentoService id in the form of '
-            f'"name:version"'
-        )
+    k, v = param.split("=")
+    v = re.sub(r"([^a-zA-Z0-9])", r"\\\1", v)
+    return "{}={}".format(k, v)
 
 
 def create_bento_service_cli(pip_installed_bundle_path=None):

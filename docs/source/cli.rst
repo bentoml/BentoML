@@ -18,4 +18,4 @@ CLI Reference
     ui
     filesystem
     gRPC
-
+    ec

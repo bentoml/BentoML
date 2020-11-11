@@ -25,12 +25,8 @@ from bentoml.cli.click_utils import (
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.exceptions import CLIException
-from bentoml.cli.utils import (
-    Spinner,
-    _print_deployment_info,
-    _print_deployments_info,
-    get_default_yatai_client,
-)
+from bentoml.cli.utils import Spinner, _print_deployment_info, _print_deployments_info
+from bentoml.utils import get_default_yatai_client
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 

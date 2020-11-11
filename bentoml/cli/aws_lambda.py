@@ -16,7 +16,8 @@ import click
 
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.cli.utils import Spinner, get_default_yatai_client
+from bentoml.utils import get_default_yatai_client
+from bentoml.cli.utils import Spinner
 from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     parse_bento_tag_callback,
@@ -102,8 +103,8 @@ def get_aws_lambda_sub_command():
     )
     def deploy(
         name,
-        namespace,
         bento,
+        namespace,
         labels,
         region,
         api_name,

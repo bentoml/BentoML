@@ -23,7 +23,8 @@ from bentoml.cli.click_utils import (
     parse_labels_callback,
 )
 from bentoml.cli.deployment import _print_deployment_info, _print_deployments_info
-from bentoml.cli.utils import Spinner, get_default_yatai_client
+from bentoml.cli.utils import Spinner
+from bentoml.utils import get_default_yatai_client
 from bentoml.yatai.deployment.azure_functions.constants import (
     AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
     AZURE_FUNCTIONS_AUTH_LEVELS,

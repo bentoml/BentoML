@@ -28,7 +28,7 @@ Automated Deployment Management:
   aws_lambda
   aws_sagemaker
   azure_functions
-
+  aws_ec2
 
 Manual Deployment Tutorials:
 

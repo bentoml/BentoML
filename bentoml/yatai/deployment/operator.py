@@ -39,6 +39,10 @@ def get_deployment_operator(yatai_service, deployment_pb):
         )
 
         return AzureFunctionsDeploymentOperator(yatai_service)
+    elif operator == DeploymentSpec.AWS_EC2:
+        from bentoml.yatai.deployment.aws_ec2.operator import AwsEc2DeploymentOperator
+
+        return AwsEc2DeploymentOperator(yatai_service)
     elif operator == DeploymentSpec.CUSTOM:
         raise NotImplementedError(
             "Custom deployment operator is not supported in current version of BentoML"

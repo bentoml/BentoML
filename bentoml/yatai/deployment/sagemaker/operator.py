@@ -20,10 +20,12 @@ from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
-    generate_aws_compatible_string,
-    get_default_aws_region,
     ensure_docker_available_or_raise,
     raise_if_api_names_not_found_in_bento_service_metadata,
+)
+from bentoml.yatai.deployment.aws_utils import (
+    generate_aws_compatible_string,
+    get_default_aws_region,
 )
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,
@@ -192,15 +194,15 @@ def _aws_client_error_to_bentoml_exception(e, message_prefix=None):
     Returns:
         StatusProto
     """
-    error_response = e.response.get('Error', {})
-    error_code = error_response.get('Code', 'Unknown')
-    error_message = error_response.get('Message', 'Unknown')
+    error_response = e.response.get("Error", {})
+    error_code = error_response.get("Code", "Unknown")
+    error_message = error_response.get("Message", "Unknown")
     error_log_message = (
-        f'AWS ClientError - operation: {e.operation_name}, '
-        f'code: {error_code}, message: {error_message}'
+        f"AWS ClientError - operation: {e.operation_name}, "
+        f"code: {error_code}, message: {error_message}"
     )
     if message_prefix:
-        error_log_message = f'{message_prefix}; {error_log_message}'
+        error_log_message = f"{message_prefix}; {error_log_message}"
     logger.error(error_log_message)
     return AWSServiceError(error_log_message)
 
@@ -231,11 +233,11 @@ def _delete_sagemaker_model_if_exist(sagemaker_client, sagemaker_model_name):
         )
         logger.debug("AWS delete model response: %s", delete_model_response)
     except ClientError as e:
-        error_response = e.response.get('Error', {})
-        error_code = error_response.get('Code', 'Unknown')
-        error_message = error_response.get('Message', 'Unknown')
+        error_response = e.response.get("Error", {})
+        error_code = error_response.get("Code", "Unknown")
+        error_message = error_response.get("Message", "Unknown")
         if (
-            error_code == 'ValidationException'
+            error_code == "ValidationException"
             and "Could not find model" in error_message
         ):
             # sagemaker model does not exist
@@ -259,11 +261,11 @@ def _delete_sagemaker_endpoint_config_if_exist(
             "AWS delete endpoint config response: %s", delete_endpoint_config_response
         )
     except ClientError as e:
-        error_response = e.response.get('Error', {})
-        error_code = error_response.get('Code', 'Unknown')
-        error_message = error_response.get('Message', 'Unknown')
+        error_response = e.response.get("Error", {})
+        error_code = error_response.get("Code", "Unknown")
+        error_message = error_response.get("Message", "Unknown")
         if (
-            error_code == 'ValidationException'
+            error_code == "ValidationException"
             and "Could not find endpoint configuration" in error_message
         ):
             # endpoint config does not exist
@@ -284,11 +286,11 @@ def _delete_sagemaker_endpoint_if_exist(sagemaker_client, sagemaker_endpoint_nam
         )
         logger.debug("AWS delete endpoint response: %s", delete_endpoint_response)
     except ClientError as e:
-        error_response = e.response.get('Error', {})
-        error_code = error_response.get('Code', 'Unknown')
-        error_message = error_response.get('Message', 'Unknown')
+        error_response = e.response.get("Error", {})
+        error_code = error_response.get("Code", "Unknown")
+        error_message = error_response.get("Message", "Unknown")
         if (
-            error_code == 'ValidationException'
+            error_code == "ValidationException"
             and "Could not find endpoint" in error_message
         ):
             # sagemaker endpoint does not exist
@@ -301,7 +303,7 @@ def _delete_sagemaker_endpoint_if_exist(sagemaker_client, sagemaker_endpoint_nam
 
 def delete_sagemaker_deployment_resources_if_exist(deployment_pb):
     sagemaker_config = deployment_pb.spec.sagemaker_operator_config
-    sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
+    sagemaker_client = boto3.client("sagemaker", sagemaker_config.region)
 
     (
         sagemaker_model_name,
@@ -319,21 +321,21 @@ def delete_sagemaker_deployment_resources_if_exist(deployment_pb):
 def _init_sagemaker_project(sagemaker_project_dir, bento_path, docker_base_image):
     shutil.copytree(bento_path, sagemaker_project_dir)
 
-    with open(os.path.join(sagemaker_project_dir, 'Dockerfile-sagemaker'), "w") as f:
+    with open(os.path.join(sagemaker_project_dir, "Dockerfile-sagemaker"), "w") as f:
         f.write(
             BENTO_SERVICE_SAGEMAKER_DOCKERFILE.format(
                 docker_base_image=docker_base_image
             )
         )
 
-    nginx_conf_path = os.path.join(os.path.dirname(__file__), 'nginx.conf')
-    shutil.copy(nginx_conf_path, os.path.join(sagemaker_project_dir, 'nginx.conf'))
+    nginx_conf_path = os.path.join(os.path.dirname(__file__), "nginx.conf")
+    shutil.copy(nginx_conf_path, os.path.join(sagemaker_project_dir, "nginx.conf"))
 
-    wsgi_py_path = os.path.join(os.path.dirname(__file__), 'wsgi.py')
-    shutil.copy(wsgi_py_path, os.path.join(sagemaker_project_dir, 'wsgi.py'))
+    wsgi_py_path = os.path.join(os.path.dirname(__file__), "wsgi.py")
+    shutil.copy(wsgi_py_path, os.path.join(sagemaker_project_dir, "wsgi.py"))
 
-    serve_file_path = os.path.join(os.path.dirname(__file__), 'serve')
-    shutil.copy(serve_file_path, os.path.join(sagemaker_project_dir, 'serve'))
+    serve_file_path = os.path.join(os.path.dirname(__file__), "serve")
+    shutil.copy(serve_file_path, os.path.join(sagemaker_project_dir, "serve"))
 
     # permission 755 is required for entry script 'serve'
     os.chmod(os.path.join(sagemaker_project_dir, "serve"), 0o755)
@@ -352,7 +354,7 @@ def _create_sagemaker_model(
             "Image": ecr_image_path,
             "Environment": {
                 "API_NAME": spec.api_name,
-                'BENTOML_GUNICORN_TIMEOUT': str(spec.timeout),
+                "BENTOML_GUNICORN_TIMEOUT": str(spec.timeout),
             },
         },
         "ExecutionRoleArn": execution_role_arn,
@@ -361,8 +363,8 @@ def _create_sagemaker_model(
     # Will set envvar, if user defined gunicorn workers per instance.  EnvVar needs
     # to be string instead of the int.
     if spec.num_of_gunicorn_workers_per_instance:
-        sagemaker_model_info['PrimaryContainer']['Environment'][
-            'BENTOML_GUNICORN_NUM_OF_WORKERS'
+        sagemaker_model_info["PrimaryContainer"]["Environment"][
+            "BENTOML_GUNICORN_NUM_OF_WORKERS"
         ] = str(spec.num_of_gunicorn_workers_per_instance)
 
     try:
@@ -455,7 +457,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
             ensure_docker_available_or_raise()
             if sagemaker_config is None:
-                raise YataiDeploymentException('Sagemaker configuration is missing.')
+                raise YataiDeploymentException("Sagemaker configuration is missing.")
 
             bento_pb = self.yatai_service.GetBento(
                 GetBentoRequest(
@@ -465,7 +467,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             )
             if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
                 raise BentoMLException(
-                    'BentoML currently not support {} repository'.format(
+                    "BentoML currently not support {} repository".format(
                         BentoUri.StorageType.Name(bento_pb.bento.uri.type)
                     )
                 )
@@ -474,7 +476,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             deployment_pb.state.state = DeploymentState.ERROR
             deployment_pb.state.error_message = (
-                f'Error creating SageMaker deployment: {str(error)}'
+                f"Error creating SageMaker deployment: {str(error)}"
             )
             return ApplyDeploymentResponse(
                 status=error.status_proto, deployment=deployment_pb
@@ -492,7 +494,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             bento_pb.bento.bento_service_metadata, [sagemaker_config.api_name]
         )
 
-        sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
+        sagemaker_client = boto3.client("sagemaker", sagemaker_config.region)
 
         with TempDirectory() as temp_dir:
             sagemaker_project_dir = os.path.join(temp_dir, deployment_spec.bento_name)
@@ -547,7 +549,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
             )
             if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
                 raise BentoMLException(
-                    'BentoML currently not support {} repository'.format(
+                    "BentoML currently not support {} repository".format(
                         BentoUri.StorageType.Name(bento_pb.bento.uri.type)
                     )
                 )
@@ -557,7 +559,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         except BentoMLException as error:
             deployment_pb.state.state = DeploymentState.ERROR
             deployment_pb.state.error_message = (
-                f'Error updating SageMaker deployment: {str(error)}'
+                f"Error updating SageMaker deployment: {str(error)}"
             )
             return ApplyDeploymentResponse(
                 status=error.status_proto, deployment=deployment_pb
@@ -572,7 +574,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         updated_deployment_spec = deployment_pb.spec
         updated_sagemaker_config = updated_deployment_spec.sagemaker_operator_config
         sagemaker_client = boto3.client(
-            'sagemaker', updated_sagemaker_config.region or get_default_aws_region()
+            "sagemaker", updated_sagemaker_config.region or get_default_aws_region()
         )
 
         try:
@@ -587,17 +589,17 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 describe_latest_deployment_state.state.info_json
             )
 
-            current_ecr_image_tag = latest_deployment_state['ProductionVariants'][0][
-                'DeployedImages'
-            ][0]['SpecifiedImage']
+            current_ecr_image_tag = latest_deployment_state["ProductionVariants"][0][
+                "DeployedImages"
+            ][0]["SpecifiedImage"]
             if (
                 updated_deployment_spec.bento_name != current_deployment_spec.bento_name
                 or updated_deployment_spec.bento_version
                 != current_deployment_spec.bento_version
             ):
                 logger.debug(
-                    'BentoService tag is different from current deployment, '
-                    'creating new docker image and push to ECR'
+                    "BentoService tag is different from current deployment, "
+                    "creating new docker image and push to ECR"
                 )
                 with TempDirectory() as temp_dir:
                     sagemaker_project_dir = os.path.join(
@@ -615,7 +617,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                         sagemaker_project_dir,
                     )
             else:
-                logger.debug('Using existing ECR image for Sagemaker model')
+                logger.debug("Using existing ECR image for Sagemaker model")
                 ecr_image_path = current_ecr_image_tag
 
             (
@@ -636,8 +638,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 or ecr_image_path != current_ecr_image_tag
             ):
                 logger.debug(
-                    'Sagemaker model requires update. Delete current sagemaker model %s'
-                    'and creating new model %s',
+                    "Sagemaker model requires update. Delete current sagemaker model %s"
+                    "and creating new model %s",
                     current_sagemaker_model_name,
                     updated_sagemaker_model_name,
                 )
@@ -657,15 +659,15 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 == updated_sagemaker_endpoint_config_name
             ):
                 logger.debug(
-                    'Current sagemaker config name %s is same as updated one, '
-                    'delete it before create new endpoint config',
+                    "Current sagemaker config name %s is same as updated one, "
+                    "delete it before create new endpoint config",
                     current_sagemaker_endpoint_config_name,
                 )
                 _delete_sagemaker_endpoint_config_if_exist(
                     sagemaker_client, current_sagemaker_endpoint_config_name
                 )
             logger.debug(
-                'Create new endpoint configuration %s',
+                "Create new endpoint configuration %s",
                 updated_sagemaker_endpoint_config_name,
             )
             _create_sagemaker_endpoint_config(
@@ -675,7 +677,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 updated_sagemaker_config,
             )
             logger.debug(
-                'Updating endpoint to new endpoint configuration %s',
+                "Updating endpoint to new endpoint configuration %s",
                 updated_sagemaker_endpoint_config_name,
             )
             _update_sagemaker_endpoint(
@@ -708,7 +710,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 sagemaker_config.region or get_default_aws_region()
             )
             if not sagemaker_config.region:
-                raise InvalidArgument('AWS region is missing')
+                raise InvalidArgument("AWS region is missing")
 
             delete_sagemaker_deployment_resources_if_exist(deployment_pb)
 
@@ -724,8 +726,8 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 sagemaker_config.region or get_default_aws_region()
             )
             if not sagemaker_config.region:
-                raise InvalidArgument('AWS region is missing')
-            sagemaker_client = boto3.client('sagemaker', sagemaker_config.region)
+                raise InvalidArgument("AWS region is missing")
+            sagemaker_client = boto3.client("sagemaker", sagemaker_config.region)
             _, _, sagemaker_endpoint_name = _get_sagemaker_resource_names(deployment_pb)
 
             try:

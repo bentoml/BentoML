@@ -45,10 +45,10 @@ logger = logging.getLogger(__name__)
 INDEX_HTML = '''\
 <!DOCTYPE html>
 <head><link rel="stylesheet" type="text/css"
-            href="/swagger_static/swagger-ui.css"></head>
+            href="swagger_static/swagger-ui.css"></head>
 <body>
 <div id="swagger-ui-container"></div>
-<script src="/swagger_static/swagger-ui-bundle.js"></script>
+<script src="swagger_static/swagger-ui-bundle.js"></script>
 <script>
     SwaggerUIBundle({{
         url: '{url}',
@@ -145,7 +145,7 @@ class BentoAPIServer:
         The swagger UI route for BentoML API server
         """
         return Response(
-            response=INDEX_HTML.format(url='/docs.json'),
+            response=INDEX_HTML.format(url='docs.json'),
             status=200,
             mimetype="text/html",
         )

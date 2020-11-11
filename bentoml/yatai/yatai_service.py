@@ -108,7 +108,9 @@ def start_yatai_service_grpc_server(
     click.echo(
         f'* Starting BentoML YataiService gRPC Server\n'
         f'* Debug mode: { "on" if debug_mode else "off"}\n'
-        f'* Web UI: {f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'
+        f'''* Web UI: {f"running on http://127.0.0.1:{ui_port}/{base_url}"
+        if (with_ui and base_url!=".")
+        else f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'''
         f'* Web Prefix Path: {f"expecting to be hosted with prefix: {base_url}"}\n'
         f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
         f'* Usage:\n'

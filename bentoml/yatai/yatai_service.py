@@ -111,7 +111,6 @@ def start_yatai_service_grpc_server(
         f'''* Web UI: {f"running on http://127.0.0.1:{ui_port}/{base_url}"
         if (with_ui and base_url!=".")
         else f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'''
-        f'* Web Prefix Path: {f"expecting to be hosted with prefix: {base_url}"}\n'
         f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
         f'* Usage:\n'
         f'*  Set config: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`\n'

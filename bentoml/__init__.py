@@ -32,6 +32,7 @@ from bentoml.service import (  # noqa: E402
     web_static_content_decorator as web_static_content,
     artifacts_decorator as artifacts,
     ver_decorator as ver,
+    save,
 )
 
 load = load_from_dir
@@ -48,6 +49,7 @@ __all__ = [
     # backward compatible
     "load",
     "load_from_dir",
+    "save",
     "save_to_dir",
     "handlers",
     "adapters",

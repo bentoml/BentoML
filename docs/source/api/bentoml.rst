@@ -62,16 +62,21 @@ ver
 +++
 .. autofunction:: bentoml.ver
 
-save_to_dir
-+++++++++++
-.. autofunction:: bentoml.save_to_dir
-
-
-.. _bentoml-load-label:
+save
+++++
+.. autofunction:: bentoml.save
 
 load
 ++++
 .. autofunction:: bentoml.load
+
+save_to_dir
++++++++++++
+.. autofunction:: bentoml.save_to_dir
+
+load_from_dir
++++++++++++++
+.. autofunction:: bentoml.load_from_dir
 
 
 .. spelling::

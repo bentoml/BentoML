@@ -310,7 +310,7 @@ class BentoRepositoryAPIClient:
             )
         name, version = bento.split(':')
         result = self.yatai_service.DangerouslyDeleteBento(
-            DangerouslyDeleteBentoRequest(bento=name, bento_version=version)
+            DangerouslyDeleteBentoRequest(bento_name=name, bento_version=version)
         )
         if result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(

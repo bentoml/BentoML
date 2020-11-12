@@ -25,7 +25,6 @@ from werkzeug.utils import cached_property
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.yatai.client import get_yatai_client
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -116,6 +115,7 @@ class catch_exceptions(object):
 
 
 def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
+    from bentoml.yatai.client import get_yatai_client
     from bentoml.exceptions import BentoMLException
 
     if pip_installed_bundle_path:

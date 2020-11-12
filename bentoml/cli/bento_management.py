@@ -122,7 +122,6 @@ def add_bento_sub_command(cli):
                 limit=limit,
                 ascending_order=ascending_order,
                 labels=labels,
-                yatai_url=yatai_url,
             )
             _print_bentos_info(result, output)
 
@@ -161,7 +160,6 @@ def add_bento_sub_command(cli):
             labels=labels,
             order_by=order_by,
             ascending_order=ascending_order,
-            yatai_url=yatai_url,
         )
         _print_bentos_info(result, output)
 

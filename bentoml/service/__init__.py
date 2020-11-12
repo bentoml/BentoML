@@ -636,6 +636,7 @@ class BentoService:
         :return: saved_path: file path to where the BentoService is saved
         """
         from bentoml.yatai.client import get_yatai_client
+
         yc = get_yatai_client(yatai_url)
 
         return yc.repository.upload(self, version, labels)

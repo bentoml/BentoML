@@ -61,7 +61,7 @@ def wait_until_container_ready(container_name, check_message, timeout_seconds=60
                 continue
 
         assert (
-                len(container_list) == 1
+            len(container_list) == 1
         ), f'should be exact one container with name {container_name}'
 
         if check_message in container_list[0].logs():
@@ -113,7 +113,7 @@ class TestModel(object):
 
 @pytest.mark.skipif(
     sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS on Github Action"
+    reason="Requires docker, skipping test for Mac OS on Github Action",
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_save_load(yatai_server_container, example_bento_service_class):
@@ -136,7 +136,7 @@ def test_save_load(yatai_server_container, example_bento_service_class):
 
 @pytest.mark.skipif(
     sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS on Github Action"
+    reason="Requires docker, skipping test for Mac OS on Github Action",
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_push(yatai_server_container, example_bento_service_class):
@@ -156,7 +156,7 @@ def test_push(yatai_server_container, example_bento_service_class):
 
 @pytest.mark.skipif(
     sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS on Github Action"
+    reason="Requires docker, skipping test for Mac OS on Github Action",
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_pull(yatai_server_container, example_bento_service_class):
@@ -176,7 +176,7 @@ def test_pull(yatai_server_container, example_bento_service_class):
 
 @pytest.mark.skipif(
     sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS for Github Action"
+    reason="Requires docker, skipping test for Mac OS for Github Action",
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_get(yatai_server_container, example_bento_service_class):
@@ -196,7 +196,7 @@ def test_get(yatai_server_container, example_bento_service_class):
 
 @pytest.mark.skipif(
     sys.platform == "darwin",
-    reason="Requires docker, skipping test for Mac OS for Github Action"
+    reason="Requires docker, skipping test for Mac OS for Github Action",
 )
 @pytest.mark.skipif('not psutil.POSIX')
 def test_list(yatai_server_container, example_bento_service_class):

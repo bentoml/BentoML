@@ -67,6 +67,7 @@ class BentoRepositoryAPIClient:
             raise BentoMLException('need set yatai_service_url')
 
         from bentoml.yatai.client import get_yatai_client
+
         local_yc = get_yatai_client()
 
         local_bento_pb = local_yc.repository.get(bento)
@@ -105,6 +106,7 @@ class BentoRepositoryAPIClient:
             safe_retrieve(bento_bundle_path, target_bundle_path)
 
             from bentoml.yatai.client import get_yatai_client
+
             local_yc = get_yatai_client()
             local_yc.repository.upload_from_dir(target_bundle_path)
 
@@ -322,9 +324,7 @@ class BentoRepositoryAPIClient:
 
     def prune(self, bento_name=None, labels=None):
         track('prune')
-        list_bentos_result = self.list(
-            bento_name=bento_name, labels=labels,
-        )
+        list_bentos_result = self.list(bento_name=bento_name, labels=labels,)
         if list_bentos_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(
                 list_bentos_result.status

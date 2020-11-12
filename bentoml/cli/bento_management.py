@@ -204,7 +204,7 @@ def add_bento_sub_command(cli):
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
         yc = get_yatai_client(yatai_url)
-        yc.repository.pull(bento=bento, yatai_url=yatai_url)
+        yc.repository.pull(bento=bento)
         _echo(f'Pulled {bento} from {yatai_url}')
 
     @cli.command(help='Push BentoService to remote yatai server', name='push')
@@ -215,5 +215,5 @@ def add_bento_sub_command(cli):
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
         yc = get_yatai_client(yatai_url)
-        yc.repository.push(bento=bento, yatai_url=yatai_url)
+        yc.repository.push(bento=bento)
         _echo(f'Pushed {bento} to {yatai_url}')

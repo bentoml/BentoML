@@ -45,6 +45,16 @@ def get_open_api_spec_json(bento_service):
             responses=default_response,
         )
     )
+
+    paths["/metadata"] = OrderedDict(
+        get=OrderedDict(
+            tags=["infra"],
+            description="BentoService metadata endpoint. Returns the service's `bentoml.yml`"
+            "in JSON format.",
+            responses=default_response,
+        )
+    )
+
     if config("apiserver").getboolean("enable_metrics"):
         paths["/metrics"] = OrderedDict(
             get=OrderedDict(

@@ -65,4 +65,4 @@ def test_spacy_artifact_pack(spacy_model_service_class):
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.dangerously_delete_bento(svc.name, svc.version)
+    yc.repository.delete(f'{svc.name}:{svc.version}')

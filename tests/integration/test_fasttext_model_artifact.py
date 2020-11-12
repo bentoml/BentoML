@@ -46,4 +46,4 @@ def test_fasttext_artifact_pack(fasttext_classifier_class):
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.dangerously_delete_bento(svc.name, svc.version)
+    yc.repository.delete(f'{svc.name}:{svc.version}')

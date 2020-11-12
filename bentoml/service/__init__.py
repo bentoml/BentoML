@@ -325,17 +325,17 @@ def validate_version_str(version_str):
 
 def save(bento_service, base_path=None, version=None, labels=None):
     """
-        Save and register the given BentoService via BentoML's built-in model management
-        system. BentoML by default keeps track of all the SavedBundle's files and metadata
-        in local file system under the $BENTOML_HOME(~/bentoml) directory. Users can also
-        configure BentoML to save their BentoService to a shared Database and cloud object
-        storage such as AWS S3.
-        :param bento_service: target BentoService instance to be saved
-        :param base_path: optional - override repository base path
-        :param version: optional - save with version override
-        :param labels: optional - user defined labels
-        :return: saved_path: file path to where the BentoService is saved
-        """
+    Save and register the given BentoService via BentoML's built-in model management
+    system. BentoML by default keeps track of all the SavedBundle's files and metadata
+    in local file system under the $BENTOML_HOME(~/bentoml) directory. Users can also
+    configure BentoML to save their BentoService to a shared Database and cloud object
+    storage such as AWS S3.
+    :param bento_service: target BentoService instance to be saved
+    :param base_path: optional - override repository base path
+    :param version: optional - save with version override
+    :param labels: optional - user defined labels
+    :return: saved_path: file path to where the BentoService is saved
+    """
 
     from bentoml.yatai.client import YataiClient
     from bentoml.yatai.yatai_service import get_yatai_service

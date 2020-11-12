@@ -78,6 +78,7 @@ load_from_dir
 +++++++++++++
 .. autofunction:: bentoml.load_from_dir
 
+.. _bentoml-load-label:
 
 .. spelling::
 

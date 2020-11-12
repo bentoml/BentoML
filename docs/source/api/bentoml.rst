@@ -62,10 +62,6 @@ ver
 +++
 .. autofunction:: bentoml.ver
 
-save
-++++
-.. autofunction:: bentoml.save
-
 save_to_dir
 +++++++++++
 .. autofunction:: bentoml.save_to_dir

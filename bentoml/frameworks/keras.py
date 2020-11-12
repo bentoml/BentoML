@@ -175,7 +175,6 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.bind_keras_backend_session()
         model._make_predict_function()
 
-        super().pack(model, metadata=metadata)
         self._model = model
         self._custom_objects = custom_objects
         self._model_wrapper = _KerasModelWrapper(self._model, self.graph, self.sess)
@@ -194,9 +193,6 @@ class KerasModelArtifact(BentoServiceArtifact):
                     )
 
         self.create_session()
-
-        # load metadata
-        super().load(path)
 
         if self._default_custom_objects is None and os.path.isfile(
             self._custom_objects_path(path)
@@ -224,9 +220,6 @@ class KerasModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
     def save(self, dst):
-        # save metadata
-        super().save(dst)
-
         # save the keras module name to be used when loading
         with open(self._keras_module_name_path(dst), "wb") as text_file:
             text_file.write(self._keras_module_name.encode(MODULE_NAME_FILE_ENCODING))

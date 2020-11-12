@@ -77,8 +77,6 @@ class PytorchModelArtifact(BentoServiceArtifact):
             raise InvalidArgument(
                 "PytorchModelArtifact can only pack type 'torch.nn.Module'"
             )
-
-        super().pack(model, metadata=metadata)
         self._model = model
         return self
 
@@ -89,10 +87,6 @@ class PytorchModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "torch package is required to use PytorchModelArtifact"
             )
-
-        # load metadata
-        super().load(path)
-
         model = cloudpickle.load(open(self._file_path(path), 'rb'))
 
         if not isinstance(model, torch.nn.Module):
@@ -117,7 +111,4 @@ class PytorchModelArtifact(BentoServiceArtifact):
         return self._model
 
     def save(self, dst):
-        # save metadata
-        super().save(dst)
-
         return cloudpickle.dump(self._model, open(self._file_path(dst), "wb"))

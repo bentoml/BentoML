@@ -75,7 +75,6 @@ class SpacyModelArtifact(BentoServiceArtifact):
                 "SpacyModelArtifact can only pack type 'spacy.language.Language'"
             )
 
-        super().pack(model, metadata=metadata)
         self._model = model
         return self
 
@@ -86,9 +85,6 @@ class SpacyModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "spacy package is required to use SpacyModelArtifact"
             )
-
-        # load metadata
-        super().load(path)
 
         model = spacy.util.load_model(self._file_path(path))
 
@@ -107,8 +103,5 @@ class SpacyModelArtifact(BentoServiceArtifact):
         return self._model
 
     def save(self, dst):
-        # save metadata
-        super().save(dst)
-
         path = self._file_path(dst)
         return self._model.to_disk(path)

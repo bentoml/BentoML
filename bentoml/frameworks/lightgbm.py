@@ -64,7 +64,6 @@ class LightGBMModelArtifact(BentoServiceArtifact):
                 "Expect `model` argument to be a `lightgbm.Booster` instance"
             )
 
-        super().pack(model, metadata=metadata)
         self._model = model
         return self
 
@@ -76,9 +75,6 @@ class LightGBMModelArtifact(BentoServiceArtifact):
                 "lightgbm package is required to use LightGBMModelArtifact"
             )
 
-        # load metadata
-        super().load(path)
-
         bst = lgb.Booster(model_file=self._model_file_path(path))
 
         return self.pack(bst)
@@ -87,9 +83,6 @@ class LightGBMModelArtifact(BentoServiceArtifact):
         env.add_pip_packages(['lightgbm'])
 
     def save(self, dst):
-        # save metadata
-        super().save(dst)
-
         return self._model.save_model(self._model_file_path(dst))
 
     def get(self):

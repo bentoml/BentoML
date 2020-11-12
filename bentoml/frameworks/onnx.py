@@ -110,7 +110,6 @@ class OnnxModelArtifact(BentoServiceArtifact):
     ):  # pylint:disable=arguments-differ
         if _is_onnx_model_file(path_or_model_proto):
             self._onnx_model_path = path_or_model_proto
-            super().pack(self._onnx_model_path, metadata=metadata)
         else:
             try:
                 import onnx
@@ -137,9 +136,6 @@ class OnnxModelArtifact(BentoServiceArtifact):
         return self
 
     def load(self, path):
-        # load metadata
-        super().load(path)
-
         return self.pack(self._saved_model_file_path(path))
 
     def set_dependencies(self, env: BentoServiceEnv):
@@ -184,9 +180,6 @@ class OnnxModelArtifact(BentoServiceArtifact):
         return self._inference_session
 
     def save(self, dst):
-        # save metadata
-        super().save(dst)
-
         if self._onnx_model_path:
             shutil.copyfile(self._onnx_model_path, self._saved_model_file_path(dst))
         elif self._model_proto:

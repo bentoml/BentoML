@@ -81,7 +81,6 @@ class CoreMLModelArtifact(BentoServiceArtifact):
                 "CoreMLModelArtifact can only pack type 'coremltools.models.MLModel'"
             )
 
-        super().pack(model, metadata=metadata)
         self._model = model
         return self
 
@@ -92,9 +91,6 @@ class CoreMLModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "coremltools package is required to use CoreMLModelArtifact"
             )
-
-        # load metadata
-        super().load(path)
 
         model = coremltools.models.MLModel(self._file_path(path))
 
@@ -113,6 +109,4 @@ class CoreMLModelArtifact(BentoServiceArtifact):
         return self._model
 
     def save(self, dst):
-        # save metadata
-        super().save(dst)
         self._model.save(self._file_path(dst))

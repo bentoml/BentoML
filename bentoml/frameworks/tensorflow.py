@@ -253,8 +253,6 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
             self._path = self._tmpdir.name
         else:
             self._path = obj
-
-        super().pack(obj, metadata=metadata)
         return self
 
     def get(self):
@@ -266,16 +264,10 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         return self.model
 
     def load(self, path):
-        # load metadata
-        super().load(path)
-
         saved_model_path = self._saved_model_path(path)
         return self.pack(saved_model_path)
 
     def save(self, dst):
-        # save metadata
-        super().save(dst)
-
         # Copy exported SavedModel model directory to BentoML saved artifact directory
         shutil.copytree(self._path, self._saved_model_path(dst))
 

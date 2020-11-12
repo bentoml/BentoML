@@ -71,14 +71,10 @@ class SklearnModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + self._pickle_extension)
 
     def pack(self, sklearn_model, metadata=None):  # pylint:disable=arguments-differ
-        super().pack(sklearn_model, metadata=metadata)
         self._model = sklearn_model
         return self
 
     def load(self, path):
-        # load metadata
-        super().load(path)
-
         joblib = _import_joblib_module()
 
         model_file_path = self._model_file_path(path)
@@ -89,9 +85,6 @@ class SklearnModelArtifact(BentoServiceArtifact):
         return self._model
 
     def save(self, dst):
-        # save metadata
-        super().save(dst)
-
         joblib = _import_joblib_module()
 
         joblib.dump(self._model, self._model_file_path(dst))

@@ -29,13 +29,11 @@ class TextFileArtifact(BentoServiceArtifact):
         )
 
     def load(self, path):
-        super().load(path)
         with open(self._text_file_path(path), "rb") as f:
             content = f.read().decode(self._encoding)
         return self.pack(content)
 
     def pack(self, content, metadata=None):  # pylint:disable=arguments-differ
-        super().pack(content, metadata=metadata)
         self._content = content
         return self
 
@@ -43,6 +41,5 @@ class TextFileArtifact(BentoServiceArtifact):
         return self._content
 
     def save(self, dst):
-        super().save(dst)
         with open(self._text_file_path(dst), "wb") as f:
             f.write(self._content.encode(self._encoding))

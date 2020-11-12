@@ -30,12 +30,10 @@ class PickleArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + self._pickle_extension)
 
     def pack(self, obj, metadata=None):  # pylint:disable=arguments-differ
-        super().pack(obj, metadata=metadata)
         self._obj = obj
         return self
 
     def load(self, path):
-        super().load(path)
         with open(self._pkl_file_path(path), "rb") as pkl_file:
             obj = self._pickle.load(pkl_file)
         self.pack(obj)
@@ -45,6 +43,5 @@ class PickleArtifact(BentoServiceArtifact):
         return self._obj
 
     def save(self, dst):
-        super().save(dst)
         with open(self._pkl_file_path(dst), "wb") as pkl_file:
             self._pickle.dump(self._obj, pkl_file)

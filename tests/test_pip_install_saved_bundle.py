@@ -23,13 +23,7 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
 
     assert (
         pipmain(
-            [
-                "install",
-                "-U",
-                "--target={}".format(install_path),
-                bento_bundle_path,
-                "--use-feature=2020-resolver",
-            ]
+            ["install", "-U", "--target={}".format(install_path), bento_bundle_path,]
         )
         == 0
     ), 'saved bundle successfully installed'

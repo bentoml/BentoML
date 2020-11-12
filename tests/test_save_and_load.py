@@ -100,14 +100,9 @@ def test_pack_metadata_invalid(tmpdir, example_bento_service_class):
 
     # try packing invalid
     model_metadata = "non-dictionary metadata"
-    svc.pack("model", test_model, metadata=model_metadata)
-    assert svc.artifacts.get('model').metadata == {}
 
-    svc.save_to_dir(str(tmpdir))
-    model_service = bentoml.load(str(tmpdir))
-
-    # check loaded metadata is still empty
-    assert model_service.artifacts.get('model').metadata == {}
+    with pytest.raises(TypeError) as e:
+        svc.pack("model", test_model, metadata=model_metadata)
 
 
 def test_pack_metadata(tmpdir, example_bento_service_class):

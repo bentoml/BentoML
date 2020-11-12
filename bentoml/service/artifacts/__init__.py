@@ -56,7 +56,7 @@ class BentoServiceArtifact:
         """
         return self._name
 
-    def pack(self, model, metadata=None):  # pylint: disable=unused-argument
+    def pack(self, model, metadata: dict = None):  # pylint: disable=unused-argument
         """
         Pack the in-memory trained model object to this BentoServiceArtifact
 
@@ -122,9 +122,8 @@ class BentoServiceArtifact:
                     if isinstance(kwargs['metadata'], dict):
                         self._metadata = kwargs['metadata']
                     else:
-                        logger.warning(
-                            "Setting a non-dictionary metadata "
-                            "is not supported. Ignoring metadata..."
+                        raise TypeError(
+                            "Setting a non-dictionary metadata " "is not supported."
                         )
                 ret = original(*args, **kwargs)
                 # do not set `self._pack` if `pack` has failed with an exception raised
@@ -176,8 +175,6 @@ class BentoServiceArtifact:
                 dst = args[0]  # save(self, dst)
                 if self.metadata:
                     yaml = YAML()
-                    print("save attempt")
-                    print(args, kwargs)
                     yaml.dump(self.metadata, Path(self._metadata_path(dst)))
 
                 original = object.__getattribute__(self, item)

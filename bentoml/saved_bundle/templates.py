@@ -129,7 +129,7 @@ cli=create_bento_service_cli(__module_path)
 
 
 def load():
-    return saved_bundle.load(__module_path)
+    return saved_bundle.load_from_dir(__module_path)
 
 
 __all__ = ['__version__', '{service_name}', 'load']

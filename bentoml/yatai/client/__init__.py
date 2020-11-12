@@ -42,3 +42,8 @@ class YataiClient:
     @cached_property
     def deployment(self):
         return DeploymentAPIClient(self.yatai_service)
+
+
+def get_yatai_client(yatai_service_channel_address=None):
+    yatai_service = get_yatai_service(channel_address=yatai_service_channel_address)
+    return YataiClient(yatai_service=yatai_service)

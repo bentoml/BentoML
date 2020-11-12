@@ -22,7 +22,7 @@ GRPC_CHANNEL_ADDRESS = f'127.0.0.1:{GRPC_PORT}'
 
 def get_bento_service_info(bento_name, bento_version):
     yatai_client = YataiClient()
-    get_result = yatai_client.repository.get(bento_name, bento_version)
+    get_result = yatai_client.repository.get(f'{bento_name}:{bento_version}')
     return get_result
 
 

@@ -25,10 +25,9 @@ from pathlib import PureWindowsPath, PurePosixPath
 
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
-from bentoml.utils.usage_stats import track_load_finish, track_load_start
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.config import SavedBundleConfig
-
+from bentoml.utils.usage_stats import track_load_start, track_load_finish
 
 logger = logging.getLogger(__name__)
 
@@ -232,7 +231,7 @@ def safe_retrieve(bundle_path, target_dir):
     return
 
 
-def load(bundle_path):
+def load_from_dir(bundle_path):
     """Load bento service from local file path or s3 path
 
     Args:
@@ -245,7 +244,7 @@ def load(bundle_path):
 
     if _is_remote_path(bundle_path):
         with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
-            return load(local_bundle_path)
+            return load_from_dir(local_bundle_path)
     track_load_start()
 
     svc_cls = load_bento_service_class(bundle_path)
@@ -260,5 +259,5 @@ def load_bento_service_api(bundle_path, api_name=None):
         with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
             return load_bento_service_api(local_bundle_path, api_name)
 
-    bento_service = load(bundle_path)
+    bento_service = load_from_dir(bundle_path)
     return bento_service.get_inference_api(api_name)

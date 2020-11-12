@@ -90,7 +90,6 @@ class Fastai1ModelArtifact(BentoServiceArtifact):
                 "Expect `model` argument to be `fastai.basic_train.Learner` instance"
             )
 
-        super().pack(model, metadata=metadata)
         self._model = model
         return self
 

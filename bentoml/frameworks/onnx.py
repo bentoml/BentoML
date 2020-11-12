@@ -116,7 +116,6 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
                 if isinstance(path_or_model_proto, onnx.ModelProto):
                     self._model_proto = path_or_model_proto
-                    super().pack(self._model_proto, metadata=metadata)
                 else:
                     raise InvalidArgument(
                         "onnx.ModelProto or a .onnx model file path is required to "

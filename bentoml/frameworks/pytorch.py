@@ -77,6 +77,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
             raise InvalidArgument(
                 "PytorchModelArtifact can only pack type 'torch.nn.Module'"
             )
+
         self._model = model
         return self
 
@@ -87,6 +88,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "torch package is required to use PytorchModelArtifact"
             )
+
         model = cloudpickle.load(open(self._file_path(path), 'rb'))
 
         if not isinstance(model, torch.nn.Module):

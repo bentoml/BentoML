@@ -58,7 +58,6 @@ class FasttextModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "fasttext package is required to use FasttextModelArtifact"
             )
-
         self._model = fasttext_model
         return self
 

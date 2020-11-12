@@ -69,6 +69,7 @@ class XgboostModelArtifact(BentoServiceArtifact):
             raise InvalidArgument(
                 "Expect `model` argument to be a `xgboost.core.Booster` instance"
             )
+
         self._model = model
         return self
 

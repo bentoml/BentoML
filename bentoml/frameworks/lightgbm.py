@@ -74,7 +74,6 @@ class LightGBMModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "lightgbm package is required to use LightGBMModelArtifact"
             )
-
         bst = lgb.Booster(model_file=self._model_file_path(path))
 
         return self.pack(bst)

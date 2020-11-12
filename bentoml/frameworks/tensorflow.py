@@ -253,6 +253,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
             self._path = self._tmpdir.name
         else:
             self._path = obj
+
         return self
 
     def get(self):

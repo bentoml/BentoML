@@ -103,7 +103,12 @@ def add_bento_sub_command(cli):
         "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
         "In (value3, value3a), key4 DoesNotExist)",
     )
-    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
     @click.option(
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table', 'wide'])
     )
@@ -125,7 +130,7 @@ def add_bento_sub_command(cli):
             )
             _print_bentos_info(result, output)
 
-    @cli.command(help='List BentoServices information')
+    @cli.command(name='list', help='List BentoServices information')
     @click.option(
         '--limit', type=click.INT, help='Limit how many BentoServices will be retrieved'
     )
@@ -143,14 +148,21 @@ def add_bento_sub_command(cli):
         '--order-by', type=click.Choice(['created_at', 'name']), default='created_at',
     )
     @click.option('--ascending-order', is_flag=True)
-    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
     @click.option(
         '-o',
         '--output',
         type=click.Choice(['json', 'yaml', 'table', 'wide']),
         default='table',
     )
-    def list(limit, offset, labels, order_by, ascending_order, yatai_url, output):
+    def list_bentos(
+        limit, offset, labels, order_by, ascending_order, yatai_url, output
+    ):
         yc = get_yatai_client(yatai_url)
         result = yc.repository.list(
             limit=limit,
@@ -166,7 +178,12 @@ def add_bento_sub_command(cli):
         'version tag separated by "," for example "bentoml delete name:v1,name:v2',
     )
     @click.argument("bentos", type=click.STRING, callback=parse_bento_tag_list_callback)
-    @click.option('--yatai-url', type=click.STRING, help='Remote YataiService URL. Optional. Example: "--yatai-url http://localhost:50050"')
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. Example: '
+        '"--yatai-url http://localhost:50050"',
+    )
     @click.option(
         '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
     )
@@ -193,7 +210,11 @@ def add_bento_sub_command(cli):
 
     @cli.command(help='Pull BentoService from remote yatai server',)
     @click.argument("bento", type=click.STRING)
-    @click.option('--yatai-url', required=True, help='Remote YataiService URL. Example: "--yatai-url http://localhost:50050"')
+    @click.option(
+        '--yatai-url',
+        required=True,
+        help='Remote YataiService URL. Example: "--yatai-url http://localhost:50050"',
+    )
     def pull(bento, yatai_url):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
@@ -204,7 +225,11 @@ def add_bento_sub_command(cli):
 
     @cli.command(help='Push BentoService to remote yatai server')
     @click.argument("bento", type=click.STRING)
-    @click.option('--yatai-url', required=True, help='Remote YataiService URL. Example: "--yatai-url http://localhost:50050"')
+    @click.option(
+        '--yatai-url',
+        required=True,
+        help='Remote YataiService URL. Example: "--yatai-url http://localhost:50050"',
+    )
     def push(bento, yatai_url):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')

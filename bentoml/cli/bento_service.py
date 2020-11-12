@@ -93,7 +93,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         short_help="List APIs",
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
-    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
     def info(bento=None, yatai_url=None):
         """
         List all APIs defined in the BentoService loaded from saved bundle
@@ -113,7 +118,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         short_help="Display OpenAPI/Swagger JSON specs",
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
-    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
     def open_api_spec(bento=None, yatai_url=None):
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
@@ -151,7 +161,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         "API server on localhost",
         envvar='BENTOML_ENABLE_NGROK',
     )
-    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
     def serve(
         port, bento=None, enable_microbatch=False, run_with_ngrok=False, yatai_url=None
     ):
@@ -198,7 +213,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Number of micro-batch request dispatcher workers",
         envvar='BENTOML_MICROBATCH_WORKERS',
     )
-    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
     def serve_gunicorn(
         port,
         workers,
@@ -275,7 +295,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '-p', '--password', type=click.STRING, required=False,
     )
-    @click.option('--yatai-url', type=click.STRING, help='Yatai server URL.')
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
     def containerize(bento, push, tag, build_arg, username, password, yatai_url):
         """Containerize specified BentoService.
 

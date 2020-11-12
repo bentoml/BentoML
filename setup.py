@@ -22,7 +22,7 @@ with open("README.md", "r", encoding="utf8") as f:
 install_requires = [
     "aiohttp",
     "alembic",
-    "urllib3<=1.25.11"
+    "urllib3<=1.25.11",
     "boto3",
     "cerberus",
     "certifi",

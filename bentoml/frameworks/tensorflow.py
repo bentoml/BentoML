@@ -7,6 +7,13 @@ import tempfile
 from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
+from bentoml.utils.tensorflow import (
+    cast_tensor_by_spec,
+    get_arg_names,
+    get_input_signatures,
+    get_restored_functions,
+    pretty_format_restored_model,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -15,78 +22,68 @@ def _is_path_like(p):
     return isinstance(p, (str, bytes, pathlib.PurePath, os.PathLike))
 
 
-def _transform_input_by_tensorspec(_input, tensorspec):
-    '''
-    transform dtype & shape following tensorspec
-    '''
-    try:
-        import tensorflow as tf
-    except ImportError:
-        raise MissingDependencyException(
-            "Tensorflow package is required to use TfSavedModelArtifact"
-        )
-
-    if _input.dtype != tensorspec.dtype:
-        # may raise TypeError
-        _input = tf.dtypes.cast(_input, tensorspec.dtype)
-    return _input
-
-
 class _TensorflowFunctionWrapper:
     '''
     TensorflowFunctionWrapper
     transform input tensor following function input signature
     '''
 
-    def __init__(self, origin_func, fullargspec):
+    def __init__(self, origin_func, arg_names=None, arg_specs=None, kwarg_specs=None):
         self.origin_func = origin_func
-        self.concrete_func = None
-        self.fullargspec = fullargspec
-        self._args_to_indices = {arg: i for i, arg in enumerate(fullargspec.args)}
+        self.arg_names = arg_names
+        self.arg_specs = arg_specs
+        self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
+        self.kwarg_specs.update(kwarg_specs or {})
 
     def __call__(self, *args, **kwargs):
-        signatures = self.origin_func.input_signature
-        if signatures is None:
+        if self.arg_specs is None and self.kwarg_specs is None:
             return self.origin_func(*args, **kwargs)
 
         for k in kwargs:
-            if k not in self._args_to_indices:
+            if k not in self.kwarg_specs:
                 raise TypeError(f"Function got an unexpected keyword argument {k}")
-        signatures_by_kw = {k: signatures[self._args_to_indices[k]] for k in kwargs}
+
+        arg_keys = {k for k, _ in zip(self.arg_names, args)}
+        _ambiguous_keys = arg_keys & set(kwargs)
+        if _ambiguous_keys:
+            raise TypeError(f"got two values for arguments '{_ambiguous_keys}'")
+
         # INFO:
         # how signature with kwargs works?
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
 
         transformed_args = tuple(
-            _transform_input_by_tensorspec(arg, signatures[i])
-            for i, arg in enumerate(args)
+            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)
         )
+
         transformed_kwargs = {
-            k: _transform_input_by_tensorspec(arg, signatures_by_kw[k])
+            k: cast_tensor_by_spec(arg, self.kwarg_specs[k])
             for k, arg in kwargs.items()
         }
-        if not self.concrete_func:
-            self.concrete_func = self.origin_func.get_concrete_function()
-        return self.concrete_func(*transformed_args, **transformed_kwargs)
+        return self.origin_func(*transformed_args, **transformed_kwargs)
 
     def __getattr__(self, k):
         return getattr(self.origin_func, k)
 
     @classmethod
     def hook_loaded_model(cls, loaded_model):
-        try:
-            from tensorflow.python.eager import def_function
-            from tensorflow.python.util import tf_inspect
-        except ImportError:
-            raise MissingDependencyException(
-                "Tensorflow package is required to use TfSavedModelArtifact"
+        funcs = get_restored_functions(loaded_model)
+        for k, func in funcs.items():
+            arg_names = get_arg_names(func)
+            sigs = get_input_signatures(func)
+            if not sigs:
+                continue
+            arg_specs, kwarg_specs = sigs[0]
+            setattr(
+                loaded_model,
+                k,
+                cls(
+                    func,
+                    arg_names=arg_names,
+                    arg_specs=arg_specs,
+                    kwarg_specs=kwarg_specs,
+                ),
             )
-
-        for k in dir(loaded_model):
-            v = getattr(loaded_model, k, None)
-            if isinstance(v, def_function.Function):
-                fullargspec = tf_inspect.getfullargspec(v)
-                setattr(loaded_model, k, cls(v, fullargspec))
 
 
 def _load_tf_saved_model(path):
@@ -187,7 +184,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
     def __init__(self, name):
         super(TensorflowSavedModelArtifact, self).__init__(name)
 
-        self.model = None
+        self._model = None
         self._tmpdir = None
         self._path = None
 
@@ -219,13 +216,11 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         Raises:
           ValueError: If `obj` is not trackable.
         """
-
         if not _is_path_like(obj):
             if self._tmpdir is not None:
                 self._tmpdir.cleanup()
             else:
                 self._tmpdir = tempfile.TemporaryDirectory()
-
             try:
                 import tensorflow as tf
 
@@ -234,7 +229,6 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
                 raise MissingDependencyException(
                     "Tensorflow package is required to use TfSavedModelArtifact."
                 )
-
             if TF2:
                 tf.saved_model.save(
                     obj, self._tmpdir.name, signatures=signatures, options=options,
@@ -246,23 +240,23 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
                         "version 1",
                         str(options),
                     )
-
                 tf.saved_model.save(
                     obj, self._tmpdir.name, signatures=signatures,
                 )
             self._path = self._tmpdir.name
         else:
             self._path = obj
-
+        self._packed = True
+        loaded = self.get()
+        logger.info(pretty_format_restored_model(loaded))
         return self
 
     def get(self):
-        if self.model is None:
+        if self._model is None:
             loaded_model = _load_tf_saved_model(self._path)
             _TensorflowFunctionWrapper.hook_loaded_model(loaded_model)
-            self.model = loaded_model
-
-        return self.model
+            self._model = loaded_model
+        return self._model
 
     def load(self, path):
         saved_model_path = self._saved_model_path(path)

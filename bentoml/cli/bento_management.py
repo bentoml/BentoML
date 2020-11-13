@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 import click
 from tabulate import tabulate
 
@@ -237,3 +238,22 @@ def add_bento_sub_command(cli):
         yc = get_yatai_client(yatai_url)
         yc.repository.push(bento=bento)
         _echo(f'Pushed {bento} to {yatai_url}')
+
+    @cli.command(help='Retrieve')
+    @click.argument("bento", type=click.STRING)
+    @click.option(
+        '--yatai-url',
+        required=True,
+        help='Remote YataiService URL. Example: "--yatai-url http://localhost:50050"',
+    )
+    @click.option(
+        '--target_dir',
+        help="Directory to put artifacts into. Defaults to pwd.",
+        default=os.getcwd(),
+    )
+    def retrieve(bento, yatai_url, target_dir):
+        yc = get_yatai_client(yatai_url)
+        bento_pb = yc.repository.get(bento)
+        yc.repository.download_to_directory(bento_pb, target_dir)
+
+        _echo(f'Save {bento} artifact to directory {target_dir}')

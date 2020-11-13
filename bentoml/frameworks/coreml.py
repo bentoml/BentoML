@@ -68,7 +68,7 @@ class CoreMLModelArtifact(BentoServiceArtifact):
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name + self._file_extension)
 
-    def pack(self, model):  # pylint:disable=arguments-differ
+    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
         try:
             import coremltools
         except ImportError:

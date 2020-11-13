@@ -123,7 +123,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.sess = tf.compat.v1.keras.backend.get_session()
         self.graph = self.sess.graph
 
-    def creat_session(self):
+    def create_session(self):
         try:
             import tensorflow as tf
         except ImportError:
@@ -136,7 +136,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.sess = tf.compat.v1.Session(graph=self.graph)
         tf.compat.v1.keras.backend.set_session(self.sess)
 
-    def pack(self, data):  # pylint:disable=arguments-differ
+    def pack(self, data, metadata=None):  # pylint:disable=arguments-differ
         try:
             import tensorflow as tf
         except ImportError:
@@ -192,7 +192,7 @@ class KerasModelArtifact(BentoServiceArtifact):
                         "KerasModelArtifact".format(keras_module_name)
                     )
 
-        self.creat_session()
+        self.create_session()
 
         if self._default_custom_objects is None and os.path.isfile(
             self._custom_objects_path(path)

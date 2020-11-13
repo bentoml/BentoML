@@ -14,6 +14,7 @@
 
 import logging
 import os
+from google.protobuf.struct_pb2 import Struct
 from datetime import datetime
 from pathlib import Path
 from sys import version_info
@@ -62,7 +63,11 @@ def _get_artifacts_list(bento_service):
     result = []
     for artifact_name, artifact in bento_service.artifacts.items():
         result.append(
-            {'name': artifact_name, 'artifact_type': artifact.__class__.__name__}
+            {
+                'name': artifact_name,
+                'artifact_type': artifact.__class__.__name__,
+                'metadata': artifact.metadata,
+            }
         )
     return result
 
@@ -218,6 +223,16 @@ class SavedBundleConfig(object):
                     artifact_metadata.name = artifact_config["name"]
                 if "artifact_type" in artifact_config:
                     artifact_metadata.artifact_type = artifact_config["artifact_type"]
+                if "metadata" in artifact_config:
+                    if isinstance(artifact_config["metadata"], dict):
+                        s = Struct()
+                        s.update(artifact_config["metadata"])
+                        artifact_metadata.metadata.CopyFrom(s)
+                    else:
+                        logger.warning(
+                            "Tried to get non-dictionary metadata for artifact "
+                            f"{artifact_metadata.name}. Ignoring metadata..."
+                        )
                 bento_service_metadata.artifacts.extend([artifact_metadata])
 
         return bento_service_metadata

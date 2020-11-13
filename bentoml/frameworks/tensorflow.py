@@ -198,7 +198,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '_saved_model')
 
     def pack(
-        self, obj, signatures=None, options=None
+        self, obj, metadata=None, signatures=None, options=None
     ):  # pylint:disable=arguments-differ
         """
         Pack the TensorFlow Trackable object `obj` to [SavedModel format].

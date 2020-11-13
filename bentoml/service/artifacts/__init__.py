@@ -1,9 +1,12 @@
 import os
+import re
 import logging
 from typing import List
+from pathlib import Path
 
 from bentoml.exceptions import InvalidArgument, FailedPrecondition
 from bentoml.service.env import BentoServiceEnv
+from bentoml.utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +30,7 @@ class BentoServiceArtifact:
         self._name = name
         self._packed = False
         self._loaded = False
+        self._metadata = dict()
 
     @property
     def packed(self):
@@ -35,6 +39,10 @@ class BentoServiceArtifact:
     @property
     def loaded(self):
         return self._loaded
+
+    @property
+    def metadata(self):
+        return self._metadata
 
     @property
     def is_ready(self):
@@ -48,7 +56,7 @@ class BentoServiceArtifact:
         """
         return self._name
 
-    def pack(self, model):
+    def pack(self, model, metadata: dict = None):  # pylint: disable=unused-argument
         """
         Pack the in-memory trained model object to this BentoServiceArtifact
 
@@ -59,6 +67,11 @@ class BentoServiceArtifact:
         """
         Load artifact assuming it was 'self.save' on the same `path`
         """
+
+    def _metadata_path(self, base_path):
+        return os.path.join(
+            base_path, re.sub("[^-a-zA-Z0-9_.() ]+", "", self.name) + ".yml",
+        )
 
     def save(self, dst):
         """
@@ -105,6 +118,13 @@ class BentoServiceArtifact:
                         "`pack` an artifact multiple times may lead to unexpected "
                         "behaviors"
                     )
+                if 'metadata' in kwargs:
+                    if isinstance(kwargs['metadata'], dict):
+                        self._metadata = kwargs['metadata']
+                    else:
+                        raise TypeError(
+                            "Setting a non-dictionary metadata " "is not supported."
+                        )
                 ret = original(*args, **kwargs)
                 # do not set `self._pack` if `pack` has failed with an exception raised
                 self._packed = True
@@ -125,6 +145,16 @@ class BentoServiceArtifact:
                         "`load` an artifact multiple times may lead to unexpected "
                         "behaviors"
                     )
+
+                # load metadata if exists
+                path = args[0]  # load(self, path)
+                meta_path = self._metadata_path(path)
+                if os.path.isfile(meta_path):
+                    with open(meta_path) as file:
+                        yaml = YAML()
+                        yaml_content = file.read()
+                        self._metadata = yaml.load(yaml_content)
+
                 ret = original(*args, **kwargs)
                 # do not set self._loaded if `load` has failed with an exception raised
                 self._loaded = True
@@ -140,6 +170,13 @@ class BentoServiceArtifact:
                         "Trying to save empty artifact. An artifact needs to be `pack` "
                         "with model instance or `load` from saved path before saving"
                     )
+
+                # save metadata
+                dst = args[0]  # save(self, dst)
+                if self.metadata:
+                    yaml = YAML()
+                    yaml.dump(self.metadata, Path(self._metadata_path(dst)))
+
                 original = object.__getattribute__(self, item)
                 return original(*args, **kwargs)
 

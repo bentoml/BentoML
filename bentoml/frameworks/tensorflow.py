@@ -248,7 +248,23 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
             self._path = obj
         self._packed = True
         loaded = self.get()
+        logger.warning(
+            f"Due to TensorFlow's save and load mechanism, only methods marked by "
+            f"`tf.function` (and some keras defaults) could be restored after "
+            f"packing & loading.\n"
+            f"You can test the restored model object by referring:\n"
+            f"<bento_svc>.artifacts.{self.name}\n"
+        )
         logger.info(pretty_format_restored_model(loaded))
+        if hasattr(loaded, "keras_api"):
+            logger.warning(
+                f"You may be using `{self.__class__.__name__}` to pack a keras model. "
+                "It works but may cause performance issues. Consider:\n"
+                f" * replacing `{self.__class__.__name__}` with `KerasModelArtifact` "
+                "(relatively good performance)\n"
+                f" * keeping `{self.__class__.__name__}`, wrapping the "
+                "`keras_model.predict` with a `tf.function`. (best performance)\n"
+            )
         return self
 
     def get(self):

@@ -248,7 +248,7 @@ def add_bento_sub_command(cli):
     )
     @click.option(
         '--target_dir',
-        help="Target directory to save bento. Defaults to the current directory.",
+        help="Target directory to save BentoService. Defaults to the current directory",
         default=os.getcwd(),
     )
     def retrieve(bento, yatai_url, target_dir):

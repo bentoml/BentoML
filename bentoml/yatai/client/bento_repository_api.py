@@ -62,7 +62,7 @@ class BentoRepositoryAPIClient:
         Returns:
             BentoService saved path
         """
-        track('push')
+        track('py-api-push')
         if isinstance(self.yatai_service, YataiService):
             raise BentoMLException('need set yatai_service_url')
 
@@ -90,20 +90,14 @@ class BentoRepositoryAPIClient:
         Returns:
             BentoService saved path
         """
-        track('pull')
+        track('py-api-pull')
         if isinstance(self.yatai_service, YataiService):
             raise BentoMLException('need set yatai_service_url')
         bento_pb = self.get(bento)
-        if bento_pb.uri.s3_presigned_url:
-            bento_bundle_path = bento_pb.uri.s3_presigned_url
-        elif bento_pb.uri.gcs_presigned_url:
-            bento_bundle_path = bento_pb.uri.gcs_presigned_url
-        else:
-            bento_bundle_path = bento_pb.uri.uri
         with TempDirectory() as tmpdir:
             # Create a non-exist directory for safe_retrieve
             target_bundle_path = os.path.join(tmpdir, 'bundle')
-            safe_retrieve(bento_bundle_path, target_bundle_path)
+            self.download_to_directory(bento_pb, target_bundle_path)
 
             from bentoml.yatai.client import get_yatai_client
 
@@ -240,8 +234,18 @@ class BentoRepositoryAPIClient:
         )
         self.yatai_service.UpdateBento(update_bento_req)
 
+    def download_to_directory(self, bento_pb, target_dir):
+        if bento_pb.uri.s3_presigned_url:
+            bento_service_bundle_path = bento_pb.bento.uri.s3_presigned_url
+        elif bento_pb.uri.gcs_presigned_url:
+            bento_service_bundle_path = bento_pb.uri.gcs_presigned_url
+        else:
+            bento_service_bundle_path = bento_pb.uri.uri
+
+        safe_retrieve(bento_service_bundle_path, target_dir)
+
     def get(self, bento):
-        track('get-bento-info')
+        track('py-api-get')
         if ':' not in bento:
             raise BentoMLException(
                 'BentoService name or version is missing. Please provide in the '
@@ -284,7 +288,7 @@ class BentoRepositoryAPIClient:
         Returns:
             [bentoml.yatai.proto.repository_pb2.Bento]
         """
-        track('list-bentos')
+        track('py-api-list')
         list_bento_request = ListBentoRequest(
             bento_name=bento_name,
             offset=offset,
@@ -304,7 +308,7 @@ class BentoRepositoryAPIClient:
         return result.bentos
 
     def delete(self, bento):
-        track('delete')
+        track('py-api-delete')
         if ':' not in bento:
             raise BentoMLException(
                 'BentoService name or version is missing. Please provide in the '
@@ -323,7 +327,7 @@ class BentoRepositoryAPIClient:
             )
 
     def prune(self, bento_name=None, labels=None):
-        track('prune')
+        track('py-api-prune')
         list_bentos_result = self.list(bento_name=bento_name, labels=labels,)
         if list_bentos_result.status.status_code != yatai_proto.status_pb2.Status.OK:
             error_code, error_message = status_pb_to_error_code_and_message(

@@ -61,7 +61,8 @@ def get_input_signatures(func):
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
         if func.structured_input_signature is not None:
             return (func.structured_input_signature,)
-        if func._arg_keywords is not None:
+
+        if func._arg_keywords is not None:  # TODO(bojiang): using private API
             return (
                 (
                     tuple(),
@@ -117,7 +118,7 @@ def get_serving_default_function(m):
             "Tensorflow package is required to use TfSavedModelArtifact"
         )
 
-    return m.signatures[tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
+    return m.signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
 
 
 def cast_tensor_by_spec(_input, spec):
@@ -135,9 +136,9 @@ def cast_tensor_by_spec(_input, spec):
         return _input
 
     if _isinstance(_input, ["Tensor", "EagerTensor"]):
-        return tf.cast(  # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
-            _input, dtype=spec.dtype, name=spec.name
-        )
+        # TensorFlow issue #43038
+        # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
+        return tf.cast(_input, dtype=spec.dtype, name=spec.name)
     else:
         return tf.constant(_input, dtype=spec.dtype, name=spec.name)
 
@@ -189,14 +190,25 @@ def pretty_format_function(function, obj="<object>", name="<function>"):
 
 
 def pretty_format_restored_model(model):
-    ret = 'Found restored functions:\n'
+    part_functions = ""
+
     restored_functions = get_restored_functions(model)
     for name, func in restored_functions.items():
-        ret += pretty_format_function(func, "model", name)
-        ret += "\n"
+        part_functions += pretty_format_function(func, "model", name)
+        part_functions += "\n"
+
     serving_default = get_serving_default_function(model)
-    ret += pretty_format_function(
-        serving_default, "model", "signature['serving_default']"
-    )
-    ret += "\n"
-    return ret
+    if serving_default:
+        part_functions += pretty_format_function(
+            serving_default, "model", "signature['serving_default']"
+        )
+        part_functions += "\n"
+
+    if not restored_functions and not serving_default:
+        return (
+            "Found no avaliable functions. You can use `tf.function` "
+            "to mark the functions you want to keep. See "
+            "https://www.tensorflow.org/api_docs/python/tf/saved_model/save "
+            "for more detail"
+        )
+    return f"Found restored functions:\n{part_functions}"

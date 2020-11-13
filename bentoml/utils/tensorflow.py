@@ -26,7 +26,7 @@ def _isinstance(obj, klass: Union[str, type, Sequence]):
         return False
     if isinstance(klass, str):
         return type(obj).__name__ == klass.split('.')[-1]
-    if isinstance(klass, Sequence):
+    if isinstance(klass, (tuple, list, set)):
         return any(_isinstance(obj, k) for k in klass)
     return isinstance(obj, klass)
 

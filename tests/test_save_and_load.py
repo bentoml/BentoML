@@ -88,7 +88,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
     assert model_service.predict(1) == 2
 
 
-def test_pack_metadata_invalid(tmpdir, example_bento_service_class):
+def test_pack_metadata_invalid(example_bento_service_class):
     example_bento_service_class = bentoml.ver(major=2, minor=10)(
         example_bento_service_class
     )
@@ -101,7 +101,7 @@ def test_pack_metadata_invalid(tmpdir, example_bento_service_class):
     # try packing invalid
     model_metadata = "non-dictionary metadata"
 
-    with pytest.raises(TypeError) as e:
+    with pytest.raises(TypeError):
         svc.pack("model", test_model, metadata=model_metadata)
 
 

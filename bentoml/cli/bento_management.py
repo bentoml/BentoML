@@ -243,7 +243,6 @@ def add_bento_sub_command(cli):
     @click.argument("bento", type=click.STRING)
     @click.option(
         '--yatai-url',
-        required=True,
         help='Remote YataiService URL. Example: "--yatai-url http://localhost:50050"',
     )
     @click.option(

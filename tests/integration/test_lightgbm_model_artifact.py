@@ -32,3 +32,7 @@ def test_lgbm_artifact_pack():
     loaded_svc = bentoml.load(saved_path)
 
     assert loaded_svc.predict(DataFrame([[0]])) == [0]
+
+    # clean up saved bundle
+    yc = YataiClient()
+    yc.repository.dangerously_delete_bento(svc.name, svc.version)

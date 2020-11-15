@@ -94,13 +94,20 @@ class BentoAPIServer:
     DEFAULT_PORT = config("apiserver").getint("default_port")
     _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
 
-    def __init__(self, bento_service: BentoService, port=DEFAULT_PORT, app_name=None):
+    def __init__(
+        self,
+        bento_service: BentoService,
+        port=DEFAULT_PORT,
+        app_name=None,
+        enable_swagger=True,
+    ):
         app_name = bento_service.name if app_name is None else app_name
 
         self.port = port
         self.bento_service = bento_service
         self.app = Flask(app_name, static_folder=None)
         self.static_path = self.bento_service.get_web_static_content_path()
+        self.enable_swagger = enable_swagger
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'swagger_static'
@@ -140,11 +147,14 @@ class BentoAPIServer:
         """
         return send_from_directory(static_path, 'index.html')
 
-    @staticmethod
-    def swagger_ui_func():
+    def swagger_ui_func(self):
         """
         The swagger UI route for BentoML API server
         """
+        if not self.enable_swagger:
+            return Response(
+                response="Swagger is disabled", status=404, mimetype="text/html"
+            )
         return Response(
             response=INDEX_HTML.format(url='docs.json'),
             status=200,

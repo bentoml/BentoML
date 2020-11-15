@@ -167,13 +167,27 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
+    @click.option(
+        '--enable-swagger/--disable-swagger',
+        is_flag=True,
+        default=True,
+        help="Run API server with Swagger UI enabled",
+        envvar='BENTOML_ENABLE_SWAGGER',
+    )
     def serve(
-        port, bento=None, enable_microbatch=False, run_with_ngrok=False, yatai_url=None
+        port,
+        bento=None,
+        enable_microbatch=False,
+        run_with_ngrok=False,
+        yatai_url=None,
+        enable_swagger=True,
     ):
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )
-        start_dev_server(saved_bundle_path, port, enable_microbatch, run_with_ngrok)
+        start_dev_server(
+            saved_bundle_path, port, enable_microbatch, run_with_ngrok, enable_swagger
+        )
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -219,6 +233,13 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
+    @click.option(
+        '--enable-swagger/--disable-swagger',
+        is_flag=True,
+        default=True,
+        help="Run API server with Swagger UI enabled",
+        envvar='BENTOML_ENABLE_SWAGGER',
+    )
     def serve_gunicorn(
         port,
         workers,
@@ -227,6 +248,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         enable_microbatch=False,
         microbatch_workers=1,
         yatai_url=None,
+        enable_swagger=True,
     ):
         if not psutil.POSIX:
             _echo(
@@ -246,6 +268,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             workers,
             enable_microbatch,
             microbatch_workers,
+            enable_swagger,
         )
 
     @bentoml_cli.command(

@@ -1,8 +1,4 @@
 # pylint: disable=redefined-outer-name
-import asyncio
-import json
-import pdb
-
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -101,9 +97,6 @@ def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
     assert (
         tf2_svc_loaded.predict(test_tensor) == 15.0
     ), 'Inference on saved and loaded TF2 artifact does not match expected'
-
-
-pdb.set_trace()
 
 
 @pytest.mark.asyncio

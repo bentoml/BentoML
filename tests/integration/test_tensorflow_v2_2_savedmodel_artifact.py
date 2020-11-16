@@ -1,4 +1,6 @@
 # pylint: disable=redefined-outer-name
+import json
+
 import numpy as np
 import pytest
 import tensorflow as tf

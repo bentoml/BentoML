@@ -57,7 +57,13 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
     """
 
     def __init__(
-        self, bundle_path, port=None, workers=None, timeout=None, prometheus_lock=None,
+        self,
+        bundle_path,
+        port=None,
+        workers=None,
+        timeout=None,
+        prometheus_lock=None,
+        enable_swagger=True,
     ):
         self.bento_service_bundle_path = bundle_path
 
@@ -73,6 +79,7 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         if workers:
             self.options['workers'] = workers
         self.prometheus_lock = prometheus_lock
+        self.enable_swagger = enable_swagger
 
         super(GunicornBentoServer, self).__init__()
 
@@ -92,7 +99,9 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
 
     def load(self):
         bento_service = load_from_dir(self.bento_service_bundle_path)
-        api_server = GunicornBentoAPIServer(bento_service, port=self.port)
+        api_server = GunicornBentoAPIServer(
+            bento_service, port=self.port, enable_swagger=self.enable_swagger
+        )
         return api_server.app
 
     def run(self):

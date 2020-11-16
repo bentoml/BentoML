@@ -85,9 +85,11 @@ def tf2_image(tf2_svc_saved_dir):
         yield image
 
 
-@pytest.fixture()
-def tf2_host(tf2_image):
-    with run_api_server_docker_container(tf2_image, timeout=500) as host:
+@pytest.fixture(params=[False, True])
+def tf2_host(tf2_image, request):
+    with run_api_server_docker_container(
+        tf2_image, enable_microbatch=request.param, timeout=500
+    ) as host:
         yield host
 
 

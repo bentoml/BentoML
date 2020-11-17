@@ -6,6 +6,7 @@ import EnvTable from "../components/BentoServiceDetail/EnvTable";
 import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
 import { Section } from "../ui/Layout";
+import LabelDetailSection from '../components/LabelDetailSection';
 
 const BentoServiceDetail = (props) => {
   const params = props.match.params;
@@ -18,7 +19,7 @@ const BentoServiceDetail = (props) => {
       {({ data }) => {
         let displayBentoServiceDetail;
 
-        if (data && data && data.bento) {
+        if (data && data.bento) {
           const bento = data.bento;
 
           displayBentoServiceDetail = (
@@ -33,6 +34,7 @@ const BentoServiceDetail = (props) => {
               <p>
                 <b>Storage: </b> {bento.uri.uri}
               </p>
+              <LabelDetailSection labels={bento.bento_service_metadata.labels}/>
               <ApisTable apis={bento.bento_service_metadata.apis} />
               <ArtifactsTable
                 artifacts={bento.bento_service_metadata.artifacts}

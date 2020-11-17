@@ -1,6 +1,6 @@
 import * as React from 'react'
+import * as lodash from 'lodash';
 import Label from './Label';
-import {map} from 'lodash';
 
 export interface ILabelDetailSectionProps {
   labels: any;
@@ -9,7 +9,7 @@ export interface ILabelDetailSectionProps {
 const LabelDetailSection: React.FC<ILabelDetailSectionProps> = (props) => {
   return (
     <p>
-      <b>Labels: </b> {map(props.labels, (value, name)=> {
+      <b>Labels: </b> {lodash.map(props.labels, (value, name)=> {
         return (<Label name={name} value={value}/>)
       })}
     </p>

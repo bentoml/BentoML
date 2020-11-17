@@ -1,5 +1,5 @@
 import * as React from "react";
-import { map, forEach } from 'lodash';
+import * as lodash from 'lodash';
 import Table from "../../ui/Table";
 import { Section } from "../../ui/Layout";
 
@@ -38,10 +38,13 @@ const parseGrpcStructToObject = (structObject) => {
     }
   */
   let result = {};
-  const keyList = Object.keys(structObject.fields)
+  if (structObject.fields) {
+    structObject = structObject.fields;
+  }
+  const keyList = Object.keys(structObject)
   for (let index = 0; index < keyList.length; index++) {
     const key = keyList[index];
-    const valueObject = structObject.fields[key];
+    const valueObject = structObject[key];
     const valueType = Object.keys(valueObject)[0];
     const value: any = Object.values(valueObject)[0];
     switch (valueType) {
@@ -50,9 +53,9 @@ const parseGrpcStructToObject = (structObject) => {
         break;
       case 'listValue':
         result[key] = [];
-        forEach(value, (item) => {
-          result[key].append(parseGrpcStructToObject(item))
-        })
+        lodash.forEach(value, (item) => {
+          result[key].push(parseGrpcStructToObject(item))
+        });
         break;
       case 'nullValue':
         result[key] = 'null';

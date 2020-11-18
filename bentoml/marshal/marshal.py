@@ -37,7 +37,7 @@ ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 def metrics_patch(cls):
     class _MarshalService(cls):
         def __init__(self, *args, **kwargs):
-            from prometheus_client import Histogram, Counter, Gauge
+            from prometheus_client import Counter, Gauge, Histogram
 
             super(_MarshalService, self).__init__(*args, **kwargs)
             namespace = config('instrument').get(
@@ -284,7 +284,9 @@ class MarshalService:
                 )
             merged = DataLoader.split_responses(raw)
             return tuple(
-                aiohttp.web.Response(body=i.body, headers=i.headers, status=i.status)
+                aiohttp.web.Response(
+                    body=i.body, headers=i.headers, status=i.status or 500
+                )
                 for i in merged
             )
 

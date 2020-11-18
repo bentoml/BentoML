@@ -224,6 +224,7 @@ To start a REST API model server locally with the IrisClassifier saved above, us
     bentoml serve IrisClassifier:latest
 
 Alternatively, use the saved path to load and serve the BentoML packaged model directly:
+
 .. code-block:: bash
 
     # Find the local path of the latest version IrisClassifier saved bundle

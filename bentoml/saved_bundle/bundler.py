@@ -17,11 +17,13 @@ import shutil
 import stat
 import logging
 
-
 from bentoml.configuration import _is_pip_installed_bentoml
 
 from bentoml.exceptions import BentoMLException
-from bentoml.saved_bundle.local_py_modules import copy_local_py_modules
+from bentoml.saved_bundle.local_py_modules import (
+    copy_local_py_modules,
+    copy_zip_import_archives,
+)
 from bentoml.saved_bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
@@ -30,6 +32,7 @@ from bentoml.saved_bundle.templates import (
 )
 from bentoml.utils.usage_stats import track_save
 from bentoml.saved_bundle.config import SavedBundleConfig
+from bentoml.saved_bundle.pip_pkg import get_zipmodules
 
 
 DEFAULT_SAVED_BUNDLE_README = """\
@@ -39,6 +42,8 @@ This is a ML Service bundle created with BentoML, it is not recommended to edit
 code or files contained in this directory. Instead, edit the code that uses BentoML
 to create this bundle, and save a new BentoService bundle.
 """
+
+ZIPIMPORT_DIR = "zipimports"
 
 logger = logging.getLogger(__name__)
 
@@ -186,6 +191,13 @@ def save_to_dir(bento_service, path, version=None, silent=False):
 
     bundled_pip_dependencies_path = os.path.join(path, 'bundled_pip_dependencies')
     _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
+
+    copy_zip_import_archives(
+        os.path.join(path, bento_service.name, ZIPIMPORT_DIR),
+        bento_service.__class__.__module__,
+        list(get_zipmodules().keys()),
+        bento_service.env._zipimport_archives or [],
+    )
 
     if not silent:
         logger.info(

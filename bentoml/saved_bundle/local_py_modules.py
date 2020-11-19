@@ -18,6 +18,7 @@ import sys
 import inspect
 import importlib
 import logging
+from typing import List
 from pathlib import Path
 from shutil import copyfile
 import modulefinder
@@ -65,20 +66,23 @@ def _get_module_relative_file_path(module_name, module_file):
     return relative_path
 
 
-def copy_local_py_modules(target_module, destination):
-    """Find all local python module dependencies of target_module, and copy all the
-    local module python files to the destination directory while maintaining the module
-    structure unchanged to ensure all imports in target_module still works when loading
-    from the destination directory again
-    """
-
+def _get_module(target_module):
     # When target_module is a string, try import it
     if isinstance(target_module, str):
         try:
             target_module = importlib.import_module(target_module)
         except ImportError:
             pass
-    target_module = inspect.getmodule(target_module)
+    return inspect.getmodule(target_module)
+
+
+def copy_local_py_modules(target_module, destination):
+    """Find all local python module dependencies of target_module, and copy all the
+    local module python files to the destination directory while maintaining the module
+    structure unchanged to ensure all imports in target_module still works when loading
+    from the destination directory again
+    """
+    target_module = _get_module(target_module)
 
     # When target module is defined in interactive session, we can not easily
     # get the class definition into a python module file and distribute it
@@ -195,3 +199,21 @@ def copy_local_py_modules(target_module, destination):
     logger.debug("Done copying local python dependant modules")
 
     return target_module_name, target_module_relative_path
+
+
+def copy_zip_import_archives(
+    target_path: str,
+    target_module: str,
+    inferred_zipimports: List[str],
+    zipimports: List[str],
+):
+    target_module = _get_module(target_module)
+    os.makedirs(target_path, exist_ok=True)
+    target_module_dir = os.path.dirname(_get_module_src_file(target_module))
+    all_zipimports = set(
+        [os.path.join(target_module_dir, z) for z in zipimports] + inferred_zipimports
+    )
+    for zippath in all_zipimports:
+        logger.debug('Copying zipmodule %s', zippath)
+        basename = os.path.basename(zippath)
+        copyfile(zippath, os.path.join(target_path, basename))

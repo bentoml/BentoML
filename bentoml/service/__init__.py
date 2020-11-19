@@ -212,6 +212,7 @@ def env_decorator(
     conda_env_yml_file: str = None,
     setup_sh: str = None,
     docker_base_image: str = None,
+    zipimport_archives: List[str] = None,
 ):
     """Define environment and dependencies required for the BentoService being created
 
@@ -236,6 +237,7 @@ def env_decorator(
             BentoML saved bundle. Base image must either have both `bash` and `conda`
             installed; or have `bash`, `pip`, `python` installed, in which case the user
             is required to ensure the python version matches the BentoService bundle
+        zipimport_archives: list of zipimport archives paths relative to the module path
     """
 
     def decorator(bento_service_cls):
@@ -251,6 +253,7 @@ def env_decorator(
             conda_env_yml_file=conda_env_yml_file,
             setup_sh=setup_sh,
             docker_base_image=docker_base_image,
+            zipimport_archives=zipimport_archives,
         )
         return bento_service_cls
 

@@ -352,6 +352,72 @@ models are depending on each other, such as the example above.
 
 .. _concepts-api-func-and-adapters:
 
+Model Artifact Metadata
+^^^^^^^^^^^^^^^^^^^^^^^
+
+BentoML allows users to include additional metadata information for the packed model
+artifacts. The metadata are intended to be used to specify identifying attributes of
+the model artifact that are meaningful and relevant to users, such as accuracy, dataset
+used, and other static information.
+
+Users can add metadata information, along with the model artifact.
+
+.. code-block:: python
+
+    # Using the example above.
+    svc = MyPredictionService()
+    svc.pack(
+        'model_a',
+        my_sklearn_model_object,
+        metadata={
+            'precision_score': 0.876,
+            'created_by': 'joe'
+        }
+    )
+    svc.pack(
+        'model_b',
+        my_xgboost_model_object,
+        metadata={
+            'precision_score': 0.792,
+            'mean_absolute_error': 0.88
+        }
+    )
+    svc.save()
+
+.. note::
+
+    The model artifact metadata is immutable.
+
+There are three ways to access the metadata information:
+
+* CLI access
+
+    .. code-block:: bash
+
+        $ bentoml get MyPredictionService:latest
+
+* REST API access
+
+    1. Start the API server with `bentoml serve` or `bentoml serve-gunicorn`
+
+        .. code-block:: bash
+
+            $ bentoml serve MyPredictionService:latest
+            # or
+            $ bentoml serve-gunicorn MyPredictionService:latest
+
+    2. Access the metadata information at the URL path `/metadata`
+
+* Programmatic access with Python
+
+    .. code-block:: python
+
+        from bentoml import load
+
+        svc = load('path_to_bento_service')
+        print(svc.artifacts['model'].metadata)
+
+
 API Function and Adapters
 -------------------------
 

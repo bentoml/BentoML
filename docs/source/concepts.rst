@@ -357,7 +357,8 @@ Model Artifact Metadata
 
 BentoML allows users to include additional metadata information for the packed model
 artifacts. The metadata are intended to be used to specify identifying attributes of
-the model artifact that are meaningful and relevant to users.
+the model artifact that are meaningful and relevant to users, such as accuracy, dataset
+used, and other static information.
 
 Users can add metadata information, along with the model artifact.
 

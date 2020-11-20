@@ -31,7 +31,7 @@ def wait_until_container_ready(container_name, check_message, timeout_seconds=60
                 continue
 
         assert (
-                len(container_list) == 1
+            len(container_list) == 1
         ), f'should be exact one container with name {container_name}'
 
         if check_message in container_list[0].logs():

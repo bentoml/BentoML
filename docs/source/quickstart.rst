@@ -43,7 +43,7 @@ Download and run the notebook in this quickstart guide:
 
     # Install jupyter and other dependencies
     pip install jupyter
-    pip install ./guides/quick-start/requirements.txt
+    pip install -r ./guides/quick-start/requirements.txt
 
     # Run the notebook
     jupyter notebook ./guides/quick-start/bentoml-quick-start-guide.ipynb

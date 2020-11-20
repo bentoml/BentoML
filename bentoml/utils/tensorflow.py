@@ -206,9 +206,10 @@ def pretty_format_restored_model(model):
 
     if not restored_functions and not serving_default:
         return (
-            "Found no avaliable functions. You can use `tf.function` "
-            "to mark the functions you want to keep. See "
-            "https://www.tensorflow.org/api_docs/python/tf/saved_model/save "
-            "for more detail"
+            "No serving function was found in the saved model. "
+            "In the model implementation, use `tf.function` decorator to mark "
+            "the method needed for model serving. \n"
+            "Find more details in related TensorFlow docs here "
+            "https://www.tensorflow.org/api_docs/python/tf/saved_model/save"
         )
     return f"Found restored functions:\n{part_functions}"

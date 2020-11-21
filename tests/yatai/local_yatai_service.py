@@ -33,7 +33,7 @@ def wait_until_container_ready(docker_container, timeout_seconds=60):
 def local_yatai_server():
     ensure_docker_available_or_raise()
     docker_client = docker.from_env()
-    local_bentoml_repo_path = os.path.abspath(__file__ + "/../../../../")
+    local_bentoml_repo_path = os.path.abspath(__file__ + "/../../../")
     yatai_docker_image_tag = f'bentoml/yatai-service:e2e-test-{uuid.uuid4().hex[:6]}'
 
     # Note: When set both `custom_context` and `fileobj`, docker api will not use the

@@ -15,27 +15,18 @@ from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 logger = logging.getLogger('bentoml.test')
 
 
-def wait_until_container_ready(container_name, check_message, timeout_seconds=60):
-    docker_client = docker.from_env()
-
+def wait_until_container_ready(docker_container, timeout_seconds=60):
     start_time = time.time()
     while True:
         time.sleep(1)
-        container_list = docker_client.containers.list(filters={'name': container_name})
-        logger.info("Container list: " + str(container_list))
-        if not container_list:
-            # Raise timeout, if exceeds timeout limit
-            if time.time() - start_time > timeout_seconds:
-                raise TimeoutError(f'Get container: {container_name} timed out')
-            else:
-                continue
-
-        assert (
-            len(container_list) == 1
-        ), f'should be exact one container with name {container_name}'
-
-        if check_message in container_list[0].logs():
+        if docker_container.status == 'created':
             break
+        else:
+            logger.info(f'Container status: {docker_container.status}')
+        if time.time() - start_time > timeout_seconds:
+            raise TimeoutError(f'Get container: {container_name} timed out')
+        else:
+            continue
 
 
 @contextlib.contextmanager
@@ -65,7 +56,7 @@ RUN pip install /bentoml-local-repo
             tag=yatai_docker_image_tag,
         )
 
-        container_name = f'e2e-test-yatai-service-container-{uuid.uuid4().hex[:6]}'
+        container_name = f'yatai-service-container-{uuid.uuid4().hex[:6]}'
         yatai_service_url = 'localhost:50051'
         command = [
             'docker',
@@ -83,14 +74,17 @@ RUN pip install /bentoml-local-repo
         ]
 
         logger.info(f"Starting docker container {container_name}: {command}")
-        docker_proc = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        container = docker_client.containers.run(
+            image=yatai_docker_image_tag,
+            environment=['BENTOML_HOME=/tmp'],
+            ports={'3000/tcp': 3000, '50051/tcp': 50051},
+            name=container_name,
+            detach=True,
         )
-        wait_until_container_ready(
-            container_name, b'* Starting BentoML YataiService gRPC Server'
-        )
+
+        wait_until_container_ready(container)
 
         yield yatai_service_url
 
         logger.info(f"Shutting down docker container: {container_name}")
-        os.kill(docker_proc.pid, signal.SIGINT)
+        container.kill()

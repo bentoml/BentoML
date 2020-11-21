@@ -1,6 +1,4 @@
 import pytest
-import tempfile
-import contextlib
 import bentoml
 from tests.bento_service_examples.gluon_classifier import GluonClassifier
 from bentoml.yatai.client import YataiClient

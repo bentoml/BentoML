@@ -16,7 +16,7 @@ class GluonModelArtifact(BentoServiceArtifact):
     >>> from bentoml.adapters import JsonInput
     >>> from bentoml.frameworks.gluon import GluonModelArtifact
     >>> import mxnet as mx
-    >>> 
+    >>>
     >>> @env(infer_pip_packages=True)
     >>> @artifacts([GluonModelArtifact('model')])
     >>> class GluonClassifier(BentoService):

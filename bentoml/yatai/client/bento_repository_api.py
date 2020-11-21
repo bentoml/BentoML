@@ -77,7 +77,7 @@ class BentoRepositoryAPIClient:
             bento_bundle_path = local_bento_pb.uri.gcs_presigned_url
         else:
             bento_bundle_path = local_bento_pb.uri.uri
-        self.upload_from_dir(bento_bundle_path, labels=labels)
+        return self.upload_from_dir(bento_bundle_path, labels=labels)
 
     def pull(self, bento):
         """
@@ -102,7 +102,7 @@ class BentoRepositoryAPIClient:
             from bentoml.yatai.client import get_yatai_client
 
             local_yc = get_yatai_client()
-            local_yc.repository.upload_from_dir(target_bundle_path)
+            return local_yc.repository.upload_from_dir(target_bundle_path)
 
     def upload(self, bento_service, version=None, labels=None):
         """Save and upload given bento_service to yatai_service, which manages all your

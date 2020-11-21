@@ -250,8 +250,8 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         loaded = self.get()
         logger.warning(
             "Due to TensorFlow's internal mechanism, only methods wrapped under "
-            "`@tf.function` decorator and Keras model API methods including predict"
-            " and xxxx can be restored after a save & load.\n"
+            "`@tf.function` decorator and the Keras default function "
+            "`__call__(inputs, training=False)` can be restored after a save & load.\n"
             "You can test the restored model object by referring:\n"
             f"<bento_svc>.artifacts.{self.name}\n"
         )

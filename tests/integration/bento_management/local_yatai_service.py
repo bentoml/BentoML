@@ -1,8 +1,6 @@
 import contextlib
 import logging
 import os
-import signal
-import subprocess
 import time
 import uuid
 
@@ -20,11 +18,13 @@ def wait_until_container_ready(docker_container, timeout_seconds=60):
     while True:
         time.sleep(1)
         if docker_container.status == 'created':
+            logger.info('Container logs')
+            logger.info(docker_container.logs())
             break
         else:
             logger.info(f'Container status: {docker_container.status}')
         if time.time() - start_time > timeout_seconds:
-            raise TimeoutError(f'Get container: {container_name} timed out')
+            raise TimeoutError(f'Get container: {docker_container.name} timed out')
         else:
             continue
 
@@ -58,32 +58,16 @@ RUN pip install /bentoml-local-repo
 
         container_name = f'yatai-service-container-{uuid.uuid4().hex[:6]}'
         yatai_service_url = 'localhost:50051'
-        command = [
-            'docker',
-            'run',
-            '--rm',
-            '--name',
-            container_name,
-            '-e',
-            'BENTOML_HOME=/tmp',
-            '-p',
-            '50051:50051',
-            '-p',
-            '3000:3000',
-            yatai_docker_image_tag,
-        ]
-
-        logger.info(f"Starting docker container {container_name}: {command}")
         container = docker_client.containers.run(
             image=yatai_docker_image_tag,
             environment=['BENTOML_HOME=/tmp'],
-            ports={'3000/tcp': 3000, '50051/tcp': 50051},
+            ports={'50051/tcp': 50051},
+            command=['bentoml', 'yatai-service-start', '--no-ui'],
             name=container_name,
             detach=True,
         )
 
         wait_until_container_ready(container)
-
         yield yatai_service_url
 
         logger.info(f"Shutting down docker container: {container_name}")

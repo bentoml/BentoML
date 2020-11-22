@@ -15,7 +15,7 @@ def test_sqlite_and_local_fs():
         svc.pack('model', [1, 2, 3])
         bento_tag = f'{svc.name}:{svc.version}'
         logger.info(f'Saving BentoML saved bundle {bento_tag}')
-        svc.save(yatai_server_url=yatai_server_url)
+        svc.save(yatai_url=yatai_server_url)
 
         bento_pb = yc.repository.get(bento_tag)
         assert (

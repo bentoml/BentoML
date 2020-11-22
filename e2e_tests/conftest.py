@@ -11,7 +11,7 @@ import pytest
 from sklearn import svm, datasets
 
 
-# Append local bentoml repository path which contains the 'e2e_tests/' direcotry
+# Append local bentoml repository path which contains the 'e2e_tests/' directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 

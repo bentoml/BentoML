@@ -28,10 +28,10 @@ def test_yatai_server_with_sqlite_and_s3():
         logger.info('BentoService saved')
 
         logger.info("Display bentoservice info")
-        get_svc_result = get_bento_service_info(svc.name, svc.version)
-        logger.info(get_svc_result)
+        bento = get_bento_service_info(svc.name, svc.version)
+        logger.info(bento)
         assert (
-            get_svc_result.bento.uri.type == BentoUri.S3
+            bento.uri.type == BentoUri.S3
         ), 'BentoService storage type mismatched, expect S3'
         retrieve_svc_result = execute_bentoml_retrieve_command(
             f'{svc.name}:{svc.version}'

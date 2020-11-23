@@ -23,6 +23,10 @@ ImageInput
 ++++++++++
 .. autoclass:: bentoml.adapters.ImageInput
 
+StringInput
++++++++++++
+.. autoclass:: bentoml.adapters.StringInput
+
 MultiImageInput
 +++++++++++++++
 .. autoclass:: bentoml.adapters.MultiImageInput
@@ -34,6 +38,10 @@ AnnotatedImageInput
 FileInput
 +++++++++
 .. autoclass:: bentoml.adapters.FileInput
+
+MultiFileInput
+++++++++++++++
+.. autoclass:: bentoml.adapters.MultiFileInput
 
 ClipperInput
 ++++++++++++
@@ -71,7 +79,7 @@ TfTensorOutput
 .. autoclass:: bentoml.adapters.TfTensorOutput
 
 JsonOutput
-++++++++++++++++++++++
+++++++++++
 .. autoclass:: bentoml.adapters.JsonOutput
 
 
@@ -106,3 +114,5 @@ The following adapter types are on our roadmap:
     imageio
     numpy
     ndarray
+    charset
+

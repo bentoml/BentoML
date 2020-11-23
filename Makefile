@@ -38,7 +38,7 @@ install-spellchecker-deps: ## Install MacOS dependencies for spellchecker
 	brew install enchant
 else
 install-spellchecker-deps: ## Install Linux dependencies for spellchecker
-	sudo apt install libenchant
+	sudo apt install libenchant-dev
 endif
 spellcheck-doc: ## Spell check documentation
 	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)

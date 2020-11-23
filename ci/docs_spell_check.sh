@@ -9,6 +9,10 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-sphinx-build -W --keep-going -b spelling "$GIT_ROOT"/docs/source "GIT_ROOT"/docs/build
+python -m pip install --upgrade pip
+pip install --upgrade .[doc_builder]
+
+make install-spellchecker-deps
+make spellcheck-doc
 
 test $error = 0 # Return non-zero if spellchecker failed

@@ -114,3 +114,5 @@ The following adapter types are on our roadmap:
     imageio
     numpy
     ndarray
+    charset
+

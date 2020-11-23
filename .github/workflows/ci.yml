@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run linting script
         run: ./ci/linter.sh
 
@@ -30,10 +30,8 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
-      - name: install dependencies
-        run: ./ci/install-doc-deps.sh
       - name: Run spellcheck script
-        run: ./ci/documentation_spelling_check.sh
+        run: ./ci/docs_spell_check.sh
 
   unit_tests:
     name: ${{ matrix.os }} Python ${{ matrix.python-version }} Unit Tests
@@ -62,7 +60,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
         shell: bash
       - name: Run Unit Tests
         run: ./ci/unit_tests.sh
@@ -84,7 +82,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/onnx_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -101,7 +99,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/pytorch_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -118,7 +116,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/coreml_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -140,7 +138,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -157,7 +155,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/tensorflow_v2.2_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -174,7 +172,7 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/h2o_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -191,7 +189,7 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/xgboost_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -208,7 +206,7 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/transformers_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -225,7 +223,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -246,7 +244,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx

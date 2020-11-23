@@ -29,10 +29,10 @@ def test_yatai_server_with_postgres_and_s3(postgres_db_container_url):
         logger.info('BentoService saved')
 
         logger.info("Display bentoservice info")
-        get_svc_result = get_bento_service_info(svc.name, svc.version)
-        logger.info(get_svc_result)
+        bento = get_bento_service_info(svc.name, svc.version)
+        logger.info(bento)
         assert (
-            get_svc_result.bento.uri.type == BentoUri.S3
+            bento.uri.type == BentoUri.S3
         ), 'BentoService storage type mismatched, expect S3'
 
         logger.info('Validate BentoService prediction result')

@@ -223,7 +223,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/gluon_integration_tests.sh
       - name: Upload test coverage to Codecov

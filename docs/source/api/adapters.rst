@@ -40,7 +40,7 @@ FileInput
 .. autoclass:: bentoml.adapters.FileInput
 
 MultiFileInput
-+++++++++
+++++++++++++++
 .. autoclass:: bentoml.adapters.MultiFileInput
 
 ClipperInput

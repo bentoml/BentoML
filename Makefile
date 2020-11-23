@@ -30,7 +30,7 @@ install-watch-deps: ## Install MacOS dependencies for watching docs
 	brew install fswatch
 else
 install-watch-deps: ## Install Linux dependencies for watching docs
-	apt install inotify-tools
+	sudo apt install inotify-tools
 endif
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
@@ -38,7 +38,7 @@ install-spellchecker-deps: ## Install MacOS dependencies for spellchecker
 	brew install enchant
 else
 install-spellchecker-deps: ## Install Linux dependencies for spellchecker
-	apt install libenchant-dev
+	sudo apt install libenchant-dev
 endif
 spellcheck-doc: ## Spell check documentation
 	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)

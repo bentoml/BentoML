@@ -105,4 +105,3 @@ def local_yatai_server(db_url=None, repo_base_url=None, port=50051):
     finally:
         logger.info('Shutting down YataiServer gRPC server and node web server')
         kill_process(proc.pid)
-

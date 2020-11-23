@@ -231,7 +231,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Run tests
-        run: ./ci/bento_management_integration_tests.sh
+        run: ./ci/model_management_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

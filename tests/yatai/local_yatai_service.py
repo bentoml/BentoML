@@ -88,17 +88,10 @@ def local_yatai_service_from_cli(db_url=None, repo_base_url=None, port=50051):
         yatai_server_command.extend(['--db-url', db_url])
     if repo_base_url:
         yatai_server_command.extend(['--repo-base-url', repo_base_url])
-    try:
-        proc = subprocess.Popen(
-            yatai_server_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        yatai_service_url = f"localhost:{port}"
-        logger.info(f'Setting config yatai_service.url to: {yatai_service_url}')
-        yield yatai_service_url
-    finally:
-        logger.info(proc.stdout.read().decode('utf-8'))
-        logger.info('Shutting down YataiServer gRPC server')
-        process = psutil.Process(proc.pid)
-        for proc in process.children(recursive=True):
-            proc.kill()
-        process.kill()
+    proc = subprocess.Popen(
+        yatai_server_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    yatai_service_url = f"localhost:{port}"
+    logger.info(f'Setting config yatai_service.url to: {yatai_service_url}')
+    yield yatai_service_url
+    proc.kill()

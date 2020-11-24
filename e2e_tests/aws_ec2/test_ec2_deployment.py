@@ -37,13 +37,13 @@ def test_aws_ec2_deployment(iris_clf_service):
 
     try:
         deployment_endpoint = run_aws_ec2_create_command(create_deployment_command)
-        assert deployment_endpoint, "AWS EC2 deployment creation should success"
 
         instance_addresses = wait_for_healthy_targets_from_stack(
             name=deployment_name,
             namespace=deployment_namespace,
             region=deployment_region,
         )
+        assert deployment_endpoint, "AWS EC2 deployment creation should success"
         assert instance_addresses, "AWS EC2 deployment should have all targets healthy"
 
         iris = datasets.load_iris()

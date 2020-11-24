@@ -114,6 +114,11 @@ def send_test_data_to_multiple_endpoint(deployment_endpoints, sample_data=None):
         request_result = requests.post(
             endpoint, data=sample_data, headers={'Content-Type': 'application/json'},
         )
+        logger.info(f'Sending request to {endpoint}')
+        logging.info(
+            f'Request result: {request_result.status_code} '
+            f'{request_result.content.decode("utf-8")}'
+        )
         all_results.append(
             (request_result.status_code, request_result.content.decode('utf-8'))
         )

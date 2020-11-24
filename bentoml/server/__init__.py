@@ -43,7 +43,11 @@ def async_trace(*args, **kwargs):
 
 
 def start_dev_server(
-    saved_bundle_path: str, port: int, enable_microbatch: bool, run_with_ngrok: bool
+    saved_bundle_path: str,
+    port: int,
+    enable_microbatch: bool,
+    run_with_ngrok: bool,
+    enable_swagger: bool,
 ):
     logger.info("Starting BentoML API server in development mode..")
 
@@ -72,11 +76,15 @@ def start_dev_server(
                 outbound_port=api_server_port,
                 outbound_workers=1,
             )
-            api_server = BentoAPIServer(bento_service, port=api_server_port)
+            api_server = BentoAPIServer(
+                bento_service, port=api_server_port, enable_swagger=enable_swagger
+            )
         marshal_server.async_start(port=port)
         api_server.start()
     else:
-        api_server = BentoAPIServer(bento_service, port=port)
+        api_server = BentoAPIServer(
+            bento_service, port=port, enable_swagger=enable_swagger
+        )
         api_server.start()
 
 
@@ -87,6 +95,7 @@ def start_prod_server(
     workers: int,
     enable_microbatch: bool,
     microbatch_workers: int,
+    enable_swagger: bool,
 ):
     logger.info("Starting BentoML API server in production mode..")
 
@@ -120,10 +129,17 @@ def start_prod_server(
             )
 
             gunicorn_app = GunicornBentoServer(
-                saved_bundle_path, api_server_port, workers, timeout, prometheus_lock,
+                saved_bundle_path,
+                api_server_port,
+                workers,
+                timeout,
+                prometheus_lock,
+                enable_swagger,
             )
         marshal_server.async_run()
         gunicorn_app.run()
     else:
-        gunicorn_app = GunicornBentoServer(saved_bundle_path, port, workers, timeout)
+        gunicorn_app = GunicornBentoServer(
+            saved_bundle_path, port, workers, timeout, enable_swagger=enable_swagger
+        )
         gunicorn_app.run()

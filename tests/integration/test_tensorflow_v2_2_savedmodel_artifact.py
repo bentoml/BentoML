@@ -1,10 +1,11 @@
 # pylint: disable=redefined-outer-name
 import json
 
+import numpy as np
 import pytest
+import tensorflow as tf
 
 import bentoml
-import tensorflow as tf
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
 from tests.integration.api_server.conftest import (
     build_api_server_docker_image,
@@ -12,7 +13,7 @@ from tests.integration.api_server.conftest import (
 )
 
 test_data = [[1, 2, 3, 4, 5]]
-test_tensor = tf.constant(test_data)
+test_tensor = tf.constant(np.asfarray(test_data))
 
 
 class Tensorflow2Model(tf.keras.Model):
@@ -30,8 +31,21 @@ class Tensorflow2Model(tf.keras.Model):
         return self.dense(inputs)
 
 
-@pytest.fixture(scope="module")
-def tf2_svc():
+class TfNativeModel(tf.Module):
+    def __init__(self):
+        self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
+        super(TfNativeModel, self).__init__()
+        self.dense = lambda inputs: tf.matmul(inputs, self.weights)
+
+    @tf.function(
+        input_signature=[tf.TensorSpec(shape=None, dtype=tf.float64, name='inputs')]
+    )
+    def __call__(self, inputs):
+        return self.dense(inputs)
+
+
+@pytest.fixture(params=[Tensorflow2Model, TfNativeModel], scope="module")
+def tf2_svc(request):
     """Return a TensorFlow2 BentoService."""
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
@@ -40,9 +54,9 @@ def tf2_svc():
     Tensorflow2Classifier._bento_service_bundle_version = None
 
     svc = Tensorflow2Classifier()
-    model = Tensorflow2Model()
+    model = request.param()
+    model(test_tensor)
     svc.pack('model', model)
-
     return svc
 
 
@@ -52,10 +66,8 @@ def tf2_svc_saved_dir(tmp_path_factory, tf2_svc):
     # Must be called at least once before saving so that layers are built
     # See: https://github.com/tensorflow/tensorflow/issues/37439
     tf2_svc.predict(test_tensor)
-
     tmpdir = str(tmp_path_factory.mktemp("tf2_svc"))
     tf2_svc.save_to_dir(tmpdir)
-
     return tmpdir
 
 
@@ -73,9 +85,11 @@ def tf2_image(tf2_svc_saved_dir):
         yield image
 
 
-@pytest.fixture()
-def tf2_host(tf2_image):
-    with run_api_server_docker_container(tf2_image, timeout=500) as host:
+@pytest.fixture(params=[False, True])
+def tf2_host(tf2_image, request):
+    with run_api_server_docker_container(
+        tf2_image, enable_microbatch=request.param, timeout=500
+    ) as host:
         yield host
 
 

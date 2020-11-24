@@ -669,6 +669,8 @@ export const bentoml = $root.bentoml = (() => {
              * @property {string|null} [api_name] SageMakerOperatorConfig api_name
              * @property {number|null} [num_of_gunicorn_workers_per_instance] SageMakerOperatorConfig num_of_gunicorn_workers_per_instance
              * @property {number|null} [timeout] SageMakerOperatorConfig timeout
+             * @property {string|null} [data_capture_s3_prefix] SageMakerOperatorConfig data_capture_s3_prefix
+             * @property {number|null} [data_capture_sample_percent] SageMakerOperatorConfig data_capture_sample_percent
              */
 
             /**
@@ -735,6 +737,22 @@ export const bentoml = $root.bentoml = (() => {
             SageMakerOperatorConfig.prototype.timeout = 0;
 
             /**
+             * SageMakerOperatorConfig data_capture_s3_prefix.
+             * @member {string} data_capture_s3_prefix
+             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
+             * @instance
+             */
+            SageMakerOperatorConfig.prototype.data_capture_s3_prefix = "";
+
+            /**
+             * SageMakerOperatorConfig data_capture_sample_percent.
+             * @member {number} data_capture_sample_percent
+             * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
+             * @instance
+             */
+            SageMakerOperatorConfig.prototype.data_capture_sample_percent = 0;
+
+            /**
              * Creates a new SageMakerOperatorConfig instance using the specified properties.
              * @function create
              * @memberof bentoml.DeploymentSpec.SageMakerOperatorConfig
@@ -770,6 +788,10 @@ export const bentoml = $root.bentoml = (() => {
                     writer.uint32(/* id 5, wireType 0 =*/40).int32(message.num_of_gunicorn_workers_per_instance);
                 if (message.timeout != null && Object.hasOwnProperty.call(message, "timeout"))
                     writer.uint32(/* id 6, wireType 0 =*/48).int32(message.timeout);
+                if (message.data_capture_s3_prefix != null && Object.hasOwnProperty.call(message, "data_capture_s3_prefix"))
+                    writer.uint32(/* id 7, wireType 2 =*/58).string(message.data_capture_s3_prefix);
+                if (message.data_capture_sample_percent != null && Object.hasOwnProperty.call(message, "data_capture_sample_percent"))
+                    writer.uint32(/* id 8, wireType 0 =*/64).int32(message.data_capture_sample_percent);
                 return writer;
             };
 
@@ -821,6 +843,12 @@ export const bentoml = $root.bentoml = (() => {
                         break;
                     case 6:
                         message.timeout = reader.int32();
+                        break;
+                    case 7:
+                        message.data_capture_s3_prefix = reader.string();
+                        break;
+                    case 8:
+                        message.data_capture_sample_percent = reader.int32();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -875,6 +903,12 @@ export const bentoml = $root.bentoml = (() => {
                 if (message.timeout != null && message.hasOwnProperty("timeout"))
                     if (!$util.isInteger(message.timeout))
                         return "timeout: integer expected";
+                if (message.data_capture_s3_prefix != null && message.hasOwnProperty("data_capture_s3_prefix"))
+                    if (!$util.isString(message.data_capture_s3_prefix))
+                        return "data_capture_s3_prefix: string expected";
+                if (message.data_capture_sample_percent != null && message.hasOwnProperty("data_capture_sample_percent"))
+                    if (!$util.isInteger(message.data_capture_sample_percent))
+                        return "data_capture_sample_percent: integer expected";
                 return null;
             };
 
@@ -902,6 +936,10 @@ export const bentoml = $root.bentoml = (() => {
                     message.num_of_gunicorn_workers_per_instance = object.num_of_gunicorn_workers_per_instance | 0;
                 if (object.timeout != null)
                     message.timeout = object.timeout | 0;
+                if (object.data_capture_s3_prefix != null)
+                    message.data_capture_s3_prefix = String(object.data_capture_s3_prefix);
+                if (object.data_capture_sample_percent != null)
+                    message.data_capture_sample_percent = object.data_capture_sample_percent | 0;
                 return message;
             };
 
@@ -925,6 +963,8 @@ export const bentoml = $root.bentoml = (() => {
                     object.api_name = "";
                     object.num_of_gunicorn_workers_per_instance = 0;
                     object.timeout = 0;
+                    object.data_capture_s3_prefix = "";
+                    object.data_capture_sample_percent = 0;
                 }
                 if (message.region != null && message.hasOwnProperty("region"))
                     object.region = message.region;
@@ -938,6 +978,10 @@ export const bentoml = $root.bentoml = (() => {
                     object.num_of_gunicorn_workers_per_instance = message.num_of_gunicorn_workers_per_instance;
                 if (message.timeout != null && message.hasOwnProperty("timeout"))
                     object.timeout = message.timeout;
+                if (message.data_capture_s3_prefix != null && message.hasOwnProperty("data_capture_s3_prefix"))
+                    object.data_capture_s3_prefix = message.data_capture_s3_prefix;
+                if (message.data_capture_sample_percent != null && message.hasOwnProperty("data_capture_sample_percent"))
+                    object.data_capture_sample_percent = message.data_capture_sample_percent;
                 return object;
             };
 
@@ -6670,6 +6714,7 @@ export const bentoml = $root.bentoml = (() => {
              * @interface IBentoArtifact
              * @property {string|null} [name] BentoArtifact name
              * @property {string|null} [artifact_type] BentoArtifact artifact_type
+             * @property {google.protobuf.IStruct|null} [metadata] BentoArtifact metadata
              */
 
             /**
@@ -6704,6 +6749,14 @@ export const bentoml = $root.bentoml = (() => {
             BentoArtifact.prototype.artifact_type = "";
 
             /**
+             * BentoArtifact metadata.
+             * @member {google.protobuf.IStruct|null|undefined} metadata
+             * @memberof bentoml.BentoServiceMetadata.BentoArtifact
+             * @instance
+             */
+            BentoArtifact.prototype.metadata = null;
+
+            /**
              * Creates a new BentoArtifact instance using the specified properties.
              * @function create
              * @memberof bentoml.BentoServiceMetadata.BentoArtifact
@@ -6731,6 +6784,8 @@ export const bentoml = $root.bentoml = (() => {
                     writer.uint32(/* id 1, wireType 2 =*/10).string(message.name);
                 if (message.artifact_type != null && Object.hasOwnProperty.call(message, "artifact_type"))
                     writer.uint32(/* id 2, wireType 2 =*/18).string(message.artifact_type);
+                if (message.metadata != null && Object.hasOwnProperty.call(message, "metadata"))
+                    $root.google.protobuf.Struct.encode(message.metadata, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
                 return writer;
             };
 
@@ -6770,6 +6825,9 @@ export const bentoml = $root.bentoml = (() => {
                         break;
                     case 2:
                         message.artifact_type = reader.string();
+                        break;
+                    case 3:
+                        message.metadata = $root.google.protobuf.Struct.decode(reader, reader.uint32());
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -6812,6 +6870,11 @@ export const bentoml = $root.bentoml = (() => {
                 if (message.artifact_type != null && message.hasOwnProperty("artifact_type"))
                     if (!$util.isString(message.artifact_type))
                         return "artifact_type: string expected";
+                if (message.metadata != null && message.hasOwnProperty("metadata")) {
+                    let error = $root.google.protobuf.Struct.verify(message.metadata);
+                    if (error)
+                        return "metadata." + error;
+                }
                 return null;
             };
 
@@ -6831,6 +6894,11 @@ export const bentoml = $root.bentoml = (() => {
                     message.name = String(object.name);
                 if (object.artifact_type != null)
                     message.artifact_type = String(object.artifact_type);
+                if (object.metadata != null) {
+                    if (typeof object.metadata !== "object")
+                        throw TypeError(".bentoml.BentoServiceMetadata.BentoArtifact.metadata: object expected");
+                    message.metadata = $root.google.protobuf.Struct.fromObject(object.metadata);
+                }
                 return message;
             };
 
@@ -6850,11 +6918,14 @@ export const bentoml = $root.bentoml = (() => {
                 if (options.defaults) {
                     object.name = "";
                     object.artifact_type = "";
+                    object.metadata = null;
                 }
                 if (message.name != null && message.hasOwnProperty("name"))
                     object.name = message.name;
                 if (message.artifact_type != null && message.hasOwnProperty("artifact_type"))
                     object.artifact_type = message.artifact_type;
+                if (message.metadata != null && message.hasOwnProperty("metadata"))
+                    object.metadata = $root.google.protobuf.Struct.toObject(message.metadata, options);
                 return object;
             };
 

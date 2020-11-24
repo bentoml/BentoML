@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import setuptools
+
 import versioneer
 
 with open("README.md", "r", encoding="utf8") as f:
@@ -21,6 +22,7 @@ with open("README.md", "r", encoding="utf8") as f:
 install_requires = [
     "aiohttp",
     "alembic",
+    "urllib3<=1.25.11",
     "boto3",
     "cerberus",
     "certifi",
@@ -44,15 +46,16 @@ install_requires = [
     "requests",
     "ruamel.yaml>=0.15.0",
     "sqlalchemy-utils<0.36.8",
-    "sqlalchemy>=1.3.0",
+    "sqlalchemy>=1.3.0,<1.4.0",
     "tabulate",
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
-    "multidict",
     "chardet",
 ]
 
 test_requires = [
+    "idna<=2.8",  # for moto
+    "ecdsa==0.14",  # for moto
     "black==19.10b0",
     "codecov",
     "coverage>=4.4",

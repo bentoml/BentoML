@@ -161,7 +161,7 @@ Use `gcloud` CLI to build the docker image
 Deploy the image to Google Cloud Run
 ====================================
 
-1. Use your browser, go into the Google Cloud Console, select project `sentiment-gcloud-run` and navigate to the CloudRun page
+1. Use your browser, go into the Google Cloud Console, select project `irisclassifier-gcloud-run` and navigate to the CloudRun page
 2. Click `Create Service` on the top of the navigation bar
 3. In the Create Cloud Run service page:
 

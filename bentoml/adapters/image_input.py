@@ -33,10 +33,11 @@ ApiFuncArgs = Tuple[
 
 
 class ImageInput(FileInput):
-    """Convert incoming image data from http request, cli or lambda event into numpy
-    array and pass down to user defined API functions
+    """Convert incoming image data from http request, cli or lambda event into imageio
+    array (a subclass of numpy.ndarray that has a meta attribute) and pass down to
+    user defined API functions.
 
-    ** To operate raw files or PIL.Image obj, use the low level :class:`.FileInput`. **
+    ** To operate raw files or PIL.Image obj, use the low-level :class:`.FileInput`. **
 
     Parameters
     ----------
@@ -75,8 +76,10 @@ class ImageInput(FileInput):
         @artifacts([TensorflowSavedModelArtifact('classifier')])
         class PetClassification(BentoService):
             @api(input=ImageInput(), batch=True)
-            def predict(self, image_ndarrays: List[np.ndarray]) -> List[str]:
-                results = self.artifacts.classifer.predict(image_ndarrays)
+            def predict(
+                self, image_arrays: List[imageio.core.utils.Array]
+            ) -> List[str]:
+                results = self.artifacts.classifer.predict(image_arrays)
                 return [CLASS_NAMES[r] for r in results]
 
     OR use ImageInput with ``batch=False`` (the default):
@@ -84,8 +87,8 @@ class ImageInput(FileInput):
     .. code-block:: python
 
         @api(input=ImageInput(), batch=False)
-        def predict(self, image_ndarray: np.ndarray) -> str:
-            results = self.artifacts.classifer.predict([image_ndarray])
+        def predict(self, image_array: imageio.core.utils.Array) -> str:
+            results = self.artifacts.classifer.predict([image_array])
             return CLASS_NAMES[results[0]]
 
     Query with HTTP request::
@@ -111,6 +114,34 @@ class ImageInput(FileInput):
             <input name="image" type="file">
             <input type="submit">
         </form>
+
+    OR by python requests:
+
+    .. code-block:: python
+
+        import requests
+
+        with open("test.jpg", "rb") as f:
+            image_bytes = f.read()  # from file path
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+        }
+        response = requests.post(your_url, files=files)
+
+    .. code-block:: python
+
+        import requests
+        import PIL
+
+        pil_image = PIL.Image.open('test.jpg')
+
+        image_bytes = pil_image.tobytes()  # from PIL.Image
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+        }
+        response = requests.post(your_url, files=files)
 
     Query with CLI command::
 

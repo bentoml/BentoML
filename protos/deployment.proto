@@ -22,6 +22,7 @@ message DeploymentSpec {
     AWS_SAGEMAKER = 2;
     AWS_LAMBDA = 3;
     AZURE_FUNCTIONS = 4;
+    AWS_EC2 = 5;
   }
 
   message CustomOperatorConfig {
@@ -41,6 +42,8 @@ message DeploymentSpec {
     // current system's cpu core count and set worker equal to half of that plus 1.
     int32 num_of_gunicorn_workers_per_instance = 5;
     int32 timeout = 6;
+    string data_capture_s3_prefix = 7;
+    int32 data_capture_sample_percent = 8;
   }
 
   message AwsLambdaOperatorConfig {
@@ -49,6 +52,7 @@ message DeploymentSpec {
     int32 memory_size = 3;
     int32 timeout = 4;
   }
+
 
   message AzureFunctionsOperatorConfig {
       // Similar to region value in AWS
@@ -60,6 +64,15 @@ message DeploymentSpec {
       // Maximum number of elastic workers
       int32 max_burst = 4;
       string function_auth_level = 5;
+  }
+
+  message AwsEc2OperatorConfig {
+    string region=1;
+    string instance_type=2;
+    string ami_id=6;
+    int32 autoscale_min_size=7;
+    int32 autoscale_desired_capacity=8;
+    int32 autoscale_max_size=9;
   }
 
   // Bento name and version are used as an reference to the saved Bento
@@ -74,6 +87,7 @@ message DeploymentSpec {
     SageMakerOperatorConfig sagemaker_operator_config = 5;
     AwsLambdaOperatorConfig aws_lambda_operator_config = 6;
     AzureFunctionsOperatorConfig azure_functions_operator_config = 7;
+    AwsEc2OperatorConfig aws_ec2_operator_config = 8;
   }
 }
 

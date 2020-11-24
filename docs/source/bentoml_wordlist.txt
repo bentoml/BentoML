@@ -1,6 +1,8 @@
 pypi
 Colab
 bento
+bentos
+BentoML
 bentoml
 Dataframe
 dataframe
@@ -24,6 +26,8 @@ livenessProbe
 readyinessProbe
 healthz
 yatai
+Yatai
+YataiService
 SLO
 hostname
 Postgres
@@ -88,3 +92,6 @@ Statsmodels
 statsmodels
 torchvision
 gRPC
+Http
+http
+HTTP

@@ -27,7 +27,7 @@ const DeploymentApisTable = ({ deployment }) => {
           let { apis } = bento.bento_service_metadata;
           if (apiName) {
             const deployedApi = apis.find((api) => {
-              return api.name == apiName;
+              return api.name === apiName;
             });
             apis = [deployedApi];
           }

@@ -1,21 +1,20 @@
 import os
 import tempfile
 
-import click
 import mock
 import psutil  # noqa # pylint: disable=unused-import
 import pytest
 from click.testing import CliRunner
 from humanfriendly import format_size
 
-from bentoml.cli.bento_service import (
-    create_bento_service_cli,
+from bentoml.cli.bento_service import create_bento_service_cli
+from bentoml.utils.docker_utils import (
+    validate_tag,
     to_valid_docker_image_name,
     to_valid_docker_image_version,
-    validate_tag,
 )
 from bentoml.cli.utils import echo_docker_api_result
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, YataiDeploymentException
 
 
 def generate_test_input_file():
@@ -74,7 +73,7 @@ def test_validate_tag(tag):
     "tag", ["AAA--", ".asdf", "asdf:...", "asdf:" + "A" * 129, "asdf:å"]
 )
 def test_validate_tag_raises(tag):
-    with pytest.raises(click.BadParameter):
+    with pytest.raises(YataiDeploymentException):
         validate_tag(None, None, tag)
 
 

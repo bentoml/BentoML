@@ -36,7 +36,7 @@ This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide
     pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
-Use `bento list` to get the BentoService name:version tag.
+Use `bentoml list` to get the BentoService name:version tag.
 
 
 .. code-block:: bash

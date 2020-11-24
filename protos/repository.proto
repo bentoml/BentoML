@@ -37,6 +37,7 @@ message BentoServiceMetadata {
   message BentoArtifact {
     string name = 1;
     string artifact_type = 2;
+    google.protobuf.Struct metadata = 3;
   }
 
   message BentoServiceApi {

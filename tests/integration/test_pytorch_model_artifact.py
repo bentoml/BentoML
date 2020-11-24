@@ -47,4 +47,4 @@ def test_pytorch_artifact_pack(pytorch_classifier_class):
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.dangerously_delete_bento(svc.name, svc.version)
+    yc.repository.delete(f'{svc.name}:{svc.version}')

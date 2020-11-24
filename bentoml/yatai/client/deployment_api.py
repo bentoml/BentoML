@@ -74,6 +74,8 @@ class DeploymentAPIClient:
                 operator = DeploymentSpec.AWS_LAMBDA
             elif operator == DeploymentSpec.AZURE_FUNCTIONS:
                 operator = 'azure-functions'
+            elif operator == "ec2":
+                operator = DeploymentSpec.AWS_EC2
             else:
                 raise BentoMLException(f'Unrecognized operator {operator}')
 
@@ -131,7 +133,6 @@ class DeploymentAPIClient:
                 f'Failed to validate deployment {deployment_pb.name}: '
                 f'{validation_errors}'
             )
-
         # Make sure there is no active deployment with the same deployment name
         get_deployment_pb = self.yatai_service.GetDeployment(
             GetDeploymentRequest(
@@ -223,6 +224,8 @@ class DeploymentAPIClient:
         labels=None,
         annotations=None,
         wait=None,
+        data_capture_s3_prefix=None,
+        data_capture_sample_percent=None,
     ):
         """Create SageMaker deployment
 
@@ -240,6 +243,8 @@ class DeploymentAPIClient:
             labels:
             annotations:
             wait:
+            data_capture_s3_prefix:
+            data_capture_sample_percent:
 
         Returns:
             ApplyDeploymentResponse
@@ -257,6 +262,16 @@ class DeploymentAPIClient:
         deployment_pb.spec.sagemaker_operator_config.instance_count = instance_count
         deployment_pb.spec.sagemaker_operator_config.instance_type = instance_type
         deployment_pb.spec.sagemaker_operator_config.timeout = timeout
+
+        if data_capture_s3_prefix:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_s3_prefix = (
+                data_capture_s3_prefix
+            )
+        if data_capture_sample_percent:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_sample_percent = (
+                data_capture_sample_percent
+            )
+
         if region:
             deployment_pb.spec.sagemaker_operator_config.region = region
         if num_of_gunicorn_workers_per_instance:
@@ -278,6 +293,8 @@ class DeploymentAPIClient:
         bento_name=None,
         bento_version=None,
         wait=None,
+        data_capture_s3_prefix=None,
+        data_capture_sample_percent=None,
     ):
         """ Update current sagemaker deployment
 
@@ -292,6 +309,8 @@ class DeploymentAPIClient:
             bento_name:
             bento_version:
             wait:
+            data_capture_s3_prefix:
+            data_capture_sample_percent:
 
         Returns:
             Protobuf message
@@ -327,6 +346,14 @@ class DeploymentAPIClient:
             deployment_pb.spec.bento_name = bento_name
         if bento_version:
             deployment_pb.spec.bento_version = bento_version
+        if data_capture_s3_prefix:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_s3_prefix = (
+                data_capture_s3_prefix
+            )
+        if data_capture_sample_percent:
+            deployment_pb.spec.sagemaker_operator_config.data_capture_sample_percent = (
+                data_capture_sample_percent
+            )
 
         logger.debug(
             'Updated configuration for sagemaker deployment %s', deployment_pb.name
@@ -365,6 +392,100 @@ class DeploymentAPIClient:
         del list_result.deployments[:]
         list_result.deployments.extend(sagemaker_deployments)
         return list_result
+
+    def create_ec2_deployment(
+        self,
+        name,
+        namespace,
+        bento_name,
+        bento_version,
+        region,
+        min_size,
+        desired_capacity,
+        max_size,
+        instance_type,
+        ami_id,
+        wait=None,
+    ):
+
+        deployment_pb = Deployment(name=name, namespace=namespace)
+        deployment_pb.spec.bento_name = bento_name
+        deployment_pb.spec.bento_version = bento_version
+        if region:
+            deployment_pb.spec.aws_ec2_operator_config.region = region
+        deployment_pb.spec.operator = DeploymentSpec.AWS_EC2
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_min_size = min_size
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = (
+            desired_capacity
+        )
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_max_size = max_size
+        deployment_pb.spec.aws_ec2_operator_config.instance_type = instance_type
+        deployment_pb.spec.aws_ec2_operator_config.ami_id = ami_id
+        return self.create(deployment_pb, wait)
+
+    def update_ec2_deployment(
+        self,
+        deployment_name,
+        bento_name,
+        bento_version,
+        namespace,
+        min_size,
+        desired_capacity,
+        max_size,
+        instance_type,
+        ami_id,
+        wait,
+    ):
+        get_deployment_result = self.get(namespace=namespace, name=deployment_name)
+        if get_deployment_result.status.status_code != status_pb2.Status.OK:
+            error_code = status_pb2.Status.Code.Name(
+                get_deployment_result.status.status_code
+            )
+            error_message = get_deployment_result.status.error_message
+            raise BentoMLException(
+                f"Failed to retrieve current deployment {deployment_name} "
+                f"in {namespace}.  {error_code}:{error_message}"
+            )
+        # new deloyment info with updated configs
+        deployment_pb = get_deployment_result.deployment
+
+        if bento_name:
+            deployment_pb.spec.bento_name = bento_name
+        if bento_version:
+            deployment_pb.spec.bento_version = bento_version
+
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_min_size = min_size
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_desired_capacity = (
+            desired_capacity
+        )
+        deployment_pb.spec.aws_ec2_operator_config.autoscale_max_size = max_size
+        deployment_pb.spec.aws_ec2_operator_config.instance_type = instance_type
+        deployment_pb.spec.aws_ec2_operator_config.ami_id = ami_id
+
+        logger.debug("Updated configuration for Lambda deployment %s", deployment_name)
+
+        return self.apply(deployment_pb, wait)
+
+    def list_ec2_deployments(
+        self,
+        limit=None,
+        offset=None,
+        labels=None,
+        namespace=None,
+        order_by=None,
+        ascending_order=None,
+        is_all_namespaces=False,
+    ):
+        return self.list(
+            limit=limit,
+            offset=offset,
+            labels=labels,
+            namespace=namespace,
+            is_all_namespaces=is_all_namespaces,
+            operator=DeploymentSpec.AWS_EC2,
+            order_by=order_by,
+            ascending_order=ascending_order,
+        )
 
     def create_lambda_deployment(
         self,

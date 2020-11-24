@@ -1,21 +1,20 @@
+import argparse
 import click
 import sys
-import os
+
 import json
 import re
 import psutil
 
 from bentoml import __version__
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.utils.s3 import is_s3_url
-from bentoml.utils.gcs import is_gcs_url
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.exceptions import BentoMLException, CLIException
 from bentoml.server import start_dev_server, start_prod_server
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import (
     ProtoMessageToDict,
-    status_pb_to_error_code_and_message,
+    resolve_bundle_path,
 )
 from bentoml.cli.click_utils import (
     CLI_COLOR_WARNING,
@@ -24,15 +23,16 @@ from bentoml.cli.click_utils import (
     BentoMLCommandGroup,
     conditional_argument,
 )
-from bentoml.cli.utils import (
-    echo_docker_api_result,
-    Spinner,
-    get_default_yatai_client,
-)
+from bentoml.cli.utils import echo_docker_api_result, Spinner
 from bentoml.saved_bundle import (
-    load,
+    load_from_dir,
     load_bento_service_api,
     load_bento_service_metadata,
+)
+from bentoml.utils.docker_utils import (
+    validate_tag,
+    to_valid_docker_image_name,
+    to_valid_docker_image_version,
 )
 
 try:
@@ -50,108 +50,9 @@ yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
 def escape_shell_params(param):
-    k, v = param.split('=')
-    v = re.sub(r'([^a-zA-Z0-9])', r'\\\1', v)
-    return '{}={}'.format(k, v)
-
-
-def to_valid_docker_image_name(name):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return name.lower().strip("._-")
-
-
-def to_valid_docker_image_version(version):
-    # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
-    return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
-
-
-def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
-    if tag is None:
-        return tag
-
-    if ":" in tag:
-        name, version = tag.split(":")[:2]
-    else:
-        name, version = tag, None
-
-    valid_name_pattern = re.compile(
-        r"""
-        ^(
-        [a-z0-9]+      # alphanumeric
-        (.|_{1,2}|-+)? # seperators
-        )*$
-        """,
-        re.VERBOSE,
-    )
-    valid_version_pattern = re.compile(
-        r"""
-        ^
-        [a-zA-Z0-9] # cant start with .-
-        [ -~]{,127} # ascii match rest, cap at 128
-        $
-        """,
-        re.VERBOSE,
-    )
-
-    if not valid_name_pattern.match(name):
-        raise click.BadParameter(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "Name components may contain lowercase letters, digits "
-            "and separators. A separator is defined as a period, "
-            "one or two underscores, or one or more dashes.",
-            ctx=ctx,
-            param=param,
-        )
-    if version and not valid_version_pattern.match(version):
-        raise click.BadParameter(
-            f"Provided Docker Image tag {tag} is invalid. "
-            "A tag name must be valid ASCII and may contain "
-            "lowercase and uppercase letters, digits, underscores, "
-            "periods and dashes. A tag name may not start with a period "
-            "or a dash and may contain a maximum of 128 characters.",
-            ctx=ctx,
-            param=param,
-        )
-    return tag
-
-
-def resolve_bundle_path(bento, pip_installed_bundle_path):
-    if pip_installed_bundle_path:
-        assert (
-            bento is None
-        ), "pip installed BentoService commands should not have Bento argument"
-        return pip_installed_bundle_path
-
-    if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
-        # saved_bundle already support loading local, s3 path and gcs path
-        return bento
-
-    elif ":" in bento:
-        # assuming passing in BentoService in the form of Name:Version tag
-        yatai_client = get_default_yatai_client()
-        name, version = bento.split(':')
-        get_bento_result = yatai_client.repository.get(name, version)
-        if get_bento_result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                get_bento_result.status
-            )
-            raise BentoMLException(
-                f'BentoService {name}:{version} not found - '
-                f'{error_code}:{error_message}'
-            )
-        if get_bento_result.bento.uri.s3_presigned_url:
-            # Use s3 presigned URL for downloading the repository if it is presented
-            return get_bento_result.bento.uri.s3_presigned_url
-        if get_bento_result.bento.uri.gcs_presigned_url:
-            return get_bento_result.bento.uri.gcs_presigned_url
-        else:
-            return get_bento_result.bento.uri.uri
-    else:
-        raise BentoMLException(
-            f'BentoService "{bento}" not found - either specify the file path of '
-            f'the BentoService saved bundle, or the BentoService id in the form of '
-            f'"name:version"'
-        )
+    k, v = param.split("=")
+    v = re.sub(r"([^a-zA-Z0-9])", r"\\\1", v)
+    return "{}={}".format(k, v)
 
 
 def create_bento_service_cli(pip_installed_bundle_path=None):
@@ -174,7 +75,13 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.argument("api_name", type=click.STRING)
     @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
     def run(api_name, run_args, bento=None):
-        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--yatai-url', type=str, default=None)
+        parsed_args, _ = parser.parse_known_args(run_args)
+        yatai_url = parsed_args.yatai_url
+        saved_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path, yatai_url
+        )
 
         api = load_bento_service_api(saved_bundle_path, api_name)
         exit_code = api.handle_cli(run_args)
@@ -186,11 +93,19 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         short_help="List APIs",
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
-    def info(bento=None):
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
+    def info(bento=None, yatai_url=None):
         """
         List all APIs defined in the BentoService loaded from saved bundle
         """
-        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
+        saved_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path, yatai_url
+        )
 
         bento_service_metadata_pb = load_bento_service_metadata(saved_bundle_path)
         output = json.dumps(ProtoMessageToDict(bento_service_metadata_pb), indent=2)
@@ -203,10 +118,18 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         short_help="Display OpenAPI/Swagger JSON specs",
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
-    def open_api_spec(bento=None):
-        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
+    def open_api_spec(bento=None, yatai_url=None):
+        saved_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path, yatai_url
+        )
 
-        bento_service = load(saved_bundle_path)
+        bento_service = load_from_dir(saved_bundle_path)
 
         _echo(json.dumps(get_open_api_spec_json(bento_service), indent=2))
 
@@ -238,9 +161,33 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         "API server on localhost",
         envvar='BENTOML_ENABLE_NGROK',
     )
-    def serve(port, bento=None, enable_microbatch=False, run_with_ngrok=False):
-        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
-        start_dev_server(saved_bundle_path, port, enable_microbatch, run_with_ngrok)
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
+    @click.option(
+        '--enable-swagger/--disable-swagger',
+        is_flag=True,
+        default=True,
+        help="Run API server with Swagger UI enabled",
+        envvar='BENTOML_ENABLE_SWAGGER',
+    )
+    def serve(
+        port,
+        bento=None,
+        enable_microbatch=False,
+        run_with_ngrok=False,
+        yatai_url=None,
+        enable_swagger=True,
+    ):
+        saved_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path, yatai_url
+        )
+        start_dev_server(
+            saved_bundle_path, port, enable_microbatch, run_with_ngrok, enable_swagger
+        )
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -280,6 +227,19 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Number of micro-batch request dispatcher workers",
         envvar='BENTOML_MICROBATCH_WORKERS',
     )
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
+    @click.option(
+        '--enable-swagger/--disable-swagger',
+        is_flag=True,
+        default=True,
+        help="Run API server with Swagger UI enabled",
+        envvar='BENTOML_ENABLE_SWAGGER',
+    )
     def serve_gunicorn(
         port,
         workers,
@@ -287,6 +247,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         bento=None,
         enable_microbatch=False,
         microbatch_workers=1,
+        yatai_url=None,
+        enable_swagger=True,
     ):
         if not psutil.POSIX:
             _echo(
@@ -296,7 +258,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 "https://docs.docker.com/docker-for-windows/ "
             )
             return
-        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
+        saved_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path, yatai_url
+        )
         start_prod_server(
             saved_bundle_path,
             port,
@@ -304,6 +268,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             workers,
             enable_microbatch,
             microbatch_workers,
+            enable_swagger,
         )
 
     @bentoml_cli.command(
@@ -353,7 +318,13 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '-p', '--password', type=click.STRING, required=False,
     )
-    def containerize(bento, push, tag, build_arg, username, password):
+    @click.option(
+        '--yatai-url',
+        type=click.STRING,
+        help='Remote YataiService URL. Optional. '
+        'Example: "--yatai-url http://localhost:50050"',
+    )
+    def containerize(bento, push, tag, build_arg, username, password, yatai_url):
         """Containerize specified BentoService.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -376,7 +347,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         By default, the `containerize` command will use the credentials provided by
         Docker. You may provide your own through `--username` and `--password`.
         """
-        saved_bundle_path = resolve_bundle_path(bento, pip_installed_bundle_path)
+        saved_bundle_path = resolve_bundle_path(
+            bento, pip_installed_bundle_path, yatai_url
+        )
 
         _echo(f"Found Bento: {saved_bundle_path}")
 
@@ -406,7 +379,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
         import docker
 
-        docker_api = docker.APIClient()
+        docker_api = docker.from_env().api
         try:
             with Spinner(f"Building Docker image {tag} from {bento} \n"):
                 for line in echo_docker_api_result(

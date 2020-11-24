@@ -27,6 +27,7 @@ from flask import (
     send_from_directory,
 )
 from werkzeug.exceptions import BadRequest, NotFound
+from google.protobuf.json_format import MessageToJson
 
 from bentoml import BentoService, config
 from bentoml.configuration import get_debug_mode
@@ -45,10 +46,10 @@ logger = logging.getLogger(__name__)
 INDEX_HTML = '''\
 <!DOCTYPE html>
 <head><link rel="stylesheet" type="text/css"
-            href="/swagger_static/swagger-ui.css"></head>
+            href="swagger_static/swagger-ui.css"></head>
 <body>
 <div id="swagger-ui-container"></div>
-<script src="/swagger_static/swagger-ui-bundle.js"></script>
+<script src="swagger_static/swagger-ui-bundle.js"></script>
 <script>
     SwaggerUIBundle({{
         url: '{url}',
@@ -93,13 +94,20 @@ class BentoAPIServer:
     DEFAULT_PORT = config("apiserver").getint("default_port")
     _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
 
-    def __init__(self, bento_service: BentoService, port=DEFAULT_PORT, app_name=None):
+    def __init__(
+        self,
+        bento_service: BentoService,
+        port=DEFAULT_PORT,
+        app_name=None,
+        enable_swagger=True,
+    ):
         app_name = bento_service.name if app_name is None else app_name
 
         self.port = port
         self.bento_service = bento_service
         self.app = Flask(app_name, static_folder=None)
         self.static_path = self.bento_service.get_web_static_content_path()
+        self.enable_swagger = enable_swagger
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'swagger_static'
@@ -139,13 +147,16 @@ class BentoAPIServer:
         """
         return send_from_directory(static_path, 'index.html')
 
-    @staticmethod
-    def swagger_ui_func():
+    def swagger_ui_func(self):
         """
         The swagger UI route for BentoML API server
         """
+        if not self.enable_swagger:
+            return Response(
+                response="Swagger is disabled", status=404, mimetype="text/html"
+            )
         return Response(
-            response=INDEX_HTML.format(url='/docs.json'),
+            response=INDEX_HTML.format(url='docs.json'),
             status=200,
             mimetype="text/html",
         )
@@ -169,6 +180,11 @@ class BentoAPIServer:
         Make sure it works with Kubernetes liveness probe
         """
         return Response(response="\n", status=200, mimetype="text/plain")
+
+    @staticmethod
+    def metadata_json_func(bento_service):
+        bento_service_metadata = bento_service.get_bento_service_metadata_pb()
+        return jsonify(MessageToJson(bento_service_metadata))
 
     def metrics_view_func(self):
         # noinspection PyProtectedMember
@@ -204,6 +220,7 @@ class BentoAPIServer:
         /healthz        Health check ping
         /feedback       Submitting feedback
         /metrics        Prometheus metrics endpoint
+        /metadata       BentoService Artifact Metadata
 
         And user defined InferenceAPI list into flask routes, e.g.:
         /classify
@@ -242,6 +259,11 @@ class BentoAPIServer:
             "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
         )
         self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
+        self.app.add_url_rule(
+            "/metadata",
+            "metadata",
+            partial(self.metadata_json_func, self.bento_service),
+        )
 
         if config("apiserver").getboolean("enable_metrics"):
             self.app.add_url_rule("/metrics", "metrics", self.metrics_view_func)

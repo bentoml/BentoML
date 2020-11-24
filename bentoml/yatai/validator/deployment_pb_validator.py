@@ -66,6 +66,12 @@ deployment_schema = {
                         'min': 1,
                     },
                     'timeout': {'type': 'integer', 'min': 1},
+                    'data_capture_s3_prefix': {'type': 'string'},
+                    'data_capture_sample_percent': {
+                        'type': 'integer',
+                        'min': 1,
+                        'max': 100,
+                    },
                 },
             },
             'aws_lambda_operator_config': {
@@ -103,6 +109,30 @@ deployment_schema = {
                     'function_auth_level': {
                         'type': 'string',
                         'allowed': AZURE_FUNCTIONS_AUTH_LEVELS,
+                    },
+                },
+            },
+            "aws_ec2_operator_config": {
+                "type": "dict",
+                "aws_ec2_operator_configurations": True,
+                "schema": {
+                    "region": {"type": "string"},
+                    "instance_type": {"type": "string"},
+                    "ami_id": {"type": "string"},
+                    "autoscale_min_size": {
+                        "type": "integer",
+                        "min": 0,
+                        "required": True,
+                    },
+                    "autoscale_desired_capacity": {
+                        "type": "integer",
+                        "min": 0,
+                        "required": True,
+                    },
+                    "autoscale_max_size": {
+                        "type": "integer",
+                        "min": 0,
+                        "required": True,
                     },
                 },
             },
@@ -184,6 +214,29 @@ class YataiDeploymentValidator(Validator):
                     'Valid label key and value must be 63 characters or less and '
                     'must be being and end with an alphanumeric character '
                     '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
+                )
+
+    def _validate_aws_ec2_operator_configurations(
+        self, aws_ec2_operator_configurations, field, value
+    ):
+        """ Test label key value schema
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        if aws_ec2_operator_configurations:
+            if (
+                value.get("autoscale_min_size") < 0
+                or value.get("autoscale_max_size") < value.get("autoscale_min_size")
+                or value.get("autoscale_desired_capacity")
+                < value.get("autoscale_min_size")
+                or value.get("autoscale_desired_capacity")
+                > value.get("autoscale_max_size")
+            ):
+                self._error(
+                    field,
+                    "Wrong autoscaling size specified. "
+                    "It should be min_size <= desired_capacity <= max_size",
                 )
 
 

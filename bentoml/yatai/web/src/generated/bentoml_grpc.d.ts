@@ -258,6 +258,12 @@ export namespace bentoml {
 
             /** SageMakerOperatorConfig timeout */
             timeout?: (number|null);
+
+            /** SageMakerOperatorConfig data_capture_s3_prefix */
+            data_capture_s3_prefix?: (string|null);
+
+            /** SageMakerOperatorConfig data_capture_sample_percent */
+            data_capture_sample_percent?: (number|null);
         }
 
         /** Represents a SageMakerOperatorConfig. */
@@ -286,6 +292,12 @@ export namespace bentoml {
 
             /** SageMakerOperatorConfig timeout. */
             public timeout: number;
+
+            /** SageMakerOperatorConfig data_capture_s3_prefix. */
+            public data_capture_s3_prefix: string;
+
+            /** SageMakerOperatorConfig data_capture_sample_percent. */
+            public data_capture_sample_percent: number;
 
             /**
              * Creates a new SageMakerOperatorConfig instance using the specified properties.
@@ -2636,6 +2648,9 @@ export namespace bentoml {
 
             /** BentoArtifact artifact_type */
             artifact_type?: (string|null);
+
+            /** BentoArtifact metadata */
+            metadata?: (google.protobuf.IStruct|null);
         }
 
         /** Represents a BentoArtifact. */
@@ -2652,6 +2667,9 @@ export namespace bentoml {
 
             /** BentoArtifact artifact_type. */
             public artifact_type: string;
+
+            /** BentoArtifact metadata. */
+            public metadata?: (google.protobuf.IStruct|null);
 
             /**
              * Creates a new BentoArtifact instance using the specified properties.

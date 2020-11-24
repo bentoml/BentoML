@@ -330,10 +330,10 @@ def save(bento_service, base_path=None, version=None, labels=None):
     in local file system under the $BENTOML_HOME(~/bentoml) directory. Users can also
     configure BentoML to save their BentoService to a shared Database and cloud object
     storage such as AWS S3.
-
     :param bento_service: target BentoService instance to be saved
     :param base_path: optional - override repository base path
     :param version: optional - save with version override
+    :param labels: optional - user defined labels
     :return: saved_path: file path to where the BentoService is saved
     """
 
@@ -648,7 +648,7 @@ class BentoService:
 
         return self._bento_service_version
 
-    def save(self, base_path=None, version=None, labels=None):
+    def save(self, yatai_url=None, version=None, labels=None):
         """
         Save and register this BentoService via BentoML's built-in model management
         system. BentoML by default keeps track of all the SavedBundle's files and
@@ -656,12 +656,16 @@ class BentoService:
         Users can also configure BentoML to save their BentoService to a shared Database
         and cloud object storage such as AWS S3.
 
-        :param base_path: optional - override repository base path
+        :param yatai_url: optional - URL path to Yatai server
         :param version: optional - save with version override
         :param labels: optional - labels dictionary
         :return: saved_path: file path to where the BentoService is saved
         """
-        return save(self, base_path, version, labels)
+        from bentoml.yatai.client import get_yatai_client
+
+        yc = get_yatai_client(yatai_url)
+
+        return yc.repository.upload(self, version, labels)
 
     def save_to_dir(self, path, version=None):
         """Save this BentoService along with all its artifacts, source code and

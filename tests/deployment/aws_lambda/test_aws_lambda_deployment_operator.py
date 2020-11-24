@@ -10,8 +10,8 @@ from bentoml.yatai.deployment.aws_lambda.operator import (
     AwsLambdaDeploymentOperator,
     _create_aws_lambda_cloudformation_template_file,
 )
+from bentoml.yatai.deployment.aws_lambda.utils import init_sam_project
 from bentoml.yatai.deployment.aws_lambda.utils import (
-    init_sam_project,
     LAMBDA_FUNCTION_LIMIT,
     LAMBDA_FUNCTION_MAX_LIMIT,
 )
@@ -188,7 +188,7 @@ def mock_lambda_related_operations(func):
 @patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
 @patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template',
+    'bentoml.yatai.deployment.aws_lambda.operator.validate_sam_template',
     MagicMock(return_value=None),
 )
 @patch(
@@ -202,6 +202,10 @@ def mock_lambda_related_operations(func):
 @patch('os.remove', MagicMock())
 @patch(
     'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    MagicMock(),
+)
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.cleanup_s3_bucket_if_exist',
     MagicMock(),
 )
 def test_aws_lambda_apply_under_bundle_size_limit_success():
@@ -223,7 +227,7 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 @patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
 @patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template',
+    'bentoml.yatai.deployment.aws_lambda.operator.validate_sam_template',
     MagicMock(return_value=None),
 )
 @patch(
@@ -241,6 +245,10 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 )
 @patch(
     'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    MagicMock(),
+)
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.cleanup_s3_bucket_if_exist',
     MagicMock(),
 )
 def test_aws_lambda_apply_over_bundle_size_limit_success():
@@ -262,7 +270,7 @@ def test_aws_lambda_apply_over_bundle_size_limit_success():
 @patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
 @patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.validate_lambda_template',
+    'bentoml.yatai.deployment.aws_lambda.operator.validate_sam_template',
     MagicMock(return_value=None),
 )
 @patch(
@@ -279,7 +287,7 @@ def test_aws_lambda_apply_over_bundle_size_limit_success():
     MagicMock(),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator._cleanup_s3_bucket_if_exist',
+    'bentoml.yatai.deployment.aws_lambda.operator.cleanup_s3_bucket_if_exist',
     MagicMock(),
 )
 def test_aws_lambda_apply_over_max_bundle_size_limit_fail():

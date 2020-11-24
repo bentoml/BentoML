@@ -35,8 +35,9 @@ AnnoImgTask = InferenceTask[Tuple[BinaryIO, BinaryIO]]  # image file bytes, json
 
 class AnnotatedImageInput(MultiFileInput):
     """Transform incoming image data from http request, cli or lambda event into a
-    numpy array, while allowing an optional JSON file for image annotations (such
-    as object bounding boxes, class labels, etc.)
+    imageio array (a subclass of numpy.ndarray that has a meta attribute), while
+    allowing an optional JSON file for image annotations (such as object bounding
+    boxes, class labels, etc.)
 
     Transforms input image file into a numpy array, and loads JSON file as
     a JSON serializable Python object, providing them to user-defined
@@ -87,7 +88,7 @@ class AnnotatedImageInput(MultiFileInput):
            @api(input=AnnotatedImageInput(), batch=True)
            def predict(
                    self,
-                   image_list: 'Sequence[numpy.ndarray]',
+                   image_list: 'Sequence[imageio.core.utils.Array]',
                    annotations_list: 'Sequence[JsonSerializable]',
                ) -> Sequence[str]:
                cropped_pets = some_pet_finder(image_list, annotations_list)
@@ -111,6 +112,40 @@ class AnnotatedImageInput(MultiFileInput):
             <input name="annotations" type="file">
             <input type="submit">
         </form>
+
+    OR by python requests:
+
+    .. code-block:: python
+
+        import requests
+
+        with open("test.jpg", "rb") as f:
+            image_bytes = f.read()
+        with open("anno.json", "rb") as f:
+            anno_bytes = f.read()
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+            "annotations": ("test.json", anno_bytes),
+        }
+        response = requests.post(your_url, files=files)
+
+    .. code-block:: python
+
+        import requests
+        import PIL
+
+        pil_image = PIL.Image.open('test.jpg')
+        annotations = { "age": 10, "bar": "foo" }
+
+        image_bytes = pil_image.tobytes()
+        anno_bytes = json.dumps(annotations).encode('utf-8')
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+            "annotations": ("test.json", anno_bytes),
+        }
+        response = requests.post(your_url, files=files)
 
     Query with CLI command::
 

@@ -24,8 +24,8 @@ from bentoml.utils.log import configure_logging
 # Configuring logging properly before loading other modules
 configure_logging()
 
-from bentoml.saved_bundle import load, save_to_dir
-from bentoml.service import (
+from bentoml.saved_bundle import load_from_dir, save_to_dir  # noqa: E402
+from bentoml.service import (  # noqa: E402
     BentoService,
     api_decorator as api,
     env_decorator as env,
@@ -34,6 +34,8 @@ from bentoml.service import (
     ver_decorator as ver,
     save,
 )
+
+load = load_from_dir
 
 __all__ = [
     "__version__",
@@ -44,7 +46,9 @@ __all__ = [
     "web_static_content",
     "ver",
     "BentoService",
+    # backward compatible
     "load",
+    "load_from_dir",
     "save",
     "save_to_dir",
     "handlers",

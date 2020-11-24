@@ -47,6 +47,40 @@ class TfTensorInput(StringInput):
 
     Raises:
         BentoMLException: BentoML currently doesn't support Content-Type
+
+    Examples
+    --------
+    Example Service:
+
+    .. code-block:: python
+
+        import tensorflow as tf
+        import bentoml
+        from bentoml.adapters import TfTensorInput
+        from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
+
+        @bentoml.env(infer_pip_packages=True)
+        @bentoml.artifacts([TensorflowSavedModelArtifact('model')])
+        class MyService(bentoml.BentoService):
+
+            @bentoml.api(input=TfTensorInput(), batch=True)
+            def predict(self, input: tf.Tensor):
+                result = self.artifacts.model.predict(input)
+                return result
+
+    Query with Http request:
+
+        curl -i \\
+        --header "Content-Type: application/json"
+        --request POST \\
+        --data '{"instances": [1]}' \\
+        localhost:5000/predict
+
+
+    Query with CLI command::
+
+        bentoml run MyService:latest predict --input \\
+          '{"instances": [1]}'
     """
 
     BATCH_MODE_SUPPORTED = True

@@ -24,6 +24,9 @@ def test_api_function_route(bento_service, img_file):
     response = test_client.get("/healthz")
     assert 200 == response.status_code
 
+    response = test_client.get("/metadata")
+    assert 200 == response.status_code
+
     response = test_client.get("/docs.json")
     assert 200 == response.status_code
 
@@ -74,3 +77,20 @@ def test_api_function_route(bento_service, img_file):
     #     },
     # )
     # assert 200 == response.status_code
+
+
+def test_api_function_route_with_disabled_swagger(bento_service):
+    rest_server = BentoAPIServer(bento_service, enable_swagger=False)
+    test_client = rest_server.app.test_client()
+
+    response = test_client.get("/")
+    assert 404 == response.status_code
+
+    response = test_client.get("/docs")
+    assert 404 == response.status_code
+
+    response = test_client.get("/healthz")
+    assert 200 == response.status_code
+
+    response = test_client.get("/docs.json")
+    assert 200 == response.status_code

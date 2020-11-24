@@ -6,7 +6,6 @@ import time
 import uuid
 
 import docker
-import psutil
 
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.utils.tempdir import TempDirectory

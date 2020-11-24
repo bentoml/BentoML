@@ -46,6 +46,8 @@ def wait_for_healthy_targets_from_stack(name, namespace, region):
 
     stack_name = f"btml-stack-{namespace}-{name}".format(namespace=namespace, name=name)
     cloudformation_stack_result = cf_client.describe_stacks(StackName=stack_name)
+    logger.info('Describe cloud formation result')
+    logger.info(cloudformation_stack_result)
 
     stack_result = cloudformation_stack_result.get("Stacks")[0]
     outputs = stack_result.get("Outputs")
@@ -90,7 +92,8 @@ def run_aws_ec2_create_command(deploy_command):
         deploy_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as proc:
         deploy_command_stdout = proc.stdout.read().decode('utf-8')
-    logger.info('Finish deploying to AWS Lambda',)
+    logger.info('Finish deploying to AWS Lambda')
+    logger.info(deploy_command_stdout)
 
     if proc.returncode != 0:
         return None

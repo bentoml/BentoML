@@ -10,6 +10,9 @@ cd "$GIT_ROOT" || exit
 
 python -m pip install -e .
 
+# Install yatai dependencies
+pip install psycopg2 psycopg2-binary
+
 # Run Yatai server tests
 python -m pytest -s "$GIT_ROOT"/tests/integration/yatai_server
 

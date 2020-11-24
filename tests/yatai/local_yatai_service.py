@@ -1,6 +1,7 @@
 import contextlib
 import logging
 import os
+import subprocess
 import time
 import uuid
 
@@ -30,7 +31,7 @@ def wait_until_container_ready(docker_container, timeout_seconds=60):
 
 
 @contextlib.contextmanager
-def local_yatai_server(db_url=None, repo_base_url=None):
+def local_yatai_service_container(db_url=None, repo_base_url=None):
     ensure_docker_available_or_raise()
     docker_client = docker.from_env()
     local_bentoml_repo_path = os.path.abspath(__file__ + "/../../../")
@@ -77,3 +78,19 @@ RUN pip install /bentoml-local-repo
 
         logger.info(f"Shutting down docker container: {container_name}")
         container.kill()
+
+
+@contextlib.contextmanager
+def local_yatai_service_from_cli(db_url=None, repo_base_url=None, port=50051):
+    yatai_server_command = ['bentoml', 'yatai-service-start', '--no-ui']
+    if db_url:
+        yatai_server_command.extend(['--db-url', db_url])
+    if repo_base_url:
+        yatai_server_command.extend(['--repo-base-url', repo_base_url])
+    proc = subprocess.Popen(
+        yatai_server_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    yatai_service_url = f"localhost:{port}"
+    logger.info(f'Setting config yatai_service.url to: {yatai_service_url}')
+    yield yatai_service_url
+    proc.kill()

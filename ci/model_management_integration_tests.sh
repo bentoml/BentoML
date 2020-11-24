@@ -11,6 +11,6 @@ cd "$GIT_ROOT" || exit
 python -m pip install -e .
 
 # Run bento management tests
-python -m pytest -s "$GIT_ROOT"/tests/integration/bento_management
+python -m pytest -s "$GIT_ROOT"/tests/integration/model_management
 
 test $error = 0 # Return non-zero if pytest failed

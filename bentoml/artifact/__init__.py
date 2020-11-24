@@ -21,6 +21,7 @@ from bentoml.service.artifacts.common import JSONArtifact
 from bentoml.service.artifacts.common import PickleArtifact
 
 from bentoml.frameworks.coreml import CoreMLModelArtifact
+from bentoml.frameworks.detectron import DetectronModelArtifact
 from bentoml.frameworks.fastai import (  # noqa: E402
     FastaiModelArtifact as Fastai2ModelArtifact,
 )  # noqa: E402
@@ -43,6 +44,7 @@ __all__ = [
     "BentoServiceArtifact",
     "BentoServiceArtifactWrapper",
     "CoreMLModelArtifact",
+    "DetectronModelArtifact",
     "Fastai2ModelArtifact",
     "FastaiModelArtifact",
     "FasttextModelArtifact",

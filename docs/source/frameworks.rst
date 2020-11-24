@@ -179,3 +179,10 @@ Example Projects:
     fasttext
     onnx
     Statsmodels
+
+
+=====
+Gluon
+=====
+
+.. autoclass:: bentoml.frameworks.gluon.GluonModelArtifact

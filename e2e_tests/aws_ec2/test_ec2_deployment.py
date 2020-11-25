@@ -55,4 +55,4 @@ def test_aws_ec2_deployment(iris_clf_service):
             assert result[0] == 200, "prediction request should success"
             assert result[1] == '[0]', "prediction result mismatch"
     finally:
-        delete_deployment('ec2', deployment_name)
+        delete_deployment('ec2', deployment_name, deployment_namespace)

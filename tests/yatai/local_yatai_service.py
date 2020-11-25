@@ -82,11 +82,18 @@ RUN pip install /bentoml-local-repo
 
 @contextlib.contextmanager
 def local_yatai_service_from_cli(db_url=None, repo_base_url=None, port=50051):
-    yatai_server_command = ['bentoml', 'yatai-service-start', '--no-ui']
+    yatai_server_command = [
+        'bentoml',
+        'yatai-service-start',
+        '--no-ui',
+        '--grpc-port',
+        str(port),
+    ]
     if db_url:
         yatai_server_command.extend(['--db-url', db_url])
     if repo_base_url:
         yatai_server_command.extend(['--repo-base-url', repo_base_url])
+    logger.info(f'Starting local YataiServer {" ".join(yatai_server_command)}')
     proc = subprocess.Popen(
         yatai_server_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )

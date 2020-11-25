@@ -17,8 +17,8 @@ logger = logging.getLogger('bentoml.test')
 
 def test_aws_ec2_deployment(iris_clf_service):
     random_hash = uuid.uuid4().hex[:6]
-    deployment_name = f'tests-ec2-e2e-{random_hash}'
-    deployment_namespace = "test"
+    deployment_name = f'tests-e2e-{random_hash}'
+    deployment_namespace = "dev"
     deployment_region = get_default_aws_region()
 
     create_deployment_command = [

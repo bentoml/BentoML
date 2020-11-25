@@ -175,7 +175,7 @@ def get_aws_ec2_sub_command():
             != yatai_proto.status_pb2.Status.OK
         ):
             error_code, error_message = status_pb_to_error_code_and_message(
-                get_deployment_result.status
+                delete_deployment_result.status
             )
             raise CLIException(f"{error_code}:{error_message}")
 

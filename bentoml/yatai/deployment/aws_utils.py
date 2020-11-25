@@ -154,8 +154,15 @@ def delete_cloudformation_stack(stack_name, region):
 
 
 def delete_ecr_repository(repository_name, region):
-    ecr_client = boto3.client("ecr", region)
-    ecr_client.delete_repository(repositoryName=repository_name, force=True)
+    try:
+        ecr_client = boto3.client("ecr", region)
+        ecr_client.delete_repository(repositoryName=repository_name, force=True)
+    except ClientError as e:
+        if e.response and e.response['Error']['Code'] == 'RepositoryNotFoundException':
+            # Don't raise error, if the repo can't be found
+            return
+        else:
+            raise e
 
 
 def get_instance_public_ip(instance_id, region):

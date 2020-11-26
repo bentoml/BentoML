@@ -34,14 +34,13 @@ class DetectronModelArtifact(BentoServiceArtifact):
             from detectron2.modeling import META_ARCH_REGISTRY
             from detectron2.config import get_cfg
             from detectron2.data import transforms as T
-            import json
         except ImportError:
             raise MissingDependencyException(
                 "Detectron package is required to use DetectronArtifact"
             )
 
         cfg = get_cfg()
-        cfg.merge_from_file(f"{path}/{self._file_name}.yaml")        
+        cfg.merge_from_file(f"{path}/{self._file_name}.yaml")
         meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
         self._model = meta_arch(cfg)
         self._model.eval()
@@ -70,7 +69,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "Detectron package is required to use DetectronArtifact"
             )
-        os.makedirs(dst, exist_ok = True)
+        os.makedirs(dst, exist_ok=True)
         checkpointer = DetectionCheckpointer(self._model, save_dir=dst)
         checkpointer.save(self._file_name)
         cfg = get_cfg()

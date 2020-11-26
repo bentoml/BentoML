@@ -1,40 +1,43 @@
-# The example is based on the coco example in 
+# The example is based on the coco example in
 # https://www.dlology.com/blog/how-to-train-detectron2-with-custom-coco-datasets/
 
 import torch
 import os
 import numpy as np
 import bentoml
-from typing import Dict, List
+from typing import Dict
 from bentoml.frameworks.detectron import DetectronModelArtifact
 from bentoml.adapters import ImageInput
 from detectron2.data import transforms as T
 import sys, traceback
 
+
 def get_traceback_list():
     exc_type, exc_value, exc_traceback = sys.exc_info()
     return traceback.format_exception(exc_type, exc_value, exc_traceback)
 
-os.environ['BENTOML_DEVICE'] = 'GPU'
+
+os.environ['BENTOML_DEVICE'] = 'CPU'
+
 
 @bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([DetectronModelArtifact('model')])
-class CocoDetectronClassifier(bentoml.BentoService):
+class DetectronClassifier(bentoml.BentoService):
 
     @bentoml.api(input=ImageInput(), batch=False)
-    def predict(self, img: np.ndarray) -> Dict:
+    def predict(self, original_image: np.ndarray) -> Dict:
         _aug = T.ResizeShortestEdge(
             [800, 800], 1333
         )
         boxes = None
         scores = None
         pred_classes = None
-        pred_masks= None
+        pred_masks = None
         try:
-            original_image = img[:, :, ::-1]
             height, width = original_image.shape[:2]
             image = _aug.get_transform(original_image).apply_image(original_image)
             image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+
             inputs = {"image": image, "height": height, "width": width}
             predictions = self.artifacts.model([inputs])[0]
             pred_instances = predictions["instances"]

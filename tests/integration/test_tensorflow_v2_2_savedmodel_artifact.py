@@ -16,6 +16,14 @@ from tests.integration.api_server.conftest import (
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(np.asfarray(test_data))
 
+import contextlib
+
+
+@pytest.fixture(scope="session")
+def clean_context():
+    with contextlib.ExitStack() as stack:
+        yield stack
+
 
 class TfKerasModel(tf.keras.Model):
     def __init__(self):
@@ -73,13 +81,15 @@ def enable_microbatch(request):
 
 
 @pytest.fixture(scope="module")
-def tf2_host(tf2_svc, enable_microbatch):
+def tf2_host(tf2_svc, enable_microbatch, clean_context):
     with export_service_bundle(tf2_svc) as saved_path:
-        with build_api_server_docker_image(saved_path) as server_image:
-            with run_api_server_docker_container(
-                server_image, enable_microbatch=enable_microbatch, timeout=500
-            ) as host:
-                yield host
+        server_image = clean_context.enter_context(
+            build_api_server_docker_image(saved_path)
+        )
+        with run_api_server_docker_container(
+            server_image, enable_microbatch=enable_microbatch, timeout=500
+        ) as host:
+            yield host
 
 
 def test_tensorflow_2_artifact(tf2_svc):

@@ -5,11 +5,12 @@ import torch # pylint: disable=import-error
 import os
 import numpy as np
 import bentoml
+import sys
+import traceback
 from typing import Dict
 from bentoml.frameworks.detectron import DetectronModelArtifact
 from bentoml.adapters import ImageInput
 from detectron2.data import transforms as T # pylint: disable=import-error
-import sys, traceback
 
 
 def get_traceback_list():

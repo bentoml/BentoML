@@ -30,26 +30,18 @@ class DetectronClassifier(bentoml.BentoService):
         _aug = T.ResizeShortestEdge(
             [800, 800], 1333
         )
-        boxes = None
-        scores = None
-        pred_classes = None
-        pred_masks = None
-        try:
-            height, width = original_image.shape[:2]
-            image = _aug.get_transform(original_image).apply_image(original_image)
-            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
 
-            inputs = {"image": image, "height": height, "width": width}
-            predictions = self.artifacts.model([inputs])[0]
-            pred_instances = predictions["instances"]
-            boxes = (pred_instances.pred_boxes).to("cpu").tensor.detach().numpy()
-            scores = (pred_instances.scores).to("cpu").detach().numpy()
-            pred_classes = (pred_instances.pred_classes).to("cpu").detach().numpy()
-            pred_masks = (pred_instances.pred_masks).to("cpu").detach().numpy()
-        except Exception as error:
-            print(f"Caught error whilst processing {error}")
-            for line in get_traceback_list():
-                print(line[:-1])
+        height, width = original_image.shape[:2]
+        image = _aug.get_transform(original_image).apply_image(original_image)
+        image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+
+        inputs = {"image": image, "height": height, "width": width}
+        predictions = self.artifacts.model([inputs])[0]
+        pred_instances = predictions["instances"]
+        boxes = (pred_instances.pred_boxes).to("cpu").tensor.detach().numpy()
+        scores = (pred_instances.scores).to("cpu").detach().numpy()
+        pred_classes = (pred_instances.pred_classes).to("cpu").detach().numpy()
+        pred_masks = (pred_instances.pred_masks).to("cpu").detach().numpy()
 
         result = {
             "boxes" : boxes,

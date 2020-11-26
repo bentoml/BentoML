@@ -1,5 +1,3 @@
-import pytest
-import builtins
 from unittest.mock import patch, MagicMock, mock_open
 from bentoml.frameworks.detectron import DetectronModelArtifact
 
@@ -29,13 +27,13 @@ def test_load():
 
         def to(self, device):
             self.device = device
-        
+
         def __call__(self, cfg):
             return self
-    
+
     class MODEL:
         META_ARCHITECTURE = "Test"
-    
+
     class INPUT:
         MIN_SIZE_TEST = 100
         MAX_SIZE_TEST = 1000
@@ -59,10 +57,15 @@ def test_load():
     fake_config = FakeConfig()
     fake_check_pointer = FakeDetectionCheckPointer()
 
-    with patch("detectron2.modeling.META_ARCH_REGISTRY.get", MagicMock(return_value=fake_meta_arch)):
+    with patch(
+        "detectron2.modeling.META_ARCH_REGISTRY.get",
+        MagicMock(return_value=fake_meta_arch),
+    ):
         with patch("detectron2.config.get_cfg", MagicMock(return_value=fake_config)):
-            with patch("detectron2.checkpoint.DetectionCheckpointer", 
-                    MagicMock(return_value=fake_check_pointer)):
+            with patch(
+                "detectron2.checkpoint.DetectionCheckpointer",
+                MagicMock(return_value=fake_check_pointer),
+            ):
                 test_artifact.load("test")
 
     assert fake_meta_arch.device == "cpu"
@@ -73,12 +76,12 @@ def test_load():
 def test_save():
     test_artifact = DetectronModelArtifact("model")
     dummy_object = True
-    returned_object = test_artifact.pack(dummy_object)
+    test_artifact.pack(dummy_object)
 
     class FakeDetectionCheckPointer:
         def __init__(self):
             pass
-        
+
         def __call__(self, model, dest):
             pass
 
@@ -91,17 +94,21 @@ def test_save():
 
         def merge_from_file(self, file):
             self.file_name = file
-        
+
         def dump(self):
             return "Test"
 
     fake_check_pointer = FakeDetectionCheckPointer()
     fake_config = FakeConfig()
     with patch("os.makedirs", MagicMock(return_value=True)):
-    
-        with patch("detectron2.checkpoint.DetectionCheckpointer", 
-                    MagicMock(return_value=fake_check_pointer)):
-            with patch("detectron2.config.get_cfg", MagicMock(return_value=fake_config)):
+
+        with patch(
+            "detectron2.checkpoint.DetectionCheckpointer",
+            MagicMock(return_value=fake_check_pointer),
+        ):
+            with patch(
+                "detectron2.config.get_cfg", MagicMock(return_value=fake_config)
+            ):
                 with patch('builtins.open', mock_open()) as m:
                     test_artifact.save("test")
                     m.assert_called_once_with('test/model.yaml', 'w', encoding='utf-8')

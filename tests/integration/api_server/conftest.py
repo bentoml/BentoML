@@ -68,9 +68,45 @@ def _wait_until_api_server_ready(host_url, timeout, container, check_interval=1)
 
 
 @contextmanager
+def export_service_bundle(bento_service):
+    """
+    Export a bentoml service to a temporary directory, yield the path.
+    Delete the temporary directory on close.
+    """
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as path:
+        bento_service.save_to_dir(path)
+        yield path
+
+
+@contextmanager
+def build_api_server_docker_image(saved_bundle_path, image_tag="test_bentoml_server"):
+    """
+    Build the docker image for a saved bentoml bundle, yield the docker image object.
+    """
+
+    import docker
+
+    client = docker.from_env()
+    logger.info(
+        f"Building API server docker image from build context: {saved_bundle_path}"
+    )
+    try:
+        image, _ = client.images.build(path=saved_bundle_path, tag=image_tag, rm=True)
+        yield image
+        client.images.remove(image.id)
+    except docker.errors.BuildError as e:
+        for line in e.build_log:
+            if 'stream' in line:
+                print(line['stream'].strip())
+        raise
+
+
+@contextmanager
 def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
     """
-    yields the host URL
+    Launch a bentoml service container from a docker image, yields the host URL.
     """
     import docker
 
@@ -98,22 +134,3 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
         print(container.logs())
         container.stop()
         time.sleep(1)  # make sure container stopped & deleted
-
-
-@contextmanager
-def build_api_server_docker_image(saved_bundle_path, image_tag):
-    import docker
-
-    client = docker.from_env()
-    logger.info(
-        f"Building API server docker image from build context: {saved_bundle_path}"
-    )
-    try:
-        image, _ = client.images.build(path=saved_bundle_path, tag=image_tag, rm=True)
-        yield image
-        client.images.remove(image.id)
-    except docker.errors.BuildError as e:
-        for line in e.build_log:
-            if 'stream' in line:
-                print(line['stream'].strip())
-        raise

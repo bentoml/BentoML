@@ -9,6 +9,7 @@ import bentoml
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
 from tests.integration.api_server.conftest import (
     build_api_server_docker_image,
+    export_service_bundle,
     run_api_server_docker_container,
 )
 
@@ -16,9 +17,9 @@ test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(np.asfarray(test_data))
 
 
-class Tensorflow2Model(tf.keras.Model):
+class TfKerasModel(tf.keras.Model):
     def __init__(self):
-        super(Tensorflow2Model, self).__init__()
+        super().__init__()
         # Simple linear layer which sums the inputs
         self.dense = tf.keras.layers.Dense(
             units=1,
@@ -33,6 +34,7 @@ class Tensorflow2Model(tf.keras.Model):
 
 class TfNativeModel(tf.Module):
     def __init__(self):
+        super().__init__()
         self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
         super(TfNativeModel, self).__init__()
         self.dense = lambda inputs: tf.matmul(inputs, self.weights)
@@ -44,8 +46,13 @@ class TfNativeModel(tf.Module):
         return self.dense(inputs)
 
 
-@pytest.fixture(params=[Tensorflow2Model, TfNativeModel], scope="module")
-def tf2_svc(request):
+@pytest.fixture(params=[TfKerasModel, TfNativeModel], scope="session")
+def model_class(request):
+    return request.param
+
+
+@pytest.fixture(params=[False, True], scope="session")
+def tf2_svc(model_class):
     """Return a TensorFlow2 BentoService."""
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
@@ -54,43 +61,25 @@ def tf2_svc(request):
     Tensorflow2Classifier._bento_service_bundle_version = None
 
     svc = Tensorflow2Classifier()
-    model = request.param()
+    model = model_class()
     model(test_tensor)
     svc.pack('model', model)
     return svc
 
 
+@pytest.fixture(params=[False, True], scope="module")
+def enable_microbatch(request):
+    return request.param
+
+
 @pytest.fixture(scope="module")
-def tf2_svc_saved_dir(tmp_path_factory, tf2_svc):
-    """Save a TensorFlow2 BentoService and return the saved directory."""
-    # Must be called at least once before saving so that layers are built
-    # See: https://github.com/tensorflow/tensorflow/issues/37439
-    tf2_svc.predict(test_tensor)
-    tmpdir = str(tmp_path_factory.mktemp("tf2_svc"))
-    tf2_svc.save_to_dir(tmpdir)
-    return tmpdir
-
-
-@pytest.fixture()
-def tf2_svc_loaded(tf2_svc_saved_dir):
-    """Return a TensorFlow2 BentoService that has been saved and loaded."""
-    return bentoml.load(tf2_svc_saved_dir)
-
-
-@pytest.fixture()
-def tf2_image(tf2_svc_saved_dir):
-    with build_api_server_docker_image(
-        tf2_svc_saved_dir, "tf2_example_service"
-    ) as image:
-        yield image
-
-
-@pytest.fixture(params=[False, True])
-def tf2_host(tf2_image, request):
-    with run_api_server_docker_container(
-        tf2_image, enable_microbatch=request.param, timeout=500
-    ) as host:
-        yield host
+def tf2_host(tf2_svc, enable_microbatch):
+    with export_service_bundle(tf2_svc) as saved_path:
+        with build_api_server_docker_image(saved_path) as server_image:
+            with run_api_server_docker_container(
+                server_image, enable_microbatch=enable_microbatch, timeout=500
+            ) as host:
+                yield host
 
 
 def test_tensorflow_2_artifact(tf2_svc):
@@ -99,10 +88,12 @@ def test_tensorflow_2_artifact(tf2_svc):
     ), 'Inference on unsaved TF2 artifact does not match expected'
 
 
-def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
-    assert (
-        tf2_svc_loaded.predict(test_tensor) == 15.0
-    ), 'Inference on saved and loaded TF2 artifact does not match expected'
+def test_tensorflow_2_artifact_loaded(tf2_svc):
+    with export_service_bundle(tf2_svc) as saved_path:
+        tf2_svc_loaded = bentoml.load(saved_path)
+        assert (
+            tf2_svc.predict(test_tensor) == tf2_svc_loaded.predict(test_tensor) == 15.0
+        ), 'Inference on saved and loaded TF2 artifact does not match expected'
 
 
 @pytest.mark.asyncio

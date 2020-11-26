@@ -1,14 +1,14 @@
 # The example is based on the coco example in
 # https://www.dlology.com/blog/how-to-train-detectron2-with-custom-coco-datasets/
 
-import torch
+import torch # pylint: disable=import-error
 import os
 import numpy as np
 import bentoml
 from typing import Dict
 from bentoml.frameworks.detectron import DetectronModelArtifact
 from bentoml.adapters import ImageInput
-from detectron2.data import transforms as T
+from detectron2.data import transforms as T # pylint: disable=import-error
 import sys, traceback
 
 

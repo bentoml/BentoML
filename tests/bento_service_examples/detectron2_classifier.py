@@ -1,7 +1,7 @@
 # The example is based on the coco example in
 # https://www.dlology.com/blog/how-to-train-detectron2-with-custom-coco-datasets/
 
-import torch # pylint: disable=import-error
+import torch  # pylint: disable=import-error
 import os
 import numpy as np
 import bentoml
@@ -10,7 +10,7 @@ import traceback
 from typing import Dict
 from bentoml.frameworks.detectron import DetectronModelArtifact
 from bentoml.adapters import ImageInput
-from detectron2.data import transforms as T # pylint: disable=import-error
+from detectron2.data import transforms as T  # pylint: disable=import-error
 
 
 def get_traceback_list():
@@ -24,12 +24,9 @@ os.environ['BENTOML_DEVICE'] = 'CPU'
 @bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([DetectronModelArtifact('model')])
 class DetectronClassifier(bentoml.BentoService):
-
     @bentoml.api(input=ImageInput(), batch=False)
     def predict(self, original_image: np.ndarray) -> Dict:
-        _aug = T.ResizeShortestEdge(
-            [800, 800], 1333
-        )
+        _aug = T.ResizeShortestEdge([800, 800], 1333)
 
         height, width = original_image.shape[:2]
         image = _aug.get_transform(original_image).apply_image(original_image)
@@ -44,9 +41,9 @@ class DetectronClassifier(bentoml.BentoService):
         pred_masks = (pred_instances.pred_masks).to("cpu").detach().numpy()
 
         result = {
-            "boxes" : boxes,
-            "scores" : scores,
-            "classes" : pred_classes,
-            "masks" : pred_masks
+            "boxes": boxes,
+            "scores": scores,
+            "classes": pred_classes,
+            "masks": pred_masks,
         }
         return result

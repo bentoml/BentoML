@@ -93,7 +93,7 @@ def build_api_server_docker_image(saved_bundle_path, image_tag="test_bentoml_ser
         f"Building API server docker image from build context: {saved_bundle_path}"
     )
     try:
-        image, _ = client.images.build(path=saved_bundle_path, tag=image_tag, rm=True)
+        image, _ = client.images.build(path=saved_bundle_path, tag=image_tag)
         yield image
         client.images.remove(image.id)
     except docker.errors.BuildError as e:

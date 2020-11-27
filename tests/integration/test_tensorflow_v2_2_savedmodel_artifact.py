@@ -16,14 +16,6 @@ from tests.integration.api_server.conftest import (
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(np.asfarray(test_data))
 
-import contextlib
-
-
-@pytest.fixture(scope="session")
-def clean_context():
-    with contextlib.ExitStack() as stack:
-        yield stack
-
 
 class TfKerasModel(tf.keras.Model):
     def __init__(self):
@@ -75,21 +67,31 @@ def tf2_svc(model_class):
     return svc
 
 
+@pytest.fixture(scope="session")
+def tf2_bundle_path(tf2_svc):
+    with export_service_bundle(tf2_svc) as saved_path:
+        yield saved_path
+
+
+@pytest.fixture(scope="session")
+def tf2_docker_image(tf2_bundle_path):
+    with build_api_server_docker_image(tf2_bundle_path) as image:
+        yield image
+
+
+# pytest gives priority to longer-lived fixtures. Make image building in session scope
+# and others in module scope to avoid redundant image builds.
 @pytest.fixture(params=[False, True], scope="module")
 def enable_microbatch(request):
     return request.param
 
 
 @pytest.fixture(scope="module")
-def tf2_host(tf2_svc, enable_microbatch, clean_context):
-    with export_service_bundle(tf2_svc) as saved_path:
-        server_image = clean_context.enter_context(
-            build_api_server_docker_image(saved_path)
-        )
-        with run_api_server_docker_container(
-            server_image, enable_microbatch=enable_microbatch, timeout=500
-        ) as host:
-            yield host
+def tf2_host(tf2_docker_image, enable_microbatch):
+    with run_api_server_docker_container(
+        tf2_docker_image, enable_microbatch=enable_microbatch, timeout=500
+    ) as host:
+        yield host
 
 
 def test_tensorflow_2_artifact(tf2_svc):

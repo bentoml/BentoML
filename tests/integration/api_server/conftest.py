@@ -18,13 +18,7 @@ def batch_mode(request):
     return request.param
 
 
-@pytest.fixture(params=[True, False], scope="session")
-def enable_microbatch(request):
-    pytest.enable_microbatch = request.param
-    return request.param
-
-
-@pytest.fixture(autouse=True, scope='session')
+@pytest.fixture(scope='session')
 def image(tmpdir_factory, batch_mode):
     bundle_dir = tmpdir_factory.mktemp('test_bundle')
     bundle_path = str(bundle_dir)
@@ -34,7 +28,13 @@ def image(tmpdir_factory, batch_mode):
         yield image
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(params=[True, False])
+def enable_microbatch(request):
+    pytest.enable_microbatch = request.param
+    return request.param
+
+
+@pytest.fixture()
 def host(image, enable_microbatch):
     with run_api_server_docker_container(image, enable_microbatch) as host:
         yield host

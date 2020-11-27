@@ -59,7 +59,7 @@ def model_class(request):
     return request.param
 
 
-@pytest.fixture(params=[False, True], scope="session")
+@pytest.fixture(scope="session")
 def tf2_svc(model_class):
     """Return a TensorFlow2 BentoService."""
     # When the ExampleBentoService got saved and loaded again in the test, the

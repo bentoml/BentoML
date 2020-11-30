@@ -493,12 +493,12 @@ def _update_azure_functions(
 class AzureFunctionsDeploymentOperator(DeploymentOperatorBase):
     def __init__(self, yatai_service):
         super(AzureFunctionsDeploymentOperator, self).__init__(yatai_service)
-        ensure_docker_available_or_raise()
         _assert_azure_cli_available()
         _assert_az_cli_logged_in()
 
     def add(self, deployment_pb):
         try:
+            ensure_docker_available_or_raise()
             deployment_spec = deployment_pb.spec
             if not deployment_spec.azure_functions_operator_config.location:
                 raise YataiDeploymentException(
@@ -558,6 +558,7 @@ class AzureFunctionsDeploymentOperator(DeploymentOperatorBase):
 
     def update(self, deployment_pb, previous_deployment):
         try:
+            ensure_docker_available_or_raise()
             bento_repo_pb = self.yatai_service.GetBento(
                 GetBentoRequest(
                     bento_name=deployment_pb.spec.bento_name,

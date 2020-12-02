@@ -115,7 +115,7 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
     with bentoml.utils.reserve_free_port() as port:
         pass
     if enable_microbatch:
-        command_args = "--enable-microbatch --workers 1"
+        command_args = "--enable-microbatch --workers 1 --mb-max-batch-size 2048"
     else:
         command_args = "--workers 1"
     try:

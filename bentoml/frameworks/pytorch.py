@@ -166,10 +166,8 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
 
     Args:
         name (string): Name of the pytorch model
-        inference_backend (string): Name of the inference runtime for pytorch model.
-            available options are [pytorch, onnxruntime, onnxruntime-gpu]
     Raises:
-        MissingDependencyException
+        MissingDependencyException: torch and pytorch_lightning package is required.
 
     Example usage:
 

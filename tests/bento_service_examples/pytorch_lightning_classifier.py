@@ -1,4 +1,4 @@
-import torch
+import torch  # pylint: disable=import-error
 
 import bentoml
 from bentoml.frameworks.pytorch import PytorchLightningModelArtifact

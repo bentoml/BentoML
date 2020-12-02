@@ -36,7 +36,7 @@ Example Projects:
 
 
 ==============
-Tensorflow 2.0
+Tensorflow 2.0 (Native API)
 ==============
 
 Example Projects:
@@ -47,8 +47,9 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
 
+
 ================
-Tensorflow Keras
+Keras (Tensorflow 2.0 as the backend)
 ================
 
 Example Projects:
@@ -58,6 +59,18 @@ Example Projects:
 * Toxic Comment Classifier - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__
 
 .. autoclass:: bentoml.frameworks.keras.KerasModelArtifact
+
+
+==============
+Tensorflow 1.0
+==============
+
+Example Projects:
+
+* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__
+
+.. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
+
 
 =========
 FastAI v1

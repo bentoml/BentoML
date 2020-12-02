@@ -36,7 +36,7 @@ install_requires = [
     "numpy",
     "packaging",
     "prometheus_client",
-    "protobuf>=3.6.0",
+    "protobuf>=3.8.0",
     "psutil",
     "py_zipkin",
     # python-dateutil required by pandas and boto3, this makes sure the version

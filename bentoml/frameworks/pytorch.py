@@ -6,7 +6,6 @@ import pathlib
 from bentoml.exceptions import (
     InvalidArgument,
     MissingDependencyException,
-    BentoMLException,
 )
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv

@@ -213,8 +213,13 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             bento, pip_installed_bundle_path, yatai_url
         )
         start_dev_server(
-            saved_bundle_path, port, enable_microbatch, mb_max_batch_size, mb_max_latency,
-            run_with_ngrok, enable_swagger
+            saved_bundle_path,
+            port,
+            enable_microbatch,
+            mb_max_batch_size,
+            mb_max_latency,
+            run_with_ngrok,
+            enable_swagger,
         )
 
     # Example Usage:

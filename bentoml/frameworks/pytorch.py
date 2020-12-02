@@ -1,13 +1,30 @@
 import logging
 import os
 import zipfile
+import pathlib
 
-from bentoml.exceptions import InvalidArgument, MissingDependencyException
+from bentoml.exceptions import (
+    InvalidArgument,
+    MissingDependencyException,
+    BentoMLException,
+)
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 from bentoml.utils import cloudpickle
 
 logger = logging.getLogger(__name__)
+
+
+def _is_path_like(path):
+    return isinstance(path, (str, bytes, pathlib.Path, os.PathLike))
+
+
+def _is_pytorch_lightning_model_file_like(path):
+    return (
+        _is_path_like(path)
+        and os.path.isfile(path)
+        and str(path).lower().endswith(".pt")
+    )
 
 
 class PytorchModelArtifact(BentoServiceArtifact):
@@ -142,3 +159,102 @@ class PytorchModelArtifact(BentoServiceArtifact):
             return torch.jit.save(self._model, self._file_path(dst))
 
         return cloudpickle.dump(self._model, open(self._file_path(dst), "wb"))
+
+
+class PytorchLightningModelArtifact(BentoServiceArtifact):
+    """Abstraction for saving and loading pytorch lighting model
+
+    Args:
+        name (string): Name of the pytorch model
+        inference_backend (string): Name of the inference runtime for pytorch model.
+            available options are [pytorch, onnxruntime, onnxruntime-gpu]
+    Raises:
+        MissingDependencyException
+
+    Example usage:
+
+    >>>
+    >>> # Train pytorch lighting model
+    >>> model = SimpleModel()
+    >>>
+    >>> import bentoml
+    >>> import torch
+    >>> from bentoml.adapters import JsonInput
+    >>> from bentoml.frameworks.pytorch import PytorchLightningModelArtifact
+    >>>
+    >>> @bentoml.env(infer_pip_packages=True)
+    >>> @bentoml.artifacts([PytorchLightningModelArtifact('model')])
+    >>> class PytorchLightingService(bentoml.BentoService):
+    >>>     @bentoml.api(input=DataframeInput(), batch=True)
+    >>>     def predict(self, df):
+    >>>         input_tensor = torch.from_numpy(df.to_numpy())
+    >>>         return self.artifacts.model(input)
+    >>>         return input
+    >>>
+    >>> svc = PytorchLightingService()
+    >>> svc.pack('model', model)
+    >>>
+    >>> svc.save()
+    """
+
+    def __init__(self, name):
+        super(PytorchLightningModelArtifact, self).__init__(name)
+        self._model = None
+        self._model_path = None
+
+    def _saved_model_file_path(self, base_path):
+        return os.path.join(base_path, self.name + '.pt')
+
+    def pack(
+        self, path_or_model, input_sample=None, metadata=None
+    ):  # pylint:disable=arguments-differ
+        if _is_pytorch_lightning_model_file_like(path_or_model):
+            self._model_path = path_or_model
+        else:
+            try:
+                from pytorch_lightning.core.lightning import LightningModule
+            except ImportError:
+                raise InvalidArgument(
+                    '"pytorch_lightning.lightning.LightningModule" model is required '
+                    'to pack a PytorchLightningModelArtifact'
+                )
+            if isinstance(path_or_model, LightningModule):
+                self._model = path_or_model
+            else:
+                raise InvalidArgument(
+                    'a LightningModule model is required to pack a '
+                    'PytorchLightningModelArtifact'
+                )
+        return self
+
+    def load(self, path):
+        return self.pack(self._saved_model_file_path(path))
+
+    def set_dependencies(self, env: BentoServiceEnv):
+        env.add_pip_packages(['pytorch'])
+
+    def get(self):
+        if self._model is not None:
+            return self._model
+        else:
+            return self._get_torch_script_model()
+
+    def save(self, dst):
+        try:
+            import torch
+        except ImportError:
+            raise MissingDependencyException(
+                '"torch" package is required for saving Pytorch lightning model'
+            )
+        script = self._model.to_torchscript()
+        torch.jit.save(script, self._saved_model_file_path(dst))
+
+    def _get_torch_script_model(self):
+        try:
+            from torch import jit
+        except ImportError:
+            raise MissingDependencyException(
+                '"torch" package is required for inference with '
+                'PytorchLightningModelArtifact'
+            )
+        return jit.load(self._model_path)

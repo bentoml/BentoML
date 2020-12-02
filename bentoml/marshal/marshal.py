@@ -133,10 +133,14 @@ class MarshalService:
         outbound_host="localhost",
         outbound_port=None,
         outbound_workers=1,
+        mb_max_batch_size: int = None,
+        mb_max_latency: int = None,
     ):
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
         self.outbound_workers = outbound_workers
+        self.mb_max_batch_size = mb_max_batch_size
+        self.mb_max_latency = mb_max_latency
         self.batch_handlers = dict()
         self._outbound_sema = None  # the semaphore to limit outbound connections
 
@@ -186,10 +190,24 @@ class MarshalService:
     def setup_routes_from_pb(self, bento_service_metadata_pb):
         for api_pb in bento_service_metadata_pb.apis:
             if api_pb.batch:
-                max_latency = api_pb.mb_max_latency or self.DEFAULT_MAX_LATENCY
-                max_batch_size = api_pb.mb_max_batch_size or self.DEFAULT_MAX_BATCH_SIZE
+                max_latency = (
+                    self.mb_max_latency
+                    or api_pb.mb_max_latency
+                    or self.DEFAULT_MAX_LATENCY
+                )
+                max_batch_size = (
+                    self.mb_max_batch_size
+                    or api_pb.mb_max_batch_size
+                    or self.DEFAULT_MAX_BATCH_SIZE
+                )
                 self.add_batch_handler(api_pb.name, max_latency, max_batch_size)
-                logger.info("Micro batch enabled for API `%s`", api_pb.name)
+                logger.info(
+                    "Micro batch enabled for API `%s` max-latency: %s"
+                    " max-batch-size %s",
+                    api_pb.name,
+                    max_latency,
+                    max_batch_size,
+                )
 
     async def request_dispatcher(self, request):
         with async_trace(

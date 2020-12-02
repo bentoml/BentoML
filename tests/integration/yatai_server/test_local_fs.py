@@ -39,9 +39,7 @@ def test_yatai_server_with_postgres_and_local_storage():
     create_database(postgres_db_url)
     time.sleep(60)
 
-    with local_yatai_service_from_cli(
-        db_url=postgres_db_url, port=50052
-    ) as yatai_server_url:
+    with local_yatai_service_from_cli(db_url=postgres_db_url) as yatai_server_url:
         logger.info('Saving bento service')
         logger.info(f'yatai url is {yatai_server_url}')
         svc = ExampleBentoService()

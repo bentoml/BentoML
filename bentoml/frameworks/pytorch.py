@@ -76,7 +76,8 @@ class PytorchModelArtifact(BentoServiceArtifact):
 
         if not isinstance(model, torch.nn.Module):
             raise InvalidArgument(
-                "PytorchModelArtifact can only pack type 'torch.nn.Module' or 'torch.jit.ScriptModule'"
+                "PytorchModelArtifact can only pack type \
+                'torch.nn.Module' or 'torch.jit.ScriptModule'"
             )
 
         self._model = model
@@ -99,7 +100,8 @@ class PytorchModelArtifact(BentoServiceArtifact):
         if not isinstance(model, torch.nn.Module):
             raise InvalidArgument(
                 "Expecting PytorchModelArtifact loaded object type to be "
-                "'torch.nn.Module' or 'torch.jit.ScriptModule' but actually it is {}".format(
+                "'torch.nn.Module' or 'torch.jit.ScriptModule' \
+                but actually it is {}".format(
                     type(model)
                 )
             )

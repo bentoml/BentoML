@@ -56,6 +56,14 @@ class PytorchModelArtifact(BentoServiceArtifact):
     >>>
     >>> # Pytorch model can be packed directly.
     >>> svc.pack('net', net)
+    >>>
+    >>> # Alternatively,
+    >>>
+    >>> # Pack a TorchScript Model
+    >>> # Random input in the format expected by the net
+    >>> sample_input = ...
+    >>> traced_net = torch.jit.trace(net, sample_input)
+    >>> svc.pack('net', traced_net)
     """
 
     def __init__(self, name, file_extension=".pt"):

@@ -187,6 +187,11 @@ class KerasModelArtifact(BentoServiceArtifact):
                         "Failed to import '{}' module when loading saved "
                         "KerasModelArtifact".format(keras_module_name)
                     )
+        else:
+            raise ArtifactLoadingException(
+                "Failed to read keras model name from '{}' when loading saved "
+                "KerasModelArtifact".format(self._keras_module_name_path(path))
+            )
 
         if self._default_custom_objects is None and os.path.isfile(
             self._custom_objects_path(path)

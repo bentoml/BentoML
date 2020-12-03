@@ -61,6 +61,7 @@ def svc(model):
     svc = KerasClassifier()
     model.predict(np.array([test_data]))
     svc.pack('model', model)
+    svc.pack('model2', model)
     return svc
 
 
@@ -87,6 +88,9 @@ def test_keras_artifact(svc):
     assert svc.predict([test_data]) == [
         15.0
     ], 'Inference on unsaved Keras artifact does not match expected'
+    assert svc.predict2([test_data]) == [
+        15.0
+    ], 'Inference on unsaved Keras artifact does not match expected'
 
 
 def test_keras_artifact_loaded(svc):
@@ -95,6 +99,9 @@ def test_keras_artifact_loaded(svc):
         assert (
             loaded.predict([test_data]) == 15.0
         ), 'Inference on saved and loaded Keras artifact does not match expected'
+        assert (
+            loaded.predict2([test_data]) == 15.0
+        ), 'Inference on saved and loaded Keras artifact does not match expected'
 
 
 @pytest.mark.asyncio
@@ -102,6 +109,14 @@ async def test_keras_artifact_with_docker(host):
     await pytest.assert_request(
         "POST",
         f"http://{host}/predict",
+        headers=(("Content-Type", "application/json"),),
+        data=json.dumps(test_data),
+        assert_status=200,
+        assert_data=b'[15.0]',
+    )
+    await pytest.assert_request(
+        "POST",
+        f"http://{host}/predict2",
         headers=(("Content-Type", "application/json"),),
         data=json.dumps(test_data),
         assert_status=200,

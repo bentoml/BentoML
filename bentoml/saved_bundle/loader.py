@@ -96,6 +96,7 @@ def _resolve_remote_bundle_path(bundle_path):
 
 def resolve_remote_bundle(func):
     """Decorate a function to handle remote bundles."""
+
     @wraps(func)
     def wrapper(bundle_path, *args):
         if _is_remote_path(bundle_path):
@@ -103,6 +104,7 @@ def resolve_remote_bundle(func):
                 return func(local_bundle_path, *args)
 
         return func(bundle_path, *args)
+
     return wrapper
 
 

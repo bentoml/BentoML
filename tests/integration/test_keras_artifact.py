@@ -9,12 +9,18 @@ import pytest
 import tensorflow as tf
 
 import bentoml
-from tests.bento_service_examples.keras_classifier import KerasClassifier
 from tests.integration.api_server.conftest import (
     build_api_server_docker_image,
     export_service_bundle,
     run_api_server_docker_container,
 )
+
+TF2 = tf.__version__.startswith('2')
+
+if TF2:
+    from tests.bento_service_examples.keras_classifier import KerasClassifier
+else:
+    from tests.bento_service_examples.keras_with_tf1_classifier import KerasClassifier
 
 test_data = [1, 2, 3, 4, 5]
 
@@ -48,6 +54,7 @@ def svc(model):
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
     # Resetting it here so it does not effect other tests
+
     KerasClassifier._bento_service_bundle_path = None
     KerasClassifier._bento_service_bundle_version = None
 

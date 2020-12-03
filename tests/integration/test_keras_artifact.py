@@ -1,4 +1,6 @@
 # pylint: disable=redefined-outer-name
+
+import contextlib
 import json
 
 import keras
@@ -16,8 +18,6 @@ from tests.integration.api_server.conftest import (
 
 test_data = [1, 2, 3, 4, 5]
 
-import contextlib
-
 
 @pytest.fixture(scope="session")
 def clean_context():
@@ -25,43 +25,25 @@ def clean_context():
         yield stack
 
 
-class TfKerasModel(tf.keras.Model):
-    def __init__(self):
-        super().__init__()
-        # Simple linear layer which sums the inputs
-        self.dense = tf.keras.layers.Dense(
-            units=1,
-            input_shape=(5,),
-            use_bias=False,
-            kernel_initializer=tf.keras.initializers.Ones(),
+@pytest.fixture(params=[tf.keras, keras], scope="session")
+def model(request):
+    ke = request.param
+    net = ke.Sequential(
+        (
+            ke.layers.Dense(
+                units=1,
+                input_shape=(5,),
+                use_bias=False,
+                kernel_initializer=ke.initializers.Ones(),
+            ),
         )
-
-    def call(self, inputs):
-        return self.dense(inputs)
-
-
-class KerasModel(keras.Model):
-    def __init__(self):
-        super().__init__()
-        # Simple linear layer which sums the inputs
-        self.dense = keras.layers.Dense(
-            units=1,
-            input_shape=(5,),
-            use_bias=False,
-            kernel_initializer=keras.initializers.Ones(),
-        )
-
-    def call(self, inputs):
-        return self.dense(inputs)
-
-
-@pytest.fixture(params=[TfKerasModel, KerasModel], scope="session")
-def model_class(request):
-    return request.param
+    )
+    net.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    return net
 
 
 @pytest.fixture(scope="session")
-def svc(model_class):
+def svc(model):
     """Return a TensorFlow2 BentoService."""
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
@@ -70,10 +52,15 @@ def svc(model_class):
     KerasClassifier._bento_service_bundle_version = None
 
     svc = KerasClassifier()
-    model = model_class()
-    model(np.array([test_data]))
+    model.predict(np.array([test_data]))
     svc.pack('model', model)
     return svc
+
+
+@pytest.fixture(scope="session")
+def image(svc, clean_context):
+    with export_service_bundle(svc) as saved_path:
+        yield clean_context.enter_context(build_api_server_docker_image(saved_path))
 
 
 @pytest.fixture(params=[False, True], scope="module")
@@ -82,15 +69,11 @@ def enable_microbatch(request):
 
 
 @pytest.fixture(scope="module")
-def host(svc, enable_microbatch, clean_context):
-    with export_service_bundle(svc) as saved_path:
-        server_image = clean_context.enter_context(
-            build_api_server_docker_image(saved_path)
-        )
-        with run_api_server_docker_container(
-            server_image, enable_microbatch=enable_microbatch, timeout=500
-        ) as host:
-            yield host
+def host(image, enable_microbatch):
+    with run_api_server_docker_container(
+        image, enable_microbatch=enable_microbatch, timeout=500
+    ) as host:
+        yield host
 
 
 def test_keras_artifact(svc):
@@ -101,9 +84,9 @@ def test_keras_artifact(svc):
 
 def test_keras_artifact_loaded(svc):
     with export_service_bundle(svc) as saved_path:
-        tf2_svc_loaded = bentoml.load(saved_path)
+        loaded = bentoml.load(saved_path)
         assert (
-            svc.predict([test_data]) == tf2_svc_loaded.predict([test_data]) == 15.0
+            loaded.predict([test_data]) == 15.0
         ), 'Inference on saved and loaded Keras artifact does not match expected'
 
 

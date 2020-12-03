@@ -173,11 +173,12 @@ class KerasModelArtifact(BentoServiceArtifact):
                 raise InvalidArgument(error_msg)
 
         self.bind_keras_backend_session()
-        model._make_predict_function()
+        # model._make_predict_function()
 
         self._model = model
         self._custom_objects = custom_objects
-        self._model_wrapper = _KerasModelWrapper(self._model, self.graph, self.sess)
+        # self._model_wrapper = _KerasModelWrapper(self._model, self.graph, self.sess)
+        self._model_wrapper = self._model
         return self
 
     def load(self, path):
@@ -192,7 +193,7 @@ class KerasModelArtifact(BentoServiceArtifact):
                         "KerasModelArtifact".format(keras_module_name)
                     )
 
-        self.create_session()
+        # self.create_session()
 
         if self._default_custom_objects is None and os.path.isfile(
             self._custom_objects_path(path)
@@ -201,6 +202,10 @@ class KerasModelArtifact(BentoServiceArtifact):
                 open(self._custom_objects_path(path), 'rb')
             )
 
+        model = keras_module.models.load_model(
+            self._model_file_path(path), custom_objects=self._default_custom_objects,
+        )
+        return self.pack(model)
         with self.graph.as_default():
             with self.sess.as_default():
                 # load keras model via json and weights if requested
@@ -262,4 +267,4 @@ class _KerasModelWrapper:
     def __call__(self, *args, **kwargs):
         with self.graph.as_default():
             with self.sess.as_default():
-                return object.__call__(self, *args, **kwargs)
+                return self.keras_model(*args, **kwargs)

@@ -10,4 +10,4 @@ from bentoml.frameworks.keras import KerasModelArtifact
 class KerasClassifier(bentoml.BentoService):
     @bentoml.api(input=JsonInput(), batch=True)
     def predict(self, jsons):
-        return self.artifacts.model(np.array(jsons))
+        return self.artifacts.model.predict(np.array(jsons))

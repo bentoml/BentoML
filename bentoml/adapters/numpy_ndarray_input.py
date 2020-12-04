@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from typing import Sequence, Tuple
 
 from bentoml.adapters.string_input import StringInput
@@ -130,7 +131,17 @@ class NumpyNdarrayInput(StringInput):
 
         for i, task in enumerate(tasks):
             try:
-                arrays[i] = numpy.array(task.data, dtype=self.dtype)
+                data = json.loads(task.data)
+            except ValueError:
+                task.discard(
+                    err_msg=f"{self.__class__.__name__} only accepts json serializable "
+                    "objects",
+                    http_status=400,
+                )
+                continue
+
+            try:
+                arrays[i] = numpy.array(data, dtype=self.dtype)
             except ValueError:
                 task.discard(
                     err_msg=f"invalid literal for {self.dtype} with value: {task.data}",

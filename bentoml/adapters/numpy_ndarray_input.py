@@ -113,7 +113,7 @@ class NumpyNdarrayInput(StringInput):
     @property
     def config(self):
         base_config = super().config
-        return dict(base_config, dtype=self.dtype.descr,)
+        return dict(base_config, dtype=repr(self.dtype),)
 
     @property
     def request_schema(self):
@@ -157,4 +157,8 @@ class NumpyNdarrayInput(StringInput):
                     http_status=400,
                 )
 
-        return (numpy.stack(tuple(a for a in arrays if a is not self._Undefined)),)
+        arrays = tuple(a for a in arrays if a is not self._Undefined)
+        if arrays:
+            return (numpy.stack(arrays),)
+        else:
+            return (numpy.array([]),)

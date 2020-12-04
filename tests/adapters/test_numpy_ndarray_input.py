@@ -30,7 +30,7 @@ def predict(ndarray):
 
 
 def test_e2e(make_api):
-    input_adapter = NumpyNdarrayInput()
+    input_adapter = NumpyNdarrayInput(dtype="int32")
 
     api = make_api(input_adapter, predict)
 

@@ -82,7 +82,10 @@ class NumpyNdarrayInput(StringInput):
     SINGLE_MODE_SUPPORTED = False
 
     def __init__(
-        self, dtype: str = None, **base_kwargs,
+        self,
+        dtype: "numpy.dtype" = None,
+        input_example: "numpy.ndarray" = None,
+        **base_kwargs,
     ):
         super().__init__(**base_kwargs)
 
@@ -92,10 +95,16 @@ class NumpyNdarrayInput(StringInput):
                 "Missing required dependency 'numpy' for NumpyNdarrayInput, install "
                 "with `pip install numpy`"
             )
-        if isinstance(dtype, (list, tuple)):
-            self.dtype = dict((index, dtype) for index, dtype in enumerate(dtype))
+        if input_example is not None and not isinstance(input_example, numpy.ndarray):
+            raise TypeError(
+                f"`input_example` of {self.__class__.__name__} must be an object of "
+                f"numpy.ndarray"
+            )
+
+        if dtype is None and input_example is not None:
+            self.dtype = input_example.dtype
         else:
-            self.dtype = dtype
+            self.dtype = numpy.dtype(dtype)
 
     @property
     def pip_dependencies(self):
@@ -104,7 +113,7 @@ class NumpyNdarrayInput(StringInput):
     @property
     def config(self):
         base_config = super().config
-        return dict(base_config, dtype=self.dtype,)
+        return dict(base_config, dtype=self.dtype.descr,)
 
     @property
     def request_schema(self):

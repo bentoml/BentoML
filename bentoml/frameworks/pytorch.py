@@ -2,6 +2,7 @@ import logging
 import os
 import zipfile
 import pathlib
+import shutil
 
 from bentoml.exceptions import (
     InvalidArgument,
@@ -228,27 +229,30 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
         return self
 
     def load(self, path):
-        return self.pack(self._saved_model_file_path(path))
+        self._model = self._get_torch_script_model(self._saved_model_file_path(path))
 
     def set_dependencies(self, env: BentoServiceEnv):
         env.add_pip_packages(['pytorch'])
 
     def get(self):
-        if self._model is not None:
-            return self._model
-        else:
-            return self._get_torch_script_model()
+        if self._model is None:
+            self._model = self._get_torch_script_model()
+        return self._model
 
     def save(self, dst):
-        try:
-            import torch
-        except ImportError:
-            raise MissingDependencyException(
-                '"torch" package is required for saving Pytorch lightning model'
-            )
-        script = self._model.to_torchscript()
-        torch.jit.save(script, self._saved_model_file_path(dst))
+        if self._model:
+            try:
+                import torch
+            except ImportError:
+                raise MissingDependencyException(
+                    '"torch" package is required for saving Pytorch lightning model'
+                )
+            script = self._model.to_torchscript()
+            torch.jit.save(script, self._saved_model_file_path(dst))
+        if self._model_path:
+            shutil.copyfile(self._model_path, self._saved_model_file_path(dst))
 
+    @staticmethod
     def _get_torch_script_model(self):
         try:
             from torch import jit

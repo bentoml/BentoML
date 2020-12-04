@@ -210,6 +210,8 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
 
     def pack(self, path_or_model, metadata=None):  # pylint:disable=arguments-differ
         if _is_pytorch_lightning_model_file_like(path_or_model):
+            print('WE HAVE PATH FOR PACKING')
+            print(path_or_model)
             self._model_path = path_or_model
         else:
             try:
@@ -236,7 +238,7 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
 
     def get(self):
         if self._model is None:
-            self._model = self._get_torch_script_model()
+            self._model = self._get_torch_script_model(self._model_path)
         return self._model
 
     def save(self, dst):
@@ -253,7 +255,7 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
             shutil.copyfile(self._model_path, self._saved_model_file_path(dst))
 
     @staticmethod
-    def _get_torch_script_model(self):
+    def _get_torch_script_model(model_path):
         try:
             from torch import jit
         except ImportError:
@@ -261,4 +263,4 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
                 '"torch" package is required for inference with '
                 'PytorchLightningModelArtifact'
             )
-        return jit.load(self._model_path)
+        return jit.load(model_path)

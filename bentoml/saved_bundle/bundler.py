@@ -71,6 +71,10 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     if _is_remote_path(path):
         # If user provided path is an remote location, the bundle will first save to
         # a temporary directory and then upload to the remote location
+        logger.info(
+            'Saving bento to an remote path. BentoML will first save the bento '
+            'to a local temporary directory and then upload to the remote path.'
+        )
         remote_save_path = path
         temp_dir = TempDirectory()
         temp_dir.create()

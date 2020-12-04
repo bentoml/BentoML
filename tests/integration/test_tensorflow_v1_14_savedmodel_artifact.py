@@ -1,12 +1,11 @@
 # pylint: disable=redefined-outer-name
-import contextlib
 import json
 import tempfile
 
 import pytest
 import tensorflow as tf
 
-from tests.integration.api_server.conftest import (
+from tests.integration.utils import (
     build_api_server_docker_image,
     export_service_bundle,
     run_api_server_docker_container,
@@ -54,7 +53,7 @@ def tf1_model_path():
 
 
 @pytest.fixture(scope="session")
-def tf1_svc(tf1_model_path):
+def svc(tf1_model_path):
     """Return a TensorFlow1 BentoService."""
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
@@ -71,34 +70,25 @@ def tf1_svc(tf1_model_path):
     return svc
 
 
-@pytest.fixture(params=[False, True], scope="module")
-def enable_microbatch(request):
-    return request.param
-
-
 @pytest.fixture(scope="session")
-def clean_context():
-    with contextlib.ExitStack() as stack:
-        yield stack
+def image(svc, clean_context):
+    with export_service_bundle(svc) as saved_path:
+        yield clean_context.enter_context(build_api_server_docker_image(saved_path))
 
 
 @pytest.fixture(scope="module")
-def tf1_host(tf1_svc, enable_microbatch, clean_context):
-    with export_service_bundle(tf1_svc) as saved_path:
-        server_image = clean_context.enter_context(
-            build_api_server_docker_image(saved_path)
-        )
-        with run_api_server_docker_container(
-            server_image, enable_microbatch=enable_microbatch, timeout=500
-        ) as host:
-            yield host
+def host(image, enable_microbatch):
+    with run_api_server_docker_container(
+        image, enable_microbatch=enable_microbatch, timeout=500
+    ) as host:
+        yield host
 
 
 @pytest.mark.asyncio
-async def test_tensorflow_1_artifact_with_docker(tf1_host):
+async def test_tensorflow_1_artifact_with_docker(host):
     await pytest.assert_request(
         "POST",
-        f"http://{tf1_host}/predict",
+        f"http://{host}/predict",
         headers=(("Content-Type", "application/json"),),
         data=json.dumps({"instances": test_data}),
         assert_status=200,

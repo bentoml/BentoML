@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
 
-import contextlib
 import json
 
 import keras
@@ -9,7 +8,7 @@ import pytest
 import tensorflow as tf
 
 import bentoml
-from tests.integration.api_server.conftest import (
+from tests.integration.utils import (
     build_api_server_docker_image,
     export_service_bundle,
     run_api_server_docker_container,
@@ -25,14 +24,8 @@ else:
 test_data = [1, 2, 3, 4, 5]
 
 
-@pytest.fixture(scope="session")
-def clean_context():
-    with contextlib.ExitStack() as stack:
-        yield stack
-
-
 @pytest.fixture(params=[tf.keras, keras], scope="session")
-def model(request):
+def keras_model(request):
     ke = request.param
     net = ke.Sequential(
         (
@@ -49,7 +42,7 @@ def model(request):
 
 
 @pytest.fixture(scope="session")
-def svc(model):
+def svc(keras_model):
     """Return a TensorFlow2 BentoService."""
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
@@ -59,9 +52,9 @@ def svc(model):
     KerasClassifier._bento_service_bundle_version = None
 
     svc = KerasClassifier()
-    model.predict(np.array([test_data]))
-    svc.pack('model', model)
-    svc.pack('model2', model)
+    keras_model.predict(np.array([test_data]))
+    svc.pack('model', keras_model)
+    svc.pack('model2', keras_model)
     return svc
 
 
@@ -69,11 +62,6 @@ def svc(model):
 def image(svc, clean_context):
     with export_service_bundle(svc) as saved_path:
         yield clean_context.enter_context(build_api_server_docker_image(saved_path))
-
-
-@pytest.fixture(params=[False, True], scope="module")
-def enable_microbatch(request):
-    return request.param
 
 
 @pytest.fixture(scope="module")

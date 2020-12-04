@@ -11,16 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
-from typing import Iterable, Mapping, Optional, Sequence, Tuple
+from typing import Sequence, Tuple
 
 from bentoml.adapters.string_input import StringInput
 from bentoml.exceptions import MissingDependencyException
-from bentoml.types import HTTPHeaders, InferenceTask
-from bentoml.utils.dataframe_util import (
-    PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
-    read_dataframes_from_json_n_csv,
-)
+from bentoml.types import InferenceTask
 from bentoml.utils.lazy_loader import LazyLoader
 
 numpy = LazyLoader('numpy', globals(), 'numpy')
@@ -31,55 +26,13 @@ ApiFuncArgs = Tuple['numpy.ndarray']
 
 class NumpyNdarrayInput(StringInput):
     """
-    Convert various inputs(HTTP, Aws Lambda or CLI) to numpy dataframe, passing it to
+    Convert various inputs(HTTP, Aws Lambda or CLI) to numpy ndarray, passing it to
     API functions.
 
     Parameters
     ----------
-    orient : str
-        Indication of expected JSON string format.
-        Compatible JSON strings can be produced by ``to_json()`` with a
-        corresponding orient value.
-        The set of possible orients is:
-
-        - ``'split'`` : dict like
-          ``{index -> [index], columns -> [columns], data -> [values]}``
-        - ``'records'`` : list like
-          ``[{column -> value}, ... , {column -> value}]``
-        - ``'index'`` : dict like ``{index -> {column -> value}}``
-        - ``'columns'`` : dict like ``{column -> {index -> value}}``
-        - ``'values'`` : just the values array
-
-        The allowed and default values depend on the value
-        of the `typ` parameter.
-
-        * when ``typ == 'series'`` (not available now),
-
-          - allowed orients are ``{'split','records','index'}``
-          - default is ``'index'``
-          - The Series index must be unique for orient ``'index'``.
-
-        * when ``typ == 'frame'``,
-
-          - allowed orients are ``{'split','records','index',
-            'columns','values'}``
-          - default is ``'columns'``
-          - The DataFrame index must be unique for orients ``'index'`` and
-            ``'columns'``.
-          - The DataFrame columns must be unique for orients ``'index'``,
-            ``'columns'``, and ``'records'``.
-
-    typ : {'frame', 'series'}, default 'frame'
-        ** Note: 'series' is not supported now. **
-        The type of object to recover.
-
     dtype : dict, default None
         If is None, infer dtypes; if a dict of column to dtype, then use those.
-        Not applicable for ``orient='table'``.
-
-    input_dtypes : dict, default None
-        ** Deprecated **
-        The same as the `dtype`
 
     Raises
     -------
@@ -94,7 +47,7 @@ class NumpyNdarrayInput(StringInput):
     .. code-block:: python
 
         from bentoml import env, artifacts, api, BentoService
-        from bentoml.adapters import DataframeInput
+        from bentoml.adapters import NumpyNdarrayInput
         from bentoml.frameworks.sklearn import SklearnModelArtifact
 
         @env(infer_pip_packages=True)
@@ -135,7 +88,7 @@ class NumpyNdarrayInput(StringInput):
         # Verify numpy imported properly and retry import if it has failed initially
         if numpy is None:
             raise MissingDependencyException(
-                "Missing required dependency 'numpy' for DataframeInput, install "
+                "Missing required dependency 'numpy' for NumpyNdarrayInput, install "
                 "with `pip install numpy`"
             )
         if isinstance(dtype, (list, tuple)):
@@ -150,22 +103,11 @@ class NumpyNdarrayInput(StringInput):
     @property
     def config(self):
         base_config = super().config
-        return dict(base_config, orient=self.orient, typ=self.typ, dtype=self.dtype,)
+        return dict(base_config, dtype=self.dtype,)
 
     @property
     def request_schema(self):
-        if isinstance(self.dtype, dict):
-            json_schema = {  # For now, only declare JSON on docs.
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        k: {"type": "array", "items": {"type": self._get_type(v)}}
-                        for k, v in self.dtype.items()
-                    },
-                }
-            }
-        else:
-            json_schema = {"schema": {"type": "object"}}
+        json_schema = {"schema": {"type": "object"}}
         return {
             "multipart/form-data": {
                 "schema": {
@@ -177,53 +119,22 @@ class NumpyNdarrayInput(StringInput):
             "text/csv": {"schema": {"type": "string", "format": "binary"}},
         }
 
-    @classmethod
-    def _detect_format(cls, task: InferenceTask) -> str:
-        if task.aws_lambda_event:
-            headers = HTTPHeaders.from_dict(task.aws_lambda_event.get('headers', {}))
-            if headers.content_type == "application/json":
-                return "json"
-            if headers.content_type == "text/csv":
-                return "csv"
-        elif task.http_headers:
-            headers = task.http_headers
-            if headers.content_type == "application/json":
-                return "json"
-            if headers.content_type == "text/csv":
-                return "csv"
-        elif task.cli_args:
-            parser = argparse.ArgumentParser()
-            parser.add_argument('--format', type=str, choices=['csv', 'json'])
-            parsed_args, _ = parser.parse_known_args(list(task.cli_args))
-            return parsed_args.format or "json"
-
-        return "json"
+    class _Undefined:
+        pass
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[str]]
+        self, tasks: Sequence[InferenceTask[str]]
     ) -> ApiFuncArgs:
-        fmts, datas = tuple(
-            zip(*((self._detect_format(task), task.data) for task in tasks))
-        )
 
-        df, batchs = read_dataframes_from_json_n_csv(
-            datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
-        )
+        arrays = [self._Undefined] * len(tasks)
 
-        if df is None:
-            for task in tasks:
+        for i, task in enumerate(tasks):
+            try:
+                arrays[i] = numpy.array(task.data, dtype=self.dtype)
+            except ValueError:
                 task.discard(
+                    err_msg=f"invalid literal for {self.dtype} with value: {task.data}",
                     http_status=400,
-                    err_msg=f"{self.__class__.__name__} Wrong input format.",
                 )
-            return (df,)
 
-        for task, batch, data in zip(tasks, batchs, datas):
-            if batch == 0:
-                task.discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__} Wrong input format: {data}.",
-                )
-            else:
-                task.batch = batch
-        return (df,)
+        return (numpy.stack(tuple(a for a in arrays if a is not self._Undefined)),)

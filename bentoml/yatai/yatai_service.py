@@ -42,6 +42,7 @@ def get_yatai_service(
         if scheme in ('grpcs', 'https'):
             tls_root_ca_cert = (
                 config().get('yatai_service', 'tls_root_ca_cert')
+                # Adding also prev. name to ensure that old configurations do not break.
                 or config().get('yatai_service', 'client_certificate_file')
                 or certifi.where()  # default: Mozilla ca cert
             )

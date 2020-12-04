@@ -31,6 +31,7 @@ from bentoml.adapters.json_input import JsonInput
 from bentoml.adapters.json_output import JsonOutput
 from bentoml.adapters.multi_file_input import MultiFileInput
 from bentoml.adapters.multi_image_input import MultiImageInput
+from bentoml.adapters.numpy_ndarray_input import NumpyNdarrayInput
 from bentoml.adapters.string_input import StringInput
 from bentoml.adapters.tensorflow_tensor_input import TfTensorInput
 from bentoml.adapters.tensorflow_tensor_output import TfTensorOutput
@@ -56,4 +57,5 @@ __all__ = [
     "ClipperIntsInput",
     "ClipperStringsInput",
     'DefaultOutput',
+    "NumpyNdarrayInput",
 ]

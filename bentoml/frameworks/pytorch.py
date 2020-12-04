@@ -161,7 +161,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
 
 
 class PytorchLightningModelArtifact(BentoServiceArtifact):
-    """Abstraction for saving and loading pytorch lighting model
+    """Abstraction for saving and loading pytorch lightning model
 
     Args:
         name (string): Name of the pytorch model
@@ -171,7 +171,13 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
     Example usage:
 
     >>>
-    >>> # Train pytorch lighting model
+    >>> # Train pytorch lightning model
+    >>> from pytorch_lightning.core.lightning import LightningModule
+    >>>
+    >>> class SimpleModel(LightningModule):
+    >>>     def forward(self, x):
+    >>>         return x.add(1)
+    >>>
     >>> model = SimpleModel()
     >>>
     >>> import bentoml
@@ -185,8 +191,7 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
     >>>     @bentoml.api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
     >>>         input_tensor = torch.from_numpy(df.to_numpy())
-    >>>         return self.artifacts.model(input)
-    >>>         return input
+    >>>         return self.artifacts.model(input).numpy()
     >>>
     >>> svc = PytorchLightingService()
     >>> svc.pack('model', model)

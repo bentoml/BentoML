@@ -47,7 +47,7 @@ def test_sqlite_and_local_fs():
 
         bento_pb = yc.repository.get(bento_tag)
         assert (
-                bento_pb.uri.type == BentoUri.LOCAL
+            bento_pb.uri.type == BentoUri.LOCAL
         ), 'BentoService storage type mismatched, expect LOCAL'
 
         logger.info(f'Deleting saved bundle {bento_tag}')

@@ -195,7 +195,15 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
     >>>         return self.artifacts.model(input).numpy()
     >>>
     >>> svc = PytorchLightingService()
+    >>> # Pack Pytorch Lightning model instance
     >>> svc.pack('model', model)
+    >>>
+    >>> # Pack saved Pytorch Lightning model
+    >>> # import torch
+    >>> # script = model.to_torchscript()
+    >>> # saved_model_path = 'path/to/model.pt'
+    >>> # torch.jit.save(script, saved_model_path)
+    >>> # svc.pack('model', saved_model_path)
     >>>
     >>> svc.save()
     """
@@ -210,8 +218,9 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
 
     def pack(self, path_or_model, metadata=None):  # pylint:disable=arguments-differ
         if _is_pytorch_lightning_model_file_like(path_or_model):
-            print('WE HAVE PATH FOR PACKING')
-            print(path_or_model)
+            logger.info(
+                'Received an existed Pytorch lightning model for artifact packing'
+            )
             self._model_path = path_or_model
         else:
             try:
@@ -222,6 +231,9 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
                     'to pack a PytorchLightningModelArtifact'
                 )
             if isinstance(path_or_model, LightningModule):
+                logger.info(
+                    'Received a Pytorch lightning model instance for artifact packing'
+                )
                 self._model = path_or_model
             else:
                 raise InvalidArgument(

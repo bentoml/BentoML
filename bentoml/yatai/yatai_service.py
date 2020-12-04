@@ -44,14 +44,8 @@ def get_yatai_service(
                 config().get('yatai_service', 'tls_root_ca_cert')
                 or certifi.where()  # default: Mozilla ca cert
             )
-            tls_client_key = (
-                config().get('yatai_service', 'tls_client_key')
-                or None
-            )
-            tls_client_cert = (
-                config().get('yatai_service', 'tls_client_cert')
-                or None
-            )
+            tls_client_key = config().get('yatai_service', 'tls_client_key') or None
+            tls_client_cert = config().get('yatai_service', 'tls_client_cert') or None
             with open(tls_root_ca_cert, 'rb') as fb:
                 ca_cert = fb.read()
             with open(tls_client_key, 'rb') as fb:

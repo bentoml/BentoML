@@ -32,7 +32,7 @@ def test_sqlite_and_local_fs():
         assert delete_svc_result is None
 
 
-@pytest.skip('Skipping Postgres test on Github Action as it continues been flaky')
+@pytest.mark.skip('Skipping Postgres test on Github Action as it continues been flaky')
 def test_yatai_server_with_postgres_and_local_storage():
     postgres_db_url = 'postgresql://postgres:postgres@localhost/bentoml:5432'
 

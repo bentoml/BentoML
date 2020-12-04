@@ -40,13 +40,25 @@ def get_yatai_service(
         scheme, addr = parse_grpc_url(channel_address)
 
         if scheme in ('grpcs', 'https'):
-            client_cacert_path = (
-                config().get('yatai_service', 'client_certificate_file')
+            tls_root_ca_cert = (
+                config().get('yatai_service', 'tls_root_ca_cert')
                 or certifi.where()  # default: Mozilla ca cert
             )
-            with open(client_cacert_path, 'rb') as ca_cert_file:
-                ca_cert = ca_cert_file.read()
-            credentials = grpc.ssl_channel_credentials(ca_cert, None, None)
+            tls_client_key = (
+                config().get('yatai_service', 'tls_client_key')
+                or None
+            )
+            tls_client_cert = (
+                config().get('yatai_service', 'tls_client_cert')
+                or None
+            )
+            with open(tls_root_ca_cert, 'rb') as fb:
+                ca_cert = fb.read()
+            with open(tls_client_key, 'rb') as fb:
+                client_key = fb.read()
+            with open(tls_client_cert, 'rb') as fb:
+                client_cert = fb.read()
+            credentials = grpc.ssl_channel_credentials(ca_cert, client_key, client_cert)
             channel = grpc.secure_channel(addr, credentials)
         else:
             channel = grpc.insecure_channel(addr)

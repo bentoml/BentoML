@@ -37,7 +37,6 @@ def test_yatai_server_with_postgres_and_local_storage():
     from sqlalchemy_utils import create_database
 
     create_database(postgres_db_url)
-    time.sleep(60)
 
     with local_yatai_service_from_cli(db_url=postgres_db_url) as yatai_server_url:
         logger.info('Saving bento service')

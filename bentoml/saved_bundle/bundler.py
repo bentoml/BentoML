@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import importlib
-import io
 import os
 import shutil
 import stat
@@ -68,10 +67,11 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         raise BentoMLException(
             "save_to_dir only works with instances of custom BentoService class"
         )
+    remote_save_path = None
     if _is_remote_path(path):
         # If user provided path is an remote location, the bundle will first save to
         # a temporary directory and then upload to the remote location
-        remote_path = path
+        remote_save_path = path
         temp_dir = TempDirectory()
         temp_dir.create()
         path = temp_dir.path
@@ -202,15 +202,15 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
 
     # Upload saved bento bundle from temp directory to the remote location
-    if remote_path is not None:
-        _upload_bento_to_remote_path(remote_path, path, bento_service.name)
+    if remote_save_path is not None:
+        _upload_bento_to_remote_path(remote_save_path, path, bento_service.name)
 
     if not silent:
         logger.info(
             "BentoService bundle '%s:%s' created at: %s",
             bento_service.name,
             bento_service.version,
-            remote_path if remote_path else path,
+            remote_save_path if remote_save_path is not None else path,
         )
 
 

@@ -1,5 +1,6 @@
 import logging
 import time
+import pytest
 
 from bentoml.yatai.client import get_yatai_client
 from bentoml.yatai.proto.repository_pb2 import BentoUri
@@ -31,6 +32,7 @@ def test_sqlite_and_local_fs():
         assert delete_svc_result is None
 
 
+@pytest.mark.skip('Skipping Postgres test on Github Action as it continues been flaky')
 def test_yatai_server_with_postgres_and_local_storage():
     postgres_db_url = 'postgresql://postgres:postgres@localhost/bentoml:5432'
 

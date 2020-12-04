@@ -7,7 +7,7 @@ import tensorflow as tf
 
 import bentoml
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
-from tests.integration.api_server.conftest import (
+from tests.integration.utils import (
     build_api_server_docker_image,
     export_service_bundle,
     run_api_server_docker_container,
@@ -15,14 +15,6 @@ from tests.integration.api_server.conftest import (
 
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(np.asfarray(test_data))
-
-import contextlib
-
-
-@pytest.fixture(scope="session")
-def clean_context():
-    with contextlib.ExitStack() as stack:
-        yield stack
 
 
 class TfKerasModel(tf.keras.Model):
@@ -55,12 +47,12 @@ class TfNativeModel(tf.Module):
 
 
 @pytest.fixture(params=[TfKerasModel, TfNativeModel], scope="session")
-def model_class(request):
+def tf2_model_class(request):
     return request.param
 
 
 @pytest.fixture(scope="session")
-def tf2_svc(model_class):
+def svc(tf2_model_class):
     """Return a TensorFlow2 BentoService."""
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
@@ -69,48 +61,45 @@ def tf2_svc(model_class):
     Tensorflow2Classifier._bento_service_bundle_version = None
 
     svc = Tensorflow2Classifier()
-    model = model_class()
+    model = tf2_model_class()
     model(test_tensor)
     svc.pack('model', model)
     return svc
 
 
-@pytest.fixture(params=[False, True], scope="module")
-def enable_microbatch(request):
-    return request.param
+@pytest.fixture(scope="session")
+def image(svc, clean_context):
+    with export_service_bundle(svc) as saved_path:
+        yield clean_context.enter_context(build_api_server_docker_image(saved_path))
 
 
 @pytest.fixture(scope="module")
-def tf2_host(tf2_svc, enable_microbatch, clean_context):
-    with export_service_bundle(tf2_svc) as saved_path:
-        server_image = clean_context.enter_context(
-            build_api_server_docker_image(saved_path)
-        )
-        with run_api_server_docker_container(
-            server_image, enable_microbatch=enable_microbatch, timeout=500
-        ) as host:
-            yield host
+def host(image, enable_microbatch):
+    with run_api_server_docker_container(
+        image, enable_microbatch=enable_microbatch, timeout=500
+    ) as host:
+        yield host
 
 
-def test_tensorflow_2_artifact(tf2_svc):
+def test_tensorflow_2_artifact(svc):
     assert (
-        tf2_svc.predict(test_tensor) == 15.0
+        svc.predict(test_tensor) == 15.0
     ), 'Inference on unsaved TF2 artifact does not match expected'
 
 
-def test_tensorflow_2_artifact_loaded(tf2_svc):
-    with export_service_bundle(tf2_svc) as saved_path:
+def test_tensorflow_2_artifact_loaded(svc):
+    with export_service_bundle(svc) as saved_path:
         tf2_svc_loaded = bentoml.load(saved_path)
         assert (
-            tf2_svc.predict(test_tensor) == tf2_svc_loaded.predict(test_tensor) == 15.0
+            svc.predict(test_tensor) == tf2_svc_loaded.predict(test_tensor) == 15.0
         ), 'Inference on saved and loaded TF2 artifact does not match expected'
 
 
 @pytest.mark.asyncio
-async def test_tensorflow_2_artifact_with_docker(tf2_host):
+async def test_tensorflow_2_artifact_with_docker(host):
     await pytest.assert_request(
         "POST",
-        f"http://{tf2_host}/predict",
+        f"http://{host}/predict",
         headers=(("Content-Type", "application/json"),),
         data=json.dumps({"instances": test_data}),
         assert_status=200,

@@ -4,7 +4,13 @@ from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([TensorflowSavedModelArtifact('model')])
+@bentoml.artifacts(
+    [
+        TensorflowSavedModelArtifact('model1'),
+        TensorflowSavedModelArtifact('model2'),
+        TensorflowSavedModelArtifact('model3'),
+    ]
+)
 class Tensorflow2Classifier(bentoml.BentoService):
     @bentoml.api(input=TfTensorInput(), batch=True)
     def predict1(self, tensor):

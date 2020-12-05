@@ -17,7 +17,7 @@ test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(np.asfarray(test_data))
 
 ragged_data = [[15], [7, 8], [1, 2, 3, 4, 5]]
-ragged_tensor = tf.ragged.constant(ragged_data)
+ragged_tensor = tf.ragged.constant(ragged_data, dtype=tf.float64)
 
 
 class TfKerasModel(tf.keras.Model):

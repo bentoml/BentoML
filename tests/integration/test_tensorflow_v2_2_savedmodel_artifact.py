@@ -115,7 +115,7 @@ def test_tensorflow_2_artifact(svc):
     ), 'Inference on unsaved TF2 artifact does not match expected'
 
     assert (
-        svc.predict3(ragged_data) == 15.0
+        (svc.predict3(ragged_data) == 15.0).numpy().all()
     ), 'Inference on unsaved TF2 artifact does not match expected'
 
 

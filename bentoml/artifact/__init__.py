@@ -10,23 +10,13 @@ Importing from "bentoml.artifact.*" has been deprecated. Instead, use\
 `from bentoml.service.artifacts.common import PickleArtifact`"""
 )
 
-from bentoml.service.artifacts import (
-    BentoServiceArtifact,
-    BentoServiceArtifactWrapper,
-    ArtifactCollection,
-)
-
-from bentoml.service.artifacts.common import TextFileArtifact
-from bentoml.service.artifacts.common import JSONArtifact
-from bentoml.service.artifacts.common import PickleArtifact
-
 from bentoml.frameworks.coreml import CoreMLModelArtifact
 from bentoml.frameworks.fastai import (  # noqa: E402
-    FastaiModelArtifact as Fastai2ModelArtifact,
-)  # noqa: E402
-from bentoml.frameworks.fastai import (  # noqa: E402
     Fastai1ModelArtifact as FastaiModelArtifact,
-)  # noqa: E402
+)
+from bentoml.frameworks.fastai import (  # noqa: E402
+    FastaiModelArtifact as Fastai2ModelArtifact,
+)
 from bentoml.frameworks.fasttext import FasttextModelArtifact
 from bentoml.frameworks.h2o import H2oModelArtifact
 from bentoml.frameworks.keras import KerasModelArtifact
@@ -37,6 +27,16 @@ from bentoml.frameworks.sklearn import SklearnModelArtifact
 from bentoml.frameworks.spacy import SpacyModelArtifact
 from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
 from bentoml.frameworks.xgboost import XgboostModelArtifact
+from bentoml.service.artifacts import (
+    ArtifactCollection,
+    BentoServiceArtifact,
+    BentoServiceArtifactWrapper,
+)
+from bentoml.service.artifacts.common import (
+    JSONArtifact,
+    PickleArtifact,
+    TextFileArtifact,
+)
 
 __all__ = [
     "ArtifactCollection",

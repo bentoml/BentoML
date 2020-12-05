@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
+import os
 from functools import lru_cache
 from pathlib import Path
 
-from bentoml import __version__, _version as version_mod
-from bentoml.exceptions import BentoMLConfigException
+from bentoml import __version__
+from bentoml import _version as version_mod
 from bentoml.configuration.configparser import BentoMLConfigParser
+from bentoml.exceptions import BentoMLConfigException
 
 # Note this file is loaded prior to logging being configured, thus logger is only
 # used within functions in this file

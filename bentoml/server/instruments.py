@@ -14,7 +14,7 @@ class InstrumentMiddleware:
         self.app = app
         self.bento_service = bento_service
 
-        from prometheus_client import Histogram, Counter, Gauge, CollectorRegistry
+        from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 
         service_name = self.bento_service.name
         namespace = config('instrument').get('default_namespace')

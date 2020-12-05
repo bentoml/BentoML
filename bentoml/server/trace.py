@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
-import aiohttp
 import asyncio
+import random
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial
 
+import aiohttp
 import requests
 from py_zipkin import Tracer
-from py_zipkin.zipkin import ZipkinAttrs, zipkin_span
 from py_zipkin.transport import BaseTransportHandler
 from py_zipkin.util import generate_random_64bit_string
-
+from py_zipkin.zipkin import ZipkinAttrs, zipkin_span
 
 trace_stack_var = ContextVar('trace_stack', default=None)
 

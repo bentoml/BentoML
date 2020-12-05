@@ -15,34 +15,33 @@
 # List of APIs for accessing remote or local yatai service via Python
 
 import io
-import os
 import logging
-import tarfile
-import requests
+import os
 import shutil
+import tarfile
 
+import requests
 
 from bentoml.exceptions import BentoMLException
+from bentoml.saved_bundle import load_bento_service_metadata, safe_retrieve, save_to_dir
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
 from bentoml.yatai.label_store import _validate_labels
+from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoRequest,
-    GetBentoRequest,
     BentoUri,
+    DangerouslyDeleteBentoRequest,
+    GetBentoRequest,
+    ListBentoRequest,
     UpdateBentoRequest,
     UploadStatus,
-    ListBentoRequest,
-    DangerouslyDeleteBentoRequest,
 )
-from bentoml.yatai.proto import status_pb2
-from bentoml.utils.tempdir import TempDirectory
-from bentoml.saved_bundle import save_to_dir, load_bento_service_metadata, safe_retrieve
 from bentoml.yatai.status import Status
 from bentoml.yatai.yatai_service_impl import YataiService
-
 
 logger = logging.getLogger(__name__)
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')

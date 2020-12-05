@@ -12,25 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import importlib
+import logging
 import os
 import shutil
 import stat
-import logging
-
 
 from bentoml.configuration import _is_pip_installed_bentoml
-
 from bentoml.exceptions import BentoMLException
+from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.saved_bundle.local_py_modules import copy_local_py_modules
 from bentoml.saved_bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
+    INIT_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
-    INIT_PY_TEMPLATE,
 )
 from bentoml.utils.usage_stats import track_save
-from bentoml.saved_bundle.config import SavedBundleConfig
-
 
 DEFAULT_SAVED_BUNDLE_README = """\
 # Generated BentoService bundle - {}:{}

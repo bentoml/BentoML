@@ -14,43 +14,41 @@
 
 import logging
 from datetime import datetime
-import logging
 
+from bentoml import __version__ as BENTOML_VERSION
 from bentoml import config
+from bentoml.exceptions import BentoMLException, InvalidArgument
+from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.usage_stats import track
+from bentoml.yatai.db import init_db
+from bentoml.yatai.deployment.operator import get_deployment_operator
+from bentoml.yatai.deployment.store import DeploymentStore
+from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import (
-    GetDeploymentResponse,
-    DescribeDeploymentResponse,
-    ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentSpec,
+    DescribeDeploymentResponse,
+    GetDeploymentResponse,
+    ListDeploymentsResponse,
 )
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoResponse,
+    BentoUri,
     DangerouslyDeleteBentoResponse,
     GetBentoResponse,
-    UpdateBentoResponse,
     ListBentoResponse,
-    BentoUri,
+    UpdateBentoResponse,
+)
+from bentoml.yatai.proto.yatai_service_pb2 import (
+    GetYataiServiceVersionResponse,
+    HealthCheckResponse,
 )
 from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
-from bentoml.yatai.proto.yatai_service_pb2 import (
-    HealthCheckResponse,
-    GetYataiServiceVersionResponse,
-)
-from bentoml.yatai.deployment.operator import get_deployment_operator
-from bentoml.yatai.deployment.store import DeploymentStore
-from bentoml.exceptions import BentoMLException, InvalidArgument
-from bentoml.yatai.repository.repository import Repository
 from bentoml.yatai.repository.metadata_store import BentoMetadataStore
-from bentoml.yatai.db import init_db
+from bentoml.yatai.repository.repository import Repository
 from bentoml.yatai.status import Status
-from bentoml.yatai.proto import status_pb2
-from bentoml.utils import ProtoMessageToDict
 from bentoml.yatai.validator import validate_deployment_pb
-from bentoml import __version__ as BENTOML_VERSION
-
 
 logger = logging.getLogger(__name__)
 

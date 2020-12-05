@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
-import logging
-import pkgutil
 import ast
+import logging
+import os
+import pkgutil
+import sys
 import zipimport
-from pkg_resources import Requirement
 
+from pkg_resources import Requirement
 
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1

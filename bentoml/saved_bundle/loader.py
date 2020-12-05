@@ -13,22 +13,22 @@
 # limitations under the License.
 
 import io
+import logging
 import os
+import shutil
 import sys
 import tarfile
-import logging
 import tempfile
-import shutil
-from functools import wraps
 from contextlib import contextmanager
+from functools import wraps
+from pathlib import PurePosixPath, PureWindowsPath
 from urllib.parse import urlparse
-from pathlib import PureWindowsPath, PurePosixPath
 
-from bentoml.utils.s3 import is_s3_url
-from bentoml.utils.gcs import is_gcs_url
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.config import SavedBundleConfig
-from bentoml.utils.usage_stats import track_load_start, track_load_finish
+from bentoml.utils.gcs import is_gcs_url
+from bentoml.utils.s3 import is_s3_url
+from bentoml.utils.usage_stats import track_load_finish, track_load_start
 
 logger = logging.getLogger(__name__)
 

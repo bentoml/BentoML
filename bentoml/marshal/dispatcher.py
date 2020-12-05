@@ -1,14 +1,14 @@
 import asyncio
-import logging
-import traceback
-import time
 import collections
+import logging
+import time
+import traceback
 from typing import Callable
+
 import numpy as np
 
 from bentoml.utils import cached_property
 from bentoml.utils.alg import TokenBucket
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)

@@ -1,10 +1,10 @@
+import logging
 import os
 import re
-import logging
-from typing import List
 from pathlib import Path
+from typing import List
 
-from bentoml.exceptions import InvalidArgument, FailedPrecondition
+from bentoml.exceptions import FailedPrecondition, InvalidArgument
 from bentoml.service.env import BentoServiceEnv
 from bentoml.utils.ruamel_yaml import YAML
 

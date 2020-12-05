@@ -17,7 +17,6 @@ from contextlib import contextmanager
 
 from bentoml import config
 
-
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 
@@ -54,15 +53,16 @@ def start_dev_server(
     logger.info("Starting BentoML API server in development mode..")
 
     from bentoml import load
-    from bentoml.server.api_server import BentoAPIServer
     from bentoml.marshal.marshal import MarshalService
+    from bentoml.server.api_server import BentoAPIServer
     from bentoml.utils import reserve_free_port
 
     bento_service = load(saved_bundle_path)
 
     if run_with_ngrok:
-        from bentoml.utils.flask_ngrok import start_ngrok
         from threading import Timer
+
+        from bentoml.utils.flask_ngrok import start_ngrok
 
         thread = Timer(1, start_ngrok, args=(port,))
         thread.setDaemon(True)
@@ -105,8 +105,9 @@ def start_prod_server(
 ):
     logger.info("Starting BentoML API server in production mode..")
 
-    import psutil
     import multiprocessing
+
+    import psutil
 
     assert (
         psutil.POSIX

@@ -14,10 +14,11 @@
 
 import logging
 import os
-from google.protobuf.struct_pb2 import Struct
 from datetime import datetime
 from pathlib import Path
 from sys import version_info
+
+from google.protobuf.struct_pb2 import Struct
 
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml import config

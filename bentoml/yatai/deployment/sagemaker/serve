@@ -6,9 +6,9 @@
 # timeout                 GUNICORN_WORKER_COUNT        number of cpu cores / 2 + 1
 # api name                API_NAME                     None
 
-import subprocess
 import os
 import signal
+import subprocess
 import sys
 
 from bentoml.server.utils import get_gunicorn_num_of_workers

@@ -1,7 +1,7 @@
 import logging
+import os
 import re
 import subprocess
-import os
 
 import boto3
 from botocore.exceptions import ClientError

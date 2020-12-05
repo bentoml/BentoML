@@ -16,7 +16,6 @@ import re
 from bentoml.exceptions import BentoMLException
 from bentoml.yatai.proto.label_selectors_pb2 import LabelSelectors
 
-
 label_expression_operators = {
     i[0]: i[1] for i in LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE.items()
 }

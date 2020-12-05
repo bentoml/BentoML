@@ -6,16 +6,17 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
-import bentoml.yatai.proto.status_pb2 as status__pb2
+
 import bentoml.yatai.proto.deployment_pb2 as deployment__pb2
 import bentoml.yatai.proto.repository_pb2 as repository__pb2
-
+import bentoml.yatai.proto.status_pb2 as status__pb2
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='yatai_service.proto',

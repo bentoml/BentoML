@@ -12,20 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
 import json
+import logging
 import sys
 import threading
-import itertools
 import time
-import logging
 from datetime import datetime
 
 import humanfriendly
 from tabulate import tabulate
 
 from bentoml.cli.click_utils import _echo
-from bentoml.utils import pb_to_yaml
 from bentoml.exceptions import BentoMLException
+from bentoml.utils import pb_to_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ def human_friendly_age_from_datetime(dt, detailed=False, max_unit=2):
 
 
 def _print_deployments_table(deployments, wide=False):
-    from bentoml.yatai.proto.deployment_pb2 import DeploymentState, DeploymentSpec
+    from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
     table = []
     if wide:

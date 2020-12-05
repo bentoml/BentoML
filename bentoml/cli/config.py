@@ -12,21 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
-import click
-import shutil
 import logging
-
+import os
+import shutil
+import sys
 from configparser import ConfigParser
 
+import click
+
 from bentoml import config as bentoml_config
-from bentoml.configuration import (
-    get_local_config_file,
-    DEFAULT_CONFIG_FILE,
-    CONFIG_FILE_ENCODING,
-)
 from bentoml.cli.click_utils import BentoMLCommandGroup
+from bentoml.configuration import (
+    CONFIG_FILE_ENCODING,
+    DEFAULT_CONFIG_FILE,
+    get_local_config_file,
+)
 
 # pylint: disable=unused-variable
 from bentoml.exceptions import CLIException

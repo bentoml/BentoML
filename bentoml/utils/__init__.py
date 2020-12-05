@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import socket
 from contextlib import contextmanager
 from functools import wraps
 from io import StringIO
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
-import os
 
 from google.protobuf.message import Message
 from werkzeug.utils import cached_property
 
-from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
 from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.utils.s3 import is_s3_url
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -115,8 +115,8 @@ class catch_exceptions(object):
 
 
 def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
-    from bentoml.yatai.client import get_yatai_client
     from bentoml.exceptions import BentoMLException
+    from bentoml.yatai.client import get_yatai_client
 
     if pip_installed_bundle_path:
         assert (

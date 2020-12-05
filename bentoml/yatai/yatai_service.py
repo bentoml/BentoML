@@ -78,6 +78,7 @@ def start_yatai_service_grpc_server(
         try:
             logger.debug('Enabling gRPC server reflection for debugging')
             from grpc_reflection.v1alpha import reflection
+
             from bentoml.yatai.proto import yatai_service_pb2
 
             SERVICE_NAMES = (

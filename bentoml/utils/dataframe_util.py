@@ -19,13 +19,7 @@ from typing import Iterable, Iterator, Mapping
 
 from bentoml.exceptions import BadInput
 from bentoml.utils import catch_exceptions
-from bentoml.utils.csv import (
-    csv_quote,
-    csv_row,
-    csv_split,
-    csv_splitlines,
-    csv_unquote,
-)
+from bentoml.utils.csv import csv_quote, csv_row, csv_split, csv_splitlines, csv_unquote
 from bentoml.utils.lazy_loader import LazyLoader
 
 pandas = LazyLoader('pandas', globals(), 'pandas')

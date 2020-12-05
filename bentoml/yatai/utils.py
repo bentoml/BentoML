@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import subprocess
+
 import urllib3
 
 from bentoml.exceptions import BentoMLException, MissingDependencyException

@@ -6,34 +6,34 @@ import shutil
 from urllib.parse import urlparse
 
 import boto3
-import docker
 from botocore.exceptions import ClientError
 
+import docker
 from bentoml.exceptions import (
-    YataiDeploymentException,
     AWSServiceError,
-    InvalidArgument,
     BentoMLException,
+    InvalidArgument,
+    YataiDeploymentException,
 )
 from bentoml.saved_bundle import loader
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.yatai.deployment.operator import DeploymentOperatorBase
-from bentoml.yatai.deployment.utils import (
-    process_docker_api_line,
-    ensure_docker_available_or_raise,
-    raise_if_api_names_not_found_in_bento_service_metadata,
-)
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
     get_default_aws_region,
 )
+from bentoml.yatai.deployment.operator import DeploymentOperatorBase
+from bentoml.yatai.deployment.utils import (
+    ensure_docker_available_or_raise,
+    process_docker_api_line,
+    raise_if_api_names_not_found_in_bento_service_metadata,
+)
 from bentoml.yatai.proto.deployment_pb2 import (
-    DeploymentState,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    DeploymentState,
     DescribeDeploymentResponse,
 )
-from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
+from bentoml.yatai.proto.repository_pb2 import BentoUri, GetBentoRequest
 from bentoml.yatai.status import Status
 
 logger = logging.getLogger(__name__)

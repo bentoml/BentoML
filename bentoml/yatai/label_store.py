@@ -1,9 +1,9 @@
 import enum
 import re
 
-from sqlalchemy import UniqueConstraint, Column, Integer, String, and_, Enum
+from sqlalchemy import Column, Enum, Integer, String, UniqueConstraint, and_
 
-from bentoml.exceptions import YataiLabelException, InvalidArgument
+from bentoml.exceptions import InvalidArgument, YataiLabelException
 from bentoml.yatai.db import Base
 from bentoml.yatai.proto.label_selectors_pb2 import LabelSelectors
 

@@ -13,12 +13,12 @@
 # limitations under the License.
 
 from bentoml import config
-from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
+from bentoml.utils.s3 import is_s3_url
 from bentoml.yatai.repository.base_repository import BaseRepository
+from bentoml.yatai.repository.gcs_repository import GCSRepository
 from bentoml.yatai.repository.local_repository import LocalRepository
 from bentoml.yatai.repository.s3_repository import S3Repository
-from bentoml.yatai.repository.gcs_repository import GCSRepository
 
 
 class Repository(BaseRepository):

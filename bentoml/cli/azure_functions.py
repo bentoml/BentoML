@@ -14,28 +14,27 @@
 
 import click
 
-from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.cli.click_utils import (
-    BentoMLCommandGroup,
-    parse_bento_tag_callback,
     CLI_COLOR_SUCCESS,
+    BentoMLCommandGroup,
     _echo,
+    parse_bento_tag_callback,
     parse_labels_callback,
 )
 from bentoml.cli.deployment import _print_deployment_info, _print_deployments_info
 from bentoml.cli.utils import Spinner
-from bentoml.utils import get_default_yatai_client
-from bentoml.yatai.deployment.azure_functions.constants import (
-    AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
-    AZURE_FUNCTIONS_AUTH_LEVELS,
-    DEFAULT_MIN_INSTANCE_COUNT,
-    DEFAULT_MAX_BURST,
-    DEFAULT_PREMIUM_PLAN_SKU,
-    DEFAULT_FUNCTION_AUTH_LEVEL,
-)
-from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.exceptions import CLIException
-from bentoml.utils import status_pb_to_error_code_and_message
+from bentoml.utils import get_default_yatai_client, status_pb_to_error_code_and_message
+from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
+from bentoml.yatai.deployment.azure_functions.constants import (
+    AZURE_FUNCTIONS_AUTH_LEVELS,
+    AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
+    DEFAULT_FUNCTION_AUTH_LEVEL,
+    DEFAULT_MAX_BURST,
+    DEFAULT_MIN_INSTANCE_COUNT,
+    DEFAULT_PREMIUM_PLAN_SKU,
+)
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 

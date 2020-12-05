@@ -1,12 +1,12 @@
 import boto3
 
+from bentoml.exceptions import BentoMLException
 from bentoml.yatai.deployment.aws_ec2.constants import (
-    BENTOSERVICE_PORT,
     AWS_EC2_IN_SERVICE_STATE,
+    BENTOSERVICE_PORT,
     TARGET_HEALTHY_STATUS,
 )
 from bentoml.yatai.deployment.aws_utils import call_sam_command
-from bentoml.exceptions import BentoMLException
 
 
 def build_template(template_file_path, project_directory, region):

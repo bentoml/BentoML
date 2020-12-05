@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 class GunicornBentoAPIServer(BentoAPIServer):
     def metrics_view_func(self):
         from prometheus_client import (
-            multiprocess,
+            CONTENT_TYPE_LATEST,
             CollectorRegistry,
             generate_latest,
-            CONTENT_TYPE_LATEST,
+            multiprocess,
         )
 
         registry = CollectorRegistry()

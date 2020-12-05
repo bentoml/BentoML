@@ -14,23 +14,19 @@
 
 import click
 
-from bentoml.utils import status_pb_to_error_code_and_message
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.utils import get_default_yatai_client
-from bentoml.cli.utils import Spinner
 from bentoml.cli.click_utils import (
-    BentoMLCommandGroup,
-    parse_bento_tag_callback,
-    _echo,
     CLI_COLOR_SUCCESS,
+    BentoMLCommandGroup,
+    _echo,
+    parse_bento_tag_callback,
     parse_labels_callback,
 )
-from bentoml.cli.deployment import (
-    _print_deployment_info,
-    _print_deployments_info,
-)
-from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
+from bentoml.cli.deployment import _print_deployment_info, _print_deployments_info
+from bentoml.cli.utils import Spinner
 from bentoml.exceptions import CLIException
+from bentoml.utils import get_default_yatai_client, status_pb_to_error_code_and_message
+from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 

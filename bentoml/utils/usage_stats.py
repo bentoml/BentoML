@@ -13,19 +13,17 @@
 # limitations under the License.
 
 
-import sys
-import platform
 import json
 import logging
-
+import platform
+import sys
 import uuid
 
-from bentoml.utils.ruamel_yaml import YAML
-from bentoml.utils import ProtoMessageToDict
-from bentoml.configuration import _is_pip_installed_bentoml
-from bentoml import config
 from bentoml import __version__ as BENTOML_VERSION
-
+from bentoml import config
+from bentoml.configuration import _is_pip_installed_bentoml
+from bentoml.utils import ProtoMessageToDict
+from bentoml.utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 

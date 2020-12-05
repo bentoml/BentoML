@@ -17,11 +17,10 @@
 
 import logging
 
-from bentoml.yatai.yatai_service import get_yatai_service
+from bentoml.utils import cached_property
 from bentoml.yatai.client.bento_repository_api import BentoRepositoryAPIClient
 from bentoml.yatai.client.deployment_api import DeploymentAPIClient
-
-from bentoml.utils import cached_property
+from bentoml.yatai.yatai_service import get_yatai_service
 
 logger = logging.getLogger(__name__)
 

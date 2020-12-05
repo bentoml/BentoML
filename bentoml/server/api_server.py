@@ -18,16 +18,9 @@ import sys
 import uuid
 from functools import partial
 
-from flask import (
-    Flask,
-    Response,
-    jsonify,
-    make_response,
-    request,
-    send_from_directory,
-)
-from werkzeug.exceptions import BadRequest, NotFound
+from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from google.protobuf.json_format import MessageToJson
+from werkzeug.exceptions import BadRequest, NotFound
 
 from bentoml import BentoService, config
 from bentoml.configuration import get_debug_mode

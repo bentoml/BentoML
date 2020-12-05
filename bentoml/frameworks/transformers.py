@@ -1,11 +1,7 @@
 import os
 from importlib import import_module
 
-from bentoml.exceptions import (
-    InvalidArgument,
-    MissingDependencyException,
-    NotFound,
-)
+from bentoml.exceptions import InvalidArgument, MissingDependencyException, NotFound
 from bentoml.service import BentoServiceArtifact
 
 try:

@@ -1,39 +1,36 @@
 import argparse
-import click
-import sys
-
 import json
 import re
+import sys
+
+import click
 import psutil
 
 from bentoml import __version__
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.server.api_server import BentoAPIServer
-from bentoml.exceptions import BentoMLException, CLIException
-from bentoml.server import start_dev_server, start_prod_server
-from bentoml.server.open_api import get_open_api_spec_json
-from bentoml.utils import (
-    ProtoMessageToDict,
-    resolve_bundle_path,
-)
 from bentoml.cli.click_utils import (
-    CLI_COLOR_WARNING,
     CLI_COLOR_SUCCESS,
-    _echo,
+    CLI_COLOR_WARNING,
     BentoMLCommandGroup,
+    _echo,
     conditional_argument,
 )
-from bentoml.cli.utils import echo_docker_api_result, Spinner
+from bentoml.cli.utils import Spinner, echo_docker_api_result
+from bentoml.exceptions import BentoMLException, CLIException
 from bentoml.saved_bundle import (
-    load_from_dir,
     load_bento_service_api,
     load_bento_service_metadata,
+    load_from_dir,
 )
+from bentoml.server import start_dev_server, start_prod_server
+from bentoml.server.api_server import BentoAPIServer
+from bentoml.server.open_api import get_open_api_spec_json
+from bentoml.utils import ProtoMessageToDict, resolve_bundle_path
 from bentoml.utils.docker_utils import (
-    validate_tag,
     to_valid_docker_image_name,
     to_valid_docker_image_version,
+    validate_tag,
 )
+from bentoml.utils.lazy_loader import LazyLoader
 
 try:
     import click_completion

@@ -18,8 +18,8 @@ import subprocess
 
 from bentoml.exceptions import (
     BentoMLException,
-    MissingDependencyException,
     InvalidArgument,
+    MissingDependencyException,
 )
 
 logger = logging.getLogger(__name__)

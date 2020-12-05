@@ -150,11 +150,15 @@ async def test_tensorflow_2_artifact_with_docker(host):
         assert_status=200,
         assert_data=b'[[15.0]]',
     )
-    await pytest.assert_request(
-        "POST",
-        f"http://{host}/predict3",
-        headers=(("Content-Type", "application/json"),),
-        data=json.dumps(ragged_data),
-        assert_status=200,
-        assert_data=b'[[15.0], [15.0], [15.0]]',
+    tasks = tuple(
+        pytest.assert_request(
+            "POST",
+            f"http://{host}/predict3",
+            headers=(("Content-Type", "application/json"),),
+            data=json.dumps(i),
+            assert_status=200,
+            assert_data=b'[15.0]',
+        )
+        for i in range(ragged_data)
     )
+    await asyncio.gather(*tasks)

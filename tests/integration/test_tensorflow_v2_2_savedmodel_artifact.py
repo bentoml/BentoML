@@ -115,7 +115,7 @@ def test_tensorflow_2_artifact(svc):
     ), 'Inference on unsaved TF2 artifact does not match expected'
 
     assert (
-        svc.predict3(ragged_tensor) == 15.0
+        svc.predict3(ragged_data) == 15.0
     ), 'Inference on unsaved TF2 artifact does not match expected'
 
 
@@ -129,7 +129,7 @@ def test_tensorflow_2_artifact_loaded(svc):
             svc_loaded.predict2(test_tensor) == 15.0
         ), 'Inference on saved and loaded TF2 artifact does not match expected'
         assert (
-            svc_loaded.predict3(ragged_tensor) == 15.0
+            svc_loaded.predict3(ragged_data) == 15.0
         ), 'Inference on saved and loaded TF2 artifact does not match expected'
 
 

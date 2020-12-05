@@ -126,7 +126,7 @@ class DataframeInput(StringInput):
         curl -i \\
           --header "Content-Type: text/csv" \\
           --request POST \\
-          --data @file.csv \\
+          --data-binary @file.csv \\
           localhost:5000/predict
 
     Query with CLI command::

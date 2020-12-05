@@ -11,32 +11,35 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import datetime
+import glob
+import gzip
 import importlib
+import io
+import logging
 import os
 import shutil
 import stat
-import logging
 import tarfile
 from urllib.parse import urlparse
 
 import requests
 
 from bentoml.configuration import _is_pip_installed_bentoml
-
 from bentoml.exceptions import BentoMLException
+from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.saved_bundle.loader import _is_remote_path
 from bentoml.saved_bundle.local_py_modules import copy_local_py_modules
 from bentoml.saved_bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
+    INIT_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
-    INIT_PY_TEMPLATE,
 )
-from bentoml.utils import is_s3_url, is_gcs_url
+from bentoml.utils import is_gcs_url, is_s3_url
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track_save
-from bentoml.saved_bundle.config import SavedBundleConfig
-
 
 DEFAULT_SAVED_BUNDLE_README = """\
 # Generated BentoService bundle - {}:{}
@@ -168,6 +171,11 @@ def _write_bento_content_to_dir(bento_service, path):
 
     bundled_pip_dependencies_path = os.path.join(path, 'bundled_pip_dependencies')
     _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
+    # delete mtime and sort file in tarballs to normalize the checksums
+    for tarball_file_path in glob.glob(
+        os.path.join(bundled_pip_dependencies_path, '*.tar.gz')
+    ):
+        normalize_gztarball(tarball_file_path)
 
 
 def save_to_dir(bento_service, path, version=None, silent=False):
@@ -221,6 +229,23 @@ def save_to_dir(bento_service, path, version=None, silent=False):
             bento_service.version,
             path,
         )
+
+
+def normalize_gztarball(file_path):
+    MTIME = datetime.datetime(2000, 1, 1).timestamp()
+    tar_io = io.BytesIO()
+
+    with tarfile.open(file_path, "r:gz") as f:
+        with tarfile.TarFile("bundle.tar", mode='w', fileobj=tar_io) as nf:
+            names = sorted(f.getnames())
+            for name in names:
+                info = f.getmember(name)
+                info.mtime = MTIME
+                nf.addfile(info, f.extractfile(name))
+
+    with open(file_path, "wb") as nf:
+        with gzip.GzipFile("bundle.tar.gz", mode="w", fileobj=nf, mtime=MTIME) as gf:
+            gf.write(tar_io.getvalue())
 
 
 def _bundle_local_bentoml_if_installed_from_source(target_path):

@@ -82,7 +82,7 @@ class FileInput(BaseInputAdapter):
         curl -i \\
           --header "Content-Type: image/jpeg" \\
           --request POST \\
-          --data @test.jpg \\
+          --data-binary @test.jpg \\
           localhost:5000/predict
 
     OR::

@@ -35,9 +35,9 @@ Example Projects:
 .. autoclass:: bentoml.frameworks.pytorch.PytorchModelArtifact
 
 
-==============
+===========================
 Tensorflow 2.0 (Native API)
-==============
+===========================
 
 Example Projects:
 
@@ -48,9 +48,9 @@ Example Projects:
 .. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
 
 
-================
+=====================================
 Keras (Tensorflow 2.0 as the backend)
-================
+=====================================
 
 Example Projects:
 
@@ -199,3 +199,15 @@ Gluon
 =====
 
 .. autoclass:: bentoml.frameworks.gluon.GluonModelArtifact
+
+
+.. spelling::
+
+    mxnet
+    env
+    GluonModelArtifact
+    JsonInput
+    nd
+    mx
+    asnumpy
+    svc

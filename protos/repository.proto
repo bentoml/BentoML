@@ -141,3 +141,18 @@ message ListBentoResponse {
   Status status = 1;
   repeated Bento bentos = 2;
 }
+
+message ContainerizeBentoRequest {
+  string bento_name = 1;
+  string bento_version = 2;
+  string tag = 3;
+  map<string, string> build_args = 4;
+  string username = 5;
+  string password = 6;
+  bool push = 7;
+}
+
+message ContainerizeBentoResponse {
+  Status status = 1;
+  string tag = 2;
+}

@@ -47,44 +47,7 @@ to create this bundle, and save a new BentoService bundle.
 logger = logging.getLogger(__name__)
 
 
-def save_to_dir(bento_service, path, version=None, silent=False):
-    """Save given BentoService along with all its artifacts, source code and
-    dependencies to target file path, assuming path exist and empty. If target path
-    is not empty, this call may override existing files in the given path.
-
-    :param bento_service (bentoml.service.BentoService): a Bento Service instance
-    :param path (str): Destination of where the bento service will be saved. The
-        destination can be local path or remote path. The remote path supports both
-        AWS S3('s3://bucket/path') and Google Cloud Storage('gs://bucket/path').
-    :param version (str): Override the service version with given version string
-    :param silent (boolean): whether to hide the log message showing target save path
-    """
-    track_save(bento_service)
-
-    from bentoml.service import BentoService
-
-    if not isinstance(bento_service, BentoService):
-        raise BentoMLException(
-            "save_to_dir only works with instances of custom BentoService class"
-        )
-    remote_save_path = None
-    if _is_remote_path(path):
-        # If user provided path is an remote location, the bundle will first save to
-        # a temporary directory and then upload to the remote location
-        logger.info(
-            'Saving bento to an remote path. BentoML will first save the bento '
-            'to a local temporary directory and then upload to the remote path.'
-        )
-        remote_save_path = path
-        temp_dir = TempDirectory()
-        temp_dir.create()
-        path = temp_dir.path
-
-    if version is not None:
-        # If parameter version provided, set bento_service version
-        # Otherwise it will bet set the first time the `version` property get accessed
-        bento_service.set_version(version)
-
+def _write_bento_content_to_dir(bento_service, path):
     if not os.path.exists(path):
         raise BentoMLException("Directory '{}' not found".format(path))
 
@@ -95,7 +58,6 @@ def save_to_dir(bento_service, path, version=None, silent=False):
                 artifact.name,
                 bento_service.name,
             )
-
     module_base_path = os.path.join(path, bento_service.name)
     try:
         os.mkdir(module_base_path)
@@ -205,16 +167,57 @@ def save_to_dir(bento_service, path, version=None, silent=False):
     bundled_pip_dependencies_path = os.path.join(path, 'bundled_pip_dependencies')
     _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
 
-    # Upload saved bento bundle from temp directory to the remote location
-    if remote_save_path is not None:
-        _upload_bento_to_remote_path(remote_save_path, path, bento_service.name)
+
+def save_to_dir(bento_service, path, version=None, silent=False):
+    """Save given BentoService along with all its artifacts, source code and
+    dependencies to target file path, assuming path exist and empty. If target path
+    is not empty, this call may override existing files in the given path.
+
+    :param bento_service (bentoml.service.BentoService): a Bento Service instance
+    :param path (str): Destination of where the bento service will be saved. The
+        destination can be local path or remote path. The remote path supports both
+        AWS S3('s3://bucket/path') and Google Cloud Storage('gs://bucket/path').
+    :param version (str): Override the service version with given version string
+    :param silent (boolean): whether to hide the log message showing target save path
+    """
+    track_save(bento_service)
+
+    from bentoml.service import BentoService
+
+    if not isinstance(bento_service, BentoService):
+        raise BentoMLException(
+            "save_to_dir only works with instances of custom BentoService class"
+        )
+
+    if version is not None:
+        # If parameter version provided, set bento_service version
+        # Otherwise it will bet set the first time the `version` property get accessed
+        bento_service.set_version(version)
+
+    if _is_remote_path(path):
+        # If user provided path is an remote location, the bundle will first save to
+        # a temporary directory and then upload to the remote location
+        logger.info(
+            'Saving bento to an remote path. BentoML will first save the bento '
+            'to a local temporary directory and then upload to the remote path.'
+        )
+        with TempDirectory() as temp_dir:
+            _write_bento_content_to_dir(bento_service, temp_dir)
+            with TempDirectory() as tarfile_dir:
+                file_name = f'{bento_service.name}.tar'
+                tarfile_path = f'{tarfile_dir}/{file_name}'
+                with tarfile.open(tarfile_path, mode="w:gz") as tar:
+                    tar.add(temp_dir, arcname=bento_service.name)
+            _upload_file_to_remote_path(path, tarfile_path, file_name)
+    else:
+        _write_bento_content_to_dir(bento_service, path)
 
     if not silent:
         logger.info(
             "BentoService bundle '%s:%s' created at: %s",
             bento_service.name,
             bento_service.version,
-            remote_save_path if remote_save_path is not None else path,
+            path,
         )
 
 
@@ -265,36 +268,32 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
         shutil.rmtree(source_dir)
 
 
-def _upload_bento_to_remote_path(remote_path, bento_path, bento_name):
-    with TempDirectory() as temp_dir:
-        file_name = f'{bento_name}.tar'
-        tarfile_path = f'{temp_dir}/{file_name}'
-        with tarfile.open(tarfile_path, mode="w:gz") as tar:
-            tar.add(bento_path, arcname=bento_name)
-
-        parsed_url = urlparse(remote_path)
-        bucket_name = parsed_url.netloc
-        object_prefix_path = parsed_url.path.lstrip('/')
-        object_path = f'{object_prefix_path}/{file_name}'
-        if is_s3_url(remote_path):
-            try:
-                import boto3
-            except ImportError:
-                raise BentoMLException(
-                    '"boto3" package is required for saving bento to AWS S3 bucket'
-                )
-            s3_client = boto3.client('s3')
-            with open(tarfile_path, 'rb') as f:
-                s3_client.upload_fileobj(f, bucket_name, object_path)
-        elif is_gcs_url(remote_path):
-            try:
-                from google.cloud import storage
-            except ImportError:
-                raise BentoMLException(
-                    '"google.cloud" package is required for saving bento to Google '
-                    'Cloud Storage'
-                )
-            gcs_client = storage.Client()
-            bucket = gcs_client.bucket(bucket_name)
-            blob = bucket.blob(object_path)
-            blob.upload_from_filename(tarfile_path)
+def _upload_file_to_remote_path(remote_path, file_path, file_name):
+    """Upload file to remote path
+    """
+    parsed_url = urlparse(remote_path)
+    bucket_name = parsed_url.netloc
+    object_prefix_path = parsed_url.path.lstrip('/')
+    object_path = f'{object_prefix_path}/{file_name}'
+    if is_s3_url(remote_path):
+        try:
+            import boto3
+        except ImportError:
+            raise BentoMLException(
+                '"boto3" package is required for saving bento to AWS S3 bucket'
+            )
+        s3_client = boto3.client('s3')
+        with open(file_path, 'rb') as f:
+            s3_client.upload_fileobj(f, bucket_name, object_path)
+    elif is_gcs_url(remote_path):
+        try:
+            from google.cloud import storage
+        except ImportError:
+            raise BentoMLException(
+                '"google.cloud" package is required for saving bento to Google '
+                'Cloud Storage'
+            )
+        gcs_client = storage.Client()
+        bucket = gcs_client.bucket(bucket_name)
+        blob = bucket.blob(object_path)
+        blob.upload_from_filename(file_path)

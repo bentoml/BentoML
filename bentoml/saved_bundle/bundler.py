@@ -19,6 +19,8 @@ import logging
 import tarfile
 from urllib.parse import urlparse
 
+import requests
+
 from bentoml.configuration import _is_pip_installed_bentoml
 
 from bentoml.exceptions import BentoMLException
@@ -297,3 +299,9 @@ def _upload_file_to_remote_path(remote_path, file_path, file_name):
         bucket = gcs_client.bucket(bucket_name)
         blob = bucket.blob(object_path)
         blob.upload_from_filename(file_path)
+    else:
+        http_response = requests.put(remote_path)
+        if http_response.status_code != 200:
+            raise BentoMLException(
+                f'Error uploading BentoService bundle to {remote_path}'
+            )

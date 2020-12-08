@@ -303,5 +303,6 @@ def _upload_file_to_remote_path(remote_path, file_path, file_name):
         http_response = requests.put(remote_path)
         if http_response.status_code != 200:
             raise BentoMLException(
-                f'Error uploading BentoService bundle to {remote_path}'
+                f'Error uploading BentoService to {remote_path} '
+                f'{http_response.status_code}'
             )

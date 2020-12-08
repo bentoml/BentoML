@@ -342,65 +342,52 @@ class BentoRepositoryAPIClient:
             raise BentoMLException(f'{error_code}:{error_message}')
         return result.bentos
 
-    def delete(self, bento):
+    def delete(self, prune=False, labels=None, bento_name=None, bento_version=None):
         """
-        Delete bento
+        Delete bentos that matches the specified criteria
 
         Args:
-            bento: a BentoService identifier in the format of NAME:VERSION
-
+            prune: boolean, Set True to delete all BentoService
+            labels: string
+            bento_name: string
+            bento_version: string
         Example:
         >>>
         >>> yatai_client = get_yatai_client()
-        >>> yatai_client.repository.delete('my_service:version')
+        >>> # Delete all bento services
+        >>> yatai_client.repository.delete(prune=True)
+        >>> # Delete bento service with name is `IrisClassifier` and version `0.1.0`
+        >>> yatai_client.repository.delete(
+        >>>     bento_name='IrisClassifier', bento_version='0.1.0'
+        >>> )
+        >>> # Delete all bento services with name 'MyService`
+        >>> yatai_client.repository.delete(bento_name='MyService')
+        >>> # Delete all bento services with labels match `ci=failed` and `cohort=20`
+        >>> yatai_client.repository.delete(labels='ci=failed, cohort=20')
         """
         track('py-api-delete')
-        if ':' not in bento:
-            raise BentoMLException(
-                'BentoService name or version is missing. Please provide in the '
-                'format of name:version'
+        if prune is True:
+            bentos_list = self.list()
+        else:
+            if bento_version is not None and bento_name is not None:
+                bento = self.get(f'{bento_name}:{bento_version}')
+                bentos_list = [bento]
+            else:
+                bentos_list = self.list(labels=labels, bento_name=bento_name)
+        for bento in bentos_list:
+            result = self.yatai_service.DangerouslyDeleteBento(
+                DangerouslyDeleteBentoRequest(
+                    bento_name=bento.name, bento_version=bento.version
+                )
             )
-        name, version = bento.split(':')
-        result = self.yatai_service.DangerouslyDeleteBento(
-            DangerouslyDeleteBentoRequest(bento_name=name, bento_version=version)
-        )
-        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                result.status
-            )
-            raise BentoMLException(
-                f'Failed to delete Bento {bento} {error_code}:{error_message}'
-            )
-
-    def prune(self, bento_name=None, labels=None):
-        """
-        Delete all BentoServices that matches the specified criteria
-
-        Args:
-            bento_name: optional
-            labels: optional
-
-        Example:
-
-        >>> yatai_client = get_yatai_client()
-        >>> # Delete all bento services
-        >>> yatai_client.repository.prune()
-        >>> # Delete bento services that matches with the label `ci=failed`
-        >>> yatai_client.repository.prune(labels='ci=failed')
-        """
-        track('py-api-prune')
-        list_bentos_result = self.list(bento_name=bento_name, labels=labels,)
-        if list_bentos_result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                list_bentos_result.status
-            )
-            raise BentoMLException(f'{error_code}:{error_message}')
-        for bento in list_bentos_result.bentos:
-            bento_tag = f'{bento.name}:{bento.version}'
-            try:
-                self.delete(bento_tag)
-            except BentoMLException as e:
-                logger.error(f'Failed to delete Bento {bento_tag}: {e}')
+            if result.status.status_code != yatai_proto.status_pb2.Status.OK:
+                error_code, error_message = status_pb_to_error_code_and_message(
+                    result.status
+                )
+                raise BentoMLException(
+                    f'Failed to delete Bento {bento.name}:{bento.version} '
+                    f'{error_code}:{error_message}'
+                )
 
     def containerize(self, bento, tag=None, build_args=None, push=False):
         """

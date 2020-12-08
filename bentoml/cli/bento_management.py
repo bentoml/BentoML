@@ -175,10 +175,25 @@ def add_bento_sub_command(cli):
         _print_bentos_info(result, output)
 
     @cli.command(
-        help='Delete bento. To delete multiple bentos provide the name '
-        'version tag separated by "," for example "bentoml delete name:v1,name:v2',
+        help='Delete bentos. To delete a bento service use "--bento-name" and '
+        '"--bento-version" option: "bentoml delete --bento-name IrisClassifier '
+        '--bento-version 0.1.0" To delete multiple bentos, use "--bento-name" and/or '
+        '"--labels" to filter. To delete all bento services use "--prune" option'
     )
-    @click.argument("bentos", type=click.STRING, callback=parse_bento_tag_list_callback)
+    @click.option(
+        '--prune',
+        is_flag=True,
+        help='Use this flag to remove all BentoServices'
+    )
+    @click.option(
+        '--labels',
+        type=click.STRING,
+        help="Label query to filter BentoServices, supports '=', '!=', 'IN', 'NotIn', "
+             "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
+             "In (value3, value3a), key4 DoesNotExist)",
+    )
+    @click.option("--bento-name", type=click.STRING, help='BentoService name')
+    @click.option("--bento-version", type=click.STRING, help='BentoService version')
     @click.option(
         '--yatai-url',
         type=click.STRING,
@@ -188,8 +203,8 @@ def add_bento_sub_command(cli):
     @click.option(
         '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
     )
-    def delete(bentos, yatai_url, yes):
-        """Delete saved BentoService.
+    def delete(prune, labels, bento_name, bento_version, yatai_url, yes):
+        """Delete saved BentoServices.
 
         BENTO is the target BentoService to be deleted, referenced by its name and
         version in format of name:version. For example: "iris_classifier:v1.2.0"
@@ -199,15 +214,19 @@ def add_bento_sub_command(cli):
 
         `bentoml delete iris_classifier:v1.2.0,my_svc:v1,my_svc2:v3`
         """
-        for bento in bentos:
-            if not yes and not click.confirm(
-                f'Are you sure about delete {bento}? This will delete the BentoService '
-                f'saved bundle files permanently'
-            ):
-                return
-            yc = get_yatai_client(yatai_url)
-            yc.repository.delete(bento)
-            _echo(f'BentoService {bento} deleted')
+        if not yes and not click.confirm(
+            'This will delete the BentoService saved bundle files permanently, '
+            'are you sure?'
+        ):
+            return
+        yc = get_yatai_client(yatai_url)
+        yc.repository.delete(
+            prune=prune,
+            labels=labels,
+            bento_name=bento_name,
+            bento_version=bento_version
+        )
+        _echo('Deleted bento services')
 
     @cli.command(help='Pull BentoService from remote yatai server',)
     @click.argument("bento", type=click.STRING)

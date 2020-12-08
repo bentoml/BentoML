@@ -1,14 +1,15 @@
 import asyncio
-import logging
-import traceback
-import time
 import collections
+import functools
+import logging
+import time
+import traceback
 from typing import Callable
+
 import numpy as np
 
 from bentoml.utils import cached_property
 from bentoml.utils.alg import TokenBucket
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -130,6 +131,7 @@ class CorkDispatcher:
     def __call__(self, callback):
         self.callback = callback
 
+        @functools.wraps(callback)
         async def _func(data):
             if self._controller is None:
                 self._controller = self._loop.create_task(self.controller())

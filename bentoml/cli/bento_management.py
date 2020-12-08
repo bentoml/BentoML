@@ -181,16 +181,14 @@ def add_bento_sub_command(cli):
         '"--labels" to filter. To delete all bento services use "--prune" option'
     )
     @click.option(
-        '--prune',
-        is_flag=True,
-        help='Use this flag to remove all BentoServices'
+        '--prune', is_flag=True, help='Use this flag to remove all BentoServices'
     )
     @click.option(
         '--labels',
         type=click.STRING,
         help="Label query to filter BentoServices, supports '=', '!=', 'IN', 'NotIn', "
-             "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
-             "In (value3, value3a), key4 DoesNotExist)",
+        "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
+        "In (value3, value3a), key4 DoesNotExist)",
     )
     @click.option("--bento-name", type=click.STRING, help='BentoService name')
     @click.option("--bento-version", type=click.STRING, help='BentoService version')
@@ -224,7 +222,7 @@ def add_bento_sub_command(cli):
             prune=prune,
             labels=labels,
             bento_name=bento_name,
-            bento_version=bento_version
+            bento_version=bento_version,
         )
         _echo('Deleted bento services')
 

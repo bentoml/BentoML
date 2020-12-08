@@ -41,7 +41,7 @@ def _is_http_url(bundle_path):
 
 
 def _is_remote_path(bundle_path):
-    return (
+    return isinstance(bundle_path, str) and (
         is_s3_url(bundle_path) or is_gcs_url(bundle_path) or _is_http_url(bundle_path)
     )
 

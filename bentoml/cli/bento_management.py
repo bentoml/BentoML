@@ -16,10 +16,7 @@ import click
 from tabulate import tabulate
 
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.cli.click_utils import (
-    _echo,
-    parse_bento_tag_list_callback,
-)
+from bentoml.cli.click_utils import _echo
 from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
     _format_labels_for_print,

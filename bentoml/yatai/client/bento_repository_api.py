@@ -36,6 +36,7 @@ from bentoml.yatai.proto.repository_pb2 import (
     UploadStatus,
     ListBentoRequest,
     DangerouslyDeleteBentoRequest,
+    ContainerizeBentoRequest,
 )
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
@@ -403,3 +404,45 @@ class BentoRepositoryAPIClient:
                 self.delete(bento_tag)
             except BentoMLException as e:
                 logger.error(f'Failed to delete Bento {bento_tag}: {e}')
+
+    def containerize(
+        self, bento, tag=None, repository=None, build_args=None, push=False
+    ):
+        """
+        Create docker container from a BentoService.
+
+        Args:
+            bento: string
+            tag: string
+            repository: string
+            build_args: dict
+            push: boolean
+
+        Returns:
+            Image tag: String
+        """
+        track('py-api-containerize')
+        if ':' not in bento:
+            raise BentoMLException(
+                'BentoService name or version is missing. Please provide in the '
+                'format of name:version'
+            )
+        name, version = bento.split(':')
+        containerize_request = ContainerizeBentoRequest(
+            bento_name=name,
+            bento_version=version,
+            tag=tag,
+            build_args=build_args,
+            repository=repository,
+            push=push,
+        )
+        result = self.yatai_service.ContainerizeBento(containerize_request)
+
+        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
+            )
+            raise BentoMLException(
+                f'Failed to containerize {bento} - {error_code}:{error_message}'
+            )
+        return result.tag

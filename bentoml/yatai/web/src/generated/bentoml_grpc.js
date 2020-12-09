@@ -10556,6 +10556,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {string|null} [bento_version] ContainerizeBentoRequest bento_version
          * @property {string|null} [tag] ContainerizeBentoRequest tag
          * @property {Object.<string,string>|null} [build_args] ContainerizeBentoRequest build_args
+         * @property {string|null} [repository] ContainerizeBentoRequest repository
          * @property {string|null} [username] ContainerizeBentoRequest username
          * @property {string|null} [password] ContainerizeBentoRequest password
          * @property {boolean|null} [push] ContainerizeBentoRequest push
@@ -10608,6 +10609,14 @@ export const bentoml = $root.bentoml = (() => {
          * @instance
          */
         ContainerizeBentoRequest.prototype.build_args = $util.emptyObject;
+
+        /**
+         * ContainerizeBentoRequest repository.
+         * @member {string} repository
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @instance
+         */
+        ContainerizeBentoRequest.prototype.repository = "";
 
         /**
          * ContainerizeBentoRequest username.
@@ -10666,12 +10675,14 @@ export const bentoml = $root.bentoml = (() => {
             if (message.build_args != null && Object.hasOwnProperty.call(message, "build_args"))
                 for (let keys = Object.keys(message.build_args), i = 0; i < keys.length; ++i)
                     writer.uint32(/* id 4, wireType 2 =*/34).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.build_args[keys[i]]).ldelim();
+            if (message.repository != null && Object.hasOwnProperty.call(message, "repository"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.repository);
             if (message.username != null && Object.hasOwnProperty.call(message, "username"))
-                writer.uint32(/* id 5, wireType 2 =*/42).string(message.username);
+                writer.uint32(/* id 6, wireType 2 =*/50).string(message.username);
             if (message.password != null && Object.hasOwnProperty.call(message, "password"))
-                writer.uint32(/* id 6, wireType 2 =*/50).string(message.password);
+                writer.uint32(/* id 7, wireType 2 =*/58).string(message.password);
             if (message.push != null && Object.hasOwnProperty.call(message, "push"))
-                writer.uint32(/* id 7, wireType 0 =*/56).bool(message.push);
+                writer.uint32(/* id 8, wireType 0 =*/64).bool(message.push);
             return writer;
         };
 
@@ -10724,12 +10735,15 @@ export const bentoml = $root.bentoml = (() => {
                     message.build_args[key] = reader.string();
                     break;
                 case 5:
-                    message.username = reader.string();
+                    message.repository = reader.string();
                     break;
                 case 6:
-                    message.password = reader.string();
+                    message.username = reader.string();
                     break;
                 case 7:
+                    message.password = reader.string();
+                    break;
+                case 8:
                     message.push = reader.bool();
                     break;
                 default:
@@ -10784,6 +10798,9 @@ export const bentoml = $root.bentoml = (() => {
                     if (!$util.isString(message.build_args[key[i]]))
                         return "build_args: string{k:string} expected";
             }
+            if (message.repository != null && message.hasOwnProperty("repository"))
+                if (!$util.isString(message.repository))
+                    return "repository: string expected";
             if (message.username != null && message.hasOwnProperty("username"))
                 if (!$util.isString(message.username))
                     return "username: string expected";
@@ -10821,6 +10838,8 @@ export const bentoml = $root.bentoml = (() => {
                 for (let keys = Object.keys(object.build_args), i = 0; i < keys.length; ++i)
                     message.build_args[keys[i]] = String(object.build_args[keys[i]]);
             }
+            if (object.repository != null)
+                message.repository = String(object.repository);
             if (object.username != null)
                 message.username = String(object.username);
             if (object.password != null)
@@ -10849,6 +10868,7 @@ export const bentoml = $root.bentoml = (() => {
                 object.bento_name = "";
                 object.bento_version = "";
                 object.tag = "";
+                object.repository = "";
                 object.username = "";
                 object.password = "";
                 object.push = false;
@@ -10865,6 +10885,8 @@ export const bentoml = $root.bentoml = (() => {
                 for (let j = 0; j < keys2.length; ++j)
                     object.build_args[keys2[j]] = message.build_args[keys2[j]];
             }
+            if (message.repository != null && message.hasOwnProperty("repository"))
+                object.repository = message.repository;
             if (message.username != null && message.hasOwnProperty("username"))
                 object.username = message.username;
             if (message.password != null && message.hasOwnProperty("password"))

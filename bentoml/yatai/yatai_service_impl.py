@@ -15,7 +15,14 @@ from datetime import datetime
 import logging
 
 from bentoml import config
+from bentoml.saved_bundle import safe_retrieve
+from bentoml.utils.docker_utils import (
+    to_valid_docker_image_name,
+    to_valid_docker_image_version,
+)
+from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track
+from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.yatai.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
@@ -31,6 +38,7 @@ from bentoml.yatai.proto.repository_pb2 import (
     UpdateBentoResponse,
     ListBentoResponse,
     BentoUri,
+    ContainerizeBentoResponse,
 )
 from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
 from bentoml.yatai.proto.yatai_service_pb2 import (
@@ -39,7 +47,11 @@ from bentoml.yatai.proto.yatai_service_pb2 import (
 )
 from bentoml.yatai.deployment.operator import get_deployment_operator
 from bentoml.yatai.deployment.store import DeploymentStore
-from bentoml.exceptions import BentoMLException, InvalidArgument
+from bentoml.exceptions import (
+    BentoMLException,
+    InvalidArgument,
+    YataiRepositoryException,
+)
 from bentoml.yatai.repository.repository import Repository
 from bentoml.yatai.repository.metadata_store import BentoMetadataStore
 from bentoml.yatai.db import init_db
@@ -437,5 +449,59 @@ class YataiService(YataiServicer):
         except Exception as e:  # pylint: disable=broad-except
             logger.error("RPC ERROR ListBento: %s", e)
             return ListBentoResponse(status=Status.INTERNAL())
+
+    def ContainerizeBento(self, request, context=None):
+        try:
+            ensure_docker_available_or_raise()
+            if not request.tag:
+                name = to_valid_docker_image_name(request.bento_name)
+                version = to_valid_docker_image_version(request.bento_version)
+                tag = f"{name}:{version}"
+            if ":" not in tag:
+                tag = f"{tag}:{version}"
+            import docker
+
+            docker_client = docker.from_env()
+            bento_pb = self.bento_metadata_store.get(
+                request.bento_name, request.bento_version
+            )
+            if not bento_pb:
+                raise YataiRepositoryException(
+                    f'BentoService {request.bento_name}:{request.bento_version} '
+                    f'does not exist'
+                )
+
+            with TempDirectory() as temp_dir:
+                bento_service_bundle_path = bento_pb.uri.uri
+                if bento_pb.uri.type == BentoUri.S3:
+                    bento_service_bundle_path = self.repo.get(
+                        bento_pb.name, bento_pb.version
+                    )
+                elif bento_pb.uri.type == BentoUri.GCS:
+                    bento_service_bundle_path = self.repo.get(
+                        bento_pb.name, bento_pb.version
+                    )
+                safe_retrieve(bento_service_bundle_path, temp_dir)
+                try:
+                    docker_client.images.build(
+                        path=temp_dir, tag=tag, buildargs=request.build_args
+                    )
+                except docker.errors.APIError or docker.errors.BuildError as error:
+                    raise YataiRepositoryException(error)
+                if request.push is True:
+                    try:
+                        docker_client.images.push(
+                            repository=request.repository, tag=tag
+                        )
+                    except docker.errors.APIError as error:
+                        raise YataiRepositoryException(error)
+
+                return ContainerizeBentoResponse(status=Status.OK(), tag=tag)
+        except BentoMLException as e:
+            logger.error(f"RPC ERROR ContainerizeBento: {e}")
+            return ContainerizeBentoResponse(status=e.status_proto)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error(f"RPC ERROR ContainerizeBento: {e}")
+            return ContainerizeBentoResponse(status=Status.INTERNAL())
 
     # pylint: enable=unused-argument

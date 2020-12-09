@@ -26,8 +26,6 @@ import uuid
 from datetime import datetime
 from typing import List
 
-import psutil
-
 from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 from bentoml.configuration import get_bentoml_deploy_version
@@ -39,10 +37,6 @@ from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 from bentoml.service.inference_api import InferenceAPI
 from bentoml.utils.hybridmethod import hybridmethod
-
-# if psutil.POSIX:
-# multiprocessing.set_start_method("fork")
-
 
 ARTIFACTS_DIR_NAME = "artifacts"
 DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")

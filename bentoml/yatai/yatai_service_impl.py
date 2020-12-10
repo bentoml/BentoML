@@ -454,11 +454,12 @@ class YataiService(YataiServicer):
         try:
             ensure_docker_available_or_raise()
             tag = request.tag
-            if tag is None:
+            if tag is None or len(tag) == 0:
                 name = to_valid_docker_image_name(request.bento_name)
                 version = to_valid_docker_image_version(request.bento_version)
                 tag = f"{name}:{version}"
             if ":" not in tag:
+                version = to_valid_docker_image_version(request.bento_version)
                 tag = f"{tag}:{version}"
             import docker
 
@@ -488,7 +489,8 @@ class YataiService(YataiServicer):
                     docker_client.images.build(
                         path=temp_bundle_path, tag=tag, buildargs=request.build_args
                     )
-                except docker.errors.APIError or docker.errors.BuildError as error:
+                except (docker.errors.APIError, docker.errors.BuildError) as error:
+                    logger.error(f'Encounter container building issue: {error}')
                     raise YataiRepositoryException(error)
                 if request.push is True:
                     try:
@@ -504,6 +506,6 @@ class YataiService(YataiServicer):
             return ContainerizeBentoResponse(status=e.status_proto)
         except Exception as e:  # pylint: disable=broad-except
             logger.error(f"RPC ERROR ContainerizeBento: {e}")
-            return ContainerizeBentoResponse(status=Status.INTERNAL())
+            return ContainerizeBentoResponse(status=Status.INTERNAL(e))
 
     # pylint: enable=unused-argument

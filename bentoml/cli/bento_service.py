@@ -9,7 +9,6 @@ import psutil
 from bentoml import __version__
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.server.api_server import BentoAPIServer
-from bentoml.exceptions import BentoMLException, CLIException
 from bentoml.server import start_dev_server, start_prod_server
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import (
@@ -17,23 +16,18 @@ from bentoml.utils import (
     resolve_bundle_path,
 )
 from bentoml.cli.click_utils import (
-    CLI_COLOR_WARNING,
     CLI_COLOR_SUCCESS,
     _echo,
     BentoMLCommandGroup,
     conditional_argument,
 )
-from bentoml.cli.utils import echo_docker_api_result, Spinner
+from bentoml.cli.utils import Spinner
 from bentoml.saved_bundle import (
     load_from_dir,
     load_bento_service_api,
     load_bento_service_metadata,
 )
-from bentoml.utils.docker_utils import (
-    validate_tag,
-    to_valid_docker_image_name,
-    to_valid_docker_image_version,
-)
+from bentoml.utils.docker_utils import validate_tag
 from bentoml.yatai.client import get_yatai_client
 
 try:
@@ -346,15 +340,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         '--build-arg', multiple=True, help="pass through docker image build arguments"
     )
     @click.option(
-        '--repository', type=click.STRING, required=False,
-    )
-    @click.option(
         '--yatai-url',
         type=click.STRING,
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
-    def containerize(bento, push, tag, build_arg, repository, yatai_url):
+    def containerize(bento, push, tag, build_arg, yatai_url):
         """Containerize specified BentoService.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -384,21 +375,25 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         _echo(f"Found Bento: {saved_bundle_path}")
 
         bento_metadata = load_bento_service_metadata(saved_bundle_path)
+        bento_tag = f'{bento_metadata.name}:{bento_metadata.version}'
         yatai_client = get_yatai_client(yatai_url)
         docker_build_args = {}
         if build_arg:
             for arg in build_arg:
                 key, value = arg.split("=")
                 docker_build_args[key] = value
-        with Spinner(f"Building Docker image"):
-            result = yatai_client.repository.containerize(
-                bento=f'{bento_metadata.name}:{bento_metadata.version}',
-                tag=tag,
-                build_args=docker_build_args,
-                repository=repository,
-                push=push
+        if yatai_url is not None:
+            spinner_message = f'Sending containerize RPC to YataiService at {yatai_url}'
+        else:
+            spinner_message = (
+                f'Containerizing {bento_tag} with local YataiService and docker '
+                f'daemon from local environment'
             )
-            _echo(f'Build container {result.tag}', CLI_COLOR_SUCCESS)
+        with Spinner(spinner_message):
+            tag = yatai_client.repository.containerize(
+                bento=bento_tag, tag=tag, build_args=docker_build_args, push=push,
+            )
+            _echo(f'Build container image: {tag}', CLI_COLOR_SUCCESS)
 
     # pylint: enable=unused-variable
     return bentoml_cli

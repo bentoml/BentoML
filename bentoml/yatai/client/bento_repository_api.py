@@ -405,16 +405,13 @@ class BentoRepositoryAPIClient:
             except BentoMLException as e:
                 logger.error(f'Failed to delete Bento {bento_tag}: {e}')
 
-    def containerize(
-        self, bento, tag=None, repository=None, build_args=None, push=False
-    ):
+    def containerize(self, bento, tag=None, build_args=None, push=False):
         """
-        Create docker container from a BentoService.
+        Create a container image from a BentoService.
 
         Args:
             bento: string
             tag: string
-            repository: string
             build_args: dict
             push: boolean
 
@@ -433,10 +430,8 @@ class BentoRepositoryAPIClient:
             bento_version=version,
             tag=tag,
             build_args=build_args,
-            repository=repository,
             push=push,
         )
-        print(containerize_request)
         result = self.yatai_service.ContainerizeBento(containerize_request)
 
         if result.status.status_code != yatai_proto.status_pb2.Status.OK:

@@ -4250,15 +4250,6 @@ export namespace bentoml {
         /** ContainerizeBentoRequest build_args */
         build_args?: ({ [k: string]: string }|null);
 
-        /** ContainerizeBentoRequest repository */
-        repository?: (string|null);
-
-        /** ContainerizeBentoRequest username */
-        username?: (string|null);
-
-        /** ContainerizeBentoRequest password */
-        password?: (string|null);
-
         /** ContainerizeBentoRequest push */
         push?: (boolean|null);
     }
@@ -4283,15 +4274,6 @@ export namespace bentoml {
 
         /** ContainerizeBentoRequest build_args. */
         public build_args: { [k: string]: string };
-
-        /** ContainerizeBentoRequest repository. */
-        public repository: string;
-
-        /** ContainerizeBentoRequest username. */
-        public username: string;
-
-        /** ContainerizeBentoRequest password. */
-        public password: string;
 
         /** ContainerizeBentoRequest push. */
         public push: boolean;

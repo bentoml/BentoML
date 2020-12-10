@@ -147,10 +147,7 @@ message ContainerizeBentoRequest {
   string bento_version = 2;
   string tag = 3;
   map<string, string> build_args = 4;
-  string repository = 5;
-  string username = 6;
-  string password = 7;
-  bool push = 8;
+  bool push = 5;
 }
 
 message ContainerizeBentoResponse {

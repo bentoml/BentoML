@@ -436,6 +436,7 @@ class BentoRepositoryAPIClient:
             repository=repository,
             push=push,
         )
+        print(containerize_request)
         result = self.yatai_service.ContainerizeBento(containerize_request)
 
         if result.status.status_code != yatai_proto.status_pb2.Status.OK:

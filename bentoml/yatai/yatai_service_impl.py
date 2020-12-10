@@ -453,7 +453,8 @@ class YataiService(YataiServicer):
     def ContainerizeBento(self, request, context=None):
         try:
             ensure_docker_available_or_raise()
-            if not request.tag:
+            tag = request.tag
+            if tag is None:
                 name = to_valid_docker_image_name(request.bento_name)
                 version = to_valid_docker_image_version(request.bento_version)
                 tag = f"{name}:{version}"
@@ -472,6 +473,7 @@ class YataiService(YataiServicer):
                 )
 
             with TempDirectory() as temp_dir:
+                temp_bundle_path = f'{temp_dir}/{bento_pb.name}'
                 bento_service_bundle_path = bento_pb.uri.uri
                 if bento_pb.uri.type == BentoUri.S3:
                     bento_service_bundle_path = self.repo.get(
@@ -481,10 +483,10 @@ class YataiService(YataiServicer):
                     bento_service_bundle_path = self.repo.get(
                         bento_pb.name, bento_pb.version
                     )
-                safe_retrieve(bento_service_bundle_path, temp_dir)
+                safe_retrieve(bento_service_bundle_path, temp_bundle_path)
                 try:
                     docker_client.images.build(
-                        path=temp_dir, tag=tag, buildargs=request.build_args
+                        path=temp_bundle_path, tag=tag, buildargs=request.build_args
                     )
                 except docker.errors.APIError or docker.errors.BuildError as error:
                     raise YataiRepositoryException(error)

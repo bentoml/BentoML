@@ -74,6 +74,10 @@ service Yatai {
   // Get a list of Bento that are stored in current repository
   rpc ListBento(ListBentoRequest)
     returns (ListBentoResponse);
+
+  // Create a container image from a Bento
+  rpc ContainerizeBento(ContainerizeBentoRequest)
+    returns (ContainerizeBentoResponse);
 }
 
 message HealthCheckResponse {

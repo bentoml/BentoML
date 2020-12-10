@@ -11553,6 +11553,39 @@ export const bentoml = $root.bentoml = (() => {
          * @variation 2
          */
 
+        /**
+         * Callback as used by {@link bentoml.Yatai#containerizeBento}.
+         * @memberof bentoml.Yatai
+         * @typedef ContainerizeBentoCallback
+         * @type {function}
+         * @param {Error|null} error Error, if any
+         * @param {bentoml.ContainerizeBentoResponse} [response] ContainerizeBentoResponse
+         */
+
+        /**
+         * Calls ContainerizeBento.
+         * @function containerizeBento
+         * @memberof bentoml.Yatai
+         * @instance
+         * @param {bentoml.IContainerizeBentoRequest} request ContainerizeBentoRequest message or plain object
+         * @param {bentoml.Yatai.ContainerizeBentoCallback} callback Node-style callback called with the error, if any, and ContainerizeBentoResponse
+         * @returns {undefined}
+         * @variation 1
+         */
+        Object.defineProperty(Yatai.prototype.containerizeBento = function containerizeBento(request, callback) {
+            return this.rpcCall(containerizeBento, $root.bentoml.ContainerizeBentoRequest, $root.bentoml.ContainerizeBentoResponse, request, callback);
+        }, "name", { value: "ContainerizeBento" });
+
+        /**
+         * Calls ContainerizeBento.
+         * @function containerizeBento
+         * @memberof bentoml.Yatai
+         * @instance
+         * @param {bentoml.IContainerizeBentoRequest} request ContainerizeBentoRequest message or plain object
+         * @returns {Promise<bentoml.ContainerizeBentoResponse>} Promise
+         * @variation 2
+         */
+
         return Yatai;
     })();
 

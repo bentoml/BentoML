@@ -4650,6 +4650,20 @@ export namespace bentoml {
          * @returns Promise
          */
         public listBento(request: bentoml.IListBentoRequest): Promise<bentoml.ListBentoResponse>;
+
+        /**
+         * Calls ContainerizeBento.
+         * @param request ContainerizeBentoRequest message or plain object
+         * @param callback Node-style callback called with the error, if any, and ContainerizeBentoResponse
+         */
+        public containerizeBento(request: bentoml.IContainerizeBentoRequest, callback: bentoml.Yatai.ContainerizeBentoCallback): void;
+
+        /**
+         * Calls ContainerizeBento.
+         * @param request ContainerizeBentoRequest message or plain object
+         * @returns Promise
+         */
+        public containerizeBento(request: bentoml.IContainerizeBentoRequest): Promise<bentoml.ContainerizeBentoResponse>;
     }
 
     namespace Yatai {
@@ -4737,6 +4751,13 @@ export namespace bentoml {
          * @param [response] ListBentoResponse
          */
         type ListBentoCallback = (error: (Error|null), response?: bentoml.ListBentoResponse) => void;
+
+        /**
+         * Callback as used by {@link bentoml.Yatai#containerizeBento}.
+         * @param error Error, if any
+         * @param [response] ContainerizeBentoResponse
+         */
+        type ContainerizeBentoCallback = (error: (Error|null), response?: bentoml.ContainerizeBentoResponse) => void;
     }
 
     /** Properties of a HealthCheckResponse. */

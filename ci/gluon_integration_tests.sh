@@ -9,6 +9,8 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-sphinx-build -W --keep-going -b spelling "$GIT_ROOT"/docs/source "GIT_ROOT"/docs/build
+pip install mxnet
 
-test $error = 0 # Return non-zero if spellchecker failed
+pytest "$GIT_ROOT"/tests/integration/test_gluon_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+
+test $error = 0 # Return non-zero if pytest failed

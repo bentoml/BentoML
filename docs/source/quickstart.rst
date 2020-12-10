@@ -43,7 +43,7 @@ Download and run the notebook in this quickstart guide:
 
     # Install jupyter and other dependencies
     pip install jupyter
-    pip install ./guides/quick-start/requirements.txt
+    pip install -r ./guides/quick-start/requirements.txt
 
     # Run the notebook
     jupyter notebook ./guides/quick-start/bentoml-quick-start-guide.ipynb
@@ -224,6 +224,7 @@ To start a REST API model server locally with the IrisClassifier saved above, us
     bentoml serve IrisClassifier:latest
 
 Alternatively, use the saved path to load and serve the BentoML packaged model directly:
+
 .. code-block:: bash
 
     # Find the local path of the latest version IrisClassifier saved bundle

@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run linting script
         run: ./ci/linter.sh
 
@@ -30,10 +30,8 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
-      - name: install dependencies
-        run: ./ci/install-doc-deps.sh
       - name: Run spellcheck script
-        run: ./ci/documentation_spelling_check.sh
+        run: ./ci/docs_spell_check.sh
 
   unit_tests:
     name: ${{ matrix.os }} Python ${{ matrix.python-version }} Unit Tests
@@ -62,7 +60,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
         shell: bash
       - name: Run Unit Tests
         run: ./ci/unit_tests.sh
@@ -84,7 +82,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/onnx_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -101,7 +99,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/pytorch_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -118,7 +116,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/coreml_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -140,7 +138,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -157,9 +155,28 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/tensorflow_v2.2_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  keras_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install_test_deps.sh
+      - name: Run tests with tf2
+        run: ./ci/keras_integration_tests.sh
+      - name: Run tests with tf1
+        run: ./ci/keras_with_tf1_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -174,7 +191,7 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/h2o_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -191,7 +208,7 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/xgboost_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -208,8 +225,84 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install-test-deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/transformers_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  gluon_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install_test_deps.sh
+      - name: Run tests
+        run: ./ci/gluon_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  bento_management_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install_test_deps.sh
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Run tests
+        run: ./ci/model_management_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  yatai_server_integration_tests:
+    runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install_test_deps.sh
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Run tests
+        run: ./ci/yatai_server_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12

@@ -600,7 +600,6 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 raise InvalidArgument("AWS region is missing")
 
             # delete stack
-            deployment_spec = deployment_pb
             deployment_stack_name = generate_aws_compatible_string(
                 "btml-stack-{namespace}-{name}".format(
                     namespace=deployment_pb.namespace, name=deployment_pb.name

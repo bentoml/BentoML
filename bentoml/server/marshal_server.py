@@ -46,6 +46,8 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         timeout=None,
         prometheus_lock=None,
         outbound_workers=1,
+        mb_max_batch_size: int = None,
+        mb_max_latency: int = None,
     ):
         self.bento_service_bundle_path = bundle_path
 
@@ -66,6 +68,8 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         self.outbound_port = outbound_port
         self.outbound_host = outbound_host
         self.outbound_workers = outbound_workers
+        self.mb_max_batch_size = mb_max_batch_size
+        self.mb_max_latency = mb_max_latency
 
         super(GunicornMarshalServer, self).__init__()
 
@@ -89,6 +93,8 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
             self.outbound_host,
             self.outbound_port,
             outbound_workers=self.outbound_workers,
+            mb_max_batch_size=self.mb_max_batch_size,
+            mb_max_latency=self.mb_max_latency,
         )
         return server.make_app()
 

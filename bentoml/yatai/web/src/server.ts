@@ -208,8 +208,8 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
       console.log('cookie created successfully');
     } else {
       console.log('cookie exists', cookie);
-    } 
-    next(); 
+    }
+    next();
   });
 
   app.use(express.json());
@@ -236,7 +236,7 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
       res.sendFile(path.join(__dirname, "../dist/client/index.html"));
     }
   });
-  
+
   app.use(express.static(path.join(__dirname, "../dist/client")));
   return app;
 };

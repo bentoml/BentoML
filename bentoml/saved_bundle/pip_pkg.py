@@ -26,6 +26,8 @@ EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1
 EPP_PKG_VERSION_MISMATCH = 2
 
+ZIPIMPORT_DIR = 'zipimports'
+
 __mm = None
 
 

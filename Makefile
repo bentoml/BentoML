@@ -22,7 +22,7 @@ gen-protos: ## Build protobufs for Python and Node
 	@./protos/generate-docker.sh
 
 # Docs
-watch: ## Build and watch documentation
+watch-doc: ## Build and watch documentation
 	@./docs/watch.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
@@ -38,16 +38,16 @@ install-spellchecker-deps: ## Install MacOS dependencies for spellchecker
 	brew install enchant
 else
 install-spellchecker-deps: ## Install Linux dependencies for spellchecker
-	sudo apt install libenchant
+	sudo apt install libenchant-dev
 endif
 spellcheck-doc: ## Spell check documentation
 	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 
 
 # YataiService gRPC
-yatai: ## Start YataiService in debug mode
+start-yatai-debug: ## Start YataiService in debug mode
 	bentoml yatai-service-start --debug || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
-grpcui: ## Start gPRC Web UI
+start-grpcui: ## Start gPRC Web UI
 	grpcui -plain text localhost:50051 || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
 install-yatai-deps: ## Install dependencies to debug YataiService
 	pip install -e ".[dev]"
@@ -55,7 +55,7 @@ install-yatai-deps: ## Install dependencies to debug YataiService
 	go install github.com/fullstorydev/grpcui/cmd/grpcui
 
 # BentoML Web UI
-web-ui: ## Build BentoML Web UI server and frontend
+build-yatai-web-ui: ## Build BentoML Web UI server and frontend
 	cd bentoml/yatai/web && npm run build
 install-web-deps: ## Install dependencies to run web server and frontend
 	cd bentoml/yatai/web && yarn install

@@ -48,6 +48,36 @@ except ImportError:
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
+batch_options = [
+    click.option(
+        '--enable-microbatch/--disable-microbatch',
+        default=False,
+        help="Run API server with micro-batch enabled",
+        envvar='BENTOML_ENABLE_MICROBATCH',
+    ),
+    click.option(
+        '--mb-max-batch-size',
+        type=click.INT,
+        help="Specify micro batching maximal batch size.",
+        envvar='BENTOML_MB_MAX_BATCH_SIZE',
+    ),
+    click.option(
+        '--mb-max-latency',
+        type=click.INT,
+        help="Specify micro batching maximal latency in milliseconds.",
+        envvar='BENTOML_MB_MAX_LATENCY',
+    ),
+]
+
+
+def add_options(options):
+    def _add_options(func):
+        for option in reversed(options):
+            func = option(func)
+        return func
+
+    return _add_options
+
 
 def escape_shell_params(param):
     k, v = param.split("=")
@@ -147,12 +177,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         f"default is {BentoAPIServer.DEFAULT_PORT}",
         envvar='BENTOML_PORT',
     )
-    @click.option(
-        '--enable-microbatch/--disable-microbatch',
-        default=False,
-        help="Run API server with micro-batch enabled",
-        envvar='BENTOML_ENABLE_MICROBATCH',
-    )
+    @add_options(batch_options)
     @click.option(
         '--run-with-ngrok',
         is_flag=True,
@@ -167,13 +192,35 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
+    @click.option(
+        '--enable-swagger/--disable-swagger',
+        is_flag=True,
+        default=True,
+        help="Run API server with Swagger UI enabled",
+        envvar='BENTOML_ENABLE_SWAGGER',
+    )
     def serve(
-        port, bento=None, enable_microbatch=False, run_with_ngrok=False, yatai_url=None
+        port,
+        bento=None,
+        enable_microbatch=False,
+        mb_max_batch_size=None,
+        mb_max_latency=None,
+        run_with_ngrok=False,
+        yatai_url=None,
+        enable_swagger=True,
     ):
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )
-        start_dev_server(saved_bundle_path, port, enable_microbatch, run_with_ngrok)
+        start_dev_server(
+            saved_bundle_path,
+            port,
+            enable_microbatch,
+            mb_max_batch_size,
+            mb_max_latency,
+            run_with_ngrok,
+            enable_swagger,
+        )
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -200,12 +247,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         envvar='BENTOML_GUNICORN_WORKERS',
     )
     @click.option("--timeout", type=click.INT, default=None)
-    @click.option(
-        '--enable-microbatch/--disable-microbatch',
-        default=False,
-        help="Run API server with micro batch enabled",
-        envvar='BENTOML_ENABLE_MICROBATCH',
-    )
+    @add_options(batch_options)
     @click.option(
         '--microbatch-workers',
         type=click.INT,
@@ -219,14 +261,24 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
+    @click.option(
+        '--enable-swagger/--disable-swagger',
+        is_flag=True,
+        default=True,
+        help="Run API server with Swagger UI enabled",
+        envvar='BENTOML_ENABLE_SWAGGER',
+    )
     def serve_gunicorn(
         port,
         workers,
         timeout,
         bento=None,
         enable_microbatch=False,
+        mb_max_batch_size=None,
+        mb_max_latency=None,
         microbatch_workers=1,
         yatai_url=None,
+        enable_swagger=True,
     ):
         if not psutil.POSIX:
             _echo(
@@ -245,7 +297,10 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             timeout,
             workers,
             enable_microbatch,
+            mb_max_batch_size,
+            mb_max_latency,
             microbatch_workers,
+            enable_swagger,
         )
 
     @bentoml_cli.command(

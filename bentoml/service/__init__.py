@@ -110,6 +110,7 @@ def api_decorator(
     def decorator(func):
         _api_name = func.__name__ if api_name is None else api_name
         validate_inference_api_name(_api_name)
+        _api_doc = func.__doc__ if api_doc is None else api_doc
 
         if input is None:
             # Raise error when input adapter class passed without instantiation
@@ -138,7 +139,7 @@ def api_decorator(
         setattr(func, "_input_adapter", input_adapter)
         setattr(func, "_output_adapter", output_adapter)
         setattr(func, "_api_name", _api_name)
-        setattr(func, "_api_doc", api_doc)
+        setattr(func, "_api_doc", _api_doc)
         setattr(func, "_mb_max_batch_size", mb_max_batch_size)
         setattr(func, "_mb_max_latency", mb_max_latency)
         setattr(func, "_batch", batch)

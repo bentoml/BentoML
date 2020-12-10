@@ -65,11 +65,10 @@ class TfTensorOutput(JsonOutput):
     ) -> Sequence[InferenceResult[str]]:
         rv = []
         results = tf_to_numpy(return_result)
-        assert isinstance(results, np.ndarray)
         for result, _ in regroup_return_value(results, tasks):
             try:
                 result_str = json.dumps(result, cls=TfTensorJsonEncoder)
-                rv.append(InferenceResult(data=result_str))
+                rv.append(InferenceResult(data=result_str, http_status=200))
             except Exception as e:  # pylint: disable=broad-except
                 rv.append(InferenceError(err_msg=str(e), http_status=500))
         return rv

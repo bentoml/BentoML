@@ -1,10 +1,6 @@
-import functools
 import json
 import time
 from typing import Sequence
-
-import numpy as np
-from sklearn.ensemble import RandomForestRegressor
 
 import bentoml
 from bentoml.adapters import (
@@ -16,9 +12,28 @@ from bentoml.adapters import (
 )
 from bentoml.frameworks.sklearn import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler  # deprecated
-from bentoml.saved_bundle import save_to_dir
 from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.types import InferenceError, InferenceResult, InferenceTask
+
+
+class PickleModel(object):
+    def predict_dataframe(self, df):
+        return df['col1'] * 2
+
+    def predict_image(self, input_datas):
+        return [input_data.shape for input_data in input_datas]
+
+    def predict_file(self, input_files):
+        return [f.read() for f in input_files]
+
+    def predict_multi_images(self, originals, compareds):
+        import numpy as np
+
+        eq = np.array(originals) == np.array(compareds)
+        return eq.all(axis=tuple(range(1, len(eq.shape))))
+
+    def predict_json(self, input_datas):
+        return input_datas
 
 
 @bentoml.env(infer_pip_packages=True)
@@ -141,52 +156,3 @@ class ExampleBentoServiceSingle(ExampleBentoService):
             return InferenceError(http_status=400, err_msg="application/json only")
         result = self.artifacts.model.predict_json([input_data])[0]
         return InferenceResult(http_status=200, data=json.dumps(result))
-
-
-class PickleModel(object):
-    def predict_dataframe(self, df):
-        return df['col1'] * 2
-
-    def predict_image(self, input_datas):
-        return [input_data.shape for input_data in input_datas]
-
-    def predict_file(self, input_files):
-        return [f.read() for f in input_files]
-
-    def predict_multi_images(self, originals, compareds):
-        eq = np.array(originals) == np.array(compareds)
-        return eq.all(axis=tuple(range(1, len(eq.shape))))
-
-    def predict_json(self, input_datas):
-        return input_datas
-
-
-@functools.lru_cache()
-def gen_test_bundle(tmpdir, batch_mode=True):
-    # When the ExampleBentoService got saved and loaded again in the test, the two class
-    # attribute below got set to the loaded BentoService class. Resetting it here so it
-    # does not effect other tests
-    if batch_mode:
-        svc_cls = ExampleBentoService
-    else:
-        svc_cls = ExampleBentoServiceSingle
-    svc_cls._bento_service_bundle_path = None
-    svc_cls._bento_service_bundle_version = None
-    test_svc = svc_cls()
-
-    pickle_model = PickleModel()
-    test_svc.pack('model', pickle_model)
-
-    sklearn_model = RandomForestRegressor(n_estimators=2)
-    sklearn_model.fit(
-        [[i] for _ in range(100) for i in range(10)],
-        [i for _ in range(100) for i in range(10)],
-    )
-    test_svc.pack('sk_model', sklearn_model)
-
-    save_to_dir(test_svc, tmpdir, silent=True)
-    return tmpdir
-
-
-if __name__ == "__main__":
-    gen_test_bundle(".test_bundle", False)

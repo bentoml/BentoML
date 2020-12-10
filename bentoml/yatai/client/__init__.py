@@ -45,5 +45,21 @@ class YataiClient:
 
 
 def get_yatai_client(yatai_service_channel_address=None):
+    """
+    Args:
+        yatai_service_channel_address: String. Yatai Service URL address.
+
+    Returns:
+        YataiClient instance
+
+    Example:
+
+    >>>  from bentoml.yatai.client import get_yatai_client
+    >>>
+    >>>  remote_yatai_service_address = 'https://remote.yatai:50050'
+    >>>  yatai_client = get_yatai_client(remote_yatai_service_address)
+    >>>
+    >>>  local_yatai_client = get_yatai_client()
+    """
     yatai_service = get_yatai_service(channel_address=yatai_service_channel_address)
     return YataiClient(yatai_service=yatai_service)

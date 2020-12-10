@@ -46,6 +46,8 @@ def start_dev_server(
     saved_bundle_path: str,
     port: int,
     enable_microbatch: bool,
+    mb_max_batch_size: int,
+    mb_max_latency: int,
     run_with_ngrok: bool,
     enable_swagger: bool,
 ):
@@ -75,6 +77,8 @@ def start_dev_server(
                 outbound_host="localhost",
                 outbound_port=api_server_port,
                 outbound_workers=1,
+                mb_max_batch_size=mb_max_batch_size,
+                mb_max_latency=mb_max_latency,
             )
             api_server = BentoAPIServer(
                 bento_service, port=api_server_port, enable_swagger=enable_swagger
@@ -94,6 +98,8 @@ def start_prod_server(
     timeout: int,
     workers: int,
     enable_microbatch: bool,
+    mb_max_batch_size: int,
+    mb_max_latency: int,
     microbatch_workers: int,
     enable_swagger: bool,
 ):
@@ -126,6 +132,8 @@ def start_prod_server(
                 outbound_host="localhost",
                 outbound_port=api_server_port,
                 outbound_workers=workers,
+                mb_max_batch_size=mb_max_batch_size,
+                mb_max_latency=mb_max_latency,
             )
 
             gunicorn_app = GunicornBentoServer(

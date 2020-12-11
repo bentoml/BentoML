@@ -743,15 +743,15 @@ class BentoService:
                 if enable_microbatch:
                     cmd += ['--enable-microbatch']
                 cmd += [path]
-                with subprocess.Popen(
+                p = subprocess.Popen(
                     cmd,
                     stderr=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stdin=subprocess.PIPE,
-                ) as p:
-                    threading.Thread(target=print_log, args=(p,), daemon=True).start()
-                    interrupt_event.wait()
-                    p.terminate()
+                )
+                threading.Thread(target=print_log, args=(p,), daemon=True).start()
+                interrupt_event.wait()
+                p.terminate()
 
             self._dev_server_interrupt_event = multiprocessing.Event()
             self._dev_server_process = multiprocessing.Process(
@@ -760,41 +760,30 @@ class BentoService:
                     self._dev_server_bundle_path.name,
                     self._dev_server_interrupt_event,
                 ),
+                daemon=True,
             )
-            self._dev_server_process.daemon = True
             self._dev_server_process.start()
             logger.info(f"======= starting dev server on port: {port} =======")
         except Exception as e:  # pylint: disable=broad-except
-            if self._dev_server_bundle_path:
-                self._dev_server_bundle_path.cleanup()
-                self._dev_server_bundle_path = None
-            if self._dev_server_process:
-                self._dev_server_process = None
-            if self._dev_server_interrupt_event:
-                self._dev_server_interrupt_event.set()
-                self._dev_server_interrupt_event = None
-
+            self.stop_dev_server()
             raise e
 
     def stop_dev_server(self):
-        if self._dev_server_process:
-            assert self._dev_server_interrupt_event
+        if self._dev_server_interrupt_event:
             self._dev_server_interrupt_event.set()
+            self._dev_server_interrupt_event = None
+        if self._dev_server_process:
             self._dev_server_process.join()
             assert not self._dev_server_process.is_alive()
+            self._dev_server_process = None
         else:
             logger.warning("No dev server is running.")
-            return
         if self._dev_server_bundle_path:
             self._dev_server_bundle_path.cleanup()
-
-        self._dev_server_interrupt_event = None
-        self._dev_server_bundle_path = None
-        self._dev_server_process = None
+            self._dev_server_bundle_path = None
 
     def __del__(self):
-        if self._dev_server_process:
-            self.stop_dev_server()
+        self.stop_dev_server()
 
     def infer_pip_dependencies_map(self):
         if not self.pip_dependencies_map:

@@ -252,7 +252,7 @@ class MarshalService:
             span_name=f"[2]{url.path} relay",
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
-            async with aiohttp.ClientSession() as client:
+            async with aiohttp.ClientSession(auto_decompress=False) as client:
                 async with client.request(
                     request.method, url, data=data, headers=request.headers
                 ) as resp:
@@ -282,7 +282,7 @@ class MarshalService:
             headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)
             try:
-                async with aiohttp.ClientSession() as client:
+                async with aiohttp.ClientSession(auto_decompress=False) as client:
                     async with client.post(
                         api_url, data=reqs_s, headers=headers
                     ) as resp:

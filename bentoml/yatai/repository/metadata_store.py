@@ -230,6 +230,25 @@ class BentoMetadataStore(object):
                     "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 
+    def dangerously_batch_delete(self, bento_list=None):
+        print('inside batch')
+        with create_session(self.sess_maker) as sess:
+            try:
+                # Deleting ALL
+                if bento_list is None:
+                    result = sess.query(Bento)
+                else:
+                    query = sess.query(Bento)
+                    names = []
+                    versions = []
+                    result = query.intersect(
+                        query.filter(Bento.name.in_(names)),
+                        query.filter(Bento.version.in_(versions))
+                    )
+                result.update({'deleted': True})
+            except Exception as e:
+                raise YataiRepositoryException(f'Batch delete failed: {e}')
+
     def list(
         self,
         bento_name=None,
@@ -251,7 +270,7 @@ class BentoMetadataStore(object):
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
             query = query.filter_by(deleted=False)
-            if label_selectors.match_labels or label_selectors.match_expressions:
+            if label_selectors is not None:
                 bento_ids = filter_label_query(
                     sess, RESOURCE_TYPE.bento, label_selectors
                 )

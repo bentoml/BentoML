@@ -108,6 +108,8 @@ message UpdateBentoResponse {
 message DangerouslyDeleteBentoRequest {
   string bento_name = 1;
   string bento_version = 2;
+  LabelSelectors label_selectors = 3;
+  bool all = 4;
 }
 
 message DangerouslyDeleteBentoResponse {

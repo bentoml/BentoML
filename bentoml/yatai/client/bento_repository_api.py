@@ -342,12 +342,12 @@ class BentoRepositoryAPIClient:
             raise BentoMLException(f'{error_code}:{error_message}')
         return result.bentos
 
-    def delete(self, prune=False, labels=None, bento_name=None, bento_version=None):
+    def delete(self, all=False, labels=None, bento_name=None, bento_version=None):
         """
         Delete bentos that matches the specified criteria
 
         Args:
-            prune: boolean, Set True to delete all BentoService
+            all: boolean, Set True to delete all BentoService
             labels: string
             bento_name: string
             bento_version: string
@@ -355,7 +355,7 @@ class BentoRepositoryAPIClient:
         >>>
         >>> yatai_client = get_yatai_client()
         >>> # Delete all bento services
-        >>> yatai_client.repository.delete(prune=True)
+        >>> yatai_client.repository.delete(all=True)
         >>> # Delete bento service with name is `IrisClassifier` and version `0.1.0`
         >>> yatai_client.repository.delete(
         >>>     bento_name='IrisClassifier', bento_version='0.1.0'
@@ -366,19 +366,18 @@ class BentoRepositoryAPIClient:
         >>> yatai_client.repository.delete(labels='ci=failed, cohort=20')
         """
         track('py-api-delete')
-        if prune is True:
-            bentos_list = self.list()
-        else:
-            if bento_version is not None and bento_name is not None:
-                bento = self.get(f'{bento_name}:{bento_version}')
-                bentos_list = [bento]
-            else:
-                bentos_list = self.list(labels=labels, bento_name=bento_name)
-        for bento in bentos_list:
-            result = self.yatai_service.DangerouslyDeleteBento(
-                DangerouslyDeleteBentoRequest(
-                    bento_name=bento.name, bento_version=bento.version
-                )
+        delete_request = DangerouslyDeleteBentoRequest(
+            all=all, bento_name=bento_name, bento_version=bento_version
+        )
+        if labels is not None:
+            generate_gprc_labels_selector(delete_request.label_selectors, labels)
+        result = self.yatai_service.DangerouslyDeleteBento(delete_request)
+        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
+            )
+            raise BentoMLException(
+                f'Failed to delete Bento {error_code}:{error_message}'
             )
             if result.status.status_code != yatai_proto.status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(

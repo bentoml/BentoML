@@ -9156,6 +9156,8 @@ export const bentoml = $root.bentoml = (() => {
          * @interface IDangerouslyDeleteBentoRequest
          * @property {string|null} [bento_name] DangerouslyDeleteBentoRequest bento_name
          * @property {string|null} [bento_version] DangerouslyDeleteBentoRequest bento_version
+         * @property {bentoml.ILabelSelectors|null} [label_selectors] DangerouslyDeleteBentoRequest label_selectors
+         * @property {boolean|null} [all] DangerouslyDeleteBentoRequest all
          */
 
         /**
@@ -9190,6 +9192,22 @@ export const bentoml = $root.bentoml = (() => {
         DangerouslyDeleteBentoRequest.prototype.bento_version = "";
 
         /**
+         * DangerouslyDeleteBentoRequest label_selectors.
+         * @member {bentoml.ILabelSelectors|null|undefined} label_selectors
+         * @memberof bentoml.DangerouslyDeleteBentoRequest
+         * @instance
+         */
+        DangerouslyDeleteBentoRequest.prototype.label_selectors = null;
+
+        /**
+         * DangerouslyDeleteBentoRequest all.
+         * @member {boolean} all
+         * @memberof bentoml.DangerouslyDeleteBentoRequest
+         * @instance
+         */
+        DangerouslyDeleteBentoRequest.prototype.all = false;
+
+        /**
          * Creates a new DangerouslyDeleteBentoRequest instance using the specified properties.
          * @function create
          * @memberof bentoml.DangerouslyDeleteBentoRequest
@@ -9217,6 +9235,10 @@ export const bentoml = $root.bentoml = (() => {
                 writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
             if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
                 writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
+            if (message.label_selectors != null && Object.hasOwnProperty.call(message, "label_selectors"))
+                $root.bentoml.LabelSelectors.encode(message.label_selectors, writer.uint32(/* id 3, wireType 2 =*/26).fork()).ldelim();
+            if (message.all != null && Object.hasOwnProperty.call(message, "all"))
+                writer.uint32(/* id 4, wireType 0 =*/32).bool(message.all);
             return writer;
         };
 
@@ -9256,6 +9278,12 @@ export const bentoml = $root.bentoml = (() => {
                     break;
                 case 2:
                     message.bento_version = reader.string();
+                    break;
+                case 3:
+                    message.label_selectors = $root.bentoml.LabelSelectors.decode(reader, reader.uint32());
+                    break;
+                case 4:
+                    message.all = reader.bool();
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -9298,6 +9326,14 @@ export const bentoml = $root.bentoml = (() => {
             if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 if (!$util.isString(message.bento_version))
                     return "bento_version: string expected";
+            if (message.label_selectors != null && message.hasOwnProperty("label_selectors")) {
+                let error = $root.bentoml.LabelSelectors.verify(message.label_selectors);
+                if (error)
+                    return "label_selectors." + error;
+            }
+            if (message.all != null && message.hasOwnProperty("all"))
+                if (typeof message.all !== "boolean")
+                    return "all: boolean expected";
             return null;
         };
 
@@ -9317,6 +9353,13 @@ export const bentoml = $root.bentoml = (() => {
                 message.bento_name = String(object.bento_name);
             if (object.bento_version != null)
                 message.bento_version = String(object.bento_version);
+            if (object.label_selectors != null) {
+                if (typeof object.label_selectors !== "object")
+                    throw TypeError(".bentoml.DangerouslyDeleteBentoRequest.label_selectors: object expected");
+                message.label_selectors = $root.bentoml.LabelSelectors.fromObject(object.label_selectors);
+            }
+            if (object.all != null)
+                message.all = Boolean(object.all);
             return message;
         };
 
@@ -9336,11 +9379,17 @@ export const bentoml = $root.bentoml = (() => {
             if (options.defaults) {
                 object.bento_name = "";
                 object.bento_version = "";
+                object.label_selectors = null;
+                object.all = false;
             }
             if (message.bento_name != null && message.hasOwnProperty("bento_name"))
                 object.bento_name = message.bento_name;
             if (message.bento_version != null && message.hasOwnProperty("bento_version"))
                 object.bento_version = message.bento_version;
+            if (message.label_selectors != null && message.hasOwnProperty("label_selectors"))
+                object.label_selectors = $root.bentoml.LabelSelectors.toObject(message.label_selectors, options);
+            if (message.all != null && message.hasOwnProperty("all"))
+                object.all = message.all;
             return object;
         };
 

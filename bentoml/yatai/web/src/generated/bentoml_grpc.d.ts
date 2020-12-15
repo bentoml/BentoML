@@ -3640,6 +3640,12 @@ export namespace bentoml {
 
         /** DangerouslyDeleteBentoRequest bento_version */
         bento_version?: (string|null);
+
+        /** DangerouslyDeleteBentoRequest label_selectors */
+        label_selectors?: (bentoml.ILabelSelectors|null);
+
+        /** DangerouslyDeleteBentoRequest all */
+        all?: (boolean|null);
     }
 
     /** Represents a DangerouslyDeleteBentoRequest. */
@@ -3656,6 +3662,12 @@ export namespace bentoml {
 
         /** DangerouslyDeleteBentoRequest bento_version. */
         public bento_version: string;
+
+        /** DangerouslyDeleteBentoRequest label_selectors. */
+        public label_selectors?: (bentoml.ILabelSelectors|null);
+
+        /** DangerouslyDeleteBentoRequest all. */
+        public all: boolean;
 
         /**
          * Creates a new DangerouslyDeleteBentoRequest instance using the specified properties.

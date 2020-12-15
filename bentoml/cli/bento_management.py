@@ -178,7 +178,7 @@ def add_bento_sub_command(cli):
         '"--labels" to filter. To delete all bento services use "--prune" option'
     )
     @click.option(
-        '--prune', is_flag=True, help='Use this flag to remove all BentoServices'
+        '--all', is_flag=True, help='Use this flag to remove all BentoServices'
     )
     @click.option(
         '--labels',
@@ -198,7 +198,7 @@ def add_bento_sub_command(cli):
     @click.option(
         '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
     )
-    def delete(prune, labels, bento_name, bento_version, yatai_url, yes):
+    def delete(all, labels, bento_name, bento_version, yatai_url, yes):
         """Delete saved BentoServices.
 
         BENTO is the target BentoService to be deleted, referenced by its name and
@@ -216,10 +216,7 @@ def add_bento_sub_command(cli):
             return
         yc = get_yatai_client(yatai_url)
         yc.repository.delete(
-            prune=prune,
-            labels=labels,
-            bento_name=bento_name,
-            bento_version=bento_version,
+            all=all, labels=labels, bento_name=bento_name, bento_version=bento_version,
         )
         _echo('Deleted bento services')
 

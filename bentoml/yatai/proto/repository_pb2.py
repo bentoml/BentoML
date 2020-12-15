@@ -134,8 +134,8 @@ _LISTBENTOREQUEST_SORTABLE_COLUMN = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2515,
-  serialized_end=2558,
+  serialized_start=2579,
+  serialized_end=2622,
 )
 _sym_db.RegisterEnumDescriptor(_LISTBENTOREQUEST_SORTABLE_COLUMN)
 
@@ -802,7 +802,21 @@ _DANGEROUSLYDELETEBENTOREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='label_selectors', full_name='bentoml.DangerouslyDeleteBentoRequest.label_selectors', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='all', full_name='bentoml.DangerouslyDeleteBentoRequest.all', index=3,
+      number=4, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -815,8 +829,8 @@ _DANGEROUSLYDELETEBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2018,
-  serialized_end=2092,
+  serialized_start=2019,
+  serialized_end=2156,
 )
 
 
@@ -847,8 +861,8 @@ _DANGEROUSLYDELETEBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2094,
-  serialized_end=2159,
+  serialized_start=2158,
+  serialized_end=2223,
 )
 
 
@@ -886,8 +900,8 @@ _GETBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2161,
-  serialized_end=2221,
+  serialized_start=2225,
+  serialized_end=2285,
 )
 
 
@@ -925,8 +939,8 @@ _GETBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2223,
-  serialized_end=2305,
+  serialized_start=2287,
+  serialized_end=2369,
 )
 
 
@@ -993,8 +1007,8 @@ _LISTBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2308,
-  serialized_end=2558,
+  serialized_start=2372,
+  serialized_end=2622,
 )
 
 
@@ -1032,8 +1046,8 @@ _LISTBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2560,
-  serialized_end=2644,
+  serialized_start=2624,
+  serialized_end=2708,
 )
 
 
@@ -1198,6 +1212,7 @@ _UPLOADSTATUS_STATUS.containing_type = _UPLOADSTATUS
 _UPDATEBENTOREQUEST.fields_by_name['upload_status'].message_type = _UPLOADSTATUS
 _UPDATEBENTOREQUEST.fields_by_name['service_metadata'].message_type = _BENTOSERVICEMETADATA
 _UPDATEBENTORESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
+_DANGEROUSLYDELETEBENTOREQUEST.fields_by_name['label_selectors'].message_type = label__selectors__pb2._LABELSELECTORS
 _DANGEROUSLYDELETEBENTORESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
 _GETBENTORESPONSE.fields_by_name['status'].message_type = status__pb2._STATUS
 _GETBENTORESPONSE.fields_by_name['bento'].message_type = _BENTO

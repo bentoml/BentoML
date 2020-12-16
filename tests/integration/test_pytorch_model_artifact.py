@@ -47,7 +47,7 @@ def test_pytorch_artifact_pack(pytorch_classifier_class):
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{svc.name}:{svc.version}')
+    yc.repository.delete(bento_name=svc.name, bento_version=svc.version)
 
 
 def test_pytorch_artifact_pack_with_traced_model(pytorch_classifier_class):
@@ -82,4 +82,4 @@ def test_pytorch_artifact_pack_with_scripted_model(pytorch_classifier_class):
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{svc.name}:{svc.version}')
+    yc.repository.delete(bento_name=svc.name, bento_version=svc.version)

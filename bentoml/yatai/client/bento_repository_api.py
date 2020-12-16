@@ -342,7 +342,13 @@ class BentoRepositoryAPIClient:
             raise BentoMLException(f'{error_code}:{error_message}')
         return result.bentos
 
-    def delete(self, all=False, labels=None, bento_name=None, bento_version=None):
+    def delete(
+        self,
+        all=False,  # pylint: disable=redefined-builtin
+        labels=None,
+        bento_name=None,
+        bento_version=None,
+    ):
         """
         Delete bentos that matches the specified criteria
 

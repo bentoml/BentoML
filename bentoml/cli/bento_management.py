@@ -198,7 +198,14 @@ def add_bento_sub_command(cli):
     @click.option(
         '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
     )
-    def delete(all, labels, bento_name, bento_version, yatai_url, yes):
+    def delete(
+        all,  # pylint: disable=redefined-builtin
+        labels,
+        bento_name,
+        bento_version,
+        yatai_url,
+        yes,
+    ):
         """Delete saved BentoServices.
 
         BENTO is the target BentoService to be deleted, referenced by its name and

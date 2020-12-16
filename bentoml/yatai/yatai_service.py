@@ -12,18 +12,21 @@ import grpc
 from bentoml import config
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
+from bentoml.yatai.client.interceptor import header_client_interceptor
 from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 
 def get_yatai_service(
     channel_address=None,
+    access_token=None,
     db_url=None,
     repo_base_url=None,
     s3_endpoint_url=None,
     default_namespace=None,
 ):
     channel_address = channel_address or config('yatai_service').get('url')
+    access_token = access_token or config('yatai_service').get('access_token')
     channel_address = channel_address.strip()
     if channel_address:
         from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
@@ -38,7 +41,9 @@ def get_yatai_service(
 
         logger.debug("Connecting YataiService gRPC server at: %s", channel_address)
         scheme, addr = parse_grpc_url(channel_address)
-
+        header_adder_interceptor = header_client_interceptor.header_adder_interceptor(
+            'access_token', access_token
+        )
         if scheme in ('grpcs', 'https'):
             tls_root_ca_cert = (
                 config().get('yatai_service', 'tls_root_ca_cert')
@@ -59,9 +64,13 @@ def get_yatai_service(
             credentials = grpc.ssl_channel_credentials(
                 ca_cert, tls_client_key, tls_client_cert
             )
-            channel = grpc.secure_channel(addr, credentials)
+            channel = grpc.intercept_channel(
+                grpc.secure_channel(addr, credentials), header_adder_interceptor
+            )
         else:
-            channel = grpc.insecure_channel(addr)
+            channel = grpc.intercept_channel(
+                grpc.insecure_channel(addr), header_adder_interceptor
+            )
         return YataiStub(channel)
     else:
         from bentoml.yatai.yatai_service_impl import YataiService

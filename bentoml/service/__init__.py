@@ -739,7 +739,7 @@ class BentoService:
             def run(path, interrupt_event):
                 cmd = [sys.executable, "-m", "bentoml", "serve", "--debug"]
                 if port:
-                    cmd += [f'--port', f'{port}']
+                    cmd += ['--port', f'{port}']
                 if enable_microbatch:
                     cmd += ['--enable-microbatch']
                 if enable_ngrok:

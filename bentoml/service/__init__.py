@@ -67,11 +67,19 @@ def validate_inference_api_name(api_name: str):
         )
 
 
+def validate_inference_api_route(api_route: str):
+    if api_route in BENTOML_RESERVED_API_NAMES:
+        raise InvalidArgument(
+            "Reserved API route: '{}' is reserved for infra endpoints".format(api_route)
+        )
+
+
 def api_decorator(
     *args,
     input: BaseInputAdapter = None,
     output: BaseOutputAdapter = None,
     api_name: str = None,
+    route: str = None,
     api_doc: str = None,
     mb_max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
     mb_max_latency: int = DEFAULT_MAX_LATENCY,
@@ -86,6 +94,8 @@ def api_decorator(
     :param output: OutputAdapter instance of the inference API
     :param api_name: API name, default to the user-defined callback function's function
         name
+    :param route: to customize the route of API, 
+        Default: None (the same as api_name)
     :param api_doc: user-facing documentation of the inference API. default to the
         user-defined callback function's docstring
     :param mb_max_batch_size: The maximum size of requests batch accepted by this
@@ -114,7 +124,9 @@ def api_decorator(
 
     def decorator(func):
         _api_name = func.__name__ if api_name is None else api_name
+        _api_route = _api_name if route is None else route
         validate_inference_api_name(_api_name)
+        validate_inference_api_route(_api_route)
         _api_doc = func.__doc__ if api_doc is None else api_doc
 
         if input is None:
@@ -144,6 +156,7 @@ def api_decorator(
         setattr(func, "_input_adapter", input_adapter)
         setattr(func, "_output_adapter", output_adapter)
         setattr(func, "_api_name", _api_name)
+        setattr(func, "_api_route", _api_route)
         setattr(func, "_api_doc", _api_doc)
         setattr(func, "_mb_max_batch_size", mb_max_batch_size)
         setattr(func, "_mb_max_latency", mb_max_latency)
@@ -480,6 +493,7 @@ class BentoService:
         ):
             if hasattr(function, "_is_api"):
                 api_name = getattr(function, "_api_name")
+                api_route = getattr(function, "_api_route", None)
                 api_doc = getattr(function, "_api_doc")
                 input_adapter = getattr(function, "_input_adapter")
                 output_adapter = getattr(function, "_output_adapter")
@@ -501,6 +515,7 @@ class BentoService:
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,
                         batch=batch,
+                        api_route=api_route,
                     )
                 )
 
@@ -527,7 +542,7 @@ class BentoService:
             self.artifacts.load_all(artifacts_path)
 
     @property
-    def inference_apis(self):
+    def inference_apis(self) -> List[InferenceAPI]:
         """Return a list of user defined API functions
 
         Returns:

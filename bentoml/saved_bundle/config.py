@@ -14,10 +14,11 @@
 
 import logging
 import os
-from google.protobuf.struct_pb2 import Struct
 from datetime import datetime
 from pathlib import Path
 from sys import version_info
+
+from google.protobuf.struct_pb2 import Struct
 
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml.configuration import get_bentoml_deploy_version
@@ -49,6 +50,7 @@ def _get_apis_list(bento_service):
             "mb_max_batch_size": api.mb_max_batch_size,
             "mb_max_latency": api.mb_max_latency,
             "batch": api.batch,
+            "route": api.route,
         }
         if api.input_adapter.config:
             api_obj["input_config"] = api.input_adapter.config
@@ -203,6 +205,12 @@ class SavedBundleConfig(object):
                         api_metadata.mb_max_batch_size = api_config["mb_max_batch_size"]
                     else:
                         api_metadata.mb_max_batch_size = DEFAULT_MAX_BATCH_SIZE
+
+                    # Supports customize route from 0.10.2
+                    if 'route' in api_config:
+                        api_metadata.route = api_config["route"]
+                    else:
+                        api_metadata.route = api_config["name"]
 
                 if "input_config" in api_config:
                     for k, v in api_config["input_config"].items():

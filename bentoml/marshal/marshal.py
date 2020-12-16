@@ -21,14 +21,14 @@ import traceback
 
 import aiohttp
 import psutil
-from dependency_injector.wiring import inject, Provide
+from dependency_injector.wiring import Provide, inject
 
-from bentoml.saved_bundle.config import DEFAULT_MAX_LATENCY, DEFAULT_MAX_BATCH_SIZE
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
 from bentoml.marshal.utils import DataLoader
 from bentoml.saved_bundle import load_bento_service_metadata
+from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
 from bentoml.tracing.trace import async_trace, make_http_headers
 from bentoml.types import HTTPRequest, HTTPResponse
 
@@ -89,9 +89,9 @@ def metrics_patch(cls):
 
         async def request_dispatcher(self, request):
             func = super(_MarshalService, self).request_dispatcher
-            api_name = request.match_info.get("name", "/")
+            api_route = request.match_info.get("path", "/")
             _metrics_request_in_progress = self.metrics_request_in_progress.labels(
-                endpoint=api_name, http_method=request.method,
+                endpoint=api_route, http_method=request.method,
             )
             _metrics_request_in_progress.inc()
             time_st = time.time()
@@ -101,25 +101,25 @@ def metrics_patch(cls):
                 resp = aiohttp.web.Response(status=503)
             except Exception as e:  # pylint: disable=broad-except
                 self.metrics_request_exception.labels(
-                    endpoint=api_name, exception_class=e.__class__.__name__
+                    endpoint=api_route, exception_class=e.__class__.__name__
                 ).inc()
                 logger.error(traceback.format_exc())
                 resp = aiohttp.web.Response(status=500)
             self.metrics_request_total.labels(
-                endpoint=api_name, http_response_code=resp.status
+                endpoint=api_route, http_response_code=resp.status
             ).inc()
             self.metrics_request_duration.labels(
-                endpoint=api_name, http_response_code=resp.status
+                endpoint=api_route, http_response_code=resp.status
             ).observe(time.time() - time_st)
             _metrics_request_in_progress.dec()
             return resp
 
-        async def _batch_handler_template(self, requests, api_name):
+        async def _batch_handler_template(self, requests, api_route):
             func = super(_MarshalService, self)._batch_handler_template
-            self.metrics_request_batch_size.labels(endpoint=api_name).observe(
+            self.metrics_request_batch_size.labels(endpoint=api_route).observe(
                 len(requests)
             )
-            return await func(requests, api_name)
+            return await func(requests, api_route)
 
     return _MarshalService
 
@@ -187,7 +187,7 @@ class MarshalService:
             self._outbound_sema = NonBlockSema(self.outbound_workers)
         return self._outbound_sema
 
-    def add_batch_handler(self, api_name, max_latency, max_batch_size):
+    def add_batch_handler(self, api_route, max_latency, max_batch_size):
         '''
         Params:
         * max_latency: limit the max latency of overall request handling
@@ -196,14 +196,14 @@ class MarshalService:
         ** marshal server will give priority to meet these limits than efficiency
         '''
 
-        if api_name not in self.batch_handlers:
+        if api_route not in self.batch_handlers:
             _func = CorkDispatcher(
                 max_latency,
                 max_batch_size,
                 shared_sema=self.fetch_sema(),
                 fallback=aiohttp.web.HTTPTooManyRequests,
-            )(functools.partial(self._batch_handler_template, api_name=api_name))
-            self.batch_handlers[api_name] = _func
+            )(functools.partial(self._batch_handler_template, api_route=api_route))
+            self.batch_handlers[api_route] = _func
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
         for api_pb in bento_service_metadata_pb.apis:
@@ -216,11 +216,11 @@ class MarshalService:
                     or api_pb.mb_max_batch_size
                     or DEFAULT_MAX_BATCH_SIZE
                 )
-                self.add_batch_handler(api_pb.name, max_latency, max_batch_size)
+                self.add_batch_handler(api_pb.route, max_latency, max_batch_size)
                 logger.info(
                     "Micro batch enabled for API `%s` max-latency: %s"
                     " max-batch-size %s",
-                    api_pb.name,
+                    api_pb.route,
                     max_latency,
                     max_batch_size,
                 )
@@ -234,14 +234,14 @@ class MarshalService:
             standalone=True,
             sample_rate=0.001,
         ):
-            api_name = request.match_info.get("name")
-            if api_name in self.batch_handlers:
+            api_route = request.match_info.get("path")
+            if api_route in self.batch_handlers:
                 req = HTTPRequest(
                     tuple((k.decode(), v.decode()) for k, v in request.raw_headers),
                     await request.read(),
                 )
                 try:
-                    resp = await self.batch_handlers[api_name](req)
+                    resp = await self.batch_handlers[api_route](req)
                 except RemoteException as e:
                     # known remote exception
                     logger.error(traceback.format_exc())
@@ -277,23 +277,23 @@ class MarshalService:
             status=resp.status, body=body, headers=resp.headers,
         )
 
-    async def _batch_handler_template(self, requests, api_name):
+    async def _batch_handler_template(self, requests, api_route):
         '''
         batch request handler
         params:
             * requests: list of aiohttp request
-            * api_name: called API name
+            * api_route: called API name
         raise:
             * RemoteException: known exceptions from model server
             * Exception: other exceptions
         '''
         headers = {self.request_header_flag: "true"}
-        api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_name}"
+        api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"
 
         with async_trace(
             self.zipkin_api_url,
             service_name=self.__class__.__name__,
-            span_name=f"[2]merged {api_name}",
+            span_name=f"[2]merged {api_route}",
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)

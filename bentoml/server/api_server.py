@@ -15,8 +15,9 @@
 import logging
 import os
 import sys
+import traceback
 import uuid
-from functools import partial
+from functools import partial, wraps
 
 from flask import (
     Flask,
@@ -58,6 +59,24 @@ INDEX_HTML = '''\
 </script>
 </body>
 '''
+
+
+def log_traceback(func):
+    """
+    Log all the exceptions, using it as the decorator
+    """
+    @wraps(func)
+    def wrapper(*args , **kwargs):
+        try:
+            return func(*args , **kwargs)
+        except Exception:
+            exception_type, exception_instance, exception_traceback = sys.exc_info()
+            formatted_traceback = "".join(traceback.format_tb(exception_traceback))
+            exception_message = f"{formatted_traceback}\n{exception_type.__name__}: {exception_instance}"
+            logger.error(exception_message)
+            raise exception_type(exception_message)
+
+    return wrapper
 
 
 def _request_to_json(req):
@@ -129,6 +148,7 @@ class BentoAPIServer:
         )
 
     @staticmethod
+    @log_traceback
     def static_serve(static_path, file_path):
         """
         The static files route for BentoML API server
@@ -141,6 +161,7 @@ class BentoAPIServer:
             )
 
     @staticmethod
+    @log_traceback
     def index_view_func(static_path):
         """
         The index route for BentoML API server

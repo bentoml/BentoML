@@ -4,7 +4,7 @@ import logging
 import os
 
 from bentoml.artifact import BentoServiceArtifact
-from bentoml.service_env import BentoServiceEnv
+from bentoml.service.env import BentoServiceEnv
 from bentoml.exceptions import (
     MissingDependencyException,
     InvalidArgument,
@@ -40,9 +40,10 @@ class PysparkModelArtifact(BentoServiceArtifact):
             "importing your model."
         )
         env.add_conda_dependencies(['openjdk'])
-        env.add_pip_dependencies_if_missing(['pyspark'])
+        env.add_pip_package('pyspark')
 
-    def pack(self, model):
+    # noinspection PyMethodOverriding
+    def pack(self, model):  # pylint: disable=arguments-differ
         try:
             import pyspark
         except ImportError:

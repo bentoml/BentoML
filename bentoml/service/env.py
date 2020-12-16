@@ -139,6 +139,7 @@ class BentoServiceEnv(object):
         conda_env_yml_file: use a pre-defined conda environment yml filej
         setup_sh: user defined setup bash script, it is executed in docker build time
         docker_base_image: used when generating Dockerfile in saved bundle
+        zipimport_archives: used to list zipimport archives
     """
 
     def __init__(
@@ -154,6 +155,7 @@ class BentoServiceEnv(object):
         conda_env_yml_file: str = None,
         setup_sh: str = None,
         docker_base_image: str = None,
+        zipimport_archives: List[str] = None,
     ):
         self._python_version = PYTHON_VERSION
         self._pip_index_url = pip_index_url
@@ -220,6 +222,7 @@ class BentoServiceEnv(object):
                     f"Using BentoML default docker base image "
                     f"'{self._docker_base_image}'"
                 )
+        self._zipimport_archives = zipimport_archives
 
     def add_conda_channels(self, channels: List[str]):
         self._conda_env.add_channels(channels)

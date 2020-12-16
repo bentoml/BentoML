@@ -28,6 +28,7 @@ from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.config import SavedBundleConfig
+from bentoml.saved_bundle.pip_pkg import ZIPIMPORT_DIR
 from bentoml.utils.usage_stats import track_load_start, track_load_finish
 
 logger = logging.getLogger(__name__)
@@ -184,6 +185,12 @@ def load_bento_service_class(bundle_path):
     # Prepend bundle_path to sys.path for loading extra python dependencies
     sys.path.insert(0, bundle_path)
     sys.path.insert(0, os.path.join(bundle_path, metadata["service_name"]))
+    # Include zipimport modules
+    zipimport_dir = os.path.join(bundle_path, metadata["service_name"], ZIPIMPORT_DIR)
+    if os.path.exists(zipimport_dir):
+        for p in os.listdir(zipimport_dir):
+            logger.debug('adding %s to sys.path', p)
+            sys.path.insert(0, os.path.join(zipimport_dir, p))
 
     module_name = metadata["module_name"]
     if module_name in sys.modules:

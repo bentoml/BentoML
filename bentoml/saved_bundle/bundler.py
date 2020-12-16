@@ -28,9 +28,11 @@ import requests
 
 from bentoml.configuration import _is_pip_installed_bentoml
 from bentoml.exceptions import BentoMLException
-from bentoml.saved_bundle.config import SavedBundleConfig
+from bentoml.saved_bundle.local_py_modules import (
+    copy_local_py_modules,
+    copy_zip_import_archives,
+)
 from bentoml.saved_bundle.loader import _is_remote_path
-from bentoml.saved_bundle.local_py_modules import copy_local_py_modules
 from bentoml.saved_bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     INIT_PY_TEMPLATE,
@@ -40,6 +42,9 @@ from bentoml.saved_bundle.templates import (
 from bentoml.utils import is_gcs_url, is_s3_url
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track_save
+from bentoml.saved_bundle.config import SavedBundleConfig
+from bentoml.saved_bundle.pip_pkg import get_zipmodules, ZIPIMPORT_DIR
+
 
 DEFAULT_SAVED_BUNDLE_README = """\
 # Generated BentoService bundle - {}:{}
@@ -221,6 +226,13 @@ def save_to_dir(bento_service, path, version=None, silent=False):
             _upload_file_to_remote_path(path, tarfile_path, file_name)
     else:
         _write_bento_content_to_dir(bento_service, path)
+
+    copy_zip_import_archives(
+        os.path.join(path, bento_service.name, ZIPIMPORT_DIR),
+        bento_service.__class__.__module__,
+        list(get_zipmodules().keys()),
+        bento_service.env._zipimport_archives or [],
+    )
 
     if not silent:
         logger.info(

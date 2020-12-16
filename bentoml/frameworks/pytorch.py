@@ -1,5 +1,6 @@
 import logging
 import os
+import zipfile
 
 from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
@@ -55,6 +56,14 @@ class PytorchModelArtifact(BentoServiceArtifact):
     >>>
     >>> # Pytorch model can be packed directly.
     >>> svc.pack('net', net)
+    >>>
+    >>> # Alternatively,
+    >>>
+    >>> # Pack a TorchScript Model
+    >>> # Random input in the format expected by the net
+    >>> sample_input = ...
+    >>> traced_net = torch.jit.trace(net, sample_input)
+    >>> svc.pack('net', traced_net)
     """
 
     def __init__(self, name, file_extension=".pt"):
@@ -75,7 +84,8 @@ class PytorchModelArtifact(BentoServiceArtifact):
 
         if not isinstance(model, torch.nn.Module):
             raise InvalidArgument(
-                "PytorchModelArtifact can only pack type 'torch.nn.Module'"
+                "PytorchModelArtifact can only pack type \
+                'torch.nn.Module' or 'torch.jit.ScriptModule'"
             )
 
         self._model = model
@@ -89,12 +99,19 @@ class PytorchModelArtifact(BentoServiceArtifact):
                 "torch package is required to use PytorchModelArtifact"
             )
 
-        model = cloudpickle.load(open(self._file_path(path), 'rb'))
+        # TorchScript Models are saved as zip files
+        if zipfile.is_zipfile(self._file_path(path)):
+            model = torch.jit.load(self._file_path(path))
+        else:
+            model = cloudpickle.load(open(self._file_path(path), 'rb'))
 
         if not isinstance(model, torch.nn.Module):
             raise InvalidArgument(
                 "Expecting PytorchModelArtifact loaded object type to be "
-                "'torch.nn.Module' but actually it is {}".format(type(model))
+                "'torch.nn.Module' or 'torch.jit.ScriptModule' \
+                but actually it is {}".format(
+                    type(model)
+                )
             )
 
         return self.pack(model)
@@ -113,4 +130,15 @@ class PytorchModelArtifact(BentoServiceArtifact):
         return self._model
 
     def save(self, dst):
+        try:
+            import torch
+        except ImportError:
+            raise MissingDependencyException(
+                "torch package is required to use PytorchModelArtifact"
+            )
+
+        # If model is a TorchScriptModule, we cannot apply standard pickling
+        if isinstance(self._model, torch.jit.ScriptModule):
+            return torch.jit.save(self._model, self._file_path(dst))
+
         return cloudpickle.dump(self._model, open(self._file_path(dst), "wb"))

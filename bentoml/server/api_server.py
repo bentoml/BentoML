@@ -65,10 +65,11 @@ def log_traceback(func):
     """
     Log all the exceptions, using it as the decorator
     """
+
     @wraps(func)
-    def wrapper(*args , **kwargs):
+    def wrapper(*args, **kwargs):
         try:
-            return func(*args , **kwargs)
+            return func(*args, **kwargs)
         except Exception:
             exception_type, exception_instance, exception_traceback = sys.exc_info()
             formatted_traceback = "".join(traceback.format_tb(exception_traceback))

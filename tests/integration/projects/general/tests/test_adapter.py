@@ -107,6 +107,12 @@ async def test_api_server_json(host):
 
 
 @pytest.mark.asyncio
+async def test_api_server_json_with_customized_route(host):
+    # TODO
+    pass
+
+
+@pytest.mark.asyncio
 async def test_api_server_tasks_api(host):
     req_count = 2 if pytest.enable_microbatch else 1
     tasks = tuple(

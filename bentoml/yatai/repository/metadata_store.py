@@ -231,7 +231,6 @@ class BentoMetadataStore(object):
                 )
 
     def dangerously_batch_delete(self, bento_list=None):
-        print('inside batch')
         with create_session(self.sess_maker) as sess:
             try:
                 # Deleting ALL
@@ -243,7 +242,7 @@ class BentoMetadataStore(object):
                     versions = []
                     result = query.intersect(
                         query.filter(Bento.name.in_(names)),
-                        query.filter(Bento.version.in_(versions))
+                        query.filter(Bento.version.in_(versions)),
                     )
                 result.update({'deleted': True})
             except Exception as e:
@@ -270,7 +269,9 @@ class BentoMetadataStore(object):
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
             query = query.filter_by(deleted=False)
-            if label_selectors is not None:
+            if label_selectors is not None and (
+                label_selectors.match_labels or label_selectors.match_expressions
+            ):
                 bento_ids = filter_label_query(
                     sess, RESOURCE_TYPE.bento, label_selectors
                 )

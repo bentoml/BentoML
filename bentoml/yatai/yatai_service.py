@@ -57,9 +57,7 @@ def get_yatai_service(
                 with open(tls_client_cert, 'rb') as fb:
                     tls_client_cert = fb.read()
             credentials = grpc.ssl_channel_credentials(
-                ca_cert,
-                tls_client_key,
-                tls_client_cert
+                ca_cert, tls_client_key, tls_client_cert
             )
             channel = grpc.secure_channel(addr, credentials)
         else:

@@ -73,7 +73,10 @@ def log_traceback(func):
         except Exception:
             exception_type, exception_instance, exception_traceback = sys.exc_info()
             formatted_traceback = "".join(traceback.format_tb(exception_traceback))
-            exception_message = f"{formatted_traceback}\n{exception_type.__name__}: {exception_instance}"
+            exception_message = (
+                f"{formatted_traceback}\n{exception_type.__name__}: "
+                f"{exception_instance}"
+            )
             logger.error(exception_message)
             raise exception_type(exception_message)
 

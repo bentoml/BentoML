@@ -17,7 +17,6 @@ from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.types import InferenceResult, InferenceTask
 
-
 @bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact('sk_model')])
 class ExampleService(bentoml.BentoService):
@@ -65,8 +64,8 @@ class ExampleService(bentoml.BentoService):
     @bentoml.api(
         route="/v1/predict_json", input=JsonInput(), batch=True,
     )
-    def _predict_json_v1(self, input_datas):
-        return input_datas
+    def predict_json_v1(self, input_datas):
+        return self.artifacts.model.predict_json(input_datas)
 
     @bentoml.api(input=JsonInput(), batch=True)
     def predict_strict_json(self, input_datas, tasks: Sequence[InferenceTask] = None):

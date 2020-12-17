@@ -70,7 +70,7 @@ def log_traceback(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception:
+        except Exception as exc:
             exception_type, exception_instance, exception_traceback = sys.exc_info()
             formatted_traceback = "".join(traceback.format_tb(exception_traceback))
             exception_message = (
@@ -78,7 +78,7 @@ def log_traceback(func):
                 f"{exception_instance}"
             )
             logger.error(exception_message)
-            raise exception_type(exception_message)
+            raise exc
 
     return wrapper
 

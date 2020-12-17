@@ -330,8 +330,7 @@ class MarshalService:
     def make_app(self):
         app = aiohttp.web.Application(client_max_size=self.max_request_size)
         app.router.add_view("/", self.relay_handler)
-        app.router.add_view("/{name}", self.request_dispatcher)
-        app.router.add_view("/{path:.*}", self.relay_handler)
+        app.router.add_view("/{path:.*}", self.request_dispatcher)
         return app
 
     def fork_start_app(self, port):

@@ -18,6 +18,7 @@ import sys
 import uuid
 from functools import partial
 
+import markdown
 from flask import (
     Flask,
     Response,
@@ -186,6 +187,11 @@ class BentoAPIServer:
         bento_service_metadata = bento_service.get_bento_service_metadata_pb()
         return jsonify(MessageToJson(bento_service_metadata))
 
+    @staticmethod
+    def readme_view_func(bento_service):
+        html = markdown.markdown(bento_service.__doc__)
+        return html
+
     def metrics_view_func(self):
         # noinspection PyProtectedMember
         from prometheus_client import generate_latest
@@ -221,6 +227,7 @@ class BentoAPIServer:
         /feedback       Submitting feedback
         /metrics        Prometheus metrics endpoint
         /metadata       BentoService Artifact Metadata
+        /readme         BentoService readme info
 
         And user defined InferenceAPI list into flask routes, e.g.:
         /classify
@@ -263,6 +270,9 @@ class BentoAPIServer:
             "/metadata",
             "metadata",
             partial(self.metadata_json_func, self.bento_service),
+        )
+        self.app.add_url_rule(
+            "/readme", "readme", partial(self.readme_view_func, self.bento_service)
         )
 
         if config("apiserver").getboolean("enable_metrics"):

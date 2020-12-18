@@ -66,12 +66,17 @@ def validate_inference_api_name(api_name: str):
         )
 
 
-def validate_inference_api_route(api_route: str):
-    if re.findall(r"[?#]+|^(//)|^:", api_route):
-        raise InvalidArgument("The path {} contains illegal url characters".format(api_route))
-    if api_route in BENTOML_RESERVED_API_NAMES :
+def validate_inference_api_route(route: str):
+    if re.findall(
+        r"[?#]+|^(//)|^:", route
+    ):  # contains '?' or '#' OR  start with '//' OR start with ':'
+        # https://tools.ietf.org/html/rfc3986#page-22
         raise InvalidArgument(
-            "Reserved API route: '{}' is reserved for infra endpoints".format(api_route)
+            "The path {} contains illegal url characters".format(route)
+        )
+    if route in BENTOML_RESERVED_API_NAMES:
+        raise InvalidArgument(
+            "Reserved API route: '{}' is reserved for infra endpoints".format(route)
         )
 
 
@@ -95,7 +100,7 @@ def api_decorator(
     :param output: OutputAdapter instance of the inference API
     :param api_name: API name, default to the user-defined callback function's function
         name
-    :param route: to customize the route of API, 
+    :param route: to customize the route of API
         Default: None (the same as api_name)
     :param api_doc: user-facing documentation of the inference API. default to the
         user-defined callback function's docstring
@@ -494,7 +499,7 @@ class BentoService:
         ):
             if hasattr(function, "_is_api"):
                 api_name = getattr(function, "_api_name")
-                api_route = getattr(function, "_api_route", None)
+                route = getattr(function, "_api_route", None)
                 api_doc = getattr(function, "_api_doc")
                 input_adapter = getattr(function, "_input_adapter")
                 output_adapter = getattr(function, "_output_adapter")
@@ -516,7 +521,7 @@ class BentoService:
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,
                         batch=batch,
-                        api_route=api_route,
+                        route=route,
                     )
                 )
 

@@ -51,11 +51,12 @@ class InferenceAPI(object):
         mb_max_latency=10000,
         mb_max_batch_size=1000,
         batch=False,
-        api_route=None,
+        route=None,
     ):
         """
         :param service: ref to service containing this API
         :param name: API name
+        :param route: API path (by default the same as `name`)
         :param doc: the user facing document of this inference API, default to the
             docstring of the inference API function
         :param input_adapter: A InputAdapter that transforms HTTP Request and/or
@@ -83,7 +84,7 @@ class InferenceAPI(object):
         self.mb_max_latency = mb_max_latency
         self.mb_max_batch_size = mb_max_batch_size
         self.batch = batch
-        self.route = name if api_route is None else api_route
+        self.route = name if route is None else route
 
         if not self.input_adapter.BATCH_MODE_SUPPORTED and batch:
             raise BentoMLConfigException(

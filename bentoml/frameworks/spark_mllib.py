@@ -2,25 +2,19 @@ import importlib
 import json
 import logging
 import os
-import typing
-from typing import Optional
 
 from bentoml.exceptions import MissingDependencyException, BentoMLException
 from bentoml.service import BentoServiceArtifact
-
-if typing.TYPE_CHECKING:  # note: requires Python 3.7
-    import pyspark
-    from pyspark.ml.base import Model
 
 
 class PySparkModelArtifact(BentoServiceArtifact):
     def __init__(self, name: str):
         super().__init__(name)
         self._model = None
-        self._sc: Optional[pyspark.SparkContext] = None
+        self._sc = None
 
     def pack(
-        self, model, metadata: dict = None, sc: pyspark.SparkContext = None
+        self, model, metadata: dict = None, sc=None
     ):  # pylint:disable=arguments-differ
         try:
             import pyspark
@@ -38,8 +32,10 @@ class PySparkModelArtifact(BentoServiceArtifact):
         model = self._model
         save_path = os.path.join(dst, self.name)
 
-        if isinstance(model, pyspark.ml.base.Model):
-            model: pyspark.ml.base.Model = model
+        from pyspark.ml.base import Model
+
+        if isinstance(model, Model):
+            model: Model = model
             model.save(save_path)
         else:
             model.save(self._sc, save_path)
@@ -65,7 +61,9 @@ class PySparkModelArtifact(BentoServiceArtifact):
         class_name = splits[-1]
         # noinspection PyPep8Naming
         ModelClass = getattr(importlib.import_module(module), class_name)
-        if issubclass(ModelClass, pyspark.ml.base.Model):
+        from pyspark.ml import Model
+
+        if issubclass(ModelClass, Model):
             model = ModelClass.load(model_data_path)
         else:
             model = ModelClass.load(spark.sparkContext, model_data_path)

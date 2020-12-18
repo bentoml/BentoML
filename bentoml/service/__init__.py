@@ -68,7 +68,9 @@ def validate_inference_api_name(api_name: str):
 
 
 def validate_inference_api_route(api_route: str):
-    if api_route in BENTOML_RESERVED_API_NAMES:
+    if re.findall(r"[?#]+|^(//)|^:", api_route):
+        raise InvalidArgument("The path {} contains illegal url characters".format(api_route))
+    if api_route in BENTOML_RESERVED_API_NAMES :
         raise InvalidArgument(
             "Reserved API route: '{}' is reserved for infra endpoints".format(api_route)
         )

@@ -14,13 +14,14 @@ if typing.TYPE_CHECKING:  # note: requires Python 3.7
 
 
 class PySparkModelArtifact(BentoServiceArtifact):
-
     def __init__(self, name: str):
         super().__init__(name)
         self._model = None
         self._sc: Optional[pyspark.SparkContext] = None
 
-    def pack(self, model, metadata: dict = None, sc: pyspark.SparkContext = None):  # pylint:disable=arguments-differ
+    def pack(
+        self, model, metadata: dict = None, sc: pyspark.SparkContext = None
+    ):  # pylint:disable=arguments-differ
         try:
             import pyspark
             from pyspark.ml.base import Model
@@ -45,6 +46,7 @@ class PySparkModelArtifact(BentoServiceArtifact):
 
     def load(self, path):
         from pyspark.sql import SparkSession
+
         spark = SparkSession.builder.appName('BentoService').getOrCreate()
 
         model_data_path = os.path.join(path, self.name)

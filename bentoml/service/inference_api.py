@@ -29,6 +29,7 @@ from bentoml.server import trace
 from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 
+logger = logging.getLogger(__name__)
 prediction_logger = logging.getLogger("bentoml.prediction")
 
 
@@ -170,6 +171,7 @@ class InferenceAPI(object):
                 try:
                     return self._user_func(*args, **kwargs)
                 except Exception as e:  # pylint: disable=broad-except
+                    logger.error("Error caught in API function:", exc_info=1)
                     if self.batch:
                         for task in tasks:
                             if not task.is_discarded:

@@ -127,7 +127,7 @@ async def test_api_server_json_with_customized_route(host):
     tasks = tuple(
             pytest.assert_request(
                 "POST",
-                f"http://{host}/#$~!@%^&*()_-+=[]\|;:,./predict_json", 
+                f"http://{host}/$~!@%^&*()_-+=[]\|;:,./predict_json", 
                 headers=(("Content-Type", "application/json"),),
                 data=json.dumps({"in":i}),
                 assert_data=bytes('{"in": %s}' % i, 'ascii'),

@@ -15,9 +15,13 @@
 
 import inspect
 import logging
+import multiprocessing
 import os
 import re
+import subprocess
 import sys
+import tempfile
+import threading
 import uuid
 from datetime import datetime
 from typing import List
@@ -425,6 +429,10 @@ class BentoService:
         self._config_inference_apis()
         self._config_environments()
 
+        self._dev_server_bundle_path: tempfile.TemporaryDirectory = None
+        self._dev_server_interrupt_event: multiprocessing.Event = None
+        self._dev_server_process: subprocess.Process = None
+
     def _config_environments(self):
         self._env = self.__class__._env or BentoServiceEnv()
 
@@ -711,6 +719,76 @@ class BentoService:
         return SavedBundleConfig(self).get_bento_service_metadata_pb()
 
     pip_dependencies_map = None
+
+    def start_dev_server(self, port=None, enable_microbatch=False, enable_ngrok=False):
+        if enable_microbatch:
+            raise NotImplementedError(
+                "start_dev_server with enable_microbatch=True is not implemented"
+            )
+        if self._dev_server_process:
+            logger.warning(
+                "There is already a running dev server, "
+                "please call `service.stop_dev_server()` first."
+            )
+            return
+        try:
+            self._dev_server_bundle_path = tempfile.TemporaryDirectory()
+            self.save_to_dir(self._dev_server_bundle_path.name)
+
+            def print_log(p):
+                for line in p.stdout:
+                    print(line.decode(), end='')
+
+            def run(path, interrupt_event):
+                cmd = [sys.executable, "-m", "bentoml", "serve", "--debug"]
+                if port:
+                    cmd += ['--port', f'{port}']
+                if enable_microbatch:
+                    cmd += ['--enable-microbatch']
+                if enable_ngrok:
+                    cmd += ['--run-with-ngrok']
+                cmd += [path]
+                p = subprocess.Popen(
+                    cmd,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stdin=subprocess.PIPE,
+                )
+                threading.Thread(target=print_log, args=(p,), daemon=True).start()
+                interrupt_event.wait()
+                p.terminate()
+
+            self._dev_server_interrupt_event = multiprocessing.Event()
+            self._dev_server_process = multiprocessing.Process(
+                target=run,
+                args=(
+                    self._dev_server_bundle_path.name,
+                    self._dev_server_interrupt_event,
+                ),
+                daemon=True,
+            )
+            self._dev_server_process.start()
+            logger.info(f"======= starting dev server on port: {port} =======")
+        except Exception as e:  # pylint: disable=broad-except
+            self.stop_dev_server()
+            raise e
+
+    def stop_dev_server(self):
+        if self._dev_server_interrupt_event:
+            self._dev_server_interrupt_event.set()
+            self._dev_server_interrupt_event = None
+        if self._dev_server_process:
+            self._dev_server_process.join()
+            assert not self._dev_server_process.is_alive()
+            self._dev_server_process = None
+        else:
+            logger.warning("No dev server is running.")
+        if self._dev_server_bundle_path:
+            self._dev_server_bundle_path.cleanup()
+            self._dev_server_bundle_path = None
+
+    def __del__(self):
+        self.stop_dev_server()
 
     def infer_pip_dependencies_map(self):
         if not self.pip_dependencies_map:

@@ -740,6 +740,8 @@ class BentoService:
                     print(line.decode(), end='')
 
             def run(path, interrupt_event):
+                my_env = os.environ.copy()
+                my_env["FLASK_ENV"] = "development"
                 cmd = [sys.executable, "-m", "bentoml", "serve", "--debug"]
                 if port:
                     cmd += ['--port', f'{port}']
@@ -753,6 +755,7 @@ class BentoService:
                     stderr=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stdin=subprocess.PIPE,
+                    env=my_env,
                 )
                 threading.Thread(target=print_log, args=(p,), daemon=True).start()
                 interrupt_event.wait()

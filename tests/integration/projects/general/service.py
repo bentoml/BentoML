@@ -66,6 +66,12 @@ class ExampleService(bentoml.BentoService):
     )
     def predict_json_v1(self, input_datas):
         return self.artifacts.model.predict_json(input_datas)
+    
+    @bentoml.api(
+            route="/$~!@%^&*()_-+=[]\|;:,./predict_json", input=JsonInput(), batch=True,
+    )
+    def predict_json_v1(self, input_datas):
+        return self.artifacts.model.predict_json(input_datas)
 
     @bentoml.api(input=JsonInput(), batch=True)
     def predict_strict_json(self, input_datas, tasks: Sequence[InferenceTask] = None):

@@ -95,6 +95,7 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
             tty=True,
             ports={'5000/tcp': port},
             detach=True,
+            remove=True,
         )
         host_url = f"127.0.0.1:{port}"
         _wait_until_api_server_ready(host_url, timeout, container)

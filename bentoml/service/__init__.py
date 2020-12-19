@@ -773,10 +773,10 @@ class BentoService:
             self._dev_server_process.start()
             logger.info(f"======= starting dev server on port: {port} =======")
         except Exception as e:  # pylint: disable=broad-except
-            self.stop_dev_server()
+            self.stop_dev_server(skip_log=True)
             raise e
 
-    def stop_dev_server(self):
+    def stop_dev_server(self, skip_log=False):
         if self._dev_server_interrupt_event:
             self._dev_server_interrupt_event.set()
             self._dev_server_interrupt_event = None
@@ -784,14 +784,14 @@ class BentoService:
             self._dev_server_process.join()
             assert not self._dev_server_process.is_alive()
             self._dev_server_process = None
-        else:
+        elif not skip_log:
             logger.warning("No dev server is running.")
         if self._dev_server_bundle_path:
             self._dev_server_bundle_path.cleanup()
             self._dev_server_bundle_path = None
 
     def __del__(self):
-        self.stop_dev_server()
+        self.stop_dev_server(skip_log=True)
 
     def infer_pip_dependencies_map(self):
         if not self.pip_dependencies_map:

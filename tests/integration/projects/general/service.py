@@ -70,6 +70,26 @@ class ExampleService(bentoml.BentoService):
     def customezed_route(self, input_datas):
         return input_datas
 
+    @bentoml.api(
+        input=JsonInput(
+            request_schema={
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "required": ["field1", "field2"],
+                        "properties": {
+                            "field1": {"type": "string"},
+                            "field2": {"type": "uuid"},
+                        },
+                    },
+                }
+            }
+        ),
+        batch=True,
+    )
+    def customezed_schema(self, input_datas):
+        return input_datas
+
     @bentoml.api(input=JsonInput(), batch=True)
     def predict_strict_json(self, input_datas, tasks: Sequence[InferenceTask] = None):
         filtered_jsons = []

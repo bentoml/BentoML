@@ -60,7 +60,7 @@ class BaseInputAdapter:
 
     @request_schema.setter
     def _set_request_schema(self, schema):
-        setattr(self, 'request_schema', schema)
+        self.__dict__['request_schema'] = schema
 
     @property
     def pip_dependencies(self):

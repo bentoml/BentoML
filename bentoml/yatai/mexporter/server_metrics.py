@@ -1,4 +1,4 @@
-from prometheus_client import Counter, Historgram
+from prometheus_client import Counter, Histogram
 
 GRPC_SERVER_STARTED_TOTAL_COUNTER = Counter(
     "grpc_server_started_total",

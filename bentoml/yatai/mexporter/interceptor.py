@@ -1,7 +1,11 @@
 import timeit
 
 import grpc
-from service_metrics import *
+from service_metrics import (GRPC_SERVER_HANDLED_LATENCY_SECONDS,
+                             GRPC_SERVER_HANDLED_TOTAL_COUNTER,
+                             GRPC_SERVER_MSG_RECEIVED_TOTAL_COUNTER,
+                             GRPC_SERVER_MSG_SENT_TOTAL_COUNTER,
+                             GRPC_SERVER_STARTED_TOTAL_COUNTER)
 
 UNARY = "UNARY"
 SERVER_STREAMING = "SERVER_STREAMING"

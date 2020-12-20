@@ -39,6 +39,22 @@ const createRoutes = (app, yataiClient) => {
       return res.status(500).json(error);
     }
   });
+  
+  router.post("/api/metrics", async (req: Request, res:Response) => {
+    let verifyError = bentoml.GetBentoRequest.verify(req.query);
+    if (verifyError) {
+      logger.error({ request: "GetMetrics", error: verifyError });
+      return res.status(400).json({ error: verifyError });
+    }
+    // TODO: Create a GetMetricsRequest for bentoml_grpc
+    let requestMessage = bentoml.GetMetricsRequest.create(req.query);
+    try {
+      const result = await yataiClient.getMetrics(requestMessage);
+    } catch (error) {
+      logger.error({request: "GetMetrics", error: JSON.stringify(error)});
+      return res.status(500).json(error);
+    }
+  });
 
   router.get("/api/GetBento", async (req: Request, res: Response) => {
     let verifyError = bentoml.GetBentoRequest.verify(req.query);

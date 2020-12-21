@@ -14,13 +14,13 @@ bucket_name = 'test-repo'
 @pytest.fixture()
 def minio_address():
     client = Minio(
-        'localhost:9000',
+        'http://127.0.0.1:9000',
         access_key=os.getenv('AWS_ACCESS_KEY'),
         secret_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
         secure=False,
     )
     client.make_bucket(bucket_name)
-    return 'http://localhost:9000'
+    return 'http://127.0.0.1:9000'
 
 
 def test_s3(minio_address):

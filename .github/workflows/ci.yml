@@ -328,7 +328,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run s3 test
-        run: ./ci/test_s3_bucket.sh
+        run: ./ci/s3_bucket_integration_tests.sh
         env:
           AWS_ACCESS_KEY: bentoml
           AWS_SECRET_ACCESS_KEY: bentoml

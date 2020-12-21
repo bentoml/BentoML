@@ -6,14 +6,15 @@ from bentoml.service.env import BentoServiceEnv
 
 class DetectronModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading objects with detectron2.checkpoint.DetectionCheckpointer
-    save and load
+    Abstraction for saving/loading objects with 
+    detectron2.checkpoint.DetectionCheckpointer save and load
 
     Args:
         name (string): name of the artifact
 
     Raises:
-        MissingDependencyException: detectron2 package is required for DetectronModelArtifact
+        MissingDependencyException: detectron2 package is required for 
+        DetectronModelArtifact
         InvalidArgument: invalid argument type, model being packed must be instance of
             torch.nn.Module
 
@@ -43,23 +44,23 @@ class DetectronModelArtifact(BentoServiceArtifact):
     >>>        try:
     >>>            original_image = img[:, :, ::-1]
     >>>            height, width = original_image.shape[:2]
-    >>>            image = _aug.get_transform(original_image).apply_image(original_image)
-    >>>            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+    >>>            image = _aug.get_transform(original_image).
+    >>>                             apply_image(original_image)
+    >>>            image = torch.as_tensor(image.astype("float32").
+    >>>                             transpose(2, 0, 1))
     >>>            inputs = {"image": image, "height": height, "width": width}
     >>>            predictions = self.artifacts.model([inputs])[0]
     >>>
     >>>
     >>> cfg = get_cfg()
-    >>> cfg.merge_from_file("input_model.yaml")        
+    >>> cfg.merge_from_file("input_model.yaml")
     >>> meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
     >>> model = meta_arch(cfg)
     >>> model.eval()
-
     >>> device = "cuda:{}".format(0)
     >>> model.to(device)
     >>> checkpointer = DetectionCheckpointer(model)
     >>> checkpointer.load("output/model.pth")
-
     >>> metadata = {
     >>>     'device' : device
     >>> }
@@ -72,6 +73,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
         self._file_name = name
         self._model = None
         self._aug = None
+        self._input_model_yaml = None
 
     def set_dependencies(self, env: BentoServiceEnv):
         env.add_pip_packages(['torch', "detectron2"])
@@ -79,7 +81,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)
 
-    def pack(self, model, metadata = None, input_model_yaml= None):  # pylint:disable=arguments-differ
+    def pack(self, model, metadata=None, input_model_yaml=None):  # pylint:disable=arguments-differ
         try:
             import detectron2  # noqa # pylint: disable=unused-import
         except ImportError:

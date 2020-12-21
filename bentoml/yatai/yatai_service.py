@@ -151,6 +151,7 @@ def async_start_yatai_service_web_ui(
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
     web_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'web'))
+    web_prefix_path = web_prefix_path.strip("/")
     if debug_mode:
         # Only when src/index.ts exists, we will run dev (nodemon)
         if os.path.exists(

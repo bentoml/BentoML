@@ -5,6 +5,68 @@ from bentoml.service.env import BentoServiceEnv
 
 
 class DetectronModelArtifact(BentoServiceArtifact):
+    """
+    Abstraction for saving/loading objects with detectron2.checkpoint.DetectionCheckpointer
+    save and load
+
+    Args:
+        name (string): name of the artifact
+
+    Raises:
+        MissingDependencyException: detectron2 package is required for DetectronModelArtifact
+        InvalidArgument: invalid argument type, model being packed must be instance of
+            torch.nn.Module
+
+    Example usage:
+
+    >>> # Train model with data
+    >>>
+    >>>
+    >>> import bentoml
+    >>> from bentoml.adapters import ImageInput
+    >>> from bentoml.frameworks.detectron import DetectronModelArtifact
+    >>> from detectron2.data import transforms as T
+    >>>
+    >>> @bentoml.env(infer_pip_packages=True)
+    >>> @bentoml.artifacts([DetectronModelArtifact('model')])
+    >>> class CocoDetectronService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(input=ImageInput(), batch=False)
+    >>>     def predict(self, img: np.ndarray) -> Dict:
+    >>>         _aug = T.ResizeShortestEdge(
+    >>>            [800, 800], 1333
+    >>>        )
+    >>>        boxes = None
+    >>>        scores = None
+    >>>        pred_classes = None
+    >>>        pred_masks= None
+    >>>        try:
+    >>>            original_image = img[:, :, ::-1]
+    >>>            height, width = original_image.shape[:2]
+    >>>            image = _aug.get_transform(original_image).apply_image(original_image)
+    >>>            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+    >>>            inputs = {"image": image, "height": height, "width": width}
+    >>>            predictions = self.artifacts.model([inputs])[0]
+    >>>
+    >>>
+    >>> cfg = get_cfg()
+    >>> cfg.merge_from_file("input_model.yaml")        
+    >>> meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
+    >>> model = meta_arch(cfg)
+    >>> model.eval()
+
+    >>> device = "cuda:{}".format(0)
+    >>> model.to(device)
+    >>> checkpointer = DetectionCheckpointer(model)
+    >>> checkpointer.load("output/model.pth")
+
+    >>> metadata = {
+    >>>     'device' : device
+    >>> }
+    >>> bento_svc = CocoDetectronService()
+    >>> bento_svc.pack('model', model, metadata, "input_model.yaml")
+    >>> saved_path = bento_svc.save()
+    """
     def __init__(self, name):
         super(DetectronModelArtifact, self).__init__(name)
         self._file_name = name
@@ -17,14 +79,16 @@ class DetectronModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)
 
-    def pack(self, detectron_model):  # pylint:disable=arguments-differ
+    def pack(self, model, metadata = None, input_model_yaml= None):  # pylint:disable=arguments-differ
         try:
             import detectron2  # noqa # pylint: disable=unused-import
         except ImportError:
             raise MissingDependencyException(
                 "Detectron package is required to use DetectronModelArtifact"
             )
-        self._model = detectron_model
+        self._model = model
+        self._metadata = metadata
+        self._input_model_yaml = input_model_yaml
         return self
 
     def load(self, path):
@@ -39,18 +103,13 @@ class DetectronModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "Detectron package is required to use DetectronArtifact"
             )
-
         cfg = get_cfg()
         cfg.merge_from_file(f"{path}/{self._file_name}.yaml")
         meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
         self._model = meta_arch(cfg)
         self._model.eval()
 
-        device = os.environ.get('BENTOML_DEVICE')
-        if device == "GPU":
-            device = "cuda:0"
-        else:
-            device = "cpu"
+        device = self._metadata['device']
         self._model.to(device)
         checkpointer = DetectionCheckpointer(self._model)
         checkpointer.load(f"{path}/{self._file_name}.pth")
@@ -76,8 +135,6 @@ class DetectronModelArtifact(BentoServiceArtifact):
         checkpointer = DetectionCheckpointer(self._model, save_dir=dst)
         checkpointer.save(self._file_name)
         cfg = get_cfg()
-        cfg.merge_from_file("input_model.yaml")
-        with open(
-            os.path.join(dst, "model.yaml"), 'w', encoding='utf-8'
-        ) as output_file:
+        cfg.merge_from_file(self._input_model_yaml)
+        with open(os.path.join(dst, f"{self._file_name}.yaml"), 'w', encoding='utf-8') as output_file:
             output_file.write(cfg.dump())

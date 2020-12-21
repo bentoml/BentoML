@@ -6,14 +6,14 @@ from bentoml.service.env import BentoServiceEnv
 
 class DetectronModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading objects with 
+    Abstraction for saving/loading objects with
     detectron2.checkpoint.DetectionCheckpointer save and load
 
     Args:
         name (string): name of the artifact
 
     Raises:
-        MissingDependencyException: detectron2 package is required for 
+        MissingDependencyException: detectron2 package is required for
         DetectronModelArtifact
         InvalidArgument: invalid argument type, model being packed must be instance of
             torch.nn.Module
@@ -68,6 +68,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
     >>> bento_svc.pack('model', model, metadata, "input_model.yaml")
     >>> saved_path = bento_svc.save()
     """
+
     def __init__(self, name):
         super(DetectronModelArtifact, self).__init__(name)
         self._file_name = name
@@ -81,7 +82,9 @@ class DetectronModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)
 
-    def pack(self, model, metadata=None, input_model_yaml=None):  # pylint:disable=arguments-differ
+    def pack(
+        self, model, metadata=None, input_model_yaml=None
+    ):  # pylint:disable=arguments-differ
         try:
             import detectron2  # noqa # pylint: disable=unused-import
         except ImportError:
@@ -138,5 +141,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
         checkpointer.save(self._file_name)
         cfg = get_cfg()
         cfg.merge_from_file(self._input_model_yaml)
-        with open(os.path.join(dst, f"{self._file_name}.yaml"), 'w', encoding='utf-8') as output_file:
+        with open(
+            os.path.join(dst, f"{self._file_name}.yaml"), 'w', encoding='utf-8'
+        ) as output_file:
             output_file.write(cfg.dump())

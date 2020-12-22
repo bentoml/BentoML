@@ -25,10 +25,10 @@ def test_pytorch_lightning_model_artifact_with_saved_lightning_model():
         torch.jit.save(script, script_path)
         svc.pack('model', script_path)
 
-        with export_service_bundle(svc) as saved_path:
-            svc = bentoml.load(saved_path)
-            result = svc.predict(pd.DataFrame([[5, 4, 3, 2]]))
-            assert result.tolist() == [[6, 5, 4, 3]]
+        saved_path = svc.save()
+        svc = bentoml.load(saved_path)
+        result = svc.predict(pd.DataFrame([[5, 4, 3, 2]]))
+        assert result.tolist() == [[6, 5, 4, 3]]
 
 
 def test_pytorch_lightning_model_artifact():

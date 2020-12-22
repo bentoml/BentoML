@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
 import imageio
-from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.detectron2_classifier import DetectronClassifier
 from detectron2.config import get_cfg
 from detectron2 import model_zoo

@@ -186,6 +186,29 @@ def test_conda_channels_n_dependencies(tmpdir):
     assert 'bentoml-test-lib' in env_yml['dependencies']
 
 
+def test_conda_overwrite_channels(tmpdir):
+    @bentoml.env(
+        conda_channels=["bentoml-test-channel"],
+        conda_dependencies=["bentoml-test-lib"],
+        conda_overwrite_channels=True,
+    )
+    class ServiceWithCondaDeps(bentoml.BentoService):
+        @bentoml.api(input=DataframeInput(), batch=True)
+        def predict(self, df):
+            return df
+
+    service_with_string = ServiceWithCondaDeps()
+    service_with_string.save_to_dir(str(tmpdir))
+
+    from pathlib import Path
+    from bentoml.utils.ruamel_yaml import YAML
+
+    yaml = YAML()
+    env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
+    assert 'bentoml-test-channel' in env_yml['channels']
+    assert len(env_yml['channels']) == 1
+
+
 def test_conda_env_yml_file_option(tmpdir):
     conda_env_yml_file = os.path.join(tmpdir, 'environment.yml')
     with open(conda_env_yml_file, 'wb') as f:

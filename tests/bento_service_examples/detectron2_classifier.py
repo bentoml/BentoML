@@ -2,7 +2,6 @@
 # https://www.dlology.com/blog/how-to-train-detectron2-with-custom-coco-datasets/
 
 import torch  # pylint: disable=import-error
-import os
 import numpy as np
 import bentoml
 import sys

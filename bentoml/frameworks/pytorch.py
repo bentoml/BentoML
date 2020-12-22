@@ -218,7 +218,10 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
 
     def pack(self, path_or_model, metadata=None):  # pylint:disable=arguments-differ
         if _is_pytorch_lightning_model_file_like(path_or_model):
-            logger.info('PytorchLightningArtifact is packing a saved model from path')
+            logger.info(
+                'PytorchLightningArtifact is packing a saved torchscript module '
+                'from path'
+            )
             self._model_path = path_or_model
         else:
             try:
@@ -231,9 +234,9 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
             if isinstance(path_or_model, LightningModule):
                 logger.info(
                     'PytorchLightningArtifact is packing a pytorch lightning '
-                    'model instance'
+                    'model instance as torchscript module'
                 )
-                self._model = path_or_model
+                self._model = path_or_model.to_torchscript()
             else:
                 raise InvalidArgument(
                     'a LightningModule model is required to pack a '
@@ -260,8 +263,7 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
                 raise MissingDependencyException(
                     '"torch" package is required for saving Pytorch lightning model'
                 )
-            script = self._model.to_torchscript()
-            torch.jit.save(script, self._saved_model_file_path(dst))
+            torch.jit.save(self._model, self._saved_model_file_path(dst))
         if self._model_path:
             shutil.copyfile(self._model_path, self._saved_model_file_path(dst))
 

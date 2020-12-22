@@ -18,9 +18,6 @@ def get_traceback_list():
     return traceback.format_exception(exc_type, exc_value, exc_traceback)
 
 
-os.environ['BENTOML_DEVICE'] = 'CPU'
-
-
 @bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([DetectronModelArtifact('model')])
 class DetectronClassifier(bentoml.BentoService):

@@ -42,8 +42,8 @@ def test_detectron2_artifact_pack(detectron2_classifier_class):
     checkpointer.load(cfg.MODEL.WEIGHTS)
 
     image = imageio.imread('http://images.cocodataset.org/val2017/000000439715.jpg')
-    image = image[:,:,::-1]
-    
+    image = image[:, :, ::-1]
+
     svc = detectron2_classifier_class()
     svc.pack('model', model)
     response = svc.predict(image)
@@ -52,4 +52,3 @@ def test_detectron2_artifact_pack(detectron2_classifier_class):
         [17, 0, 0, 0, 0, 0, 0, 0, 25, 0, 25, 25, 0, 0, 24]
     )
     assert comparison.all()
-

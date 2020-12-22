@@ -107,6 +107,14 @@ class CondaEnv(object):
         )
 
     def add_channels(self, channels: List[str]):
+        # Allow for empty channel list in yml and if conda_channels not specified
+        # then use the default
+        if not self._conda_env["channels"]:
+            if not channels:
+                self._conda_env["channels"] = ["conda-forge, defaults"]
+                logger.debug("No channels in yml or conda_channels. Using defaults")
+            else:
+                self._conda_env["channels"] = []
         for channel_name in channels:
             if channel_name not in self._conda_env["channels"]:
                 self._conda_env["channels"] += channels

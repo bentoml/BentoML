@@ -1,7 +1,7 @@
 import pytest
 import urllib
 import numpy as np
-import cv2
+import imageio
 from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.detectron2_classifier import DetectronClassifier
 from detectron2.config import get_cfg
@@ -41,12 +41,10 @@ def test_detectron2_artifact_pack(detectron2_classifier_class):
     model.eval()
     checkpointer = DetectionCheckpointer(model)
     checkpointer.load(cfg.MODEL.WEIGHTS)
-    req = urllib.request.urlopen(
-        'http://images.cocodataset.org/val2017/000000439715.jpg'
-    )
-    arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
-    image = cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
+    image = imageio.imread('http://images.cocodataset.org/val2017/000000439715.jpg')
+    image = image[:,:,::-1]
+    
     svc = detectron2_classifier_class()
     svc.pack('model', model)
     response = svc.predict(image)

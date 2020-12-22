@@ -71,7 +71,7 @@ class CondaEnv(object):
         channels: List[str] = None,
         dependencies: List[str] = None,
         default_env_yaml_file: str = None,
-        overwrite_channels: bool = False
+        overwrite_channels: bool = False,
     ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
@@ -110,9 +110,7 @@ class CondaEnv(object):
 
     def add_channels(self, channels: List[str]):
         if channels and self.overwrite_channels:
-            logger.debug(
-                "Removing default conda channels from environment.yml"
-                )
+            logger.debug("Removing default conda channels from environment.yml")
             self._conda_env["channels"] = []
 
         for channel_name in channels:

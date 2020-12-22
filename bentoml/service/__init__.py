@@ -208,6 +208,7 @@ def env_decorator(
     infer_pip_packages: bool = False,
     requirements_txt_file: str = None,
     conda_channels: List[str] = None,
+    conda_overwrite_channels: bool = False,
     conda_dependencies: List[str] = None,
     conda_env_yml_file: str = None,
     setup_sh: str = None,
@@ -229,8 +230,10 @@ def env_decorator(
             this can be a relative path to the requirements.txt file or the content
             of the file
         conda_channels: list of extra conda channels to be used
+        conda_overwrite_channels: Turn on to make conda_channels overwrite the list of
+            channels instead of adding to it
         conda_dependencies: list of conda dependencies required
-        conda_env_yml_file: use a pre-defined conda environment yml filej
+        conda_env_yml_file: use a pre-defined conda environment yml file
         setup_sh: user defined setup bash script, it is executed in docker build time
         docker_base_image: used for customizing the docker container image built with
             BentoML saved bundle. Base image must either have both `bash` and `conda`
@@ -247,6 +250,7 @@ def env_decorator(
             infer_pip_packages=infer_pip_packages or auto_pip_dependencies,
             requirements_txt_file=requirements_txt_file,
             conda_channels=conda_channels,
+            conda_overwrite_channels=conda_overwrite_channels,
             conda_dependencies=conda_dependencies,
             conda_env_yml_file=conda_env_yml_file,
             setup_sh=setup_sh,

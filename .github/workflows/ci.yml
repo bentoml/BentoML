@@ -209,7 +209,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run tests
-        run: ./ci/xgboost_integration_tests.sh
+        run: ./ci/detectron2_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

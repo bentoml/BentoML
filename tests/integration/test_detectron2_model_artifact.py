@@ -54,6 +54,3 @@ def test_detectron2_artifact_pack(detectron2_classifier_class):
     )
     assert comparison.all()
 
-    # clean up saved bundle
-    yc = YataiClient()
-    yc.repository.delete(f'{svc.name}:{svc.version}')

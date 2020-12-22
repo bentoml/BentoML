@@ -181,6 +181,20 @@ Example Projects:
 * Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
 
 
+=====
+Gluon
+=====
+
+.. autoclass:: bentoml.frameworks.gluon.GluonModelArtifact
+
+
+=================
+Pytorch Lightning
+=================
+
+.. autoclass:: bentoml.frameworks.pytorch.PytorchLightningModelArtifact
+
+
 .. spelling::
 
     MLModel
@@ -190,17 +204,6 @@ Example Projects:
     fasttext
     onnx
     Statsmodels
-
-
-=====
-Gluon
-=====
-
-.. autoclass:: bentoml.frameworks.gluon.GluonModelArtifact
-
-
-.. spelling::
-
     mxnet
     env
     GluonModelArtifact
@@ -209,3 +212,6 @@ Gluon
     mx
     asnumpy
     svc
+    Pytorch
+    pytorch
+

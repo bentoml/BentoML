@@ -1,5 +1,4 @@
 import pytest
-import urllib
 import numpy as np
 import imageio
 from bentoml.yatai.client import YataiClient

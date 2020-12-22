@@ -37,6 +37,7 @@ def test_detectron2_artifact_pack(detectron2_classifier_class):
         "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
     )
     clone_cfg = cfg.clone()  # cfg can be modified by model
+    clone_cfg.MODEL.DEVICE = "cpu"
     model = build_model(clone_cfg)
     model.eval()
     checkpointer = DetectionCheckpointer(model)

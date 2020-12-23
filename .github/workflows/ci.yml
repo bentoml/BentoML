@@ -360,7 +360,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run tests
-        run: ./ci/pyspark_integration_tests.sh
+        run: ./ci/pyspark_integration_test.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

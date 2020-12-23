@@ -1,5 +1,7 @@
 import time
 import json
+import urllib
+
 import pytest
 
 import pandas as pd
@@ -9,7 +11,22 @@ from pyspark.ml.feature import VectorAssembler
 import bentoml
 from bentoml.server.api_server import BentoAPIServer
 from tests.bento_service_examples.pyspark_classifier import PysparkClassifier
-from tests.integration.test_xgboost_model_artifact import _wait_until_ready
+
+
+def _wait_until_ready(_host, timeout, check_interval=0.5):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            if (
+                    urllib.request.urlopen(f'http://{_host}/healthz', timeout=0.1).status
+                    == 200
+            ):
+                break
+        except Exception:
+            time.sleep(check_interval - 0.1)
+        else:
+            raise AssertionError(f"server didn't get ready in {timeout} seconds")
+
 
 train_data = [[0, -1.0], [1, 1.0]]
 train_pddf = pd.DataFrame(train_data, columns=["label", "feature1"])

@@ -1,8 +1,6 @@
 Frameworks
 ==========
 
-.. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
-
 Here are the all of the supported ML frameworks for BentoML. You can find the official
 BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__
 repository, group by the ML training frameworks used in the project.
@@ -183,6 +181,20 @@ Example Projects:
 * Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
 
 
+=====
+Gluon
+=====
+
+.. autoclass:: bentoml.frameworks.gluon.GluonModelArtifact
+
+
+=================
+Pytorch Lightning
+=================
+
+.. autoclass:: bentoml.frameworks.pytorch.PytorchLightningModelArtifact
+
+
 .. spelling::
 
     MLModel
@@ -192,17 +204,6 @@ Example Projects:
     fasttext
     onnx
     Statsmodels
-
-
-=====
-Gluon
-=====
-
-.. autoclass:: bentoml.frameworks.gluon.GluonModelArtifact
-
-
-.. spelling::
-
     mxnet
     env
     GluonModelArtifact
@@ -211,3 +212,6 @@ Gluon
     mx
     asnumpy
     svc
+    Pytorch
+    pytorch
+

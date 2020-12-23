@@ -252,7 +252,7 @@ class BentoRepositoryAPIClient:
 
     def download_to_directory(self, bento_pb, target_dir):
         if bento_pb.uri.s3_presigned_url:
-            bento_service_bundle_path = bento_pb.bento.uri.s3_presigned_url
+            bento_service_bundle_path = bento_pb.uri.s3_presigned_url
         elif bento_pb.uri.gcs_presigned_url:
             bento_service_bundle_path = bento_pb.uri.gcs_presigned_url
         else:

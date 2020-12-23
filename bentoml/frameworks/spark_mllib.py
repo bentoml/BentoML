@@ -4,7 +4,7 @@ import logging
 import os
 
 from bentoml.exceptions import MissingDependencyException, BentoMLException
-from bentoml.service import BentoServiceArtifact
+from bentoml.service import BentoServiceArtifact, BentoServiceEnv
 
 
 class PySparkModelArtifact(BentoServiceArtifact):
@@ -13,16 +13,12 @@ class PySparkModelArtifact(BentoServiceArtifact):
         self._model = None
         self._sc = None
 
+    def set_dependencies(self, env: BentoServiceEnv):
+        env.add_pip_package("pyspark")
+
     def pack(
         self, model, metadata: dict = None, sc=None
     ):  # pylint:disable=arguments-differ
-        try:
-            import pyspark
-            from pyspark.ml.base import Model
-        except ImportError:
-            raise MissingDependencyException(
-                "pyspark is required to use PySparkModelArtifact"
-            )
         self._sc = sc
         self._model = model
 

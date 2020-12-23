@@ -3,7 +3,7 @@ import json
 import logging
 import os
 
-from bentoml.exceptions import MissingDependencyException, BentoMLException
+from bentoml.exceptions import BentoMLException
 from bentoml.service import BentoServiceArtifact, BentoServiceEnv
 
 

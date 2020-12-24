@@ -19,8 +19,8 @@ def _wait_until_ready(_host, timeout, check_interval=0.5):
     while time.time() - start_time < timeout:
         try:
             if (
-                    urllib.request.urlopen(f'http://{_host}/healthz', timeout=0.1).status
-                    == 200
+                urllib.request.urlopen(f'http://{_host}/healthz', timeout=0.1).status
+                == 200
             ):
                 break
         except Exception:

@@ -17,7 +17,7 @@ class PySparkModelArtifact(BentoServiceArtifact):
         env.add_pip_package("pyspark")
 
     def pack(
-            self, model, metadata: dict = None, sc=None
+        self, model, metadata: dict = None, sc=None
     ):  # pylint:disable=arguments-differ
         self._sc = sc
         self._model = model

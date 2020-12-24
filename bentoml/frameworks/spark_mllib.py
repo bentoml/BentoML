@@ -3,7 +3,7 @@ import json
 import logging
 import os
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, MissingDependencyException
 from bentoml.service import BentoServiceArtifact, BentoServiceEnv
 
 
@@ -17,7 +17,7 @@ class PySparkModelArtifact(BentoServiceArtifact):
         env.add_pip_package("pyspark")
 
     def pack(
-        self, model, metadata: dict = None, sc=None
+            self, model, metadata: dict = None, sc=None
     ):  # pylint:disable=arguments-differ
         self._sc = sc
         self._model = model
@@ -28,7 +28,12 @@ class PySparkModelArtifact(BentoServiceArtifact):
         model = self._model
         save_path = os.path.join(dst, self.name)
 
-        from pyspark.ml.base import Model
+        try:
+            from pyspark.ml.base import Model
+        except ImportError:
+            raise MissingDependencyException(
+                "pyspark is required to use the PySparkModelArtifact"
+            )
 
         if isinstance(model, Model):
             model: Model = model
@@ -37,7 +42,12 @@ class PySparkModelArtifact(BentoServiceArtifact):
             model.save(self._sc, save_path)
 
     def load(self, path):
-        from pyspark.sql import SparkSession
+        try:
+            from pyspark.sql import SparkSession
+        except ImportError:
+            raise MissingDependencyException(
+                "pyspark is required to use the PySparkModelArtifact"
+            )
 
         spark = SparkSession.builder.appName('BentoService').getOrCreate()
 
@@ -57,7 +67,12 @@ class PySparkModelArtifact(BentoServiceArtifact):
         class_name = splits[-1]
         # noinspection PyPep8Naming
         ModelClass = getattr(importlib.import_module(module), class_name)
-        from pyspark.ml import Model
+        try:
+            from pyspark.ml import Model
+        except:
+            raise MissingDependencyException(
+                "pyspark is required to use the PySparkModelArtifact"
+            )
 
         if issubclass(ModelClass, Model):
             model = ModelClass.load(model_data_path)
@@ -65,3 +80,6 @@ class PySparkModelArtifact(BentoServiceArtifact):
             model = ModelClass.load(spark.sparkContext, model_data_path)
 
         return self.pack(model)
+
+    def get(self):
+        return self._model

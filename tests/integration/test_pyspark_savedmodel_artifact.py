@@ -7,6 +7,7 @@ import pytest
 import pandas as pd
 from pyspark.ml.classification import LogisticRegression
 from pyspark.ml.feature import VectorAssembler
+from pyspark.sql import SparkSession
 
 import bentoml
 from bentoml.server.api_server import BentoAPIServer
@@ -32,6 +33,11 @@ train_data = [[0, -1.0], [1, 1.0]]
 train_pddf = pd.DataFrame(train_data, columns=["label", "feature1"])
 test_data = [-5.0, 5.0, -0.5, 0.5]
 test_pddf = pd.DataFrame(test_data, columns=["feature1"])
+
+
+@pytest.fixture(scope="module")
+def spark_session():
+    return SparkSession.builder.appName("BentoService").getOrCreate()
 
 
 @pytest.fixture(scope="module")
@@ -126,7 +132,7 @@ def test_pyspark_rest_api(pyspark_svc):
     test_client = rest_server.app.test_client()
 
     response = test_client.post(
-        "/predict", data=json.dumps(test_data), content_type="application/json"
+        "/predict", data=test_pddf.to_json(), content_type="application/json"
     )
     assert response.data.decode().strip() == '[0.0, 1.0, 0.0, 1.0]'
 
@@ -138,7 +144,7 @@ async def test_pyspark_artifact_with_docker(pyspark_host):
         "POST",
         f"http://{pyspark_host}/predict",
         headers=(("Content-Type", "application/json"),),
-        data=json.dumps(test_data),
+        data=test_pddf.to_json(),
         assert_status=200,
         assert_data=b'[[15.0]]',
     )

@@ -11,7 +11,7 @@ spark_session = SparkSession.builder.appName("BentoService").getOrCreate()
 @bentoml.env(auto_pip_dependencies=True)
 @bentoml.artifacts([PySparkModelArtifact('model')])
 class PysparkClassifier(bentoml.BentoService):
-    @bentoml.api(input=DataframeInput())
+    @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, pandas_df):
         spark_df = spark_session.createDataFrame(pandas_df)
         column_labels = [str(c) for c in list(pandas_df.columns)]

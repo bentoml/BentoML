@@ -247,3 +247,7 @@ dependencies:
 
     assert 'test-dep-1' in env_yml['dependencies']
     assert 'bentoml-test-lib' in env_yml['dependencies']
+
+    assert os.path.isfile(
+        Path(os.path.join(tmpdir, service_with_string.name, 'environment.yml'))
+    )

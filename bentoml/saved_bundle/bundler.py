@@ -93,6 +93,12 @@ def _write_bento_content_to_dir(bento_service, path):
     # write conda environment, requirement.txt
     bento_service.env.infer_pip_packages(bento_service)
     bento_service.env.save(path)
+    # Also write conda environment.yml to module base path to make it accessible when
+    # users specificed custom conda environment.
+    shutil.copyfile(
+        os.path.join(path, 'environment.yml'),
+        os.path.join(path, bento_service.name, 'environment.yml'),
+    )
 
     # Copy all local python modules used by the module containing the `bento_service`'s
     # class definition to saved bundle directory

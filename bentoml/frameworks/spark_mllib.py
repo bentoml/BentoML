@@ -69,7 +69,7 @@ class PySparkModelArtifact(BentoServiceArtifact):
         ModelClass = getattr(importlib.import_module(module), class_name)
         try:
             from pyspark.ml import Model
-        except:
+        except ImportError:
             raise MissingDependencyException(
                 "pyspark is required to use the PySparkModelArtifact"
             )

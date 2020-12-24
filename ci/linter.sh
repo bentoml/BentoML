@@ -2,7 +2,7 @@
 set -x
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd "$GIT_ROOT"
+cd "$GIT_ROOT" || exit
 
 has_errors=0
 

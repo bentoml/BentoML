@@ -2,8 +2,8 @@ import bentoml
 from bentoml.adapters import DataframeInput
 from bentoml.frameworks.spark_mllib import PySparkModelArtifact
 
-from pyspark.ml.feature import VectorAssembler
-from pyspark.sql import SparkSession
+from pyspark.ml.feature import VectorAssembler  # pylint: disable=import-error
+from pyspark.sql import SparkSession  # pylint: disable=import-error
 
 spark_session = SparkSession.builder.appName("BentoService").getOrCreate()
 

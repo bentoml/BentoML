@@ -1,10 +1,8 @@
 import time
-import json
 import urllib
 
-import pytest
-
 import pandas as pd
+import pytest
 from pyspark.ml.classification import LogisticRegression
 from pyspark.ml.feature import VectorAssembler
 from pyspark.sql import SparkSession

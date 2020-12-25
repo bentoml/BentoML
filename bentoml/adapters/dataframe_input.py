@@ -12,14 +12,11 @@
 # limitations under the License.
 
 import argparse
-import pathlib
 from typing import Iterable, Iterator, Mapping, Optional, Sequence, Tuple
-
-import chardet
 
 from bentoml.adapters.string_input import StringInput
 from bentoml.exceptions import MissingDependencyException
-from bentoml.types import FileLike, HTTPHeaders, InferenceTask
+from bentoml.types import HTTPHeaders, InferenceTask
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
     read_dataframes_from_json_n_csv,
@@ -278,7 +275,7 @@ class DataframeInput(StringInput):
                 task.batch = batch
         return (df,)
 
-    def from_function_call(  # pylint: disable=arguments-differ
+    def from_function_call(
         self, input_=None, input_file=None, **additional_kwargs,
     ) -> Iterator[InferenceTask[str]]:
         if input_ is not None and input_file is None:
@@ -286,28 +283,6 @@ class DataframeInput(StringInput):
                 "DataFrameInput does not support calling with input_data currently"
             )
 
-        is_file = input_file is not None
-        for input_ in input_file:
-            if is_file:
-                uri = pathlib.Path(input_).absolute().as_uri()
-                input_ = FileLike(uri=uri)
-            else:
-                input_ = FileLike(bytes_=input_.encode())
-
-            try:
-                bytes_ = input_.read()
-                charset = chardet.detect(bytes_)['encoding'] or "utf-8"
-                yield InferenceTask(
-                    additional_kwargs=additional_kwargs, data=bytes_.decode(charset),
-                )
-            except UnicodeDecodeError:
-                yield InferenceTask().discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__}: "
-                    f"Try decoding with {charset} but failed with DecodeError.",
-                )
-            except LookupError:
-                return InferenceTask().discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__}: Unsupported charset {charset}",
-                )
+        return super().from_function_call(
+            input_=input_, input_file=input_file, **additional_kwargs
+        )

@@ -145,7 +145,7 @@ class CliInputParser(NamedTuple):
 
         return cls(arg_names, file_arg_names, arg_strs, file_arg_strs, parser)
 
-    def parse(self, args: Sequence[str]) -> Iterator[Tuple[FileLike]]:
+    def parse(self, args: Sequence[str]):
         try:
             parsed, _ = self.parser.parse_known_args(args)
         except SystemExit:
@@ -173,8 +173,10 @@ class CliInputParser(NamedTuple):
 
         if all(inputs):
             if functools.reduce(lambda i, j: len(i) == len(j), inputs):
-                for input_ in zip(*inputs):
-                    yield tuple(FileLike(bytes_=i.encode()) for i in input_)
+                return inputs, None
+                # for input_ in zip(*inputs):
+                # yield input_, None
+                # yield tuple(FileLike(bytes_=i.encode()) for i in input_)
             else:
                 exit_cli(
                     f'''
@@ -186,9 +188,11 @@ class CliInputParser(NamedTuple):
 
         if all(file_inputs):
             if functools.reduce(lambda i, j: len(i) == len(j), file_inputs):
-                for input_ in zip(*file_inputs):
-                    uris = (pathlib.Path(fpath).absolute().as_uri() for fpath in input_)
-                    yield tuple(FileLike(uri=uri) for uri in uris)
+                return None, file_inputs
+                # for input_ in zip(*file_inputs):
+                # uris = (pathlib.Path(fpath).absolute().as_uri() for fpath in input_)
+                # yield None, uris
+                # yield tuple(FileLike(uri=uri) for uri in uris)
             else:
                 exit_cli(
                     f'''

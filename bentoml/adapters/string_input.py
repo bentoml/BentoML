@@ -17,7 +17,7 @@ from typing import Iterable, Iterator, Sequence, Tuple
 
 import chardet
 
-from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
+from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.utils import decompress_gzip_request
 from bentoml.types import AwsLambdaEvent, FileLike, HTTPRequest, InferenceTask
 
@@ -86,41 +86,44 @@ class StringInput(BaseInputAdapter):
         return InferenceTask(aws_lambda_event=event, data=event.get('body', ""),)
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[str]]:
-        for input_ in parse_cli_input(cli_args):
-            try:
-                bytes_ = input_.read()
-                charset = chardet.detect(bytes_)['encoding'] or "utf-8"
-                yield InferenceTask(
-                    cli_args=cli_args, data=bytes_.decode(charset),
-                )
-            except UnicodeDecodeError:
-                yield InferenceTask().discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__}: "
-                    f"Try decoding with {charset} but failed with DecodeError.",
-                )
-            except LookupError:
-                return InferenceTask().discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__}: Unsupported charset {charset}",
-                )
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        input_g = parser.add_mutually_exclusive_group(required=True)
+        input_g.add_argument('--input', nargs="+", type=str)
+        input_g.add_argument('--input-file', nargs="+")
+
+        parsed_args, _ = parser.parse_known_args(list(cli_args))
+
+        for t in self.from_function_call(
+            input_=parsed_args.input, input_file=parsed_args.input_file,
+        ):
+            t.cli_args = cli_args
+            yield t
 
     def from_function_call(  # pylint: disable=arguments-differ
         self, input_=None, input_file=None, **additional_kwargs,
     ) -> Iterator[InferenceTask[str]]:
+        '''
+        Generate InferenceTask from calling bentom_svc.run(input_=None, input_file=None)
+
+        Parameters
+        ----------
+        input_ : str
+            The input value
+
+        input_file : str
+            The URI/path of the input file
+
+        additional_kwargs : dict
+            Additional parameters
+        '''
         if input_ is not None and input_file is None:
             assert NotImplementedError(
                 "DataFrameInput does not support calling with input_data currently"
             )
-
-        is_file = input_file is not None
-        if is_file:
-            strs_or_files = input_file
-        else:
-            strs_or_files = input_
-
-        for d in strs_or_files:
-            if is_file:
+        if input_file is not None:
+            for d in input_file:
                 uri = pathlib.Path(d).absolute().as_uri()
                 bytes_ = FileLike(uri=uri).read()  # make use of utils of class FileLike
                 try:
@@ -141,7 +144,8 @@ class StringInput(BaseInputAdapter):
                         err_msg=f"{self.__class__.__name__}: "
                         f"Unsupported charset {charset}",
                     )
-            else:
+        else:
+            for d in input_:
                 yield InferenceTask(additional_kwargs=additional_kwargs, data=d)
 
     def extract_user_func_args(

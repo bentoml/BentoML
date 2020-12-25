@@ -95,7 +95,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         BentoML CLI tool
         """
 
-    # Example Usage: bentoml run {API_NAME} {BUNDLE_PATH} --input=...
+    # Example Usage: bentoml run {API_NAME} {BUNDLE_PATH} --input ...
     @bentoml_cli.command(
         help="Run a API defined in saved BentoService bundle from command line",
         short_help="Run API function",

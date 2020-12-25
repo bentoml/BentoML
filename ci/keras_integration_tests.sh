@@ -9,7 +9,8 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-pip install tensorflow==2.2.0 keras
+python -m pip install pip --upgrade
+python -m pip install tensorflow==2.2.0 keras
 pytest -s "$GIT_ROOT"/tests/integration/test_keras_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

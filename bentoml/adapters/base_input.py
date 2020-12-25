@@ -81,6 +81,12 @@ class BaseInputAdapter:
         """
         raise NotImplementedError()
 
+    def from_function_call(self, *_args, **_kwargs) -> Iterator[InferenceTask]:
+        """
+        Handles <bento_inference_api>.run(), generate InferenceTask
+        """
+        raise NotImplementedError()
+
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask]
     ) -> BatchApiFuncArgs:

@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pathlib
 from typing import Iterable, Iterator, Sequence, Tuple
 
 import chardet
 
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
 from bentoml.adapters.utils import decompress_gzip_request
-from bentoml.types import AwsLambdaEvent, HTTPRequest, InferenceTask
+from bentoml.types import AwsLambdaEvent, FileLike, HTTPRequest, InferenceTask
 
 ApiFuncArgs = Tuple[
     Sequence[str],
@@ -103,6 +104,45 @@ class StringInput(BaseInputAdapter):
                     http_status=400,
                     err_msg=f"{self.__class__.__name__}: Unsupported charset {charset}",
                 )
+
+    def from_function_call(  # pylint: disable=arguments-differ
+        self, input_=None, input_file=None, **additional_kwargs,
+    ) -> Iterator[InferenceTask[str]]:
+        if input_ is not None and input_file is None:
+            assert NotImplementedError(
+                "DataFrameInput does not support calling with input_data currently"
+            )
+
+        is_file = input_file is not None
+        if is_file:
+            strs_or_files = input_file
+        else:
+            strs_or_files = input_
+
+        for d in strs_or_files:
+            if is_file:
+                uri = pathlib.Path(d).absolute().as_uri()
+                bytes_ = FileLike(uri=uri).read()  # make use of utils of class FileLike
+                try:
+                    charset = chardet.detect(bytes_)['encoding'] or "utf-8"
+                    yield InferenceTask(
+                        additional_kwargs=additional_kwargs,
+                        data=bytes_.decode(charset),
+                    )
+                except UnicodeDecodeError:
+                    yield InferenceTask().discard(
+                        http_status=400,
+                        err_msg=f"{self.__class__.__name__}: "
+                        f"Try decoding with {charset} but failed with DecodeError.",
+                    )
+                except LookupError:
+                    yield InferenceTask().discard(
+                        http_status=400,
+                        err_msg=f"{self.__class__.__name__}: "
+                        f"Unsupported charset {charset}",
+                    )
+            else:
+                yield InferenceTask(additional_kwargs=additional_kwargs, data=d)
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]

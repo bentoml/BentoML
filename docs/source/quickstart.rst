@@ -272,9 +272,9 @@ argument or local csv or json files:
 
 .. code-block:: bash
 
-  bentoml run IrisClassifier:latest predict --input='[[5.1, 3.5, 1.4, 0.2]]'
+  bentoml run IrisClassifier:latest predict --input '[[5.1, 3.5, 1.4, 0.2]]'
 
-  bentoml run IrisClassifier:latest predict --input='./iris_data.csv'
+  bentoml run IrisClassifier:latest predict --input-file './iris_data.csv'
 
 
 Containerize Model API Server

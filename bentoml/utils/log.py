@@ -15,11 +15,11 @@
 import os
 import sys
 import logging.config
-from ruamel.yaml import YAML
 from pathlib import Path
 
 from bentoml import config
 from bentoml.configuration import get_debug_mode
+from bentoml.utils.ruamel_yaml import YAML
 
 
 def get_logging_config_dict(logging_level, base_log_directory):
@@ -27,13 +27,8 @@ def get_logging_config_dict(logging_level, base_log_directory):
 
     LOG_FORMAT = conf.get("LOG_FORMAT")
     DEV_LOG_FORMAT = conf.get("DEV_LOG_FORMAT")
-
-    PREDICTION_LOG_FILENAME = conf.get("prediction_log_filename")
     PREDICTION_LOG_JSON_FORMAT = conf.get("prediction_log_json_format")
-
-    FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
     FEEDBACK_LOG_JSON_FORMAT = conf.get("feedback_log_json_format")
-
     MEGABYTES = 1024 * 1024
 
     return {

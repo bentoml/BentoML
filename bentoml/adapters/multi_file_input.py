@@ -206,18 +206,12 @@ class MultiFileInput(BaseInputAdapter):
         if input_file is not None:
             for ds in zip(*input_file):
                 uris = (pathlib.Path(d).absolute().as_uri() for d in ds)
-                fs = (FileLike(uri=uri) for uri in uris)
-                yield tuple(
-                    InferenceTask(data=f, additional_kwargs=additional_kwargs)
-                    for f in fs
-                )
+                fs = tuple(FileLike(uri=uri) for uri in uris)
+                yield InferenceTask(data=fs, additional_kwargs=additional_kwargs)
         else:
             for ds in zip(*input_):
-                fs = (FileLike(bytes_=d.encode()) for d in ds)
-                yield tuple(
-                    InferenceTask(data=f, additional_kwargs=additional_kwargs)
-                    for f in fs
-                )
+                fs = tuple(FileLike(bytes_=d.encode()) for d in ds)
+                yield InferenceTask(data=fs, additional_kwargs=additional_kwargs)
 
     def extract_user_func_args(self, tasks: Sequence[MultiFileTask]) -> ApiFuncArgs:
         args = tuple(map(tuple, zip(*map(lambda t: t.data, tasks))))

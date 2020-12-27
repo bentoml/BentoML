@@ -12,14 +12,16 @@
 # limitations under the License.
 
 import argparse
-from typing import Iterable, Mapping, Optional, Sequence, Tuple
+import sys
+from typing import Iterable, Iterator, Mapping, Optional, Sequence, Tuple
 
+from bentoml.adapters.base_input import parse_cli_input
 from bentoml.adapters.string_input import StringInput
 from bentoml.exceptions import MissingDependencyException
 from bentoml.types import HTTPHeaders, InferenceTask
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
-    read_dataframes_from_json_n_csv,
+    read_dataframes_from_json_n_csv_by_chunk,
 )
 from bentoml.utils.lazy_loader import LazyLoader
 
@@ -246,30 +248,46 @@ class DataframeInput(StringInput):
 
         return "json"
 
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[str]]:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--max-batch-size", default=sys.maxsize, type=int)
+        parsed_args, _ = parser.parse_known_args(cli_args)
+        chunksize = parsed_args.max_batch_size
+
+        for input_ in parse_cli_input(cli_args):
+            try:
+                df_reader = read_dataframes_from_json_n_csv_by_chunk(input_.path, chunksize=chunksize)
+                for df in df_reader:
+                    yield InferenceTask(
+                        cli_args=cli_args, data=df,
+                    )
+            except LookupError:
+                return InferenceTask().discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__}: Unsupported charset {charset}",
+                )
+
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]
     ) -> ApiFuncArgs:
-        fmts, datas = tuple(
+        fmts, dfs = tuple(
             zip(*((self._detect_format(task), task.data) for task in tasks))
         )
 
-        df, batchs = read_dataframes_from_json_n_csv(
-            datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
-        )
-
-        if df is None:
+        if dfs is None:
             for task in tasks:
                 task.discard(
                     http_status=400,
                     err_msg=f"{self.__class__.__name__} Wrong input format.",
                 )
-            return (df,)
+            return (dfs,)
 
-        for task, batch, data in zip(tasks, batchs, datas):
+        for task, df in zip(tasks, dfs):
+            batch = df.shape[0]
             if batch == 0:
                 task.discard(
                     http_status=400,
-                    err_msg=f"{self.__class__.__name__} Wrong input format: {data}.",
+                    err_msg=f"{self.__class__.__name__} Wrong input format: {df}.",
                 )
             else:
                 task.batch = batch

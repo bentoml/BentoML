@@ -1,7 +1,7 @@
 Logging
 =======
 
-BentoML provides basic logging customization through `bentoml.cfg` under the BentoML home directory. See below for configurable fields and default values.
+BentoML uses standard `Python logging <https://docs.python.org/3/howto/logging.html>`_ libraries and provides basic logging customization through `bentoml.cfg` under the BentoML home directory. See below for configurable fields and default values.
 
 .. code-block:: init
 
@@ -25,7 +25,7 @@ BentoML provides basic logging customization through `bentoml.cfg` under the Ben
 
     yatai_web_server_log_filename = yatai_web_server.log    
 
-For advanced logging customization, user can provide full logging configuration in `logging.yaml`, placed under BentoML home directory. Please see below for the default logging configuration in yaml format for reference.
+For advanced logging customization, user can provide full logging configuration in `logging.yaml`, placed under BentoML home directory. Please see below for an example of logging configuration in yaml format.
 
 .. code-block:: yaml
 

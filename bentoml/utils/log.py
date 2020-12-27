@@ -15,7 +15,7 @@
 import os
 import sys
 import logging.config
-import yaml
+from ruamel.yaml import YAML
 from pathlib import Path
 
 from bentoml import config
@@ -66,22 +66,6 @@ def get_logging_config_dict(logging_level, base_log_directory):
                 "maxBytes": 100 * MEGABYTES,
                 "backupCount": 2,
             },
-            "prediction": {
-                "class": "logging.handlers.RotatingFileHandler",
-                "formatter": "prediction",
-                "level": "INFO",
-                "filename": os.path.join(base_log_directory, PREDICTION_LOG_FILENAME),
-                "maxBytes": 100 * MEGABYTES,
-                "backupCount": 10,
-            },
-            "feedback": {
-                "class": "logging.handlers.RotatingFileHandler",
-                "formatter": "feedback",
-                "level": "INFO",
-                "filename": os.path.join(base_log_directory, FEEDBACK_LOG_FILENAME),
-                "maxBytes": 100 * MEGABYTES,
-                "backupCount": 10,
-            },
         },
         "loggers": {
             "bentoml": {
@@ -90,12 +74,12 @@ def get_logging_config_dict(logging_level, base_log_directory):
                 "propagate": False,
             },
             "bentoml.prediction": {
-                "handlers": ["prediction", "console"],
+                "handlers": ["console"],
                 "level": "INFO",
                 "propagate": False,
             },
             "bentoml.feedback": {
-                "handlers": ["feedback", "console"],
+                "handlers": ["console"],
                 "level": "INFO",
                 "propagate": False,
             },
@@ -107,7 +91,7 @@ def configure_logging(logging_level=None):
     if os.path.exists(config("logging").get("logging_config")):
         logging_config_path = config("logging").get("logging_config")
         with open(logging_config_path, "rb") as f:
-            logging_config = yaml.safe_load(f.read())
+            logging_config = YAML().load(f.read())
     else:
         if logging_level is None:
             logging_level = config("logging").get("LEVEL").upper()

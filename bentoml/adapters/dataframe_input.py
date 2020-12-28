@@ -278,11 +278,7 @@ class DataframeInput(StringInput):
     def from_function_call(
         self, input_=None, input_file=None, **additional_kwargs,
     ) -> Iterator[InferenceTask[str]]:
-        if input_ is not None and input_file is None:
-            raise NotImplementedError(
-                "DataFrameInput does not support calling with input_data"
-            )
-
+        # TODO: generate N InferenceTask from M inputs.
         return super().from_function_call(
             input_=input_, input_file=input_file, **additional_kwargs
         )

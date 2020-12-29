@@ -230,17 +230,6 @@ class BentoMetadataStore(object):
                     "Bento %s:%s is not found in repository" % bento_name, bento_version
                 )
 
-    def dangerously_bulk_delete(self, bento_list):
-        with create_session(self.sess_maker) as sess:
-            try:
-                names = [bento.name for bento in bento_list]
-                versions = [bento.version for bento in bento_list]
-                sess.query(Bento).filter(Bento.name.in_(names)).filter(
-                    Bento.version.in_(versions)
-                ).update({'deleted': True}, synchronize_session=False)
-            except Exception as e:
-                raise YataiRepositoryException(f'Batch delete failed: {e}')
-
     def list(
         self,
         bento_name=None,

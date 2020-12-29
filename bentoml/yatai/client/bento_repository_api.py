@@ -18,6 +18,8 @@ import io
 import os
 import logging
 import tarfile
+
+import click
 import requests
 import shutil
 
@@ -345,6 +347,7 @@ class BentoRepositoryAPIClient:
     def delete(
         self,
         all=False,  # pylint: disable=redefined-builtin
+        confirm_delete=False,
         labels=None,
         bento_name=None,
         bento_version=None,
@@ -357,6 +360,7 @@ class BentoRepositoryAPIClient:
             labels: string
             bento_name: string
             bento_version: string
+            confirm_delete: boolean
         Example:
         >>>
         >>> yatai_client = get_yatai_client()
@@ -372,18 +376,24 @@ class BentoRepositoryAPIClient:
         >>> yatai_client.repository.delete(labels='ci=failed, cohort=20')
         """
         track('py-api-delete')
-        delete_request = DangerouslyDeleteBentoRequest(
-            all=all, bento_name=bento_name, bento_version=bento_version
-        )
-        if labels is not None:
-            generate_gprc_labels_selector(delete_request.label_selectors, labels)
-        result = self.yatai_service.DangerouslyDeleteBento(delete_request)
-        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
-            error_code, error_message = status_pb_to_error_code_and_message(
-                result.status
-            )
-            raise BentoMLException(
-                f'Failed to delete Bento {error_code}:{error_message}'
+        bento_delete_list = []
+        if all is True:
+            bento_delete_list = self.list()
+        else:
+            if bento_name is not None and bento_version is not None:
+                bento_delete_list.append(self.get(f'{bento_name}:{bento_version}'))
+            else:
+                bento_delete_list = self.list(bento_name=bento_name, labels=labels)
+        for bento in bento_delete_list:
+            if not confirm_delete and not click.confirm(
+                f'Are you sure about delete {bento.name}:{bento.version}? This '
+                f'will delete the BentoService saved bundle files permanently'
+            ):
+                return
+            result = self.yatai_service.DangerouslyDeleteBento(
+                DangerouslyDeleteBentoRequest(
+                    bento_name=bento_name, bento_version=bento_version
+                )
             )
             if result.status.status_code != yatai_proto.status_pb2.Status.OK:
                 error_code, error_message = status_pb_to_error_code_and_message(

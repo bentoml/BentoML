@@ -216,14 +216,13 @@ def add_bento_sub_command(cli):
 
         `bentoml delete iris_classifier:v1.2.0,my_svc:v1,my_svc2:v3`
         """
-        if not yes and not click.confirm(
-            'This will delete the BentoService saved bundle files permanently, '
-            'are you sure?'
-        ):
-            return
         yc = get_yatai_client(yatai_url)
         yc.repository.delete(
-            all=all, labels=labels, bento_name=bento_name, bento_version=bento_version,
+            all=all,
+            labels=labels,
+            bento_name=bento_name,
+            bento_version=bento_version,
+            confirm_delete=yes,
         )
         _echo('Deleted bento services')
 

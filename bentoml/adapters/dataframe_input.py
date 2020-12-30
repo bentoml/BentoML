@@ -278,7 +278,7 @@ class DataframeInput(StringInput):
     def from_inference_job(
         self, input_=None, input_file=None, **extra_args,
     ) -> Iterator[InferenceTask[str]]:
-        # TODO: generate N InferenceTask from M inputs.
+        # TODO: generate small batches of InferenceTasks from large input files
         return super().from_inference_job(
             input_=input_, input_file=input_file, **extra_args
         )

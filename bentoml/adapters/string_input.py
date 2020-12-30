@@ -119,13 +119,13 @@ class StringInput(BaseInputAdapter):
             Additional parameters
         '''
         if input_ is not None and input_file is None:
-            assert NotImplementedError(
+            raise NotImplementedError(
                 "DataFrameInput does not support calling with input_data currently"
             )
         if input_file is not None:
             for d in input_file:
                 uri = pathlib.Path(d).absolute().as_uri()
-                bytes_ = FileLike(uri=uri).read()  # make use of utils of class FileLike
+                bytes_ = FileLike(uri=uri).read()
                 try:
                     charset = chardet.detect(bytes_)['encoding'] or "utf-8"
                     yield InferenceTask(

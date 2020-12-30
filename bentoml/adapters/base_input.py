@@ -174,9 +174,6 @@ class CliInputParser(NamedTuple):
         if all(inputs):
             if functools.reduce(lambda i, j: len(i) == len(j), inputs):
                 return inputs, None
-                # for input_ in zip(*inputs):
-                # yield input_, None
-                # yield tuple(FileLike(bytes_=i.encode()) for i in input_)
             else:
                 exit_cli(
                     f'''
@@ -189,10 +186,6 @@ class CliInputParser(NamedTuple):
         if all(file_inputs):
             if functools.reduce(lambda i, j: len(i) == len(j), file_inputs):
                 return None, file_inputs
-                # for input_ in zip(*file_inputs):
-                # uris = (pathlib.Path(fpath).absolute().as_uri() for fpath in input_)
-                # yield None, uris
-                # yield tuple(FileLike(uri=uri) for uri in uris)
             else:
                 exit_cli(
                     f'''

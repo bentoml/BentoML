@@ -174,7 +174,7 @@ class FileInput(BaseInputAdapter):
         f = FileLike(bytes_=base64.decodebytes(event.get('body', "")))
         return InferenceTask(aws_lambda_event=event, data=f)
 
-    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[str]]:
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[FileLike]]:
         import argparse
 
         parser = argparse.ArgumentParser()

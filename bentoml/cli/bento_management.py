@@ -19,7 +19,7 @@ from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.cli.click_utils import _echo
 from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
-    _format_labels_for_print,
+    _format_labels_for_print, Spinner,
 )
 from bentoml.utils import pb_to_yaml
 from bentoml.yatai.client import get_yatai_client
@@ -174,8 +174,8 @@ def add_bento_sub_command(cli):
     @cli.command(
         help='Delete bentos. To delete a bento service use "--bento-name" and '
         '"--bento-version" option: "bentoml delete --bento-name IrisClassifier '
-        '--bento-version 0.1.0" To delete multiple bentos, use "--bento-name" and/or '
-        '"--labels" to filter. To delete all bento services use "--prune" option'
+        '--bento-version 0.1.0". To delete multiple bentos, use "--bento-name" and/or '
+        '"--labels" to filter. To delete all bento services use "--all" option'
     )
     @click.option(
         '--all', is_flag=True, help='Use this flag to remove all BentoServices'
@@ -212,9 +212,7 @@ def add_bento_sub_command(cli):
         version in format of name:version. For example: "iris_classifier:v1.2.0"
 
         `bentoml delete` command also supports deleting multiple saved BentoService at
-        once, by providing name version tag separated by ",", for example:
-
-        `bentoml delete iris_classifier:v1.2.0,my_svc:v1,my_svc2:v3`
+        once, by providing either the BentoService name and/or labels
         """
         yc = get_yatai_client(yatai_url)
         yc.repository.delete(
@@ -224,7 +222,6 @@ def add_bento_sub_command(cli):
             bento_version=bento_version,
             confirm_delete=yes,
         )
-        _echo('Deleted bento services')
 
     @cli.command(help='Pull BentoService from remote yatai server',)
     @click.argument("bento", type=click.STRING)

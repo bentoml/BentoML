@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pathlib
 from typing import Iterator, Sequence, Tuple
 
 from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_inputs
@@ -194,8 +195,23 @@ class MultiFileInput(BaseInputAdapter):
         return self.from_http_request(request)
 
     def from_cli(self, cli_args: Sequence[str]) -> Iterator[MultiFileTask]:
-        for inputs in parse_cli_inputs(cli_args, self.input_names):
-            yield InferenceTask(cli_args=cli_args, data=inputs)
+        input_, input_file = parse_cli_inputs(cli_args, self.input_names)
+        for t in self.from_inference_job(input_=input_, input_file=input_file):
+            t.cli_args = cli_args
+            yield t
+
+    def from_inference_job(  # pylint: disable=arguments-differ
+        self, input_=None, input_file=None, **extra_args
+    ) -> Iterator[InferenceTask[FileLike]]:
+        if input_file is not None:
+            for ds in zip(*input_file):
+                uris = (pathlib.Path(d).absolute().as_uri() for d in ds)
+                fs = tuple(FileLike(uri=uri) for uri in uris)
+                yield InferenceTask(data=fs, inference_job_args=extra_args)
+        else:
+            for ds in zip(*input_):
+                fs = tuple(FileLike(bytes_=d.encode()) for d in ds)
+                yield InferenceTask(data=fs, inference_job_args=extra_args)
 
     def extract_user_func_args(self, tasks: Sequence[MultiFileTask]) -> ApiFuncArgs:
         args = tuple(map(tuple, zip(*map(lambda t: t.data, tasks))))

@@ -118,10 +118,6 @@ class StringInput(BaseInputAdapter):
         extra_args : dict
             Additional parameters
         '''
-        if input_ is not None and input_file is None:
-            raise NotImplementedError(
-                "DataFrameInput does not support calling with input_data currently"
-            )
         if input_file is not None:
             for d in input_file:
                 uri = pathlib.Path(d).absolute().as_uri()

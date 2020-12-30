@@ -55,14 +55,6 @@ def get_open_api_spec_json(bento_service):
         )
     )
 
-    paths["/readme"] = OrderedDict(
-        get=OrderedDict(
-            tags=["infra"],
-            description="BentoService's readme endpoint. Display README render in HTML",
-            responses=default_response,
-        )
-    )
-
     if config("apiserver").getboolean("enable_metrics"):
         paths["/metrics"] = OrderedDict(
             get=OrderedDict(

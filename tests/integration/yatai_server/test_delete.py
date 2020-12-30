@@ -15,7 +15,11 @@ def test_delete_single_bento(bento_service):
 
     bento_service.save(version=deleted_version)
     bento_service.save(version=uuid.uuid4().hex[0:8])
-    yc.repository.delete(bento_name=bento_service.name, bento_version=deleted_version, confirm_delete=True)
+    yc.repository.delete(
+        bento_name=bento_service.name,
+        bento_version=deleted_version,
+        confirm_delete=True,
+    )
     bentos = yc.repository.list()
     assert len(bentos) == 1
     # Clean up existing bentos

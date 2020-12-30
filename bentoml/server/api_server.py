@@ -47,10 +47,10 @@ logger = logging.getLogger(__name__)
 INDEX_HTML = '''\
 <!DOCTYPE html>
 <head><link rel="stylesheet" type="text/css"
-            href="swagger_static/swagger-ui.css"></head>
+            href="static_content/swagger-ui.css"></head>
 <body>
 <div id="swagger-ui-container"></div>
-<script src="swagger_static/swagger-ui-bundle.js"></script>
+<script src="static_content/swagger-ui-bundle.js"></script>
 <script>
     SwaggerUIBundle({{
         url: '{url}',
@@ -111,7 +111,7 @@ class BentoAPIServer:
         self.enable_swagger = enable_swagger
 
         self.swagger_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'swagger_static'
+            os.path.dirname(os.path.abspath(__file__)), 'static_content'
         )
 
         for middleware in (InstrumentMiddleware,):
@@ -258,8 +258,8 @@ class BentoAPIServer:
 
         self.app.add_url_rule("/docs", "swagger", self.swagger_ui_func)
         self.app.add_url_rule(
-            "/swagger_static/<path:filename>",
-            "swagger_static",
+            "/static_content/<path:filename>",
+            "static_content",
             partial(self.swagger_static, self.swagger_path),
         )
         self.app.add_url_rule(

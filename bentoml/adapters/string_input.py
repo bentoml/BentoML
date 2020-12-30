@@ -95,14 +95,14 @@ class StringInput(BaseInputAdapter):
 
         parsed_args, _ = parser.parse_known_args(list(cli_args))
 
-        for t in self.from_function_call(
+        for t in self.from_inference_job(
             input_=parsed_args.input, input_file=parsed_args.input_file,
         ):
             t.cli_args = cli_args
             yield t
 
-    def from_function_call(  # pylint: disable=arguments-differ
-        self, input_=None, input_file=None, **additional_kwargs,
+    def from_inference_job(  # pylint: disable=arguments-differ
+        self, input_=None, input_file=None, **extra_args,
     ) -> Iterator[InferenceTask[str]]:
         '''
         Generate InferenceTask from calling bentom_svc.run(input_=None, input_file=None)
@@ -115,7 +115,7 @@ class StringInput(BaseInputAdapter):
         input_file : str
             The URI/path of the input file
 
-        additional_kwargs : dict
+        extra_args : dict
             Additional parameters
         '''
         if input_ is not None and input_file is None:
@@ -129,8 +129,7 @@ class StringInput(BaseInputAdapter):
                 try:
                     charset = chardet.detect(bytes_)['encoding'] or "utf-8"
                     yield InferenceTask(
-                        additional_kwargs=additional_kwargs,
-                        data=bytes_.decode(charset),
+                        inference_job_args=extra_args, data=bytes_.decode(charset),
                     )
                 except UnicodeDecodeError:
                     yield InferenceTask().discard(
@@ -146,7 +145,7 @@ class StringInput(BaseInputAdapter):
                     )
         else:
             for d in input_:
-                yield InferenceTask(additional_kwargs=additional_kwargs, data=d)
+                yield InferenceTask(inference_job_args=extra_args, data=d)
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]

@@ -49,7 +49,7 @@ class ClipperInput(BaseInputAdapter):
             "ClipperInput is not supported to be used with BentoML CLI"
         )
 
-    def from_function_call(self, *args, **kwargs):
+    def from_inference_job(self, *args, **kwargs):
         raise NotImplementedError(
             "" "ClipperInput is not supported to be used with BentoML function calling"
         )

@@ -377,7 +377,7 @@ class InferenceTask(Generic[Input]):
     http_headers: HTTPHeaders = HTTPHeaders()
     aws_lambda_event: Optional[dict] = None
     cli_args: Optional[Sequence[str]] = None
-    additional_kwargs: Optional[Mapping[str, Any]] = None
+    inference_job_args: Optional[Mapping[str, Any]] = None
 
     def discard(self, err_msg="", **context):
         """

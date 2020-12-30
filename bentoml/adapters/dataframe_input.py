@@ -275,10 +275,10 @@ class DataframeInput(StringInput):
                 task.batch = batch
         return (df,)
 
-    def from_function_call(
-        self, input_=None, input_file=None, **additional_kwargs,
+    def from_inference_job(
+        self, input_=None, input_file=None, **extra_args,
     ) -> Iterator[InferenceTask[str]]:
         # TODO: generate N InferenceTask from M inputs.
-        return super().from_function_call(
-            input_=input_, input_file=input_file, **additional_kwargs
+        return super().from_inference_job(
+            input_=input_, input_file=input_file, **extra_args
         )

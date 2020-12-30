@@ -13,6 +13,7 @@
 
 import argparse
 import sys
+from pandas.io.parsers import TextFileReader
 from typing import Iterable, Iterator, Mapping, Optional, Sequence, Tuple
 
 from bentoml.adapters.base_input import parse_cli_input
@@ -21,6 +22,7 @@ from bentoml.exceptions import MissingDependencyException
 from bentoml.types import HTTPHeaders, InferenceTask
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
+    read_dataframes_from_json_n_csv,
     read_dataframes_from_json_n_csv_by_chunk,
 )
 from bentoml.utils.lazy_loader import LazyLoader
@@ -250,17 +252,18 @@ class DataframeInput(StringInput):
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[str]]:
         parser = argparse.ArgumentParser()
-        parser.add_argument("--max-batch-size", default=sys.maxsize, type=int)
+        parser.add_argument("--batch-size", default=sys.maxsize, type=int)
         parsed_args, _ = parser.parse_known_args(cli_args)
-        chunksize = parsed_args.max_batch_size
-
+        chunksize = parsed_args.batch_size
+        print("chunk size is")
+        print(chunksize)
         for input_ in parse_cli_input(cli_args):
             try:
-                df_reader = read_dataframes_from_json_n_csv_by_chunk(input_.path, chunksize=chunksize)
-                for df in df_reader:
-                    yield InferenceTask(
-                        cli_args=cli_args, data=df,
-                    )
+                df_reader = read_dataframes_from_json_n_csv_by_chunk(
+                    input_.path, columns=self.columns, dtype=self.dtype, chunksize=chunksize)
+                yield InferenceTask(
+                    cli_args=cli_args, data=df_reader,
+                )
             except LookupError:
                 return InferenceTask().discard(
                     http_status=400,
@@ -269,26 +272,45 @@ class DataframeInput(StringInput):
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]
-    ) -> ApiFuncArgs:
-        fmts, dfs = tuple(
+    ) -> [TextFileReader]:
+        fmts, datas = tuple(
             zip(*((self._detect_format(task), task.data) for task in tasks))
         )
 
-        if dfs is None:
-            for task in tasks:
-                task.discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__} Wrong input format.",
-                )
-            return (dfs,)
+        data_type = "str"
+        for data in datas:
+            if isinstance(data, TextFileReader):
+                # if there is one TextFileReader, then others
+                # should also be TextFileReader
+                data_type = "TextFileReader"
+                break
 
-        for task, df in zip(tasks, dfs):
-            batch = df.shape[0]
-            if batch == 0:
-                task.discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__} Wrong input format: {df}.",
-                )
-            else:
-                task.batch = batch
-        return (df,)
+        if data_type == "str":
+            df_reader, batches = read_dataframes_from_json_n_csv(
+                datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
+            )
+            if df_reader is not None:
+                for task, batch, data in zip(tasks, batches, datas):
+                    if batch == 0:
+                        task.discard(
+                            http_status=400,
+                            err_msg=f"{self.__class__.__name__} Wrong input format: {data}.",
+                        )
+                    else:
+                        task.batch = batch
+                return [df_reader]
+        else:
+            for task, df_reader in zip(tasks, datas):
+                if df_reader is None:
+                    task.discard(
+                        http_status=400,
+                        err_msg=f"{self.__class__.__name__} Wrong input file: {df_reader.f}.",
+                    )
+            return datas
+
+        for task in tasks:
+            task.discard(
+                http_status=400,
+                err_msg=f"{self.__class__.__name__} Wrong input format.",
+            )
+        return None

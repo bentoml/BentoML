@@ -15,6 +15,8 @@
 import io
 import itertools
 import json
+import sys
+from pandas.io.parsers import TextFileReader
 from typing import Iterable, Iterator, Mapping
 
 from bentoml.exceptions import BadInput
@@ -192,7 +194,8 @@ def read_dataframes_from_json_n_csv(
     orient: str = None,
     columns=None,
     dtype=None,
-) -> ("pandas.DataFrame", Iterable[slice]):
+    chunksize=sys.maxsize,
+) -> (TextFileReader, Iterable[slice]):
     '''
     load dataframes from multiple raw datas in json or csv format, efficiently
 
@@ -212,30 +215,30 @@ def read_dataframes_from_json_n_csv(
     table = "\n".join(tr for trs in trs_list if trs is not None for tr in trs)
     try:
         if not header:
-            df = pandas.read_csv(
-                io.StringIO(table), index_col=None, dtype=dtype, header=None,
+            df_reader = pandas.read_csv(
+                io.StringIO(table), index_col=None, dtype=dtype, header=None, chunksize=chunksize
             )
         else:
-            df = pandas.read_csv(
-                io.StringIO("\n".join((header, table))), index_col=None, dtype=dtype,
+            df_reader = pandas.read_csv(
+                io.StringIO("\n".join((header, table))), index_col=None, dtype=dtype, chunksize=chunksize
             )
-        return df, lens
+        return df_reader, lens
     except pandas.errors.EmptyDataError:
         return None, lens
 
 
 def read_dataframes_from_json_n_csv_by_chunk(
     file_path: str,
-    column_names=None,
+    columns=None,
     dtype=None,
-    chunksize=1000000,
+    chunksize=sys.maxsize,
 ) -> "pandas.io.parsers.TextFileReader":
     '''
     load dataframes from json or csv chunk by chunk
     '''
     try:
         df = pandas.read_csv(
-            file_path, index_col=None, dtype=dtype, names=column_names, chunksize=chunksize
+            file_path, index_col=None, dtype=dtype, names=columns, chunksize=chunksize, encoding="utf-8"
         )
         return df
     except pandas.errors.EmptyDataError:

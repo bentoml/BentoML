@@ -38,19 +38,24 @@ def test_dataframe_request_schema():
 
 def test_dataframe_handle_cli(capsys, make_api, tmpdir):
     def test_func(df):
+        print("hello1")
+        print(df)
+        print(df.keys())
+        print("hello2")
         return df["name"]
 
     input_adapter = DataframeInput()
     api = make_api(input_adapter, test_func)
-
     json_file = tmpdir.join("test.csv")
     with open(str(json_file), "w") as f:
-        f.write('name,game,city\njohn,mario,sf')
+        f.write('name,game,city\njohn,mario,sf\nvictor,halo,seattle')
 
-    test_args = ["--input-file", str(json_file), "--format", "csv"]
+    test_args = ["--input-file", str(json_file),
+                 "--format", "csv", "--batch-size", "1"]
     api.handle_cli(test_args)
     out, _ = capsys.readouterr()
     assert "john" in out
+    assert "victor" in out
 
 
 def test_dataframe_handle_aws_lambda_event(make_api):
@@ -87,6 +92,9 @@ def test_dataframe_handle_aws_lambda_event(make_api):
 
 def test_dataframe_handle_request_csv(make_api):
     def test_func(df):
+        print("input is")
+        print(df)
+        print(df["name"])
         return df["name"]
 
     input_adapter = DataframeInput()
@@ -97,7 +105,8 @@ def test_dataframe_handle_request_csv(make_api):
     request.get_data.return_value = csv_data
 
     result = api.handle_request(request)
-    assert result.get_data().decode('utf-8') == '[{"name":"john"}]'
+    print(result.get_data())
+    assert result.get_data().decode('utf-8') == '[{"0":"john"}]'
 
 
 def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):

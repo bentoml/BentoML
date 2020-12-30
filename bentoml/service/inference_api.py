@@ -20,6 +20,7 @@ import itertools
 import logging
 import sys
 from typing import Iterable, Iterator, Sequence
+from pandas import DataFrame
 
 import flask
 
@@ -220,6 +221,9 @@ class InferenceAPI(object):
 
         # extract args
         user_args = self.input_adapter.extract_user_func_args(inf_tasks)
+        print("user_args are")
+        print(user_args)
+        print("done")
         filtered_tasks = tuple(t for t in inf_tasks if not t.is_discarded)
 
         # call user function
@@ -229,11 +233,21 @@ class InferenceAPI(object):
                 filtered_tasks,
                 self.input_adapter.iter_batch_args(user_args, tasks=filtered_tasks),
             ):
-                ret = self.user_func(*legacy_user_args, task=task)
+                user_arg_0 = legacy_user_args[0]
+                if isinstance(user_arg_0, Iterable):
+                    df_reader = user_arg_0
+                    ret = []
+                    for df in df_reader:
+                        ret.append(self.user_func(df, *(legacy_user_args[1:]), tasks=task))
+                else:
+                    df = user_arg_0
+                    ret = [self.user_func(df, *(legacy_user_args[1:]), tasks=task)]
+                print("ret is ")
+                print(ret)
                 if task.is_discarded:
                     continue
                 else:
-                    user_return.append(ret)
+                    user_return = user_return + ret
             if (
                 isinstance(user_return, (list, tuple))
                 and len(user_return)
@@ -247,7 +261,16 @@ class InferenceAPI(object):
                     user_return, tasks=filtered_tasks
                 )
         else:
-            user_return = self.user_func(*user_args, tasks=filtered_tasks)
+            user_return = DataFrame()
+            for task in filtered_tasks:
+                user_arg_0 = user_args[0]
+                if isinstance(user_arg_0, Iterable):
+                    df_reader = user_arg_0
+                    for df in df_reader:
+                        user_return = user_return.append(self.user_func(df, *(user_args[1:]), tasks=task))
+                else:
+                    df = user_arg_0
+                    user_return = user_return.append(self.user_func(df, *(user_args[1:]), tasks=task))
             if (
                 isinstance(user_return, (list, tuple))
                 and len(user_return)

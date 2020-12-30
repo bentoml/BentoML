@@ -40,7 +40,7 @@ const createRoutes = (app, yataiClient) => {
     }
   });
   
-  router.post("/api/metrics", async (req: Request, res:Response) => {
+  router.post("/metrics", async (req: Request, res:Response) => {
     let verifyError = bentoml.GetBentoRequest.verify(req.query);
     if (verifyError) {
       logger.error({ request: "GetMetrics", error: verifyError });

@@ -27,9 +27,67 @@ def get_logging_config_dict(logging_level, base_log_directory):
 
     LOG_FORMAT = conf.get("LOG_FORMAT")
     DEV_LOG_FORMAT = conf.get("DEV_LOG_FORMAT")
+
+    PREDICTION_LOG_FILENAME = conf.get("prediction_log_filename")
     PREDICTION_LOG_JSON_FORMAT = conf.get("prediction_log_json_format")
+
+    FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
     FEEDBACK_LOG_JSON_FORMAT = conf.get("feedback_log_json_format")
+
     MEGABYTES = 1024 * 1024
+
+    handlers = {}
+    bentoml_logger_handlers = []
+    prediction_logger_handlers = []
+    feedback_logger_handlers = []
+    if conf.getboolean("console_logging_enabled"):
+        handlers.update(
+            {
+                "console": {
+                    "level": logging_level,
+                    "formatter": "console",
+                    "class": "logging.StreamHandler",
+                    "stream": sys.stdout,
+                }
+            }
+        )
+        bentoml_logger_handlers.append("console")
+        prediction_logger_handlers.append("console")
+        feedback_logger_handlers.append("console")
+    if conf.getboolean("file_logging_enabled"):
+        handlers.update(
+            {
+                "local": {
+                    "level": logging_level,
+                    "formatter": "dev",
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "filename": os.path.join(base_log_directory, "active.log"),
+                    "maxBytes": 100 * MEGABYTES,
+                    "backupCount": 2,
+                },
+                "prediction": {
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "formatter": "prediction",
+                    "level": "INFO",
+                    "filename": os.path.join(
+                        base_log_directory, PREDICTION_LOG_FILENAME
+                    ),
+                    "maxBytes": 100 * MEGABYTES,
+                    "backupCount": 10,
+                },
+                "feedback": {
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "formatter": "feedback",
+                    "level": "INFO",
+                    "filename": os.path.join(base_log_directory, FEEDBACK_LOG_FILENAME),
+                    "maxBytes": 100 * MEGABYTES,
+                    "backupCount": 10,
+                },
+            }
+        )
+        bentoml_logger_handlers.append("local")
+        prediction_logger_handlers.append("prediction")
+        feedback_logger_handlers.append("feedback")
 
     return {
         "version": 1,
@@ -46,35 +104,20 @@ def get_logging_config_dict(logging_level, base_log_directory):
                 "fmt": FEEDBACK_LOG_JSON_FORMAT,
             },
         },
-        "handlers": {
-            "console": {
-                "level": logging_level,
-                "formatter": "console",
-                "class": "logging.StreamHandler",
-                "stream": sys.stdout,
-            },
-            "local": {
-                "level": logging_level,
-                "formatter": "dev",
-                "class": "logging.handlers.RotatingFileHandler",
-                "filename": os.path.join(base_log_directory, "active.log"),
-                "maxBytes": 100 * MEGABYTES,
-                "backupCount": 2,
-            },
-        },
+        "handlers": handlers,
         "loggers": {
             "bentoml": {
-                "handlers": ["console", "local"],
+                "handlers": bentoml_logger_handlers,
                 "level": logging_level,
                 "propagate": False,
             },
             "bentoml.prediction": {
-                "handlers": ["console"],
+                "handlers": prediction_logger_handlers,
                 "level": "INFO",
                 "propagate": False,
             },
             "bentoml.feedback": {
-                "handlers": ["console"],
+                "handlers": feedback_logger_handlers,
                 "level": "INFO",
                 "propagate": False,
             },
@@ -83,7 +126,10 @@ def get_logging_config_dict(logging_level, base_log_directory):
 
 
 def configure_logging(logging_level=None):
+    base_log_dir = os.path.expanduser(config("logging").get("BASE_LOG_DIR"))
+    Path(base_log_dir).mkdir(parents=True, exist_ok=True)
     if os.path.exists(config("logging").get("logging_config")):
+        print("Found logging config")
         logging_config_path = config("logging").get("logging_config")
         with open(logging_config_path, "rb") as f:
             logging_config = YAML().load(f.read())
@@ -97,7 +143,5 @@ def configure_logging(logging_level=None):
         if get_debug_mode():
             logging_level = logging.getLevelName(logging.DEBUG)
 
-        base_log_dir = os.path.expanduser(config("logging").get("BASE_LOG_DIR"))
-        Path(base_log_dir).mkdir(parents=True, exist_ok=True)
         logging_config = get_logging_config_dict(logging_level, base_log_dir)
     logging.config.dictConfig(logging_config)

@@ -10,9 +10,10 @@ and ask in the bentoml-users channel.
 .. toctree::
   :glob:
 
+  configuration
+  logging
   batch_serving
   monitoring
-  logging
   micro_batching
   custom_artifact
   custom_input_adapter

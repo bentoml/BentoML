@@ -217,7 +217,7 @@ def add_bento_sub_command(cli):
         """
         yc = get_yatai_client(yatai_url)
         yc.repository.delete(
-            all=all,
+            prune=all,
             labels=labels,
             bento_name=bento_name,
             bento_version=bento_version,

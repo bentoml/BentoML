@@ -11,7 +11,7 @@ def test_delete_single_bento(bento_service):
     yc = get_yatai_client()
     # Remove all other bentos. Clean state
     deleted_version = uuid.uuid4().hex[0:8]
-    yc.repository.delete(all=True, confirm_delete=True)
+    yc.repository.delete(prune=True, confirm_delete=True)
 
     bento_service.save(version=deleted_version)
     bento_service.save(version=uuid.uuid4().hex[0:8])
@@ -23,12 +23,12 @@ def test_delete_single_bento(bento_service):
     bentos = yc.repository.list()
     assert len(bentos) == 1
     # Clean up existing bentos
-    yc.repository.delete(all=True, confirm_delete=True)
+    yc.repository.delete(prune=True, confirm_delete=True)
 
 
 def test_delete_bentos_base_on_labels(bento_service):
     yc = get_yatai_client()
-    yc.repository.delete(all=True, confirm_delete=True)
+    yc.repository.delete(prune=True, confirm_delete=True)
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'cohort': '100'})
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'cohort': '110'})
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'cohort': '120'})
@@ -37,12 +37,12 @@ def test_delete_bentos_base_on_labels(bento_service):
     bentos = yc.repository.list()
     assert len(bentos) == 1
     # Clean up existing bentos
-    yc.repository.delete(all=True, confirm_delete=True)
+    yc.repository.delete(prune=True, confirm_delete=True)
 
 
 def test_delete_bentos_base_on_name(bento_service):
     yc = get_yatai_client()
-    yc.repository.delete(all=True, confirm_delete=True)
+    yc.repository.delete(prune=True, confirm_delete=True)
     bento_service.save(version=uuid.uuid4().hex[0:8])
     bento_service.save(version=uuid.uuid4().hex[0:8])
     iris = IrisClassifier()
@@ -53,7 +53,7 @@ def test_delete_bentos_base_on_name(bento_service):
     bentos = yc.repository.list()
     assert len(bentos) == 1
     # Clean up existing bentos
-    yc.repository.delete(all=True, confirm_delete=True)
+    yc.repository.delete(prune=True, confirm_delete=True)
 
 
 def test_delete_all_bentos(bento_service):
@@ -62,6 +62,6 @@ def test_delete_all_bentos(bento_service):
     bento_service.save(version=uuid.uuid4().hex[0:8])
 
     yc = get_yatai_client()
-    yc.repository.delete(all=True, confirm_delete=True)
+    yc.repository.delete(prune=True, confirm_delete=True)
     bentos = yc.repository.list()
     assert len(bentos) == 0

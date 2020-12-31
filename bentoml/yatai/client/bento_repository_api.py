@@ -346,7 +346,7 @@ class BentoRepositoryAPIClient:
 
     def delete(
         self,
-        all=False,  # pylint: disable=redefined-builtin
+        prune=False,  # pylint: disable=redefined-builtin
         confirm_delete=False,
         labels=None,
         bento_name=None,
@@ -356,7 +356,7 @@ class BentoRepositoryAPIClient:
         Delete bentos that matches the specified criteria
 
         Args:
-            all: boolean, Set True to delete all BentoService
+            prune: boolean, Set True to delete all BentoService
             labels: string
             bento_name: string
             bento_version: string
@@ -365,7 +365,7 @@ class BentoRepositoryAPIClient:
         >>>
         >>> yatai_client = get_yatai_client()
         >>> # Delete all bento services
-        >>> yatai_client.repository.delete(all=True)
+        >>> yatai_client.repository.delete(prune=True)
         >>> # Delete bento service with name is `IrisClassifier` and version `0.1.0`
         >>> yatai_client.repository.delete(
         >>>     bento_name='IrisClassifier', bento_version='0.1.0'
@@ -377,7 +377,7 @@ class BentoRepositoryAPIClient:
         """
         track('py-api-delete')
         bento_delete_list = []
-        if all is True:
+        if prune is True:
             bento_delete_list = self.list()
         else:
             if bento_name is not None and bento_version is not None:

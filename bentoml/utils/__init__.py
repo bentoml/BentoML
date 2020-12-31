@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
+import functools
+import inspect
+import os
 import socket
-from contextlib import contextmanager
-from functools import wraps
 from io import StringIO
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
-import os
 
 from google.protobuf.message import Message
 from werkzeug.utils import cached_property
 
-from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
 from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.utils.s3 import is_s3_url
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -39,12 +40,63 @@ __all__ = [
     "ProtoMessageToDict",
     "status_pb_to_error_code_and_message",
     "catch_exceptions",
+    "cached_contextmanager",
 ]
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 
-@contextmanager
+class _CachedContextmanager:
+    def __init__(self, cache_key_template=None):
+        self._cache_key_template = cache_key_template
+        self._cache = {}
+
+    def __call__(self, func):
+        func_m = contextlib.contextmanager(func)
+
+        @contextlib.contextmanager
+        @functools.wraps(func)
+        def _func(*args, **kwargs):
+            bound_args = inspect.signature(func).bind(*args, **kwargs)
+            bound_args.apply_defaults()
+            if self._cache_key_template:
+                cache_key = self._cache_key_template.format(**bound_args.arguments)
+            else:
+                cache_key = tuple(bound_args.arguments.values())
+            if cache_key in self._cache:
+                yield self._cache[cache_key]
+            else:
+                with func_m(*args, **kwargs) as value:
+                    self._cache[cache_key] = value
+                    yield value
+                    self._cache.pop(cache_key)
+
+        return _func
+
+
+def cached_contextmanager(*args, **kwargs):
+    """
+    Just like contextlib.contextmanager, but will cache the yield value for the same
+    arguments. When one instance of the contextmanager exits, the cache value will
+    also be poped.
+
+    Example Usage::
+    (To reuse the container based on the same iamge)
+
+    >>> @cached_contextmanager("{docker_image.id}")
+    >>> def start_docker_container_from_image(docker_image, timeout=60):
+    >>>     container = ...
+    >>>     yield container
+    >>>     container.stop()
+    """
+
+    if len(args) == 1 and callable(args[0]):
+        return _CachedContextmanager()(args[0])
+    else:
+        return _CachedContextmanager(*args, **kwargs)
+
+
+@contextlib.contextmanager
 def reserve_free_port(host="localhost"):
     """
     detect free port and reserve until exit the context
@@ -104,7 +156,7 @@ class catch_exceptions(object):
         self.fallback = fallback
 
     def __call__(self, func):
-        @wraps(func)
+        @functools.wraps(func)
         def _(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
@@ -115,8 +167,8 @@ class catch_exceptions(object):
 
 
 def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
-    from bentoml.yatai.client import get_yatai_client
     from bentoml.exceptions import BentoMLException
+    from bentoml.yatai.client import get_yatai_client
 
     if pip_installed_bundle_path:
         assert (

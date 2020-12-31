@@ -139,8 +139,6 @@ def api_decorator(
 
         if output:
             output_adapter = output
-        elif isinstance(input_adapter, DataframeInput):
-            output_adapter = DataframeOutput()
         else:
             output_adapter = DefaultOutput()
 

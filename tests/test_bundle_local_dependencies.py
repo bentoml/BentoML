@@ -61,3 +61,51 @@ def test_bento_service_class(bento_service_class):
             assert output.strip() == '[0]'
     finally:
         delete_saved_bento_service(bento_service.name, bento_service.version)
+
+
+from click.testing import CliRunner
+from bentoml.cli.bento_service import create_bento_service_cli
+
+@pytest.mark.parametrize("bento_service_class", service_classes)
+def test_bento_service_class_cli(bento_service_class):
+    clf = svm.SVC(gamma='scale')
+    iris = datasets.load_iris()
+    X, y = iris.data, iris.target
+    clf.fit(X, y)
+
+    # Create a bento service instance
+    bento_service = bento_service_class()
+
+    # Pack it with the newly trained model artifact
+    bento_service.pack('model', clf)
+
+    # Save the prediction service to a BentoService bundle
+    bento_service.save()
+
+    bento_name = f"{bento_service.name}:{bento_service.version}"
+
+    run_command = [
+        "bentoml",
+        "run",
+        bento_name,
+        "predict",
+        "--input",
+        "[[5.1, 3.5, 1.4, 0.2]]",
+        "-q",
+    ]
+    runner = CliRunner()
+    cli = create_bento_service_cli()
+    run_cmd = cli.commands["run"]
+    result = runner.invoke(
+        run_cmd,
+        [
+            bento_name,
+            "predict",
+            "--input",
+            "[[5.1, 3.5, 1.4, 0.2]]",
+            "-q",
+        ],
+    )
+    print("----------------------")
+    print(result.output)
+    print("----------------------")

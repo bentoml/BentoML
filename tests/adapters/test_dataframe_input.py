@@ -11,7 +11,7 @@ import pandas as pd
 import psutil  # noqa # pylint: disable=unused-import
 import pytest
 
-from bentoml.adapters import DataframeInput
+from bentoml.adapters import DataframeInput, DataframeOutput
 from bentoml.utils.csv import csv_splitlines
 from bentoml.utils.dataframe_util import guess_orient
 from bentoml.utils.dataframe_util import read_dataframes_from_json_n_csv
@@ -38,14 +38,11 @@ def test_dataframe_request_schema():
 
 def test_dataframe_handle_cli(capsys, make_api, tmpdir):
     def test_func(df):
-        print("hello1")
-        print(df)
-        print(df.keys())
-        print("hello2")
         return df["name"]
 
     input_adapter = DataframeInput()
-    api = make_api(input_adapter, test_func)
+    output_adapter = DataframeOutput()
+    api = make_api(input_adapter, test_func, output_adapter)
     json_file = tmpdir.join("test.csv")
     with open(str(json_file), "w") as f:
         f.write('name,game,city\njohn,mario,sf\nvictor,halo,seattle')
@@ -65,7 +62,8 @@ def test_dataframe_handle_aws_lambda_event(make_api):
         return df["name"]
 
     input_adapter = DataframeInput()
-    api = make_api(input_adapter, test_func)
+    output_adapter = DataframeOutput()
+    api = make_api(input_adapter, test_func, output_adapter)
     event = {
         "headers": {"Content-Type": "application/json"},
         "body": test_content,
@@ -92,21 +90,18 @@ def test_dataframe_handle_aws_lambda_event(make_api):
 
 def test_dataframe_handle_request_csv(make_api):
     def test_func(df):
-        print("input is")
-        print(df)
-        print(df["name"])
         return df["name"]
 
     input_adapter = DataframeInput()
-    api = make_api(input_adapter, test_func)
+    output_adapter = DataframeOutput()
+    api = make_api(input_adapter, test_func, output_adapter)
     csv_data = b'name,game,city\njohn,mario,sf'
     request = MagicMock(spec=flask.Request)
     request.headers = {'Content-Type': 'text/csv'}
     request.get_data.return_value = csv_data
 
     result = api.handle_request(request)
-    print(result.get_data())
-    assert result.get_data().decode('utf-8') == '[{"0":"john"}]'
+    assert result.get_data().decode('utf-8') == '[{"name":"john"}]'
 
 
 def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):
@@ -168,11 +163,12 @@ def test_batch_read_dataframes_from_mixed_json_n_csv(df):
     test_datas.extend([df.to_csv(index=False)] * 3)
     test_types.extend(['csv'] * 3)
 
-    df_merged, counts = read_dataframes_from_json_n_csv(test_datas, test_types)
-    i = 0
-    for count in counts:
-        assert_df_equal(df_merged[i : i + count], df)
-        i += count
+    df_reader, counts = read_dataframes_from_json_n_csv(test_datas, test_types)
+    for df_merged in df_reader:
+        i = 0
+        for count in counts:
+            assert_df_equal(df_merged[i : i + count], df)
+            i += count
 
 
 def test_batch_read_dataframes_from_csv_other_CRLF(df):
@@ -182,26 +178,28 @@ def test_batch_read_dataframes_from_csv_other_CRLF(df):
         csv_str = '\n'.join(csv_splitlines(csv_str))
     else:
         csv_str = '\r\n'.join(csv_splitlines(csv_str))
-    df_merged, _ = read_dataframes_from_json_n_csv([csv_str], ['csv'])
-    assert_df_equal(df_merged, df)
+    df_reader, _ = read_dataframes_from_json_n_csv([csv_str], ['csv'])
+    for df_merged in df_reader:
+        assert_df_equal(df_merged, df)
 
 
 def test_batch_read_dataframes_from_json_of_orients(df, orient):
     test_datas = [df.to_json(orient=orient)] * 3
     test_types = ['json'] * 3
-    df_merged, counts = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
-    i = 0
-    for count in counts:
-        assert_df_equal(df_merged[i : i + count], df)
-        i += count
+    df_reader, counts = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
+    for df_merged in df_reader:
+        i = 0
+        for count in counts:
+            assert_df_equal(df_merged[i : i + count], df)
+            i += count
 
 
 def test_batch_read_dataframes_from_json_with_wrong_orients(df, orient):
     test_datas = [df.to_json(orient='table')] * 3
     test_types = ['json'] * 3
 
-    df_merged, counts = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
-    assert not df_merged
+    df_reader, counts = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
+    assert not df_reader
     for count in counts:
         assert not count
 
@@ -209,26 +207,28 @@ def test_batch_read_dataframes_from_json_with_wrong_orients(df, orient):
 def test_batch_read_dataframes_from_json_in_mixed_order():
     # different column order when orient=records
     df_json = '[{"A": 1, "B": 2, "C": 3}, {"C": 6, "A": 2, "B": 4}]'
-    df_merged, counts = read_dataframes_from_json_n_csv([df_json], ['json'])
-    i = 0
-    for count in counts:
-        assert_df_equal(df_merged[i : i + count], pd.read_json(df_json))
-        i += count
+    df_reader, counts = read_dataframes_from_json_n_csv([df_json], ['json'])
+    for df_merged in df_reader:
+        i = 0
+        for count in counts:
+            assert_df_equal(df_merged[i : i + count], pd.read_json(df_json))
+            i += count
 
     # different row/column order when orient=columns
     df_json1 = '{"A": {"1": 1, "2": 2}, "B": {"1": 2, "2": 4}, "C": {"1": 3, "2": 6}}'
     df_json2 = '{"B": {"1": 2, "2": 4}, "A": {"1": 1, "2": 2}, "C": {"1": 3, "2": 6}}'
     df_json3 = '{"A": {"1": 1, "2": 2}, "B": {"2": 4, "1": 2}, "C": {"1": 3, "2": 6}}'
-    df_merged, counts = read_dataframes_from_json_n_csv(
+    df_reader, counts = read_dataframes_from_json_n_csv(
         [df_json1, df_json2, df_json3], ['json'] * 3
     )
-    i = 0
-    for count in counts:
-        assert_df_equal(
-            df_merged[i : i + count][["A", "B", "C"]],
-            pd.read_json(df_json1)[["A", "B", "C"]],
-        )
-        i += count
+    for df_merged in df_reader:
+        i = 0
+        for count in counts:
+            assert_df_equal(
+                df_merged[i : i + count][["A", "B", "C"]],
+                pd.read_json(df_json1)[["A", "B", "C"]],
+            )
+            i += count
 
 
 def test_guess_orient(df, orient):
@@ -253,12 +253,13 @@ def test_benchmark_load_dataframes():
     time1 = time.time() - time_st
 
     time_st = time.time()
-    result2, _ = read_dataframes_from_json_n_csv(
+    df_reader, _ = read_dataframes_from_json_n_csv(
         inputs, itertools.repeat('json'), 'columns'
     )
 
     time2 = time.time() - time_st
-    assert_df_equal(result1, result2)
+    for result2 in df_reader:
+        assert_df_equal(result1, result2)
 
     # 5 is just an estimate on the smaller end, which should be true for most
     # development machines and Github actions CI environment, the actual ratio depends

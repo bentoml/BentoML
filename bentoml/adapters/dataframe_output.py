@@ -58,14 +58,7 @@ class DataframeOutput(JsonOutput):
         self, return_result, tasks: Sequence[InferenceTask],
     ) -> Sequence[InferenceResult[str]]:
         rv = []
-        i = 0
-        for task in tasks:
-            if task.batch is None:
-                result = return_result[i : i + 1]
-                i += 1
-            else:
-                result = return_result[i : i + task.batch]
-                i += task.batch
+        for result in return_result:
             try:
                 result = df_to_json(result, self.output_orient)
                 rv.append(InferenceResult(http_status=200, data=result))

@@ -95,7 +95,6 @@ def test_run_command_with_input_file(bento_bundle_path):
             "--quiet",
         ],
     )
-
     assert result.exit_code == 0
     assert result.output.strip() == '[{"col1":2},{"col1":4}]'
 

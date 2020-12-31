@@ -27,7 +27,7 @@ from datetime import datetime
 from typing import List
 
 from bentoml import config
-from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
+from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DataframeInput, DataframeOutput, DefaultOutput
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
@@ -130,14 +130,19 @@ def api_decorator(
             # noinspection PyPep8Naming
             InputAdapter = args[0]
             input_adapter = InputAdapter(*args[1:], **kwargs)
-            output_adapter = DefaultOutput()
         else:
             assert isinstance(input, BaseInputAdapter), (
                 "API input parameter must be an instance of a class derived from "
                 "bentoml.adapters.BaseInputAdapter"
             )
             input_adapter = input
-            output_adapter = output or DefaultOutput()
+
+        if output:
+            output_adapter = output
+        elif isinstance(input_adapter, DataframeInput):
+            output_adapter = DataframeOutput()
+        else:
+            output_adapter = DefaultOutput()
 
         setattr(func, "_is_api", True)
         setattr(func, "_input_adapter", input_adapter)

@@ -44,6 +44,22 @@ def test_dataframe_handle_cli(capsys, make_api, tmpdir):
     api = make_api(input_adapter, test_func)
     json_file = tmpdir.join("test.csv")
     with open(str(json_file), "w") as f:
+        f.write('name,game,city\njohn,mario,sf')
+
+    test_args = ["--input-file", str(json_file), "--format", "csv"]
+    api.handle_cli(test_args)
+    out, _ = capsys.readouterr()
+    assert "john" in out
+
+
+def test_dataframe_handle_cli_with_batch_size_specified(capsys, make_api, tmpdir):
+    def test_func(df):
+        return df["name"]
+
+    input_adapter = DataframeInput()
+    api = make_api(input_adapter, test_func)
+    json_file = tmpdir.join("test.csv")
+    with open(str(json_file), "w") as f:
         f.write('name,game,city\njohn,mario,sf\nvictor,halo,seattle')
 
     test_args = ["--input-file", str(json_file),
@@ -52,7 +68,6 @@ def test_dataframe_handle_cli(capsys, make_api, tmpdir):
     out, _ = capsys.readouterr()
     assert "john" in out
     assert "victor" in out
-
 
 def test_dataframe_handle_aws_lambda_event(make_api):
     test_content = '[{"name": "john","game": "mario","city": "sf"}]'

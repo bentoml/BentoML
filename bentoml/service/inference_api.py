@@ -20,11 +20,10 @@ import itertools
 import logging
 import sys
 from typing import Iterable, Iterator, Sequence
-from pandas import DataFrame
 
 import flask
 
-from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DataframeInput, DataframeOutput
+from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.server import trace
 from bentoml.types import HTTPRequest, InferenceResult, InferenceTask

@@ -282,9 +282,10 @@ class DataframeInput(StringInput):
                 try:
                     df_reader = read_dataframes_from_json_n_csv_by_chunk(
                         input_.path, columns=self.columns, dtype=self.dtype, chunksize=chunksize)
-                    yield InferenceTask(
-                        cli_args=cli_args, data=df_reader,
-                    )
+                    for df in df_reader:
+                        yield InferenceTask(
+                            cli_args=cli_args, data=df,
+                        )
                 except LookupError:
                     return InferenceTask().discard(
                         http_status=400,
@@ -293,24 +294,26 @@ class DataframeInput(StringInput):
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]
-    ) -> Tuple[TextFileReader]:
+    ) -> ApiFuncArgs:
         fmts, datas = tuple(
             zip(*((self._detect_format(task), task.data) for task in tasks))
         )
 
         data_type = "str"
         for data in datas:
-            if isinstance(data, TextFileReader):
+            print("data is")
+            print(data)
+            if isinstance(data, pandas.DataFrame):
                 # if there is one TextFileReader, then others
                 # should also be TextFileReader
-                data_type = "TextFileReader"
+                data_type = "DataFrame"
                 break
 
         if data_type == "str":
-            df_reader, batches = read_dataframes_from_json_n_csv(
+            df, batches = read_dataframes_from_json_n_csv(
                 datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
             )
-            if df_reader is not None:
+            if df is not None:
                 for task, batch, data in zip(tasks, batches, datas):
                     if batch == 0:
                         task.discard(
@@ -319,16 +322,24 @@ class DataframeInput(StringInput):
                         )
                     else:
                         task.batch = batch
-                return (df_reader,)
+                return (df,)
         else:
-            for task, df_reader in zip(tasks, datas):
-                if df_reader is None:
+            df_merged = None
+            for task, df in zip(tasks, datas):
+                if df is None:
                     task.discard(
                         http_status=400,
                         err_msg=f"{self.__class__.__name__} Wrong input file: {df_reader.f}.",
                     )
-                task.batch = 0
-            return datas
+                else:
+                    task.batch = df.shape[0]
+                    # Make sure the data of a task can be serialized into a log
+                    task.data = task.data.to_json()
+                    if df_merged is None:
+                        df_merged = df
+                    else:
+                        df_merged = df_merged.append(df)
+            return (df_merged,)
 
         for task in tasks:
             task.discard(

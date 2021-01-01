@@ -256,19 +256,7 @@ class InferenceAPI(object):
                     user_return, tasks=filtered_tasks
                 )
         else:
-            if user_args and len(user_args) > 0 and isinstance(user_args[0], TextFileReader):
-                user_return = []
-                df_reader = user_args[0]
-                df_merged = None
-                for df in df_reader:
-                    new_df = self.user_func(df, *(user_args[1:]))
-                    if df_merged is None:
-                        df_merged = new_df
-                    else:
-                        df_merged = df_merged.append(new_df)
-                user_return.append(df_merged)
-            else:
-                user_return = self.user_func(*user_args, tasks=filtered_tasks)
+            user_return = self.user_func(*user_args, tasks=filtered_tasks)
 
             if (
                 isinstance(user_return, (list, tuple))
@@ -290,6 +278,7 @@ class InferenceAPI(object):
             service_version=self.service.version if self.service else "",
             api=self.name,
         )
+
         for task, result in zip(inf_tasks, inf_results):
             prediction_logger.info(
                 dict(

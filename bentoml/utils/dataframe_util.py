@@ -194,8 +194,7 @@ def read_dataframes_from_json_n_csv(
     orient: str = None,
     columns=None,
     dtype=None,
-    chunksize=sys.maxsize,
-) -> (TextFileReader, Iterable[slice]):
+) -> (pandas.DataFrame, Iterable[slice]):
     '''
     load dataframes from multiple raw datas in json or csv format, efficiently
 
@@ -215,14 +214,14 @@ def read_dataframes_from_json_n_csv(
     table = "\n".join(tr for trs in trs_list if trs is not None for tr in trs)
     try:
         if not header:
-            df_reader = pandas.read_csv(
-                io.StringIO(table), index_col=None, dtype=dtype, header=None, chunksize=chunksize
+            df = pandas.read_csv(
+                io.StringIO(table), index_col=None, dtype=dtype, header=None
             )
         else:
-            df_reader = pandas.read_csv(
-                io.StringIO("\n".join((header, table))), index_col=None, dtype=dtype, chunksize=chunksize
+            df = pandas.read_csv(
+                io.StringIO("\n".join((header, table))), index_col=None, dtype=dtype,
             )
-        return df_reader, lens
+        return df, lens
     except pandas.errors.EmptyDataError:
         return None, lens
 

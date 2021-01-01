@@ -234,9 +234,9 @@ def read_dataframes_from_json_n_csv_by_chunk(
     load dataframes from json or csv chunk by chunk
     '''
     try:
-        df = pandas.read_csv(
+        df_reader = pandas.read_csv(
             file_path, index_col=None, dtype=dtype, names=columns, chunksize=chunksize, encoding="utf-8"
         )
-        return df
+        return df_reader
     except pandas.errors.EmptyDataError:
         return None

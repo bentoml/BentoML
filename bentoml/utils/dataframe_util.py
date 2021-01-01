@@ -170,7 +170,6 @@ def _dataframe_csv_from_input(table: str, fmt, orient, state):
             else:
                 guessed_orient = guess_orient(table, strict=True)
                 if orient != guessed_orient and orient not in guessed_orient:
-                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", orient)
                     return None
             if orient not in _ORIENT_MAP:
                 return None

@@ -300,8 +300,6 @@ class DataframeInput(StringInput):
 
         data_type = "str"
         for data in datas:
-            print("data is")
-            print(data)
             if isinstance(data, pandas.DataFrame):
                 # if there is one pandas DataFrame, then others
                 # should also be pandas DataFrame

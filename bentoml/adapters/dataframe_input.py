@@ -23,7 +23,7 @@ from bentoml.types import HTTPHeaders, InferenceTask
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
     read_dataframes_from_json_n_csv,
-    read_dataframes_from_json_n_csv_by_chunk,
+    read_dataframes_from_csv_by_chunk,
 )
 from bentoml.utils.lazy_loader import LazyLoader
 
@@ -267,7 +267,7 @@ class DataframeInput(StringInput):
                         cli_args=cli_args, data=bytes_.decode(charset),
                     )
                 else:
-                    df_reader = read_dataframes_from_json_n_csv_by_chunk(
+                    df_reader = read_dataframes_from_csv_by_chunk(
                         input_.path, columns=self.columns, dtype=self.dtype, chunksize=chunksize)
                     for df in df_reader:
                         yield InferenceTask(

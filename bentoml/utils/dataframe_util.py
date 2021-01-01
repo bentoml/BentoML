@@ -224,7 +224,7 @@ def read_dataframes_from_json_n_csv(
         return None, lens
 
 
-def read_dataframes_from_json_n_csv_by_chunk(
+def read_dataframes_from_csv_by_chunk(
     file_path: str,
     columns=None,
     dtype=None,

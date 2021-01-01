@@ -27,7 +27,7 @@ from datetime import datetime
 from typing import List
 
 from bentoml import config
-from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DataframeInput, DataframeOutput, DefaultOutput
+from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir

@@ -129,10 +129,13 @@ def configure_logging(logging_level=None):
     base_log_dir = os.path.expanduser(config("logging").get("BASE_LOG_DIR"))
     Path(base_log_dir).mkdir(parents=True, exist_ok=True)
     if os.path.exists(config("logging").get("logging_config")):
-        print("Found logging config")
         logging_config_path = config("logging").get("logging_config")
         with open(logging_config_path, "rb") as f:
             logging_config = YAML().load(f.read())
+        logging.config.dictConfig(logging_config)
+        logging.getLogger(__name__).debug(
+            "Loaded logging configuration from %s." % logging_config_path
+        )
     else:
         if logging_level is None:
             logging_level = config("logging").get("LEVEL").upper()
@@ -144,4 +147,7 @@ def configure_logging(logging_level=None):
             logging_level = logging.getLevelName(logging.DEBUG)
 
         logging_config = get_logging_config_dict(logging_level, base_log_dir)
-    logging.config.dictConfig(logging_config)
+        logging.config.dictConfig(logging_config)
+        logging.getLogger(__name__).debug(
+            "Loaded logging configuration from default configuration and environment variables."
+        )

@@ -12,9 +12,9 @@ import psutil  # noqa # pylint: disable=unused-import
 import pytest
 
 from bentoml.adapters import DataframeInput
+from bentoml.adapters.dataframe_input import read_dataframes_from_json_n_csv
 from bentoml.utils.csv import csv_splitlines
 from bentoml.utils.dataframe_util import guess_orient
-from bentoml.utils.dataframe_util import read_dataframes_from_json_n_csv
 
 try:
     from unittest.mock import MagicMock

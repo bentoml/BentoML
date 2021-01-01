@@ -2,8 +2,6 @@ import subprocess
 import pytest
 import logging
 
-from bentoml.cli.bento_service import create_bento_service_cli
-from click.testing import CliRunner
 from sklearn import datasets, svm
 
 from tests.conftest import delete_saved_bento_service
@@ -51,14 +49,6 @@ def test_bento_service_class(bento_service_class):
         "-q",
     ]
     print(f"running command {' '.join(run_command)}:")
-
-    runner = CliRunner()
-    cli = create_bento_service_cli()
-    run_cmd = cli.commands["run"]
-    result = runner.invoke(
-        run_cmd, [bento_name, "predict", "--input", "[[5.1, 3.5, 1.4, 0.2]]", "-q",],
-    )
-    assert result.output.strip() == '[0]'
 
     try:
         with subprocess.Popen(

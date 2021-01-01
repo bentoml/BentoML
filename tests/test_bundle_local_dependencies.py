@@ -56,14 +56,7 @@ def test_bento_service_class(bento_service_class):
     cli = create_bento_service_cli()
     run_cmd = cli.commands["run"]
     result = runner.invoke(
-        run_cmd,
-        [
-            bento_name,
-            "predict",
-            "--input",
-            "[[5.1, 3.5, 1.4, 0.2]]",
-            "-q",
-        ],
+        run_cmd, [bento_name, "predict", "--input", "[[5.1, 3.5, 1.4, 0.2]]", "-q",],
     )
     assert result.output.strip() == '[0]'
 

@@ -225,18 +225,19 @@ def read_dataframes_from_json_n_csv(
 
 
 def read_dataframes_from_csv_by_chunk(
-    file_path: str,
-    columns=None,
-    dtype=None,
-    chunksize=sys.maxsize,
+    file_path: str, columns=None, dtype=None, chunksize=sys.maxsize,
 ) -> "pandas.io.parsers.TextFileReader":
     '''
     load dataframes from csv chunk by chunk
     '''
     try:
         df_reader = pandas.read_csv(
-            file_path, index_col=None, dtype=dtype,
-            names=columns, chunksize=chunksize, encoding="utf-8"
+            file_path,
+            index_col=None,
+            dtype=dtype,
+            names=columns,
+            chunksize=chunksize,
+            encoding="utf-8",
         )
         return df_reader
     except pandas.errors.EmptyDataError:

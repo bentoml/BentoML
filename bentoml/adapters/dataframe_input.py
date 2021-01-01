@@ -268,8 +268,11 @@ class DataframeInput(StringInput):
                     )
                 else:
                     df_reader = read_dataframes_from_csv_by_chunk(
-                        input_.path, columns=self.columns,
-                        dtype=self.dtype, chunksize=chunksize)
+                        input_.path,
+                        columns=self.columns,
+                        dtype=self.dtype,
+                        chunksize=chunksize,
+                    )
                     for df in df_reader:
                         yield InferenceTask(
                             cli_args=cli_args, data=df,
@@ -278,14 +281,14 @@ class DataframeInput(StringInput):
                 yield InferenceTask().discard(
                     http_status=400,
                     err_msg=f"{self.__class__.__name__}: "
-                            f"Try decoding with {charset} but failed "
-                            f"with DecodeError.",
+                    f"Try decoding with {charset} but failed "
+                    f"with DecodeError.",
                 )
             except LookupError:
                 return InferenceTask().discard(
                     http_status=400,
                     err_msg=f"{self.__class__.__name__}: Unsupported "
-                            f"charset {charset}",
+                    f"charset {charset}",
                 )
 
     def __infer_data_type(self, datas: Iterable) -> str:
@@ -312,8 +315,7 @@ class DataframeInput(StringInput):
         df = None
         if data_type == "str":
             df, batches = read_dataframes_from_json_n_csv(
-                datas, fmts, orient=self.orient,
-                columns=self.columns, dtype=self.dtype,
+                datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
             )
 
             if df is not None:
@@ -322,7 +324,7 @@ class DataframeInput(StringInput):
                         task.discard(
                             http_status=400,
                             err_msg=f"{self.__class__.__name__} "
-                                    f"Wrong input format: {data}.",
+                            f"Wrong input format: {data}.",
                         )
                     else:
                         task.batch = batch

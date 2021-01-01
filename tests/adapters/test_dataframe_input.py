@@ -63,8 +63,7 @@ def test_dataframe_handle_cli_with_batch_size_specified(capsys, make_api, tmpdir
     with open(str(json_file), "w") as f:
         f.write('name,game,city\njohn,mario,sf\nvictor,halo,seattle')
 
-    test_args = ["--input-file", str(json_file),
-                 "--format", "csv", "--batch-size", "1"]
+    test_args = ["--input-file", str(json_file), "--format", "csv", "--batch-size", "1"]
     api.handle_cli(test_args)
     out, _ = capsys.readouterr()
     assert "john" in out

@@ -32,11 +32,6 @@ def detect_suitable_adapter(result) -> Type[BaseOutputAdapter]:
         if isinstance(result, (pd.DataFrame, pd.Series)):
             from .dataframe_output import DataframeOutput
             return DataframeOutput
-        elif isinstance(result, list) and \
-                len(result) > 0 and \
-                isinstance(result[0], (pd.DataFrame, pd.Series)):
-            from .dataframe_output import DataframeOutput
-            return DataframeOutput
     except ImportError:
         pass
 

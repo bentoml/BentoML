@@ -16,7 +16,6 @@ import io
 import itertools
 import json
 import sys
-from pandas.io.parsers import TextFileReader
 from typing import Iterable, Iterator, Mapping
 
 from bentoml.exceptions import BadInput
@@ -193,7 +192,7 @@ def read_dataframes_from_json_n_csv(
     orient: str = None,
     columns=None,
     dtype=None,
-) -> (pandas.DataFrame, Iterable[slice]):
+) -> ("pandas.DataFrame", Iterable[slice]):
     '''
     load dataframes from multiple raw datas in json or csv format, efficiently
 
@@ -214,7 +213,7 @@ def read_dataframes_from_json_n_csv(
     try:
         if not header:
             df = pandas.read_csv(
-                io.StringIO(table), index_col=None, dtype=dtype, header=None
+                io.StringIO(table), index_col=None, dtype=dtype, header=None,
             )
         else:
             df = pandas.read_csv(

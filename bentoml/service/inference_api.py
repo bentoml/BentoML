@@ -19,7 +19,6 @@ import inspect
 import itertools
 import logging
 import sys
-from pandas.io.parsers import TextFileReader
 from typing import Iterable, Iterator, Sequence
 from pandas import DataFrame
 
@@ -233,18 +232,11 @@ class InferenceAPI(object):
                 filtered_tasks,
                 self.input_adapter.iter_batch_args(user_args, tasks=filtered_tasks),
             ):
-                user_arg_0 = legacy_user_args[0]
-                if isinstance(user_arg_0, TextFileReader):
-                    iterable_input = user_arg_0
-                    ret = []
-                    for df in iterable_input:
-                        ret.append(self.user_func(df, *(legacy_user_args[1:]), tasks=task))
-                else:
-                    ret = [self.user_func(*legacy_user_args, task=task)]
+                ret = self.user_func(*legacy_user_args, task=task)
                 if task.is_discarded:
                     continue
                 else:
-                    user_return = user_return + ret
+                    user_return.append(ret)
             if (
                 isinstance(user_return, (list, tuple))
                 and len(user_return)
@@ -259,7 +251,6 @@ class InferenceAPI(object):
                 )
         else:
             user_return = self.user_func(*user_args, tasks=filtered_tasks)
-
             if (
                 isinstance(user_return, (list, tuple))
                 and len(user_return)
@@ -280,7 +271,6 @@ class InferenceAPI(object):
             service_version=self.service.version if self.service else "",
             api=self.name,
         )
-
         for task, result in zip(inf_tasks, inf_results):
             prediction_logger.info(
                 dict(

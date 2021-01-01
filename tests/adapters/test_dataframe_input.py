@@ -11,7 +11,7 @@ import pandas as pd
 import psutil  # noqa # pylint: disable=unused-import
 import pytest
 
-from bentoml.adapters import DataframeInput, DataframeOutput
+from bentoml.adapters import DataframeInput
 from bentoml.utils.csv import csv_splitlines
 from bentoml.utils.dataframe_util import guess_orient
 from bentoml.utils.dataframe_util import read_dataframes_from_json_n_csv
@@ -41,8 +41,7 @@ def test_dataframe_handle_cli(capsys, make_api, tmpdir):
         return df["name"]
 
     input_adapter = DataframeInput()
-    output_adapter = DataframeOutput()
-    api = make_api(input_adapter, test_func, output_adapter)
+    api = make_api(input_adapter, test_func)
     json_file = tmpdir.join("test.csv")
     with open(str(json_file), "w") as f:
         f.write('name,game,city\njohn,mario,sf\nvictor,halo,seattle')
@@ -62,8 +61,7 @@ def test_dataframe_handle_aws_lambda_event(make_api):
         return df["name"]
 
     input_adapter = DataframeInput()
-    output_adapter = DataframeOutput()
-    api = make_api(input_adapter, test_func, output_adapter)
+    api = make_api(input_adapter, test_func)
     event = {
         "headers": {"Content-Type": "application/json"},
         "body": test_content,
@@ -93,8 +91,7 @@ def test_dataframe_handle_request_csv(make_api):
         return df["name"]
 
     input_adapter = DataframeInput()
-    output_adapter = DataframeOutput()
-    api = make_api(input_adapter, test_func, output_adapter)
+    api = make_api(input_adapter, test_func)
     csv_data = b'name,game,city\njohn,mario,sf'
     request = MagicMock(spec=flask.Request)
     request.headers = {'Content-Type': 'text/csv'}

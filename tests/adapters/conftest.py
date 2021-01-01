@@ -13,7 +13,7 @@ def batch_mode(request):
 
 @pytest.fixture()
 def make_api(batch_mode):
-    def _make_api(input_adapter, user_func, output_adapter=DefaultOutput()):
+    def _make_api(input_adapter, user_func):
         if not input_adapter.BATCH_MODE_SUPPORTED and batch_mode:
             pytest.skip()
         if not input_adapter.SINGLE_MODE_SUPPORTED and not batch_mode:
@@ -24,7 +24,7 @@ def make_api(batch_mode):
             "",
             input_adapter=input_adapter,
             user_func=user_func,
-            output_adapter=output_adapter,
+            output_adapter=DefaultOutput(),
             batch=batch_mode,
         )
 

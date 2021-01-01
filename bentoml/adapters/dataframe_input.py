@@ -256,40 +256,47 @@ class DataframeInput(StringInput):
         parser.add_argument('--format', type=str, choices=['csv', 'json'])
         parsed_args, _ = parser.parse_known_args(cli_args)
         chunksize = parsed_args.batch_size
-        data_format = parsed_args.format or "json"
-        if data_format == "json":
-            for input_ in parse_cli_input(cli_args):
-                try:
+        input_data_format = parsed_args.format or "json"
+
+        for input_ in parse_cli_input(cli_args):
+            try:
+                if input_data_format == "json":
                     bytes_ = input_.read()
                     charset = chardet.detect(bytes_)['encoding'] or "utf-8"
                     yield InferenceTask(
                         cli_args=cli_args, data=bytes_.decode(charset),
                     )
-                except UnicodeDecodeError:
-                    yield InferenceTask().discard(
-                        http_status=400,
-                        err_msg=f"{self.__class__.__name__}: "
-                                f"Try decoding with {charset} but failed with DecodeError.",
-                    )
-                except LookupError:
-                    return InferenceTask().discard(
-                        http_status=400,
-                        err_msg=f"{self.__class__.__name__}: Unsupported charset {charset}",
-                    )
-        else:
-            for input_ in parse_cli_input(cli_args):
-                try:
+                else:
                     df_reader = read_dataframes_from_json_n_csv_by_chunk(
                         input_.path, columns=self.columns, dtype=self.dtype, chunksize=chunksize)
                     for df in df_reader:
                         yield InferenceTask(
                             cli_args=cli_args, data=df,
                         )
-                except LookupError:
+            except UnicodeDecodeError:
+                    yield InferenceTask().discard(
+                        http_status=400,
+                        err_msg=f"{self.__class__.__name__}: "
+                                f"Try decoding with {charset} but failed with DecodeError.",
+                    )
+            except LookupError:
                     return InferenceTask().discard(
                         http_status=400,
                         err_msg=f"{self.__class__.__name__}: Unsupported charset {charset}",
                     )
+
+    def __infer_data_type(self, datas: Iterable) -> str:
+        data_type = ""
+        for data in datas:
+            if isinstance(data, pandas.DataFrame):
+                # if there is one pandas DataFrame, then others
+                # should also be pandas DataFrame
+                data_type = "DataFrame"
+                break
+            elif isinstance(data, str):
+                data_type = "str"
+                break
+        return data_type
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]
@@ -298,14 +305,8 @@ class DataframeInput(StringInput):
             zip(*((self._detect_format(task), task.data) for task in tasks))
         )
 
-        data_type = "str"
-        for data in datas:
-            if isinstance(data, pandas.DataFrame):
-                # if there is one pandas DataFrame, then others
-                # should also be pandas DataFrame
-                data_type = "DataFrame"
-                break
-
+        data_type = self.__infer_data_type(datas)
+        df = None
         if data_type == "str":
             df, batches = read_dataframes_from_json_n_csv(
                 datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
@@ -321,7 +322,7 @@ class DataframeInput(StringInput):
                     else:
                         task.batch = batch
                 return (df,)
-        else:
+        elif data_type == "DataFrame":
             df_merged = None
             for task, df in zip(tasks, datas):
                 if df is None:

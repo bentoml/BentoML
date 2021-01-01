@@ -329,7 +329,7 @@ class DataframeInput(StringInput):
                 )
             return (df,)
 
-    def from_inference_job(
+    def from_inference_job(  # pylint: disable=arguments-differ
         self, inputs=None, **extra_args,
     ) -> Iterator[InferenceTask[str]]:
         input_data_format = extra_args["input_data_format"]

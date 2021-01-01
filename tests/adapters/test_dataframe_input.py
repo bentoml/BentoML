@@ -70,6 +70,7 @@ def test_dataframe_handle_cli_with_batch_size_specified(capsys, make_api, tmpdir
     assert "john" in out
     assert "victor" in out
 
+
 def test_dataframe_handle_aws_lambda_event(make_api):
     test_content = '[{"name": "john","game": "mario","city": "sf"}]'
 

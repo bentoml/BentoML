@@ -65,7 +65,7 @@ def test_bento_service_class(bento_service_class):
             "-q",
         ],
     )
-    result.output.strip() == '[0]'
+    assert result.output.strip() == '[0]'
 
     try:
         with subprocess.Popen(

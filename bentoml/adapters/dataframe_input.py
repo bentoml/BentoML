@@ -268,22 +268,25 @@ class DataframeInput(StringInput):
                     )
                 else:
                     df_reader = read_dataframes_from_csv_by_chunk(
-                        input_.path, columns=self.columns, dtype=self.dtype, chunksize=chunksize)
+                        input_.path, columns=self.columns,
+                        dtype=self.dtype, chunksize=chunksize)
                     for df in df_reader:
                         yield InferenceTask(
                             cli_args=cli_args, data=df,
                         )
             except UnicodeDecodeError:
-                    yield InferenceTask().discard(
-                        http_status=400,
-                        err_msg=f"{self.__class__.__name__}: "
-                                f"Try decoding with {charset} but failed with DecodeError.",
-                    )
+                yield InferenceTask().discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__}: "
+                            f"Try decoding with {charset} but failed "
+                            f"with DecodeError.",
+                )
             except LookupError:
-                    return InferenceTask().discard(
-                        http_status=400,
-                        err_msg=f"{self.__class__.__name__}: Unsupported charset {charset}",
-                    )
+                return InferenceTask().discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__}: Unsupported "
+                            f"charset {charset}",
+                )
 
     def __infer_data_type(self, datas: Iterable) -> str:
         data_type = ""
@@ -309,7 +312,8 @@ class DataframeInput(StringInput):
         df = None
         if data_type == "str":
             df, batches = read_dataframes_from_json_n_csv(
-                datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
+                datas, fmts, orient=self.orient,
+                columns=self.columns, dtype=self.dtype,
             )
 
             if df is not None:
@@ -317,7 +321,8 @@ class DataframeInput(StringInput):
                     if batch == 0:
                         task.discard(
                             http_status=400,
-                            err_msg=f"{self.__class__.__name__} Wrong input format: {data}.",
+                            err_msg=f"{self.__class__.__name__} "
+                                    f"Wrong input format: {data}.",
                         )
                     else:
                         task.batch = batch
@@ -328,7 +333,7 @@ class DataframeInput(StringInput):
                 if df is None:
                     task.discard(
                         http_status=400,
-                        err_msg=f"{self.__class__.__name__} Wrong input file: {df_reader.f}.",
+                        err_msg=f"{self.__class__.__name__} Input data frame is None.",
                     )
                 else:
                     task.batch = df.shape[0]

@@ -235,7 +235,8 @@ def read_dataframes_from_csv_by_chunk(
     '''
     try:
         df_reader = pandas.read_csv(
-            file_path, index_col=None, dtype=dtype, names=columns, chunksize=chunksize, encoding="utf-8"
+            file_path, index_col=None, dtype=dtype,
+            names=columns, chunksize=chunksize, encoding="utf-8"
         )
         return df_reader
     except pandas.errors.EmptyDataError:

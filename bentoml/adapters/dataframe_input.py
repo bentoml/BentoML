@@ -257,39 +257,11 @@ class DataframeInput(StringInput):
         parsed_args, _ = parser.parse_known_args(cli_args)
         chunksize = parsed_args.batch_size
         input_data_format = parsed_args.format or "json"
+        inputs = parse_cli_input(cli_args)
+        return self.from_inference_job(
+            inputs, input_data_format=input_data_format,
+            chunksize=chunksize, cli_args=cli_args)
 
-        for input_ in parse_cli_input(cli_args):
-            try:
-                if input_data_format == "json":
-                    bytes_ = input_.read()
-                    charset = chardet.detect(bytes_)['encoding'] or "utf-8"
-                    yield InferenceTask(
-                        cli_args=cli_args, data=bytes_.decode(charset),
-                    )
-                else:
-                    df_reader = read_dataframes_from_csv_by_chunk(
-                        input_.path,
-                        columns=self.columns,
-                        dtype=self.dtype,
-                        chunksize=chunksize,
-                    )
-                    for df in df_reader:
-                        yield InferenceTask(
-                            cli_args=cli_args, data=df,
-                        )
-            except UnicodeDecodeError:
-                yield InferenceTask().discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__}: "
-                    f"Try decoding with {charset} but failed "
-                    f"with DecodeError.",
-                )
-            except LookupError:
-                return InferenceTask().discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__}: Unsupported "
-                    f"charset {charset}",
-                )
 
     def __infer_data_type(self, datas: Iterable) -> str:
         data_type = ""
@@ -356,9 +328,40 @@ class DataframeInput(StringInput):
             return (df,)
 
     def from_inference_job(
-        self, input_=None, input_file=None, **extra_args,
+        self, inputs=None, **extra_args,
     ) -> Iterator[InferenceTask[str]]:
-        # TODO: generate small batches of InferenceTasks from large input files
-        return super().from_inference_job(
-            input_=input_, input_file=input_file, **extra_args
-        )
+        input_data_format = extra_args["input_data_format"]
+        chunksize = extra_args["chunksize"]
+        cli_args = extra_args["cli_args"]
+        for input_ in inputs:
+            try:
+                if input_data_format == "json":
+                    bytes_ = input_.read()
+                    charset = chardet.detect(bytes_)['encoding'] or "utf-8"
+                    yield InferenceTask(
+                        cli_args=cli_args, data=bytes_.decode(charset),
+                    )
+                else:
+                    df_reader = read_dataframes_from_csv_by_chunk(
+                        input_.path,
+                        columns=self.columns,
+                        dtype=self.dtype,
+                        chunksize=chunksize,
+                    )
+                    for df in df_reader:
+                        yield InferenceTask(
+                            cli_args=cli_args, data=df,
+                        )
+            except UnicodeDecodeError:
+                yield InferenceTask().discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__}: "
+                    f"Try decoding with {charset} but failed "
+                    f"with DecodeError.",
+                )
+            except LookupError:
+                return InferenceTask().discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__}: Unsupported "
+                    f"charset {charset}",
+                )

@@ -231,7 +231,7 @@ def read_dataframes_from_csv_by_chunk(
     chunksize=sys.maxsize,
 ) -> "pandas.io.parsers.TextFileReader":
     '''
-    load dataframes from json or csv chunk by chunk
+    load dataframes from csv chunk by chunk
     '''
     try:
         df_reader = pandas.read_csv(

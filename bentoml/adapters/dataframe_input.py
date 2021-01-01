@@ -259,9 +259,11 @@ class DataframeInput(StringInput):
         input_data_format = parsed_args.format or "json"
         inputs = parse_cli_input(cli_args)
         return self.from_inference_job(
-            inputs, input_data_format=input_data_format,
-            chunksize=chunksize, cli_args=cli_args)
-
+            inputs,
+            input_data_format=input_data_format,
+            chunksize=chunksize,
+            cli_args=cli_args,
+        )
 
     def __infer_data_type(self, datas: Iterable) -> str:
         data_type = ""

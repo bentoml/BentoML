@@ -42,6 +42,7 @@ def test_dataframe_handle_cli(capsys, make_api, tmpdir):
 
     input_adapter = DataframeInput()
     api = make_api(input_adapter, test_func)
+
     json_file = tmpdir.join("test.csv")
     with open(str(json_file), "w") as f:
         f.write('name,game,city\njohn,mario,sf')

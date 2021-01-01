@@ -14,7 +14,6 @@
 import argparse
 import chardet
 import sys
-from pandas.io.parsers import TextFileReader
 from typing import Iterable, Iterator, Mapping, Optional, Sequence, Tuple
 
 from bentoml.adapters.base_input import parse_cli_input
@@ -304,8 +303,8 @@ class DataframeInput(StringInput):
             print("data is")
             print(data)
             if isinstance(data, pandas.DataFrame):
-                # if there is one TextFileReader, then others
-                # should also be TextFileReader
+                # if there is one pandas DataFrame, then others
+                # should also be pandas DataFrame
                 data_type = "DataFrame"
                 break
 
@@ -313,6 +312,7 @@ class DataframeInput(StringInput):
             df, batches = read_dataframes_from_json_n_csv(
                 datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
             )
+
             if df is not None:
                 for task, batch, data in zip(tasks, batches, datas):
                     if batch == 0:
@@ -341,9 +341,18 @@ class DataframeInput(StringInput):
                         df_merged = df_merged.append(df)
             return (df_merged,)
 
-        for task in tasks:
-            task.discard(
-                http_status=400,
-                err_msg=f"{self.__class__.__name__} Wrong input format.",
-            )
-        return (None,)
+        if df is None:
+            for task in tasks:
+                task.discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__} Wrong input format.",
+                )
+            return (df,)
+
+    def from_inference_job(
+        self, input_=None, input_file=None, **extra_args,
+    ) -> Iterator[InferenceTask[str]]:
+        # TODO: generate small batches of InferenceTasks from large input files
+        return super().from_inference_job(
+            input_=input_, input_file=input_file, **extra_args
+        )

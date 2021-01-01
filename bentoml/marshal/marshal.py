@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import asyncio
+import functools
 import logging
 import multiprocessing
 import time
 import traceback
-from functools import partial
 
 import aiohttp
 import psutil
@@ -37,6 +37,12 @@ ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 def metrics_patch(cls):
     class _MarshalService(cls):
         def __init__(self, *args, **kwargs):
+            for attr_name in functools.WRAPPER_ASSIGNMENTS:
+                try:
+                    setattr(self.__class__, attr_name, getattr(cls, attr_name))
+                except AttributeError:
+                    pass
+
             from prometheus_client import Counter, Gauge, Histogram
 
             super(_MarshalService, self).__init__(*args, **kwargs)
@@ -184,7 +190,7 @@ class MarshalService:
                 max_batch_size,
                 shared_sema=self.fetch_sema(),
                 fallback=aiohttp.web.HTTPTooManyRequests,
-            )(partial(self._batch_handler_template, api_name=api_name))
+            )(functools.partial(self._batch_handler_template, api_name=api_name))
             self.batch_handlers[api_name] = _func
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):

@@ -108,7 +108,7 @@ def test_configure_logging_console_disabled():
 
 
 def test_configure_logging_yaml():
-    logging_config = tempfile.NamedTemporaryFile()
+    logging_config = tempfile.NamedTemporaryFile(delete=False)
     logging_config.write(
         b"""
 version: 1
@@ -128,7 +128,7 @@ loggers:
         level: WARN
         propagate: False"""
     )
-    logging_config.flush()
+    logging_config.close()
 
     os.environ["BENTOML__LOGGING__LOGGING_CONFIG"] = logging_config.name
 
@@ -140,4 +140,5 @@ loggers:
     assert len(bentoml_logger.handlers) == 1
     assert bentoml_logger.handlers[0].name == "test_handler"
 
+    os.remove(logging_config.name)
     del os.environ["BENTOML__LOGGING__LOGGING_CONFIG"]

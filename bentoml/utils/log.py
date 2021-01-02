@@ -149,5 +149,6 @@ def configure_logging(logging_level=None):
         logging_config = get_logging_config_dict(logging_level, base_log_dir)
         logging.config.dictConfig(logging_config)
         logging.getLogger(__name__).debug(
-            "Loaded logging configuration from default configuration and environment variables."
+            "Loaded logging configuration from default configuration "
+            + "and environment variables."
         )

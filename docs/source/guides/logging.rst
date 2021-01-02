@@ -5,7 +5,7 @@ BentoML uses standard `Python logging <https://docs.python.org/3/howto/logging.h
 logging customization through `logging` section in `bentoml.cfg` under the BentoML home directory. Refer to the 
 :ref:`configuration guide <configuration-page>` on how override configuration properties. See 
 `default_bentoml.cfg <https://github.com/bentoml/BentoML/blob/master/bentoml/configuration/default_bentoml.cfg>`_
-for a list of overridable properties.
+for a list of override-able properties.
 
 For advanced logging customization, user can provide full logging configurations in `logging.yml`, placed under 
 the BentoML home directory. For example, `logging.yml` configuration file can be injected into the Docker container 

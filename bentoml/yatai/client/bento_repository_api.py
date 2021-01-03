@@ -346,20 +346,20 @@ class BentoRepositoryAPIClient:
 
     def delete(
         self,
-        prune=False,  # pylint: disable=redefined-builtin
-        confirm_delete=False,
         labels=None,
         bento_name=None,
         bento_version=None,
+        prune=False,  # pylint: disable=redefined-builtin
+        confirm_delete=False,
     ):
         """
         Delete bentos that matches the specified criteria
 
         Args:
-            prune: boolean, Set True to delete all BentoService
             labels: string
             bento_name: string
             bento_version: string
+            prune: boolean, Set True to delete all BentoService
             confirm_delete: boolean
         Example:
         >>>
@@ -384,10 +384,10 @@ class BentoRepositoryAPIClient:
                 bento_delete_list.append(self.get(f'{bento_name}:{bento_version}'))
             else:
                 bento_delete_list = self.list(bento_name=bento_name, labels=labels)
+        logger.info(f'Deleting all {len(bento_delete_list)} BentoML saved bundles.')
         for bento in bento_delete_list:
             if not confirm_delete and not click.confirm(
-                f'Are you sure about delete {bento.name}:{bento.version}? This '
-                f'will delete the BentoService saved bundle files permanently'
+                f'Are you sure about permanently delete {bento.name}:{bento.version}?'
             ):
                 return
             result = self.yatai_service.DangerouslyDeleteBento(
@@ -399,10 +399,12 @@ class BentoRepositoryAPIClient:
                 error_code, error_message = status_pb_to_error_code_and_message(
                     result.status
                 )
-                raise BentoMLException(
-                    f'Failed to delete Bento {bento.name}:{bento.version} '
+                # Rather than raise Exception, continue to delete the next bentos
+                logger.error(
+                    f'Failed to delete {bento.name}:{bento.version} '
                     f'{error_code}:{error_message}'
                 )
+            logger.info(f'Deleted {bento.name}:{bento.version}')
 
     def containerize(self, bento, tag=None, build_args=None, push=False):
         """

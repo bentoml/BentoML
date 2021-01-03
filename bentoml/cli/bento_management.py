@@ -197,7 +197,12 @@ def add_bento_sub_command(cli):
         '"--yatai-url http://localhost:50050"',
     )
     @click.option(
-        '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
+        '-y',
+        '--yes',
+        '--assume-yes',
+        is_flag=True,
+        help='Skip confirmation when deleting specific BentoService bundle',
+        default=True,
     )
     def delete(
         all,  # pylint: disable=redefined-builtin

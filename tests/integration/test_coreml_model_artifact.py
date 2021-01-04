@@ -47,6 +47,4 @@ def test_pytorch_artifact_pack(coreml_classifier_class):
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(
-        bento_name=svc.name, bento_version=svc.version, confirm_delete=True
-    )
+    yc.repository.delete(f'{svc.name}:{svc.version}')

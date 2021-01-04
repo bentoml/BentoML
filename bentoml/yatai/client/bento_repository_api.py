@@ -344,23 +344,47 @@ class BentoRepositoryAPIClient:
             raise BentoMLException(f'{error_code}:{error_message}')
         return result.bentos
 
+    def _delete_bento_bundle(self, bento_tag, require_confirm):
+        bento_pb = self.get(bento_tag)
+        if require_confirm and not click.confirm(f'Permanently delete {bento_tag}?'):
+            return
+        result = self.yatai_service.DangerouslyDeleteBento(
+            DangerouslyDeleteBentoRequest(
+                bento_name=bento_pb.name, bento_version=bento_pb.version
+            )
+        )
+
+        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
+            )
+            # Rather than raise Exception, continue to delete the next bentos
+            logger.error(
+                f'Failed to delete {bento_pb.name}:{bento_pb.version} - '
+                f'{error_code}:{error_message}'
+            )
+        else:
+            logger.info(f'Deleted {bento_pb.name}:{bento_pb.version}')
+
     def delete(
         self,
+        bento_tag=None,
         labels=None,
         bento_name=None,
         bento_version=None,
         prune=False,  # pylint: disable=redefined-builtin
-        confirm_delete=False,
+        require_confirm=False,
     ):
         """
         Delete bentos that matches the specified criteria
 
         Args:
+            bento_tag: string
             labels: string
             bento_name: string
             bento_version: string
             prune: boolean, Set True to delete all BentoService
-            confirm_delete: boolean
+            require_confirm: boolean
         Example:
         >>>
         >>> yatai_client = get_yatai_client()
@@ -370,50 +394,63 @@ class BentoRepositoryAPIClient:
         >>> yatai_client.repository.delete(
         >>>     bento_name='IrisClassifier', bento_version='0.1.0'
         >>> )
+        >>> # or use bento tag
+        >>> yatai_client.repository.delete('IrisClassifier:v0.1.0')
         >>> # Delete all bento services with name 'MyService`
         >>> yatai_client.repository.delete(bento_name='MyService')
         >>> # Delete all bento services with labels match `ci=failed` and `cohort=20`
         >>> yatai_client.repository.delete(labels='ci=failed, cohort=20')
         """
         track('py-api-delete')
-        bento_delete_list = []
-        if prune is True:
-            bento_delete_list = self.list()
-            logger.info(f'Deleting all {len(bento_delete_list)} BentoML saved bundles.')
-        else:
-            if bento_name is not None and bento_version is not None:
-                bento_delete_list.append(self.get(f'{bento_name}:{bento_version}'))
-                logger.info(f'Deleting saved Bento bundle {bento_name}:{bento_version}')
-            else:
-                bento_delete_list = self.list(bento_name=bento_name, labels=labels)
-                log_message = (
-                    f'Deleting all {len(bento_delete_list)} saved Bento bundles'
-                )
-                if bento_name is not None:
-                    log_message += f' with name: {bento_name}'
-                if labels is not None:
-                    log_message += f' with labels: {labels}'
-                logger.info(log_message)
-        for bento in bento_delete_list:
-            if not confirm_delete and not click.confirm(
-                f'Permanently delete {bento.name}:{bento.version}?'
-            ):
-                return
-            result = self.yatai_service.DangerouslyDeleteBento(
-                DangerouslyDeleteBentoRequest(
-                    bento_name=bento.name, bento_version=bento.version
-                )
+
+        delete_list_limit = 50
+
+        if (
+            bento_tag is not None
+            and bento_name is not None
+            and bento_version is not None
+        ):
+            raise BentoMLException('Too much arguments')
+
+        if bento_tag is not None:
+            logger.info(f'Deleting saved Bento bundle {bento_tag}')
+            return self._delete_bento_bundle(bento_tag, require_confirm)
+        elif bento_name is not None and bento_tag is not None:
+            logger.info(f'Deleting saved Bento bundle {bento_name}:{bento_version}')
+            return self._delete_bento_bundle(
+                f'{bento_name}:{bento_version}', require_confirm
             )
-            if result.status.status_code != yatai_proto.status_pb2.Status.OK:
-                error_code, error_message = status_pb_to_error_code_and_message(
-                    result.status
+        else:
+            # list of bentos
+            if prune is True:
+                logger.info('Deleting all BentoML saved bundles.')
+                # ignore other fields
+                bento_name = None
+                labels = None
+            else:
+                log_message = f'Deleting saved Bento bundles'
+                if bento_name is not None:
+                    log_message += f' with name: {bento_name},'
+                if labels is not None:
+                    log_message += f' with labels match to {labels}'
+                logger.info(log_message)
+            offset = 0
+            while offset >= 0:
+                bento_list = self.list(
+                    bento_name=bento_name,
+                    labels=labels,
+                    offset=offset,
+                    limit=delete_list_limit,
                 )
-                # Rather than raise Exception, continue to delete the next bentos
-                logger.error(
-                    f'Failed to delete {bento.name}:{bento.version} '
-                    f'{error_code}:{error_message}'
-                )
-            logger.info(f'Deleted {bento.name}:{bento.version}')
+                offset += delete_list_limit
+                # Stop the loop, when no more bentos
+                if len(bento_list) == 0:
+                    break
+                else:
+                    for bento in bento_list:
+                        self._delete_bento_bundle(
+                            f'{bento.name}:{bento.version}', require_confirm
+                        )
 
     def containerize(self, bento, tag=None, build_args=None, push=False):
         """

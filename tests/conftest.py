@@ -188,4 +188,4 @@ def bento_bundle_path(bento_service):  # pylint:disable=redefined-outer-name
 
 def delete_saved_bento_service(name, version):
     yc = YataiClient()
-    yc.repository.delete(bento_name=name, bento_version=version, confirm_delete=True)
+    yc.repository.delete(f'{name}:{version}')

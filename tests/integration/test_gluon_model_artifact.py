@@ -33,8 +33,4 @@ def test_gluon_artifact_pack(gluon_classifier, trained_gluon_model):
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(
-        bento_name=gluon_classifier.name,
-        bento_version=gluon_classifier.version,
-        confirm_delete=True,
-    )
+    yc.repository.delete(f'{gluon_classifier.name}:{gluon_classifier.version}')

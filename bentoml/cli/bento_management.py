@@ -16,7 +16,7 @@ import click
 from tabulate import tabulate
 
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.cli.click_utils import _echo
+from bentoml.cli.click_utils import _echo, parse_bento_tag_list_callback
 from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
     _format_labels_for_print,
@@ -181,14 +181,21 @@ def add_bento_sub_command(cli):
         '--all', is_flag=True, help='Use this flag to remove all BentoServices'
     )
     @click.option(
+        '--tag',
+        type=click.STRING,
+        help='Bento tags. To delete multiple bentos provide the name version tag '
+        'separated by "," for example "bentoml delete --tag name:v1,name:v2',
+        callback=parse_bento_tag_list_callback,
+    )
+    @click.option(
         '--labels',
         type=click.STRING,
         help="Label query to filter BentoServices, supports '=', '!=', 'IN', 'NotIn', "
         "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
         "In (value3, value3a), key4 DoesNotExist)",
     )
-    @click.option("--bento-name", type=click.STRING, help='BentoService name')
-    @click.option("--bento-version", type=click.STRING, help='BentoService version')
+    @click.option("--name", type=click.STRING, help='BentoService name')
+    @click.option("--version", type=click.STRING, help='BentoService version')
     @click.option(
         '--yatai-url',
         type=click.STRING,
@@ -201,13 +208,13 @@ def add_bento_sub_command(cli):
         '--assume-yes',
         is_flag=True,
         help='Skip confirmation when deleting specific BentoService bundle',
-        default=True,
     )
     def delete(
         all,  # pylint: disable=redefined-builtin
+        tag,
         labels,
-        bento_name,
-        bento_version,
+        name,
+        version,
         yatai_url,
         yes,
     ):
@@ -220,13 +227,25 @@ def add_bento_sub_command(cli):
         once, by providing either the BentoService name and/or labels
         """
         yc = get_yatai_client(yatai_url)
-        yc.repository.delete(
-            prune=all,
-            labels=labels,
-            bento_name=bento_name,
-            bento_version=bento_version,
-            confirm_delete=yes,
-        )
+        # Backward compatible with the previous CLI, allows deletion with tag/s
+        if len(tag) > 0:
+            for item in tag:
+                yc.repository.delete(
+                    prune=all,
+                    labels=labels,
+                    bento_tag=item,
+                    bento_name=name,
+                    bento_version=version,
+                    require_confirm=False if yes else True,
+                )
+        else:
+            yc.repository.delete(
+                prune=all,
+                labels=labels,
+                bento_name=name,
+                bento_version=version,
+                require_confirm=False if yes else True,
+            )
 
     @cli.command(help='Pull BentoService from remote yatai server',)
     @click.argument("bento", type=click.STRING)

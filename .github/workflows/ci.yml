@@ -72,12 +72,12 @@ jobs:
           fail_ci_if_error: true
 
   back_compatibility_integration_tests:
-    name: ${{ matrix.os }} API Server Integration Tests
+    name: ${{ matrix.os }} Back Compatibility Integration Tests
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
         with:
@@ -166,6 +166,23 @@ jobs:
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
+  tensorflow_v1_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install_test_deps.sh
+      - name: Run tests
+        run: ./ci/tensorflow_v1_itests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
   tensorflow_v2_integration_tests:
     runs-on: ubuntu-latest
     steps:
@@ -179,7 +196,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run tests
-        run: ./ci/tensorflow_v2.2_integration_tests.sh
+        run: ./ci/tensorflow_v2_itests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -196,7 +213,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run tests with tf1
-        run: ./ci/keras_with_tf1_integration_tests.sh
+        run: ./ci/keras_with_tf1_itests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -213,7 +230,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run tests with tf2
-        run: ./ci/keras_integration_tests.sh
+        run: ./ci/keras_with_tf2_itests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

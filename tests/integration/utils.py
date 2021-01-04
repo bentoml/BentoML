@@ -112,14 +112,22 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
         time.sleep(1)  # make sure container stopped & deleted
 
 
+def upgrade_package(package):
+    with subprocess.Popen(
+        [sys.executable, "-m", "pip", "install", "--upgrade", package]
+    ) as p:
+        p.wait(60)
+
+
 @contextmanager
-def run_api_server(bundle_path, enable_microbatch=False, timeout=10, init_cmd=None):
+def run_api_server(
+    bundle_path, enable_microbatch=False, timeout=10, use_bentoml_package: str = ""
+):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
-    if init_cmd:
-        with subprocess.Popen(init_cmd) as p:
-            p.wait(60)
+    if use_bentoml_package:
+        upgrade_package(use_bentoml_package)
 
     with bentoml.utils.reserve_free_port() as port:
         my_env = os.environ.copy()
@@ -131,8 +139,11 @@ def run_api_server(bundle_path, enable_microbatch=False, timeout=10, init_cmd=No
         cmd += [bundle_path, "--workers", "1"]
 
     def print_log(p):
-        for line in p.stdout:
-            print(line.decode(), end='')
+        try:
+            for line in p.stdout:
+                print(line.decode(), end='')
+        except ValueError:  # stdout closed
+            return
 
     with subprocess.Popen(
         cmd,

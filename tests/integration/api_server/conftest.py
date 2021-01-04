@@ -17,11 +17,17 @@ logger = logging.getLogger("bentoml.tests")
 
 def pytest_addoption(parser):
     parser.addoption("--docker", action="store_true")
+    parser.addoption("--bentomlver", action="store", default="")
 
 
 @pytest.fixture(scope="session")
 def with_docker(pytestconfig):
     return pytestconfig.getoption("docker")
+
+
+@pytest.fixture(scope="session")
+def bentoml_version(pytestconfig):
+    return pytestconfig.getoption("bentomlver")
 
 
 @pytest.fixture(params=[True, False], scope="session")
@@ -63,7 +69,9 @@ def test_svc_bundle(clean_context, test_svc):
 
 
 @pytest.fixture(scope="module")
-def host(clean_context, test_svc_bundle, enable_microbatch, with_docker):
+def host(
+    clean_context, test_svc_bundle, enable_microbatch, with_docker, bentoml_version
+):
     if with_docker:
         image = clean_context.enter_context(
             build_api_server_docker_image(test_svc_bundle, "example_service")
@@ -71,5 +79,7 @@ def host(clean_context, test_svc_bundle, enable_microbatch, with_docker):
         with run_api_server_docker_container(image, enable_microbatch) as host:
             yield host
     else:
-        with run_api_server(test_svc_bundle, enable_microbatch) as host:
+        with run_api_server(
+            test_svc_bundle, enable_microbatch, use_bentoml_package=bentoml_version
+        ) as host:
             yield host

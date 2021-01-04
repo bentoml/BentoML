@@ -6,12 +6,22 @@ import pytest
 from tests.integration.utils import (
     build_api_server_docker_image,
     export_service_bundle,
+    run_api_server,
     run_api_server_docker_container,
 )
 
 from .example_service import ExampleBentoService, ExampleBentoServiceSingle, PickleModel
 
 logger = logging.getLogger("bentoml.tests")
+
+
+def pytest_addoption(parser):
+    parser.addoption("--docker", action="store_true")
+
+
+@pytest.fixture(scope="session")
+def with_docker(pytestconfig):
+    return pytestconfig.getoption("docker")
 
 
 @pytest.fixture(params=[True, False], scope="session")
@@ -47,15 +57,19 @@ def test_svc(batch_mode):
     return test_svc
 
 
-@pytest.fixture(scope='session')
-def image(test_svc, clean_context):
-    with export_service_bundle(test_svc) as bundle_dir:
-        yield clean_context.enter_context(
-            build_api_server_docker_image(bundle_dir, "example_service")
-        )
+@pytest.fixture(scope="session")
+def test_svc_bundle(clean_context, test_svc):
+    return clean_context.enter_context(export_service_bundle(test_svc))
 
 
 @pytest.fixture(scope="module")
-def host(image, enable_microbatch):
-    with run_api_server_docker_container(image, enable_microbatch) as host:
-        yield host
+def host(clean_context, test_svc_bundle, enable_microbatch, with_docker):
+    if with_docker:
+        image = clean_context.enter_context(
+            build_api_server_docker_image(test_svc_bundle, "example_service")
+        )
+        with run_api_server_docker_container(image, enable_microbatch) as host:
+            yield host
+    else:
+        with run_api_server(test_svc_bundle, enable_microbatch) as host:
+            yield host

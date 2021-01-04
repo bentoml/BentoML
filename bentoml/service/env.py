@@ -12,26 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
+import os
 import stat
-from pkg_resources import Requirement, parse_requirements
-from sys import version_info
 from pathlib import Path
+from sys import version_info
 from typing import List
 
-from bentoml.exceptions import BentoMLException
-from bentoml.utils.ruamel_yaml import YAML
+from pkg_resources import Requirement, parse_requirements
+
 from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
+from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.pip_pkg import (
+    EPP_NO_ERROR,
     EPP_PKG_NOT_EXIST,
     EPP_PKG_VERSION_MISMATCH,
-    EPP_NO_ERROR,
-    verify_pkg,
     get_pkg_version,
+    verify_pkg,
 )
-
+from bentoml.utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - pip
+  - conda-forge::pip
 """
 
 

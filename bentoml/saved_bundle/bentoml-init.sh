@@ -20,7 +20,7 @@ if [ -f ./python_version ]; then
 
   if command -v conda >/dev/null 2>&1; then
     echo "Installing python=$DESIRED_PY_VERSION with conda:"
-    conda install -y -n base conda-forge::python=$DESIRED_PY_VERSION
+    conda install -y -n base defaults::python=$DESIRED_PY_VERSION
   else
     if [[ "$DESIRED_PY_VERSION" != "$CURRENT_PY_VERSION" ]]; then
       echo "WARNING: Python Version $DESIRED_PY_VERSION is required, but $CURRENT_PY_VERSION was found."

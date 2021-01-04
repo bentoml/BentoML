@@ -55,7 +55,9 @@ def test_onnx_model_artifact_pack_modelproto_with_onnxruntime_backend(
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(bento_name=svc.name, bento_version=svc.version)
+    yc.repository.delete(
+        bento_name=svc.name, bento_version=svc.version, confirm_delete=True
+    )
 
 
 def test_onnx_model_artifact_pack_model_file_path_with_onnxruntime_backend(
@@ -75,4 +77,6 @@ def test_onnx_model_artifact_pack_model_file_path_with_onnxruntime_backend(
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(bento_name=svc.name, bento_version=svc.version)
+    yc.repository.delete(
+        bento_name=svc.name, bento_version=svc.version, confirm_delete=True
+    )

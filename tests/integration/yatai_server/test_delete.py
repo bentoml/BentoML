@@ -32,7 +32,7 @@ def test_delete_bentos_base_on_labels(bento_service):
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'cohort': '100'})
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'cohort': '110'})
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'cohort': '120'})
-    yc = get_yatai_client()
+
     yc.repository.delete(labels='cohort in (100, 110)', confirm_delete=True)
     bentos = yc.repository.list()
     assert len(bentos) == 1
@@ -48,10 +48,27 @@ def test_delete_bentos_base_on_name(bento_service):
     iris = IrisClassifier()
     iris.save()
 
-    yc = get_yatai_client()
     yc.repository.delete(bento_name=bento_service.name, confirm_delete=True)
     bentos = yc.repository.list()
     assert len(bentos) == 1
+    # Clean up existing bentos
+    yc.repository.delete(prune=True, confirm_delete=True)
+
+
+def test_delete_bentos_on_name_and_labels(bento_service):
+    yc = get_yatai_client()
+    yc.repository.delete(prune=True, confirm_delete=True)
+    bento_service.save(version=uuid.uuid4().hex[0:8], labels={'dataset': '20201212'})
+    bento_service.save(version=uuid.uuid4().hex[0:8], labels={'dataset': '20201212'})
+    bento_service.save(version=uuid.uuid4().hex[0:8], labels={'dataset': '20210101'})
+    iris = IrisClassifier()
+    iris.save()
+
+    yc.repository.delete(
+        bento_name=bento_service.name, labels='dataset=20201212', confirm_delete=True
+    )
+    bentos = yc.repository.list()
+    assert len(bentos) == 2
     # Clean up existing bentos
     yc.repository.delete(prune=True, confirm_delete=True)
 

@@ -379,15 +379,24 @@ class BentoRepositoryAPIClient:
         bento_delete_list = []
         if prune is True:
             bento_delete_list = self.list()
+            logger.info(f'Deleting all {len(bento_delete_list)} BentoML saved bundles.')
         else:
             if bento_name is not None and bento_version is not None:
                 bento_delete_list.append(self.get(f'{bento_name}:{bento_version}'))
+                logger.info(f'Deleting saved Bento bundle {bento_name}:{bento_version}')
             else:
                 bento_delete_list = self.list(bento_name=bento_name, labels=labels)
-        logger.info(f'Deleting all {len(bento_delete_list)} BentoML saved bundles.')
+                log_message = (
+                    f'Deleting all {len(bento_delete_list)} saved Bento bundles'
+                )
+                if bento_name is not None:
+                    log_message += f' with name: {bento_name}'
+                if labels is not None:
+                    log_message += f' with labels: {labels}'
+                logger.info(log_message)
         for bento in bento_delete_list:
             if not confirm_delete and not click.confirm(
-                f'Are you sure about permanently delete {bento.name}:{bento.version}?'
+                f'Permanently delete {bento.name}:{bento.version}?'
             ):
                 return
             result = self.yatai_service.DangerouslyDeleteBento(

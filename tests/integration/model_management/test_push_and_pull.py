@@ -16,7 +16,9 @@ def test_push_and_pull():
         assert pushed_path != saved_path
 
         local_yc = get_yatai_client()
-        delete_result = local_yc.repository.delete(bento_tag)
+        delete_result = local_yc.repository.delete(
+            bento_name=svc.name, bento_version=svc.version, confirm_delete=True
+        )
         assert delete_result is None
         assert os.path.exists(saved_path) is False
 

@@ -20,7 +20,6 @@ from bentoml.cli.click_utils import _echo
 from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
     _format_labels_for_print,
-    Spinner,
 )
 from bentoml.utils import pb_to_yaml
 from bentoml.yatai.client import get_yatai_client

@@ -138,6 +138,9 @@ def run_api_server(
             cmd += ['--enable-microbatch']
         cmd += [bundle_path, "--workers", "1"]
 
+        # For macOS only, ref: https://stackoverflow.com/a/52230415/3089381
+        my_env['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+
     def print_log(p):
         try:
             for line in p.stdout:

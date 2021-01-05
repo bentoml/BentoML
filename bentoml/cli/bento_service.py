@@ -342,8 +342,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '--yatai-url',
         type=click.STRING,
-        help='Remote YataiService URL. Optional. '
-        'Example: "--yatai-url http://localhost:50050"',
+        help='Specify the YataiService for running the containerization, default to '
+        'the Local YataiService with local docker deamon. Example: '
+        '"--yatai-url http://localhost:50050"'
     )
     def containerize(bento, push, tag, build_arg, yatai_url):
         """Containerize specified BentoService.
@@ -355,18 +356,18 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         which will automatically use the last built version of your Bento.
 
         You can provide a tag for the image built by Bento using the
-        `--docker-image-tag` flag. Additionally, you can provide a `--push` flag,
+        `--tag` flag. Additionally, you can provide a `--push` flag,
         which will push the built image to the Docker repository specified by the
         image tag.
 
         You can also prefixing the tag with a hostname for the repository you wish
         to push to.
-        e.g. `bentoml containerize IrisClassifier:latest --push --tag username/iris`
-        would build a Docker image called `username/iris:latest` and push that to
-        Docker Hub.
+        e.g. `bentoml containerize IrisClassifier:latest --push --tag
+        repo-address.com:username/iris` would build a Docker image called
+        `username/iris:latest` and push that to docker repository at repo-addres.com.
 
-        By default, the `containerize` command will use the credentials provided by
-        Docker. You may provide your own through `--username` and `--password`.
+        By default, the `containerize` command will use the current credentials
+        provided by Docker daemon.
         """
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url

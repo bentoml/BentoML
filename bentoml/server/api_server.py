@@ -52,7 +52,7 @@ DEFAULT_INDEX_HTML = '''\
 </head>
 <body>
   <div id="tab">
-    <button 
+    <button
       class="tabLinks active"
       onclick="openTab(event, 'swagger_ui_container')"
       id="defaultOpen"
@@ -66,7 +66,7 @@ DEFAULT_INDEX_HTML = '''\
   <script>
     function openTab(evt, tabName) {{
       // Declare all variables
-      var i, tabContent, tabLinks; 
+      var i, tabContent, tabLinks;
       // Get all elements with class="tabContent" and hide them
       tabContent = document.getElementsByClassName("tabContent");
       for (i = 0; i < tabContent.length; i++) {{

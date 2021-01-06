@@ -280,6 +280,11 @@ def _deploy_lambda_function(
 
 
 class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
+    def __init__(self, yatai_service):
+        super(AwsLambdaDeploymentOperator, self).__init__(yatai_service)
+        ensure_docker_available_or_raise()
+        ensure_sam_available_or_raise()
+
     def add(self, deployment_pb):
         try:
             deployment_spec = deployment_pb.spec
@@ -290,8 +295,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             if not deployment_spec.aws_lambda_operator_config.region:
                 raise InvalidArgument('AWS region is missing')
 
-            ensure_sam_available_or_raise()
-            ensure_docker_available_or_raise()
             bento_pb = self.yatai_service.GetBento(
                 GetBentoRequest(
                     bento_name=deployment_spec.bento_name,
@@ -350,9 +353,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
 
     def update(self, deployment_pb, previous_deployment):
         try:
-            ensure_sam_available_or_raise()
-            ensure_docker_available_or_raise()
-
             deployment_spec = deployment_pb.spec
             bento_pb = self.yatai_service.GetBento(
                 GetBentoRequest(

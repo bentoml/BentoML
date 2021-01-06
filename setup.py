@@ -51,7 +51,6 @@ install_requires = [
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "chardet",
-    "markdown",
 ]
 
 test_requires = [

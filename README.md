@@ -88,6 +88,7 @@ Advanced workflow for model serving and deployment:
 * Statsmodels - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#statsmodels) | [Examples](https://github.com/bentoml/gallery#statsmodels)
 * CoreML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#coreml)
 * Transformers - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#transformers)
+* Detectron - [Docs](https://docs.bentoml.org/en/latest/frameworks/html#detectron)
 
 
 ### Deployment Options

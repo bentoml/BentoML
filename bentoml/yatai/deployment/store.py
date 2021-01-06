@@ -209,7 +209,7 @@ class DeploymentStore(object):
             if operator:
                 operator_name = DeploymentSpec.DeploymentOperator.Name(operator)
                 query = query.filter(
-                    Deployment.spec['operator'].contains(operator_name)
+                    Deployment.spec['operator'].as_string().contains(operator_name)
                 )
             # We are not defaulting limit to 200 in the signature,
             # because protobuf will pass 0 as value

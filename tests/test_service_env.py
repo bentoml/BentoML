@@ -183,7 +183,7 @@ def test_conda_channels_n_dependencies(tmpdir):
     assert 'defaults' in env_yml['channels']
     assert 'bentoml-test-channel' in env_yml['channels']
 
-    assert 'defaults::pip' in env_yml['dependencies']
+    assert 'pkgs/main::pip' in env_yml['dependencies']
     assert 'bentoml-test-lib' in env_yml['dependencies']
 
 

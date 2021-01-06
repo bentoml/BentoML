@@ -54,7 +54,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - defaults::pip
+  - pkgs/main::pip
 """
 
 

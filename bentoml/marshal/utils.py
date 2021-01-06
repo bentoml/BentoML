@@ -2,10 +2,36 @@ import pickle
 from functools import lru_cache
 from typing import Sequence
 
-from bentoml import config as bentoml_config
+import bentoml.config as bentoml_config
 from bentoml.types import HTTPRequest, HTTPResponse
 
 BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
+
+import io
+import builtins
+
+safe_builtins = {
+    'range',
+    'complex',
+    'set',
+    'frozenset',
+    'slice',
+}
+
+
+class RestrictedUnpickler(pickle.Unpickler):
+
+    def find_class(self, module, name):
+        """Only allow safe classes from builtins"""
+        if module == "builtins" and name in safe_builtins:
+            return getattr(builtins, name)
+        """Forbid everything else"""
+        raise pickle.UnpicklingError("global '%s.%s' is forbidden" %
+                                     (module, name))
+
+def restricted_loads(s):
+    """Helper function analogous to pickle.loads()"""
+    return RestrictedUnpickler(io.BytesIO(s)).load()
 
 
 class PlasmaDataLoader:
@@ -64,7 +90,7 @@ class PickleDataLoader:
 
     @classmethod
     def split_requests(cls, raw: bytes) -> Sequence[HTTPRequest]:
-        return pickle.loads(raw)
+        return restricted_loads(pickle.loads(raw))
 
     @classmethod
     def merge_responses(cls, resps: Sequence[HTTPResponse]) -> bytes:

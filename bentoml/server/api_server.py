@@ -18,7 +18,6 @@ import sys
 import uuid
 from functools import partial
 
-import markdown
 from flask import (
     Flask,
     Response,
@@ -54,7 +53,7 @@ DEFAULT_INDEX_HTML = '''\
 <body>
   <div id="tab">
     <button 
-      class="tabLinks active" 
+      class="tabLinks active"
       onclick="openTab(event, 'swagger_ui_container')"
       id="defaultOpen"
     >
@@ -67,8 +66,7 @@ DEFAULT_INDEX_HTML = '''\
   <script>
     function openTab(evt, tabName) {{
       // Declare all variables
-      var i, tabContent, tabLinks;
-      
+      var i, tabContent, tabLinks; 
       // Get all elements with class="tabContent" and hide them
       tabContent = document.getElementsByClassName("tabContent");
       for (i = 0; i < tabContent.length; i++) {{
@@ -81,7 +79,7 @@ DEFAULT_INDEX_HTML = '''\
         tabLinks[i].className = tabLinks[i].className.replace(" active", "");
       }}
 
-      // Show the current tab, and add an "active" class to the button that opened the 
+      // Show the current tab, and add an "active" class to the button that opened the
       // tab
       document.getElementById(tabName).style.display = "block";
       evt.currentTarget.className += " active";

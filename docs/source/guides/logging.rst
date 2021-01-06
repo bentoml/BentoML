@@ -37,7 +37,7 @@ Please see below configuration examples of different logging scenarios in YAML f
             level: WARN
             formatter: dev
             class: logging.handlers.RotatingFileHandler
-            filename: '{BENTOML_HOME}/logs/active.log'
+            filename: '/var/log/bentoml/active.log'
             maxBytes: 104857600
             backupCount: 2
     loggers:
@@ -71,14 +71,14 @@ Please see below configuration examples of different logging scenarios in YAML f
             class: logging.handlers.RotatingFileHandler
             formatter: prediction
             level: INFO
-            filename: '{BENTOML_HOME}/logs/prediction.log'
+            filename: '/var/log/bentoml/prediction.log'
             maxBytes: 104857600
             backupCount: 10
         feedback:
             class: logging.handlers.RotatingFileHandler
             formatter: feedback
             level: INFO
-            filename: '{BENTOML_HOME}/logs/feedback.log'
+            filename: '/var/log/bentoml/feedback.log'
             maxBytes: 104857600
             backupCount: 10
     loggers:
@@ -122,21 +122,21 @@ Please see below configuration examples of different logging scenarios in YAML f
             level: INFO
             formatter: dev
             class: logging.handlers.RotatingFileHandler
-            filename: '{BENTOML_HOME}/logs/active.log'
+            filename: '/var/log/bentoml/active.log'
             maxBytes: 104857600
             backupCount: 2
         prediction:
             class: logging.handlers.RotatingFileHandler
             formatter: prediction
             level: INFO
-            filename: '{BENTOML_HOME}/logs/prediction.log'
+            filename: '/var/log/bentoml/prediction.log'
             maxBytes: 104857600
             backupCount: 10
         feedback:
             class: logging.handlers.RotatingFileHandler
             formatter: feedback
             level: INFO
-            filename: '{BENTOML_HOME}/logs/feedback.log'
+            filename: '/var/log/bentoml/feedback.log'
             maxBytes: 104857600
             backupCount: 10
     loggers:

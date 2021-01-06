@@ -56,7 +56,6 @@ class InferenceAPI(object):
         """
         :param service: ref to service containing this API
         :param name: API name
-        :param route: API path (by default the same as `name`)
         :param doc: the user facing document of this inference API, default to the
             docstring of the inference API function
         :param input_adapter: A InputAdapter that transforms HTTP Request and/or
@@ -75,6 +74,9 @@ class InferenceAPI(object):
             memory to hold the entire batch's data). Default: 1000.
         :param batch: If true, the user API functool would take a batch of input data
             a time.
+        :param route: Specify HTTP URL route of this inference API. By default,
+            `api.name` is used as the route.  This parameter can be used for customizing
+            the URL route, e.g. `route="/api/v2/model_a/predict"`
         """
         self._service = service
         self._name = name

@@ -207,10 +207,12 @@ class SavedBundleConfig(object):
                     else:
                         api_metadata.mb_max_batch_size = DEFAULT_MAX_BATCH_SIZE
 
-                    # Supports customize route from 0.10.2
                     if 'route' in api_config:
                         api_metadata.route = api_config["route"]
                     else:
+                        # Use API name as the URL route when route config is missing,
+                        # this is for backward compatibility for
+                        # BentoML version <= 0.10.1
                         api_metadata.route = api_config["name"]
 
                 if "input_config" in api_config:

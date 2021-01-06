@@ -2,7 +2,7 @@ import pickle
 from functools import lru_cache
 from typing import Sequence
 
-import bentoml.config as bentoml_config
+from bentoml import config as bentoml_config
 from bentoml.types import HTTPRequest, HTTPResponse
 
 BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")

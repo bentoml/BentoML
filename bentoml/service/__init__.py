@@ -101,7 +101,9 @@ def api_decorator(
     :param output: OutputAdapter instance of the inference API
     :param api_name: API name, default to the user-defined callback function's function
         name
-    :param route: to customize the route of API
+    :param route: Specify HTTP URL route of this inference API. By default,
+        `api.name` is used as the route.  This parameter can be used for customizing
+        the URL route, e.g. `route="/api/v2/model_a/predict"`
         Default: None (the same as api_name)
     :param api_doc: user-facing documentation of the inference API. default to the
         user-defined callback function's docstring

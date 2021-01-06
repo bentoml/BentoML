@@ -195,6 +195,13 @@ Pytorch Lightning
 .. autoclass:: bentoml.frameworks.pytorch.PytorchLightningModelArtifact
 
 
+=========
+Detectron
+=========
+
+.. autoclass:: bentoml.frameworks.detectron.DetectronModelArtifact
+
+
 .. spelling::
 
     MLModel
@@ -214,4 +221,7 @@ Pytorch Lightning
     svc
     Pytorch
     pytorch
+    detectron
+    Detectron
+    DetectionCheckpointer
 

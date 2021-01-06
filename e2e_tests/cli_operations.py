@@ -5,7 +5,7 @@ import subprocess
 logger = logging.getLogger('bentoml.test')
 
 
-def delete_deployment(deployment_type, deployment_name):
+def delete_deployment(deployment_type, deployment_name, deployment_namespace=None):
     logger.info(f'Delete deployment {deployment_name} with BentoML CLI')
     delete_deployment_command = [
         'bentoml',
@@ -14,6 +14,8 @@ def delete_deployment(deployment_type, deployment_name):
         deployment_name,
         '--force',
     ]
+    if deployment_namespace:
+        delete_deployment_command.extend(['--namespace', deployment_namespace])
     logger.info(f'Delete command: {delete_deployment_command}')
     with subprocess.Popen(
         delete_deployment_command,

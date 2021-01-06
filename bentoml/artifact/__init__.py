@@ -33,7 +33,10 @@ from bentoml.frameworks.h2o import H2oModelArtifact
 from bentoml.frameworks.keras import KerasModelArtifact
 from bentoml.frameworks.lightgbm import LightGBMModelArtifact
 from bentoml.frameworks.onnx import OnnxModelArtifact
-from bentoml.frameworks.pytorch import PytorchModelArtifact
+from bentoml.frameworks.pytorch import (  # noqa: E402
+    PytorchModelArtifact,
+    PytorchLightningModelArtifact,
+)  # noqa: E402
 from bentoml.frameworks.sklearn import SklearnModelArtifact
 from bentoml.frameworks.spacy import SpacyModelArtifact
 from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
@@ -60,4 +63,5 @@ __all__ = [
     "TensorflowSavedModelArtifact",
     "TextFileArtifact",
     "XgboostModelArtifact",
+    "PytorchLightningModelArtifact",
 ]

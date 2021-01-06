@@ -15,9 +15,13 @@
 
 import inspect
 import logging
+import multiprocessing
 import os
 import re
+import subprocess
 import sys
+import tempfile
+import threading
 import uuid
 from datetime import datetime
 from typing import List
@@ -110,6 +114,7 @@ def api_decorator(
     def decorator(func):
         _api_name = func.__name__ if api_name is None else api_name
         validate_inference_api_name(_api_name)
+        _api_doc = func.__doc__ if api_doc is None else api_doc
 
         if input is None:
             # Raise error when input adapter class passed without instantiation
@@ -138,7 +143,7 @@ def api_decorator(
         setattr(func, "_input_adapter", input_adapter)
         setattr(func, "_output_adapter", output_adapter)
         setattr(func, "_api_name", _api_name)
-        setattr(func, "_api_doc", api_doc)
+        setattr(func, "_api_doc", _api_doc)
         setattr(func, "_mb_max_batch_size", mb_max_batch_size)
         setattr(func, "_mb_max_latency", mb_max_latency)
         setattr(func, "_batch", batch)
@@ -208,10 +213,12 @@ def env_decorator(
     infer_pip_packages: bool = False,
     requirements_txt_file: str = None,
     conda_channels: List[str] = None,
+    conda_overwrite_channels: bool = False,
     conda_dependencies: List[str] = None,
     conda_env_yml_file: str = None,
     setup_sh: str = None,
     docker_base_image: str = None,
+    zipimport_archives: List[str] = None,
 ):
     """Define environment and dependencies required for the BentoService being created
 
@@ -229,6 +236,8 @@ def env_decorator(
             this can be a relative path to the requirements.txt file or the content
             of the file
         conda_channels: list of extra conda channels to be used
+        conda_overwrite_channels: Turn on to make conda_channels overwrite the list of
+            channels instead of adding to it
         conda_dependencies: list of conda dependencies required
         conda_env_yml_file: use a pre-defined conda environment yml file
         setup_sh: user defined setup bash script, it is executed in docker build time
@@ -236,6 +245,7 @@ def env_decorator(
             BentoML saved bundle. Base image must either have both `bash` and `conda`
             installed; or have `bash`, `pip`, `python` installed, in which case the user
             is required to ensure the python version matches the BentoService bundle
+        zipimport_archives: list of zipimport archives paths relative to the module path
     """
 
     def decorator(bento_service_cls):
@@ -247,10 +257,12 @@ def env_decorator(
             infer_pip_packages=infer_pip_packages or auto_pip_dependencies,
             requirements_txt_file=requirements_txt_file,
             conda_channels=conda_channels,
+            conda_overwrite_channels=conda_overwrite_channels,
             conda_dependencies=conda_dependencies,
             conda_env_yml_file=conda_env_yml_file,
             setup_sh=setup_sh,
             docker_base_image=docker_base_image,
+            zipimport_archives=zipimport_archives,
         )
         return bento_service_cls
 
@@ -420,6 +432,10 @@ class BentoService:
         self._config_artifacts()
         self._config_inference_apis()
         self._config_environments()
+
+        self._dev_server_bundle_path: tempfile.TemporaryDirectory = None
+        self._dev_server_interrupt_event: multiprocessing.Event = None
+        self._dev_server_process: subprocess.Process = None
 
     def _config_environments(self):
         self._env = self.__class__._env or BentoServiceEnv()
@@ -707,6 +723,79 @@ class BentoService:
         return SavedBundleConfig(self).get_bento_service_metadata_pb()
 
     pip_dependencies_map = None
+
+    def start_dev_server(self, port=None, enable_microbatch=False, enable_ngrok=False):
+        if enable_microbatch:
+            raise NotImplementedError(
+                "start_dev_server with enable_microbatch=True is not implemented"
+            )
+        if self._dev_server_process:
+            logger.warning(
+                "There is already a running dev server, "
+                "please call `service.stop_dev_server()` first."
+            )
+            return
+        try:
+            self._dev_server_bundle_path = tempfile.TemporaryDirectory()
+            self.save_to_dir(self._dev_server_bundle_path.name)
+
+            def print_log(p):
+                for line in p.stdout:
+                    print(line.decode(), end='')
+
+            def run(path, interrupt_event):
+                my_env = os.environ.copy()
+                my_env["FLASK_ENV"] = "development"
+                cmd = [sys.executable, "-m", "bentoml", "serve", "--debug"]
+                if port:
+                    cmd += ['--port', f'{port}']
+                if enable_microbatch:
+                    cmd += ['--enable-microbatch']
+                if enable_ngrok:
+                    cmd += ['--run-with-ngrok']
+                cmd += [path]
+                p = subprocess.Popen(
+                    cmd,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stdin=subprocess.PIPE,
+                    env=my_env,
+                )
+                threading.Thread(target=print_log, args=(p,), daemon=True).start()
+                interrupt_event.wait()
+                p.terminate()
+
+            self._dev_server_interrupt_event = multiprocessing.Event()
+            self._dev_server_process = multiprocessing.Process(
+                target=run,
+                args=(
+                    self._dev_server_bundle_path.name,
+                    self._dev_server_interrupt_event,
+                ),
+                daemon=True,
+            )
+            self._dev_server_process.start()
+            logger.info(f"======= starting dev server on port: {port} =======")
+        except Exception as e:  # pylint: disable=broad-except
+            self.stop_dev_server(skip_log=True)
+            raise e
+
+    def stop_dev_server(self, skip_log=False):
+        if self._dev_server_interrupt_event:
+            self._dev_server_interrupt_event.set()
+            self._dev_server_interrupt_event = None
+        if self._dev_server_process:
+            self._dev_server_process.join()
+            assert not self._dev_server_process.is_alive()
+            self._dev_server_process = None
+        elif not skip_log:
+            logger.warning("No dev server is running.")
+        if self._dev_server_bundle_path:
+            self._dev_server_bundle_path.cleanup()
+            self._dev_server_bundle_path = None
+
+    def __del__(self):
+        self.stop_dev_server(skip_log=True)
 
     def infer_pip_dependencies_map(self):
         if not self.pip_dependencies_map:

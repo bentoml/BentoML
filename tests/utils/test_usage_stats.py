@@ -45,7 +45,13 @@ def mock_get_operator_func():
 
 
 def mock_start_dev_server(
-    bundle_path, port, enable_microbatch, run_with_ngrok, enable_swagger
+    bundle_path,
+    port,
+    enable_microbatch,
+    mb_max_latency,
+    mb_max_batch_size,
+    run_with_ngrok,
+    enable_swagger,
 ):
     raise KeyboardInterrupt()
 

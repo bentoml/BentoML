@@ -17,7 +17,6 @@ from contextlib import contextmanager
 
 from bentoml import config
 
-
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 
@@ -46,21 +45,23 @@ def start_dev_server(
     saved_bundle_path: str,
     port: int,
     enable_microbatch: bool,
+    mb_max_batch_size: int,
+    mb_max_latency: int,
     run_with_ngrok: bool,
     enable_swagger: bool,
 ):
     logger.info("Starting BentoML API server in development mode..")
 
+    import multiprocessing
+
     from bentoml import load
     from bentoml.server.api_server import BentoAPIServer
-    from bentoml.marshal.marshal import MarshalService
     from bentoml.utils import reserve_free_port
 
-    bento_service = load(saved_bundle_path)
-
     if run_with_ngrok:
-        from bentoml.utils.flask_ngrok import start_ngrok
         from threading import Timer
+
+        from bentoml.utils.flask_ngrok import start_ngrok
 
         thread = Timer(1, start_ngrok, args=(port,))
         thread.setDaemon(True)
@@ -70,22 +71,53 @@ def start_dev_server(
         with reserve_free_port() as api_server_port:
             # start server right after port released
             #  to reduce potential race
-            marshal_server = MarshalService(
-                saved_bundle_path,
-                outbound_host="localhost",
-                outbound_port=api_server_port,
-                outbound_workers=1,
+
+            marshal_proc = multiprocessing.Process(
+                target=start_dev_batching_server,
+                kwargs=dict(
+                    api_server_port=api_server_port,
+                    saved_bundle_path=saved_bundle_path,
+                    port=port,
+                    mb_max_latency=mb_max_latency,
+                    mb_max_batch_size=mb_max_batch_size,
+                ),
+                daemon=True,
             )
-            api_server = BentoAPIServer(
-                bento_service, port=api_server_port, enable_swagger=enable_swagger
-            )
-        marshal_server.async_start(port=port)
+        marshal_proc.start()
+
+        bento_service = load(saved_bundle_path)
+        api_server = BentoAPIServer(
+            bento_service, port=api_server_port, enable_swagger=enable_swagger
+        )
         api_server.start()
     else:
+        bento_service = load(saved_bundle_path)
         api_server = BentoAPIServer(
             bento_service, port=port, enable_swagger=enable_swagger
         )
         api_server.start()
+
+
+def start_dev_batching_server(
+    saved_bundle_path: str,
+    port: int,
+    api_server_port: int,
+    mb_max_batch_size: int,
+    mb_max_latency: int,
+):
+
+    from bentoml.marshal.marshal import MarshalService
+
+    marshal_server = MarshalService(
+        saved_bundle_path,
+        outbound_host="localhost",
+        outbound_port=api_server_port,
+        outbound_workers=1,
+        mb_max_batch_size=mb_max_batch_size,
+        mb_max_latency=mb_max_latency,
+    )
+    logger.info("Running micro batch service on :%d", port)
+    marshal_server.fork_start_app(port=port)
 
 
 def start_prod_server(
@@ -94,13 +126,16 @@ def start_prod_server(
     timeout: int,
     workers: int,
     enable_microbatch: bool,
+    mb_max_batch_size: int,
+    mb_max_latency: int,
     microbatch_workers: int,
     enable_swagger: bool,
 ):
     logger.info("Starting BentoML API server in production mode..")
 
-    import psutil
     import multiprocessing
+
+    import psutil
 
     assert (
         psutil.POSIX
@@ -126,6 +161,8 @@ def start_prod_server(
                 outbound_host="localhost",
                 outbound_port=api_server_port,
                 outbound_workers=workers,
+                mb_max_batch_size=mb_max_batch_size,
+                mb_max_latency=mb_max_latency,
             )
 
             gunicorn_app = GunicornBentoServer(

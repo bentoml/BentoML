@@ -3,9 +3,7 @@
 Core Concepts
 =============
 
-.. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
-
-The main idea of BentoML is that the Data Science team should be able to ship their 
+The main idea of BentoML is that the Data Science team should be able to ship their
 models in a way that is easy to test, easy to deploy, and easy to integrate with.
 And to do so, Data Scientists need tools that help them build and ship prediction
 services, instead of uploading pickled model files or Protobuf files to a server and
@@ -909,12 +907,12 @@ Python. There are two main ways this can be done:
   .. code-block:: bash
       
       # With BentoService name and version pair
-      bentoml run IrisClassifier:latest predict --input='[[5.1, 3.5, 1.4, 0.2]]'
-      bentoml run IrisClassifier:latest predict --input='./iris_test_data.csv'
+      bentoml run IrisClassifier:latest predict --input '[[5.1, 3.5, 1.4, 0.2]]'
+      bentoml run IrisClassifier:latest predict --input-file './iris_test_data.csv'
 
       # With BentoService's saved path
-      bentoml run $saved_path predict --input='[[5.1, 3.5, 1.4, 0.2]]'
-      bentoml run $saved_path predict --input='./iris_test_data.csv'
+      bentoml run $saved_path predict --input '[[5.1, 3.5, 1.4, 0.2]]'
+      bentoml run $saved_path predict --input-file './iris_test_data.csv'
 
   Or if you have already pip-installed the BentoService, it provides a CLI command
   specifically for this BentoService. The CLI command is the same as the BentoService
@@ -922,8 +920,8 @@ Python. There are two main ways this can be done:
 
   .. code-block:: bash
       
-      IrisClassifier run predict --input='[[5.1, 3.5, 1.4, 0.2]]'
-      IrisClassifier run predict --input='./iris_test_data.csv'
+      IrisClassifier run predict --input '[[5.1, 3.5, 1.4, 0.2]]'
+      IrisClassifier run predict --input-file './iris_test_data.csv'
 
 
 
@@ -1021,7 +1019,7 @@ BentoService directly. For example:
     * Debug mode: off
     * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
 
-    > bentoml run IrisClassifier:latest predict --input='[[5.1, 3.5, 1.4, 0.2]]'
+    > bentoml run IrisClassifier:latest predict --input '[[5.1, 3.5, 1.4, 0.2]]'
     [0]
 
 

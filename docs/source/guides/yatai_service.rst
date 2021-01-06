@@ -29,6 +29,9 @@ NGINX ≥ 1.13.9
 
             ssl_certificate /etc/letsencrypt/live/yatai.yourdomain.com/fullchain.pem;
             ssl_certificate_key /etc/letsencrypt/live/yatai.yourdomain.com/privkey.pem;
+            # Activates Client Certificate Authentication
+            # ssl_client_certificate /etc/nginx/ssl/ca_chain.crt;
+            # ssl_verify_client on;
 
             location / {
                 grpc_pass grpc://localhost:50051;
@@ -48,6 +51,10 @@ NGINX ≥ 1.13.9
             ssl_certificate_key /etc/letsencrypt/live/yatai.yourdomain.com/privkey.pem;
             include /etc/letsencrypt/options-ssl-nginx.conf;
             ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+            # Activates Client Certificate Authentication
+            # ssl_client_certificate /etc/nginx/ssl/ca_chain.crt;
+            # ssl_verify_client on;
         }
     }
 
@@ -63,7 +70,16 @@ NGINX ≥ 1.13.9
 
 .. code:: bash
 
-    bentoml config set yatai_service.client_certificate_file=<path_to_your_ca_cert.pem>
+    bentoml config set yatai_service.tls_root_ca_cert=<path_to_your_ca_cert.pem>
+
+
+4. (Optional) using TLS client certificates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code:: bash
+
+    bentoml config set yatai_service.tls_client_cert=<path_to_your_tls_client_cert.pem>
+    bentoml config set yatai_service.tls_client_key=<path_to_your_tls_client_key.pem>
 
 More options of gRPC NGINX configuration:
 `https://www.nginx.com/blog/nginx-1-13-10-grpc/ <https://www.nginx.com/blog/nginx-1-13-10-grpc/>`__

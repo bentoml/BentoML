@@ -1,16 +1,27 @@
 # pylint: disable=redefined-outer-name
 import logging
-import time
-import urllib
-from contextlib import contextmanager
 
 import pytest
 
-import bentoml
+from tests.integration.utils import (
+    build_api_server_docker_image,
+    export_service_bundle,
+    run_api_server,
+    run_api_server_docker_container,
+)
 
-from .example_service import gen_test_bundle
+from .example_service import ExampleBentoService, ExampleBentoServiceSingle, PickleModel
 
 logger = logging.getLogger("bentoml.tests")
+
+
+def pytest_addoption(parser):
+    parser.addoption("--docker", action="store_true")
+
+
+@pytest.fixture(scope="session")
+def with_docker(pytestconfig):
+    return pytestconfig.getoption("docker")
 
 
 @pytest.fixture(params=[True, False], scope="session")
@@ -18,102 +29,47 @@ def batch_mode(request):
     return request.param
 
 
-@pytest.fixture(params=[True, False], scope="session")
-def enable_microbatch(request):
-    pytest.enable_microbatch = request.param
-    return request.param
+@pytest.fixture(scope="session")
+def test_svc(batch_mode):
 
-
-@pytest.fixture(autouse=True, scope='session')
-def image(tmpdir_factory, batch_mode):
-    bundle_dir = tmpdir_factory.mktemp('test_bundle')
-    bundle_path = str(bundle_dir)
-    gen_test_bundle(bundle_path, batch_mode)
-
-    with build_api_server_docker_image(bundle_path, "example_service") as image:
-        yield image
-
-
-@pytest.fixture(autouse=True)
-def host(image, enable_microbatch):
-    with run_api_server_docker_container(image, enable_microbatch) as host:
-        yield host
-
-
-def _wait_until_api_server_ready(host_url, timeout, container, check_interval=1):
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        try:
-            if (
-                urllib.request.urlopen(f'http://{host_url}/healthz', timeout=1).status
-                == 200
-            ):
-                break
-            else:
-                logger.info("Waiting for host %s to be ready..", host_url)
-                time.sleep(check_interval)
-        except Exception as e:  # pylint:disable=broad-except
-            logger.info(f"Error caught waiting for host {host_url} to be ready: '{e}'")
-            time.sleep(check_interval)
-        finally:
-            container_logs = container.logs()
-            if container_logs:
-                logger.info(f"Container {container.id} logs:")
-                for log_record in container_logs.decode().split('\r\n'):
-                    logger.info(f">>> {log_record}")
+    # When the ExampleBentoService got saved and loaded again in the test, the two class
+    # attribute below got set to the loaded BentoService class. Resetting it here so it
+    # does not effect other tests
+    if batch_mode:
+        svc_cls = ExampleBentoService
     else:
-        raise AssertionError(
-            f"Timed out waiting {timeout} seconds for Server {host_url} to be ready"
-        )
+        svc_cls = ExampleBentoServiceSingle
+    svc_cls._bento_service_bundle_path = None
+    svc_cls._bento_service_bundle_version = None
+    test_svc = svc_cls()
 
+    pickle_model = PickleModel()
+    test_svc.pack('model', pickle_model)
 
-@contextmanager
-def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
-    """
-    yields the host URL
-    """
-    import docker
+    from sklearn.ensemble import RandomForestRegressor
 
-    client = docker.from_env()
-
-    with bentoml.utils.reserve_free_port() as port:
-        pass
-    if enable_microbatch:
-        command_args = "--enable-microbatch --workers 1"
-    else:
-        command_args = "--workers 1"
-    try:
-        container = client.containers.run(
-            image=image.id,
-            command=command_args,
-            auto_remove=True,
-            tty=True,
-            ports={'5000/tcp': port},
-            detach=True,
-        )
-        host_url = f"127.0.0.1:{port}"
-        _wait_until_api_server_ready(host_url, timeout, container)
-        yield host_url
-    finally:
-        print(container.logs())
-        container.stop()
-        time.sleep(1)  # make sure container stopped & deleted
-
-
-@contextmanager
-def build_api_server_docker_image(saved_bundle_path, image_tag):
-    import docker
-
-    client = docker.from_env()
-    logger.info(
-        f"Building API server docker image from build context: {saved_bundle_path}"
+    sklearn_model = RandomForestRegressor(n_estimators=2)
+    sklearn_model.fit(
+        [[i] for _ in range(100) for i in range(10)],
+        [i for _ in range(100) for i in range(10)],
     )
-    try:
-        image, _ = client.images.build(path=saved_bundle_path, tag=image_tag, rm=True)
-        yield image
-        client.images.remove(image.id)
-    except docker.errors.BuildError as e:
-        for line in e.build_log:
-            if 'stream' in line:
-                print(line['stream'].strip())
-        raise
+    test_svc.pack('sk_model', sklearn_model)
+    return test_svc
+
+
+@pytest.fixture(scope="session")
+def test_svc_bundle(clean_context, test_svc):
+    return clean_context.enter_context(export_service_bundle(test_svc))
+
+
+@pytest.fixture(scope="module")
+def host(clean_context, test_svc_bundle, enable_microbatch, with_docker):
+    if with_docker:
+        image = clean_context.enter_context(
+            build_api_server_docker_image(test_svc_bundle, "example_service")
+        )
+        with run_api_server_docker_container(image, enable_microbatch) as host:
+            yield host
+    else:
+        with run_api_server(test_svc_bundle, enable_microbatch) as host:
+            yield host

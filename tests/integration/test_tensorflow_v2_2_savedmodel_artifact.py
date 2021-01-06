@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+import asyncio
 import json
 
 import numpy as np
@@ -7,18 +8,22 @@ import tensorflow as tf
 
 import bentoml
 from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
-from tests.integration.api_server.conftest import (
+from tests.integration.utils import (
     build_api_server_docker_image,
+    export_service_bundle,
     run_api_server_docker_container,
 )
 
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(np.asfarray(test_data))
 
+ragged_data = [[15], [7, 8], [1, 2, 3, 4, 5]]
+ragged_tensor = tf.ragged.constant(ragged_data, dtype=tf.float64)
 
-class Tensorflow2Model(tf.keras.Model):
+
+class TfKerasModel(tf.keras.Model):
     def __init__(self):
-        super(Tensorflow2Model, self).__init__()
+        super().__init__()
         # Simple linear layer which sums the inputs
         self.dense = tf.keras.layers.Dense(
             units=1,
@@ -33,8 +38,8 @@ class Tensorflow2Model(tf.keras.Model):
 
 class TfNativeModel(tf.Module):
     def __init__(self):
+        super().__init__()
         self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
-        super(TfNativeModel, self).__init__()
         self.dense = lambda inputs: tf.matmul(inputs, self.weights)
 
     @tf.function(
@@ -44,8 +49,24 @@ class TfNativeModel(tf.Module):
         return self.dense(inputs)
 
 
-@pytest.fixture(params=[Tensorflow2Model, TfNativeModel], scope="module")
-def tf2_svc(request):
+class TfNativeModelWithRagged(tf.Module):
+    def __init__(self):
+        super().__init__()
+        self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
+        self.dense = lambda inputs: tf.matmul(inputs, self.weights)
+
+    @tf.function(
+        input_signature=[
+            tf.RaggedTensorSpec(tf.TensorShape([None, None]), tf.float64, 1, tf.int64)
+        ]
+    )
+    def __call__(self, inputs):
+        inputs = inputs.to_tensor(shape=[None, 5], default_value=0)
+        return self.dense(inputs)
+
+
+@pytest.fixture(scope="session")
+def svc():
     """Return a TensorFlow2 BentoService."""
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
@@ -54,64 +75,91 @@ def tf2_svc(request):
     Tensorflow2Classifier._bento_service_bundle_version = None
 
     svc = Tensorflow2Classifier()
-    model = request.param()
-    model(test_tensor)
-    svc.pack('model', model)
+
+    model1 = TfKerasModel()
+    model1(test_tensor)
+    svc.pack('model1', model1)
+
+    model2 = TfNativeModel()
+    model2(test_tensor)
+    svc.pack('model2', model2)
+
+    model3 = TfNativeModelWithRagged()
+    model3(ragged_tensor)
+    svc.pack('model3', model3)
+
     return svc
 
 
+@pytest.fixture(scope="session")
+def image(svc, clean_context):
+    with export_service_bundle(svc) as saved_path:
+        yield clean_context.enter_context(build_api_server_docker_image(saved_path))
+
+
 @pytest.fixture(scope="module")
-def tf2_svc_saved_dir(tmp_path_factory, tf2_svc):
-    """Save a TensorFlow2 BentoService and return the saved directory."""
-    # Must be called at least once before saving so that layers are built
-    # See: https://github.com/tensorflow/tensorflow/issues/37439
-    tf2_svc.predict(test_tensor)
-    tmpdir = str(tmp_path_factory.mktemp("tf2_svc"))
-    tf2_svc.save_to_dir(tmpdir)
-    return tmpdir
-
-
-@pytest.fixture()
-def tf2_svc_loaded(tf2_svc_saved_dir):
-    """Return a TensorFlow2 BentoService that has been saved and loaded."""
-    return bentoml.load(tf2_svc_saved_dir)
-
-
-@pytest.fixture()
-def tf2_image(tf2_svc_saved_dir):
-    with build_api_server_docker_image(
-        tf2_svc_saved_dir, "tf2_example_service"
-    ) as image:
-        yield image
-
-
-@pytest.fixture(params=[False, True])
-def tf2_host(tf2_image, request):
+def host(image, enable_microbatch):
     with run_api_server_docker_container(
-        tf2_image, enable_microbatch=request.param, timeout=500
+        image, enable_microbatch=enable_microbatch, timeout=500
     ) as host:
         yield host
 
 
-def test_tensorflow_2_artifact(tf2_svc):
+def test_tensorflow_2_artifact(svc):
     assert (
-        tf2_svc.predict(test_tensor) == 15.0
+        svc.predict1(test_tensor) == 15.0
+    ), 'Inference on unsaved TF2 artifact does not match expected'
+
+    assert (
+        svc.predict2(test_tensor) == 15.0
+    ), 'Inference on unsaved TF2 artifact does not match expected'
+
+    assert (
+        (svc.predict3(ragged_data) == 15.0).numpy().all()
     ), 'Inference on unsaved TF2 artifact does not match expected'
 
 
-def test_tensorflow_2_artifact_loaded(tf2_svc_loaded):
-    assert (
-        tf2_svc_loaded.predict(test_tensor) == 15.0
-    ), 'Inference on saved and loaded TF2 artifact does not match expected'
+def test_tensorflow_2_artifact_loaded(svc):
+    with export_service_bundle(svc) as saved_path:
+        svc_loaded = bentoml.load(saved_path)
+        assert (
+            svc_loaded.predict1(test_tensor) == 15.0
+        ), 'Inference on saved and loaded TF2 artifact does not match expected'
+        assert (
+            svc_loaded.predict2(test_tensor) == 15.0
+        ), 'Inference on saved and loaded TF2 artifact does not match expected'
+        assert (
+            (svc_loaded.predict3(ragged_data) == 15.0).numpy().all()
+        ), 'Inference on saved and loaded TF2 artifact does not match expected'
 
 
 @pytest.mark.asyncio
-async def test_tensorflow_2_artifact_with_docker(tf2_host):
+async def test_tensorflow_2_artifact_with_docker(host):
     await pytest.assert_request(
         "POST",
-        f"http://{tf2_host}/predict",
+        f"http://{host}/predict1",
         headers=(("Content-Type", "application/json"),),
         data=json.dumps({"instances": test_data}),
         assert_status=200,
         assert_data=b'[[15.0]]',
     )
+    await pytest.assert_request(
+        "POST",
+        f"http://{host}/predict2",
+        headers=(("Content-Type", "application/json"),),
+        data=json.dumps({"instances": test_data}),
+        assert_status=200,
+        assert_data=b'[[15.0]]',
+    )
+    tasks = tuple(
+        pytest.assert_request(
+            "POST",
+            f"http://{host}/predict3",
+            headers=(("Content-Type", "application/json"),),
+            data=json.dumps(i),
+            assert_status=200,
+            assert_data=b'[15.0]',
+        )
+        for i in ragged_data
+    )
+    await asyncio.gather(*tasks)

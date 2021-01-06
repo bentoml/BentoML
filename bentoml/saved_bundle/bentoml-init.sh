@@ -48,9 +48,11 @@ else
 fi
 
 # Install PyPI packages specified in requirements.txt
+pip install --upgrade pip
 pip install -r ./requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
 
 # Install additional python packages inside bundled pip dependencies directory
-if [ -d ./bundled_pip_dependencies ]; then
-  pip install -U ./bundled_pip_dependencies/* ;
-fi
+for filename in ./bundled_pip_dependencies/*; do
+ [ -e "$filename" ] || continue
+ pip install -U "$filename"
+done

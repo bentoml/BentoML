@@ -18,7 +18,7 @@ logger = logging.getLogger('bentoml.test')
 def test_aws_ec2_deployment(iris_clf_service):
     random_hash = uuid.uuid4().hex[:6]
     deployment_name = f'tests-ec2-e2e-{random_hash}'
-    deployment_namespace = "test"
+    deployment_namespace = "dev"
     deployment_region = get_default_aws_region()
 
     create_deployment_command = [
@@ -37,22 +37,22 @@ def test_aws_ec2_deployment(iris_clf_service):
 
     try:
         deployment_endpoint = run_aws_ec2_create_command(create_deployment_command)
-        instance_adresses = wait_for_healthy_targets_from_stack(
+
+        instance_addresses = wait_for_healthy_targets_from_stack(
             name=deployment_name,
             namespace=deployment_namespace,
             region=deployment_region,
         )
-
         assert deployment_endpoint, "AWS EC2 deployment creation should success"
-        assert instance_adresses, "AWS EC2 deployment should have all targets healthy"
+        assert instance_addresses, "AWS EC2 deployment should have all targets healthy"
 
         iris = datasets.load_iris()
         sample_data = iris.data[0:1]
         results = send_test_data_to_multiple_endpoint(
-            [deployment_endpoint] + instance_adresses, json.dumps(sample_data.tolist())
+            [deployment_endpoint] + instance_addresses, json.dumps(sample_data.tolist())
         )
         for result in results:
             assert result[0] == 200, "prediction request should success"
             assert result[1] == '[0]', "prediction result mismatch"
     finally:
-        delete_deployment('ec2', deployment_name)
+        delete_deployment('ec2', deployment_name, deployment_namespace)

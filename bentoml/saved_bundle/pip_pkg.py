@@ -18,12 +18,15 @@ import logging
 import pkgutil
 import ast
 import zipimport
+import zipfile
+from typing import Dict
 from pkg_resources import Requirement
-
 
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1
 EPP_PKG_VERSION_MISMATCH = 2
+
+ZIPIMPORT_DIR = 'zipimports'
 
 __mm = None
 
@@ -55,6 +58,13 @@ def get_pkg_version(pkg_name):
     if __mm is None:
         __mm = ModuleManager()
     return __mm.pip_pkg_map.get(pkg_name, None)
+
+
+def get_zipmodules():
+    global __mm  # pylint: disable=global-statement
+    if __mm is None:
+        __mm = ModuleManager()
+    return __mm.zip_modules
 
 
 def get_all_pip_installed_modules():
@@ -109,12 +119,15 @@ class ModuleManager(object):
                     self.setuptools_module_set.add(mn)
 
         self.searched_modules = {}
+        self.zip_modules: Dict[str, zipimport.zipimporter] = {}
         for m in pkgutil.iter_modules():
-            if isinstance(m.module_finder, zipimport.zipimporter):
-                logger.warning(f"Skipped unsupported zipimporter {m.module_finder}")
-                continue
             if m.name not in self.searched_modules:
-                path = m.module_finder.path
+                if isinstance(m.module_finder, zipimport.zipimporter):
+                    logger.info(f"Detected zipimporter {m.module_finder}")
+                    path = m.module_finder.archive
+                    self.zip_modules[path] = m.module_finder
+                else:
+                    path = m.module_finder.path
                 is_local = self.is_local_path(path)
                 self.searched_modules[m.name] = ModuleInfo(
                     m.name, path, is_local, m.ispkg
@@ -133,6 +146,7 @@ class ModuleManager(object):
         return EPP_NO_ERROR
 
     def seek_pip_packages(self, target_py_file_path):
+        logger.debug('target py file path: %s', target_py_file_path)
         work = DepSeekWork(self, target_py_file_path)
         work.do()
         requirements = {}
@@ -177,15 +191,17 @@ class DepSeekWork(object):
         self.seek_in_file(self.target_py_file_path)
 
     def seek_in_file(self, file_path):
-        # Extract all dependency modules by searching through the trees of the Python
-        # abstract syntax grammar with Python's built-in ast module
         try:
             with open(file_path) as f:
                 content = f.read()
         except UnicodeDecodeError:
             with open(file_path, encoding='utf-8') as f:
                 content = f.read()
+        self.seek_in_source(content)
 
+    def seek_in_source(self, content):
+        # Extract all dependency modules by searching through the trees of the Python
+        # abstract syntax grammar with Python's built-in ast module
         tree = ast.parse(content)
         import_set = set()
         for node in ast.walk(tree):
@@ -195,6 +211,7 @@ class DepSeekWork(object):
             elif isinstance(node, ast.ImportFrom):
                 if node.module is not None and node.level == 0:
                     import_set.add(node.module.partition(".")[0])
+        logger.debug("import set: %s", import_set)
         for module_name in import_set:
             # Avoid parsing BentoML when BentoML is imported from local source code repo
             if module_name == 'bentoml':
@@ -207,7 +224,9 @@ class DepSeekWork(object):
                 m = self.module_manager.searched_modules[module_name]
                 if m.is_local:
                     # Recursively search dependencies in sub-modules
-                    if m.is_pkg:
+                    if m.path in self.module_manager.zip_modules:
+                        self.seek_in_zip(m.path)
+                    elif m.is_pkg:
                         self.seek_in_dir(os.path.join(m.path, m.name))
                     else:
                         self.seek_in_file(os.path.join(m.path, "{}.py".format(m.name)))
@@ -243,3 +262,14 @@ class DepSeekWork(object):
                 if dir_name == '__pycache__':
                     continue
                 self.seek_in_dir(os.path.join(path, dir_name))
+
+    def seek_in_zip(self, zip_path):
+        with zipfile.ZipFile(zip_path) as zf:
+            for module_path in zf.infolist():
+                filename = module_path.filename
+                if filename.endswith('.py'):
+                    logger.debug("Seeking modules in zip %s", filename)
+                    content = self.module_manager.zip_modules[zip_path].get_source(
+                        filename.replace('.py', '')
+                    )
+                    self.seek_in_source(content)

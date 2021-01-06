@@ -12,18 +12,21 @@ import grpc
 from bentoml import config
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
+from bentoml.yatai.client.interceptor import header_client_interceptor
 from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 
 def get_yatai_service(
     channel_address=None,
+    access_token=None,
     db_url=None,
     repo_base_url=None,
     s3_endpoint_url=None,
     default_namespace=None,
 ):
     channel_address = channel_address or config('yatai_service').get('url')
+    access_token = access_token or config('yatai_service').get('access_token')
     channel_address = channel_address.strip()
     if channel_address:
         from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
@@ -38,18 +41,36 @@ def get_yatai_service(
 
         logger.debug("Connecting YataiService gRPC server at: %s", channel_address)
         scheme, addr = parse_grpc_url(channel_address)
-
+        header_adder_interceptor = header_client_interceptor.header_adder_interceptor(
+            'access_token', access_token
+        )
         if scheme in ('grpcs', 'https'):
-            client_cacert_path = (
-                config().get('yatai_service', 'client_certificate_file')
+            tls_root_ca_cert = (
+                config().get('yatai_service', 'tls_root_ca_cert')
+                # Adding also prev. name to ensure that old configurations do not break.
+                or config().get('yatai_service', 'client_certificate_file')
                 or certifi.where()  # default: Mozilla ca cert
             )
-            with open(client_cacert_path, 'rb') as ca_cert_file:
-                ca_cert = ca_cert_file.read()
-            credentials = grpc.ssl_channel_credentials(ca_cert, None, None)
-            channel = grpc.secure_channel(addr, credentials)
+            tls_client_key = config().get('yatai_service', 'tls_client_key') or None
+            tls_client_cert = config().get('yatai_service', 'tls_client_cert') or None
+            with open(tls_root_ca_cert, 'rb') as fb:
+                ca_cert = fb.read()
+            if tls_client_key:
+                with open(tls_client_key, 'rb') as fb:
+                    tls_client_key = fb.read()
+            if tls_client_cert:
+                with open(tls_client_cert, 'rb') as fb:
+                    tls_client_cert = fb.read()
+            credentials = grpc.ssl_channel_credentials(
+                ca_cert, tls_client_key, tls_client_cert
+            )
+            channel = grpc.intercept_channel(
+                grpc.secure_channel(addr, credentials), header_adder_interceptor
+            )
         else:
-            channel = grpc.insecure_channel(addr)
+            channel = grpc.intercept_channel(
+                grpc.insecure_channel(addr), header_adder_interceptor
+            )
         return YataiStub(channel)
     else:
         from bentoml.yatai.yatai_service_impl import YataiService
@@ -142,6 +163,7 @@ def async_start_yatai_service_web_ui(
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
     web_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'web'))
+    web_prefix_path = web_prefix_path.strip("/")
     if debug_mode:
         # Only when src/index.ts exists, we will run dev (nodemon)
         if os.path.exists(

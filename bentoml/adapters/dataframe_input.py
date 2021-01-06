@@ -12,7 +12,7 @@
 # limitations under the License.
 
 import argparse
-from typing import Iterable, Mapping, Optional, Sequence, Tuple
+from typing import Iterable, Iterator, Mapping, Optional, Sequence, Tuple
 
 from bentoml.adapters.string_input import StringInput
 from bentoml.exceptions import MissingDependencyException
@@ -126,7 +126,7 @@ class DataframeInput(StringInput):
         curl -i \\
           --header "Content-Type: text/csv" \\
           --request POST \\
-          --data @file.csv \\
+          --data-binary @file.csv \\
           localhost:5000/predict
 
     Query with CLI command::
@@ -274,3 +274,11 @@ class DataframeInput(StringInput):
             else:
                 task.batch = batch
         return (df,)
+
+    def from_inference_job(
+        self, input_=None, input_file=None, **extra_args,
+    ) -> Iterator[InferenceTask[str]]:
+        # TODO: generate small batches of InferenceTasks from large input files
+        return super().from_inference_job(
+            input_=input_, input_file=input_file, **extra_args
+        )

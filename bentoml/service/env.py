@@ -71,9 +71,11 @@ class CondaEnv(object):
         channels: List[str] = None,
         dependencies: List[str] = None,
         default_env_yaml_file: str = None,
+        overwrite_channels: bool = False,
     ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
+        self.overwrite_channels = overwrite_channels
 
         if default_env_yaml_file:
             env_yml_file = Path(default_env_yaml_file)
@@ -107,6 +109,10 @@ class CondaEnv(object):
         )
 
     def add_channels(self, channels: List[str]):
+        if channels and self.overwrite_channels:
+            logger.debug("Removing default conda channels from environment.yml")
+            self._conda_env["channels"] = []
+
         for channel_name in channels:
             if channel_name not in self._conda_env["channels"]:
                 self._conda_env["channels"] += channels
@@ -135,10 +141,13 @@ class BentoServiceEnv(object):
             this can be a relative path to the requirements.txt file or the content
             of the file
         conda_channels: list of extra conda channels to be used
+        conda_overwrite_channels: Turn on to make conda_channels overwrite the list of
+            channels instead of adding to it
         conda_dependencies: list of conda dependencies required
-        conda_env_yml_file: use a pre-defined conda environment yml filej
+        conda_env_yml_file: use a pre-defined conda environment yml file
         setup_sh: user defined setup bash script, it is executed in docker build time
         docker_base_image: used when generating Dockerfile in saved bundle
+        zipimport_archives: used to list zipimport archives
     """
 
     def __init__(
@@ -150,10 +159,12 @@ class BentoServiceEnv(object):
         infer_pip_packages: bool = False,
         requirements_txt_file: str = None,
         conda_channels: List[str] = None,
+        conda_overwrite_channels: bool = False,
         conda_dependencies: List[str] = None,
         conda_env_yml_file: str = None,
         setup_sh: str = None,
         docker_base_image: str = None,
+        zipimport_archives: List[str] = None,
     ):
         self._python_version = PYTHON_VERSION
         self._pip_index_url = pip_index_url
@@ -165,6 +176,7 @@ class BentoServiceEnv(object):
             channels=conda_channels,
             dependencies=conda_dependencies,
             default_env_yaml_file=conda_env_yml_file,
+            overwrite_channels=conda_overwrite_channels,
         )
 
         self._pip_packages = {}
@@ -220,6 +232,7 @@ class BentoServiceEnv(object):
                     f"Using BentoML default docker base image "
                     f"'{self._docker_base_image}'"
                 )
+        self._zipimport_archives = zipimport_archives
 
     def add_conda_channels(self, channels: List[str]):
         self._conda_env.add_channels(channels)

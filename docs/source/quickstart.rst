@@ -1,7 +1,5 @@
 .. _getting-started-page:
 
-.. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
-
 ***************
 Getting Started
 ***************
@@ -274,9 +272,9 @@ argument or local csv or json files:
 
 .. code-block:: bash
 
-  bentoml run IrisClassifier:latest predict --input='[[5.1, 3.5, 1.4, 0.2]]'
+  bentoml run IrisClassifier:latest predict --input '[[5.1, 3.5, 1.4, 0.2]]'
 
-  bentoml run IrisClassifier:latest predict --input='./iris_data.csv'
+  bentoml run IrisClassifier:latest predict --input-file './iris_data.csv'
 
 
 Containerize Model API Server

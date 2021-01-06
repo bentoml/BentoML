@@ -48,3 +48,38 @@ def test_pytorch_artifact_pack(pytorch_classifier_class):
     # clean up saved bundle
     yc = YataiClient()
     yc.repository.delete(f'{svc.name}:{svc.version}')
+
+
+def test_pytorch_artifact_pack_with_traced_model(pytorch_classifier_class):
+    svc = pytorch_classifier_class()
+    input_for_tracing = torch.ones(5)
+    model = PytorchModel()
+    traced_model = torch.jit.trace(model, input_for_tracing)
+
+    svc.pack('model', traced_model)
+    assert svc.predict(test_df) == 5.0, 'Run inference before save the artifact'
+
+    saved_path = svc.save()
+    loaded_svc = bentoml.load(saved_path)
+    assert loaded_svc.predict(test_df) == 5.0, 'Run inference from saved artifact'
+
+    # clean up saved bundle
+    yc = YataiClient()
+    yc.repository.delete(f'{svc.name}:{svc.version}')
+
+
+def test_pytorch_artifact_pack_with_scripted_model(pytorch_classifier_class):
+    svc = pytorch_classifier_class()
+    model = PytorchModel()
+    scripted_model = torch.jit.script(model)
+
+    svc.pack('model', scripted_model)
+    assert svc.predict(test_df) == 5.0, 'Run inference before save the artifact'
+
+    saved_path = svc.save()
+    loaded_svc = bentoml.load(saved_path)
+    assert loaded_svc.predict(test_df) == 5.0, 'Run inference from saved artifact'
+
+    # clean up saved bundle
+    yc = YataiClient()
+    yc.repository.delete(f'{svc.name}:{svc.version}')

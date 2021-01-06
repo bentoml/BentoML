@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import asyncio
+import functools
 import logging
 import multiprocessing
 import time
 import traceback
-from functools import partial
 
 import aiohttp
 import psutil
@@ -37,6 +37,12 @@ ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 def metrics_patch(cls):
     class _MarshalService(cls):
         def __init__(self, *args, **kwargs):
+            for attr_name in functools.WRAPPER_ASSIGNMENTS:
+                try:
+                    setattr(self.__class__, attr_name, getattr(cls, attr_name))
+                except AttributeError:
+                    pass
+
             from prometheus_client import Counter, Gauge, Histogram
 
             super(_MarshalService, self).__init__(*args, **kwargs)
@@ -133,10 +139,14 @@ class MarshalService:
         outbound_host="localhost",
         outbound_port=None,
         outbound_workers=1,
+        mb_max_batch_size: int = None,
+        mb_max_latency: int = None,
     ):
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
         self.outbound_workers = outbound_workers
+        self.mb_max_batch_size = mb_max_batch_size
+        self.mb_max_latency = mb_max_latency
         self.batch_handlers = dict()
         self._outbound_sema = None  # the semaphore to limit outbound connections
 
@@ -180,16 +190,30 @@ class MarshalService:
                 max_batch_size,
                 shared_sema=self.fetch_sema(),
                 fallback=aiohttp.web.HTTPTooManyRequests,
-            )(partial(self._batch_handler_template, api_name=api_name))
+            )(functools.partial(self._batch_handler_template, api_name=api_name))
             self.batch_handlers[api_name] = _func
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
         for api_pb in bento_service_metadata_pb.apis:
             if api_pb.batch:
-                max_latency = api_pb.mb_max_latency or self.DEFAULT_MAX_LATENCY
-                max_batch_size = api_pb.mb_max_batch_size or self.DEFAULT_MAX_BATCH_SIZE
+                max_latency = (
+                    self.mb_max_latency
+                    or api_pb.mb_max_latency
+                    or self.DEFAULT_MAX_LATENCY
+                )
+                max_batch_size = (
+                    self.mb_max_batch_size
+                    or api_pb.mb_max_batch_size
+                    or self.DEFAULT_MAX_BATCH_SIZE
+                )
                 self.add_batch_handler(api_pb.name, max_latency, max_batch_size)
-                logger.info("Micro batch enabled for API `%s`", api_pb.name)
+                logger.info(
+                    "Micro batch enabled for API `%s` max-latency: %s"
+                    " max-batch-size %s",
+                    api_pb.name,
+                    max_latency,
+                    max_batch_size,
+                )
 
     async def request_dispatcher(self, request):
         with async_trace(
@@ -234,7 +258,7 @@ class MarshalService:
             span_name=f"[2]{url.path} relay",
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
-            async with aiohttp.ClientSession() as client:
+            async with aiohttp.ClientSession(auto_decompress=False) as client:
                 async with client.request(
                     request.method, url, data=data, headers=request.headers
                 ) as resp:
@@ -264,7 +288,7 @@ class MarshalService:
             headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)
             try:
-                async with aiohttp.ClientSession() as client:
+                async with aiohttp.ClientSession(auto_decompress=False) as client:
                     async with client.post(
                         api_url, data=reqs_s, headers=headers
                     ) as resp:

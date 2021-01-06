@@ -4,11 +4,15 @@ import { Section } from "../../ui/Layout";
 
 const ENV_TABLE_RATIO = [1, 4];
 
-const EnvTable: React.FC<{ env: { [key: string]: string } }> = ({ env }) => {
+const EnvTable: React.FC<{ env: { [key: string]: any } }> = ({ env }) => {
   const envKeys = Object.keys(env);
 
   const parsedEnv = envKeys.map((key) => {
-    return { content: [key, env[key]] };
+    let env_value = env[key];
+    if (key == 'pip_packages') {
+      env_value = env[key].join('\n');
+    }
+    return { content: [key, env_value] };
   });
 
   return (

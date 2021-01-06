@@ -84,7 +84,6 @@ class KerasModelArtifact(BentoServiceArtifact):
 
         self._model = None
         self._custom_objects = None
-        self._model_wrapper = None
 
     def set_dependencies(self, env: BentoServiceEnv):
         # Note that keras module is not required, user can use tf.keras as an
@@ -173,11 +172,8 @@ class KerasModelArtifact(BentoServiceArtifact):
                 raise InvalidArgument(error_msg)
 
         self.bind_keras_backend_session()
-        model._make_predict_function()
-
         self._model = model
         self._custom_objects = custom_objects
-        self._model_wrapper = _KerasModelWrapper(self._model, self.graph, self.sess)
         return self
 
     def load(self, path):
@@ -191,8 +187,11 @@ class KerasModelArtifact(BentoServiceArtifact):
                         "Failed to import '{}' module when loading saved "
                         "KerasModelArtifact".format(keras_module_name)
                     )
-
-        self.create_session()
+        else:
+            raise ArtifactLoadingException(
+                "Failed to read keras model name from '{}' when loading saved "
+                "KerasModelArtifact".format(self._keras_module_name_path(path))
+            )
 
         if self._default_custom_objects is None and os.path.isfile(
             self._custom_objects_path(path)
@@ -201,10 +200,11 @@ class KerasModelArtifact(BentoServiceArtifact):
                 open(self._custom_objects_path(path), 'rb')
             )
 
-        with self.graph.as_default():
-            with self.sess.as_default():
-                # load keras model via json and weights if requested
-                if self._store_as_json_and_weights:
+        # load keras model via json and weights if requested
+        if self._store_as_json_and_weights:
+            self.create_session()
+            with self.graph.as_default():
+                with self.sess.as_default():
                     with open(self._model_json_path(path), 'r') as json_file:
                         model_json = json_file.read()
                     model = keras_module.models.model_from_json(
@@ -212,11 +212,11 @@ class KerasModelArtifact(BentoServiceArtifact):
                     )
                     model.load_weights(self._model_weights_path(path))
                 # otherwise, load keras model via standard load_model
-                else:
-                    model = keras_module.models.load_model(
-                        self._model_file_path(path),
-                        custom_objects=self._default_custom_objects,
-                    )
+        else:
+            model = keras_module.models.load_model(
+                self._model_file_path(path),
+                custom_objects=self._default_custom_objects,
+            )
         return self.pack(model)
 
     def save(self, dst):
@@ -240,26 +240,4 @@ class KerasModelArtifact(BentoServiceArtifact):
             self._model.save(self._model_file_path(dst))
 
     def get(self):
-        return self._model_wrapper
-
-
-class _KerasModelWrapper:
-    def __init__(self, keras_model, graph, sess):
-        self.keras_model = keras_model
-        self.graph = graph
-        self.sess = sess
-
-    def predict(self, *args, **kwargs):
-        with self.graph.as_default():
-            with self.sess.as_default():
-                return self.keras_model.predict(*args, **kwargs)
-
-    def predict_classes(self, *args, **kwargs):
-        with self.graph.as_default():
-            with self.sess.as_default():
-                return self.keras_model.predict_classes(*args, **kwargs)
-
-    def __call__(self, *args, **kwargs):
-        with self.graph.as_default():
-            with self.sess.as_default():
-                return object.__call__(self, *args, **kwargs)
+        return self._model

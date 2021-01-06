@@ -19,6 +19,7 @@ import tarfile
 import logging
 import tempfile
 import shutil
+from functools import wraps
 from contextlib import contextmanager
 from urllib.parse import urlparse
 from pathlib import PureWindowsPath, PurePosixPath
@@ -27,6 +28,7 @@ from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.config import SavedBundleConfig
+from bentoml.saved_bundle.pip_pkg import ZIPIMPORT_DIR
 from bentoml.utils.usage_stats import track_load_start, track_load_finish
 
 logger = logging.getLogger(__name__)
@@ -40,7 +42,7 @@ def _is_http_url(bundle_path):
 
 
 def _is_remote_path(bundle_path):
-    return (
+    return isinstance(bundle_path, str) and (
         is_s3_url(bundle_path) or is_gcs_url(bundle_path) or _is_http_url(bundle_path)
     )
 
@@ -93,11 +95,22 @@ def _resolve_remote_bundle_path(bundle_path):
             yield os.path.join(tmpdir, filename)
 
 
-def load_saved_bundle_config(bundle_path):
-    if _is_remote_path(bundle_path):
-        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
-            return load_saved_bundle_config(local_bundle_path)
+def resolve_remote_bundle(func):
+    """Decorate a function to handle remote bundles."""
 
+    @wraps(func)
+    def wrapper(bundle_path, *args):
+        if _is_remote_path(bundle_path):
+            with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
+                return func(local_bundle_path, *args)
+
+        return func(bundle_path, *args)
+
+    return wrapper
+
+
+@resolve_remote_bundle
+def load_saved_bundle_config(bundle_path):
     try:
         return SavedBundleConfig.load(os.path.join(bundle_path, "bentoml.yml"))
     except FileNotFoundError:
@@ -152,6 +165,7 @@ def _find_module_file(bundle_path, service_name, module_file):
     return module_file_path
 
 
+@resolve_remote_bundle
 def load_bento_service_class(bundle_path):
     """
     Load a BentoService class from saved bundle in given path
@@ -160,10 +174,6 @@ def load_bento_service_class(bundle_path):
         #save_to_dir, or the path to pip installed BentoService directory
     :return: BentoService class
     """
-    if _is_remote_path(bundle_path):
-        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
-            return load_bento_service_class(local_bundle_path)
-
     config = load_saved_bundle_config(bundle_path)
     metadata = config["metadata"]
 
@@ -175,6 +185,12 @@ def load_bento_service_class(bundle_path):
     # Prepend bundle_path to sys.path for loading extra python dependencies
     sys.path.insert(0, bundle_path)
     sys.path.insert(0, os.path.join(bundle_path, metadata["service_name"]))
+    # Include zipimport modules
+    zipimport_dir = os.path.join(bundle_path, metadata["service_name"], ZIPIMPORT_DIR)
+    if os.path.exists(zipimport_dir):
+        for p in os.listdir(zipimport_dir):
+            logger.debug('adding %s to sys.path', p)
+            sys.path.insert(0, os.path.join(zipimport_dir, p))
 
     module_name = metadata["module_name"]
     if module_name in sys.modules:
@@ -211,6 +227,7 @@ def load_bento_service_class(bundle_path):
     return model_service_class
 
 
+@resolve_remote_bundle
 def safe_retrieve(bundle_path, target_dir):
     """Safely retrieve bento service to local path
 
@@ -222,15 +239,10 @@ def safe_retrieve(bundle_path, target_dir):
     Returns:
         string: location of safe local path
     """
-    if _is_remote_path(bundle_path):
-        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
-            shutil.copytree(local_bundle_path, target_dir)
-            return target_dir
-
     shutil.copytree(bundle_path, target_dir)
-    return
 
 
+@resolve_remote_bundle
 def load_from_dir(bundle_path):
     """Load bento service from local file path or s3 path
 
@@ -241,10 +253,6 @@ def load_from_dir(bundle_path):
     Returns:
         bentoml.service.BentoService: a loaded BentoService instance
     """
-
-    if _is_remote_path(bundle_path):
-        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
-            return load_from_dir(local_bundle_path)
     track_load_start()
 
     svc_cls = load_bento_service_class(bundle_path)
@@ -254,10 +262,7 @@ def load_from_dir(bundle_path):
     return svc
 
 
+@resolve_remote_bundle
 def load_bento_service_api(bundle_path, api_name=None):
-    if _is_remote_path(bundle_path):
-        with _resolve_remote_bundle_path(bundle_path) as local_bundle_path:
-            return load_bento_service_api(local_bundle_path, api_name)
-
     bento_service = load_from_dir(bundle_path)
     return bento_service.get_inference_api(api_name)

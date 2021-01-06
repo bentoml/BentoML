@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import base64
+import pathlib
 from typing import Iterable, Iterator, Sequence, Tuple
 
-from bentoml.adapters.base_input import BaseInputAdapter, parse_cli_input
+from bentoml.adapters.base_input import BaseInputAdapter
 from bentoml.adapters.utils import decompress_gzip_request
 from bentoml.types import AwsLambdaEvent, FileLike, HTTPRequest, InferenceTask
 
@@ -82,7 +83,7 @@ class FileInput(BaseInputAdapter):
         curl -i \\
           --header "Content-Type: image/jpeg" \\
           --request POST \\
-          --data @test.jpg \\
+          --data-binary @test.jpg \\
           localhost:5000/predict
 
     OR::
@@ -174,8 +175,50 @@ class FileInput(BaseInputAdapter):
         return InferenceTask(aws_lambda_event=event, data=f)
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[FileLike]]:
-        for f in parse_cli_input(cli_args):
-            yield InferenceTask(cli_args=cli_args, data=f)
+        import argparse
+
+        parser = argparse.ArgumentParser()
+        input_g = parser.add_mutually_exclusive_group(required=True)
+        input_g.add_argument('--input', nargs="+", type=str)
+        input_g.add_argument('--input-file', nargs="+")
+
+        parsed_args, _ = parser.parse_known_args(list(cli_args))
+
+        for t in self.from_inference_job(
+            input_=parsed_args.input, input_file=parsed_args.input_file,
+        ):
+            t.cli_args = cli_args
+            yield t
+
+    def from_inference_job(  # pylint: disable=arguments-differ
+        self, input_=None, input_file=None, **extra_args
+    ) -> Iterator[InferenceTask[str]]:
+        '''
+        Generate InferenceTask from calling bentom_svc.run(input_=None, input_file=None)
+
+        Parameters
+        ----------
+        input_ : str
+            The input value
+
+        input_file : str
+            The URI/path of the input file
+
+        extra_args : dict
+            Additional parameters
+
+        '''
+        if input_file is not None:
+            for d in input_file:
+                uri = pathlib.Path(d).absolute().as_uri()
+                yield InferenceTask(
+                    inference_job_args=extra_args, data=FileLike(uri=uri)
+                )
+        else:
+            for d in input_:
+                yield InferenceTask(
+                    inference_job_args=extra_args, data=FileLike(bytes_=d.encode()),
+                )
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[FileLike]]

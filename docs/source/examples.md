@@ -1,8 +1,6 @@
 Example Projects
 ================
 
-<img src="https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c">
-
 Here are the official BentoML example projects that you can find in the 
 [bentoml/gallery](https://github.com/bentoml/gallery) repository, grouped by the main
 ML training framework used in the project.

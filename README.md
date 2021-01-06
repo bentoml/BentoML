@@ -89,7 +89,7 @@ Advanced workflow for model serving and deployment:
 * CoreML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#coreml)
 * Transformers - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#transformers)
 * Gluon - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#gluon)
-* Detectron - [Docs](https://docs.bentoml.org/en/latest/frameworks/html#detectron)
+* Detectron - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#detectron)
 
 
 

@@ -1,8 +1,6 @@
 Frameworks
 ==========
 
-.. image:: https://static.scarf.sh/a.png?x-pxid=0beb35eb-7742-4dfb-b183-2228e8caf04c
-
 Here are the all of the supported ML frameworks for BentoML. You can find the official
 BentoML example projects in the `bentoml/gallery <https://github.com/bentoml/gallery>`__
 repository, group by the ML training frameworks used in the project.
@@ -35,9 +33,9 @@ Example Projects:
 .. autoclass:: bentoml.frameworks.pytorch.PytorchModelArtifact
 
 
-==============
-Tensorflow 2.0
-==============
+===========================
+Tensorflow 2.0 (Native API)
+===========================
 
 Example Projects:
 
@@ -47,9 +45,10 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
 
-================
-Tensorflow Keras
-================
+
+=====================================
+Keras (Tensorflow 2.0 as the backend)
+=====================================
 
 Example Projects:
 
@@ -58,6 +57,18 @@ Example Projects:
 * Toxic Comment Classifier - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__
 
 .. autoclass:: bentoml.frameworks.keras.KerasModelArtifact
+
+
+==============
+Tensorflow 1.0
+==============
+
+Example Projects:
+
+* Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__
+
+.. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
+
 
 =========
 FastAI v1
@@ -169,11 +180,27 @@ Example Projects:
 
 * Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
 
+
+=====
+Gluon
+=====
+
+.. autoclass:: bentoml.frameworks.gluon.GluonModelArtifact
+
+
+=================
+Pytorch Lightning
+=================
+
+.. autoclass:: bentoml.frameworks.pytorch.PytorchLightningModelArtifact
+
+
 =========
 Detectron
 =========
 
 .. autoclass:: bentoml.frameworks.detectron.DetectronModelArtifact
+
 
 .. spelling::
 
@@ -184,6 +211,16 @@ Detectron
     fasttext
     onnx
     Statsmodels
+    mxnet
+    env
+    GluonModelArtifact
+    JsonInput
+    nd
+    mx
+    asnumpy
+    svc
+    Pytorch
+    pytorch
     detectron
     Detectron
     DetectionCheckpointer

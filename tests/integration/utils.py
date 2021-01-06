@@ -23,6 +23,8 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
                 == 200
             ):
                 break
+            elif container.status != "running":
+                break
             else:
                 logger.info("Waiting for host %s to be ready..", host_url)
                 time.sleep(check_interval)

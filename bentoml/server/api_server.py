@@ -18,16 +18,9 @@ import sys
 import uuid
 from functools import partial
 
-from flask import (
-    Flask,
-    Response,
-    jsonify,
-    make_response,
-    request,
-    send_from_directory,
-)
-from werkzeug.exceptions import BadRequest, NotFound
+from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from google.protobuf.json_format import MessageToJson
+from werkzeug.exceptions import BadRequest, NotFound
 
 from bentoml import BentoService, config
 from bentoml.configuration import get_debug_mode
@@ -285,7 +278,7 @@ class BentoAPIServer:
         for api in self.bento_service.inference_apis:
             route_function = self.bento_service_api_func_wrapper(api)
             self.app.add_url_rule(
-                rule="/{}".format(api.name),
+                rule="/{}".format(api.route),
                 endpoint=api.name,
                 view_func=route_function,
                 methods=api.input_adapter.HTTP_METHODS,

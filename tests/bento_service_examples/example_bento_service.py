@@ -1,10 +1,5 @@
 import bentoml
-from bentoml.adapters import (
-    DataframeInput,
-    ImageInput,
-    JsonInput,
-    MultiImageInput,
-)
+from bentoml.adapters import DataframeInput, ImageInput, JsonInput, MultiImageInput
 from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.service.artifacts.pickle import PickleArtifact
 
@@ -49,3 +44,11 @@ class ExampleBentoService(bentoml.BentoService):
     @bentoml.api(input=JsonInput(), batch=True)
     def predict_json(self, input_data):
         return self.artifacts.model.predict_json(input_data)
+
+    CUSTOM_ROUTE = "$~!@%^&*()_-+=[]\\|;:,./predict"
+
+    @bentoml.api(
+        route=CUSTOM_ROUTE, input=JsonInput(), batch=True,
+    )
+    def customize_route(self, input_data):
+        return input_data

@@ -44,7 +44,7 @@ def pytest_configure():
 
         if assert_data is not None:
             if callable(assert_data):
-                assert assert_data(r_body)
+                assert assert_data(r_body), r_body
             else:
                 assert r_body == assert_data
 

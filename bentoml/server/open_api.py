@@ -93,7 +93,7 @@ def get_open_api_spec_json(bento_service):
         )
 
     for api in bento_service.inference_apis:
-        path = "/{}".format(api.name)
+        path = "/{}".format(api.route)
         paths[path] = OrderedDict(
             post=OrderedDict(
                 tags=["app"],

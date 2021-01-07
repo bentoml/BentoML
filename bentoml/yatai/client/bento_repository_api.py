@@ -21,7 +21,6 @@ import tarfile
 import requests
 import shutil
 
-
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.lazy_loader import LazyLoader
@@ -40,7 +39,12 @@ from bentoml.yatai.proto.repository_pb2 import (
 )
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.saved_bundle import save_to_dir, load_bento_service_metadata, safe_retrieve
+from bentoml.saved_bundle import (
+    save_to_dir,
+    load_bento_service_metadata,
+    safe_retrieve,
+    load_from_dir,
+)
 from bentoml.yatai.status import Status
 
 
@@ -439,3 +443,28 @@ class BentoRepositoryAPIClient:
                 f'Failed to containerize {bento} - {error_code}:{error_message}'
             )
         return result.tag
+
+    def load(self, bento):
+        """
+        Load bento service.
+        Args:
+            bento: string
+        Returns:
+            BentoService instance
+
+        Example:
+
+        >>> yatai_client = get_yatai_client()
+        >>> bento = yatai_client.repository.load('Service_name:version')
+        """
+        track('py-api-load')
+        bento_pb = self.get(bento)
+        saved_bundle_path = bento_pb.uri.uri
+        if bento_pb.uri.s3_presigned_url:
+            # Use s3 presigned URL for downloading the repository if it is presented
+            saved_bundle_path = bento_pb.uri.s3_presigned_url
+        if bento_pb.uri.gcs_presigned_url:
+            saved_bundle_path = bento_pb.uri.gcs_presigned_url
+
+        svc = load_from_dir(saved_bundle_path)
+        return svc

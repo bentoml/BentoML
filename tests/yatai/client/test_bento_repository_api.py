@@ -211,3 +211,22 @@ def test_list(yatai_server_container, example_bento_service_class):
 
     bentos = yc.repository.list(bento_name=svc.name)
     assert len(bentos) == 5
+
+
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="Requires docker, skipping test for Mac OS for Github Action",
+)
+@pytest.mark.skipif('not psutil.POSIX')
+def test_load(yatai_server_container, example_bento_service_class):
+    example_bento_service_class = bentoml.ver(major=2, minor=5)(
+        example_bento_service_class
+    )
+    yc = get_yatai_client(yatai_server_container)
+    test_model = TestModel()
+    svc = example_bento_service_class()
+    svc.pack('model', test_model)
+    svc.save(yatai_url=yatai_server_container)
+
+    loaded_svc = yc.repository.load(f'{svc.name}:{svc.version}')
+    assert loaded_svc.name == svc.name

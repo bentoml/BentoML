@@ -90,7 +90,8 @@ class PickleDataLoader:
 
     @classmethod
     def split_requests(cls, raw: bytes) -> Sequence[HTTPRequest]:
-        return pickle.loads(restricted_loads(raw))
+        restricted_loads(raw)
+        return pickle.loads(raw)
 
     @classmethod
     def merge_responses(cls, resps: Sequence[HTTPResponse]) -> bytes:

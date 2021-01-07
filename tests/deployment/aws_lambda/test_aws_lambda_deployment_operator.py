@@ -208,6 +208,10 @@ def mock_lambda_related_operations(func):
     'bentoml.yatai.deployment.aws_lambda.operator.cleanup_s3_bucket_if_exist',
     MagicMock(),
 )
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_docker_available_or_raise',
+    MagicMock(),
+)
 def test_aws_lambda_apply_under_bundle_size_limit_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
@@ -251,6 +255,10 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
     'bentoml.yatai.deployment.aws_lambda.operator.cleanup_s3_bucket_if_exist',
     MagicMock(),
 )
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_docker_available_or_raise',
+    MagicMock(),
+)
 def test_aws_lambda_apply_over_bundle_size_limit_success():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
@@ -290,6 +298,10 @@ def test_aws_lambda_apply_over_bundle_size_limit_success():
     'bentoml.yatai.deployment.aws_lambda.operator.cleanup_s3_bucket_if_exist',
     MagicMock(),
 )
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_docker_available_or_raise',
+    MagicMock(),
+)
 def test_aws_lambda_apply_over_max_bundle_size_limit_fail():
     yatai_service_mock = create_yatai_service_mock()
     test_deployment_pb = generate_lambda_deployment_pb()
@@ -299,6 +311,14 @@ def test_aws_lambda_apply_over_max_bundle_size_limit_fail():
     assert result_pb.deployment.state.state == DeploymentState.ERROR
 
 
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_docker_available_or_raise',
+    MagicMock(),
+)
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    MagicMock(),
+)
 def test_aws_lambda_describe_still_in_progress():
     def mock_cf_response(_self, op_name, _kwarg):
         if op_name == 'DescribeStacks':
@@ -319,6 +339,14 @@ def test_aws_lambda_describe_still_in_progress():
             assert result_pb.state.state == DeploymentState.PENDING
 
 
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_docker_available_or_raise',
+    MagicMock(),
+)
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    MagicMock(),
+)
 def test_aws_lambda_describe_success():
     def mock_cf_response(_self, op_name, _kwarg):
         if op_name == 'DescribeStacks':

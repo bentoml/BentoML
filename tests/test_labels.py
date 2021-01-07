@@ -52,6 +52,14 @@ def test_label_selectors_on_cli_get(bento_service):
     assert f'{bento_service.name}:{bento_service.version}' in success_result.output
 
 
+@mock.patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_docker_available_or_raise',
+    mock.MagicMock(),
+)
+@mock.patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
+    mock.MagicMock(),
+)
 def test_deployment_labels():
     runner = CliRunner()
     cli = create_bentoml_cli()

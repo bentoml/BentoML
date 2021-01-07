@@ -447,6 +447,10 @@ def _update_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
 
 
 class SageMakerDeploymentOperator(DeploymentOperatorBase):
+    def __init__(self, yatai_service):
+        super(SageMakerDeploymentOperator, self).__init__(yatai_service)
+        ensure_docker_available_or_raise()
+
     def add(self, deployment_pb):
         try:
             deployment_spec = deployment_pb.spec
@@ -455,7 +459,6 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 sagemaker_config.region or get_default_aws_region()
             )
 
-            ensure_docker_available_or_raise()
             if sagemaker_config is None:
                 raise YataiDeploymentException("Sagemaker configuration is missing.")
 
@@ -539,7 +542,6 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
     def update(self, deployment_pb, previous_deployment):
         try:
-            ensure_docker_available_or_raise()
             deployment_spec = deployment_pb.spec
             bento_pb = self.yatai_service.GetBento(
                 GetBentoRequest(

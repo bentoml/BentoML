@@ -46,8 +46,6 @@ PYTHON_VERSION = "{minor_version}.{micro}".format(
 )
 
 
-# Including 'conda-forge' channel in the default channels to ensure newest Python
-# versions can be installed properly via conda when building API server docker image
 DEFAULT_CONDA_ENV_BASE_YAML = """
 name: bentoml-default-conda-env
 channels:

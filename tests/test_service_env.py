@@ -179,11 +179,9 @@ def test_conda_channels_n_dependencies(tmpdir):
 
     yaml = YAML()
     env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
-    assert 'conda-forge' in env_yml['channels']
     assert 'defaults' in env_yml['channels']
     assert 'bentoml-test-channel' in env_yml['channels']
 
-    assert 'pkgs/main::pip' in env_yml['dependencies']
     assert 'bentoml-test-lib' in env_yml['dependencies']
 
 

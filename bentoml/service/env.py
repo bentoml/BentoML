@@ -51,10 +51,8 @@ PYTHON_VERSION = "{minor_version}.{micro}".format(
 DEFAULT_CONDA_ENV_BASE_YAML = """
 name: bentoml-default-conda-env
 channels:
-  - conda-forge
   - defaults
-dependencies:
-  - pkgs/main::pip
+dependencies: []
 """
 
 

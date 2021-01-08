@@ -15,7 +15,6 @@
 import logging
 import os
 import sys
-import uuid
 from functools import partial
 
 from flask import (
@@ -296,7 +295,6 @@ class BentoAPIServer:
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
-        request_id = str(uuid.uuid4())
 
         def api_func():
             # handle_request may raise 4xx or 5xx exception.
@@ -331,8 +329,6 @@ class BentoAPIServer:
                     'request, find the error details in server logs',
                     500,
                 )
-
-            response.headers["request_id"] = request_id
 
             return response
 

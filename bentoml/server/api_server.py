@@ -35,6 +35,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader
 from bentoml.server import trace
 from bentoml.server.instruments import InstrumentMiddleware
+from bentoml.server.jaegermiddleware import JaegerMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import InferenceAPI
 
@@ -113,7 +114,7 @@ class BentoAPIServer:
             os.path.dirname(os.path.abspath(__file__)), 'swagger_static'
         )
 
-        for middleware in (InstrumentMiddleware,):
+        for middleware in (InstrumentMiddleware,JaegerMiddleware):
             self.app.wsgi_app = middleware(self.app.wsgi_app, self.bento_service)
 
         self.setup_routes()

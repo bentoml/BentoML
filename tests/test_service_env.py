@@ -174,15 +174,14 @@ def test_conda_channels_n_dependencies(tmpdir):
     service_with_string.save_to_dir(str(tmpdir))
 
     from pathlib import Path
+
     from bentoml.utils.ruamel_yaml import YAML
 
     yaml = YAML()
     env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
-    assert 'conda-forge' in env_yml['channels']
     assert 'defaults' in env_yml['channels']
     assert 'bentoml-test-channel' in env_yml['channels']
 
-    assert 'pip' in env_yml['dependencies']
     assert 'bentoml-test-lib' in env_yml['dependencies']
 
 
@@ -201,6 +200,7 @@ def test_conda_overwrite_channels(tmpdir):
     service_with_string.save_to_dir(str(tmpdir))
 
     from pathlib import Path
+
     from bentoml.utils.ruamel_yaml import YAML
 
     yaml = YAML()
@@ -237,6 +237,7 @@ dependencies:
     service_with_string.save_to_dir(str(tmpdir))
 
     from pathlib import Path
+
     from bentoml.utils.ruamel_yaml import YAML
 
     yaml = YAML()

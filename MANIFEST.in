@@ -28,7 +28,7 @@ include versioneer.py
 include bentoml/_version.py
 include bentoml/saved_bundle/bentoml-init.sh
 include bentoml/saved_bundle/docker-entrypoint.sh
-graft bentoml/server/swagger_static
+graft bentoml/server/static_content
 graft bentoml/configuration
 
 # include migration files

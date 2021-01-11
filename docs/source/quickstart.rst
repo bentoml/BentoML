@@ -266,9 +266,7 @@ prediction request:
 Launch inference job from CLI
 -----------------------------
 
-BentoML cli supports loading and running a packaged model from CLI. With the
-`DataframeInput` adapter, the CLI command supports reading input Dataframe data from CLI
-argument or local csv or json files:
+The BentoML CLI supports loading and running a packaged model from CLI. With the `DataframeInput` adapter, the CLI command supports reading input Dataframe data directly from CLI arguments and local files:
 
 .. code-block:: bash
 
@@ -276,6 +274,7 @@ argument or local csv or json files:
 
   bentoml run IrisClassifier:latest predict --input-file './iris_data.csv'
 
+More details on running packaged models that use other input adapters here: `Offline Batch Serving <https://docs.bentoml.org/en/latest/guides/batch_serving.html>`_
 
 Containerize Model API Server
 -----------------------------

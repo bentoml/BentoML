@@ -7,13 +7,10 @@ from concurrent import futures
 
 import certifi
 import click
-import grpc
 
 from bentoml import config
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
-from bentoml.yatai.client.interceptor import header_client_interceptor
-from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 
@@ -29,7 +26,17 @@ def get_yatai_service(
     access_token = access_token or config('yatai_service').get('access_token')
     channel_address = channel_address.strip()
     if channel_address:
-        from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
+        try:
+            # Limit the dependency on grpcio to YataiSerivce related actions
+            import grpc
+            from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
+            from bentoml.yatai.client.interceptor import header_client_interceptor
+        except ImportError:
+            logger.error(
+                "Failed importing grpcio module, install via `pip install grpcio` or"
+                "`pip install bentoml[yatai_service]`"
+            )
+            raise
 
         if any([db_url, repo_base_url, s3_endpoint_url, default_namespace]):
             logger.warning(
@@ -87,7 +94,19 @@ def get_yatai_service(
 def start_yatai_service_grpc_server(
     db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url, base_url
 ):
-    from bentoml.yatai.yatai_service_impl import YataiService
+    try:
+        # Limit the dependency on grpcio to YataiSerivce related actions
+        import grpc
+        from bentoml.yatai.yatai_service_impl import YataiService
+        from bentoml.yatai.proto.yatai_service_pb2_grpc import (
+            add_YataiServicer_to_server,
+        )
+    except ImportError:
+        logger.error(
+            'Failed importing grpcio module, install via `pip install grpcio` or'
+            '"pip install bentoml[yatai_service]"'
+        )
+        raise
 
     yatai_service = YataiService(
         db_url=db_url, repo_base_url=repo_base_url, s3_endpoint_url=s3_endpoint_url,
@@ -108,7 +127,7 @@ def start_yatai_service_grpc_server(
             reflection.enable_server_reflection(SERVICE_NAMES, server)
         except ImportError:
             logger.debug(
-                'Failed enabling gRPC server reflection, missing required package: '
+                'Failed to enable gRPC server reflection, missing required package: '
                 '"pip install grpcio-reflection"'
             )
     server.add_insecure_port(f'[::]:{grpc_port}')
@@ -133,12 +152,21 @@ def start_yatai_service_grpc_server(
         if (with_ui and base_url!=".")
         else f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'''
         f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
-        f'* Usage:\n'
-        f'*  Set config: `bentoml config set yatai_service.url=127.0.0.1:{grpc_port}`\n'
-        f'*  Set env var: `export BENTOML__YATAI_SERVICE__URL=127.0.0.1:{grpc_port}`\n'
         f'* Help and instructions: '
         f'https://docs.bentoml.org/en/latest/guides/yatai_service.html\n'
         f'{f"* Web server log can be found here: {web_ui_log_path}" if with_ui else ""}'
+        f'\n-----\n'
+        f'* Usage in Python:\n'
+        f'*  bento_svc.save(yatai_url="127.0.0.1:{grpc_port}")\n'
+        f'*  bentoml.yatai.client.get_yatai_client("127.0.0.1:{grpc_port}").repository.list()\n'
+        f'* Usage in CLI:\n'
+        f'*  bentoml list --yatai-url=127.0.0.1:{grpc_port}\n'
+        f'*  bentoml containerize IrisClassifier:latest --yatai-url=127.0.0.1:{grpc_port}\n'
+        f'*  bentoml push IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:{grpc_port}\n'
+        f'*  bentoml pull IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:{grpc_port}\n'
+        f'*  bentoml retrieve IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:{grpc_port} --target_dir="/tmp/foo/bar"\n'
+        f'*  bentoml delete IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:{grpc_port}\n'
+        # TODO: simplify the example usage here once related documentation is ready
     )
 
     try:

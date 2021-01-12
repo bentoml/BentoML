@@ -349,6 +349,11 @@ def save(bento_service, base_path=None, version=None, labels=None):
     :return: saved_path: file path to where the BentoService is saved
     """
 
+    logger.warning(
+        "`from bentoml import save` is being deprecated soon, use BentoService#save "
+        "and BentoService#save_to_dir instead."
+    )
+
     from bentoml.yatai.client import YataiClient
     from bentoml.yatai.yatai_service import get_yatai_service
 

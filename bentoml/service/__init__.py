@@ -209,7 +209,7 @@ def env_decorator(
     pip_index_url: str = None,
     pip_trusted_host: str = None,
     pip_extra_index_url: str = None,
-    auto_pip_dependencies: bool = False,
+    auto_pip_dependencies: bool = None,
     infer_pip_packages: bool = False,
     requirements_txt_file: str = None,
     conda_channels: List[str] = None,
@@ -247,6 +247,17 @@ def env_decorator(
             is required to ensure the python version matches the BentoService bundle
         zipimport_archives: list of zipimport archives paths relative to the module path
     """
+
+    if pip_dependencies is not None:
+        logger.warning(
+            "`pip_dependencies` parameter in `@env` is being deprecated soon, use "
+            "`pip_packages` instead, e.g. `@env(pip_packages=[\"numpy\"])`"
+        )
+    if auto_pip_dependencies is not None:
+        logger.warning(
+            "`auto_pip_dependencies` parameter in `@env` is being deprecated soon, use"
+            "`infer_pip_packages` instead, e.g. `@env(infer_pip_packages=True)`"
+        )
 
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv(

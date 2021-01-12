@@ -344,7 +344,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         type=click.STRING,
         help='Specify the YataiService for running the containerization, default to '
         'the Local YataiService with local docker deamon. Example: '
-        '"--yatai-url http://localhost:50050"'
+        '"--yatai-url http://localhost:50050"',
     )
     def containerize(bento, push, tag, build_arg, yatai_url):
         """Containerize specified BentoService.

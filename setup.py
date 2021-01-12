@@ -30,7 +30,7 @@ install_requires = [
     "configparser",
     "docker",
     "flask",
-    "grpcio<=1.27.2",
+    "grpcio",
     "gunicorn",
     "humanfriendly",
     "numpy",
@@ -74,10 +74,10 @@ test_requires = [
 dev_requires = [
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
-    "grpcio-reflection<=1.27.2",
-    # This grpcio-tools version  should be kept in sync with the version found in
+    # grpcio-tools version must be kept in sync with the version used in
     # `protos/generate-docker.sh` script
-    "grpcio-tools==1.27.2",
+    "grpcio-tools~=1.34.0",
+    "grpcio-reflection~=1.34.0",
     "pylint>=2.5.2",
     "setuptools",
     "tox-conda>=0.2.0",
@@ -98,6 +98,7 @@ docs_requires = [
 dev_all = install_requires + dev_requires + docs_requires
 
 yatai_service = [
+    "grpcio~=1.34.0",  # match the grpcio-tools version used in yatai docker image
     "google-cloud-storage",
     "azure-cli",
     "aws-sam-cli==0.33.1",

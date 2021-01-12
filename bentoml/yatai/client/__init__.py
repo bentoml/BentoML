@@ -44,7 +44,7 @@ class YataiClient:
         return DeploymentAPIClient(self.yatai_service)
 
 
-def get_yatai_client(yatai_service_channel_address=None):
+def get_yatai_client(yatai_url=None):
     """
     Args:
         yatai_service_channel_address: String. Yatai Service URL address.
@@ -56,10 +56,10 @@ def get_yatai_client(yatai_service_channel_address=None):
 
     >>>  from bentoml.yatai.client import get_yatai_client
     >>>
-    >>>  remote_yatai_service_address = 'https://remote.yatai:50050'
-    >>>  yatai_client = get_yatai_client(remote_yatai_service_address)
+    >>>  yatai_url = 'https://remote.yatai:50050'
+    >>>  yatai_client = get_yatai_client(yatai_url)
     >>>
     >>>  local_yatai_client = get_yatai_client()
     """
-    yatai_service = get_yatai_service(channel_address=yatai_service_channel_address)
+    yatai_service = get_yatai_service(channel_address=yatai_url)
     return YataiClient(yatai_service=yatai_service)

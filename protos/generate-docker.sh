@@ -8,7 +8,7 @@ echo "Building BentoML proto generator docker image.."
 docker build -t bentoml-proto-generator - <<EOF
 FROM python:3.7
 
-RUN pip install grpcio-tools==1.27.2
+RUN pip install grpcio-tools~=1.34.0
 
 RUN apt-get update && apt-get install -y nodejs npm
 

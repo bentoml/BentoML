@@ -74,6 +74,9 @@ def track_deployment_delete(deployment_operator, created_at, force_delete=False)
 
 
 def get_yatai_service_impl(base=object):
+    # This helps avoid loading YataiServicer grpc file when using local YataiService
+    # implementation. This speeds up regular save/load operations when Yatai is not used
+
     class YataiServiceImpl(base):
 
         # pylint: disable=unused-argument
@@ -102,7 +105,9 @@ def get_yatai_service_impl(base=object):
             return HealthCheckResponse(status=Status.OK())
 
         def GetYataiServiceVersion(self, request, context=None):
-            return GetYataiServiceVersionResponse(status=Status.OK, version=BENTOML_VERSION)
+            return GetYataiServiceVersionResponse(
+                status=Status.OK, version=BENTOML_VERSION
+            )
 
         def ApplyDeployment(self, request, context=None):
             try:
@@ -142,8 +147,8 @@ def get_yatai_service_impl(base=object):
                         self.deployment_store.insert_or_update(response.deployment)
                     else:
                         raise BentoMLException(
-                            "DeploymentOperator Internal Error: failed to add or update "
-                            "deployment metadata to database"
+                            "DeploymentOperator Internal Error: failed to add or "
+                            "update deployment metadata to database"
                         )
                     logger.info(
                         "ApplyDeployment (%s, namespace %s) succeeded",
@@ -187,7 +192,8 @@ def get_yatai_service_impl(base=object):
                     # executing deployment deletion
                     response = operator.delete(deployment_pb)
 
-                    # if delete successful, remove it from active deployment records table
+                    # if delete successful, remove it from active deployment records
+                    # table
                     if response.status.status_code == status_pb2.Status.OK:
                         track_deployment_delete(
                             deployment_pb.spec.operator, deployment_pb.created_at
@@ -200,7 +206,8 @@ def get_yatai_service_impl(base=object):
                     # If force delete flag is True, we will remove the record
                     # from yatai database.
                     if request.force_delete:
-                        # Track deployment delete before it vanquishes from deployment store
+                        # Track deployment delete before it vanquishes from deployment
+                        # store
                         track_deployment_delete(
                             deployment_pb.spec.operator, deployment_pb.created_at, True
                         )
@@ -355,7 +362,9 @@ def get_yatai_service_impl(base=object):
                     )
                 if request.service_metadata:
                     self.bento_metadata_store.update_bento_service_metadata(
-                        request.bento_name, request.bento_version, request.service_metadata
+                        request.bento_name,
+                        request.bento_version,
+                        request.service_metadata,
                     )
                 return UpdateBentoResponse(status=Status.OK())
             except BentoMLException as e:
@@ -379,7 +388,9 @@ def get_yatai_service_impl(base=object):
                     return DangerouslyDeleteBentoResponse(status=Status.ABORTED(msg))
 
                 logger.debug(
-                    'Deleting BentoService %s:%s', request.bento_name, request.bento_version
+                    'Deleting BentoService %s:%s',
+                    request.bento_name,
+                    request.bento_version,
                 )
                 self.bento_metadata_store.dangerously_delete(
                     request.bento_name, request.bento_version
@@ -442,7 +453,9 @@ def get_yatai_service_impl(base=object):
                     ascending_order=request.ascending_order,
                 )
 
-                return ListBentoResponse(status=Status.OK(), bentos=bento_metadata_pb_list)
+                return ListBentoResponse(
+                    status=Status.OK(), bentos=bento_metadata_pb_list
+                )
             except BentoMLException as e:
                 logger.error("RPC ERROR ListBento: %s", e)
                 return ListBentoResponse(status=e.status_proto)

@@ -59,6 +59,7 @@ test_requires = [
     "codecov",
     "coverage>=4.4",
     "flake8>=3.8.2",
+    "grpcio",  # For testing yatai grpc service and client related code
     "imageio>=2.5.0",
     "mock>=2.0.0",
     "moto==1.3.14",

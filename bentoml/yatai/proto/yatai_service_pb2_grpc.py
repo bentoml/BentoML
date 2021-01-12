@@ -87,6 +87,11 @@ class YataiStub(object):
         request_serializer=repository__pb2.ListBentoRequest.SerializeToString,
         response_deserializer=repository__pb2.ListBentoResponse.FromString,
         )
+    self.ContainerizeBento = channel.unary_unary(
+        '/bentoml.Yatai/ContainerizeBento',
+        request_serializer=repository__pb2.ContainerizeBentoRequest.SerializeToString,
+        response_deserializer=repository__pb2.ContainerizeBentoResponse.FromString,
+        )
 
 
 class YataiServicer(object):
@@ -194,6 +199,13 @@ class YataiServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def ContainerizeBento(self, request, context):
+    """Create a container image from a Bento
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_YataiServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -256,6 +268,11 @@ def add_YataiServicer_to_server(servicer, server):
           servicer.ListBento,
           request_deserializer=repository__pb2.ListBentoRequest.FromString,
           response_serializer=repository__pb2.ListBentoResponse.SerializeToString,
+      ),
+      'ContainerizeBento': grpc.unary_unary_rpc_method_handler(
+          servicer.ContainerizeBento,
+          request_deserializer=repository__pb2.ContainerizeBentoRequest.FromString,
+          response_serializer=repository__pb2.ContainerizeBentoResponse.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

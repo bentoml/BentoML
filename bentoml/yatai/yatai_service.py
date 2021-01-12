@@ -80,10 +80,10 @@ def get_yatai_service(
             )
         return YataiStub(channel)
     else:
-        from bentoml.yatai.yatai_service_impl import YataiService
+        from bentoml.yatai.yatai_service_impl import LocalYataiService
 
         logger.debug("Creating local YataiService instance")
-        return YataiService(
+        return LocalYataiService(
             db_url=db_url,
             repo_base_url=repo_base_url,
             s3_endpoint_url=s3_endpoint_url,
@@ -97,10 +97,11 @@ def start_yatai_service_grpc_server(
     try:
         # Limit the dependency on grpcio to YataiSerivce related actions
         import grpc
-        from bentoml.yatai.yatai_service_impl import YataiService
+        from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
         from bentoml.yatai.proto.yatai_service_pb2_grpc import (
             add_YataiServicer_to_server,
         )
+        from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
     except ImportError:
         logger.error(
             'Failed importing grpcio module, install via `pip install grpcio` or'
@@ -108,7 +109,8 @@ def start_yatai_service_grpc_server(
         )
         raise
 
-    yatai_service = YataiService(
+    YataiServicerImpl = get_yatai_service_impl(YataiServicer)
+    yatai_service = YataiServicerImpl(
         db_url=db_url, repo_base_url=repo_base_url, s3_endpoint_url=s3_endpoint_url,
     )
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

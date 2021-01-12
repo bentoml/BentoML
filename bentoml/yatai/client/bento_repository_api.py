@@ -42,7 +42,6 @@ from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.saved_bundle import save_to_dir, load_bento_service_metadata, safe_retrieve
 from bentoml.yatai.status import Status
-from bentoml.yatai.yatai_service_impl import YataiService
 
 
 logger = logging.getLogger(__name__)
@@ -51,6 +50,7 @@ yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 class BentoRepositoryAPIClient:
     def __init__(self, yatai_service):
+        # YataiService stub for accessing remote YataiService RPCs
         self.yatai_service = yatai_service
 
     def push(self, bento, labels=None):
@@ -74,8 +74,6 @@ class BentoRepositoryAPIClient:
         >>> remote_saved_path= remote_yatai_client.repository.push(bento)
         """
         track('py-api-push')
-        if isinstance(self.yatai_service, YataiService):
-            raise BentoMLException('need set yatai_service_url')
 
         from bentoml.yatai.client import get_yatai_client
 
@@ -103,12 +101,11 @@ class BentoRepositoryAPIClient:
 
         Example:
 
-        >>> remote_yatai_client = get_yatai_client('remote_yatai_service_address')
-        >>> saved_path = remote_yatai_client.repository.pull('MyService:version')
+        >>> client = get_yatai_client('127.0.0.1:50051')
+        >>> saved_path = client.repository.pull('MyService:')
         """
         track('py-api-pull')
-        if isinstance(self.yatai_service, YataiService):
-            raise BentoMLException('need set yatai_service_url')
+
         bento_pb = self.get(bento)
         with TempDirectory() as tmpdir:
             # Create a non-exist directory for safe_retrieve

@@ -11,7 +11,7 @@ cd "$GIT_ROOT" || exit
 python -m pip install -e .
 
 # Install Yatai dependencies
-pip install psycopg2 psycopg2-binary grpcio
+pip install psycopg2 psycopg2-binary
 
 # Run Yatai server tests
 python -m pytest -s "$GIT_ROOT"/tests/integration/yatai_server/test_local_fs.py

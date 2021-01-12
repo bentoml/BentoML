@@ -47,7 +47,7 @@ def local_yatai_service_container(db_url=None, repo_base_url=None):
                 f"""\
 FROM bentoml/yatai-service:{LAST_PYPI_RELEASE_VERSION}
 ADD . /bentoml-local-repo
-RUN pip install /bentoml-local-repo
+RUN pip install -U /bentoml-local-repo
             """
             )
         logger.info(f'building docker image {yatai_docker_image_tag}')

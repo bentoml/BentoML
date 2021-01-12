@@ -26,17 +26,10 @@ def get_yatai_service(
     access_token = access_token or config('yatai_service').get('access_token')
     channel_address = channel_address.strip()
     if channel_address:
-        try:
-            # Limit the dependency on grpcio to YataiSerivce related actions
-            import grpc
-            from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
-            from bentoml.yatai.client.interceptor import header_client_interceptor
-        except ImportError:
-            logger.error(
-                "Failed importing grpcio module, install via `pip install grpcio` or"
-                "`pip install bentoml[yatai_service]`"
-            )
-            raise
+        # Lazily import grpcio for YataiSerivce gRPC related actions
+        import grpc
+        from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
+        from bentoml.yatai.client.interceptor import header_client_interceptor
 
         if any([db_url, repo_base_url, s3_endpoint_url, default_namespace]):
             logger.warning(
@@ -80,7 +73,9 @@ def get_yatai_service(
             )
         return YataiStub(channel)
     else:
-        from bentoml.yatai.yatai_service_impl import LocalYataiService
+        from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
+
+        LocalYataiService = get_yatai_service_impl()
 
         logger.debug("Creating local YataiService instance")
         return LocalYataiService(
@@ -94,20 +89,11 @@ def get_yatai_service(
 def start_yatai_service_grpc_server(
     db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url, base_url
 ):
-    try:
-        # Limit the dependency on grpcio to YataiSerivce related actions
-        import grpc
-        from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
-        from bentoml.yatai.proto.yatai_service_pb2_grpc import (
-            add_YataiServicer_to_server,
-        )
-        from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
-    except ImportError:
-        logger.error(
-            'Failed importing grpcio module, install via `pip install grpcio` or'
-            '"pip install bentoml[yatai_service]"'
-        )
-        raise
+    # Lazily import grpcio for YataiSerivce gRPC related actions
+    import grpc
+    from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
+    from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
+    from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
 
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(

@@ -524,6 +524,3 @@ def get_yatai_service_impl(base=object):
         # pylint: enable=unused-argument
 
     return YataiServiceImpl
-
-
-LocalYataiService = get_yatai_service_impl()

@@ -205,7 +205,7 @@ class BentoRepositoryAPIClient:
                 http_response = requests.put(
                     response.uri.s3_presigned_url, data=fileobj
                 )
-            elif response.uri.uri == BentoUri.GCS:
+            elif response.uri.type == BentoUri.GCS:
                 http_response = requests.put(
                     response.uri.gcs_presigned_url, data=fileobj
                 )

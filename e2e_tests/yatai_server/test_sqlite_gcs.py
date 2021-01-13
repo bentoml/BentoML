@@ -33,7 +33,9 @@ def test_yatai_server_with_sqlite_and_gcs():
         retrieve_svc_result = execute_bentoml_retrieve_command(
             f'{svc.name}:{svc.version}'
         )
-        assert retrieve_svc_result.startswith(f'Service {svc.name} artifact directory')
+        assert retrieve_svc_result.startswith(
+            f'Save {svc.name}:{svc.version} artifact to directory'
+        )
 
         logger.info('Validate BentoService prediction result')
         run_result = execute_bentoml_run_command(bento_tag, '[]')

@@ -201,13 +201,15 @@ class BentoRepositoryAPIClient:
                 tar.add(saved_bento_path, arcname=bento_service_metadata.name)
             fileobj.seek(0, 0)
 
-            request_url = (
-                response.uri.s3_presigned_url
-                if response.uri.type == BentoUri.S3
-                else response.uri.gcs_presigned_url
-            )
+            if response.uri.type == BentoUri.S3:
+                http_response = requests.put(
+                    response.uri.s3_presigned_url, data=fileobj
+                )
+            elif response.uri.type == BentoUri.GCS:
+                http_response = requests.put(
+                    response.uri.gcs_presigned_url, data=fileobj
+                )
 
-            http_response = requests.put(request_url, data=fileobj)
             if http_response.status_code != 200:
                 self._update_bento_upload_progress(
                     bento_service_metadata, UploadStatus.ERROR

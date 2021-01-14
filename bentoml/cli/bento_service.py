@@ -381,7 +381,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         docker_build_args = {}
         if build_arg:
             for arg in build_arg:
-                key, value = arg.split("=")
+                key, value = arg.split("=", 1)
                 docker_build_args[key] = value
         if yatai_url is not None:
             spinner_message = f'Sending containerize RPC to YataiService at {yatai_url}'

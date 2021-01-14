@@ -500,7 +500,9 @@ def get_yatai_service_impl(base=object):
                     safe_retrieve(bento_service_bundle_path, temp_bundle_path)
                     try:
                         docker_client.images.build(
-                            path=temp_bundle_path, tag=tag, buildargs=request.build_args
+                            path=temp_bundle_path,
+                            tag=tag,
+                            buildargs=dict(request.build_args),
                         )
                     except (docker.errors.APIError, docker.errors.BuildError) as error:
                         logger.error(f'Encounter container building issue: {error}')

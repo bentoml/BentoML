@@ -17,13 +17,10 @@ def initialize_tracer(service_name, log_level=logging.DEBUG):
     logging.basicConfig(level=log_level)
 
     config = Config(
-        config={
-            'sampler': {'type': 'const', 'param': 1},
-            'logging': True
-        },
+        config={'sampler': {'type': 'const', 'param': 1}, 'logging': True},
         service_name=service_name,
         validate=True,
-        scope_manager=AsyncioScopeManager()
+        scope_manager=AsyncioScopeManager(),
     )
 
     return config.initialize_tracer()
@@ -31,15 +28,15 @@ def initialize_tracer(service_name, log_level=logging.DEBUG):
 
 @contextmanager
 def trace(
-        server_url=None,
-        request_headers=None,
-        async_transport=False,
-        sample_rate=1.0,
-        standalone=False,
-        is_root=False,
-        service_name="some service",
-        span_name="service procedure",
-        port=0,
+    server_url=None,
+    request_headers=None,
+    async_transport=False,
+    sample_rate=1.0,
+    standalone=False,
+    is_root=False,
+    service_name="some service",
+    span_name="service procedure",
+    port=0,
 ):
     """
     Opentracing tracer function
@@ -59,8 +56,9 @@ def trace(
     if span_context is None:
         span_context = span_context_saved or None
 
-    with tracer.start_active_span(operation_name=span_name,
-                                  child_of=span_context) as scope:
+    with tracer.start_active_span(
+        operation_name=span_name, child_of=span_context
+    ) as scope:
         token = span_context_var.set(scope.span.context)
         yield scope
         span_context_var.reset(token)

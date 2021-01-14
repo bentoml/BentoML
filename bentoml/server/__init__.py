@@ -31,10 +31,12 @@ def trace(*args, **kwargs):
 
     if ZIPKIN_API_URL:
         from bentoml.server.trace import trace as _trace
+
         new_args = [ZIPKIN_API_URL, *args]
 
     elif OPENTRACING_SERVER_ADDRESS:
         from bentoml.server.opentrace import trace as _trace
+
         new_args = [OPENTRACING_SERVER_ADDRESS, *args]
         kwargs['port'] = OPENTRACING_SERVER_PORT
 
@@ -55,10 +57,12 @@ def async_trace(*args, **kwargs):
 
     if ZIPKIN_API_URL:
         from bentoml.server.trace import async_trace as _async_trace
+
         new_args = [ZIPKIN_API_URL, *args]
 
     elif OPENTRACING_SERVER_ADDRESS:
         from bentoml.server.opentrace import async_trace as _async_trace
+
         new_args = [OPENTRACING_SERVER_ADDRESS, *args]
         kwargs['port'] = OPENTRACING_SERVER_PORT
 
@@ -72,13 +76,13 @@ def async_trace(*args, **kwargs):
 
 
 def start_dev_server(
-        saved_bundle_path: str,
-        port: int,
-        enable_microbatch: bool,
-        mb_max_batch_size: int,
-        mb_max_latency: int,
-        run_with_ngrok: bool,
-        enable_swagger: bool,
+    saved_bundle_path: str,
+    port: int,
+    enable_microbatch: bool,
+    mb_max_batch_size: int,
+    mb_max_latency: int,
+    run_with_ngrok: bool,
+    enable_swagger: bool,
 ):
     logger.info("Starting BentoML API server in development mode..")
 
@@ -129,11 +133,11 @@ def start_dev_server(
 
 
 def start_dev_batching_server(
-        saved_bundle_path: str,
-        port: int,
-        api_server_port: int,
-        mb_max_batch_size: int,
-        mb_max_latency: int,
+    saved_bundle_path: str,
+    port: int,
+    api_server_port: int,
+    mb_max_batch_size: int,
+    mb_max_latency: int,
 ):
     from bentoml.marshal.marshal import MarshalService
 
@@ -150,15 +154,15 @@ def start_dev_batching_server(
 
 
 def start_prod_server(
-        saved_bundle_path: str,
-        port: int,
-        timeout: int,
-        workers: int,
-        enable_microbatch: bool,
-        mb_max_batch_size: int,
-        mb_max_latency: int,
-        microbatch_workers: int,
-        enable_swagger: bool,
+    saved_bundle_path: str,
+    port: int,
+    timeout: int,
+    workers: int,
+    enable_microbatch: bool,
+    mb_max_batch_size: int,
+    mb_max_latency: int,
+    microbatch_workers: int,
+    enable_swagger: bool,
 ):
     logger.info("Starting BentoML API server in production mode..")
 

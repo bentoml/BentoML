@@ -19,36 +19,66 @@ from bentoml import config
 
 logger = logging.getLogger(__name__)
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
+OPENTRACING_SERVER_ADDRESS = config("tracing").get("opentracing_server_address")
+OPENTRACING_SERVER_PORT = config("tracing").get("opentracing_server_port")
 
 
 @contextmanager
 def trace(*args, **kwargs):
+    """
+    synchronous tracing function, will choose relevant tracer
+    """
+
     if ZIPKIN_API_URL:
         from bentoml.server.trace import trace as _trace
+        new_args = [ZIPKIN_API_URL, *args]
 
-        return _trace(ZIPKIN_API_URL, *args, **kwargs)
+    elif OPENTRACING_SERVER_ADDRESS:
+        from bentoml.server.opentrace import trace as _trace
+        new_args = [OPENTRACING_SERVER_ADDRESS, *args]
+        kwargs['port'] = OPENTRACING_SERVER_PORT
+
     else:
-        yield
+        yield None
+        return
+
+    with _trace(*new_args, **kwargs) as scope:
+        yield scope
+    return
 
 
 @contextmanager
 def async_trace(*args, **kwargs):
+    """
+    asynchronous tracing function, will choose relevant tracer
+    """
+
     if ZIPKIN_API_URL:
         from bentoml.server.trace import async_trace as _async_trace
+        new_args = [ZIPKIN_API_URL, *args]
 
-        return _async_trace(ZIPKIN_API_URL, *args, **kwargs)
+    elif OPENTRACING_SERVER_ADDRESS:
+        from bentoml.server.opentrace import async_trace as _async_trace
+        new_args = [OPENTRACING_SERVER_ADDRESS, *args]
+        kwargs['port'] = OPENTRACING_SERVER_PORT
+
     else:
-        yield
+        yield None
+        return
+
+    with _async_trace(*new_args, **kwargs) as scope:
+        yield scope
+    return
 
 
 def start_dev_server(
-    saved_bundle_path: str,
-    port: int,
-    enable_microbatch: bool,
-    mb_max_batch_size: int,
-    mb_max_latency: int,
-    run_with_ngrok: bool,
-    enable_swagger: bool,
+        saved_bundle_path: str,
+        port: int,
+        enable_microbatch: bool,
+        mb_max_batch_size: int,
+        mb_max_latency: int,
+        run_with_ngrok: bool,
+        enable_swagger: bool,
 ):
     logger.info("Starting BentoML API server in development mode..")
 
@@ -99,13 +129,12 @@ def start_dev_server(
 
 
 def start_dev_batching_server(
-    saved_bundle_path: str,
-    port: int,
-    api_server_port: int,
-    mb_max_batch_size: int,
-    mb_max_latency: int,
+        saved_bundle_path: str,
+        port: int,
+        api_server_port: int,
+        mb_max_batch_size: int,
+        mb_max_latency: int,
 ):
-
     from bentoml.marshal.marshal import MarshalService
 
     marshal_server = MarshalService(
@@ -121,15 +150,15 @@ def start_dev_batching_server(
 
 
 def start_prod_server(
-    saved_bundle_path: str,
-    port: int,
-    timeout: int,
-    workers: int,
-    enable_microbatch: bool,
-    mb_max_batch_size: int,
-    mb_max_latency: int,
-    microbatch_workers: int,
-    enable_swagger: bool,
+        saved_bundle_path: str,
+        port: int,
+        timeout: int,
+        workers: int,
+        enable_microbatch: bool,
+        mb_max_batch_size: int,
+        mb_max_latency: int,
+        microbatch_workers: int,
+        enable_swagger: bool,
 ):
     logger.info("Starting BentoML API server in production mode..")
 

@@ -248,8 +248,8 @@ class BentoAPIServer:
         return send_from_directory(static_path, filename)
 
     @staticmethod
-    def docs_view_func(bento_service):
-        docs = get_open_api_spec_json(bento_service)
+    def docs_view_func(bento_service, swagger_url_prefix):
+        docs = get_open_api_spec_json(bento_service, swagger_url_prefix)
         return jsonify(docs)
 
     @staticmethod
@@ -335,21 +335,21 @@ class BentoAPIServer:
             partial(self.swagger_static, self.swagger_path),
         )
         self.app.add_url_rule(
-            "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
+            "/docs.json", "docs", partial(self.docs_view_func, self.bento_service, self.swagger_url_prefix)
         )
-        self.app.add_url_rule(self.swagger_url_prefix+"/healthz", "healthz", self.healthz_view_func)
+        self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
         self.app.add_url_rule(
-            self.swagger_url_prefix+"/metadata",
+            "/metadata",
             "metadata",
             partial(self.metadata_json_func, self.bento_service),
         )
 
         if config("apiserver").getboolean("enable_metrics"):
-            self.app.add_url_rule(self.swagger_url_prefix+"/metrics", "metrics", self.metrics_view_func)
+            self.app.add_url_rule("/metrics", "metrics", self.metrics_view_func)
 
         if config("apiserver").getboolean("enable_feedback"):
             self.app.add_url_rule(
-                self.swagger_url_prefix+"/feedback",
+                "/feedback",
                 "feedback",
                 partial(self.feedback_view_func, self.bento_service),
                 methods=["POST"],
@@ -364,7 +364,7 @@ class BentoAPIServer:
         for api in self.bento_service.inference_apis:
             route_function = self.bento_service_api_func_wrapper(api)
             self.app.add_url_rule(
-                rule="{}/{}".format(self.swagger_url_prefix, api.name),
+                rule="/{}".format(api.name),
                 endpoint=api.name,
                 view_func=route_function,
                 methods=api.input_adapter.HTTP_METHODS,

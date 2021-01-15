@@ -17,7 +17,7 @@ from collections import OrderedDict
 from bentoml import config
 
 
-def get_open_api_spec_json(bento_service):
+def get_open_api_spec_json(bento_service, swagger_url_prefix=""):
     """
     The docs for all endpoints in Open API format.
     """
@@ -37,7 +37,7 @@ def get_open_api_spec_json(bento_service):
     paths = OrderedDict()
     default_response = {"200": {"description": "success"}}
 
-    paths["/healthz"] = OrderedDict(
+    paths[swagger_url_prefix+"/healthz"] = OrderedDict(
         get=OrderedDict(
             tags=["infra"],
             description="Health check endpoint. Expecting an empty response with status"
@@ -46,7 +46,7 @@ def get_open_api_spec_json(bento_service):
         )
     )
 
-    paths["/metadata"] = OrderedDict(
+    paths[swagger_url_prefix+"/metadata"] = OrderedDict(
         get=OrderedDict(
             tags=["infra"],
             description="BentoService metadata endpoint. Returns the service's"
@@ -56,7 +56,7 @@ def get_open_api_spec_json(bento_service):
     )
 
     if config("apiserver").getboolean("enable_metrics"):
-        paths["/metrics"] = OrderedDict(
+        paths[swagger_url_prefix+"/metrics"] = OrderedDict(
             get=OrderedDict(
                 tags=["infra"],
                 description="Prometheus metrics endpoint",
@@ -64,7 +64,7 @@ def get_open_api_spec_json(bento_service):
             )
         )
     if config("apiserver").getboolean("enable_feedback"):
-        paths["/feedback"] = OrderedDict(
+        paths[swagger_url_prefix+"/feedback"] = OrderedDict(
             post=OrderedDict(
                 tags=["infra"],
                 description="Provide feedback to prediction results from BentoService. "
@@ -93,7 +93,7 @@ def get_open_api_spec_json(bento_service):
         )
 
     for api in bento_service.inference_apis:
-        path = "/{}".format(api.name)
+        path = "{}/{}".format(swagger_url_prefix, api.name)
         paths[path] = OrderedDict(
             post=OrderedDict(
                 tags=["app"],

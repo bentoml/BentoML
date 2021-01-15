@@ -160,6 +160,7 @@ class BentoAPIServer:
         port=DEFAULT_PORT,
         app_name=None,
         enable_swagger=True,
+        swagger_url_prefix=""
     ):
         app_name = bento_service.name if app_name is None else app_name
 
@@ -168,6 +169,7 @@ class BentoAPIServer:
         self.app = Flask(app_name, static_folder=None)
         self.static_path = self.bento_service.get_web_static_content_path()
         self.enable_swagger = enable_swagger
+        self.swagger_url_prefix = swagger_url_prefix
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static_content'
@@ -335,19 +337,19 @@ class BentoAPIServer:
         self.app.add_url_rule(
             "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
         )
-        self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
+        self.app.add_url_rule(self.swagger_url_prefix+"/healthz", "healthz", self.healthz_view_func)
         self.app.add_url_rule(
-            "/metadata",
+            self.swagger_url_prefix+"/metadata",
             "metadata",
             partial(self.metadata_json_func, self.bento_service),
         )
 
         if config("apiserver").getboolean("enable_metrics"):
-            self.app.add_url_rule("/metrics", "metrics", self.metrics_view_func)
+            self.app.add_url_rule(self.swagger_url_prefix+"/metrics", "metrics", self.metrics_view_func)
 
         if config("apiserver").getboolean("enable_feedback"):
             self.app.add_url_rule(
-                "/feedback",
+                self.swagger_url_prefix+"/feedback",
                 "feedback",
                 partial(self.feedback_view_func, self.bento_service),
                 methods=["POST"],
@@ -362,7 +364,7 @@ class BentoAPIServer:
         for api in self.bento_service.inference_apis:
             route_function = self.bento_service_api_func_wrapper(api)
             self.app.add_url_rule(
-                rule="/{}".format(api.name),
+                rule="{}/{}".format(self.swagger_url_prefix, api.name),
                 endpoint=api.name,
                 view_func=route_function,
                 methods=api.input_adapter.HTTP_METHODS,

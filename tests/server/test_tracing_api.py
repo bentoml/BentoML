@@ -1,5 +1,4 @@
 import time
-import logging
 import opentracing
 from bentoml.server.opentrace import initialize_tracer, trace
 
@@ -7,10 +6,8 @@ from bentoml.server.opentrace import initialize_tracer, trace
 def test_initialize_tracer():
     service_name = 'test service name'
 
-    tracer = (
-        initialize_tracer(service_name=service_name, log_level=logging.WARNING)
-        or opentracing.global_tracer()
-    )
+    tracer = initialize_tracer(service_name=service_name) or opentracing.global_tracer()
+
     assert tracer is not None
     assert tracer.service_name == service_name
 
@@ -39,5 +36,5 @@ def test_trace():
     ) as scope:
         assert scope is not None
         assert scope.span.operation_name == span_name
-        assert scope.span.start_time < time.time()
+        assert scope.span.start_time <= time.time()
         assert scope.span.finished is False

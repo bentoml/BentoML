@@ -4,7 +4,6 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
 import opentracing
-import logging
 from opentracing import Format
 from functools import partial
 from jaeger_client.config import Config
@@ -13,11 +12,9 @@ from opentracing.scope_managers.asyncio import AsyncioScopeManager
 span_context_var = ContextVar('span context', default=None)
 
 
-def initialize_tracer(service_name, log_level=logging.DEBUG):
-    logging.basicConfig(level=log_level)
-
+def initialize_tracer(service_name):
     config = Config(
-        config={'sampler': {'type': 'const', 'param': 1}, 'logging': True},
+        config={'sampler': {'type': 'const', 'param': 1}},
         service_name=service_name,
         validate=True,
         scope_manager=AsyncioScopeManager(),

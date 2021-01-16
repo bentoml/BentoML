@@ -1,12 +1,16 @@
 import time
+import logging
 import opentracing
 from bentoml.server.opentrace import initialize_tracer, trace
 
 
-def test_tracer():
+def test_initialize_tracer():
     service_name = 'test service name'
 
-    tracer = initialize_tracer(service_name=service_name) or opentracing.global_tracer()
+    tracer = (
+        initialize_tracer(service_name=service_name, log_level=logging.WARNING)
+        or opentracing.global_tracer()
+    )
     assert tracer is not None
     assert tracer.service_name == service_name
 

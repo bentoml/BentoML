@@ -28,15 +28,15 @@ def initialize_tracer(service_name, log_level=logging.DEBUG):
 
 @contextmanager
 def trace(
-        server_url=None,  # @UnusedVariable
-        request_headers=None,
-        async_transport=False,  # @UnusedVariable
-        sample_rate=1.0,  # @UnusedVariable
-        standalone=False,  # @UnusedVariable
-        is_root=False,  # @UnusedVariable
-        service_name="some service",
-        span_name="service procedure",
-        port=0,  # @UnusedVariable
+    server_url=None,  # @UnusedVariable
+    request_headers=None,
+    async_transport=False,  # @UnusedVariable
+    sample_rate=1.0,  # @UnusedVariable
+    standalone=False,  # @UnusedVariable
+    is_root=False,  # @UnusedVariable
+    service_name="some service",
+    span_name="service procedure",
+    port=0,  # @UnusedVariable
 ):
     """
     Opentracing tracer function
@@ -58,7 +58,7 @@ def trace(
         span_context = span_context_saved or None
 
     with tracer.start_active_span(
-            operation_name=span_name, child_of=span_context
+        operation_name=span_name, child_of=span_context
     ) as scope:
         token = span_context_var.set(scope.span.context)
         yield scope

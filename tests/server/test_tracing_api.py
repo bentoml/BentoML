@@ -9,7 +9,6 @@ def test_initialize_tracer():
     tracer = initialize_tracer(service_name=service_name) or opentracing.global_tracer()
 
     assert tracer is not None
-    assert tracer.service_name == service_name
 
 
 def test_trace():

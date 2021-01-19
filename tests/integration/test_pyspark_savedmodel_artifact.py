@@ -62,7 +62,7 @@ def pyspark_svc(pyspark_model):
 
 @pytest.fixture(scope="module")
 def pyspark_svc_saved_dir(tmp_path_factory, pyspark_svc):
-    """Save a TensorFlow2 BentoService and return the saved directory."""
+    """Save a PySpark MLLib BentoService and return the saved directory."""
     tmpdir = str(tmp_path_factory.mktemp("pyspark_svc"))
     pyspark_svc.save_to_dir(tmpdir)
 
@@ -71,7 +71,7 @@ def pyspark_svc_saved_dir(tmp_path_factory, pyspark_svc):
 
 @pytest.fixture()
 def pyspark_svc_loaded(pyspark_svc_saved_dir):
-    """Return a TensorFlow2 BentoService that has been saved and loaded."""
+    """Return a PySpark BentoService that has been saved and loaded."""
     return bentoml.load(pyspark_svc_saved_dir)
 
 

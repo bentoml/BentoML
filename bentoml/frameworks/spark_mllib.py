@@ -8,13 +8,15 @@ from bentoml.service import BentoServiceArtifact, BentoServiceEnv
 
 
 class PySparkModelArtifact(BentoServiceArtifact):
-    def __init__(self, name: str):
+    def __init__(self, name: str, spark=None):
         super().__init__(name)
         self._model = None
         self._sc = None
+        self.spark = spark
 
     def set_dependencies(self, env: BentoServiceEnv):
         env.add_pip_package("pyspark")
+        env.add_conda_dependencies(["openjdk"])
 
     def pack(
         self, model, metadata: dict = None, sc=None
@@ -49,13 +51,18 @@ class PySparkModelArtifact(BentoServiceArtifact):
                 "pyspark is required to use the PySparkModelArtifact"
             )
 
-        spark = SparkSession.builder.appName('BentoService').getOrCreate()
+        spark = self.spark or SparkSession.builder.appName('BentoService').getOrCreate()
 
         model_data_path = os.path.join(path, self.name)
         metadata_path = os.path.join(path, self.name, "metadata/part-00000")
 
-        with open(metadata_path, "r") as metadata:
-            metadata = json.load(metadata)
+        try:
+            with open(metadata_path, "r") as metadata:
+                metadata = json.load(metadata)
+        except IOError:
+            raise BentoMLException(
+                "Incorrectly serialized model was loaded. Unable to load metadata"
+            )
         if "class" not in metadata:
             raise BentoMLException("Malformed metadata file.")
         model_class = metadata["class"]

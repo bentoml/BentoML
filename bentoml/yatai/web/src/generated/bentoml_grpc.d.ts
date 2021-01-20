@@ -25,6 +25,9 @@ export namespace bentoml {
 
         /** DeploymentSpec azure_functions_operator_config */
         azure_functions_operator_config?: (bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig|null);
+
+        /** DeploymentSpec aws_ec2_operator_config */
+        aws_ec2_operator_config?: (bentoml.DeploymentSpec.IAwsEc2OperatorConfig|null);
     }
 
     /** Represents a DeploymentSpec. */
@@ -57,8 +60,11 @@ export namespace bentoml {
         /** DeploymentSpec azure_functions_operator_config. */
         public azure_functions_operator_config?: (bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig|null);
 
+        /** DeploymentSpec aws_ec2_operator_config. */
+        public aws_ec2_operator_config?: (bentoml.DeploymentSpec.IAwsEc2OperatorConfig|null);
+
         /** DeploymentSpec deployment_operator_config. */
-        public deployment_operator_config?: ("custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"azure_functions_operator_config");
+        public deployment_operator_config?: ("custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"azure_functions_operator_config"|"aws_ec2_operator_config");
 
         /**
          * Creates a new DeploymentSpec instance using the specified properties.
@@ -139,7 +145,8 @@ export namespace bentoml {
             CUSTOM = 1,
             AWS_SAGEMAKER = 2,
             AWS_LAMBDA = 3,
-            AZURE_FUNCTIONS = 4
+            AZURE_FUNCTIONS = 4,
+            AWS_EC2 = 5
         }
 
         /** Properties of a CustomOperatorConfig. */
@@ -587,6 +594,126 @@ export namespace bentoml {
 
             /**
              * Converts this AzureFunctionsOperatorConfig to JSON.
+             * @returns JSON object
+             */
+            public toJSON(): { [k: string]: any };
+        }
+
+        /** Properties of an AwsEc2OperatorConfig. */
+        interface IAwsEc2OperatorConfig {
+
+            /** AwsEc2OperatorConfig region */
+            region?: (string|null);
+
+            /** AwsEc2OperatorConfig instance_type */
+            instance_type?: (string|null);
+
+            /** AwsEc2OperatorConfig ami_id */
+            ami_id?: (string|null);
+
+            /** AwsEc2OperatorConfig autoscale_min_size */
+            autoscale_min_size?: (number|null);
+
+            /** AwsEc2OperatorConfig autoscale_desired_capacity */
+            autoscale_desired_capacity?: (number|null);
+
+            /** AwsEc2OperatorConfig autoscale_max_size */
+            autoscale_max_size?: (number|null);
+        }
+
+        /** Represents an AwsEc2OperatorConfig. */
+        class AwsEc2OperatorConfig implements IAwsEc2OperatorConfig {
+
+            /**
+             * Constructs a new AwsEc2OperatorConfig.
+             * @param [properties] Properties to set
+             */
+            constructor(properties?: bentoml.DeploymentSpec.IAwsEc2OperatorConfig);
+
+            /** AwsEc2OperatorConfig region. */
+            public region: string;
+
+            /** AwsEc2OperatorConfig instance_type. */
+            public instance_type: string;
+
+            /** AwsEc2OperatorConfig ami_id. */
+            public ami_id: string;
+
+            /** AwsEc2OperatorConfig autoscale_min_size. */
+            public autoscale_min_size: number;
+
+            /** AwsEc2OperatorConfig autoscale_desired_capacity. */
+            public autoscale_desired_capacity: number;
+
+            /** AwsEc2OperatorConfig autoscale_max_size. */
+            public autoscale_max_size: number;
+
+            /**
+             * Creates a new AwsEc2OperatorConfig instance using the specified properties.
+             * @param [properties] Properties to set
+             * @returns AwsEc2OperatorConfig instance
+             */
+            public static create(properties?: bentoml.DeploymentSpec.IAwsEc2OperatorConfig): bentoml.DeploymentSpec.AwsEc2OperatorConfig;
+
+            /**
+             * Encodes the specified AwsEc2OperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.AwsEc2OperatorConfig.verify|verify} messages.
+             * @param message AwsEc2OperatorConfig message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encode(message: bentoml.DeploymentSpec.IAwsEc2OperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Encodes the specified AwsEc2OperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.AwsEc2OperatorConfig.verify|verify} messages.
+             * @param message AwsEc2OperatorConfig message or plain object to encode
+             * @param [writer] Writer to encode to
+             * @returns Writer
+             */
+            public static encodeDelimited(message: bentoml.DeploymentSpec.IAwsEc2OperatorConfig, writer?: $protobuf.Writer): $protobuf.Writer;
+
+            /**
+             * Decodes an AwsEc2OperatorConfig message from the specified reader or buffer.
+             * @param reader Reader or buffer to decode from
+             * @param [length] Message length if known beforehand
+             * @returns AwsEc2OperatorConfig
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.DeploymentSpec.AwsEc2OperatorConfig;
+
+            /**
+             * Decodes an AwsEc2OperatorConfig message from the specified reader or buffer, length delimited.
+             * @param reader Reader or buffer to decode from
+             * @returns AwsEc2OperatorConfig
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.DeploymentSpec.AwsEc2OperatorConfig;
+
+            /**
+             * Verifies an AwsEc2OperatorConfig message.
+             * @param message Plain object to verify
+             * @returns `null` if valid, otherwise the reason why it is not
+             */
+            public static verify(message: { [k: string]: any }): (string|null);
+
+            /**
+             * Creates an AwsEc2OperatorConfig message from a plain object. Also converts values to their respective internal types.
+             * @param object Plain object
+             * @returns AwsEc2OperatorConfig
+             */
+            public static fromObject(object: { [k: string]: any }): bentoml.DeploymentSpec.AwsEc2OperatorConfig;
+
+            /**
+             * Creates a plain object from an AwsEc2OperatorConfig message. Also converts values to other types if specified.
+             * @param message AwsEc2OperatorConfig
+             * @param [options] Conversion options
+             * @returns Plain object
+             */
+            public static toObject(message: bentoml.DeploymentSpec.AwsEc2OperatorConfig, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+            /**
+             * Converts this AwsEc2OperatorConfig to JSON.
              * @returns JSON object
              */
             public toJSON(): { [k: string]: any };

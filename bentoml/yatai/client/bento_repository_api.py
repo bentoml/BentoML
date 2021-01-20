@@ -22,7 +22,7 @@ import requests
 import shutil
 
 from bentoml.exceptions import BentoMLException
-from bentoml.utils import status_pb_to_error_code_and_message
+from bentoml.utils import status_pb_to_error_code_and_message, resolve_bento_bundle_uri
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.usage_stats import track
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
@@ -459,12 +459,6 @@ class BentoRepositoryAPIClient:
         """
         track('py-api-load')
         bento_pb = self.get(bento)
-        saved_bundle_path = bento_pb.uri.uri
-        if bento_pb.uri.s3_presigned_url:
-            # Use s3 presigned URL for downloading the repository if it is presented
-            saved_bundle_path = bento_pb.uri.s3_presigned_url
-        if bento_pb.uri.gcs_presigned_url:
-            saved_bundle_path = bento_pb.uri.gcs_presigned_url
-
+        saved_bundle_path = resolve_bento_bundle_uri(bento_pb)
         svc = load_from_dir(saved_bundle_path)
         return svc

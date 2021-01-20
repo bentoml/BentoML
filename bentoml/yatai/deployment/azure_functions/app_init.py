@@ -16,10 +16,10 @@ import os
 import azure.functions as func  # pylint: disable=import-error
 
 from bentoml.server.api_server import BentoAPIServer
-from bentoml import load
+from bentoml.saved_bundle.loader import load_from_dir
 
 bento_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-svc = load(bento_path)
+svc = load_from_dir(bento_path)
 
 bento_server = BentoAPIServer(svc)
 

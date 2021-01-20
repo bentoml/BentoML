@@ -54,7 +54,7 @@ def start_dev_server(
 
     import multiprocessing
 
-    from bentoml import load
+    from bentoml.saved_bundle.loader import load_from_dir
     from bentoml.server.api_server import BentoAPIServer
     from bentoml.utils import reserve_free_port
 
@@ -85,13 +85,13 @@ def start_dev_server(
             )
         marshal_proc.start()
 
-        bento_service = load(saved_bundle_path)
+        bento_service = load_from_dir(saved_bundle_path)
         api_server = BentoAPIServer(
             bento_service, port=api_server_port, enable_swagger=enable_swagger
         )
         api_server.start()
     else:
-        bento_service = load(saved_bundle_path)
+        bento_service = load_from_dir(saved_bundle_path)
         api_server = BentoAPIServer(
             bento_service, port=port, enable_swagger=enable_swagger
         )

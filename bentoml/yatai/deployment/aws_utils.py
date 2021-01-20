@@ -82,11 +82,11 @@ def ensure_sam_available_or_raise():
     try:
         import samcli
 
-        # if samcli.__version__ != "0.33.1":
-        #     raise BentoMLException(
-        #         "aws-sam-cli package requires version 0.33.1 "
-        #         "Install the package with `pip install -U aws-sam-cli==0.33.1`"
-        #     )
+        if samcli.__version__ != "0.33.1":
+            raise BentoMLException(
+                "aws-sam-cli package requires version 0.33.1 "
+                "Install the package with `pip install -U aws-sam-cli==0.33.1`"
+            )
     except ImportError:
         raise MissingDependencyException(
             "aws-sam-cli package is required. Install "

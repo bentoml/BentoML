@@ -428,7 +428,7 @@ class BentoRepositoryAPIClient:
                 bento_name = None
                 labels = None
             else:
-                log_message = f'Deleting saved Bento bundles'
+                log_message = 'Deleting saved Bento bundles'
                 if bento_name is not None:
                     log_message += f' with name: {bento_name},'
                 if labels is not None:

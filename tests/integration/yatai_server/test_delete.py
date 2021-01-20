@@ -99,8 +99,8 @@ def test_delete_bentos_with_tags(bento_service):
         [
             '--tag',
             f'{bento_service.name}:{version_two},{bento_service.name}:{version_three}',
-            '-y'
-        ]
+            '-y',
+        ],
     )
     bentos = yc.repository.list()
     assert len(bentos) == 0

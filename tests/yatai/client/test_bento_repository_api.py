@@ -233,7 +233,7 @@ def test_load(yatai_server_container, example_bento_service_class):
 
 
 @pytest.mark.skipif('not psutil.POSIX')
-def test_load(example_bento_service_class):
+def test_load_from_dir(example_bento_service_class):
     example_bento_service_class = bentoml.ver(major=2, minor=6)(
         example_bento_service_class
     )

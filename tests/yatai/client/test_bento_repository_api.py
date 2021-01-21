@@ -230,3 +230,18 @@ def test_load(yatai_server_container, example_bento_service_class):
 
     loaded_svc = yc.repository.load(f'{svc.name}:{svc.version}')
     assert loaded_svc.name == svc.name
+
+
+@pytest.mark.skipif('not psutil.POSIX')
+def test_load(example_bento_service_class):
+    example_bento_service_class = bentoml.ver(major=2, minor=6)(
+        example_bento_service_class
+    )
+    yc = get_yatai_client()
+    test_model = TestModel()
+    svc = example_bento_service_class()
+    svc.pack('model', test_model)
+    saved_path = svc.save()
+
+    loaded_svc = yc.repository.load(saved_path)
+    assert loaded_svc.name == svc.name

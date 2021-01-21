@@ -22,7 +22,12 @@ import requests
 import shutil
 
 from bentoml.exceptions import BentoMLException
-from bentoml.utils import status_pb_to_error_code_and_message, resolve_bento_bundle_uri
+from bentoml.utils import (
+    status_pb_to_error_code_and_message,
+    resolve_bento_bundle_uri,
+    is_s3_url,
+    is_gcs_url,
+)
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.usage_stats import track
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
@@ -446,19 +451,26 @@ class BentoRepositoryAPIClient:
 
     def load(self, bento):
         """
-        Load bento service.
+        Load bento service from bento tag or from a bento bundle path.
         Args:
-            bento: string
+            bento: string,
         Returns:
             BentoService instance
 
         Example:
-
         >>> yatai_client = get_yatai_client()
+        >>> # Load BentoService bases on bento tag.
         >>> bento = yatai_client.repository.load('Service_name:version')
+        >>> # Load BentoService from bento bundle path
+        >>> bento = yatai_client.repository.load('/path/to/bento/bundle')
+        >>> # Load BentoService from s3 storage
+        >>> bento = yatai_client.repository.load('s3://bucket/path/bundle.tar.gz')
         """
         track('py-api-load')
-        bento_pb = self.get(bento)
-        saved_bundle_path = resolve_bento_bundle_uri(bento_pb)
+        if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
+            saved_bundle_path = bento
+        else:
+            bento_pb = self.get(bento)
+            saved_bundle_path = resolve_bento_bundle_uri(bento_pb)
         svc = load_from_dir(saved_bundle_path)
         return svc

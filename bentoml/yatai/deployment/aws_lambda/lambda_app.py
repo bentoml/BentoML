@@ -38,7 +38,7 @@ if '/tmp/requirements' not in sys.path:
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
-from bentoml.saved_bundle.loader import load_from_dir # noqa
+from bentoml.saved_bundle.loader import load_from_dir  # noqa
 
 logger = logging.getLogger('bentoml.lambda_app')
 

@@ -1,7 +1,9 @@
 # pylint: disable=redefined-outer-name
 import base64
 
+import flask
 import pytest
+from mock import MagicMock
 
 from bentoml.adapters import FileInput
 from bentoml.types import HTTPRequest
@@ -10,6 +12,31 @@ from bentoml.types import HTTPRequest
 @pytest.fixture()
 def input_adapter():
     return FileInput()
+
+
+def echo(file_):
+    return file_.read()
+
+
+def echo_batch(files):
+    return [f.read() for f in files]
+
+
+def test_fileio_e2e(batch_mode, make_api, input_adapter, bin_file):
+    if batch_mode:
+        api = make_api(input_adapter, echo_batch)
+    else:
+        api = make_api(input_adapter, echo)
+
+    with open(bin_file, "rb") as f:
+        bytes_ = f.read()
+    request = MagicMock(spec=flask.Request)
+    request.headers = {'Content-Type': 'application/octet-stream'}
+    request.get_data.return_value = bytes_
+
+    result = api.handle_request(request)
+    assert result.get_data() == bytes_
+    assert result.headers['Content-Type'] == 'application/octet-stream'
 
 
 def test_file_input_cli(input_adapter, bin_file):

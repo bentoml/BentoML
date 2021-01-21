@@ -82,6 +82,9 @@ JsonOutput
 ++++++++++
 .. autoclass:: bentoml.adapters.JsonOutput
 
+FileOutput
+++++++++++
+.. autoclass:: bentoml.adapters.FileOutput
 
 Adapter Roadmap
 ===============

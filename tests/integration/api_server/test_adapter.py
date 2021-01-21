@@ -74,19 +74,13 @@ async def test_api_server_file(host, bin_file):
     with open(str(bin_file), "rb") as f:
         b = f.read()
         await pytest.assert_request(
-            "POST",
-            f"http://{host}/predict_file",
-            data=b,
-            assert_data=b'{"b64": "gTCJOQ=="}',
+            "POST", f"http://{host}/predict_file", data=b, assert_data=b,
         )
 
     # Test FileInput as multipart binary
     with open(str(bin_file), "rb") as f:
         await pytest.assert_request(
-            "POST",
-            f"http://{host}/predict_file",
-            data={"file": f},
-            assert_data=b'{"b64": "gTCJOQ=="}',
+            "POST", f"http://{host}/predict_file", data={"file": f}, assert_data=b,
         )
 
 

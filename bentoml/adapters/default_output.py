@@ -46,6 +46,16 @@ def detect_suitable_adapter(result) -> Type[BaseOutputAdapter]:
     except ImportError:
         pass
 
+    if (
+        isinstance(result, bytes)
+        or isinstance(result, (tuple, list))
+        and result
+        and isinstance(result[0], bytes)
+    ):
+        from .file_output import FileOutput
+
+        return FileOutput
+
     from .json_output import JsonOutput
 
     return JsonOutput

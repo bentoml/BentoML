@@ -4,37 +4,35 @@ import subprocess
 
 logger = logging.getLogger('bentoml.test')
 
-# load local file
+# load local file helper
 
 
 # generic run predict
-def delete_deployment(deployment_type, deployment_name, deployment_namespace=None):
-    logger.info(f'Delete deployment {deployment_name} with BentoML CLI')
-    delete_deployment_command = [
+def run_predict(bento, input_data, is_file=False):
+    run_predict_deployment_command = [
         'bentoml',
-        deployment_type,
-        'delete',
-        deployment_name,
-        '--force',
+        'run',
+        bento,
+        'predict',
+        '--input-file' if is_file else '--input',
+        input_data,
     ]
-    if deployment_namespace:
-        delete_deployment_command.extend(['--namespace', deployment_namespace])
-    logger.info(f'Delete command: {delete_deployment_command}')
+
+    logger.info(f'Run predict command: {run_predict_deployment_command}')
     with subprocess.Popen(
-        delete_deployment_command,
+        run_predict_deployment_command,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=os.environ,
     ) as proc:
-        delete_deployment_stdout = proc.stdout.read().decode('utf-8')
-    logger.info(delete_deployment_stdout)
-    return delete_deployment_stdout
+        run_predict_deployment_stdout = proc.stdout.read().decode('utf-8')
+    logger.info(f'Got output: {run_predict_deployment_stdout}')
+    return run_predict_deployment_stdout
+
 
 # testing bentoml run <bento> predict --input
 def run_predict_input():
     pass
 
-# testing bentoml run <bento> predict --input
 
-
-# testing bentoml run <bento> predict --input
+# testing bentoml run <bento> predict --input-file

@@ -304,7 +304,8 @@ class BentoServiceEnv(object):
             content = f.read().decode()
 
             # ignore customized PyPi URL (#1406)
-            lines = [l for l in content.splitlines() if not l.startswith("-i ")]
+            split = content.splitlines()
+            lines = [line for line in split if not line.startswith("-i ")]
             for req in parse_requirements(lines):
                 self._add_pip_package_requirement(req)
 

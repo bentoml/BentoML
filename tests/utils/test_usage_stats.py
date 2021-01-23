@@ -43,12 +43,12 @@ def mock_get_operator_func():
 
 def mock_start_dev_server(
     bundle_path,
-    port,
-    enable_microbatch,
-    mb_max_latency,
-    mb_max_batch_size,
-    run_with_ngrok,
-    enable_swagger,
+    port: int = 5000,
+    enable_microbatch: bool = False,
+    mb_max_latency: int = 0,
+    mb_max_batch_size: int = 0,
+    run_with_ngrok: bool = False,
+    enable_swagger: bool = False,
 ):
     raise KeyboardInterrupt()
 

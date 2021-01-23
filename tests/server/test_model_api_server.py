@@ -11,7 +11,14 @@ def test_api_function_route(bento_service, img_file):
     import imageio  # noqa # pylint: disable=unused-import
     import numpy as np  # noqa # pylint: disable=unused-import
 
-    rest_server = BentoAPIServer(bento_service)
+    rest_server = BentoAPIServer(
+        bento_service=bento_service,
+        port=5000,
+        enable_swagger=True,
+        enable_metrics=True,
+        enable_feedback=True,
+        request_header_flag="BentoML-Is-Merged-Request",
+    )
     test_client = rest_server.app.test_client()
 
     index_list = []
@@ -80,7 +87,14 @@ def test_api_function_route(bento_service, img_file):
 
 
 def test_api_function_route_with_disabled_swagger(bento_service):
-    rest_server = BentoAPIServer(bento_service, enable_swagger=False)
+    rest_server = BentoAPIServer(
+        bento_service=bento_service,
+        port=5000,
+        enable_swagger=False,
+        enable_metrics=True,
+        enable_feedback=True,
+        request_header_flag="BentoML-Is-Merged-Request",
+    )
     test_client = rest_server.app.test_client()
 
     response = test_client.get("/")

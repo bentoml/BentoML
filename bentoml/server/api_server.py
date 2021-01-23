@@ -15,6 +15,7 @@
 import logging
 import os
 import sys
+from dependency_injector.wiring import inject, Provide
 from functools import partial
 
 from flask import (
@@ -28,11 +29,12 @@ from flask import (
 from werkzeug.exceptions import BadRequest, NotFound
 from google.protobuf.json_format import MessageToJson
 
-from bentoml import BentoService, config
+from bentoml import BentoService
 from bentoml.configuration import get_debug_mode
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader
-from bentoml.server import trace
+from bentoml.tracing.__init__ import trace
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import InferenceAPI
@@ -151,15 +153,22 @@ class BentoAPIServer:
     request data into a Service API function
     """
 
-    DEFAULT_PORT = config("apiserver").getint("default_port")
-    _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
-
+    @inject
     def __init__(
         self,
         bento_service: BentoService,
-        port=DEFAULT_PORT,
-        app_name=None,
-        enable_swagger=True,
+        port: int = Provide[BentoMLContainer.config.api_server.port],
+        app_name: str = None,
+        enable_swagger: bool = True,
+        enable_metrics: bool = Provide[
+            BentoMLContainer.config.api_server.enable_metrics
+        ],
+        enable_feedback: bool = Provide[
+            BentoMLContainer.config.api_server.enable_feedback
+        ],
+        request_header_flag: str = Provide[
+            BentoMLContainer.config.marshal_server.request_header_flag
+        ],
     ):
         app_name = bento_service.name if app_name is None else app_name
 
@@ -168,6 +177,9 @@ class BentoAPIServer:
         self.app = Flask(app_name, static_folder=None)
         self.static_path = self.bento_service.get_web_static_content_path()
         self.enable_swagger = enable_swagger
+        self.enable_metrics = enable_metrics
+        self.enable_feedback = enable_feedback
+        self.request_header_flag = request_header_flag
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static_content'
@@ -342,10 +354,10 @@ class BentoAPIServer:
             partial(self.metadata_json_func, self.bento_service),
         )
 
-        if config("apiserver").getboolean("enable_metrics"):
+        if self.enable_metrics:
             self.app.add_url_rule("/metrics", "metrics", self.metrics_view_func)
 
-        if config("apiserver").getboolean("enable_feedback"):
+        if self.enable_feedback:
             self.app.add_url_rule(
                 "/feedback",
                 "feedback",
@@ -377,7 +389,7 @@ class BentoAPIServer:
         def api_func():
             # handle_request may raise 4xx or 5xx exception.
             try:
-                if request.headers.get(self._MARSHAL_FLAG):
+                if request.headers.get(self.request_header_flag):
                     reqs = DataLoader.split_requests(request.get_data())
                     responses = api.handle_batch_request(reqs)
                     response_body = DataLoader.merge_responses(responses)

@@ -36,12 +36,12 @@ from bentoml.yatai.proto.repository_pb2 import (
     UploadStatus,
     ListBentoRequest,
     DangerouslyDeleteBentoRequest,
+    ContainerizeBentoRequest,
 )
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.saved_bundle import save_to_dir, load_bento_service_metadata, safe_retrieve
 from bentoml.yatai.status import Status
-from bentoml.yatai.yatai_service_impl import YataiService
 
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,7 @@ yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 class BentoRepositoryAPIClient:
     def __init__(self, yatai_service):
+        # YataiService stub for accessing remote YataiService RPCs
         self.yatai_service = yatai_service
 
     def push(self, bento, labels=None):
@@ -73,8 +74,6 @@ class BentoRepositoryAPIClient:
         >>> remote_saved_path= remote_yatai_client.repository.push(bento)
         """
         track('py-api-push')
-        if isinstance(self.yatai_service, YataiService):
-            raise BentoMLException('need set yatai_service_url')
 
         from bentoml.yatai.client import get_yatai_client
 
@@ -102,12 +101,11 @@ class BentoRepositoryAPIClient:
 
         Example:
 
-        >>> remote_yatai_client = get_yatai_client('remote_yatai_service_address')
-        >>> saved_path = remote_yatai_client.repository.pull('MyService:version')
+        >>> client = get_yatai_client('127.0.0.1:50051')
+        >>> saved_path = client.repository.pull('MyService:')
         """
         track('py-api-pull')
-        if isinstance(self.yatai_service, YataiService):
-            raise BentoMLException('need set yatai_service_url')
+
         bento_pb = self.get(bento)
         with TempDirectory() as tmpdir:
             # Create a non-exist directory for safe_retrieve
@@ -207,7 +205,7 @@ class BentoRepositoryAPIClient:
                 http_response = requests.put(
                     response.uri.s3_presigned_url, data=fileobj
                 )
-            elif response.uri.uri == BentoUri.GCS:
+            elif response.uri.type == BentoUri.GCS:
                 http_response = requests.put(
                     response.uri.gcs_presigned_url, data=fileobj
                 )
@@ -403,3 +401,41 @@ class BentoRepositoryAPIClient:
                 self.delete(bento_tag)
             except BentoMLException as e:
                 logger.error(f'Failed to delete Bento {bento_tag}: {e}')
+
+    def containerize(self, bento, tag=None, build_args=None, push=False):
+        """
+        Create a container image from a BentoService.
+
+        Args:
+            bento: string
+            tag: string
+            build_args: dict
+            push: boolean
+
+        Returns:
+            Image tag: String
+        """
+        track('py-api-containerize')
+        if ':' not in bento:
+            raise BentoMLException(
+                'BentoService name or version is missing. Please provide in the '
+                'format of name:version'
+            )
+        name, version = bento.split(':')
+        containerize_request = ContainerizeBentoRequest(
+            bento_name=name,
+            bento_version=version,
+            tag=tag,
+            build_args=build_args,
+            push=push,
+        )
+        result = self.yatai_service.ContainerizeBento(containerize_request)
+
+        if result.status.status_code != yatai_proto.status_pb2.Status.OK:
+            error_code, error_message = status_pb_to_error_code_and_message(
+                result.status
+            )
+            raise BentoMLException(
+                f'Failed to containerize {bento} - {error_code}:{error_message}'
+            )
+        return result.tag

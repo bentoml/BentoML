@@ -16,10 +16,7 @@ import argparse
 import json
 from typing import Iterable, Sequence
 
-from bentoml.adapters.base_output import (
-    BaseOutputAdapter,
-    regroup_return_value,
-)
+from bentoml.adapters.base_output import BaseOutputAdapter, regroup_return_value
 from bentoml.adapters.utils import NumpyJsonEncoder
 from bentoml.types import (
     AwsLambdaEvent,

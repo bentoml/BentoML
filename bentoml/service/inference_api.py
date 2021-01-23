@@ -288,6 +288,7 @@ class InferenceAPI(object):
         results = self.infer((inf_task,))
         result = next(iter(results))
         response = self.output_adapter.to_http_response(result)
+        response.headers['X-Request-Id'] = inf_task.task_id
         return response.to_flask_response()
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
@@ -297,7 +298,10 @@ class InferenceAPI(object):
         ):
             inf_tasks = map(self.input_adapter.from_http_request, requests)
             results = self.infer(inf_tasks)
-            return map(self.output_adapter.to_http_response, results)
+            responses = tuple(map(self.output_adapter.to_http_response, results))
+            for inf_task, response in zip(inf_tasks, responses):
+                response.headers['X-Request-Id'] = inf_task.task_id
+            return responses
 
     def handle_cli(self, cli_args: Sequence[str]) -> int:
         parser = argparse.ArgumentParser()

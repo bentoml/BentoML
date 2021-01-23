@@ -23,7 +23,7 @@ if [ -f ./python_version ]; then
   else
     if command -v conda >/dev/null 2>&1; then
       echo "Installing python=$DESIRED_PY_VERSION with conda:"
-      conda install -y -n base python=$DESIRED_PY_VERSION
+      conda install -y -n base pkgs/main::python=$DESIRED_PY_VERSION pip
     else
       echo "WARNING: Python Version $DESIRED_PY_VERSION is required, but $CURRENT_PY_VERSION was found."
     fi
@@ -48,7 +48,6 @@ else
 fi
 
 # Install PyPI packages specified in requirements.txt
-pip install --upgrade pip
 pip install -r ./requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
 
 # Install additional python packages inside bundled pip dependencies directory

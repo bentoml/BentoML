@@ -15,7 +15,6 @@
 import logging
 import os
 import sys
-import uuid
 from functools import partial
 
 from flask import (
@@ -43,19 +42,80 @@ CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
 
-INDEX_HTML = '''\
+DEFAULT_INDEX_HTML = '''\
 <!DOCTYPE html>
-<head><link rel="stylesheet" type="text/css"
-            href="swagger_static/swagger-ui.css"></head>
+<head>
+  <link rel="stylesheet" type="text/css" href="static_content/main.css">
+  <link rel="stylesheet" type="text/css" href="static_content/readme.css">
+  <link rel="stylesheet" type="text/css" href="static_content/swagger-ui.css">
+</head>
 <body>
-<div id="swagger-ui-container"></div>
-<script src="swagger_static/swagger-ui-bundle.js"></script>
-<script>
-    SwaggerUIBundle({{
-        url: '{url}',
-        dom_id: '#swagger-ui-container'
-    }})
-</script>
+  <div id="tab">
+    <button
+      class="tabLinks active"
+      onclick="openTab(event, 'swagger_ui_container')"
+      id="defaultOpen"
+    >
+      Swagger UI
+    </button>
+    <button class="tabLinks" onclick="openTab(event, 'markdown_readme')">
+      ReadMe
+    </button>
+  </div>
+  <script>
+    function openTab(evt, tabName) {{
+      // Declare all variables
+      var i, tabContent, tabLinks;
+      // Get all elements with class="tabContent" and hide them
+      tabContent = document.getElementsByClassName("tabContent");
+      for (i = 0; i < tabContent.length; i++) {{
+        tabContent[i].style.display = "none";
+      }}
+
+      // Get all elements with class="tabLinks" and remove the class "active"
+      tabLinks = document.getElementsByClassName("tabLinks");
+      for (i = 0; i < tabLinks.length; i++) {{
+        tabLinks[i].className = tabLinks[i].className.replace(" active", "");
+      }}
+
+      // Show the current tab, and add an "active" class to the button that opened the
+      // tab
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }}
+  </script>
+  <div id="markdown_readme" class="tabContent"></div>
+  <script src="static_content/marked.min.js"></script>
+  <script>
+    var markdownContent = marked(`{readme}`);
+    var element = document.getElementById('markdown_readme');
+    element.innerHTML = markdownContent;
+  </script>
+  <div id="swagger_ui_container" class="tabContent" style="display: block"></div>
+  <script src="static_content/swagger-ui-bundle.js"></script>
+  <script>
+      SwaggerUIBundle({{
+          url: '{url}',
+          dom_id: '#swagger_ui_container'
+      }})
+  </script>
+</body>
+'''
+
+SWAGGER_HTML = '''\
+<!DOCTYPE html>
+<head>
+  <link rel="stylesheet" type="text/css" href="static_content/swagger-ui.css">
+</head>
+<body>
+  <div id="swagger-ui-container"></div>
+  <script src="static_content/swagger-ui-bundle.js"></script>
+  <script>
+      SwaggerUIBundle({{
+          url: '{url}',
+          dom_id: '#swagger-ui-container'
+      }})
+  </script>
 </body>
 '''
 
@@ -110,7 +170,7 @@ class BentoAPIServer:
         self.enable_swagger = enable_swagger
 
         self.swagger_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'swagger_static'
+            os.path.dirname(os.path.abspath(__file__)), 'static_content'
         )
 
         for middleware in (InstrumentMiddleware,):
@@ -147,6 +207,23 @@ class BentoAPIServer:
         """
         return send_from_directory(static_path, 'index.html')
 
+    def default_index_view_func(self):
+        """
+        The default index view for BentoML API server. This includes the readme
+        generated from docstring and swagger UI
+        """
+        if not self.enable_swagger:
+            return Response(
+                response="Swagger is disabled", status=404, mimetype="text/html"
+            )
+        return Response(
+            response=DEFAULT_INDEX_HTML.format(
+                url='docs.json', readme=self.bento_service.__doc__
+            ),
+            status=200,
+            mimetype="text/html",
+        )
+
     def swagger_ui_func(self):
         """
         The swagger UI route for BentoML API server
@@ -156,7 +233,7 @@ class BentoAPIServer:
                 response="Swagger is disabled", status=404, mimetype="text/html"
             )
         return Response(
-            response=INDEX_HTML.format(url='docs.json'),
+            response=SWAGGER_HTML.format(url='docs.json'),
             status=200,
             mimetype="text/html",
         )
@@ -247,12 +324,12 @@ class BentoAPIServer:
                 "/", "index", partial(self.index_view_func, self.static_path)
             )
         else:
-            self.app.add_url_rule("/", "index", self.swagger_ui_func)
+            self.app.add_url_rule("/", "index", self.default_index_view_func)
 
         self.app.add_url_rule("/docs", "swagger", self.swagger_ui_func)
         self.app.add_url_rule(
-            "/swagger_static/<path:filename>",
-            "swagger_static",
+            "/static_content/<path:filename>",
+            "static_content",
             partial(self.swagger_static, self.swagger_path),
         )
         self.app.add_url_rule(
@@ -296,7 +373,6 @@ class BentoAPIServer:
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
-        request_id = str(uuid.uuid4())
 
         def api_func():
             # handle_request may raise 4xx or 5xx exception.
@@ -331,8 +407,6 @@ class BentoAPIServer:
                     'request, find the error details in server logs',
                     500,
                 )
-
-            response.headers["request_id"] = request_id
 
             return response
 

@@ -37,7 +37,6 @@ ifeq ($(OS),Darwin)
 install-spellchecker-deps: ## Install MacOS dependencies for spellchecker
 	brew install enchant \
 	pip install sphinxcontrib-spelling \
-else
 install-spellchecker-deps: ## Install Linux dependencies for spellchecker
 	sudo apt install libenchant-dev
 endif

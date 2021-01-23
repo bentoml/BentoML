@@ -29,6 +29,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {bentoml.DeploymentSpec.ISageMakerOperatorConfig|null} [sagemaker_operator_config] DeploymentSpec sagemaker_operator_config
          * @property {bentoml.DeploymentSpec.IAwsLambdaOperatorConfig|null} [aws_lambda_operator_config] DeploymentSpec aws_lambda_operator_config
          * @property {bentoml.DeploymentSpec.IAzureFunctionsOperatorConfig|null} [azure_functions_operator_config] DeploymentSpec azure_functions_operator_config
+         * @property {bentoml.DeploymentSpec.IAwsEc2OperatorConfig|null} [aws_ec2_operator_config] DeploymentSpec aws_ec2_operator_config
          */
 
         /**
@@ -102,17 +103,25 @@ export const bentoml = $root.bentoml = (() => {
          */
         DeploymentSpec.prototype.azure_functions_operator_config = null;
 
+        /**
+         * DeploymentSpec aws_ec2_operator_config.
+         * @member {bentoml.DeploymentSpec.IAwsEc2OperatorConfig|null|undefined} aws_ec2_operator_config
+         * @memberof bentoml.DeploymentSpec
+         * @instance
+         */
+        DeploymentSpec.prototype.aws_ec2_operator_config = null;
+
         // OneOf field names bound to virtual getters and setters
         let $oneOfFields;
 
         /**
          * DeploymentSpec deployment_operator_config.
-         * @member {"custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"azure_functions_operator_config"|undefined} deployment_operator_config
+         * @member {"custom_operator_config"|"sagemaker_operator_config"|"aws_lambda_operator_config"|"azure_functions_operator_config"|"aws_ec2_operator_config"|undefined} deployment_operator_config
          * @memberof bentoml.DeploymentSpec
          * @instance
          */
         Object.defineProperty(DeploymentSpec.prototype, "deployment_operator_config", {
-            get: $util.oneOfGetter($oneOfFields = ["custom_operator_config", "sagemaker_operator_config", "aws_lambda_operator_config", "azure_functions_operator_config"]),
+            get: $util.oneOfGetter($oneOfFields = ["custom_operator_config", "sagemaker_operator_config", "aws_lambda_operator_config", "azure_functions_operator_config", "aws_ec2_operator_config"]),
             set: $util.oneOfSetter($oneOfFields)
         });
 
@@ -154,6 +163,8 @@ export const bentoml = $root.bentoml = (() => {
                 $root.bentoml.DeploymentSpec.AwsLambdaOperatorConfig.encode(message.aws_lambda_operator_config, writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
             if (message.azure_functions_operator_config != null && Object.hasOwnProperty.call(message, "azure_functions_operator_config"))
                 $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.encode(message.azure_functions_operator_config, writer.uint32(/* id 7, wireType 2 =*/58).fork()).ldelim();
+            if (message.aws_ec2_operator_config != null && Object.hasOwnProperty.call(message, "aws_ec2_operator_config"))
+                $root.bentoml.DeploymentSpec.AwsEc2OperatorConfig.encode(message.aws_ec2_operator_config, writer.uint32(/* id 8, wireType 2 =*/66).fork()).ldelim();
             return writer;
         };
 
@@ -209,6 +220,9 @@ export const bentoml = $root.bentoml = (() => {
                 case 7:
                     message.azure_functions_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.decode(reader, reader.uint32());
                     break;
+                case 8:
+                    message.aws_ec2_operator_config = $root.bentoml.DeploymentSpec.AwsEc2OperatorConfig.decode(reader, reader.uint32());
+                    break;
                 default:
                     reader.skipType(tag & 7);
                     break;
@@ -260,6 +274,7 @@ export const bentoml = $root.bentoml = (() => {
                 case 2:
                 case 3:
                 case 4:
+                case 5:
                     break;
                 }
             if (message.custom_operator_config != null && message.hasOwnProperty("custom_operator_config")) {
@@ -298,6 +313,16 @@ export const bentoml = $root.bentoml = (() => {
                     let error = $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.verify(message.azure_functions_operator_config);
                     if (error)
                         return "azure_functions_operator_config." + error;
+                }
+            }
+            if (message.aws_ec2_operator_config != null && message.hasOwnProperty("aws_ec2_operator_config")) {
+                if (properties.deployment_operator_config === 1)
+                    return "deployment_operator_config: multiple values";
+                properties.deployment_operator_config = 1;
+                {
+                    let error = $root.bentoml.DeploymentSpec.AwsEc2OperatorConfig.verify(message.aws_ec2_operator_config);
+                    if (error)
+                        return "aws_ec2_operator_config." + error;
                 }
             }
             return null;
@@ -340,6 +365,10 @@ export const bentoml = $root.bentoml = (() => {
             case 4:
                 message.operator = 4;
                 break;
+            case "AWS_EC2":
+            case 5:
+                message.operator = 5;
+                break;
             }
             if (object.custom_operator_config != null) {
                 if (typeof object.custom_operator_config !== "object")
@@ -360,6 +389,11 @@ export const bentoml = $root.bentoml = (() => {
                 if (typeof object.azure_functions_operator_config !== "object")
                     throw TypeError(".bentoml.DeploymentSpec.azure_functions_operator_config: object expected");
                 message.azure_functions_operator_config = $root.bentoml.DeploymentSpec.AzureFunctionsOperatorConfig.fromObject(object.azure_functions_operator_config);
+            }
+            if (object.aws_ec2_operator_config != null) {
+                if (typeof object.aws_ec2_operator_config !== "object")
+                    throw TypeError(".bentoml.DeploymentSpec.aws_ec2_operator_config: object expected");
+                message.aws_ec2_operator_config = $root.bentoml.DeploymentSpec.AwsEc2OperatorConfig.fromObject(object.aws_ec2_operator_config);
             }
             return message;
         };
@@ -408,6 +442,11 @@ export const bentoml = $root.bentoml = (() => {
                 if (options.oneofs)
                     object.deployment_operator_config = "azure_functions_operator_config";
             }
+            if (message.aws_ec2_operator_config != null && message.hasOwnProperty("aws_ec2_operator_config")) {
+                object.aws_ec2_operator_config = $root.bentoml.DeploymentSpec.AwsEc2OperatorConfig.toObject(message.aws_ec2_operator_config, options);
+                if (options.oneofs)
+                    object.deployment_operator_config = "aws_ec2_operator_config";
+            }
             return object;
         };
 
@@ -431,6 +470,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {number} AWS_SAGEMAKER=2 AWS_SAGEMAKER value
          * @property {number} AWS_LAMBDA=3 AWS_LAMBDA value
          * @property {number} AZURE_FUNCTIONS=4 AZURE_FUNCTIONS value
+         * @property {number} AWS_EC2=5 AWS_EC2 value
          */
         DeploymentSpec.DeploymentOperator = (function() {
             const valuesById = {}, values = Object.create(valuesById);
@@ -439,6 +479,7 @@ export const bentoml = $root.bentoml = (() => {
             values[valuesById[2] = "AWS_SAGEMAKER"] = 2;
             values[valuesById[3] = "AWS_LAMBDA"] = 3;
             values[valuesById[4] = "AZURE_FUNCTIONS"] = 4;
+            values[valuesById[5] = "AWS_EC2"] = 5;
             return values;
         })();
 
@@ -1527,6 +1568,304 @@ export const bentoml = $root.bentoml = (() => {
             };
 
             return AzureFunctionsOperatorConfig;
+        })();
+
+        DeploymentSpec.AwsEc2OperatorConfig = (function() {
+
+            /**
+             * Properties of an AwsEc2OperatorConfig.
+             * @memberof bentoml.DeploymentSpec
+             * @interface IAwsEc2OperatorConfig
+             * @property {string|null} [region] AwsEc2OperatorConfig region
+             * @property {string|null} [instance_type] AwsEc2OperatorConfig instance_type
+             * @property {string|null} [ami_id] AwsEc2OperatorConfig ami_id
+             * @property {number|null} [autoscale_min_size] AwsEc2OperatorConfig autoscale_min_size
+             * @property {number|null} [autoscale_desired_capacity] AwsEc2OperatorConfig autoscale_desired_capacity
+             * @property {number|null} [autoscale_max_size] AwsEc2OperatorConfig autoscale_max_size
+             */
+
+            /**
+             * Constructs a new AwsEc2OperatorConfig.
+             * @memberof bentoml.DeploymentSpec
+             * @classdesc Represents an AwsEc2OperatorConfig.
+             * @implements IAwsEc2OperatorConfig
+             * @constructor
+             * @param {bentoml.DeploymentSpec.IAwsEc2OperatorConfig=} [properties] Properties to set
+             */
+            function AwsEc2OperatorConfig(properties) {
+                if (properties)
+                    for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                        if (properties[keys[i]] != null)
+                            this[keys[i]] = properties[keys[i]];
+            }
+
+            /**
+             * AwsEc2OperatorConfig region.
+             * @member {string} region
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @instance
+             */
+            AwsEc2OperatorConfig.prototype.region = "";
+
+            /**
+             * AwsEc2OperatorConfig instance_type.
+             * @member {string} instance_type
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @instance
+             */
+            AwsEc2OperatorConfig.prototype.instance_type = "";
+
+            /**
+             * AwsEc2OperatorConfig ami_id.
+             * @member {string} ami_id
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @instance
+             */
+            AwsEc2OperatorConfig.prototype.ami_id = "";
+
+            /**
+             * AwsEc2OperatorConfig autoscale_min_size.
+             * @member {number} autoscale_min_size
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @instance
+             */
+            AwsEc2OperatorConfig.prototype.autoscale_min_size = 0;
+
+            /**
+             * AwsEc2OperatorConfig autoscale_desired_capacity.
+             * @member {number} autoscale_desired_capacity
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @instance
+             */
+            AwsEc2OperatorConfig.prototype.autoscale_desired_capacity = 0;
+
+            /**
+             * AwsEc2OperatorConfig autoscale_max_size.
+             * @member {number} autoscale_max_size
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @instance
+             */
+            AwsEc2OperatorConfig.prototype.autoscale_max_size = 0;
+
+            /**
+             * Creates a new AwsEc2OperatorConfig instance using the specified properties.
+             * @function create
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @static
+             * @param {bentoml.DeploymentSpec.IAwsEc2OperatorConfig=} [properties] Properties to set
+             * @returns {bentoml.DeploymentSpec.AwsEc2OperatorConfig} AwsEc2OperatorConfig instance
+             */
+            AwsEc2OperatorConfig.create = function create(properties) {
+                return new AwsEc2OperatorConfig(properties);
+            };
+
+            /**
+             * Encodes the specified AwsEc2OperatorConfig message. Does not implicitly {@link bentoml.DeploymentSpec.AwsEc2OperatorConfig.verify|verify} messages.
+             * @function encode
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @static
+             * @param {bentoml.DeploymentSpec.IAwsEc2OperatorConfig} message AwsEc2OperatorConfig message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            AwsEc2OperatorConfig.encode = function encode(message, writer) {
+                if (!writer)
+                    writer = $Writer.create();
+                if (message.region != null && Object.hasOwnProperty.call(message, "region"))
+                    writer.uint32(/* id 1, wireType 2 =*/10).string(message.region);
+                if (message.instance_type != null && Object.hasOwnProperty.call(message, "instance_type"))
+                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.instance_type);
+                if (message.ami_id != null && Object.hasOwnProperty.call(message, "ami_id"))
+                    writer.uint32(/* id 6, wireType 2 =*/50).string(message.ami_id);
+                if (message.autoscale_min_size != null && Object.hasOwnProperty.call(message, "autoscale_min_size"))
+                    writer.uint32(/* id 7, wireType 0 =*/56).int32(message.autoscale_min_size);
+                if (message.autoscale_desired_capacity != null && Object.hasOwnProperty.call(message, "autoscale_desired_capacity"))
+                    writer.uint32(/* id 8, wireType 0 =*/64).int32(message.autoscale_desired_capacity);
+                if (message.autoscale_max_size != null && Object.hasOwnProperty.call(message, "autoscale_max_size"))
+                    writer.uint32(/* id 9, wireType 0 =*/72).int32(message.autoscale_max_size);
+                return writer;
+            };
+
+            /**
+             * Encodes the specified AwsEc2OperatorConfig message, length delimited. Does not implicitly {@link bentoml.DeploymentSpec.AwsEc2OperatorConfig.verify|verify} messages.
+             * @function encodeDelimited
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @static
+             * @param {bentoml.DeploymentSpec.IAwsEc2OperatorConfig} message AwsEc2OperatorConfig message or plain object to encode
+             * @param {$protobuf.Writer} [writer] Writer to encode to
+             * @returns {$protobuf.Writer} Writer
+             */
+            AwsEc2OperatorConfig.encodeDelimited = function encodeDelimited(message, writer) {
+                return this.encode(message, writer).ldelim();
+            };
+
+            /**
+             * Decodes an AwsEc2OperatorConfig message from the specified reader or buffer.
+             * @function decode
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @param {number} [length] Message length if known beforehand
+             * @returns {bentoml.DeploymentSpec.AwsEc2OperatorConfig} AwsEc2OperatorConfig
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            AwsEc2OperatorConfig.decode = function decode(reader, length) {
+                if (!(reader instanceof $Reader))
+                    reader = $Reader.create(reader);
+                let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DeploymentSpec.AwsEc2OperatorConfig();
+                while (reader.pos < end) {
+                    let tag = reader.uint32();
+                    switch (tag >>> 3) {
+                    case 1:
+                        message.region = reader.string();
+                        break;
+                    case 2:
+                        message.instance_type = reader.string();
+                        break;
+                    case 6:
+                        message.ami_id = reader.string();
+                        break;
+                    case 7:
+                        message.autoscale_min_size = reader.int32();
+                        break;
+                    case 8:
+                        message.autoscale_desired_capacity = reader.int32();
+                        break;
+                    case 9:
+                        message.autoscale_max_size = reader.int32();
+                        break;
+                    default:
+                        reader.skipType(tag & 7);
+                        break;
+                    }
+                }
+                return message;
+            };
+
+            /**
+             * Decodes an AwsEc2OperatorConfig message from the specified reader or buffer, length delimited.
+             * @function decodeDelimited
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @static
+             * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+             * @returns {bentoml.DeploymentSpec.AwsEc2OperatorConfig} AwsEc2OperatorConfig
+             * @throws {Error} If the payload is not a reader or valid buffer
+             * @throws {$protobuf.util.ProtocolError} If required fields are missing
+             */
+            AwsEc2OperatorConfig.decodeDelimited = function decodeDelimited(reader) {
+                if (!(reader instanceof $Reader))
+                    reader = new $Reader(reader);
+                return this.decode(reader, reader.uint32());
+            };
+
+            /**
+             * Verifies an AwsEc2OperatorConfig message.
+             * @function verify
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @static
+             * @param {Object.<string,*>} message Plain object to verify
+             * @returns {string|null} `null` if valid, otherwise the reason why it is not
+             */
+            AwsEc2OperatorConfig.verify = function verify(message) {
+                if (typeof message !== "object" || message === null)
+                    return "object expected";
+                if (message.region != null && message.hasOwnProperty("region"))
+                    if (!$util.isString(message.region))
+                        return "region: string expected";
+                if (message.instance_type != null && message.hasOwnProperty("instance_type"))
+                    if (!$util.isString(message.instance_type))
+                        return "instance_type: string expected";
+                if (message.ami_id != null && message.hasOwnProperty("ami_id"))
+                    if (!$util.isString(message.ami_id))
+                        return "ami_id: string expected";
+                if (message.autoscale_min_size != null && message.hasOwnProperty("autoscale_min_size"))
+                    if (!$util.isInteger(message.autoscale_min_size))
+                        return "autoscale_min_size: integer expected";
+                if (message.autoscale_desired_capacity != null && message.hasOwnProperty("autoscale_desired_capacity"))
+                    if (!$util.isInteger(message.autoscale_desired_capacity))
+                        return "autoscale_desired_capacity: integer expected";
+                if (message.autoscale_max_size != null && message.hasOwnProperty("autoscale_max_size"))
+                    if (!$util.isInteger(message.autoscale_max_size))
+                        return "autoscale_max_size: integer expected";
+                return null;
+            };
+
+            /**
+             * Creates an AwsEc2OperatorConfig message from a plain object. Also converts values to their respective internal types.
+             * @function fromObject
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @static
+             * @param {Object.<string,*>} object Plain object
+             * @returns {bentoml.DeploymentSpec.AwsEc2OperatorConfig} AwsEc2OperatorConfig
+             */
+            AwsEc2OperatorConfig.fromObject = function fromObject(object) {
+                if (object instanceof $root.bentoml.DeploymentSpec.AwsEc2OperatorConfig)
+                    return object;
+                let message = new $root.bentoml.DeploymentSpec.AwsEc2OperatorConfig();
+                if (object.region != null)
+                    message.region = String(object.region);
+                if (object.instance_type != null)
+                    message.instance_type = String(object.instance_type);
+                if (object.ami_id != null)
+                    message.ami_id = String(object.ami_id);
+                if (object.autoscale_min_size != null)
+                    message.autoscale_min_size = object.autoscale_min_size | 0;
+                if (object.autoscale_desired_capacity != null)
+                    message.autoscale_desired_capacity = object.autoscale_desired_capacity | 0;
+                if (object.autoscale_max_size != null)
+                    message.autoscale_max_size = object.autoscale_max_size | 0;
+                return message;
+            };
+
+            /**
+             * Creates a plain object from an AwsEc2OperatorConfig message. Also converts values to other types if specified.
+             * @function toObject
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @static
+             * @param {bentoml.DeploymentSpec.AwsEc2OperatorConfig} message AwsEc2OperatorConfig
+             * @param {$protobuf.IConversionOptions} [options] Conversion options
+             * @returns {Object.<string,*>} Plain object
+             */
+            AwsEc2OperatorConfig.toObject = function toObject(message, options) {
+                if (!options)
+                    options = {};
+                let object = {};
+                if (options.defaults) {
+                    object.region = "";
+                    object.instance_type = "";
+                    object.ami_id = "";
+                    object.autoscale_min_size = 0;
+                    object.autoscale_desired_capacity = 0;
+                    object.autoscale_max_size = 0;
+                }
+                if (message.region != null && message.hasOwnProperty("region"))
+                    object.region = message.region;
+                if (message.instance_type != null && message.hasOwnProperty("instance_type"))
+                    object.instance_type = message.instance_type;
+                if (message.ami_id != null && message.hasOwnProperty("ami_id"))
+                    object.ami_id = message.ami_id;
+                if (message.autoscale_min_size != null && message.hasOwnProperty("autoscale_min_size"))
+                    object.autoscale_min_size = message.autoscale_min_size;
+                if (message.autoscale_desired_capacity != null && message.hasOwnProperty("autoscale_desired_capacity"))
+                    object.autoscale_desired_capacity = message.autoscale_desired_capacity;
+                if (message.autoscale_max_size != null && message.hasOwnProperty("autoscale_max_size"))
+                    object.autoscale_max_size = message.autoscale_max_size;
+                return object;
+            };
+
+            /**
+             * Converts this AwsEc2OperatorConfig to JSON.
+             * @function toJSON
+             * @memberof bentoml.DeploymentSpec.AwsEc2OperatorConfig
+             * @instance
+             * @returns {Object.<string,*>} JSON object
+             */
+            AwsEc2OperatorConfig.prototype.toJSON = function toJSON() {
+                return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            return AwsEc2OperatorConfig;
         })();
 
         return DeploymentSpec;
@@ -4406,6 +4745,7 @@ export const bentoml = $root.bentoml = (() => {
                 case 2:
                 case 3:
                 case 4:
+                case 5:
                     break;
                 }
             if (message.order_by != null && message.hasOwnProperty("order_by"))
@@ -4468,6 +4808,10 @@ export const bentoml = $root.bentoml = (() => {
             case "AZURE_FUNCTIONS":
             case 4:
                 message.operator = 4;
+                break;
+            case "AWS_EC2":
+            case 5:
+                message.operator = 5;
                 break;
             }
             switch (object.order_by) {
@@ -10202,6 +10546,519 @@ export const bentoml = $root.bentoml = (() => {
         return ListBentoResponse;
     })();
 
+    bentoml.ContainerizeBentoRequest = (function() {
+
+        /**
+         * Properties of a ContainerizeBentoRequest.
+         * @memberof bentoml
+         * @interface IContainerizeBentoRequest
+         * @property {string|null} [bento_name] ContainerizeBentoRequest bento_name
+         * @property {string|null} [bento_version] ContainerizeBentoRequest bento_version
+         * @property {string|null} [tag] ContainerizeBentoRequest tag
+         * @property {Object.<string,string>|null} [build_args] ContainerizeBentoRequest build_args
+         * @property {boolean|null} [push] ContainerizeBentoRequest push
+         */
+
+        /**
+         * Constructs a new ContainerizeBentoRequest.
+         * @memberof bentoml
+         * @classdesc Represents a ContainerizeBentoRequest.
+         * @implements IContainerizeBentoRequest
+         * @constructor
+         * @param {bentoml.IContainerizeBentoRequest=} [properties] Properties to set
+         */
+        function ContainerizeBentoRequest(properties) {
+            this.build_args = {};
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ContainerizeBentoRequest bento_name.
+         * @member {string} bento_name
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @instance
+         */
+        ContainerizeBentoRequest.prototype.bento_name = "";
+
+        /**
+         * ContainerizeBentoRequest bento_version.
+         * @member {string} bento_version
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @instance
+         */
+        ContainerizeBentoRequest.prototype.bento_version = "";
+
+        /**
+         * ContainerizeBentoRequest tag.
+         * @member {string} tag
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @instance
+         */
+        ContainerizeBentoRequest.prototype.tag = "";
+
+        /**
+         * ContainerizeBentoRequest build_args.
+         * @member {Object.<string,string>} build_args
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @instance
+         */
+        ContainerizeBentoRequest.prototype.build_args = $util.emptyObject;
+
+        /**
+         * ContainerizeBentoRequest push.
+         * @member {boolean} push
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @instance
+         */
+        ContainerizeBentoRequest.prototype.push = false;
+
+        /**
+         * Creates a new ContainerizeBentoRequest instance using the specified properties.
+         * @function create
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @static
+         * @param {bentoml.IContainerizeBentoRequest=} [properties] Properties to set
+         * @returns {bentoml.ContainerizeBentoRequest} ContainerizeBentoRequest instance
+         */
+        ContainerizeBentoRequest.create = function create(properties) {
+            return new ContainerizeBentoRequest(properties);
+        };
+
+        /**
+         * Encodes the specified ContainerizeBentoRequest message. Does not implicitly {@link bentoml.ContainerizeBentoRequest.verify|verify} messages.
+         * @function encode
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @static
+         * @param {bentoml.IContainerizeBentoRequest} message ContainerizeBentoRequest message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ContainerizeBentoRequest.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
+            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
+            if (message.tag != null && Object.hasOwnProperty.call(message, "tag"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.tag);
+            if (message.build_args != null && Object.hasOwnProperty.call(message, "build_args"))
+                for (let keys = Object.keys(message.build_args), i = 0; i < keys.length; ++i)
+                    writer.uint32(/* id 4, wireType 2 =*/34).fork().uint32(/* id 1, wireType 2 =*/10).string(keys[i]).uint32(/* id 2, wireType 2 =*/18).string(message.build_args[keys[i]]).ldelim();
+            if (message.push != null && Object.hasOwnProperty.call(message, "push"))
+                writer.uint32(/* id 5, wireType 0 =*/40).bool(message.push);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ContainerizeBentoRequest message, length delimited. Does not implicitly {@link bentoml.ContainerizeBentoRequest.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @static
+         * @param {bentoml.IContainerizeBentoRequest} message ContainerizeBentoRequest message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ContainerizeBentoRequest.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ContainerizeBentoRequest message from the specified reader or buffer.
+         * @function decode
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {bentoml.ContainerizeBentoRequest} ContainerizeBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ContainerizeBentoRequest.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ContainerizeBentoRequest(), key;
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.bento_name = reader.string();
+                    break;
+                case 2:
+                    message.bento_version = reader.string();
+                    break;
+                case 3:
+                    message.tag = reader.string();
+                    break;
+                case 4:
+                    reader.skip().pos++;
+                    if (message.build_args === $util.emptyObject)
+                        message.build_args = {};
+                    key = reader.string();
+                    reader.pos++;
+                    message.build_args[key] = reader.string();
+                    break;
+                case 5:
+                    message.push = reader.bool();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ContainerizeBentoRequest message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {bentoml.ContainerizeBentoRequest} ContainerizeBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ContainerizeBentoRequest.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ContainerizeBentoRequest message.
+         * @function verify
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ContainerizeBentoRequest.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+                if (!$util.isString(message.bento_name))
+                    return "bento_name: string expected";
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+                if (!$util.isString(message.bento_version))
+                    return "bento_version: string expected";
+            if (message.tag != null && message.hasOwnProperty("tag"))
+                if (!$util.isString(message.tag))
+                    return "tag: string expected";
+            if (message.build_args != null && message.hasOwnProperty("build_args")) {
+                if (!$util.isObject(message.build_args))
+                    return "build_args: object expected";
+                let key = Object.keys(message.build_args);
+                for (let i = 0; i < key.length; ++i)
+                    if (!$util.isString(message.build_args[key[i]]))
+                        return "build_args: string{k:string} expected";
+            }
+            if (message.push != null && message.hasOwnProperty("push"))
+                if (typeof message.push !== "boolean")
+                    return "push: boolean expected";
+            return null;
+        };
+
+        /**
+         * Creates a ContainerizeBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.ContainerizeBentoRequest} ContainerizeBentoRequest
+         */
+        ContainerizeBentoRequest.fromObject = function fromObject(object) {
+            if (object instanceof $root.bentoml.ContainerizeBentoRequest)
+                return object;
+            let message = new $root.bentoml.ContainerizeBentoRequest();
+            if (object.bento_name != null)
+                message.bento_name = String(object.bento_name);
+            if (object.bento_version != null)
+                message.bento_version = String(object.bento_version);
+            if (object.tag != null)
+                message.tag = String(object.tag);
+            if (object.build_args) {
+                if (typeof object.build_args !== "object")
+                    throw TypeError(".bentoml.ContainerizeBentoRequest.build_args: object expected");
+                message.build_args = {};
+                for (let keys = Object.keys(object.build_args), i = 0; i < keys.length; ++i)
+                    message.build_args[keys[i]] = String(object.build_args[keys[i]]);
+            }
+            if (object.push != null)
+                message.push = Boolean(object.push);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ContainerizeBentoRequest message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @static
+         * @param {bentoml.ContainerizeBentoRequest} message ContainerizeBentoRequest
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ContainerizeBentoRequest.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.objects || options.defaults)
+                object.build_args = {};
+            if (options.defaults) {
+                object.bento_name = "";
+                object.bento_version = "";
+                object.tag = "";
+                object.push = false;
+            }
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+                object.bento_name = message.bento_name;
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+                object.bento_version = message.bento_version;
+            if (message.tag != null && message.hasOwnProperty("tag"))
+                object.tag = message.tag;
+            let keys2;
+            if (message.build_args && (keys2 = Object.keys(message.build_args)).length) {
+                object.build_args = {};
+                for (let j = 0; j < keys2.length; ++j)
+                    object.build_args[keys2[j]] = message.build_args[keys2[j]];
+            }
+            if (message.push != null && message.hasOwnProperty("push"))
+                object.push = message.push;
+            return object;
+        };
+
+        /**
+         * Converts this ContainerizeBentoRequest to JSON.
+         * @function toJSON
+         * @memberof bentoml.ContainerizeBentoRequest
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ContainerizeBentoRequest.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return ContainerizeBentoRequest;
+    })();
+
+    bentoml.ContainerizeBentoResponse = (function() {
+
+        /**
+         * Properties of a ContainerizeBentoResponse.
+         * @memberof bentoml
+         * @interface IContainerizeBentoResponse
+         * @property {bentoml.IStatus|null} [status] ContainerizeBentoResponse status
+         * @property {string|null} [tag] ContainerizeBentoResponse tag
+         */
+
+        /**
+         * Constructs a new ContainerizeBentoResponse.
+         * @memberof bentoml
+         * @classdesc Represents a ContainerizeBentoResponse.
+         * @implements IContainerizeBentoResponse
+         * @constructor
+         * @param {bentoml.IContainerizeBentoResponse=} [properties] Properties to set
+         */
+        function ContainerizeBentoResponse(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * ContainerizeBentoResponse status.
+         * @member {bentoml.IStatus|null|undefined} status
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @instance
+         */
+        ContainerizeBentoResponse.prototype.status = null;
+
+        /**
+         * ContainerizeBentoResponse tag.
+         * @member {string} tag
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @instance
+         */
+        ContainerizeBentoResponse.prototype.tag = "";
+
+        /**
+         * Creates a new ContainerizeBentoResponse instance using the specified properties.
+         * @function create
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @static
+         * @param {bentoml.IContainerizeBentoResponse=} [properties] Properties to set
+         * @returns {bentoml.ContainerizeBentoResponse} ContainerizeBentoResponse instance
+         */
+        ContainerizeBentoResponse.create = function create(properties) {
+            return new ContainerizeBentoResponse(properties);
+        };
+
+        /**
+         * Encodes the specified ContainerizeBentoResponse message. Does not implicitly {@link bentoml.ContainerizeBentoResponse.verify|verify} messages.
+         * @function encode
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @static
+         * @param {bentoml.IContainerizeBentoResponse} message ContainerizeBentoResponse message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ContainerizeBentoResponse.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+                $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            if (message.tag != null && Object.hasOwnProperty.call(message, "tag"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.tag);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified ContainerizeBentoResponse message, length delimited. Does not implicitly {@link bentoml.ContainerizeBentoResponse.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @static
+         * @param {bentoml.IContainerizeBentoResponse} message ContainerizeBentoResponse message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        ContainerizeBentoResponse.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a ContainerizeBentoResponse message from the specified reader or buffer.
+         * @function decode
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {bentoml.ContainerizeBentoResponse} ContainerizeBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ContainerizeBentoResponse.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.ContainerizeBentoResponse();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.status = $root.bentoml.Status.decode(reader, reader.uint32());
+                    break;
+                case 2:
+                    message.tag = reader.string();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a ContainerizeBentoResponse message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {bentoml.ContainerizeBentoResponse} ContainerizeBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        ContainerizeBentoResponse.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a ContainerizeBentoResponse message.
+         * @function verify
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        ContainerizeBentoResponse.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.status != null && message.hasOwnProperty("status")) {
+                let error = $root.bentoml.Status.verify(message.status);
+                if (error)
+                    return "status." + error;
+            }
+            if (message.tag != null && message.hasOwnProperty("tag"))
+                if (!$util.isString(message.tag))
+                    return "tag: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a ContainerizeBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.ContainerizeBentoResponse} ContainerizeBentoResponse
+         */
+        ContainerizeBentoResponse.fromObject = function fromObject(object) {
+            if (object instanceof $root.bentoml.ContainerizeBentoResponse)
+                return object;
+            let message = new $root.bentoml.ContainerizeBentoResponse();
+            if (object.status != null) {
+                if (typeof object.status !== "object")
+                    throw TypeError(".bentoml.ContainerizeBentoResponse.status: object expected");
+                message.status = $root.bentoml.Status.fromObject(object.status);
+            }
+            if (object.tag != null)
+                message.tag = String(object.tag);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a ContainerizeBentoResponse message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @static
+         * @param {bentoml.ContainerizeBentoResponse} message ContainerizeBentoResponse
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        ContainerizeBentoResponse.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.status = null;
+                object.tag = "";
+            }
+            if (message.status != null && message.hasOwnProperty("status"))
+                object.status = $root.bentoml.Status.toObject(message.status, options);
+            if (message.tag != null && message.hasOwnProperty("tag"))
+                object.tag = message.tag;
+            return object;
+        };
+
+        /**
+         * Converts this ContainerizeBentoResponse to JSON.
+         * @function toJSON
+         * @memberof bentoml.ContainerizeBentoResponse
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        ContainerizeBentoResponse.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return ContainerizeBentoResponse;
+    })();
+
     bentoml.Yatai = (function() {
 
         /**
@@ -10627,6 +11484,39 @@ export const bentoml = $root.bentoml = (() => {
          * @instance
          * @param {bentoml.IListBentoRequest} request ListBentoRequest message or plain object
          * @returns {Promise<bentoml.ListBentoResponse>} Promise
+         * @variation 2
+         */
+
+        /**
+         * Callback as used by {@link bentoml.Yatai#containerizeBento}.
+         * @memberof bentoml.Yatai
+         * @typedef ContainerizeBentoCallback
+         * @type {function}
+         * @param {Error|null} error Error, if any
+         * @param {bentoml.ContainerizeBentoResponse} [response] ContainerizeBentoResponse
+         */
+
+        /**
+         * Calls ContainerizeBento.
+         * @function containerizeBento
+         * @memberof bentoml.Yatai
+         * @instance
+         * @param {bentoml.IContainerizeBentoRequest} request ContainerizeBentoRequest message or plain object
+         * @param {bentoml.Yatai.ContainerizeBentoCallback} callback Node-style callback called with the error, if any, and ContainerizeBentoResponse
+         * @returns {undefined}
+         * @variation 1
+         */
+        Object.defineProperty(Yatai.prototype.containerizeBento = function containerizeBento(request, callback) {
+            return this.rpcCall(containerizeBento, $root.bentoml.ContainerizeBentoRequest, $root.bentoml.ContainerizeBentoResponse, request, callback);
+        }, "name", { value: "ContainerizeBento" });
+
+        /**
+         * Calls ContainerizeBento.
+         * @function containerizeBento
+         * @memberof bentoml.Yatai
+         * @instance
+         * @param {bentoml.IContainerizeBentoRequest} request ContainerizeBentoRequest message or plain object
+         * @returns {Promise<bentoml.ContainerizeBentoResponse>} Promise
          * @variation 2
          */
 

@@ -479,10 +479,13 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 cf_client = boto3.client(
                     'cloudformation', lambda_deployment_config.region
                 )
-                cloud_formation_stack_result = cf_client.describe_stacks(
-                    StackName='{ns}-{name}'.format(
+                stack_name = generate_aws_compatible_string(
+                    '{ns}-{name}'.format(
                         ns=deployment_pb.namespace, name=deployment_pb.name
                     )
+                )
+                cloud_formation_stack_result = cf_client.describe_stacks(
+                    StackName=stack_name
                 )
                 stack_result = cloud_formation_stack_result.get('Stacks')[0]
                 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/\

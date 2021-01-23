@@ -15,7 +15,10 @@ Yatai Client
 
     .. automethod:: bentoml.yatai.client.bento_repository_api.BentoRepositoryAPIClient.prune
 
+    .. automethod:: bentoml.yatai.client.bento_repository_api.BentoRepositoryAPIClient.containerize
+
 .. spelling::
 
     proto
     pb
+    boolean

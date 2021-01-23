@@ -302,7 +302,10 @@ class BentoServiceEnv(object):
             )
         with open(requirements_txt_file, 'rb') as f:
             content = f.read().decode()
-            for req in parse_requirements(content):
+
+            # ignore customized PyPi URL (#1406)
+            lines = [l for l in content.splitlines() if not l.startswith("-i ")]
+            for req in parse_requirements(lines):
                 self._add_pip_package_requirement(req)
 
     def infer_pip_packages(self, bento_service):

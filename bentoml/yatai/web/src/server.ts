@@ -2,7 +2,7 @@ import path from "path";
 import morgan from "morgan";
 import { Request, Response } from "express";
 import express from "express";
-import { bentoml, google } from "./generated/bentoml_grpc";
+import { bentoml } from "./generated/bentoml_grpc";
 import { createYataiClient } from "./yatai_client";
 import { getLogger } from "./logger";
 import { rest } from 'lodash';
@@ -226,9 +226,8 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
 
   app.get('/healthz', async (req, res) => {
     try {
-      let request = google.protobuf.Empty
-      const response = await yataiClient.healthCheck(request);
-      console.log(response)
+      // Pass in empty object or google.protobuf.IEmpty
+      const response = await yataiClient.healthCheck({});
       if (response.status.status_code != 0) {
         throw new Error('Yatai gRPC server is unavailable');
       }

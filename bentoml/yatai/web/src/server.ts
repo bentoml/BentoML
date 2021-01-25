@@ -5,7 +5,6 @@ import express from "express";
 import { bentoml } from "./generated/bentoml_grpc";
 import { createYataiClient } from "./yatai_client";
 import { getLogger } from "./logger";
-import { rest } from 'lodash';
 const logger = getLogger();
 
 const createAPIRoutes = (app, yataiClient) => {

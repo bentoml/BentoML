@@ -7,7 +7,7 @@ import { createYataiClient } from "./yatai_client";
 import { getLogger } from "./logger";
 const logger = getLogger();
 
-const createRoutes = (app, yataiClient) => {
+const createAPIRoutes = (app, yataiClient) => {
   let router = express.Router();
   router.get("/api/ListBento", async (req: Request, res: Response) => {
     const requestQuery: any = Object.assign({}, req.query);
@@ -219,9 +219,22 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
     })
   );
   const yataiClient = createYataiClient(grpcAddress);
-  const router = createRoutes(app, yataiClient);
+  const router = createAPIRoutes(app, yataiClient);
   const apiUrlPrefix = (baseURL=="." ? '/' : '/' + baseURL);
   app.use(apiUrlPrefix, router);
+
+  app.get('/healthz', async (req, res) => {
+    try {
+      // Pass in empty object or google.protobuf.IEmpty
+      const response = await yataiClient.healthCheck({});
+      if (response.status.status_code != 0) {
+        throw new Error('Yatai gRPC server is unavailable');
+      }
+      return res.status(200).json({});
+    } catch (e) {
+      return res.status(500).json(e);
+    }
+  });
 
   app.get("/*", (req, res) => {
     let directory = req.path.split("/").slice(-2, -1);

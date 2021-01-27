@@ -198,9 +198,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         '--swagger-url-prefix',
         type=click.STRING,
         default="",
-        help='Prefix for the swagger endpoints'
-        'Example: "/my_service" which will put the \
-            endpoint as /my_service/predict',
+        help='Prefix for the swagger endpoints. '
+        'Example: "/my_service" which will make the '
+        'endpoint /my_service/predict',
     )
     def serve(
         port,
@@ -277,9 +277,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         '--swagger-url-prefix',
         type=click.STRING,
         default="",
-        help='Prefix for the swagger endpoints'
-        'Example: "/my_service" which will put the \
-            endpoint as /my_service/predict',
+        help='Prefix for the swagger endpoints. '
+        'Example: "/my_service" which will make the '
+        'endpoint /my_service/predict',
     )
     def serve_gunicorn(
         port,

@@ -37,7 +37,13 @@ def get_open_api_spec_json(bento_service, swagger_url_prefix=""):
     paths = OrderedDict()
     default_response = {"200": {"description": "success"}}
 
-    paths[swagger_url_prefix+"/healthz"] = OrderedDict(
+    if swagger_url_prefix:
+        if not swagger_url_prefix.startswith("/"):
+            swagger_url_prefix = "/" + swagger_url_prefix
+        if swagger_url_prefix.endswith("/"):
+            swagger_url_prefix = swagger_url_prefix[:-1]
+
+    paths[swagger_url_prefix + "/healthz"] = OrderedDict(
         get=OrderedDict(
             tags=["infra"],
             description="Health check endpoint. Expecting an empty response with status"
@@ -46,7 +52,7 @@ def get_open_api_spec_json(bento_service, swagger_url_prefix=""):
         )
     )
 
-    paths[swagger_url_prefix+"/metadata"] = OrderedDict(
+    paths[swagger_url_prefix + "/metadata"] = OrderedDict(
         get=OrderedDict(
             tags=["infra"],
             description="BentoService metadata endpoint. Returns the service's"
@@ -56,7 +62,7 @@ def get_open_api_spec_json(bento_service, swagger_url_prefix=""):
     )
 
     if config("apiserver").getboolean("enable_metrics"):
-        paths[swagger_url_prefix+"/metrics"] = OrderedDict(
+        paths[swagger_url_prefix + "/metrics"] = OrderedDict(
             get=OrderedDict(
                 tags=["infra"],
                 description="Prometheus metrics endpoint",
@@ -64,7 +70,7 @@ def get_open_api_spec_json(bento_service, swagger_url_prefix=""):
             )
         )
     if config("apiserver").getboolean("enable_feedback"):
-        paths[swagger_url_prefix+"/feedback"] = OrderedDict(
+        paths[swagger_url_prefix + "/feedback"] = OrderedDict(
             post=OrderedDict(
                 tags=["infra"],
                 description="Provide feedback to prediction results from BentoService. "

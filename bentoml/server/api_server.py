@@ -160,7 +160,7 @@ class BentoAPIServer:
         port=DEFAULT_PORT,
         app_name=None,
         enable_swagger=True,
-        swagger_url_prefix=""
+        swagger_url_prefix="",
     ):
         app_name = bento_service.name if app_name is None else app_name
 
@@ -335,7 +335,9 @@ class BentoAPIServer:
             partial(self.swagger_static, self.swagger_path),
         )
         self.app.add_url_rule(
-            "/docs.json", "docs", partial(self.docs_view_func, self.bento_service, self.swagger_url_prefix)
+            "/docs.json",
+            "docs",
+            partial(self.docs_view_func, self.bento_service, self.swagger_url_prefix),
         )
         self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
         self.app.add_url_rule(

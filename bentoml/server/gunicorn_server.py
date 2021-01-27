@@ -64,7 +64,7 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         timeout=None,
         prometheus_lock=None,
         enable_swagger=True,
-        swagger_url_prefix=""
+        swagger_url_prefix="",
     ):
         self.bento_service_bundle_path = bundle_path
 
@@ -102,8 +102,10 @@ class GunicornBentoServer(Application):  # pylint: disable=abstract-method
     def load(self):
         bento_service = load_from_dir(self.bento_service_bundle_path)
         api_server = GunicornBentoAPIServer(
-            bento_service, port=self.port, enable_swagger=self.enable_swagger, 
-            swagger_url_prefix=self.swagger_url_prefix
+            bento_service,
+            port=self.port,
+            enable_swagger=self.enable_swagger,
+            swagger_url_prefix=self.swagger_url_prefix,
         )
         return api_server.app
 

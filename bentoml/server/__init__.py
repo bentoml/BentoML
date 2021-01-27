@@ -49,7 +49,7 @@ def start_dev_server(
     mb_max_latency: int,
     run_with_ngrok: bool,
     enable_swagger: bool,
-    swagger_url_prefix: str
+    swagger_url_prefix: str,
 ):
     logger.info("Starting BentoML API server in development mode..")
 
@@ -88,15 +88,19 @@ def start_dev_server(
 
         bento_service = load(saved_bundle_path)
         api_server = BentoAPIServer(
-            bento_service, port=api_server_port, enable_swagger=enable_swagger,
-            swagger_url_prefix=swagger_url_prefix
+            bento_service,
+            port=api_server_port,
+            enable_swagger=enable_swagger,
+            swagger_url_prefix=swagger_url_prefix,
         )
         api_server.start()
     else:
         bento_service = load(saved_bundle_path)
         api_server = BentoAPIServer(
-            bento_service, port=port, enable_swagger=enable_swagger,
-            swagger_url_prefix=swagger_url_prefix
+            bento_service,
+            port=port,
+            enable_swagger=enable_swagger,
+            swagger_url_prefix=swagger_url_prefix,
         )
         api_server.start()
 
@@ -176,13 +180,17 @@ def start_prod_server(
                 timeout,
                 prometheus_lock,
                 enable_swagger,
-                swagger_url_prefix
+                swagger_url_prefix,
             )
         marshal_server.async_run()
         gunicorn_app.run()
     else:
         gunicorn_app = GunicornBentoServer(
-            saved_bundle_path, port, workers, timeout, enable_swagger=enable_swagger,
-            swagger_url_prefix=swagger_url_prefix
+            saved_bundle_path,
+            port,
+            workers,
+            timeout,
+            enable_swagger=enable_swagger,
+            swagger_url_prefix=swagger_url_prefix,
         )
         gunicorn_app.run()

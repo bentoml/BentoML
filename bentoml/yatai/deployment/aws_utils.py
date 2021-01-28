@@ -7,7 +7,17 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 
-from bentoml.exceptions import BentoMLException, MissingDependencyException
+from bentoml.exceptions import (
+    BentoMLException,
+    MissingDependencyException,
+    AWSServiceError,
+)
+from bentoml.yatai.deployment.docker_utils import (
+    build_docker_image,
+    push_docker_image_to_repository,
+    generate_docker_image_tag,
+)
+from bentoml.yatai.deployment.sagemaker.operator import logger
 
 logger = logging.getLogger(__name__)
 
@@ -227,3 +237,51 @@ def get_ecr_login_info(region):
 
     return registry_url, username, password
 
+
+def create_and_push_docker_image_to_ecr(
+    region, repository_name, docker_context_path, dockerfile_name, image_tag,
+):
+    registry_url, username, password = get_ecr_login_info(region)
+    create_ecr_repository_if_not_exists(region, repository_name)
+
+    ecr_tag = generate_docker_image_tag(image_tag=image_tag, registry_url=registry_url)
+
+    logger.debug("Building docker image: %s", ecr_tag)
+    build_docker_image(
+        context_path=docker_context_path,
+        dockerfile=os.path.join(docker_context_path, dockerfile_name),
+        image_tag=ecr_tag,
+    )
+
+    logger.debug("Pushing image to AWS ECR at %s", ecr_tag)
+    push_docker_image_to_repository(
+        repository=ecr_tag, username=username, password=password
+    )
+    logger.debug("Finished pushing image: %s", ecr_tag)
+    return ecr_tag
+
+
+def generate_bentoml_exception_from_aws_client_error(e, message_prefix=None):
+    """parse botocore.exceptions.ClientError into Bento StatusProto
+
+    We handle two most common errors when deploying to Sagemaker.
+        1. Authentication issue/invalid access(InvalidSignatureException)
+        2. resources not found (ValidationException)
+    It will return correlated StatusProto(NOT_FOUND, UNAUTHENTICATED)
+
+    Args:
+        e: ClientError from botocore.exceptions
+    Returns:
+        StatusProto
+    """
+    error_response = e.response.get("Error", {})
+    error_code = error_response.get("Code", "Unknown")
+    error_message = error_response.get("Message", "Unknown")
+    error_log_message = (
+        f"AWS ClientError - operation: {e.operation_name}, "
+        f"code: {error_code}, message: {error_message}"
+    )
+    if message_prefix:
+        error_log_message = f"{message_prefix}; {error_log_message}"
+    logger.error(error_log_message)
+    return AWSServiceError(error_log_message)

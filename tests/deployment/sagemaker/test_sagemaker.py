@@ -8,8 +8,10 @@ from mock import patch, MagicMock
 from moto import mock_ecr, mock_iam, mock_sts
 
 from bentoml.yatai.deployment.sagemaker.operator import (
-    _aws_client_error_to_bentoml_exception,
     get_arn_role_from_current_aws_user,
+)
+from bentoml.yatai.deployment.aws_utils import (
+    generate_bentoml_exception_from_aws_client_error,
 )
 from bentoml.yatai.deployment.sagemaker.operator import SageMakerDeploymentOperator
 from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentSpec
@@ -36,7 +38,7 @@ def test_sagemaker_handle_client_errors():
         },
         operation_name='failed_operation',
     )
-    exception = _aws_client_error_to_bentoml_exception(error)
+    exception = generate_bentoml_exception_from_aws_client_error(error)
     assert isinstance(exception, AWSServiceError)
 
 

@@ -4,7 +4,6 @@ import os
 import shutil
 
 import boto3
-import docker
 from botocore.exceptions import ClientError
 
 from bentoml.exceptions import (
@@ -19,14 +18,12 @@ from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import (
     raise_if_api_names_not_found_in_bento_service_metadata,
 )
-from bentoml.yatai.deployment.docker_utils import (
-    ensure_docker_available_or_raise,
-    process_docker_api_line, generate_docker_image_tag,
-)
+from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
     get_default_aws_region,
-    create_ecr_repository_if_not_exists, get_ecr_login_info,
+    create_and_push_docker_image_to_ecr,
+    generate_bentoml_exception_from_aws_client_error,
 )
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,
@@ -98,50 +95,6 @@ def get_arn_role_from_current_aws_user():
     )
 
 
-def create_and_push_docker_image_to_ecr(
-    region, bento_name, bento_version, snapshot_path
-):
-    """Create BentoService sagemaker image and push to AWS ECR
-
-    Example: https://github.com/awslabs/amazon-sagemaker-examples/blob/\
-        master/advanced_functionality/scikit_bring_your_own/container/build_and_push.sh
-    1. get aws account info and login ecr
-    2. create ecr repository, if not exist
-    3. build tag and push docker image
-
-    Args:
-        region(String)
-        bento_name(String)
-        bento_version(String)
-        snapshot_path(Path)
-
-    Returns:
-        str: AWS ECR Tag
-    """
-    registry_url, username, password = get_ecr_login_info(region)
-    auth_config_payload = {"username": username, "password": password}
-
-    docker_api = docker.APIClient()
-
-    ecr_tag = generate_docker_image_tag(
-        f'{bento_name}-sagemaker', bento_version, registry_url
-    )
-
-    logger.debug("Building docker image: %s", ecr_tag)
-    for line in docker_api.build(
-        path=snapshot_path, dockerfile="Dockerfile-sagemaker", tag=ecr_tag
-    ):
-        process_docker_api_line(line)
-
-    create_ecr_repository_if_not_exists(region, f'{bento_name}-sagemaker'.lower())
-
-    logger.debug("Pushing image to AWS ECR at %s", ecr_tag)
-    for line in docker_api.push(ecr_tag, stream=True, auth_config=auth_config_payload):
-        process_docker_api_line(line)
-    logger.debug("Finished pushing image: %s", ecr_tag)
-    return ecr_tag
-
-
 # Sagemaker response status: 'OutOfService'|'Creating'|'Updating'|
 #                            'SystemUpdating'|'RollingBack'|'InService'|
 #                            'Deleting'|'Failed'
@@ -155,32 +108,6 @@ ENDPOINT_STATUS_TO_STATE = {
     "OutOfService": DeploymentState.INACTIVATED,
     "Failed": DeploymentState.ERROR,
 }
-
-
-def _aws_client_error_to_bentoml_exception(e, message_prefix=None):
-    """parse botocore.exceptions.ClientError into Bento StatusProto
-
-    We handle two most common errors when deploying to Sagemaker.
-        1. Authentication issue/invalid access(InvalidSignatureException)
-        2. resources not found (ValidationException)
-    It will return correlated StatusProto(NOT_FOUND, UNAUTHENTICATED)
-
-    Args:
-        e: ClientError from botocore.exceptions
-    Returns:
-        StatusProto
-    """
-    error_response = e.response.get("Error", {})
-    error_code = error_response.get("Code", "Unknown")
-    error_message = error_response.get("Message", "Unknown")
-    error_log_message = (
-        f"AWS ClientError - operation: {e.operation_name}, "
-        f"code: {error_code}, message: {error_message}"
-    )
-    if message_prefix:
-        error_log_message = f"{message_prefix}; {error_log_message}"
-    logger.error(error_log_message)
-    return AWSServiceError(error_log_message)
 
 
 def _get_sagemaker_resource_names(deployment_pb):
@@ -219,7 +146,7 @@ def _delete_sagemaker_model_if_exist(sagemaker_client, sagemaker_model_name):
             # sagemaker model does not exist
             return
 
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, f"Failed to cleanup sagemaker model '{sagemaker_model_name}'"
         )
 
@@ -247,7 +174,7 @@ def _delete_sagemaker_endpoint_config_if_exist(
             # endpoint config does not exist
             return
 
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e,
             f"Failed to cleanup sagemaker endpoint config "
             f"'{sagemaker_endpoint_config_name}' after creation failed",
@@ -272,7 +199,7 @@ def _delete_sagemaker_endpoint_if_exist(sagemaker_client, sagemaker_endpoint_nam
             # sagemaker endpoint does not exist
             return
 
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, f"Failed to delete sagemaker endpoint '{sagemaker_endpoint_name}'"
         )
 
@@ -346,7 +273,7 @@ def _create_sagemaker_model(
     try:
         create_model_response = sagemaker_client.create_model(**sagemaker_model_info)
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to create sagemaker model"
         )
     logger.debug("AWS create model response: %s", create_model_response)
@@ -390,7 +317,7 @@ def _create_sagemaker_endpoint_config(
             **create_endpoint_config_arguments
         )
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to create sagemaker endpoint config"
         )
     logger.debug("AWS create endpoint config response: %s", create_config_response)
@@ -404,7 +331,7 @@ def _create_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
         )
         logger.debug("AWS create endpoint response: %s", create_endpoint_response)
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to create sagemaker endpoint"
         )
 
@@ -417,7 +344,7 @@ def _update_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
         )
         logger.debug("AWS update endpoint response: %s", str(update_endpoint_response))
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to update sagemaker endpoint"
         )
 
@@ -472,7 +399,6 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
         raise_if_api_names_not_found_in_bento_service_metadata(
             bento_pb.bento.bento_service_metadata, [sagemaker_config.api_name]
         )
-
         sagemaker_client = boto3.client("sagemaker", sagemaker_config.region)
 
         with TempDirectory() as temp_dir:
@@ -483,10 +409,11 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                 bento_pb.bento.bento_service_metadata.env.docker_base_image,
             )
             ecr_image_path = create_and_push_docker_image_to_ecr(
-                sagemaker_config.region,
-                deployment_spec.bento_name,
-                deployment_spec.bento_version,
-                sagemaker_project_dir,
+                region=sagemaker_config.region,
+                repository_name=deployment_spec.bento_name,
+                docker_context_path=sagemaker_project_dir,
+                dockerfile_name='Dockerfile-sagemaker',
+                image_tag=f'{deployment_spec.bento_name}:{deployment_spec.bento_version}',
             )
 
         try:
@@ -589,10 +516,11 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                         bento_pb.bento.bento_service_metadata.env.docker_base_image,
                     )
                     ecr_image_path = create_and_push_docker_image_to_ecr(
-                        updated_sagemaker_config.region,
-                        updated_deployment_spec.bento_name,
-                        updated_deployment_spec.bento_version,
-                        sagemaker_project_dir,
+                        region=updated_sagemaker_config.region,
+                        repository_name='',
+                        docker_context_path=sagemaker_project_dir,
+                        dockerfile_name='Dockerfile-sagemaker',
+                        image_tag='',
                     )
             else:
                 logger.debug("Using existing ECR image for Sagemaker model")
@@ -713,7 +641,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     EndpointName=sagemaker_endpoint_name
                 )
             except ClientError as e:
-                raise _aws_client_error_to_bentoml_exception(
+                raise generate_bentoml_exception_from_aws_client_error(
                     e,
                     f"Failed to fetch current status of sagemaker endpoint "
                     f"'{sagemaker_endpoint_name}'",

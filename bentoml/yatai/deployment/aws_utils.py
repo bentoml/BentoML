@@ -1,3 +1,4 @@
+import base64
 import logging
 import re
 import subprocess
@@ -201,3 +202,28 @@ def get_instance_ip_from_scaling_group(autoscaling_group_names, region):
 
 def get_aws_user_id():
     return boto3.client("sts").get_caller_identity().get("Account")
+
+
+def create_ecr_repository_if_not_exists(region, repository_name):
+    ecr_client = boto3.client('ecr', region)
+    try:
+        ecr_client.describe_repositories(repositoryNames=[repository_name])[
+            "repositories"
+        ]
+    except ecr_client.exceptions.RepositoryNotFoundException:
+        ecr_client.create_repository(repositoryName=repository_name)
+
+
+def get_ecr_login_info(region):
+    ecr_client = boto3.client('ecr', region)
+    token = ecr_client.get_authorization_token()
+    logger.debug("Getting docker login info from AWS")
+    username, password = (
+        base64.b64decode(token["authorizationData"][0]["authorizationToken"])
+        .decode("utf-8")
+        .split(":")
+    )
+    registry_url = token["authorizationData"][0]["proxyEndpoint"]
+
+    return registry_url, username, password
+

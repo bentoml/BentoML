@@ -1,6 +1,7 @@
 import json
 import logging
 import subprocess
+from urllib.parse import urlparse
 
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
@@ -47,3 +48,22 @@ def process_docker_api_line(payload):
     if errors:
         error_msg = ";".join(errors)
         raise BentoMLException("Error running docker command: {}".format(error_msg))
+
+
+def _strip_scheme(url):
+    """ Stripe url's schema
+    e.g.   http://some.url/path -> some.url/path
+    :param url: String
+    :return: String
+    """
+    parsed = urlparse(url)
+    scheme = "%s://" % parsed.scheme
+    return parsed.geturl().replace(scheme, "", 1)
+
+
+def generate_docker_image_tag(image_name, version='latest', registry_url=None):
+    image_tag = f'{image_name}:{version}'.lower()
+    if registry_url is not None:
+        return _strip_scheme(f'{registry_url}/{image_tag}')
+    else:
+        return image_tag

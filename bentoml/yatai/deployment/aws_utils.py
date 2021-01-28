@@ -176,7 +176,7 @@ def delete_ecr_repository(repository_name, region):
             raise e
 
 
-def get_instance_public_ip(instance_id, region):
+def get_ec2_instance_public_address(instance_id, region):
     ec2_client = boto3.client("ec2", region)
     response = ec2_client.describe_instances(InstanceIds=[instance_id])
     all_instances = response["Reservations"][0]["Instances"]
@@ -186,7 +186,7 @@ def get_instance_public_ip(instance_id, region):
     return ""
 
 
-def get_instance_ip_from_scaling_group(autoscaling_group_names, region):
+def get_scaling_group_instance_addresses(autoscaling_group_names, region):
     asg_client = boto3.client("autoscaling", region)
     response = asg_client.describe_auto_scaling_groups(
         AutoScalingGroupNames=autoscaling_group_names
@@ -197,7 +197,9 @@ def get_instance_ip_from_scaling_group(autoscaling_group_names, region):
     if all_autoscaling_group_info:
         for group in all_autoscaling_group_info:
             for instance in group["Instances"]:
-                endpoint = get_instance_public_ip(instance["InstanceId"], region)
+                endpoint = get_ec2_instance_public_address(
+                    instance["InstanceId"], region
+                )
                 all_instances.append(
                     {
                         "instance_id": instance["InstanceId"],

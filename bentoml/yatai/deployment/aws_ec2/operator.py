@@ -29,7 +29,7 @@ from bentoml.yatai.deployment.aws_utils import (
     cleanup_s3_bucket_if_exist,
     delete_cloudformation_stack,
     delete_ecr_repository,
-    get_instance_ip_from_scaling_group,
+    get_scaling_group_instance_addresses,
     get_aws_user_id,
 )
 from bentoml.utils.docker_utils import containerize_bento_service
@@ -766,7 +766,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             info_json = {}
             outputs = {o["OutputKey"]: o["OutputValue"] for o in outputs}
             if "AutoScalingGroup" in outputs:
-                info_json["InstanceDetails"] = get_instance_ip_from_scaling_group(
+                info_json["InstanceDetails"] = get_scaling_group_instance_addresses(
                     [outputs["AutoScalingGroup"]], ec2_deployment_config.region
                 )
                 info_json["Endpoints"] = get_endpoints_from_instance_address(

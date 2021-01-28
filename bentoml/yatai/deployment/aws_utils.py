@@ -176,42 +176,6 @@ def delete_ecr_repository(repository_name, region):
             raise e
 
 
-def get_ec2_instance_public_address(instance_id, region):
-    ec2_client = boto3.client("ec2", region)
-    response = ec2_client.describe_instances(InstanceIds=[instance_id])
-    all_instances = response["Reservations"][0]["Instances"]
-    if all_instances:
-        if "PublicIpAddress" in all_instances[0]:
-            return all_instances[0]["PublicIpAddress"]
-    return ""
-
-
-def get_scaling_group_instance_addresses(autoscaling_group_names, region):
-    asg_client = boto3.client("autoscaling", region)
-    response = asg_client.describe_auto_scaling_groups(
-        AutoScalingGroupNames=autoscaling_group_names
-    )
-    all_autoscaling_group_info = response["AutoScalingGroups"]
-
-    all_instances = []
-    if all_autoscaling_group_info:
-        for group in all_autoscaling_group_info:
-            for instance in group["Instances"]:
-                endpoint = get_ec2_instance_public_address(
-                    instance["InstanceId"], region
-                )
-                all_instances.append(
-                    {
-                        "instance_id": instance["InstanceId"],
-                        "endpoint": endpoint,
-                        "state": instance["LifecycleState"],
-                        "health_status": instance["HealthStatus"],
-                    }
-                )
-
-    return all_instances
-
-
 def get_aws_user_id():
     return boto3.client("sts").get_caller_identity().get("Account")
 
@@ -273,6 +237,7 @@ def generate_bentoml_exception_from_aws_client_error(e, message_prefix=None):
 
     Args:
         e: ClientError from botocore.exceptions
+        message_prefix: string
     Returns:
         StatusProto
     """
@@ -284,7 +249,7 @@ def generate_bentoml_exception_from_aws_client_error(e, message_prefix=None):
         f"code: {error_code}, message: {error_message}"
     )
     if message_prefix:
-        error_log_message = f"{message_prefix}; {error_log_message}"
+        error_log_message = f"{message_prefix}: {error_log_message}"
     logger.error(error_log_message)
     return AWSServiceError(error_log_message)
 

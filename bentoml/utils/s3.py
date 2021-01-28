@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 from urllib.parse import urlparse
-
-logger = logging.getLogger(__name__)
 
 
 def is_s3_url(url):

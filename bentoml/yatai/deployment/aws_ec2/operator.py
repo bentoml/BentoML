@@ -31,7 +31,6 @@ from bentoml.yatai.deployment.aws_utils import (
     cleanup_s3_bucket_if_exist,
     delete_cloudformation_stack,
     delete_ecr_repository,
-    get_scaling_group_instance_addresses,
     get_aws_user_id,
     get_ecr_login_info,
     create_ecr_repository_if_not_exists,
@@ -225,6 +224,42 @@ def get_healthy_target(target_group_arn, region):
         if instance["TargetHealth"]["State"] == TARGET_HEALTHY_STATUS:
             return instance
     return None
+
+
+def get_ec2_instance_public_address(instance_id, region):
+    ec2_client = boto3.client("ec2", region)
+    response = ec2_client.describe_instances(InstanceIds=[instance_id])
+    all_instances = response["Reservations"][0]["Instances"]
+    if all_instances:
+        if "PublicIpAddress" in all_instances[0]:
+            return all_instances[0]["PublicIpAddress"]
+    return ""
+
+
+def get_scaling_group_instance_addresses(autoscaling_group_names, region):
+    asg_client = boto3.client("autoscaling", region)
+    response = asg_client.describe_auto_scaling_groups(
+        AutoScalingGroupNames=autoscaling_group_names
+    )
+    all_autoscaling_group_info = response["AutoScalingGroups"]
+
+    all_instances = []
+    if all_autoscaling_group_info:
+        for group in all_autoscaling_group_info:
+            for instance in group["Instances"]:
+                endpoint = get_ec2_instance_public_address(
+                    instance["InstanceId"], region
+                )
+                all_instances.append(
+                    {
+                        "instance_id": instance["InstanceId"],
+                        "endpoint": endpoint,
+                        "state": instance["LifecycleState"],
+                        "health_status": instance["HealthStatus"],
+                    }
+                )
+
+    return all_instances
 
 
 class AwsEc2DeploymentOperator(DeploymentOperatorBase):

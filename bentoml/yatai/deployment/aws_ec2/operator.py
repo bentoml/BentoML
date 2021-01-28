@@ -19,7 +19,7 @@ from bentoml.yatai.proto.deployment_pb2 import (
 from bentoml.yatai.status import Status
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
-from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
     get_default_aws_region,

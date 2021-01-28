@@ -20,12 +20,13 @@ from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import (
     process_docker_api_line,
-    ensure_docker_available_or_raise,
     raise_if_api_names_not_found_in_bento_service_metadata,
 )
+from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
     get_default_aws_region,
+    get_default_aws_region, create_ecr_repository_if_not_exists,
 )
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,
@@ -158,6 +159,7 @@ def create_and_push_docker_image_to_ecr(
         ecr_client.describe_repositories(repositoryNames=[image_name])["repositories"]
     except ecr_client.exceptions.RepositoryNotFoundException:
         ecr_client.create_repository(repositoryName=image_name)
+    create_ecr_repository_if_not_exists(region, image_name)
 
     logger.debug("Pushing image to AWS ECR at %s", ecr_tag)
     for line in docker_api.push(ecr_tag, stream=True, auth_config=auth_config_payload):

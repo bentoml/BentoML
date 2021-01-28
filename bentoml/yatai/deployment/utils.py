@@ -14,11 +14,9 @@
 
 import json
 import logging
-import subprocess
 
 from bentoml.exceptions import (
     BentoMLException,
-    MissingDependencyException,
     InvalidArgument,
 )
 
@@ -50,20 +48,6 @@ def process_docker_api_line(payload):
     if errors:
         error_msg = ";".join(errors)
         raise BentoMLException("Error running docker command: {}".format(error_msg))
-
-
-def ensure_docker_available_or_raise():
-    try:
-        subprocess.check_output(['docker', 'info'])
-    except subprocess.CalledProcessError as error:
-        raise BentoMLException(
-            'Error executing docker command: {}'.format(error.output.decode())
-        )
-    except FileNotFoundError:
-        raise MissingDependencyException(
-            'Docker is required for this deployment. Please visit '
-            'www.docker.com for instructions'
-        )
 
 
 def raise_if_api_names_not_found_in_bento_service_metadata(metadata, api_names):

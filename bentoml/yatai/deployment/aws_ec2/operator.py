@@ -21,7 +21,6 @@ from bentoml.yatai.proto.deployment_pb2 import (
 )
 from bentoml.yatai.status import Status
 from bentoml.utils import status_pb_to_error_code_and_message
-from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
@@ -36,7 +35,9 @@ from bentoml.yatai.deployment.aws_utils import (
     get_aws_user_id,
     get_ecr_login_info,
     create_ecr_repository_if_not_exists,
-    create_and_push_docker_image_to_ecr, call_sam_command,
+    create_and_push_docker_image_to_ecr,
+    call_sam_command,
+    create_s3_bucket_if_not_exists,
 )
 from bentoml.exceptions import (
     BentoMLException,
@@ -52,6 +53,8 @@ from bentoml.yatai.deployment.aws_ec2.constants import (
     TARGET_HEALTH_CHECK_PORT,
     TARGET_HEALTH_CHECK_TIMEOUT_SECONDS,
     TARGET_HEALTH_CHECK_THRESHOLD_COUNT,
+    AWS_EC2_IN_SERVICE_STATE,
+    TARGET_HEALTHY_STATUS,
 )
 
 logger = logging.getLogger(__name__)

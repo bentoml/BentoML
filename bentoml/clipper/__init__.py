@@ -22,10 +22,10 @@ import docker
 
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.yatai.deployment.utils import (
+from bentoml.yatai.deployment.docker_utils import (
+    ensure_docker_available_or_raise,
     process_docker_api_line,
 )
-from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.adapters.clipper_input import ADAPTER_TYPE_TO_INPUT_TYPE
 from bentoml.exceptions import BentoMLException
 from bentoml.utils.usage_stats import track

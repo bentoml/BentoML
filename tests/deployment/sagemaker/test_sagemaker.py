@@ -190,7 +190,7 @@ def mock_sagemaker_deployment_wrapper(func):
     @patch('docker.APIClient.build', MagicMock())
     @patch('docker.APIClient.push', MagicMock())
     @patch(
-        'bentoml.yatai.deployment.sagemaker.operator._init_sagemaker_project',
+        'bentoml.yatai.deployment.sagemaker.operator._generate_sagemaker_project',
         MagicMock(),
     )
     @patch(

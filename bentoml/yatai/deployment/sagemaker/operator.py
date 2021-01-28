@@ -221,7 +221,7 @@ def delete_sagemaker_deployment_resources_if_exist(deployment_pb):
     _delete_sagemaker_endpoint_if_exist(sagemaker_client, sagemaker_endpoint_name)
 
 
-def _init_sagemaker_project(sagemaker_project_dir, bento_path, docker_base_image):
+def _generate_sagemaker_project(sagemaker_project_dir, bento_path, docker_base_image):
     shutil.copytree(bento_path, sagemaker_project_dir)
 
     with open(os.path.join(sagemaker_project_dir, "Dockerfile-sagemaker"), "w") as f:
@@ -403,7 +403,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
 
         with TempDirectory() as temp_dir:
             sagemaker_project_dir = os.path.join(temp_dir, deployment_spec.bento_name)
-            _init_sagemaker_project(
+            _generate_sagemaker_project(
                 sagemaker_project_dir,
                 bento_path,
                 bento_pb.bento.bento_service_metadata.env.docker_base_image,
@@ -510,7 +510,7 @@ class SageMakerDeploymentOperator(DeploymentOperatorBase):
                     sagemaker_project_dir = os.path.join(
                         temp_dir, updated_deployment_spec.bento_name
                     )
-                    _init_sagemaker_project(
+                    _generate_sagemaker_project(
                         sagemaker_project_dir,
                         bento_path,
                         bento_pb.bento.bento_service_metadata.env.docker_base_image,

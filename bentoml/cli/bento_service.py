@@ -315,8 +315,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         config.override(["api_server", "timeout"], timeout)
         config.override(["api_server", "enable_microbatch"], enable_microbatch)
         config.override(["api_server", "enable_swagger"], enable_swagger)
-        config.override(["marshal_server", "mb_max_batch_size"], mb_max_batch_size)
-        config.override(["marshal_server", "mb_max_latency"], mb_max_latency)
+        config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
+        config.override(["marshal_server", "max_latency"], mb_max_latency)
         config.override(["marshal_server", "workers"], microbatch_workers)
         container.config.from_dict(config.as_dict())
 

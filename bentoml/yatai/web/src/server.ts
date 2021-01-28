@@ -223,18 +223,7 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
   const apiUrlPrefix = (baseURL=="." ? '/' : '/' + baseURL);
   app.use(apiUrlPrefix, router);
 
-  app.get('/healthz', async (req, res) => {
-    try {
-      // Pass in empty object or google.protobuf.IEmpty
-      const response = await yataiClient.healthCheck({});
-      if (response.status.status_code != 0) {
-        throw new Error('Yatai gRPC server is unavailable');
-      }
-      return res.status(200).json({});
-    } catch (e) {
-      return res.status(500).json(e);
-    }
-  });
+  app.get('/healthz', (req, res) => res.status(200).json());
 
   app.get("/*", (req, res) => {
     let directory = req.path.split("/").slice(-2, -1);

@@ -42,8 +42,7 @@ def fastai_learner():
     model = Model()
     loss = Loss()
 
-    dblock = DataBlock(get_items=get_items,
-                       get_y=np.sum)
+    dblock = DataBlock(get_items=get_items, get_y=np.sum)
     dls = dblock.datasets(None).dataloaders()
     learner = Learner(dls, model, loss)
     return learner
@@ -55,11 +54,11 @@ test_df = pandas.DataFrame([[1] * 5])
 def test_fastai2_artifact_pack(fastai_learner):
     svc = FastaiClassifier()
     svc.pack('model', fastai_learner)
-    assert svc.predict(test_df) == 5., 'Run inference before saving'
+    assert svc.predict(test_df) == 5.0, 'Run inference before saving'
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
-    assert loaded_svc.predict(test_df) == 5., 'Run inference from saved model'
+    assert loaded_svc.predict(test_df) == 5.0, 'Run inference from saved model'
 
     yc = YataiClient()
     yc.repository.delete(f'{svc.name}:{svc.version}')

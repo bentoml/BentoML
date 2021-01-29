@@ -18,6 +18,7 @@ import time
 import click
 import functools
 import logging
+import traceback
 
 from click import ClickException
 
@@ -121,6 +122,7 @@ class BentoMLCommandGroup(click.Group):
                 track_properties['duration'] = time.time() - start_time
                 track_properties['error_type'] = type(e).__name__
                 track_properties['error_message'] = str(e)
+                track_properties['error_trace'] = traceback.format_exc()
                 track_properties['return_code'] = 1
                 if type(e) == KeyboardInterrupt:
                     track_properties['return_code'] = 2

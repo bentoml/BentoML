@@ -105,6 +105,24 @@ jobs:
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
+  fastai_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with: 
+          fetch-depth: 0
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        run: ./ci/install_test_deps.sh
+      - name: Run tests
+        run: ./ci/fastai_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+
   coreml_integration_tests:
     runs-on: macos-latest
     steps:

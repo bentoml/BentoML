@@ -120,6 +120,7 @@ class BentoMLCommandGroup(click.Group):
             except BaseException as e:
                 track_properties['duration'] = time.time() - start_time
                 track_properties['error_type'] = type(e).__name__
+                track_properties['error_message'] = str(e)
                 track_properties['return_code'] = 1
                 if type(e) == KeyboardInterrupt:
                     track_properties['return_code'] = 2

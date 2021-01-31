@@ -2,7 +2,7 @@ import os
 
 from sklearn import svm
 from sklearn import datasets
-from pkg_resources import Requirement, parse_requirements
+from pkg_resources import parse_requirements
 
 from bentoml.saved_bundle import load_bento_service_metadata
 from tests.bento_service_examples.iris_classifier import (
@@ -43,10 +43,12 @@ def _parse_dependencies(path):
 
     return requirements_txt_content.split('\n')
 
+
 def _dependencies_to_requirements(deps):
     print(deps)
     deps = [dep.split("==")[0] for dep in deps if not dep.startswith("-")]
     return [r.name for r in parse_requirements(deps)]
+
 
 def test_auto_artifact_dependencies():
     clf = _fit_clf()

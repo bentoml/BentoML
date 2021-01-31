@@ -158,13 +158,9 @@ class SavedBundleConfig(object):
                 for pip_package in env["pip_packages"]:
                     bento_service_metadata.env.pip_packages.append(pip_package)
             if "python_version" in env:
-                bento_service_metadata.env.python_version = env[
-                    "python_version"
-                ]
+                bento_service_metadata.env.python_version = env["python_version"]
             if "docker_base_image" in env:
-                bento_service_metadata.env.docker_base_image = env[
-                    "docker_base_image"
-                ]
+                bento_service_metadata.env.docker_base_image = env["docker_base_image"]
 
             if "requirements_txt" in env:
                 bento_service_metadata.env.requirements_txt = env["requirements_txt"]

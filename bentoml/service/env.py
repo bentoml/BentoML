@@ -329,23 +329,30 @@ class BentoServiceEnv(object):
         with open(os.path.join(path, "python_version"), "wb") as f:
             f.write(self._python_version.encode("utf-8"))
 
-        # If requirements.txt is specified, other requirements will NOT be parsed (#1421)
+        # If requirements.txt is specified, other requirements will
+        # NOT be parsed (#1421)
         requirements_txt_file = os.path.join(path, "requirements.txt")
         if self._requirements_txt_file:
             logger.info(
                 f"Found requirements text file: {self._requirements_txt_file}. "
                 "Ignoring any @env defined pip_packages..."
             )
-            self.copy_requirements_txt_file(self._requirements_txt_file, requirements_txt_file)
+            self.copy_requirements_txt_file(
+                self._requirements_txt_file, requirements_txt_file
+            )
         else:
             with open(requirements_txt_file, "wb") as f:
                 if self._pip_index_url:
                     f.write(f"--index-url={self._pip_index_url}\n".encode("utf-8"))
                 if self._pip_trusted_host:
-                    f.write(f"--trusted-host={self._pip_trusted_host}\n".encode("utf-8"))
+                    f.write(
+                        f"--trusted-host={self._pip_trusted_host}\n".encode("utf-8")
+                    )
                 if self._pip_extra_index_url:
                     f.write(
-                        f"--extra-index-url={self._pip_extra_index_url}\n".encode("utf-8")
+                        f"--extra-index-url={self._pip_extra_index_url}\n".encode(
+                            "utf-8"
+                        )
                     )
                 pip_content = '\n'.join(
                     [str(pkg_req) for pkg_req in self._pip_packages.values()]

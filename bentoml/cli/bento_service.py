@@ -231,9 +231,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         config.override(["marshal_server", "max_latency"], mb_max_latency)
         container.config.from_dict(config.as_dict())
 
-        from bentoml import marshal, server
-
-        container.wire(packages=[marshal, server])
+        import bentoml.marshal
+        import bentoml.server
+        container.wire(modules=[
+            bentoml.marshal,
+            bentoml.server,
+        ])
 
         start_dev_server(saved_bundle_path)
 
@@ -322,7 +325,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
         from bentoml import marshal, server
 
-        container.wire(packages=[marshal, server])
+        import bentoml.marshal
+        import bentoml.server
+        container.wire(modules=[
+            bentoml.marshal,
+            bentoml.server,
+        ])
 
         start_prod_server(saved_bundle_path)
 

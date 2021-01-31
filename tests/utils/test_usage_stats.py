@@ -87,7 +87,6 @@ def test_track_cli_usage(bento_service, bento_bundle_path):
             cli.commands['info'], [f'{bento_service.name}:{bento_service.version}']
         )
         event_name, properties = mock.call_args_list[0][0]
-        print(properties)
         assert event_name == 'bentoml-cli'
         assert properties['command'] == 'info'
         assert properties['return_code'] == 0
@@ -120,7 +119,6 @@ def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
         cli = create_bentoml_cli()
         runner.invoke(cli.commands['serve'], [bento_bundle_path])
         _, properties = mock.call_args_list[0][0]
-        print(properties)
         assert properties['return_code'] == 2
         assert properties['error_type'] == 'KeyboardInterrupt'
         assert properties['command'] == 'serve'

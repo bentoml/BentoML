@@ -18,7 +18,6 @@ import time
 import click
 import functools
 import logging
-import traceback
 
 from click import ClickException
 

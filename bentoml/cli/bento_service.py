@@ -323,8 +323,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         config.override(["marshal_server", "workers"], microbatch_workers)
         container.config.from_dict(config.as_dict())
 
-        from bentoml import marshal, server
-
         import bentoml.marshal
         import bentoml.server
         container.wire(modules=[

@@ -2,6 +2,7 @@ import os
 
 from sklearn import svm
 from sklearn import datasets
+from pkg_resources import Requirement, parse_requirements
 
 from bentoml.saved_bundle import load_bento_service_metadata
 from tests.bento_service_examples.iris_classifier import (
@@ -42,6 +43,10 @@ def _parse_dependencies(path):
 
     return requirements_txt_content.split('\n')
 
+def _dependencies_to_requirements(deps):
+    print(deps)
+    deps = [dep.split("==")[0] for dep in deps if not dep.startswith("-")]
+    return [r.name for r in parse_requirements(deps)]
 
 def test_auto_artifact_dependencies():
     clf = _fit_clf()
@@ -56,13 +61,13 @@ def test_auto_artifact_dependencies():
     saved_path = iris_classifier_service.save()
 
     # parse generated requirements.txt
-    dependencies = [dep.split('==')[0] for dep in _parse_dependencies(saved_path)]
+    dependencies = _dependencies_to_requirements(_parse_dependencies(saved_path))
     _assert_in_dependencies(['scikit-learn', 'bentoml'], dependencies)
 
     # Test that dependencies also wrote to BentoServiceMetadata config file
     bs_metadata = load_bento_service_metadata(saved_path)
     dependencies = bs_metadata.env.pip_packages
-    dependencies = [dep.split('==')[0] for dep in dependencies]
+    dependencies = _dependencies_to_requirements(dependencies)
     _assert_in_dependencies(['scikit-learn', 'bentoml'], dependencies)
 
     # Clean up
@@ -78,17 +83,14 @@ def test_requirements_txt_file():
     iris_classifier_service.pack('model', clf)
     saved_path = iris_classifier_service.save()
 
-    dependencies = [dep.split('==')[0] for dep in _parse_dependencies(saved_path)]
+    dependencies = _dependencies_to_requirements(_parse_dependencies(saved_path))
     _assert_in_dependencies(
         ['scikit-learn', 'azure-cli', 'psycopg2-binary', 'bentoml'], dependencies
     )
 
     bs_metadata = load_bento_service_metadata(saved_path)
-    dependencies = bs_metadata.env.pip_packages
-    dependencies = [dep.split('==')[0] for dep in dependencies]
-    _assert_in_dependencies(
-        ['scikit-learn', 'azure-cli', 'psycopg2-binary', 'bentoml'], dependencies
-    )
+    requirements_txt = bs_metadata.env.requirements_txt
+    assert requirements_txt == "./tests/pipenv_requirements.txt"
 
     delete_saved_bento_service(
         iris_classifier_service.name, iris_classifier_service.version

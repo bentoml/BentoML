@@ -145,25 +145,29 @@ class SavedBundleConfig(object):
         )
 
         if "env" in self.config:
-            if "setup_sh" in self.config["env"]:
-                bento_service_metadata.env.setup_sh = self.config["env"]["setup_sh"]
+            env = self.config["env"]
+            if "setup_sh" in env:
+                bento_service_metadata.env.setup_sh = env["setup_sh"]
 
-            if "conda_env" in self.config["env"]:
+            if "conda_env" in env:
                 bento_service_metadata.env.conda_env = dump_to_yaml_str(
-                    self.config["env"]["conda_env"]
+                    env["conda_env"]
                 )
 
-            if "pip_packages" in self.config["env"]:
-                for pip_package in self.config["env"]["pip_packages"]:
+            if "pip_packages" in env:
+                for pip_package in env["pip_packages"]:
                     bento_service_metadata.env.pip_packages.append(pip_package)
-            if "python_version" in self.config["env"]:
-                bento_service_metadata.env.python_version = self.config["env"][
+            if "python_version" in env:
+                bento_service_metadata.env.python_version = env[
                     "python_version"
                 ]
-            if "docker_base_image" in self.config["env"]:
-                bento_service_metadata.env.docker_base_image = self.config["env"][
+            if "docker_base_image" in env:
+                bento_service_metadata.env.docker_base_image = env[
                     "docker_base_image"
                 ]
+
+            if "requirements_txt" in env:
+                bento_service_metadata.env.requirements_txt = env["requirements_txt"]
 
         if "apis" in self.config:
             for api_config in self.config["apis"]:

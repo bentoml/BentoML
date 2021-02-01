@@ -1,4 +1,5 @@
 import pytest
+import psutil  # noqa # pylint: disable=unused-import
 from click.testing import CliRunner
 from mock import MagicMock, patch
 
@@ -110,20 +111,18 @@ def test_track_cli_with_click_exception():
 
 
 @pytest.mark.skipif('not psutil.POSIX')
-@patch(
-    'bentoml.cli.bento_service.start_dev_server',
-    MagicMock(side_effect=mock_start_dev_server),
-)
 def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
-    with patch('bentoml.cli.click_utils.track') as mock:
-        mock.side_effect = mock_track_func
-        runner = CliRunner()
-        cli = create_bentoml_cli()
-        runner.invoke(cli.commands['serve'], [bento_bundle_path])
-        _, properties = mock.call_args_list[0][0]
-        assert properties['return_code'] == 2
-        assert properties['error_type'] == 'KeyboardInterrupt'
-        assert properties['command'] == 'serve'
+    with patch('bentoml.cli.click_utils.track') as track:
+        track.side_effect = mock_track_func
+        with patch('bentoml.cli.bento_service.start_dev_server') as start_dev_server:
+            start_dev_server.side_effect = mock_start_dev_server
+            runner = CliRunner()
+            cli = create_bentoml_cli()
+            runner.invoke(cli.commands['serve'], [bento_bundle_path])
+            _, properties = track.call_args_list[0][0]
+            assert properties['return_code'] == 2
+            assert properties['error_type'] == 'KeyboardInterrupt'
+            assert properties['command'] == 'serve'
 
 
 @patch('bentoml.yatai.yatai_service_impl.validate_deployment_pb', MagicMock())

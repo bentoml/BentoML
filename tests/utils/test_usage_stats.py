@@ -1,3 +1,4 @@
+import pytest
 from click.testing import CliRunner
 from mock import MagicMock, patch
 
@@ -108,6 +109,7 @@ def test_track_cli_with_click_exception():
         assert properties['return_code'] == 1
 
 
+@pytest.mark.skipif('not psutil.POSIX')
 @patch(
     'bentoml.cli.bento_service.start_dev_server',
     MagicMock(side_effect=mock_start_dev_server),

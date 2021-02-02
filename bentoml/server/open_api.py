@@ -38,10 +38,7 @@ def get_open_api_spec_json(bento_service, swagger_url_prefix=""):
     default_response = {"200": {"description": "success"}}
 
     if swagger_url_prefix:
-        if not swagger_url_prefix.startswith("/"):
-            swagger_url_prefix = "/" + swagger_url_prefix
-        if swagger_url_prefix.endswith("/"):
-            swagger_url_prefix = swagger_url_prefix[:-1]
+        swagger_url_prefix = "/" + swagger_url_prefix.strip("/")
 
     paths[swagger_url_prefix + "/healthz"] = OrderedDict(
         get=OrderedDict(

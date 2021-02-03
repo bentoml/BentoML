@@ -172,10 +172,11 @@ def add_bento_sub_command(cli):
         _print_bentos_info(result, output)
 
     @cli.command(
-        help='Delete bentos. To delete a bento service use "--bento-name" and '
-        '"--bento-version" option: "bentoml delete --bento-name IrisClassifier '
-        '--bento-version 0.1.0". To delete multiple bentos, use "--bento-name" and/or '
-        '"--labels" to filter. To delete all bento services use "--all" option'
+        help='Delete bentos. To delete a bento service use "--name" and '
+        '"--version" options: "bentoml delete --name IrisClassifier '
+        '--bento-version 0.1.0" or "--tag" option: "bentoml delete --tag '
+        'IrisClassifier:v0.1.0". To delete multiple bentos, use "--name", "--tag", '
+        'and/or "--labels" to filter. To delete all bento services use "--all" option'
     )
     @click.option(
         '--all', is_flag=True, help='Use this flag to remove all BentoServices'
@@ -183,8 +184,10 @@ def add_bento_sub_command(cli):
     @click.option(
         '--tag',
         type=click.STRING,
-        help='Bento tags. To delete multiple bentos provide the name version tag '
-        'separated by "," for example "bentoml delete --tag name:v1,name:v2',
+        help='Bento tag referenced by BentoService\'s name and version in format of '
+        'name:version. For example: "iris_classifier:v1.2.0". To delete multiple '
+        'bentos provide the name version tag separated by "," for example '
+        '"bentoml delete --tag name:v1,name:v2',
         callback=parse_bento_tag_list_callback,
     )
     @click.option(

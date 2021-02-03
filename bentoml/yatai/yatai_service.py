@@ -17,6 +17,7 @@ from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 def get_yatai_service(
     channel_address=None,
     access_token=None,
+    access_token_header=None,
     db_url=None,
     repo_base_url=None,
     s3_endpoint_url=None,
@@ -24,6 +25,9 @@ def get_yatai_service(
 ):
     channel_address = channel_address or config('yatai_service').get('url')
     access_token = access_token or config('yatai_service').get('access_token')
+    access_token_header = access_token_header or config('yatai_service').get(
+        'access_token_header'
+    )
     channel_address = channel_address.strip()
     if channel_address:
         # Lazily import grpcio for YataiSerivce gRPC related actions
@@ -42,7 +46,7 @@ def get_yatai_service(
         logger.debug("Connecting YataiService gRPC server at: %s", channel_address)
         scheme, addr = parse_grpc_url(channel_address)
         header_adder_interceptor = header_client_interceptor.header_adder_interceptor(
-            'access_token', access_token
+            access_token_header, access_token
         )
         if scheme in ('grpcs', 'https'):
             tls_root_ca_cert = (

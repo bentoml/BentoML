@@ -186,13 +186,15 @@ def mock_lambda_related_operations(func):
 @patch('shutil.copy', MagicMock())
 @patch('os.listdir', MagicMock())
 @patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.upload_lambda_package', MagicMock()
+)
 @patch(
     'bentoml.yatai.deployment.aws_lambda.operator.validate_sam_template',
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy',
+    'bentoml.yatai.deployment.aws_lambda.operator.deploy_lambda',
     MagicMock(return_value=None),
 )
 @patch(
@@ -229,13 +231,15 @@ def test_aws_lambda_apply_under_bundle_size_limit_success():
 @patch('shutil.copy', MagicMock())
 @patch('os.listdir', MagicMock())
 @patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.upload_lambda_package', MagicMock()
+)
 @patch(
     'bentoml.yatai.deployment.aws_lambda.operator.validate_sam_template',
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy',
+    'bentoml.yatai.deployment.aws_lambda.operator.deploy_lambda',
     MagicMock(return_value=None),
 )
 @patch(
@@ -276,13 +280,15 @@ def test_aws_lambda_apply_over_bundle_size_limit_success():
 @patch('shutil.copy', MagicMock())
 @patch('os.listdir', MagicMock())
 @patch('bentoml.yatai.deployment.aws_lambda.operator.init_sam_project', MagicMock())
-@patch('bentoml.yatai.deployment.aws_lambda.operator.lambda_package', MagicMock())
+@patch(
+    'bentoml.yatai.deployment.aws_lambda.operator.upload_lambda_package', MagicMock()
+)
 @patch(
     'bentoml.yatai.deployment.aws_lambda.operator.validate_sam_template',
     MagicMock(return_value=None),
 )
 @patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.lambda_deploy',
+    'bentoml.yatai.deployment.aws_lambda.operator.deploy_lambda',
     MagicMock(return_value=None),
 )
 @patch(

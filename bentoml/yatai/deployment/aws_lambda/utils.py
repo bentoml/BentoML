@@ -147,7 +147,7 @@ def cleanup_build_files(project_dir, api_name):
             os.remove(os.path.join(root, "caff2"))
 
 
-def lambda_package(project_dir, aws_region, s3_bucket_name, deployment_prefix):
+def upload_lambda_package(project_dir, aws_region, s3_bucket_name, deployment_prefix):
     prefix_path = os.path.join(deployment_prefix, "lambda-functions")
     build_dir = os.path.join(project_dir, ".aws-sam", "build")
 
@@ -180,7 +180,7 @@ def lambda_package(project_dir, aws_region, s3_bucket_name, deployment_prefix):
         return stdout
 
 
-def lambda_deploy(project_dir, aws_region, stack_name):
+def deploy_lambda(project_dir, aws_region, stack_name):
     # if the stack name exists and the state is in rollback_complete or
     # other 'bad' state, we will delete the stack first, and then deploy
     # it

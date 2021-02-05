@@ -38,8 +38,8 @@ from bentoml.yatai.deployment.aws_utils import (
 )
 from bentoml.yatai.deployment.aws_lambda.utils import (
     init_sam_project,
-    lambda_deploy,
-    lambda_package,
+    deploy_lambda,
+    upload_lambda_package,
     reduce_bundle_size_and_upload_extra_resources_to_s3,
     total_file_or_directory_size,
     LAMBDA_FUNCTION_LIMIT,
@@ -264,7 +264,7 @@ def _deploy_lambda_function(
                 )
                 os.remove(os.path.join(build_directory, 'download_extra_resources.py'))
         logger.info('Packaging AWS Lambda project at %s ...', lambda_project_dir)
-        lambda_package(
+        upload_lambda_package(
             lambda_project_dir,
             lambda_deployment_config.region,
             lambda_s3_bucket,
@@ -274,7 +274,7 @@ def _deploy_lambda_function(
         stack_name = generate_aws_compatible_string(
             deployment_pb.namespace + '-' + deployment_pb.name
         )
-        lambda_deploy(
+        deploy_lambda(
             lambda_project_dir, lambda_deployment_config.region, stack_name=stack_name,
         )
 

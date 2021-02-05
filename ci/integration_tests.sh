@@ -8,9 +8,16 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 
 cd "$GIT_ROOT" || exit
 
-python -m pip install -e .
+python -m pip install -e . -q
 
 # Run test
-python -m pytest -s "$GIT_ROOT"/tests/integration/api_server --docker
+PROJECT_PATH="$GIT_ROOT/tests/integration/projects/general"
+BUILD_PATH="$PROJECT_PATH/build"
+
+python "$PROJECT_PATH/model/model.py" "$BUILD_PATH/artifacts"
+python "$PROJECT_PATH/service.py" "$BUILD_PATH/artifacts" "$BUILD_PATH/dist"
+python -m pytest -s "$PROJECT_PATH" --bento-dist "$BUILD_PATH/dist" --docker
+
+rm -r $BUILD_PATH
 
 test $error = 0 # Return non-zero if pytest failed

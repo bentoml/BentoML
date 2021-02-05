@@ -92,6 +92,8 @@ def metrics_patch(cls):
             time_st = time.time()
             try:
                 resp = await func(request)
+            except asyncio.CancelledError:
+                resp = aiohttp.web.Response(status=503)
             except Exception as e:  # pylint: disable=broad-except
                 self.metrics_request_exception.labels(
                     endpoint=api_name, exception_class=e.__class__.__name__

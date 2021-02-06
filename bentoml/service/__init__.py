@@ -250,12 +250,10 @@ def env_decorator(
 
     if requirements_txt_file:
         if pip_packages:
-            logger.warning(
-                f"Ignoring pip_packages as requirements_txt_file is set."
-            )
+            logger.warning("Ignoring pip_packages as requirements_txt_file is set.")
         if pip_index_url or pip_trusted_host or pip_extra_index_url:
             logger.warning(
-                f"Ignoring pip related options as requirements_txt_file is set."
+                "Ignoring pip related options as requirements_txt_file is set."
             )
     else:
         if pip_dependencies is not None:
@@ -265,8 +263,8 @@ def env_decorator(
             )
         if auto_pip_dependencies is not None:
             logger.warning(
-                "`auto_pip_dependencies` parameter in `@env` is being deprecated soon, use"
-                "`infer_pip_packages` instead, e.g. `@env(infer_pip_packages=True)`"
+                "`auto_pip_dependencies` parameter in `@env` is being deprecated soon,"
+                "use `infer_pip_packages` instead, e.g. `@env(infer_pip_packages=True)`"
             )
 
     def decorator(bento_service_cls):

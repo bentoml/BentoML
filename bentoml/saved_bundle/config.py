@@ -161,7 +161,6 @@ class SavedBundleConfig(object):
                 bento_service_metadata.env.python_version = env["python_version"]
             if "docker_base_image" in env:
                 bento_service_metadata.env.docker_base_image = env["docker_base_image"]
-
             if "requirements_txt" in env:
                 bento_service_metadata.env.requirements_txt = env["requirements_txt"]
 

@@ -45,7 +45,6 @@ def _parse_dependencies(path):
 
 
 def _dependencies_to_requirements(deps):
-    print(deps)
     deps = [dep.split("==")[0] for dep in deps if not dep.startswith("-")]
     return [r.name for r in parse_requirements(deps)]
 
@@ -92,7 +91,8 @@ def test_requirements_txt_file():
 
     bs_metadata = load_bento_service_metadata(saved_path)
     requirements_txt = bs_metadata.env.requirements_txt
-    assert requirements_txt == "./tests/pipenv_requirements.txt"
+    requirements_content = open("./tests/pipenv_requirements.txt", "r").read()
+    assert requirements_txt == requirements_content
 
     delete_saved_bento_service(
         iris_classifier_service.name, iris_classifier_service.version

@@ -15,7 +15,6 @@
 import logging
 import os
 import stat
-from shutil import copyfile
 from pathlib import Path
 from sys import version_info
 from typing import List
@@ -295,14 +294,13 @@ class BentoServiceEnv(object):
         else:
             self._setup_sh = setup_sh_path_or_content.encode("utf-8")
 
-    def copy_requirements_txt_file(self, requirements_txt_path, dst):
-        requirements_txt_file = Path(requirements_txt_path)
+    def requirements_txt_content(self):
+        requirements_txt_file = Path(self._requirements_txt_file)
         if not requirements_txt_file.is_file():
             raise BentoMLException(
                 f"requirement txt file not found at '{requirements_txt_file}'"
             )
-
-        copyfile(requirements_txt_file, dst)
+        return requirements_txt_file
 
     def infer_pip_packages(self, bento_service):
         if self._infer_pip_packages:
@@ -319,10 +317,6 @@ class BentoServiceEnv(object):
                     self.add_pip_package(f"{pkg_name}=={pkg_version}")
 
     def save(self, path):
-        # Parse pip packages from specified requirements.txt file, note that this file
-        # may not be presented in the docker container, but its content will be parsed
-        # and added to the new requirements.txt file generated in the Bento
-
         conda_yml_file = os.path.join(path, "environment.yml")
         self._conda_env.write_to_yaml_file(conda_yml_file)
 
@@ -332,16 +326,10 @@ class BentoServiceEnv(object):
         # If requirements.txt is specified, other requirements will
         # NOT be parsed (#1421)
         requirements_txt_file = os.path.join(path, "requirements.txt")
-        if self._requirements_txt_file:
-            logger.info(
-                f"Found requirements text file: {self._requirements_txt_file}. "
-                "Ignoring any @env defined pip_packages..."
-            )
-            self.copy_requirements_txt_file(
-                self._requirements_txt_file, requirements_txt_file
-            )
-        else:
-            with open(requirements_txt_file, "wb") as f:
+        with open(requirements_txt_file, "wb") as f:
+            if self._requirements_txt_file:
+                f.write(self.requirements_txt_content().read_bytes())
+            else:
                 if self._pip_index_url:
                     f.write(f"--index-url={self._pip_index_url}\n".encode("utf-8"))
                 if self._pip_trusted_host:
@@ -380,7 +368,7 @@ class BentoServiceEnv(object):
             ]
 
         if self._requirements_txt_file:
-            env_dict["requirements_txt"] = self._requirements_txt_file
+            env_dict["requirements_txt"] = self.requirements_txt_content().read_text()
 
         env_dict["conda_env"] = self._conda_env._conda_env
         env_dict["python_version"] = self._python_version

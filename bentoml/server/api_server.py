@@ -160,6 +160,7 @@ class BentoAPIServer:
         port=DEFAULT_PORT,
         app_name=None,
         enable_swagger=True,
+        swagger_url_prefix="",
     ):
         app_name = bento_service.name if app_name is None else app_name
 
@@ -168,6 +169,7 @@ class BentoAPIServer:
         self.app = Flask(app_name, static_folder=None)
         self.static_path = self.bento_service.get_web_static_content_path()
         self.enable_swagger = enable_swagger
+        self.swagger_url_prefix = swagger_url_prefix
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static_content'
@@ -246,8 +248,8 @@ class BentoAPIServer:
         return send_from_directory(static_path, filename)
 
     @staticmethod
-    def docs_view_func(bento_service):
-        docs = get_open_api_spec_json(bento_service)
+    def docs_view_func(bento_service, swagger_url_prefix):
+        docs = get_open_api_spec_json(bento_service, swagger_url_prefix)
         return jsonify(docs)
 
     @staticmethod
@@ -333,7 +335,9 @@ class BentoAPIServer:
             partial(self.swagger_static, self.swagger_path),
         )
         self.app.add_url_rule(
-            "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
+            "/docs.json",
+            "docs",
+            partial(self.docs_view_func, self.bento_service, self.swagger_url_prefix),
         )
         self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
         self.app.add_url_rule(

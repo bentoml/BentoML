@@ -194,6 +194,14 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Run API server with Swagger UI enabled",
         envvar='BENTOML_ENABLE_SWAGGER',
     )
+    @click.option(
+        '--swagger-url-prefix',
+        type=click.STRING,
+        default="",
+        help='Prefix for the swagger endpoints. '
+        'Example: "/my_service" which will make the '
+        'endpoint /my_service/predict',
+    )
     def serve(
         port,
         bento=None,
@@ -203,6 +211,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         run_with_ngrok=False,
         yatai_url=None,
         enable_swagger=True,
+        swagger_url_prefix="",
     ):
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
@@ -215,6 +224,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             mb_max_latency,
             run_with_ngrok,
             enable_swagger,
+            swagger_url_prefix,
         )
 
     # Example Usage:
@@ -263,6 +273,14 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help="Run API server with Swagger UI enabled",
         envvar='BENTOML_ENABLE_SWAGGER',
     )
+    @click.option(
+        '--swagger-url-prefix',
+        type=click.STRING,
+        default="",
+        help='Prefix for the swagger endpoints. '
+        'Example: "/my_service" which will make the '
+        'endpoint /my_service/predict',
+    )
     def serve_gunicorn(
         port,
         workers,
@@ -274,6 +292,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         microbatch_workers=1,
         yatai_url=None,
         enable_swagger=True,
+        swagger_url_prefix="",
     ):
         if not psutil.POSIX:
             _echo(
@@ -296,6 +315,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             mb_max_latency,
             microbatch_workers,
             enable_swagger,
+            swagger_url_prefix,
         )
 
     @bentoml_cli.command(

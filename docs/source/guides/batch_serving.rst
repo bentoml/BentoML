@@ -28,7 +28,7 @@ Example with :code:`ImageInput`. We provide the image data to the input adapter 
 
     $ bentoml run PyTorchFashionClassifier:latest predict --input-file test.jpg
 
-Alternatively, we can also run inference on all images in a folder and specify the batchsize using the flag :code:`--max-match-size`::
+Alternatively, we can also run inference on all images in a folder and specify the batch size using the flag :code:`--max-match-size`::
 
     $ bentoml run PyTorchFashionClassifier:latest predict \\
           --input-file folder/*.jpg --max-batch-size 10

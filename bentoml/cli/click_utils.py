@@ -188,15 +188,10 @@ def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argum
 
 
 def parse_bento_tag_list_callback(ctx, param, value):  # pylint: disable=unused-argument
+    if value is None:
+        return None
     bento_tags = value.split(",")
     bento_tags = list(map(str.strip, bento_tags))
-    for bento_tag in bento_tags:
-        if not _is_valid_bento_tag(bento_tag):
-            raise click.BadParameter(
-                "Bad formatting. Please present in BentoName:Version, for example "
-                "\"iris_classifier:v1.2.0\". For list of BentoService, separate tags "
-                "by \",\", for example: \"my_service:v1,my_service:v2,classifier:v3\""
-            )
     return bento_tags
 
 

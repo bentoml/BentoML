@@ -97,7 +97,6 @@ def test_delete_bentos_with_tags(bento_service):
     runner.invoke(
         cli.commands['delete'],
         [
-            '--tag',
             f'{bento_service.name}:{version_two},{bento_service.name}:{version_three}',
             '-y',
         ],

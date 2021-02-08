@@ -16,7 +16,8 @@ import click
 from tabulate import tabulate
 
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.cli.click_utils import _echo, parse_bento_tag_list_callback
+from bentoml.cli.click_utils import _echo, parse_bento_tag_list_callback, \
+    _is_valid_bento_tag
 from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
     _format_labels_for_print,
@@ -172,23 +173,21 @@ def add_bento_sub_command(cli):
         _print_bentos_info(result, output)
 
     @cli.command(
-        help='Delete bentos. To delete a bento service use "--name" and '
-        '"--version" options: "bentoml delete --name IrisClassifier '
-        '--bento-version 0.1.0" or "--tag" option: "bentoml delete --tag '
-        'IrisClassifier:v0.1.0". To delete multiple bentos, use "--name", "--tag", '
-        'and/or "--labels" to filter. To delete all bento services use "--all" option'
+        help='Delete bentos. Delete individual bento bundle: "bentoml delete '
+        'IrisClassifier:v1". Delete bento bundles with the same bento service name '
+        '"bentoml delete Irisclassifier". Delete multiple bento bundles: "bentoml '
+        'delete Irisclassifier:v1,ToxicCommentService:v123". Delete multiple bento '
+        'bundles using label filters: "bentoml delete --labels cicd=failed". Delete '
+        'all bento bundles "bentoml delete --all"',
+    )
+    @click.argument(
+        'tag',
+        type=click.STRING,
+        callback=parse_bento_tag_list_callback,
+        required=False,
     )
     @click.option(
         '--all', is_flag=True, help='Use this flag to remove all BentoServices'
-    )
-    @click.option(
-        '--tag',
-        type=click.STRING,
-        help='Bento tag referenced by BentoService\'s name and version in format of '
-        'name:version. For example: "iris_classifier:v1.2.0". To delete multiple '
-        'bentos provide the name version tag separated by "," for example '
-        '"bentoml delete --tag name:v1,name:v2',
-        callback=parse_bento_tag_list_callback,
     )
     @click.option(
         '--labels',
@@ -197,8 +196,6 @@ def add_bento_sub_command(cli):
         "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
         "In (value3, value3a), key4 DoesNotExist)",
     )
-    @click.option("--name", type=click.STRING, help='BentoService name')
-    @click.option("--version", type=click.STRING, help='BentoService version')
     @click.option(
         '--yatai-url',
         type=click.STRING,
@@ -216,8 +213,6 @@ def add_bento_sub_command(cli):
         all,  # pylint: disable=redefined-builtin
         tag,
         labels,
-        name,
-        version,
         yatai_url,
         yes,
     ):
@@ -233,20 +228,31 @@ def add_bento_sub_command(cli):
         # Backward compatible with the previous CLI, allows deletion with tag/s
         if len(tag) > 0:
             for item in tag:
-                yc.repository.delete(
-                    prune=all,
-                    labels=labels,
-                    bento_tag=item,
-                    bento_name=name,
-                    bento_version=version,
-                    require_confirm=False if yes else True,
-                )
+                if ':' in item:
+                    if not _is_valid_bento_tag(item):
+                        raise click.BadParameter(
+                            "Bad formatting. Please present in BentoName:Version, "
+                            "for example \"iris_classifier:v1.2.0\". For list of "
+                            "BentoService, separate tags by \",\", for example: "
+                            "\"my_service:v1,my_service:v2,classifier:v3\""
+                        )
+                    yc.repository.delete(
+                        prune=all,
+                        labels=labels,
+                        bento_tag=item,
+                        require_confirm=False if yes else True,
+                    )
+                else:
+                    yc.repository.delete(
+                        prune=all,
+                        labels=labels,
+                        bento_name=item,
+                        require_confirm=False if yes else True,
+                    )
         else:
             yc.repository.delete(
                 prune=all,
                 labels=labels,
-                bento_name=name,
-                bento_version=version,
                 require_confirm=False if yes else True,
             )
 

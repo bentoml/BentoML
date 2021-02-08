@@ -10,6 +10,7 @@ cd "$GIT_ROOT" || exit
 
 python -m pip uninstall bentoml -y
 python -m pip install bentoml
+export BUNDLE_BENTOML_VERSION=$(python -c "import bentoml;print(bentoml.__version__)")
 
 # Run test
 PROJECT_PATH="$GIT_ROOT/tests/integration/projects/general"

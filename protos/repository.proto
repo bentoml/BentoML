@@ -32,6 +32,7 @@ message BentoServiceMetadata {
     string python_version = 4;
     string docker_base_image = 5;
     repeated string pip_packages = 6;
+    string requirements_txt = 7;
   }
 
   message BentoArtifact {

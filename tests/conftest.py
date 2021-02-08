@@ -76,8 +76,9 @@ def pytest_configure():
                     from packaging import version
 
                     bundle_ver = os.environ.get("BUNDLE_BENTOML_VERSION")
-                    assert bundle_ver is not None, "no environ `BUNDLE_BENTOML_VERSION`"
-                    if version.parse(bundle_ver) < version.parse(version_str):
+                    if bundle_ver and version.parse(bundle_ver) < version.parse(
+                        version_str
+                    ):
                         pytest.skip()
                     return func(*args, **kwargs)
 

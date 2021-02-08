@@ -85,7 +85,7 @@ def test_aws_lambda_app_py(monkeypatch):
     monkeypatch.setenv('BENTOML_ARTIFACTS_PREFIX', 'mock_artifacts_prefix')
     monkeypatch.setenv('BENTOML_API_NAME', 'predict')
 
-    @patch('bentoml.saved_bundle.loader.load_from_dir', return_value=mock_bento_service)
+    @patch('bentoml.saved_bundle.load_from_dir', return_value=mock_bento_service)
     def return_predict_func(_):
         from bentoml.yatai.deployment.aws_lambda.lambda_app import api_func
 

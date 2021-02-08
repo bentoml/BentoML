@@ -54,7 +54,7 @@ def start_dev_server(
 
     import multiprocessing
 
-    from bentoml.saved_bundle.loader import load_from_dir
+    from bentoml.saved_bundle import load_from_dir
     from bentoml.server.api_server import BentoAPIServer
     from bentoml.utils import reserve_free_port
 

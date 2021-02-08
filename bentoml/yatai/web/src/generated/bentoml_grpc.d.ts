@@ -2667,6 +2667,9 @@ export namespace bentoml {
 
             /** BentoServiceEnv pip_packages */
             pip_packages?: (string[]|null);
+
+            /** BentoServiceEnv requirements_txt */
+            requirements_txt?: (string|null);
         }
 
         /** Represents a BentoServiceEnv. */
@@ -2695,6 +2698,9 @@ export namespace bentoml {
 
             /** BentoServiceEnv pip_packages. */
             public pip_packages: string[];
+
+            /** BentoServiceEnv requirements_txt. */
+            public requirements_txt: string;
 
             /**
              * Creates a new BentoServiceEnv instance using the specified properties.

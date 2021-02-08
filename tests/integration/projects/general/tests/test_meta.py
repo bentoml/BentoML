@@ -11,6 +11,7 @@ async def test_api_server_meta(host):
     await pytest.assert_request("GET", f"http://{host}/docs.json")
 
 
+@pytest.since_bentoml_version("0.11.0")
 @pytest.mark.asyncio
 async def test_customized_route(host):
     CUSTOM_ROUTE = "$~!@%^&*()_-+=[]\\|;:,./predict"

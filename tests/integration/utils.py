@@ -27,7 +27,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
                 logger.info("Waiting for host %s to be ready..", host_url)
                 time.sleep(check_interval)
         except Exception as e:  # pylint:disable=broad-except
-            logger.info(f"Error caught waiting for host {host_url} to be ready: '{e}'")
+            logger.info(f"'{e}', retrying to connect to the host {host_url}...")
             time.sleep(check_interval)
         finally:
             if container:
@@ -131,8 +131,11 @@ def run_api_server(bundle_path, enable_microbatch=False, timeout=10, init_cmd=No
         cmd += [bundle_path, "--workers", "1"]
 
     def print_log(p):
-        for line in p.stdout:
-            print(line.decode(), end='')
+        try:
+            for line in p.stdout:
+                print(line.decode(), end='')
+        except ValueError:
+            pass
 
     with subprocess.Popen(
         cmd,

@@ -1,4 +1,6 @@
 import json
+import pathlib
+import sys
 import time
 from typing import Sequence
 
@@ -13,32 +15,12 @@ from bentoml.adapters import (
 from bentoml.frameworks.sklearn import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler  # deprecated
 from bentoml.service.artifacts.pickle import PickleArtifact
-from bentoml.types import InferenceError, InferenceResult, InferenceTask
-
-
-class PickleModel(object):
-    def predict_dataframe(self, df):
-        return df['col1'] * 2
-
-    def predict_image(self, input_datas):
-        return [input_data.shape for input_data in input_datas]
-
-    def predict_file(self, input_files):
-        return [f.read() for f in input_files]
-
-    def predict_multi_images(self, originals, compareds):
-        import numpy as np
-
-        eq = np.array(originals) == np.array(compareds)
-        return eq.all(axis=tuple(range(1, len(eq.shape))))
-
-    def predict_json(self, input_datas):
-        return input_datas
+from bentoml.types import InferenceResult, InferenceTask
 
 
 @bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact('sk_model')])
-class ExampleBentoService(bentoml.BentoService):
+class ExampleService(bentoml.BentoService):
     """
     Example BentoService class made for testing purpose
     """
@@ -110,49 +92,11 @@ class ExampleBentoService(bentoml.BentoService):
         return input_datas
 
 
-# pylint: disable=arguments-differ
-@bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact('sk_model')])
-class ExampleBentoServiceSingle(ExampleBentoService):
-    """
-    Example BentoService class made for testing purpose
-    """
+if __name__ == "__main__":
+    artifacts_path = sys.argv[1]
+    bento_dist_path = sys.argv[2]
+    service = ExampleService()
+    service.artifacts.load_all(artifacts_path)
 
-    @bentoml.api(
-        input=MultiImageInput(input_names=('original', 'compared')), batch=False
-    )
-    def predict_multi_images(self, original, compared):
-        return self.artifacts.model.predict_multi_images([original], [compared])[0]
-
-    @bentoml.api(input=ImageInput(), batch=False)
-    def predict_image(self, image):
-        return self.artifacts.model.predict_image([image])[0]
-
-    @bentoml.api(
-        input=JsonInput(), mb_max_latency=1000, mb_max_batch_size=2000, batch=False
-    )
-    def predict_with_sklearn(self, json):
-        return self.artifacts.sk_model.predict([json])[0]
-
-    @bentoml.api(input=FileInput(), batch=False)
-    def predict_file(self, file_):
-        return self.artifacts.model.predict_file([file_])[0]
-
-    @bentoml.api(input=JsonInput(), batch=False)
-    def predict_json(self, input_data):
-        return self.artifacts.model.predict_json([input_data])[0]
-
-    @bentoml.api(input=JsonInput(), batch=False)
-    def predict_strict_json(self, input_data, task: InferenceTask = None):
-        if task.http_headers.content_type != "application/json":
-            task.discard(http_status=400, err_msg="application/json only")
-            return
-        result = self.artifacts.model.predict_json([input_data])[0]
-        return result
-
-    @bentoml.api(input=JsonInput(), batch=False)
-    def predict_direct_json(self, input_data, task: InferenceTask = None):
-        if task.http_headers.content_type != "application/json":
-            return InferenceError(http_status=400, err_msg="application/json only")
-        result = self.artifacts.model.predict_json([input_data])[0]
-        return InferenceResult(http_status=200, data=json.dumps(result))
+    pathlib.Path(bento_dist_path).mkdir(parents=True, exist_ok=True)
+    service.save_to_dir(bento_dist_path)

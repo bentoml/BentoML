@@ -67,7 +67,7 @@ def pytest_configure():
         'columns',
     }
 
-    def _since_version(version_str):
+    def _since_version(ver: str):
         def _wrapper(func):
             if not inspect.iscoroutinefunction(func):
 
@@ -76,9 +76,7 @@ def pytest_configure():
                     from packaging import version
 
                     bundle_ver = os.environ.get("BUNDLE_BENTOML_VERSION")
-                    if bundle_ver and version.parse(bundle_ver) < version.parse(
-                        version_str
-                    ):
+                    if bundle_ver and version.parse(bundle_ver) < version.parse(ver):
                         pytest.skip()
                     return func(*args, **kwargs)
 
@@ -89,8 +87,7 @@ def pytest_configure():
                     from packaging import version
 
                     bundle_ver = os.environ.get("BUNDLE_BENTOML_VERSION")
-                    assert bundle_ver is not None, "no environ `BUNDLE_BENTOML_VERSION`"
-                    if version.parse(bundle_ver) < version.parse(version_str):
+                    if bundle_ver and version.parse(bundle_ver) < version.parse(ver):
                         pytest.skip()
                     return await func(*args, **kwargs)
 

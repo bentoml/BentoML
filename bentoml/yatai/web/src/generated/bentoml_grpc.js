@@ -7324,6 +7324,7 @@ export const bentoml = $root.bentoml = (() => {
              * @property {number|null} [mb_max_latency] BentoServiceApi mb_max_latency
              * @property {number|null} [mb_max_batch_size] BentoServiceApi mb_max_batch_size
              * @property {boolean|null} [batch] BentoServiceApi batch
+             * @property {string|null} [route] BentoServiceApi route
              */
 
             /**
@@ -7414,6 +7415,14 @@ export const bentoml = $root.bentoml = (() => {
             BentoServiceApi.prototype.batch = false;
 
             /**
+             * BentoServiceApi route.
+             * @member {string} route
+             * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
+             * @instance
+             */
+            BentoServiceApi.prototype.route = "";
+
+            /**
              * Creates a new BentoServiceApi instance using the specified properties.
              * @function create
              * @memberof bentoml.BentoServiceMetadata.BentoServiceApi
@@ -7455,6 +7464,8 @@ export const bentoml = $root.bentoml = (() => {
                     writer.uint32(/* id 8, wireType 0 =*/64).int32(message.mb_max_batch_size);
                 if (message.batch != null && Object.hasOwnProperty.call(message, "batch"))
                     writer.uint32(/* id 9, wireType 0 =*/72).bool(message.batch);
+                if (message.route != null && Object.hasOwnProperty.call(message, "route"))
+                    writer.uint32(/* id 10, wireType 2 =*/82).string(message.route);
                 return writer;
             };
 
@@ -7515,6 +7526,9 @@ export const bentoml = $root.bentoml = (() => {
                         break;
                     case 9:
                         message.batch = reader.bool();
+                        break;
+                    case 10:
+                        message.route = reader.string();
                         break;
                     default:
                         reader.skipType(tag & 7);
@@ -7582,6 +7596,9 @@ export const bentoml = $root.bentoml = (() => {
                 if (message.batch != null && message.hasOwnProperty("batch"))
                     if (typeof message.batch !== "boolean")
                         return "batch: boolean expected";
+                if (message.route != null && message.hasOwnProperty("route"))
+                    if (!$util.isString(message.route))
+                        return "route: string expected";
                 return null;
             };
 
@@ -7621,6 +7638,8 @@ export const bentoml = $root.bentoml = (() => {
                     message.mb_max_batch_size = object.mb_max_batch_size | 0;
                 if (object.batch != null)
                     message.batch = Boolean(object.batch);
+                if (object.route != null)
+                    message.route = String(object.route);
                 return message;
             };
 
@@ -7647,6 +7666,7 @@ export const bentoml = $root.bentoml = (() => {
                     object.mb_max_latency = 0;
                     object.mb_max_batch_size = 0;
                     object.batch = false;
+                    object.route = "";
                 }
                 if (message.name != null && message.hasOwnProperty("name"))
                     object.name = message.name;
@@ -7666,6 +7686,8 @@ export const bentoml = $root.bentoml = (() => {
                     object.mb_max_batch_size = message.mb_max_batch_size;
                 if (message.batch != null && message.hasOwnProperty("batch"))
                     object.batch = message.batch;
+                if (message.route != null && message.hasOwnProperty("route"))
+                    object.route = message.route;
                 return object;
             };
 

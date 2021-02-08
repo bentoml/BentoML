@@ -16,8 +16,11 @@ import click
 from tabulate import tabulate
 
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.cli.click_utils import _echo, parse_bento_tag_list_callback, \
-    _is_valid_bento_tag
+from bentoml.cli.click_utils import (
+    _echo,
+    parse_bento_tag_list_callback,
+    _is_valid_bento_tag,
+)
 from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
     _format_labels_for_print,
@@ -210,11 +213,7 @@ def add_bento_sub_command(cli):
         help='Skip confirmation when deleting specific BentoService bundle',
     )
     def delete(
-        all,  # pylint: disable=redefined-builtin
-        tag,
-        labels,
-        yatai_url,
-        yes,
+        all, tag, labels, yatai_url, yes,  # pylint: disable=redefined-builtin
     ):
         """Delete saved BentoServices.
 
@@ -251,9 +250,7 @@ def add_bento_sub_command(cli):
                     )
         else:
             yc.repository.delete(
-                prune=all,
-                labels=labels,
-                require_confirm=False if yes else True,
+                prune=all, labels=labels, require_confirm=False if yes else True,
             )
 
     @cli.command(help='Pull BentoService from remote yatai server',)

@@ -23,7 +23,7 @@ python "$PROJECT_PATH/model/model.py" "$BUILD_PATH/artifacts"
 python "$PROJECT_PATH/service.py" "$BUILD_PATH/artifacts" "$BUILD_PATH/dist"
 
 python -m pip uninstall bentoml -y
-python -m pip install .
+python -m pip install --editable .
 
 PROJECT_PATH="$GIT_ROOT/tests/integration/projects/general"
 BUILD_PATH="$PROJECT_PATH/build"

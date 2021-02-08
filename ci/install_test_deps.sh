@@ -3,4 +3,4 @@ set -x
 
 python -m pip install --upgrade pip
 pip install .
-pip install --upgrade --edit .[test]
+pip install --upgrade --editable .[test]

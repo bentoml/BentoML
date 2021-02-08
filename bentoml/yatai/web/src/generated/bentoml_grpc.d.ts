@@ -2904,6 +2904,9 @@ export namespace bentoml {
 
             /** BentoServiceApi batch */
             batch?: (boolean|null);
+
+            /** BentoServiceApi route */
+            route?: (string|null);
         }
 
         /** Represents a BentoServiceApi. */
@@ -2941,6 +2944,9 @@ export namespace bentoml {
 
             /** BentoServiceApi batch. */
             public batch: boolean;
+
+            /** BentoServiceApi route. */
+            public route: string;
 
             /**
              * Creates a new BentoServiceApi instance using the specified properties.

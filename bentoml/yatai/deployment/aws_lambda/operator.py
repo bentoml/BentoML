@@ -34,7 +34,7 @@ from bentoml.yatai.deployment.aws_utils import (
     validate_sam_template,
     FAILED_CLOUDFORMATION_STACK_STATUS,
     cleanup_s3_bucket_if_exist,
-    create_s3_bucket_if_not_exists,
+    create_s3_bucket_if_not_exists, delete_cloudformation_stack,
 )
 from bentoml.yatai.deployment.aws_lambda.utils import (
     init_sam_project,
@@ -360,7 +360,11 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                     bento_version=deployment_spec.bento_version,
                 )
             )
-            if bento_pb.bento.uri.type not in (BentoUri.LOCAL, BentoUri.S3):
+            if bento_pb.bento.uri.type not in (
+                BentoUri.LOCAL,
+                BentoUri.S3,
+                BentoUri.GCS,
+            ):
                 raise BentoMLException(
                     'BentoML currently not support {} repository'.format(
                         BentoUri.StorageType.Name(bento_pb.bento.uri.type)
@@ -429,7 +433,6 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
             if not lambda_deployment_config.region:
                 raise InvalidArgument('AWS region is missing')
 
-            cf_client = boto3.client('cloudformation', lambda_deployment_config.region)
             stack_name = generate_aws_compatible_string(
                 deployment_pb.namespace, deployment_pb.name
             )
@@ -446,7 +449,7 @@ class AwsLambdaDeploymentOperator(DeploymentOperatorBase):
                 'and related resources',
                 stack_name,
             )
-            cf_client.delete_stack(StackName=stack_name)
+            delete_cloudformation_stack(lambda_deployment_config.region, stack_name)
             return DeleteDeploymentResponse(status=Status.OK())
 
         except BentoMLException as error:

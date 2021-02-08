@@ -288,3 +288,11 @@ def create_s3_bucket_if_not_exists(bucket_name, region):
                     raise s3_error
         else:
             raise error
+
+
+def delete_cloudformation_stack(region, stack_name):
+    try:
+        cf_client = boto3.client('cloudformation', region)
+        cf_client.delete_stack(StackName=stack_name)
+    except Exception as e:
+        raise BentoMLException(f'Failed to delete stack: {stack_name}: {e}')

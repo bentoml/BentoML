@@ -52,9 +52,10 @@ def parse_delete_targets_argument_callback(
             _is_valid_bento_tag(delete_target) or _is_valid_bento_name(delete_target)
         ):
             raise click.BadParameter(
-                "Bad formatting. Please present a valid BentoName or BentoName:Version"
-                ". For list of BentoService, separate delete targets by \",\", "
-                "for example: \"my_service:v1,my_service:v2,classifier\""
+                "Bad formatting. Please present a valid bento bundle name or "
+                "\"name:version\" tag. For list of bento bundles, separate delete "
+                "targets by \",\", for example: \"my_service:v1,my_service:v2,"
+                "classifier\""
             )
     return delete_targets
 

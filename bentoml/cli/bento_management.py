@@ -48,8 +48,8 @@ def parse_delete_targets_argument_callback(
     delete_targets = value.split(",")
     delete_targets = list(map(str.strip, delete_targets))
     for delete_target in delete_targets:
-        if _is_valid_bento_tag(delete_target) or _is_valid_bento_name(
-            delete_target
+        if not (
+            _is_valid_bento_tag(delete_target) or _is_valid_bento_name(delete_target)
         ):
             raise click.BadParameter(
                 "Bad formatting. Please present a valid BentoName or BentoName:Version"
@@ -201,9 +201,7 @@ def add_bento_sub_command(cli):
         callback=parse_delete_targets_argument_callback,
         required=False,
     )
-    @click.option(
-        '--all', is_flag=True, help='Set true to delete all bento bundles'
-    )
+    @click.option('--all', is_flag=True, help='Set true to delete all bento bundles')
     @click.option(
         '--labels',
         type=click.STRING,

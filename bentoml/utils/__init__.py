@@ -184,13 +184,7 @@ def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
         # assuming passing in BentoService in the form of Name:Version tag
         yatai_client = get_yatai_client(yatai_url)
         bento_pb = yatai_client.repository.get(bento)
-        if bento_pb.uri.s3_presigned_url:
-            # Use s3 presigned URL for downloading the repository if it is presented
-            return bento_pb.uri.s3_presigned_url
-        if bento_pb.uri.gcs_presigned_url:
-            return bento_pb.uri.gcs_presigned_url
-        else:
-            return bento_pb.uri.uri
+        return resolve_bento_bundle_uri(bento_pb)
     else:
         raise BentoMLException(
             f'BentoService "{bento}" not found - either specify the file path of '
@@ -203,3 +197,13 @@ def get_default_yatai_client():
     from bentoml.yatai.client import YataiClient
 
     return YataiClient()
+
+
+def resolve_bento_bundle_uri(bento_pb):
+    if bento_pb.uri.s3_presigned_url:
+        # Use s3 presigned URL for downloading the repository if it is presented
+        return bento_pb.uri.s3_presigned_url
+    if bento_pb.uri.gcs_presigned_url:
+        return bento_pb.uri.gcs_presigned_url
+    else:
+        return bento_pb.uri.uri

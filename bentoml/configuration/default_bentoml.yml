@@ -1,0 +1,42 @@
+#
+# default_bentoml.yml is currently working-in-progress. Configuration changes
+# should still be made to default_bentoml.cfg.
+#
+
+api_server:
+  port: 5000
+  enable_microbatch: False
+  run_with_ngrok: False
+  enable_swagger: True
+  enable_metrics: True
+  enable_feedback: True
+  max_request_size: 20971520
+
+  #
+  # Number of worker threads to be configured for the API server. If Null is
+  # configured, then BentoML will determine an optimal number of worker threads
+  # automatically, see `bentoml.configuration.containers.BentoMLContainer.
+  # api_server_workers` for details.
+  #
+  workers: Null
+
+  timeout: 60
+
+marshal_server:
+  max_batch_size: 2000
+  max_latency: 10000
+  request_header_flag: BentoML-Is-Merged-Request
+
+  #
+  # Number of workers for marshal server microbatching.
+  #
+  workers: 1
+
+yatai:
+  url: Null
+
+tracing:
+  zipkin_api_url: Null
+
+instrument:
+  namespace: BENTOML

@@ -18,8 +18,8 @@ from tabulate import tabulate
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.cli.click_utils import (
     _echo,
-    parse_bento_tag_list_callback,
     _is_valid_bento_tag,
+    _is_valid_bento_name,
 )
 from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
@@ -38,6 +38,25 @@ def _print_bento_info(bento, output_type):
         from google.protobuf.json_format import MessageToJson
 
         _echo(MessageToJson(bento))
+
+
+def parse_delete_target_argument_callback(
+    ctx, params, value
+):  # pylint: disable=unused-argument
+    if value is None:
+        return value
+    delete_targets = value.split(",")
+    delete_targets = list(map(str.strip, delete_targets))
+    for delete_target in delete_targets:
+        if not _is_valid_bento_tag(delete_target) or _is_valid_bento_name(
+            delete_target
+        ):
+            raise click.BadParameter(
+                "Bad formatting. Please present a valid BentoName or BentoName:Version"
+                ". For list of BentoService, separate delete targets by \",\", "
+                "for example: \"my_service:v1,my_service:v2,classifier\""
+            )
+    return delete_targets
 
 
 def _print_bento_table(bentos, wide=False):
@@ -175,22 +194,15 @@ def add_bento_sub_command(cli):
         )
         _print_bentos_info(result, output)
 
-    @cli.command(
-        help='Delete bentos. Delete individual bento bundle: "bentoml delete '
-        'IrisClassifier:v1". Delete bento bundles with the same bento service name '
-        '"bentoml delete Irisclassifier". Delete multiple bento bundles: "bentoml '
-        'delete Irisclassifier:v1,ToxicCommentService:v123". Delete multiple bento '
-        'bundles using label filters: "bentoml delete --labels cicd=failed". Delete '
-        'all bento bundles "bentoml delete --all"',
-    )
+    @cli.command()
     @click.argument(
-        'tag',
+        'delete_targets',
         type=click.STRING,
-        callback=parse_bento_tag_list_callback,
+        callback=parse_delete_target_argument_callback,
         required=False,
     )
     @click.option(
-        '--all', is_flag=True, help='Use this flag to remove all BentoServices'
+        '--all', is_flag=True, help='Set true to delete all saved bento bundles'
     )
     @click.option(
         '--labels',
@@ -213,20 +225,30 @@ def add_bento_sub_command(cli):
         help='Skip confirmation when deleting specific BentoService bundle',
     )
     def delete(
-        all, tag, labels, yatai_url, yes,  # pylint: disable=redefined-builtin
+        all,
+        delete_targets,
+        labels,
+        yatai_url,
+        yes,  # pylint: disable=redefined-builtin
     ):
-        """Delete saved BentoServices.
+        """Delete service bundles saved in target YataiService. When the --yatai-url option is not specified, it will use local Yatai by default.
 
-        BENTO is the target BentoService to be deleted, referenced by its name and
-        version in format of name:version. For example: "iris_classifier:v1.2.0"
+Specify target service bundles to remove:
 
-        `bentoml delete` command also supports deleting multiple saved BentoService at
-        once, by providing either the BentoService name and/or labels
-        """
+* Delete single service bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
+
+* Bulk delete all service bundle with a specific name, e.g.: `bentoml delete IrisClassifier`
+
+* Bulk delete multiple service bundle by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+
+* Bulk delete by tag, e.g.: `bentoml delete --tag env=dev`
+
+* Bulk delete all, e.g.: `bentoml delete --all`
+        """  # noqa
         yc = get_yatai_client(yatai_url)
         # Backward compatible with the previous CLI, allows deletion with tag/s
-        if len(tag) > 0:
-            for item in tag:
+        if len(delete_targets) > 0:
+            for item in delete_targets:
                 if ':' in item:
                     if not _is_valid_bento_tag(item):
                         raise click.BadParameter(

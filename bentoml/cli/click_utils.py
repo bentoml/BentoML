@@ -178,6 +178,10 @@ def _is_valid_bento_tag(value):
     return re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", value) is not None
 
 
+def _is_valid_bento_name(value):
+    return re.match(r"^[A-Za-z_0-9]*$", value) is not None
+
+
 def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argument
     if param.required and not _is_valid_bento_tag(value):
         raise click.BadParameter(
@@ -185,14 +189,6 @@ def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argum
             "iris_classifier:v1.2.0"
         )
     return value
-
-
-def parse_bento_tag_list_callback(ctx, param, value):  # pylint: disable=unused-argument
-    if value is None:
-        return None
-    bento_tags = value.split(",")
-    bento_tags = list(map(str.strip, bento_tags))
-    return bento_tags
 
 
 def parse_labels_callback(ctx, param, value):  # pylint: disable=unused-argument

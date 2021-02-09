@@ -26,6 +26,7 @@ BUILD_PATH="$PROJECT_PATH/build"
 python "$PROJECT_PATH/model/model.py" "$BUILD_PATH/artifacts"
 python "$PROJECT_PATH/service.py" "$BUILD_PATH/artifacts" "$BUILD_PATH/dist"
 if [ "$(uname)" == "Darwin" ]; then
+	export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 	python -m pytest -s "$PROJECT_PATH" --bento-dist "$BUILD_PATH/dist"
 else
 	python -m pytest -s "$PROJECT_PATH" --bento-dist "$BUILD_PATH/dist" --docker

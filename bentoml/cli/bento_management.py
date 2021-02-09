@@ -224,7 +224,7 @@ def add_bento_sub_command(cli):
         help='Skip confirmation when deleting a specific bento bundle',
     )
     def delete(
-        all,
+        all,  # pylint: disable=redefined-builtin
         delete_targets,
         labels,
         yatai_url,

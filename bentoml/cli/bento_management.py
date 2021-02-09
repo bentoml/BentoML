@@ -40,7 +40,7 @@ def _print_bento_info(bento, output_type):
         _echo(MessageToJson(bento))
 
 
-def parse_delete_target_argument_callback(
+def parse_delete_targets_argument_callback(
     ctx, params, value
 ):  # pylint: disable=unused-argument
     if value is None:
@@ -48,7 +48,7 @@ def parse_delete_target_argument_callback(
     delete_targets = value.split(",")
     delete_targets = list(map(str.strip, delete_targets))
     for delete_target in delete_targets:
-        if not _is_valid_bento_tag(delete_target) or _is_valid_bento_name(
+        if _is_valid_bento_tag(delete_target) or _is_valid_bento_name(
             delete_target
         ):
             raise click.BadParameter(
@@ -198,16 +198,16 @@ def add_bento_sub_command(cli):
     @click.argument(
         'delete_targets',
         type=click.STRING,
-        callback=parse_delete_target_argument_callback,
+        callback=parse_delete_targets_argument_callback,
         required=False,
     )
     @click.option(
-        '--all', is_flag=True, help='Set true to delete all saved bento bundles'
+        '--all', is_flag=True, help='Set true to delete all bento bundles'
     )
     @click.option(
         '--labels',
         type=click.STRING,
-        help="Label query to filter BentoServices, supports '=', '!=', 'IN', 'NotIn', "
+        help="Label query to filter bento bundles, supports '=', '!=', 'IN', 'NotIn', "
         "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
         "In (value3, value3a), key4 DoesNotExist)",
     )
@@ -222,7 +222,7 @@ def add_bento_sub_command(cli):
         '--yes',
         '--assume-yes',
         is_flag=True,
-        help='Skip confirmation when deleting specific BentoService bundle',
+        help='Skip confirmation when deleting a specific bento bundle',
     )
     def delete(
         all,
@@ -231,15 +231,15 @@ def add_bento_sub_command(cli):
         yatai_url,
         yes,  # pylint: disable=redefined-builtin
     ):
-        """Delete service bundles saved in target YataiService. When the --yatai-url option is not specified, it will use local Yatai by default.
+        """Delete bento bundles in target YataiService. When the --yatai-url option is not specified, it will use local Yatai by default.
 
 Specify target service bundles to remove:
 
-* Delete single service bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
+* Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
 
-* Bulk delete all service bundle with a specific name, e.g.: `bentoml delete IrisClassifier`
+* Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
 
-* Bulk delete multiple service bundle by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+* Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
 
 * Bulk delete by tag, e.g.: `bentoml delete --tag env=dev`
 

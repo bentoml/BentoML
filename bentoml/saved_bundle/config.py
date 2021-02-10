@@ -207,7 +207,9 @@ class SavedBundleConfig(object):
                     else:
                         api_metadata.mb_max_batch_size = DEFAULT_MAX_BATCH_SIZE
 
-                    if 'route' in api_config:
+                    assert api_config['route']
+
+                    if api_config["route"]:
                         api_metadata.route = api_config["route"]
                     else:
                         # Use API name as the URL route when route config is missing,

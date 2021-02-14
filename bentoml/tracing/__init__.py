@@ -20,23 +20,56 @@ from bentoml import config
 
 
 ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
+OPENTRACING_SERVER_ADDRESS = config("tracing").get("opentracing_server_address")
+OPENTRACING_SERVER_PORT = config("tracing").get("opentracing_server_port")
 
 
 @contextmanager
 def trace(*args, **kwargs):
+    """
+    synchronous tracing function, will choose relevant tracer
+    """
+
     if ZIPKIN_API_URL:
         from bentoml.tracing.trace import trace as _trace
 
-        return _trace(ZIPKIN_API_URL, *args, **kwargs)
+        new_args = [ZIPKIN_API_URL, *args]
+
+    elif OPENTRACING_SERVER_ADDRESS:
+        from bentoml.tracing.opentrace import trace as _trace
+
+        new_args = [OPENTRACING_SERVER_ADDRESS, *args]
+        kwargs['port'] = OPENTRACING_SERVER_PORT
+
     else:
         yield
+        return
+
+    with _trace(*new_args, **kwargs) as scope:
+        yield scope
+    return
 
 
 @contextmanager
 def async_trace(*args, **kwargs):
+    """
+    asynchronous tracing function, will choose relevant tracer
+    """
     if ZIPKIN_API_URL:
         from bentoml.tracing.trace import async_trace as _async_trace
 
-        return _async_trace(ZIPKIN_API_URL, *args, **kwargs)
+        new_args = [ZIPKIN_API_URL, *args]
+
+    elif OPENTRACING_SERVER_ADDRESS:
+        from bentoml.tracing.opentrace import async_trace as _async_trace
+
+        new_args = [OPENTRACING_SERVER_ADDRESS, *args]
+        kwargs['port'] = OPENTRACING_SERVER_PORT
+
     else:
         yield
+        return
+
+    with _async_trace(*new_args, **kwargs) as scope:
+        yield scope
+    return

@@ -46,7 +46,11 @@ SCHEMA = Schema(
             "request_header_flag": str,
         },
         "yatai": {"url": Or(str, None)},
-        "tracing": {"zipkin_api_url": Or(str, None)},
+        "tracing": {
+            "zipkin_api_url": Or(str, None),
+            "opentracing_server_address": Or(str, None),
+            "opentracing_server_port": Or(str, None),
+        },
         "instrument": {"namespace": str},
     }
 )

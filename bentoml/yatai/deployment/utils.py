@@ -57,13 +57,13 @@ def ensure_docker_available_or_raise():
     try:
         client = docker.from_env()
         client.ping()
+    except docker.errors.APIError as error:
+        raise MissingDependencyException(f'Docker server is not responsive. {error}')
     except docker.errors.DockerException:
         raise MissingDependencyException(
             'Docker is required for this deployment. Please visit '
             'www.docker.com for instructions'
         )
-    except docker.errors.APIError as error:
-        raise MissingDependencyException(f'Docker server is not responsive. {error}')
 
 
 def raise_if_api_names_not_found_in_bento_service_metadata(metadata, api_names):

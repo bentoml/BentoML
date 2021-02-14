@@ -1,24 +1,25 @@
-from sys import version_info
-
 import pytest
 
-from mock import patch
+import docker
+from mock import patch, Mock
 
 from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
 from bentoml.exceptions import MissingDependencyException
 
 
-def raise_(ex):
-    raise ex
-
-
 def test_ensure_docker_available_or_raise():
-    if version_info.major < 3:
-        not_found_error = OSError
-    else:
-        not_found_error = FileNotFoundError
-
-    with patch('subprocess.check_output', new=lambda x: raise_(not_found_error())):
+    with patch('docker.from_env') as from_env_mock:
+        from_env_mock.side_effect = docker.errors.DockerException('no docker error')
         with pytest.raises(MissingDependencyException) as error:
             ensure_docker_available_or_raise()
         assert str(error.value).startswith('Docker is required')
+
+        from_env_mock.side_effect = None
+        mock_docker_client = Mock()
+        mock_docker_client.ping = Mock(
+            side_effect=docker.errors.APIError('no response')
+        )
+        from_env_mock.return_value = mock_docker_client
+        with pytest.raises(MissingDependencyException) as server_error:
+            ensure_docker_available_or_raise()
+        assert str(server_error.value).startswith('Docker server is not responsive.')

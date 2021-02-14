@@ -74,36 +74,38 @@ FROM {docker_base_image}
 # Configure PIP install arguments, e.g. --index-url, --trusted-url, --extra-index-url
 ARG EXTRA_PIP_INSTALL_ARGS=
 ENV EXTRA_PIP_INSTALL_ARGS $EXTRA_PIP_INSTALL_ARGS
+CMD useradd -m bento
+USER bento
 
 # copy over files needed for init script
-COPY environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* /bento/
-WORKDIR /bento
+COPY environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* /home/bento/
+WORKDIR /home/bento
 
 # copy over entrypoint scripts
 COPY docker-entrypoint.sh /usr/local/bin/
 
 # Copy environment.yml, because bundled_pip_dependencies might not exist. This
 # prevent COPY command from failing.
-COPY environment.yml bundled_pip_dependencies*  /bento/bundled_pip_dependencies/
+COPY environment.yml bundled_pip_dependencies*  /home/bento/bundled_pip_dependencies/
 
 # Remove environment.yml from bundled_pip_dependencies directory
-RUN rm /bento/bundled_pip_dependencies/environment.yml
+RUN rm /home/bento/bundled_pip_dependencies/environment.yml
 
 # Execute permission for scripts
-RUN chmod +x /bento/bentoml-init.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /home/bento/bentoml-init.sh /usr/local/bin/docker-entrypoint.sh
 
 # Install conda, pip dependencies and run user defined setup script
-RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
+RUN if [ -f /home/bento/bentoml-init.sh ]; then bash -c /home/bento/bentoml-init.sh; fi
 
 # copy over model files
-COPY . /bento
+COPY . /home/bento
 
 # the env var $PORT is required by heroku container runtime
 ENV PORT 5000
 EXPOSE $PORT
 
 ENTRYPOINT [ "docker-entrypoint.sh" ]
-CMD ["bentoml", "serve-gunicorn", "/bento"]
+CMD ["bentoml", "serve-gunicorn", "/home/bento"]
 """  # noqa: E501
 
 INIT_PY_TEMPLATE = """\

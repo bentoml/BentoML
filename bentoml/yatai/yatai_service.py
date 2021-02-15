@@ -13,6 +13,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.yatai.client.interceptor.prom_server_interceptor import \
     PromServerInterceptor
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
+from prometheus_client import start_http_server
 
 
 def get_yatai_service(
@@ -25,10 +26,10 @@ def get_yatai_service(
     default_namespace=None,
 ):
 
-    channel_address = channel_address or config('yatai_service').get('url')
-    access_token = access_token or config('yatai_service').get('access_token')
-    access_token_header = access_token_header or config('yatai_service').get(
-        'access_token_header'
+    channel_address = channel_address or config("yatai_service").get("url")
+    access_token = access_token or config("yatai_service").get("access_token")
+    access_token_header = access_token_header or config("yatai_service").get(
+        "access_token_header"
     )
 
     channel_address = channel_address.strip()
@@ -130,6 +131,8 @@ def start_yatai_service_grpc_server(
             )
     server.add_insecure_port(f"[::]:{grpc_port}")
     server.start()
+    start_http_server(50052)
+    logger.info("Starting metrics at https://localhost:50052")
     if with_ui:
         web_ui_log_path = os.path.join(
             config("logging").get("BASE_LOG_DIR"),

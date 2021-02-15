@@ -6,12 +6,6 @@ GRPC_SERVER_STARTED_COUNTER = Counter(
     ["grpc_type", "grpc_service", "grpc_method"],
 )
 
-GRPC_SERVER_HANDLED_TOTAL = Counter(
-    "grpc_server_handled_total",
-    "Total number of RPCs completed on the server, regardless of success or failure.",
-    ["grpc_type", "grpc_service", "grpc_method", "grpc_code"],
-)
-
 GRPC_SERVER_STREAM_MSG_RECEIVED = Counter(
     "grpc_server_msg_received_total",
     "Total number of RPC stream messages received on the server.",
@@ -31,9 +25,8 @@ GRPC_SERVER_HANDLED_HISTOGRAM = Histogram(
     ["grpc_type", "grpc_service", "grpc_method"],
 )
 
-# this is costly for prometheus server
-GRPC_SERVER_HANDLED_LATENCY_SECONDS = Histogram(
-    "grpc_server_handled_latency_seconds",
-    "Histogram of response latency (seconds) of gRPC that had been application-level handled by the server.",
-    ["grpc_type", "grpc_service", "grpc_method"],
+GRPC_SERVER_HANDLED_TOTAL = Counter(
+    "grpc_server_handled_total",
+    "Total number of RPCs completed on the server, regardless of success or failure.",
+    ["grpc_type", "grpc_service", "grpc_method", "grpc_code"],
 )

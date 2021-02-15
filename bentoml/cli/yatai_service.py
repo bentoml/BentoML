@@ -17,67 +17,80 @@ import logging
 
 import click
 
-
 logger = logging.getLogger(__name__)
 
 
 def add_yatai_service_sub_command(cli):
     # pylint: disable=unused-variable
 
-    @cli.command(help='Start BentoML YataiService for model management and deployment')
+    @cli.command(help="Start BentoML YataiService for model management and deployment")
     @click.option(
-        '--db-url',
+        "--db-url",
         type=click.STRING,
-        help='Database URL following RFC-1738, and usually can include username, '
-        'password, hostname, database name as well as optional keyword arguments '
-        'for additional configuration',
-        envvar='BENTOML_DB_URL',
+        help="Database URL following RFC-1738, and usually can include username, "
+        "password, hostname, database name as well as optional keyword arguments "
+        "for additional configuration",
+        envvar="BENTOML_DB_URL",
     )
     @click.option(
-        '--repo-base-url',
+        "--repo-base-url",
         type=click.STRING,
-        help='Base URL for storing BentoML saved bundle files, this can be a file '
+        help="Base URL for storing BentoML saved bundle files, this can be a file "
         'system path(POSIX/Windows), or a S3 URL, usually starting with "s3://"',
-        envvar='BENTOML_REPO_BASE_URL',
+        envvar="BENTOML_REPO_BASE_URL",
     )
     @click.option(
-        '--grpc-port',
+        "--grpc-port",
         type=click.INT,
         default=50051,
-        help='Port to run YataiService gRPC server',
-        envvar='BENTOML_GRPC_PORT',
+        help="Port to run YataiService gRPC server",
+        envvar="BENTOML_GRPC_PORT",
     )
     @click.option(
-        '--ui-port',
+        "--prometheus-port",
+        type=click.INT,
+        default=50052,
+        help="Port to run Prometheus server for metrics exporting",
+        envvar="BENTOML_PROMETHEUS_PORT",
+    )
+    @click.option(
+        "--ui-port",
         type=click.INT,
         default=3000,
-        help='Port to run YataiService Web UI server',
-        envvar='BENTOML_WEB_UI_PORT',
+        help="Port to run YataiService Web UI server",
+        envvar="BENTOML_WEB_UI_PORT",
     )
     @click.option(
-        '--ui/--no-ui',
+        "--ui/--no-ui",
         default=True,
-        help='Run YataiService with or without Web UI, when running with --no-ui, it '
-        'will only run the gRPC server',
-        envvar='BENTOML_ENABLE_WEB_UI',
+        help="Run YataiService with or without Web UI, when running with --no-ui, it "
+        "will only run the gRPC server",
+        envvar="BENTOML_ENABLE_WEB_UI",
     )
     @click.option(
-        '--s3-endpoint-url',
+        "--s3-endpoint-url",
         type=click.STRING,
-        help='S3 Endpoint URL is used for deploying with storage services that are '
-        'compatible with Amazon S3, such as MinIO',
-        envvar='BENTOML_S3_ENDPOINT_URL',
+        help="S3 Endpoint URL is used for deploying with storage services that are "
+        "compatible with Amazon S3, such as MinIO",
+        envvar="BENTOML_S3_ENDPOINT_URL",
     )
     @click.option(
-        '--web-prefix-path',
+        "--web-prefix-path",
         type=click.STRING,
-        default='.',
-        help='Add a location prefix to the URL when running YataiService'
-        'behind a reverse proxy server',
-        envvar='BENTOML_YATAI_WEB_PREFIX_PATH',
+        default=".",
+        help="Add a location prefix to the URL when running YataiService"
+        "behind a reverse proxy server",
+        envvar="BENTOML_YATAI_WEB_PREFIX_PATH",
     )
     def yatai_service_start(
-        db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, web_prefix_path
+        db_url,
+        repo_base_url,
+        grpc_port,
+        prometheus_port,
+        ui_port,
+        ui,
+        s3_endpoint_url,
+        web_prefix_path,
     ):
         from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 
@@ -85,6 +98,7 @@ def add_yatai_service_sub_command(cli):
             db_url,
             repo_base_url,
             grpc_port,
+            prometheus_port,
             ui_port,
             ui,
             s3_endpoint_url,

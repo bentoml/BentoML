@@ -62,10 +62,6 @@ def wrap_interator_inc_counter(
 
 
 # get method name for given RPC handler
-# UNARY            - both handler.request_streaming and handler.response_streaming=false   - > unary_unary
-# SERVER_STREAMING - handler.request_streaming=false and handler.response_streaming=true   - > unary_stream
-# CIENT_STREAMING  - handler.request_streaming=true and handler.reqsponse_streaming=false  - > stream_unary
-# BIDI_STREAMING   - both handler.request_streaming and handler.response_streaming=true    - > stram_stream
 def get_method_type(request_streaming, response_streaming) -> str:
     if not request_streaming and not response_streaming:
         return UNARY

@@ -10,8 +10,9 @@ import click
 from bentoml import config
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
-from bentoml.yatai.client.interceptor.prom_server_interceptor import \
-    PromServerInterceptor
+from bentoml.yatai.client.interceptor.prom_server_interceptor import (
+    PromServerInterceptor,
+)
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 from prometheus_client import start_http_server
 
@@ -95,14 +96,24 @@ def get_yatai_service(
 
 
 def start_yatai_service_grpc_server(
-    db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url, base_url
+    db_url,
+    repo_base_url,
+    grpc_port,
+    prometheus_port,
+    ui_port,
+    with_ui,
+    s3_endpoint_url,
+    base_url,
 ):
     # Lazily import grpcio for YataiSerivce gRPC related actions
     import grpc
     from bentoml.yatai.proto.yatai_service_pb2_grpc import (
-        YataiServicer, add_YataiServicer_to_server)
+        YataiServicer,
+        add_YataiServicer_to_server,
+    )
     from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
 
+    # prometheus_port = 50052
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(
         db_url=db_url, repo_base_url=repo_base_url, s3_endpoint_url=s3_endpoint_url,
@@ -131,8 +142,8 @@ def start_yatai_service_grpc_server(
             )
     server.add_insecure_port(f"[::]:{grpc_port}")
     server.start()
-    start_http_server(50052)
-    logger.info("Starting metrics at https://localhost:50052")
+    start_http_server(prometheus_port)
+    logger.info(f"Starting prometheus metrics at https://localhost:{prometheus_port}")
     if with_ui:
         web_ui_log_path = os.path.join(
             config("logging").get("BASE_LOG_DIR"),

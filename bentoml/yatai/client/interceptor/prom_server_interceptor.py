@@ -3,13 +3,18 @@
 from timeit import default_timer
 
 import grpc
-from bentoml.yatai.metrics import (GRPC_SERVER_HANDLED_HISTOGRAM,
-                                   GRPC_SERVER_HANDLED_TOTAL,
-                                   GRPC_SERVER_STARTED_COUNTER,
-                                   GRPC_SERVER_STREAM_MSG_RECEIVED,
-                                   GRPC_SERVER_STREAM_MSG_SENT)
-from bentoml.yatai.utils import (get_method_type, parse_method_name,
-                                 wrap_interator_inc_counter)
+from bentoml.yatai.metrics import (
+    GRPC_SERVER_HANDLED_HISTOGRAM,
+    GRPC_SERVER_HANDLED_TOTAL,
+    GRPC_SERVER_STARTED_COUNTER,
+    GRPC_SERVER_STREAM_MSG_RECEIVED,
+    GRPC_SERVER_STREAM_MSG_SENT,
+)
+from bentoml.yatai.utils import (
+    get_method_type,
+    parse_method_name,
+    wrap_interator_inc_counter,
+)
 
 
 # request are either RPC request as protobuf or iterator of RPC request

@@ -251,7 +251,9 @@ class BentoMetadataStore(object):
                 # filter_by apply filtering criterion to a copy of the query
                 query = query.filter_by(name=bento_name)
             query = query.filter_by(deleted=False)
-            if label_selectors.match_labels or label_selectors.match_expressions:
+            if label_selectors is not None and (
+                label_selectors.match_labels or label_selectors.match_expressions
+            ):
                 bento_ids = filter_label_query(
                     sess, RESOURCE_TYPE.bento, label_selectors
                 )

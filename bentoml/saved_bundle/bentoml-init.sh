@@ -18,11 +18,13 @@ if [ -f ./python_version ]; then
   DESIRED_PY_VERSION=${PY_VERSION_SAVED:0:3} # returns 3.6, 3.7 or 3.8
   CURRENT_PY_VERSION=$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 
-  if command -v conda >/dev/null 2>&1; then
-    echo "Installing python=$DESIRED_PY_VERSION with conda:"
-    conda install -y -n base pkgs/main::python=$DESIRED_PY_VERSION pip
+  if [[ "$DESIRED_PY_VERSION" == "$CURRENT_PY_VERSION" ]]; then
+    echo "Python Version in docker base image $CURRENT_PY_VERSION matches requirement python=$DESIRED_PY_VERSION. Skipping."
   else
-    if [[ "$DESIRED_PY_VERSION" != "$CURRENT_PY_VERSION" ]]; then
+    if command -v conda >/dev/null 2>&1; then
+      echo "Installing python=$DESIRED_PY_VERSION with conda:"
+      conda install -y -n base pkgs/main::python=$DESIRED_PY_VERSION pip
+    else
       echo "WARNING: Python Version $DESIRED_PY_VERSION is required, but $CURRENT_PY_VERSION was found."
     fi
   fi

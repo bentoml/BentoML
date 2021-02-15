@@ -61,6 +61,7 @@ def parameterized_config(template):
 
 DEFAULT_BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
 BENTOML_HOME = DEFAULT_BENTOML_HOME
+BENTOML_CONFIG = os.path.join(BENTOML_HOME, "bentoml.yml")
 
 # This is used as default for config('core', 'bentoml_deploy_version') - which is used
 # for getting the BentoML PyPI version string or the URL to a BentoML sdist, indicating

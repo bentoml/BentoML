@@ -7,8 +7,9 @@ import re
 import psutil
 
 from bentoml import __version__
+from bentoml.configuration import BENTOML_CONFIG
+from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.server.api_server import BentoAPIServer
 from bentoml.server import start_dev_server, start_prod_server
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import (
@@ -46,7 +47,7 @@ yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 batch_options = [
     click.option(
         '--enable-microbatch/--disable-microbatch',
-        default=False,
+        default=None,
         help="Run API server with micro-batch enabled",
         envvar='BENTOML_ENABLE_MICROBATCH',
     ),
@@ -61,6 +62,17 @@ batch_options = [
         type=click.INT,
         help="Specify micro batching maximal latency in milliseconds.",
         envvar='BENTOML_MB_MAX_LATENCY',
+    ),
+]
+
+config_options = [
+    click.option(
+        "--config",
+        "-c",
+        type=click.Path(file_okay=True, dir_okay=False, readable=True),
+        help="Specify the configuration to be used for this command.",
+        envvar="BENTOML_CONFIG",
+        default=BENTOML_CONFIG,
     ),
 ]
 
@@ -167,16 +179,16 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         "--port",
         type=click.INT,
-        default=BentoAPIServer.DEFAULT_PORT,
-        help=f"The port to listen on for the REST api server, "
-        f"default is {BentoAPIServer.DEFAULT_PORT}",
+        default=None,
+        help="The port to listen on for the REST api server, default is 5000",
         envvar='BENTOML_PORT',
     )
     @add_options(batch_options)
+    @add_options(config_options)
     @click.option(
         '--run-with-ngrok',
         is_flag=True,
-        default=False,
+        default=None,
         help="Use ngrok to relay traffic on a public endpoint to this "
         "API server on localhost",
         envvar='BENTOML_ENABLE_NGROK',
@@ -190,32 +202,40 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '--enable-swagger/--disable-swagger',
         is_flag=True,
-        default=True,
+        default=None,
         help="Run API server with Swagger UI enabled",
         envvar='BENTOML_ENABLE_SWAGGER',
     )
     def serve(
         port,
-        bento=None,
-        enable_microbatch=False,
-        mb_max_batch_size=None,
-        mb_max_latency=None,
-        run_with_ngrok=False,
-        yatai_url=None,
-        enable_swagger=True,
+        bento,
+        enable_microbatch,
+        mb_max_batch_size,
+        mb_max_latency,
+        run_with_ngrok,
+        yatai_url,
+        enable_swagger,
+        config,
     ):
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )
-        start_dev_server(
-            saved_bundle_path,
-            port,
-            enable_microbatch,
-            mb_max_batch_size,
-            mb_max_latency,
-            run_with_ngrok,
-            enable_swagger,
-        )
+
+        container = BentoMLContainer()
+        config = BentoMLConfiguration(override_config_file=config)
+        config.override(["api_server", "port"], port)
+        config.override(["api_server", "enable_microbatch"], enable_microbatch)
+        config.override(["api_server", "run_with_ngrok"], run_with_ngrok)
+        config.override(["api_server", "enable_swagger"], enable_swagger)
+        config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
+        config.override(["marshal_server", "max_latency"], mb_max_latency)
+        container.config.from_dict(config.as_dict())
+
+        from bentoml import marshal, server
+
+        container.wire(packages=[marshal, server])
+
+        start_dev_server(saved_bundle_path)
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -228,9 +248,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         "-p",
         "--port",
         type=click.INT,
-        default=BentoAPIServer.DEFAULT_PORT,
-        help=f"The port to listen on for the REST api server, "
-        f"default is {BentoAPIServer.DEFAULT_PORT}",
+        default=None,
+        help="The port to listen on for the REST api server, default is 5000",
         envvar='BENTOML_PORT',
     )
     @click.option(
@@ -243,10 +262,11 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     )
     @click.option("--timeout", type=click.INT, default=None)
     @add_options(batch_options)
+    @add_options(config_options)
     @click.option(
         '--microbatch-workers',
         type=click.INT,
-        default=1,
+        default=None,
         help="Number of micro-batch request dispatcher workers",
         envvar='BENTOML_MICROBATCH_WORKERS',
     )
@@ -259,7 +279,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '--enable-swagger/--disable-swagger',
         is_flag=True,
-        default=True,
+        default=None,
         help="Run API server with Swagger UI enabled",
         envvar='BENTOML_ENABLE_SWAGGER',
     )
@@ -267,13 +287,14 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         port,
         workers,
         timeout,
-        bento=None,
-        enable_microbatch=False,
-        mb_max_batch_size=None,
-        mb_max_latency=None,
-        microbatch_workers=1,
-        yatai_url=None,
-        enable_swagger=True,
+        bento,
+        enable_microbatch,
+        mb_max_batch_size,
+        mb_max_latency,
+        microbatch_workers,
+        yatai_url,
+        enable_swagger,
+        config,
     ):
         if not psutil.POSIX:
             _echo(
@@ -286,17 +307,24 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )
-        start_prod_server(
-            saved_bundle_path,
-            port,
-            timeout,
-            workers,
-            enable_microbatch,
-            mb_max_batch_size,
-            mb_max_latency,
-            microbatch_workers,
-            enable_swagger,
-        )
+
+        container = BentoMLContainer()
+        config = BentoMLConfiguration(override_config_file=config)
+        config.override(["api_server", "port"], port)
+        config.override(["api_server", "workers"], workers)
+        config.override(["api_server", "timeout"], timeout)
+        config.override(["api_server", "enable_microbatch"], enable_microbatch)
+        config.override(["api_server", "enable_swagger"], enable_swagger)
+        config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
+        config.override(["marshal_server", "max_latency"], mb_max_latency)
+        config.override(["marshal_server", "workers"], microbatch_workers)
+        container.config.from_dict(config.as_dict())
+
+        from bentoml import marshal, server
+
+        container.wire(packages=[marshal, server])
+
+        start_prod_server(saved_bundle_path)
 
     @bentoml_cli.command(
         help="Install shell command completion",

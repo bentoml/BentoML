@@ -21,22 +21,28 @@ import traceback
 
 import aiohttp
 import psutil
+from dependency_injector.wiring import inject, Provide
 
-from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
 from bentoml.marshal.utils import DataLoader
 from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.server.trace import async_trace, make_http_headers
+from bentoml.tracing.trace import async_trace, make_http_headers
 from bentoml.types import HTTPRequest, HTTPResponse
 
 logger = logging.getLogger(__name__)
-ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 
 
 def metrics_patch(cls):
     class _MarshalService(cls):
-        def __init__(self, *args, **kwargs):
+        @inject
+        def __init__(
+            self,
+            *args,
+            namespace: str = Provide[BentoMLContainer.config.instrument.namespace],
+            **kwargs,
+        ):
             for attr_name in functools.WRAPPER_ASSIGNMENTS:
                 try:
                     setattr(self.__class__, attr_name, getattr(cls, attr_name))
@@ -46,9 +52,7 @@ def metrics_patch(cls):
             from prometheus_client import Counter, Gauge, Histogram
 
             super(_MarshalService, self).__init__(*args, **kwargs)
-            namespace = config('instrument').get(
-                'default_namespace'
-            )  # its own namespace?
+            # its own namespace?
             service_name = self.bento_service_metadata_pb.name
 
             self.metrics_request_batch_size = Histogram(
@@ -92,6 +96,8 @@ def metrics_patch(cls):
             time_st = time.time()
             try:
                 resp = await func(request)
+            except asyncio.CancelledError:
+                resp = aiohttp.web.Response(status=503)
             except Exception as e:  # pylint: disable=broad-except
                 self.metrics_request_exception.labels(
                     endpoint=api_name, exception_class=e.__class__.__name__
@@ -127,12 +133,7 @@ class MarshalService:
     It applied an optimized CORK algorithm to get best efficiency.
     """
 
-    _MARSHAL_FLAG = config("marshal_server").get("marshal_request_header_flag")
-    _DEFAULT_PORT = config("apiserver").getint("default_port")
-    DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
-    DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
-    MAX_REQUEST_SIZE = config("apiserver").getint("default_max_request_size")
-
+    @inject
     def __init__(
         self,
         bento_bundle_path,
@@ -141,6 +142,13 @@ class MarshalService:
         outbound_workers=1,
         mb_max_batch_size: int = None,
         mb_max_latency: int = None,
+        request_header_flag: str = Provide[
+            BentoMLContainer.config.marshal_server.request_header_flag
+        ],
+        max_request_size: int = Provide[
+            BentoMLContainer.config.api_server.max_request_size
+        ],
+        zipkin_api_url: str = Provide[BentoMLContainer.config.tracing.zipkin_api_url],
     ):
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
@@ -149,6 +157,9 @@ class MarshalService:
         self.mb_max_latency = mb_max_latency
         self.batch_handlers = dict()
         self._outbound_sema = None  # the semaphore to limit outbound connections
+        self.request_header_flag = request_header_flag
+        self.max_request_size = max_request_size
+        self.zipkin_api_url = zipkin_api_url
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
@@ -196,16 +207,8 @@ class MarshalService:
     def setup_routes_from_pb(self, bento_service_metadata_pb):
         for api_pb in bento_service_metadata_pb.apis:
             if api_pb.batch:
-                max_latency = (
-                    self.mb_max_latency
-                    or api_pb.mb_max_latency
-                    or self.DEFAULT_MAX_LATENCY
-                )
-                max_batch_size = (
-                    self.mb_max_batch_size
-                    or api_pb.mb_max_batch_size
-                    or self.DEFAULT_MAX_BATCH_SIZE
-                )
+                max_latency = api_pb.mb_max_latency or self.mb_max_latency
+                max_batch_size = api_pb.mb_max_batch_size or self.mb_max_batch_size
                 self.add_batch_handler(api_pb.name, max_latency, max_batch_size)
                 logger.info(
                     "Micro batch enabled for API `%s` max-latency: %s"
@@ -217,7 +220,7 @@ class MarshalService:
 
     async def request_dispatcher(self, request):
         with async_trace(
-            ZIPKIN_API_URL,
+            self.zipkin_api_url,
             service_name=self.__class__.__name__,
             span_name="[1]http request",
             is_root=True,
@@ -253,7 +256,7 @@ class MarshalService:
         url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)
 
         with async_trace(
-            ZIPKIN_API_URL,
+            self.zipkin_api_url,
             service_name=self.__class__.__name__,
             span_name=f"[2]{url.path} relay",
         ) as trace_ctx:
@@ -277,11 +280,11 @@ class MarshalService:
             * RemoteException: known exceptions from model server
             * Exception: other exceptions
         '''
-        headers = {self._MARSHAL_FLAG: "true"}
+        headers = {self.request_header_flag: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_name}"
 
         with async_trace(
-            ZIPKIN_API_URL,
+            self.zipkin_api_url,
             service_name=self.__class__.__name__,
             span_name=f"[2]merged {api_name}",
         ) as trace_ctx:
@@ -325,7 +328,7 @@ class MarshalService:
         logger.info("Running micro batch service on :%d", port)
 
     def make_app(self):
-        app = aiohttp.web.Application(client_max_size=self.MAX_REQUEST_SIZE)
+        app = aiohttp.web.Application(client_max_size=self.max_request_size)
         app.router.add_view("/", self.relay_handler)
         app.router.add_view("/{name}", self.request_dispatcher)
         app.router.add_view("/{path:.*}", self.relay_handler)

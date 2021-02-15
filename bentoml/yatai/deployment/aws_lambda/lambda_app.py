@@ -38,7 +38,7 @@ if '/tmp/requirements' not in sys.path:
 
 # Set BENTOML_HOME to /tmp directory due to AWS lambda disk access restrictions
 os.environ['BENTOML_HOME'] = '/tmp/bentoml/'
-from bentoml import load  # noqa
+from bentoml.saved_bundle import load_from_dir  # noqa
 
 logger = logging.getLogger('bentoml.lambda_app')
 
@@ -50,7 +50,7 @@ if not os.path.exists(bento_bundle_path):
     bento_bundle_path = os.path.join('/tmp/requirements', bento_name)
 
 logger.debug('Loading BentoService bundle from path: "%s"', bento_bundle_path)
-bento_service = load(bento_bundle_path)
+bento_service = load_from_dir(bento_bundle_path)
 logger.debug('BentoService "%s" loaded successfully', bento_service.name)
 bento_service_api = bento_service.get_inference_api(api_name)
 logger.debug('BentoService API "%s" loaded successfully', {bento_service_api.name})

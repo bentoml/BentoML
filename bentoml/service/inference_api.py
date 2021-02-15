@@ -25,7 +25,7 @@ import flask
 
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
 from bentoml.exceptions import BentoMLConfigException
-from bentoml.server import trace
+from bentoml.tracing import trace
 from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 

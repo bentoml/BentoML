@@ -15,17 +15,24 @@
 import logging
 import os
 from contextlib import contextmanager
-from urllib.parse import urlparse
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from urllib.parse import urlparse
 
 from bentoml.exceptions import BentoMLException
 
 Base = declarative_base()
 
 logger = logging.getLogger(__name__)
+
+
+def is_postgresql_db(db_url):
+    try:
+        return urlparse(db_url).scheme == 'postgresql'
+    except ValueError:
+        return False
 
 
 def is_sqlite_db(db_url):
@@ -43,6 +50,10 @@ def init_db(db_url):
     if is_sqlite_db(db_url):
         extra_db_args['connect_args'] = {'check_same_thread': False}
         extra_db_args['echo'] = False
+    elif is_postgresql_db(db_url):
+        extra_db_args['connect_args'] = {'application_name': 'yatai'}
+        extra_db_args['pool_pre_ping'] = True
+
     engine = create_engine(db_url, **extra_db_args)
 
     if not database_exists(engine.url) and not is_sqlite_db(db_url):

@@ -76,7 +76,7 @@ def add_yatai_service_sub_command(cli):
         envvar='BENTOML_YATAI_WEB_PREFIX_PATH',
     )
     def yatai_service_start(
-        db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, web_prefix_path,
+        db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, web_prefix_path
     ):
         from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 

@@ -95,7 +95,7 @@ class PromServerInterceptor(grpc.ServerInterceptor):
                         self._compute_error_code(e).name,
                     )
                     raise e
-
+                # TODO: Tracing needed to track error?
                 finally:
                     if not response_streaming:
                         if self.enable_handling_time_historgram:

@@ -19,9 +19,11 @@ from bentoml.saved_bundle import loader
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import (
-    process_docker_api_line,
-    ensure_docker_available_or_raise,
     raise_if_api_names_not_found_in_bento_service_metadata,
+)
+from bentoml.yatai.deployment.docker_utils import (
+    ensure_docker_available_or_raise,
+    process_docker_api_line,
 )
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,

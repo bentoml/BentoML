@@ -15,7 +15,7 @@ import bentoml
 from bentoml.saved_bundle.loader import load_from_dir
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.yatai.client import get_yatai_client
-from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.exceptions import InvalidArgument
 from bentoml.yatai.label_store import _validate_labels
 

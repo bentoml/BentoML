@@ -14,7 +14,8 @@
 
 import json
 import logging
-import subprocess
+
+import docker
 
 from bentoml.exceptions import (
     BentoMLException,
@@ -54,12 +55,11 @@ def process_docker_api_line(payload):
 
 def ensure_docker_available_or_raise():
     try:
-        subprocess.check_output(['docker', 'info'])
-    except subprocess.CalledProcessError as error:
-        raise BentoMLException(
-            'Error executing docker command: {}'.format(error.output.decode())
-        )
-    except FileNotFoundError:
+        client = docker.from_env()
+        client.ping()
+    except docker.errors.APIError as error:
+        raise MissingDependencyException(f'Docker server is not responsive. {error}')
+    except docker.errors.DockerException:
         raise MissingDependencyException(
             'Docker is required for this deployment. Please visit '
             'www.docker.com for instructions'

@@ -248,7 +248,7 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
         self._model = self._get_torch_script_model(self._saved_model_file_path(path))
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_packages(['pytorch'])
+        env.add_pip_packages(['pytorch-lightning'])
 
     def get(self):
         if self._model is None:

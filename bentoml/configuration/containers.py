@@ -84,6 +84,9 @@ class BentoMLConfiguration:
                 self.config["api_server"]["port"] = config("apiserver").getint(
                     "default_port"
                 )
+                self.config["api_server"]["workers"] = config("apiserver").getint(
+                    "default_gunicorn_workers_count"
+                )
                 self.config["api_server"]["max_request_size"] = config(
                     "apiserver"
                 ).getint("default_max_request_size")

@@ -18,7 +18,7 @@ api_server:
   # automatically, see `bentoml.configuration.containers.BentoMLContainer.
   # api_server_workers` for details.
   #
-  workers: Null
+  workers: 1
 
   timeout: 60
 

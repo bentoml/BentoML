@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 import os
 import shutil
@@ -6,7 +7,9 @@ from timeit import default_timer
 from flask import Request
 
 from bentoml import config
-from bentoml.server.utils import logger
+
+
+logger = logging.getLogger(__name__)
 
 
 class InstrumentMiddleware:

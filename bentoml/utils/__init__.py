@@ -110,6 +110,7 @@ def reserve_free_port(host="localhost", check_port=None):
     yield port
     sock.close()
 
+
 def is_url(url: str) -> bool:
     try:
         return urlparse(url).scheme in _VALID_URLS

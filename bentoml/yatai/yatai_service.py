@@ -13,7 +13,11 @@ from bentoml.exceptions import BentoMLException
 from bentoml.yatai.client.interceptor.prom_server_interceptor import (
     PromServerInterceptor,
 )
-from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url, start_prometheus_http_server
+from bentoml.yatai.utils import (
+    ensure_node_available_or_raise,
+    parse_grpc_url,
+    start_prometheus_http_server,
+)
 
 
 def get_yatai_service(

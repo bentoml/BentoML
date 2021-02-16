@@ -225,8 +225,8 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
 
   app.get('/healthz', (req, res) => res.status(200).json());
 
-  app.post('/metrics', (req, res) => {
-      ("http://127.0.0.1:50052");
+  app.get('/metrics', (req, res) => {
+    res.redirect("http://127.0.0.1:50052");
   });
 
   app.get("/*", (req, res) => {

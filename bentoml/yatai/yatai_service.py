@@ -13,8 +13,7 @@ from bentoml.exceptions import BentoMLException
 from bentoml.yatai.client.interceptor.prom_server_interceptor import (
     PromServerInterceptor,
 )
-from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
-from prometheus_client import start_http_server
+from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url, start_prometheus_http_server
 
 
 def get_yatai_service(
@@ -96,7 +95,7 @@ def get_yatai_service(
 def start_yatai_service_grpc_server(
     db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url, base_url
 ):
-    prometheus_port = 50052
+    prometheus_port = config('yatai_service').get('default_prometheus_port')
     # Lazily import grpcio for YataiSerivce gRPC related actions
     import grpc
     from bentoml.yatai.proto.yatai_service_pb2_grpc import (
@@ -133,7 +132,7 @@ def start_yatai_service_grpc_server(
             )
     server.add_insecure_port(f'[::]:{grpc_port}')
     server.start()
-    start_http_server(prometheus_port)
+    start_prometheus_http_server(int(prometheus_port))
 
     if with_ui:
         web_ui_log_path = os.path.join(

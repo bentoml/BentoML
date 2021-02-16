@@ -1,13 +1,13 @@
 # Copyright 2019 Atalaya Tech, Inc.
 
-# Licensed under the Apache License, Version 2.0 (the 'License');
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an 'AS IS' BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -15,6 +15,8 @@
 import subprocess
 import urllib3
 
+from prometheus_client import start_http_server
+from bentoml.utils import reserve_free_port
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 UNARY = 'UNARY'
@@ -48,6 +50,12 @@ def parse_grpc_url(url):
     parts = urllib3.util.parse_url(url)
     return parts.scheme, url.replace(f"{parts.scheme}://", "", 1)
 
+def start_prometheus_http_server(port):
+    with reserve_free_port(check_port=port) as p:
+        if p != 0:
+            start_http_server(port)
+        else:
+            raise ConnectionError(f'port {port} has been used and is required by `prometheus_client`. Please free port {port} before running YataiService')
 
 def wrap_interator_inc_counter(
     iterator, counter, grpc_type, grpc_service_name, grpc_method_name,

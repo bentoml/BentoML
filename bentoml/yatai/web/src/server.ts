@@ -226,7 +226,6 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
   app.get('/healthz', (req, res) => res.status(200).json());
 
   app.get('/metrics', (req, res) => {
-      console.log("redirecting to prometheus server at localhost:50052")
       res.redirect("http://127.0.0.1:50052");
   });
 

@@ -96,14 +96,7 @@ def get_yatai_service(
 
 
 def start_yatai_service_grpc_server(
-    db_url,
-    repo_base_url,
-    grpc_port,
-    prometheus_port,
-    ui_port,
-    with_ui,
-    s3_endpoint_url,
-    base_url,
+    db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url, base_url,
 ):
     # Lazily import grpcio for YataiSerivce gRPC related actions
     import grpc
@@ -113,6 +106,7 @@ def start_yatai_service_grpc_server(
     )
     from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
 
+    prometheus_port = 50052
     # prometheus_port = 50052
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(

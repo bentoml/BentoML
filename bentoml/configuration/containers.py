@@ -18,7 +18,7 @@ import os
 
 from deepmerge import always_merger
 from dependency_injector import containers, providers
-from schema import Schema, SchemaError, And, Or
+from schema import Schema, SchemaError, And, Or, Optional
 
 from bentoml.configuration import config
 from bentoml.exceptions import BentoMLConfigException
@@ -48,8 +48,8 @@ SCHEMA = Schema(
         "yatai": {"url": Or(str, None)},
         "tracing": {
             "zipkin_api_url": Or(str, None),
-            "opentracing_server_address": Or(str, None),
-            "opentracing_server_port": Or(str, None),
+            Optional("opentracing_server_address"): Or(str, None),
+            Optional("opentracing_server_port"): Or(str, None),
         },
         "instrument": {"namespace": str},
     }

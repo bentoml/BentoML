@@ -8,16 +8,14 @@ from concurrent import futures
 import certifi
 import click
 from bentoml import config
+from prometheus_client import start_http_server
+from bentoml.utils import reserve_free_port
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
 from bentoml.yatai.client.interceptor.prom_server_interceptor import (
     PromServerInterceptor,
 )
-from bentoml.yatai.utils import (
-    ensure_node_available_or_raise,
-    parse_grpc_url,
-    start_prometheus_http_server,
-)
+from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 
 def get_yatai_service(
@@ -99,7 +97,6 @@ def get_yatai_service(
 def start_yatai_service_grpc_server(
     db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url, base_url
 ):
-    prometheus_port = config('yatai_service').get('default_prometheus_port')
     # Lazily import grpcio for YataiSerivce gRPC related actions
     import grpc
     from bentoml.yatai.proto.yatai_service_pb2_grpc import (
@@ -135,8 +132,10 @@ def start_yatai_service_grpc_server(
                 '"pip install grpcio-reflection"'
             )
     server.add_insecure_port(f'[::]:{grpc_port}')
+    with reserve_free_port() as port:
+        prometheus_port = port
+    start_http_server(prometheus_port)
     server.start()
-    start_prometheus_http_server(int(prometheus_port))
 
     if with_ui:
         web_ui_log_path = os.path.join(
@@ -146,8 +145,14 @@ def start_yatai_service_grpc_server(
 
         ensure_node_available_or_raise()
         yatai_grpc_server_address = f'localhost:{grpc_port}'
+        prometheus_address = f'http://localhost:{prometheus_port}'
         async_start_yatai_service_web_ui(
-            yatai_grpc_server_address, ui_port, web_ui_log_path, debug_mode, base_url
+            yatai_grpc_server_address,
+            prometheus_address,
+            ui_port,
+            web_ui_log_path,
+            debug_mode,
+            base_url,
         )
 
     # We don't import _echo function from click_utils because of circular dep
@@ -157,7 +162,8 @@ def start_yatai_service_grpc_server(
         f'''* Web UI: {f"running on http://127.0.0.1:{ui_port}/{base_url}"
         if (with_ui and base_url!=".")
         else f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'''
-        f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
+        f'* Yatai gRPC running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
+        f'* Prometheus running on 127.0.0.1:{prometheus_port}\n'
         f'* Help and instructions: '
         f'https://docs.bentoml.org/en/latest/guides/yatai_service.html\n'
         f'{f"* Web server log can be found here: {web_ui_log_path}" if with_ui else ""}'
@@ -198,7 +204,12 @@ def _is_web_server_debug_tools_available(root_dir):
 
 
 def async_start_yatai_service_web_ui(
-    yatai_server_address, ui_port, base_log_path, debug_mode, web_prefix_path
+    yatai_server_address,
+    prometheus_address,
+    ui_port,
+    base_log_path,
+    debug_mode,
+    web_prefix_path,
 ):
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
@@ -215,6 +226,7 @@ def async_start_yatai_service_web_ui(
                 'dev',
                 '--',
                 yatai_server_address,
+                prometheus_address,
                 ui_port,
                 base_log_path,
                 web_prefix_path,
@@ -224,6 +236,7 @@ def async_start_yatai_service_web_ui(
                 'node',
                 'dist/bundle.js',
                 yatai_server_address,
+                prometheus_address,
                 ui_port,
                 base_log_path,
                 web_prefix_path,
@@ -239,6 +252,7 @@ def async_start_yatai_service_web_ui(
             'node',
             'dist/bundle.js',
             yatai_server_address,
+            prometheus_address,
             ui_port,
             base_log_path,
             web_prefix_path,

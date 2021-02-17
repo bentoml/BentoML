@@ -15,8 +15,6 @@
 import subprocess
 import urllib3
 
-from prometheus_client import start_http_server
-from bentoml.utils import reserve_free_port
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 UNARY = 'UNARY'
@@ -49,17 +47,6 @@ def parse_grpc_url(url):
     '''
     parts = urllib3.util.parse_url(url)
     return parts.scheme, url.replace(f"{parts.scheme}://", "", 1)
-
-
-def start_prometheus_http_server(port):
-    with reserve_free_port(check_port=port) as p:
-        if p != 0:
-            start_http_server(port)
-        else:
-            raise ConnectionError(
-                f'port {port} has been used and is required by `prometheus_client`. '
-                'Please free port {port} before running YataiService'
-            )
 
 
 def wrap_interator_inc_counter(

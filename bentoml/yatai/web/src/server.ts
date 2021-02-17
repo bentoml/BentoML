@@ -197,7 +197,7 @@ const createAPIRoutes = (app, yataiClient) => {
   return router;
 };
 
-export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
+export const getExpressApp = (grpcAddress: string | null, baseURL: string, promethusAddress: string) => {
   const app = express();
   const cookieParser = require('cookie-parser');
   app.use(cookieParser());
@@ -225,9 +225,7 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
 
   app.get('/healthz', (req, res) => res.status(200).json());
 
-  app.get('/metrics', (req, res) => {
-    res.redirect("http://127.0.0.1:50052");
-  });
+  app.get('/metrics', (req, res) => res.redirect(promethusAddress));
 
   app.get("/*", (req, res) => {
     let directory = req.path.split("/").slice(-2, -1);

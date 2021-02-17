@@ -97,16 +97,13 @@ def cached_contextmanager(*args, **kwargs):
 
 
 @contextlib.contextmanager
-def reserve_free_port(host="localhost", check_port=None):
+def reserve_free_port(host="localhost"):
     """
     detect free port and reserve until exit the context
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    if check_port is None:
-        sock.bind((host, 0))
-        port = sock.getsockname()[1]
-    else:
-        port = sock.connect_ex((host, check_port))
+    sock.bind((host, 0))
+    port = sock.getsockname()[1]
     yield port
     sock.close()
 

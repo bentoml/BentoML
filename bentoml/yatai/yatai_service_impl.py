@@ -22,7 +22,7 @@ from bentoml.utils.docker_utils import (
 )
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track
-from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.yatai.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,

@@ -38,14 +38,15 @@ def trained_pytorch_classifier():
     # reproducability
     torch.manual_seed(0)
 
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
-    trainset = torchvision.datasets.CIFAR10(root='./tests/integration/data', train=True,
-                                            download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
-                                              shuffle=True, num_workers=2)
+    transform = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+    )
+    trainset = torchvision.datasets.CIFAR10(
+        root='./tests/integration/data', train=True, download=True, transform=transform
+    )
+    trainloader = torch.utils.data.DataLoader(
+        trainset, batch_size=4, shuffle=True, num_workers=2
+    )
 
     class Net(nn.Module):
         def __init__(self):
@@ -56,6 +57,7 @@ def trained_pytorch_classifier():
             self.fc1 = nn.Linear(16 * 5 * 5, 120)
             self.fc2 = nn.Linear(120, 84)
             self.fc3 = nn.Linear(84, 10)
+
         def forward(self, x):
             x = self.pool(F.relu(self.conv1(x)))
             x = self.pool(F.relu(self.conv2(x)))
@@ -70,7 +72,7 @@ def trained_pytorch_classifier():
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
     # train
-    for i, data in enumerate(trainloader, 0):
+    for data in trainloader:
         inputs, labels = data
         optimizer.zero_grad()
         outputs = net(inputs)

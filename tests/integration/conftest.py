@@ -80,4 +80,3 @@ def trained_pytorch_classifier():
         loss.backward()
         optimizer.step()
     return net
-

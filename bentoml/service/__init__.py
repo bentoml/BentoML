@@ -255,17 +255,16 @@ def env_decorator(
             logger.warning(
                 "Ignoring pip related options as requirements_txt_file is set."
             )
-    else:
-        if pip_dependencies is not None:
-            logger.warning(
-                "`pip_dependencies` parameter in `@env` is being deprecated soon, use "
-                "`pip_packages` instead, e.g. `@env(pip_packages=[\"numpy\"])`"
-            )
-        if auto_pip_dependencies is not None:
-            logger.warning(
-                "`auto_pip_dependencies` parameter in `@env` is being deprecated soon,"
-                "use `infer_pip_packages` instead, e.g. `@env(infer_pip_packages=True)`"
-            )
+    if pip_dependencies is not None:
+        logger.warning(
+            "`pip_dependencies` parameter in `@env` is being deprecated soon, use "
+            "`pip_packages` instead, e.g. `@env(pip_packages=[\"numpy\"])`"
+        )
+    if auto_pip_dependencies is not None:
+        logger.warning(
+            "`auto_pip_dependencies` parameter in `@env` is being deprecated soon,"
+            "use `infer_pip_packages` instead, e.g. `@env(infer_pip_packages=True)`"
+        )
 
     def decorator(bento_service_cls):
         bento_service_cls._env = BentoServiceEnv(

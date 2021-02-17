@@ -55,7 +55,7 @@ from bentoml.yatai.deployment.aws_utils import (
     get_default_aws_region,
     ensure_sam_available_or_raise,
 )
-from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,

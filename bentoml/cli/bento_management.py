@@ -18,7 +18,8 @@ from tabulate import tabulate
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.cli.click_utils import (
     _echo,
-    parse_bento_tag_list_callback,
+    _is_valid_bento_tag,
+    _is_valid_bento_name,
 )
 from bentoml.cli.utils import (
     human_friendly_age_from_datetime,
@@ -37,6 +38,26 @@ def _print_bento_info(bento, output_type):
         from google.protobuf.json_format import MessageToJson
 
         _echo(MessageToJson(bento))
+
+
+def parse_delete_targets_argument_callback(
+    ctx, params, value
+):  # pylint: disable=unused-argument
+    if value is None:
+        return value
+    delete_targets = value.split(",")
+    delete_targets = list(map(str.strip, delete_targets))
+    for delete_target in delete_targets:
+        if not (
+            _is_valid_bento_tag(delete_target) or _is_valid_bento_name(delete_target)
+        ):
+            raise click.BadParameter(
+                "Bad formatting. Please present a valid bento bundle name or "
+                "\"name:version\" tag. For list of bento bundles, separate delete "
+                "targets by \",\", for example: \"my_service:v1,my_service:v2,"
+                "classifier\""
+            )
+    return delete_targets
 
 
 def _print_bento_table(bentos, wide=False):
@@ -174,11 +195,21 @@ def add_bento_sub_command(cli):
         )
         _print_bentos_info(result, output)
 
-    @cli.command(
-        help='Delete bento. To delete multiple bentos provide the name '
-        'version tag separated by "," for example "bentoml delete name:v1,name:v2',
+    @cli.command()
+    @click.argument(
+        'delete_targets',
+        type=click.STRING,
+        callback=parse_delete_targets_argument_callback,
+        required=False,
     )
-    @click.argument("bentos", type=click.STRING, callback=parse_bento_tag_list_callback)
+    @click.option('--all', is_flag=True, help='Set true to delete all bento bundles')
+    @click.option(
+        '--labels',
+        type=click.STRING,
+        help="Label query to filter bento bundles, supports '=', '!=', 'IN', 'NotIn', "
+        "'Exists', and 'DoesNotExist'. (e.g. key1=value1, key2!=value2, key3 "
+        "In (value3, value3a), key4 DoesNotExist)",
+    )
     @click.option(
         '--yatai-url',
         type=click.STRING,
@@ -186,28 +217,62 @@ def add_bento_sub_command(cli):
         '"--yatai-url http://localhost:50050"',
     )
     @click.option(
-        '-y', '--yes', '--assume-yes', is_flag=True, help='Automatic yes to prompts'
+        '-y',
+        '--yes',
+        '--assume-yes',
+        is_flag=True,
+        help='Skip confirmation when deleting a specific bento bundle',
     )
-    def delete(bentos, yatai_url, yes):
-        """Delete saved BentoService.
+    def delete(
+        all,  # pylint: disable=redefined-builtin
+        delete_targets,
+        labels,
+        yatai_url,
+        yes,  # pylint: disable=redefined-builtin
+    ):
+        """Delete bento bundles in target YataiService. When the --yatai-url option is not specified, it will use local Yatai by default.
 
-        BENTO is the target BentoService to be deleted, referenced by its name and
-        version in format of name:version. For example: "iris_classifier:v1.2.0"
+Specify target service bundles to remove:
 
-        `bentoml delete` command also supports deleting multiple saved BentoService at
-        once, by providing name version tag separated by ",", for example:
+* Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
 
-        `bentoml delete iris_classifier:v1.2.0,my_svc:v1,my_svc2:v3`
-        """
-        for bento in bentos:
-            if not yes and not click.confirm(
-                f'Are you sure about delete {bento}? This will delete the BentoService '
-                f'saved bundle files permanently'
-            ):
-                return
-            yc = get_yatai_client(yatai_url)
-            yc.repository.delete(bento)
-            _echo(f'BentoService {bento} deleted')
+* Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
+
+* Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+
+* Bulk delete by tag, e.g.: `bentoml delete --tag env=dev`
+
+* Bulk delete all, e.g.: `bentoml delete --all`
+        """  # noqa
+        yc = get_yatai_client(yatai_url)
+        # Backward compatible with the previous CLI, allows deletion with tag/s
+        if len(delete_targets) > 0:
+            for item in delete_targets:
+                if ':' in item:
+                    if not _is_valid_bento_tag(item):
+                        raise click.BadParameter(
+                            "Bad formatting. Please present in BentoName:Version, "
+                            "for example \"iris_classifier:v1.2.0\". For list of "
+                            "BentoService, separate tags by \",\", for example: "
+                            "\"my_service:v1,my_service:v2,classifier:v3\""
+                        )
+                    yc.repository.delete(
+                        prune=all,
+                        labels=labels,
+                        bento_tag=item,
+                        require_confirm=False if yes else True,
+                    )
+                else:
+                    yc.repository.delete(
+                        prune=all,
+                        labels=labels,
+                        bento_name=item,
+                        require_confirm=False if yes else True,
+                    )
+        else:
+            yc.repository.delete(
+                prune=all, labels=labels, require_confirm=False if yes else True,
+            )
 
     @cli.command(help='Pull BentoService from remote yatai server',)
     @click.argument("bento", type=click.STRING)

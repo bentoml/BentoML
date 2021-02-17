@@ -13,9 +13,9 @@ Yatai Client
 
     .. automethod:: bentoml.yatai.client.bento_repository_api.BentoRepositoryAPIClient.delete
 
-    .. automethod:: bentoml.yatai.client.bento_repository_api.BentoRepositoryAPIClient.prune
-
     .. automethod:: bentoml.yatai.client.bento_repository_api.BentoRepositoryAPIClient.containerize
+
+    .. automethod:: bentoml.yatai.client.bento_repository_api.BentoRepositoryAPIClient.load
 
 .. spelling::
 

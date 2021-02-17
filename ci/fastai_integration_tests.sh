@@ -9,8 +9,8 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-# Install PyTorchLightning
-pip install pytorch-lightning
-pytest "$GIT_ROOT"/tests/integration/test_pytorch_lightning_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+# Install PyTorch
+pip install fastai
+pytest "$GIT_ROOT"/tests/integration/test_fastai2_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

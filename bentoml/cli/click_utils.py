@@ -120,6 +120,7 @@ class BentoMLCommandGroup(click.Group):
             except BaseException as e:
                 track_properties['duration'] = time.time() - start_time
                 track_properties['error_type'] = type(e).__name__
+                track_properties['error_message'] = str(e)
                 track_properties['return_code'] = 1
                 if type(e) == KeyboardInterrupt:
                     track_properties['return_code'] = 2
@@ -178,6 +179,10 @@ def _is_valid_bento_tag(value):
     return re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", value) is not None
 
 
+def _is_valid_bento_name(value):
+    return re.match(r"^[A-Za-z_0-9]*$", value) is not None
+
+
 def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argument
     if param.required and not _is_valid_bento_tag(value):
         raise click.BadParameter(
@@ -185,19 +190,6 @@ def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argum
             "iris_classifier:v1.2.0"
         )
     return value
-
-
-def parse_bento_tag_list_callback(ctx, param, value):  # pylint: disable=unused-argument
-    bento_tags = value.split(",")
-    bento_tags = list(map(str.strip, bento_tags))
-    for bento_tag in bento_tags:
-        if not _is_valid_bento_tag(bento_tag):
-            raise click.BadParameter(
-                "Bad formatting. Please present in BentoName:Version, for example "
-                "\"iris_classifier:v1.2.0\". For list of BentoService, separate tags "
-                "by \",\", for example: \"my_service:v1,my_service:v2,classifier:v3\""
-            )
-    return bento_tags
 
 
 def parse_labels_callback(ctx, param, value):  # pylint: disable=unused-argument

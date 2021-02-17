@@ -13,48 +13,32 @@
 # limitations under the License.
 
 import logging
-from contextlib import contextmanager
+from dependency_injector.wiring import inject, Provide
 
-from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
-ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
 
 
-@contextmanager
-def trace(*args, **kwargs):
-    if ZIPKIN_API_URL:
-        from bentoml.server.trace import trace as _trace
-
-        return _trace(ZIPKIN_API_URL, *args, **kwargs)
-    else:
-        yield
-
-
-@contextmanager
-def async_trace(*args, **kwargs):
-    if ZIPKIN_API_URL:
-        from bentoml.server.trace import async_trace as _async_trace
-
-        return _async_trace(ZIPKIN_API_URL, *args, **kwargs)
-    else:
-        yield
-
-
+@inject
 def start_dev_server(
     saved_bundle_path: str,
-    port: int,
-    enable_microbatch: bool,
-    mb_max_batch_size: int,
-    mb_max_latency: int,
-    run_with_ngrok: bool,
-    enable_swagger: bool,
+    port: int = Provide[BentoMLContainer.config.api_server.port],
+    enable_microbatch: bool = Provide[
+        BentoMLContainer.config.api_server.enable_microbatch
+    ],
+    mb_max_batch_size: int = Provide[
+        BentoMLContainer.config.marshal_server.max_batch_size
+    ],
+    mb_max_latency: int = Provide[BentoMLContainer.config.marshal_server.max_latency],
+    run_with_ngrok: bool = Provide[BentoMLContainer.config.api_server.run_with_ngrok],
+    enable_swagger: bool = Provide[BentoMLContainer.config.api_server.enable_swagger],
 ):
     logger.info("Starting BentoML API server in development mode..")
 
     import multiprocessing
 
-    from bentoml import load
+    from bentoml.saved_bundle import load_from_dir
     from bentoml.server.api_server import BentoAPIServer
     from bentoml.utils import reserve_free_port
 
@@ -85,13 +69,13 @@ def start_dev_server(
             )
         marshal_proc.start()
 
-        bento_service = load(saved_bundle_path)
+        bento_service = load_from_dir(saved_bundle_path)
         api_server = BentoAPIServer(
             bento_service, port=api_server_port, enable_swagger=enable_swagger
         )
         api_server.start()
     else:
-        bento_service = load(saved_bundle_path)
+        bento_service = load_from_dir(saved_bundle_path)
         api_server = BentoAPIServer(
             bento_service, port=port, enable_swagger=enable_swagger
         )
@@ -120,16 +104,21 @@ def start_dev_batching_server(
     marshal_server.fork_start_app(port=port)
 
 
+@inject
 def start_prod_server(
     saved_bundle_path: str,
-    port: int,
-    timeout: int,
-    workers: int,
-    enable_microbatch: bool,
-    mb_max_batch_size: int,
-    mb_max_latency: int,
-    microbatch_workers: int,
-    enable_swagger: bool,
+    port: int = Provide[BentoMLContainer.config.api_server.port],
+    timeout: int = Provide[BentoMLContainer.config.api_server.timeout],
+    workers: int = Provide[BentoMLContainer.api_server_workers],
+    enable_microbatch: bool = Provide[
+        BentoMLContainer.config.api_server.enable_microbatch
+    ],
+    mb_max_batch_size: int = Provide[
+        BentoMLContainer.config.marshal_server.max_batch_size
+    ],
+    mb_max_latency: int = Provide[BentoMLContainer.config.marshal_server.max_latency],
+    microbatch_workers: int = Provide[BentoMLContainer.config.marshal_server.workers],
+    enable_swagger: bool = Provide[BentoMLContainer.config.api_server.enable_swagger],
 ):
     logger.info("Starting BentoML API server in production mode..")
 
@@ -143,11 +132,7 @@ def start_prod_server(
 
     from bentoml.server.gunicorn_server import GunicornBentoServer
     from bentoml.server.marshal_server import GunicornMarshalServer
-    from bentoml.server.utils import get_gunicorn_num_of_workers
     from bentoml.utils import reserve_free_port
-
-    if workers is None:
-        workers = get_gunicorn_num_of_workers()
 
     if enable_microbatch:
         prometheus_lock = multiprocessing.Lock()

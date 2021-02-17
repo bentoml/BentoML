@@ -49,7 +49,7 @@ spellcheck-doc: ## Spell check documentation
 start-yatai-debug: ## Start YataiService in debug mode
 	bentoml yatai-service-start --debug || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
 start-grpcui: ## Start gPRC Web UI
-	grpcui -plain text localhost:50051 || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
+	grpcui -plaintext localhost:50051 || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
 install-yatai-deps: ## Install dependencies to debug YataiService
 	pip install -e ".[dev]"
 	go get github.com/fullstorydev/grpcui

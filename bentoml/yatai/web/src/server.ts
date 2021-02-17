@@ -5,6 +5,7 @@ import express from "express";
 import { bentoml } from "./generated/bentoml_grpc";
 import { createYataiClient } from "./yatai_client";
 import { getLogger } from "./logger";
+import axios from 'axios';
 const logger = getLogger();
 
 const createAPIRoutes = (app, yataiClient) => {
@@ -197,7 +198,7 @@ const createAPIRoutes = (app, yataiClient) => {
   return router;
 };
 
-export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
+export const getExpressApp = (grpcAddress: string | null, baseURL: string, prometheusAddress: string) => {
   const app = express();
   const cookieParser = require('cookie-parser');
   app.use(cookieParser());
@@ -224,6 +225,11 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string) => {
   app.use(apiUrlPrefix, router);
 
   app.get('/healthz', (req, res) => res.status(200).json());
+
+    app.get('/metrics', async (req, res) => {
+      const metricsResponse = await axios.get(prometheusAddress);
+      res.end(metricsResponse.data);
+    });
 
   app.get("/*", (req, res) => {
     let directory = req.path.split("/").slice(-2, -1);

@@ -62,38 +62,6 @@ yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 SAM_TEMPLATE_NAME = "template.yml"
 
 
-def _get_ecr_password(registry_id, region):
-    """
-    Get authentication token for registry to authenticate docker agent with ecr.
-    """
-    ecr_client = boto3.client("ecr", region)
-    try:
-        token_data = ecr_client.get_authorization_token(registryIds=[registry_id])
-        token = token_data["authorizationData"][0]["authorizationToken"]
-        registry_endpoint = token_data["authorizationData"][0]["proxyEndpoint"]
-        return token, registry_endpoint
-
-    except ClientError as error:
-        if (
-            error.response
-            and error.response["Error"]["Code"] == "InvalidParameterException"
-        ):
-            raise BentoMLException(
-                "Could not get token for registry {registry_id},{error}".format(
-                    registry_id=registry_id, error=error.response["Error"]["Message"]
-                )
-            )
-
-
-def _get_creds_from_token(token):
-    """
-    Decode ecr token into username and password.
-    """
-    cred_string = base64.b64decode(token).decode("ascii")
-    username, password = str(cred_string).split(":")
-    return username, password
-
-
 def _make_user_data(registry, tag, region):
     """
     Create init script for EC2 containers to download docker image,

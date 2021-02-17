@@ -120,13 +120,17 @@ def create_and_push_docker_image_to_ecr(
     Returns:
         str: AWS ECR Tag
     """
+    repository_id = create_ecr_repository_if_not_exists(
+        region, f'{bento_name}-sagemaker'.lower()
+    )
     logger.debug("Getting docker login info from AWS")
-    registry_url, username, password = get_ecr_login_info(region)
+    registry_url, username, password = get_ecr_login_info(
+        region, repository_id=repository_id
+    )
     auth_config_payload = {"username": username, "password": password}
 
     docker_api = docker.APIClient()
 
-    image_name = bento_name.lower() + "-sagemaker"
     ecr_tag = generate_docker_image_tag(
         f'{bento_name}-sagemaker', bento_version, registry_url
     )
@@ -136,8 +140,6 @@ def create_and_push_docker_image_to_ecr(
         path=snapshot_path, dockerfile="Dockerfile-sagemaker", tag=ecr_tag
     ):
         process_docker_api_line(line)
-
-    create_ecr_repository_if_not_exists(region, f'{bento_name}-sagemaker'.lower())
 
     logger.debug("Pushing image to AWS ECR at %s", ecr_tag)
     for line in docker_api.push(ecr_tag, stream=True, auth_config=auth_config_payload):

@@ -204,17 +204,20 @@ def get_aws_user_id():
     return boto3.client("sts").get_caller_identity().get("Account")
 
 
-def create_ecr_repository_if_not_exists(region, repoistory_name):
+def create_ecr_repository_if_not_exists(region, repository_name):
     ecr_client = boto3.client("ecr", region)
     try:
-        ecr_client.describe_repositories(repositoryNames=repoistory_name)
+        result = ecr_client.describe_repositories(repositoryNames=[repository_name])
+        repository_id = result['repositories'][0]['registryId']
     except ecr_client.exceptions.RepositoryNotFoundException:
-        ecr_client.create_repository(repositoryName=repoistory_name)
+        result = ecr_client.create_repository(repositoryName=repository_name)
+        repository_id = result['repository']['registryId']
+    return repository_id
 
 
-def get_ecr_login_info(region):
+def get_ecr_login_info(region, repository_id):
     ecr_client = boto3.client('ecr', region)
-    token = ecr_client.get_authorization_token()
+    token = ecr_client.get_authorization_token(registryId=[repository_id])
     logger.debug("Getting docker login info from AWS")
     username, password = (
         base64.b64decode(token["authorizationData"][0]["authorizationToken"])

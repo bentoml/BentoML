@@ -14,9 +14,9 @@ from sklearn import svm, datasets
 # Append local bentoml repository path which contains the 'e2e_tests/' directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from bentoml.yatai.deployment.docker_utils import (
+from bentoml.yatai.deployment.docker_utils import (  # noqa
     ensure_docker_available_or_raise,
-)  # noqa
+)
 
 from e2e_tests.iris_classifier_example import IrisClassifier
 from e2e_tests.cli_operations import delete_bento

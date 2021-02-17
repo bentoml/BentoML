@@ -15,7 +15,6 @@ from tests.bento_service_examples import (
 )
 
 logger = logging.getLogger('bentoml.test')
-test_data = "[[5.1, 3.5, 1.4, 0.2]]"
 
 
 @pytest.fixture()
@@ -79,7 +78,7 @@ def test_run_predict_input_dataframe_adapter():
     bento_service.pack('model', clf)
     bento_service.save()
 
-    stdout, stderr = run_predict(bento_service, test_data)
+    stdout, stderr = run_predict(bento_service, "[[5.1, 3.5, 1.4, 0.2]]")
     assert_out(stdout, stderr, '[0]')
 
 

@@ -1,9 +1,7 @@
-import base64
 import json
 import logging
 import os
 import shutil
-from urllib.parse import urlparse
 
 import boto3
 import docker
@@ -24,10 +22,13 @@ from bentoml.yatai.deployment.utils import (
 from bentoml.yatai.deployment.docker_utils import (
     ensure_docker_available_or_raise,
     process_docker_api_line,
+    generate_docker_image_tag,
 )
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
     get_default_aws_region,
+    get_ecr_login_info,
+    create_ecr_repository_if_not_exists,
 )
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,
@@ -63,17 +64,6 @@ RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
 
 ENV PATH="/bento:$PATH"
 """  # noqa: E501
-
-
-def strip_scheme(url):
-    """ Stripe url's schema
-    e.g.   http://some.url/path -> some.url/path
-    :param url: String
-    :return: String
-    """
-    parsed = urlparse(url)
-    scheme = "%s://" % parsed.scheme
-    return parsed.geturl().replace(scheme, "", 1)
 
 
 def get_arn_role_from_current_aws_user():
@@ -130,24 +120,15 @@ def create_and_push_docker_image_to_ecr(
     Returns:
         str: AWS ECR Tag
     """
-    ecr_client = boto3.client("ecr", region)
-    token = ecr_client.get_authorization_token()
     logger.debug("Getting docker login info from AWS")
-    username, password = (
-        base64.b64decode(token["authorizationData"][0]["authorizationToken"])
-        .decode("utf-8")
-        .split(":")
-    )
-    registry_url = token["authorizationData"][0]["proxyEndpoint"]
+    registry_url, username, password = get_ecr_login_info(region)
     auth_config_payload = {"username": username, "password": password}
 
     docker_api = docker.APIClient()
 
     image_name = bento_name.lower() + "-sagemaker"
-    ecr_tag = strip_scheme(
-        "{registry_url}/{image_name}:{version}".format(
-            registry_url=registry_url, image_name=image_name, version=bento_version
-        )
+    ecr_tag = generate_docker_image_tag(
+        f'{bento_name}-sagemaker', bento_version, registry_url
     )
 
     logger.debug("Building docker image: %s", ecr_tag)
@@ -156,10 +137,7 @@ def create_and_push_docker_image_to_ecr(
     ):
         process_docker_api_line(line)
 
-    try:
-        ecr_client.describe_repositories(repositoryNames=[image_name])["repositories"]
-    except ecr_client.exceptions.RepositoryNotFoundException:
-        ecr_client.create_repository(repositoryName=image_name)
+    create_ecr_repository_if_not_exists(region, f'{bento_name}-sagemaker'.lower())
 
     logger.debug("Pushing image to AWS ECR at %s", ecr_tag)
     for line in docker_api.push(ecr_tag, stream=True, auth_config=auth_config_payload):

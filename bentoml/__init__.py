@@ -24,7 +24,17 @@ if psutil.POSIX:
     # on MacOS.
     import multiprocessing
 
-    multiprocessing.set_start_method('fork')
+    try:
+        multiprocessing.set_start_method("fork")
+    except RuntimeError:
+        import logging
+
+        if multiprocessing.get_start_method() == "fork":
+            logging.warning(
+                "multiprocessing's start_method has already been loaded into fork"
+            )
+        else:
+            raise
 
 from ._version import get_versions
 

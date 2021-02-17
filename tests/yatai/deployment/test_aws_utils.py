@@ -1,8 +1,10 @@
 import boto3
 from mock import patch
 
-from bentoml.yatai.deployment.aws_utils import create_ecr_repository_if_not_exists, \
-    get_ecr_login_info
+from bentoml.yatai.deployment.aws_utils import (
+    create_ecr_repository_if_not_exists,
+    get_ecr_login_info,
+)
 
 mock_s3_bucket_name = 'test_deployment_bucket'
 mock_s3_prefix = 'prefix'
@@ -10,7 +12,7 @@ mock_s3_path = 's3://{}/{}'.format(mock_s3_bucket_name, mock_s3_prefix)
 mock_repository_name = "test_registry"
 mock_repository_id = "7520142243238"
 mock_repository_username = 'abc'
-mock_repository_password= '123'
+mock_repository_password = '123'
 mock_elb_name = "elb-test"
 mock_region = "us-east-1"
 mock_repository_auth_token = "YWJjOjEyMw=="
@@ -22,9 +24,7 @@ mock_repository_endpoint = (
 def test_create_ecr_repository_if_not_exists():
     ecr_client = boto3.client("ecr", mock_region)
 
-    def mock_ecr_create_success(
-        self, op_name, args
-    ):  # pylint: disable=unused-argument
+    def mock_ecr_create_success(self, op_name, args):  # pylint: disable=unused-argument
         if op_name == 'CreateRepository':
             return {"repository": {"registryId": mock_repository_id}}
         elif op_name == 'DescribeRepositories':

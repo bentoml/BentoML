@@ -3,7 +3,6 @@ import boto3
 import base64
 import json
 import logging
-from botocore.exceptions import ClientError
 
 from bentoml.utils.tempdir import TempDirectory
 
@@ -30,7 +29,9 @@ from bentoml.yatai.deployment.aws_utils import (
     delete_cloudformation_stack,
     delete_ecr_repository,
     get_instance_ip_from_scaling_group,
-    get_aws_user_id, create_ecr_repository_if_not_exists, get_ecr_login_info,
+    get_aws_user_id,
+    create_ecr_repository_if_not_exists,
+    get_ecr_login_info,
 )
 from bentoml.utils.docker_utils import containerize_bento_service
 from bentoml.exceptions import (

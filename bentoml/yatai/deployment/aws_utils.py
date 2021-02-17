@@ -217,7 +217,7 @@ def create_ecr_repository_if_not_exists(region, repository_name):
 
 def get_ecr_login_info(region, repository_id):
     ecr_client = boto3.client('ecr', region)
-    token = ecr_client.get_authorization_token(registryId=[repository_id])
+    token = ecr_client.get_authorization_token(registryIds=[repository_id])
     logger.debug("Getting docker login info from AWS")
     username, password = (
         base64.b64decode(token["authorizationData"][0]["authorizationToken"])

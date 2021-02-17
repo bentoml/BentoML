@@ -3,8 +3,6 @@ import contextlib
 
 import pytest
 
-from tests.integration.utils import run_api_server_docker_container
-
 
 @pytest.fixture(scope="session")
 def clean_context():
@@ -16,14 +14,6 @@ def clean_context():
 def enable_microbatch(request):
     pytest.enable_microbatch = request.param
     return request.param
-
-
-@pytest.fixture(scope="module")
-def host(image, enable_microbatch):
-    with run_api_server_docker_container(
-        image, enable_microbatch=enable_microbatch, timeout=500
-    ) as host:
-        yield host
 
 
 @pytest.fixture()

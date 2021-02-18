@@ -209,9 +209,7 @@ class MarshalService:
         for api_pb in bento_service_metadata_pb.apis:
             if api_pb.batch:
                 max_latency = (
-                    self.mb_max_latency
-                    or api_pb.mb_max_latency
-                    or DEFAULT_MAX_LATENCY
+                    self.mb_max_latency or api_pb.mb_max_latency or DEFAULT_MAX_LATENCY
                 )
                 max_batch_size = (
                     self.mb_max_batch_size

@@ -6,6 +6,11 @@ from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContai
 from bentoml.exceptions import BentoMLConfigException
 
 
+def test():
+    api_name = os.environ["BENTOML_API_NAME123123"]
+    print(api_name)
+
+
 def test_override():
     config = BentoMLConfiguration(legacy_compatibility=False)
     config.override(["api_server", "port"], 6000)

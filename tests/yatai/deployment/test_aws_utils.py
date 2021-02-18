@@ -1,9 +1,12 @@
 import boto3
+from botocore.exceptions import ClientError
 from mock import patch
 
+from bentoml.exceptions import AWSServiceError
 from bentoml.yatai.deployment.aws_utils import (
     create_ecr_repository_if_not_exists,
     get_ecr_login_info,
+    generate_bentoml_exception_from_aws_client_error,
 )
 
 mock_s3_bucket_name = 'test_deployment_bucket'
@@ -78,3 +81,14 @@ def test_get_ecr_login_info():
         assert registry_url == mock_repository_endpoint
         assert username == mock_repository_username
         assert password == mock_repository_password
+
+
+def test_generate_bentoml_exception_from_aws_client_error():
+    error = ClientError(
+        error_response={
+            'Error': {'Code': 'ValidationException', 'Message': 'error message'}
+        },
+        operation_name='failed_operation',
+    )
+    exception = generate_bentoml_exception_from_aws_client_error(error)
+    assert isinstance(exception, AWSServiceError)

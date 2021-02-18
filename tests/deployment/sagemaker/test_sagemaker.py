@@ -19,7 +19,7 @@ from bentoml.yatai.proto.repository_pb2 import (
     BentoUri,
 )
 from bentoml.yatai.proto.status_pb2 import Status
-from bentoml.exceptions import AWSServiceError, YataiDeploymentException
+from bentoml.exceptions import YataiDeploymentException
 from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
 
 

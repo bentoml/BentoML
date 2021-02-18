@@ -1,9 +1,9 @@
 from typing import List, BinaryIO
 
 from PIL import Image
-import torch
-from torch.autograd import Variable
-from torchvision import transforms
+import torch  # pylint: disable=import-error
+from torch.autograd import Variable  # pylint: disable=import-error
+from torchvision import transforms  # pylint: disable=import-error
 
 import bentoml
 from bentoml.frameworks.pytorch import PytorchModelArtifact

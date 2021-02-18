@@ -7,7 +7,11 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 
-from bentoml.exceptions import BentoMLException, MissingDependencyException
+from bentoml.exceptions import (
+    BentoMLException,
+    MissingDependencyException,
+    AWSServiceError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -227,3 +231,30 @@ def get_ecr_login_info(region, repository_id):
     registry_url = token["authorizationData"][0]["proxyEndpoint"]
 
     return registry_url, username, password
+
+
+def generate_bentoml_exception_from_aws_client_error(e, message_prefix=None):
+    """parse botocore.exceptions.ClientError into Bento StatusProto
+
+     We handle two most common errors when deploying to Sagemaker.
+         1. Authentication issue/invalid access(InvalidSignatureException)
+         2. resources not found (ValidationException)
+     It will return correlated StatusProto(NOT_FOUND, UNAUTHENTICATED)
+
+     Args:
+         e: ClientError from botocore.exceptions
+         message_prefix: string
+     Returns:
+         StatusProto
+     """
+    error_response = e.response.get("Error", {})
+    error_code = error_response.get("Code", "Unknown")
+    error_message = error_response.get("Message", "Unknown")
+    error_log_message = (
+        f"AWS ClientError - operation: {e.operation_name}, "
+        f"code: {error_code}, message: {error_message}"
+    )
+    if message_prefix:
+        error_log_message = f"{message_prefix}; {error_log_message}"
+    logger.error(error_log_message)
+    return AWSServiceError(error_log_message)

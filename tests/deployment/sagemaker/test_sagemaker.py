@@ -8,7 +8,6 @@ from mock import patch, MagicMock
 from moto import mock_ecr, mock_iam, mock_sts
 
 from bentoml.yatai.deployment.sagemaker.operator import (
-    _aws_client_error_to_bentoml_exception,
     get_arn_role_from_current_aws_user,
 )
 from bentoml.yatai.deployment.sagemaker.operator import SageMakerDeploymentOperator
@@ -27,17 +26,6 @@ from tests.deployment.sagemaker.sagemaker_moto import moto_mock_sagemaker
 if sys.platform == "darwin":
     # TODO: Undo the skipping and understand why this test is failling on Mac OS
     pytest.skip("skipping SageMaker tests on MacOS", allow_module_level=True)
-
-
-def test_sagemaker_handle_client_errors():
-    error = ClientError(
-        error_response={
-            'Error': {'Code': 'ValidationException', 'Message': 'error message'}
-        },
-        operation_name='failed_operation',
-    )
-    exception = _aws_client_error_to_bentoml_exception(error)
-    assert isinstance(exception, AWSServiceError)
 
 
 ROLE_PATH_ARN_RESULT = 'arn:aws:us-west-2:999'

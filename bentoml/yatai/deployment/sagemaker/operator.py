@@ -29,6 +29,7 @@ from bentoml.yatai.deployment.aws_utils import (
     get_default_aws_region,
     get_ecr_login_info,
     create_ecr_repository_if_not_exists,
+    generate_bentoml_exception_from_aws_client_error,
 )
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,
@@ -225,7 +226,7 @@ def _delete_sagemaker_model_if_exist(sagemaker_client, sagemaker_model_name):
             # sagemaker model does not exist
             return
 
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, f"Failed to cleanup sagemaker model '{sagemaker_model_name}'"
         )
 
@@ -253,7 +254,7 @@ def _delete_sagemaker_endpoint_config_if_exist(
             # endpoint config does not exist
             return
 
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e,
             f"Failed to cleanup sagemaker endpoint config "
             f"'{sagemaker_endpoint_config_name}' after creation failed",
@@ -278,7 +279,7 @@ def _delete_sagemaker_endpoint_if_exist(sagemaker_client, sagemaker_endpoint_nam
             # sagemaker endpoint does not exist
             return
 
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, f"Failed to delete sagemaker endpoint '{sagemaker_endpoint_name}'"
         )
 
@@ -352,7 +353,7 @@ def _create_sagemaker_model(
     try:
         create_model_response = sagemaker_client.create_model(**sagemaker_model_info)
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to create sagemaker model"
         )
     logger.debug("AWS create model response: %s", create_model_response)
@@ -396,7 +397,7 @@ def _create_sagemaker_endpoint_config(
             **create_endpoint_config_arguments
         )
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to create sagemaker endpoint config"
         )
     logger.debug("AWS create endpoint config response: %s", create_config_response)
@@ -410,7 +411,7 @@ def _create_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
         )
         logger.debug("AWS create endpoint response: %s", create_endpoint_response)
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to create sagemaker endpoint"
         )
 
@@ -423,7 +424,7 @@ def _update_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
         )
         logger.debug("AWS update endpoint response: %s", str(update_endpoint_response))
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to update sagemaker endpoint"
         )
 

@@ -3,7 +3,6 @@ import boto3
 import base64
 import json
 import logging
-from botocore.exceptions import ClientError
 
 from bentoml.utils.tempdir import TempDirectory
 
@@ -31,6 +30,8 @@ from bentoml.yatai.deployment.aws_utils import (
     delete_ecr_repository,
     get_instance_ip_from_scaling_group,
     get_aws_user_id,
+    create_ecr_repository_if_not_exists,
+    get_ecr_login_info,
 )
 from bentoml.utils.docker_utils import containerize_bento_service
 from bentoml.exceptions import (
@@ -60,59 +61,6 @@ logger = logging.getLogger(__name__)
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 SAM_TEMPLATE_NAME = "template.yml"
-
-
-def _create_ecr_repo(repo_name, region):
-    """
-    Create ecr repository,in given region
-    args:
-        repo_name: repository name to create
-        region: aws region
-    """
-    try:
-        ecr_client = boto3.client("ecr", region)
-        repository = ecr_client.create_repository(
-            repositoryName=repo_name, imageScanningConfiguration={"scanOnPush": False}
-        )
-        registry_id = repository["repository"]["registryId"]
-
-    except ecr_client.exceptions.RepositoryAlreadyExistsException:
-        all_repositories = ecr_client.describe_repositories(repositoryNames=[repo_name])
-        registry_id = all_repositories["repositories"][0]["registryId"]
-
-    return registry_id
-
-
-def _get_ecr_password(registry_id, region):
-    """
-    Get authentication token for registry to authenticate docker agent with ecr.
-    """
-    ecr_client = boto3.client("ecr", region)
-    try:
-        token_data = ecr_client.get_authorization_token(registryIds=[registry_id])
-        token = token_data["authorizationData"][0]["authorizationToken"]
-        registry_endpoint = token_data["authorizationData"][0]["proxyEndpoint"]
-        return token, registry_endpoint
-
-    except ClientError as error:
-        if (
-            error.response
-            and error.response["Error"]["Code"] == "InvalidParameterException"
-        ):
-            raise BentoMLException(
-                "Could not get token for registry {registry_id},{error}".format(
-                    registry_id=registry_id, error=error.response["Error"]["Message"]
-                )
-            )
-
-
-def _get_creds_from_token(token):
-    """
-    Decode ecr token into username and password.
-    """
-    cred_string = base64.b64decode(token).decode("ascii")
-    username, password = str(cred_string).split(":")
-    return username, password
 
 
 def _make_user_data(registry, tag, region):
@@ -461,11 +409,12 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         )
 
         with TempDirectory() as project_path:
-            registry_id = _create_ecr_repo(repo_name, region)
-            registry_token, registry_url = _get_ecr_password(registry_id, region)
-            registry_username, registry_password = _get_creds_from_token(registry_token)
+            repository_id = create_ecr_repository_if_not_exists(region, repo_name)
+            repository_url, username, password = get_ecr_login_info(
+                region, repository_id
+            )
 
-            registry_domain = registry_url.replace("https://", "")
+            registry_domain = repository_url.replace("https://", "")
             push_tag = f"{registry_domain}/{repo_name}"
             pull_tag = push_tag + f":{deployment_spec.bento_version}"
 
@@ -477,12 +426,12 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 push=True,
                 tag=push_tag,
                 build_arg={},
-                username=registry_username,
-                password=registry_password,
+                username=username,
+                password=password,
             )
 
             logger.info("Generating user data")
-            encoded_user_data = _make_user_data(registry_url, pull_tag, region)
+            encoded_user_data = _make_user_data(repository_url, pull_tag, region)
 
             logger.info("Making template")
             template_file_path = _make_cloudformation_template(

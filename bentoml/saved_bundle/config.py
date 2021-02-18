@@ -20,7 +20,6 @@ from pathlib import Path
 from sys import version_info
 
 from bentoml import __version__ as BENTOML_VERSION
-from bentoml import config
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils import dump_to_yaml_str
@@ -34,8 +33,8 @@ metadata:
 """
 
 logger = logging.getLogger(__name__)
-DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
-DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
+DEFAULT_MAX_LATENCY = 20000
+DEFAULT_MAX_BATCH_SIZE = 4000
 PYTHON_VERSION = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
 
 

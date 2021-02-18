@@ -207,8 +207,8 @@ class MarshalService:
     def setup_routes_from_pb(self, bento_service_metadata_pb):
         for api_pb in bento_service_metadata_pb.apis:
             if api_pb.batch:
-                max_latency = api_pb.mb_max_latency or self.mb_max_latency
-                max_batch_size = api_pb.mb_max_batch_size or self.mb_max_batch_size
+                max_latency = self.mb_max_latency or api_pb.mb_max_latency
+                max_batch_size = self.mb_max_batch_size or api_pb.mb_max_batch_size
                 self.add_batch_handler(api_pb.name, max_latency, max_batch_size)
                 logger.info(
                     "Micro batch enabled for API `%s` max-latency: %s"

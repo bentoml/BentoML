@@ -40,8 +40,8 @@ SCHEMA = Schema(
             "timeout": And(int, lambda timeout: timeout > 0),
         },
         "marshal_server": {
-            "max_batch_size": And(int, lambda size: size > 0),
-            "max_latency": And(int, lambda latency: latency > 0),
+            "max_batch_size": Or(And(int, lambda size: size > 0), None),
+            "max_latency": Or(And(int, lambda latency: latency > 0), None),
             "workers": Or(And(int, lambda workers: workers > 0), None),
             "request_header_flag": str,
         },
@@ -87,12 +87,17 @@ class BentoMLConfiguration:
                 self.config["api_server"]["max_request_size"] = config(
                     "apiserver"
                 ).getint("default_max_request_size")
-                self.config["marshal_server"]["max_batch_size"] = config(
-                    "marshal_server"
-                ).getint("default_max_batch_size")
-                self.config["marshal_server"]["max_latency"] = config(
-                    "marshal_server"
-                ).getint("default_max_latency")
+
+                if "default_max_batch_size" in config("marshal_server"):
+                    self.config["marshal_server"]["max_batch_size"] = config(
+                        "marshal_server"
+                    ).getint("default_max_batch_size")
+
+                if "default_max_latency" in config("marshal_server"):
+                    self.config["marshal_server"]["max_latency"] = config(
+                        "marshal_server"
+                    ).getint("default_max_latency")
+
                 self.config["marshal_server"]["request_header_flag"] = config(
                     "marshal_server"
                 ).get("marshal_request_header_flag")

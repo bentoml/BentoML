@@ -58,8 +58,6 @@ api_server:
   port: 0
   max_request_size: 0
 marshal_server:
-  max_batch_size: 0
-  max_latency: 0
   request_header_flag: Null
 yatai:
   url: Null
@@ -80,8 +78,6 @@ instrument:
     assert config_dict is not None
     assert config_dict["api_server"]["port"] == 5000
     assert config_dict["api_server"]["max_request_size"] == 20971520
-    assert config_dict["marshal_server"]["max_batch_size"] == 2000
-    assert config_dict["marshal_server"]["max_latency"] == 10000
     assert config_dict["marshal_server"]["request_header_flag"] == (
         "BentoML-Is-Merged-Request"
     )

@@ -2,33 +2,42 @@
 set -e
 
 if [[ -z "$BENTOML_REPO" ]]; then
-  # Assuming running this script from anywhere within the BentoML git repository
-  BENTOML_REPO=$(git rev-parse --show-toplevel)
+    # Assuming running this script from anywhere within the BentoML git repository
+    BENTOML_REPO=$(git rev-parse --show-toplevel)
 fi
 
 PROTO_PATH=$BENTOML_REPO/protos
 PY_OUT_PATH=$BENTOML_REPO/bentoml/yatai/proto
+PROTO_TEST_PATH=$PROTO_PATH/testing
+# testing YataiService Interceptor calls
+PY_TEST_OUT_PATH=$BENTOML_REPO/tests/yatai/proto
 
 echo "Cleaning up existing proto generated py code.."
-rm -rf "$PY_OUT_PATH"
-mkdir -p "$PY_OUT_PATH"
-touch "$PY_OUT_PATH"/__init__.py
+rm -rf "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
+mkdir -p "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
+touch "$PY_OUT_PATH"/__init__.py "$PY_TEST_OUT_PATH"/__init__.py
 
 echo "Generate proto message code.."
-find "$PROTO_PATH"/ -name '*.proto' | while read -r protofile; do
+find "$PROTO_PATH"/ -name '*.proto' -not -path "${PROTO_TEST_PATH}/*" | while read -r protofile; do
 python -m grpc_tools.protoc \
-  -I"$PROTO_PATH" \
-  --python_out="$PY_OUT_PATH" \
-  "$protofile"
+    -I"$PROTO_PATH" \
+    --python_out="$PY_OUT_PATH" \
+    "$protofile"
 done
+
+echo "Generate proto test service code.."
+python -m grpc_tools.protoc \
+    -I"$PROTO_TEST_PATH" \
+    --python_out="$PY_TEST_OUT_PATH" \
+    --grpc_python_out="$PY_TEST_OUT_PATH" \
+    "$PROTO_TEST_PATH"/mock_service.proto
 
 echo "Generate grpc service code.."
 python -m grpc_tools.protoc \
-  -I"$PROTO_PATH" \
-  --python_out="$PY_OUT_PATH" \
-  --grpc_python_out="$PY_OUT_PATH" \
-  "$PROTO_PATH"/yatai_service.proto
-
+    -I"$PROTO_PATH" \
+    --python_out="$PY_OUT_PATH" \
+    --grpc_python_out="$PY_OUT_PATH" \
+    "$PROTO_PATH"/yatai_service.proto
 
 echo "Fix imports in generated GRPC service code.."
 find "$PY_OUT_PATH"/ -name '*_pb2*.py' | while read -r pyfile; do
@@ -65,7 +74,7 @@ for PKG in $PKGS; do
         echo "    \"${SUBPKGNAME}\"," >> "$PKG_INIT"
     done
     echo "]" >> "$PKG_INIT"
-  done
+done
 
 echo "Done"
 

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+message MockRequest {
+  string input = 1;
+}
+
+message MockResponse {
+  string output = 1;
+}
+
+// A Simple MockService to test interceptors for each RPC calls
+service MockService {
+  rpc Execute (MockRequest) returns (MockResponse);
+  rpc ExecuteClientStream (stream MockRequest) returns (MockResponse);
+  rpc ExecuteServerStream (MockRequest) returns (stream MockResponse);
+  rpc ExecuteClientServerStream (stream MockRequest) returns (stream MockResponse);
+}

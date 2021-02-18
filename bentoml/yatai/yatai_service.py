@@ -108,9 +108,12 @@ def start_yatai_service_grpc_server(
     yatai_service = YataiServicerImpl(
         db_url=db_url, repo_base_url=repo_base_url, s3_endpoint_url=s3_endpoint_url,
     )
+
+    # Define interceptors here
+    grpc_interceptors = [PromServerInterceptor(),]
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10),
-        interceptors=(PromServerInterceptor(),),
+        interceptors=grpc_interceptors,
     )
     add_YataiServicer_to_server(yatai_service, server)
     debug_mode = get_debug_mode()

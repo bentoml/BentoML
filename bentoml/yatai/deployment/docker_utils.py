@@ -67,3 +67,30 @@ def generate_docker_image_tag(image_name, version='latest', registry_url=None):
         return _strip_scheme(f'{registry_url}/{image_tag}')
     else:
         return image_tag
+
+
+def build_docker_image(context_path, dockerfile, image_tag, additional_build_args=None):
+    docker_client = docker.from_env()
+    try:
+        docker_client.images.build(
+            path=context_path,
+            tag=image_tag,
+            dockerfile=dockerfile,
+            buildargs=additional_build_args,
+        )
+    except (docker.errors.APIError, docker.errors.BuildError) as error:
+        logger.error(f'Failed to build docker image {image_tag}: {error}')
+        raise BentoMLException(f'Failed to build docker image {image_tag}: {error}')
+
+
+def push_docker_image_to_repository(
+    repository, image_tag=None, username=None, password=None
+):
+    docker_client = docker.from_env()
+    docker_push_kwags = {'repository': repository, 'tag': image_tag}
+    if username is not None and password is not None:
+        docker_push_kwags['auth_config'] = {'username': username, 'password': password}
+    try:
+        docker_client.images.push(**docker_push_kwags)
+    except docker.errors.APIError as error:
+        raise BentoMLException(f'Failed to push docker image {image_tag}: {error}')

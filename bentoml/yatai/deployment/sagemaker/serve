@@ -74,8 +74,6 @@ if __name__ == '__main__':
         config.override(["api_server", "workers"], int(os.environ.get("BENTOML_GUNICORN_NUM_OF_WORKERS")))
     container.config.from_dict(config.as_dict())
 
-    from bentoml import service, yatai
-
-    container.wire(packages=[service, yatai])
+    container.wire(modules=[_serve])
 
     _serve()

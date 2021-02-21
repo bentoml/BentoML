@@ -74,6 +74,6 @@ if __name__ == '__main__':
         config.override(["api_server", "workers"], int(os.environ.get("BENTOML_GUNICORN_NUM_OF_WORKERS")))
     container.config.from_dict(config.as_dict())
 
-    container.wire(modules=[_serve])
+    container.wire(modules=[sys.modules[__name__]])
 
     _serve()

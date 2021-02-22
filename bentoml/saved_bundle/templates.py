@@ -75,41 +75,38 @@ FROM {docker_base_image}
 ARG EXTRA_PIP_INSTALL_ARGS=
 ENV EXTRA_PIP_INSTALL_ARGS $EXTRA_PIP_INSTALL_ARGS
 
-ARG UNAME=bento
 ARG UID=1034
 ARG GID=1034
-CMD groupadd -g $GID -o $UNAME && useradd -m -u $UID -g $GID -o -r $UNAME
-USER $UNAME
+RUN groupadd -g $GID -o bentoml && useradd -m -u $UID -g $GID -o -r bentoml
+USER bentoml
+WORKDIR /home/bentoml
 
 # copy over files needed for init script
-COPY environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* /home/bento/
-WORKDIR /home/bento
+COPY --chown=bentoml:bentoml environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* ./
 
 # copy over entrypoint scripts
-COPY docker-entrypoint.sh /usr/local/bin/
+COPY --chown=bentoml:bentoml docker-entrypoint.sh ./
 
 # Copy environment.yml, because bundled_pip_dependencies might not exist. This
 # prevent COPY command from failing.
-COPY environment.yml bundled_pip_dependencies*  /home/bento/bundled_pip_dependencies/
-
-# Remove environment.yml from bundled_pip_dependencies directory
-RUN rm /home/bento/bundled_pip_dependencies/environment.yml
+COPY --chown=bentoml:bentoml environment.yml bundled_pip_dependencies*  ./bundled_pip_dependencies/
+RUN rm ./bundled_pip_dependencies/environment.yml
 
 # Execute permission for scripts
-RUN chmod +x /home/bento/bentoml-init.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x ./bentoml-init.sh ./docker-entrypoint.sh
 
 # Install conda, pip dependencies and run user defined setup script
-RUN if [ -f /home/bento/bentoml-init.sh ]; then bash -c /home/bento/bentoml-init.sh; fi
+RUN if [ -f ./bentoml-init.sh ]; then bash -c ./bentoml-init.sh; fi
 
 # copy over model files
-COPY . /home/bento
+COPY --chown=bentoml:bentoml . ./
 
 # the env var $PORT is required by heroku container runtime
 ENV PORT 5000
 EXPOSE $PORT
 
-ENTRYPOINT [ "docker-entrypoint.sh" ]
-CMD ["bentoml", "serve-gunicorn", "/home/bento"]
+ENTRYPOINT [ "./docker-entrypoint.sh" ]
+CMD ["bentoml", "serve-gunicorn", "/home/bentoml"]
 """  # noqa: E501
 
 INIT_PY_TEMPLATE = """\

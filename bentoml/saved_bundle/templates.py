@@ -74,8 +74,12 @@ FROM {docker_base_image}
 # Configure PIP install arguments, e.g. --index-url, --trusted-url, --extra-index-url
 ARG EXTRA_PIP_INSTALL_ARGS=
 ENV EXTRA_PIP_INSTALL_ARGS $EXTRA_PIP_INSTALL_ARGS
-CMD useradd -m bento
-USER bento
+
+ARG UNAME=bento
+ARG UID=1034
+ARG GID=1034
+CMD groupadd -g $GID -o $UNAME && useradd -m -u $UID -g $GID -o -r $UNAME
+USER $UNAME
 
 # copy over files needed for init script
 COPY environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* /home/bento/

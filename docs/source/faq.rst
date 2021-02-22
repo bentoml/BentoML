@@ -54,7 +54,7 @@ BentoML packaged model can be easily deployed to SageMaker serving: https://docs
 How does BentoML compare to MLFlow?
 -----------------------------------
 
-MLFlow provides components that work great for experimentation management, ML project management. BentoML only focuses on serving and deploying trained models. You can, in fact, serve models logged in MLFlow experimentation with BentoML (we are working on related documentation)
+MLFlow provides components that work great for experimentation management, ML project management. BentoML only focuses on serving and deploying trained models. You can, in fact, serve models logged in MLFlow experimentation with BentoML (see the gallery for an `example <https://github.com/bentoml/gallery/blob/master/bentomlflow/mlflow-to-bentoml-example.ipynb>`_).
 
 Both BentoML and MLFlow can expose a trained model as a REST API server, but there are a few main differences:
 

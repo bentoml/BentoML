@@ -6,10 +6,12 @@ from mock import patch, Mock
 from bentoml.yatai.deployment.docker_utils import (
     ensure_docker_available_or_raise,
     build_docker_image,
+    push_docker_image_to_repository,
 )
 from bentoml.exceptions import MissingDependencyException, BentoMLException
 
 mock_image_tag = 'mytag:v1'
+mock_repository = f'repository.com/{mock_image_tag}'
 
 
 def test_ensure_docker_available_or_raise():
@@ -50,4 +52,18 @@ def test_build_docker_image():
             build_docker_image(context_path='', dockerfile='', image_tag=mock_image_tag)
         assert str(build_api_error.value).startswith(
             f'Failed to build docker image {mock_image_tag}'
+        )
+
+
+def test_push_docker_image_to_repository():
+    with patch('docker.from_env') as from_env_mock:
+        mock_docker_client = Mock()
+        mock_docker_client.images.push = Mock(
+            side_effect=docker.errors.APIError('API error')
+        )
+        from_env_mock.return_value = mock_docker_client
+        with pytest.raises(BentoMLException) as push_api_error:
+            push_docker_image_to_repository(mock_repository, image_tag=mock_image_tag)
+        assert str(push_api_error.value).startswith(
+            f'Failed to push docker image {mock_image_tag}'
         )

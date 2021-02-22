@@ -23,33 +23,6 @@ def ensure_docker_available_or_raise():
         )
 
 
-def process_docker_api_line(payload):
-    """ Process the output from API stream, throw an Exception if there is an error """
-    # Sometimes Docker sends to "{}\n" blocks together...
-    errors = []
-    for segment in payload.decode("utf-8").strip().split("\n"):
-        line = segment.strip()
-        if line:
-            try:
-                line_payload = json.loads(line)
-            except ValueError as e:
-                logger.warning("Could not decipher payload from Docker API: %s", str(e))
-            if line_payload:
-                if "errorDetail" in line_payload:
-                    error = line_payload["errorDetail"]
-                    error_msg = 'Error running docker command: {}: {}'.format(
-                        error["code"], error['message']
-                    )
-                    logger.error(error_msg)
-                    errors.append(error_msg)
-                elif "stream" in line_payload:
-                    logger.info(line_payload['stream'])
-
-    if errors:
-        error_msg = ";".join(errors)
-        raise BentoMLException("Error running docker command: {}".format(error_msg))
-
-
 def _strip_scheme(url):
     """ Stripe url's schema
     e.g.   http://some.url/path -> some.url/path

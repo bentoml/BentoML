@@ -8,7 +8,9 @@ from fastai.learner import Learner
 from fastai.torch_core import Module
 from torch import nn
 
-from tests.integration.fastai_utils import get_items
+
+def get_items(_x):
+    return np.ones([5, 5], np.float32)
 
 
 class Model(nn.Module):

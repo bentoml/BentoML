@@ -117,6 +117,8 @@ jobs:
           python-version: 3.7
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
+      - name: Install fastai
+        run: python -m pip install fastai
       - name: Run tests
         run: ./ci/test_project.sh tests/integration/projects/fastai2
       - name: Upload test coverage to Codecov

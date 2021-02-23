@@ -23,8 +23,8 @@ api_server:
   timeout: 60
 
 marshal_server:
-  max_batch_size: 2000
-  max_latency: 10000
+  max_batch_size: Null
+  max_latency: Null
   request_header_flag: BentoML-Is-Merged-Request
 
   #

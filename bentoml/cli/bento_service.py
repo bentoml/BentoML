@@ -56,12 +56,14 @@ batch_options = [
         type=click.INT,
         help="Specify micro batching maximal batch size.",
         envvar='BENTOML_MB_MAX_BATCH_SIZE',
+        default=None,
     ),
     click.option(
         '--mb-max-latency',
         type=click.INT,
         help="Specify micro batching maximal latency in milliseconds.",
         envvar='BENTOML_MB_MAX_LATENCY',
+        default=None,
     ),
 ]
 

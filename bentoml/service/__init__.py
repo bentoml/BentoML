@@ -26,12 +26,15 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
-from bentoml.saved_bundle.config import SavedBundleConfig
+from bentoml.saved_bundle.config import (
+    SavedBundleConfig,
+    DEFAULT_MAX_LATENCY,
+    DEFAULT_MAX_BATCH_SIZE,
+)
 from bentoml.saved_bundle.pip_pkg import seek_pip_packages
 from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
@@ -39,8 +42,6 @@ from bentoml.service.inference_api import InferenceAPI
 from bentoml.utils.hybridmethod import hybridmethod
 
 ARTIFACTS_DIR_NAME = "artifacts"
-DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
-DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 BENTOML_RESERVED_API_NAMES = [
     "index",
     "swagger",

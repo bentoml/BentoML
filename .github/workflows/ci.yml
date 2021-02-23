@@ -118,7 +118,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run tests
-        run: ./ci/fastai_integration_tests.sh
+        run: ./ci/test_project.sh tests/integration/projects/fastai2
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -158,7 +158,9 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run tests
-        run: ./ci/integration_tests.sh
+        run: ./ci/test_project.sh tests/integration/projects/general
+      - name: Run tests
+        run: ./ci/test_project.sh tests/integration/projects/general_non_batch
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

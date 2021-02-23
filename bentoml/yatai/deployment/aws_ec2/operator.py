@@ -137,6 +137,19 @@ def _make_cloudformation_template(
     return template_file_path
 
 
+def generate_ec2_resource_names(namespace, name):
+    sam_template_name = generate_aws_compatible_string(
+        f"btml-template-{namespace}-{name}"
+    )
+    deployment_stack_name = generate_aws_compatible_string(
+        f"btml-stack-{namespace}-{name}"
+    )
+    repo_name = generate_aws_compatible_string(f"btml-repo-{namespace}-{name}")
+    elb_name = generate_aws_compatible_string(f"{namespace}-{name}", max_length=32)
+
+    return sam_template_name, deployment_stack_name, repo_name, elb_name
+
+
 class AwsEc2DeploymentOperator(DeploymentOperatorBase):
     def deploy_service(
         self,
@@ -147,30 +160,12 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
         s3_bucket_name,
         region,
     ):
-        sam_template_name = generate_aws_compatible_string(
-            "btml-template-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            )
-        )
-
-        deployment_stack_name = generate_aws_compatible_string(
-            "btml-stack-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            )
-        )
-
-        repo_name = generate_aws_compatible_string(
-            "btml-repo-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            )
-        )
-
-        elb_name = generate_aws_compatible_string(
-            "{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            ),
-            max_length=32,
-        )
+        (
+            sam_template_name,
+            deployment_stack_name,
+            repo_name,
+            elb_name,
+        ) = generate_ec2_resource_names(deployment_pb.namespace, deployment_pb.name)
 
         with TempDirectory() as project_path:
             repository_id = create_ecr_repository_if_not_exists(region, repo_name)

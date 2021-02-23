@@ -4,7 +4,6 @@ import os
 import shutil
 
 import boto3
-import docker
 from botocore.exceptions import ClientError
 
 from bentoml.exceptions import (
@@ -21,8 +20,9 @@ from bentoml.yatai.deployment.utils import (
 )
 from bentoml.yatai.deployment.docker_utils import (
     ensure_docker_available_or_raise,
-    process_docker_api_line,
     generate_docker_image_tag,
+    push_docker_image_to_repository,
+    build_docker_image,
 )
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
@@ -128,23 +128,18 @@ def create_and_push_docker_image_to_ecr(
     registry_url, username, password = get_ecr_login_info(
         region, repository_id=repository_id
     )
-    auth_config_payload = {"username": username, "password": password}
-
-    docker_api = docker.APIClient()
 
     ecr_tag = generate_docker_image_tag(
         f'{bento_name}-sagemaker', bento_version, registry_url
     )
 
     logger.debug("Building docker image: %s", ecr_tag)
-    for line in docker_api.build(
-        path=snapshot_path, dockerfile="Dockerfile-sagemaker", tag=ecr_tag
-    ):
-        process_docker_api_line(line)
+    build_docker_image(snapshot_path, 'Dockerfile-sagemaker', ecr_tag)
 
     logger.debug("Pushing image to AWS ECR at %s", ecr_tag)
-    for line in docker_api.push(ecr_tag, stream=True, auth_config=auth_config_payload):
-        process_docker_api_line(line)
+    push_docker_image_to_repository(
+        repository=ecr_tag, username=username, password=password
+    )
     logger.debug("Finished pushing image: %s", ecr_tag)
     return ecr_tag
 

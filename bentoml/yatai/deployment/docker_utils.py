@@ -1,5 +1,4 @@
 import logging
-import json
 from urllib.parse import urlparse
 
 import docker

@@ -184,9 +184,13 @@ def mock_aws_services_for_sagemaker(func):
 
 def mock_sagemaker_deployment_wrapper(func):
     @mock_aws_services_for_sagemaker
-    @patch('subprocess.check_output', MagicMock())
-    @patch('docker.APIClient.build', MagicMock())
-    @patch('docker.APIClient.push', MagicMock())
+    @patch(
+        'bentoml.yatai.deployment.sagemaker.operator.build_docker_image', MagicMock()
+    )
+    @patch(
+        'bentoml.yatai.deployment.sagemaker.operator.push_docker_image_to_repository',
+        MagicMock(),
+    )
     @patch(
         'bentoml.yatai.deployment.sagemaker.operator._init_sagemaker_project',
         MagicMock(),

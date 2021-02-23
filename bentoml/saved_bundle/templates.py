@@ -80,6 +80,7 @@ ARG GID=1034
 RUN groupadd -g $GID -o bentoml && useradd -m -u $UID -g $GID -o -r bentoml
 USER bentoml
 WORKDIR /home/bentoml
+ENV BENTOML_HOME=/home/bentoml/var/
 
 # copy over files needed for init script
 COPY --chown=bentoml:bentoml environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* ./

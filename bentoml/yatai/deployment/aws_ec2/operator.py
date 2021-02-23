@@ -36,6 +36,7 @@ from bentoml.yatai.deployment.aws_utils import (
     get_aws_user_id,
     create_ecr_repository_if_not_exists,
     get_ecr_login_info,
+    describe_cloudformation_stack,
 )
 from bentoml.utils.docker_utils import containerize_bento_service
 from bentoml.exceptions import (
@@ -307,22 +308,15 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             if not ec2_deployment_config.region:
                 raise InvalidArgument("AWS region is missing")
 
-            # delete stack
-            deployment_stack_name = generate_aws_compatible_string(
-                "btml-stack-{namespace}-{name}".format(
-                    namespace=deployment_pb.namespace, name=deployment_pb.name
-                )
+            _, deployment_stack_name, repository_name, _ = generate_ec2_resource_names(
+                deployment_pb.namespace, deployment_pb.name
             )
+            # delete stack
             delete_cloudformation_stack(
                 deployment_stack_name, ec2_deployment_config.region
             )
 
             # delete repo from ecr
-            repository_name = generate_aws_compatible_string(
-                "btml-repo-{namespace}-{name}".format(
-                    namespace=deployment_pb.namespace, name=deployment_pb.name
-                )
-            )
             delete_ecr_repository(repository_name, ec2_deployment_config.region)
 
             # remove bucket
@@ -436,10 +430,8 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             bento_service_metadata = bento_pb.bento.bento_service_metadata
             api_names = [api.name for api in bento_service_metadata.apis]
 
-            deployment_stack_name = generate_aws_compatible_string(
-                "btml-stack-{namespace}-{name}".format(
-                    namespace=deployment_pb.namespace, name=deployment_pb.name
-                )
+            _, deployment_stack_name, _, _ = generate_ec2_resource_names(
+                deployment_pb.namespace, deployment_pb.name
             )
             try:
                 cf_client = boto3.client("cloudformation", ec2_deployment_config.region)

@@ -143,7 +143,7 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
   api_server_integration_tests:
-    name: ${{ matrix.os }} API Server Integration Tests
+    name: API Server Integration Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -167,7 +167,7 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
   back_compatibility_integration_tests:
-    name: ${{ matrix.os }} Back Compatibility Integration Tests
+    name: Backward Compatibility Integration Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

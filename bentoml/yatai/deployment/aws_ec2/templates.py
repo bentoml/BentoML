@@ -241,4 +241,4 @@ runcmd:
 - docker run -p {bentoservice_port}:{bentoservice_port} {tag}
 
 --==MYBOUNDARY==--
-"""
+"""  # noqa: E501

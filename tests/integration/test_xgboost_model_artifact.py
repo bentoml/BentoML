@@ -82,7 +82,7 @@ def xgboost_svc_saved_dir(tmp_path_factory, xgboost_svc):
     return tmpdir
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def xgboost_svc_loaded(xgboost_svc_saved_dir):
     return bentoml.load(xgboost_svc_saved_dir)
 
@@ -93,7 +93,7 @@ def test_xgboost_artifact(xgboost_svc_loaded):
     assert result == 1
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def xgboost_image(xgboost_svc_saved_dir):
     import docker
 

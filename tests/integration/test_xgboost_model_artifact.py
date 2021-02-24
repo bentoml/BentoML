@@ -93,7 +93,7 @@ def test_xgboost_artifact(xgboost_svc_loaded):
     assert result == 1
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def xgboost_image(xgboost_svc_saved_dir):
     import docker
 

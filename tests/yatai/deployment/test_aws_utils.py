@@ -1,12 +1,14 @@
 import boto3
+import pytest
 from botocore.exceptions import ClientError
 from mock import patch
 
-from bentoml.exceptions import AWSServiceError
+from bentoml.exceptions import AWSServiceError, BentoMLException
 from bentoml.yatai.deployment.aws_utils import (
     create_ecr_repository_if_not_exists,
     get_ecr_login_info,
     generate_bentoml_exception_from_aws_client_error,
+    describe_cloudformation_stack,
 )
 
 mock_s3_bucket_name = 'test_deployment_bucket'
@@ -22,6 +24,8 @@ mock_repository_auth_token = "YWJjOjEyMw=="
 mock_repository_endpoint = (
     "https://752014255238.dkr.ecr.ap-south-1.amazonaws.com/bento-iris"
 )
+mock_stack_name = 'mock_stack'
+mock_stack_info = 'abc'
 
 
 def test_create_ecr_repository_if_not_exists():
@@ -92,3 +96,36 @@ def test_generate_bentoml_exception_from_aws_client_error():
     )
     exception = generate_bentoml_exception_from_aws_client_error(error)
     assert isinstance(exception, AWSServiceError)
+
+
+def test_describe_cloudformation_stack():
+    def mock_cf_client_success(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "DescribeStacks":
+            return {"stacks": [mock_stack_info]}
+
+    with patch("botocore.client.BaseClient._make_api_call", new=mock_cf_client_success):
+        stack_result = describe_cloudformation_stack(mock_region, mock_stack_name)
+        assert stack_result == mock_stack_info
+
+    def mock_cf_client_too_many(self, op_name, args):  # pylint: disable=unused-argument
+        if op_name == "DescribeStacks":
+            return {"stacks": [mock_stack_info, 'another stack']}
+
+    with patch(
+        "botocore.client.BaseClient._make_api_call", new=mock_cf_client_too_many
+    ):
+        with pytest.raises(BentoMLException) as error:
+            describe_cloudformation_stack(mock_region, mock_stack_name)
+        assert f'Found more than one cloudformation stack for {mock_stack_name}' in str(
+            error.value
+        )
+
+    with patch("botocore.client.BaseClient._make_api_call") as mock_client_call:
+        mock_client_call.side_effect = ClientError(
+            operation_name='DescribeStacks', error_response={}
+        )
+        with pytest.raises(BentoMLException) as error:
+            describe_cloudformation_stack(mock_region, mock_stack_name)
+        assert f'Failed to describe CloudFormation {mock_stack_name}' in str(
+            error.value
+        )

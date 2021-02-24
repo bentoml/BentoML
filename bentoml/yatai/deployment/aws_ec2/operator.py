@@ -1,5 +1,4 @@
 import os
-import boto3
 import base64
 import json
 import logging
@@ -151,83 +150,79 @@ def generate_ec2_resource_names(namespace, name):
     return sam_template_name, deployment_stack_name, repo_name, elb_name
 
 
-class AwsEc2DeploymentOperator(DeploymentOperatorBase):
-    def deploy_service(
-        self,
-        deployment_pb,
-        deployment_spec,
-        bento_path,
-        aws_ec2_deployment_config,
-        s3_bucket_name,
-        region,
-    ):
-        (
+def deploy_ec2_service(
+    deployment_pb,
+    deployment_spec,
+    bento_path,
+    aws_ec2_deployment_config,
+    s3_bucket_name,
+    region,
+):
+    (
+        sam_template_name,
+        deployment_stack_name,
+        repo_name,
+        elb_name,
+    ) = generate_ec2_resource_names(deployment_pb.namespace, deployment_pb.name)
+
+    with TempDirectory() as project_path:
+        repository_id = create_ecr_repository_if_not_exists(region, repo_name)
+        repository_url, username, password = get_ecr_login_info(region, repository_id)
+
+        registry_domain = repository_url.replace("https://", "")
+        push_tag = f"{registry_domain}/{repo_name}"
+        pull_tag = push_tag + f":{deployment_spec.bento_version}"
+
+        logger.info("Containerizing service")
+        containerize_bento_service(
+            bento_name=deployment_spec.bento_name,
+            bento_version=deployment_spec.bento_version,
+            saved_bundle_path=bento_path,
+            push=True,
+            tag=push_tag,
+            build_arg={},
+            username=username,
+            password=password,
+        )
+
+        logger.info("Generating user data")
+        encoded_user_data = _make_user_data(repository_url, pull_tag, region)
+
+        logger.info("Making template")
+        template_file_path = _make_cloudformation_template(
+            project_path,
+            encoded_user_data,
+            s3_bucket_name,
             sam_template_name,
-            deployment_stack_name,
-            repo_name,
             elb_name,
-        ) = generate_ec2_resource_names(deployment_pb.namespace, deployment_pb.name)
+            aws_ec2_deployment_config.ami_id,
+            aws_ec2_deployment_config.instance_type,
+            aws_ec2_deployment_config.autoscale_min_size,
+            aws_ec2_deployment_config.autoscale_desired_capacity,
+            aws_ec2_deployment_config.autoscale_max_size,
+        )
+        validate_sam_template(
+            sam_template_name, aws_ec2_deployment_config.region, project_path
+        )
 
-        with TempDirectory() as project_path:
-            repository_id = create_ecr_repository_if_not_exists(region, repo_name)
-            repository_url, username, password = get_ecr_login_info(
-                region, repository_id
-            )
+        logger.info("Building service")
+        build_template(
+            template_file_path, project_path, aws_ec2_deployment_config.region
+        )
 
-            registry_domain = repository_url.replace("https://", "")
-            push_tag = f"{registry_domain}/{repo_name}"
-            pull_tag = push_tag + f":{deployment_spec.bento_version}"
+        logger.info("Packaging service")
+        package_template(s3_bucket_name, project_path, aws_ec2_deployment_config.region)
 
-            logger.info("Containerizing service")
-            containerize_bento_service(
-                bento_name=deployment_spec.bento_name,
-                bento_version=deployment_spec.bento_version,
-                saved_bundle_path=bento_path,
-                push=True,
-                tag=push_tag,
-                build_arg={},
-                username=username,
-                password=password,
-            )
+        logger.info("Deploying service")
+        deploy_template(
+            deployment_stack_name,
+            s3_bucket_name,
+            project_path,
+            aws_ec2_deployment_config.region,
+        )
 
-            logger.info("Generating user data")
-            encoded_user_data = _make_user_data(repository_url, pull_tag, region)
 
-            logger.info("Making template")
-            template_file_path = _make_cloudformation_template(
-                project_path,
-                encoded_user_data,
-                s3_bucket_name,
-                sam_template_name,
-                elb_name,
-                aws_ec2_deployment_config.ami_id,
-                aws_ec2_deployment_config.instance_type,
-                aws_ec2_deployment_config.autoscale_min_size,
-                aws_ec2_deployment_config.autoscale_desired_capacity,
-                aws_ec2_deployment_config.autoscale_max_size,
-            )
-            validate_sam_template(
-                sam_template_name, aws_ec2_deployment_config.region, project_path
-            )
-
-            logger.info("Building service")
-            build_template(
-                template_file_path, project_path, aws_ec2_deployment_config.region
-            )
-
-            logger.info("Packaging service")
-            package_template(
-                s3_bucket_name, project_path, aws_ec2_deployment_config.region
-            )
-
-            logger.info("Deploying service")
-            deploy_template(
-                deployment_stack_name,
-                s3_bucket_name,
-                project_path,
-                aws_ec2_deployment_config.region,
-            )
-
+class AwsEc2DeploymentOperator(DeploymentOperatorBase):
     def add(self, deployment_pb):
         try:
             deployment_spec = deployment_pb.spec
@@ -282,7 +277,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             create_s3_bucket_if_not_exists(
                 artifact_s3_bucket_name, aws_ec2_deployment_config.region
             )
-            self.deploy_service(
+            deploy_ec2_service(
                 deployment_pb,
                 deployment_spec,
                 bento_path,
@@ -400,7 +395,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 "it exists and try again"
             )
 
-        self.deploy_service(
+        deploy_ec2_service(
             deployment_pb,
             updated_deployment_spec,
             bento_path,
@@ -434,12 +429,9 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 deployment_pb.namespace, deployment_pb.name
             )
             try:
-                cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
-                cloudformation_stack_result = cf_client.describe_stacks(
-                    StackName=deployment_stack_name
+                stack_result = describe_cloudformation_stack(
+                    ec2_deployment_config.region, deployment_stack_name
                 )
-                stack_result = cloudformation_stack_result.get("Stacks")[0]
-
                 if stack_result.get("Outputs"):
                     outputs = stack_result.get("Outputs")
                 else:

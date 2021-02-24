@@ -79,8 +79,9 @@ ARG UID=1034
 ARG GID=1034
 RUN groupadd -g $GID -o bentoml && useradd -m -u $UID -g $GID -o -r bentoml
 
-ENV BENTOML_HOME=/home/bentoml/
 ARG BUNDLE_PATH=/home/bentoml/bundle
+ENV BUNDLE_PATH=$BUNDLE_PATH
+ENV BENTOML_HOME=/home/bentoml/
 
 RUN mkdir $BUNDLE_PATH && chown bentoml:bentoml $BUNDLE_PATH -R
 WORKDIR $BUNDLE_PATH

@@ -12,7 +12,7 @@ _is_sourced() {
 _main() {
   # if first arg looks like a flag, assume we want to start bentoml YataiService
   if [ "${1:0:1}" = '-' ]; then
-    set -- bentoml serve-gunicorn "$@" /home/bentoml
+    set -- bentoml serve-gunicorn "$@" $BUNDLE_PATH
   fi
 
   # Set BentoML API server port via env var

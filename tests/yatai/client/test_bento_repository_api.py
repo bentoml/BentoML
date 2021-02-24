@@ -1,22 +1,22 @@
 # pylint: disable=redefined-outer-name
-import os
-import sys
 import logging
+import os
 import signal
 import subprocess
+import sys
 import time
 import uuid
+
 import psutil  # noqa # pylint: disable=unused-import
 import pytest
 
-import docker
-
 import bentoml
-from bentoml.saved_bundle.loader import load_from_dir
+import docker
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
+from bentoml.exceptions import InvalidArgument
+from bentoml.saved_bundle.loader import load_from_dir
 from bentoml.yatai.client import get_yatai_client
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
-from bentoml.exceptions import InvalidArgument
 from bentoml.yatai.label_store import _validate_labels
 
 logger = logging.getLogger('bentoml.test')
@@ -45,7 +45,7 @@ def test_validate_labels_pass():
     _validate_labels({'create_by': 'admin', 'py.version': '3.6.8'})
 
 
-def wait_until_container_ready(container_name, check_message, timeout_seconds=60):
+def wait_until_container_ready(container_name, check_message, timeout_seconds=120):
     docker_client = docker.from_env()
 
     start_time = time.time()
@@ -97,7 +97,7 @@ def yatai_server_container():
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     wait_until_container_ready(
-        container_name, b'* Starting BentoML YataiService gRPC Server'
+        container_name, b'* Starting BentoML YataiService gRPC Server', 120
     )
 
     yield f'localhost:{port}'

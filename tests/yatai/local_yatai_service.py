@@ -6,7 +6,6 @@ import time
 import uuid
 
 import docker
-
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
@@ -14,7 +13,7 @@ from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_rai
 logger = logging.getLogger('bentoml.test')
 
 
-def wait_until_container_ready(docker_container, timeout_seconds=60):
+def wait_until_container_ready(docker_container, timeout_seconds=120):
     start_time = time.time()
     while True:
         time.sleep(1)

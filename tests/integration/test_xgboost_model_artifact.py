@@ -7,7 +7,10 @@ import xgboost as xgb
 
 import bentoml
 from tests.bento_service_examples.xgboost_classifier import XgboostModelClassifier
-from tests.integration.utils import run_api_server_docker_container
+from tests.integration.utils import (
+    build_api_server_docker_image,
+    run_api_server_docker_container,
+)
 
 
 def XgboostModel():
@@ -95,15 +98,10 @@ def test_xgboost_artifact(xgboost_svc_loaded):
 
 @pytest.fixture(scope="module")
 def xgboost_image(xgboost_svc_saved_dir):
-    import docker
-
-    client = docker.from_env()
-
-    image = client.images.build(
-        path=xgboost_svc_saved_dir, tag='xgboost_example_service', rm=True
-    )[0]
-    yield image
-    client.images.remove(image.id)
+    with build_api_server_docker_image(
+        xgboost_svc_saved_dir, "xgboost_example_service"
+    ) as image:
+        yield image
 
 
 def _wait_until_ready(_host, timeout, check_interval=0.5):

@@ -16,7 +16,6 @@ import logging
 import psutil
 
 from flask import Response
-from gunicorn.app.base import Application
 
 from bentoml import config
 from bentoml.saved_bundle import load_from_dir
@@ -41,6 +40,7 @@ class GunicornBentoAPIServer(BentoAPIServer):
 
 
 if psutil.POSIX:
+    from gunicorn.app.base import Application
 
     class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         """

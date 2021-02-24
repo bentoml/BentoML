@@ -16,8 +16,6 @@ import logging
 import multiprocessing
 import psutil
 
-from gunicorn.app.base import Application
-
 from bentoml import config
 from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
@@ -37,6 +35,7 @@ marshal_logger = logging.getLogger("bentoml.marshal")
 
 
 if psutil.POSIX:
+    from gunicorn.app.base import Application
 
     class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         def __init__(

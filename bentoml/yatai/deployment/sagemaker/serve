@@ -69,7 +69,7 @@ if __name__ == '__main__':
     container = BentoMLContainer()
     config = BentoMLConfiguration()
     if "BENTOML_GUNICORN_TIMEOUT" in os.environ:
-        config.override(["api_server", "port"], int(os.environ.get("BENTOML_GUNICORN_TIMEOUT")))
+        config.override(["api_server", "timeout"], int(os.environ.get("BENTOML_GUNICORN_TIMEOUT")))
     if "BENTOML_GUNICORN_NUM_OF_WORKERS" in os.environ:
         config.override(["api_server", "workers"], int(os.environ.get("BENTOML_GUNICORN_NUM_OF_WORKERS")))
     container.config.from_dict(config.as_dict())

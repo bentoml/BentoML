@@ -1,5 +1,3 @@
-import pytest
-import psutil  # noqa # pylint: disable=unused-import
 from click.testing import CliRunner
 from mock import MagicMock, patch
 
@@ -110,7 +108,6 @@ def test_track_cli_with_click_exception():
         assert properties['return_code'] == 1
 
 
-@pytest.mark.skipif('not psutil.POSIX')
 def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
     with patch('bentoml.cli.click_utils.track') as track:
         track.side_effect = mock_track_func

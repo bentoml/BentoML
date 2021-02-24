@@ -78,26 +78,34 @@ ENV EXTRA_PIP_INSTALL_ARGS $EXTRA_PIP_INSTALL_ARGS
 ARG UID=1034
 ARG GID=1034
 RUN groupadd -g $GID -o bentoml && useradd -m -u $UID -g $GID -o -r bentoml
-USER bentoml
-WORKDIR /home/bentoml
-ENV BENTOML_HOME=/home/bentoml/var/
 
-# copy over files needed for init script
-COPY --chown=bentoml:bentoml environment.yml requirements.txt setup.sh* bentoml-init.sh python_version* ./
+ENV BENTOML_HOME=/home/bentoml/
+ARG BUNDLE_PATH=/home/bentoml/bundle
 
-# copy over entrypoint scripts
-COPY --chown=bentoml:bentoml docker-entrypoint.sh ./
+RUN mkdir $BUNDLE_PATH && chown bentoml:bentoml $BUNDLE_PATH -R
+WORKDIR $BUNDLE_PATN
 
-# Copy environment.yml, because bundled_pip_dependencies might not exist. This
-# prevent COPY command from failing.
-COPY --chown=bentoml:bentoml environment.yml bundled_pip_dependencies*  ./bundled_pip_dependencies/
-RUN rm ./bundled_pip_dependencies/environment.yml
-
-# Execute permission for scripts
+COPY --chown=bentoml:bentoml bentoml-init.sh docker-entrypoint.sh ./
 RUN chmod +x ./bentoml-init.sh ./docker-entrypoint.sh
 
-# Install conda, pip dependencies and run user defined setup script
-RUN if [ -f ./bentoml-init.sh ]; then bash -c ./bentoml-init.sh; fi
+# Copy bentoml-init.sh again, because setup.sh might not exist. This
+# prevent COPY command from failing.
+# copy over files needed for init script; copy over entrypoint scripts
+COPY --chown=bentoml:bentoml bentoml-init.sh setup.s[h] ./
+RUN ./bentoml-init.sh setup.sh
+
+COPY --chown=bentoml:bentoml bentoml-init.sh python_versio[n] ./
+RUN ./bentoml-init.sh python_version
+
+COPY --chown=bentoml:bentoml environment.yml ./
+RUN ./bentoml-init.sh environment.yml
+
+COPY --chown=bentoml:bentoml requirements.txt ./
+RUN ./bentoml-init.sh requirements.txt
+
+COPY --chown=bentoml:bentoml bentoml-init.sh bundled_pip_dependencie[s]  ./bundled_pip_dependencies/
+RUN rm ./bundled_pip_dependencies/bentoml-init.sh
+RUN ./bentoml-init.sh bundled_pip_dependencies
 
 # copy over model files
 COPY --chown=bentoml:bentoml . ./
@@ -106,8 +114,9 @@ COPY --chown=bentoml:bentoml . ./
 ENV PORT 5000
 EXPOSE $PORT
 
+USER bentoml
 ENTRYPOINT [ "./docker-entrypoint.sh" ]
-CMD ["bentoml", "serve-gunicorn", "/home/bentoml"]
+CMD ["bentoml", "serve-gunicorn", "./"]
 """  # noqa: E501
 
 INIT_PY_TEMPLATE = """\

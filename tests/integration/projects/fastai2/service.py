@@ -24,7 +24,7 @@ if __name__ == "__main__":
     bento_dist_path = sys.argv[2]
     service = FastaiClassifier()
 
-    from model.model import Model
+    from model.model import Loss, Model
 
     service.artifacts.load_all(artifacts_path)
 

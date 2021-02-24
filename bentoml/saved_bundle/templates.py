@@ -83,7 +83,7 @@ ENV BENTOML_HOME=/home/bentoml/
 ARG BUNDLE_PATH=/home/bentoml/bundle
 
 RUN mkdir $BUNDLE_PATH && chown bentoml:bentoml $BUNDLE_PATH -R
-WORKDIR $BUNDLE_PATN
+WORKDIR $BUNDLE_PATH
 
 COPY --chown=bentoml:bentoml bentoml-init.sh docker-entrypoint.sh ./
 RUN chmod +x ./bentoml-init.sh ./docker-entrypoint.sh

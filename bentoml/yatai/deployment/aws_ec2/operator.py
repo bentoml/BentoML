@@ -1,5 +1,4 @@
 import os
-import boto3
 import base64
 import json
 import logging
@@ -8,6 +7,10 @@ from bentoml.utils.tempdir import TempDirectory
 
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.saved_bundle import loader
+from bentoml.yatai.deployment.aws_ec2.templates import (
+    EC2_CLOUDFORMATION_TEMPLATE,
+    EC2_USER_INIT_SCRIPT,
+)
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
@@ -32,6 +35,7 @@ from bentoml.yatai.deployment.aws_utils import (
     get_aws_user_id,
     create_ecr_repository_if_not_exists,
     get_ecr_login_info,
+    describe_cloudformation_stack,
 )
 from bentoml.utils.docker_utils import containerize_bento_service
 from bentoml.exceptions import (
@@ -73,28 +77,7 @@ def _make_user_data(registry, tag, region):
         region: AWS region
     """
 
-    base_format = """MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=\"==MYBOUNDARY==\"
-
---==MYBOUNDARY==
-Content-Type: text/cloud-config; charset=\"us-ascii\"
-
-runcmd:
-
-- sudo yum update -y
-- sudo amazon-linux-extras install docker -y
-- sudo service docker start
-- sudo usermod -a -G docker ec2-user
-- curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-- unzip awscliv2.zip
-- sudo ./aws/install
-- ln -s /usr/bin/aws aws
-- aws ecr get-login-password --region {region}|docker login --username AWS --password-stdin {registry}
-- docker pull {tag}
-- docker run -p {bentoservice_port}:{bentoservice_port} {tag}
-
---==MYBOUNDARY==--
-""".format(  # noqa: E501
+    base_format = EC2_USER_INIT_SCRIPT.format(
         registry=registry, tag=tag, region=region, bentoservice_port=BENTOSERVICE_PORT
     )
     encoded = base64.b64encode(base_format.encode("ascii")).decode("ascii")
@@ -134,226 +117,7 @@ def _make_cloudformation_template(
     template_file_path = os.path.join(project_dir, sam_template_name)
     with open(template_file_path, "a") as f:
         f.write(
-            """\
-AWSTemplateFormatVersion: 2010-09-09
-Transform: AWS::Serverless-2016-10-31
-Description: BentoML load balanced template
-Parameters:
-    AmazonLinux2LatestAmiId:
-        Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-        Default: {ami_id}
-Resources:
-    SecurityGroupResource:
-        Type: AWS::EC2::SecurityGroup
-        Properties:
-            GroupDescription: "security group for bentoservice"
-            SecurityGroupIngress:
-                -
-                    IpProtocol: tcp
-                    CidrIp: 0.0.0.0/0
-                    FromPort: 5000
-                    ToPort: 5000
-                -
-                    IpProtocol: tcp
-                    CidrIp: 0.0.0.0/0
-                    FromPort: 22
-                    ToPort: 22
-            VpcId: !Ref Vpc1
-
-    Ec2InstanceECRProfile:
-        Type: AWS::IAM::InstanceProfile
-        Properties:
-            Path: /
-            Roles: [!Ref EC2Role]
-
-    EC2Role:
-        Type: AWS::IAM::Role
-        Properties:
-            AssumeRolePolicyDocument:
-                Statement:
-                    -   Effect: Allow
-                        Principal:
-                            Service: [ec2.amazonaws.com]
-                        Action: ['sts:AssumeRole']
-            Path: /
-            Policies:
-                -   PolicyName: ecs-service
-                    PolicyDocument:
-                        Statement:
-                            -   Effect: Allow
-                                Action:
-                                    -   'ecr:GetAuthorizationToken'
-                                    -   'ecr:BatchGetImage'
-                                    -   'ecr:GetDownloadUrlForLayer'
-                                Resource: '*'
-
-    LaunchTemplateResource:
-        Type: AWS::EC2::LaunchTemplate
-        Properties:
-            LaunchTemplateName: {template_name}
-            LaunchTemplateData:
-                IamInstanceProfile:
-                    Arn: !GetAtt Ec2InstanceECRProfile.Arn
-                ImageId: !Ref AmazonLinux2LatestAmiId
-                InstanceType: {instance_type}
-                UserData: "{user_data}"
-                SecurityGroupIds:
-                - !GetAtt SecurityGroupResource.GroupId
-
-    TargetGroup:
-        Type: AWS::ElasticLoadBalancingV2::TargetGroup
-        Properties:
-            VpcId: !Ref Vpc1
-            Protocol: HTTP
-            Port: 5000
-            TargetType: instance
-            HealthCheckEnabled: true
-            HealthCheckIntervalSeconds: {target_health_check_interval_seconds}
-            HealthCheckPath: {target_health_check_path}
-            HealthCheckPort: {target_health_check_port}
-            HealthCheckProtocol: HTTP
-            HealthCheckTimeoutSeconds: {target_health_check_timeout_seconds}
-            HealthyThresholdCount: {target_health_check_threshold_count}
-
-    LoadBalancerSecurityGroup:
-        Type: AWS::EC2::SecurityGroup
-        Properties:
-            GroupDescription: "security group for loadbalancing"
-            VpcId: !Ref Vpc1
-            SecurityGroupIngress:
-                -
-                    IpProtocol: tcp
-                    CidrIp: 0.0.0.0/0
-                    FromPort: 80
-                    ToPort: 80
-
-    InternetGateway:
-        Type: AWS::EC2::InternetGateway
-
-    Gateway:
-        Type: AWS::EC2::VPCGatewayAttachment
-        Properties:
-            InternetGatewayId: !Ref InternetGateway
-            VpcId: !Ref Vpc1
-
-    PublicRouteTable:
-        Type: AWS::EC2::RouteTable
-        Properties:
-            VpcId: !Ref Vpc1
-
-    PublicRoute:
-        Type: AWS::EC2::Route
-        DependsOn: Gateway
-        Properties:
-            DestinationCidrBlock: 0.0.0.0/0
-            GatewayId: !Ref InternetGateway
-            RouteTableId: !Ref PublicRouteTable
-
-    RouteTableSubnetTwoAssociationOne:
-        Type: AWS::EC2::SubnetRouteTableAssociation
-        Properties:
-          RouteTableId: !Ref PublicRouteTable
-          SubnetId: !Ref Subnet1
-    RouteTableSubnetTwoAssociationTwo:
-        Type: AWS::EC2::SubnetRouteTableAssociation
-        Properties:
-          RouteTableId: !Ref PublicRouteTable
-          SubnetId: !Ref Subnet2
-
-    Vpc1:
-        Type: AWS::EC2::VPC
-        Properties:
-            CidrBlock: 172.31.0.0/16
-            EnableDnsHostnames: true
-            EnableDnsSupport: true
-            InstanceTenancy: default
-
-    Subnet1:
-        Type: AWS::EC2::Subnet
-        Properties:
-            VpcId: !Ref Vpc1
-            AvailabilityZone:
-                Fn::Select:
-                    - 0
-                    - Fn::GetAZs: ""
-            CidrBlock: 172.31.16.0/20
-            MapPublicIpOnLaunch: true
-
-    Subnet2:
-        Type: AWS::EC2::Subnet
-        Properties:
-            VpcId: !Ref Vpc1
-            AvailabilityZone:
-                Fn::Select:
-                    - 1
-                    - Fn::GetAZs: ""
-            CidrBlock: 172.31.0.0/20
-            MapPublicIpOnLaunch: true
-
-    LoadBalancer:
-        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-        Properties:
-            IpAddressType: ipv4
-            Name: {elb_name}
-            Scheme: internet-facing
-            SecurityGroups:
-                - !Ref LoadBalancerSecurityGroup
-            Subnets:
-                - !Ref Subnet1
-                - !Ref Subnet2
-            Type: application
-
-    Listener:
-        Type: AWS::ElasticLoadBalancingV2::Listener
-        Properties:
-            DefaultActions:
-                -   Type: forward
-                    TargetGroupArn: !Ref TargetGroup
-            LoadBalancerArn: !Ref LoadBalancer
-            Port: 80
-            Protocol: HTTP
-
-    AutoScalingGroup:
-        Type: AWS::AutoScaling::AutoScalingGroup
-        DependsOn: Gateway
-        Properties:
-            MinSize: {autoscaling_min_size}
-            MaxSize: {autoscaling_max_size}
-            DesiredCapacity: {autoscaling_desired_capacity}
-            AvailabilityZones:
-                - Fn::Select:
-                    - 0
-                    - Fn::GetAZs: ""
-                - Fn::Select:
-                    - 1
-                    - Fn::GetAZs: ""
-            LaunchTemplate:
-                LaunchTemplateId: !Ref LaunchTemplateResource
-                Version: !GetAtt LaunchTemplateResource.LatestVersionNumber
-            TargetGroupARNs:
-                - !Ref TargetGroup
-            VPCZoneIdentifier:
-            - !Ref Subnet1
-            - !Ref Subnet2
-        UpdatePolicy:
-            AutoScalingReplacingUpdate:
-                WillReplace: true
-
-Outputs:
-    S3Bucket:
-        Value: {s3_bucket_name}
-        Description: Bucket to store sam artifacts
-    AutoScalingGroup:
-        Value: !Ref AutoScalingGroup
-        Description: Autoscaling group name
-    TargetGroup:
-        Value: !Ref TargetGroup
-        Description: Target group for load balancer
-    Url:
-        Value: !Join ['', ['http://', !GetAtt [LoadBalancer, DNSName]]]
-        Description: URL of the bento service
-
-""".format(
+            EC2_CLOUDFORMATION_TEMPLATE.format(
                 ami_id=ami_id,
                 template_name=sam_template_name,
                 instance_type=instance_type,
@@ -373,101 +137,92 @@ Outputs:
     return template_file_path
 
 
+def generate_ec2_resource_names(namespace, name):
+    sam_template_name = generate_aws_compatible_string(
+        f"btml-template-{namespace}-{name}"
+    )
+    deployment_stack_name = generate_aws_compatible_string(
+        f"btml-stack-{namespace}-{name}"
+    )
+    repo_name = generate_aws_compatible_string(f"btml-repo-{namespace}-{name}")
+    elb_name = generate_aws_compatible_string(f"{namespace}-{name}", max_length=32)
+
+    return sam_template_name, deployment_stack_name, repo_name, elb_name
+
+
+def deploy_ec2_service(
+    deployment_pb,
+    deployment_spec,
+    bento_path,
+    aws_ec2_deployment_config,
+    s3_bucket_name,
+    region,
+):
+    (
+        sam_template_name,
+        deployment_stack_name,
+        repo_name,
+        elb_name,
+    ) = generate_ec2_resource_names(deployment_pb.namespace, deployment_pb.name)
+
+    with TempDirectory() as project_path:
+        repository_id = create_ecr_repository_if_not_exists(region, repo_name)
+        repository_url, username, password = get_ecr_login_info(region, repository_id)
+
+        registry_domain = repository_url.replace("https://", "")
+        push_tag = f"{registry_domain}/{repo_name}"
+        pull_tag = push_tag + f":{deployment_spec.bento_version}"
+
+        logger.info("Containerizing service")
+        containerize_bento_service(
+            bento_name=deployment_spec.bento_name,
+            bento_version=deployment_spec.bento_version,
+            saved_bundle_path=bento_path,
+            push=True,
+            tag=push_tag,
+            build_arg={},
+            username=username,
+            password=password,
+        )
+
+        logger.info("Generating user data")
+        encoded_user_data = _make_user_data(repository_url, pull_tag, region)
+
+        logger.info("Making template")
+        template_file_path = _make_cloudformation_template(
+            project_path,
+            encoded_user_data,
+            s3_bucket_name,
+            sam_template_name,
+            elb_name,
+            aws_ec2_deployment_config.ami_id,
+            aws_ec2_deployment_config.instance_type,
+            aws_ec2_deployment_config.autoscale_min_size,
+            aws_ec2_deployment_config.autoscale_desired_capacity,
+            aws_ec2_deployment_config.autoscale_max_size,
+        )
+        validate_sam_template(
+            sam_template_name, aws_ec2_deployment_config.region, project_path
+        )
+
+        logger.info("Building service")
+        build_template(
+            template_file_path, project_path, aws_ec2_deployment_config.region
+        )
+
+        logger.info("Packaging service")
+        package_template(s3_bucket_name, project_path, aws_ec2_deployment_config.region)
+
+        logger.info("Deploying service")
+        deploy_template(
+            deployment_stack_name,
+            s3_bucket_name,
+            project_path,
+            aws_ec2_deployment_config.region,
+        )
+
+
 class AwsEc2DeploymentOperator(DeploymentOperatorBase):
-    def deploy_service(
-        self,
-        deployment_pb,
-        deployment_spec,
-        bento_path,
-        aws_ec2_deployment_config,
-        s3_bucket_name,
-        region,
-    ):
-        sam_template_name = generate_aws_compatible_string(
-            "btml-template-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            )
-        )
-
-        deployment_stack_name = generate_aws_compatible_string(
-            "btml-stack-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            )
-        )
-
-        repo_name = generate_aws_compatible_string(
-            "btml-repo-{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            )
-        )
-
-        elb_name = generate_aws_compatible_string(
-            "{namespace}-{name}".format(
-                namespace=deployment_pb.namespace, name=deployment_pb.name
-            ),
-            max_length=32,
-        )
-
-        with TempDirectory() as project_path:
-            repository_id = create_ecr_repository_if_not_exists(region, repo_name)
-            repository_url, username, password = get_ecr_login_info(
-                region, repository_id
-            )
-
-            registry_domain = repository_url.replace("https://", "")
-            push_tag = f"{registry_domain}/{repo_name}"
-            pull_tag = push_tag + f":{deployment_spec.bento_version}"
-
-            logger.info("Containerizing service")
-            containerize_bento_service(
-                bento_name=deployment_spec.bento_name,
-                bento_version=deployment_spec.bento_version,
-                saved_bundle_path=bento_path,
-                push=True,
-                tag=push_tag,
-                build_arg={},
-                username=username,
-                password=password,
-            )
-
-            logger.info("Generating user data")
-            encoded_user_data = _make_user_data(repository_url, pull_tag, region)
-
-            logger.info("Making template")
-            template_file_path = _make_cloudformation_template(
-                project_path,
-                encoded_user_data,
-                s3_bucket_name,
-                sam_template_name,
-                elb_name,
-                aws_ec2_deployment_config.ami_id,
-                aws_ec2_deployment_config.instance_type,
-                aws_ec2_deployment_config.autoscale_min_size,
-                aws_ec2_deployment_config.autoscale_desired_capacity,
-                aws_ec2_deployment_config.autoscale_max_size,
-            )
-            validate_sam_template(
-                sam_template_name, aws_ec2_deployment_config.region, project_path
-            )
-
-            logger.info("Building service")
-            build_template(
-                template_file_path, project_path, aws_ec2_deployment_config.region
-            )
-
-            logger.info("Packaging service")
-            package_template(
-                s3_bucket_name, project_path, aws_ec2_deployment_config.region
-            )
-
-            logger.info("Deploying service")
-            deploy_template(
-                deployment_stack_name,
-                s3_bucket_name,
-                project_path,
-                aws_ec2_deployment_config.region,
-            )
-
     def add(self, deployment_pb):
         try:
             deployment_spec = deployment_pb.spec
@@ -522,7 +277,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             create_s3_bucket_if_not_exists(
                 artifact_s3_bucket_name, aws_ec2_deployment_config.region
             )
-            self.deploy_service(
+            deploy_ec2_service(
                 deployment_pb,
                 deployment_spec,
                 bento_path,
@@ -548,22 +303,15 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             if not ec2_deployment_config.region:
                 raise InvalidArgument("AWS region is missing")
 
-            # delete stack
-            deployment_stack_name = generate_aws_compatible_string(
-                "btml-stack-{namespace}-{name}".format(
-                    namespace=deployment_pb.namespace, name=deployment_pb.name
-                )
+            _, deployment_stack_name, repository_name, _ = generate_ec2_resource_names(
+                deployment_pb.namespace, deployment_pb.name
             )
+            # delete stack
             delete_cloudformation_stack(
                 deployment_stack_name, ec2_deployment_config.region
             )
 
             # delete repo from ecr
-            repository_name = generate_aws_compatible_string(
-                "btml-repo-{namespace}-{name}".format(
-                    namespace=deployment_pb.namespace, name=deployment_pb.name
-                )
-            )
             delete_ecr_repository(repository_name, ec2_deployment_config.region)
 
             # remove bucket
@@ -647,7 +395,7 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
                 "it exists and try again"
             )
 
-        self.deploy_service(
+        deploy_ec2_service(
             deployment_pb,
             updated_deployment_spec,
             bento_path,
@@ -677,18 +425,13 @@ class AwsEc2DeploymentOperator(DeploymentOperatorBase):
             bento_service_metadata = bento_pb.bento.bento_service_metadata
             api_names = [api.name for api in bento_service_metadata.apis]
 
-            deployment_stack_name = generate_aws_compatible_string(
-                "btml-stack-{namespace}-{name}".format(
-                    namespace=deployment_pb.namespace, name=deployment_pb.name
-                )
+            _, deployment_stack_name, _, _ = generate_ec2_resource_names(
+                deployment_pb.namespace, deployment_pb.name
             )
             try:
-                cf_client = boto3.client("cloudformation", ec2_deployment_config.region)
-                cloudformation_stack_result = cf_client.describe_stacks(
-                    StackName=deployment_stack_name
+                stack_result = describe_cloudformation_stack(
+                    ec2_deployment_config.region, deployment_stack_name
                 )
-                stack_result = cloudformation_stack_result.get("Stacks")[0]
-
                 if stack_result.get("Outputs"):
                     outputs = stack_result.get("Outputs")
                 else:

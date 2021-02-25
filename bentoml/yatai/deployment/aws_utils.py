@@ -258,3 +258,21 @@ def generate_bentoml_exception_from_aws_client_error(e, message_prefix=None):
         error_log_message = f"{message_prefix}; {error_log_message}"
     logger.error(error_log_message)
     return AWSServiceError(error_log_message)
+
+
+def describe_cloudformation_stack(region, stack_name):
+    cf_client = boto3.client("cloudformation", region)
+    try:
+        cloudformation_stack_result = cf_client.describe_stacks(StackName=stack_name)
+        stack_info = cloudformation_stack_result.get('Stacks')
+        if len(stack_info) < 1:
+            raise BentoMLException(f'Cloudformation {stack_name} not found')
+        if len(stack_info) > 1:
+            raise BentoMLException(
+                f'Found more than one cloudformation stack for {stack_name}'
+            )
+        return stack_info[0]
+    except ClientError as error:
+        raise BentoMLException(
+            f'Failed to describe CloudFormation {stack_name} {error}'
+        )

@@ -101,7 +101,7 @@ def test_generate_bentoml_exception_from_aws_client_error():
 def test_describe_cloudformation_stack():
     def mock_cf_client_success(self, op_name, args):  # pylint: disable=unused-argument
         if op_name == "DescribeStacks":
-            return {"stacks": [mock_stack_info]}
+            return {"Stacks": [mock_stack_info]}
 
     with patch("botocore.client.BaseClient._make_api_call", new=mock_cf_client_success):
         stack_result = describe_cloudformation_stack(mock_region, mock_stack_name)
@@ -109,7 +109,7 @@ def test_describe_cloudformation_stack():
 
     def mock_cf_client_too_many(self, op_name, args):  # pylint: disable=unused-argument
         if op_name == "DescribeStacks":
-            return {"stacks": [mock_stack_info, 'another stack']}
+            return {"Stacks": [mock_stack_info, 'another stack']}
 
     with patch(
         "botocore.client.BaseClient._make_api_call", new=mock_cf_client_too_many

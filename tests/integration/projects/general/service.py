@@ -62,6 +62,14 @@ class ExampleService(bentoml.BentoService):
     def predict_json(self, input_datas):
         return self.artifacts.model.predict_json(input_datas)
 
+    CUSTOM_ROUTE = "$~!@%^&*()_-+=[]\\|;:,./predict"
+
+    @bentoml.api(
+        route=CUSTOM_ROUTE, input=JsonInput(), batch=True,
+    )
+    def customezed_route(self, input_datas):
+        return input_datas
+
     @bentoml.api(input=JsonInput(), batch=True)
     def predict_strict_json(self, input_datas, tasks: Sequence[InferenceTask] = None):
         filtered_jsons = []

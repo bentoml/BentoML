@@ -203,7 +203,11 @@ class InferenceAPI(object):
         """
         :return: the HTTP API request schema in OpenAPI/Swagger format
         """
-        schema = self.input_adapter.request_schema
+        if self.input_adapter.custom_request_schema is None:
+            schema = self.input_adapter.request_schema
+        else:
+            schema = self.input_adapter.custom_request_schema
+
         if schema.get('application/json'):
             schema.get('application/json')[
                 'example'

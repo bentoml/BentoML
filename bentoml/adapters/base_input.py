@@ -43,8 +43,7 @@ class BaseInputAdapter:
     def __init__(self, http_input_example=None, **base_config):
         self._config = base_config
         self._http_input_example = http_input_example
-        if base_config.get('request_schema') is not None:
-            self.request_schema = base_config['request_schema']
+        self.custom_request_schema = base_config.get('request_schema')
 
     @property
     def config(self):
@@ -57,10 +56,6 @@ class BaseInputAdapter:
                  adapter
         """
         return {"application/json": {"schema": {"type": "object"}}}
-
-    @request_schema.setter
-    def request_schema(self, schema):
-        self.__dict__['request_schema'] = schema
 
     @property
     def pip_dependencies(self):

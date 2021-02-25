@@ -70,23 +70,20 @@ class ExampleService(bentoml.BentoService):
     def customezed_route(self, input_datas):
         return input_datas
 
-    @bentoml.api(
-        input=JsonInput(
-            request_schema={
-                "application/json": {
-                    "schema": {
-                        "type": "object",
-                        "required": ["field1", "field2"],
-                        "properties": {
-                            "field1": {"type": "string"},
-                            "field2": {"type": "uuid"},
-                        },
-                    },
-                }
-            }
-        ),
-        batch=True,
-    )
+    CUSTOM_SCHEMA = {
+        "application/json": {
+            "schema": {
+                "type": "object",
+                "required": ["field1", "field2"],
+                "properties": {
+                    "field1": {"type": "string"},
+                    "field2": {"type": "uuid"},
+                },
+            },
+        }
+    }
+
+    @bentoml.api(input=JsonInput(request_schema=CUSTOM_SCHEMA), batch=True)
     def customezed_schema(self, input_datas):
         return input_datas
 

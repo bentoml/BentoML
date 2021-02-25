@@ -86,27 +86,25 @@ ENV BENTOML_HOME=/home/bentoml/
 RUN mkdir $BUNDLE_PATH && chown bentoml:bentoml $BUNDLE_PATH -R
 WORKDIR $BUNDLE_PATH
 
+# copy over the init script; copy over entrypoint scripts
 COPY --chown=bentoml:bentoml bentoml-init.sh docker-entrypoint.sh ./
-RUN chmod +x ./bentoml-init.sh ./docker-entrypoint.sh
+RUN chmod +x ./bentoml-init.sh
 
-# Copy bentoml-init.sh again, because setup.sh might not exist. This
-# prevent COPY command from failing.
-# copy over files needed for init script; copy over entrypoint scripts
-COPY --chown=bentoml:bentoml bentoml-init.sh setup.s[h] ./
-RUN ./bentoml-init.sh setup.sh
+# Copy docker-entrypoint.sh again, because setup.sh might not exist. This prevent COPY command from failing.
+COPY --chown=bentoml:bentoml docker-entrypoint.sh setup.s[h] ./
+RUN ./bentoml-init.sh custom_setup
 
-COPY --chown=bentoml:bentoml bentoml-init.sh python_versio[n] ./
-RUN ./bentoml-init.sh python_version
+COPY --chown=bentoml:bentoml docker-entrypoint.sh python_versio[n] ./
+RUN ./bentoml-init.sh ensure_python
 
 COPY --chown=bentoml:bentoml environment.yml ./
-RUN ./bentoml-init.sh environment.yml
+RUN ./bentoml-init.sh restore_conda_env
 
 COPY --chown=bentoml:bentoml requirements.txt ./
-RUN ./bentoml-init.sh requirements.txt
+RUN ./bentoml-init.sh install_pip_packages
 
-COPY --chown=bentoml:bentoml bentoml-init.sh bundled_pip_dependencie[s]  ./bundled_pip_dependencies/
-RUN rm ./bundled_pip_dependencies/bentoml-init.sh
-RUN ./bentoml-init.sh bundled_pip_dependencies
+COPY --chown=bentoml:bentoml docker-entrypoint.sh bundled_pip_dependencie[s]  ./bundled_pip_dependencies/
+RUN rm ./bundled_pip_dependencies/docker-entrypoint.sh && ./bentoml-init.sh install_bundled_pip_packages
 
 # copy over model files
 COPY --chown=bentoml:bentoml . ./
@@ -116,6 +114,7 @@ ENV PORT 5000
 EXPOSE $PORT
 
 USER bentoml
+RUN chmod +x ./docker-entrypoint.sh
 ENTRYPOINT [ "./docker-entrypoint.sh" ]
 CMD ["bentoml", "serve-gunicorn", "./"]
 """  # noqa: E501

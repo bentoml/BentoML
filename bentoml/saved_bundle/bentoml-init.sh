@@ -4,7 +4,7 @@
 # Usage:
 #   * `bentoml-init.sh` to run the full script
 #   * `bentoml-init.sh <step_name>` to run a specific step 
-#      available steps: [setup.py python_version environment.yml requirement.txt bundled_pip_dependencies]
+#      available steps: [custom_setup ensure_python restore_conda_env install_pip_packages install_bundled_pip_packages
 
 set -ex
 
@@ -13,12 +13,12 @@ SAVED_BUNDLE_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)
 cd $SAVED_BUNDLE_PATH
 
 # Run the user defined setup.sh script if it is presented
-if [ $# -eq 0 ] || [ $1 == "setup.py" ] ; then
+if [ $# -eq 0 ] || [ $1 == "custom_setup" ] ; then
   if [ -f ./setup.sh ]; then chmod +x ./setup.sh && bash -c ./setup.sh; fi
 fi
 
 # Check and install the right python version
-if [ $# -eq 0 ] || [ $1 == "python_version" ] ; then
+if [ $# -eq 0 ] || [ $1 == "ensure_python" ] ; then
   if [ -f ./python_version ]; then
     PY_VERSION_SAVED=$(cat ./python_version)
     # remove PATCH version - since most patch version only contains backwards compatible
@@ -40,7 +40,7 @@ if [ $# -eq 0 ] || [ $1 == "python_version" ] ; then
   fi
 fi
 
-if [ $# -eq 0 ] || [ $1 == "environment.yml" ] ; then
+if [ $# -eq 0 ] || [ $1 == "restore_conda_env" ] ; then
   if command -v conda >/dev/null 2>&1; then
     # set pip_interop_enabled to improve conda-pip interoperability. Conda can use
     # pip-installed packages to satisfy dependencies.
@@ -60,12 +60,12 @@ if [ $# -eq 0 ] || [ $1 == "environment.yml" ] ; then
 fi
 
 # Install PyPI packages specified in requirements.txt
-if [ $# -eq 0 ] || [ $1 == "requirements.txt" ] ; then
+if [ $# -eq 0 ] || [ $1 == "install_pip_packages" ] ; then
   pip install -r ./requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
 fi
 
 # Install additional python packages inside bundled pip dependencies directory
-if [ $# -eq 0 ] || [ $1 == "bundled_pip_dependencies" ] ; then
+if [ $# -eq 0 ] || [ $1 == "install_bundled_pip_packages" ] ; then
   for filename in ./bundled_pip_dependencies/*; do
     [ -e "$filename" ] || continue
     pip install -U "$filename"

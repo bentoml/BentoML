@@ -264,7 +264,7 @@ def describe_cloudformation_stack(region, stack_name):
     cf_client = boto3.client("cloudformation", region)
     try:
         cloudformation_stack_result = cf_client.describe_stacks(StackName=stack_name)
-        stack_info = cloudformation_stack_result.get('stacks')
+        stack_info = cloudformation_stack_result.get('Stacks')
         if len(stack_info) < 1:
             raise BentoMLException(f'Cloudformation {stack_name} not found')
         if len(stack_info) > 1:

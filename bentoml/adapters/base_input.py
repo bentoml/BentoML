@@ -59,7 +59,7 @@ class BaseInputAdapter:
         return {"application/json": {"schema": {"type": "object"}}}
 
     @request_schema.setter
-    def _set_request_schema(self, schema):
+    def request_schema(self, schema):
         self.__dict__['request_schema'] = schema
 
     @property

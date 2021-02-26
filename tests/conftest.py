@@ -2,6 +2,8 @@ import functools
 import glob
 import inspect
 import os
+import subprocess
+from typing import Callable, List, Optional, Union
 
 import imageio
 import numpy as np
@@ -11,47 +13,80 @@ from bentoml.yatai.client import YataiClient
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
 
 
+# Assert HTTP server responses. Sending request asynchronously.
+async def assert_http_request(
+    method: str,
+    url: str,
+    headers: Optional[dict] = None,
+    data: Optional[str] = None,
+    timeout: Optional[int] = None,
+    assert_status: Union[Callable, int, None] = None,
+    assert_data: Union[Callable, bytes, None] = None,
+):
+    if assert_status is None:
+        assert_status = 200
+
+    import aiohttp
+
+    try:
+        async with aiohttp.ClientSession() as sess:
+            async with sess.request(
+                method, url, data=data, headers=headers, timeout=timeout
+            ) as r:
+                r_body = await r.read()
+    except RuntimeError:
+        # the event loop has been closed due to previous task failed, ignore
+        return
+
+    if callable(assert_status):
+        assert assert_status(r.status), f"{r.status} {r_body}"
+    else:
+        assert r.status == assert_status, f"{r.status} {r_body}"
+
+    if assert_data is not None:
+        if callable(assert_data):
+            assert assert_data(r_body), r_body
+        else:
+            assert r_body == assert_data
+
+
+# Assert system command std output.
+def assert_command(
+    cmd: List[str],
+    assert_out: Union[Callable, str, None] = None,
+    assert_err: Union[Callable, str, None] = None,
+    strip=True,
+):
+    with subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ,
+    ) as proc:
+        stdout = proc.stdout.read().decode('utf-8')
+        stderr = proc.stderr.read().decode('utf-8')
+
+    if assert_out is not None:
+        if callable(assert_out):
+            assert assert_out(stdout)
+        elif strip:
+            assert stdout.strip() == assert_out.strip()
+        else:
+            assert stdout == assert_out
+
+    if assert_err is not None:
+        if callable(assert_err):
+            assert assert_err(stderr)
+        elif strip:
+            assert stderr.strip() == assert_err.strip()
+        else:
+            assert stderr == assert_err
+
+
 def pytest_configure():
     '''
     global constants for tests
     '''
-    # async request client
-    async def assert_request(
-        method,
-        url,
-        headers=None,
-        data=None,
-        timeout=None,
-        assert_status=None,
-        assert_data=None,
-    ):
-        if assert_status is None:
-            assert_status = 200
 
-        import aiohttp
-
-        try:
-            async with aiohttp.ClientSession() as sess:
-                async with sess.request(
-                    method, url, data=data, headers=headers, timeout=timeout
-                ) as r:
-                    r_body = await r.read()
-        except RuntimeError:
-            # the event loop has been closed due to previous task failed, ignore
-            return
-
-        if callable(assert_status):
-            assert assert_status(r.status), f"{r.status} {r_body}"
-        else:
-            assert r.status == assert_status, f"{r.status} {r_body}"
-
-        if assert_data is not None:
-            if callable(assert_data):
-                assert assert_data(r_body), r_body
-            else:
-                assert r_body == assert_data
-
-    pytest.assert_request = assert_request
+    pytest.assert_request = assert_http_request
+    pytest.assert_command = assert_command
 
     # dataframe json orients
     pytest.DF_ORIENTS = {

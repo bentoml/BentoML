@@ -5,6 +5,7 @@ import os
 import sys
 
 import pytest
+
 from tests.integration.utils import (
     build_api_server_docker_image,
     run_api_server,
@@ -23,6 +24,14 @@ def clean_context():
         yield stack
 
 
+@pytest.fixture(scope="session")
+def bundle(pytestconfig):
+    test_svc_bundle = pytestconfig.getoption("bento_dist") or os.path.join(
+        sys.argv[1], "build", "dist"
+    )
+    return test_svc_bundle
+
+
 @pytest.fixture(params=[True, False], scope="module")
 def enable_microbatch(request):
     pytest.enable_microbatch = request.param
@@ -30,28 +39,20 @@ def enable_microbatch(request):
 
 
 @pytest.fixture(scope="module")
-def host(pytestconfig, clean_context, enable_microbatch):
-    test_svc_bundle = pytestconfig.getoption("bento_dist") or os.path.join(
-        sys.argv[1], "build", "dist"
-    )
-
+def host(pytestconfig, bundle, clean_context, enable_microbatch):
     if pytestconfig.getoption("docker"):
         image = clean_context.enter_context(
-            build_api_server_docker_image(test_svc_bundle, "example_service")
+            build_api_server_docker_image(bundle, "example_service")
         )
         with run_api_server_docker_container(image, enable_microbatch) as host:
             yield host
     else:
-        with run_api_server(test_svc_bundle, enable_microbatch) as host:
+        with run_api_server(bundle, enable_microbatch) as host:
             yield host
 
 
 @pytest.fixture(scope="module")
-def service(pytestconfig):
-    test_svc_bundle = pytestconfig.getoption("bento_dist") or os.path.join(
-        sys.argv[1], "build", "dist"
-    )
-
+def service(bundle):
     import bentoml
 
-    return bentoml.load_from_dir(test_svc_bundle)
+    return bentoml.load_from_dir(bundle)

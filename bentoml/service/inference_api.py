@@ -277,7 +277,8 @@ class InferenceAPI(object):
         )
         for task, result in zip(inf_tasks, inf_results):
             prediction_logger.info(
-                dict(
+                None,
+                extra = dict(
                     log_data,
                     task=task.to_json(),
                     result=result.to_json(),

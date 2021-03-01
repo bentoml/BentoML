@@ -16,6 +16,7 @@ import os
 import sys
 import logging.config
 from pathlib import Path
+from pythonjsonlogger.jsonlogger import RESERVED_ATTRS
 
 from bentoml import config
 from bentoml.configuration import get_debug_mode
@@ -30,9 +31,11 @@ def get_logging_config_dict(logging_level, base_log_directory):
 
     PREDICTION_LOG_FILENAME = conf.get("prediction_log_filename")
     PREDICTION_LOG_JSON_FORMAT = conf.get("prediction_log_json_format")
+    PREDICTION_LOG_JSON_RESERVED = tuple(conf.get("prediction_log_json_reserved").split(",")) + RESERVED_ATTRS
 
     FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
     FEEDBACK_LOG_JSON_FORMAT = conf.get("feedback_log_json_format")
+    FEEDBACK_LOG_JSON_RESERVED = tuple(conf.get("feedback_log_json_reserved").split(",")) + RESERVED_ATTRS
 
     MEGABYTES = 1024 * 1024
 
@@ -52,8 +55,6 @@ def get_logging_config_dict(logging_level, base_log_directory):
             }
         )
         bentoml_logger_handlers.append("console")
-        prediction_logger_handlers.append("console")
-        feedback_logger_handlers.append("console")
     if conf.getboolean("file_logging_enabled"):
         handlers.update(
             {
@@ -98,10 +99,12 @@ def get_logging_config_dict(logging_level, base_log_directory):
             "prediction": {
                 "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
                 "fmt": PREDICTION_LOG_JSON_FORMAT,
+                "reserved_attrs": PREDICTION_LOG_JSON_RESERVED,
             },
             "feedback": {
                 "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
                 "fmt": FEEDBACK_LOG_JSON_FORMAT,
+                "reserved_attrs": FEEDBACK_LOG_JSON_RESERVED,
             },
         },
         "handlers": handlers,

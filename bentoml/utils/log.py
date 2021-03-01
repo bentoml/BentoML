@@ -31,11 +31,15 @@ def get_logging_config_dict(logging_level, base_log_directory):
 
     PREDICTION_LOG_FILENAME = conf.get("prediction_log_filename")
     PREDICTION_LOG_JSON_FORMAT = conf.get("prediction_log_json_format")
-    PREDICTION_LOG_JSON_RESERVED = tuple(conf.get("prediction_log_json_reserved").split(",")) + RESERVED_ATTRS
+    PREDICTION_LOG_JSON_RESERVED = (
+        tuple(conf.get("prediction_log_json_reserved").split(",")) + RESERVED_ATTRS
+    )
 
     FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
     FEEDBACK_LOG_JSON_FORMAT = conf.get("feedback_log_json_format")
-    FEEDBACK_LOG_JSON_RESERVED = tuple(conf.get("feedback_log_json_reserved").split(",")) + RESERVED_ATTRS
+    FEEDBACK_LOG_JSON_RESERVED = (
+        tuple(conf.get("feedback_log_json_reserved").split(",")) + RESERVED_ATTRS
+    )
 
     MEGABYTES = 1024 * 1024
 

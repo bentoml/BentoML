@@ -18,16 +18,14 @@ def test_configure_logging_default():
     prediction_logger = logging.getLogger("bentoml.prediction")
     assert prediction_logger.level == logging.INFO
     assert prediction_logger.propagate is False
-    assert len(prediction_logger.handlers) == 2
-    assert prediction_logger.handlers[0].name == "console"
-    assert prediction_logger.handlers[1].name == "prediction"
+    assert len(prediction_logger.handlers) == 1
+    assert prediction_logger.handlers[0].name == "prediction"
 
     feedback_logger = logging.getLogger("bentoml.feedback")
     assert feedback_logger.level == logging.INFO
     assert feedback_logger.propagate is False
-    assert len(feedback_logger.handlers) == 2
-    assert feedback_logger.handlers[0].name == "console"
-    assert feedback_logger.handlers[1].name == "feedback"
+    assert len(feedback_logger.handlers) == 1
+    assert feedback_logger.handlers[0].name == "feedback"
 
 
 def test_configure_logging_custom_level():
@@ -43,16 +41,14 @@ def test_configure_logging_custom_level():
     prediction_logger = logging.getLogger("bentoml.prediction")
     assert prediction_logger.level == logging.INFO
     assert prediction_logger.propagate is False
-    assert len(prediction_logger.handlers) == 2
-    assert prediction_logger.handlers[0].name == "console"
-    assert prediction_logger.handlers[1].name == "prediction"
+    assert len(prediction_logger.handlers) == 1
+    assert prediction_logger.handlers[0].name == "prediction"
 
     feedback_logger = logging.getLogger("bentoml.feedback")
     assert feedback_logger.level == logging.INFO
     assert feedback_logger.propagate is False
-    assert len(feedback_logger.handlers) == 2
-    assert feedback_logger.handlers[0].name == "console"
-    assert feedback_logger.handlers[1].name == "feedback"
+    assert len(feedback_logger.handlers) == 1
+    assert feedback_logger.handlers[0].name == "feedback"
 
 
 def test_configure_logging_file_disabled():
@@ -95,14 +91,12 @@ def test_configure_logging_console_disabled():
     prediction_logger = logging.getLogger("bentoml.prediction")
     assert prediction_logger.level == logging.INFO
     assert prediction_logger.propagate is False
-    assert len(prediction_logger.handlers) == 1
-    assert prediction_logger.handlers[0].name == "console"
+    assert len(prediction_logger.handlers) == 0
 
     feedback_logger = logging.getLogger("bentoml.feedback")
     assert feedback_logger.level == logging.INFO
     assert feedback_logger.propagate is False
-    assert len(feedback_logger.handlers) == 1
-    assert feedback_logger.handlers[0].name == "console"
+    assert len(feedback_logger.handlers) == 0
 
     del os.environ["BENTOML__LOGGING__FILE_LOGGING_ENABLED"]
 

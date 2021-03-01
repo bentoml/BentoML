@@ -13,23 +13,12 @@
 # limitations under the License.
 
 import logging
-import multiprocessing
+
 import psutil
 
 from bentoml import config
 from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
-
-if psutil.POSIX:
-    # After Python 3.8, the default start method of multiprocessing for MacOS changed to
-    # spawn, which would cause RecursionError when launching Gunicorn Application.
-    # Ref:
-    # https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
-    #
-    # Note: https://bugs.python.org/issue33725 claims that fork method may cause crashes
-    # on MacOS.
-    multiprocessing.set_start_method('fork')
-
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 
@@ -102,15 +91,8 @@ if psutil.POSIX:
 
         def run(self):
             setup_prometheus_multiproc_dir(self.prometheus_lock)
-            super(GunicornMarshalServer, self).run()
-
-        def async_run(self):
-            """
-            Start an micro batch server.
-            """
-            marshal_proc = multiprocessing.Process(target=self.run, daemon=True)
-            marshal_proc.start()
             marshal_logger.info("Running micro batch service on :%d", self.port)
+            super(GunicornMarshalServer, self).run()
 
 
 else:

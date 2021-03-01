@@ -150,7 +150,9 @@ class MarshalService:
             BentoMLContainer.config.api_server.max_request_size
         ],
         zipkin_api_url: str = Provide[BentoMLContainer.config.tracing.zipkin_api_url],
+        outbound_unix_socket: str = None,
     ):
+        self.outbound_unix_socket = outbound_unix_socket
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
         self.outbound_workers = outbound_workers
@@ -178,6 +180,7 @@ class MarshalService:
             "or launch more microbatch instances to accept more concurrent connection.",
             self.CONNECTION_LIMIT,
         )
+        self._client = None
 
     def set_outbound_port(self, outbound_port):
         self.outbound_port = outbound_port
@@ -186,6 +189,22 @@ class MarshalService:
         if self._outbound_sema is None:
             self._outbound_sema = NonBlockSema(self.outbound_workers)
         return self._outbound_sema
+
+    def get_client(self):
+        if self._client is None:
+            jar = aiohttp.DummyCookieJar()
+            if self.outbound_unix_socket:
+                conn = aiohttp.UnixConnector(path=self.outbound_unix_socket,)
+            else:
+                conn = aiohttp.TCPConnector(limit=30)
+            self._client = aiohttp.ClientSession(
+                connector=conn, auto_decompress=False, cookie_jar=jar,
+            )
+        return self._client
+
+    def __del__(self):
+        if self._client is not None and not self._client.closed:
+            self._client.close()
 
     def add_batch_handler(self, api_route, max_latency, max_batch_size):
         '''
@@ -268,11 +287,16 @@ class MarshalService:
             span_name=f"[2]{url.path} relay",
         ) as trace_ctx:
             headers.update(make_http_headers(trace_ctx))
-            async with aiohttp.ClientSession(auto_decompress=False) as client:
+            try:
+                client = self.get_client()
                 async with client.request(
                     request.method, url, data=data, headers=request.headers
                 ) as resp:
                     body = await resp.read()
+            except aiohttp.client_exceptions.ClientConnectionError as e:
+                raise RemoteException(
+                    e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
+                )
         return aiohttp.web.Response(
             status=resp.status, body=body, headers=resp.headers,
         )
@@ -298,11 +322,9 @@ class MarshalService:
             headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)
             try:
-                async with aiohttp.ClientSession(auto_decompress=False) as client:
-                    async with client.post(
-                        api_url, data=reqs_s, headers=headers
-                    ) as resp:
-                        raw = await resp.read()
+                client = self.get_client()
+                async with client.post(api_url, data=reqs_s, headers=headers) as resp:
+                    raw = await resp.read()
             except aiohttp.client_exceptions.ClientConnectionError as e:
                 raise RemoteException(
                     e, payload=HTTPResponse(status=503, body=b"Service Unavailable")

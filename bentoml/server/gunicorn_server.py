@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import logging
-import psutil
 
+import psutil
 from flask import Response
 
 from bentoml import config
@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 class GunicornBentoAPIServer(BentoAPIServer):
     def metrics_view_func(self):
         from prometheus_client import (
-            multiprocess,
+            CONTENT_TYPE_LATEST,
             CollectorRegistry,
             generate_latest,
-            CONTENT_TYPE_LATEST,
+            multiprocess,
         )
 
         registry = CollectorRegistry()
@@ -50,11 +50,13 @@ if psutil.POSIX:
 
             >>> from bentoml.server.gunicorn_server import GunicornBentoServer
             >>>
-            >>> gunicorn_app = GunicornBentoServer(saved_bundle_path, port=5000)
+            >>> gunicorn_app = GunicornBentoServer(saved_bundle_path,\
+            >>>     bind="127.0.0.1:5000")
             >>> gunicorn_app.run()
 
         :param bundle_path: path to the saved BentoService bundle
-        :param port: the port you want to run gunicorn server on
+        :param bind: Specify a server socket to bind. Server sockets can be any of
+            $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH).
         :param workers: number of worker processes
         :param timeout: request timeout config
         """
@@ -62,7 +64,7 @@ if psutil.POSIX:
         def __init__(
             self,
             bundle_path,
-            port=None,
+            bind=None,
             workers=None,
             timeout=None,
             prometheus_lock=None,
@@ -70,11 +72,15 @@ if psutil.POSIX:
         ):
             self.bento_service_bundle_path = bundle_path
 
-            self.port = port or config("apiserver").getint("default_port")
+            if bind is None:
+                port = config("apiserver").getint("default_port")
+                self.bind = f"0.0.0.0:{port}"
+            else:
+                self.bind = bind
             timeout = timeout or config("apiserver").getint("default_timeout")
             max_request_size = config("apiserver").getint("default_max_request_size")
             self.options = {
-                "bind": "%s:%s" % ("0.0.0.0", self.port),
+                "bind": self.bind,
                 "timeout": timeout,
                 "limit_request_line": max_request_size,
                 "loglevel": config("logging").get("LEVEL").upper(),
@@ -103,7 +109,7 @@ if psutil.POSIX:
         def load(self):
             bento_service = load_from_dir(self.bento_service_bundle_path)
             api_server = GunicornBentoAPIServer(
-                bento_service, port=self.port, enable_swagger=self.enable_swagger
+                bento_service, enable_swagger=self.enable_swagger
             )
             return api_server.app
 

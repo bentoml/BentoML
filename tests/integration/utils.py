@@ -16,20 +16,21 @@ logger = logging.getLogger("bentoml.tests")
 
 def _wait_until_api_server_ready(host_url, timeout, container=None, check_interval=1):
     start_time = time.time()
+    proxy_handler = urllib.request.ProxyHandler({})
+    opener = urllib.request.build_opener(proxy_handler)
+    ex = None
     while time.time() - start_time < timeout:
         try:
-            if (
-                urllib.request.urlopen(f'http://{host_url}/healthz', timeout=1).status
-                == 200
-            ):
-                break
+            if opener.open(f'http://{host_url}/healthz', timeout=1).status == 200:
+                return
             elif container.status != "running":
                 break
             else:
                 logger.info("Waiting for host %s to be ready..", host_url)
                 time.sleep(check_interval)
         except Exception as e:  # pylint:disable=broad-except
-            logger.info(f"'{e}', retrying to connect to the host {host_url}...")
+            logger.info(f"retrying to connect to the host {host_url}...")
+            ex = e
             time.sleep(check_interval)
         finally:
             if container:
@@ -40,7 +41,8 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
                         logger.info(f">>> {log_record}")
     else:
         raise AssertionError(
-            f"Timed out waiting {timeout} seconds for Server {host_url} to be ready"
+            f"Timed out waiting {timeout} seconds for Server {host_url} to be ready, "
+            f"exception: {ex}"
         )
 
 
@@ -148,6 +150,8 @@ def run_api_server(bundle_path, enable_microbatch=False, timeout=10, init_cmd=No
     ) as p:
         host_url = f"127.0.0.1:{port}"
         threading.Thread(target=print_log, args=(p,), daemon=True).start()
-        _wait_until_api_server_ready(host_url, timeout=timeout)
-        yield host_url
-        p.terminate()
+        try:
+            _wait_until_api_server_ready(host_url, timeout=timeout)
+            yield host_url
+        finally:
+            p.terminate()

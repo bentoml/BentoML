@@ -33,6 +33,15 @@ async def test_slow_server(host):
     await asyncio.gather(*tasks)
     assert time.time() - time_start < 12
 
+
+@pytest.mark.asyncio
+async def test_fast_server(host):
+    if not pytest.enable_microbatch:
+        pytest.skip()
+
+    A, B = 0.0002, 0.01
+    data = '{"a": %s, "b": %s}' % (A, B)
+
     req_count = 100
     tasks = tuple(
         pytest.assert_request(
@@ -46,17 +55,8 @@ async def test_slow_server(host):
     )
     await asyncio.gather(*tasks)
 
-
-@pytest.mark.asyncio
-async def test_fast_server(host):
-    if not pytest.enable_microbatch:
-        pytest.skip()
-
-    A, B = 0.0002, 0.01
-    data = '{"a": %s, "b": %s}' % (A, B)
-
     time_start = time.time()
-    req_count = 500
+    req_count = 200
     tasks = tuple(
         pytest.assert_request(
             "POST",
@@ -70,4 +70,4 @@ async def test_fast_server(host):
         for i in range(req_count)
     )
     await asyncio.gather(*tasks)
-    assert time.time() - time_start < 5
+    assert time.time() - time_start < 2

@@ -43,6 +43,7 @@ class BaseInputAdapter:
     def __init__(self, http_input_example=None, **base_config):
         self._config = base_config
         self._http_input_example = http_input_example
+        self.custom_request_schema = base_config.get('request_schema')
 
     @property
     def config(self):

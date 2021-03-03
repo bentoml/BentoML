@@ -29,10 +29,8 @@ def get_logging_config_dict(logging_level, base_log_directory):
     DEV_LOG_FORMAT = conf.get("DEV_LOG_FORMAT")
 
     PREDICTION_LOG_FILENAME = conf.get("prediction_log_filename")
-    PREDICTION_LOG_JSON_FORMAT = conf.get("prediction_log_json_format")
 
     FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
-    FEEDBACK_LOG_JSON_FORMAT = conf.get("feedback_log_json_format")
 
     MEGABYTES = 1024 * 1024
 
@@ -97,11 +95,11 @@ def get_logging_config_dict(logging_level, base_log_directory):
             "dev": {"format": DEV_LOG_FORMAT},
             "prediction": {
                 "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "fmt": PREDICTION_LOG_JSON_FORMAT,
+                "fmt": "%%(service_name)s %%(service_version)s %%(api)s %%(request_id)s %%(task)s %%(result)s %%(asctime)s",
             },
             "feedback": {
                 "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "fmt": FEEDBACK_LOG_JSON_FORMAT,
+                "fmt": "%%(service_name)s %%(service_version)s %%(request_id)s %%(asctime)s",
             },
         },
         "handlers": handlers,

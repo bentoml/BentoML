@@ -16,10 +16,8 @@ import logging
 import multiprocessing
 from typing import Optional
 
-from dependency_injector.wiring import Provide, inject
-
 from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
-from bentoml.utils import ProtoMessageToDict, reserve_free_port, resolve_bundle_path
+from bentoml.utils import reserve_free_port
 
 logger = logging.getLogger(__name__)
 

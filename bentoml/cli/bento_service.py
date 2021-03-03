@@ -1,6 +1,5 @@
 import argparse
 import json
-import multiprocessing
 import re
 import sys
 
@@ -25,7 +24,7 @@ from bentoml.saved_bundle import (
 )
 from bentoml.server import start_dev_server
 from bentoml.server.open_api import get_open_api_spec_json
-from bentoml.utils import ProtoMessageToDict, reserve_free_port, resolve_bundle_path
+from bentoml.utils import ProtoMessageToDict, resolve_bundle_path
 from bentoml.utils.docker_utils import validate_tag
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.yatai.client import get_yatai_client

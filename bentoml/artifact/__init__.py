@@ -33,6 +33,7 @@ from bentoml.frameworks.h2o import H2oModelArtifact
 from bentoml.frameworks.keras import KerasModelArtifact
 from bentoml.frameworks.lightgbm import LightGBMModelArtifact
 from bentoml.frameworks.onnx import OnnxModelArtifact
+from bentoml.frameworks.onnxmlir import OnnxMlirModelArtifact
 from bentoml.frameworks.pytorch import (  # noqa: E402
     PytorchModelArtifact,
     PytorchLightningModelArtifact,
@@ -56,6 +57,7 @@ __all__ = [
     "KerasModelArtifact",
     "LightGBMModelArtifact",
     "OnnxModelArtifact",
+    "OnnxMlirModelArtifact",
     "PickleArtifact",
     "PytorchModelArtifact",
     "SklearnModelArtifact",

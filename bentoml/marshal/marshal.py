@@ -293,10 +293,8 @@ class MarshalService:
                     request.method, url, data=data, headers=request.headers
                 ) as resp:
                     body = await resp.read()
-            except aiohttp.client_exceptions.ClientConnectionError as e:
-                raise RemoteException(
-                    e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
-                )
+            except aiohttp.client_exceptions.ClientConnectionError:
+                return aiohttp.web.Response(status=503, body=b"Service Unavailable")
         return aiohttp.web.Response(
             status=resp.status, body=body, headers=resp.headers,
         )

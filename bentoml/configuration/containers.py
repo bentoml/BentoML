@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
 import logging
 import multiprocessing
 import os
+from types import ModuleType
+from typing import Union
 
 from deepmerge import always_merger
 from dependency_injector import containers, providers
-from schema import Schema, SchemaError, And, Or
+from schema import And, Or, Schema, SchemaError
 
 from bentoml.configuration import config
 from bentoml.exceptions import BentoMLConfigException
@@ -48,6 +51,7 @@ SCHEMA = Schema(
         "yatai": {"url": Or(str, None)},
         "tracing": {"zipkin_api_url": Or(str, None)},
         "instrument": {"namespace": str},
+        "logging": {"level": str},
     }
 )
 
@@ -178,3 +182,19 @@ class BentoMLContainer(containers.DeclarativeContainer):
         lambda workers: workers if workers else (multiprocessing.cpu_count() // 2) + 1,
         config.api_server.workers,
     )
+
+    @staticmethod
+    def _eval_import(name: Union[str, ModuleType]):
+        if isinstance(name, str):
+            return importlib.import_module(name)
+        return name
+
+    def wire(self, packages=None, modules=None):
+        import ipdb
+
+        ipdb.set_trace()
+        if packages:
+            actual_packages = [self._eval_import(p) for p in packages]
+        if modules:
+            actual_modules = [self._eval_import(p) for p in modules]
+        return super().wire(packages=actual_packages, modules=actual_modules)

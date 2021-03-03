@@ -17,16 +17,13 @@ from bentoml.cli.click_utils import (
 from bentoml.cli.utils import Spinner
 from bentoml.configuration import BENTOML_CONFIG
 from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
+from bentoml.entrypoint import start_prod_server
 from bentoml.saved_bundle import (
     load_bento_service_api,
     load_bento_service_metadata,
     load_from_dir,
 )
-from bentoml.server import (
-    start_dev_server,
-    start_prod_batching_server,
-    start_prod_server,
-)
+from bentoml.server import start_dev_server
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import ProtoMessageToDict, reserve_free_port, resolve_bundle_path
 from bentoml.utils.docker_utils import validate_tag
@@ -312,7 +309,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             bento, pip_installed_bundle_path, yatai_url
         )
 
-        container = BentoMLContainer()
         config = BentoMLConfiguration(override_config_file=config)
         config.override(["api_server", "port"], port)
         config.override(["api_server", "workers"], workers)
@@ -322,37 +318,8 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
         config.override(["marshal_server", "max_latency"], mb_max_latency)
         config.override(["marshal_server", "workers"], microbatch_workers)
-        container.config.from_dict(config.as_dict())
 
-        if enable_microbatch:
-            from bentoml import marshal, server
-
-            container.wire(packages=[marshal, server])
-            prometheus_lock = multiprocessing.Lock()
-            with reserve_free_port() as api_server_port:
-                pass
-
-            model_server_job = multiprocessing.Process(
-                target=start_prod_server,
-                kwargs=dict(
-                    saved_bundle_path=saved_bundle_path,
-                    port=api_server_port,
-                    prometheus_lock=prometheus_lock,
-                ),
-                daemon=True,
-            )
-            model_server_job.start()
-            start_prod_batching_server(
-                saved_bundle_path=saved_bundle_path,
-                api_server_port=api_server_port,
-                prometheus_lock=prometheus_lock,
-            )
-            model_server_job.join()
-        else:
-            from bentoml import server
-
-            container.wire(packages=[server])
-            start_prod_server(saved_bundle_path)
+        start_prod_server(saved_bundle_path, config=config)
 
     @bentoml_cli.command(
         help="Install shell command completion",

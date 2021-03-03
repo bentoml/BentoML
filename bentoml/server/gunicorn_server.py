@@ -13,11 +13,15 @@
 # limitations under the License.
 
 import logging
+import multiprocessing
+from typing import Optional
 
 import psutil
+from dependency_injector.wiring import Provide as P
+from dependency_injector.wiring import inject
 from flask import Response
 
-from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer as C
 from bentoml.saved_bundle import load_from_dir
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
@@ -61,29 +65,31 @@ if psutil.POSIX:
         :param timeout: request timeout config
         """
 
+        @inject
         def __init__(
             self,
             bundle_path,
-            bind=None,
-            workers=None,
-            timeout=None,
-            prometheus_lock=None,
-            enable_swagger=True,
+            bind: str = None,
+            port: int = P[C.config.api_server.port],
+            timeout: int = P[C.config.api_server.timeout],
+            workers: int = P[C.api_server_workers],
+            prometheus_lock: Optional[multiprocessing.Lock] = None,
+            enable_swagger: bool = P[C.config.api_server.enable_swagger],
+            max_request_size: int = P[C.config.api_server.max_request_size],
+            loglevel=P[C.config.logging.level],
         ):
             self.bento_service_bundle_path = bundle_path
 
             if bind is None:
-                port = config("apiserver").getint("default_port")
                 self.bind = f"0.0.0.0:{port}"
             else:
                 self.bind = bind
-            timeout = timeout or config("apiserver").getint("default_timeout")
-            max_request_size = config("apiserver").getint("default_max_request_size")
+
             self.options = {
                 "bind": self.bind,
                 "timeout": timeout,
                 "limit_request_line": max_request_size,
-                "loglevel": config("logging").get("LEVEL").upper(),
+                "loglevel": loglevel.upper(),
             }
             if workers:
                 self.options['workers'] = workers
@@ -95,7 +101,6 @@ if psutil.POSIX:
         def load_config(self):
             self.load_config_from_file("python:bentoml.server.gunicorn_config")
 
-            # override config with self.options
             gunicorn_config = dict(
                 [
                     (key, value)

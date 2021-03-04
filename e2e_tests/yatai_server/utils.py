@@ -7,7 +7,6 @@ import uuid
 import psutil
 
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.yatai.client import YataiClient
 
 logger = logging.getLogger('bentoml.test')
 
@@ -15,14 +14,10 @@ GRPC_PORT = '50051'
 GRPC_CHANNEL_ADDRESS = f'127.0.0.1:{GRPC_PORT}'
 
 
-def get_bento_service_info(bento_name, bento_version):
-    yatai_client = YataiClient()
-    get_result = yatai_client.repository.get(f'{bento_name}:{bento_version}')
-    return get_result
-
-
-def execute_bentoml_run_command(bento_tag, data, api="predict"):
+def execute_bentoml_run_command(bento_tag, data, api="predict", yatai_url=None):
     command = ['bentoml', 'run', bento_tag, api, '--input', data, "-q"]
+    if yatai_url is not None:
+        command.extend(['--yatai-url', yatai_url])
     proc = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ,
     )
@@ -30,7 +25,7 @@ def execute_bentoml_run_command(bento_tag, data, api="predict"):
     return stdout
 
 
-def execute_bentoml_retrieve_command(bento_tag):
+def execute_bentoml_retrieve_command(bento_tag, yatai_url=None):
     dir_name = uuid.uuid4().hex[:8]
     with TempDirectory() as temp_dir:
         command = [
@@ -40,6 +35,8 @@ def execute_bentoml_retrieve_command(bento_tag):
             '--target_dir',
             f'{temp_dir}/{dir_name}',
         ]
+        if yatai_url is not None:
+            command.extend(['--yatai-url', yatai_url])
         proc = subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ
         )
@@ -100,8 +97,7 @@ def local_yatai_server(db_url=None, repo_base_url=None, port=50051):
         )
         yatai_service_url = f"localhost:{port}"
         logger.info(f'Setting config yatai_service.url to: {yatai_service_url}')
-        with modified_environ(BENTOML__YATAI_SERVICE__URL=yatai_service_url):
-            yield yatai_service_url
+        yield yatai_service_url
     finally:
         logger.info('Shutting down YataiServer gRPC server and node web server')
         kill_process(proc.pid)

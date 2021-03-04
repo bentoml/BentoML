@@ -14,7 +14,6 @@
 
 import logging
 import multiprocessing
-from typing import Optional
 
 from dependency_injector.wiring import Provide, inject
 

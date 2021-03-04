@@ -308,17 +308,18 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             bento, pip_installed_bundle_path, yatai_url
         )
 
-        config = BentoMLConfiguration(override_config_file=config)
-        config.override(["api_server", "port"], port)
-        config.override(["api_server", "workers"], workers)
-        config.override(["api_server", "timeout"], timeout)
-        config.override(["api_server", "enable_microbatch"], enable_microbatch)
-        config.override(["api_server", "enable_swagger"], enable_swagger)
-        config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
-        config.override(["marshal_server", "max_latency"], mb_max_latency)
-        config.override(["marshal_server", "workers"], microbatch_workers)
-
-        start_prod_server(saved_bundle_path, config=config)
+        start_prod_server(
+            saved_bundle_path,
+            port=port,
+            workers=workers,
+            timeout=timeout,
+            enable_microbatch=enable_microbatch,
+            enable_swagger=enable_swagger,
+            mb_max_batch_size=mb_max_batch_size,
+            mb_max_latency=mb_max_latency,
+            microbatch_workers=microbatch_workers,
+            config_file=config,
+        )
 
     @bentoml_cli.command(
         help="Install shell command completion",

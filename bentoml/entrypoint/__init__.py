@@ -22,12 +22,33 @@ from bentoml.utils import reserve_free_port
 logger = logging.getLogger(__name__)
 
 
-def start_prod_server(saved_bundle_path: str, config: BentoMLConfiguration):
+def start_prod_server(
+    saved_bundle_path: str,
+    port: Optional[int] = None,
+    workers: Optional[int] = None,
+    timeout: Optional[int] = None,
+    enable_microbatch: Optional[bool] = None,
+    enable_swagger: Optional[bool] = None,
+    mb_max_batch_size: Optional[int] = None,
+    mb_max_latency: Optional[int] = None,
+    microbatch_workers: Optional[int] = None,
+    config_file: Optional[str] = None,
+):
     import psutil
 
     assert (
         psutil.POSIX
     ), "BentoML API Server production mode only supports POSIX platforms"
+
+    config = BentoMLConfiguration(override_config_file=config_file)
+    config.override(["api_server", "port"], port)
+    config.override(["api_server", "workers"], workers)
+    config.override(["api_server", "timeout"], timeout)
+    config.override(["api_server", "enable_microbatch"], enable_microbatch)
+    config.override(["api_server", "enable_swagger"], enable_swagger)
+    config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
+    config.override(["marshal_server", "max_latency"], mb_max_latency)
+    config.override(["marshal_server", "workers"], microbatch_workers)
 
     if config.config['api_server'].get('enable_microbatch'):
         prometheus_lock = multiprocessing.Lock()

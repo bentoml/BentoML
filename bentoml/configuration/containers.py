@@ -190,9 +190,6 @@ class BentoMLContainer(containers.DeclarativeContainer):
         return name
 
     def wire(self, packages=None, modules=None):
-        import ipdb
-
-        ipdb.set_trace()
         if packages:
             actual_packages = [self._eval_import(p) for p in packages]
         if modules:

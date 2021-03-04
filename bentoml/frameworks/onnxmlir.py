@@ -75,11 +75,9 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
 
     def _saved_model_file_path(self, base_path):
         self._model_so_path = os.path.join(base_path, self.name + '.so')
-        print(self._model_so_path)
         return os.path.join(base_path, self.name + '.so')
 
     def pack(self, onnxmlir_model_so, metadata=None):  
-        print(onnxmlir_model_so)
         self._model_so_path = onnxmlir_model_so
         return self
 
@@ -92,12 +90,12 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
 
     def _get_onnxmlir_inference_session(self):
         try:
+            # this has to be able to find the architecture and OS specific PyRuntime .so file 
             from PyRuntime import ExecutionSession  
         except ImportError:
             raise MissingDependencyException(
                 "PyRuntime package must be in python path"
             )
-        print(self._model_so_path)
         return ExecutionSession(self._model_so_path, "run_main_graph")
 
     def get(self):
@@ -106,6 +104,7 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
         return self._inference_session
 
     def save(self, dst):
+        # copies the model .so and places in the version controlled deployment path
         shutil.copyfile(self._model_so_path, self._saved_model_file_path(dst))
 
 

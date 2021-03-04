@@ -95,11 +95,13 @@ def get_logging_config_dict(logging_level, base_log_directory):
             "dev": {"format": DEV_LOG_FORMAT},
             "prediction": {
                 "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "fmt": "%%(service_name)s %%(service_version)s %%(api)s %%(request_id)s %%(task)s %%(result)s %%(asctime)s",
+                "fmt": "%%(service_name)s %%(service_version)s %%(api)s "
+                "%%(request_id)s %%(task)s %%(result)s %%(asctime)s",
             },
             "feedback": {
                 "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "fmt": "%%(service_name)s %%(service_version)s %%(request_id)s %%(asctime)s",
+                "fmt": "%%(service_name)s %%(service_version)s %%(request_id)s "
+                "%%(asctime)s",
             },
         },
         "handlers": handlers,

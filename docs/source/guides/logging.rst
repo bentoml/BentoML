@@ -62,10 +62,8 @@ Please see below configuration examples of different logging scenarios in YAML f
     formatters:
         prediction:
             (): pythonjsonlogger.jsonlogger.JsonFormatter
-            fmt: '%(service_name)s %(service_version)s %(api)s %(request_id)s %(task)s %(result)s %(asctime)s'
         feedback:
             (): pythonjsonlogger.jsonlogger.JsonFormatter
-            fmt: '%(service_name)s %(service_version)s %(request_id)s %(asctime)s'
     handlers:
         prediction:
             class: logging.handlers.RotatingFileHandler
@@ -108,10 +106,8 @@ Please see below configuration examples of different logging scenarios in YAML f
             format: '[%(asctime)s] {{%(filename)s:%(lineno)d}} %(levelname)s - %(message)s'
         prediction:
             (): pythonjsonlogger.jsonlogger.JsonFormatter
-            fmt: '%(service_name)s %(service_version)s %(api)s %(request_id)s %(task)s %(result)s %(asctime)s'
         feedback:
             (): pythonjsonlogger.jsonlogger.JsonFormatter
-            fmt: '%(service_name)s %(service_version)s %(request_id)s %(asctime)s'
     handlers:
         console:
             level: INFO

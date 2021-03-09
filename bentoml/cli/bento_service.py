@@ -16,13 +16,12 @@ from bentoml.cli.click_utils import (
 from bentoml.cli.utils import Spinner
 from bentoml.configuration import BENTOML_CONFIG
 from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
-from bentoml.entrypoint import start_prod_server
 from bentoml.saved_bundle import (
     load_bento_service_api,
     load_bento_service_metadata,
     load_from_dir,
 )
-from bentoml.server import start_dev_server
+from bentoml.server import start_dev_server, start_prod_server
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import ProtoMessageToDict, resolve_bundle_path
 from bentoml.utils.docker_utils import validate_tag

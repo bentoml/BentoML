@@ -42,7 +42,6 @@ def start_dev_server(
 
     from bentoml.saved_bundle import load_from_dir
     from bentoml.server.api_server import BentoAPIServer
-    from bentoml.utils import reserve_free_port
 
     if run_with_ngrok:
         from threading import Timer

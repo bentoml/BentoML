@@ -14,6 +14,7 @@
 
 import logging
 import multiprocessing
+import sys
 from typing import Optional
 
 from dependency_injector.wiring import Provide, inject
@@ -171,16 +172,16 @@ def _start_prod_server(
     container = BentoMLContainer()
     container.config.from_dict(config.as_dict())
 
-    from bentoml import server
+    container.wire(packages=[sys.modules[__name__]])
 
-    container.wire(packages=[server])
+    from bentoml.server.gunicorn_server import GunicornBentoServer
 
     if port is None:
-        gunicorn_app = server.gunicorn_server.GunicornBentoServer(
+        gunicorn_app = GunicornBentoServer(
             saved_bundle_path, prometheus_lock=prometheus_lock,
         )
     else:
-        gunicorn_app = server.gunicorn_server.GunicornBentoServer(
+        gunicorn_app = GunicornBentoServer(
             saved_bundle_path, port=port, prometheus_lock=prometheus_lock,
         )
     gunicorn_app.run()
@@ -198,12 +199,13 @@ def _start_prod_batching_server(
     container = BentoMLContainer()
     container.config.from_dict(config.as_dict())
 
-    from bentoml import marshal, server
+    from bentoml import marshal
+    from bentoml.server.marshal_server import GunicornMarshalServer
 
-    container.wire(packages=[server, marshal])
+    container.wire(packages=[sys.modules[__name__], marshal])
 
     # avoid load model before gunicorn fork
-    marshal_server = server.marshal_server.GunicornMarshalServer(
+    marshal_server = GunicornMarshalServer(
         bundle_path=saved_bundle_path,
         prometheus_lock=prometheus_lock,
         outbound_host="localhost",

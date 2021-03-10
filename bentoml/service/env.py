@@ -133,9 +133,8 @@ class BentoServiceEnv(object):
         pip_extra_index_url: passing down to pip install --extra-index-url option
         infer_pip_packages: Turn on to automatically find all the required
             pip dependencies and pin their version
-        requirements_txt_file: pip dependencies in the form of a requirements.txt file,
-            this can be a relative path to the requirements.txt file or the content
-            of the file
+        requirements_txt_file: path to the requirements.txt where pip dependencies
+            are explicitly specified
         conda_channels: list of extra conda channels to be used
         conda_overwrite_channels: Turn on to make conda_channels overwrite the list of
             channels instead of adding to it

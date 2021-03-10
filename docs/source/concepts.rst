@@ -171,16 +171,18 @@ python class, simply use the :code:`infer_pip_packages=True` option.
 <https://github.com/bentoml/BentoML/issues>`_ are highly appreciated if you experience
 problems when using the :code:`infer_pip_packages=True` option.
 
-Specifying dependencies explicitly is recommended for improving reliability in the
-production environment. PyPI packages can be manually specified using either the
-:code:`pip_packages` option or the :code:`requirements_txt_file` option.
+Specifying **both direct and transitive** dependencies explicitly with **pinned versions**
+is recommended for improving reliability in the production environment. Transitive
+dependencies and versions can be resolved with utility like 
+`pip-compile <https://github.com/jazzband/pip-tools>`_. PyPI packages can be specified
+using either the :code:`pip_packages` option or the :code:`requirements_txt_file` option.
 
 .. code-block:: python
   :caption: Specifying PyPI packages through the `pip_packages` option
 
   @bentoml.env(
     pip_packages=[
-      'scikit-learn',
+      'scikit-learn==0.24.1',
       'pandas @https://github.com/pypa/pip/archive/1.3.1.zip',
     ]
   )

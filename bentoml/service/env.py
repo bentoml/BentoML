@@ -134,7 +134,7 @@ class BentoServiceEnv(object):
         infer_pip_packages: Turn on to automatically find all the required
             pip dependencies and pin their version
         requirements_txt_file: path to the requirements.txt where pip dependencies
-            are explicitly specified
+            are explicitly specified, with ideally pinned versions
         conda_channels: list of extra conda channels to be used
         conda_overwrite_channels: Turn on to make conda_channels overwrite the list of
             channels instead of adding to it
@@ -161,6 +161,7 @@ class BentoServiceEnv(object):
         docker_base_image: str = None,
         zipimport_archives: List[str] = None,
     ):
+        logger.info("############################")
         self._python_version = PYTHON_VERSION
         self._pip_index_url = pip_index_url
         self._pip_trusted_host = pip_trusted_host
@@ -243,6 +244,7 @@ class BentoServiceEnv(object):
         # str must be a valid pip requirement specifier
         # https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers
         package_req = Requirement(pip_package)
+        logger.info("### package ###: %s", package_req)
         self._add_pip_package_requirement(package_req)
 
     def _add_pip_package_requirement(self, pkg_req: Requirement):

@@ -161,7 +161,6 @@ class BentoServiceEnv(object):
         docker_base_image: str = None,
         zipimport_archives: List[str] = None,
     ):
-        logger.info("############################")
         self._python_version = PYTHON_VERSION
         self._pip_index_url = pip_index_url
         self._pip_trusted_host = pip_trusted_host
@@ -244,7 +243,6 @@ class BentoServiceEnv(object):
         # str must be a valid pip requirement specifier
         # https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers
         package_req = Requirement(pip_package)
-        logger.info("### package ###: %s", package_req)
         self._add_pip_package_requirement(package_req)
 
     def _add_pip_package_requirement(self, pkg_req: Requirement):

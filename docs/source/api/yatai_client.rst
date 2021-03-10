@@ -22,3 +22,7 @@ Yatai Client
     proto
     pb
     boolean
+    IrisClassifier
+    ci
+    MyService
+    gz

@@ -246,7 +246,7 @@ Specify target service bundles to remove:
         """  # noqa
         yc = get_yatai_client(yatai_url)
         # Backward compatible with the previous CLI, allows deletion with tag/s
-        if len(delete_targets) > 0:
+        if delete_targets is not None and len(delete_targets) > 0:
             for item in delete_targets:
                 if ':' in item:
                     if not _is_valid_bento_tag(item):

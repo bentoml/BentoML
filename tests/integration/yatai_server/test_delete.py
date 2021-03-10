@@ -124,11 +124,7 @@ def test_delete_all_bentos(bento_service):
     runner = CliRunner()
     cli = create_bentoml_cli()
     runner.invoke(
-        cli.commands['delete'],
-        [
-            '--all',
-            '-y',
-        ],
+        cli.commands['delete'], ['--all', '-y',],
     )
     bentos = yc.repository.list()
     assert len(bentos) == 0

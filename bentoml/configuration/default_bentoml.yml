@@ -40,3 +40,6 @@ tracing:
 
 instrument:
   namespace: BENTOML
+
+logging:
+  level: INFO

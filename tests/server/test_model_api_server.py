@@ -15,7 +15,6 @@ def test_api_function_route(bento_service, img_file):
 
     rest_server = BentoAPIServer(
         bento_service=bento_service,
-        port=5000,
         enable_swagger=True,
         enable_metrics=True,
         enable_feedback=True,
@@ -97,7 +96,6 @@ def test_api_function_route(bento_service, img_file):
 def test_api_function_route_with_disabled_swagger(bento_service):
     rest_server = BentoAPIServer(
         bento_service=bento_service,
-        port=5000,
         enable_swagger=False,
         enable_metrics=True,
         enable_feedback=True,

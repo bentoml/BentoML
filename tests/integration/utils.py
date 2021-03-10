@@ -117,13 +117,10 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
 
 
 @contextmanager
-def run_api_server(bundle_path, enable_microbatch=False, timeout=10, init_cmd=None):
+def run_api_server(bundle_path, enable_microbatch=False, timeout=10):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
-    if init_cmd:
-        with subprocess.Popen(init_cmd) as p:
-            p.wait(60)
 
     with bentoml.utils.reserve_free_port() as port:
         my_env = os.environ.copy()

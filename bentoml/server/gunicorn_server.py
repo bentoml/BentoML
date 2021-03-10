@@ -13,11 +13,15 @@
 # limitations under the License.
 
 import logging
-import psutil
+import multiprocessing
+from typing import Optional
 
+import psutil
+from dependency_injector.wiring import Provide as P
+from dependency_injector.wiring import inject
 from flask import Response
 
-from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer as C
 from bentoml.saved_bundle import load_from_dir
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
@@ -28,10 +32,10 @@ logger = logging.getLogger(__name__)
 class GunicornBentoAPIServer(BentoAPIServer):
     def metrics_view_func(self):
         from prometheus_client import (
-            multiprocess,
+            CONTENT_TYPE_LATEST,
             CollectorRegistry,
             generate_latest,
-            CONTENT_TYPE_LATEST,
+            multiprocess,
         )
 
         registry = CollectorRegistry()
@@ -50,34 +54,42 @@ if psutil.POSIX:
 
             >>> from bentoml.server.gunicorn_server import GunicornBentoServer
             >>>
-            >>> gunicorn_app = GunicornBentoServer(saved_bundle_path, port=5000)
+            >>> gunicorn_app = GunicornBentoServer(saved_bundle_path,\
+            >>>     bind="127.0.0.1:5000")
             >>> gunicorn_app.run()
 
         :param bundle_path: path to the saved BentoService bundle
-        :param port: the port you want to run gunicorn server on
+        :param bind: Specify a server socket to bind. Server sockets can be any of
+            $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH).
         :param workers: number of worker processes
         :param timeout: request timeout config
         """
 
+        @inject
         def __init__(
             self,
             bundle_path,
-            port=None,
-            workers=None,
-            timeout=None,
-            prometheus_lock=None,
-            enable_swagger=True,
+            bind: str = None,
+            port: int = P[C.config.api_server.port],
+            timeout: int = P[C.config.api_server.timeout],
+            workers: int = P[C.api_server_workers],
+            prometheus_lock: Optional[multiprocessing.Lock] = None,
+            enable_swagger: bool = P[C.config.api_server.enable_swagger],
+            max_request_size: int = P[C.config.api_server.max_request_size],
+            loglevel=P[C.config.logging.level],
         ):
             self.bento_service_bundle_path = bundle_path
 
-            self.port = port or config("apiserver").getint("default_port")
-            timeout = timeout or config("apiserver").getint("default_timeout")
-            max_request_size = config("apiserver").getint("default_max_request_size")
+            if bind is None:
+                self.bind = f"0.0.0.0:{port}"
+            else:
+                self.bind = bind
+
             self.options = {
-                "bind": "%s:%s" % ("0.0.0.0", self.port),
+                "bind": self.bind,
                 "timeout": timeout,
                 "limit_request_line": max_request_size,
-                "loglevel": config("logging").get("LEVEL").upper(),
+                "loglevel": loglevel.upper(),
             }
             if workers:
                 self.options['workers'] = workers
@@ -89,7 +101,6 @@ if psutil.POSIX:
         def load_config(self):
             self.load_config_from_file("python:bentoml.server.gunicorn_config")
 
-            # override config with self.options
             gunicorn_config = dict(
                 [
                     (key, value)
@@ -103,7 +114,7 @@ if psutil.POSIX:
         def load(self):
             bento_service = load_from_dir(self.bento_service_bundle_path)
             api_server = GunicornBentoAPIServer(
-                bento_service, port=self.port, enable_swagger=self.enable_swagger
+                bento_service, enable_swagger=self.enable_swagger
             )
             return api_server.app
 

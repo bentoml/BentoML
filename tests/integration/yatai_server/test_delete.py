@@ -116,3 +116,19 @@ def test_delete_all_bentos(bento_service):
     yc.repository.delete(prune=True)
     bentos = yc.repository.list()
     assert len(bentos) == 0
+
+    bento_service.save(version=uuid.uuid4().hex[0:8])
+    bento_service.save(version=uuid.uuid4().hex[0:8])
+    bento_service.save(version=uuid.uuid4().hex[0:8])
+
+    runner = CliRunner()
+    cli = create_bentoml_cli()
+    runner.invoke(
+        cli.commands['delete'],
+        [
+            '--all',
+            '-y',
+        ],
+    )
+    bentos = yc.repository.list()
+    assert len(bentos) == 0

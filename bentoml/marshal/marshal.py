@@ -141,9 +141,13 @@ class MarshalService:
         bento_bundle_path,
         outbound_host="localhost",
         outbound_port=None,
-        outbound_workers=1,
-        mb_max_batch_size: int = None,
-        mb_max_latency: int = None,
+        outbound_workers: int = Provide[BentoMLContainer.config.api_server.workers],
+        mb_max_batch_size: int = Provide[
+            BentoMLContainer.config.marshal_server.max_batch_size
+        ],
+        mb_max_latency: int = Provide[
+            BentoMLContainer.config.marshal_server.max_latency
+        ],
         request_header_flag: str = Provide[
             BentoMLContainer.config.marshal_server.request_header_flag
         ],
@@ -152,6 +156,7 @@ class MarshalService:
         ],
         outbound_unix_socket: str = None,
     ):
+        self._client = None
         self.outbound_unix_socket = outbound_unix_socket
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
@@ -179,7 +184,6 @@ class MarshalService:
             "or launch more microbatch instances to accept more concurrent connection.",
             self.CONNECTION_LIMIT,
         )
-        self._client = None
 
     def set_outbound_port(self, outbound_port):
         self.outbound_port = outbound_port
@@ -356,10 +360,14 @@ class MarshalService:
         app.router.add_view("/{path:.*}", self.request_dispatcher)
         return app
 
-    def fork_start_app(self, port):
+    def fork_start_app(
+        self, port=Provide[BentoMLContainer.config.api_server.port],
+    ):
         # Use new eventloop in the fork process to avoid problems on MacOS
         # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         app = self.make_app()
+
+        logger.info("Running micro batch service on :%d", port)
         aiohttp.web.run_app(app, port=port)

@@ -49,6 +49,7 @@ def mock_start_dev_server(
     mb_max_batch_size: int = 0,
     run_with_ngrok: bool = False,
     enable_swagger: bool = False,
+    config_file: str = None,
 ):
     raise KeyboardInterrupt()
 

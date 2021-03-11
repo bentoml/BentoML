@@ -192,6 +192,10 @@ using either the :code:`pip_packages` option or the :code:`requirements_txt_file
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
+Note that although this supports the use of remote Git URLs, any use of Pip package options 
+like :code:`-i` or :code:`-f` is not supported. If you'd like to use those features, you can 
+define your own :code:`requirements.txt` file.
+
 .. code-block:: python
   :caption: Specifying PyPI packages through the `requirements_txt_file` option
 
@@ -204,10 +208,8 @@ using either the :code:`pip_packages` option or the :code:`requirements_txt_file
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
-Note that although this supports the use of remote Git URLs, any use of Pip package options 
-like :code:`-i` or :code:`-f` is not supported. If you'd like to use those features, you can 
-define your own :code:`requirements.txt` file and pass it using the :code:`requirements_txt_file` 
-option by doing :code:`@bentoml.env(requirements_txt_file='./requirements.txt')`.
+This requirements.txt file should be compatible with the latest version of pip, and supports all
+the pip package install options including :code:`--index-url` and :code:`--find-links`.
 
 .. note::
     The :code:`requirements_txt_file` option will override any other method for defining 

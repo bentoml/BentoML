@@ -383,10 +383,12 @@ def save(bento_service, base_path=None, version=None, labels=None):
     in local file system under the $BENTOML_HOME(~/bentoml) directory. Users can also
     configure BentoML to save their BentoService to a shared Database and cloud object
     storage such as AWS S3.
+
     :param bento_service: target BentoService instance to be saved
     :param base_path: optional - override repository base path
     :param version: optional - save with version override
     :param labels: optional - user defined labels
+
     :return: saved_path: file path to where the BentoService is saved
     """
 

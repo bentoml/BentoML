@@ -173,7 +173,6 @@ class MarshalService:
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
-        print("### enable_microbatch ###", enable_microbatch)
         if enable_microbatch:
             self.setup_routes_from_pb(self.bento_service_metadata_pb)
         if psutil.POSIX:
@@ -253,7 +252,6 @@ class MarshalService:
                 )
 
     async def request_dispatcher(self, request):
-        print("### Marshal request_dispatcher ###")
         with async_trace(
             service_name=self.__class__.__name__,
             span_name="[1]http request",

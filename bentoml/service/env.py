@@ -84,6 +84,11 @@ class CondaEnv(object):
         if name:
             self.set_name(name)
 
+        if override_channels and channels is None:
+            raise BentoMLException(
+                "No `conda_channels` provided while override_channels=True"
+            )
+
         if channels:
             self.set_channels(channels, override_channels)
 

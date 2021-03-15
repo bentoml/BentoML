@@ -17,18 +17,16 @@ import multiprocessing
 import sys
 from typing import Optional
 
-from dependency_injector.wiring import Provide, inject
-
 from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 from bentoml.utils import reserve_free_port
 
 logger = logging.getLogger(__name__)
 
 
-@inject
 def start_dev_server(
     bundle_path: str,
     port: Optional[int] = None,
+    enable_microbatch: Optional[bool] = None,
     mb_max_batch_size: Optional[int] = None,
     mb_max_latency: Optional[int] = None,
     run_with_ngrok: Optional[bool] = None,
@@ -37,6 +35,7 @@ def start_dev_server(
 ):
     config = BentoMLConfiguration(override_config_file=config_file)
     config.override(["api_server", "port"], port)
+    config.override(["api_server", "enable_microbatch"], enable_microbatch)
     config.override(["api_server", "enable_swagger"], enable_swagger)
     config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
     config.override(["marshal_server", "max_latency"], mb_max_latency)
@@ -66,7 +65,7 @@ def start_dev_server(
     model_server_proc.start()
 
     try:
-        _start_dev_batching_server(
+        _start_dev_proxy(
             api_server_port=api_server_port,
             saved_bundle_path=bundle_path,
             config=config,
@@ -95,9 +94,12 @@ def _start_dev_server(
     api_server.start(port=api_server_port)
 
 
-def _start_dev_batching_server(
+def _start_dev_proxy(
     saved_bundle_path: str, api_server_port: int, config: BentoMLConfiguration,
 ):
+
+    logger.info("Starting BentoML API proxy in development mode..")
+
     from bentoml import marshal
 
     container = BentoMLContainer()
@@ -118,6 +120,7 @@ def start_prod_server(
     port: Optional[int] = None,
     workers: Optional[int] = None,
     timeout: Optional[int] = None,
+    enable_microbatch: Optional[bool] = None,
     enable_swagger: Optional[bool] = None,
     mb_max_batch_size: Optional[int] = None,
     mb_max_latency: Optional[int] = None,
@@ -134,6 +137,7 @@ def start_prod_server(
     config.override(["api_server", "port"], port)
     config.override(["api_server", "workers"], workers)
     config.override(["api_server", "timeout"], timeout)
+    config.override(["api_server", "enable_microbatch"], enable_microbatch)
     config.override(["api_server", "enable_swagger"], enable_swagger)
     config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
     config.override(["marshal_server", "max_latency"], mb_max_latency)
@@ -156,7 +160,7 @@ def start_prod_server(
     model_server_job.start()
 
     try:
-        _start_prod_batching_server(
+        _start_prod_proxy(
             saved_bundle_path=saved_bundle_path,
             config=config,
             api_server_port=api_server_port,
@@ -188,14 +192,14 @@ def _start_prod_server(
     gunicorn_app.run()
 
 
-def _start_prod_batching_server(
+def _start_prod_proxy(
     saved_bundle_path: str,
     api_server_port: int,
     config: BentoMLConfiguration,
     prometheus_lock: Optional[multiprocessing.Lock] = None,
 ):
 
-    logger.info("Starting BentoML Batching server in production mode..")
+    logger.info("Starting BentoML proxy in production mode..")
 
     container = BentoMLContainer()
     container.config.from_dict(config.as_dict())

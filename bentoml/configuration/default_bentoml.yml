@@ -5,7 +5,7 @@
 
 api_server:
   port: 5000
-  enable_microbatch: False
+  enable_microbatch: True
   run_with_ngrok: False
   enable_swagger: True
   enable_metrics: True

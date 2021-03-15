@@ -71,7 +71,6 @@ class CondaEnv(object):
     ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
-        self.overwrite_channels = overwrite_channels
 
         if default_env_yaml_file:
             env_yml_file = Path(default_env_yaml_file)
@@ -88,7 +87,7 @@ class CondaEnv(object):
             self.set_name(name)
 
         if channels:
-            self.add_channels(channels)
+            self.set_channels(channels, overwrite_channels)
 
         if dependencies:
             self.add_conda_dependencies(dependencies)
@@ -104,16 +103,10 @@ class CondaEnv(object):
             conda_dependencies + self._conda_env["dependencies"]
         )
 
-    def add_channels(self, channels: List[str]):
-        if channels and self.overwrite_channels:
-            logger.debug("Removing default conda channels from environment.yml")
-            self._conda_env["channels"] = []
-
-        for channel_name in channels:
-            if channel_name not in self._conda_env["channels"]:
-                self._conda_env["channels"] += channels
-            else:
-                logger.debug(f"Conda channel {channel_name} already added")
+    def set_channels(self, channels: List[str], overwrite_channels=False):
+        if overwrite_channels and "nodefaults" not in channels:
+            channels.append("nodefaults")
+        self._conda_env["channels"] = channels
 
     def write_to_yaml_file(self, filepath):
         with open(filepath, 'wb') as output_yaml:
@@ -135,9 +128,12 @@ class BentoServiceEnv(object):
             pip dependencies and pin their version
         requirements_txt_file: path to the requirements.txt where pip dependencies
             are explicitly specified, with ideally pinned versions
-        conda_channels: list of extra conda channels to be used
-        conda_overwrite_channels: Turn on to make conda_channels overwrite the list of
-            channels instead of adding to it
+        conda_channels: list of extra conda channels other than dafault channels to be
+            used. This is equivalent to passing the --channels to conda commands
+        conda_overwrite_channels: ensures that conda searches only your specified
+            channel and no other channels, such as default channels.
+            This is equivalent to passing the --override-channels option to conda
+            commands, or adding `nodefaults` to the `channels` in the environment.yml
         conda_dependencies: list of conda dependencies required
         conda_env_yml_file: use a pre-defined conda environment yml file
         setup_sh: user defined setup bash script, it is executed in docker build time
@@ -228,9 +224,6 @@ class BentoServiceEnv(object):
                     f"'{self._docker_base_image}'"
                 )
         self._zipimport_archives = zipimport_archives
-
-    def add_conda_channels(self, channels: List[str]):
-        self._conda_env.add_channels(channels)
 
     def add_conda_dependencies(self, conda_dependencies: List[str]):
         self._conda_env.add_conda_dependencies(conda_dependencies)

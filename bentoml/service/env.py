@@ -48,8 +48,6 @@ PYTHON_VERSION = "{minor_version}.{micro}".format(
 
 DEFAULT_CONDA_ENV_BASE_YAML = """
 name: bentoml-default-conda-env
-channels:
-  - defaults
 dependencies: []
 """
 
@@ -129,7 +127,9 @@ class BentoServiceEnv(object):
         requirements_txt_file: path to the requirements.txt where pip dependencies
             are explicitly specified, with ideally pinned versions
         conda_channels: list of extra conda channels other than dafault channels to be
-            used. This is equivalent to passing the --channels to conda commands
+            used. This is equivalent to passing the --channels to conda commands.
+            If the `conda_env_yml_file` is specified, this will override the `channels`
+            section of the env yml file
         conda_override_channels: ensures that conda searches only your specified
             channel and no other channels, such as default channels.
             This is equivalent to passing the --override-channels option to conda

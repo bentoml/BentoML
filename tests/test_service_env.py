@@ -179,7 +179,6 @@ def test_conda_channels_n_dependencies(tmpdir):
 
     yaml = YAML()
     env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
-    assert 'defaults' in env_yml['channels']
     assert 'bentoml-test-channel' in env_yml['channels']
 
     assert 'bentoml-test-lib' in env_yml['dependencies']
@@ -206,10 +205,46 @@ def test_conda_overwrite_channels(tmpdir):
     yaml = YAML()
     env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
     assert 'bentoml-test-channel' in env_yml['channels']
-    assert len(env_yml['channels']) == 1
+    assert 'nodefaults' in env_yml['channels']
+    assert len(env_yml['channels']) == 2
 
 
 def test_conda_env_yml_file_option(tmpdir):
+    conda_env_yml_file = os.path.join(tmpdir, 'environment.yml')
+    with open(conda_env_yml_file, 'wb') as f:
+        f.write(
+            """
+name: bentoml-test-conda-env
+channels:
+  - test-ch-1
+  - test-ch-2
+dependencies:
+  - test-dep-1
+""".encode()
+        )
+
+    @bentoml.env(conda_env_yml_file=conda_env_yml_file)
+    class ServiceWithCondaDeps(bentoml.BentoService):
+        @bentoml.api(input=DataframeInput(), batch=True)
+        def predict(self, df):
+            return df
+
+    service_with_string = ServiceWithCondaDeps()
+    service_with_string.save_to_dir(str(tmpdir))
+
+    from pathlib import Path
+
+    from bentoml.utils.ruamel_yaml import YAML
+
+    yaml = YAML()
+    env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
+    assert 'test-ch-1' in env_yml['channels']
+    assert 'test-ch-2' in env_yml['channels']
+
+    assert 'test-dep-1' in env_yml['dependencies']
+
+
+def test_both_conda_env_yml_file_and_other_options(tmpdir):
     conda_env_yml_file = os.path.join(tmpdir, 'environment.yml')
     with open(conda_env_yml_file, 'wb') as f:
         f.write(
@@ -242,8 +277,8 @@ dependencies:
 
     yaml = YAML()
     env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
-    assert 'test-ch-1' in env_yml['channels']
-    assert 'test-ch-2' in env_yml['channels']
+    assert 'test-ch-1' not in env_yml['channels']
+    assert 'test-ch-2' not in env_yml['channels']
     assert 'bentoml-test-channel' in env_yml['channels']
 
     assert 'test-dep-1' in env_yml['dependencies']

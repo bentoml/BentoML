@@ -1,12 +1,16 @@
-import pytest
 import time
 import urllib
 
-import xgboost as xgb
 import pandas as pd
+import pytest
+import xgboost as xgb
 
 import bentoml
 from tests.bento_service_examples.xgboost_classifier import XgboostModelClassifier
+from tests.integration.utils import (
+    build_api_server_docker_image,
+    run_api_server_docker_container,
+)
 
 
 def XgboostModel():
@@ -81,7 +85,7 @@ def xgboost_svc_saved_dir(tmp_path_factory, xgboost_svc):
     return tmpdir
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def xgboost_svc_loaded(xgboost_svc_saved_dir):
     return bentoml.load(xgboost_svc_saved_dir)
 
@@ -92,17 +96,12 @@ def test_xgboost_artifact(xgboost_svc_loaded):
     assert result == 1
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def xgboost_image(xgboost_svc_saved_dir):
-    import docker
-
-    client = docker.from_env()
-
-    image = client.images.build(
-        path=xgboost_svc_saved_dir, tag='xgboost_example_service', rm=True
-    )[0]
-    yield image
-    client.images.remove(image.id)
+    with build_api_server_docker_image(
+        xgboost_svc_saved_dir, "xgboost_example_service"
+    ) as image:
+        yield image
 
 
 def _wait_until_ready(_host, timeout, check_interval=0.5):
@@ -120,31 +119,12 @@ def _wait_until_ready(_host, timeout, check_interval=0.5):
             raise AssertionError(f"server didn't get ready in {timeout} seconds")
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def xgboost_docker_host(xgboost_image):
-    import docker
-
-    client = docker.from_env()
-    with bentoml.utils.reserve_free_port() as port:
-        pass
-
-    command = 'bentoml serve-gunicorn /bento --workers 1'
-
-    try:
-        container = client.containers.run(
-            command=command,
-            image=xgboost_image.id,
-            auto_remove=True,
-            tty=True,
-            ports={'5000/tcp': port},
-            detach=True,
-        )
-        _host = f'127.0.0.1:{port}'
-        _wait_until_ready(_host, 10)
-        yield _host
-    finally:
-        container.stop()
-        time.sleep(1)
+    with run_api_server_docker_container(
+        xgboost_image, enable_microbatch=False, timeout=60
+    ) as host:
+        yield host
 
 
 # @pytest.mark.asyncio

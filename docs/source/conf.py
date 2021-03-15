@@ -21,7 +21,7 @@ import bentoml
 # -- Project information -----------------------------------------------------
 
 project = 'BentoML'
-copyright = '2020, bentoml.org'
+copyright = '2021, bentoml.org'
 author = 'bentoml.org'
 version = bentoml.__version__
 

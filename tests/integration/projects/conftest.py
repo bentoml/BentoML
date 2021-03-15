@@ -24,18 +24,17 @@ def clean_context():
         yield stack
 
 
-@pytest.fixture(params=[True, False], scope="module")
+@pytest.fixture(params=[True, False], scope="session")
 def enable_microbatch(request):
     pytest.enable_microbatch = request.param
     return request.param
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def host(pytestconfig, clean_context, enable_microbatch):
     test_svc_bundle = pytestconfig.getoption("bento_dist") or os.path.join(
         sys.argv[1], "build", "dist"
     )
-    print(test_svc_bundle)
 
     if pytestconfig.getoption("docker"):
         image = clean_context.enter_context(
@@ -46,3 +45,14 @@ def host(pytestconfig, clean_context, enable_microbatch):
     else:
         with run_api_server(test_svc_bundle, enable_microbatch) as host:
             yield host
+
+
+@pytest.fixture(scope="session")
+def service(pytestconfig):
+    test_svc_bundle = pytestconfig.getoption("bento_dist") or os.path.join(
+        sys.argv[1], "build", "dist"
+    )
+
+    import bentoml
+
+    return bentoml.load_from_dir(test_svc_bundle)

@@ -1,12 +1,9 @@
-import base64
 import json
 import logging
 import os
 import shutil
-from urllib.parse import urlparse
 
 import boto3
-import docker
 from botocore.exceptions import ClientError
 
 from bentoml.exceptions import (
@@ -19,13 +16,20 @@ from bentoml.saved_bundle import loader
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import (
-    process_docker_api_line,
-    ensure_docker_available_or_raise,
     raise_if_api_names_not_found_in_bento_service_metadata,
+)
+from bentoml.yatai.deployment.docker_utils import (
+    ensure_docker_available_or_raise,
+    generate_docker_image_tag,
+    push_docker_image_to_repository,
+    build_docker_image,
 )
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
     get_default_aws_region,
+    get_ecr_login_info,
+    create_ecr_repository_if_not_exists,
+    generate_bentoml_exception_from_aws_client_error,
 )
 from bentoml.yatai.proto.deployment_pb2 import (
     DeploymentState,
@@ -61,17 +65,6 @@ RUN if [ -f /bento/bentoml-init.sh ]; then bash -c /bento/bentoml-init.sh; fi
 
 ENV PATH="/bento:$PATH"
 """  # noqa: E501
-
-
-def strip_scheme(url):
-    """ Stripe url's schema
-    e.g.   http://some.url/path -> some.url/path
-    :param url: String
-    :return: String
-    """
-    parsed = urlparse(url)
-    scheme = "%s://" % parsed.scheme
-    return parsed.geturl().replace(scheme, "", 1)
 
 
 def get_arn_role_from_current_aws_user():
@@ -128,40 +121,25 @@ def create_and_push_docker_image_to_ecr(
     Returns:
         str: AWS ECR Tag
     """
-    ecr_client = boto3.client("ecr", region)
-    token = ecr_client.get_authorization_token()
-    logger.debug("Getting docker login info from AWS")
-    username, password = (
-        base64.b64decode(token["authorizationData"][0]["authorizationToken"])
-        .decode("utf-8")
-        .split(":")
+    repository_id = create_ecr_repository_if_not_exists(
+        region, f'{bento_name}-sagemaker'.lower()
     )
-    registry_url = token["authorizationData"][0]["proxyEndpoint"]
-    auth_config_payload = {"username": username, "password": password}
+    logger.debug("Getting docker login info from AWS")
+    registry_url, username, password = get_ecr_login_info(
+        region, repository_id=repository_id
+    )
 
-    docker_api = docker.APIClient()
-
-    image_name = bento_name.lower() + "-sagemaker"
-    ecr_tag = strip_scheme(
-        "{registry_url}/{image_name}:{version}".format(
-            registry_url=registry_url, image_name=image_name, version=bento_version
-        )
+    ecr_tag = generate_docker_image_tag(
+        f'{bento_name}-sagemaker', bento_version, registry_url
     )
 
     logger.debug("Building docker image: %s", ecr_tag)
-    for line in docker_api.build(
-        path=snapshot_path, dockerfile="Dockerfile-sagemaker", tag=ecr_tag
-    ):
-        process_docker_api_line(line)
-
-    try:
-        ecr_client.describe_repositories(repositoryNames=[image_name])["repositories"]
-    except ecr_client.exceptions.RepositoryNotFoundException:
-        ecr_client.create_repository(repositoryName=image_name)
+    build_docker_image(snapshot_path, 'Dockerfile-sagemaker', ecr_tag)
 
     logger.debug("Pushing image to AWS ECR at %s", ecr_tag)
-    for line in docker_api.push(ecr_tag, stream=True, auth_config=auth_config_payload):
-        process_docker_api_line(line)
+    push_docker_image_to_repository(
+        repository=ecr_tag, username=username, password=password
+    )
     logger.debug("Finished pushing image: %s", ecr_tag)
     return ecr_tag
 
@@ -243,7 +221,7 @@ def _delete_sagemaker_model_if_exist(sagemaker_client, sagemaker_model_name):
             # sagemaker model does not exist
             return
 
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, f"Failed to cleanup sagemaker model '{sagemaker_model_name}'"
         )
 
@@ -271,7 +249,7 @@ def _delete_sagemaker_endpoint_config_if_exist(
             # endpoint config does not exist
             return
 
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e,
             f"Failed to cleanup sagemaker endpoint config "
             f"'{sagemaker_endpoint_config_name}' after creation failed",
@@ -296,7 +274,7 @@ def _delete_sagemaker_endpoint_if_exist(sagemaker_client, sagemaker_endpoint_nam
             # sagemaker endpoint does not exist
             return
 
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, f"Failed to delete sagemaker endpoint '{sagemaker_endpoint_name}'"
         )
 
@@ -370,7 +348,7 @@ def _create_sagemaker_model(
     try:
         create_model_response = sagemaker_client.create_model(**sagemaker_model_info)
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to create sagemaker model"
         )
     logger.debug("AWS create model response: %s", create_model_response)
@@ -414,7 +392,7 @@ def _create_sagemaker_endpoint_config(
             **create_endpoint_config_arguments
         )
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to create sagemaker endpoint config"
         )
     logger.debug("AWS create endpoint config response: %s", create_config_response)
@@ -428,7 +406,7 @@ def _create_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
         )
         logger.debug("AWS create endpoint response: %s", create_endpoint_response)
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to create sagemaker endpoint"
         )
 
@@ -441,7 +419,7 @@ def _update_sagemaker_endpoint(sagemaker_client, endpoint_name, endpoint_config_
         )
         logger.debug("AWS update endpoint response: %s", str(update_endpoint_response))
     except ClientError as e:
-        raise _aws_client_error_to_bentoml_exception(
+        raise generate_bentoml_exception_from_aws_client_error(
             e, "Failed to update sagemaker endpoint"
         )
 

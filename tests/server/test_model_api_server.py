@@ -6,6 +6,8 @@ from bentoml.server.api_server import BentoAPIServer
 
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
+CUSTOM_ROUTE = "$~!@%^&*()_-+=[]\\|;:,./predict"
+
 
 def test_api_function_route(bento_service, img_file):
     import imageio  # noqa # pylint: disable=unused-import
@@ -13,7 +15,6 @@ def test_api_function_route(bento_service, img_file):
 
     rest_server = BentoAPIServer(
         bento_service=bento_service,
-        port=5000,
         enable_swagger=True,
         enable_metrics=True,
         enable_feedback=True,
@@ -36,6 +37,12 @@ def test_api_function_route(bento_service, img_file):
 
     response = test_client.get("/docs.json")
     assert 200 == response.status_code
+    docs = json.loads(response.data.decode())
+    assert f"/{CUSTOM_ROUTE}" in docs["paths"]
+
+    response = test_client.post(f"/{CUSTOM_ROUTE}", data='{"a": 1}',)
+    assert 200 == response.status_code
+    assert '{"a": 1}' == response.data.decode()
 
     assert "predict_dataframe" in index_list
     data = [{"col1": 10}, {"col1": 20}]
@@ -89,7 +96,6 @@ def test_api_function_route(bento_service, img_file):
 def test_api_function_route_with_disabled_swagger(bento_service):
     rest_server = BentoAPIServer(
         bento_service=bento_service,
-        port=5000,
         enable_swagger=False,
         enable_metrics=True,
         enable_feedback=True,

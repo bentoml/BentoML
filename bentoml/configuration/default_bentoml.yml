@@ -18,13 +18,13 @@ api_server:
   # automatically, see `bentoml.configuration.containers.BentoMLContainer.
   # api_server_workers` for details.
   #
-  workers: Null
+  workers: 1
 
   timeout: 60
 
 marshal_server:
-  max_batch_size: 2000
-  max_latency: 10000
+  max_batch_size: Null
+  max_latency: Null
   request_header_flag: BentoML-Is-Merged-Request
 
   #
@@ -40,3 +40,6 @@ tracing:
 
 instrument:
   namespace: BENTOML
+
+logging:
+  level: INFO

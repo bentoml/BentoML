@@ -35,7 +35,7 @@ from bentoml.yatai.deployment.azure_functions.constants import (
 )
 from bentoml.yatai.deployment.azure_functions.templates import AZURE_API_FUNCTION_JSON
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
-from bentoml.yatai.deployment.utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.exceptions import (
     BentoMLException,
     MissingDependencyException,

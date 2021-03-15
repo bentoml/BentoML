@@ -51,6 +51,7 @@ class InferenceAPI(object):
         mb_max_latency=10000,
         mb_max_batch_size=1000,
         batch=False,
+        route=None,
     ):
         """
         :param service: ref to service containing this API
@@ -73,6 +74,9 @@ class InferenceAPI(object):
             memory to hold the entire batch's data). Default: 1000.
         :param batch: If true, the user API functool would take a batch of input data
             a time.
+        :param route: Specify HTTP URL route of this inference API. By default,
+            `api.name` is used as the route.  This parameter can be used for customizing
+            the URL route, e.g. `route="/api/v2/model_a/predict"`
         """
         self._service = service
         self._name = name
@@ -82,6 +86,7 @@ class InferenceAPI(object):
         self.mb_max_latency = mb_max_latency
         self.mb_max_batch_size = mb_max_batch_size
         self.batch = batch
+        self.route = name if route is None else route
 
         if not self.input_adapter.BATCH_MODE_SUPPORTED and batch:
             raise BentoMLConfigException(
@@ -198,7 +203,11 @@ class InferenceAPI(object):
         """
         :return: the HTTP API request schema in OpenAPI/Swagger format
         """
-        schema = self.input_adapter.request_schema
+        if self.input_adapter.custom_request_schema is None:
+            schema = self.input_adapter.request_schema
+        else:
+            schema = self.input_adapter.custom_request_schema
+
         if schema.get('application/json'):
             schema.get('application/json')[
                 'example'

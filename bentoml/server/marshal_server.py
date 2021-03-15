@@ -14,88 +14,96 @@
 
 import logging
 import multiprocessing
+from typing import Optional
 
-from gunicorn.app.base import Application
+import psutil
+from dependency_injector.wiring import Provide as P
+from dependency_injector.wiring import inject
 
-from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer as C
 from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
-
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 
 
-class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
-    def __init__(
-        self,
-        outbound_host,
-        outbound_port,
-        bundle_path,
-        port=None,
-        workers=1,
-        timeout=None,
-        prometheus_lock=None,
-        outbound_workers=1,
-        mb_max_batch_size: int = None,
-        mb_max_latency: int = None,
-    ):
-        self.bento_service_bundle_path = bundle_path
+if psutil.POSIX:
+    from gunicorn.app.base import Application
 
-        self.port = port or config("apiserver").getint("default_port")
-        timeout = timeout or config("apiserver").getint("default_timeout")
-        max_request_size = config("apiserver").getint("default_max_request_size")
-        self.options = {
-            "bind": "%s:%s" % ("0.0.0.0", self.port),
-            "timeout": timeout,
-            "limit_request_line": max_request_size,
-            "loglevel": config("logging").get("LEVEL").upper(),
-            "worker_class": "aiohttp.worker.GunicornWebWorker",
-        }
-        if workers:
-            self.options['workers'] = workers
-        self.prometheus_lock = prometheus_lock
+    class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
+        @inject
+        def __init__(
+            self,
+            bundle_path,
+            outbound_host,
+            outbound_port,
+            workers: int = P[C.config.marshal_server.workers],
+            timeout: int = P[C.config.api_server.timeout],
+            outbound_workers: int = P[C.api_server_workers],
+            max_request_size: int = P[C.config.api_server.max_request_size],
+            port: int = P[C.config.api_server.port],
+            mb_max_batch_size: int = P[C.config.marshal_server.max_batch_size],
+            mb_max_latency: int = P[C.config.marshal_server.max_latency],
+            prometheus_lock: Optional[multiprocessing.Lock] = None,
+            loglevel=P[C.config.logging.level],
+        ):
+            self.bento_service_bundle_path = bundle_path
 
-        self.outbound_port = outbound_port
-        self.outbound_host = outbound_host
-        self.outbound_workers = outbound_workers
-        self.mb_max_batch_size = mb_max_batch_size
-        self.mb_max_latency = mb_max_latency
+            self.port = port
+            self.options = {
+                "bind": "%s:%s" % ("0.0.0.0", self.port),
+                "timeout": timeout,
+                "limit_request_line": max_request_size,
+                "loglevel": loglevel.upper(),
+                "worker_class": "aiohttp.worker.GunicornWebWorker",
+            }
+            if workers:
+                self.options['workers'] = workers
+            self.prometheus_lock = prometheus_lock
 
-        super(GunicornMarshalServer, self).__init__()
+            self.outbound_port = outbound_port
+            self.outbound_host = outbound_host
+            self.outbound_workers = outbound_workers
+            self.mb_max_batch_size = mb_max_batch_size
+            self.mb_max_latency = mb_max_latency
 
-    def load_config(self):
-        self.load_config_from_file("python:bentoml.server.gunicorn_config")
+            super(GunicornMarshalServer, self).__init__()
 
-        # override config with self.options
-        gunicorn_config = dict(
-            [
-                (key, value)
-                for key, value in self.options.items()
-                if key in self.cfg.settings and value is not None
-            ]
-        )
-        for key, value in gunicorn_config.items():
-            self.cfg.set(key.lower(), value)
+        def load_config(self):
+            self.load_config_from_file("python:bentoml.server.gunicorn_config")
 
-    def load(self):
-        server = MarshalService(
-            self.bento_service_bundle_path,
-            self.outbound_host,
-            self.outbound_port,
-            outbound_workers=self.outbound_workers,
-            mb_max_batch_size=self.mb_max_batch_size,
-            mb_max_latency=self.mb_max_latency,
-        )
-        return server.make_app()
+            # override config with self.options
+            gunicorn_config = dict(
+                [
+                    (key, value)
+                    for key, value in self.options.items()
+                    if key in self.cfg.settings and value is not None
+                ]
+            )
+            for key, value in gunicorn_config.items():
+                self.cfg.set(key.lower(), value)
 
-    def run(self):
-        setup_prometheus_multiproc_dir(self.prometheus_lock)
-        super(GunicornMarshalServer, self).run()
+        def load(self):
+            server = MarshalService(
+                self.bento_service_bundle_path,
+                self.outbound_host,
+                self.outbound_port,
+                outbound_workers=self.outbound_workers,
+                mb_max_batch_size=self.mb_max_batch_size,
+                mb_max_latency=self.mb_max_latency,
+            )
+            return server.make_app()
 
-    def async_run(self):
-        """
-        Start an micro batch server.
-        """
-        marshal_proc = multiprocessing.Process(target=self.run, daemon=True)
-        marshal_proc.start()
-        marshal_logger.info("Running micro batch service on :%d", self.port)
+        def run(self):
+            setup_prometheus_multiproc_dir(self.prometheus_lock)
+            marshal_logger.info("Running micro batch service on :%d", self.port)
+            super(GunicornMarshalServer, self).run()
+
+
+else:
+
+    class GunicornMarshalServer:
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError(
+                "GunicornMarshalServer is not supported in non-POSIX environments."
+            )

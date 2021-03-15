@@ -31,24 +31,18 @@ class StringInput(BaseInputAdapter):
     Convert various inputs(HTTP, Aws Lambda or CLI) to strings(list of str), passing it
     to API functions.
 
-    Parameters
-    ----------
-    none
-
     Errors
-    -------
         400 UnicodeDecodeError
+
         400 Unsupported charset
 
     Example Request
-    -------
-        ```
-        curl -i \
-            --header "Content-Type: text/plain; charset=utf-8" \
-            --request POST \
-            --data 'best movie ever' \
-            localhost:5000/predict
-        ```
+
+    >>> curl -i \\
+    >>>    --header "Content-Type: text/plain; charset=utf-8" \\
+    >>>    --request POST \\
+    >>>    --data 'best movie ever' \\
+    >>>    localhost:5000/predict
     """
 
     BATCH_MODE_SUPPORTED = True

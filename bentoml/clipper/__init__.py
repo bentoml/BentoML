@@ -18,13 +18,11 @@ import shutil
 import re
 import logging
 
-import docker
-
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.yatai.deployment.utils import (
-    process_docker_api_line,
+from bentoml.yatai.deployment.docker_utils import (
     ensure_docker_available_or_raise,
+    build_docker_image,
 )
 from bentoml.adapters.clipper_input import ADAPTER_TYPE_TO_INPUT_TYPE
 from bentoml.exceptions import BentoMLException
@@ -207,16 +205,12 @@ def deploy_bentoml(
         with open(os.path.join(build_path, "Dockerfile-clipper"), "w") as f:
             f.write(docker_content)
 
-        docker_api = docker.APIClient()
         clipper_model_docker_image_tag = "clipper-model-{}:{}".format(
             bento_service_metadata.name.lower(), bento_service_metadata.version
         )
-        for line in docker_api.build(
-            path=build_path,
-            dockerfile="Dockerfile-clipper",
-            tag=clipper_model_docker_image_tag,
-        ):
-            process_docker_api_line(line)
+        build_docker_image(
+            build_path, 'Dockerfile-clipper', clipper_model_docker_image_tag
+        )
 
         logger.info(
             "Successfully built docker image %s for Clipper deployment",

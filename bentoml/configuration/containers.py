@@ -18,7 +18,7 @@ import os
 
 from deepmerge import always_merger
 from dependency_injector import containers, providers
-from schema import Schema, SchemaError, And, Or, Optional
+from schema import And, Or, Schema, SchemaError, Optional
 
 from bentoml.configuration import config
 from bentoml.exceptions import BentoMLConfigException
@@ -40,8 +40,8 @@ SCHEMA = Schema(
             "timeout": And(int, lambda timeout: timeout > 0),
         },
         "marshal_server": {
-            "max_batch_size": And(int, lambda size: size > 0),
-            "max_latency": And(int, lambda latency: latency > 0),
+            "max_batch_size": Or(And(int, lambda size: size > 0), None),
+            "max_latency": Or(And(int, lambda latency: latency > 0), None),
             "workers": Or(And(int, lambda workers: workers > 0), None),
             "request_header_flag": str,
         },
@@ -52,6 +52,7 @@ SCHEMA = Schema(
             Optional("opentracing_server_port"): Or(str, None),
         },
         "instrument": {"namespace": str},
+        "logging": {"level": str},
     }
 )
 
@@ -88,15 +89,23 @@ class BentoMLConfiguration:
                 self.config["api_server"]["port"] = config("apiserver").getint(
                     "default_port"
                 )
+                self.config["api_server"]["workers"] = config("apiserver").getint(
+                    "default_gunicorn_workers_count"
+                )
                 self.config["api_server"]["max_request_size"] = config(
                     "apiserver"
                 ).getint("default_max_request_size")
-                self.config["marshal_server"]["max_batch_size"] = config(
-                    "marshal_server"
-                ).getint("default_max_batch_size")
-                self.config["marshal_server"]["max_latency"] = config(
-                    "marshal_server"
-                ).getint("default_max_latency")
+
+                if "default_max_batch_size" in config("marshal_server"):
+                    self.config["marshal_server"]["max_batch_size"] = config(
+                        "marshal_server"
+                    ).getint("default_max_batch_size")
+
+                if "default_max_latency" in config("marshal_server"):
+                    self.config["marshal_server"]["max_latency"] = config(
+                        "marshal_server"
+                    ).getint("default_max_latency")
+
                 self.config["marshal_server"]["request_header_flag"] = config(
                     "marshal_server"
                 ).get("marshal_request_header_flag")

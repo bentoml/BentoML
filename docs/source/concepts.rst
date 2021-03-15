@@ -167,16 +167,22 @@ python class, simply use the :code:`infer_pip_packages=True` option.
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
-If you had specific versions of PyPI packages required for model serving that are
-different from your training environment, or if the :code:`infer_pip_packages=True`
-option did not work for your case (bug report highly appreciated), you can also specify
-the list of PyPI packages manually using the :code:`pip_packages` option:
+`Bug reports 
+<https://github.com/bentoml/BentoML/issues>`_ are highly appreciated if you experience
+problems when using the :code:`infer_pip_packages=True` option.
+
+Specifying **both direct and transitive** dependencies explicitly with **pinned versions**
+is recommended for improving reliability in the production environment. Transitive
+dependencies and versions can be resolved with utility like 
+`pip-compile <https://github.com/jazzband/pip-tools>`_. PyPI packages can be specified
+using either the :code:`pip_packages` option or the :code:`requirements_txt_file` option.
 
 .. code-block:: python
+  :caption: Specifying PyPI packages through the `pip_packages` option
 
   @bentoml.env(
     pip_packages=[
-      'scikit-learn',
+      'scikit-learn==0.24.1',
       'pandas @https://github.com/pypa/pip/archive/1.3.1.zip',
     ]
   )
@@ -186,10 +192,28 @@ the list of PyPI packages manually using the :code:`pip_packages` option:
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
-Note that although this supports the use of remote Git URLs, any use of Pip package options like :code:`-i` or :code:`-f` is not supported. If you'd like to use those features, you can define your own :code:`requirements.txt` file and pass it using the :code:`requirements_txt_file` option by doing :code:`@bentoml.env(requirements_txt_file='./requirements.txt')`.
+Note that although this supports the use of remote Git URLs, any use of Pip package options 
+like :code:`-i` or :code:`-f` is not supported. If you'd like to use those features, you can 
+define your own :code:`requirements.txt` file.
+
+.. code-block:: python
+  :caption: Specifying PyPI packages through the `requirements_txt_file` option
+
+  @bentoml.env(
+    requirements_txt_file="./requirements.txt"
+  )
+  class ExamplePredictionService(bentoml.BentoService):
+
+      @bentoml.api(input=DataframeInput(), batch=True)
+      def predict(self, df):
+          return self.artifacts.model.predict(df)
+
+This requirements.txt file should be compatible with the latest version of pip, and supports all
+the pip package install options including :code:`--index-url` and :code:`--find-links`.
 
 .. note::
-    The :code:`requirements_txt_file` option will override any other method for defining requirements such as :code:`pip_packages` and :code:`infer_pip_packages`.
+    The :code:`requirements_txt_file` option will override any other method for defining 
+    requirements such as :code:`pip_packages` and :code:`infer_pip_packages`.
 
 Conda Packages
 ^^^^^^^^^^^^^^

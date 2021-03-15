@@ -67,7 +67,7 @@ class CondaEnv(object):
         channels: List[str] = None,
         dependencies: List[str] = None,
         default_env_yaml_file: str = None,
-        overwrite_channels: bool = False,
+        override_channels: bool = False,
     ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
@@ -87,7 +87,7 @@ class CondaEnv(object):
             self.set_name(name)
 
         if channels:
-            self.set_channels(channels, overwrite_channels)
+            self.set_channels(channels, override_channels)
 
         if dependencies:
             self.add_conda_dependencies(dependencies)
@@ -103,8 +103,8 @@ class CondaEnv(object):
             conda_dependencies + self._conda_env["dependencies"]
         )
 
-    def set_channels(self, channels: List[str], overwrite_channels=False):
-        if overwrite_channels and "nodefaults" not in channels:
+    def set_channels(self, channels: List[str], override_channels=False):
+        if override_channels and "nodefaults" not in channels:
             channels.append("nodefaults")
         self._conda_env["channels"] = channels
 
@@ -130,10 +130,11 @@ class BentoServiceEnv(object):
             are explicitly specified, with ideally pinned versions
         conda_channels: list of extra conda channels other than dafault channels to be
             used. This is equivalent to passing the --channels to conda commands
-        conda_overwrite_channels: ensures that conda searches only your specified
+        conda_override_channels: ensures that conda searches only your specified
             channel and no other channels, such as default channels.
             This is equivalent to passing the --override-channels option to conda
             commands, or adding `nodefaults` to the `channels` in the environment.yml
+        conda_overwrite_channels: aliases to `override_channels`
         conda_dependencies: list of conda dependencies required
         conda_env_yml_file: use a pre-defined conda environment yml file
         setup_sh: user defined setup bash script, it is executed in docker build time
@@ -151,6 +152,7 @@ class BentoServiceEnv(object):
         requirements_txt_file: str = None,
         conda_channels: List[str] = None,
         conda_overwrite_channels: bool = False,
+        conda_override_channels: bool = False,
         conda_dependencies: List[str] = None,
         conda_env_yml_file: str = None,
         setup_sh: str = None,
@@ -167,7 +169,7 @@ class BentoServiceEnv(object):
             channels=conda_channels,
             dependencies=conda_dependencies,
             default_env_yaml_file=conda_env_yml_file,
-            overwrite_channels=conda_overwrite_channels,
+            override_channels=conda_overwrite_channels or conda_override_channels,
         )
 
         self._pip_packages = {}

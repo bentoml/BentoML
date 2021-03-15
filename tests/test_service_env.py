@@ -189,7 +189,7 @@ def test_conda_overwrite_channels(tmpdir):
     @bentoml.env(
         conda_channels=["bentoml-test-channel"],
         conda_dependencies=["bentoml-test-lib"],
-        conda_overwrite_channels=True,
+        conda_override_channels=True,
     )
     class ServiceWithCondaDeps(bentoml.BentoService):
         @bentoml.api(input=DataframeInput(), batch=True)

@@ -31,9 +31,9 @@ from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import (
-    SavedBundleConfig,
-    DEFAULT_MAX_LATENCY,
     DEFAULT_MAX_BATCH_SIZE,
+    DEFAULT_MAX_LATENCY,
+    SavedBundleConfig,
 )
 from bentoml.saved_bundle.pip_pkg import seek_pip_packages
 from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
@@ -237,6 +237,7 @@ def env_decorator(
     requirements_txt_file: str = None,
     conda_channels: List[str] = None,
     conda_overwrite_channels: bool = False,
+    conda_override_channels: bool = False,
     conda_dependencies: List[str] = None,
     conda_env_yml_file: str = None,
     setup_sh: str = None,
@@ -257,9 +258,13 @@ def env_decorator(
         auto_pip_dependencies: same as infer_pip_packages but deprecated
         requirements_txt_file: path to the requirements.txt where pip dependencies
             are explicitly specified, with ideally pinned versions
-        conda_channels: list of extra conda channels to be used
-        conda_overwrite_channels: Turn on to make conda_channels overwrite the list of
-            channels instead of adding to it
+        conda_channels: list of extra conda channels other than dafault channels to be
+            used. This is equivalent to passing the --channels to conda commands
+        conda_override_channels: ensures that conda searches only your specified
+            channel and no other channels, such as default channels.
+            This is equivalent to passing the --override-channels option to conda
+            commands, or adding `nodefaults` to the `channels` in the environment.yml
+        conda_overwrite_channels: aliases to `override_channels`
         conda_dependencies: list of conda dependencies required
         conda_env_yml_file: use a pre-defined conda environment yml file
         setup_sh: user defined setup bash script, it is executed in docker build time
@@ -297,6 +302,7 @@ def env_decorator(
             infer_pip_packages=infer_pip_packages or auto_pip_dependencies,
             requirements_txt_file=requirements_txt_file,
             conda_channels=conda_channels,
+            conda_override_channels=conda_override_channels,
             conda_overwrite_channels=conda_overwrite_channels,
             conda_dependencies=conda_dependencies,
             conda_env_yml_file=conda_env_yml_file,

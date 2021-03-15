@@ -63,7 +63,6 @@ def test_get_bento_service_event_properties(bento_service):
     assert len(properties["input_types"]) == 4
 
     assert properties["env"] is not None
-    assert properties["env"]["conda_env"]["channels"] == ["defaults"]
 
 
 def test_get_bento_service_event_properties_with_no_artifact():

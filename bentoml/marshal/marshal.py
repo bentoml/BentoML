@@ -372,6 +372,4 @@ class MarshalService:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         app = self.make_app()
-
-        logger.info("Running micro batch service on :%d", port)
         aiohttp.web.run_app(app, port=port)

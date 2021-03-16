@@ -29,7 +29,8 @@ from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
 from bentoml.marshal.utils import DataLoader
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
-from bentoml.tracing.trace import async_trace, make_http_headers
+from bentoml.tracing import async_trace
+from bentoml.tracing.zipkin import make_http_headers
 from bentoml.types import HTTPRequest, HTTPResponse
 
 logger = logging.getLogger(__name__)

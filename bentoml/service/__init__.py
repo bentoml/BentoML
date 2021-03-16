@@ -258,7 +258,7 @@ def env_decorator(
         auto_pip_dependencies: same as infer_pip_packages but deprecated
         requirements_txt_file: path to the requirements.txt where pip dependencies
             are explicitly specified, with ideally pinned versions
-        conda_channels: list of extra conda channels other than dafault channels to be
+        conda_channels: list of extra conda channels other than default channels to be
             used. This is equivalent to passing the --channels to conda commands
         conda_override_channels: ensures that conda searches only your specified
             channel and no other channels, such as default channels.

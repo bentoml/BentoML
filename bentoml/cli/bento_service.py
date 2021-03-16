@@ -110,7 +110,16 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.argument("api_name", type=click.STRING)
     @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
-    def run(api_name, run_args, bento=None):
+    @add_options(config_options)
+    def run(api_name, config, run_args, bento=None):
+        container = BentoMLContainer()
+        config = BentoMLConfiguration(override_config_file=config)
+        container.config.from_dict(config.as_dict())
+
+        from bentoml import tracing
+
+        container.wire(packages=[tracing])
+
         parser = argparse.ArgumentParser()
         parser.add_argument('--yatai-url', type=str, default=None)
         parsed_args, _ = parser.parse_known_args(run_args)

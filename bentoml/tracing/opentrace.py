@@ -5,19 +5,17 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial
 
-# pylint: disable=E0401
-import opentracing
-from opentracing import Format
-from jaeger_client.config import Config
-from opentracing.scope_managers.asyncio import AsyncioScopeManager
-
-# pylint: enable=E0401
-
 
 span_context_var = ContextVar('span context', default=None)
 
 
 def initialize_tracer(service_name):
+    # pylint: disable=E0401
+    from jaeger_client.config import Config
+    from opentracing.scope_managers.asyncio import AsyncioScopeManager
+
+    # pylint: enable=E0401
+
     config = Config(
         config={'sampler': {'type': 'const', 'param': 1}},
         service_name=service_name,
@@ -44,6 +42,12 @@ def trace(
     Opentracing tracer function
     """
     del server_url, async_transport, sample_rate, standalone, is_root, port
+
+    # pylint: disable=E0401
+    import opentracing
+    from opentracing import Format
+
+    # pylint: enable=E0401
 
     tracer = initialize_tracer(service_name) or opentracing.global_tracer() or None
     if tracer is None:

@@ -29,7 +29,7 @@ def trace(
     opentracing_server_port: str = Provide[
         BentoMLContainer.config.tracing.opentracing_server_port
     ],
-    **kwargs
+    **kwargs,
 ):
     """
     synchronous tracing function, will choose relevant tracer based on config
@@ -65,7 +65,7 @@ def async_trace(
     opentracing_server_port: str = Provide[
         BentoMLContainer.config.tracing.opentracing_server_port
     ],
-    **kwargs
+    **kwargs,
 ):
     """
     asynchronous tracing function, will choose relevant tracer based on config

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# List of APIs for accessing remote or local yatai service via Python
-
+import logging
 from contextlib import contextmanager
 
 from bentoml import config
@@ -27,11 +26,11 @@ OPENTRACING_SERVER_PORT = config("tracing").get("opentracing_server_port")
 @contextmanager
 def trace(*args, **kwargs):
     """
-    synchronous tracing function, will choose relevant tracer
+    synchronous tracing function, will choose relevant tracer based on config
     """
 
     if ZIPKIN_API_URL:
-        from bentoml.tracing.trace import trace as _trace
+        from bentoml.tracing.zipkin import trace as _trace
 
         new_args = [ZIPKIN_API_URL, *args]
 
@@ -53,10 +52,10 @@ def trace(*args, **kwargs):
 @contextmanager
 def async_trace(*args, **kwargs):
     """
-    asynchronous tracing function, will choose relevant tracer
+    asynchronous tracing function, will choose relevant tracer based on config
     """
     if ZIPKIN_API_URL:
-        from bentoml.tracing.trace import async_trace as _async_trace
+        from bentoml.tracing.zipkin import async_trace as _async_trace
 
         new_args = [ZIPKIN_API_URL, *args]
 

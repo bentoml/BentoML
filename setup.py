@@ -40,7 +40,6 @@ install_requires = [
     "prometheus_client",
     "protobuf>=3.8.0",
     "psutil",
-    "py_zipkin",
     # python-dateutil required by pandas and boto3, this makes sure the version
     # works for both
     "python-dateutil>=2.7.3,<3.0.0",
@@ -54,6 +53,21 @@ install_requires = [
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "chardet",
+]
+
+yatai_service_requires = [
+    "grpcio~=1.34.0",  # match the grpcio-tools version used in yatai docker image
+    "google-cloud-storage",
+    "azure-cli",
+    "aws-sam-cli==0.33.1",
+    "psycopg2",
+    "psycopg2-binary",
+]
+
+model_server_requires = [
+    "opentracing",
+    "py_zipkin",
+    "jaeger_client",
 ]
 
 test_requires = [
@@ -72,7 +86,7 @@ test_requires = [
     "pytest>=5.4.0",
     "pytest-asyncio",
     "scikit-learn",
-]
+] + model_server_requires
 
 dev_requires = [
     "flake8>=3.8.2",
@@ -100,20 +114,12 @@ docs_requires = [
 
 dev_all = install_requires + dev_requires + docs_requires
 
-yatai_service = [
-    "grpcio~=1.34.0",  # match the grpcio-tools version used in yatai docker image
-    "google-cloud-storage",
-    "azure-cli",
-    "aws-sam-cli==0.33.1",
-    "psycopg2",
-    "psycopg2-binary",
-]
-
 extras_require = {
     "dev": dev_all,
-    "doc_builder": docs_requires + install_requires,  # required by readthedocs.io
     "test": test_requires,
-    "yatai_service": yatai_service + install_requires,
+    "yatai_service": yatai_service_requires,
+    "model_server": model_server_requires,
+    "doc_builder": docs_requires,  # 'doc_builder' is required by readthedocs.io
 }
 
 setuptools.setup(

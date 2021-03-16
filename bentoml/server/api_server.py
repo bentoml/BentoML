@@ -30,7 +30,7 @@ from bentoml.marshal.utils import DataLoader
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import InferenceAPI
-from bentoml.tracing.__init__ import trace
+from bentoml.tracing import trace
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 

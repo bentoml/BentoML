@@ -419,7 +419,7 @@ class BentoAPIServer:
 
         def api_func_with_tracing():
             with trace(
-                request.headers, service_name=self.__class__.__name__,
+                request_headers=request.headers, service_name=self.__class__.__name__,
             ):
                 return api_func()
 

@@ -38,19 +38,19 @@ def trace(
     if zipkin_api_url:
         from bentoml.tracing.zipkin import trace as _trace
 
-        args = [zipkin_api_url]
+        kwargs['server_url'] = zipkin_api_url
 
     elif opentracing_server_address:
         from bentoml.tracing.opentrace import trace as _trace
 
-        args = [opentracing_server_address]
+        kwargs['server_url'] = opentracing_server_address
         kwargs['port'] = opentracing_server_port
 
     else:
         yield
         return
 
-    with _trace(*args, **kwargs) as scope:
+    with _trace(**kwargs) as scope:
         yield scope
     return
 
@@ -73,18 +73,18 @@ def async_trace(
     if zipkin_api_url:
         from bentoml.tracing.zipkin import async_trace as _async_trace
 
-        args = [zipkin_api_url]
+        kwargs['server_url'] = zipkin_api_url
 
     elif opentracing_server_address:
         from bentoml.tracing.opentrace import async_trace as _async_trace
 
-        args = [opentracing_server_address]
+        kwargs['server_url'] = opentracing_server_address
         kwargs['port'] = opentracing_server_port
 
     else:
         yield
         return
 
-    with _async_trace(*args, **kwargs) as scope:
+    with _async_trace(**kwargs) as scope:
         yield scope
     return

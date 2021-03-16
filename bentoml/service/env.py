@@ -131,7 +131,7 @@ class BentoServiceEnv(object):
             pip dependencies and pin their version
         requirements_txt_file: path to the requirements.txt where pip dependencies
             are explicitly specified, with ideally pinned versions
-        conda_channels: list of extra conda channels other than dafault channels to be
+        conda_channels: list of extra conda channels other than default channels to be
             used. This is equivalent to passing the --channels to conda commands.
             If the `conda_env_yml_file` is specified, this will override the `channels`
             section of the env yml file

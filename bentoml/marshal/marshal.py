@@ -29,7 +29,8 @@ from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
 from bentoml.marshal.utils import DataLoader
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
-from bentoml.tracing.trace import async_trace, make_http_headers
+from bentoml.tracing import async_trace
+from bentoml.tracing.zipkin import make_http_headers
 from bentoml.types import HTTPRequest, HTTPResponse
 
 logger = logging.getLogger(__name__)
@@ -149,7 +150,6 @@ class MarshalService:
         max_request_size: int = Provide[
             BentoMLContainer.config.api_server.max_request_size
         ],
-        zipkin_api_url: str = Provide[BentoMLContainer.config.tracing.zipkin_api_url],
         outbound_unix_socket: str = None,
     ):
         self.outbound_unix_socket = outbound_unix_socket
@@ -162,7 +162,6 @@ class MarshalService:
         self._outbound_sema = None  # the semaphore to limit outbound connections
         self.request_header_flag = request_header_flag
         self.max_request_size = max_request_size
-        self.zipkin_api_url = zipkin_api_url
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
@@ -246,7 +245,6 @@ class MarshalService:
 
     async def request_dispatcher(self, request):
         with async_trace(
-            self.zipkin_api_url,
             service_name=self.__class__.__name__,
             span_name="[1]http request",
             is_root=True,
@@ -282,11 +280,10 @@ class MarshalService:
         url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)
 
         with async_trace(
-            self.zipkin_api_url,
-            service_name=self.__class__.__name__,
-            span_name=f"[2]{url.path} relay",
+            service_name=self.__class__.__name__, span_name=f"[2]{url.path} relay",
         ) as trace_ctx:
-            headers.update(make_http_headers(trace_ctx))
+            if trace_ctx:
+                headers.update(make_http_headers(trace_ctx))
             try:
                 client = self.get_client()
                 async with client.request(
@@ -313,11 +310,10 @@ class MarshalService:
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"
 
         with async_trace(
-            self.zipkin_api_url,
-            service_name=self.__class__.__name__,
-            span_name=f"[2]merged {api_route}",
+            service_name=self.__class__.__name__, span_name=f"[2]merged {api_route}",
         ) as trace_ctx:
-            headers.update(make_http_headers(trace_ctx))
+            if trace_ctx:
+                headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)
             try:
                 client = self.get_client()

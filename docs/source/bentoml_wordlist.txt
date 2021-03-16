@@ -95,3 +95,4 @@ gRPC
 Http
 http
 HTTP
+zipkin

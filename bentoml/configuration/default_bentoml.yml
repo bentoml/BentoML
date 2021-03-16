@@ -37,6 +37,8 @@ yatai:
 
 tracing:
   zipkin_api_url: Null
+  opentracing_server_address: Null
+  opentracing_server_port: Null
 
 instrument:
   namespace: BENTOML

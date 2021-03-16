@@ -282,7 +282,8 @@ class MarshalService:
         with async_trace(
             service_name=self.__class__.__name__, span_name=f"[2]{url.path} relay",
         ) as trace_ctx:
-            headers.update(make_http_headers(trace_ctx))
+            if trace_ctx:
+                headers.update(make_http_headers(trace_ctx))
             try:
                 client = self.get_client()
                 async with client.request(
@@ -311,7 +312,8 @@ class MarshalService:
         with async_trace(
             service_name=self.__class__.__name__, span_name=f"[2]merged {api_route}",
         ) as trace_ctx:
-            headers.update(make_http_headers(trace_ctx))
+            if trace_ctx:
+                headers.update(make_http_headers(trace_ctx))
             reqs_s = DataLoader.merge_requests(requests)
             try:
                 client = self.get_client()

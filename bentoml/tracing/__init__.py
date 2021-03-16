@@ -47,7 +47,7 @@ def trace(
         kwargs['port'] = opentracing_server_port
 
     else:
-        yield
+        yield None
         return
 
     with _trace(**kwargs) as scope:
@@ -82,7 +82,7 @@ def async_trace(
         kwargs['port'] = opentracing_server_port
 
     else:
-        yield
+        yield None
         return
 
     with _async_trace(**kwargs) as scope:

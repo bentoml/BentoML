@@ -81,6 +81,8 @@ Test with example data
     $ bentoml serve MyService:latest
 
 
+In another terminal to make a `curl` request
+
 .. code-block:: shell
 
     $ curl -i --header "Content-Type: application/json" \

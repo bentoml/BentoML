@@ -43,23 +43,32 @@ interface IApiProps {
   input_type: string;
   docs: string;
   input_config: { [key: string]: string };
+  output_type: string;
+  batch: boolean;
+  route: string;
 }
 
 const APIS_TABLE_HEADER = [
   "API name",
+  "route",
+  "is batch enabled",
   "Input type",
   "Input Config",
+  "Output type",
   "Documentation",
 ];
 
-const APIS_TABLE_RATIO = [1, 1, 1, 4];
+const APIS_TABLE_RATIO = [1, 1, 1, 1, 1, 1, 4];
 
 const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
   const apisTableContent = apis.map((api) => ({
     content: [
       api.name,
+      api.route ? api.route : `/${api.name}`,
+      api.batch ? 'Yes' : 'No',
       api.input_type,
       inputConfigToTableContent(api.input_config),
+      api.output_type,
       api.docs,
     ],
   }));

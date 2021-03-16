@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run linting script
         run: ./ci/linter.sh
 
@@ -62,7 +62,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
         shell: bash
       - name: Run Unit Tests
         run: ./ci/unit_tests.sh
@@ -84,7 +84,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/onnx_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -101,7 +101,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/pytorch_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -118,11 +118,11 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Install fastai
         run: python -m pip install fastai
       - name: Run tests
-        run: ./ci/test_project.sh tests/integration/projects/fastai2
+        run: ./ci/test_project.sh.cmd tests/integration/projects/fastai2
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -138,7 +138,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/coreml_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -160,11 +160,11 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/test_project.sh tests/integration/projects/general
+        run: ./ci/test_project.sh.cmd tests/integration/projects/general
       - name: Run tests
-        run: ./ci/test_project.sh tests/integration/projects/general_non_batch
+        run: ./ci/test_project.sh.cmd tests/integration/projects/general_non_batch
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -184,7 +184,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/back_compatibility_itest.sh
       - name: Upload test coverage to Codecov
@@ -201,7 +201,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/tensorflow_v2.2_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -218,7 +218,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests with tf1
         run: ./ci/keras_with_tf1_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -235,7 +235,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests with tf2
         run: ./ci/keras_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -252,7 +252,7 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/h2o_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -269,7 +269,7 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/xgboost_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -287,7 +287,7 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/detectron2_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -304,7 +304,7 @@ jobs:
         with:
           python-version: 3.6.10
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/transformers_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -321,7 +321,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/gluon_integration_tests.sh
       - name: Upload test coverage to Codecov
@@ -338,7 +338,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -376,7 +376,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -405,7 +405,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run s3 test
         run: ./ci/s3_bucket_integration_tests.sh
         env:
@@ -425,7 +425,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx

@@ -204,3 +204,34 @@ def test_echo_docker_api_result_push():
 
     res = [line for line in echo_docker_api_result(push_stream)]
     assert_equal_lists(res, expected)
+
+
+@pytest.mark.skipif('not psutil.POSIX')
+def test_gunicorn_serve_command():
+    runner = CliRunner()
+
+    cli = create_bento_service_cli()
+    gunicorn_cmd = cli.commands["serve-gunicorn"]
+
+    with mock.patch(
+        'bentoml.cli.bento_service.start_prod_server',
+    ) as mocked_start_prod_server:
+        runner.invoke(
+            gunicorn_cmd, ["/"],
+        )
+        assert mocked_start_prod_server.called
+
+
+def test_serve_command():
+    runner = CliRunner()
+
+    cli = create_bento_service_cli()
+    gunicorn_cmd = cli.commands["serve"]
+
+    with mock.patch(
+        'bentoml.cli.bento_service.start_dev_server',
+    ) as mocked_start_dev_server:
+        runner.invoke(
+            gunicorn_cmd, ["/"],
+        )
+        assert mocked_start_dev_server.called

@@ -151,7 +151,9 @@ class BentoAPIServer:
         self,
         bento_service: BentoService,
         app_name: str = None,
-        enable_swagger: bool = True,
+        enable_swagger: bool = Provide[
+            BentoMLContainer.config.api_server.enable_swagger
+        ],
         enable_metrics: bool = Provide[
             BentoMLContainer.config.api_server.enable_metrics
         ],

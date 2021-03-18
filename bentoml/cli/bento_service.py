@@ -45,7 +45,7 @@ batch_options = [
     click.option(
         '--enable-microbatch/--disable-microbatch',
         default=None,
-        help="Run API server with micro-batch enabled",
+        help="Run API server with micro-batch enabled.",
         envvar='BENTOML_ENABLE_MICROBATCH',
     ),
     click.option(
@@ -229,21 +229,16 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             bento, pip_installed_bundle_path, yatai_url
         )
 
-        container = BentoMLContainer()
-        config = BentoMLConfiguration(override_config_file=config)
-        config.override(["api_server", "port"], port)
-        config.override(["api_server", "enable_microbatch"], enable_microbatch)
-        config.override(["api_server", "run_with_ngrok"], run_with_ngrok)
-        config.override(["api_server", "enable_swagger"], enable_swagger)
-        config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
-        config.override(["marshal_server", "max_latency"], mb_max_latency)
-        container.config.from_dict(config.as_dict())
-
-        from bentoml import marshal, server
-
-        container.wire(packages=[marshal, server])
-
-        start_dev_server(saved_bundle_path)
+        start_dev_server(
+            saved_bundle_path,
+            port=port,
+            enable_microbatch=enable_microbatch,
+            mb_max_batch_size=mb_max_batch_size,
+            mb_max_latency=mb_max_latency,
+            run_with_ngrok=run_with_ngrok,
+            enable_swagger=enable_swagger,
+            config_file=config,
+        )
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -312,6 +307,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 "https://docs.docker.com/docker-for-windows/ "
             )
             return
+
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )

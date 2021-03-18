@@ -214,10 +214,24 @@ def test_gunicorn_serve_command():
     gunicorn_cmd = cli.commands["serve-gunicorn"]
 
     with mock.patch(
-        'bentoml.server.gunicorn_server.GunicornBentoServer',
-    ) as mocked_class:
+        'bentoml.cli.bento_service.start_prod_server',
+    ) as mocked_start_prod_server:
         runner.invoke(
             gunicorn_cmd, ["/"],
         )
-        instance = mocked_class.return_value
-        assert instance.run.called
+        assert mocked_start_prod_server.called
+
+
+def test_serve_command():
+    runner = CliRunner()
+
+    cli = create_bento_service_cli()
+    gunicorn_cmd = cli.commands["serve"]
+
+    with mock.patch(
+        'bentoml.cli.bento_service.start_dev_server',
+    ) as mocked_start_dev_server:
+        runner.invoke(
+            gunicorn_cmd, ["/"],
+        )
+        assert mocked_start_dev_server.called

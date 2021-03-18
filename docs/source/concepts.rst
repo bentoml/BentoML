@@ -857,6 +857,10 @@ image built above:
 Adaptive Micro-Batching
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+.. note::
+  The Adaptive Micro-batching option has become the default behavior starting release 0.12.0.
+  Running with the --disable-microbatch option will fail.
+
 Micro batching is a technique where incoming prediction requests are grouped into small
 batches to achieve the performance advantage of batch processing in model inference
 tasks. BentoML implemented such a micro batching layer that is inspired by the paper
@@ -868,17 +872,6 @@ Given the mass performance improvement a model serving system get from micro-bat
 BentoML APIs were designed to work with micro-batching without any code changes on the 
 user side. It is why all the API InputAdapters are designed to accept a list of input data, 
 as described in the :ref:`concepts-api-func-and-adapters` section.
-
-Currently, micro-batching is still a beta feature, users can enable micro-batching by
-passing a flag when running BentoML API server:
-
-.. code-block:: bash
-
-    # Launch micro batching API server from CLI
-    bentoml serve-gunicorn $saved_path --enable-microbatch
-
-    # Launch model server docker image with micro batching enabled
-    docker run -p 5000:5000 -e BENTOML_ENABLE_MICROBATCH=True {username}/iris-classifier:latest
 
 
 Programmatic Access

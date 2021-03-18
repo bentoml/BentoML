@@ -5,9 +5,9 @@
   "description": "",
   "license": "Apache-2.0",
   "scripts": {
-    "start": "node dist/bundle.js",
-    "dev": "bash -c 'concurrently \"nodemon -- ${0} ${1} ${2} ${3}\" \"npm run watch:client\"'",
-    "watch": "concurrently \"npm:watch:*\"",
+    "start": "bash -c 'concurrently \"bentoml yatai-service-start --no-ui\" \"node dist/bundle.js\"'",
+    "dev": "bash -c 'concurrently \"bentoml yatai-service-start --no-ui\"  \"nodemon -- ${0} ${1} ${2} ${3}\" \"npm run watch:client\"'",
+    "watch": "npm:watch:*",
     "watch:server": "nodemon",
     "watch:client": "cd client && yarn start",
     "build": "rm -rf dist && concurrently \"npm run build:client\" \"npm run build:server\"",

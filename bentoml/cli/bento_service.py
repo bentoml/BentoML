@@ -15,6 +15,7 @@ from bentoml.cli.click_utils import (
 )
 from bentoml.cli.utils import Spinner
 from bentoml.configuration import BENTOML_CONFIG
+from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 from bentoml.saved_bundle import (
     load_bento_service_api,
     load_bento_service_metadata,

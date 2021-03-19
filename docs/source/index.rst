@@ -10,27 +10,32 @@
     :target: https://github.com/bentoml/BentoML
 
 
-The easiest way to build Machine Learning APIs
-==============================================
+Model Serving Made Easy
+=======================
 
-* Package models trained with **any ML frameworks** and reproduce them for model serving in production
-* **Deploy anywhere** for online API serving or offline batch serving
-* High-Performance API model server with *adaptive micro-batching* support
-* Central hub for managing models and deployment process via Web UI and APIs
-* Modular and flexible design making it *adaptable to your infrastructure*
+BentoML is a flexible, high-performance framework for serving, managing, and deploying machine learning models.
 
-BentoML is a framework for serving, managing, and deploying machine learning models.
-It is aiming to bridge the gap between Data Science and DevOps, and enable teams to
-deliver prediction services in a fast, repeatable, and scalable way.
+* Support **multiple ML frameworks**, including Tensorflow, PyTorch, Keras, XGBoost
+  and :ref:`more <frameworks-page>`
+* Cloud native deployment with Docker, Kubernetes, AWS, Azure and
+  :ref:`many more <deployments-page>`
+* High-Performance online API serving and offline batch serving
+* Web dashboards and APIs for model management and deployment automation
+
+BentoML bridges the gap between Data Science and DevOps. By providing a
+standard interface for describing a prediction service, BentoML
+abstracts away how to run model inference efficiently and how model
+serving workloads can integrate with cloud infrastructures.
+`See how it works! <https://github.com/bentoml/BentoML#introduction>`_
 
 
 💻 Get started with BentoML: :ref:`Quickstart Guide <getting-started-page>` | `Quickstart on Google Colab <https://colab.research.google.com/github/bentoml/BentoML/blob/master/guides/quick-start/bentoml-quick-start-guide.ipynb>`_
 
 👩‍💻 Star/Watch/Fork the `BentoML Github Repository <https://github.com/bentoml/BentoML>`_.
 
-👉 Join the community:
-`Bentoml Slack Channel <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_
-and the `Discussions on Github <https://github.com/bentoml/BentoML/discussions>`_.
+👉 Join the
+`community Slack <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_
+and `discussions on Github <https://github.com/bentoml/BentoML/discussions>`_.
 
 
 ___________

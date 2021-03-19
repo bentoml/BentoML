@@ -798,7 +798,7 @@ command instead, or use Docker container for deployment.
 
 .. code-block:: bash
 
-    bentoml serve-gunicorn $saved_path --enable-microbatch --workers=2 --port=3000
+    bentoml serve-gunicorn $saved_path --workers=2 --port=3000
 
 
 API Server Dockerization
@@ -858,8 +858,8 @@ Adaptive Micro-Batching
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-  The Adaptive Micro-batching option has become the default behavior starting release 0.12.0.
-  Running with the --disable-microbatch option will fail.
+  The micro-batching option has become the default behavior starting release 0.12.0.
+  Use the --disable-microbatch option to turn off batching behavior.
 
 Micro batching is a technique where incoming prediction requests are grouped into small
 batches to achieve the performance advantage of batch processing in model inference
@@ -896,12 +896,16 @@ Python. There are two main ways this can be done:
 
 2. Install BentoService as a PyPI package
 
-  A Bento directory is also pip-installable as demonstrated in the 
-  :doc:`Getting Started Guide <quickstart>`:
+  The BentoService SavedBundle is pip-installable and can be directly distributed as a
+  PyPI package if you plan to use the model in your python applications. You can install
+  it as as a system-wide python package with :code:`pip`:
 
   .. code-block:: bash
 
-      pip install $saved_path
+    saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
+
+    pip install $saved_path
+
 
   .. code-block:: python
 
@@ -911,7 +915,20 @@ Python. There are two main ways this can be done:
     installed_svc = IrisClassifier.load()
     installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
 
-  This approach made sure that all the required pip dependencies are installed for the 
+  This also allow users to upload their BentoService to pypi.org as public python
+  package or to their organization's private PyPi index to share with other developers.
+
+  .. code-block:: bash
+
+      cd $saved_path & python setup.py sdist upload
+
+  .. note::
+
+      You will have to configure ".pypirc" file before uploading to pypi index.
+      You can find more information about distributing python package at:
+      https://docs.python.org/3.7/distributing/index.html#distributing-index
+
+  This approach made sure that all the required pip dependencies are installed for the
   BentoService when being installed. It is convenient when your Data Science team is
   shipping the prediction service as a standalone python package that can be shared
   by a variety of different developers to integrate with.

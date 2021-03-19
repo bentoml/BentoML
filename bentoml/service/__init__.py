@@ -481,14 +481,13 @@ class BentoService:
         # When creating BentoService instance from a saved bundle, set version to the
         # version specified in the saved bundle
         self._bento_service_version = self.__class__._bento_service_bundle_version
+        self._dev_server_bundle_path: tempfile.TemporaryDirectory = None
+        self._dev_server_interrupt_event: multiprocessing.Event = None
+        self._dev_server_process: subprocess.Process = None
 
         self._config_artifacts()
         self._config_inference_apis()
         self._config_environments()
-
-        self._dev_server_bundle_path: tempfile.TemporaryDirectory = None
-        self._dev_server_interrupt_event: multiprocessing.Event = None
-        self._dev_server_process: subprocess.Process = None
 
     def _config_environments(self):
         self._env = self.__class__._env or BentoServiceEnv()
@@ -850,7 +849,8 @@ class BentoService:
             self._dev_server_bundle_path = None
 
     def __del__(self):
-        self.stop_dev_server(skip_log=True)
+        if hasattr(self, "_dev_server_interrupt_event"):  # __init__ may not be called
+            self.stop_dev_server(skip_log=True)
 
     def infer_pip_dependencies_map(self):
         if not self.pip_dependencies_map:

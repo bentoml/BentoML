@@ -79,6 +79,16 @@ def async_trace(
     """
     asynchronous tracing function, will choose relevant tracer based on config
     """
+
+    # isinstance check here allow trace to be used where the top-level entry point has
+    # not yet implemented the wiring of BentoML config
+    if isinstance(zipkin_api_url, Provide):
+        zipkin_api_url = None
+    if isinstance(opentracing_server_address, Provide):
+        opentracing_server_address = None
+    if isinstance(opentracing_server_port, Provide):
+        opentracing_server_port = None
+
     if zipkin_api_url:
         from bentoml.tracing.zipkin import async_trace as _async_trace
 

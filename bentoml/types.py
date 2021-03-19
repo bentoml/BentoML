@@ -134,7 +134,7 @@ class FileLike:
             self._stream.close()
 
     def __del__(self):
-        if self._stream and not self._stream.closed:
+        if getattr(self, "_stream", None) and not self._stream.closed:
             self._stream.close()
 
 

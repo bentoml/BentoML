@@ -282,5 +282,5 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         shutil.copytree(self._path, self._saved_model_path(dst))
 
     def __del__(self):
-        if self._tmpdir is not None:
+        if getattr(self, "_tmpdir", None) is not None:
             self._tmpdir.cleanup()

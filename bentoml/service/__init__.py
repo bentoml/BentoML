@@ -850,12 +850,12 @@ class BentoService:
             self._dev_server_process.join()
             assert not self._dev_server_process.is_alive()
             self._dev_server_process = None
+            logger.info("Dev server has stopped.")
         elif not skip_log:
             logger.warning("No dev server is running.")
         if self._dev_server_bundle_path:
             self._dev_server_bundle_path.cleanup()
             self._dev_server_bundle_path = None
-        logger.info("Dev server has stopped.")
 
     def __del__(self):
         if hasattr(self, "_dev_server_interrupt_event"):  # __init__ may not be called

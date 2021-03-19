@@ -43,7 +43,7 @@ def send_test_data_to_endpoint(endpoint_name, sample_data=None, region="us-west-
         logger.info(result)
         if result.get('ResponseMetadata', None) is None:
             return False, None
-        if result['ResponseMetadata']['HTTPStatusCode'] is not 200:
+        if result['ResponseMetadata']['HTTPStatusCode'] != 200:
             return False, None
         body = result['Body'].read()
         return True, body.decode('utf-8')

@@ -38,7 +38,7 @@ def send_test_data_to_endpoint(endpoint_name, sample_data=None, region="us-west-
         result = client.invoke_endpoint(
             EndpointName=endpoint_name.strip(),
             ContentType='application/json',
-            Body=sample_data
+            Body=sample_data,
         )
         logger.info(result)
         if result.get('ResponseMetadata', None) is None:

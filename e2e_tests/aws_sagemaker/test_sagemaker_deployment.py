@@ -45,11 +45,11 @@ def test_sagemaker_deployment(iris_clf_service):
         iris = datasets.load_iris()
         sample_data = iris.data[0:1]
         request_success, prediction_result = send_test_data_to_endpoint(
-            endpoint_name, f'"{json.dumps(sample_data.tolist())}"', region
+            endpoint_name, json.dumps(sample_data.tolist()), region
         )
         assert request_success, 'Failed to make successful Sagemaker prediction'
         assert (
-            '[\n  0\n]\n' == prediction_result
+            '[0]' == prediction_result
         ), 'Sagemaker prediction result mismatches with expected value'
     finally:
         delete_deployment('sagemaker', deployment_name)

@@ -210,7 +210,7 @@ class MarshalService:
         return self._client
 
     def __del__(self):
-        if self._client is not None and not self._client.closed:
+        if getattr(self, '_client', None) is not None and not self._client.closed:
             self._client.close()
 
     def add_batch_handler(self, api_route, max_latency, max_batch_size):

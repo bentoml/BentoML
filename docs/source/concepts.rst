@@ -28,12 +28,15 @@ the :doc:`Getting Started Guide <quickstart>`:
           return self.artifacts.model.predict(df)
 
 
-Each BentoService class can contain multiple models declared through the
-:code:`@bentoml.artifact` API, and multiple APIs for accessing this service. Each API
-definition requires a :code:`InputAdapter` type, which defines the expected input data
+Each BentoService class can contain multiple ML models through the
+:code:`@bentoml.artifact` decorator. And multiple inference APIs can be defined for
+client to access this service. Each inference API requires a input type specified via an
+:code:`InputAdapter` instance, which defines the expected input data type and data
 format of this API. BentoML provides API input adapters that covers most model serving
 use cases including :code:`DataframeInput`, :code:`TfTensorInput`, :code:`ImageInput`
-and :code:`JsonInput`.
+and :code:`JsonInput`. BentoML by default will automatically detect the output type at
+runtime based on the return value of the API function, user can also specify an output
+type, e.g. :code:`@api(input=DataframeInput(), output=JsonOutput())`.
 
 
 Once an ML model is trained, a BentoService instance can bundle with the trained model
@@ -75,28 +78,33 @@ BentoML will:
   # Test invoking BentoService instance
   iris_classifier_service.predict([[5.1, 3.5, 1.4, 0.2]])
 
-  # Save the entire prediction service to file bundle
+  # Start a dev model server to test out the API endpoint locally
+  iris_classifier_service.start_dev_server()
+
+  # Stop the dev model server
+  iris_classifier_service.stop_dev_server()
+
+  # Save the entire prediction service to a BentoML bundle
   saved_path = iris_classifier_service.save()
 
 
-The saved BentoService file directory is called a Bento. It is a versioned file
-directory that contains all the information required to run this prediction service.
+The BentoML bundle is a file directory that contains all the code, files and configs
+that are required to run this prediction service. A :code:`bentoml.yml` file can be
+found under the directory that contains all the metadata about this bundle and how it
+can be used for inference workload.
 
-Think of Bento as a docker container image or a software binary, but for an ML model. A
-Bento can be  generated at the end of every training job, reflecting your newest code
-changes and training data changes. You can then easily store and distribute the Bento
-file, test the prediction service, and then update it to production model serving
-endpoint.
+BentoML bundle can be think of as a docker container image or a software binary for
+machine learning model serving. The BentoML bundle can be generated at each of your
+training job, and then easily stored and distributed for CI testing and deployment in
+production.
 
-BentoML keeps track of all the services saved and provides web UI and CLI commands for
-model management. By default, BentoML saves all the model files and metadata in the
-local file system. For team settings, it is recommended to run a shared BentoML server 
-for the entire team, which stores all of their Bento files and metadata in the cloud
-(e.g. RDS, S3). This allows your ML team to easily share, find and use each others' 
-models and model serving endpoints. 
-:doc:`Read more about it here <guides/yatai_service>`.
+BentoML's model management component is called Yatai, it means food cart in Japanese,
+and you can think of it as where you'd store your bentos 🍱. Yatai provides CLI, Web UI,
+and Python API for accessing BentoML bundles you have created, and you can start a Yatai
+server for your team to manage all models on cloud storage(S3, GCS, MinIO etc) and build
+CI/CD workflow around it. :doc:`Lean more about it here <guides/yatai_service>`.
 
-BentoML CLI Listing recent Bento:
+Listing recent BentoML bundles created:
 
 .. code-block:: bash
 
@@ -107,7 +115,7 @@ BentoML CLI Listing recent Bento:
     ...
 
 
-BentoML model management web UI:
+BentoML model registry web UI:
 
 .. image:: _static/img/yatai-service-web-ui-repository.png
     :alt: BentoML YataiService Bento Repository Page
@@ -118,15 +126,12 @@ BentoML model management web UI:
 Creating BentoService
 ---------------------
 
-Users build their prediction service by subclassing
+Users create a prediction service by subclassing
 :ref:`bentoml.BentoService <bentoml-bentoservice-label>`. It is recommended to always
-put the source code of your BentoService class into an individual Python file and check it
-into source control(e.g. git) along with your model training code.
-
-BentoML is designed to be easily inserted to the end of your model training workflow,
-where you can import your BentoService class and create a Bento(a saved BentoService
-bundled with trained model artifacts). This makes it easy to manage, test and deploy all
-the models you and your team have created overtime.
+put the source code of your BentoService class into an individual Python file and check
+it into source control(e.g. git) along with your model training code. BentoML is
+designed to be easily inserted to the end of your model training workflow, where you can
+import your BentoService class and create a BentoML bundle.
 
 .. note::
 
@@ -154,8 +159,8 @@ of dependencies supported by BentoML:
 PyPI Packages
 ^^^^^^^^^^^^^
 
-Python PyPI package is the most common type of dependencies. BentoML provides a 
-mechanism that automatically figures out the PyPI packages required by your BentoService
+Python PyPI package is the most common type of dependency. BentoML provides a mechanism
+that automatically figures out the PyPI packages required by your BentoService
 python class, simply use the :code:`infer_pip_packages=True` option.
 
 .. code-block:: python
@@ -167,18 +172,19 @@ python class, simply use the :code:`infer_pip_packages=True` option.
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
-`Bug reports 
-<https://github.com/bentoml/BentoML/issues>`_ are highly appreciated if you experience
-problems when using the :code:`infer_pip_packages=True` option.
 
-Specifying **both direct and transitive** dependencies explicitly with **pinned versions**
-is recommended for improving reliability in the production environment. Transitive
-dependencies and versions can be resolved with utility like 
-`pip-compile <https://github.com/jazzband/pip-tools>`_. PyPI packages can be specified
-using either the :code:`pip_packages` option or the :code:`requirements_txt_file` option.
+.. note::
+
+    Specifying **both direct and transitive** dependencies explicitly with
+    **pinned versions** is recommended for improving reliability in the production
+    environment. Transitive dependencies and versions can be resolved with utility like
+    `pip-compile <https://github.com/jazzband/pip-tools>`_. PyPI packages can be specified
+    using either the :code:`pip_packages` option or the :code:`requirements_txt_file` option.
+
+
+Specifying PyPI packages through the :code:`pip_packages` option:
 
 .. code-block:: python
-  :caption: Specifying PyPI packages through the `pip_packages` option
 
   @bentoml.env(
     pip_packages=[
@@ -192,12 +198,13 @@ using either the :code:`pip_packages` option or the :code:`requirements_txt_file
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
-Note that although this supports the use of remote Git URLs, any use of Pip package options 
-like :code:`-i` or :code:`-f` is not supported. If you'd like to use those features, you can 
-define your own :code:`requirements.txt` file.
+
+Note that :code:`pip_packages` option does not support the use of pip package options
+like :code:`-i, --index-url` or :code:`-f, --find-links`. If you'd like to use those
+features, you can define your own :code:`requirements.txt` file and specifying PyPI
+packages through the `requirements_txt_file` option:
 
 .. code-block:: python
-  :caption: Specifying PyPI packages through the `requirements_txt_file` option
 
   @bentoml.env(
     requirements_txt_file="./requirements.txt"
@@ -208,9 +215,6 @@ define your own :code:`requirements.txt` file.
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
-This requirements.txt file should be compatible with the latest version of pip, and supports all
-the pip package install options including :code:`--index-url` and :code:`--find-links`.
-
 .. note::
     The :code:`requirements_txt_file` option will override any other method for defining 
     requirements such as :code:`pip_packages` and :code:`infer_pip_packages`.
@@ -218,8 +222,8 @@ the pip package install options including :code:`--index-url` and :code:`--find-
 Conda Packages
 ^^^^^^^^^^^^^^
 
-Conda packages can be specified similarly, here's an example prediction service relying 
-on an H2O model that requires the h2o conda packages:
+Conda packages are also supported in BentoML, here's an example prediction service
+hosting a H2O model that requires the h2o conda packages:
 
 .. code-block:: python
 
@@ -235,58 +239,86 @@ on an H2O model that requires the h2o conda packages:
       def predict(self, df):
           return self.artifacts.model.predict(df)
 
+If you want to avoid install conda packages from the `defaults` conda channel, and want
+all your conda dependencies to be installed from the channels specified in the
+:code:`conda_channels` option, BentoML provides the optional flag
+:code:`conda_override_channels` for this, which is similar to the
+:code:`--override-channels` in conda:
+
+.. code-block:: python
+
+    @bentoml.artifacts([H2oModelArtifact('model')])
+    @bentoml.env(
+      conda_channels=['h2oai'],
+      conda_dependencies=['h2o==3.24.0.2'],
+      conda_override_channels=True,
+    )
+
 
 .. note::
     One caveat with Conda Packages here, is that it does not work with AWS Lambda 
     deployment due to the limitation of the AWS Lambda platform.
 
-Using other Docker base images
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, BentoML uses a default Docker base image and installs your model and its dependencies on top of it. This base image contains all of BentoML's dependencies and an installation of `conda` which helps BentoML to package and use the right Python version for your bundle.
+Custom Docker base image
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-However, there may be times when you need to use other Docker images (e.g. have some pre-build dependencies layers, company base image, using an Alpine-based image, etc.). BentoML makes it really easy to switch between base images by doing allowing you to specify a `docker_base_image`.
+BentoML's default Docker base image is released on
+`dockerhub r/bentoml <https://hub.docker.com/r/bentoml/model-server/tags>`_, its build
+process can be found under the
+`./docker directory in BentoML source code <https://github.com/bentoml/BentoML/tree/master/docker/model-server>`_.
+
+The `bentoml containerize` is equivlant to running `docker build .` in the BentoML
+bundle directory with a few additional options. The docker image build process copies
+all the bundle files to the docker image, makes sure it has the right python vesrion,
+and installs all its PyPI and conda dependencies.
+
+However, there may be times when you need to use other Docker images (e.g. have some
+pre-build dependencies layers, company base image, using an Alpine-based image, etc.).
+BentoML makes it really easy to switch between base images by specifying a
+:code:`docker_base_image`.
 
 .. code-block:: python
 
-  # e.g. using BentoML slim image
-  @env(docker_base_image="bentoml/model-server:0.8.12-slim-py37")
+  # e.g. using a custom image:
+  @env(docker_base_image="mycompany/my-base-image:v123")
   @artifacts([SklearnModelArtifact('model')])
   class ExamplePredictionService(BentoService):
     ...
 
-In fact, one such base image that many may find useful are the BentoML slim base images. The original base image weighs in at roughly `~853MB` whereas the slim version weighs in at `~360MB`. 
 
-.. code-block:: bash
+.. note::
 
-  > docker image ls
+    BentoML requires the user provided docker base image to have :code:`bash` and the
+    right version of :code:`Python` pre-installed.
+    If the conda packages are being used, an installation of conda on the base image
+    will also be required.
+    This `bentoml-init.sh <https://github.com/bentoml/BentoML/blob/master/bentoml/saved_bundle/bentoml-init.sh>`_
+    script is how BentoML initializes a docker image with files under a BentoML bundle
 
-  REPOSITORY                             TAG                   IMAGE ID            CREATED              SIZE
-  bentoml/model-server                   0.8.12-slim-py37      109b451ed537        6 minutes ago        360MB
-  bentoml/model-server                   0.8.12                f034fa23264c        33 minutes ago       853MB
 
-This means that each image built on top of these slim images will be significantly smaller. 
-
-.. code-block:: bash
-
-  > docker image ls
-
-  REPOSITORY                               TAG                 IMAGE ID            CREATED              SIZE
-  jzhao2k19/iris                           latest              bfc9b81c7535        About a minute ago   1.54GB
-  jzhao2k19/iris-slim                      latest              4e8d87a0c18a        4 minutes ago        577MB
-
-However, as with using any alternative Docker base image, there are a few things to keep in mind. The regular base image uses `conda`, whereas the slim image does not. This has a few consequences. BentoML uses `conda` to ensure the Python version used matches the one you used to save your bundle. This means that you should manually select the right slim image for your bundle. For example, if you used Python 3.8 to train your model, you would use `bentoml/model-server:0.8.12-slim-py38`. Currently, BentoML support Python 3.6, 3.7, and 3.8. Additionally, this means that BentoML will ignore the `environment.yml`, meaning that user-defined `conda` packages and dependencies will be ignored. In the following example, only `pandas` will be installed, as the `conda_channels` and `conda_dependencies` will be ignored.
+One such base image that many may find useful are the BentoML slim base images.
+The original base image weighs in at roughly `~320MB` whereas the slim version weighs
+in at `~90MB`.
 
 .. code-block:: python
 
-  @bentoml.env(
-    pip_packages=['pandas'],
-    conda_channels=['h2oai'],
-    conda_dependencies=['h2o==3.24.0.2'],
-    docker_base_image="bentoml/model-server:0.8.12-slim-py37"
-  )
-  class ExamplePredictionService(bentoml.BentoService):
+  # e.g. using BentoML slim image
+  @env(docker_base_image="bentoml/model-server:0.12.0-slim-py37")
+  @artifacts([SklearnModelArtifact('model')])
+  class ExamplePredictionService(BentoService):
     ...
+
+However, as with using any alternative Docker base image, there are a few things to keep
+in mind. Firstly, you should manually select the right slim image for your bundle. For
+example, if you used BentoML version 0.11.0 and Python 3.7 to create your BentoML
+bundle, you would use `bentoml/model-server:0.11.0-slim-py37`. Currently, BentoML support
+Python 3.6, 3.7, and 3.8.
+
+Additionally, unlike the default docker base image, the slim image does not come with
+:code:`conda` pre-installed. This means that BentoML will ignore the conda dependencies
+a user may have specified through the `conda_channels` and `conda_dependencies`
+option in the :code:`@env` decorator.
 
 Init Bash Script
 ^^^^^^^^^^^^^^^^

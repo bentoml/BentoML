@@ -4,12 +4,12 @@
 
 BentoML is a flexible, high-performance framework for serving, managing, and deploying machine learning models. 
 
-* Support __multiple ML frameworks__, including Tensorflow, PyTorch, Keras, XGBoost
+* Supports __multiple ML frameworks__, including Tensorflow, PyTorch, Keras, XGBoost
   and [more](https://github.com/bentoml/BentoML#ml-frameworks)
-* Cloud native deployment with Docker, Kubernetes, AWS, Azure and
+* __Cloud native deployment__ with Docker, Kubernetes, AWS, Azure and
   [many more](https://github.com/bentoml/BentoML#deployment-options)
-* High-Performance online API serving and offline batch serving
-* Web dashboards and APIs for model management and deployment automation
+* __High-Performance__ online API serving and offline batch serving
+* Web dashboards and APIs for model registry and deployment management
 
                                                            
 BentoML bridges the gap between Data Science and DevOps. By providing a

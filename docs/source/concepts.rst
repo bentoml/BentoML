@@ -268,9 +268,9 @@ BentoML's default Docker base image is released on
 process can be found under the
 `./docker directory in BentoML source code <https://github.com/bentoml/BentoML/tree/master/docker/model-server>`_.
 
-The `bentoml containerize` is equivlant to running `docker build .` in the BentoML
+The `bentoml containerize` is equivalent to running `docker build .` in the BentoML
 bundle directory with a few additional options. The docker image build process copies
-all the bundle files to the docker image, makes sure it has the right python vesrion,
+all the bundle files to the docker image, makes sure it has the right python version,
 and installs all its PyPI and conda dependencies.
 
 However, there may be times when you need to use other Docker images (e.g. have some

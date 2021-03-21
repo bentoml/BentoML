@@ -96,3 +96,8 @@ Http
 http
 HTTP
 zipkin
+microbatch
+pypirc
+autoscale
+prometheus
+grafana

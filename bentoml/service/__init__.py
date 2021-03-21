@@ -778,7 +778,9 @@ class BentoService:
 
     pip_dependencies_map = None
 
-    def start_dev_server(self, port=None, enable_microbatch=False, enable_ngrok=False):
+    def start_dev_server(
+        self, port=None, enable_microbatch=False, enable_ngrok=False, debug=False
+    ):
         if enable_microbatch:
             raise NotImplementedError(
                 "start_dev_server with enable_microbatch=True is not implemented"
@@ -799,14 +801,18 @@ class BentoService:
 
             def run(path, interrupt_event):
                 my_env = os.environ.copy()
-                my_env["FLASK_ENV"] = "development"
-                cmd = [sys.executable, "-m", "bentoml", "serve", "--debug"]
+                # my_env["FLASK_ENV"] = "development"
+                cmd = [sys.executable, "-m", "bentoml", "serve"]
                 if port:
                     cmd += ['--port', f'{port}']
                 if enable_microbatch:
                     cmd += ['--enable-microbatch']
+                else:
+                    cmd += ['--disable-microbatch']
                 if enable_ngrok:
                     cmd += ['--run-with-ngrok']
+                if debug:
+                    cmd += ['--debug']
                 cmd += [path]
                 p = subprocess.Popen(
                     cmd,
@@ -829,7 +835,9 @@ class BentoService:
                 daemon=True,
             )
             self._dev_server_process.start()
-            logger.info(f"======= starting dev server on port: {port} =======")
+            logger.info(
+                f"======= starting dev server on port: {port if port else 5000} ======="
+            )
         except Exception as e:  # pylint: disable=broad-except
             self.stop_dev_server(skip_log=True)
             raise e
@@ -842,6 +850,7 @@ class BentoService:
             self._dev_server_process.join()
             assert not self._dev_server_process.is_alive()
             self._dev_server_process = None
+            logger.info("Dev server has stopped.")
         elif not skip_log:
             logger.warning("No dev server is running.")
         if self._dev_server_bundle_path:

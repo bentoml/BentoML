@@ -2,10 +2,9 @@ Deploying to AWS EC2
 =======================
 
 
-AWS EC2 is a great service to deploy containerized and load balanced services to the cloud.
-It's ability to auto scale and automated health checking features make it attractive to
-user who want to save cost and want to scale base on usage without administrative overhead.
-
+AWS EC2 is a great choice for deploying containerized and load balanced services in the cloud.
+It's ability to autoscale and automated health checking features make it attractive to
+users who want to reduce cost and want to horizontally scale base on traffic.
 
 
 Prerequisites

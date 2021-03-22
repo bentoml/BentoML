@@ -4,12 +4,12 @@
 
 BentoML is a flexible, high-performance framework for serving, managing, and deploying machine learning models. 
 
-* Support __multiple ML frameworks__, including Tensorflow, PyTorch, Keras, XGBoost
+* Supports __multiple ML frameworks__, including Tensorflow, PyTorch, Keras, XGBoost
   and [more](https://github.com/bentoml/BentoML#ml-frameworks)
-* Cloud native deployment with Docker, Kubernetes, AWS, Azure and
+* __Cloud native deployment__ with Docker, Kubernetes, AWS, Azure and
   [many more](https://github.com/bentoml/BentoML#deployment-options)
-* High-Performance online API serving and offline batch serving
-* Web dashboards and APIs for model management and deployment automation
+* __High-Performance__ online API serving and offline batch serving
+* Web dashboards and APIs for model registry and deployment management
 
                                                            
 BentoML bridges the gap between Data Science and DevOps. By providing a
@@ -207,7 +207,8 @@ into production systems.
 BentoML's model management component is called Yatai, it means food cart in Japanese, 
 and you can think of it as where you'd store your bentos 🍱. Yatai provides CLI, Web UI,
 and Python API for accessing BentoML bundles you have created, and you can start a Yatai
-server for your team to manage all models and build CI/CD workflow around it. 
+server for your team to manage all models on cloud storage(S3, GCS, MinIO etc) and build
+CI/CD workflow around it. 
 [Learn more about it here](https://docs.bentoml.org/en/latest/concepts.html#model-management).
 
 ![Yatai UI](https://github.com/bentoml/BentoML/blob/master/docs/source/_static/img/yatai-service-web-ui-repository.png)

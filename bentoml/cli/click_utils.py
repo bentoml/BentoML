@@ -84,6 +84,13 @@ class BentoMLCommandGroup(click.Group):
             default=False,
             help="Show debug logs when running the command",
         )
+        @click.option(
+            "--do-not-track",
+            is_flag=True,
+            help="Specify the option to not track usage.",
+            envvar="BENTOML_DO_NOT_TRACK",
+            default=None,
+        )
         @functools.wraps(func)
         def wrapper(quiet, verbose, *args, **kwargs):
             if quiet:
@@ -106,6 +113,12 @@ class BentoMLCommandGroup(click.Group):
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            do_not_track = kwargs["do_not_track"]
+            if do_not_track:
+                logger.info(
+                    "Executing '%s' command without usage tracking.", command_name
+                )
+
             track_properties = {
                 'command_group': cmd_group.name,
                 'command': command_name,
@@ -115,7 +128,7 @@ class BentoMLCommandGroup(click.Group):
                 return_value = func(*args, **kwargs)
                 track_properties['duration'] = time.time() - start_time
                 track_properties['return_code'] = 0
-                track(TRACK_CLI_EVENT_NAME, track_properties)
+                track(TRACK_CLI_EVENT_NAME, track_properties, do_not_track)
                 return return_value
             except BaseException as e:
                 track_properties['duration'] = time.time() - start_time
@@ -124,7 +137,7 @@ class BentoMLCommandGroup(click.Group):
                 track_properties['return_code'] = 1
                 if type(e) == KeyboardInterrupt:
                     track_properties['return_code'] = 2
-                track(TRACK_CLI_EVENT_NAME, track_properties)
+                track(TRACK_CLI_EVENT_NAME, track_properties, do_not_track)
                 raise
 
         return wrapper

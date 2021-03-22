@@ -11,10 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime
 import logging
+from datetime import datetime
+from dependency_injector.wiring import Provide
+from dependency_injector.wiring import inject
 
 from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.saved_bundle import safe_retrieve
 from bentoml.utils.docker_utils import (
     to_valid_docker_image_name,
@@ -64,16 +67,19 @@ from bentoml import __version__ as BENTOML_VERSION
 logger = logging.getLogger(__name__)
 
 
-def track_deployment_delete(deployment_operator, created_at, force_delete=False):
+def track_deployment_delete(
+    deployment_operator, created_at, force_delete=False, do_not_track: bool = False,
+):
     operator_name = DeploymentSpec.DeploymentOperator.Name(deployment_operator)
     up_time = int((datetime.utcnow() - created_at.ToDatetime()).total_seconds())
     track(
         f'deployment-{operator_name}-stop',
         {'up_time': up_time, 'force_delete': force_delete},
+        do_not_track,
     )
 
 
-def get_yatai_service_impl(base=object):
+def get_yatai_service_impl(base=object, do_not_track: bool = False):
     # This helps avoid loading YataiServicer grpc file when using local YataiService
     # implementation. This speeds up regular save/load operations when Yatai is not used
 
@@ -100,6 +106,7 @@ def get_yatai_service_impl(base=object):
             self.sess_maker = init_db(db_url)
             self.deployment_store = DeploymentStore(self.sess_maker)
             self.bento_metadata_store = BentoMetadataStore(self.sess_maker)
+            self.do_not_track = do_not_track
 
         def HealthCheck(self, request, context=None):
             return HealthCheckResponse(status=Status.OK())
@@ -196,7 +203,9 @@ def get_yatai_service_impl(base=object):
                     # table
                     if response.status.status_code == status_pb2.Status.OK:
                         track_deployment_delete(
-                            deployment_pb.spec.operator, deployment_pb.created_at
+                            deployment_pb.spec.operator,
+                            deployment_pb.created_at,
+                            self.do_not_track,
                         )
                         self.deployment_store.delete(
                             request.deployment_name, request.namespace
@@ -209,7 +218,10 @@ def get_yatai_service_impl(base=object):
                         # Track deployment delete before it vanquishes from deployment
                         # store
                         track_deployment_delete(
-                            deployment_pb.spec.operator, deployment_pb.created_at, True
+                            deployment_pb.spec.operator,
+                            deployment_pb.created_at,
+                            True,
+                            self.do_not_track,
                         )
                         self.deployment_store.delete(
                             request.deployment_name, request.namespace

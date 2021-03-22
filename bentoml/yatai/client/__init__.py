@@ -30,24 +30,26 @@ class YataiClient:
     """Python Client for interacting with YataiService
     """
 
-    def __init__(self, yatai_service=None):
+    def __init__(self, yatai_service=None, do_not_track: bool = False):
         self.yatai_service = yatai_service if yatai_service else get_yatai_service()
         self.bento_repository_api_client = None
         self.deployment_api_client = None
+        self.do_not_track = do_not_track
 
     @cached_property
     def repository(self):
-        return BentoRepositoryAPIClient(self.yatai_service)
+        return BentoRepositoryAPIClient(self.yatai_service, self.do_not_track)
 
     @cached_property
     def deployment(self):
         return DeploymentAPIClient(self.yatai_service)
 
 
-def get_yatai_client(yatai_url=None):
+def get_yatai_client(yatai_url=None, do_not_track: bool = False):
     """
     Args:
         yatai_service_channel_address: String. Yatai Service URL address.
+        do_not_track: Bool. Do not track usage if True; False otherwise.
 
     Returns:
         YataiClient instance
@@ -62,4 +64,4 @@ def get_yatai_client(yatai_url=None):
     >>>  local_yatai_client = get_yatai_client()
     """
     yatai_service = get_yatai_service(channel_address=yatai_url)
-    return YataiClient(yatai_service=yatai_service)
+    return YataiClient(yatai_service=yatai_service, do_not_track=do_not_track)

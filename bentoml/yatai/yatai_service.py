@@ -22,6 +22,7 @@ def get_yatai_service(
     repo_base_url=None,
     s3_endpoint_url=None,
     default_namespace=None,
+    do_not_track: bool = False,
 ):
     channel_address = channel_address or config('yatai_service').get('url')
     access_token = access_token or config('yatai_service').get('access_token')
@@ -79,7 +80,7 @@ def get_yatai_service(
     else:
         from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
 
-        LocalYataiService = get_yatai_service_impl()
+        LocalYataiService = get_yatai_service_impl(do_not_track=do_not_track)
 
         logger.debug("Creating local YataiService instance")
         return LocalYataiService(
@@ -91,7 +92,14 @@ def get_yatai_service(
 
 
 def start_yatai_service_grpc_server(
-    db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url, base_url
+    db_url,
+    repo_base_url,
+    grpc_port,
+    ui_port,
+    with_ui,
+    s3_endpoint_url,
+    base_url,
+    do_not_track: bool = False,
 ):
     # Lazily import grpcio for YataiSerivce gRPC related actions
     import grpc
@@ -99,7 +107,7 @@ def start_yatai_service_grpc_server(
     from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
     from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
 
-    YataiServicerImpl = get_yatai_service_impl(YataiServicer)
+    YataiServicerImpl = get_yatai_service_impl(YataiServicer, do_not_track=do_not_track)
     yatai_service = YataiServicerImpl(
         db_url=db_url, repo_base_url=repo_base_url, s3_endpoint_url=s3_endpoint_url,
     )

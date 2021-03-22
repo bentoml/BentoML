@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 def start_dev_server(
     bundle_path: str,
+    do_not_track: bool = False,
     port: Optional[int] = None,
     enable_microbatch: Optional[bool] = None,
     mb_max_batch_size: Optional[int] = None,
@@ -59,6 +60,7 @@ def start_dev_server(
                 api_server_port=api_server_port,
                 saved_bundle_path=bundle_path,
                 config=config,
+                do_not_track=do_not_track,
             ),
             daemon=True,
         )
@@ -75,14 +77,17 @@ def start_dev_server(
 
 
 def _start_dev_server(
-    saved_bundle_path: str, api_server_port: int, config: BentoMLConfiguration,
+    saved_bundle_path: str,
+    api_server_port: int,
+    config: BentoMLConfiguration,
+    do_not_track: bool = False,
 ):
 
     logger.info("Starting BentoML API server in development mode..")
 
     from bentoml.saved_bundle import load_from_dir
 
-    bento_service = load_from_dir(saved_bundle_path)
+    bento_service = load_from_dir(saved_bundle_path, do_not_track)
 
     from bentoml.server.api_server import BentoAPIServer
 
@@ -117,6 +122,7 @@ def _start_dev_proxy(
 
 def start_prod_server(
     saved_bundle_path: str,
+    do_not_track: bool = False,
     port: Optional[int] = None,
     workers: Optional[int] = None,
     timeout: Optional[int] = None,
@@ -154,6 +160,7 @@ def start_prod_server(
             port=api_server_port,
             config=config,
             prometheus_lock=prometheus_lock,
+            do_not_track=do_not_track,
         ),
         daemon=True,
     )
@@ -175,6 +182,7 @@ def _start_prod_server(
     config: BentoMLConfiguration,
     port: int,
     prometheus_lock: Optional[multiprocessing.Lock] = None,
+    do_not_track: bool = False,
 ):
 
     logger.info("Starting BentoML API server in production mode..")
@@ -187,7 +195,10 @@ def _start_prod_server(
     from bentoml.server.gunicorn_server import GunicornBentoServer
 
     gunicorn_app = GunicornBentoServer(
-        saved_bundle_path, port=port, prometheus_lock=prometheus_lock,
+        saved_bundle_path,
+        port=port,
+        prometheus_lock=prometheus_lock,
+        do_not_track=do_not_track,
     )
     gunicorn_app.run()
 

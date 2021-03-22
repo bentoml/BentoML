@@ -243,26 +243,28 @@ def safe_retrieve(bundle_path, target_dir):
 
 
 @resolve_remote_bundle
-def load_from_dir(bundle_path):
+def load_from_dir(bundle_path, do_not_track: bool = False):
     """Load bento service from local file path or s3 path
 
     Args:
         bundle_path (str): The path that contains saved BentoService bundle,
             supporting both local file path and s3 path
+        do_not_track (bool): Do not track the usage of this operation if True;
+            False otherwise.
 
     Returns:
         bentoml.service.BentoService: a loaded BentoService instance
     """
-    track_load_start()
+    track_load_start(do_not_track)
 
     svc_cls = load_bento_service_class(bundle_path)
     svc = svc_cls()
 
-    track_load_finish(svc)
+    track_load_finish(svc, do_not_track)
     return svc
 
 
 @resolve_remote_bundle
-def load_bento_service_api(bundle_path, api_name=None):
-    bento_service = load_from_dir(bundle_path)
+def load_bento_service_api(bundle_path, api_name=None, do_not_track: bool = False):
+    bento_service = load_from_dir(bundle_path, do_not_track)
     return bento_service.get_inference_api(api_name)

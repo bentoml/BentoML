@@ -44,13 +44,16 @@ logger = logging.getLogger('bentoml.lambda_app')
 
 bento_name = os.environ['BENTOML_BENTO_SERVICE_NAME']
 api_name = os.environ["BENTOML_API_NAME"]
+do_not_track = bool(os.environ.get("BENTOML_DO_NOT_TRACK", False))
+if do_not_track:
+    logger.info("Running without usage tracking.")
 
 bento_bundle_path = os.path.join('./', bento_name)
 if not os.path.exists(bento_bundle_path):
     bento_bundle_path = os.path.join('/tmp/requirements', bento_name)
 
 logger.debug('Loading BentoService bundle from path: "%s"', bento_bundle_path)
-bento_service = load_from_dir(bento_bundle_path)
+bento_service = load_from_dir(bento_bundle_path, do_not_track)
 logger.debug('BentoService "%s" loaded successfully', bento_service.name)
 bento_service_api = bento_service.get_inference_api(api_name)
 logger.debug('BentoService API "%s" loaded successfully', {bento_service_api.name})

@@ -111,7 +111,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.argument("api_name", type=click.STRING)
     @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
     @add_options(config_options)
-    def run(api_name, config, run_args, bento=None):
+    def run(api_name, do_not_track, config, run_args, bento=None):
         container = BentoMLContainer()
         config = BentoMLConfiguration(override_config_file=config)
         container.config.from_dict(config.as_dict())
@@ -125,10 +125,10 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         parsed_args, _ = parser.parse_known_args(run_args)
         yatai_url = parsed_args.yatai_url
         saved_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path, yatai_url
+            bento, pip_installed_bundle_path, yatai_url, do_not_track
         )
 
-        api = load_bento_service_api(saved_bundle_path, api_name)
+        api = load_bento_service_api(saved_bundle_path, api_name, do_not_track)
         exit_code = api.handle_cli(run_args)
         sys.exit(exit_code)
 
@@ -144,12 +144,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
-    def info(bento=None, yatai_url=None):
+    def info(do_not_track, bento=None, yatai_url=None):
         """
         List all APIs defined in the BentoService loaded from saved bundle
         """
         saved_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path, yatai_url
+            bento, pip_installed_bundle_path, yatai_url, do_not_track
         )
 
         bento_service_metadata_pb = load_bento_service_metadata(saved_bundle_path)
@@ -169,12 +169,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
-    def open_api_spec(bento=None, yatai_url=None):
+    def open_api_spec(do_not_track, bento=None, yatai_url=None):
         saved_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path, yatai_url
+            bento, pip_installed_bundle_path, yatai_url, do_not_track
         )
 
-        bento_service = load_from_dir(saved_bundle_path)
+        bento_service = load_from_dir(saved_bundle_path, do_not_track)
 
         _echo(json.dumps(get_open_api_spec_json(bento_service), indent=2))
 
@@ -224,13 +224,15 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         yatai_url,
         enable_swagger,
         config,
+        do_not_track,
     ):
         saved_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path, yatai_url
+            bento, pip_installed_bundle_path, yatai_url, do_not_track
         )
 
         start_dev_server(
             saved_bundle_path,
+            do_not_track=do_not_track,
             port=port,
             enable_microbatch=enable_microbatch,
             mb_max_batch_size=mb_max_batch_size,
@@ -298,6 +300,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         yatai_url,
         enable_swagger,
         config,
+        do_not_track,
     ):
         if not psutil.POSIX:
             _echo(
@@ -309,11 +312,12 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             return
 
         saved_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path, yatai_url
+            bento, pip_installed_bundle_path, yatai_url, do_not_track
         )
 
         start_prod_server(
             saved_bundle_path,
+            do_not_track=do_not_track,
             port=port,
             workers=workers,
             timeout=timeout,
@@ -373,7 +377,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         'the Local YataiService with local docker daemon. Example: '
         '"--yatai-url http://localhost:50050"',
     )
-    def containerize(bento, push, tag, build_arg, yatai_url):
+    def containerize(bento, push, tag, build_arg, yatai_url, do_not_track):
         """Containerize specified BentoService.
 
         BENTO is the target BentoService to be containerized, referenced by its name
@@ -397,14 +401,14 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         provided by Docker daemon.
         """
         saved_bundle_path = resolve_bundle_path(
-            bento, pip_installed_bundle_path, yatai_url
+            bento, pip_installed_bundle_path, yatai_url, do_not_track
         )
 
         _echo(f"Found Bento: {saved_bundle_path}")
 
         bento_metadata = load_bento_service_metadata(saved_bundle_path)
         bento_tag = f'{bento_metadata.name}:{bento_metadata.version}'
-        yatai_client = get_yatai_client(yatai_url)
+        yatai_client = get_yatai_client(yatai_url, do_not_track)
         docker_build_args = {}
         if build_arg:
             for arg in build_arg:

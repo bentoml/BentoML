@@ -166,7 +166,9 @@ class catch_exceptions(object):
         return _
 
 
-def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
+def resolve_bundle_path(
+    bento, pip_installed_bundle_path, yatai_url=None, do_not_track: bool = False
+):
     from bentoml.exceptions import BentoMLException
     from bentoml.yatai.client import get_yatai_client
 
@@ -182,7 +184,7 @@ def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
 
     elif ":" in bento:
         # assuming passing in BentoService in the form of Name:Version tag
-        yatai_client = get_yatai_client(yatai_url)
+        yatai_client = get_yatai_client(yatai_url, do_not_track)
         bento_pb = yatai_client.repository.get(bento)
         return resolve_bento_bundle_uri(bento_pb)
     else:

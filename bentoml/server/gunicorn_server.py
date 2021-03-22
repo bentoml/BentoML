@@ -76,6 +76,7 @@ if psutil.POSIX:
             prometheus_lock: Optional[multiprocessing.Lock] = None,
             enable_swagger: bool = P[C.config.api_server.enable_swagger],
             max_request_size: int = P[C.config.api_server.max_request_size],
+            do_not_track: bool = False,
             loglevel=P[C.config.logging.level],
         ):
             self.bento_service_bundle_path = bundle_path
@@ -95,6 +96,7 @@ if psutil.POSIX:
                 self.options['workers'] = workers
             self.prometheus_lock = prometheus_lock
             self.enable_swagger = enable_swagger
+            self.do_not_track = do_not_track
 
             super(GunicornBentoServer, self).__init__()
 
@@ -112,7 +114,9 @@ if psutil.POSIX:
                 self.cfg.set(key.lower(), value)
 
         def load(self):
-            bento_service = load_from_dir(self.bento_service_bundle_path)
+            bento_service = load_from_dir(
+                self.bento_service_bundle_path, self.do_not_track
+            )
             api_server = GunicornBentoAPIServer(
                 bento_service, enable_swagger=self.enable_swagger
             )

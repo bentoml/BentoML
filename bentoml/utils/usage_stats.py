@@ -23,7 +23,6 @@ import uuid
 from bentoml.utils.ruamel_yaml import YAML
 from bentoml.utils import ProtoMessageToDict
 from bentoml.configuration import _is_pip_installed_bentoml
-from bentoml import config
 from bentoml import __version__ as BENTOML_VERSION
 
 
@@ -120,9 +119,19 @@ def _bento_service_metadata_to_event_properties(
     return properties
 
 
-def track(event_type, event_properties=None):
-    if not config().getboolean("core", "usage_tracking"):
+def track(event_type, event_properties=None, do_not_track: bool = False):
+    if do_not_track:
+        logger.info(
+            "########### Not Tracking ###########, do_not_track=%s, event_type=%s",
+            do_not_track,
+            event_type,
+        )
         return  # Usage tracking disabled
+    logger.info(
+        "########### Tracking ###########, do_not_track=%s, event_type=%s",
+        do_not_track,
+        event_type,
+    )
 
     if event_properties is None:
         event_properties = {}
@@ -145,10 +154,10 @@ def track_save(bento_service, extra_properties=None):
     return track("save", properties)
 
 
-def track_load_start():
-    return track('load-start', {})
+def track_load_start(do_not_track: bool = False):
+    return track('load-start', {}, do_not_track)
 
 
-def track_load_finish(bento_service):
+def track_load_finish(bento_service, do_not_track: bool = False):
     properties = _get_bento_service_event_properties(bento_service)
-    return track("load", properties)
+    return track("load", properties, do_not_track)

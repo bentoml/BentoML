@@ -17,7 +17,8 @@ import os
 from bentoml.saved_bundle import load_from_dir
 from bentoml.yatai.deployment.sagemaker.model_server import BentomlSagemakerServer
 
+do_not_track = bool(os.environ.get("BENTOML_DO_NOT_TRACK", False))
+model_service = load_from_dir('/bento', do_not_track)
 api_name = os.environ.get('API_NAME', None)
-model_service = load_from_dir('/bento')
 server = BentomlSagemakerServer(model_service, api_name)
 app = server.app

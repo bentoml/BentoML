@@ -252,13 +252,15 @@ command:
 
 ```bash
 # From terminal:
-bentoml config set usage_tracking=false
+bentoml [command] --do-not-track
 ```
+
+If a BentoML Python API tracks usage, a `do-not-track` parameter option will be available to disable usage tracking.
 
 ```python
 # From python:
-import bentoml
-bentoml.config().set('core', 'usage_tracking', 'False')
+from bentoml import load_from_dir
+load_from_dir(bundle_path, do_not_track=True)
 ```
 
 

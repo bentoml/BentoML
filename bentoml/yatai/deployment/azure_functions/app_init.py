@@ -19,7 +19,8 @@ from bentoml.server.api_server import BentoAPIServer
 from bentoml.saved_bundle import load_from_dir
 
 bento_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-svc = load_from_dir(bento_path)
+do_not_track = bool(os.environ.get("BENTOML_DO_NOT_TRACK", False))
+svc = load_from_dir(bento_path, do_not_track)
 
 bento_server = BentoAPIServer(svc)
 

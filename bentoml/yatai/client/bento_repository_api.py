@@ -22,7 +22,10 @@ import tarfile
 import click
 import requests
 import shutil
+from dependency_injector.wiring import Provide
+from dependency_injector.wiring import inject
 
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import (
     status_pb_to_error_code_and_message,
@@ -60,9 +63,12 @@ yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
 class BentoRepositoryAPIClient:
-    def __init__(self, yatai_service):
+    def __init__(
+        self, yatai_service, do_not_track: bool = False,
+    ):
         # YataiService stub for accessing remote YataiService RPCs
         self.yatai_service = yatai_service
+        self.do_not_track = do_not_track
 
     def push(self, bento, labels=None):
         """
@@ -84,7 +90,7 @@ class BentoRepositoryAPIClient:
         >>> bento = f'{svc.name}:{svc.version}'
         >>> remote_saved_path= remote_yatai_client.repository.push(bento)
         """
-        track('py-api-push')
+        track('py-api-push', do_not_track=self.do_not_track)
 
         from bentoml.yatai.client import get_yatai_client
 
@@ -115,7 +121,7 @@ class BentoRepositoryAPIClient:
         >>> client = get_yatai_client('127.0.0.1:50051')
         >>> saved_path = client.repository.pull('MyService:')
         """
-        track('py-api-pull')
+        track('py-api-pull', do_not_track=self.do_not_track)
 
         bento_pb = self.get(bento)
         with TempDirectory() as tmpdir:
@@ -284,7 +290,7 @@ class BentoRepositoryAPIClient:
         >>> yatai_client = get_yatai_client()
         >>> bento_info = yatai_client.repository.get('my_service:version')
         """
-        track('py-api-get')
+        track('py-api-get', do_not_track=self.do_not_track)
         if ':' not in bento:
             raise BentoMLException(
                 'BentoService name or version is missing. Please provide in the '
@@ -334,7 +340,7 @@ class BentoRepositoryAPIClient:
         >>>     labels='key=value,key2=value'
         >>> )
         """
-        track('py-api-list')
+        track('py-api-list', do_not_track=self.do_not_track)
         list_bento_request = ListBentoRequest(
             bento_name=bento_name,
             offset=offset,
@@ -410,7 +416,7 @@ class BentoRepositoryAPIClient:
         >>> # Delete all bento services with labels match `ci=failed` and `cohort=20`
         >>> yatai_client.repository.delete(labels='ci=failed, cohort=20')
         """
-        track('py-api-delete')
+        track('py-api-delete', do_not_track=self.do_not_track)
 
         delete_list_limit = 50
 
@@ -474,7 +480,7 @@ class BentoRepositoryAPIClient:
         Returns:
             Image tag: String
         """
-        track('py-api-containerize')
+        track('py-api-containerize', do_not_track=self.do_not_track)
         if ':' not in bento:
             raise BentoMLException(
                 'BentoService name or version is missing. Please provide in the '
@@ -516,11 +522,11 @@ class BentoRepositoryAPIClient:
         >>> # Load BentoService from s3 storage
         >>> bento = yatai_client.repository.load('s3://bucket/path/bundle.tar.gz')
         """
-        track('py-api-load')
+        track('py-api-load', do_not_track=self.do_not_track)
         if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
             saved_bundle_path = bento
         else:
             bento_pb = self.get(bento)
             saved_bundle_path = resolve_bento_bundle_uri(bento_pb)
-        svc = load_from_dir(saved_bundle_path)
+        svc = load_from_dir(saved_bundle_path, do_not_track=self.do_not_track)
         return svc

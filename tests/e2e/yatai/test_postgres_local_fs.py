@@ -3,9 +3,7 @@ import logging
 from bentoml.yatai.client import get_yatai_client
 from bentoml.yatai.proto.repository_pb2 import BentoUri
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
-from tests.yatai.local_yatai_service import (
-    local_yatai_service_from_cli,
-)
+from tests.yatai.local_yatai_service import local_yatai_service_from_cli
 
 logger = logging.getLogger('bentoml.test')
 
@@ -25,3 +23,5 @@ def test_yatai_server_with_postgres_and_local_storage(postgres_db_url):
         assert (
             bento_pb.uri.type == BentoUri.LOCAL
         ), 'BentoService storage type mismatched, expect LOCAL'
+        logger.info(f'Deleting saved bundle {bento_tag}')
+        yc.repository.delete(bento_tag=bento_tag)

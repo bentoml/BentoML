@@ -3,9 +3,7 @@ import logging
 from bentoml.yatai.client import get_yatai_client
 from bentoml.yatai.proto.repository_pb2 import BentoUri
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
-from tests.yatai.local_yatai_service import (
-    local_yatai_service_container,
-)
+from tests.yatai.local_yatai_service import local_yatai_service_container
 
 logger = logging.getLogger('bentoml.test')
 

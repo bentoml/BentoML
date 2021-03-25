@@ -33,7 +33,7 @@ def initialize_tracer(
 
     if host:
         tracer_config['local_agent'] = (
-            {'reporting_host': host, 'reporting_port': port,},
+            {'reporting_host': host, 'reporting_port': port},
         )
 
     config = Config(

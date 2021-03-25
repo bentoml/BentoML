@@ -20,9 +20,9 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial
 
-from py_zipkin.zipkin import ZipkinAttrs, zipkin_span
-from py_zipkin.transport import SimpleHTTPTransport
-from py_zipkin.util import generate_random_64bit_string
+from py_zipkin.zipkin import ZipkinAttrs, zipkin_span  # pylint: disable=E0401
+from py_zipkin.transport import SimpleHTTPTransport  # pylint: disable=E0401
+from py_zipkin.util import generate_random_64bit_string  # pylint: disable=E0401
 
 
 trace_stack_var = ContextVar('trace_stack', default=None)

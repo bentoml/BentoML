@@ -1,11 +1,9 @@
 import time
 import pytest
-from bentoml import config
 
 
 @pytest.mark.skipif(
-    not config("tracing").get("opentracing_server_address"),
-    reason="Opentracing is not configured",
+    True, reason="Opentracing test is WIP",
 )
 def test_initialize_tracer():
     import opentracing
@@ -21,8 +19,7 @@ def test_initialize_tracer():
 
 
 @pytest.mark.skipif(
-    not config("tracing").get("opentracing_server_address"),
-    reason="Opentracing is not configured",
+    True, reason="Opentracing test is WIP",
 )
 def test_trace():
     from bentoml.tracing.opentrace import trace

@@ -6,10 +6,12 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial
 
-import opentracing
-from opentracing import Format
-from opentracing.scope_managers.asyncio import AsyncioScopeManager
-from jaeger_client.config import Config
+import opentracing  # pylint: disable=E0401
+from opentracing import Format  # pylint: disable=E0401
+from opentracing.scope_managers.asyncio import (  # pylint: disable=E0401
+    AsyncioScopeManager,
+)
+from jaeger_client.config import Config  # pylint: disable=E0401
 
 span_context_var = ContextVar('span context', default=None)
 

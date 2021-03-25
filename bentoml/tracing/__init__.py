@@ -52,13 +52,13 @@ def trace(
         opentracing_server_port = None
 
     if zipkin_server_address:
-        from bentoml.tracing._zipkin import trace as _trace
+        from bentoml.tracing.zipkin import trace as _trace
 
         kwargs['server_address'] = zipkin_server_address
         kwargs['server_port'] = zipkin_server_port
 
     elif opentracing_server_address:
-        from bentoml.tracing._opentrace import trace as _trace
+        from bentoml.tracing.opentrace import trace as _trace
 
         kwargs['server_address'] = opentracing_server_address
         kwargs['server_port'] = opentracing_server_port
@@ -105,13 +105,13 @@ def async_trace(
         opentracing_server_port = None
 
     if zipkin_server_address:
-        from bentoml.tracing._zipkin import async_trace as _async_trace
+        from bentoml.tracing.zipkin import async_trace as _async_trace
 
         kwargs['server_address'] = zipkin_server_address
         kwargs['server_port'] = zipkin_server_port
 
     elif opentracing_server_address:
-        from bentoml.tracing._opentrace import async_trace as _async_trace
+        from bentoml.tracing.opentrace import async_trace as _async_trace
 
         kwargs['server_address'] = opentracing_server_address
         kwargs['server_port'] = opentracing_server_port

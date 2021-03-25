@@ -1,9 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# This module name starts with underscore because it contains optional Python package
-# dependency `opentracing` and `jaeger-client`, this naming convention helps avoid
-# loading this module when injecting configurations
 
 from contextlib import contextmanager
 from contextvars import ContextVar

@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This module name starts with underscore because it contains optional Python package
-# dependency `py_zipkin`, and this naming convention helps avoid loading this module
-# when injecting configurations
 
 import random
 import aiohttp
@@ -23,9 +20,8 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import partial
 
-import requests
 from py_zipkin.zipkin import ZipkinAttrs, zipkin_span
-from py_zipkin.transport import BaseTransportHandler, SimpleHTTPTransport
+from py_zipkin.transport import SimpleHTTPTransport
 from py_zipkin.util import generate_random_64bit_string
 
 

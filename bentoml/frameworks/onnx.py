@@ -34,9 +34,11 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
     Args:
         name (string): Name of the artifact
-        backend (string): Name of ONNX inference runtime. ["onnxruntime", "onnxruntime-gpu"]
+        backend (string): Name of ONNX inference runtime. ["onnxruntime",
+                            "onnxruntime-gpu"]
     Raises:
-        MissingDependencyException: onnx package is required for packing a ModelProto object
+        MissingDependencyException: onnx package is required for packing a ModelProto
+                                    object
         NotImplementedError: {backend} as onnx runtime is not supported at the moment
 
     Example usage:

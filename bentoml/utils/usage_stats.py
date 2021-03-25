@@ -27,8 +27,6 @@ from bentoml.configuration import _is_pip_installed_bentoml
 from bentoml import __version__ as BENTOML_VERSION
 
 
-_DO_NOT_TRACK = "BENTOML_DO_NOT_TRACK"
-
 logger = logging.getLogger(__name__)
 
 AMPLITUDE_URL = "https://api.amplitude.com/httpapi"

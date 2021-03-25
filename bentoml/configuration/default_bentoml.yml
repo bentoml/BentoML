@@ -36,7 +36,8 @@ yatai:
   url: Null
 
 tracing:
-  zipkin_api_url: Null
+  zipkin_server_address: Null
+  zipkin_server_port: Null
   opentracing_server_address: Null
   opentracing_server_port: Null
 

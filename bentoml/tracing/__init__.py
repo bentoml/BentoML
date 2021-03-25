@@ -22,7 +22,12 @@ from bentoml.configuration.containers import BentoMLContainer
 @inject
 @contextmanager
 def trace(
-    zipkin_api_url: str = Provide[BentoMLContainer.config.tracing.zipkin_api_url],
+    zipkin_server_address: str = Provide[
+        BentoMLContainer.config.tracing.zipkin_server_address
+    ],
+    zipkin_server_port: str = Provide[
+        BentoMLContainer.config.tracing.zipkin_server_port
+    ],
     opentracing_server_address: str = Provide[
         BentoMLContainer.config.tracing.opentracing_server_address
     ],
@@ -37,23 +42,26 @@ def trace(
 
     # isinstance check here allow trace to be used where the top-level entry point has
     # not yet implemented the wiring of BentoML config
-    if isinstance(zipkin_api_url, Provide):
-        zipkin_api_url = None
+    if isinstance(zipkin_server_address, Provide):
+        zipkin_server_address = None
+    if isinstance(zipkin_server_port, Provide):
+        zipkin_server_port = None
     if isinstance(opentracing_server_address, Provide):
         opentracing_server_address = None
     if isinstance(opentracing_server_port, Provide):
         opentracing_server_port = None
 
-    if zipkin_api_url:
-        from bentoml.tracing.zipkin import trace as _trace
+    if zipkin_server_address:
+        from bentoml.tracing._zipkin import trace as _trace
 
-        kwargs['server_url'] = zipkin_api_url
+        kwargs['server_address'] = zipkin_server_address
+        kwargs['server_port'] = zipkin_server_port
 
     elif opentracing_server_address:
-        from bentoml.tracing.opentrace import trace as _trace
+        from bentoml.tracing._opentrace import trace as _trace
 
-        kwargs['server_url'] = opentracing_server_address
-        kwargs['port'] = opentracing_server_port
+        kwargs['server_address'] = opentracing_server_address
+        kwargs['server_port'] = opentracing_server_port
 
     else:
         yield None
@@ -67,7 +75,12 @@ def trace(
 @inject
 @contextmanager
 def async_trace(
-    zipkin_api_url: str = Provide[BentoMLContainer.config.tracing.zipkin_api_url],
+    zipkin_server_address: str = Provide[
+        BentoMLContainer.config.tracing.zipkin_server_address
+    ],
+    zipkin_server_port: str = Provide[
+        BentoMLContainer.config.tracing.zipkin_server_port
+    ],
     opentracing_server_address: str = Provide[
         BentoMLContainer.config.tracing.opentracing_server_address
     ],
@@ -82,23 +95,26 @@ def async_trace(
 
     # isinstance check here allow trace to be used where the top-level entry point has
     # not yet implemented the wiring of BentoML config
-    if isinstance(zipkin_api_url, Provide):
-        zipkin_api_url = None
+    if isinstance(zipkin_server_address, Provide):
+        zipkin_server_address = None
+    if isinstance(zipkin_server_port, Provide):
+        zipkin_server_port = None
     if isinstance(opentracing_server_address, Provide):
         opentracing_server_address = None
     if isinstance(opentracing_server_port, Provide):
         opentracing_server_port = None
 
-    if zipkin_api_url:
-        from bentoml.tracing.zipkin import async_trace as _async_trace
+    if zipkin_server_address:
+        from bentoml.tracing._zipkin import async_trace as _async_trace
 
-        kwargs['server_url'] = zipkin_api_url
+        kwargs['server_address'] = zipkin_server_address
+        kwargs['server_port'] = zipkin_server_port
 
     elif opentracing_server_address:
-        from bentoml.tracing.opentrace import async_trace as _async_trace
+        from bentoml.tracing._opentrace import async_trace as _async_trace
 
-        kwargs['server_url'] = opentracing_server_address
-        kwargs['port'] = opentracing_server_port
+        kwargs['server_address'] = opentracing_server_address
+        kwargs['server_port'] = opentracing_server_port
 
     else:
         yield None

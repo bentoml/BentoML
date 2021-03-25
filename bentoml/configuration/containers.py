@@ -47,9 +47,10 @@ SCHEMA = Schema(
         },
         "yatai": {"url": Or(str, None)},
         "tracing": {
-            "zipkin_api_url": Or(str, None),
+            "zipkin_server_address": Or(str, None),
+            "zipkin_server_port": Or(str, int, None),
             Optional("opentracing_server_address"): Or(str, None),
-            Optional("opentracing_server_port"): Or(str, None),
+            Optional("opentracing_server_port"): Or(str, int, None),
         },
         "instrument": {"namespace": str},
         "logging": {"level": str},
@@ -110,9 +111,6 @@ class BentoMLConfiguration:
                     "marshal_server"
                 ).get("marshal_request_header_flag")
                 self.config["yatai"]["url"] = config("yatai_service").get("url")
-                self.config["tracing"]["zipkin_api_url"] = config("tracing").get(
-                    "zipkin_api_url"
-                )
                 self.config["instrument"]["namespace"] = config("instrument").get(
                     "default_namespace"
                 )
@@ -131,8 +129,13 @@ class BentoMLConfiguration:
                     ) from e
 
         # User override configuration
-        if override_config_file is not None and os.path.exists(override_config_file):
+        if override_config_file is not None:
             LOGGER.info("Applying user config override from %s" % override_config_file)
+            if not os.path.exists(override_config_file):
+                raise BentoMLConfigException(
+                    f"Config file {override_config_file} not found"
+                )
+
             with open(override_config_file, "rb") as f:
                 override_config = YAML().load(f.read())
             always_merger.merge(self.config, override_config)

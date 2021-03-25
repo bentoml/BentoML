@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This module name starts with underscore because it contains optional Python package
+# dependency `py_zipkin`, and this naming convention helps avoid loading this module
+# when injecting configurations
+
 import random
 import aiohttp
 import asyncio
@@ -20,9 +24,8 @@ from contextvars import ContextVar
 from functools import partial
 
 import requests
-from py_zipkin import Tracer
 from py_zipkin.zipkin import ZipkinAttrs, zipkin_span
-from py_zipkin.transport import BaseTransportHandler
+from py_zipkin.transport import BaseTransportHandler, SimpleHTTPTransport
 from py_zipkin.util import generate_random_64bit_string
 
 
@@ -32,6 +35,7 @@ trace_stack_var = ContextVar('trace_stack', default=None)
 def load_http_headers(headers):
     if not headers or "X-B3-TraceId" not in headers:
         return None
+
     return ZipkinAttrs(
         headers.get("X-B3-TraceId"),
         headers.get("X-B3-SpanId"),
@@ -41,19 +45,22 @@ def load_http_headers(headers):
     )
 
 
-def make_http_headers(attrs):
-    headers = {
+def _set_http_headers(attrs, headers):
+    if not headers or "X-B3-TraceId" in headers:
+        return
+
+    tracing_headers = {
         "X-B3-TraceId": attrs.trace_id,
         "X-B3-SpanId": attrs.span_id,
         "X-B3-Flags": attrs.flags,
         "X-B3-Sampled": attrs.is_sampled and '1' or '0',
     }
     if attrs.parent_span_id:
-        headers["X-B3-ParentSpanId"] = attrs.parent_span_id
-    return headers
+        tracing_headers["X-B3-ParentSpanId"] = attrs.parent_span_id
+    headers.update(tracing_headers)
 
 
-def make_child_attrs(attrs):
+def _make_child_attrs(attrs):
     return ZipkinAttrs(
         attrs.trace_id,
         generate_random_64bit_string(),
@@ -63,7 +70,7 @@ def make_child_attrs(attrs):
     )
 
 
-def make_new_attrs(sample_rate=1.0):
+def _make_new_attrs(sample_rate=1.0):
     return ZipkinAttrs(
         generate_random_64bit_string(),
         generate_random_64bit_string(),
@@ -73,33 +80,10 @@ def make_new_attrs(sample_rate=1.0):
     )
 
 
-class HttpTransport(BaseTransportHandler):
-    def __init__(self, server_url):
-        super(HttpTransport, self).__init__()
-        self.server_url = server_url
-
-    def get_max_payload_bytes(self):
-        return None
-
-    def send(self, payload):
-        requests.post(
-            self.server_url,
-            data=payload,
-            headers={'Content-Type': 'application/x-thrift'},
-        )
-
-
-class AsyncHttpTransport(BaseTransportHandler):
+class AsyncHttpTransport(SimpleHTTPTransport):
     '''
     add trace data transporting task into default eventloop
     '''
-
-    def __init__(self, server_url):
-        super(AsyncHttpTransport, self).__init__()
-        self.server_url = server_url
-
-    def get_max_payload_bytes(self):
-        return None
 
     @staticmethod
     async def _async_post(url, data, headers):
@@ -109,18 +93,17 @@ class AsyncHttpTransport(BaseTransportHandler):
                 return resp
 
     def send(self, payload):
+        path, content_type = self._get_path_content_type(payload)
+        url = 'http://{}:{}{}'.format(self.address, self.port, path)
+
         asyncio.get_event_loop().create_task(
-            self._async_post(
-                self.server_url,
-                data=payload,
-                headers={'Content-Type': 'application/x-thrift'},
-            )
+            self._async_post(url, data=payload, headers={'Content-Type': content_type},)
         )
 
 
 @contextmanager
 def trace(
-    server_url,
+    server_address,
     request_headers=None,
     async_transport=False,
     sample_rate=1.0,
@@ -128,47 +111,46 @@ def trace(
     is_root=False,
     service_name="some service",
     span_name="service procedure",
-    port=0,
+    server_port=0,
 ):
     trace_stack = trace_stack_var.get()
 
     parent_attrs = load_http_headers(request_headers) or trace_stack or None
 
     if not is_root and parent_attrs:
-        attrs = make_child_attrs(parent_attrs)
+        attrs = _make_child_attrs(parent_attrs)
     else:
-        attrs = make_new_attrs(sample_rate)
+        attrs = _make_new_attrs(sample_rate)
 
-    if not attrs.is_sampled or not server_url:
+    if not attrs.is_sampled or not server_address:
         if standalone:
             yield None
             return
         else:
             token = trace_stack_var.set(attrs)
+            _set_http_headers(attrs, request_headers)
             yield attrs
             trace_stack_var.reset(token)
             return
 
     if async_transport:
-        transport_handler = AsyncHttpTransport(server_url)
+        transport_handler = AsyncHttpTransport(server_address, server_port)
     else:
-        transport_handler = HttpTransport(server_url)
+        transport_handler = SimpleHTTPTransport(server_address, server_port)
 
     with zipkin_span(
         service_name=service_name,
         span_name=span_name,
         zipkin_attrs=attrs,
         transport_handler=transport_handler,
-        port=port,
-        _tracer=Tracer(),
     ):
         if standalone:
             yield None
             return
         else:
             token = trace_stack_var.set(attrs)
-            # yield ctx.zipkin_attrs
-            yield attrs
+            _set_http_headers(attrs, request_headers)
+            yield
             trace_stack_var.reset(token)
 
 

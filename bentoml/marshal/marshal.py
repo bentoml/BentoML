@@ -30,7 +30,6 @@ from bentoml.marshal.utils import DataLoader
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
 from bentoml.tracing import async_trace
-from bentoml.tracing.zipkin import make_http_headers
 from bentoml.types import HTTPRequest, HTTPResponse
 
 logger = logging.getLogger(__name__)
@@ -284,14 +283,13 @@ class MarshalService:
 
     async def relay_handler(self, request):
         data = await request.read()
-        headers = dict(request.headers)
         url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)
 
         with async_trace(
-            service_name=self.__class__.__name__, span_name=f"[2]{url.path} relay",
-        ) as trace_ctx:
-            if trace_ctx:
-                headers.update(make_http_headers(trace_ctx))
+            service_name=self.__class__.__name__,
+            span_name=f"[2]{url.path} relay",
+            request_headers=request.headers,
+        ):
             try:
                 client = self.get_client()
                 async with client.request(
@@ -318,10 +316,10 @@ class MarshalService:
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"
 
         with async_trace(
-            service_name=self.__class__.__name__, span_name=f"[2]merged {api_route}",
-        ) as trace_ctx:
-            if trace_ctx:
-                headers.update(make_http_headers(trace_ctx))
+            service_name=self.__class__.__name__,
+            span_name=f"[2]merged {api_route}",
+            request_headers=headers,
+        ):
             reqs_s = DataLoader.merge_requests(requests)
             try:
                 client = self.get_client()

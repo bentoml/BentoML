@@ -1,0 +1,50 @@
+name: BentoML-E2E
+
+on:
+  pull_request:
+    types: [ labeled ]
+
+jobs:
+
+  e2e_yatai:
+    if: ${{ github.event.label.name == 'e2e_yatai' }}
+    name: e2e deployments
+    runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Install test dependencies
+        run: ./ci/install_test_deps.sh
+        shell: bash
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Run Yatai Service E2E tests
+        run: ./ci/e2e_yatai_tests.sh
+        shell: bash
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12

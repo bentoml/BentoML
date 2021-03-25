@@ -1,5 +1,4 @@
 import logging
-import time
 
 from bentoml.yatai.client import get_yatai_client
 from bentoml.yatai.proto.repository_pb2 import BentoUri
@@ -11,14 +10,7 @@ from tests.yatai.local_yatai_service import (
 logger = logging.getLogger('bentoml.test')
 
 
-def test_yatai_server_with_postgres_and_local_storage():
-    postgres_db_url = 'postgresql://postgres:postgres@localhost/bentoml:5432'
-
-    from sqlalchemy_utils import create_database
-
-    create_database(postgres_db_url)
-    time.sleep(60)
-
+def test_yatai_server_with_postgres_and_local_storage(postgres_db_url):
     with local_yatai_service_from_cli(db_url=postgres_db_url) as yatai_server_url:
         logger.info('Saving bento service')
         logger.info(f'yatai url is {yatai_server_url}')
@@ -31,5 +23,5 @@ def test_yatai_server_with_postgres_and_local_storage():
         yc = get_yatai_client(yatai_server_url)
         bento_pb = yc.repository.get(bento_tag)
         assert (
-                bento_pb.uri.type == BentoUri.LOCAL
+            bento_pb.uri.type == BentoUri.LOCAL
         ), 'BentoService storage type mismatched, expect LOCAL'

@@ -17,11 +17,11 @@ import multiprocessing
 from typing import Optional
 
 import psutil
-from dependency_injector.wiring import Provide as P
+from dependency_injector.wiring import Provide
 from dependency_injector.wiring import inject
 from flask import Response
 
-from bentoml.configuration.containers import BentoMLContainer as C
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.saved_bundle import load_from_dir
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
@@ -70,13 +70,17 @@ if psutil.POSIX:
             self,
             bundle_path,
             bind: str = None,
-            port: int = P[C.config.api_server.port],
-            timeout: int = P[C.config.api_server.timeout],
-            workers: int = P[C.api_server_workers],
+            port: int = Provide[BentoMLContainer.config.api_server.port],
+            timeout: int = Provide[BentoMLContainer.config.api_server.timeout],
+            workers: int = Provide[BentoMLContainer.api_server_workers],
             prometheus_lock: Optional[multiprocessing.Lock] = None,
-            enable_swagger: bool = P[C.config.api_server.enable_swagger],
-            max_request_size: int = P[C.config.api_server.max_request_size],
-            loglevel=P[C.config.logging.level],
+            enable_swagger: bool = Provide[
+                BentoMLContainer.config.api_server.enable_swagger
+            ],
+            max_request_size: int = Provide[
+                BentoMLContainer.config.api_server.max_request_size
+            ],
+            loglevel=Provide[BentoMLContainer.config.logging.level],
         ):
             self.bento_service_bundle_path = bundle_path
 

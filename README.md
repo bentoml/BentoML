@@ -267,19 +267,17 @@ BentoML by default collects anonymous usage data using [Amplitude](https://ampli
 It only collects BentoML library's own actions and parameters, no user or model data will be collected.
 [Here is the code that does it](https://github.com/bentoml/BentoML/blob/master/bentoml/utils/usage_stats.py).
 
-This helps BentoML team to understand how the community is using this tool and
-what to build next. You can easily opt-out of usage tracking by running the following
-command:
+This helps BentoML team to understand how the community is using this tool and what to build next. You can
+easily opt-out of usage tracking by running the BentoML commands with the `--do-not-track` option.
 
 ```bash
-# From terminal:
-bentoml config set usage_tracking=false
+% bentoml [command] --do-not-track
 ```
 
-```python
-# From python:
-import bentoml
-bentoml.config().set('core', 'usage_tracking', 'False')
+or by setting the `BENTOML_DO_NOT_TRACK` environment variable to `True`.
+
+```bash
+% export BENTOML_DO_NOT_TRACK=True
 ```
 
 

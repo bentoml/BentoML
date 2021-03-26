@@ -367,7 +367,7 @@ def get_yatai_service_impl(base=object):
                             sess, request.bento_name, request.bento_version, request.upload_status
                         )
                     if request.service_metadata:
-                        self.db.metadata_store.update_bento_service_metadata(
+                        self.db.metadata_store.update(
                             sess,
                             request.bento_name,
                             request.bento_version,

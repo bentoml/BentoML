@@ -138,7 +138,6 @@ def test_track_server_successful_delete(mock_deployment_store):
             delete_request.namespace = MOCK_DEPLOYMENT_NAMESPACE
             delete_request.force_delete = False
             yatai_service.DeleteDeployment(delete_request)
-            print(mock.call_args_list)
             event_name, properties = mock.call_args_list[0][0]
             assert event_name == 'deployment-AZURE_FUNCTIONS-stop'
 

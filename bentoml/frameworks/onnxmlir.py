@@ -1,12 +1,7 @@
 import os
-import pathlib
 import shutil
 
-from bentoml.exceptions import (
-    BentoMLException,
-    InvalidArgument,
-    MissingDependencyException,
-)
+from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 
@@ -27,44 +22,45 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
     Example usage:
         import bentoml
         from bentoml import env, artifacts, api, BentoService
-        from bentoml.adapters import DataframeInput
-        from bentoml.adapters import JsonInput
+        from bentoml.adapters import ImageInput
         from bentoml.frameworks.onnxmlir import OnnxMlirModelArtifact
+        from bentoml.types import JsonSerializable, InferenceTask, InferenceError
+        from bentoml.service.artifacts.common import PickleArtifact
+        from typing import List
         import numpy as np
         import pandas as pd
         import sys
 
-        sys.path.insert(0, '/Users/andrewsius.ibm.com/Documents/models/mnist/')
-        print(sys.path)
-
         @bentoml.env(infer_pip_packages=True)
-        @bentoml.artifacts([OnnxMlirModelArtifact('model')])
-        class MyPredictionService(BentoService):
+        @bentoml.artifacts([OnnxMlirModelArtifact('model'), PickleArtifact('labels')])
+        class ResNetPredict(BentoService):
 
-         A simple prediction service exposing a Onnx-Mlir model
+            def preprocess(self, input_data):
+                # convert the input data into the float32 input
+                ...
 
+            def softmax(self, x):
+                x = x.reshape(-1)
+                e_x = np.exp(x - np.max(x))
+                return e_x / e_x.sum(axis=0)
+            
+            def post_process(self, raw_result):
+                return self.softmax(np.array(raw_result)).tolist()
 
-        @bentoml.api(input=DataframeInput(orient='values'), batch=True)
-        def predict(self, df: pd.DataFrame):
+            @bentoml.api(input=ImageInput(), batch=True)
+            def predict(self, image_ndarrays: List[np.ndarray]) -> List[str]:
+                input_datas = self.preprocess(image_ndarrays)
+                
+                outputs = []
+                for i in range(input_datas.shape[0]):
+                    raw_result = self.artifacts.model.run(input_datas[i:i+1])
+                    result = self.post_process(raw_result)
+                    idx = np.argmax(result)
+                    sort_idx = np.flip(np.squeeze(np.argsort(result)))
 
-            An inference API named `predict` with Dataframe input adapter, which defines
-            how HTTP requests or CSV files get converted to a pandas Dataframe object as the
-            inference API function input
-
-            input_data = df.to_numpy().astype(np.float32)
-            print(input_data.shape)
-            result = self.artifacts.model.run(input_data)
-            return result
-
-
-        from bcOnnxM import MyPredictionService
-
-            import sys
-            sys.path.insert(0, '/Users/andrewsius.ibm.com/Documents/models/mnist/')
-            svc = MyPredictionService()
-            svc.pack('model', '/Users/andrewsius.ibm.com/Documents/models/mnist/model.so')
-            location = svc.save()
-            print(location)
+                    # return top 5 labels
+                    outputs.append(self.artifacts.labels[sort_idx[:5]])
+                return outputs
 
     """
 

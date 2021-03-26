@@ -154,6 +154,13 @@ Example Projects:
 
 
 =====
+ONNX-MLIR
+=====
+
+.. autoclass:: bentoml.frameworks.onnxmlir.OnnxMlirModelArtifact
+
+
+=====
 Spacy
 =====
 

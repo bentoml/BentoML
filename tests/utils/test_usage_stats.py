@@ -1,5 +1,3 @@
-import pytest
-import psutil  # noqa # pylint: disable=unused-import
 from click.testing import CliRunner
 from mock import MagicMock, patch
 
@@ -51,6 +49,7 @@ def mock_start_dev_server(
     mb_max_batch_size: int = 0,
     run_with_ngrok: bool = False,
     enable_swagger: bool = False,
+    config_file: str = None,
 ):
     raise KeyboardInterrupt()
 
@@ -65,7 +64,6 @@ def test_get_bento_service_event_properties(bento_service):
     assert len(properties["input_types"]) == 4
 
     assert properties["env"] is not None
-    assert properties["env"]["conda_env"]["channels"] == ["defaults"]
 
 
 def test_get_bento_service_event_properties_with_no_artifact():
@@ -110,7 +108,6 @@ def test_track_cli_with_click_exception():
         assert properties['return_code'] == 1
 
 
-@pytest.mark.skipif('not psutil.POSIX')
 def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
     with patch('bentoml.cli.click_utils.track') as track:
         track.side_effect = mock_track_func

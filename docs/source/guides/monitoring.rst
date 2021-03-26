@@ -1,7 +1,12 @@
 Monitoring with Prometheus
 ==========================
 
-This part of the BentoML documentation is a work in progress. If you have any questions
-related to this, please join
-`the BentoML Slack community <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_
-and ask in the bentoml-users channel.
+
+BentoML API server comes with Prometheus support out of the box. 
+When launching an API model server with BentoML, whether it is running
+dev server locally or deployed with docker in the cloud, a "/metrics"
+endpoint will always be available for exposing prometheus metrics.
+
+We are working on more documentation around setting up a grafana 
+dashboard for monitoring BentoML API model server, adding custom metrics
+and other advanced usages for monitoring.

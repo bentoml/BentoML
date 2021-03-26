@@ -15,29 +15,22 @@
 import logging
 import os
 import sys
-from dependency_injector.wiring import inject, Provide
 from functools import partial
 
-from flask import (
-    Flask,
-    Response,
-    jsonify,
-    make_response,
-    request,
-    send_from_directory,
-)
-from werkzeug.exceptions import BadRequest, NotFound
+from dependency_injector.wiring import Provide, inject
+from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from google.protobuf.json_format import MessageToJson
+from werkzeug.exceptions import BadRequest, NotFound
 
 from bentoml import BentoService
 from bentoml.configuration import get_debug_mode
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader
-from bentoml.tracing.__init__ import trace
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import InferenceAPI
+from bentoml.tracing import trace
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
@@ -157,9 +150,10 @@ class BentoAPIServer:
     def __init__(
         self,
         bento_service: BentoService,
-        port: int = Provide[BentoMLContainer.config.api_server.port],
         app_name: str = None,
-        enable_swagger: bool = True,
+        enable_swagger: bool = Provide[
+            BentoMLContainer.config.api_server.enable_swagger
+        ],
         enable_metrics: bool = Provide[
             BentoMLContainer.config.api_server.enable_metrics
         ],
@@ -172,7 +166,6 @@ class BentoAPIServer:
     ):
         app_name = bento_service.name if app_name is None else app_name
 
-        self.port = port
         self.bento_service = bento_service
         self.app = Flask(app_name, static_folder=None)
         self.static_path = self.bento_service.get_web_static_content_path()
@@ -190,14 +183,18 @@ class BentoAPIServer:
 
         self.setup_routes()
 
-    def start(self):
+    def start(self, port: int, host: str = "127.0.0.1"):
         """
         Start an REST server at the specific port on the instance or parameter.
         """
         # Bentoml api service is not thread safe.
         # Flask dev server enabled threaded by default, disable it.
         self.app.run(
-            port=self.port, threaded=False, debug=get_debug_mode(), use_reloader=False,
+            host=host,
+            port=port,
+            threaded=False,
+            debug=get_debug_mode(),
+            use_reloader=False,
         )
 
     @staticmethod
@@ -374,7 +371,7 @@ class BentoAPIServer:
         for api in self.bento_service.inference_apis:
             route_function = self.bento_service_api_func_wrapper(api)
             self.app.add_url_rule(
-                rule="/{}".format(api.name),
+                rule="/{}".format(api.route),
                 endpoint=api.name,
                 view_func=route_function,
                 methods=api.input_adapter.HTTP_METHODS,
@@ -424,7 +421,7 @@ class BentoAPIServer:
 
         def api_func_with_tracing():
             with trace(
-                request.headers, service_name=self.__class__.__name__,
+                request_headers=request.headers, service_name=self.__class__.__name__,
             ):
                 return api_func()
 

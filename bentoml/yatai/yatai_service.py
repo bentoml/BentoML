@@ -137,12 +137,20 @@ def start_yatai_service_grpc_server(
         )
 
     # We don't import _echo function from click_utils because of circular dep
+    if with_ui:
+        if debug_mode is True:
+            ui_port = 8080
+        web_ui_link = f'http://127.0.0.1:{ui_port}'
+        if base_url != '.':
+            web_ui_link += f'/{base_url}'
+        web_ui_message = f'running on {web_ui_link}'
+    else:
+        web_ui_message = 'off'
+
     click.echo(
         f'* Starting BentoML YataiService gRPC Server\n'
         f'* Debug mode: { "on" if debug_mode else "off"}\n'
-        f'''* Web UI: {f"running on http://127.0.0.1:{ui_port}/{base_url}"
-        if (with_ui and base_url!=".")
-        else f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'''
+        f'* Web UI: {web_ui_message}\n'
         f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
         f'* Help and instructions: '
         f'https://docs.bentoml.org/en/latest/guides/yatai_service.html\n'
@@ -150,8 +158,8 @@ def start_yatai_service_grpc_server(
         f'\n-----\n'
         f'* Usage in Python:\n'
         f'*  bento_svc.save(yatai_url="127.0.0.1:{grpc_port}")\n'
-        f'*  bentoml.yatai.client.get_yatai_client("127.0.0.1:{grpc_port}").repository.'
-        f'list()\n'
+        f'*  from bentoml.yatai.client import get_yatai_client\n'
+        f'*  get_yatai_client("127.0.0.1:{grpc_port}").repository.list()\n'
         f'* Usage in CLI:\n'
         f'*  bentoml list --yatai-url=127.0.0.1:{grpc_port}\n'
         f'*  bentoml containerize IrisClassifier:latest --yatai-url=127.0.0.1:'

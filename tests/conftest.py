@@ -1,4 +1,7 @@
+import functools
 import glob
+import inspect
+import os
 
 import imageio
 import numpy as np
@@ -44,7 +47,7 @@ def pytest_configure():
 
         if assert_data is not None:
             if callable(assert_data):
-                assert assert_data(r_body)
+                assert assert_data(r_body), r_body
             else:
                 assert r_body == assert_data
 
@@ -63,6 +66,36 @@ def pytest_configure():
         'records',
         'columns',
     }
+
+    def _since_version(ver: str):
+        def _wrapper(func):
+            if not inspect.iscoroutinefunction(func):
+
+                @functools.wraps(func)
+                def _wrapped(*args, **kwargs):
+                    from packaging import version
+
+                    bundle_ver = os.environ.get("BUNDLE_BENTOML_VERSION")
+                    if bundle_ver and version.parse(bundle_ver) < version.parse(ver):
+                        pytest.skip()
+                    return func(*args, **kwargs)
+
+            else:
+
+                @functools.wraps(func)
+                async def _wrapped(*args, **kwargs):
+                    from packaging import version
+
+                    bundle_ver = os.environ.get("BUNDLE_BENTOML_VERSION")
+                    if bundle_ver and version.parse(bundle_ver) < version.parse(ver):
+                        pytest.skip()
+                    return await func(*args, **kwargs)
+
+            return _wrapped
+
+        return _wrapper
+
+    pytest.since_bentoml_version = _since_version
 
 
 def pytest_addoption(parser):

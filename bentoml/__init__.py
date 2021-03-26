@@ -12,20 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import psutil
-
-if psutil.POSIX:
-    # After Python 3.8, the default start method of multiprocessing for MacOS changed to
-    # spawn, which would cause RecursionError when launching Gunicorn Application.
-    # Ref:
-    # https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
-    #
-    # Note: https://bugs.python.org/issue33725 claims that fork method may cause crashes
-    # on MacOS.
-    import multiprocessing
-
-    multiprocessing.set_start_method('fork')
-
 from ._version import get_versions
 
 __version__ = get_versions()['version']

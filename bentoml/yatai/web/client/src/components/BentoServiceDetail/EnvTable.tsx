@@ -9,7 +9,7 @@ const EnvTable: React.FC<{ env: { [key: string]: any } }> = ({ env }) => {
 
   const parsedEnv = envKeys.map((key) => {
     let env_value = env[key];
-    if (key == 'pip_packages') {
+    if (key === 'pip_packages') {
       env_value = env[key].join('\n');
     }
     return { content: [key, env_value] };

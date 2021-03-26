@@ -13,6 +13,38 @@ class RESOURCE_TYPE(enum.Enum):
     bento = 2
 
 
+def _validate_labels(labels):
+    """
+    Validate labels key value format is:
+        * Between 3 and 63 characters
+        * Consist of alphanumeric, dash (-), period (.), and underscore (_)
+        * Start and end with alphanumeric
+    Args:
+        labels: Dictionary
+
+    Returns:
+    Raise:
+        InvalidArgument
+    """
+    if not isinstance(labels, dict):
+        raise InvalidArgument('BentoService labels must be a dictionary')
+
+    pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
+    for key in labels:
+        if (
+                not (63 >= len(key) >= 3)
+                or not (63 >= len(labels[key]) >= 3)
+                or not pattern.match(key)
+                or not pattern.match(labels[key])
+        ):
+            raise InvalidArgument(
+                f'Invalide label {key}:{labels[key]}. Valid label key and value must '
+                f'be between 3 to 63 characters and must be begin and end with '
+                f'an alphanumeric character ([a-z0-9A-Z]) with dashes (-), '
+                f'underscores (_), and dots (.).'
+            )
+
+
 class Label(Base):
     __tablename__ = 'labels'
     __table_args__ = tuple(
@@ -145,35 +177,3 @@ class LabelStore(object):
         query = query.intersect(*filters)
         result = query.all()
         return [row[0] for row in result]
-
-    @staticmethod
-    def _validate_labels(labels):
-        """
-        Validate labels key value format is:
-            * Between 3 and 63 characters
-            * Consist of alphanumeric, dash (-), period (.), and underscore (_)
-            * Start and end with alphanumeric
-        Args:
-            labels: Dictionary
-
-        Returns:
-        Raise:
-            InvalidArgument
-        """
-        if not isinstance(labels, dict):
-            raise InvalidArgument('BentoService labels must be a dictionary')
-
-        pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
-        for key in labels:
-            if (
-                not (63 >= len(key) >= 3)
-                or not (63 >= len(labels[key]) >= 3)
-                or not pattern.match(key)
-                or not pattern.match(labels[key])
-            ):
-                raise InvalidArgument(
-                    f'Invalide label {key}:{labels[key]}. Valid label key and value must '
-                    f'be between 3 to 63 characters and must be begin and end with '
-                    f'an alphanumeric character ([a-z0-9A-Z]) with dashes (-), '
-                    f'underscores (_), and dots (.).'
-                )

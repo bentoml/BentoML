@@ -123,7 +123,7 @@ def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
 
 
 @patch('bentoml.yatai.yatai_service_impl.validate_deployment_pb', MagicMock())
-@patch('bentoml.yatai.yatai_service_impl.DeploymentStore')
+@patch('bentoml.yatai.db.DeploymentStore')
 def test_track_server_successful_delete(mock_deployment_store):
     mock_deployment_store.return_value.get.return_value = mock_deployment_pb()
     with patch('bentoml.yatai.yatai_service_impl.track') as mock:
@@ -138,6 +138,7 @@ def test_track_server_successful_delete(mock_deployment_store):
             delete_request.namespace = MOCK_DEPLOYMENT_NAMESPACE
             delete_request.force_delete = False
             yatai_service.DeleteDeployment(delete_request)
+            print(mock.call_args_list)
             event_name, properties = mock.call_args_list[0][0]
             assert event_name == 'deployment-AZURE_FUNCTIONS-stop'
 
@@ -146,7 +147,7 @@ def test_track_server_successful_delete(mock_deployment_store):
     'bentoml.yatai.yatai_service_impl.validate_deployment_pb',
     MagicMock(return_value=None),
 )
-@patch('bentoml.yatai.yatai_service_impl.DeploymentStore')
+@patch('bentoml.yatai.db.DeploymentStore')
 def test_track_server_force_delete(mock_deployment_store):
     mock_deployment_store.return_value.get.return_value = mock_deployment_pb(
         MOCK_FAILED_DEPLOYMENT_NAME

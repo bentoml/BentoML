@@ -129,9 +129,9 @@ class MetadataStore(object):
     def _get_latest(sess, bento_name):
         query = (
             sess.query(Bento)
-                .filter_by(name=bento_name, deleted=False)
-                .order_by(desc(Bento.created_at))
-                .limit(1)
+            .filter_by(name=bento_name, deleted=False)
+            .order_by(desc(Bento.created_at))
+            .limit(1)
         )
 
         query_result = query.all()
@@ -173,8 +173,8 @@ class MetadataStore(object):
             if service_metadata.get('labels', None) is not None:
                 bento = (
                     sess.query(Bento)
-                        .filter_by(name=bento_name, version=bento_version)
-                        .one()
+                    .filter_by(name=bento_name, version=bento_version)
+                    .one()
                 )
                 LabelStore.add_or_update(
                     sess, RESOURCE_TYPE.bento, bento.id, service_metadata['labels']

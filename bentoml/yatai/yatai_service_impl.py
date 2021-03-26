@@ -58,7 +58,6 @@ from bentoml.utils import ProtoMessageToDict
 from bentoml.yatai.validator import validate_deployment_pb
 from bentoml import __version__ as BENTOML_VERSION
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -81,11 +80,11 @@ def get_yatai_service_impl(base=object):
         # pylint: disable=broad-except
 
         def __init__(
-            self,
-            db_url=None,
-            repo_base_url=None,
-            s3_endpoint_url=None,
-            default_namespace=None,
+                self,
+                db_url=None,
+                repo_base_url=None,
+                s3_endpoint_url=None,
+                default_namespace=None,
         ):
             cfg = config('yatai_service')
             repo_base_url = repo_base_url or cfg.get('repository_base_url')
@@ -111,7 +110,7 @@ def get_yatai_service_impl(base=object):
                 try:
                     # apply default namespace if not set
                     request.deployment.namespace = (
-                        request.deployment.namespace or self.default_namespace
+                            request.deployment.namespace or self.default_namespace
                     )
 
                     validation_errors = validate_deployment_pb(request.deployment)
@@ -292,7 +291,7 @@ def get_yatai_service_impl(base=object):
 
                         if response.status.status_code == status_pb2.Status.OK:
                             with self.db.deployment_store.update_deployment(
-                                sess, request.deployment_name, request.namespace
+                                    sess, request.deployment_name, request.namespace
                             ) as deployment:
                                 deployment.state = ProtoMessageToDict(response.state)
 
@@ -534,8 +533,8 @@ def get_yatai_service_impl(base=object):
                                 buildargs=dict(request.build_args),
                             )
                         except (
-                            docker.errors.APIError,
-                            docker.errors.BuildError,
+                                docker.errors.APIError,
+                                docker.errors.BuildError,
                         ) as error:
                             logger.error(f'Encounter container building issue: {error}')
                             raise YataiRepositoryException(error)

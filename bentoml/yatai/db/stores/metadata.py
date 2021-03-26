@@ -32,7 +32,7 @@ from google.protobuf.json_format import ParseDict
 from bentoml.utils import ProtoMessageToDict
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.yatai.db import Base
-from bentoml.yatai.label_store import (
+from bentoml.yatai.db.stores.label import (
     filter_label_query,
     get_labels,
     list_labels,

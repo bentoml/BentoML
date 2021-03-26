@@ -33,7 +33,7 @@ from bentoml.utils import (
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.usage_stats import track
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
-from bentoml.yatai.label_store import _validate_labels
+from bentoml.yatai.db.stores.label import _validate_labels
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoRequest,
     GetBentoRequest,

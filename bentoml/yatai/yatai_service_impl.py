@@ -45,14 +45,14 @@ from bentoml.yatai.proto.yatai_service_pb2 import (
     GetYataiServiceVersionResponse,
 )
 from bentoml.yatai.deployment.operator import get_deployment_operator
-from bentoml.yatai.deployment.store import DeploymentStore
+from bentoml.yatai.db.stores.deployment import DeploymentStore
 from bentoml.exceptions import (
     BentoMLException,
     InvalidArgument,
     YataiRepositoryException,
 )
 from bentoml.yatai.repository.repository import Repository
-from bentoml.yatai.repository.metadata_store import BentoMetadataStore
+from bentoml.yatai.db.stores.metadata import BentoMetadataStore
 from bentoml.yatai.db import DB
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2

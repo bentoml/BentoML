@@ -31,7 +31,7 @@ from google.protobuf.json_format import ParseDict
 from bentoml.exceptions import YataiDeploymentException
 from bentoml.yatai.db import Base
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
-from bentoml.yatai.label_store import (
+from bentoml.yatai.db.stores.label import (
     filter_label_query,
     delete_labels,
     add_labels,

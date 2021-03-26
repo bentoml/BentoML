@@ -17,13 +17,13 @@ import os
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from urllib.parse import urlparse
 
 from bentoml.exceptions import BentoMLException
-
-Base = declarative_base()
+from bentoml.yatai.db.base import Base
+from bentoml.yatai.db.stores.deployment import DeploymentStore
+from bentoml.yatai.db.stores.metadata import BentoMetadataStore
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +66,11 @@ class DB(object):
 
         self.create_all_or_upgrade_db()
         self.session_maker = sessionmaker(bind=self.engine)
+        self._setup_stores()
+
+    def _setup_stores(self):
+        self.deployment_store = DeploymentStore(self)
+        self.bento_metadata_store = BentoMetadataStore(self)
 
     @contextmanager
     def create_session(self):

@@ -32,12 +32,7 @@ from bentoml.exceptions import YataiDeploymentException
 from bentoml.yatai.db import Base
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.db.stores.label import (
-    filter_label_query,
-    delete_labels,
-    add_labels,
-    list_labels,
-    get_labels,
-    add_or_update_labels,
+    BentoLabelStore,
     RESOURCE_TYPE,
 )
 from bentoml.yatai.proto import deployment_pb2
@@ -110,7 +105,7 @@ class DeploymentStore(object):
                     # updating deployment record in db
                     _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
                     if deployment_pb.labels:
-                        add_or_update_labels(
+                        BentoLabelStore.add_or_update(
                             sess,
                             RESOURCE_TYPE.deployment,
                             deployment_obj.id,
@@ -128,7 +123,7 @@ class DeploymentStore(object):
                         )
                         .one()
                     )
-                    add_labels(
+                    BentoLabelStore.add(
                         sess,
                         RESOURCE_TYPE.deployment,
                         deployment_row.id,
@@ -156,7 +151,7 @@ class DeploymentStore(object):
                     .filter_by(name=name, namespace=namespace)
                     .one()
                 )
-                labels = get_labels(sess, RESOURCE_TYPE.deployment, deployment_obj.id)
+                labels = BentoLabelStore.get(sess, RESOURCE_TYPE.deployment, deployment_obj.id)
             except NoResultFound:
                 return None
 
@@ -170,7 +165,7 @@ class DeploymentStore(object):
                     .filter_by(name=name, namespace=namespace)
                     .one()
                 )
-                delete_labels(
+                BentoLabelStore.delete(
                     sess,
                     resource_type=RESOURCE_TYPE.deployment,
                     resource_id=deployment.id,
@@ -200,7 +195,7 @@ class DeploymentStore(object):
             )
             query = query.order_by(order_by_action)
             if label_selectors.match_labels or label_selectors.match_expressions:
-                deployment_ids = filter_label_query(
+                deployment_ids = BentoLabelStore.filter_query(
                     sess, RESOURCE_TYPE.deployment, label_selectors
                 )
                 query.filter(Deployment.id.in_(deployment_ids))
@@ -221,7 +216,7 @@ class DeploymentStore(object):
                 query = query.offset(offset)
             query_result = query.all()
             deployment_ids = [deployment_obj.id for deployment_obj in query_result]
-            labels = list_labels(sess, RESOURCE_TYPE.deployment, deployment_ids)
+            labels = BentoLabelStore.list(sess, RESOURCE_TYPE.deployment, deployment_ids)
 
             return [
                 _deployment_orm_obj_to_pb(

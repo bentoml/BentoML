@@ -29,7 +29,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
 from bentoml.exceptions import YataiDeploymentException
-from bentoml.yatai.db import Base, create_session
+from bentoml.yatai.db import Base
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.label_store import (
     filter_label_query,
@@ -93,11 +93,11 @@ def _deployment_orm_obj_to_pb(deployment_obj, labels=None):
 
 
 class DeploymentStore(object):
-    def __init__(self, sess_maker):
-        self.sess_maker = sess_maker
+    def __init__(self, db):
+        self.db = db
 
     def insert_or_update(self, deployment_pb):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             try:
                 deployment_obj = (
                     sess.query(Deployment)
@@ -137,7 +137,7 @@ class DeploymentStore(object):
 
     @contextmanager
     def update_deployment(self, name, namespace):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             try:
                 deployment_obj = (
                     sess.query(Deployment)
@@ -149,7 +149,7 @@ class DeploymentStore(object):
                 yield None
 
     def get(self, name, namespace):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             try:
                 deployment_obj = (
                     sess.query(Deployment)
@@ -163,7 +163,7 @@ class DeploymentStore(object):
             return _deployment_orm_obj_to_pb(deployment_obj, labels)
 
     def delete(self, name, namespace):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             try:
                 deployment = (
                     sess.query(Deployment)
@@ -191,7 +191,7 @@ class DeploymentStore(object):
         order_by=ListDeploymentsRequest.created_at,
         ascending_order=False,
     ):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             query = sess.query(Deployment)
             order_by = ListDeploymentsRequest.SORTABLE_COLUMN.Name(order_by)
             order_by_field = getattr(Deployment, order_by)

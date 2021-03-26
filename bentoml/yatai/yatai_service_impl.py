@@ -53,7 +53,7 @@ from bentoml.exceptions import (
 )
 from bentoml.yatai.repository.repository import Repository
 from bentoml.yatai.repository.metadata_store import BentoMetadataStore
-from bentoml.yatai.db import init_db
+from bentoml.yatai.db import DB
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import ProtoMessageToDict
@@ -97,9 +97,10 @@ def get_yatai_service_impl(base=object):
 
             self.default_namespace = default_namespace
             self.repo = Repository(repo_base_url, s3_endpoint_url)
-            self.sess_maker = init_db(db_url)
-            self.deployment_store = DeploymentStore(self.sess_maker)
-            self.bento_metadata_store = BentoMetadataStore(self.sess_maker)
+
+            self.db = DB(db_url)
+            self.deployment_store = DeploymentStore(self.db)
+            self.bento_metadata_store = BentoMetadataStore(self.db)
 
         def HealthCheck(self, request, context=None):
             return HealthCheckResponse(status=Status.OK())

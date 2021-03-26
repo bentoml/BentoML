@@ -31,7 +31,7 @@ from google.protobuf.json_format import ParseDict
 
 from bentoml.utils import ProtoMessageToDict
 from bentoml.exceptions import YataiRepositoryException
-from bentoml.yatai.db import Base, create_session
+from bentoml.yatai.db import Base
 from bentoml.yatai.label_store import (
     filter_label_query,
     get_labels,
@@ -120,11 +120,11 @@ def _bento_orm_obj_to_pb(bento_obj, labels=None):
 
 
 class BentoMetadataStore(object):
-    def __init__(self, sess_maker):
-        self.sess_maker = sess_maker
+    def __init__(self, db):
+        self.db = db
 
     def add(self, bento_name, bento_version, uri, uri_type):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             bento_obj = Bento()
             bento_obj.name = bento_name
             bento_obj.version = bento_version
@@ -133,7 +133,7 @@ class BentoMetadataStore(object):
             return sess.add(bento_obj)
 
     def _get_latest(self, bento_name):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             query = (
                 sess.query(Bento)
                 .filter_by(name=bento_name, deleted=False)
@@ -152,7 +152,7 @@ class BentoMetadataStore(object):
         if bento_version.lower() == "latest":
             return self._get_latest(bento_name)
 
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             try:
                 bento_obj = (
                     sess.query(Bento)
@@ -170,7 +170,7 @@ class BentoMetadataStore(object):
     def update_bento_service_metadata(
         self, bento_name, bento_version, bento_service_metadata_pb
     ):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             try:
                 bento_obj = (
                     sess.query(Bento)
@@ -194,7 +194,7 @@ class BentoMetadataStore(object):
                 )
 
     def update_upload_status(self, bento_name, bento_version, upload_status_pb):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             try:
                 bento_obj = (
                     sess.query(Bento)
@@ -211,7 +211,7 @@ class BentoMetadataStore(object):
                 )
 
     def dangerously_delete(self, bento_name, bento_version):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             try:
                 bento_obj = (
                     sess.query(Bento)
@@ -239,7 +239,7 @@ class BentoMetadataStore(object):
         order_by=ListBentoRequest.created_at,
         ascending_order=False,
     ):
-        with create_session(self.sess_maker) as sess:
+        with self.db.create_session() as sess:
             query = sess.query(Bento)
             order_by = ListBentoRequest.SORTABLE_COLUMN.Name(order_by)
             order_by_field = getattr(Bento, order_by)

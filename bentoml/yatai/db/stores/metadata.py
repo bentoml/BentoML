@@ -86,8 +86,8 @@ class Bento(Base):
 def _bento_orm_obj_to_pb(bento_obj, labels=None):
     # Backwards compatible support loading saved bundle created before 0.8.0
     if (
-            'apis' in bento_obj.bento_service_metadata
-            and bento_obj.bento_service_metadata['apis']
+        'apis' in bento_obj.bento_service_metadata
+        and bento_obj.bento_service_metadata['apis']
     ):
         for api in bento_obj.bento_service_metadata['apis']:
             if 'handler_type' in api:
@@ -149,8 +149,8 @@ class MetadataStore(object):
         try:
             bento_obj = (
                 sess.query(Bento)
-                    .filter_by(name=bento_name, version=bento_version, deleted=False)
-                    .one()
+                .filter_by(name=bento_name, version=bento_version, deleted=False)
+                .one()
             )
             if bento_obj.deleted:
                 # bento has been marked as deleted
@@ -165,8 +165,8 @@ class MetadataStore(object):
         try:
             bento_obj = (
                 sess.query(Bento)
-                    .filter_by(name=bento_name, version=bento_version, deleted=False)
-                    .one()
+                .filter_by(name=bento_name, version=bento_version, deleted=False)
+                .one()
             )
             service_metadata = ProtoMessageToDict(bento_service_metadata_pb)
             bento_obj.bento_service_metadata = service_metadata
@@ -189,8 +189,8 @@ class MetadataStore(object):
         try:
             bento_obj = (
                 sess.query(Bento)
-                    .filter_by(name=bento_name, version=bento_version, deleted=False)
-                    .one()
+                .filter_by(name=bento_name, version=bento_version, deleted=False)
+                .one()
             )
             # TODO:
             # if bento_obj.upload_status and bento_obj.upload_status.updated_at >
@@ -206,8 +206,8 @@ class MetadataStore(object):
         try:
             bento_obj = (
                 sess.query(Bento)
-                    .filter_by(name=bento_name, version=bento_version, deleted=False)
-                    .one()
+                .filter_by(name=bento_name, version=bento_version, deleted=False)
+                .one()
             )
             if bento_obj.deleted:
                 raise YataiRepositoryException(
@@ -223,13 +223,13 @@ class MetadataStore(object):
 
     @staticmethod
     def list(
-            sess,
-            bento_name=None,
-            offset=None,
-            limit=None,
-            label_selectors=None,
-            order_by=ListBentoRequest.created_at,
-            ascending_order=False,
+        sess,
+        bento_name=None,
+        offset=None,
+        limit=None,
+        label_selectors=None,
+        order_by=ListBentoRequest.created_at,
+        ascending_order=False,
     ):
         query = sess.query(Bento)
         order_by = ListBentoRequest.SORTABLE_COLUMN.Name(order_by)
@@ -241,7 +241,7 @@ class MetadataStore(object):
             query = query.filter_by(name=bento_name)
         query = query.filter_by(deleted=False)
         if label_selectors is not None and (
-                label_selectors.match_labels or label_selectors.match_expressions
+            label_selectors.match_labels or label_selectors.match_expressions
         ):
             bento_ids = LabelStore.filter_query(
                 sess, RESOURCE_TYPE.bento, label_selectors

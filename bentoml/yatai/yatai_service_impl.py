@@ -80,11 +80,11 @@ def get_yatai_service_impl(base=object):
         # pylint: disable=broad-except
 
         def __init__(
-                self,
-                db_url=None,
-                repo_base_url=None,
-                s3_endpoint_url=None,
-                default_namespace=None,
+            self,
+            db_url=None,
+            repo_base_url=None,
+            s3_endpoint_url=None,
+            default_namespace=None,
         ):
             cfg = config('yatai_service')
             repo_base_url = repo_base_url or cfg.get('repository_base_url')
@@ -110,7 +110,7 @@ def get_yatai_service_impl(base=object):
                 try:
                     # apply default namespace if not set
                     request.deployment.namespace = (
-                            request.deployment.namespace or self.default_namespace
+                        request.deployment.namespace or self.default_namespace
                     )
 
                     validation_errors = validate_deployment_pb(request.deployment)
@@ -158,8 +158,8 @@ def get_yatai_service_impl(base=object):
                         )
                     else:
                         if not previous_deployment:
-                            # When failed to create the deployment, delete it from active
-                            # deployments records
+                            # When failed to create the deployment,
+                            # delete it from active deployments records
                             self.db.deployment_store.delete(
                                 sess,
                                 request.deployment.name,
@@ -210,8 +210,8 @@ def get_yatai_service_impl(base=object):
                         # If force delete flag is True, we will remove the record
                         # from yatai database.
                         if request.force_delete:
-                            # Track deployment delete before it vanquishes from deployment
-                            # store
+                            # Track deployment delete before it
+                            # vanishes from deployment store
                             track_deployment_delete(
                                 deployment_pb.spec.operator,
                                 deployment_pb.created_at,
@@ -224,10 +224,10 @@ def get_yatai_service_impl(base=object):
 
                         if response.status.status_code == status_pb2.Status.NOT_FOUND:
                             modified_message = (
-                                'Cloud resources not found, error: {} - it may have been '
-                                'deleted manually. Try delete deployment '
-                                'with "--force" option to ignore this error '
-                                'and force deleting the deployment record'.format(
+                                'Cloud resources not found, error: {} - it '
+                                'may have been deleted manually. Try delete '
+                                'deployment with "--force" option to ignore this '
+                                'error and force deleting the deployment record'.format(
                                     response.status.error_message
                                 )
                             )
@@ -291,7 +291,7 @@ def get_yatai_service_impl(base=object):
 
                         if response.status.status_code == status_pb2.Status.OK:
                             with self.db.deployment_store.update_deployment(
-                                    sess, request.deployment_name, request.namespace
+                                sess, request.deployment_name, request.namespace
                             ) as deployment:
                                 deployment.state = ProtoMessageToDict(response.state)
 
@@ -344,8 +344,11 @@ def get_yatai_service_impl(base=object):
                         sess, request.bento_name, request.bento_version
                     )
                     if bento_pb:
-                        error_message = "BentoService bundle: {}:{} already exist".format(
-                            request.bento_name, request.bento_version
+                        error_message = (
+                            "BentoService bundle: "
+                            "{}:{} already exists".format(
+                                request.bento_name, request.bento_version
+                            )
                         )
                         logger.error(error_message)
                         return AddBentoResponse(status=Status.ABORTED(error_message))
@@ -402,7 +405,8 @@ def get_yatai_service_impl(base=object):
                     )
                     if not bento_pb:
                         msg = (
-                            f"BentoService {request.bento_name}:{request.bento_version} "
+                            f"BentoService "
+                            f"{request.bento_name}:{request.bento_version} "
                             f"has already been deleted"
                         )
                         return DangerouslyDeleteBentoResponse(
@@ -510,7 +514,8 @@ def get_yatai_service_impl(base=object):
                     )
                     if not bento_pb:
                         raise YataiRepositoryException(
-                            f'BentoService {request.bento_name}:{request.bento_version} '
+                            f'BentoService '
+                            f'{request.bento_name}:{request.bento_version} '
                             f'does not exist'
                         )
 
@@ -533,8 +538,8 @@ def get_yatai_service_impl(base=object):
                                 buildargs=dict(request.build_args),
                             )
                         except (
-                                docker.errors.APIError,
-                                docker.errors.BuildError,
+                            docker.errors.APIError,
+                            docker.errors.BuildError,
                         ) as error:
                             logger.error(f'Encounter container building issue: {error}')
                             raise YataiRepositoryException(error)

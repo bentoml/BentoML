@@ -135,14 +135,18 @@ def get_yatai_service_impl(base=object):
 
                     # deploying to target platform
                     if previous_deployment:
-                        response = operator.update(request.deployment, previous_deployment)
+                        response = operator.update(
+                            request.deployment, previous_deployment
+                        )
                     else:
                         response = operator.add(request.deployment)
 
                     if response.status.status_code == status_pb2.Status.OK:
                         # update deployment state
                         if response and response.deployment:
-                            self.db.deployment_store.insert_or_update(sess, response.deployment)
+                            self.db.deployment_store.insert_or_update(
+                                sess, response.deployment
+                            )
                         else:
                             raise BentoMLException(
                                 "DeploymentOperator Internal Error: failed to add or "
@@ -158,7 +162,9 @@ def get_yatai_service_impl(base=object):
                             # When failed to create the deployment, delete it from active
                             # deployments records
                             self.db.deployment_store.delete(
-                                sess, request.deployment.name, request.deployment.namespace
+                                sess,
+                                request.deployment.name,
+                                request.deployment.namespace,
                             )
                         logger.debug(
                             "ApplyDeployment (%s, namespace %s) failed: %s",
@@ -208,7 +214,9 @@ def get_yatai_service_impl(base=object):
                             # Track deployment delete before it vanquishes from deployment
                             # store
                             track_deployment_delete(
-                                deployment_pb.spec.operator, deployment_pb.created_at, True
+                                deployment_pb.spec.operator,
+                                deployment_pb.created_at,
+                                True,
                             )
                             self.db.deployment_store.delete(
                                 sess, request.deployment_name, request.namespace
@@ -342,7 +350,9 @@ def get_yatai_service_impl(base=object):
                         )
                         logger.error(error_message)
                         return AddBentoResponse(status=Status.ABORTED(error_message))
-                    new_bento_uri = self.repo.add(request.bento_name, request.bento_version)
+                    new_bento_uri = self.repo.add(
+                        request.bento_name, request.bento_version
+                    )
                     self.db.metadata_store.add(
                         sess,
                         bento_name=request.bento_name,
@@ -364,7 +374,10 @@ def get_yatai_service_impl(base=object):
                     # TODO: validate request
                     if request.upload_status:
                         self.db.metadata_store.update_upload_status(
-                            sess, request.bento_name, request.bento_version, request.upload_status
+                            sess,
+                            request.bento_name,
+                            request.bento_version,
+                            request.upload_status,
                         )
                     if request.service_metadata:
                         self.db.metadata_store.update(
@@ -393,7 +406,9 @@ def get_yatai_service_impl(base=object):
                             f"BentoService {request.bento_name}:{request.bento_version} "
                             f"has already been deleted"
                         )
-                        return DangerouslyDeleteBentoResponse(status=Status.ABORTED(msg))
+                        return DangerouslyDeleteBentoResponse(
+                            status=Status.ABORTED(msg)
+                        )
 
                     logger.debug(
                         'Deleting BentoService %s:%s',
@@ -403,7 +418,9 @@ def get_yatai_service_impl(base=object):
                     self.db.metadata_store.dangerously_delete(
                         sess, request.bento_name, request.bento_version
                     )
-                    self.repo.dangerously_delete(request.bento_name, request.bento_version)
+                    self.repo.dangerously_delete(
+                        request.bento_name, request.bento_version
+                    )
                     return DangerouslyDeleteBentoResponse(status=Status.OK())
                 except BentoMLException as e:
                     logger.error("RPC ERROR DangerouslyDeleteBento: %s", e)
@@ -516,7 +533,10 @@ def get_yatai_service_impl(base=object):
                                 tag=tag,
                                 buildargs=dict(request.build_args),
                             )
-                        except (docker.errors.APIError, docker.errors.BuildError) as error:
+                        except (
+                            docker.errors.APIError,
+                            docker.errors.BuildError,
+                        ) as error:
                             logger.error(f'Encounter container building issue: {error}')
                             raise YataiRepositoryException(error)
                         if request.push is True:

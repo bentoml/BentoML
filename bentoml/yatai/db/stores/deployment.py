@@ -93,9 +93,7 @@ class DeploymentStore(object):
         try:
             deployment_obj = (
                 sess.query(Deployment)
-                .filter_by(
-                    name=deployment_pb.name, namespace=deployment_pb.namespace
-                )
+                .filter_by(name=deployment_pb.name, namespace=deployment_pb.namespace)
                 .one()
             )
             if deployment_obj:
@@ -132,9 +130,7 @@ class DeploymentStore(object):
     def update_deployment(sess, name, namespace):
         try:
             deployment_obj = (
-                sess.query(Deployment)
-                .filter_by(name=name, namespace=namespace)
-                .one()
+                sess.query(Deployment).filter_by(name=name, namespace=namespace).one()
             )
             yield deployment_obj
         except NoResultFound:
@@ -144,9 +140,7 @@ class DeploymentStore(object):
     def get(sess, name, namespace):
         try:
             deployment_obj = (
-                sess.query(Deployment)
-                .filter_by(name=name, namespace=namespace)
-                .one()
+                sess.query(Deployment).filter_by(name=name, namespace=namespace).one()
             )
             labels = LabelStore.get(sess, RESOURCE_TYPE.deployment, deployment_obj.id)
         except NoResultFound:
@@ -158,14 +152,10 @@ class DeploymentStore(object):
     def delete(sess, name, namespace):
         try:
             deployment = (
-                sess.query(Deployment)
-                .filter_by(name=name, namespace=namespace)
-                .one()
+                sess.query(Deployment).filter_by(name=name, namespace=namespace).one()
             )
             LabelStore.delete(
-                sess,
-                resource_type=RESOURCE_TYPE.deployment,
-                resource_id=deployment.id,
+                sess, resource_type=RESOURCE_TYPE.deployment, resource_id=deployment.id,
             )
             return sess.delete(deployment)
         except NoResultFound:
@@ -187,9 +177,7 @@ class DeploymentStore(object):
         query = sess.query(Deployment)
         order_by = ListDeploymentsRequest.SORTABLE_COLUMN.Name(order_by)
         order_by_field = getattr(Deployment, order_by)
-        order_by_action = (
-            order_by_field if ascending_order else desc(order_by_field)
-        )
+        order_by_action = order_by_field if ascending_order else desc(order_by_field)
         query = query.order_by(order_by_action)
         if label_selectors.match_labels or label_selectors.match_expressions:
             deployment_ids = LabelStore.filter_query(

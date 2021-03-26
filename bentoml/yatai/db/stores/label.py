@@ -32,10 +32,10 @@ def _validate_labels(labels):
     pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
     for key in labels:
         if (
-                not (63 >= len(key) >= 3)
-                or not (63 >= len(labels[key]) >= 3)
-                or not pattern.match(key)
-                or not pattern.match(labels[key])
+            not (63 >= len(key) >= 3)
+            or not (63 >= len(labels[key]) >= 3)
+            or not pattern.match(key)
+            or not pattern.match(labels[key])
         ):
             raise InvalidArgument(
                 f'Invalide label {key}:{labels[key]}. Valid label key and value must '
@@ -79,7 +79,9 @@ class LabelStore(object):
     def add_or_update(sess, resource_type, resource_id, labels):
         label_rows = (
             sess.query(Label)
-            .filter(Label.resource_type == resource_type, Label.resource_id == resource_id)
+            .filter(
+                Label.resource_type == resource_type, Label.resource_id == resource_id
+            )
             .all()
         )
         if len(label_rows) == 0:
@@ -120,7 +122,10 @@ class LabelStore(object):
 
     @staticmethod
     def delete(sess, resource_type, resource_id, labels=None):
-        filters = [Label.resource_id == resource_id, Label.resource_type == resource_type]
+        filters = [
+            Label.resource_id == resource_id,
+            Label.resource_type == resource_type,
+        ]
         if labels is not None:
             filters.append(Label.key.in_(list(labels.keys())))
         return sess.query(Label).filter(and_(*filters)).delete()
@@ -133,7 +138,10 @@ class LabelStore(object):
         for key in label_selectors.match_labels:
             filters.append(
                 sess.query(Label.resource_id).filter(
-                    and_(Label.key == key, Label.value == label_selectors.match_labels[key])
+                    and_(
+                        Label.key == key,
+                        Label.value == label_selectors.match_labels[key],
+                    )
                 )
             )
         for expression in label_selectors.match_expressions:
@@ -144,7 +152,8 @@ class LabelStore(object):
                 filters.append(
                     sess.query(Label.resource_id).filter(
                         and_(
-                            Label.key == expression.key, Label.value.in_(expression.values)
+                            Label.key == expression.key,
+                            Label.value.in_(expression.values),
                         )
                     )
                 )
@@ -155,7 +164,8 @@ class LabelStore(object):
                 filters.append(
                     sess.query(Label.resource_id).filter(
                         and_(
-                            Label.key == expression.key, ~Label.value.in_(expression.values)
+                            Label.key == expression.key,
+                            ~Label.value.in_(expression.values),
                         )
                     )
                 )
@@ -174,7 +184,9 @@ class LabelStore(object):
                     sess.query(Label.resource_id).filter(Label.key != expression.key)
                 )
             else:
-                raise YataiLabelException(f'Unrecognized operator: "{expression.operator}"')
+                raise YataiLabelException(
+                    f'Unrecognized operator: "{expression.operator}"'
+                )
         query = query.intersect(*filters)
         result = query.all()
         return [row[0] for row in result]

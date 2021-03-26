@@ -11,15 +11,19 @@ class CatBoostModelArtifact(BentoServiceArtifact):
 
     Args:
         name (string): name of the artifact
-        model_extension (string): Extension name for saved CatBoost model
+        model_type (string): Type of the model - 'classifier', 'regressor', 'catboost'
+        model_extension (string): Extension name for saved CatBoost model. Default - "cbm"
+        model_export_parameters (dict): Additional format-dependent parameters. Default - None
+        model_pool: The dataset previously used for training. See catboost.Pool for more details. Default - None.
 
     Raises:
         MissingDependencyException: catboost package is required for using
             CatBoostModelArtifact.
         InvalidArgument: invalid argument type, model being packed must be instance of
-            cbm — CatBoost binary format
+            catboost.core.CatBoost
 
     Example usage:
+    
     >>> import numpy as np
     >>> from catboost import CatBoostClassifier
     >>>
@@ -75,7 +79,7 @@ class CatBoostModelArtifact(BentoServiceArtifact):
 
         if not isinstance(model, catboost.core.CatBoost):
             raise InvalidArgument(
-                "Expect `model` argument to be a `lightgbm.Booster` instance"
+                "Expect `model` argument to be a `catboost.core.CatBoost` instance"
             )
 
         self._model = model

@@ -23,7 +23,8 @@ from urllib.parse import urlparse
 from bentoml.exceptions import BentoMLException
 from bentoml.yatai.db.base import Base
 from bentoml.yatai.db.stores.deployment import DeploymentStore
-from bentoml.yatai.db.stores.metadata import BentoMetadataStore
+from bentoml.yatai.db.stores.label import LabelStore
+from bentoml.yatai.db.stores.metadata import MetadataStore
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +70,9 @@ class DB(object):
         self._setup_stores()
 
     def _setup_stores(self):
-        self.deployment_store = DeploymentStore(self)
-        self.bento_metadata_store = BentoMetadataStore(self)
+        self.deployment_store = DeploymentStore()
+        self.metadata_store = MetadataStore()
+        self.label_store = LabelStore()
 
     @contextmanager
     def create_session(self):

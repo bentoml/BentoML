@@ -52,7 +52,7 @@ from bentoml.exceptions import (
     YataiRepositoryException,
 )
 from bentoml.yatai.repository.repository import Repository
-from bentoml.yatai.db.stores.metadata import BentoMetadataStore
+from bentoml.yatai.db.stores.metadata import MetadataStore
 from bentoml.yatai.db import DB
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
@@ -99,8 +99,6 @@ def get_yatai_service_impl(base=object):
             self.repo = Repository(repo_base_url, s3_endpoint_url)
 
             self.db = DB(db_url)
-            self.deployment_store = DeploymentStore(self.db)
-            self.bento_metadata_store = BentoMetadataStore(self.db)
 
         def HealthCheck(self, request, context=None):
             return HealthCheckResponse(status=Status.OK())

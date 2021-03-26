@@ -33,7 +33,7 @@ from bentoml.utils import ProtoMessageToDict
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.yatai.db import Base
 from bentoml.yatai.db.stores.label import (
-    BentoLabelStore,
+    LabelStore,
     RESOURCE_TYPE,
 )
 from bentoml.yatai.proto.repository_pb2 import (
@@ -116,7 +116,7 @@ def _bento_orm_obj_to_pb(bento_obj, labels=None):
     )
 
 
-class BentoMetadataStore(object):
+class MetadataStore(object):
     @staticmethod
     def add(sess, bento_name, bento_version, uri, uri_type):
         bento_obj = Bento()
@@ -137,7 +137,7 @@ class BentoMetadataStore(object):
 
         query_result = query.all()
         if len(query_result) == 1:
-            labels = BentoLabelStore.get(sess, RESOURCE_TYPE.bento, query_result[0].id)
+            labels = LabelStore.get(sess, RESOURCE_TYPE.bento, query_result[0].id)
             return _bento_orm_obj_to_pb(query_result[0], labels)
         else:
             return None
@@ -145,7 +145,7 @@ class BentoMetadataStore(object):
     @staticmethod
     def get(sess, bento_name, bento_version="latest"):
         if bento_version.lower() == "latest":
-            return BentoMetadataStore._get_latest(bento_name)
+            return MetadataStore._get_latest(bento_name)
 
         try:
             bento_obj = (
@@ -156,7 +156,7 @@ class BentoMetadataStore(object):
             if bento_obj.deleted:
                 # bento has been marked as deleted
                 return None
-            labels = BentoLabelStore.get(sess, RESOURCE_TYPE.bento, bento_obj.id)
+            labels = LabelStore.get(sess, RESOURCE_TYPE.bento, bento_obj.id)
             return _bento_orm_obj_to_pb(bento_obj, labels)
         except NoResultFound:
             return None
@@ -177,7 +177,7 @@ class BentoMetadataStore(object):
                     .filter_by(name=bento_name, version=bento_version)
                     .one()
                 )
-                BentoLabelStore.add_or_update(
+                LabelStore.add_or_update(
                     sess, RESOURCE_TYPE.bento, bento.id, service_metadata['labels']
                 )
         except NoResultFound:
@@ -246,7 +246,7 @@ class BentoMetadataStore(object):
         if label_selectors is not None and (
             label_selectors.match_labels or label_selectors.match_expressions
         ):
-            bento_ids = BentoLabelStore.filter_query(
+            bento_ids = LabelStore.filter_query(
                 sess, RESOURCE_TYPE.bento, label_selectors
             )
             query = query.filter(Bento.id.in_(bento_ids))
@@ -262,7 +262,7 @@ class BentoMetadataStore(object):
 
         query_result = query.all()
         bento_ids = [bento_obj.id for bento_obj in query_result]
-        labels = BentoLabelStore.list(sess, RESOURCE_TYPE.bento, bento_ids)
+        labels = LabelStore.list(sess, RESOURCE_TYPE.bento, bento_ids)
         result = [
             _bento_orm_obj_to_pb(bento_obj, labels.get(str(bento_obj.id)))
             for bento_obj in query_result

@@ -30,7 +30,7 @@ class Label(Base):
     value = Column(String, nullable=False)
 
 
-class BentoLabelStore(object):
+class LabelStore(object):
     @staticmethod
     def add(sess, resource_type, resource_id, labels):
         label_objects = []
@@ -51,7 +51,7 @@ class BentoLabelStore(object):
             .all()
         )
         if len(label_rows) == 0:
-            return BentoLabelStore.add(sess, resource_type, resource_id, labels)
+            return LabelStore.add(sess, resource_type, resource_id, labels)
         else:
             for row in label_rows:
                 if labels.get(row.key, None) is not None:

@@ -32,7 +32,7 @@ from bentoml.exceptions import YataiDeploymentException
 from bentoml.yatai.db import Base
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.db.stores.label import (
-    BentoLabelStore,
+    LabelStore,
     RESOURCE_TYPE,
 )
 from bentoml.yatai.proto import deployment_pb2
@@ -88,96 +88,94 @@ def _deployment_orm_obj_to_pb(deployment_obj, labels=None):
 
 
 class DeploymentStore(object):
-    def __init__(self, db):
-        self.db = db
-
-    def insert_or_update(self, deployment_pb):
-        with self.db.create_session() as sess:
-            try:
-                deployment_obj = (
-                    sess.query(Deployment)
-                    .filter_by(
-                        name=deployment_pb.name, namespace=deployment_pb.namespace
-                    )
-                    .one()
+    @staticmethod
+    def insert_or_update(sess, deployment_pb):
+        try:
+            deployment_obj = (
+                sess.query(Deployment)
+                .filter_by(
+                    name=deployment_pb.name, namespace=deployment_pb.namespace
                 )
-                if deployment_obj:
-                    # updating deployment record in db
-                    _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
-                    if deployment_pb.labels:
-                        BentoLabelStore.add_or_update(
-                            sess,
-                            RESOURCE_TYPE.deployment,
-                            deployment_obj.id,
-                            deployment_pb.labels,
-                        )
-            except NoResultFound:
-                deployment_orm_obj = _deployment_pb_to_orm_obj(deployment_pb)
-                sess.add(deployment_orm_obj)
+                .one()
+            )
+            if deployment_obj:
+                # updating deployment record in db
+                _deployment_pb_to_orm_obj(deployment_pb, deployment_obj)
                 if deployment_pb.labels:
-                    deployment_row = (
-                        sess.query(Deployment)
-                        .filter_by(
-                            name=deployment_orm_obj.name,
-                            namespace=deployment_orm_obj.namespace,
-                        )
-                        .one()
-                    )
-                    BentoLabelStore.add(
+                    LabelStore.add_or_update(
                         sess,
                         RESOURCE_TYPE.deployment,
-                        deployment_row.id,
+                        deployment_obj.id,
                         deployment_pb.labels,
                     )
-
-    @contextmanager
-    def update_deployment(self, name, namespace):
-        with self.db.create_session() as sess:
-            try:
-                deployment_obj = (
+        except NoResultFound:
+            deployment_orm_obj = _deployment_pb_to_orm_obj(deployment_pb)
+            sess.add(deployment_orm_obj)
+            if deployment_pb.labels:
+                deployment_row = (
                     sess.query(Deployment)
-                    .filter_by(name=name, namespace=namespace)
+                    .filter_by(
+                        name=deployment_orm_obj.name,
+                        namespace=deployment_orm_obj.namespace,
+                    )
                     .one()
                 )
-                yield deployment_obj
-            except NoResultFound:
-                yield None
-
-    def get(self, name, namespace):
-        with self.db.create_session() as sess:
-            try:
-                deployment_obj = (
-                    sess.query(Deployment)
-                    .filter_by(name=name, namespace=namespace)
-                    .one()
-                )
-                labels = BentoLabelStore.get(sess, RESOURCE_TYPE.deployment, deployment_obj.id)
-            except NoResultFound:
-                return None
-
-            return _deployment_orm_obj_to_pb(deployment_obj, labels)
-
-    def delete(self, name, namespace):
-        with self.db.create_session() as sess:
-            try:
-                deployment = (
-                    sess.query(Deployment)
-                    .filter_by(name=name, namespace=namespace)
-                    .one()
-                )
-                BentoLabelStore.delete(
+                LabelStore.add(
                     sess,
-                    resource_type=RESOURCE_TYPE.deployment,
-                    resource_id=deployment.id,
-                )
-                return sess.delete(deployment)
-            except NoResultFound:
-                raise YataiDeploymentException(
-                    "Deployment '%s' in namespace: '%s' is not found" % name, namespace
+                    RESOURCE_TYPE.deployment,
+                    deployment_row.id,
+                    deployment_pb.labels,
                 )
 
+    @staticmethod
+    @contextmanager
+    def update_deployment(sess, name, namespace):
+        try:
+            deployment_obj = (
+                sess.query(Deployment)
+                .filter_by(name=name, namespace=namespace)
+                .one()
+            )
+            yield deployment_obj
+        except NoResultFound:
+            yield None
+
+    @staticmethod
+    def get(sess, name, namespace):
+        try:
+            deployment_obj = (
+                sess.query(Deployment)
+                .filter_by(name=name, namespace=namespace)
+                .one()
+            )
+            labels = LabelStore.get(sess, RESOURCE_TYPE.deployment, deployment_obj.id)
+        except NoResultFound:
+            return None
+
+        return _deployment_orm_obj_to_pb(deployment_obj, labels)
+
+    @staticmethod
+    def delete(sess, name, namespace):
+        try:
+            deployment = (
+                sess.query(Deployment)
+                .filter_by(name=name, namespace=namespace)
+                .one()
+            )
+            LabelStore.delete(
+                sess,
+                resource_type=RESOURCE_TYPE.deployment,
+                resource_id=deployment.id,
+            )
+            return sess.delete(deployment)
+        except NoResultFound:
+            raise YataiDeploymentException(
+                "Deployment '%s' in namespace: '%s' is not found" % name, namespace
+            )
+
+    @staticmethod
     def list(
-        self,
+        sess,
         namespace,
         operator=None,
         label_selectors=None,
@@ -186,41 +184,40 @@ class DeploymentStore(object):
         order_by=ListDeploymentsRequest.created_at,
         ascending_order=False,
     ):
-        with self.db.create_session() as sess:
-            query = sess.query(Deployment)
-            order_by = ListDeploymentsRequest.SORTABLE_COLUMN.Name(order_by)
-            order_by_field = getattr(Deployment, order_by)
-            order_by_action = (
-                order_by_field if ascending_order else desc(order_by_field)
+        query = sess.query(Deployment)
+        order_by = ListDeploymentsRequest.SORTABLE_COLUMN.Name(order_by)
+        order_by_field = getattr(Deployment, order_by)
+        order_by_action = (
+            order_by_field if ascending_order else desc(order_by_field)
+        )
+        query = query.order_by(order_by_action)
+        if label_selectors.match_labels or label_selectors.match_expressions:
+            deployment_ids = LabelStore.filter_query(
+                sess, RESOURCE_TYPE.deployment, label_selectors
             )
-            query = query.order_by(order_by_action)
-            if label_selectors.match_labels or label_selectors.match_expressions:
-                deployment_ids = BentoLabelStore.filter_query(
-                    sess, RESOURCE_TYPE.deployment, label_selectors
-                )
-                query.filter(Deployment.id.in_(deployment_ids))
-            if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
-                query = query.filter_by(namespace=namespace)
-            if operator:
-                operator_name = DeploymentSpec.DeploymentOperator.Name(operator)
-                query = query.filter(
-                    Deployment.spec['operator'].as_string().contains(operator_name)
-                )
-            # We are not defaulting limit to 200 in the signature,
-            # because protobuf will pass 0 as value
-            limit = limit or 200
-            # Limit and offset need to be called after order_by filter/filter_by is
-            # called
-            query = query.limit(limit)
-            if offset:
-                query = query.offset(offset)
-            query_result = query.all()
-            deployment_ids = [deployment_obj.id for deployment_obj in query_result]
-            labels = BentoLabelStore.list(sess, RESOURCE_TYPE.deployment, deployment_ids)
+            query.filter(Deployment.id.in_(deployment_ids))
+        if namespace != ALL_NAMESPACE_TAG:  # else query all namespaces
+            query = query.filter_by(namespace=namespace)
+        if operator:
+            operator_name = DeploymentSpec.DeploymentOperator.Name(operator)
+            query = query.filter(
+                Deployment.spec['operator'].as_string().contains(operator_name)
+            )
+        # We are not defaulting limit to 200 in the signature,
+        # because protobuf will pass 0 as value
+        limit = limit or 200
+        # Limit and offset need to be called after order_by filter/filter_by is
+        # called
+        query = query.limit(limit)
+        if offset:
+            query = query.offset(offset)
+        query_result = query.all()
+        deployment_ids = [deployment_obj.id for deployment_obj in query_result]
+        labels = LabelStore.list(sess, RESOURCE_TYPE.deployment, deployment_ids)
 
-            return [
-                _deployment_orm_obj_to_pb(
-                    deployment_obj, labels.get(str(deployment_obj.id))
-                )
-                for deployment_obj in query_result
-            ]
+        return [
+            _deployment_orm_obj_to_pb(
+                deployment_obj, labels.get(str(deployment_obj.id))
+            )
+            for deployment_obj in query_result
+        ]

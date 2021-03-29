@@ -5,6 +5,7 @@ from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 
+
 class OnnxMlirModelArtifact(BentoServiceArtifact):
     """Abstraction for saving/loading onnx-mlir compiled model and operationalized using pyruntime wrapper
 
@@ -73,7 +74,7 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
         self._model_so_path = os.path.join(base_path, self.name + '.so')
         return os.path.join(base_path, self.name + '.so')
 
-    def pack(self, onnxmlir_model_so, metadata=None):  
+    def pack(self, onnxmlir_model_so, metadata=None):
         self._model_so_path = onnxmlir_model_so
         return self
 
@@ -86,8 +87,8 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
 
     def _get_onnxmlir_inference_session(self):
         try:
-            # this has to be able to find the architecture and OS specific PyRuntime .so file 
-            from PyRuntime import ExecutionSession  
+            # this has to be able to find the architecture and OS specific PyRuntime .so file
+            from PyRuntime import ExecutionSession
         except ImportError:
             raise MissingDependencyException(
                 "PyRuntime package library must be in python path"
@@ -102,5 +103,3 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
     def save(self, dst):
         # copies the model .so and places in the version controlled deployment path
         shutil.copyfile(self._model_so_path, self._saved_model_file_path(dst))
-
-

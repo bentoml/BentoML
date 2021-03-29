@@ -305,25 +305,3 @@ def test_serve_command():
             run_with_ngrok=True,
             enable_swagger=True,
         )
-
-
-def test_serve_command_arguments():
-    runner = CliRunner()
-
-    cli = create_bento_service_cli()
-    serve_cmd = cli.commands["serve"]
-    arguments = [
-        "/",
-        "--port=5050",
-        "--enable-microbatch",
-        "--enable-swagger",
-        "--mb-max-batch-size=10000",
-        "--mb-max-latency=20000",
-        "--run-with-ngrok",
-    ]
-
-    with mock.patch(
-        "bentoml.server.gunicorn_server.BentoAPIServer"
-    ) as MockedBentoAPIServer:
-        runner.invoke(serve_cmd, arguments)
-        MockedBentoAPIServer.assert_called()

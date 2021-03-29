@@ -159,11 +159,6 @@ class MarshalService:
             BentoMLContainer.config.api_server.enable_microbatch
         ],
     ):
-        print("### MarshalService.enable_microbatch ###", enable_microbatch)
-        print("### MarshalService.mb_max_batch_size ###", mb_max_batch_size)
-        print("### MarshalService.mb_max_latency ###", mb_max_latency)
-        print("### MarshalService.outbound_workers ###", outbound_workers)
-
         self._client = None
         self.outbound_unix_socket = outbound_unix_socket
         self.outbound_host = outbound_host
@@ -372,8 +367,6 @@ class MarshalService:
     def fork_start_app(
         self, port=Provide[BentoMLContainer.config.api_server.port],
     ):
-        print("### MarshalService.fork_start_app.port ###", port)
-
         # Use new eventloop in the fork process to avoid problems on MacOS
         # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
         loop = asyncio.new_event_loop()

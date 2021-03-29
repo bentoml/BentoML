@@ -48,12 +48,6 @@ if psutil.POSIX:
             prometheus_lock: Optional[multiprocessing.Lock] = None,
             loglevel=P[C.config.logging.level],
         ):
-            print("### GunicornMarshalServer.port ###", port)
-            print("### GunicornMarshalServer.workers ###", workers)
-            print("### GunicornMarshalServer.mb_max_batch_size ###", mb_max_batch_size)
-            print("### GunicornMarshalServer.mb_max_latency ###", mb_max_latency)
-            print("### GunicornMarshalServer.outbound_workers ###", outbound_workers)
-
             self.bento_service_bundle_path = bundle_path
 
             self.port = port

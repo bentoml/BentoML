@@ -164,8 +164,6 @@ class BentoAPIServer:
             BentoMLContainer.config.marshal_server.request_header_flag
         ],
     ):
-        print("### BentoAPIServer.enable_swagger ###", enable_swagger)
-
         app_name = bento_service.name if app_name is None else app_name
 
         self.bento_service = bento_service

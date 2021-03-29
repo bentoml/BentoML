@@ -78,11 +78,6 @@ if psutil.POSIX:
             max_request_size: int = P[C.config.api_server.max_request_size],
             loglevel=P[C.config.logging.level],
         ):
-            print("### GunicornBentoServer.port ###", port)
-            print("### GunicornBentoServer.timeout ###", timeout)
-            print("### GunicornBentoServer.enable_swagger ###", enable_swagger)
-            print("### GunicornBentoServer.workers ###", workers)
-
             self.bento_service_bundle_path = bundle_path
 
             if bind is None:

@@ -10,9 +10,9 @@ import subprocess
 import os
 import signal
 import sys
-from dependency_injector.wiring import inject, Provide
+from dependency_injector.wiring import Provide
 
-from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
+from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer, inject
 
 
 def sigterm_handler(nginx_pid, gunicorn_pid):

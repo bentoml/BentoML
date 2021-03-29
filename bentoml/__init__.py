@@ -17,11 +17,14 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-from bentoml.configuration import config
+from bentoml.configuration import config, inject_dependencies
 from bentoml.utils.log import configure_logging
 
 # Configuring logging properly before loading other modules
 configure_logging()
+
+# Inject dependencies and configurations
+inject_dependencies()
 
 from bentoml.saved_bundle import load_from_dir, save_to_dir  # noqa: E402
 from bentoml.service import (  # noqa: E402

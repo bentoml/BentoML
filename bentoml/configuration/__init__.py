@@ -32,6 +32,20 @@ DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.c
 CONFIG_FILE_ENCODING = "utf-8"
 
 
+def inject_dependencies():
+    from bentoml.configuration.containers import BentoMLContainer, BentoMLConfiguration
+
+    # TODO: Override config with environemnt variable
+    configuration = BentoMLConfiguration()
+
+    container = BentoMLContainer()
+    container.config.from_dict(configuration.as_dict())
+
+    from bentoml import marshal, server, tracing
+
+    container.wire(packages=[marshal, server, tracing])
+
+
 def expand_env_var(env_var):
     """Expands potentially nested env var by repeatedly applying `expandvars` and
     `expanduser` until interpolation stops having any effect.

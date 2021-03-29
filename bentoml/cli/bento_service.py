@@ -235,7 +235,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             mb_max_latency=mb_max_latency,
             run_with_ngrok=run_with_ngrok,
             enable_swagger=enable_swagger,
-            config_file=config,
         )
 
     # Example Usage:
@@ -320,7 +319,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
             mb_max_batch_size=mb_max_batch_size,
             mb_max_latency=mb_max_latency,
             microbatch_workers=microbatch_workers,
-            config_file=config,
         )
 
     @bentoml_cli.command(

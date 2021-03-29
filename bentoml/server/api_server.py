@@ -17,19 +17,18 @@ import os
 import sys
 from functools import partial
 
-from dependency_injector.wiring import Provide, inject
+from dependency_injector.wiring import Provide
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from google.protobuf.json_format import MessageToJson
 from werkzeug.exceptions import BadRequest, NotFound
 
-from bentoml import BentoService
 from bentoml.configuration import get_debug_mode
-from bentoml.configuration.containers import BentoMLContainer
+from bentoml.configuration.containers import BentoMLContainer, inject
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
-from bentoml.service import InferenceAPI
+from bentoml.service import BentoService, InferenceAPI
 from bentoml.tracing import get_tracer
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
@@ -165,6 +164,8 @@ class BentoAPIServer:
             BentoMLContainer.config.marshal_server.request_header_flag
         ],
     ):
+        print("### BentoAPIServer.enable_swagger ###", enable_swagger)
+
         app_name = bento_service.name if app_name is None else app_name
 
         self.bento_service = bento_service

@@ -18,9 +18,9 @@ from typing import Optional
 
 import psutil
 from dependency_injector.wiring import Provide as P
-from dependency_injector.wiring import inject
 
 from bentoml.configuration.containers import BentoMLContainer as C
+from bentoml.configuration.containers import inject
 from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
 
@@ -42,11 +42,18 @@ if psutil.POSIX:
             outbound_workers: int = P[C.api_server_workers],
             max_request_size: int = P[C.config.api_server.max_request_size],
             port: int = P[C.config.api_server.port],
+            enable_microbatch: bool = P[C.config.api_server.enable_microbatch],
             mb_max_batch_size: int = P[C.config.marshal_server.max_batch_size],
             mb_max_latency: int = P[C.config.marshal_server.max_latency],
             prometheus_lock: Optional[multiprocessing.Lock] = None,
             loglevel=P[C.config.logging.level],
         ):
+            print("### GunicornMarshalServer.port ###", port)
+            print("### GunicornMarshalServer.workers ###", workers)
+            print("### GunicornMarshalServer.mb_max_batch_size ###", mb_max_batch_size)
+            print("### GunicornMarshalServer.mb_max_latency ###", mb_max_latency)
+            print("### GunicornMarshalServer.outbound_workers ###", outbound_workers)
+
             self.bento_service_bundle_path = bundle_path
 
             self.port = port
@@ -64,6 +71,7 @@ if psutil.POSIX:
             self.outbound_port = outbound_port
             self.outbound_host = outbound_host
             self.outbound_workers = outbound_workers
+            self.enable_microbatch = enable_microbatch
             self.mb_max_batch_size = mb_max_batch_size
             self.mb_max_latency = mb_max_latency
 
@@ -89,6 +97,7 @@ if psutil.POSIX:
                 self.outbound_host,
                 self.outbound_port,
                 outbound_workers=self.outbound_workers,
+                enable_microbatch=self.enable_microbatch,
                 mb_max_batch_size=self.mb_max_batch_size,
                 mb_max_latency=self.mb_max_latency,
             )

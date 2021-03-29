@@ -18,10 +18,10 @@ from typing import Optional
 
 import psutil
 from dependency_injector.wiring import Provide as P
-from dependency_injector.wiring import inject
 from flask import Response
 
 from bentoml.configuration.containers import BentoMLContainer as C
+from bentoml.configuration.containers import inject
 from bentoml.saved_bundle import load_from_dir
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
@@ -78,6 +78,11 @@ if psutil.POSIX:
             max_request_size: int = P[C.config.api_server.max_request_size],
             loglevel=P[C.config.logging.level],
         ):
+            print("### GunicornBentoServer.port ###", port)
+            print("### GunicornBentoServer.timeout ###", timeout)
+            print("### GunicornBentoServer.enable_swagger ###", enable_swagger)
+            print("### GunicornBentoServer.workers ###", workers)
+
             self.bento_service_bundle_path = bundle_path
 
             if bind is None:

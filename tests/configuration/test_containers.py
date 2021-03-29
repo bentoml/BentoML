@@ -191,3 +191,47 @@ key1:
     assert config["key1"]["key2"]["key3"] == "override3"
     assert config["key1"]["key2"]["key4"] == "value4"
     assert config["key1"]["key2"]["key5"] == "override5"
+
+
+def test_inject():
+    from bentoml.configuration.containers import inject
+    from dependency_injector import containers, providers
+    from dependency_injector.wiring import Provide
+    from sys import modules
+    from typing import Optional
+
+    class MockContainer(containers.DeclarativeContainer):
+        value1 = providers.Object(1)
+        value2 = providers.Object(2)
+
+    @inject
+    def mock_function(
+        value1: Optional[int] = Provide[MockContainer.value1],
+        value2: Optional[int] = Provide[MockContainer.value2],
+    ):
+        return value1, value2
+
+    container = MockContainer()
+    container.wire(modules=[modules[__name__]])
+
+    value1, value2 = mock_function()
+    assert value1 == 1
+    assert value2 == 2
+
+    value1, value2 = mock_function(value1=None, value2=None)
+    assert value1 == 1
+    assert value2 == 2
+
+    value1, value2 = mock_function(value1=3, value2=None)
+    assert value1 == 3
+    assert value2 == 2
+
+    value1, value2 = mock_function(value1=None, value2=4)
+    assert value1 == 1
+    assert value2 == 4
+
+    value1, value2 = mock_function(value1=3, value2=4)
+    assert value1 == 3
+    assert value2 == 4
+
+    container.unwire()

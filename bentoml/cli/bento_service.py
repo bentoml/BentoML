@@ -14,7 +14,6 @@ from bentoml.cli.click_utils import (
     conditional_argument,
 )
 from bentoml.cli.utils import Spinner
-from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 from bentoml.saved_bundle import (
     load_bento_service_api,
     load_bento_service_metadata,
@@ -63,16 +62,6 @@ batch_options = [
     ),
 ]
 
-config_options = [
-    click.option(
-        "--config",
-        "-c",
-        type=click.Path(file_okay=True, dir_okay=False, readable=True),
-        help="Specify the configuration to be used for this command.",
-        envvar="BENTOML_CONFIG",
-    ),
-]
-
 
 def add_options(options):
     def _add_options(func):
@@ -108,16 +97,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.argument("api_name", type=click.STRING)
     @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
-    @add_options(config_options)
-    def run(api_name, config, run_args, bento=None):
-        container = BentoMLContainer()
-        config = BentoMLConfiguration(override_config_file=config)
-        container.config.from_dict(config.as_dict())
-
-        from bentoml import tracing
-
-        container.wire(modules=[tracing])
-
+    def run(api_name, run_args, bento=None):
         parser = argparse.ArgumentParser()
         parser.add_argument('--yatai-url', type=str, default=None)
         parsed_args, _ = parser.parse_known_args(run_args)
@@ -190,7 +170,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         envvar='BENTOML_PORT',
     )
     @add_options(batch_options)
-    @add_options(config_options)
     @click.option(
         '--run-with-ngrok',
         is_flag=True,
@@ -221,7 +200,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         run_with_ngrok,
         yatai_url,
         enable_swagger,
-        config,
     ):
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
@@ -262,7 +240,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     )
     @click.option("--timeout", type=click.INT, default=None)
     @add_options(batch_options)
-    @add_options(config_options)
     @click.option(
         '--microbatch-workers',
         type=click.INT,
@@ -294,7 +271,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         microbatch_workers,
         yatai_url,
         enable_swagger,
-        config,
     ):
         if not psutil.POSIX:
             _echo(

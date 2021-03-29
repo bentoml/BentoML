@@ -14,10 +14,8 @@
 
 import logging
 import multiprocessing
-import sys
 from typing import Optional
 
-from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 from bentoml.utils import reserve_free_port
 
 logger = logging.getLogger(__name__)

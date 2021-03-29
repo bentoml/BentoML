@@ -71,13 +71,13 @@ def inject(func):
     @inject
     def foo (a = Provide[Container.some_provider]):
         pass
-        
+
     a = some_other_function()
     if a:
         foo(a)
     else:
         foo()
-    
+
     In the above example, the decorator can implify the logic around the if statement,
     which can be quite complex as the number of arguments increases.
     """

@@ -7,13 +7,15 @@ from bentoml.service.env import BentoServiceEnv
 
 
 class OnnxMlirModelArtifact(BentoServiceArtifact):
-    """Abstraction for saving/loading onnx-mlir compiled model and operationalized using pyruntime wrapper
+    """Abstraction for saving/loading onnx-mlir compiled model and operationalized
+    using pyruntime wrapper
 
-    onnx-mlir is a compiler technology that can take an onnx model and lower it (using llvm) to an inference
-    library that is optimized and has little external dependencies.
+    onnx-mlir is a compiler technology that can take an onnx model and lower it
+    (using llvm) to an inference library that is optimized and has little external
+    dependencies.
 
-    The PyRuntime interface is created during the build of onnx-mlir using pybind. 
-    See the onnx-mlir supporting documentation for detail. 
+    The PyRuntime interface is created during the build of onnx-mlir using pybind.
+    See the onnx-mlir supporting documentation for detail.
 
     Args:
         name (string): Name of the artifact
@@ -44,14 +46,14 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
                 x = x.reshape(-1)
                 e_x = np.exp(x - np.max(x))
                 return e_x / e_x.sum(axis=0)
-            
+
             def post_process(self, raw_result):
                 return self.softmax(np.array(raw_result)).tolist()
 
             @bentoml.api(input=ImageInput(), batch=True)
             def predict(self, image_ndarrays: List[np.ndarray]) -> List[str]:
                 input_datas = self.preprocess(image_ndarrays)
-                
+
                 outputs = []
                 for i in range(input_datas.shape[0]):
                     raw_result = self.artifacts.model.run(input_datas[i:i+1])
@@ -75,6 +77,7 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '.so')
 
     def pack(self, onnxmlir_model_so, metadata=None):
+        # pylint:disable=arguments-differ
         self._model_so_path = onnxmlir_model_so
         return self
 
@@ -87,7 +90,7 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
 
     def _get_onnxmlir_inference_session(self):
         try:
-            # this has to be able to find the architecture and OS specific PyRuntime .so file
+            # this has to be able to find the arch and OS specific PyRuntime .so file
             from PyRuntime import ExecutionSession
         except ImportError:
             raise MissingDependencyException(

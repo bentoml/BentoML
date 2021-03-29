@@ -84,9 +84,9 @@ def inject(func):
 
     import dependency_injector.wiring
     from functools import wraps
-    
+
     func = dependency_injector.wiring.inject(func)
-    
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         args = [arg for arg in args if arg is not None]

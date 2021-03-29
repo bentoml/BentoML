@@ -103,7 +103,7 @@ def _start_dev_proxy(
         mb_max_latency=mb_max_latency,
     )
 
-    marshal_server.fork_start_app()
+    marshal_server.fork_start_app(port=port)
 
 
 def start_prod_server(

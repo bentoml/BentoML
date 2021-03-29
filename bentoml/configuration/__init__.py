@@ -33,6 +33,12 @@ CONFIG_FILE_ENCODING = "utf-8"
 
 
 def inject_dependencies():
+    """Inject dependencies and configuration to BentoML packages"""
+
+    from timeit import default_timer as timer
+
+    start = timer()
+
     from bentoml.configuration.containers import BentoMLContainer, BentoMLConfiguration
 
     # TODO: Override config with environemnt variable
@@ -44,6 +50,10 @@ def inject_dependencies():
     from bentoml import marshal, server, tracing
 
     container.wire(packages=[marshal, server, tracing])
+
+    end = timer()
+
+    logger.debug("Dependency injection completed in %.3f seconds.", end - start)
 
 
 def expand_env_var(env_var):

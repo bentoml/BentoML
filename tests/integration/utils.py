@@ -134,7 +134,7 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
             cmd += ['--port', f'{port}']
         if enable_microbatch:
             cmd += ['--enable-microbatch']
-        cmd += [bundle_path, "--workers", "1"]
+        cmd += [bundle_path]
 
     def print_log(p):
         try:

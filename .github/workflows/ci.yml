@@ -166,6 +166,7 @@ jobs:
   api_server_integration_tests:
     name: API Server Integration Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:

@@ -101,3 +101,5 @@ pypirc
 autoscale
 prometheus
 grafana
+gpu
+onnxruntime

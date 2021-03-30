@@ -11,7 +11,9 @@ class GluonModelArtifact(BentoServiceArtifact):
         name (str): Name for the artifact
     Raises:
         MissingDependencyError: mxnet package is required for GluonModelArtifact
+
     Example usage:
+
     >>> from bentoml import env, artifacts, api, BentoService
     >>> from bentoml.adapters import JsonInput
     >>> from bentoml.frameworks.gluon import GluonModelArtifact
@@ -24,8 +26,10 @@ class GluonModelArtifact(BentoServiceArtifact):
     >>>     def predict(self, request):
     >>>         nd_input = mx.nd.array(request['input'])
     >>>     return self.artifacts.model(nd_input).asnumpy()
+    >>>
     >>> svc = GluonClassifier()
     >>> svc.pack('model', model_to_save)
+    >>> svc.save()
     """
 
     def __init__(self, name: str):

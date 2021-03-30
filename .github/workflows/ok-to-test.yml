@@ -1,12 +1,12 @@
 # If someone with write access comments "/test-e2e" on a pull request, emit a repository_dispatch event
-name: Ok-To-Test
+name: ok-to-test
 
 on:
   issue_comment:
     types: [created, edited]
 
 jobs:
-  ok-to-test:
+  test-e2e-command:
     runs-on: ubuntu-latest
     # Only run for PRs, not issue comments
     if: ${{ github.event.issue.pull_request }}
@@ -23,7 +23,7 @@ jobs:
         private_key: ${{ secrets.PRIVATE_KEY }}
 
     - name: Slash Command Dispatch
-      uses: peter-evans/slash-command-dispatch@v1
+      uses: peter-evans/slash-command-dispatch@v2
       env:
         TOKEN: ${{ steps.generate_token.outputs.token }}
       with:
@@ -31,6 +31,6 @@ jobs:
         # token: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # PAT or OAuth token will also work
         reaction-token: ${{ secrets.PAT_FOR_TEST}}
         issue-type: pull-request
-        commands: test-e2e
+        commands: test-e2e-yatai
         named-args: true
         permission: write

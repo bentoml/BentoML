@@ -2,21 +2,17 @@ name: BentoML-E2E
 
 on:
   pull_request:
-    branches: [ master ]
-    types: [labeled, synchronize, opened, reopened, ready_for_review]
-
+  repository_dispatch:
+    types: [ ok-to-test-command ]
 
 jobs:
-  e2e_yatai:
-    #      contains(github.event.pull_request.labels.*.name, 'e2e_yatai') &&
+  e2e-yatai-service:
+    runs-on: ubuntu-latest
     if:
       github.event_name == 'repository_dispatch' &&
+      github.event.client_payload.slash_command.command == 'test-e2e-yatai' &&
       github.event.client_payload.slash_command.sha != '' &&
       contains(github.event.client_payload.pull_request.head.sha, github.event.client_payload.slash_command.sha)
-
-    name: e2e deployments
-    runs-on: ubuntu-latest
-    environment: test
     services:
       # Label used to access the service container
       postgres:
@@ -35,19 +31,20 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
     steps:
-      - uses: actions/checkout@v2
+
+      # Check out merge commit
+      - name: Fork based /e2e-test-yatai checkout
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
+          ref: 'refs/pull/${{ github.event.client_payload.pull_request.number }}/merge'
+
+      # <insert integration tests needing secrets>
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-1
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-west-1
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -58,8 +55,6 @@ jobs:
       - name: Run Yatai Service E2E tests
         run: ./ci/e2e_yatai_tests.sh
         shell: bash
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
 
       # Update check run called "integration-fork"
       - uses: actions/github-script@v1

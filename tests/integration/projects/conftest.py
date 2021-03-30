@@ -47,7 +47,7 @@ def host(pytestconfig, clean_context, enable_microbatch):
         )
         with run_api_server_docker_container(image, enable_microbatch) as host:
             yield host
-    if pytestconfig.getoption("dev_server"):
+    elif pytestconfig.getoption("dev_server"):
         with run_api_server(
             test_svc_bundle, enable_microbatch=enable_microbatch, dev_server=True
         ) as host:

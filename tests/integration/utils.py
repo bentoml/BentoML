@@ -117,14 +117,19 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
 
 
 @contextmanager
-def run_api_server(bundle_path, enable_microbatch=False, timeout=10):
+def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeout=10):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
 
+    if dev_server:
+        serve_cmd = "serve"
+    else:
+        serve_cmd = "serve-gunicorn"
+
     with bentoml.utils.reserve_free_port() as port:
         my_env = os.environ.copy()
-        cmd = [sys.executable, "-m", "bentoml", "serve-gunicorn"]
+        cmd = [sys.executable, "-m", "bentoml", serve_cmd]
         if port:
             cmd += ['--port', f'{port}']
         if enable_microbatch:

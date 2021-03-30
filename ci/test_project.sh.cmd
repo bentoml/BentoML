@@ -39,6 +39,6 @@ set BUILD_PATH=%PROJECT_PATH%\build
 # Run test
 python %PROJECT_PATH%\model\model.py %BUILD_PATH%\artifacts
 python %PROJECT_PATH%\service.py %BUILD_PATH%\artifacts %BUILD_PATH%\dist
-python -m pytest -s %PROJECT_PATH% --bento-dist %BUILD_PATH%\dist --docker --cov=bentoml --cov-config=.coveragerc
+python -m pytest -s %PROJECT_PATH% --bento-dist %BUILD_PATH%\dist --dev-server --cov=bentoml --cov-config=.coveragerc
 
 rmdir /s /q %BUILD_PATH%

@@ -43,7 +43,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
                     for log_record in container_logs.decode().split('\r\n'):
                         logger.info(f">>> {log_record}")
     else:
-        logger.info(f"retrying to connect to the host {host_url}...")
+        logger.info("Timeout!")
         raise AssertionError(
             f"Timed out waiting {timeout} seconds for Server {host_url} to be ready, "
             f"exception: {ex}"
@@ -156,7 +156,7 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
             _wait_until_api_server_ready(host_url, timeout=timeout)
             yield host_url
         finally:
-            # if psutil.POSIX:
-            p.terminate()
-            # elif psutil.WINDOWS:
-            # os.kill(p.pid, signal.CTRL_C_EVENT)
+            if psutil.POSIX:
+                p.terminate()
+            elif psutil.WINDOWS:
+                os.kill(p.pid, signal.CTRL_C_EVENT)

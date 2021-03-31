@@ -47,7 +47,7 @@
        - name: slash command dispatch
          uses: peter-evans/slash-command-dispatch@v2
          with:
-           token: $ {{ secret.PAT_FOR_TEST }}
+           token: $ {{ secrets.PAT_FOR_TEST }}
            commands: help
            permission: none
            issue-type: both

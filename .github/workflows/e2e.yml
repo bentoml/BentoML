@@ -1,7 +1,6 @@
 name: BentoML-E2E
 
 on:
-  pull_request:
   repository_dispatch:
     types: [ test-e2e-yatai-command ]
 

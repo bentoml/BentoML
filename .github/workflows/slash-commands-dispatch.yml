@@ -1,5 +1,5 @@
 # If someone with write access comments "/test-e2e" on a pull request, emit a repository_dispatch event
- name: slash-commands
+ name: slash-commands-dispatch
 
  on:
    issue_comment:

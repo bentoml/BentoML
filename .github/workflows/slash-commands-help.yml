@@ -1,9 +1,9 @@
-name: Slash commands help
+name: Slash commands
 on:
   repository_dispatch:
     types: [help-command]
 jobs:
-  helloWorld:
+  display-help-info:
     runs-on: ubuntu-latest
     steps:
       - name: Create comment

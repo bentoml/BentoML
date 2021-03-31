@@ -154,5 +154,6 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
             _wait_until_api_server_ready(host_url, timeout=timeout)
             yield host_url
         finally:
+            # TODO: can not terminate the subprocess on Windows
             p.terminate()
             p.wait()

@@ -1,10 +1,19 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+# Copyright 2021 Atalaya Tech, Inc.
 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from functools import partial
 
 import opentracing  # pylint: disable=E0401
 from opentracing import Format  # pylint: disable=E0401
@@ -48,52 +57,65 @@ def initialize_tracer(
     return config.initialize_tracer()
 
 
-@contextmanager
-def trace(
-    server_address=None,  # @UnusedVariable
-    request_headers=None,
-    async_transport=False,  # @UnusedVariable
-    sample_rate=1.0,  # @UnusedVariable
-    standalone=False,  # @UnusedVariable
-    is_root=False,  # @UnusedVariable
-    service_name="some service",
-    span_name="service procedure",
-    server_port=0,  # @UnusedVariable
-):
-    """
-    Opentracing tracer function
-    """
-    tracer = initialize_tracer(
-        service_name, async_transport, server_address, server_port, sample_rate
-    )
-    if tracer is None:
-        yield
+class OpentracingTracer:
+    def __init__(self, address, port):
+        self.address = address
+        self.port = port
+
+    @contextmanager
+    def span(
+        self,
+        service_name,
+        span_name,
+        request_headers=None,
+        async_transport=False,
+        sample_rate=1.0,
+        standalone=False,
+        is_root=False,
+    ):
+        """
+        Opentracing tracer function
+        """
+        tracer = initialize_tracer(
+            service_name, async_transport, self.address, self.port, sample_rate
+        )
+        if tracer is None:
+            yield
+            return
+
+        span_context = None
+        span_context_saved = span_context_var.get()
+        if not is_root and not standalone:
+            if request_headers is not None:
+                span_context = tracer.extract(Format.HTTP_HEADERS, request_headers)
+
+            if span_context is None:
+                span_context = span_context_saved or None
+
+        with tracer.start_active_span(
+            operation_name=span_name, child_of=span_context
+        ) as scope:
+            if standalone:
+                yield None
+                return
+            else:
+                token = span_context_var.set(scope.span.context)
+                if request_headers:
+                    tracer.inject(
+                        scope.span.context,
+                        opentracing.Format.HTTP_HEADERS,
+                        request_headers,
+                    )
+                yield scope
+                span_context_var.reset(token)
+                return
+
+    @contextmanager
+    def async_span(self, *args, **kwargs):
+        with self.span(*args, async_transport=True, **kwargs) as ctx:
+            yield ctx
         return
 
-    span_context = None
-    span_context_saved = span_context_var.get()
-    if not is_root and not standalone:
-        if request_headers is not None:
-            span_context = tracer.extract(Format.HTTP_HEADERS, request_headers)
 
-        if span_context is None:
-            span_context = span_context_saved or None
-
-    with tracer.start_active_span(
-        operation_name=span_name, child_of=span_context
-    ) as scope:
-        if standalone:
-            yield None
-            return
-        else:
-            token = span_context_var.set(scope.span.context)
-            if request_headers:
-                tracer.inject(
-                    scope.span.context, opentracing.Format.HTTP_HEADERS, request_headers
-                )
-            yield scope
-            span_context_var.reset(token)
-            return
-
-
-async_trace = partial(trace, async_transport=True)
+def get_opentracing_tracer(address, port):
+    return OpentracingTracer(address, port)

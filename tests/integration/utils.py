@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 import logging
 import os
-import signal
 import subprocess
 import sys
 import threading

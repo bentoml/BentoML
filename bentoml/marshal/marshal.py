@@ -20,6 +20,7 @@ import time
 import traceback
 
 import aiohttp
+import aiohttp.web
 import psutil
 from dependency_injector.wiring import Provide, inject
 

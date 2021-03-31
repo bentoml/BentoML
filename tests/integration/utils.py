@@ -43,6 +43,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
                     for log_record in container_logs.decode().split('\r\n'):
                         logger.info(f">>> {log_record}")
     else:
+        logger.info(f"retrying to connect to the host {host_url}...")
         raise AssertionError(
             f"Timed out waiting {timeout} seconds for Server {host_url} to be ready, "
             f"exception: {ex}"
@@ -120,7 +121,7 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
 
 
 @contextmanager
-def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeout=10):
+def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeout=20):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
@@ -147,11 +148,7 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
             pass
 
     with subprocess.Popen(
-        cmd,
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-        env=my_env,
+        cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=my_env,
     ) as p:
         host_url = f"127.0.0.1:{port}"
         threading.Thread(target=print_log, args=(p,), daemon=True).start()
@@ -159,7 +156,7 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
             _wait_until_api_server_ready(host_url, timeout=timeout)
             yield host_url
         finally:
-            if psutil.POSIX:
-                p.terminate()
-            elif psutil.WINDOWS:
-                os.kill(p.pid, signal.CTRL_C_EVENT)
+            # if psutil.POSIX:
+            p.terminate()
+            # elif psutil.WINDOWS:
+            # os.kill(p.pid, signal.CTRL_C_EVENT)

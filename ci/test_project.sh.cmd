@@ -11,7 +11,6 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 
 cd "$GIT_ROOT" || exit
 
-# Run test
 PROJECT_PATH="$GIT_ROOT/$1"
 BUILD_PATH="$PROJECT_PATH/build"
 python "$PROJECT_PATH/model/model.py" "$BUILD_PATH/artifacts"
@@ -30,6 +29,7 @@ exit
 :WINDOWS
 git rev-parse --show-toplevel > gitroot.txt
 set /p GIT_ROOT=<gitroot.txt
+set "GIT_ROOT=%GIT_ROOT:/=\%"
 
 cd %GIT_ROOT%
 

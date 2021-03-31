@@ -34,7 +34,8 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
     Args:
         name (string): Name of the artifact
-        backend (string): Name of ONNX inference runtime. [onnx]
+        backend (string): Name of ONNX inference runtime. ["onnxruntime",
+                            "onnxruntime-gpu"]
     Raises:
         MissingDependencyException: onnx package is required for packing a ModelProto
                                     object
@@ -42,7 +43,6 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
     Example usage:
 
-    >>>
     >>> # Train a model.
     >>> from sklearn.datasets import load_iris
     >>> from sklearn.model_selection import train_test_split

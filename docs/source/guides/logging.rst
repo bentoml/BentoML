@@ -1,19 +1,24 @@
 Logging
 =======
 
-BentoML uses standard `Python logging <https://docs.python.org/3/howto/logging.html>`_ libraries and provides basic 
-logging customization through `logging` section in `bentoml.cfg` under the BentoML home directory. Refer to the 
-:ref:`configuration guide <configuration-page>` on how override configuration properties. See 
+BentoML API server logs all the prediction requests and their responses under the
+:code:`$BENTOML_HOME/logs` directory by default in a local development environment. When
+deploying with Docker, the logs can be found under the :code:`/home/bentoml/logs`
+directory.
+
+BentoML uses standard `Python logging <https://docs.python.org/3/howto/logging.html>`_
+module and provides logging customization through :code:`logging` section in :code:`bentoml.cfg`
+under the BentoML home directory. Refer to the :ref:`configuration guide <configuration-page>` on how override configuration properties. See
 `default_bentoml.cfg <https://github.com/bentoml/BentoML/blob/master/bentoml/configuration/default_bentoml.cfg>`_
 for a list of override-able properties.
 
-For advanced logging customization, user can provide full logging configurations in `logging.yml`, placed under 
-the BentoML home directory. For example, `logging.yml` configuration file can be injected into the Docker container 
-through the following command.
+For advanced logging customization, user can provide full logging configurations in :code:`logging.yml`, placed under
+the BentoML home directory. For example, :code:`logging.yml` configuration file can be injected into the Docker container
+through the following command:
 
 .. code-block:: shell
 
-    $ docker run -v /local/path/to/logging.yml:{BENTOML_HOME}/logging.yml
+    $ docker run -v /local/path/to/logging.yml:/home/bentoml/logging.yml
 
 Please see below configuration examples of different logging scenarios in YAML format.
 

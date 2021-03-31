@@ -101,5 +101,7 @@ pypirc
 autoscale
 prometheus
 grafana
+openzipkin
+jaeger
 gpu
 onnxruntime

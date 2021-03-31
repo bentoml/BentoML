@@ -12,98 +12,62 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from contextlib import contextmanager
+import logging
+from functools import lru_cache
 
 from dependency_injector.wiring import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 
 
-@inject
-@contextmanager
-def trace(
-    zipkin_api_url: str = Provide[BentoMLContainer.config.tracing.zipkin_api_url],
-    opentracing_server_address: str = Provide[
-        BentoMLContainer.config.tracing.opentracing_server_address
-    ],
-    opentracing_server_port: str = Provide[
-        BentoMLContainer.config.tracing.opentracing_server_port
-    ],
-    **kwargs,
-):
-    """
-    synchronous tracing function, will choose relevant tracer based on config
-    """
-
-    # isinstance check here allow trace to be used where the top-level entry point has
-    # not yet implemented the wiring of BentoML config
-    if isinstance(zipkin_api_url, Provide):
-        zipkin_api_url = None
-    if isinstance(opentracing_server_address, Provide):
-        opentracing_server_address = None
-    if isinstance(opentracing_server_port, Provide):
-        opentracing_server_port = None
-
-    if zipkin_api_url:
-        from bentoml.tracing.zipkin import trace as _trace
-
-        kwargs['server_url'] = zipkin_api_url
-
-    elif opentracing_server_address:
-        from bentoml.tracing.opentrace import trace as _trace
-
-        kwargs['server_url'] = opentracing_server_address
-        kwargs['port'] = opentracing_server_port
-
-    else:
-        yield None
-        return
-
-    with _trace(**kwargs) as scope:
-        yield scope
-    return
+logger = logging.getLogger(__name__)
 
 
 @inject
-@contextmanager
-def async_trace(
-    zipkin_api_url: str = Provide[BentoMLContainer.config.tracing.zipkin_api_url],
-    opentracing_server_address: str = Provide[
-        BentoMLContainer.config.tracing.opentracing_server_address
+@lru_cache(maxsize=1)
+def get_tracer(
+    tracer_type=Provide[BentoMLContainer.config.tracing.type],
+    zipkin_server_url: str = Provide[BentoMLContainer.config.tracing.zipkin.url],
+    jaeger_server_address: str = Provide[
+        BentoMLContainer.config.tracing.jaeger.address
     ],
-    opentracing_server_port: str = Provide[
-        BentoMLContainer.config.tracing.opentracing_server_port
-    ],
-    **kwargs,
+    jaeger_server_port: str = Provide[BentoMLContainer.config.tracing.jaeger.port],
 ):
-    """
-    asynchronous tracing function, will choose relevant tracer based on config
-    """
-
     # isinstance check here allow trace to be used where the top-level entry point has
     # not yet implemented the wiring of BentoML config
-    if isinstance(zipkin_api_url, Provide):
-        zipkin_api_url = None
-    if isinstance(opentracing_server_address, Provide):
-        opentracing_server_address = None
-    if isinstance(opentracing_server_port, Provide):
-        opentracing_server_port = None
+    # TODO: remove this check after PR1543 https://github.com/bentoml/BentoML/pull/1543
+    if isinstance(tracer_type, Provide):
+        tracer_type = None
+    if isinstance(zipkin_server_url, Provide):
+        zipkin_server_url = None
+    if isinstance(jaeger_server_address, Provide):
+        jaeger_server_address = None
+    if isinstance(jaeger_server_port, Provide):
+        jaeger_server_port = None
 
-    if zipkin_api_url:
-        from bentoml.tracing.zipkin import async_trace as _async_trace
+    if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
+        from bentoml.tracing.zipkin import get_zipkin_tracer
 
-        kwargs['server_url'] = zipkin_api_url
+        logger.info(
+            "Initializing global zipkin tracer for collector endpoint: "
+            f"{zipkin_server_url}"
+        )
+        return get_zipkin_tracer(zipkin_server_url)
 
-    elif opentracing_server_address:
-        from bentoml.tracing.opentrace import async_trace as _async_trace
+    if (
+        tracer_type
+        and tracer_type == 'jaeger'
+        and jaeger_server_address
+        and jaeger_server_port
+    ):
+        from bentoml.tracing.jaeger import get_jaeger_tracer
 
-        kwargs['server_url'] = opentracing_server_address
-        kwargs['port'] = opentracing_server_port
+        logger.info(
+            "Initializing global jaeger tracer for opentracing server at "
+            f"{jaeger_server_address}:{jaeger_server_port}"
+        )
+        return get_jaeger_tracer(jaeger_server_address, jaeger_server_port)
 
-    else:
-        yield None
-        return
+    from bentoml.tracing.noop import NoopTracer
 
-    with _async_trace(**kwargs) as scope:
-        yield scope
-    return
+    return NoopTracer()

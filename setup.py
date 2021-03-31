@@ -86,7 +86,7 @@ test_requires = [
     "pytest>=5.4.0",
     "pytest-asyncio",
     "scikit-learn",
-] + model_server_requires
+]
 
 dev_requires = [
     "flake8>=3.8.2",

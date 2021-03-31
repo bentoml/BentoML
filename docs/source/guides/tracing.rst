@@ -1,21 +1,21 @@
 Performance Tracing
 ===================
 
-BentoML API server supports tracing with `Zipkin <https://zipkin.io/>`_ or `Opentracing
-<https://opentracing.io/>`_. To config tracing server, user can provide a config YAML
-file containing either a zipkin server url or an opentracing server address and port:
+BentoML API server supports tracing with both `Zipkin <https://zipkin.io/>`_ and
+`Jaeger <https://www.jaegertracing.io/>`_. To config tracing server, user can provide a
+config YAML file specifying the tracer type and tracing server information:
 
 .. code-block:: yml
 
     tracing:
-      type: zipkin
+      type: jaeger
       zipkin:
-        url: Null
-      opentracing:
-        address: Null
-        port: Null
+        url: http://localhost:9411/api/v2/spans
+      jaeger:
+        address: localhost
+        port: 6831
 
-Here's an example config for tracing with a OpenZipkin server:
+Here's an example config for tracing with a Zipkin server:
 
 .. code-block:: yml
 
@@ -27,6 +27,17 @@ Here's an example config for tracing with a OpenZipkin server:
 When using Zipkin tracer, BentoML only supports its v2 protocol. If you are reporting to
 the an OpenZipkin server directly, make sure to add the URL path :code:`/api/v2/spans`
 to the server address.
+
+Here is another example config file for tracing with Jaeger and opentracing:
+
+.. code-block:: yml
+
+    tracing:
+      type: jaeger
+      jaeger:
+        address: localhost
+        port: 6831
+
 
 When starting a BentoML API model server, provide the path to this config file via the
 CLI argument `--config`:

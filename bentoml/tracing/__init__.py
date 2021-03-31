@@ -28,12 +28,10 @@ logger = logging.getLogger(__name__)
 def get_tracer(
     tracer_type=Provide[BentoMLContainer.config.tracing.type],
     zipkin_server_url: str = Provide[BentoMLContainer.config.tracing.zipkin.url],
-    opentracing_server_address: str = Provide[
-        BentoMLContainer.config.tracing.opentracing.address
+    jaeger_server_address: str = Provide[
+        BentoMLContainer.config.tracing.jaeger.address
     ],
-    opentracing_server_port: str = Provide[
-        BentoMLContainer.config.tracing.opentracing.port
-    ],
+    jaeger_server_port: str = Provide[BentoMLContainer.config.tracing.jaeger.port],
 ):
     # isinstance check here allow trace to be used where the top-level entry point has
     # not yet implemented the wiring of BentoML config
@@ -42,10 +40,10 @@ def get_tracer(
         tracer_type = None
     if isinstance(zipkin_server_url, Provide):
         zipkin_server_url = None
-    if isinstance(opentracing_server_address, Provide):
-        opentracing_server_address = None
-    if isinstance(opentracing_server_port, Provide):
-        opentracing_server_port = None
+    if isinstance(jaeger_server_address, Provide):
+        jaeger_server_address = None
+    if isinstance(jaeger_server_port, Provide):
+        jaeger_server_port = None
 
     if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
         from bentoml.tracing.zipkin import get_zipkin_tracer
@@ -58,19 +56,17 @@ def get_tracer(
 
     if (
         tracer_type
-        and type.tracer_type() == 'opentracing'
-        and opentracing_server_address
-        and opentracing_server_port
+        and tracer_type == 'jaeger'
+        and jaeger_server_address
+        and jaeger_server_port
     ):
-        from bentoml.tracing.opentrace import get_opentracing_tracer
+        from bentoml.tracing.jaeger import get_jaeger_tracer
 
         logger.info(
             "Initializing global jaeger tracer for opentracing server at "
-            f"{opentracing_server_address}:{opentracing_server_port}"
+            f"{jaeger_server_address}:{jaeger_server_port}"
         )
-        return get_opentracing_tracer(
-            opentracing_server_address, opentracing_server_port
-        )
+        return get_jaeger_tracer(jaeger_server_address, jaeger_server_port)
 
     from bentoml.tracing.noop import NoopTracer
 

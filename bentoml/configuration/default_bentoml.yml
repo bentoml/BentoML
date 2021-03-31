@@ -39,7 +39,7 @@ tracing:
   type: zipkin
   zipkin:
     url: Null
-  opentracing:
+  jaeger:
     address: Null
     port: Null
 

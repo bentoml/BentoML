@@ -50,10 +50,10 @@ SCHEMA = Schema(
         "yatai": {"url": Or(str, None)},
         "tracing": {
             "type": Or(
-                And(str, Use(str.lower), lambda s: s in ('zipkin', 'opentracing')), None
+                And(str, Use(str.lower), lambda s: s in ('zipkin', 'jaeger')), None
             ),
             Optional("zipkin"): {"url": Or(str, None),},
-            Optional("opentracing"): {"address": Or(str, None), "port": Or(int, None)},
+            Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
         "instrument": {"namespace": str},
         "logging": {"level": str},

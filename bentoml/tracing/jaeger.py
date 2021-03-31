@@ -21,6 +21,7 @@ from opentracing.scope_managers.asyncio import (  # pylint: disable=E0401
     AsyncioScopeManager,
 )
 from jaeger_client.config import Config  # pylint: disable=E0401
+from jaeger_client.constants import TRACE_ID_HEADER  # pylint: disable=E0401
 
 span_context_var = ContextVar('span context', default=None)
 
@@ -43,9 +44,7 @@ def initialize_tracer(
     }
 
     if host:
-        tracer_config['local_agent'] = (
-            {'reporting_host': host, 'reporting_port': port},
-        )
+        tracer_config['local_agent'] = {'reporting_host': host, 'reporting_port': port}
 
     config = Config(
         config=tracer_config,
@@ -54,10 +53,10 @@ def initialize_tracer(
         scope_manager=AsyncioScopeManager() if async_transport else None,
     )
 
-    return config.initialize_tracer()
+    return config.new_tracer()
 
 
-class OpentracingTracer:
+class JaegerTracer:
     def __init__(self, address, port):
         self.address = address
         self.port = port
@@ -100,7 +99,7 @@ class OpentracingTracer:
                 return
             else:
                 token = span_context_var.set(scope.span.context)
-                if request_headers:
+                if request_headers and TRACE_ID_HEADER not in request_headers:
                     tracer.inject(
                         scope.span.context,
                         opentracing.Format.HTTP_HEADERS,
@@ -117,5 +116,5 @@ class OpentracingTracer:
         return
 
 
-def get_opentracing_tracer(address, port):
-    return OpentracingTracer(address, port)
+def get_jaeger_tracer(address, port):
+    return JaegerTracer(address, port)

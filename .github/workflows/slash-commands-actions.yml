@@ -1,10 +1,13 @@
-name: Slash commands help
+name: Slash commands
 on:
   repository_dispatch:
     types: [help-command]
 jobs:
-  helloWorld:
+  display-help-info:
     runs-on: ubuntu-latest
+    if:
+      github.event_name == 'repository_dispatch' &&
+      github.event.client_payload.slash_command.command == 'help-command'
     steps:
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v1

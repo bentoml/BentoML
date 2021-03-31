@@ -17,11 +17,11 @@ from contextlib import contextmanager
 
 class NoopTracer:
     @contextmanager
-    def span(self, *args, **kwargs):  # @UnusedVariable
+    def span(self, *args, **kwargs):  # pylint: disable=unused-argument
         yield
         return
 
     @contextmanager
-    def async_span(self, *args, **kwargs):  # @UnusedVariable
+    def async_span(self, *args, **kwargs):  # pylint: disable=unused-argument
         yield
         return

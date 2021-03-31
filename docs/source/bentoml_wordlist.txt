@@ -101,3 +101,4 @@ pypirc
 autoscale
 prometheus
 grafana
+openzipkin

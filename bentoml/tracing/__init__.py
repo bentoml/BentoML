@@ -22,13 +22,11 @@ from bentoml.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-_tracer = None
-
 
 @inject
 @lru_cache(maxsize=1)
 def get_tracer(
-    type: str = Provide[BentoMLContainer.config.tracing.type],
+    tracer_type=Provide[BentoMLContainer.config.tracing.type],
     zipkin_server_url: str = Provide[BentoMLContainer.config.tracing.zipkin.url],
     opentracing_server_address: str = Provide[
         BentoMLContainer.config.tracing.opentracing.address
@@ -37,11 +35,10 @@ def get_tracer(
         BentoMLContainer.config.tracing.opentracing.port
     ],
 ):
-    print("Get_Tracer called", type, zipkin_server_url)
     # isinstance check here allow trace to be used where the top-level entry point has
     # not yet implemented the wiring of BentoML config
     # TODO: remove this check after PR1543 https://github.com/bentoml/BentoML/pull/1543
-    if isinstance(type, Provide):
+    if isinstance(tracer_type, Provide):
         type = None
     if isinstance(zipkin_server_url, Provide):
         zipkin_server_url = None
@@ -50,7 +47,7 @@ def get_tracer(
     if isinstance(opentracing_server_port, Provide):
         opentracing_server_port = None
 
-    if type and type.lower() == 'zipkin' and zipkin_server_url:
+    if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
         from bentoml.tracing.zipkin import get_zipkin_tracer
 
         logger.info(
@@ -60,8 +57,8 @@ def get_tracer(
         return get_zipkin_tracer(zipkin_server_url)
 
     if (
-        type
-        and type.lower() == 'opentracing'
+        tracer_type
+        and type.tracer_type() == 'opentracing'
         and opentracing_server_address
         and opentracing_server_port
     ):

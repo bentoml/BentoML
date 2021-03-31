@@ -20,6 +20,7 @@ import requests
 from contextlib import contextmanager
 from contextvars import ContextVar
 
+from py_zipkin import Encoding  # pylint: disable=E0401
 from py_zipkin.zipkin import ZipkinAttrs, zipkin_span  # pylint: disable=E0401
 from py_zipkin.transport import BaseTransportHandler  # pylint: disable=E0401
 from py_zipkin.util import generate_random_64bit_string  # pylint: disable=E0401
@@ -172,6 +173,7 @@ class ZipkinTracer:
             span_name=span_name,
             zipkin_attrs=attrs,
             transport_handler=transport_handler,
+            encoding=Encoding.V2_JSON,
         ):
             if standalone:
                 yield

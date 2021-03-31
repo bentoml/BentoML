@@ -204,15 +204,15 @@ Detectron
 .. autoclass:: bentoml.frameworks.detectron.DetectronModelArtifact
 
 
-=========
+======
 Paddle
-=========
+======
 
 Example Projects:
 
 * Boston Housing Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.paddle.PaddleModelArtifact
+.. autoclass:: bentoml.frameworks.paddle.PaddlePaddleModelArtifact
 
 
 .. spelling::

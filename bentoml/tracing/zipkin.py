@@ -87,7 +87,6 @@ class _HttpTransport(BaseTransportHandler):
         return None
 
     def send(self, payload):
-        print("sending http transport at url", self.server_url)
         requests.post(
             self.server_url,
             data=payload,
@@ -116,7 +115,6 @@ class _AsyncHttpTransport(BaseTransportHandler):
                 return resp
 
     def send(self, payload):
-        print("sending async http transport at url", self.server_url)
         asyncio.get_event_loop().create_task(
             self._async_post(
                 self.server_url,

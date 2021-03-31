@@ -9,8 +9,6 @@ import time
 import urllib
 from contextlib import contextmanager
 
-import psutil
-
 import bentoml
 from bentoml.utils import cached_contextmanager
 
@@ -156,7 +154,5 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
             _wait_until_api_server_ready(host_url, timeout=timeout)
             yield host_url
         finally:
-            if psutil.POSIX:
-                p.terminate()
-            elif psutil.WINDOWS:
-                os.kill(p.pid, signal.CTRL_C_EVENT)
+            p.terminate()
+            p.wait()

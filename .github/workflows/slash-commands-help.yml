@@ -1,7 +1,7 @@
 name: Slash commands help
 on:
   repository_dispatch:
-    types: [slash-help-local-command]
+    types: [help-command]
 jobs:
   helloWorld:
     runs-on: ubuntu-latest

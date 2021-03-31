@@ -37,7 +37,13 @@
 
    help-command:
      runs-on: ubuntu-latest
+
      steps:
+       # Checkout is necessary here due to referencing a local action.
+       # It's also necessary when using the 'config-from-file' option.
+       # Otherwise, avoid using checkout to keep this workflow fast.
+       - uses: actions/checkout@v2
+
        - name: slash command dispatch
          uses: peter-evans/slash-command-dispatch@v2
          with:

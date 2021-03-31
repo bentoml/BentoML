@@ -39,7 +39,7 @@ def get_tracer(
     # not yet implemented the wiring of BentoML config
     # TODO: remove this check after PR1543 https://github.com/bentoml/BentoML/pull/1543
     if isinstance(tracer_type, Provide):
-        type = None
+        tracer_type = None
     if isinstance(zipkin_server_url, Provide):
         zipkin_server_url = None
     if isinstance(opentracing_server_address, Provide):

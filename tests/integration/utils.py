@@ -1,12 +1,15 @@
 # pylint: disable=redefined-outer-name
 import logging
 import os
+import signal
 import subprocess
 import sys
 import threading
 import time
 import urllib
 from contextlib import contextmanager
+
+import psutil
 
 import bentoml
 from bentoml.utils import cached_contextmanager
@@ -23,7 +26,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
         try:
             if opener.open(f'http://{host_url}/healthz', timeout=1).status == 200:
                 return
-            elif container.status != "running":
+            elif container and container.status != "running":
                 break
             else:
                 logger.info("Waiting for host %s to be ready..", host_url)
@@ -156,4 +159,7 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
             _wait_until_api_server_ready(host_url, timeout=timeout)
             yield host_url
         finally:
-            p.terminate()
+            if psutil.POSIX:
+                p.terminate()
+            elif psutil.WINDOWS:
+                os.kill(p.pid, signal.CTRL_C_EVENT)

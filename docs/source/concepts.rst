@@ -93,7 +93,7 @@ that are required to run this prediction service. A :code:`bentoml.yml` file can
 found under the directory that contains all the metadata about this bundle and how it
 can be used for inference workload.
 
-BentoML bundle can be think of as a docker container image or a software binary for
+BentoML bundle can be thought of as a docker container image or a software binary for
 machine learning model serving. The BentoML bundle can be generated at each of your
 training job, and then easily stored and distributed for CI testing and deployment in
 production.

@@ -37,7 +37,6 @@
 
    help-command:
      runs-on: ubuntu-latest
-
      steps:
        # Checkout is necessary here due to referencing a local action.
        # It's also necessary when using the 'config-from-file' option.
@@ -47,7 +46,7 @@
        - name: slash command dispatch
          uses: peter-evans/slash-command-dispatch@v2
          with:
-           token: $ {{ secrets.PAT_FOR_TEST }}
+           token: ${{ secrets.PAT_FOR_TEST }}
            commands: help
            permission: none
            issue-type: both

@@ -32,7 +32,6 @@
            reaction-token: ${{ secrets.PAT_FOR_TEST}}
            issue-type: pull-request
            commands: test-e2e-yatai
-           named-args: true
            permission: write
 
    help-command:

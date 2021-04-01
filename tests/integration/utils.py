@@ -144,15 +144,15 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
         except ValueError:
             pass
 
-    with subprocess.Popen(
+    p = subprocess.Popen(
         cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=my_env,
-    ) as p:
-        host_url = f"127.0.0.1:{port}"
+    )
+    try:
         threading.Thread(target=print_log, args=(p,), daemon=True).start()
-        try:
-            _wait_until_api_server_ready(host_url, timeout=timeout)
-            yield host_url
-        finally:
-            # TODO: can not terminate the subprocess on Windows
-            p.terminate()
-            p.wait()
+        host_url = f"127.0.0.1:{port}"
+        _wait_until_api_server_ready(host_url, timeout=timeout)
+        yield host_url
+    finally:
+        # TODO: can not terminate the subprocess on Windows
+        p.terminate()
+        p.wait()

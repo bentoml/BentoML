@@ -34,6 +34,7 @@ set "GIT_ROOT=%GIT_ROOT:/=\%"
 cd %GIT_ROOT%
 
 set PROJECT_PATH=%GIT_ROOT%\%1
+set "PROJECT_PATH=%PROJECT_PATH:/=\%"
 set BUILD_PATH=%PROJECT_PATH%\build
 
 # Run test

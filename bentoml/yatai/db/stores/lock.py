@@ -32,7 +32,7 @@ class LockStore(object):
         lock_obj = (
             sess.query(Lock)
             .filter_by(resource_id=resource_id)
-            .one()
+            .first()
         )
         return lock_obj
 

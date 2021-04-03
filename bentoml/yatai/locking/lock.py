@@ -10,7 +10,7 @@ class LockType:
     WRITE = LOCK_STATUS.write_lock
 
 class Lock():
-    def __init__(self, db, lock_identifier, type=LockType.READ, timeout_seconds=None, timeout_jitter_seconds=1, max_retry_count=5):
+    def __init__(self, db, lock_identifier, type=LockType.READ, timeout_seconds=10, timeout_jitter_seconds=1, max_retry_count=5):
         self.db = db
         self.id = lock_identifier
         self.type = type

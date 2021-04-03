@@ -222,14 +222,14 @@ def test_gunicorn_serve_command():
         mocked_start_prod_server.assert_called()
         mocked_start_prod_server.assert_called_with(
             "/",
-            port=None,
-            workers=None,
-            timeout=None,
-            enable_microbatch=None,
-            enable_swagger=None,
+            port=5000,
+            workers=1,
+            timeout=60,
+            enable_microbatch=False,
+            enable_swagger=True,
             mb_max_batch_size=None,
             mb_max_latency=None,
-            microbatch_workers=None,
+            microbatch_workers=1,
         )
 
         runner.invoke(
@@ -275,12 +275,12 @@ def test_serve_command():
         mocked_start_dev_server.assert_called()
         mocked_start_dev_server.assert_called_with(
             '/',
-            port=None,
-            enable_microbatch=None,
+            port=5000,
+            enable_microbatch=False,
             mb_max_batch_size=None,
             mb_max_latency=None,
-            run_with_ngrok=None,
-            enable_swagger=None,
+            run_with_ngrok=False,
+            enable_swagger=True,
         )
 
         runner.invoke(

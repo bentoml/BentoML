@@ -83,7 +83,6 @@ def create_bento_service_cli(
     default_timeout: int = Provide[BentoMLContainer.config.api_server.timeout],
 ):
     # pylint: disable=unused-variable
-    print("!!! default_port !!!", default_port)
 
     batch_options = [
         click.option(
@@ -231,13 +230,6 @@ def create_bento_service_cli(
         yatai_url,
         enable_swagger,
     ):
-        print("### port ###", port)
-        print("### enable_microbatch ###", enable_microbatch)
-        print("### mb_max_batch_size ###", mb_max_batch_size)
-        print("### mb_max_latency ###", mb_max_latency)
-        print("### run_with_ngrok ###", run_with_ngrok)
-        print("### yatai_url ###", yatai_url)
-        print("### enable_swagger ###", enable_swagger)
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )

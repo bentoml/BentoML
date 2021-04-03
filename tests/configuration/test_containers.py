@@ -194,9 +194,8 @@ key1:
 
 
 def test_inject():
-    from bentoml.configuration.containers import inject
     from dependency_injector import containers, providers
-    from dependency_injector.wiring import Provide
+    from dependency_injector.wiring import Provide, inject
     from sys import modules
     from typing import Optional
 

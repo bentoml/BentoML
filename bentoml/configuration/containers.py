@@ -61,41 +61,6 @@ SCHEMA = Schema(
 )
 
 
-def inject(func):
-    """Injects a function with provider values from a container
-
-    In addition to the injecting the parameters of a function with values from a
-    dependency_injector provider, the decorator also filters out args and kwargs
-    with None values, allowing injected values to be used.
-
-    @inject
-    def foo (a = Provide[Container.some_provider]):
-        pass
-
-    a = some_other_function()
-    if a:
-        foo(a)
-    else:
-        foo()
-
-    In the above example, the decorator can implify the logic around the if statement,
-    which can be quite complex as the number of arguments increases.
-    """
-
-    import dependency_injector.wiring
-    from functools import wraps
-
-    func = dependency_injector.wiring.inject(func)
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        args = [arg for arg in args if arg is not None]
-        kwargs = {key: value for key, value in kwargs.items() if value is not None}
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
 class BentoMLConfiguration:
     def __init__(
         self,

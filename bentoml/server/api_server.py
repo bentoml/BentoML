@@ -17,13 +17,13 @@ import os
 import sys
 from functools import partial
 
-from dependency_injector.wiring import Provide
+from dependency_injector.wiring import Provide, inject
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from google.protobuf.json_format import MessageToJson
 from werkzeug.exceptions import BadRequest, NotFound
 
 from bentoml.configuration import get_debug_mode
-from bentoml.configuration.containers import BentoMLContainer, inject
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader
 from bentoml.server.instruments import InstrumentMiddleware

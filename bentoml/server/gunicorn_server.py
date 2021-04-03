@@ -18,10 +18,10 @@ from typing import Optional
 
 import psutil
 from dependency_injector.wiring import Provide as P
+from dependency_injector.wiring import inject
 from flask import Response
 
 from bentoml.configuration.containers import BentoMLContainer as C
-from bentoml.configuration.containers import inject
 from bentoml.saved_bundle import load_from_dir
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir

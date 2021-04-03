@@ -15,9 +15,9 @@
 import logging
 from functools import lru_cache
 
-from dependency_injector.wiring import Provide
+from dependency_injector.wiring import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer, inject
+from bentoml.configuration.containers import BentoMLContainer
 
 
 logger = logging.getLogger(__name__)

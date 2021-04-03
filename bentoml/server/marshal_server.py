@@ -18,9 +18,9 @@ from typing import Optional
 
 import psutil
 from dependency_injector.wiring import Provide as P
+from dependency_injector.wiring import inject
 
 from bentoml.configuration.containers import BentoMLContainer as C
-from bentoml.configuration.containers import inject
 from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
 

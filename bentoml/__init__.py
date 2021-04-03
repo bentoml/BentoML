@@ -37,6 +37,10 @@ from bentoml.service import (  # noqa: E402
     save,
 )
 
+from bentoml.cli import create_bentoml_cli
+
+commandline_interface = create_bentoml_cli()
+
 load = load_from_dir
 
 __all__ = [

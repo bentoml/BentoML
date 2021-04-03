@@ -146,7 +146,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.6.1",
-    entry_points={"console_scripts": ["bentoml=bentoml.cli:cli"]},
+    entry_points={"console_scripts": ["bentoml=bentoml:commandline_interface"]},
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",
         "BentoML User Slack Group": "https://bit.ly/2N5IpbB",

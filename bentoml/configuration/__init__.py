@@ -213,6 +213,8 @@ def inject_dependencies():
 
     start = timer()
 
+    logger.debug("Start dependency injection")
+
     from bentoml.configuration.containers import BentoMLContainer, BentoMLConfiguration
 
     config_file = get_local_config_file()
@@ -224,10 +226,10 @@ def inject_dependencies():
     container = BentoMLContainer()
     container.config.from_dict(configuration.as_dict())
 
-    from bentoml import marshal, server, tracing
+    from bentoml import marshal, server, tracing, cli
 
-    container.wire(packages=[marshal, server, tracing])
+    container.wire(packages=[marshal, server, tracing, cli])
 
     end = timer()
 
-    logger.debug("Dependency injection completed in %.3f seconds.", end - start)
+    logger.debug("Dependency injection completed in %.3f seconds", end - start)

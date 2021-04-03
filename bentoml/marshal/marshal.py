@@ -22,9 +22,9 @@ import traceback
 import aiohttp
 import aiohttp.web
 import psutil
-from dependency_injector.wiring import Provide
+from dependency_injector.wiring import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer, inject
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
 from bentoml.marshal.utils import DataLoader

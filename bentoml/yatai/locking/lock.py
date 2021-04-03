@@ -10,6 +10,7 @@ from bentoml.yatai.db.stores.lock import LockStore, LOCK_STATUS
 
 logger = logging.getLogger(__name__)
 
+
 class LockType:
     READ = LOCK_STATUS.read_lock
     WRITE = LOCK_STATUS.write_lock
@@ -22,6 +23,7 @@ def lock(db, lock_identifier, type=LockType.READ, timeout_seconds=10, timeout_ji
             with db.create_session() as sess:
                 LockStore.acquire(sess, type, lock_identifier)
                 yield sess
+                LockStore.release(sess, lock_identifier)
                 break
         except LockUnavailable as e:
             sleep_seconds = timeout_seconds + random.random() * timeout_jitter_seconds

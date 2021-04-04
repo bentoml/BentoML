@@ -107,7 +107,7 @@ def load_config():
     )
 
     local_config_file = get_local_config_file()
-    if os.path.isfile(local_config_file):
+    if os.path.isfile(local_config_file) and not local_config_file.endswith(".yml"):
         logger.info("Loading local BentoML config file: %s", local_config_file)
         with open(local_config_file, "rb") as f:
             loaded_config.read_string(
@@ -218,7 +218,7 @@ def inject_dependencies():
     from bentoml.configuration.containers import BentoMLContainer, BentoMLConfiguration
 
     config_file = get_local_config_file()
-    if config_file.endswith(".yml") or config_file.endswith(".yaml"):
+    if config_file.endswith(".yml"):
         configuration = BentoMLConfiguration(override_config_file=config_file)
     else:
         configuration = BentoMLConfiguration()

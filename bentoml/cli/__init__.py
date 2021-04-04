@@ -51,4 +51,5 @@ def create_bentoml_cli():
 
 if __name__ == "__main__":
     from bentoml import commandline_interface
+
     commandline_interface()  # pylint: disable=no-value-for-parameter

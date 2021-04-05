@@ -17,13 +17,13 @@ import sys
 import platform
 import json
 import logging
-
+import os
 import uuid
+from functools import lru_cache
 
 from bentoml.utils.ruamel_yaml import YAML
 from bentoml.utils import ProtoMessageToDict
 from bentoml.configuration import _is_pip_installed_bentoml
-from bentoml import config
 from bentoml import __version__ as BENTOML_VERSION
 
 
@@ -120,8 +120,18 @@ def _bento_service_metadata_to_event_properties(
     return properties
 
 
+@lru_cache(maxsize=1)
+def _do_not_track() -> bool:
+    """Returns if tracking is disabled from the environment variable
+
+    Returns True if and only if the environment variable is defined and has value True.
+    The function is cached for better performance.
+    """
+    return os.environ.get("BENTOML_DO_NOT_TRACK", str(False)).lower() == "true"
+
+
 def track(event_type, event_properties=None):
-    if not config().getboolean("core", "usage_tracking"):
+    if _do_not_track():
         return  # Usage tracking disabled
 
     if event_properties is None:

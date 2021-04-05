@@ -19,12 +19,12 @@ class TestPrometheusServerInterceptor(unittest.TestCase):
             ).enable_handling_time_historgram,
             bool_val,
         )
-    
+
     def test_intercept_service_no_metadata(self):
         patch = mock.patch('bentoml.yatai.client.interceptor.prom_server_interceptor')
         mock_context = mock.Mock()
         mock_context.invocation_metatdata = mock.Mock(return_value=None)
-        mock_context._rpc_event.call_details.method='hello'
+        mock_context._rpc_event.call_details.method = 'hello'
         interceptor = PromServerInterceptor()
         mock_handler = mock.Mock()
         mock_handler.request_streaming = False
@@ -32,4 +32,6 @@ class TestPrometheusServerInterceptor(unittest.TestCase):
         mock_continuation = mock.Mock(return_value=mock_handler)
 
         with patch:
-            interceptor.intercept_service(mock_continuation, mock.Mock()).unary_unary(mock.Mock(), mock_context)
+            interceptor.intercept_service(mock_continuation, mock.Mock()).unary_unary(
+                mock.Mock(), mock_context
+            )

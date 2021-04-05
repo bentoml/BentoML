@@ -110,10 +110,11 @@ def start_yatai_service_grpc_server(
     )
 
     # Define interceptors here
-    grpc_interceptors = [PromServerInterceptor(),]
+    grpc_interceptors = [
+        PromServerInterceptor(),
+    ]
     server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=10),
-        interceptors=grpc_interceptors,
+        futures.ThreadPoolExecutor(max_workers=10), interceptors=grpc_interceptors,
     )
     add_YataiServicer_to_server(yatai_service, server)
     debug_mode = get_debug_mode()

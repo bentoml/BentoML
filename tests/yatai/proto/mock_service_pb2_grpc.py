@@ -15,25 +15,25 @@ class MockServiceStub(object):
             channel: A grpc.Channel.
         """
         self.Execute = channel.unary_unary(
-                '/MockService/Execute',
-                request_serializer=mock__service__pb2.MockRequest.SerializeToString,
-                response_deserializer=mock__service__pb2.MockResponse.FromString,
-                )
+            '/MockService/Execute',
+            request_serializer=mock__service__pb2.MockRequest.SerializeToString,
+            response_deserializer=mock__service__pb2.MockResponse.FromString,
+        )
         self.ExecuteClientStream = channel.stream_unary(
-                '/MockService/ExecuteClientStream',
-                request_serializer=mock__service__pb2.MockRequest.SerializeToString,
-                response_deserializer=mock__service__pb2.MockResponse.FromString,
-                )
+            '/MockService/ExecuteClientStream',
+            request_serializer=mock__service__pb2.MockRequest.SerializeToString,
+            response_deserializer=mock__service__pb2.MockResponse.FromString,
+        )
         self.ExecuteServerStream = channel.unary_stream(
-                '/MockService/ExecuteServerStream',
-                request_serializer=mock__service__pb2.MockRequest.SerializeToString,
-                response_deserializer=mock__service__pb2.MockResponse.FromString,
-                )
+            '/MockService/ExecuteServerStream',
+            request_serializer=mock__service__pb2.MockRequest.SerializeToString,
+            response_deserializer=mock__service__pb2.MockResponse.FromString,
+        )
         self.ExecuteClientServerStream = channel.stream_stream(
-                '/MockService/ExecuteClientServerStream',
-                request_serializer=mock__service__pb2.MockRequest.SerializeToString,
-                response_deserializer=mock__service__pb2.MockResponse.FromString,
-                )
+            '/MockService/ExecuteClientServerStream',
+            request_serializer=mock__service__pb2.MockRequest.SerializeToString,
+            response_deserializer=mock__service__pb2.MockResponse.FromString,
+        )
 
 
 class MockServiceServicer(object):
@@ -66,100 +66,149 @@ class MockServiceServicer(object):
 
 def add_MockServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'Execute': grpc.unary_unary_rpc_method_handler(
-                    servicer.Execute,
-                    request_deserializer=mock__service__pb2.MockRequest.FromString,
-                    response_serializer=mock__service__pb2.MockResponse.SerializeToString,
-            ),
-            'ExecuteClientStream': grpc.stream_unary_rpc_method_handler(
-                    servicer.ExecuteClientStream,
-                    request_deserializer=mock__service__pb2.MockRequest.FromString,
-                    response_serializer=mock__service__pb2.MockResponse.SerializeToString,
-            ),
-            'ExecuteServerStream': grpc.unary_stream_rpc_method_handler(
-                    servicer.ExecuteServerStream,
-                    request_deserializer=mock__service__pb2.MockRequest.FromString,
-                    response_serializer=mock__service__pb2.MockResponse.SerializeToString,
-            ),
-            'ExecuteClientServerStream': grpc.stream_stream_rpc_method_handler(
-                    servicer.ExecuteClientServerStream,
-                    request_deserializer=mock__service__pb2.MockRequest.FromString,
-                    response_serializer=mock__service__pb2.MockResponse.SerializeToString,
-            ),
+        'Execute': grpc.unary_unary_rpc_method_handler(
+            servicer.Execute,
+            request_deserializer=mock__service__pb2.MockRequest.FromString,
+            response_serializer=mock__service__pb2.MockResponse.SerializeToString,
+        ),
+        'ExecuteClientStream': grpc.stream_unary_rpc_method_handler(
+            servicer.ExecuteClientStream,
+            request_deserializer=mock__service__pb2.MockRequest.FromString,
+            response_serializer=mock__service__pb2.MockResponse.SerializeToString,
+        ),
+        'ExecuteServerStream': grpc.unary_stream_rpc_method_handler(
+            servicer.ExecuteServerStream,
+            request_deserializer=mock__service__pb2.MockRequest.FromString,
+            response_serializer=mock__service__pb2.MockResponse.SerializeToString,
+        ),
+        'ExecuteClientServerStream': grpc.stream_stream_rpc_method_handler(
+            servicer.ExecuteClientServerStream,
+            request_deserializer=mock__service__pb2.MockRequest.FromString,
+            response_serializer=mock__service__pb2.MockResponse.SerializeToString,
+        ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'MockService', rpc_method_handlers)
+        'MockService', rpc_method_handlers
+    )
     server.add_generic_rpc_handlers((generic_handler,))
 
 
- # This class is part of an EXPERIMENTAL API.
+# This class is part of an EXPERIMENTAL API.
 class MockService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def Execute(request,
+    def Execute(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
             target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/MockService/Execute',
+            '/MockService/Execute',
             mock__service__pb2.MockRequest.SerializeToString,
             mock__service__pb2.MockResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
 
     @staticmethod
-    def ExecuteClientStream(request_iterator,
+    def ExecuteClientStream(
+        request_iterator,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.stream_unary(
+            request_iterator,
             target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/MockService/ExecuteClientStream',
+            '/MockService/ExecuteClientStream',
             mock__service__pb2.MockRequest.SerializeToString,
             mock__service__pb2.MockResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
 
     @staticmethod
-    def ExecuteServerStream(request,
+    def ExecuteServerStream(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_stream(
+            request,
             target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/MockService/ExecuteServerStream',
+            '/MockService/ExecuteServerStream',
             mock__service__pb2.MockRequest.SerializeToString,
             mock__service__pb2.MockResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
 
     @staticmethod
-    def ExecuteClientServerStream(request_iterator,
+    def ExecuteClientServerStream(
+        request_iterator,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.stream_stream(
+            request_iterator,
             target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/MockService/ExecuteClientServerStream',
+            '/MockService/ExecuteClientServerStream',
             mock__service__pb2.MockRequest.SerializeToString,
             mock__service__pb2.MockResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )

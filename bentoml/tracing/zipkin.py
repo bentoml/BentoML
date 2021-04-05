@@ -79,13 +79,12 @@ def _make_new_attrs(sample_rate=1.0):
         sample_rate and random.random() < sample_rate or False,
     )
 
-
-class ZipkinTracer:
+def get_zipkin_tracer(server_url):
     from py_zipkin.transport import BaseTransportHandler  # pylint: disable=E0401
 
     class HttpTransport(BaseTransportHandler):
         def __init__(self, server_url):
-            super(ZipkinTracer.HttpTransport, self).__init__()
+            super(HttpTransport, self).__init__()
             self.server_url = server_url
 
         def get_max_payload_bytes(self):
@@ -105,7 +104,7 @@ class ZipkinTracer:
         '''
 
         def __init__(self, server_url):
-            super(ZipkinTracer.AsyncHttpTransport, self).__init__()
+            super(AsyncHttpTransport, self).__init__()
             self.server_url = server_url
 
         def get_max_payload_bytes(self):
@@ -128,72 +127,71 @@ class ZipkinTracer:
                 )
             )
 
-    def __init__(self, server_url):
-        self.server_url = server_url
-        self.async_transport = ZipkinTracer.AsyncHttpTransport(self.server_url)
-        self.http_transport = ZipkinTracer.HttpTransport(self.server_url)
+    class ZipkinTracer:
+        def __init__(self, server_url):
+            self.server_url = server_url
+            self.async_transport = AsyncHttpTransport(self.server_url)
+            self.http_transport = HttpTransport(self.server_url)
 
-    @contextmanager
-    def span(
-        self,
-        service_name,
-        span_name,
-        request_headers=None,
-        async_transport=False,
-        sample_rate=1.0,
-        standalone=False,
-        is_root=False,
-    ):
-        from py_zipkin import Encoding  # pylint: disable=E0401
-        from py_zipkin.zipkin import zipkin_span  # pylint: disable=E0401
-
-        trace_stack = trace_stack_var.get()
-
-        parent_attrs = _load_http_headers(request_headers) or trace_stack or None
-
-        if not is_root and parent_attrs:
-            attrs = _make_child_attrs(parent_attrs)
-        else:
-            attrs = _make_new_attrs(sample_rate)
-
-        if not attrs.is_sampled:
-            if standalone:
-                yield None
-                return
-            else:
-                token = trace_stack_var.set(attrs)
-                _set_http_headers(attrs, request_headers)
-                yield attrs
-                trace_stack_var.reset(token)
-                return
-
-        if async_transport:
-            transport_handler = self.async_transport
-        else:
-            transport_handler = self.http_transport
-
-        with zipkin_span(
-            service_name=service_name,
-            span_name=span_name,
-            zipkin_attrs=attrs,
-            transport_handler=transport_handler,
-            encoding=Encoding.V2_JSON,
+        @contextmanager
+        def span(
+            self,
+            service_name,
+            span_name,
+            request_headers=None,
+            async_transport=False,
+            sample_rate=1.0,
+            standalone=False,
+            is_root=False,
         ):
-            if standalone:
-                yield
-                return
+            from py_zipkin import Encoding  # pylint: disable=E0401
+            from py_zipkin.zipkin import zipkin_span  # pylint: disable=E0401
+
+            trace_stack = trace_stack_var.get()
+
+            parent_attrs = _load_http_headers(request_headers) or trace_stack or None
+
+            if not is_root and parent_attrs:
+                attrs = _make_child_attrs(parent_attrs)
             else:
-                token = trace_stack_var.set(attrs)
-                _set_http_headers(attrs, request_headers)
-                yield
-                trace_stack_var.reset(token)
+                attrs = _make_new_attrs(sample_rate)
 
-    @contextmanager
-    def async_span(self, *args, **kwargs):
-        with self.span(*args, async_transport=True, **kwargs) as ctx:
-            yield ctx
-        return
+            if not attrs.is_sampled:
+                if standalone:
+                    yield None
+                    return
+                else:
+                    token = trace_stack_var.set(attrs)
+                    _set_http_headers(attrs, request_headers)
+                    yield attrs
+                    trace_stack_var.reset(token)
+                    return
 
+            if async_transport:
+                transport_handler = self.async_transport
+            else:
+                transport_handler = self.http_transport
 
-def get_zipkin_tracer(server_url):
+            with zipkin_span(
+                service_name=service_name,
+                span_name=span_name,
+                zipkin_attrs=attrs,
+                transport_handler=transport_handler,
+                encoding=Encoding.V2_JSON,
+            ):
+                if standalone:
+                    yield
+                    return
+                else:
+                    token = trace_stack_var.set(attrs)
+                    _set_http_headers(attrs, request_headers)
+                    yield
+                    trace_stack_var.reset(token)
+
+        @contextmanager
+        def async_span(self, *args, **kwargs):
+            with self.span(*args, async_transport=True, **kwargs) as ctx:
+                yield ctx
+            return
+
     return ZipkinTracer(server_url)

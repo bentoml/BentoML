@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from bentoml.exceptions import LockUnavailable, BentoMLException
+from bentoml.exceptions import LockUnavailable
 
 import logging
 import random
@@ -17,16 +17,26 @@ class LockType:
 
 
 @contextmanager
-def lock(db, lock_identifier, type=LockType.READ, timeout_seconds=10, timeout_jitter_seconds=1, max_retry_count=5):
+def lock(
+    db,
+    lock_identifier,
+    lock_type=LockType.READ,
+    timeout_seconds=10,
+    timeout_jitter_seconds=1,
+    max_retry_count=5,
+):
     for i in range(max_retry_count):
         try:
             with db.create_session() as sess:
-                LockStore.acquire(sess, type, lock_identifier)
+                LockStore.acquire(sess, lock_type, lock_identifier)
                 yield sess
                 LockStore.release(sess, lock_identifier)
                 break
         except LockUnavailable as e:
             sleep_seconds = timeout_seconds + random.random() * timeout_jitter_seconds
             time.sleep(sleep_seconds)
-            logger.warning(f"Failed to acquire lock: {e}. Retrying {max_retry_count - i - 1} more times...")
-        raise LockUnavailable(f"Failed to acquire lock after {max_retry_count} attempts")
+            logger.warning(
+                f"Failed to acquire lock: {e}."
+                f"Retrying {max_retry_count - i - 1} more times..."
+            )
+    raise LockUnavailable(f"Failed to acquire lock after {max_retry_count} attempts")

@@ -79,6 +79,7 @@ def _make_new_attrs(sample_rate=1.0):
         sample_rate and random.random() < sample_rate or False,
     )
 
+
 def get_zipkin_tracer(server_url):
     from py_zipkin.transport import BaseTransportHandler  # pylint: disable=E0401
 

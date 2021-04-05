@@ -301,7 +301,7 @@ class BentoServiceEnv(object):
             return self._requirements_txt_content
 
         if not self._requirements_txt_file:
-            raise BentoMLException(f"requirement txt file not specified")
+            raise BentoMLException("requirement txt file not specified")
 
         if not self._requirements_txt_content:
             req_txt_file = Path(self._requirements_txt_file)

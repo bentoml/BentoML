@@ -224,7 +224,10 @@ def load_bento_service_class(bundle_path):
     # Set cls._version, service instance can access it via svc.version
     model_service_class._bento_service_bundle_version = metadata["service_version"]
 
-    if model_service_class._env._requirements_txt_file is not None:
+    if (
+        model_service_class._env
+        and model_service_class._env._requirements_txt_file is not None
+    ):
         # Load `requirement.txt` from bundle directory instead of the user-provided
         # file path, which may only available during the bundle save process
         model_service_class._env._requirements_txt_file = os.path.join(

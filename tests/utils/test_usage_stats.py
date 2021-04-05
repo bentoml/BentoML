@@ -126,7 +126,7 @@ def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
 
 
 @patch('bentoml.yatai.yatai_service_impl.validate_deployment_pb', MagicMock())
-@patch('bentoml.yatai.yatai_service_impl.DeploymentStore')
+@patch('bentoml.yatai.db.DeploymentStore')
 def test_track_server_successful_delete(mock_deployment_store):
     mock_deployment_store.return_value.get.return_value = mock_deployment_pb()
     with patch('bentoml.yatai.yatai_service_impl.track') as mock:
@@ -149,7 +149,7 @@ def test_track_server_successful_delete(mock_deployment_store):
     'bentoml.yatai.yatai_service_impl.validate_deployment_pb',
     MagicMock(return_value=None),
 )
-@patch('bentoml.yatai.yatai_service_impl.DeploymentStore')
+@patch('bentoml.yatai.db.DeploymentStore')
 def test_track_server_force_delete(mock_deployment_store):
     mock_deployment_store.return_value.get.return_value = mock_deployment_pb(
         MOCK_FAILED_DEPLOYMENT_NAME

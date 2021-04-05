@@ -5,7 +5,7 @@ import express from "express";
 import { bentoml } from "./generated/bentoml_grpc";
 import { createYataiClient } from "./yatai_client";
 import { getLogger } from "./logger";
-import axios from 'axios';
+import axios from "axios";
 const logger = getLogger();
 
 const createAPIRoutes = (app, yataiClient) => {
@@ -198,17 +198,21 @@ const createAPIRoutes = (app, yataiClient) => {
   return router;
 };
 
-export const getExpressApp = (grpcAddress: string | null, baseURL: string, prometheusAddress: string) => {
+export const getExpressApp = (
+  grpcAddress: string | null,
+  baseURL: string,
+  prometheusAddress: string
+) => {
   const app = express();
-  const cookieParser = require('cookie-parser');
+  const cookieParser = require("cookie-parser");
   app.use(cookieParser());
   app.use(function (req, res, next) {
     var cookie = req.cookies.cookieName;
     if (cookie === undefined) {
-      res.cookie('baseURLCookie',baseURL, { maxAge: 900000, httpOnly: false });
-      console.log('cookie created successfully');
+      res.cookie("baseURLCookie", baseURL, { maxAge: 900000, httpOnly: false });
+      console.log("cookie created successfully");
     } else {
-      console.log('cookie exists', cookie);
+      console.log("cookie exists", cookie);
     }
     next();
   });
@@ -221,25 +225,29 @@ export const getExpressApp = (grpcAddress: string | null, baseURL: string, prome
   );
   const yataiClient = createYataiClient(grpcAddress);
   const router = createAPIRoutes(app, yataiClient);
-  const apiUrlPrefix = (baseURL=="." ? '/' : '/' + baseURL);
+  const apiUrlPrefix = baseURL == "." ? "/" : "/" + baseURL;
   app.use(apiUrlPrefix, router);
 
-  app.get('/healthz', (req, res) => res.status(200).json());
+  app.get("/healthz", (req, res) => res.status(200).json());
 
-    app.get('/metrics', async (req, res) => {
-      const metricsResponse = await axios.get(prometheusAddress);
-      res.end(metricsResponse.data);
-    });
+  app.get("/metrics", async (req, res) => {
+    const metricsResponse = await axios.get(prometheusAddress);
+    res.end(metricsResponse.data);
+  });
 
   app.get("/*", (req, res) => {
     let directory = req.path.split("/").slice(-2, -1);
     let filename = req.path.split("/").pop();
     if (/.js$|.css$/.test(req.path)) {
-      res.sendFile(path.join(__dirname, `../dist/client/static/${directory}/${filename}`));
+      res.sendFile(
+        path.join(__dirname, `../dist/client/static/${directory}/${filename}`)
+      );
     } else if (/favicon.png$|logo192.png$/.test(req.path)) {
       res.sendFile(path.join(__dirname, `../dist/client/${filename}`));
     } else if (/.png/.test(req.path)) {
-      res.sendFile(path.join(__dirname, `../dist/client/static/${directory}/${filename}`));
+      res.sendFile(
+        path.join(__dirname, `../dist/client/static/${directory}/${filename}`)
+      );
     } else {
       res.sendFile(path.join(__dirname, "../dist/client/index.html"));
     }

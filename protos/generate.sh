@@ -8,8 +8,8 @@ fi
 
 PROTO_PATH=$BENTOML_REPO/protos
 PY_OUT_PATH=$BENTOML_REPO/bentoml/yatai/proto
-PROTO_TEST_PATH=$PROTO_PATH/testing
-# testing YataiService Interceptor calls
+# test YataiService Interceptor calls
+PROTO_TEST_PATH=$BENTOML_REPO/protos/tests
 PY_TEST_OUT_PATH=$BENTOML_REPO/tests/yatai/proto
 
 echo "Cleaning up existing proto generated py code.."

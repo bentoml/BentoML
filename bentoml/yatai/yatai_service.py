@@ -135,6 +135,8 @@ def start_yatai_service_grpc_server(
                 '"pip install grpcio-reflection"'
             )
     server.add_insecure_port(f'[::]:{grpc_port}')
+    # TODO: it seems that current impl doesn't actually intercept RPC calls
+    prometheus_port = 50052
     with reserve_free_port() as port:
         prometheus_port = port
     # prevents wsgi to see prometheus_port as used

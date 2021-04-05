@@ -17,11 +17,11 @@ const Breadcrumbs: React.FC<IBreadcrumbsProps> = (props) => {
     []
   );
   const location = useLocation();
-  const {baseURL} = props;
-  console.log(baseURL)
+  const { baseURL } = props;
+  console.log(baseURL);
   const HOME_CRUMB: IBreadcrumbProps = {
     text: "Home",
-    href: baseURL + '/'
+    href: baseURL + "/",
   };
 
   React.useEffect(() => {
@@ -40,7 +40,10 @@ const Breadcrumbs: React.FC<IBreadcrumbsProps> = (props) => {
   );
 };
 
-const getBreadcrumbs = (baseURL: string, pathname: string): Array<IBreadcrumbProps> => {
+const getBreadcrumbs = (
+  baseURL: string,
+  pathname: string
+): Array<IBreadcrumbProps> => {
   const pathSnippets = pathname.split("/").filter((i) => i);
 
   return pathSnippets.map((name, index) => {

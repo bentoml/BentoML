@@ -6,9 +6,10 @@ from tempfile import gettempdir
 from typing import Callable, Dict, Iterable, Optional, List
 
 import grpc
+from prometheus_client import start_http_server
 
-from tests.yatai.proto import mock_service_pb2_grpc
-from tests.yatai.proto.mock_service_pb2 import MockRequest, MockResponse
+from tests.yatai.protos.mock_service_pb2 import MockRequest, MockResponse
+from tests.yatai.protos.mock_service_pb2_grpc import MockServiceServicer
 from bentoml.yatai.client.interceptor.prom_server_interceptor import (
     PromServerInterceptor,
 )
@@ -17,7 +18,8 @@ from bentoml.utils import reserve_free_port
 SpecialCaseFunction = Callable[[str, grpc.ServicerContext], str]
 
 
-class MockService(mock_service_pb2_grpc.MockServiceServicer):
+# this would also work for future interceptor if needed
+class MockService(MockServiceServicer):
     """A gRPC service used for testing
 
     Args:
@@ -30,7 +32,7 @@ class MockService(mock_service_pb2_grpc.MockServiceServicer):
     def Execute(
         self, request: MockRequest, context: grpc.ServicerContext
     ) -> MockResponse:
-        return MockResponse(outpu=self.__get_output(request, context))
+        return MockResponse(output=self.__get_output(request, context))
 
     def ExecuteClientStream(
         self, request_iterator: Iterable[MockRequest], context: grpc.ServicerContext
@@ -54,27 +56,33 @@ class MockService(mock_service_pb2_grpc.MockServiceServicer):
 
     def __get_output(self, request: MockRequest, context: grpc.ServicerContext) -> str:
         inp = request.input
+        output = inp
 
-        return (
-            self._special_cases[inp](inp, context)
-            if inp in self._special_cases
-            else inp
-        )
+        if inp in self._special_cases:
+            output = self._special_cases[inp][inp, context]
+
+        return output
 
 
 @contextlib.contextmanager
 def mock_client(
     special_cases: Dict[str, SpecialCaseFunction],
-    server_interceptor: Optional[List[PromServerInterceptor]],
+    server_interceptor: Optional[List[PromServerInterceptor]] = None,
+    prometheus_enabled: Optional[bool] = True,
 ):
     """A context manager returns a gRPC client connected with MockService"""
+    from tests.yatai.protos.mock_service_pb2_grpc import (
+        add_MockServiceServicer_to_server,
+        MockServiceStub,
+    )
+
     interceptors = [] if not server_interceptor else server_interceptor
 
     mock_server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=1), interceptors=interceptors
     )
     mock_service = MockService(special_cases=special_cases)
-    mock_service_pb2_grpc.add_MockServiceServicer_to_server(mock_service, mock_server)
+    add_MockServiceServicer_to_server(mock_service, mock_server)
 
     # reserve a free port for windows, else we use unix domain socket
     with reserve_free_port() as mock_grpc_port:
@@ -86,9 +94,14 @@ def mock_client(
     mock_server.add_insecure_port(channel_descriptor)
     mock_server.start()
 
+    if prometheus_enabled:
+        with reserve_free_port() as mock_prom_port:
+            prom_port = mock_prom_port
+        start_http_server(prom_port)
+
     channel = grpc.insecure_channel(channel_descriptor)
 
-    client_stub = mock_service_pb2_grpc.MockServiceStub(channel)
+    client_stub = MockServiceStub(channel)
 
     try:
         yield client_stub

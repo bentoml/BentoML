@@ -10,7 +10,7 @@ PROTO_PATH=$BENTOML_REPO/protos
 PY_OUT_PATH=$BENTOML_REPO/bentoml/yatai/proto
 # test YataiService Interceptor calls
 PROTO_TEST_PATH=$BENTOML_REPO/protos/tests
-PY_TEST_OUT_PATH=$BENTOML_REPO/tests/yatai/proto
+PY_TEST_OUT_PATH=$BENTOML_REPO/tests/yatai/protos
 
 echo "Cleaning up existing proto generated py code.."
 rm -rf "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"

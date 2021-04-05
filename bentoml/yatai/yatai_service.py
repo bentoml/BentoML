@@ -8,15 +8,16 @@ from concurrent import futures
 import certifi
 import click
 
-from prometheus_client import start_http_server
 from bentoml import config
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
 from bentoml.yatai.client.interceptor.prom_server_interceptor import (
     PromServerInterceptor,
+    ServiceLatencyInterceptor,
 )
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 from bentoml.utils import reserve_free_port
+from prometheus_client import start_http_server
 
 
 def get_yatai_service(
@@ -110,9 +111,7 @@ def start_yatai_service_grpc_server(
     )
 
     # Define interceptors here
-    grpc_interceptors = [
-        PromServerInterceptor(),
-    ]
+    grpc_interceptors = [PromServerInterceptor(), ServiceLatencyInterceptor()]
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10), interceptors=grpc_interceptors,
     )

@@ -169,6 +169,7 @@ class BentoServiceEnv(object):
         self._pip_trusted_host = pip_trusted_host
         self._pip_extra_index_url = pip_extra_index_url
         self._requirements_txt_file = requirements_txt_file
+        self._requirements_txt_content = None
 
         self._conda_env = CondaEnv(
             channels=conda_channels,
@@ -294,12 +295,23 @@ class BentoServiceEnv(object):
             self._setup_sh = setup_sh_path_or_content.encode("utf-8")
 
     def requirements_txt_content(self):
-        requirements_txt_file = Path(self._requirements_txt_file)
-        if not requirements_txt_file.is_file():
-            raise BentoMLException(
-                f"requirement txt file not found at '{requirements_txt_file}'"
-            )
-        return requirements_txt_file
+        if self._requirements_txt_content:
+            # This branch handles the case when the _requirements_txt_content is
+            # previously set by the BentoBundle loader
+            return self._requirements_txt_content
+
+        if not self._requirements_txt_file:
+            raise BentoMLException("requirement txt file not specified")
+
+        if not self._requirements_txt_content:
+            req_txt_file = Path(self._requirements_txt_file)
+            if not req_txt_file.is_file():
+                raise BentoMLException(
+                    f"requirement txt file not found at '{self._requirements_txt_file}'"
+                )
+            self._requirements_txt_content = req_txt_file.read_text()
+
+        return self._requirements_txt_content
 
     def infer_pip_packages(self, bento_service):
         if self._infer_pip_packages:
@@ -327,7 +339,7 @@ class BentoServiceEnv(object):
         requirements_txt_file = os.path.join(path, "requirements.txt")
         with open(requirements_txt_file, "wb") as f:
             if self._requirements_txt_file:
-                f.write(self.requirements_txt_content().read_bytes())
+                f.write(self.requirements_txt_content().encode("utf-8"))
             else:
                 if self._pip_index_url:
                     f.write(f"--index-url={self._pip_index_url}\n".encode("utf-8"))
@@ -361,13 +373,14 @@ class BentoServiceEnv(object):
         if self._setup_sh:
             env_dict["setup_sh"] = self._setup_sh
 
-        if self._pip_packages:
+        if self._requirements_txt_file:
+            env_dict["requirements_txt"] = self.requirements_txt_content()
+        elif self._pip_packages:
+            # pip_packages are ignored when the requirements_txt_file parameter is
+            # specified by the user
             env_dict["pip_packages"] = [
                 str(pkg_req) for pkg_req in self._pip_packages.values()
             ]
-
-        if self._requirements_txt_file:
-            env_dict["requirements_txt"] = self.requirements_txt_content().read_text()
 
         env_dict["conda_env"] = self._conda_env._conda_env
         env_dict["python_version"] = self._python_version

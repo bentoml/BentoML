@@ -30,12 +30,13 @@ from bentoml.marshal.utils import DataLoader
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import InferenceAPI
-from bentoml.tracing import trace
+from bentoml.tracing import get_tracer
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
+
 
 DEFAULT_INDEX_HTML = '''\
 <!DOCTYPE html>
@@ -420,8 +421,10 @@ class BentoAPIServer:
             return response
 
         def api_func_with_tracing():
-            with trace(
-                request_headers=request.headers, service_name=self.__class__.__name__,
+            with get_tracer().span(
+                service_name=f"BentoService.{self.bento_service.name}",
+                span_name=f"InferenceAPI {api.name} HTTP route",
+                request_headers=request.headers,
             ):
                 return api_func()
 

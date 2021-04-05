@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:4.8.2
+FROM continuumio/miniconda3:4.9.2
 
 RUN apt-get update --fix-missing && \
     apt-get install -y build-essential && \

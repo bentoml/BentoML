@@ -1,9 +1,10 @@
+from os import environ
 from click.testing import CliRunner
 from mock import MagicMock, patch
 
 import bentoml
 from bentoml.cli import create_bentoml_cli
-from bentoml.utils.usage_stats import _get_bento_service_event_properties
+from bentoml.utils.usage_stats import _get_bento_service_event_properties, _do_not_track
 from bentoml.yatai.proto.deployment_pb2 import DeleteDeploymentResponse, Deployment
 from bentoml.yatai.status import Status
 from bentoml.yatai.yatai_service import get_yatai_service
@@ -11,6 +12,8 @@ from bentoml.yatai.yatai_service import get_yatai_service
 MOCK_DEPLOYMENT_NAME = 'mock_name'
 MOCK_FAILED_DEPLOYMENT_NAME = 'mock-failed'
 MOCK_DEPLOYMENT_NAMESPACE = 'mock_namespace'
+
+DO_NOT_TRACK_ENV = "BENTOML_DO_NOT_TRACK"
 
 
 def mock_track_func(event, properties):
@@ -166,3 +169,28 @@ def test_track_server_force_delete(mock_deployment_store):
             event_name, properties = mock.call_args_list[0][0]
             assert event_name == 'deployment-AZURE_FUNCTIONS-stop'
             assert properties['force_delete']
+
+
+def test_do_not_track():
+    """Test _do_not_track behavior with different environment variable values.
+
+    If BENTOML_DO_NOT_TRACK is not set, False should be returned. Else if
+    BENTOML_DO_NOT_TRACK is True, True should be returned. Else if
+    BENTOML_DO_NOT_TRACK is False, False should be returned. Calling _do_not_track()
+    multiple times will return the same value.
+    """
+    _do_not_track.cache_clear()
+    if DO_NOT_TRACK_ENV in environ:
+        del environ[DO_NOT_TRACK_ENV]
+    assert not _do_not_track()
+
+    _do_not_track.cache_clear()
+    environ[DO_NOT_TRACK_ENV] = str(True)
+    assert _do_not_track()
+
+    _do_not_track.cache_clear()
+    environ[DO_NOT_TRACK_ENV] = str(False)
+    assert not _do_not_track()
+
+    environ[DO_NOT_TRACK_ENV] = str(True)
+    assert not _do_not_track()

@@ -15,20 +15,17 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
 
-import opentracing  # pylint: disable=E0401
-from opentracing import Format  # pylint: disable=E0401
-from opentracing.scope_managers.asyncio import (  # pylint: disable=E0401
-    AsyncioScopeManager,
-)
-from jaeger_client.config import Config  # pylint: disable=E0401
-from jaeger_client.constants import TRACE_ID_HEADER  # pylint: disable=E0401
-
 span_context_var = ContextVar('span context', default=None)
 
 
 def initialize_tracer(
     service_name, async_transport=False, host=None, port=0, sample_rate=1.0
 ):
+    from opentracing.scope_managers.asyncio import (  # pylint: disable=E0401
+        AsyncioScopeManager,
+    )
+    from jaeger_client.config import Config  # pylint: disable=E0401
+
     if sample_rate == 1.0:
         # sample all traces
         sampler_config = {'type': 'const', 'param': 1}
@@ -75,6 +72,9 @@ class JaegerTracer:
         """
         Opentracing tracer function
         """
+        from opentracing import Format  # pylint: disable=E0401
+        from jaeger_client.constants import TRACE_ID_HEADER  # pylint: disable=E0401
+
         tracer = initialize_tracer(
             service_name, async_transport, self.address, self.port, sample_rate
         )
@@ -102,7 +102,7 @@ class JaegerTracer:
                 if request_headers and TRACE_ID_HEADER not in request_headers:
                     tracer.inject(
                         scope.span.context,
-                        opentracing.Format.HTTP_HEADERS,
+                        Format.HTTP_HEADERS,
                         request_headers,
                     )
                 yield scope

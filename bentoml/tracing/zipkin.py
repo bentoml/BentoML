@@ -20,16 +20,13 @@ import requests
 from contextlib import contextmanager
 from contextvars import ContextVar
 
-from py_zipkin import Encoding  # pylint: disable=E0401
-from py_zipkin.zipkin import ZipkinAttrs, zipkin_span  # pylint: disable=E0401
-from py_zipkin.transport import BaseTransportHandler  # pylint: disable=E0401
-from py_zipkin.util import generate_random_64bit_string  # pylint: disable=E0401
-
 
 trace_stack_var = ContextVar('trace_stack', default=None)
 
 
 def _load_http_headers(headers):
+    from py_zipkin.zipkin import ZipkinAttrs  # pylint: disable=E0401
+
     if not headers or "X-B3-TraceId" not in headers:
         return None
 
@@ -58,6 +55,9 @@ def _set_http_headers(attrs, headers):
 
 
 def _make_child_attrs(attrs):
+    from py_zipkin.zipkin import ZipkinAttrs  # pylint: disable=E0401
+    from py_zipkin.util import generate_random_64bit_string  # pylint: disable=E0401
+
     return ZipkinAttrs(
         attrs.trace_id,
         generate_random_64bit_string(),
@@ -68,6 +68,9 @@ def _make_child_attrs(attrs):
 
 
 def _make_new_attrs(sample_rate=1.0):
+    from py_zipkin.zipkin import ZipkinAttrs  # pylint: disable=E0401
+    from py_zipkin.util import generate_random_64bit_string  # pylint: disable=E0401
+
     return ZipkinAttrs(
         generate_random_64bit_string(),
         generate_random_64bit_string(),
@@ -77,58 +80,58 @@ def _make_new_attrs(sample_rate=1.0):
     )
 
 
-class _HttpTransport(BaseTransportHandler):
-    def __init__(self, server_url):
-        super(_HttpTransport, self).__init__()
-        self.server_url = server_url
+class ZipkinTracer:
+    from py_zipkin.transport import BaseTransportHandler  # pylint: disable=E0401
 
-    def get_max_payload_bytes(self):
-        # None for no max payload size
-        return None
+    class HttpTransport(BaseTransportHandler):
+        def __init__(self, server_url):
+            super(ZipkinTracer.HttpTransport, self).__init__()
+            self.server_url = server_url
 
-    def send(self, payload):
-        requests.post(
-            self.server_url,
-            data=payload,
-            headers={'Content-Type': 'application/x-thrift'},
-        )
+        def get_max_payload_bytes(self):
+            # None for no max payload size
+            return None
 
-
-class _AsyncHttpTransport(BaseTransportHandler):
-    '''
-    add trace data transporting task into default eventloop
-    '''
-
-    def __init__(self, server_url):
-        super(_AsyncHttpTransport, self).__init__()
-        self.server_url = server_url
-
-    def get_max_payload_bytes(self):
-        # None for no max payload size
-        return None
-
-    @staticmethod
-    async def _async_post(url, data, headers):
-        async with aiohttp.ClientSession() as client:
-            async with client.post(url, data=data, headers=headers) as resp:
-                resp = await resp.text()
-                return resp
-
-    def send(self, payload):
-        asyncio.get_event_loop().create_task(
-            self._async_post(
+        def send(self, payload):
+            requests.post(
                 self.server_url,
                 data=payload,
                 headers={'Content-Type': 'application/x-thrift'},
             )
-        )
 
+    class AsyncHttpTransport(BaseTransportHandler):
+        '''
+        add trace data transporting task into default eventloop
+        '''
 
-class ZipkinTracer:
+        def __init__(self, server_url):
+            super(ZipkinTracer.AsyncHttpTransport, self).__init__()
+            self.server_url = server_url
+
+        def get_max_payload_bytes(self):
+            # None for no max payload size
+            return None
+
+        @staticmethod
+        async def _async_post(url, data, headers):
+            async with aiohttp.ClientSession() as client:
+                async with client.post(url, data=data, headers=headers) as resp:
+                    resp = await resp.text()
+                    return resp
+
+        def send(self, payload):
+            asyncio.get_event_loop().create_task(
+                self._async_post(
+                    self.server_url,
+                    data=payload,
+                    headers={'Content-Type': 'application/x-thrift'},
+                )
+            )
+
     def __init__(self, server_url):
         self.server_url = server_url
-        self.async_transport = _AsyncHttpTransport(self.server_url)
-        self.http_transport = _HttpTransport(self.server_url)
+        self.async_transport = ZipkinTracer.AsyncHttpTransport(self.server_url)
+        self.http_transport = ZipkinTracer.HttpTransport(self.server_url)
 
     @contextmanager
     def span(
@@ -141,6 +144,9 @@ class ZipkinTracer:
         standalone=False,
         is_root=False,
     ):
+        from py_zipkin import Encoding  # pylint: disable=E0401
+        from py_zipkin.zipkin import zipkin_span  # pylint: disable=E0401
+
         trace_stack = trace_stack_var.get()
 
         parent_attrs = _load_http_headers(request_headers) or trace_stack or None

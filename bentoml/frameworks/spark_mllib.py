@@ -8,6 +8,42 @@ from bentoml.service import BentoServiceArtifact, BentoServiceEnv
 
 
 class PySparkModelArtifact(BentoServiceArtifact):
+    """
+    PySparkModelArtifact allows you to use the spark.ml and spark.mllib APIs with Bento
+
+    Example usage:
+
+    >>> from pyspark.sql import SparkSession
+    >>> 
+    >>> spark = SparkSession.builder.getOrCreate()
+    >>>
+    >>> # Load training data
+    >>> training = spark.read.format("libsvm").load("data/mllib/sample_libsvm_data.txt")
+
+    >>> lr = LogisticRegression(maxIter=10, regParam=0.3, elasticNetParam=0.8)
+
+    >>> # Fit the model
+    >>> lrModel = lr.fit(training)
+    >>>
+    >>> import bentoml
+    >>> from bentoml.frameworks.sklearn import PySparkModelArtifact
+    >>> from bentoml.adapters import DataframeInput
+    >>>
+    >>> @bentoml.env(infer_pip_packages=True)
+    >>> @bentoml.artifacts([PySparkModelArtifact('model')])
+    >>> class SparkModelService(bentoml.BentoService):
+    >>>
+    >>>     @bentoml.api(input=DataframeInput(), batch=True)
+    >>>     def predict(self, df):
+    >>>         result = self.artifacts.model.predict(df)
+    >>>         return result
+    >>>
+    >>> svc = SparkModelService()
+    >>>
+    >>> # Pack directly with sklearn model object
+    >>> svc.pack('model', model_to_save)
+    """
+
     def __init__(self, name: str, spark=None):
         super().__init__(name)
         self._model = None

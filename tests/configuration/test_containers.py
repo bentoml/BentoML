@@ -61,8 +61,6 @@ marshal_server:
   request_header_flag: Null
 yatai:
   url: Null
-tracing:
-  zipkin_api_url: Null
 instrument:
   namespace: Null
 """
@@ -82,7 +80,6 @@ instrument:
         "BentoML-Is-Merged-Request"
     )
     assert config_dict["yatai"]["url"] == ""
-    assert config_dict["tracing"]["zipkin_api_url"] == ""
     assert config_dict["instrument"]["namespace"] == "BENTOML"
 
 

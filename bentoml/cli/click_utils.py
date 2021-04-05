@@ -14,6 +14,7 @@
 
 import re
 import time
+import os
 
 import click
 import functools
@@ -84,6 +85,13 @@ class BentoMLCommandGroup(click.Group):
             default=False,
             help="Show debug logs when running the command",
         )
+        @click.option(
+            '--do-not-track',
+            is_flag=True,
+            default=False,
+            envvar="BENTOML_DO_NOT_TRACK",
+            help="Specify the option to not track usage.",
+        )
         @functools.wraps(func)
         def wrapper(quiet, verbose, *args, **kwargs):
             if quiet:
@@ -105,7 +113,13 @@ class BentoMLCommandGroup(click.Group):
         command_name = kwargs.get('name', func.__name__)
 
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(do_not_track: bool, *args, **kwargs):
+            if do_not_track:
+                os.environ["BENTOML_DO_NOT_TRACK"] = str(True)
+                logger.info(
+                    "Executing '%s' command without usage tracking.", command_name
+                )
+
             track_properties = {
                 'command_group': cmd_group.name,
                 'command': command_name,

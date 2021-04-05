@@ -17,7 +17,7 @@ from bentoml.exceptions import InvalidArgument
 from bentoml.saved_bundle.loader import load_from_dir
 from bentoml.yatai.client import get_yatai_client
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
-from bentoml.yatai.label_store import _validate_labels
+from bentoml.yatai.db.stores.label import _validate_labels
 
 logger = logging.getLogger('bentoml.test')
 

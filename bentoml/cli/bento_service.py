@@ -14,7 +14,6 @@ from bentoml.cli.click_utils import (
     conditional_argument,
 )
 from bentoml.cli.utils import Spinner
-from bentoml.configuration import BENTOML_CONFIG
 from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 from bentoml.saved_bundle import (
     load_bento_service_api,
@@ -71,7 +70,6 @@ config_options = [
         type=click.Path(file_okay=True, dir_okay=False, readable=True),
         help="Specify the configuration to be used for this command.",
         envvar="BENTOML_CONFIG",
-        default=BENTOML_CONFIG,
     ),
 ]
 
@@ -118,7 +116,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
 
         from bentoml import tracing
 
-        container.wire(packages=[tracing])
+        container.wire(modules=[tracing])
 
         parser = argparse.ArgumentParser()
         parser.add_argument('--yatai-url', type=str, default=None)

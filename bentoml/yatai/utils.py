@@ -80,8 +80,10 @@ class MethodName(NamedTuple):
     """
     Represents a gRPC method name
     Attributes:
-        package: This is defined by `package foo.bar`, designation in the protocol buffer definition
-        service: service name in protocol buffer definition (eg: service SearchService { ... })
+        package: This is defined by `package foo.bar`,
+        designation in the protocol buffer definition
+        service: service name in protocol buffer
+        definition (eg: service SearchService { ... })
         method: method name
     """
 

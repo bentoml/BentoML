@@ -9,10 +9,9 @@ from bentoml.yatai.client.interceptor.prom_server_interceptor import (
 )
 from bentoml.yatai.utils import parse_method_name, MethodName
 
-import grpc
 import requests
 
-from tests.yatai.grpc_testing_service import MockRequest, MockService, MockServerClient
+from tests.yatai.grpc_testing_service import MockRequest, MockServerClient
 
 
 def test_method_name():
@@ -35,7 +34,7 @@ def test_parse_method_name():
     assert mn.package == "foo.bar"
     assert mn.service == "SearchService"
     assert mn.method == "Search"
-    assert ok == True
+    assert ok
 
 
 def test_parse_empty_package():
@@ -57,7 +56,7 @@ class TestPrometheusServerInterceptor(TestCase):
             mock_continuation, Mock(return_value=None)
         )
 
-        assert None == ret
+        assert not ret
 
     @parameterized.expand(
         [(True, True, 1), (True, False, 1), (False, True, 1), (False, False, 2)],
@@ -121,20 +120,36 @@ class TestWrapRPCBehaviour(TestCase):
     def test_wrap_rpc_behaviour_none(self):
         assert _wrap_rpc_behaviour(None, Mock()) == None
 
-class TestMetrics(TestCase):
 
-    @parameterized.expand([
-        ('grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}', 1.0),
-        ('grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}', 2.0),
-        ('grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}', 3.0),
-        ('grpc_server_handled_total{grpc_code="OK",grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}', 4.0),
-    ])
+class TestMetrics(TestCase):
+    @parameterized.expand(
+        [
+            (
+                'grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',
+                1.0,
+            ),
+            (
+                'grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',
+                2.0,
+            ),
+            (
+                'grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',
+                3.0,
+            ),
+            (
+                'grpc_server_handled_total{grpc_code="OK",grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',
+                4.0,
+            ),
+        ]
+    )
     def test_grpc_server_metrics(self, metric_name, value):
-        mock_server = MockServerClient(special_cases="", server_interceptors=[PromServerInterceptor(), ServiceLatencyInterceptor()])
+        mock_server = MockServerClient(
+            special_cases="",
+            server_interceptors=[PromServerInterceptor(), ServiceLatencyInterceptor()],
+        )
         with mock_server.mock_server_client() as client:
             assert client.Execute(MockRequest(input="foo")).output == "foo"
             r = requests.get(f"http://localhost:{mock_server.prom_port}")
             assert (
                 f"{metric_name} {value}" in r.text
             ), f"expected metrics {metric_name} {value} not found in server response:\n{r.text}"
-

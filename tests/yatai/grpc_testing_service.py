@@ -23,7 +23,9 @@ class MockService(MockServiceServicer):
     def __init__(self, special_cases: Union[str, Dict[str, SpecialCaseFunction]]):
         self._special_cases = special_cases if isinstance(special_cases, dict) else ""
 
-    def Execute(self, request: MockRequest, context:grpc.ServicerContext) -> MockResponse:
+    def Execute(
+        self, request: MockRequest, context: grpc.ServicerContext
+    ) -> MockResponse:
         return MockResponse(output=self.__get_output(request, context))
 
     def ExecuteClientStream(
@@ -69,7 +71,7 @@ class MockServerClient:
         self.prometheus_enabled = prometheus_enabled
         self.mock_server: grpc.Server
         with reserve_free_port() as server_port:
-            self.server_port: int =  server_port
+            self.server_port: int = server_port
         with reserve_free_port() as prom_port:
             self.prom_port: int = prom_port
 

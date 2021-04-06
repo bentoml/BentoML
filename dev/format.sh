@@ -6,5 +6,5 @@ WEB_UI_DIR=$GIT_ROOT/bentoml/yatai/web
 
 black -S "$GIT_ROOT"
 
-cd $WEB_UI_DIR && yarn format
+cd "$WEB_UI_DIR" && yarn format
 

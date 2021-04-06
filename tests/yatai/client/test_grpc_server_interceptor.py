@@ -123,32 +123,19 @@ class TestMetrics(TestCase):
     @parameterized.expand(
         [
             (
-                'grpc_server_started_total\
-                {grpc_method="Execute",\
-                grpc_service="bentoml.MockService",\
-                grpc_type="UNARY"}',
+                'grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',  # noqa: E501
                 1.0,
             ),
             (
-                'grpc_server_started_total\
-                {grpc_method="Execute",\
-                grpc_service="bentoml.MockService",\
-                grpc_type="UNARY"}',
+                'grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',  # noqa: E501
                 2.0,
             ),
             (
-                'grpc_server_started_total\
-                {grpc_method="Execute",\
-                grpc_service="bentoml.MockService",\
-                grpc_type="UNARY"}',
+                'grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',  # noqa: E501
                 3.0,
             ),
             (
-                'grpc_server_handled_total\
-                {grpc_code="OK",\
-                grpc_method="Execute",\
-                grpc_service="bentoml.MockService",\
-                grpc_type="UNARY"}',
+                'grpc_server_handled_total{grpc_code="OK",grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',  # noqa: E501
                 4.0,
             ),
         ]

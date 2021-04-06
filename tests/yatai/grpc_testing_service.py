@@ -5,8 +5,8 @@ from typing import Callable, Dict, Iterable, Optional, Union, List
 import grpc
 from prometheus_client import start_http_server
 
-from bentoml.yatai.proto.mock_service_pb2 import MockRequest, MockResponse
-from bentoml.yatai.proto.mock_service_pb2_grpc import MockServiceServicer
+from tests.yatai.proto.mock_service_pb2 import MockRequest, MockResponse
+from tests.yatai.proto.mock_service_pb2_grpc import MockServiceServicer
 from bentoml.utils import reserve_free_port
 
 SpecialCaseFunction = Callable[[str, grpc.ServicerContext], str]
@@ -78,7 +78,7 @@ class MockServerClient:
     @contextlib.contextmanager
     def mock_server_client(self):
         """A context manager returns a gRPC client connected with MockService"""
-        from bentoml.yatai.proto.mock_service_pb2_grpc import (
+        from tests.yatai.proto.mock_service_pb2_grpc import (
             add_MockServiceServicer_to_server,
             MockServiceStub,
         )

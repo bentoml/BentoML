@@ -2,83 +2,98 @@
 set -e
 
 if [[ -z "$BENTOML_REPO" ]]; then
-    # Assuming running this script from anywhere within the BentoML git repository
-    BENTOML_REPO=$(git rev-parse --show-toplevel)
+  # Assuming running this script from anywhere within the BentoML git repository
+  BENTOML_REPO=$(git rev-parse --show-toplevel)
 fi
 
 PROTO_PATH=$BENTOML_REPO/protos
 PY_OUT_PATH=$BENTOML_REPO/bentoml/yatai/proto
 # test YataiService Interceptor calls
-# add different directory for tests proto for yatai
 PROTO_TEST_PATH=$PROTO_PATH/tests
+PY_TEST_OUT_PATH=$BENTOML_REPO/tests/yatai/proto
 
 echo "Cleaning up existing proto generated py code.."
-rm -rf "$PY_OUT_PATH"
-mkdir -p "$PY_OUT_PATH"
-touch "$PY_OUT_PATH"/__init__.py
+rm -rf "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
+mkdir -p "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
+touch "$PY_OUT_PATH"/__init__.py "$PY_TEST_OUT_PATH"/__init__.py
 
 echo "Generate proto message code.."
 find "$PROTO_PATH"/ -name '*.proto' -not -path "${PROTO_TEST_PATH}/*" | while read -r protofile; do
 python -m grpc_tools.protoc \
-    -I"$PROTO_PATH" \
-    --python_out="$PY_OUT_PATH" \
-    "$protofile"
+  -I"$PROTO_PATH" \
+  --python_out="$PY_OUT_PATH" \
+  "$protofile"
 done
 
 echo "Generate grpc test service code.."
 python -m grpc_tools.protoc \
-    -I"$PROTO_TEST_PATH" \
-    --python_out="$PY_OUT_PATH" \
-    --grpc_python_out="$PY_OUT_PATH" \
-    "$PROTO_TEST_PATH"/mock_service.proto
+  -I"$PROTO_TEST_PATH" \
+  --python_out="$PY_TEST_OUT_PATH" \
+  --grpc_python_out="$PY_TEST_OUT_PATH" \
+  "$PROTO_TEST_PATH"/mock_service.proto
 
 echo "Generate grpc service code.."
 python -m grpc_tools.protoc \
-    -I"$PROTO_PATH" \
-    --python_out="$PY_OUT_PATH" \
-    --grpc_python_out="$PY_OUT_PATH" \
-    "$PROTO_PATH"/yatai_service.proto
+  -I"$PROTO_PATH" \
+  --python_out="$PY_OUT_PATH" \
+  --grpc_python_out="$PY_OUT_PATH" \
+  "$PROTO_PATH"/yatai_service.proto
 
-echo "Fix imports in generated GRPC service code.."
-find "$PY_OUT_PATH"/ -name '*_pb2*.py' | while read -r pyfile; do
-sed -i'.old' 's/^import \([^ ]*\)_pb2 \(.*\)$/import bentoml.yatai.proto.\1_pb2 \2/' "$pyfile"
-sed -i'.old' 's/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from bentoml.yatai.proto.\1 import \2_pb2\3/' "$pyfile"
-# Fix google.protobuf package imports
-sed -i'.old' 's/^import bentoml.yatai.proto.google.\([^ ]*\)_pb2 as \([^ ]*\)$/import google.\1_pb2 as \2/' "$pyfile"
-sed -i'.old' 's/^from bentoml.yatai.proto.google.\([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from google.\1 import \2_pb2 as \3/' "$pyfile"
-rm "$pyfile".old
-done
+fix_grpc_service_code(){
+  PKGNAME=$1
+  OUT_DIR=$2
 
-
-PKG_PATH=$PY_OUT_PATH
-PKGS=$(find "$PKG_PATH" -type d)
-for PKG in $PKGS; do
-    SUBPACKAGES=$(find "$PKG" -maxdepth 1 -type d | grep -E -v "${PKG}$" | sort)
-    MODULES=$(find "$PKG" -maxdepth 1 -iname "*.py" | grep -v "__init__.py" | sort)
-    MODULE_COUNT=$(echo "$MODULES" | wc -w)
-    PKG_INIT="${PKG}/__init__.py"
-    echo "Writing Python package exports"
-    echo "------------------------------"
-    echo "PKG: ${PKG} (${PKG_INIT})"
-    echo "SUBPACKAGES: ${SUBPACKAGES}"
-    echo "FOUND MODULES: $MODULE_COUNT"
-    # echo "MODULES: ${MODULES}"
-    echo ""
-    echo "__all__ = [" > "$PKG_INIT"
-    for MODULE in $MODULES; do
-        FILENAME=$(basename "$MODULE" .py)
-        echo "    \"${FILENAME}\"," >> "$PKG_INIT"
-    done
-    for SUBPKG in $SUBPACKAGES; do
-        SUBPKGNAME=$(basename "$SUBPKG")
-        echo "    \"${SUBPKGNAME}\"," >> "$PKG_INIT"
-    done
-    echo "]" >> "$PKG_INIT"
-done
-
-echo "Done"
+  echo "Fix imports in generated GRPC service code.."
+  find "$OUT_DIR" -name '*_pb2*.py' | while read -r pyfile; do
+  sed -i'.old' "s/^import \([^ ]*\)_pb2 \(.*\)$/import $PKGNAME.yatai.proto.\1_pb2 \2/" "$pyfile"
+  sed -i'.old' "s/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from $PKGNAME.yatai.proto.\1 import \2_pb2\3/" "$pyfile"
+  # Fix google.protobuf package imports
+  sed -i'.old' "s/^import $PKGNAME.yatai.proto.google.\([^ ]*\)_pb2 as \([^ ]*\)$/import google.\1_pb2 as \2/" "$pyfile"
+  sed -i'.old' "s/^from $PKGNAME.yatai.proto.google.\([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from google.\1 import \2_pb2 as \3/" "$pyfile"
+  rm "$pyfile".old
+  done
+}
 
 
+fix_grpc_service_code "bentoml" "$PY_OUT_PATH"
+fix_grpc_service_code "tests" "$PY_TEST_OUT_PATH"
+
+
+edit_init() {
+  PKG_PATH=$1
+
+  PKGS=$(find "$PKG_PATH" -type d)
+  for PKG in $PKGS; do
+      SUBPACKAGES=$(find "$PKG" -maxdepth 1 -type d | grep -E -v "${PKG}$" | sort)
+      MODULES=$(find "$PKG" -maxdepth 1 -iname "*.py" | grep -v "__init__.py" | sort)
+      MODULE_COUNT=$(echo "$MODULES" | wc -w)
+      PKG_INIT="${PKG}/__init__.py"
+      echo "Writing Python package exports"
+      echo "------------------------------"
+      echo "PKG: ${PKG} (${PKG_INIT})"
+      echo "SUBPACKAGES: ${SUBPACKAGES}"
+      echo "FOUND MODULES: $MODULE_COUNT"
+      # echo "MODULES: ${MODULES}"
+      echo ""
+      echo "__all__ = [" > "$PKG_INIT"
+      for MODULE in $MODULES; do
+          FILENAME=$(basename "$MODULE" .py)
+          echo "    \"${FILENAME}\"," >> "$PKG_INIT"
+      done
+      for SUBPKG in $SUBPACKAGES; do
+          SUBPKGNAME=$(basename "$SUBPKG")
+          echo "    \"${SUBPKGNAME}\"," >> "$PKG_INIT"
+      done
+      echo "]" >> "$PKG_INIT"
+  done
+
+  echo "Done"
+}
+
+edit_init "$PY_OUT_PATH"
+edit_init "$PY_TEST_OUT_PATH"
+
+# TODO: if run with generate-docker then we don't have to print this warning
 echo "Generate grpc code for javascript/typescript"
 echo "Please make sure protobufjs is installed on your system"
 echo "You can install with npm i -g protobufjs"

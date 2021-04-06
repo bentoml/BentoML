@@ -87,9 +87,7 @@ class TestServiceLatencyInterceptor(TestCase):
     def setUp(self):
         self.interceptor: ServiceLatencyInterceptor = ServiceLatencyInterceptor()
 
-    @parameterized.expand(
-        [("/grpc-latency"), ("/grpc-latency/grpc-method"),]
-    )
+    @parameterized.expand([("/grpc-latency"), ("/grpc-latency/grpc-method")])
     def test_intercept_service(self, method):
         mock_handler_call_details = Mock(method=method)
         mock_handler = Mock(request_streaming=False, response_streaming=False)
@@ -118,26 +116,39 @@ class TestWrapRPCBehaviour(TestCase):
         assert getattr(res, behaviour) is not None
 
     def test_wrap_rpc_behaviour_none(self):
-        assert _wrap_rpc_behaviour(None, Mock()) == None
+        assert not _wrap_rpc_behaviour(None, Mock())
 
 
 class TestMetrics(TestCase):
     @parameterized.expand(
         [
             (
-                'grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',
+                'grpc_server_started_total\
+                {grpc_method="Execute",\
+                grpc_service="bentoml.MockService",\
+                grpc_type="UNARY"}',
                 1.0,
             ),
             (
-                'grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',
+                'grpc_server_started_total\
+                {grpc_method="Execute",\
+                grpc_service="bentoml.MockService",\
+                grpc_type="UNARY"}',
                 2.0,
             ),
             (
-                'grpc_server_started_total{grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',
+                'grpc_server_started_total\
+                {grpc_method="Execute",\
+                grpc_service="bentoml.MockService",\
+                grpc_type="UNARY"}',
                 3.0,
             ),
             (
-                'grpc_server_handled_total{grpc_code="OK",grpc_method="Execute",grpc_service="bentoml.MockService",grpc_type="UNARY"}',
+                'grpc_server_handled_total\
+                {grpc_code="OK",\
+                grpc_method="Execute",\
+                grpc_service="bentoml.MockService",\
+                grpc_type="UNARY"}',
                 4.0,
             ),
         ]
@@ -152,4 +163,5 @@ class TestMetrics(TestCase):
             r = requests.get(f"http://localhost:{mock_server.prom_port}")
             assert (
                 f"{metric_name} {value}" in r.text
-            ), f"expected metrics {metric_name} {value} not found in server response:\n{r.text}"
+            ), f"expected metrics {metric_name} {value}\
+                not found in server response:\n{r.text}"

@@ -43,7 +43,7 @@ def _wrap_rpc_behaviour(handler, fn):
 
 
 # request are either RPC request as protobuf or iterator of RPC request
-class PromServerInterceptor(grpc.ServerInterceptor):
+class PromServerInterceptor(grpc.ServerInterceptor):  # pylint: disable=W0232
     """Interceptor for handling client call with metrics to prometheus"""
 
     def intercept_service(self, continuation, handler_call_details):
@@ -153,7 +153,7 @@ class PromServerInterceptor(grpc.ServerInterceptor):
         return grpc.StatusCode.UNKNOWN.name
 
 
-class ServiceLatencyInterceptor(grpc.ServerInterceptor):
+class ServiceLatencyInterceptor(grpc.ServerInterceptor):  # pylint: disable=W0232
     """Interceptor to handle service latency calls"""
 
     def intercept_service(self, continuation, handler_call_details):
@@ -173,6 +173,7 @@ class ServiceLatencyInterceptor(grpc.ServerInterceptor):
         if not ok:
             return continuation(handler_call_details)
 
+        # pylint: disable=W0613
         def latency_wrapper(behaviour, request_streaming, response_streaming):
             def new_behaviour(request_or_iterator, servicer_context):
                 start = default_timer()

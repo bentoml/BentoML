@@ -109,9 +109,3 @@ def parse_method_name(method_name: str) -> Tuple[MethodName, bool]:
     *packages, service = package_service.rsplit(".", maxsplit=1)
     package = packages[0] if packages else ""
     return MethodName(package, service, method), True
-    # parts = handler_call_details.method.split('/')
-    # if len(parts) < 3:
-    #     return '', '', False
-
-    # grpc_service_name, grpc_method_name = parts[1:3]
-    # return grpc_service_name, grpc_method_name, True

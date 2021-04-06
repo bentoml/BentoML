@@ -1,4 +1,5 @@
 syntax = "proto3";
+package bentoml;
 
 message MockRequest {
   string input = 1;

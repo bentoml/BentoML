@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import mock_service_pb2 as mock__service__pb2
+import bentoml.yatai.proto.mock_service_pb2 as mock__service__pb2
 
 
 class MockServiceStub(object):
@@ -16,22 +16,22 @@ class MockServiceStub(object):
             channel: A grpc.Channel.
         """
         self.Execute = channel.unary_unary(
-                '/MockService/Execute',
+                '/bentoml.MockService/Execute',
                 request_serializer=mock__service__pb2.MockRequest.SerializeToString,
                 response_deserializer=mock__service__pb2.MockResponse.FromString,
                 )
         self.ExecuteClientStream = channel.stream_unary(
-                '/MockService/ExecuteClientStream',
+                '/bentoml.MockService/ExecuteClientStream',
                 request_serializer=mock__service__pb2.MockRequest.SerializeToString,
                 response_deserializer=mock__service__pb2.MockResponse.FromString,
                 )
         self.ExecuteServerStream = channel.unary_stream(
-                '/MockService/ExecuteServerStream',
+                '/bentoml.MockService/ExecuteServerStream',
                 request_serializer=mock__service__pb2.MockRequest.SerializeToString,
                 response_deserializer=mock__service__pb2.MockResponse.FromString,
                 )
         self.ExecuteClientServerStream = channel.stream_stream(
-                '/MockService/ExecuteClientServerStream',
+                '/bentoml.MockService/ExecuteClientServerStream',
                 request_serializer=mock__service__pb2.MockRequest.SerializeToString,
                 response_deserializer=mock__service__pb2.MockResponse.FromString,
                 )
@@ -90,7 +90,7 @@ def add_MockServiceServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'MockService', rpc_method_handlers)
+            'bentoml.MockService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
@@ -110,7 +110,7 @@ class MockService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/MockService/Execute',
+        return grpc.experimental.unary_unary(request, target, '/bentoml.MockService/Execute',
             mock__service__pb2.MockRequest.SerializeToString,
             mock__service__pb2.MockResponse.FromString,
             options, channel_credentials,
@@ -127,7 +127,7 @@ class MockService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/MockService/ExecuteClientStream',
+        return grpc.experimental.stream_unary(request_iterator, target, '/bentoml.MockService/ExecuteClientStream',
             mock__service__pb2.MockRequest.SerializeToString,
             mock__service__pb2.MockResponse.FromString,
             options, channel_credentials,
@@ -144,7 +144,7 @@ class MockService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/MockService/ExecuteServerStream',
+        return grpc.experimental.unary_stream(request, target, '/bentoml.MockService/ExecuteServerStream',
             mock__service__pb2.MockRequest.SerializeToString,
             mock__service__pb2.MockResponse.FromString,
             options, channel_credentials,
@@ -161,7 +161,7 @@ class MockService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/MockService/ExecuteClientServerStream',
+        return grpc.experimental.stream_stream(request_iterator, target, '/bentoml.MockService/ExecuteClientServerStream',
             mock__service__pb2.MockRequest.SerializeToString,
             mock__service__pb2.MockResponse.FromString,
             options, channel_credentials,

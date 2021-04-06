@@ -9,13 +9,13 @@ fi
 PROTO_PATH=$BENTOML_REPO/protos
 PY_OUT_PATH=$BENTOML_REPO/bentoml/yatai/proto
 # test YataiService Interceptor calls
-PROTO_TEST_PATH=$BENTOML_REPO/protos/tests
-PY_TEST_OUT_PATH=$BENTOML_REPO/tests/yatai/protos
+# add different directory for tests proto for yatai
+PROTO_TEST_PATH=$PROTO_PATH/tests
 
 echo "Cleaning up existing proto generated py code.."
-rm -rf "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
-mkdir -p "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
-touch "$PY_OUT_PATH"/__init__.py "$PY_TEST_OUT_PATH"/__init__.py
+rm -rf "$PY_OUT_PATH"
+mkdir -p "$PY_OUT_PATH"
+touch "$PY_OUT_PATH"/__init__.py
 
 echo "Generate proto message code.."
 find "$PROTO_PATH"/ -name '*.proto' -not -path "${PROTO_TEST_PATH}/*" | while read -r protofile; do
@@ -25,11 +25,11 @@ python -m grpc_tools.protoc \
     "$protofile"
 done
 
-echo "Generate proto test service code.."
+echo "Generate grpc test service code.."
 python -m grpc_tools.protoc \
     -I"$PROTO_TEST_PATH" \
-    --python_out="$PY_TEST_OUT_PATH" \
-    --grpc_python_out="$PY_TEST_OUT_PATH" \
+    --python_out="$PY_OUT_PATH" \
+    --grpc_python_out="$PY_OUT_PATH" \
     "$PROTO_TEST_PATH"/mock_service.proto
 
 echo "Generate grpc service code.."

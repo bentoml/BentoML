@@ -15,6 +15,7 @@
 import subprocess
 import urllib3
 
+from typing import NamedTuple, Tuple
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 UNARY = 'UNARY'
@@ -75,15 +76,40 @@ def get_method_type(request_streaming, response_streaming) -> str:
         raise RuntimeError('Unknown request_streaming or response_streaming')
 
 
-def parse_method_name(handler_call_details):
+class MethodName(NamedTuple):
+    """
+    Represents a gRPC method name
+    Attributes:
+        package: This is defined by `package foo.bar`, designation in the protocol buffer definition
+        service: service name in protocol buffer definition (eg: service SearchService { ... })
+        method: method name
+    """
+
+    package: str
+    service: str
+    method: str
+
+    @property
+    def fully_qualified_service(self):
+        """return the service name prefixed with package"""
+        return f"{self.package}.{self.service}" if self.package else self.service
+
+
+def parse_method_name(method_name: str) -> Tuple[MethodName, bool]:
     '''
     Infers the grpc service and method name from the handler_call_details.
+    e.g. /package.ServiceName/MethodName
     '''
-
-    # e.g. /package.ServiceName/MethodName
-    parts = handler_call_details.method.split('/')
+    parts = method_name.split("/")
     if len(parts) < 3:
-        return '', '', False
+        return MethodName("", "", ""), False
+    _, package_service, method = parts
+    *packages, service = package_service.rsplit(".", maxsplit=1)
+    package = packages[0] if packages else ""
+    return MethodName(package, service, method), True
+    # parts = handler_call_details.method.split('/')
+    # if len(parts) < 3:
+    #     return '', '', False
 
-    grpc_service_name, grpc_method_name = parts[1:3]
-    return grpc_service_name, grpc_method_name, True
+    # grpc_service_name, grpc_method_name = parts[1:3]
+    # return grpc_service_name, grpc_method_name, True

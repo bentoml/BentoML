@@ -1,18 +1,12 @@
-import os
 import contextlib
 from concurrent import futures
-from uuid import uuid4
-from tempfile import gettempdir
-from typing import Callable, Dict, Iterable, Optional, List
+from typing import Callable, Dict, Iterable, Optional, Union, List
 
 import grpc
 from prometheus_client import start_http_server
 
-from tests.yatai.protos.mock_service_pb2 import MockRequest, MockResponse
-from tests.yatai.protos.mock_service_pb2_grpc import MockServiceServicer
-from bentoml.yatai.client.interceptor.prom_server_interceptor import (
-    PromServerInterceptor,
-)
+from bentoml.yatai.proto.mock_service_pb2 import MockRequest, MockResponse
+from bentoml.yatai.proto.mock_service_pb2_grpc import MockServiceServicer
 from bentoml.utils import reserve_free_port
 
 SpecialCaseFunction = Callable[[str, grpc.ServicerContext], str]
@@ -26,12 +20,10 @@ class MockService(MockServiceServicer):
         special_cases: dict where keys are string, values are servicer_context
         that take and return strings. This will allow testing exception"""
 
-    def __init__(self, special_cases: Dict[str, SpecialCaseFunction]):
-        self._special_cases = special_cases
+    def __init__(self, special_cases: Union[str, Dict[str, SpecialCaseFunction]]):
+        self._special_cases = special_cases if isinstance(special_cases, dict) else ""
 
-    def Execute(
-        self, request: MockRequest, context: grpc.ServicerContext
-    ) -> MockResponse:
+    def Execute(self, request: MockRequest, context:grpc.ServicerContext) -> MockResponse:
         return MockResponse(output=self.__get_output(request, context))
 
     def ExecuteClientStream(
@@ -58,52 +50,60 @@ class MockService(MockServiceServicer):
         inp = request.input
         output = inp
 
-        if inp in self._special_cases:
-            output = self._special_cases[inp][inp, context]
+        if isinstance(self._special_cases, dict):
+            if inp in self._special_cases:
+                output = self._special_cases[inp][inp, context]
 
         return output
 
 
-@contextlib.contextmanager
-def mock_client(
-    special_cases: Dict[str, SpecialCaseFunction],
-    server_interceptor: Optional[List[PromServerInterceptor]] = None,
-    prometheus_enabled: Optional[bool] = True,
-):
-    """A context manager returns a gRPC client connected with MockService"""
-    from tests.yatai.protos.mock_service_pb2_grpc import (
-        add_MockServiceServicer_to_server,
-        MockServiceStub,
-    )
+class MockServerClient:
+    def __init__(
+        self,
+        special_cases: Union[str, Dict[str, SpecialCaseFunction]],
+        server_interceptors: Optional[List] = None,
+        prometheus_enabled: Optional[bool] = True,
+    ):
+        self.special_cases = special_cases
+        self.server_interceptors = server_interceptors
+        self.prometheus_enabled = prometheus_enabled
+        self.mock_server: grpc.Server
+        with reserve_free_port() as server_port:
+            self.server_port: int =  server_port
+        with reserve_free_port() as prom_port:
+            self.prom_port: int = prom_port
 
-    interceptors = [] if not server_interceptor else server_interceptor
+    @contextlib.contextmanager
+    def mock_server_client(self):
+        """A context manager returns a gRPC client connected with MockService"""
+        from bentoml.yatai.proto.mock_service_pb2_grpc import (
+            add_MockServiceServicer_to_server,
+            MockServiceStub,
+        )
 
-    mock_server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=1), interceptors=interceptors
-    )
-    mock_service = MockService(special_cases=special_cases)
-    add_MockServiceServicer_to_server(mock_service, mock_server)
-
-    # reserve a free port for windows, else we use unix domain socket
-    with reserve_free_port() as mock_grpc_port:
-        if os.name == 'nt':
-            channel_descriptor = f'localhost:{mock_grpc_port}'
+        if not self.server_interceptors:
+            interceptors = []
         else:
-            channel_descriptor = f'unix://{gettempdir()}/{uuid4()}.sock'
+            interceptors = self.server_interceptors
 
-    mock_server.add_insecure_port(channel_descriptor)
-    mock_server.start()
+        self.mock_server = grpc.server(
+            futures.ThreadPoolExecutor(max_workers=1), interceptors=interceptors
+        )
+        mock_service = MockService(special_cases=self.special_cases)
+        add_MockServiceServicer_to_server(mock_service, self.mock_server)
 
-    if prometheus_enabled:
-        with reserve_free_port() as mock_prom_port:
-            prom_port = mock_prom_port
-        start_http_server(prom_port)
+        # reserve a free port for windows, else we use unix domain socket
 
-    channel = grpc.insecure_channel(channel_descriptor)
+        self.mock_server.add_insecure_port(f'[::]:{self.server_port}')
+        self.mock_server.start()
 
-    client_stub = MockServiceStub(channel)
+        if self.prometheus_enabled:
+            start_http_server(self.prom_port)
+        channel = grpc.insecure_channel(f'localhost:{self.server_port}')
 
-    try:
-        yield client_stub
-    finally:
-        mock_server.stop(None)
+        client_stub = MockServiceStub(channel)
+
+        try:
+            yield client_stub
+        finally:
+            self.mock_server.stop(None)

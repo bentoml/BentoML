@@ -17,17 +17,6 @@ from bentoml.yatai.utils import (
 )
 
 
-def increase_grpc_server_handled_total_counter(
-    grpc_type, grpc_service_name, grpc_method_name, grpc_code
-):
-    GRPC_SERVER_HANDLED_TOTAL.labels(
-        grpc_type=grpc_type,
-        grpc_service=grpc_service_name,
-        grpc_method=grpc_method_name,
-        grpc_code=grpc_code,
-    ).inc()
-
-
 def _wrap_rpc_behaviour(handler, fn):
     """Returns a new rpc handler that wraps the given function"""
     if handler is None:
@@ -58,12 +47,24 @@ class PromServerInterceptor(grpc.ServerInterceptor):
     """Interceptor for handling client call with metrics to prometheus"""
 
     def intercept_service(self, continuation, handler_call_details):
-        grpc_service_name, grpc_method_name, _ = parse_method_name(handler_call_details)
+
+        handler = continuation(handler_call_details)
+        if handler is None:
+            return handler
+
+        # unary
+        if handler.request_streaming or handler.response_streaming:
+            return handler
+
+        mn, ok = parse_method_name(handler_call_details.method)
+        grpc_service_name = mn.fully_qualified_service
+        grpc_method_name = mn.method
+
+        if not ok:
+            return continuation(handler_call_details)
 
         def metrics_wrapper(behaviour, request_streaming, response_streaming):
             def new_behaviour(request_or_iterator, servicer_context):
-                start = default_timer()
-
                 grpc_type = get_method_type(request_streaming, response_streaming)
 
                 try:
@@ -111,22 +112,22 @@ class PromServerInterceptor(grpc.ServerInterceptor):
                             grpc_method_name,
                         )
                     else:
-                        increase_grpc_server_handled_total_counter(
-                            grpc_type,
-                            grpc_service_name,
-                            grpc_method_name,
-                            self._compute_status_code(servicer_context).name,
-                        )
+                        GRPC_SERVER_HANDLED_TOTAL.labels(
+                            grpc_type=grpc_type,
+                            grpc_service=grpc_service_name,
+                            grpc_method=grpc_method_name,
+                            grpc_code=self._compute_status_code(servicer_context).name,
+                        ).inc()
 
                     return response_or_iterator
 
                 except grpc.RpcError as e:
-                    increase_grpc_server_handled_total_counter(
-                        grpc_type,
-                        grpc_service_name,
-                        grpc_method_name,
-                        self._compute_error_code(e).name,
-                    )
+                    GRPC_SERVER_HANDLED_TOTAL.labels(
+                        grpc_type=grpc_type,
+                        grpc_service=grpc_service_name,
+                        grpc_method=grpc_method_name,
+                        grpc_code=self._compute_error_code(e),
+                    ).inc()
                     raise e
 
             return new_behaviour
@@ -156,9 +157,19 @@ class ServiceLatencyInterceptor(grpc.ServerInterceptor):
     """Interceptor to handle service latency calls"""
 
     def intercept_service(self, continuation, handler_call_details):
-        grpc_service_name, grpc_method_name, ok = parse_method_name(
-            handler_call_details
-        )
+
+        handler = continuation(handler_call_details)
+        if handler is None:
+            return handler
+
+        # unary
+        if handler.request_streaming or handler.response_streaming:
+            return handler
+
+        mn, ok = parse_method_name(handler_call_details.method)
+        grpc_service_name = mn.fully_qualified_service
+        grpc_method_name = mn.method
+
         if not ok:
             return continuation(handler_call_details)
 

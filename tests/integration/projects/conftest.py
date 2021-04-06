@@ -16,6 +16,11 @@ from tests.integration.utils import (
 def pytest_addoption(parser):
     parser.addoption("--bento-dist", action="store", default=None)
     parser.addoption("--docker", action="store_true", help="run in docker")
+    parser.addoption(
+        "--dev-server",
+        action="store_true",
+        help="run with development server, available on Windows",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -42,8 +47,15 @@ def host(pytestconfig, clean_context, enable_microbatch):
         )
         with run_api_server_docker_container(image, enable_microbatch) as host:
             yield host
+    elif pytestconfig.getoption("dev_server"):
+        with run_api_server(
+            test_svc_bundle, enable_microbatch=enable_microbatch, dev_server=True
+        ) as host:
+            yield host
     else:
-        with run_api_server(test_svc_bundle, enable_microbatch) as host:
+        with run_api_server(
+            test_svc_bundle, enable_microbatch=enable_microbatch
+        ) as host:
             yield host
 
 

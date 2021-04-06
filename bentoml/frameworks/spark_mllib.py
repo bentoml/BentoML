@@ -14,7 +14,7 @@ class PySparkModelArtifact(BentoServiceArtifact):
     Example usage:
 
     >>> from pyspark.sql import SparkSession
-    >>> 
+    >>>
     >>> spark = SparkSession.builder.getOrCreate()
     >>>
     >>> # Load training data

@@ -42,6 +42,7 @@ if psutil.POSIX:
             outbound_workers: int = P[C.api_server_workers],
             max_request_size: int = P[C.config.api_server.max_request_size],
             port: int = P[C.config.api_server.port],
+            enable_microbatch: bool = P[C.config.api_server.enable_microbatch],
             mb_max_batch_size: int = P[C.config.marshal_server.max_batch_size],
             mb_max_latency: int = P[C.config.marshal_server.max_latency],
             prometheus_lock: Optional[multiprocessing.Lock] = None,
@@ -64,6 +65,7 @@ if psutil.POSIX:
             self.outbound_port = outbound_port
             self.outbound_host = outbound_host
             self.outbound_workers = outbound_workers
+            self.enable_microbatch = enable_microbatch
             self.mb_max_batch_size = mb_max_batch_size
             self.mb_max_latency = mb_max_latency
 
@@ -89,6 +91,7 @@ if psutil.POSIX:
                 self.outbound_host,
                 self.outbound_port,
                 outbound_workers=self.outbound_workers,
+                enable_microbatch=self.enable_microbatch,
                 mb_max_batch_size=self.mb_max_batch_size,
                 mb_max_latency=self.mb_max_latency,
             )

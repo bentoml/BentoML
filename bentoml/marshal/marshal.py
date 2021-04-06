@@ -141,7 +141,7 @@ class MarshalService:
         bento_bundle_path,
         outbound_host="localhost",
         outbound_port=None,
-        outbound_workers: int = Provide[BentoMLContainer.config.api_server.workers],
+        outbound_workers: int = Provide[BentoMLContainer.api_server_workers],
         mb_max_batch_size: int = Provide[
             BentoMLContainer.config.marshal_server.max_batch_size
         ],
@@ -363,6 +363,7 @@ class MarshalService:
         app.router.add_view("/{path:.*}", self.request_dispatcher)
         return app
 
+    @inject
     def fork_start_app(
         self, port=Provide[BentoMLContainer.config.api_server.port],
     ):

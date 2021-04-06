@@ -214,24 +214,94 @@ def test_gunicorn_serve_command():
     gunicorn_cmd = cli.commands["serve-gunicorn"]
 
     with mock.patch(
-        'bentoml.cli.bento_service.start_prod_server',
+        "bentoml.cli.bento_service.start_prod_server"
     ) as mocked_start_prod_server:
         runner.invoke(
             gunicorn_cmd, ["/"],
         )
-        assert mocked_start_prod_server.called
+        mocked_start_prod_server.assert_called()
+        mocked_start_prod_server.assert_called_with(
+            "/",
+            port=5000,
+            workers=1,
+            timeout=60,
+            enable_microbatch=False,
+            enable_swagger=True,
+            mb_max_batch_size=None,
+            mb_max_latency=None,
+            microbatch_workers=1,
+        )
+
+        runner.invoke(
+            gunicorn_cmd,
+            [
+                "/",
+                "--port=5050",
+                "--workers=10",
+                "--timeout=120",
+                "--enable-microbatch",
+                "--enable-swagger",
+                "--mb-max-batch-size=10000",
+                "--mb-max-latency=20000",
+                "--microbatch-workers=5",
+            ],
+        )
+        mocked_start_prod_server.assert_called()
+        mocked_start_prod_server.assert_called_with(
+            "/",
+            port=5050,
+            workers=10,
+            timeout=120,
+            enable_microbatch=True,
+            enable_swagger=True,
+            mb_max_batch_size=10000,
+            mb_max_latency=20000,
+            microbatch_workers=5,
+        )
 
 
 def test_serve_command():
     runner = CliRunner()
 
     cli = create_bento_service_cli()
-    gunicorn_cmd = cli.commands["serve"]
+    serve_cmd = cli.commands["serve"]
 
     with mock.patch(
-        'bentoml.cli.bento_service.start_dev_server',
+        "bentoml.cli.bento_service.start_dev_server",
     ) as mocked_start_dev_server:
         runner.invoke(
-            gunicorn_cmd, ["/"],
+            serve_cmd, ["/"],
         )
-        assert mocked_start_dev_server.called
+        mocked_start_dev_server.assert_called()
+        mocked_start_dev_server.assert_called_with(
+            '/',
+            port=5000,
+            enable_microbatch=False,
+            mb_max_batch_size=None,
+            mb_max_latency=None,
+            run_with_ngrok=False,
+            enable_swagger=True,
+        )
+
+        runner.invoke(
+            serve_cmd,
+            [
+                "/",
+                "--port=5050",
+                "--enable-microbatch",
+                "--enable-swagger",
+                "--mb-max-batch-size=10000",
+                "--mb-max-latency=20000",
+                "--run-with-ngrok",
+            ],
+        )
+        mocked_start_dev_server.assert_called()
+        mocked_start_dev_server.assert_called_with(
+            '/',
+            port=5050,
+            enable_microbatch=True,
+            mb_max_batch_size=10000,
+            mb_max_latency=20000,
+            run_with_ngrok=True,
+            enable_swagger=True,
+        )

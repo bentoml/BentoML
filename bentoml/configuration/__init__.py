@@ -61,7 +61,6 @@ def parameterized_config(template):
 
 DEFAULT_BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
 BENTOML_HOME = DEFAULT_BENTOML_HOME
-BENTOML_CONFIG = os.path.join(BENTOML_HOME, "bentoml.yml")
 
 # This is used as default for config('core', 'bentoml_deploy_version') - which is used
 # for getting the BentoML PyPI version string or the URL to a BentoML sdist, indicating
@@ -108,7 +107,7 @@ def load_config():
     )
 
     local_config_file = get_local_config_file()
-    if os.path.isfile(local_config_file):
+    if os.path.isfile(local_config_file) and not local_config_file.endswith(".yml"):
         logger.info("Loading local BentoML config file: %s", local_config_file)
         with open(local_config_file, "rb") as f:
             loaded_config.read_string(
@@ -205,3 +204,32 @@ def set_debug_mode(debug_mode_on: bool):
     logger.debug(
         f"Setting debug mode: {'ON' if debug_mode_on else 'OFF'} for current session"
     )
+
+
+def inject_dependencies():
+    """Inject dependencies and configuration to BentoML packages"""
+
+    from timeit import default_timer as timer
+
+    start = timer()
+
+    logger.debug("Start dependency injection")
+
+    from bentoml.configuration.containers import BentoMLContainer, BentoMLConfiguration
+
+    config_file = get_local_config_file()
+    if config_file.endswith(".yml"):
+        configuration = BentoMLConfiguration(override_config_file=config_file)
+    else:
+        configuration = BentoMLConfiguration()
+
+    container = BentoMLContainer()
+    container.config.from_dict(configuration.as_dict())
+
+    from bentoml import marshal, server, tracing, cli
+
+    container.wire(packages=[marshal, server, tracing, cli])
+
+    end = timer()
+
+    logger.debug("Dependency injection completed in %.3f seconds", end - start)

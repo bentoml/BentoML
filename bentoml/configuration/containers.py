@@ -23,7 +23,6 @@ from schema import And, Or, Schema, SchemaError, Optional, Use
 from bentoml.configuration import config
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils.ruamel_yaml import YAML
-from bentoml.configuration import BENTOML_CONFIG
 
 
 LOGGER = logging.getLogger(__name__)
@@ -130,10 +129,6 @@ class BentoMLConfiguration:
                         "Configuration after applying legacy compatibility"
                         " does not conform to the required schema."
                     ) from e
-
-        # Use system-wide override configuration
-        if override_config_file is None and os.path.exists(BENTOML_CONFIG):
-            override_config_file = BENTOML_CONFIG
 
         # User override configuration
         if override_config_file is not None:

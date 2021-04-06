@@ -53,8 +53,7 @@ def get_tracer(
             f"{zipkin_server_url}"
         )
         return get_zipkin_tracer(zipkin_server_url)
-
-    if (
+    elif (
         tracer_type
         and tracer_type == 'jaeger'
         and jaeger_server_address
@@ -67,7 +66,8 @@ def get_tracer(
             f"{jaeger_server_address}:{jaeger_server_port}"
         )
         return get_jaeger_tracer(jaeger_server_address, jaeger_server_port)
+    else:
+        from bentoml.tracing.noop import NoopTracer
 
-    from bentoml.tracing.noop import NoopTracer
-
-    return NoopTracer()
+        logger.info("Tracing is disabled. Initializing no-op tracer")
+        return NoopTracer()

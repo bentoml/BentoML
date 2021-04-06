@@ -10,7 +10,7 @@ import subprocess
 import os
 import signal
 import sys
-from dependency_injector.wiring import inject, Provide
+from dependency_injector.wiring import Provide, inject
 
 from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 

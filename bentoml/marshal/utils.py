@@ -6,6 +6,7 @@ from bentoml import config as bentoml_config
 from bentoml.types import HTTPRequest, HTTPResponse
 
 BATCH_REQUEST_HEADER = bentoml_config("apiserver").get("batch_request_header")
+MARSHAL_REQUEST_HEADER = "BentoML-Is-Merged-Request"
 
 
 class PlasmaDataLoader:

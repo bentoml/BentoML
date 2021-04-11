@@ -18,7 +18,6 @@ def test_api_function_route(bento_service, img_file):
         enable_swagger=True,
         enable_metrics=True,
         enable_feedback=True,
-        request_header_flag="BentoML-Is-Merged-Request",
     )
     test_client = rest_server.app.test_client()
 
@@ -99,7 +98,6 @@ def test_api_function_route_with_disabled_swagger(bento_service):
         enable_swagger=False,
         enable_metrics=True,
         enable_feedback=True,
-        request_header_flag="BentoML-Is-Merged-Request",
     )
     test_client = rest_server.app.test_client()
 

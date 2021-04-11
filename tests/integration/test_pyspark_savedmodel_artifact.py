@@ -10,22 +10,8 @@ from pyspark.sql import SparkSession
 import bentoml
 from bentoml.server.api_server import BentoAPIServer
 from tests.bento_service_examples.pyspark_classifier import PysparkClassifier
-
-
-def _wait_until_ready(_host, timeout, check_interval=0.5):
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        try:
-            if (
-                urllib.request.urlopen(f'http://{_host}/healthz', timeout=0.1).status
-                == 200
-            ):
-                break
-        except Exception:
-            time.sleep(check_interval - 0.1)
-        else:
-            raise AssertionError(f"server didn't get ready in {timeout} seconds")
-
+from tests.integration.utils import (_wait_until_api_server_ready,
+                                     build_api_server_docker_image)
 
 train_data = [[0, -1.0], [1, 1.0]]
 train_pddf = pd.DataFrame(train_data, columns=["label", "feature1"])
@@ -76,24 +62,12 @@ def pyspark_svc_loaded(pyspark_svc_saved_dir):
 
 
 @pytest.fixture()
-def pyspark_image(pyspark_svc_saved_dir):
-    # Based on `image()` in tests/integration/api_server/conftest.py
-    # Better refactoring might be possible to combine both functions
-    import docker
-
-    client = docker.from_env()
-    image = client.images.build(
-        path=pyspark_svc_saved_dir, tag="example_service", rm=True
-    )[0]
-    yield image
-    client.images.remove(image.id)
-
-
-@pytest.fixture()
-def pyspark_host(pyspark_image):
+def pyspark_host(pyspark_svc_saved_dir):
     # Based on `host()` in tests/integration/api_server/conftest.py
     # Better refactoring might be possible to combine both functions
     import docker
+
+    pyspark_image = build_api_server_docker_image(pyspark_svc_saved_dir)
 
     client = docker.from_env()
 
@@ -110,7 +84,7 @@ def pyspark_host(pyspark_image):
             detach=True,
         )
         _host = f"127.0.0.1:{port}"
-        _wait_until_ready(_host, 10)
+        _wait_until_api_server_ready(_host, 10)
         yield _host
     finally:
         container.stop()

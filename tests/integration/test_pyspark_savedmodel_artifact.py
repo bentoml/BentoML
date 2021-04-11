@@ -1,5 +1,4 @@
 import time
-import urllib
 
 import pandas as pd
 import pytest

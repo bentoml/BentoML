@@ -48,25 +48,24 @@ class PySparkModelArtifact(BentoServiceArtifact):
     >>> svc.pack('model', model_to_save)
     """
 
-    def __init__(self, name: str, spark=None):
+    def __init__(self, name: str):
         super().__init__(name)
         self._model = None
         self._sc = None
-        self.spark = spark
 
     def set_dependencies(self, env: BentoServiceEnv):
         env.add_pip_package("pyspark")
         env.add_conda_dependencies(["openjdk"])
 
-    """
-    Store a model in this artifact
-
-    Parameters:
-        sc (SparkContext): An optional pyspark SparkContext for the mllib module
-    """
     def pack(
         self, model, metadata: dict = None, sc=None
     ):  # pylint:disable=arguments-differ
+        """
+        Store a model in this artifact
+
+        Parameters:
+            sc (SparkContext): An optional pyspark SparkContext for the mllib module
+        """
         self._sc = sc
         self._model = model
 
@@ -90,12 +89,12 @@ class PySparkModelArtifact(BentoServiceArtifact):
         else:
             model.save(self._sc, save_path)
 
-    """
-    Load a PySpark artifact from the given path. If this is a mllib model, 
-    a SparkSession was provided to the constructor will be used, or a default 
-    "BentoService" SparkSession will be created
-    """
     def load(self, path):
+        """
+        Load a PySpark artifact from the given path. If this is a mllib model,
+        a SparkSession was provided to the constructor will be used, or a default
+        "BentoService" SparkSession will be created
+        """
         try:
             from pyspark.sql import SparkSession
         except ImportError:
@@ -131,11 +130,12 @@ class PySparkModelArtifact(BentoServiceArtifact):
                 "pyspark is required to use the PySparkModelArtifact"
             )
 
-        # again, we need to make a distinction for spark.mllib because it expects a spark context
+        # again, we need to make a distinction for spark.mllib because it expects a
+        # spark context
         if issubclass(ModelClass, Model):
             model = ModelClass.load(model_data_path)
         else:
-            spark = self.spark or SparkSession.builder.appName("BentoService").getOrCreate()
+            spark = SparkSession.builder.appName("BentoService").getOrCreate()
             model = ModelClass.load(spark.sparkContext, model_data_path)
 
         return self.pack(model)

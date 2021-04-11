@@ -358,7 +358,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.cmd
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/pyspark_integration_test.sh
       - name: Upload test coverage to Codecov

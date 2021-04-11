@@ -9,8 +9,10 @@ from pyspark.sql import SparkSession
 import bentoml
 from bentoml.server.api_server import BentoAPIServer
 from tests.bento_service_examples.pyspark_classifier import PysparkClassifier
-from tests.integration.utils import (_wait_until_api_server_ready,
-                                     build_api_server_docker_image)
+from tests.integration.utils import (
+    _wait_until_api_server_ready,
+    build_api_server_docker_image,
+)
 
 train_data = [[0, -1.0], [1, 1.0]]
 train_pddf = pd.DataFrame(train_data, columns=["label", "feature1"])
@@ -27,8 +29,8 @@ def spark_session():
 def pyspark_model(spark_session):
     # Put pandas training df into Spark df form with Vector features
     train_spdf = spark_session.createDataFrame(train_pddf)
-    assembler = VectorAssembler(inputCols=['feature1'], outputCol='features')
-    train_spdf = assembler.transform(train_spdf).select(['features', 'label'])
+    assembler = VectorAssembler(inputCols=["feature1"], outputCol="features")
+    train_spdf = assembler.transform(train_spdf).select(["features", "label"])
 
     # Train model (should result in x=neg => y=0, x=pos => y=1)
     lr = LogisticRegression()
@@ -40,7 +42,7 @@ def pyspark_model(spark_session):
 @pytest.fixture(scope="module")
 def pyspark_svc(pyspark_model):
     svc = PysparkClassifier()
-    svc.pack('model', pyspark_model)
+    svc.pack("model", pyspark_model)
 
     return svc
 
@@ -79,7 +81,7 @@ def pyspark_host(pyspark_svc_saved_dir):
             image=pyspark_image.id,
             auto_remove=True,
             tty=True,
-            ports={'5000/tcp': port},
+            ports={"5000/tcp": port},
             detach=True,
         )
         _host = f"127.0.0.1:{port}"
@@ -105,7 +107,7 @@ def test_pyspark_rest_api(pyspark_svc):
     response = test_client.post(
         "/predict", data=test_pddf.to_json(), content_type="application/json"
     )
-    assert response.data.decode().strip() == '[0.0, 1.0, 0.0, 1.0]'
+    assert response.data.decode().strip() == "[0.0, 1.0, 0.0, 1.0]"
 
 
 @pytest.mark.skip(msg="Fix Docker tests once JAR dependencies are sorted")
@@ -117,5 +119,5 @@ async def test_pyspark_artifact_with_docker(pyspark_host):
         headers=(("Content-Type", "application/json"),),
         data=test_pddf.to_json(),
         assert_status=200,
-        assert_data=b'[[15.0]]',
+        assert_data=b"[[15.0]]",
     )

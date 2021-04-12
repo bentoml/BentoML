@@ -104,16 +104,7 @@ class JsonOutput(BaseOutputAdapter):
         return flag
 
     def to_aws_lambda_event(self, result: InferenceResult) -> AwsLambdaEvent:
-
-        # Allow disabling CORS by setting it to None
-        if self.cors:
-            return {
-                "statusCode": result.http_status,
-                "body": result.err_msg or result.data,
-                "headers": {"Access-Control-Allow-Origin": self.cors},
-            }
-        else:
-            return {
-                "statusCode": result.http_status,
-                "body": result.err_msg or result.data,
-            }
+        return {
+            "statusCode": result.http_status,
+            "body": result.err_msg or result.data,
+        }

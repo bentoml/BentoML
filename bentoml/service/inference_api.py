@@ -297,6 +297,8 @@ class InferenceAPI(object):
         result = next(iter(results))
         response = self.output_adapter.to_http_response(result)
         response.headers['X-Request-Id'] = inf_task.task_id
+        if self.output_adapter.cors:
+            response.headers["Access-Control-Allow-Origin"] = self.output_adapter.cors
         return response.to_flask_response()
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
@@ -309,6 +311,9 @@ class InferenceAPI(object):
             responses = tuple(map(self.output_adapter.to_http_response, results))
             for inf_task, response in zip(inf_tasks, responses):
                 response.headers['X-Request-Id'] = inf_task.task_id
+                if self.output_adapter.cors:
+                    response.headers["Access-Control-Allow-Origin"] = \
+                            self.output_adapter.cors
             return responses
 
     def handle_cli(self, cli_args: Sequence[str]) -> int:
@@ -331,4 +336,9 @@ class InferenceAPI(object):
     def handle_aws_lambda_event(self, event):
         inf_task = self.input_adapter.from_aws_lambda_event(event)
         result = next(iter(self.infer((inf_task,))))
-        return self.output_adapter.to_aws_lambda_event(result)
+        out_event = self.output_adapter.to_aws_lambda_event(result)
+        if self.output_adapter.cors and isinstance(out_event, dict):
+            headers = out_event.get("headers", dict())
+            headers["Access-Control-Allow-Origin"] = self.output_adapter.cors
+            out_event["headers"] = headers
+        return out_event

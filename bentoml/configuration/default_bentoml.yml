@@ -5,7 +5,6 @@
 
 bento_server:
   port: 5000
-  # run_with_ngrok: False
   ngrok:
     enabled: False
   workers: 1

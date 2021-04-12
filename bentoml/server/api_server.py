@@ -22,8 +22,8 @@ from flask import Flask, Response, jsonify, make_response, request, send_from_di
 from google.protobuf.json_format import MessageToJson
 from werkzeug.exceptions import BadRequest, NotFound
 
-from bentoml.configuration import get_debug_mode
 from bentoml.configuration.containers import BentoMLContainer
+from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
 from bentoml.server.instruments import InstrumentMiddleware
@@ -382,7 +382,7 @@ class BentoAPIServer:
         def api_func():
             # handle_request may raise 4xx or 5xx exception.
             try:
-                if request.headers.get("MARSHAL_REQUEST_HEADER"):
+                if request.headers.get(MARSHAL_REQUEST_HEADER):
                     reqs = DataLoader.split_requests(request.get_data())
                     responses = api.handle_batch_request(reqs)
                     response_body = DataLoader.merge_responses(responses)

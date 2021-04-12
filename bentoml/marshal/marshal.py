@@ -311,7 +311,7 @@ class MarshalService:
             * RemoteException: known exceptions from model server
             * Exception: other exceptions
         '''
-        headers = {MARSHAL_REQUEST_HEADER, "true"}
+        headers = {MARSHAL_REQUEST_HEADER: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"
 
         with get_tracer().async_span(

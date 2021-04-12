@@ -37,10 +37,9 @@ from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
 
-from bentoml import config
 from bentoml.utils.dataclasses import json_serializer
 
-BATCH_HEADER = config("apiserver").get("batch_request_header")
+BATCH_HEADER = "Bentoml-Is-Batch-Request"
 
 # For non latin1 characters: https://tools.ietf.org/html/rfc8187
 # Also https://github.com/benoitc/gunicorn/issues/1778

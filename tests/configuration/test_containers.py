@@ -60,6 +60,9 @@ bento_server:
   max_request_size: 0
   metrics:
     namespace: Null
+adapters:
+  image_input:
+    extensions: []
 """
     )
     config.close()
@@ -75,6 +78,14 @@ bento_server:
     assert config_dict["bento_server"]["workers"] == 1
     assert config_dict["bento_server"]["max_request_size"] == 20971520
     assert config_dict["bento_server"]["metrics"]["namespace"] == "BENTOML"
+    assert config_dict["adapters"]["image_input"]["extensions"] == [
+        '.jpg',
+        '.png',
+        '.jpeg',
+        '.tiff',
+        '.webp',
+        '.bmp',
+    ]
 
 
 def test_validate_schema():

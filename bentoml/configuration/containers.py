@@ -53,6 +53,7 @@ SCHEMA = Schema(
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
+        "adapters": {"image_input": {"extensions": [str]}},
     }
 )
 
@@ -109,6 +110,13 @@ class BentoMLConfiguration:
                 self.config["bento_server"]["metrics"]["namespace"] = config(
                     "instrument"
                 ).get("default_namespace")
+
+                self.config["adapters"]["image_input"]["extensions"] = [
+                    extension.strip()
+                    for extension in config("apiserver")
+                    .get("default_image_input_accept_file_extensions")
+                    .split(",")
+                ]
             except KeyError as e:
                 raise BentoMLConfigException(
                     "Overriding a non-existent configuration key in compatibility mode."

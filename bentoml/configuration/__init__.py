@@ -207,9 +207,9 @@ def inject_dependencies():
     container = BentoMLContainer()
     container.config.from_dict(configuration.as_dict())
 
-    from bentoml import marshal, server, tracing, cli, utils
+    from bentoml import marshal, server, tracing, cli, adapters
 
-    container.wire(packages=[marshal, server, tracing, cli, utils])
+    container.wire(packages=[marshal, server, tracing, cli, adapters])
 
     end = timer()
 

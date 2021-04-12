@@ -32,3 +32,13 @@ tracing:
   jaeger:
     address: Null
     port: Null
+
+adapters:
+  image_input:
+    extensions:
+      - .jpg
+      - .png
+      - .jpeg
+      - .tiff
+      - .webp
+      - .bmp

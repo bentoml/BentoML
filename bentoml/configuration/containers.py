@@ -53,7 +53,7 @@ SCHEMA = Schema(
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
-        "adapters": {"image_input": {"extensions": [str]}},
+        "adapters": {"image_input": {"default_extensions": [str]}},
     }
 )
 
@@ -111,7 +111,7 @@ class BentoMLConfiguration:
                     "instrument"
                 ).get("default_namespace")
 
-                self.config["adapters"]["image_input"]["extensions"] = [
+                self.config["adapters"]["image_input"]["default_extensions"] = [
                     extension.strip()
                     for extension in config("apiserver")
                     .get("default_image_input_accept_file_extensions")

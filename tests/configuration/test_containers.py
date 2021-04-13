@@ -78,7 +78,7 @@ adapters:
     assert config_dict["bento_server"]["workers"] == 1
     assert config_dict["bento_server"]["max_request_size"] == 20971520
     assert config_dict["bento_server"]["metrics"]["namespace"] == "BENTOML"
-    assert config_dict["adapters"]["image_input"]["extensions"] == [
+    assert config_dict["adapters"]["image_input"]["default_extensions"] == [
         '.jpg',
         '.png',
         '.jpeg',

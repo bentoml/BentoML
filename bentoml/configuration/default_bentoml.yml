@@ -35,7 +35,7 @@ tracing:
 
 adapters:
   image_input:
-    extensions:
+    default_extensions:
       - .jpg
       - .png
       - .jpeg

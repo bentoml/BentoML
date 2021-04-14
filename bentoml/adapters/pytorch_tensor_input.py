@@ -19,12 +19,3 @@ class PytorchTensorInput(BaseInputAdapter):
     """
     Tensor input adapter for Pytorch models
     """
-
-    def handle_request(self, request):
-        raise NotImplementedError
-
-    def handle_cli(self, args, func):
-        raise NotImplementedError
-
-    def handle_aws_lambda_event(self, event, func):
-        raise NotImplementedError

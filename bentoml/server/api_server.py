@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from functools import partial
 import logging
 import os
 import sys
-from functools import partial
 
 from dependency_injector.wiring import Provide, inject
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
@@ -30,6 +30,7 @@ from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import BentoService, InferenceAPI
 from bentoml.tracing import get_tracer
+from bentoml.types import HTTPRequest
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
@@ -388,7 +389,9 @@ class BentoAPIServer:
                     response_body = DataLoader.merge_responses(responses)
                     response = make_response(response_body)
                 else:
-                    response = api.handle_request(request)
+                    req = HTTPRequest.from_flask_request(request)
+                    resp = api.handle_request(req)
+                    response = resp.to_flask_response()
             except BentoMLException as e:
                 log_exception(sys.exc_info())
 

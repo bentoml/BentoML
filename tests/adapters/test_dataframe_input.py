@@ -220,7 +220,7 @@ def test_guess_orient(df, orient):
     assert orient == guessed_orient or orient in guessed_orient
 
 
-@pytest.mark.skipif('not psutil.POSIX')
+@pytest.mark.skipif(not psutil.POSIX)
 def test_benchmark_load_dataframes():
     '''
     read_dataframes_from_json_n_csv should be 30x faster than pd.read_json + pd.concat

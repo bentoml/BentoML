@@ -53,7 +53,7 @@ start-grpcui: ## Start gPRC Web UI
 install-yatai-deps: ## Install dependencies to debug YataiService
 	pip install -e ".[dev]"
 	go get github.com/fullstorydev/grpcui
-	go install github.com/fullstorydev/grpcui/cmd/grpcui
+	go install github.com/fullstorydev/grpcui/cmd/grpcui@latest
 
 # BentoML Web UI
 watch-yatai-web-ui: ## Start BentoML Web UI server in dev mode

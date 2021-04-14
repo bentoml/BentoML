@@ -93,7 +93,6 @@ edit_init() {
 edit_init "$PY_OUT_PATH"
 edit_init "$PY_TEST_OUT_PATH"
 
-# TODO: if run with generate-docker then we don't have to print this warning
 echo "Generate grpc code for javascript/typescript"
 echo "Please make sure protobufjs is installed on your system"
 echo "You can install with npm i -g protobufjs"

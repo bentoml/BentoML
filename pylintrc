@@ -7,7 +7,7 @@ extension-pkg-whitelist=dependency_injector.containers,dependency_injector.provi
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=tests/yatai/protos, proto, _version.py
+ignore=tests/yatai/proto, proto, _version.py
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
@@ -149,6 +149,9 @@ disable=print-statement,
 
         # prevent errors with proto generated Class
         no-member,
+
+        # prevent unsubscriptable-object error for typing in python3.9
+        unsubscriptable-object,
 
         # Ignore explicitly re-raising using the 'from' keyword. New checker added
         # in pylint 2.6.

@@ -50,7 +50,7 @@ class BaseOutputAdapter:
     such as HTTP response, command line stdout or AWS Lambda event object.
     """
 
-    def __init__(self, cors='*'):
+    def __init__(self, cors=None):
         self.cors = cors
 
     @property

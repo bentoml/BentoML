@@ -27,7 +27,7 @@ from dependency_injector.wiring import Provide, inject
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
-from bentoml.marshal.utils import DataLoader
+from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
 from bentoml.tracing import get_tracer
@@ -42,7 +42,9 @@ def metrics_patch(cls):
         def __init__(
             self,
             *args,
-            namespace: str = Provide[BentoMLContainer.config.instrument.namespace],
+            namespace: str = Provide[
+                BentoMLContainer.config.bento_server.metrics.namespace
+            ],
             **kwargs,
         ):
             for attr_name in functools.WRAPPER_ASSIGNMENTS:
@@ -143,20 +145,17 @@ class MarshalService:
         outbound_port=None,
         outbound_workers: int = Provide[BentoMLContainer.api_server_workers],
         mb_max_batch_size: int = Provide[
-            BentoMLContainer.config.marshal_server.max_batch_size
+            BentoMLContainer.config.bento_server.microbatch.max_batch_size
         ],
         mb_max_latency: int = Provide[
-            BentoMLContainer.config.marshal_server.max_latency
-        ],
-        request_header_flag: str = Provide[
-            BentoMLContainer.config.marshal_server.request_header_flag
+            BentoMLContainer.config.bento_server.microbatch.max_latency
         ],
         max_request_size: int = Provide[
-            BentoMLContainer.config.api_server.max_request_size
+            BentoMLContainer.config.bento_server.max_request_size
         ],
         outbound_unix_socket: str = None,
         enable_microbatch: bool = Provide[
-            BentoMLContainer.config.api_server.enable_microbatch
+            BentoMLContainer.config.bento_server.microbatch.enabled
         ],
     ):
         self._client = None
@@ -168,7 +167,6 @@ class MarshalService:
         self.mb_max_latency = mb_max_latency
         self.batch_handlers = dict()
         self._outbound_sema = None  # the semaphore to limit outbound connections
-        self.request_header_flag = request_header_flag
         self.max_request_size = max_request_size
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
@@ -313,7 +311,7 @@ class MarshalService:
             * RemoteException: known exceptions from model server
             * Exception: other exceptions
         '''
-        headers = {self.request_header_flag: "true"}
+        headers = {MARSHAL_REQUEST_HEADER: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"
 
         with get_tracer().async_span(
@@ -365,7 +363,7 @@ class MarshalService:
 
     @inject
     def fork_start_app(
-        self, port=Provide[BentoMLContainer.config.api_server.port],
+        self, port=Provide[BentoMLContainer.config.bento_server.port],
     ):
         # Use new eventloop in the fork process to avoid problems on MacOS
         # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI

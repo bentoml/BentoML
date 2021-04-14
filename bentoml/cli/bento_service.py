@@ -59,28 +59,28 @@ def escape_shell_params(param):
 @inject
 def create_bento_service_cli(
     pip_installed_bundle_path: str = None,
-    default_port: int = Provide[BentoMLContainer.config.api_server.port],
+    default_yatai_url: str = None,
+    default_port: int = Provide[BentoMLContainer.config.bento_server.port],
     default_enable_microbatch: bool = Provide[
-        BentoMLContainer.config.api_server.enable_microbatch
+        BentoMLContainer.config.bento_server.microbatch.enabled
     ],
     default_mb_max_batch_size: int = Provide[
-        BentoMLContainer.config.marshal_server.max_batch_size
+        BentoMLContainer.config.bento_server.microbatch.max_batch_size
     ],
     default_mb_max_latency: int = Provide[
-        BentoMLContainer.config.marshal_server.max_latency
+        BentoMLContainer.config.bento_server.microbatch.max_latency
     ],
     default_run_with_ngrok: bool = Provide[
-        BentoMLContainer.config.api_server.run_with_ngrok
+        BentoMLContainer.config.bento_server.ngrok.enabled
     ],
-    default_yatai_url: str = Provide[BentoMLContainer.config.yatai.url],
     default_enable_swagger: bool = Provide[
-        BentoMLContainer.config.api_server.enable_swagger
+        BentoMLContainer.config.bento_server.swagger.enabled
     ],
-    default_workers: int = Provide[BentoMLContainer.config.api_server.workers],
+    default_workers: int = Provide[BentoMLContainer.config.bento_server.workers],
     default_microbatch_workers: int = Provide[
-        BentoMLContainer.config.marshal_server.workers
+        BentoMLContainer.config.bento_server.microbatch.workers
     ],
-    default_timeout: int = Provide[BentoMLContainer.config.api_server.timeout],
+    default_timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
 ):
     # pylint: disable=unused-variable
 

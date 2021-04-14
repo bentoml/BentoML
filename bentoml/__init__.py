@@ -20,11 +20,11 @@ del get_versions
 from bentoml.configuration import config, inject_dependencies
 from bentoml.utils.log import configure_logging
 
-# Configuring logging properly before loading other modules
-configure_logging()
-
 # Inject dependencies and configurations
 inject_dependencies()
+
+# Configuring logging properly before loading other modules
+configure_logging()
 
 from bentoml.saved_bundle import load_from_dir, save_to_dir  # noqa: E402
 from bentoml.service import (  # noqa: E402

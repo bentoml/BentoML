@@ -29,24 +29,23 @@ LOGGER = logging.getLogger(__name__)
 
 SCHEMA = Schema(
     {
-        "api_server": {
+        "bento_server": {
             "port": And(int, lambda port: port > 0),
-            "enable_microbatch": bool,
-            "run_with_ngrok": bool,
-            "enable_swagger": bool,
-            "enable_metrics": bool,
-            "enable_feedback": bool,
-            "max_request_size": And(int, lambda size: size > 0),
             "workers": Or(And(int, lambda workers: workers > 0), None),
             "timeout": And(int, lambda timeout: timeout > 0),
+            "max_request_size": And(int, lambda size: size > 0),
+            "microbatch": {
+                "enabled": bool,
+                "workers": Or(And(int, lambda workers: workers > 0), None),
+                "max_batch_size": Or(And(int, lambda size: size > 0), None),
+                "max_latency": Or(And(int, lambda latency: latency > 0), None),
+            },
+            "ngrok": {"enabled": bool},
+            "swagger": {"enabled": bool},
+            "metrics": {"enabled": bool, "namespace": str},
+            "feedback": {"enabled": bool},
+            "logging": {"level": str},
         },
-        "marshal_server": {
-            "max_batch_size": Or(And(int, lambda size: size > 0), None),
-            "max_latency": Or(And(int, lambda latency: latency > 0), None),
-            "workers": Or(And(int, lambda workers: workers > 0), None),
-            "request_header_flag": str,
-        },
-        "yatai": {"url": Or(str, None)},
         "tracing": {
             "type": Or(
                 And(str, Use(str.lower), lambda s: s in ('zipkin', 'jaeger')), None
@@ -54,8 +53,7 @@ SCHEMA = Schema(
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
-        "instrument": {"namespace": str},
-        "logging": {"level": str},
+        "adapters": {"image_input": {"default_extensions": [str]}},
     }
 )
 
@@ -89,33 +87,36 @@ class BentoMLConfiguration:
         # Legacy configuration compatibility
         if legacy_compatibility:
             try:
-                self.config["api_server"]["port"] = config("apiserver").getint(
+                self.config["bento_server"]["port"] = config("apiserver").getint(
                     "default_port"
                 )
-                self.config["api_server"]["workers"] = config("apiserver").getint(
+                self.config["bento_server"]["workers"] = config("apiserver").getint(
                     "default_gunicorn_workers_count"
                 )
-                self.config["api_server"]["max_request_size"] = config(
+                self.config["bento_server"]["max_request_size"] = config(
                     "apiserver"
                 ).getint("default_max_request_size")
 
                 if "default_max_batch_size" in config("marshal_server"):
-                    self.config["marshal_server"]["max_batch_size"] = config(
-                        "marshal_server"
-                    ).getint("default_max_batch_size")
+                    self.config["bento_server"]["microbatch"][
+                        "max_batch_size"
+                    ] = config("marshal_server").getint("default_max_batch_size")
 
                 if "default_max_latency" in config("marshal_server"):
-                    self.config["marshal_server"]["max_latency"] = config(
+                    self.config["bento_server"]["microbatch"]["max_latency"] = config(
                         "marshal_server"
                     ).getint("default_max_latency")
 
-                self.config["marshal_server"]["request_header_flag"] = config(
-                    "marshal_server"
-                ).get("marshal_request_header_flag")
-                self.config["yatai"]["url"] = config("yatai_service").get("url")
-                self.config["instrument"]["namespace"] = config("instrument").get(
-                    "default_namespace"
-                )
+                self.config["bento_server"]["metrics"]["namespace"] = config(
+                    "instrument"
+                ).get("default_namespace")
+
+                self.config["adapters"]["image_input"]["default_extensions"] = [
+                    extension.strip()
+                    for extension in config("apiserver")
+                    .get("default_image_input_accept_file_extensions")
+                    .split(",")
+                ]
             except KeyError as e:
                 raise BentoMLConfigException(
                     "Overriding a non-existent configuration key in compatibility mode."
@@ -186,5 +187,5 @@ class BentoMLContainer(containers.DeclarativeContainer):
 
     api_server_workers = providers.Callable(
         lambda workers: workers if workers else (multiprocessing.cpu_count() // 2) + 1,
-        config.api_server.workers,
+        config.bento_server.workers,
     )

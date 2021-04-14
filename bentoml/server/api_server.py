@@ -22,10 +22,10 @@ from flask import Flask, Response, jsonify, make_response, request, send_from_di
 from google.protobuf.json_format import MessageToJson
 from werkzeug.exceptions import BadRequest, NotFound
 
-from bentoml.configuration import get_debug_mode
 from bentoml.configuration.containers import BentoMLContainer
+from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
-from bentoml.marshal.utils import DataLoader
+from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import BentoService, InferenceAPI
@@ -152,16 +152,13 @@ class BentoAPIServer:
         bento_service: BentoService,
         app_name: str = None,
         enable_swagger: bool = Provide[
-            BentoMLContainer.config.api_server.enable_swagger
+            BentoMLContainer.config.bento_server.swagger.enabled
         ],
         enable_metrics: bool = Provide[
-            BentoMLContainer.config.api_server.enable_metrics
+            BentoMLContainer.config.bento_server.metrics.enabled
         ],
         enable_feedback: bool = Provide[
-            BentoMLContainer.config.api_server.enable_feedback
-        ],
-        request_header_flag: str = Provide[
-            BentoMLContainer.config.marshal_server.request_header_flag
+            BentoMLContainer.config.bento_server.feedback.enabled
         ],
     ):
         app_name = bento_service.name if app_name is None else app_name
@@ -172,7 +169,6 @@ class BentoAPIServer:
         self.enable_swagger = enable_swagger
         self.enable_metrics = enable_metrics
         self.enable_feedback = enable_feedback
-        self.request_header_flag = request_header_flag
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static_content'
@@ -386,7 +382,7 @@ class BentoAPIServer:
         def api_func():
             # handle_request may raise 4xx or 5xx exception.
             try:
-                if request.headers.get(self.request_header_flag):
+                if request.headers.get(MARSHAL_REQUEST_HEADER):
                     reqs = DataLoader.split_requests(request.get_data())
                     responses = api.handle_batch_request(reqs)
                     response_body = DataLoader.merge_responses(responses)

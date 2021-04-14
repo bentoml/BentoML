@@ -13,8 +13,7 @@ try:
 except ImportError:
     from mock import MagicMock
 
-from bentoml.types import HTTPRequest
-from bentoml.marshal.utils import BATCH_REQUEST_HEADER
+from bentoml.types import HTTPRequest, BATCH_HEADER
 
 
 def mock_tensorflow_module():
@@ -64,13 +63,13 @@ TEST_INPUTS = [
 
 
 TEST_HEADERS = [
-    ((BATCH_REQUEST_HEADER, 'true'),),
-    ((BATCH_REQUEST_HEADER, 'true'),),
-    ((BATCH_REQUEST_HEADER, 'false'),),
-    ((BATCH_REQUEST_HEADER, 'false'),),
-    ((BATCH_REQUEST_HEADER, 'true'),),
-    ((BATCH_REQUEST_HEADER, 'false'),),
-    ((BATCH_REQUEST_HEADER, 'true'),),
+    ((BATCH_HEADER, 'true'),),
+    ((BATCH_HEADER, 'true'),),
+    ((BATCH_HEADER, 'false'),),
+    ((BATCH_HEADER, 'false'),),
+    ((BATCH_HEADER, 'true'),),
+    ((BATCH_HEADER, 'false'),),
+    ((BATCH_HEADER, 'true'),),
 ]
 
 

@@ -70,13 +70,13 @@ if psutil.POSIX:
             self,
             bundle_path,
             bind: str = None,
-            port: int = P[C.config.api_server.port],
-            timeout: int = P[C.config.api_server.timeout],
+            port: int = P[C.config.bento_server.port],
+            timeout: int = P[C.config.bento_server.timeout],
             workers: int = P[C.api_server_workers],
             prometheus_lock: Optional[multiprocessing.Lock] = None,
-            enable_swagger: bool = P[C.config.api_server.enable_swagger],
-            max_request_size: int = P[C.config.api_server.max_request_size],
-            loglevel=P[C.config.logging.level],
+            enable_swagger: bool = P[C.config.bento_server.swagger.enabled],
+            max_request_size: int = P[C.config.bento_server.max_request_size],
+            loglevel=P[C.config.bento_server.logging.level],
         ):
             self.bento_service_bundle_path = bundle_path
 

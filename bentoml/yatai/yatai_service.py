@@ -11,7 +11,7 @@ import click
 from bentoml import config
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
-from bentoml.yatai.client.interceptor.prom_server_interceptor import (
+from bentoml.yatai.client.interceptor import (
     PromServerInterceptor,
     ServiceLatencyInterceptor,
 )
@@ -134,7 +134,7 @@ def start_yatai_service_grpc_server(
                 '"pip install grpcio-reflection"'
             )
     server.add_insecure_port(f'[::]:{grpc_port}')
-    # TODO: it seems that current impl doesn't actually intercept RPC calls
+
     prometheus_port = 50052
     with reserve_free_port() as port:
         prometheus_port = port

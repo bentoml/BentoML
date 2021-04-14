@@ -42,12 +42,35 @@ def _wrap_rpc_behaviour(handler, fn):
     )
 
 
-# request are either RPC request as protobuf or iterator of RPC request
 class PromServerInterceptor(grpc.ServerInterceptor):  # pylint: disable=W0232
-    """Interceptor for handling client call with metrics to prometheus"""
+    """
+    Interceptor for handling client call with metrics to prometheus
+    This implementation is referred to:
+    https://grpc.github.io/grpc/python/grpc.html#service-side-interceptor
+    https://github.com/lchenn/py-grpc-prometheus
+
+    Server metrics are exposed by adding the interceptor when gRPC server is started.
+    Refers to
+    tests/yatai/grpc_testing_service.py for a mock gRPC service
+    tests/yatai/client/test_grpc_server_interceptor.py for an implementation's example
+
+    ```python
+
+        import grpc
+        from prometheus_client import start_http_server
+        from bentoml.yatai.client.interceptor import PromServerInterceptor
+        ...
+        server = grpc.server(
+            futures.ThreadPoolExecutor(max_workers=1),
+            interceptors=(PromServerInterceptor(), )
+            )
+        start_http_server(self.prom_port)
+    ```
+    """
 
     def intercept_service(self, continuation, handler_call_details):
 
+        # handles if call_details are None
         handler = continuation(handler_call_details)
         if handler is None:
             return handler

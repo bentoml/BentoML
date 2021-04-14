@@ -13,7 +13,7 @@ from bentoml.adapters import (
     MultiImageInput,
 )
 from bentoml.frameworks.sklearn import SklearnModelArtifact
-from bentoml.handlers import DataframeHandler  # deprecated
+from bentoml.handlers import DataframeHandler
 from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.types import InferenceResult, InferenceTask
 
@@ -115,6 +115,10 @@ class ExampleService(bentoml.BentoService):
         data = input_datas[0]
         time.sleep(data['b'] + data['a'] * len(input_datas))
         return input_datas
+
+    @bentoml.api(input=JsonInput())
+    def echo_json(self, input_data):
+        return input_data
 
 
 if __name__ == "__main__":

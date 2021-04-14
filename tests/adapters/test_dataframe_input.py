@@ -5,7 +5,6 @@ import json
 import math
 import time
 
-import flask
 import numpy as np
 import pandas as pd
 import psutil
@@ -16,11 +15,6 @@ from bentoml.adapters.dataframe_input import read_dataframes_from_json_n_csv
 from bentoml.types import HTTPRequest
 from bentoml.utils.csv import csv_splitlines
 from bentoml.utils.dataframe_util import guess_orient
-
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import MagicMock
 
 
 def test_dataframe_request_schema():
@@ -95,7 +89,7 @@ def test_dataframe_handle_request_csv(make_api):
     csv_data = b'name,game,city\njohn,mario,sf'
     request = HTTPRequest(headers={'Content-Type': 'text/csv'}, body=csv_data)
     result = api.handle_request(request)
-    assert result.get_data().decode('utf-8') == '[{"name":"john"}]'
+    assert result.body == '[{"name":"john"}]'
 
 
 def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):

@@ -15,7 +15,7 @@
 from bentoml.adapters.base_input import BaseInputAdapter
 
 
-class PytorchTensorInput(BaseInputAdapter):
+class PytorchTensorInput(BaseInputAdapter):  # pylint: disable=W0223 # noqa
     """
     Tensor input adapter for Pytorch models
     """

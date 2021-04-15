@@ -1,5 +1,7 @@
 # pylint: disable=redefined-outer-name
 
+import json
+
 from bentoml.types import HTTPRequest
 
 
@@ -15,8 +17,8 @@ def test_string_input(make_api):
     request = HTTPRequest(body=body)
     response = api.handle_request(request)
 
-    assert response.body == body.decode()
+    assert json.loads(response.body) == body.decode()
 
     responses = api.handle_batch_request([request] * 3)
     for response in responses:
-        assert response.body == body.decode()
+        assert json.loads(response.body) == body.decode()

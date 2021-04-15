@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from dataclasses import dataclass, field
 import io
 import os
 from typing import (
@@ -32,7 +33,6 @@ from typing import (
 import urllib
 import uuid
 
-from dataclasses import dataclass, field
 from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
@@ -257,7 +257,7 @@ class HTTPRequest:
 class HTTPResponse:
     status: int = 200
     headers: HTTPHeaders = HTTPHeaders()
-    body: bytes = b""
+    body: Optional[bytes] = b""
 
     @classmethod
     def new(

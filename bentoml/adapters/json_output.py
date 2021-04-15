@@ -57,7 +57,9 @@ class JsonOutput(BaseOutputAdapter):
                 output = "json"
             try:
                 if output == "json":
-                    json_str = json.dumps(json_obj, cls=NumpyJsonEncoder)
+                    json_str = json.dumps(
+                        json_obj, cls=NumpyJsonEncoder, ensure_ascii=False
+                    )
                 else:
                     json_str = str(json_obj)
                 results.append(

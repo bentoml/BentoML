@@ -4,7 +4,10 @@ import sys
 import time
 from typing import Sequence
 
+from packaging import version
+
 import bentoml
+from bentoml import __version__ as BENTOML_VERSION
 from bentoml.adapters import (
     DataframeInput,
     FileInput,
@@ -121,9 +124,11 @@ class ExampleService(bentoml.BentoService):
     def echo_json(self, input_data):
         return input_data
 
-    @bentoml.api(input=JsonInput(), output=JsonOutput(ensure_ascii=True))
-    def echo_json_ensure_ascii(self, input_data):
-        return input_data
+    if version.parse(BENTOML_VERSION) > version.parse("0.12.1+0"):
+
+        @bentoml.api(input=JsonInput(), output=JsonOutput(ensure_ascii=True))
+        def echo_json_ensure_ascii(self, input_data):
+            return input_data
 
 
 if __name__ == "__main__":

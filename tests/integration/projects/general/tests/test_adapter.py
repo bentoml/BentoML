@@ -12,7 +12,7 @@ def df_orient(request):
 
 @pytest.mark.asyncio
 async def test_api_echo_json(host):
-    for data in ('"hello"', '"汉语"'):
+    for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
         await pytest.assert_request(
             "POST",
             f"http://{host}/echo_json",

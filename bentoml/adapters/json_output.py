@@ -38,7 +38,12 @@ class JsonOutput(BaseOutputAdapter):
         cors (str): The value of the Access-Control-Allow-Origin header set in the
             AWS Lambda response object. Default is "*". If set to None,
             the header will not be set.
+        ensure_ascii(bool): Escape all non-ASCII characters. Default False.
     """
+
+    def __init__(self, ensure_ascii=False, **kwargs):
+        super().__init__(**kwargs)
+        self.ensure_ascii = ensure_ascii
 
     def pack_user_func_return_value(
         self, return_result: ApiFuncReturnValue, tasks: Sequence[InferenceTask],
@@ -58,7 +63,7 @@ class JsonOutput(BaseOutputAdapter):
             try:
                 if output == "json":
                     json_str = json.dumps(
-                        json_obj, cls=NumpyJsonEncoder, ensure_ascii=False
+                        json_obj, cls=NumpyJsonEncoder, ensure_ascii=self.ensure_ascii
                     )
                 else:
                     json_str = str(json_obj)

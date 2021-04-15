@@ -10,6 +10,7 @@ from bentoml.adapters import (
     FileInput,
     ImageInput,
     JsonInput,
+    JsonOutput,
     MultiImageInput,
 )
 from bentoml.frameworks.sklearn import SklearnModelArtifact
@@ -118,6 +119,10 @@ class ExampleService(bentoml.BentoService):
 
     @bentoml.api(input=JsonInput())
     def echo_json(self, input_data):
+        return input_data
+
+    @bentoml.api(input=JsonInput(), output=JsonOutput(ensure_ascii=True))
+    def echo_json_ensure_ascii(self, input_data):
         return input_data
 
 

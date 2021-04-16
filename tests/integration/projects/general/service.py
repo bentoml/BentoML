@@ -4,16 +4,20 @@ import sys
 import time
 from typing import Sequence
 
+from packaging import version
+
 import bentoml
+from bentoml import __version__ as BENTOML_VERSION
 from bentoml.adapters import (
     DataframeInput,
     FileInput,
     ImageInput,
     JsonInput,
+    JsonOutput,
     MultiImageInput,
 )
 from bentoml.frameworks.sklearn import SklearnModelArtifact
-from bentoml.handlers import DataframeHandler  # deprecated
+from bentoml.handlers import DataframeHandler
 from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.types import InferenceResult, InferenceTask
 
@@ -115,6 +119,16 @@ class ExampleService(bentoml.BentoService):
         data = input_datas[0]
         time.sleep(data['b'] + data['a'] * len(input_datas))
         return input_datas
+
+    @bentoml.api(input=JsonInput())
+    def echo_json(self, input_data):
+        return input_data
+
+    if version.parse(BENTOML_VERSION) > version.parse("0.12.1+0"):
+
+        @bentoml.api(input=JsonInput(), output=JsonOutput(ensure_ascii=True))
+        def echo_json_ensure_ascii(self, input_data):
+            return input_data
 
 
 if __name__ == "__main__":

@@ -11,6 +11,33 @@ def df_orient(request):
 
 
 @pytest.mark.asyncio
+async def test_api_echo_json(host):
+    for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
+        await pytest.assert_request(
+            "POST",
+            f"http://{host}/echo_json",
+            headers=(("Content-Type", "application/json"),),
+            data=data,
+            assert_status=200,
+            assert_data=data.encode(),
+        )
+
+
+@pytest.since_bentoml_version("0.12.1+0")
+@pytest.mark.asyncio
+async def test_api_echo_json_ensure_ascii(host):
+    for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
+        await pytest.assert_request(
+            "POST",
+            f"http://{host}/echo_json_ensure_ascii",
+            headers=(("Content-Type", "application/json"),),
+            data=data,
+            assert_status=200,
+            assert_data=json.dumps(json.loads(data)).encode(),
+        )
+
+
+@pytest.mark.asyncio
 async def test_api_server_dataframe(host, df_orient):
     import pandas as pd  # noqa # pylint: disable=unused-import
 

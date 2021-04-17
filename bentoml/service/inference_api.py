@@ -51,6 +51,7 @@ class InferenceAPI(object):
         mb_max_batch_size=1000,
         batch=False,
         route=None,
+        cors=None,
     ):
         """
         :param service: ref to service containing this API
@@ -76,6 +77,9 @@ class InferenceAPI(object):
         :param route: Specify HTTP URL route of this inference API. By default,
             `api.name` is used as the route.  This parameter can be used for customizing
             the URL route, e.g. `route="/api/v2/model_a/predict"`
+        :param cors (str): The value of the Access-Control-Allow-Origin header set in the
+            HTTP/ AWS Lambda response object. Default is None. If set to None,
+            the header will not be set.
         """
         self._service = service
         self._name = name
@@ -86,6 +90,9 @@ class InferenceAPI(object):
         self.mb_max_batch_size = mb_max_batch_size
         self.batch = batch
         self.route = name if route is None else route
+
+        # [backwards compatibility for <=0.12.1]
+        self.cors = cors or self.output_adapter.cors
 
         if not self.input_adapter.BATCH_MODE_SUPPORTED and batch:
             raise BentoMLConfigException(
@@ -296,8 +303,9 @@ class InferenceAPI(object):
         result = next(iter(results))
         response = self.output_adapter.to_http_response(result)
         response.headers['X-Request-Id'] = inf_task.task_id
-        if self.output_adapter.cors:
-            response.headers["Access-Control-Allow-Origin"] = self.output_adapter.cors
+
+        if self.cors:
+            response.headers["Access-Control-Allow-Origin"] = self.cors
         return response
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
@@ -310,10 +318,8 @@ class InferenceAPI(object):
             responses = tuple(map(self.output_adapter.to_http_response, results))
             for inf_task, response in zip(inf_tasks, responses):
                 response.headers['X-Request-Id'] = inf_task.task_id
-                if self.output_adapter.cors:
-                    response.headers[
-                        "Access-Control-Allow-Origin"
-                    ] = self.output_adapter.cors
+                if self.cors:
+                    response.headers["Access-Control-Allow-Origin"] = self.cors
             return responses
 
     def handle_cli(self, cli_args: Sequence[str]) -> int:
@@ -337,8 +343,8 @@ class InferenceAPI(object):
         inf_task = self.input_adapter.from_aws_lambda_event(event)
         result = next(iter(self.infer((inf_task,))))
         out_event = self.output_adapter.to_aws_lambda_event(result)
-        if self.output_adapter.cors and isinstance(out_event, dict):
+        if self.cors and isinstance(out_event, dict):
             headers = out_event.get("headers", dict())
-            headers["Access-Control-Allow-Origin"] = self.output_adapter.cors
+            headers["Access-Control-Allow-Origin"] = self.cors
             out_event["headers"] = headers
         return out_event

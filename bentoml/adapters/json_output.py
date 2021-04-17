@@ -32,14 +32,10 @@ ApiFuncReturnValue = Sequence[JsonSerializable]
 
 class JsonOutput(BaseOutputAdapter):
     """
-    Converts result of user defined API function into specific output.
-
-    Args:
-        cors (str): The value of the Access-Control-Allow-Origin header set in the
-            AWS Lambda response object. Default is "*". If set to None,
-            the header will not be set.
         ensure_ascii(bool): Escape all non-ASCII characters. Default False.
     """
+
+    __doc__ = (BaseOutputAdapter.__doc__ or "") + __doc__
 
     def __init__(self, ensure_ascii=False, **kwargs):
         super().__init__(**kwargs)

@@ -77,8 +77,8 @@ class InferenceAPI(object):
         :param route: Specify HTTP URL route of this inference API. By default,
             `api.name` is used as the route.  This parameter can be used for customizing
             the URL route, e.g. `route="/api/v2/model_a/predict"`
-        :param cors (str): The value of the Access-Control-Allow-Origin header set in the
-            HTTP/ AWS Lambda response object. Default is None. If set to None,
+        :param cors (str): The value of the Access-Control-Allow-Origin header set in
+            the HTTP/ AWS Lambda response object. Default is None. If set to None,
             the header will not be set.
         """
         self._service = service

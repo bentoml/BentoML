@@ -52,7 +52,7 @@ class BaseOutputAdapter:
         cors (str): DEPRECATED. Use @api(cors="*") instead.
             The value of the Access-Control-Allow-Origin header set in the
             HTTP/AWS Lambda response object. If set to None, the header will not be set.
-            Default is None. 
+            Default is None.
     """
 
     def __init__(self, cors=None):

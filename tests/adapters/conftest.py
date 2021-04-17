@@ -23,7 +23,7 @@ def make_api(
     service_mock = Mock()
     service_mock.name = "TestBentoService"
 
-    def _make_api(input_adapter, user_func, output_adapter=None):
+    def _make_api(input_adapter, user_func, output_adapter=None, **kwargs):
         if not input_adapter.BATCH_MODE_SUPPORTED and batch_mode:
             pytest.skip()
         if not input_adapter.SINGLE_MODE_SUPPORTED and not batch_mode:
@@ -38,6 +38,7 @@ def make_api(
             user_func=user_func,
             output_adapter=output_adapter,
             batch=batch_mode,
+            **kwargs,
         )
 
     return _make_api

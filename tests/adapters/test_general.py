@@ -9,8 +9,9 @@ def test_cors(make_api):
 
     api = make_api(
         input_adapter=JsonInput(),
-        output_adapter=JsonOutput(cors="*"),
+        output_adapter=JsonOutput(),
         user_func=lambda i: i,
+        cors="*",
     )
 
     body = b'{"a": 1}'

@@ -45,9 +45,14 @@ def regroup_return_value(
 
 class BaseOutputAdapter:
     """
-    OutputAdapter is an layer between result of user defined API callback function
-    and final output in a variety of different forms,
+    OutputAdapter converts returns of user defined API function into specific output,
     such as HTTP response, command line stdout or AWS Lambda event object.
+
+    Args:
+        cors (str): DEPRECATED. Use @api(cors="*") instead.
+            The value of the Access-Control-Allow-Origin header set in the
+            HTTP/AWS Lambda response object. If set to None, the header will not be set.
+            Default is None. 
     """
 
     def __init__(self, cors=None):

@@ -53,10 +53,10 @@ def detect_suitable_adapter(result) -> Type[BaseOutputAdapter]:
 
 class DefaultOutput(BaseOutputAdapter):
     """
-    Detect suitable output adapter automatically and
+    Detect suitable output adapter automatically
     """
 
-    __doc__ += BaseOutputAdapter.__doc__ or ""
+    __doc__ = (BaseOutputAdapter.__doc__ or "") + __doc__
 
     def __init__(self, **kwargs):
         super(DefaultOutput, self).__init__(**kwargs)

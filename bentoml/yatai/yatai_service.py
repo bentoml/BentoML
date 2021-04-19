@@ -4,24 +4,27 @@ import os
 import subprocess
 import time
 from concurrent import futures
+from dependency_injector.wiring import Provide, inject
 
 import certifi
 import click
 
 from bentoml import config
 from bentoml.configuration import get_debug_mode
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 
+@inject
 def get_yatai_service(
     channel_address=None,
     access_token=None,
     access_token_header=None,
-    db_url=None,
-    repo_base_url=None,
     s3_endpoint_url=None,
     default_namespace=None,
+    db_url: str = Provide[BentoMLContainer.yatai_database_url],
+    repo_base_url: str = Provide[BentoMLContainer.yatai_repository_base_url],
 ):
     channel_address = channel_address or config('yatai_service').get('url')
     access_token = access_token or config('yatai_service').get('access_token')
@@ -90,8 +93,15 @@ def get_yatai_service(
         )
 
 
+@inject
 def start_yatai_service_grpc_server(
-    db_url, repo_base_url, grpc_port, ui_port, with_ui, s3_endpoint_url, base_url
+    grpc_port,
+    ui_port,
+    with_ui,
+    s3_endpoint_url,
+    base_url,
+    db_url: str = Provide[BentoMLContainer.yatai_database_url],
+    repo_base_url: str = Provide[BentoMLContainer.yatai_repository_base_url],
 ):
     # Lazily import grpcio for YataiSerivce gRPC related actions
     import grpc

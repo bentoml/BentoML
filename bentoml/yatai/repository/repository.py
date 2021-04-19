@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml import config
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
 from bentoml.yatai.repository.base_repository import BaseRepository
@@ -29,9 +28,6 @@ class Repository(BaseRepository):
         :param s3_endpoint_url: configuring S3Repository to talk to a specific s3
             endpoint
         """
-
-        if base_url is None:
-            base_url = config().get('default_repository_base_url')
 
         if is_s3_url(base_url):
             self._repo = S3Repository(base_url, s3_endpoint_url)

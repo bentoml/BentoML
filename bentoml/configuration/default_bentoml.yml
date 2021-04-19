@@ -3,6 +3,10 @@
 # should still be made to default_bentoml.cfg.
 #
 
+bento_bundle:
+  deployment_version: Null
+  default_docker_base_image: Null
+
 bento_server:
   port: 5000
   ngrok:
@@ -20,6 +24,7 @@ bento_server:
   metrics:
     enabled: True
     namespace: BENTOML
+    prometheus_dir: prometheus_multiproc_dir
   feedback:
     enabled: True
   logging:
@@ -42,3 +47,18 @@ adapters:
       - .tiff
       - .webp
       - .bmp
+
+yatai:
+  repository:
+    type: local
+    local:
+      directory: repository
+    s3:
+      directory: repository
+      endpoint: Null
+    gcs:
+      url: Null
+  database:
+    scheme: sqlite
+    name: storage.db
+

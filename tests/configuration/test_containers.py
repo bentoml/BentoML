@@ -7,7 +7,7 @@ from bentoml.exceptions import BentoMLConfigException
 
 
 def test_override():
-    config = BentoMLConfiguration(legacy_compatibility=False)
+    config = BentoMLConfiguration()
     config.override(["bento_server", "port"], 6000)
     config_dict = config.as_dict()
     assert config_dict is not None
@@ -29,7 +29,7 @@ def test_override_nonexist_key():
 
 
 def test_override_none_value():
-    config = BentoMLConfiguration(legacy_compatibility=False)
+    config = BentoMLConfiguration()
     config.override(["bento_server", "port"], None)
     config_dict = config.as_dict()
     assert config_dict is not None
@@ -37,55 +37,17 @@ def test_override_none_value():
 
 
 def test_override_none_key():
-    config = BentoMLConfiguration(legacy_compatibility=False)
+    config = BentoMLConfiguration()
     with pytest.raises(BentoMLConfigException) as e:
         config.override(None, 6000)
     assert e is not None
 
 
 def test_override_empty_key():
-    config = BentoMLConfiguration(legacy_compatibility=False)
+    config = BentoMLConfiguration()
     with pytest.raises(BentoMLConfigException) as e:
         config.override([], 6000)
     assert e is not None
-
-
-def test_legacy_compatibility():
-    config = tempfile.NamedTemporaryFile(delete=False)
-    config.write(
-        b"""
-bento_server:
-  port: 0
-  workers: 0
-  max_request_size: 0
-  metrics:
-    namespace: Null
-adapters:
-  image_input:
-    extensions: []
-"""
-    )
-    config.close()
-
-    config_dict = BentoMLConfiguration(
-        default_config_file=config.name,
-        legacy_compatibility=True,
-        validate_schema=False,
-    ).as_dict()
-    os.remove(config.name)
-    assert config_dict is not None
-    assert config_dict["bento_server"]["port"] == 5000
-    assert config_dict["bento_server"]["workers"] == 1
-    assert config_dict["bento_server"]["max_request_size"] == 20971520
-    assert config_dict["bento_server"]["metrics"]["namespace"] == "BENTOML"
-    assert config_dict["adapters"]["image_input"]["default_extensions"] == [
-        '.jpg',
-        '.png',
-        '.jpeg',
-        '.tiff',
-        '.webp',
-        '.bmp',
-    ]
 
 
 def test_validate_schema():
@@ -100,9 +62,7 @@ invalid_key1:
 
     with pytest.raises(BentoMLConfigException) as e:
         BentoMLConfiguration(
-            default_config_file=config.name,
-            validate_schema=True,
-            legacy_compatibility=False,
+            default_config_file=config.name, validate_schema=True,
         )
 
     assert e is not None
@@ -123,9 +83,7 @@ bento_server:
 
     container.config.from_dict(
         BentoMLConfiguration(
-            default_config_file=config_auto_workers.name,
-            validate_schema=False,
-            legacy_compatibility=False,
+            default_config_file=config_auto_workers.name, validate_schema=False,
         ).as_dict(),
     )
     os.remove(config_auto_workers.name)
@@ -144,9 +102,7 @@ bento_server:
 
     container.config.from_dict(
         BentoMLConfiguration(
-            default_config_file=config_manual_workers.name,
-            validate_schema=False,
-            legacy_compatibility=False,
+            default_config_file=config_manual_workers.name, validate_schema=False,
         ).as_dict(),
     )
     os.remove(config_manual_workers.name)
@@ -183,7 +139,6 @@ key1:
         default_config_file=default_config_file.name,
         override_config_file=override_config_file.name,
         validate_schema=False,
-        legacy_compatibility=False,
     ).as_dict()
 
     os.remove(default_config_file.name)
@@ -196,3 +151,61 @@ key1:
     assert config["key1"]["key2"]["key3"] == "override3"
     assert config["key1"]["key2"]["key4"] == "value4"
     assert config["key1"]["key2"]["key5"] == "override5"
+
+
+def test_bentoml_home():
+    container = BentoMLContainer()
+    assert container.bentoml_home() == os.path.expanduser("~/bentoml")
+
+    os.environ["BENTOML_HOME"] = "/tmp/bentoml"
+    assert container.bentoml_home() == "/tmp/bentoml"
+
+    del os.environ["BENTOML_HOME"]
+
+
+def test_prometheus_multiproc_dir():
+    container = BentoMLContainer()
+    config = BentoMLConfiguration().as_dict()
+    container.config.from_dict(config)
+
+    assert container.prometheus_multiproc_dir() == os.path.expanduser(
+        "~/bentoml/prometheus_multiproc_dir"
+    )
+
+
+def test_bento_bundle_deployment_version():
+    override_config = tempfile.NamedTemporaryFile(delete=False)
+    override_config.write(
+        b"""
+bento_bundle:
+  deployment_version: 0.0.1
+"""
+    )
+    override_config.close()
+
+    container = BentoMLContainer()
+    config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
+    container.config.from_dict(config)
+
+    assert container.bento_bundle_deployment_version() == "0.0.1"
+    os.remove(override_config.name)
+
+
+def test_yatai_repository_base_url():
+    container = BentoMLContainer()
+    config = BentoMLConfiguration().as_dict()
+    container.config.from_dict(config)
+
+    assert container.yatai_repository_base_url() == os.path.expanduser(
+        "~/bentoml/repository"
+    )
+
+
+def test_yatai_database_url():
+    container = BentoMLContainer()
+    config = BentoMLConfiguration().as_dict()
+    container.config.from_dict(config)
+
+    assert container.yatai_database_url() == "{}:///{}".format(
+        "sqlite", os.path.expanduser("~/bentoml/storage.db")
+    )

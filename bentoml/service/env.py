@@ -15,14 +15,14 @@
 import logging
 import os
 import stat
+from dependency_injector.wiring import Provide, inject
 from pathlib import Path
 from sys import version_info
 from typing import List
 
 from pkg_resources import Requirement
 
-from bentoml import config
-from bentoml.configuration import get_bentoml_deploy_version
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.pip_pkg import (
     EPP_NO_ERROR,
@@ -147,6 +147,7 @@ class BentoServiceEnv(object):
         zipimport_archives: used to list zipimport archives
     """
 
+    @inject
     def __init__(
         self,
         pip_packages: List[str] = None,
@@ -162,7 +163,13 @@ class BentoServiceEnv(object):
         conda_env_yml_file: str = None,
         setup_sh: str = None,
         docker_base_image: str = None,
+        default_docker_base_image: str = Provide[
+            BentoMLContainer.config.bento_bundle.default_docker_base_image
+        ],
         zipimport_archives: List[str] = None,
+        bentoml_version: str = Provide[
+            BentoMLContainer.bento_bundle_deployment_version
+        ],
     ):
         self._python_version = PYTHON_VERSION
         self._pip_index_url = pip_index_url
@@ -181,7 +188,7 @@ class BentoServiceEnv(object):
         self._pip_packages = {}
 
         # add BentoML to pip packages list
-        bentoml_deploy_version = get_bentoml_deploy_version()
+        bentoml_deploy_version = bentoml_version
         self.add_pip_package("bentoml=={}".format(bentoml_deploy_version))
 
         if pip_packages:
@@ -198,14 +205,14 @@ class BentoServiceEnv(object):
                 f"{PYTHON_MINOR_VERSION} or conda installed."
             )
             self._docker_base_image = docker_base_image
-        elif config('core').get('default_docker_base_image'):
+        elif default_docker_base_image:
             logger.info(
                 f"Using default docker base image: `{docker_base_image}` specified in"
                 f"BentoML config file or env var. User must make sure that the docker "
                 f"base image either has Python {PYTHON_MINOR_VERSION} or conda "
                 f"installed."
             )
-            self._docker_base_image = config('core').get('default_docker_base_image')
+            self._docker_base_image = default_docker_base_image
         else:
             if PYTHON_MINOR_VERSION not in PYTHON_SUPPORTED_VERSIONS:
                 self._docker_base_image = (

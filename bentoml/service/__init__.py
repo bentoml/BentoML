@@ -24,10 +24,11 @@ import tempfile
 import threading
 import uuid
 from datetime import datetime
+from dependency_injector.wiring import Provide, inject
 from typing import List
 
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
-from bentoml.configuration import get_bentoml_deploy_version
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
 from bentoml.saved_bundle.config import (
@@ -861,7 +862,13 @@ class BentoService:
         if hasattr(self, "_dev_server_interrupt_event"):  # __init__ may not be called
             self.stop_dev_server(skip_log=True)
 
-    def infer_pip_dependencies_map(self):
+    @inject
+    def infer_pip_dependencies_map(
+        self,
+        bentoml_version: str = Provide[
+            BentoMLContainer.bento_bundle_deployment_version
+        ],
+    ):
         if not self.pip_dependencies_map:
             self.pip_dependencies_map = {}
             bento_service_module = sys.modules[self.__class__.__module__]
@@ -882,6 +889,6 @@ class BentoService:
             # to deploy with docker due to the version can't be found on PyPI, but
             # get_bentoml_deploy_version gives the user the latest released PyPI
             # version that's closest to the `dirty` branch
-            self.pip_dependencies_map['bentoml'] = get_bentoml_deploy_version()
+            self.pip_dependencies_map['bentoml'] = bentoml_version
 
         return self.pip_dependencies_map

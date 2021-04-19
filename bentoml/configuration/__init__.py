@@ -14,12 +14,15 @@
 
 import os
 import logging
+from dependency_injector.wiring import Provide, inject
 from functools import lru_cache
 from pathlib import Path
 
 from bentoml import __version__, _version as version_mod
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.configuration.configparser import BentoMLConfigParser
+
+# from bentoml.configuration.containers import BentoMLContainer
 
 # Note this file is loaded prior to logging being configured, thus logger is only
 # used within functions in this file
@@ -136,7 +139,7 @@ def config(section=None):
 
 
 @lru_cache(maxsize=1)
-def get_bentoml_deploy_version():
+def get_bentoml_deploy_version(bentoml_deploy_version: str):
     """
     BentoML version to use for generated docker image or serverless function bundle to
     be deployed, this can be changed to an url to your fork of BentoML on github, or an
@@ -144,7 +147,6 @@ def get_bentoml_deploy_version():
 
     bentoml_deploy_version = git+https://github.com/{username}/bentoml.git@{branch}
     """
-    bentoml_deploy_version = config('core').get('bentoml_deploy_version')
 
     if bentoml_deploy_version != LAST_PYPI_RELEASE_VERSION:
         logger.info(f"Setting BentoML deploy version to '{bentoml_deploy_version}'")
@@ -207,9 +209,21 @@ def inject_dependencies():
     container = BentoMLContainer()
     container.config.from_dict(configuration.as_dict())
 
-    from bentoml import marshal, server, tracing, cli, adapters
+    from bentoml import (
+        marshal,
+        server,
+        tracing,
+        cli,
+        adapters,
+        saved_bundle,
+        service,
+    )
+    from bentoml.yatai import yatai_service
 
-    container.wire(packages=[marshal, server, tracing, cli, adapters])
+    container.wire(
+        modules=[yatai_service],
+        packages=[marshal, server, tracing, cli, adapters, saved_bundle, service],
+    )
 
     end = timer()
 

@@ -20,7 +20,8 @@ from deepmerge import always_merger
 from dependency_injector import containers, providers
 from schema import And, Or, Schema, SchemaError, Optional, Use
 
-from bentoml.configuration import config
+from bentoml import __version__
+from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils.ruamel_yaml import YAML
 
@@ -29,6 +30,10 @@ LOGGER = logging.getLogger(__name__)
 
 SCHEMA = Schema(
     {
+        "bento_bundle": {
+            "deployment_version": Or(str, None),
+            "default_docker_base_image": Or(str, None),
+        },
         "bento_server": {
             "port": And(int, lambda port: port > 0),
             "workers": Or(And(int, lambda workers: workers > 0), None),
@@ -42,7 +47,7 @@ SCHEMA = Schema(
             },
             "ngrok": {"enabled": bool},
             "swagger": {"enabled": bool},
-            "metrics": {"enabled": bool, "namespace": str},
+            "metrics": {"enabled": bool, "namespace": str, "prometheus_dir": str},
             "feedback": {"enabled": bool},
             "logging": {"level": str},
         },
@@ -54,6 +59,10 @@ SCHEMA = Schema(
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
         "adapters": {"image_input": {"default_extensions": [str]}},
+        "yatai": {
+            "repository": {"directory": str},
+            "database": {"scheme": str, "name": str},
+        },
     }
 )
 
@@ -64,7 +73,6 @@ class BentoMLConfiguration:
         default_config_file: str = None,
         override_config_file: str = None,
         validate_schema: bool = True,
-        legacy_compatibility: bool = True,
     ):
         # Default configuraiton
         if default_config_file is None:
@@ -83,53 +91,6 @@ class BentoMLConfiguration:
                     "Default configuration 'default_bentoml.yml' does not"
                     " conform to the required schema."
                 ) from e
-
-        # Legacy configuration compatibility
-        if legacy_compatibility:
-            try:
-                self.config["bento_server"]["port"] = config("apiserver").getint(
-                    "default_port"
-                )
-                self.config["bento_server"]["workers"] = config("apiserver").getint(
-                    "default_gunicorn_workers_count"
-                )
-                self.config["bento_server"]["max_request_size"] = config(
-                    "apiserver"
-                ).getint("default_max_request_size")
-
-                if "default_max_batch_size" in config("marshal_server"):
-                    self.config["bento_server"]["microbatch"][
-                        "max_batch_size"
-                    ] = config("marshal_server").getint("default_max_batch_size")
-
-                if "default_max_latency" in config("marshal_server"):
-                    self.config["bento_server"]["microbatch"]["max_latency"] = config(
-                        "marshal_server"
-                    ).getint("default_max_latency")
-
-                self.config["bento_server"]["metrics"]["namespace"] = config(
-                    "instrument"
-                ).get("default_namespace")
-
-                self.config["adapters"]["image_input"]["default_extensions"] = [
-                    extension.strip()
-                    for extension in config("apiserver")
-                    .get("default_image_input_accept_file_extensions")
-                    .split(",")
-                ]
-            except KeyError as e:
-                raise BentoMLConfigException(
-                    "Overriding a non-existent configuration key in compatibility mode."
-                ) from e
-
-            if validate_schema:
-                try:
-                    SCHEMA.validate(self.config)
-                except SchemaError as e:
-                    raise BentoMLConfigException(
-                        "Configuration after applying legacy compatibility"
-                        " does not conform to the required schema."
-                    ) from e
 
         # User override configuration
         if override_config_file is not None:
@@ -188,4 +149,26 @@ class BentoMLContainer(containers.DeclarativeContainer):
     api_server_workers = providers.Callable(
         lambda workers: workers if workers else (multiprocessing.cpu_count() // 2) + 1,
         config.bento_server.workers,
+    )
+
+    bentoml_home = providers.Callable(
+        lambda: expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
+    )
+
+    prometheus_multiproc_dir = providers.Callable(
+        os.path.join, bentoml_home, config.bento_server.metrics.prometheus_dir,
+    )
+
+    bento_bundle_deployment_version = providers.Callable(
+        get_bentoml_deploy_version, config.bento_bundle.deployment_version,
+    )
+
+    yatai_repository_base_url = providers.Callable(
+        os.path.join, bentoml_home, config.yatai.repository.directory,
+    )
+
+    yatai_database_url = providers.Callable(
+        "{}:///{}".format,
+        config.yatai.database.scheme,
+        providers.Callable(os.path.join, bentoml_home, config.yatai.database.name),
     )

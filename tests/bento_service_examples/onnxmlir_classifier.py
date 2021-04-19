@@ -10,5 +10,5 @@ from bentoml.frameworks.onnxmlir import OnnxMlirModelArtifact
 class OnnxMlirClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):
-        input_data = df.to_numpy().astype(numpy.float32)  
+        input_data = df.to_numpy().astype(numpy.float32)
         return self.artifacts.model.run(input_data)

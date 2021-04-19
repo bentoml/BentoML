@@ -1,0 +1,82 @@
+import pytest
+import numpy as np
+import imageio
+import tensorflow as tf
+import tf2onnx
+import bentoml
+import subprocess
+from tests.bento_service_examples.onnxmlir_classifier import OnnxMlirClassifier
+
+test_data = [[1, 2, 3, 4, 5]]
+test_tensor = tf.constant(np.asfarray(test_data))
+
+ragged_data = [[15], [7, 8], [1, 2, 3, 4, 5]]
+ragged_tensor = tf.ragged.constant(ragged_data, dtype=tf.float64)
+
+
+class TfNativeModel(tf.Module):
+    def __init__(self):
+        super().__init__()
+        self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
+        self.dense = lambda inputs: tf.matmul(inputs, self.weights)
+
+    @tf.function(
+        input_signature=[tf.TensorSpec(shape=[1,5], dtype=tf.float32, name='inputs')]
+    )
+    def __call__(self, inputs):
+        return self.dense(inputs)
+
+@pytest.fixture(scope="module")
+def tensorflow_model(tmp_path_factory):
+    model1 =  TfNativeModel()
+    tmpdir = str(tmp_path_factory.mktemp("tf2_model"))
+    tf.saved_model.save(model1,tmpdir)
+    return tmpdir
+
+# python -m tf2onnx.convert --saved-model /Users/andrewsius.ibm.com/Documents/pipeline_tests/tf2saved  --output model.onnx
+
+@pytest.fixture(scope="module")
+def convert_to_onnx(tensorflow_model,tmp_path_factory):
+    tmpdir = str(tmp_path_factory.mktemp("onnx_model"))
+    modelpath = tmpdir+'model.onnx'
+    command = [
+        'python -m tf2onnx.convert',
+        '--saved-model',
+        tensorflow_model,
+        '--output',
+        modelpath,
+    ]
+    docker_proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    stdout = docker_proc.stdout.read().decode('utf-8')
+    return modelpath
+
+@pytest.fixture(scope="module")
+def compile_model(convert_to_onnx,tmp_path_factory):
+    tmpdir = str(tmp_path_factory.mktemp("onnx_model"))
+    modelpath = tmpdir+'model.onnx'
+    command = [
+        './onnx-mlir',
+        '--EmitLib',
+        convert_to_onnx,
+    ]
+    docker_proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    # should return something like: 'Shared library model.so has been compiled.'
+    stdout = docker_proc.stdout.read().decode('utf-8')
+    modelname = 'model.so'
+    return modelname
+
+@pytest.fixture(scope="module")
+def get_onnx_mlir_svc(compile_model):
+    svc = OnnxMlirClassifier()
+    # need to check compile output location from compile_model
+    svc.pack('model', compile_model)
+    return svc
+
+def test_onnxmlir_artifact(get_onnx_mlir_svc): 
+    assert (
+        get_onnx_mlir_svc.predict(test_tensor) == 15.0
+    ), 'Inference on onnx-mlir artifact does not match expected'

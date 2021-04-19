@@ -12,27 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import psutil
-
-if psutil.POSIX:
-    # After Python 3.8, the default start method of multiprocessing for MacOS changed to
-    # spawn, which would cause RecursionError when launching Gunicorn Application.
-    # Ref:
-    # https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
-    #
-    # Note: https://bugs.python.org/issue33725 claims that fork method may cause crashes
-    # on MacOS.
-    import multiprocessing
-
-    multiprocessing.set_start_method('fork')
-
 from ._version import get_versions
 
 __version__ = get_versions()['version']
 del get_versions
 
-from bentoml.configuration import config
+from bentoml.configuration import config, inject_dependencies
 from bentoml.utils.log import configure_logging
+
+# Inject dependencies and configurations
+inject_dependencies()
 
 # Configuring logging properly before loading other modules
 configure_logging()
@@ -47,6 +36,10 @@ from bentoml.service import (  # noqa: E402
     ver_decorator as ver,
     save,
 )
+
+from bentoml.cli import create_bentoml_cli
+
+commandline_interface = create_bentoml_cli()
 
 load = load_from_dir
 

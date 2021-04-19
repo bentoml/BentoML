@@ -10,11 +10,12 @@ import BentoServiceDetail from "./pages/BentoServiceDetail";
 import Layout from "./ui/Layout";
 import Breadcrumbs from "./components/Breadcrumbs";
 import NavigationBar from "./components/NavigationBar";
-import { setBaseUrl } from "./utils/HttpRequestContainer";
-import { useCookies } from "react-cookie";
+import { setBaseUrl } from './utils/HttpRequestContainer';
+import { useCookies } from 'react-cookie';
+
 export const App = () => {
   const [cookies] = useCookies();
-  const baseURL = "/" + cookies["baseURLCookie"];
+  const baseURL = cookies["baseURLCookie"] === undefined ? "/" : "/" + cookies["baseURLCookie"]
   setBaseUrl(baseURL);
   return (
     <BrowserRouter basename={baseURL}>

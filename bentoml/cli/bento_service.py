@@ -1,34 +1,30 @@
 import argparse
-import click
-import sys
-
 import json
 import re
+import sys
+import click
 import psutil
+from dependency_injector.wiring import Provide, inject
 
 from bentoml import __version__
-from bentoml.configuration import BENTOML_CONFIG
-from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.server import start_dev_server, start_prod_server
-from bentoml.server.open_api import get_open_api_spec_json
-from bentoml.utils import (
-    ProtoMessageToDict,
-    resolve_bundle_path,
-)
 from bentoml.cli.click_utils import (
     CLI_COLOR_SUCCESS,
-    _echo,
     BentoMLCommandGroup,
+    _echo,
     conditional_argument,
 )
 from bentoml.cli.utils import Spinner
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.saved_bundle import (
-    load_from_dir,
     load_bento_service_api,
     load_bento_service_metadata,
+    load_from_dir,
 )
+from bentoml.server import start_dev_server, start_prod_server
+from bentoml.server.open_api import get_open_api_spec_json
+from bentoml.utils import ProtoMessageToDict, resolve_bundle_path
 from bentoml.utils.docker_utils import validate_tag
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.yatai.client import get_yatai_client
 
 try:
@@ -43,38 +39,6 @@ except ImportError:
 
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
-
-batch_options = [
-    click.option(
-        '--enable-microbatch/--disable-microbatch',
-        default=None,
-        help="Run API server with micro-batch enabled",
-        envvar='BENTOML_ENABLE_MICROBATCH',
-    ),
-    click.option(
-        '--mb-max-batch-size',
-        type=click.INT,
-        help="Specify micro batching maximal batch size.",
-        envvar='BENTOML_MB_MAX_BATCH_SIZE',
-    ),
-    click.option(
-        '--mb-max-latency',
-        type=click.INT,
-        help="Specify micro batching maximal latency in milliseconds.",
-        envvar='BENTOML_MB_MAX_LATENCY',
-    ),
-]
-
-config_options = [
-    click.option(
-        "--config",
-        "-c",
-        type=click.Path(file_okay=True, dir_okay=False, readable=True),
-        help="Specify the configuration to be used for this command.",
-        envvar="BENTOML_CONFIG",
-        default=BENTOML_CONFIG,
-    ),
-]
 
 
 def add_options(options):
@@ -92,8 +56,56 @@ def escape_shell_params(param):
     return "{}={}".format(k, v)
 
 
-def create_bento_service_cli(pip_installed_bundle_path=None):
+@inject
+def create_bento_service_cli(
+    pip_installed_bundle_path: str = None,
+    default_yatai_url: str = None,
+    default_port: int = Provide[BentoMLContainer.config.bento_server.port],
+    default_enable_microbatch: bool = Provide[
+        BentoMLContainer.config.bento_server.microbatch.enabled
+    ],
+    default_mb_max_batch_size: int = Provide[
+        BentoMLContainer.config.bento_server.microbatch.max_batch_size
+    ],
+    default_mb_max_latency: int = Provide[
+        BentoMLContainer.config.bento_server.microbatch.max_latency
+    ],
+    default_run_with_ngrok: bool = Provide[
+        BentoMLContainer.config.bento_server.ngrok.enabled
+    ],
+    default_enable_swagger: bool = Provide[
+        BentoMLContainer.config.bento_server.swagger.enabled
+    ],
+    default_workers: int = Provide[BentoMLContainer.config.bento_server.workers],
+    default_microbatch_workers: int = Provide[
+        BentoMLContainer.config.bento_server.microbatch.workers
+    ],
+    default_timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
+):
     # pylint: disable=unused-variable
+
+    batch_options = [
+        click.option(
+            '--enable-microbatch/--disable-microbatch',
+            default=default_enable_microbatch,
+            help="Run API server with micro-batch enabled.",
+            envvar='BENTOML_ENABLE_MICROBATCH',
+        ),
+        click.option(
+            '--mb-max-batch-size',
+            type=click.INT,
+            help="Specify micro batching maximal batch size.",
+            envvar='BENTOML_MB_MAX_BATCH_SIZE',
+            default=default_mb_max_batch_size,
+        ),
+        click.option(
+            '--mb-max-latency',
+            type=click.INT,
+            help="Specify micro batching maximal latency in milliseconds.",
+            envvar='BENTOML_MB_MAX_LATENCY',
+            default=default_mb_max_latency,
+        ),
+    ]
 
     @click.group(cls=BentoMLCommandGroup)
     @click.version_option(version=__version__)
@@ -113,7 +125,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
     def run(api_name, run_args, bento=None):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--yatai-url', type=str, default=None)
+        parser.add_argument('--yatai-url', type=str, default=default_yatai_url)
         parsed_args, _ = parser.parse_known_args(run_args)
         yatai_url = parsed_args.yatai_url
         saved_bundle_path = resolve_bundle_path(
@@ -133,6 +145,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '--yatai-url',
         type=click.STRING,
+        default=default_yatai_url,
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
@@ -158,6 +171,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '--yatai-url',
         type=click.STRING,
+        default=default_yatai_url,
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
@@ -179,16 +193,15 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         "--port",
         type=click.INT,
-        default=None,
+        default=default_port,
         help="The port to listen on for the REST api server, default is 5000",
         envvar='BENTOML_PORT',
     )
     @add_options(batch_options)
-    @add_options(config_options)
     @click.option(
         '--run-with-ngrok',
         is_flag=True,
-        default=None,
+        default=default_run_with_ngrok,
         help="Use ngrok to relay traffic on a public endpoint to this "
         "API server on localhost",
         envvar='BENTOML_ENABLE_NGROK',
@@ -196,13 +209,14 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '--yatai-url',
         type=click.STRING,
+        default=default_yatai_url,
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
     @click.option(
         '--enable-swagger/--disable-swagger',
         is_flag=True,
-        default=None,
+        default=default_enable_swagger,
         help="Run API server with Swagger UI enabled",
         envvar='BENTOML_ENABLE_SWAGGER',
     )
@@ -215,27 +229,20 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         run_with_ngrok,
         yatai_url,
         enable_swagger,
-        config,
     ):
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )
 
-        container = BentoMLContainer()
-        config = BentoMLConfiguration(override_config_file=config)
-        config.override(["api_server", "port"], port)
-        config.override(["api_server", "enable_microbatch"], enable_microbatch)
-        config.override(["api_server", "run_with_ngrok"], run_with_ngrok)
-        config.override(["api_server", "enable_swagger"], enable_swagger)
-        config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
-        config.override(["marshal_server", "max_latency"], mb_max_latency)
-        container.config.from_dict(config.as_dict())
-
-        from bentoml import marshal, server
-
-        container.wire(packages=[marshal, server])
-
-        start_dev_server(saved_bundle_path)
+        start_dev_server(
+            saved_bundle_path,
+            port=port,
+            enable_microbatch=enable_microbatch,
+            mb_max_batch_size=mb_max_batch_size,
+            mb_max_latency=mb_max_latency,
+            run_with_ngrok=run_with_ngrok,
+            enable_swagger=enable_swagger,
+        )
 
     # Example Usage:
     # bentoml serve-gunicorn {BUNDLE_PATH} --port={PORT} --workers={WORKERS}
@@ -248,7 +255,7 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         "-p",
         "--port",
         type=click.INT,
-        default=None,
+        default=default_port,
         help="The port to listen on for the REST api server, default is 5000",
         envvar='BENTOML_PORT',
     )
@@ -256,30 +263,35 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         "-w",
         "--workers",
         type=click.INT,
-        default=None,
+        default=default_workers,
         help="Number of workers will start for the gunicorn server",
         envvar='BENTOML_GUNICORN_WORKERS',
     )
-    @click.option("--timeout", type=click.INT, default=None)
+    @click.option(
+        "--timeout",
+        type=click.INT,
+        default=default_timeout,
+        help="Number of seconds for an API server request to timeout",
+    )
     @add_options(batch_options)
-    @add_options(config_options)
     @click.option(
         '--microbatch-workers',
         type=click.INT,
-        default=None,
+        default=default_microbatch_workers,
         help="Number of micro-batch request dispatcher workers",
         envvar='BENTOML_MICROBATCH_WORKERS',
     )
     @click.option(
         '--yatai-url',
         type=click.STRING,
+        default=default_yatai_url,
         help='Remote YataiService URL. Optional. '
         'Example: "--yatai-url http://localhost:50050"',
     )
     @click.option(
         '--enable-swagger/--disable-swagger',
         is_flag=True,
-        default=None,
+        default=default_enable_swagger,
         help="Run API server with Swagger UI enabled",
         envvar='BENTOML_ENABLE_SWAGGER',
     )
@@ -294,7 +306,6 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
         microbatch_workers,
         yatai_url,
         enable_swagger,
-        config,
     ):
         if not psutil.POSIX:
             _echo(
@@ -304,27 +315,22 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
                 "https://docs.docker.com/docker-for-windows/ "
             )
             return
+
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )
 
-        container = BentoMLContainer()
-        config = BentoMLConfiguration(override_config_file=config)
-        config.override(["api_server", "port"], port)
-        config.override(["api_server", "workers"], workers)
-        config.override(["api_server", "timeout"], timeout)
-        config.override(["api_server", "enable_microbatch"], enable_microbatch)
-        config.override(["api_server", "enable_swagger"], enable_swagger)
-        config.override(["marshal_server", "max_batch_size"], mb_max_batch_size)
-        config.override(["marshal_server", "max_latency"], mb_max_latency)
-        config.override(["marshal_server", "workers"], microbatch_workers)
-        container.config.from_dict(config.as_dict())
-
-        from bentoml import marshal, server
-
-        container.wire(packages=[marshal, server])
-
-        start_prod_server(saved_bundle_path)
+        start_prod_server(
+            saved_bundle_path,
+            port=port,
+            workers=workers,
+            timeout=timeout,
+            enable_microbatch=enable_microbatch,
+            enable_swagger=enable_swagger,
+            mb_max_batch_size=mb_max_batch_size,
+            mb_max_latency=mb_max_latency,
+            microbatch_workers=microbatch_workers,
+        )
 
     @bentoml_cli.command(
         help="Install shell command completion",
@@ -370,8 +376,9 @@ def create_bento_service_cli(pip_installed_bundle_path=None):
     @click.option(
         '--yatai-url',
         type=click.STRING,
+        default=default_yatai_url,
         help='Specify the YataiService for running the containerization, default to '
-        'the Local YataiService with local docker deamon. Example: '
+        'the Local YataiService with local docker daemon. Example: '
         '"--yatai-url http://localhost:50050"',
     )
     def containerize(bento, push, tag, build_arg, yatai_url):

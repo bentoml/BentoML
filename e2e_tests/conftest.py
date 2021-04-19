@@ -1,15 +1,15 @@
 import logging
-import subprocess
-import uuid
-import time
 import os
 import signal
+import subprocess
 import sys
+import time
+import uuid
+
+import pytest
+from sklearn import datasets, svm
 
 import docker
-import pytest
-from sklearn import svm, datasets
-
 
 # Append local bentoml repository path which contains the 'e2e_tests/' directory
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -17,14 +17,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from bentoml.yatai.deployment.docker_utils import (  # noqa
     ensure_docker_available_or_raise,
 )
-
-from e2e_tests.iris_classifier_example import IrisClassifier
 from e2e_tests.cli_operations import delete_bento
-from e2e_tests.sample_bento_service import (
-    SampleBentoService,
-    UpdatedSampleBentoService,
-)
-
+from e2e_tests.iris_classifier_example import IrisClassifier
+from e2e_tests.sample_bento_service import SampleBentoService, UpdatedSampleBentoService
 
 logger = logging.getLogger('bentoml.test')
 
@@ -69,7 +64,7 @@ def basic_bentoservice_v2():
     delete_bento(bento_name)
 
 
-def wait_until_container_ready(container_name, check_message, timeout_seconds=60):
+def wait_until_container_ready(container_name, check_message, timeout_seconds=120):
     docker_client = docker.from_env()
 
     start_time = time.time()

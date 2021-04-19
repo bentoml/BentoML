@@ -7,16 +7,15 @@ from concurrent import futures
 
 import certifi
 import click
-
 from bentoml import config
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
+from bentoml.utils import reserve_free_port
 from bentoml.yatai.client.interceptor import (
     PromServerInterceptor,
     ServiceLatencyInterceptor,
 )
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
-from bentoml.utils import reserve_free_port
 from prometheus_client import start_http_server
 
 
@@ -29,17 +28,17 @@ def get_yatai_service(
     s3_endpoint_url=None,
     default_namespace=None,
 ):
-    channel_address = channel_address or config('yatai_service').get('url')
-    access_token = access_token or config('yatai_service').get('access_token')
-    access_token_header = access_token_header or config('yatai_service').get(
-        'access_token_header'
+    channel_address = channel_address or config("yatai_service").get("url")
+    access_token = access_token or config("yatai_service").get("access_token")
+    access_token_header = access_token_header or config("yatai_service").get(
+        "access_token_header"
     )
     channel_address = channel_address.strip()
     if channel_address:
         # Lazily import grpcio for YataiSerivce gRPC related actions
         import grpc
-        from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
         from bentoml.yatai.client.interceptor import header_client_interceptor
+        from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
 
         if any([db_url, repo_base_url, s3_endpoint_url, default_namespace]):
             logger.warning(
@@ -54,22 +53,22 @@ def get_yatai_service(
         header_adder_interceptor = header_client_interceptor.header_adder_interceptor(
             access_token_header, access_token
         )
-        if scheme in ('grpcs', 'https'):
+        if scheme in ("grpcs", "https"):
             tls_root_ca_cert = (
-                config().get('yatai_service', 'tls_root_ca_cert')
+                config().get("yatai_service", "tls_root_ca_cert")
                 # Adding also prev. name to ensure that old configurations do not break.
-                or config().get('yatai_service', 'client_certificate_file')
+                or config().get("yatai_service", "client_certificate_file")
                 or certifi.where()  # default: Mozilla ca cert
             )
-            tls_client_key = config().get('yatai_service', 'tls_client_key') or None
-            tls_client_cert = config().get('yatai_service', 'tls_client_cert') or None
-            with open(tls_root_ca_cert, 'rb') as fb:
+            tls_client_key = config().get("yatai_service", "tls_client_key") or None
+            tls_client_cert = config().get("yatai_service", "tls_client_cert") or None
+            with open(tls_root_ca_cert, "rb") as fb:
                 ca_cert = fb.read()
             if tls_client_key:
-                with open(tls_client_key, 'rb') as fb:
+                with open(tls_client_key, "rb") as fb:
                     tls_client_key = fb.read()
             if tls_client_cert:
-                with open(tls_client_cert, 'rb') as fb:
+                with open(tls_client_cert, "rb") as fb:
                     tls_client_cert = fb.read()
             credentials = grpc.ssl_channel_credentials(
                 ca_cert, tls_client_key, tls_client_cert
@@ -101,9 +100,11 @@ def start_yatai_service_grpc_server(
 ):
     # Lazily import grpcio for YataiSerivce gRPC related actions
     import grpc
+    from bentoml.yatai.proto.yatai_service_pb2_grpc import (
+        YataiServicer,
+        add_YataiServicer_to_server,
+    )
     from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
-    from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
-    from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
 
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(
@@ -119,21 +120,21 @@ def start_yatai_service_grpc_server(
     debug_mode = get_debug_mode()
     if debug_mode:
         try:
-            logger.debug('Enabling gRPC server reflection for debugging')
-            from grpc_reflection.v1alpha import reflection
+            logger.debug("Enabling gRPC server reflection for debugging")
             from bentoml.yatai.proto import yatai_service_pb2
+            from grpc_reflection.v1alpha import reflection
 
             SERVICE_NAMES = (
-                yatai_service_pb2.DESCRIPTOR.services_by_name['Yatai'].full_name,
+                yatai_service_pb2.DESCRIPTOR.services_by_name["Yatai"].full_name,
                 reflection.SERVICE_NAME,
             )
             reflection.enable_server_reflection(SERVICE_NAMES, server)
         except ImportError:
             logger.debug(
-                'Failed to enable gRPC server reflection, missing required package: '
+                "Failed to enable gRPC server reflection, missing required package: "
                 '"pip install grpcio-reflection"'
             )
-    server.add_insecure_port(f'[::]:{grpc_port}')
+    server.add_insecure_port(f"[::]:{grpc_port}")
 
     prometheus_port = 50052
     with reserve_free_port() as port:
@@ -144,12 +145,12 @@ def start_yatai_service_grpc_server(
     if with_ui:
         web_ui_log_path = os.path.join(
             config("logging").get("BASE_LOG_DIR"),
-            config('logging').get("yatai_web_server_log_filename"),
+            config("logging").get("yatai_web_server_log_filename"),
         )
 
         ensure_node_available_or_raise()
-        yatai_grpc_server_address = f'localhost:{grpc_port}'
-        prometheus_address = f'http://localhost:{prometheus_port}'
+        yatai_grpc_server_address = f"localhost:{grpc_port}"
+        prometheus_address = f"http://localhost:{prometheus_port}"
         async_start_yatai_service_web_ui(
             yatai_grpc_server_address,
             prometheus_address,
@@ -160,34 +161,44 @@ def start_yatai_service_grpc_server(
         )
 
     # We don't import _echo function from click_utils because of circular dep
+    if with_ui:
+        if debug_mode is True:
+            ui_port = 8080
+        web_ui_link = f"http://127.0.0.1:{ui_port}"
+        if base_url != ".":
+            web_ui_link += f"/{base_url}"
+        web_ui_message = f"running on {web_ui_link}"
+    else:
+        web_ui_message = "off"
+
     click.echo(
-        f'* Starting BentoML YataiService gRPC Server\n'
+        f"* Starting BentoML YataiService gRPC Server\n"
         f'* Debug mode: { "on" if debug_mode else "off"}\n'
-        f'''* Web UI: {f"running on http://127.0.0.1:{ui_port}/{base_url}"
+        f"""* Web UI: {f"running on http://127.0.0.1:{ui_port}/{base_url}"
         if (with_ui and base_url!=".")
-        else f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n'''
-        f'* Prometheus running on 127.0.0.1:{prometheus_port}\n'
-        f'* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n'
-        f'* Help and instructions: '
-        f'https://docs.bentoml.org/en/latest/guides/yatai_service.html\n'
+        else f"running on http://127.0.0.1:{ui_port}" if with_ui else "off"}\n"""
+        f"* Prometheus running on 127.0.0.1:{prometheus_port}\n"
+        f"* Running on 127.0.0.1:{grpc_port} (Press CTRL+C to quit)\n"
+        f"* Help and instructions: "
+        f"https://docs.bentoml.org/en/latest/guides/yatai_service.html\n"
         f'{f"* Web server log can be found here: {web_ui_log_path}" if with_ui else ""}'
-        f'\n-----\n'
-        f'* Usage in Python:\n'
+        f"\n-----\n"
+        f"* Usage in Python:\n"
         f'*  bento_svc.save(yatai_url="127.0.0.1:{grpc_port}")\n'
-        f'*  bentoml.yatai.client.get_yatai_client("127.0.0.1:{grpc_port}").repository.'
-        f'list()\n'
-        f'* Usage in CLI:\n'
-        f'*  bentoml list --yatai-url=127.0.0.1:{grpc_port}\n'
-        f'*  bentoml containerize IrisClassifier:latest --yatai-url=127.0.0.1:'
-        f'{grpc_port}\n'
-        f'*  bentoml push IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:'
-        f'{grpc_port}\n'
-        f'*  bentoml pull IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:'
-        f'{grpc_port}\n'
-        f'*  bentoml retrieve IrisClassifier:20200918001645_CD2886 '
+        f"*  from bentoml.yatai.client import get_yatai_client\n"
+        f'*  get_yatai_client("127.0.0.1:{grpc_port}").repository.list()\n'
+        f"* Usage in CLI:\n"
+        f"*  bentoml list --yatai-url=127.0.0.1:{grpc_port}\n"
+        f"*  bentoml containerize IrisClassifier:latest --yatai-url=127.0.0.1:"
+        f"{grpc_port}\n"
+        f"*  bentoml push IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:"
+        f"{grpc_port}\n"
+        f"*  bentoml pull IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:"
+        f"{grpc_port}\n"
+        f"*  bentoml retrieve IrisClassifier:20200918001645_CD2886 "
         f'--yatai-url=127.0.0.1:{grpc_port} --target_dir="/tmp/foo/bar"\n'
-        f'*  bentoml delete IrisClassifier:20200918001645_CD2886 '
-        f'--yatai-url=127.0.0.1:{grpc_port}\n'
+        f"*  bentoml delete IrisClassifier:20200918001645_CD2886 "
+        f"--yatai-url=127.0.0.1:{grpc_port}\n"
         # TODO: simplify the example usage here once related documentation is ready
     )
 
@@ -201,9 +212,9 @@ def start_yatai_service_grpc_server(
 
 def _is_web_server_debug_tools_available(root_dir):
     return (
-        os.path.exists(os.path.join(root_dir, 'node_modules/.bin', 'concurrently'))
-        and os.path.exists(os.path.join(root_dir, 'node_modules/.bin', 'ts-node'))
-        and os.path.exists(os.path.join(root_dir, 'node_modules/.bin', 'nodemon'))
+        os.path.exists(os.path.join(root_dir, "node_modules/.bin", "concurrently"))
+        and os.path.exists(os.path.join(root_dir, "node_modules/.bin", "ts-node"))
+        and os.path.exists(os.path.join(root_dir, "node_modules/.bin", "nodemon"))
     )
 
 
@@ -217,18 +228,18 @@ def async_start_yatai_service_web_ui(
 ):
     if ui_port is not None:
         ui_port = ui_port if isinstance(ui_port, str) else str(ui_port)
-    web_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'web'))
+    web_ui_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "web"))
     web_prefix_path = web_prefix_path.strip("/")
     if debug_mode:
         # Only when src/index.ts exists, we will run dev (nodemon)
         if os.path.exists(
-            os.path.join(web_ui_dir, 'src/index.ts')
+            os.path.join(web_ui_dir, "src/index.ts")
         ) and _is_web_server_debug_tools_available(web_ui_dir):
             web_ui_command = [
-                'npm',
-                'run',
-                'dev',
-                '--',
+                "npm",
+                "run",
+                "dev",
+                "--",
                 yatai_server_address,
                 ui_port,
                 base_log_path,
@@ -237,8 +248,8 @@ def async_start_yatai_service_web_ui(
             ]
         else:
             web_ui_command = [
-                'node',
-                'dist/bundle.js',
+                "node",
+                "dist/bundle.js",
                 yatai_server_address,
                 ui_port,
                 base_log_path,
@@ -246,15 +257,15 @@ def async_start_yatai_service_web_ui(
                 prometheus_address,
             ]
     else:
-        if not os.path.exists(os.path.join(web_ui_dir, 'dist', 'bundle.js')):
+        if not os.path.exists(os.path.join(web_ui_dir, "dist", "bundle.js")):
             raise BentoMLException(
-                'Yatai web client built is missing. '
-                'Please run `npm run build` in the bentoml/yatai/web directory '
-                'and then try again'
+                "Yatai web client built is missing. "
+                "Please run `npm run build` in the bentoml/yatai/web directory "
+                "and then try again"
             )
         web_ui_command = [
-            'node',
-            'dist/bundle.js',
+            "node",
+            "dist/bundle.js",
             yatai_server_address,
             ui_port,
             base_log_path,
@@ -268,9 +279,9 @@ def async_start_yatai_service_web_ui(
 
     is_web_proc_running = web_proc.poll() is None
     if not is_web_proc_running:
-        web_proc_output = web_proc.stdout.read().decode('utf-8')
-        logger.error(f'return code: {web_proc.returncode} {web_proc_output}')
-        raise BentoMLException('Yatai web ui did not start properly')
+        web_proc_output = web_proc.stdout.read().decode("utf-8")
+        logger.error(f"return code: {web_proc.returncode} {web_proc_output}")
+        raise BentoMLException("Yatai web ui did not start properly")
 
     atexit.register(web_proc.terminate)
 

@@ -51,6 +51,7 @@ message BentoServiceMetadata {
     int32 mb_max_latency = 7;
     int32 mb_max_batch_size = 8;
     bool batch = 9;
+    string route = 10;
   }
 
   string name = 1;

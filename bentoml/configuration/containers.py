@@ -18,36 +18,42 @@ import os
 
 from deepmerge import always_merger
 from dependency_injector import containers, providers
-from schema import Schema, SchemaError, And, Or
+from schema import And, Or, Schema, SchemaError, Optional, Use
 
 from bentoml.configuration import config
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils.ruamel_yaml import YAML
 
+
 LOGGER = logging.getLogger(__name__)
 
 SCHEMA = Schema(
     {
-        "api_server": {
+        "bento_server": {
             "port": And(int, lambda port: port > 0),
-            "enable_microbatch": bool,
-            "run_with_ngrok": bool,
-            "enable_swagger": bool,
-            "enable_metrics": bool,
-            "enable_feedback": bool,
-            "max_request_size": And(int, lambda size: size > 0),
             "workers": Or(And(int, lambda workers: workers > 0), None),
             "timeout": And(int, lambda timeout: timeout > 0),
+            "max_request_size": And(int, lambda size: size > 0),
+            "microbatch": {
+                "enabled": bool,
+                "workers": Or(And(int, lambda workers: workers > 0), None),
+                "max_batch_size": Or(And(int, lambda size: size > 0), None),
+                "max_latency": Or(And(int, lambda latency: latency > 0), None),
+            },
+            "ngrok": {"enabled": bool},
+            "swagger": {"enabled": bool},
+            "metrics": {"enabled": bool, "namespace": str},
+            "feedback": {"enabled": bool},
+            "logging": {"level": str},
         },
-        "marshal_server": {
-            "max_batch_size": And(int, lambda size: size > 0),
-            "max_latency": And(int, lambda latency: latency > 0),
-            "workers": Or(And(int, lambda workers: workers > 0), None),
-            "request_header_flag": str,
+        "tracing": {
+            "type": Or(
+                And(str, Use(str.lower), lambda s: s in ('zipkin', 'jaeger')), None
+            ),
+            Optional("zipkin"): {"url": Or(str, None)},
+            Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
-        "yatai": {"url": Or(str, None)},
-        "tracing": {"zipkin_api_url": Or(str, None)},
-        "instrument": {"namespace": str},
+        "adapters": {"image_input": {"default_extensions": [str]}},
     }
 )
 
@@ -81,28 +87,36 @@ class BentoMLConfiguration:
         # Legacy configuration compatibility
         if legacy_compatibility:
             try:
-                self.config["api_server"]["port"] = config("apiserver").getint(
+                self.config["bento_server"]["port"] = config("apiserver").getint(
                     "default_port"
                 )
-                self.config["api_server"]["max_request_size"] = config(
+                self.config["bento_server"]["workers"] = config("apiserver").getint(
+                    "default_gunicorn_workers_count"
+                )
+                self.config["bento_server"]["max_request_size"] = config(
                     "apiserver"
                 ).getint("default_max_request_size")
-                self.config["marshal_server"]["max_batch_size"] = config(
-                    "marshal_server"
-                ).getint("default_max_batch_size")
-                self.config["marshal_server"]["max_latency"] = config(
-                    "marshal_server"
-                ).getint("default_max_latency")
-                self.config["marshal_server"]["request_header_flag"] = config(
-                    "marshal_server"
-                ).get("marshal_request_header_flag")
-                self.config["yatai"]["url"] = config("yatai_service").get("url")
-                self.config["tracing"]["zipkin_api_url"] = config("tracing").get(
-                    "zipkin_api_url"
-                )
-                self.config["instrument"]["namespace"] = config("instrument").get(
-                    "default_namespace"
-                )
+
+                if "default_max_batch_size" in config("marshal_server"):
+                    self.config["bento_server"]["microbatch"][
+                        "max_batch_size"
+                    ] = config("marshal_server").getint("default_max_batch_size")
+
+                if "default_max_latency" in config("marshal_server"):
+                    self.config["bento_server"]["microbatch"]["max_latency"] = config(
+                        "marshal_server"
+                    ).getint("default_max_latency")
+
+                self.config["bento_server"]["metrics"]["namespace"] = config(
+                    "instrument"
+                ).get("default_namespace")
+
+                self.config["adapters"]["image_input"]["default_extensions"] = [
+                    extension.strip()
+                    for extension in config("apiserver")
+                    .get("default_image_input_accept_file_extensions")
+                    .split(",")
+                ]
             except KeyError as e:
                 raise BentoMLConfigException(
                     "Overriding a non-existent configuration key in compatibility mode."
@@ -118,8 +132,13 @@ class BentoMLConfiguration:
                     ) from e
 
         # User override configuration
-        if override_config_file is not None and os.path.exists(override_config_file):
+        if override_config_file is not None:
             LOGGER.info("Applying user config override from %s" % override_config_file)
+            if not os.path.exists(override_config_file):
+                raise BentoMLConfigException(
+                    f"Config file {override_config_file} not found"
+                )
+
             with open(override_config_file, "rb") as f:
                 override_config = YAML().load(f.read())
             always_merger.merge(self.config, override_config)
@@ -168,5 +187,5 @@ class BentoMLContainer(containers.DeclarativeContainer):
 
     api_server_workers = providers.Callable(
         lambda workers: workers if workers else (multiprocessing.cpu_count() // 2) + 1,
-        config.api_server.workers,
+        config.bento_server.workers,
     )

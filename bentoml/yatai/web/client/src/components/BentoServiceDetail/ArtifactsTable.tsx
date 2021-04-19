@@ -79,25 +79,34 @@ const artifactMetadataToTableContent = (artifactMetadata: any): string => {
 const ArtifactsTable: React.FC<{ artifacts: Array<IArtifactProps> }> = ({
   artifacts,
 }) => {
-  const artifactsTableContent = artifacts.map((artifact) => {
-    return {
-      content: [
-        artifact.name,
-        artifact.artifact_type,
-        artifactMetadataToTableContent(artifact.metadata),
-      ],
-    };
-  });
-  return (
-    <Section>
-      <h2>Artifacts</h2>
-      <Table
-        content={artifactsTableContent}
-        ratio={ARTIFACTS_TABLE_RATIO}
-        header={ARTIFACTS_TABLE_HEADER}
-      />
-    </Section>
-  );
+  if (artifacts && artifacts.length > 0) {
+    const artifactsTableContent = artifacts.map((artifact) => {
+      return {
+        content: [
+          artifact.name,
+          artifact.artifact_type,
+          artifactMetadataToTableContent(artifact.metadata)
+        ]
+      };
+    });
+    return (
+      <Section>
+        <h2>Artifacts</h2>
+        <Table
+          content={artifactsTableContent}
+          ratio={ARTIFACTS_TABLE_RATIO}
+          header={ARTIFACTS_TABLE_HEADER}
+        />
+      </Section>
+    );
+  } else {
+    return (
+      <Section>
+        <h2>Artifacts</h2>
+        <p>No Artifacts</p>
+      </Section>
+    )
+  }
 };
 
 export default ArtifactsTable;

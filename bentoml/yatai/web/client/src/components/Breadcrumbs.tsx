@@ -18,7 +18,6 @@ const Breadcrumbs: React.FC<IBreadcrumbsProps> = (props) => {
   );
   const location = useLocation();
   const { baseURL } = props;
-  console.log(baseURL);
   const HOME_CRUMB: IBreadcrumbProps = {
     text: "Home",
     href: baseURL + "/",
@@ -27,7 +26,7 @@ const Breadcrumbs: React.FC<IBreadcrumbsProps> = (props) => {
   React.useEffect(() => {
     const parsedBreadcrumbs = getBreadcrumbs(baseURL, location.pathname);
     setBreadcrumbs(parsedBreadcrumbs);
-  }, [location]);
+  }, [baseURL, location]);
 
   breadcrumbs.length > 0 && breadcrumbs.unshift(HOME_CRUMB);
   if (breadcrumbs.length === 0) {

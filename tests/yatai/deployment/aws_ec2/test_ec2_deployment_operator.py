@@ -1,6 +1,5 @@
 import os
 
-import boto3
 from mock import MagicMock, patch
 
 from bentoml.yatai.proto import status_pb2
@@ -16,8 +15,6 @@ from bentoml.yatai.proto.repository_pb2 import (
     GetBentoResponse,
 )
 from bentoml.yatai.deployment.aws_ec2.operator import (
-    _create_ecr_repo,
-    _get_ecr_password,
     _make_cloudformation_template,
     AwsEc2DeploymentOperator,
 )
@@ -71,62 +68,6 @@ def generate_ec2_deployment_pb():
     return test_deployment_pb
 
 
-def test_create_ecr_repo():
-    def mock_ecr_client_success_reponse(
-        self, op_name, args
-    ):  # pylint: disable=unused-argument
-        return {"repository": {"registryId": mock_registry_id}}
-
-    with patch(
-        "botocore.client.BaseClient._make_api_call", new=mock_ecr_client_success_reponse
-    ):
-        r = _create_ecr_repo(mock_registry_name, mock_region)
-        assert r == mock_registry_id
-
-
-# Need to patch 2 operation create_repository and describe_repositories
-def test_existing_ecr_repo():
-    ecr_client = boto3.client("ecr", mock_region)
-
-    def mock_ecr_client_raise_exception(
-        self, op_name, args
-    ):  # pylint: disable=unused-argument
-        if op_name == "CreateRepository":
-            raise ecr_client.exceptions.RepositoryAlreadyExistsException(
-                {"ResponseMetadata": {"maxAttemptsReached": True}}, "CreateRepository"
-            )
-        elif op_name == "DescribeRepositories":
-            return {"repositories": [{"registryId": mock_registry_id}]}
-
-    with patch(
-        "botocore.client.BaseClient._make_api_call", new=mock_ecr_client_raise_exception
-    ):
-        r = _create_ecr_repo(mock_registry_name, mock_region)
-        assert r == mock_registry_id
-
-
-def test_get_ecr_password():
-    def mock_ecr_client_auth_token(
-        self, op_name, args
-    ):  # pylint: disable=unused-argument
-        if op_name == "GetAuthorizationToken":
-            return {
-                "authorizationData": [
-                    {
-                        "authorizationToken": mock_registry_auth_token,
-                        "proxyEndpoint": mock_registry_endpoint,
-                    }
-                ]
-            }
-
-    with patch(
-        "botocore.client.BaseClient._make_api_call", new=mock_ecr_client_auth_token
-    ):
-        token, ep = _get_ecr_password(mock_registry_id, mock_region)
-        assert token == mock_registry_auth_token
-        assert ep == mock_registry_endpoint
-
-
 def test_make_cloudformation_template(tmpdir):
     mock_template_name = "template.yaml"
     _make_cloudformation_template(
@@ -157,8 +98,7 @@ def test_make_cloudformation_template(tmpdir):
     MagicMock(),
 )
 @patch(
-    "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.deploy_service",
-    MagicMock(),
+    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service", MagicMock(),
 )
 def test_ec2_add_success():
     def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
@@ -363,8 +303,7 @@ def test_ec2_describe_no_bucket_failure():
     MagicMock(),
 )
 @patch(
-    "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.deploy_service",
-    MagicMock(),
+    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service", MagicMock(),
 )
 def test_ec2_update_success():
     def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
@@ -425,8 +364,7 @@ def test_ec2_update_success():
     MagicMock(),
 )
 @patch(
-    "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.deploy_service",
-    MagicMock(),
+    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service", MagicMock(),
 )
 @patch(
     "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.describe",
@@ -457,8 +395,7 @@ def test_ec2_update_describe_failure():
     MagicMock(),
 )
 @patch(
-    "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.deploy_service",
-    MagicMock(),
+    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service", MagicMock(),
 )
 def test_ec2_update_no_bucket_failure():
     def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument

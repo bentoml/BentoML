@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.cfg")
 
 CONFIG_FILE_ENCODING = "utf-8"
+DEBUG_ENV_VAR = "BENTOML_DEBUG"
 
 
 def expand_env_var(env_var):
@@ -61,7 +62,6 @@ def parameterized_config(template):
 
 DEFAULT_BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
 BENTOML_HOME = DEFAULT_BENTOML_HOME
-BENTOML_CONFIG = os.path.join(BENTOML_HOME, "bentoml.yml")
 
 # This is used as default for config('core', 'bentoml_deploy_version') - which is used
 # for getting the BentoML PyPI version string or the URL to a BentoML sdist, indicating
@@ -108,7 +108,7 @@ def load_config():
     )
 
     local_config_file = get_local_config_file()
-    if os.path.isfile(local_config_file):
+    if os.path.isfile(local_config_file) and not local_config_file.endswith(".yml"):
         logger.info("Loading local BentoML config file: %s", local_config_file)
         with open(local_config_file, "rb") as f:
             loaded_config.read_string(
@@ -121,29 +121,6 @@ def load_config():
 
 
 _config = None
-
-
-def _reset_bentoml_home(new_bentoml_home_directory):
-    global _config  # pylint: disable=global-statement
-    global DEFAULT_BENTOML_HOME, BENTOML_HOME  # pylint: disable=global-statement
-
-    DEFAULT_BENTOML_HOME = new_bentoml_home_directory
-    BENTOML_HOME = new_bentoml_home_directory
-
-    # reload config
-    _config = load_config()
-
-    # re-config logging
-    from bentoml import configure_logging
-
-    root = logging.getLogger()
-    map(root.removeHandler, root.handlers[:])
-    map(root.removeFilter, root.filters[:])
-    configure_logging()
-
-
-def _get_bentoml_home():
-    return BENTOML_HOME
 
 
 def config(section=None):
@@ -191,17 +168,49 @@ def get_bentoml_deploy_version():
     return bentoml_deploy_version
 
 
-def get_debug_mode():
-    return config().getboolean('core', 'debug')
+def set_debug_mode(enabled: bool):
+    os.environ[DEBUG_ENV_VAR] = str(enabled)
 
-
-def set_debug_mode(debug_mode_on: bool):
-    config().set('core', 'debug', str(debug_mode_on))
-
+    # reconfigure logging
     from bentoml.utils.log import configure_logging
 
-    configure_logging()  # reconfigure logging and set log level to debug
+    configure_logging()
 
     logger.debug(
-        f"Setting debug mode: {'ON' if debug_mode_on else 'OFF'} for current session"
+        f"Setting debug mode: {'ON' if enabled else 'OFF'} for current session"
     )
+
+
+def get_debug_mode():
+    if DEBUG_ENV_VAR in os.environ:
+        return os.environ[DEBUG_ENV_VAR].lower() == "true"
+    return False
+
+
+def inject_dependencies():
+    """Inject dependencies and configuration to BentoML packages"""
+
+    from timeit import default_timer as timer
+
+    start = timer()
+
+    logger.debug("Start dependency injection")
+
+    from bentoml.configuration.containers import BentoMLContainer, BentoMLConfiguration
+
+    config_file = get_local_config_file()
+    if config_file.endswith(".yml"):
+        configuration = BentoMLConfiguration(override_config_file=config_file)
+    else:
+        configuration = BentoMLConfiguration()
+
+    container = BentoMLContainer()
+    container.config.from_dict(configuration.as_dict())
+
+    from bentoml import marshal, server, tracing, cli, adapters
+
+    container.wire(packages=[marshal, server, tracing, cli, adapters])
+
+    end = timer()
+
+    logger.debug("Dependency injection completed in %.3f seconds", end - start)

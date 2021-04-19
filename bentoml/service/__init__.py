@@ -26,12 +26,15 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from bentoml import config
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 from bentoml.configuration import get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 from bentoml.saved_bundle import save_to_dir
-from bentoml.saved_bundle.config import SavedBundleConfig
+from bentoml.saved_bundle.config import (
+    DEFAULT_MAX_BATCH_SIZE,
+    DEFAULT_MAX_LATENCY,
+    SavedBundleConfig,
+)
 from bentoml.saved_bundle.pip_pkg import seek_pip_packages
 from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
@@ -39,8 +42,6 @@ from bentoml.service.inference_api import InferenceAPI
 from bentoml.utils.hybridmethod import hybridmethod
 
 ARTIFACTS_DIR_NAME = "artifacts"
-DEFAULT_MAX_LATENCY = config("marshal_server").getint("default_max_latency")
-DEFAULT_MAX_BATCH_SIZE = config("marshal_server").getint("default_max_batch_size")
 BENTOML_RESERVED_API_NAMES = [
     "index",
     "swagger",
@@ -66,11 +67,26 @@ def validate_inference_api_name(api_name: str):
         )
 
 
+def validate_inference_api_route(route: str):
+    if re.findall(
+        r"[?#]+|^(//)|^:", route
+    ):  # contains '?' or '#' OR  start with '//' OR start with ':'
+        # https://tools.ietf.org/html/rfc3986#page-22
+        raise InvalidArgument(
+            "The path {} contains illegal url characters".format(route)
+        )
+    if route in BENTOML_RESERVED_API_NAMES:
+        raise InvalidArgument(
+            "Reserved API route: '{}' is reserved for infra endpoints".format(route)
+        )
+
+
 def api_decorator(
     *args,
     input: BaseInputAdapter = None,
     output: BaseOutputAdapter = None,
     api_name: str = None,
+    route: str = None,
     api_doc: str = None,
     mb_max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
     mb_max_latency: int = DEFAULT_MAX_LATENCY,
@@ -85,6 +101,10 @@ def api_decorator(
     :param output: OutputAdapter instance of the inference API
     :param api_name: API name, default to the user-defined callback function's function
         name
+    :param route: Specify HTTP URL route of this inference API. By default,
+        `api.name` is used as the route.  This parameter can be used for customizing
+        the URL route, e.g. `route="/api/v2/model_a/predict"`
+        Default: None (the same as api_name)
     :param api_doc: user-facing documentation of the inference API. default to the
         user-defined callback function's docstring
     :param mb_max_batch_size: The maximum size of requests batch accepted by this
@@ -113,7 +133,9 @@ def api_decorator(
 
     def decorator(func):
         _api_name = func.__name__ if api_name is None else api_name
+        _api_route = _api_name if route is None else route
         validate_inference_api_name(_api_name)
+        validate_inference_api_route(_api_route)
         _api_doc = func.__doc__ if api_doc is None else api_doc
 
         if input is None:
@@ -143,6 +165,7 @@ def api_decorator(
         setattr(func, "_input_adapter", input_adapter)
         setattr(func, "_output_adapter", output_adapter)
         setattr(func, "_api_name", _api_name)
+        setattr(func, "_api_route", _api_route)
         setattr(func, "_api_doc", _api_doc)
         setattr(func, "_mb_max_batch_size", mb_max_batch_size)
         setattr(func, "_mb_max_latency", mb_max_latency)
@@ -214,6 +237,7 @@ def env_decorator(
     requirements_txt_file: str = None,
     conda_channels: List[str] = None,
     conda_overwrite_channels: bool = False,
+    conda_override_channels: bool = False,
     conda_dependencies: List[str] = None,
     conda_env_yml_file: str = None,
     setup_sh: str = None,
@@ -232,12 +256,15 @@ def env_decorator(
         infer_pip_packages: whether to automatically find all the required
             pip dependencies and pin their version
         auto_pip_dependencies: same as infer_pip_packages but deprecated
-        requirements_txt_file: pip dependencies in the form of a requirements.txt file,
-            this can be a relative path to the requirements.txt file or the content
-            of the file
-        conda_channels: list of extra conda channels to be used
-        conda_overwrite_channels: Turn on to make conda_channels overwrite the list of
-            channels instead of adding to it
+        requirements_txt_file: path to the requirements.txt where pip dependencies
+            are explicitly specified, with ideally pinned versions
+        conda_channels: list of extra conda channels other than default channels to be
+            used. This is equivalent to passing the --channels to conda commands
+        conda_override_channels: ensures that conda searches only your specified
+            channel and no other channels, such as default channels.
+            This is equivalent to passing the --override-channels option to conda
+            commands, or adding `nodefaults` to the `channels` in the environment.yml
+        conda_overwrite_channels: aliases to `override_channels`
         conda_dependencies: list of conda dependencies required
         conda_env_yml_file: use a pre-defined conda environment yml file
         setup_sh: user defined setup bash script, it is executed in docker build time
@@ -275,6 +302,7 @@ def env_decorator(
             infer_pip_packages=infer_pip_packages or auto_pip_dependencies,
             requirements_txt_file=requirements_txt_file,
             conda_channels=conda_channels,
+            conda_override_channels=conda_override_channels,
             conda_overwrite_channels=conda_overwrite_channels,
             conda_dependencies=conda_dependencies,
             conda_env_yml_file=conda_env_yml_file,
@@ -360,10 +388,12 @@ def save(bento_service, base_path=None, version=None, labels=None):
     in local file system under the $BENTOML_HOME(~/bentoml) directory. Users can also
     configure BentoML to save their BentoService to a shared Database and cloud object
     storage such as AWS S3.
+
     :param bento_service: target BentoService instance to be saved
     :param base_path: optional - override repository base path
     :param version: optional - save with version override
     :param labels: optional - user defined labels
+
     :return: saved_path: file path to where the BentoService is saved
     """
 
@@ -451,14 +481,13 @@ class BentoService:
         # When creating BentoService instance from a saved bundle, set version to the
         # version specified in the saved bundle
         self._bento_service_version = self.__class__._bento_service_bundle_version
+        self._dev_server_bundle_path: tempfile.TemporaryDirectory = None
+        self._dev_server_interrupt_event: multiprocessing.Event = None
+        self._dev_server_process: subprocess.Process = None
 
         self._config_artifacts()
         self._config_inference_apis()
         self._config_environments()
-
-        self._dev_server_bundle_path: tempfile.TemporaryDirectory = None
-        self._dev_server_interrupt_event: multiprocessing.Event = None
-        self._dev_server_process: subprocess.Process = None
 
     def _config_environments(self):
         self._env = self.__class__._env or BentoServiceEnv()
@@ -479,6 +508,7 @@ class BentoService:
         ):
             if hasattr(function, "_is_api"):
                 api_name = getattr(function, "_api_name")
+                route = getattr(function, "_api_route", None)
                 api_doc = getattr(function, "_api_doc")
                 input_adapter = getattr(function, "_input_adapter")
                 output_adapter = getattr(function, "_output_adapter")
@@ -500,6 +530,7 @@ class BentoService:
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,
                         batch=batch,
+                        route=route,
                     )
                 )
 
@@ -526,7 +557,7 @@ class BentoService:
             self.artifacts.load_all(artifacts_path)
 
     @property
-    def inference_apis(self):
+    def inference_apis(self) -> List[InferenceAPI]:
         """Return a list of user defined API functions
 
         Returns:
@@ -747,7 +778,9 @@ class BentoService:
 
     pip_dependencies_map = None
 
-    def start_dev_server(self, port=None, enable_microbatch=False, enable_ngrok=False):
+    def start_dev_server(
+        self, port=None, enable_microbatch=False, enable_ngrok=False, debug=False
+    ):
         if enable_microbatch:
             raise NotImplementedError(
                 "start_dev_server with enable_microbatch=True is not implemented"
@@ -768,14 +801,18 @@ class BentoService:
 
             def run(path, interrupt_event):
                 my_env = os.environ.copy()
-                my_env["FLASK_ENV"] = "development"
-                cmd = [sys.executable, "-m", "bentoml", "serve", "--debug"]
+                # my_env["FLASK_ENV"] = "development"
+                cmd = [sys.executable, "-m", "bentoml", "serve"]
                 if port:
                     cmd += ['--port', f'{port}']
                 if enable_microbatch:
                     cmd += ['--enable-microbatch']
+                else:
+                    cmd += ['--disable-microbatch']
                 if enable_ngrok:
                     cmd += ['--run-with-ngrok']
+                if debug:
+                    cmd += ['--debug']
                 cmd += [path]
                 p = subprocess.Popen(
                     cmd,
@@ -798,7 +835,9 @@ class BentoService:
                 daemon=True,
             )
             self._dev_server_process.start()
-            logger.info(f"======= starting dev server on port: {port} =======")
+            logger.info(
+                f"======= starting dev server on port: {port if port else 5000} ======="
+            )
         except Exception as e:  # pylint: disable=broad-except
             self.stop_dev_server(skip_log=True)
             raise e
@@ -811,6 +850,7 @@ class BentoService:
             self._dev_server_process.join()
             assert not self._dev_server_process.is_alive()
             self._dev_server_process = None
+            logger.info("Dev server has stopped.")
         elif not skip_log:
             logger.warning("No dev server is running.")
         if self._dev_server_bundle_path:
@@ -818,7 +858,8 @@ class BentoService:
             self._dev_server_bundle_path = None
 
     def __del__(self):
-        self.stop_dev_server(skip_log=True)
+        if hasattr(self, "_dev_server_interrupt_event"):  # __init__ may not be called
+            self.stop_dev_server(skip_log=True)
 
     def infer_pip_dependencies_map(self):
         if not self.pip_dependencies_map:

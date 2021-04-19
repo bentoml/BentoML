@@ -8,10 +8,10 @@ from bentoml.exceptions import BentoMLConfigException
 
 def test_override():
     config = BentoMLConfiguration(legacy_compatibility=False)
-    config.override(["api_server", "port"], 6000)
+    config.override(["bento_server", "port"], 6000)
     config_dict = config.as_dict()
     assert config_dict is not None
-    assert config_dict["api_server"]["port"] == 6000
+    assert config_dict["bento_server"]["port"] == 6000
 
 
 def test_override_schema_violation():
@@ -30,10 +30,10 @@ def test_override_nonexist_key():
 
 def test_override_none_value():
     config = BentoMLConfiguration(legacy_compatibility=False)
-    config.override(["api_server", "port"], None)
+    config.override(["bento_server", "port"], None)
     config_dict = config.as_dict()
     assert config_dict is not None
-    assert config_dict["api_server"]["port"] == 5000
+    assert config_dict["bento_server"]["port"] == 5000
 
 
 def test_override_none_key():
@@ -50,23 +50,19 @@ def test_override_empty_key():
     assert e is not None
 
 
-def test_legacy_compatibiltiy():
+def test_legacy_compatibility():
     config = tempfile.NamedTemporaryFile(delete=False)
     config.write(
         b"""
-api_server:
+bento_server:
   port: 0
+  workers: 0
   max_request_size: 0
-marshal_server:
-  max_batch_size: 0
-  max_latency: 0
-  request_header_flag: Null
-yatai:
-  url: Null
-tracing:
-  zipkin_api_url: Null
-instrument:
-  namespace: Null
+  metrics:
+    namespace: Null
+adapters:
+  image_input:
+    extensions: []
 """
     )
     config.close()
@@ -78,16 +74,18 @@ instrument:
     ).as_dict()
     os.remove(config.name)
     assert config_dict is not None
-    assert config_dict["api_server"]["port"] == 5000
-    assert config_dict["api_server"]["max_request_size"] == 20971520
-    assert config_dict["marshal_server"]["max_batch_size"] == 2000
-    assert config_dict["marshal_server"]["max_latency"] == 10000
-    assert config_dict["marshal_server"]["request_header_flag"] == (
-        "BentoML-Is-Merged-Request"
-    )
-    assert config_dict["yatai"]["url"] == ""
-    assert config_dict["tracing"]["zipkin_api_url"] == ""
-    assert config_dict["instrument"]["namespace"] == "BENTOML"
+    assert config_dict["bento_server"]["port"] == 5000
+    assert config_dict["bento_server"]["workers"] == 1
+    assert config_dict["bento_server"]["max_request_size"] == 20971520
+    assert config_dict["bento_server"]["metrics"]["namespace"] == "BENTOML"
+    assert config_dict["adapters"]["image_input"]["default_extensions"] == [
+        '.jpg',
+        '.png',
+        '.jpeg',
+        '.tiff',
+        '.webp',
+        '.bmp',
+    ]
 
 
 def test_validate_schema():
@@ -117,7 +115,7 @@ def test_api_server_workers():
     config_auto_workers = tempfile.NamedTemporaryFile(delete=False)
     config_auto_workers.write(
         b"""
-api_server:
+bento_server:
   workers: Null
 """
     )
@@ -138,7 +136,7 @@ api_server:
     config_manual_workers = tempfile.NamedTemporaryFile(delete=False)
     config_manual_workers.write(
         b"""
-api_server:
+bento_server:
   workers: 42
 """
     )

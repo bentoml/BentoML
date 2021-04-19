@@ -35,7 +35,6 @@ logger = logging.getLogger(__name__)
 
 EXAMPLE_CONFIG_USAGE = '''
 Example usage for `bentoml config`:
-  bentoml config set usage_tracking=false
   bentoml config set apiserver.default_port=9000
   bentoml config unset apiserver.default_port
 '''

@@ -29,7 +29,7 @@
     "react-scripts": "3.4.4",
     "typescript": "~3.7.2"
   },
-  "proxy": "http://localhost:3000",  
+  "proxy": "http://localhost:3000",
   "scripts": {
     "start": "PORT=8080 BROWSER=none react-scripts start",
     "build": "react-scripts build",

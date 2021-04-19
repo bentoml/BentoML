@@ -22,7 +22,7 @@ const inputConfigToTableContent = (
     }
     */
 
-  const displayInputList : React.ReactNode[]= [];
+  const displayInputList: React.ReactNode[] = [];
   const configureKeys = Object.keys(config);
   for (let index = 0; index < configureKeys.length; index++) {
     const key = configureKeys[index];

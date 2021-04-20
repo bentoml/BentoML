@@ -342,6 +342,10 @@ jobs:
           cd ..
           ls -l
           cd ..
+          pwd
+          ls -l 
+          cd ..
+          pwd
           ls -l 
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh

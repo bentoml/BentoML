@@ -11,6 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import io
+import os
+import shutil
+import tarfile
+import uuid
+from datetime import datetime
 import logging
 from datetime import datetime
 from dependency_injector.wiring import Provide, inject
@@ -41,6 +47,7 @@ from bentoml.yatai.proto.repository_pb2 import (
     ListBentoResponse,
     BentoUri,
     ContainerizeBentoResponse,
+    UploadBentoResponse,
 )
 from bentoml.yatai.proto.yatai_service_pb2 import (
     HealthCheckResponse,
@@ -579,5 +586,58 @@ def get_yatai_service_impl(base=object):
                     return ContainerizeBentoResponse(status=Status.INTERNAL(e))
 
             # pylint: enable=unused-argument
+
+        def UploadBento(self, request_iterator, context=None):
+            # 1. create temp directory for the file
+            # 2. write bytes into the tar file
+            # 3. unzip tar to the fs storage
+            # 4. update the path for the bento
+            # 5. return response
+            with self.db.create_session() as sess:
+                try:
+                    with TempDirectory(cleanup=False) as temp_dir:
+                        temp_tar_path = os.path.join(
+                            temp_dir, f'{uuid.uuid4().hex[:12]}.tar'
+                        )
+                        print(f'saved yatai tar path: {temp_tar_path}')
+                        file = open(temp_tar_path, 'wb+')
+                        for request in request_iterator:
+                            bento_name = request.bento_name
+                            bento_version = request.bento_version
+                            file.write(request.bento_bundle)
+                        if bento_name is None or bento_version is None:
+                            return UploadBentoResponse(status=Status.ABORTED())
+                        bento_pb = self.db.metadata_store.get(
+                            sess, bento_name, bento_version
+                        )
+                        file.seek(0)
+                        if bento_pb:
+                            # save the content
+                            if os.path.exists(bento_pb.uri.uri):
+                                shutil.rmtree(bento_pb.uri.uri)
+                            tar = tarfile.open(fileobj=file, mode='r:gz')
+                            # the tar is build an extra directory...
+                            bento_bundle_root, _ = os.path.split(bento_pb.uri.uri)
+                            tar.extractall(path=bento_bundle_root)
+                            tar.close()
+                            file.close()
+                            return UploadBentoResponse(status=Status.OK())
+                        else:
+                            return UploadBentoResponse(
+                                status=Status.NOT_FOUND(
+                                    "BentoService `{}:{}` is not found".format(
+                                        bento_name, bento_version
+                                    )
+                                )
+                            )
+                except BentoMLException as e:
+                    logger.error("RPC ERROR GetBento: %s", e)
+                    return UploadBentoResponse(status=e.status_proto)
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.error("RPC ERROR GetBento: %s", e)
+                    return UploadBentoResponse(status=Status.INTERNAL())
+
+        def DownloadBento(self, request, context=None):
+            pass
 
     return YataiServiceImpl

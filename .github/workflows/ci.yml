@@ -336,6 +336,9 @@ jobs:
       - name: List directory
         run: |
           ls -l
+      - name: List directory
+        run: |
+          pwd
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run tests

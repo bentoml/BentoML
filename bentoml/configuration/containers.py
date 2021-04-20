@@ -20,7 +20,6 @@ from deepmerge import always_merger
 from dependency_injector import containers, providers
 from schema import And, Or, Schema, SchemaError, Optional, Use
 
-from bentoml import __version__
 from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils.ruamel_yaml import YAML
@@ -47,7 +46,7 @@ SCHEMA = Schema(
             },
             "ngrok": {"enabled": bool},
             "swagger": {"enabled": bool},
-            "metrics": {"enabled": bool, "namespace": str, "prometheus_dir": str},
+            "metrics": {"enabled": bool, "namespace": str},
             "feedback": {"enabled": bool},
             "logging": {"level": str},
         },
@@ -61,7 +60,8 @@ SCHEMA = Schema(
         "adapters": {"image_input": {"default_extensions": [str]}},
         "yatai": {
             "repository": {"directory": str},
-            "database": {"scheme": str, "name": str},
+            "database": {"url": Or(str, None)},
+            "namespace": str,
         },
     }
 )
@@ -156,7 +156,7 @@ class BentoMLContainer(containers.DeclarativeContainer):
     )
 
     prometheus_multiproc_dir = providers.Callable(
-        os.path.join, bentoml_home, config.bento_server.metrics.prometheus_dir,
+        os.path.join, bentoml_home, "prometheus_multiproc_dir",
     )
 
     bento_bundle_deployment_version = providers.Callable(
@@ -168,7 +168,10 @@ class BentoMLContainer(containers.DeclarativeContainer):
     )
 
     yatai_database_url = providers.Callable(
-        "{}:///{}".format,
-        config.yatai.database.scheme,
-        providers.Callable(os.path.join, bentoml_home, config.yatai.database.name),
+        lambda default, customized: customized if customized else default,
+        providers.Callable(
+            "sqlite:///{}".format,
+            providers.Callable(os.path.join, bentoml_home, "storage.db"),
+        ),
+        config.yatai.database.url,
     )

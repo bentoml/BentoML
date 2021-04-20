@@ -88,7 +88,6 @@ def get_yatai_service_impl(base=object):
         ):
             cfg = config('yatai_service')
             s3_endpoint_url = s3_endpoint_url or cfg.get('s3_endpoint_url') or None
-            default_namespace = default_namespace or cfg.get('default_namespace')
 
             self.default_namespace = default_namespace
             self.repo = Repository(repo_base_url, s3_endpoint_url)

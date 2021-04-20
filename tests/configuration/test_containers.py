@@ -209,3 +209,20 @@ def test_yatai_database_url():
     assert container.yatai_database_url() == "{}:///{}".format(
         "sqlite", os.path.expanduser("~/bentoml/storage.db")
     )
+
+    override_config = tempfile.NamedTemporaryFile(delete=False)
+    override_config.write(
+        b"""
+yatai:
+  database:
+    url: customized_url
+"""
+    )
+    override_config.close()
+
+    config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
+    container.config.from_dict(config)
+
+    assert container.yatai_database_url() == "customized_url"
+
+    os.remove(override_config.name)

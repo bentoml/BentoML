@@ -22,7 +22,7 @@ def get_yatai_service(
     access_token=None,
     access_token_header=None,
     s3_endpoint_url=None,
-    default_namespace=None,
+    default_namespace: str = Provide[BentoMLContainer.config.yatai.namespace],
     db_url: str = Provide[BentoMLContainer.yatai_database_url],
     repo_base_url: str = Provide[BentoMLContainer.yatai_repository_base_url],
 ):

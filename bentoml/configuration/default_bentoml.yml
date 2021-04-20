@@ -24,7 +24,6 @@ bento_server:
   metrics:
     enabled: True
     namespace: BENTOML
-    prometheus_dir: prometheus_multiproc_dir
   feedback:
     enabled: True
   logging:
@@ -50,15 +49,17 @@ adapters:
 
 yatai:
   repository:
-    type: local
-    local:
-      directory: repository
-    s3:
-      directory: repository
-      endpoint: Null
-    gcs:
-      url: Null
+    directory: repository
+    # type: local
+    # local:
+    #   directory: Null
+    # s3:
+    #   url: Null
+    #   endpoint_url: Null
+    # gcs:
+    #   url: Null
   database:
-    scheme: sqlite
-    name: storage.db
+    url: Null
+  namespace: dev
 
+#  --web-prefix-path

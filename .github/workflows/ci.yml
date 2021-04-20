@@ -339,9 +339,9 @@ jobs:
       - name: issue debug commands
         run: |
           pwd
-          cd..
+          cd ..
           ls -l
-          cd..
+          cd ..
           ls -l 
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh

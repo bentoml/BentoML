@@ -333,9 +333,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
-      - name: List directory
-        run: |
-          ls -l
       - name: issue debug commands
         run: |
           pwd
@@ -347,6 +344,8 @@ jobs:
           cd ..
           pwd
           ls -l 
+          cd workdir
+          ls -l
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh
       - name: Run tests

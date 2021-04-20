@@ -18,6 +18,7 @@ import inspect
 from io import StringIO
 import os
 import socket
+import tarfile
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
@@ -254,3 +255,11 @@ def resolve_bento_bundle_uri(bento_pb):
         return bento_pb.uri.gcs_presigned_url
     else:
         return bento_pb.uri.uri
+
+
+def _archive_directory_to_tar(source_dir, tarfile_dir, arcname):
+    file_name = f'{arcname}.tar'
+    tarfile_path = f'{tarfile_dir}/{file_name}'
+    with tarfile.open(tarfile_path, mode="w:gz") as tar:
+        tar.add(source_dir, arcname=arcname)
+    return tarfile_path, file_name

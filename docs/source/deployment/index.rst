@@ -46,6 +46,7 @@ and open source platforms:
   aws_ecs
   heroku
   google_cloud_run
+  google_cloud_ai_platform
   azure_container_instance
   knative
   kubeflow

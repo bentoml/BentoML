@@ -119,6 +119,7 @@ to understand which deployment option is best suited for your use case.
 * Manual cloud deployment guides:
   - [AWS ECS](https://docs.bentoml.org/en/latest/deployment/aws_ecs.html)
   - [Google Cloud Run](https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html)
+  - [Google Cloud AI Platform Unified](https://docs.bentoml.org/en/latest/deployment/google_cloud_ai_platform.html)
   - [Azure container instance](https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html)
   - [Heroku](https://docs.bentoml.org/en/latest/deployment/heroku.html)
 

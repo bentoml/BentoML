@@ -11103,6 +11103,845 @@ export const bentoml = $root.bentoml = (() => {
         return ContainerizeBentoResponse;
     })();
 
+    bentoml.UploadBentoRequest = (function() {
+
+        /**
+         * Properties of an UploadBentoRequest.
+         * @memberof bentoml
+         * @interface IUploadBentoRequest
+         * @property {string|null} [bento_name] UploadBentoRequest bento_name
+         * @property {string|null} [bento_version] UploadBentoRequest bento_version
+         * @property {Uint8Array|null} [bento_bundle] UploadBentoRequest bento_bundle
+         */
+
+        /**
+         * Constructs a new UploadBentoRequest.
+         * @memberof bentoml
+         * @classdesc Represents an UploadBentoRequest.
+         * @implements IUploadBentoRequest
+         * @constructor
+         * @param {bentoml.IUploadBentoRequest=} [properties] Properties to set
+         */
+        function UploadBentoRequest(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * UploadBentoRequest bento_name.
+         * @member {string} bento_name
+         * @memberof bentoml.UploadBentoRequest
+         * @instance
+         */
+        UploadBentoRequest.prototype.bento_name = "";
+
+        /**
+         * UploadBentoRequest bento_version.
+         * @member {string} bento_version
+         * @memberof bentoml.UploadBentoRequest
+         * @instance
+         */
+        UploadBentoRequest.prototype.bento_version = "";
+
+        /**
+         * UploadBentoRequest bento_bundle.
+         * @member {Uint8Array} bento_bundle
+         * @memberof bentoml.UploadBentoRequest
+         * @instance
+         */
+        UploadBentoRequest.prototype.bento_bundle = $util.newBuffer([]);
+
+        /**
+         * Creates a new UploadBentoRequest instance using the specified properties.
+         * @function create
+         * @memberof bentoml.UploadBentoRequest
+         * @static
+         * @param {bentoml.IUploadBentoRequest=} [properties] Properties to set
+         * @returns {bentoml.UploadBentoRequest} UploadBentoRequest instance
+         */
+        UploadBentoRequest.create = function create(properties) {
+            return new UploadBentoRequest(properties);
+        };
+
+        /**
+         * Encodes the specified UploadBentoRequest message. Does not implicitly {@link bentoml.UploadBentoRequest.verify|verify} messages.
+         * @function encode
+         * @memberof bentoml.UploadBentoRequest
+         * @static
+         * @param {bentoml.IUploadBentoRequest} message UploadBentoRequest message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        UploadBentoRequest.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
+            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
+            if (message.bento_bundle != null && Object.hasOwnProperty.call(message, "bento_bundle"))
+                writer.uint32(/* id 3, wireType 2 =*/26).bytes(message.bento_bundle);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified UploadBentoRequest message, length delimited. Does not implicitly {@link bentoml.UploadBentoRequest.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof bentoml.UploadBentoRequest
+         * @static
+         * @param {bentoml.IUploadBentoRequest} message UploadBentoRequest message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        UploadBentoRequest.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an UploadBentoRequest message from the specified reader or buffer.
+         * @function decode
+         * @memberof bentoml.UploadBentoRequest
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {bentoml.UploadBentoRequest} UploadBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        UploadBentoRequest.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.UploadBentoRequest();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.bento_name = reader.string();
+                    break;
+                case 2:
+                    message.bento_version = reader.string();
+                    break;
+                case 3:
+                    message.bento_bundle = reader.bytes();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an UploadBentoRequest message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof bentoml.UploadBentoRequest
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {bentoml.UploadBentoRequest} UploadBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        UploadBentoRequest.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an UploadBentoRequest message.
+         * @function verify
+         * @memberof bentoml.UploadBentoRequest
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        UploadBentoRequest.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+                if (!$util.isString(message.bento_name))
+                    return "bento_name: string expected";
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+                if (!$util.isString(message.bento_version))
+                    return "bento_version: string expected";
+            if (message.bento_bundle != null && message.hasOwnProperty("bento_bundle"))
+                if (!(message.bento_bundle && typeof message.bento_bundle.length === "number" || $util.isString(message.bento_bundle)))
+                    return "bento_bundle: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates an UploadBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof bentoml.UploadBentoRequest
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.UploadBentoRequest} UploadBentoRequest
+         */
+        UploadBentoRequest.fromObject = function fromObject(object) {
+            if (object instanceof $root.bentoml.UploadBentoRequest)
+                return object;
+            let message = new $root.bentoml.UploadBentoRequest();
+            if (object.bento_name != null)
+                message.bento_name = String(object.bento_name);
+            if (object.bento_version != null)
+                message.bento_version = String(object.bento_version);
+            if (object.bento_bundle != null)
+                if (typeof object.bento_bundle === "string")
+                    $util.base64.decode(object.bento_bundle, message.bento_bundle = $util.newBuffer($util.base64.length(object.bento_bundle)), 0);
+                else if (object.bento_bundle.length)
+                    message.bento_bundle = object.bento_bundle;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an UploadBentoRequest message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof bentoml.UploadBentoRequest
+         * @static
+         * @param {bentoml.UploadBentoRequest} message UploadBentoRequest
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        UploadBentoRequest.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.bento_name = "";
+                object.bento_version = "";
+                if (options.bytes === String)
+                    object.bento_bundle = "";
+                else {
+                    object.bento_bundle = [];
+                    if (options.bytes !== Array)
+                        object.bento_bundle = $util.newBuffer(object.bento_bundle);
+                }
+            }
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+                object.bento_name = message.bento_name;
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+                object.bento_version = message.bento_version;
+            if (message.bento_bundle != null && message.hasOwnProperty("bento_bundle"))
+                object.bento_bundle = options.bytes === String ? $util.base64.encode(message.bento_bundle, 0, message.bento_bundle.length) : options.bytes === Array ? Array.prototype.slice.call(message.bento_bundle) : message.bento_bundle;
+            return object;
+        };
+
+        /**
+         * Converts this UploadBentoRequest to JSON.
+         * @function toJSON
+         * @memberof bentoml.UploadBentoRequest
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        UploadBentoRequest.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return UploadBentoRequest;
+    })();
+
+    bentoml.UploadBentoResponse = (function() {
+
+        /**
+         * Properties of an UploadBentoResponse.
+         * @memberof bentoml
+         * @interface IUploadBentoResponse
+         * @property {bentoml.IStatus|null} [status] UploadBentoResponse status
+         */
+
+        /**
+         * Constructs a new UploadBentoResponse.
+         * @memberof bentoml
+         * @classdesc Represents an UploadBentoResponse.
+         * @implements IUploadBentoResponse
+         * @constructor
+         * @param {bentoml.IUploadBentoResponse=} [properties] Properties to set
+         */
+        function UploadBentoResponse(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * UploadBentoResponse status.
+         * @member {bentoml.IStatus|null|undefined} status
+         * @memberof bentoml.UploadBentoResponse
+         * @instance
+         */
+        UploadBentoResponse.prototype.status = null;
+
+        /**
+         * Creates a new UploadBentoResponse instance using the specified properties.
+         * @function create
+         * @memberof bentoml.UploadBentoResponse
+         * @static
+         * @param {bentoml.IUploadBentoResponse=} [properties] Properties to set
+         * @returns {bentoml.UploadBentoResponse} UploadBentoResponse instance
+         */
+        UploadBentoResponse.create = function create(properties) {
+            return new UploadBentoResponse(properties);
+        };
+
+        /**
+         * Encodes the specified UploadBentoResponse message. Does not implicitly {@link bentoml.UploadBentoResponse.verify|verify} messages.
+         * @function encode
+         * @memberof bentoml.UploadBentoResponse
+         * @static
+         * @param {bentoml.IUploadBentoResponse} message UploadBentoResponse message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        UploadBentoResponse.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+                $root.bentoml.Status.encode(message.status, writer.uint32(/* id 1, wireType 2 =*/10).fork()).ldelim();
+            return writer;
+        };
+
+        /**
+         * Encodes the specified UploadBentoResponse message, length delimited. Does not implicitly {@link bentoml.UploadBentoResponse.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof bentoml.UploadBentoResponse
+         * @static
+         * @param {bentoml.IUploadBentoResponse} message UploadBentoResponse message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        UploadBentoResponse.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an UploadBentoResponse message from the specified reader or buffer.
+         * @function decode
+         * @memberof bentoml.UploadBentoResponse
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {bentoml.UploadBentoResponse} UploadBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        UploadBentoResponse.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.UploadBentoResponse();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.status = $root.bentoml.Status.decode(reader, reader.uint32());
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an UploadBentoResponse message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof bentoml.UploadBentoResponse
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {bentoml.UploadBentoResponse} UploadBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        UploadBentoResponse.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an UploadBentoResponse message.
+         * @function verify
+         * @memberof bentoml.UploadBentoResponse
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        UploadBentoResponse.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.status != null && message.hasOwnProperty("status")) {
+                let error = $root.bentoml.Status.verify(message.status);
+                if (error)
+                    return "status." + error;
+            }
+            return null;
+        };
+
+        /**
+         * Creates an UploadBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof bentoml.UploadBentoResponse
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.UploadBentoResponse} UploadBentoResponse
+         */
+        UploadBentoResponse.fromObject = function fromObject(object) {
+            if (object instanceof $root.bentoml.UploadBentoResponse)
+                return object;
+            let message = new $root.bentoml.UploadBentoResponse();
+            if (object.status != null) {
+                if (typeof object.status !== "object")
+                    throw TypeError(".bentoml.UploadBentoResponse.status: object expected");
+                message.status = $root.bentoml.Status.fromObject(object.status);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an UploadBentoResponse message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof bentoml.UploadBentoResponse
+         * @static
+         * @param {bentoml.UploadBentoResponse} message UploadBentoResponse
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        UploadBentoResponse.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                object.status = null;
+            if (message.status != null && message.hasOwnProperty("status"))
+                object.status = $root.bentoml.Status.toObject(message.status, options);
+            return object;
+        };
+
+        /**
+         * Converts this UploadBentoResponse to JSON.
+         * @function toJSON
+         * @memberof bentoml.UploadBentoResponse
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        UploadBentoResponse.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return UploadBentoResponse;
+    })();
+
+    bentoml.DownloadBentoRequest = (function() {
+
+        /**
+         * Properties of a DownloadBentoRequest.
+         * @memberof bentoml
+         * @interface IDownloadBentoRequest
+         * @property {string|null} [bento_name] DownloadBentoRequest bento_name
+         * @property {string|null} [bento_version] DownloadBentoRequest bento_version
+         */
+
+        /**
+         * Constructs a new DownloadBentoRequest.
+         * @memberof bentoml
+         * @classdesc Represents a DownloadBentoRequest.
+         * @implements IDownloadBentoRequest
+         * @constructor
+         * @param {bentoml.IDownloadBentoRequest=} [properties] Properties to set
+         */
+        function DownloadBentoRequest(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * DownloadBentoRequest bento_name.
+         * @member {string} bento_name
+         * @memberof bentoml.DownloadBentoRequest
+         * @instance
+         */
+        DownloadBentoRequest.prototype.bento_name = "";
+
+        /**
+         * DownloadBentoRequest bento_version.
+         * @member {string} bento_version
+         * @memberof bentoml.DownloadBentoRequest
+         * @instance
+         */
+        DownloadBentoRequest.prototype.bento_version = "";
+
+        /**
+         * Creates a new DownloadBentoRequest instance using the specified properties.
+         * @function create
+         * @memberof bentoml.DownloadBentoRequest
+         * @static
+         * @param {bentoml.IDownloadBentoRequest=} [properties] Properties to set
+         * @returns {bentoml.DownloadBentoRequest} DownloadBentoRequest instance
+         */
+        DownloadBentoRequest.create = function create(properties) {
+            return new DownloadBentoRequest(properties);
+        };
+
+        /**
+         * Encodes the specified DownloadBentoRequest message. Does not implicitly {@link bentoml.DownloadBentoRequest.verify|verify} messages.
+         * @function encode
+         * @memberof bentoml.DownloadBentoRequest
+         * @static
+         * @param {bentoml.IDownloadBentoRequest} message DownloadBentoRequest message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DownloadBentoRequest.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.bento_name != null && Object.hasOwnProperty.call(message, "bento_name"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.bento_name);
+            if (message.bento_version != null && Object.hasOwnProperty.call(message, "bento_version"))
+                writer.uint32(/* id 2, wireType 2 =*/18).string(message.bento_version);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified DownloadBentoRequest message, length delimited. Does not implicitly {@link bentoml.DownloadBentoRequest.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof bentoml.DownloadBentoRequest
+         * @static
+         * @param {bentoml.IDownloadBentoRequest} message DownloadBentoRequest message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DownloadBentoRequest.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a DownloadBentoRequest message from the specified reader or buffer.
+         * @function decode
+         * @memberof bentoml.DownloadBentoRequest
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {bentoml.DownloadBentoRequest} DownloadBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DownloadBentoRequest.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DownloadBentoRequest();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.bento_name = reader.string();
+                    break;
+                case 2:
+                    message.bento_version = reader.string();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a DownloadBentoRequest message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof bentoml.DownloadBentoRequest
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {bentoml.DownloadBentoRequest} DownloadBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DownloadBentoRequest.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a DownloadBentoRequest message.
+         * @function verify
+         * @memberof bentoml.DownloadBentoRequest
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        DownloadBentoRequest.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+                if (!$util.isString(message.bento_name))
+                    return "bento_name: string expected";
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+                if (!$util.isString(message.bento_version))
+                    return "bento_version: string expected";
+            return null;
+        };
+
+        /**
+         * Creates a DownloadBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof bentoml.DownloadBentoRequest
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DownloadBentoRequest} DownloadBentoRequest
+         */
+        DownloadBentoRequest.fromObject = function fromObject(object) {
+            if (object instanceof $root.bentoml.DownloadBentoRequest)
+                return object;
+            let message = new $root.bentoml.DownloadBentoRequest();
+            if (object.bento_name != null)
+                message.bento_name = String(object.bento_name);
+            if (object.bento_version != null)
+                message.bento_version = String(object.bento_version);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a DownloadBentoRequest message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof bentoml.DownloadBentoRequest
+         * @static
+         * @param {bentoml.DownloadBentoRequest} message DownloadBentoRequest
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DownloadBentoRequest.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults) {
+                object.bento_name = "";
+                object.bento_version = "";
+            }
+            if (message.bento_name != null && message.hasOwnProperty("bento_name"))
+                object.bento_name = message.bento_name;
+            if (message.bento_version != null && message.hasOwnProperty("bento_version"))
+                object.bento_version = message.bento_version;
+            return object;
+        };
+
+        /**
+         * Converts this DownloadBentoRequest to JSON.
+         * @function toJSON
+         * @memberof bentoml.DownloadBentoRequest
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        DownloadBentoRequest.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return DownloadBentoRequest;
+    })();
+
+    bentoml.DownloadBentoResponse = (function() {
+
+        /**
+         * Properties of a DownloadBentoResponse.
+         * @memberof bentoml
+         * @interface IDownloadBentoResponse
+         * @property {Uint8Array|null} [bento_bundle] DownloadBentoResponse bento_bundle
+         */
+
+        /**
+         * Constructs a new DownloadBentoResponse.
+         * @memberof bentoml
+         * @classdesc Represents a DownloadBentoResponse.
+         * @implements IDownloadBentoResponse
+         * @constructor
+         * @param {bentoml.IDownloadBentoResponse=} [properties] Properties to set
+         */
+        function DownloadBentoResponse(properties) {
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * DownloadBentoResponse bento_bundle.
+         * @member {Uint8Array} bento_bundle
+         * @memberof bentoml.DownloadBentoResponse
+         * @instance
+         */
+        DownloadBentoResponse.prototype.bento_bundle = $util.newBuffer([]);
+
+        /**
+         * Creates a new DownloadBentoResponse instance using the specified properties.
+         * @function create
+         * @memberof bentoml.DownloadBentoResponse
+         * @static
+         * @param {bentoml.IDownloadBentoResponse=} [properties] Properties to set
+         * @returns {bentoml.DownloadBentoResponse} DownloadBentoResponse instance
+         */
+        DownloadBentoResponse.create = function create(properties) {
+            return new DownloadBentoResponse(properties);
+        };
+
+        /**
+         * Encodes the specified DownloadBentoResponse message. Does not implicitly {@link bentoml.DownloadBentoResponse.verify|verify} messages.
+         * @function encode
+         * @memberof bentoml.DownloadBentoResponse
+         * @static
+         * @param {bentoml.IDownloadBentoResponse} message DownloadBentoResponse message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DownloadBentoResponse.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.bento_bundle != null && Object.hasOwnProperty.call(message, "bento_bundle"))
+                writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.bento_bundle);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified DownloadBentoResponse message, length delimited. Does not implicitly {@link bentoml.DownloadBentoResponse.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof bentoml.DownloadBentoResponse
+         * @static
+         * @param {bentoml.IDownloadBentoResponse} message DownloadBentoResponse message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        DownloadBentoResponse.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes a DownloadBentoResponse message from the specified reader or buffer.
+         * @function decode
+         * @memberof bentoml.DownloadBentoResponse
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {bentoml.DownloadBentoResponse} DownloadBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DownloadBentoResponse.decode = function decode(reader, length) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.bentoml.DownloadBentoResponse();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                switch (tag >>> 3) {
+                case 1:
+                    message.bento_bundle = reader.bytes();
+                    break;
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes a DownloadBentoResponse message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof bentoml.DownloadBentoResponse
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {bentoml.DownloadBentoResponse} DownloadBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        DownloadBentoResponse.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies a DownloadBentoResponse message.
+         * @function verify
+         * @memberof bentoml.DownloadBentoResponse
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        DownloadBentoResponse.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.bento_bundle != null && message.hasOwnProperty("bento_bundle"))
+                if (!(message.bento_bundle && typeof message.bento_bundle.length === "number" || $util.isString(message.bento_bundle)))
+                    return "bento_bundle: buffer expected";
+            return null;
+        };
+
+        /**
+         * Creates a DownloadBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof bentoml.DownloadBentoResponse
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {bentoml.DownloadBentoResponse} DownloadBentoResponse
+         */
+        DownloadBentoResponse.fromObject = function fromObject(object) {
+            if (object instanceof $root.bentoml.DownloadBentoResponse)
+                return object;
+            let message = new $root.bentoml.DownloadBentoResponse();
+            if (object.bento_bundle != null)
+                if (typeof object.bento_bundle === "string")
+                    $util.base64.decode(object.bento_bundle, message.bento_bundle = $util.newBuffer($util.base64.length(object.bento_bundle)), 0);
+                else if (object.bento_bundle.length)
+                    message.bento_bundle = object.bento_bundle;
+            return message;
+        };
+
+        /**
+         * Creates a plain object from a DownloadBentoResponse message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof bentoml.DownloadBentoResponse
+         * @static
+         * @param {bentoml.DownloadBentoResponse} message DownloadBentoResponse
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        DownloadBentoResponse.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.defaults)
+                if (options.bytes === String)
+                    object.bento_bundle = "";
+                else {
+                    object.bento_bundle = [];
+                    if (options.bytes !== Array)
+                        object.bento_bundle = $util.newBuffer(object.bento_bundle);
+                }
+            if (message.bento_bundle != null && message.hasOwnProperty("bento_bundle"))
+                object.bento_bundle = options.bytes === String ? $util.base64.encode(message.bento_bundle, 0, message.bento_bundle.length) : options.bytes === Array ? Array.prototype.slice.call(message.bento_bundle) : message.bento_bundle;
+            return object;
+        };
+
+        /**
+         * Converts this DownloadBentoResponse to JSON.
+         * @function toJSON
+         * @memberof bentoml.DownloadBentoResponse
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        DownloadBentoResponse.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        return DownloadBentoResponse;
+    })();
+
     bentoml.Yatai = (function() {
 
         /**
@@ -11561,6 +12400,72 @@ export const bentoml = $root.bentoml = (() => {
          * @instance
          * @param {bentoml.IContainerizeBentoRequest} request ContainerizeBentoRequest message or plain object
          * @returns {Promise<bentoml.ContainerizeBentoResponse>} Promise
+         * @variation 2
+         */
+
+        /**
+         * Callback as used by {@link bentoml.Yatai#uploadBento}.
+         * @memberof bentoml.Yatai
+         * @typedef UploadBentoCallback
+         * @type {function}
+         * @param {Error|null} error Error, if any
+         * @param {bentoml.UploadBentoResponse} [response] UploadBentoResponse
+         */
+
+        /**
+         * Calls UploadBento.
+         * @function uploadBento
+         * @memberof bentoml.Yatai
+         * @instance
+         * @param {bentoml.IUploadBentoRequest} request UploadBentoRequest message or plain object
+         * @param {bentoml.Yatai.UploadBentoCallback} callback Node-style callback called with the error, if any, and UploadBentoResponse
+         * @returns {undefined}
+         * @variation 1
+         */
+        Object.defineProperty(Yatai.prototype.uploadBento = function uploadBento(request, callback) {
+            return this.rpcCall(uploadBento, $root.bentoml.UploadBentoRequest, $root.bentoml.UploadBentoResponse, request, callback);
+        }, "name", { value: "UploadBento" });
+
+        /**
+         * Calls UploadBento.
+         * @function uploadBento
+         * @memberof bentoml.Yatai
+         * @instance
+         * @param {bentoml.IUploadBentoRequest} request UploadBentoRequest message or plain object
+         * @returns {Promise<bentoml.UploadBentoResponse>} Promise
+         * @variation 2
+         */
+
+        /**
+         * Callback as used by {@link bentoml.Yatai#downloadBento}.
+         * @memberof bentoml.Yatai
+         * @typedef DownloadBentoCallback
+         * @type {function}
+         * @param {Error|null} error Error, if any
+         * @param {bentoml.DownloadBentoResponse} [response] DownloadBentoResponse
+         */
+
+        /**
+         * Calls DownloadBento.
+         * @function downloadBento
+         * @memberof bentoml.Yatai
+         * @instance
+         * @param {bentoml.IDownloadBentoRequest} request DownloadBentoRequest message or plain object
+         * @param {bentoml.Yatai.DownloadBentoCallback} callback Node-style callback called with the error, if any, and DownloadBentoResponse
+         * @returns {undefined}
+         * @variation 1
+         */
+        Object.defineProperty(Yatai.prototype.downloadBento = function downloadBento(request, callback) {
+            return this.rpcCall(downloadBento, $root.bentoml.DownloadBentoRequest, $root.bentoml.DownloadBentoResponse, request, callback);
+        }, "name", { value: "DownloadBento" });
+
+        /**
+         * Calls DownloadBento.
+         * @function downloadBento
+         * @memberof bentoml.Yatai
+         * @instance
+         * @param {bentoml.IDownloadBentoRequest} request DownloadBentoRequest message or plain object
+         * @returns {Promise<bentoml.DownloadBentoResponse>} Promise
          * @variation 2
          */
 

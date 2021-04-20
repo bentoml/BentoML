@@ -93,6 +93,16 @@ class YataiStub(object):
                 request_serializer=repository__pb2.ContainerizeBentoRequest.SerializeToString,
                 response_deserializer=repository__pb2.ContainerizeBentoResponse.FromString,
                 )
+        self.UploadBento = channel.stream_unary(
+                '/bentoml.Yatai/UploadBento',
+                request_serializer=repository__pb2.UploadBentoRequest.SerializeToString,
+                response_deserializer=repository__pb2.UploadBentoResponse.FromString,
+                )
+        self.DownloadBento = channel.unary_stream(
+                '/bentoml.Yatai/DownloadBento',
+                request_serializer=repository__pb2.DownloadBentoRequest.SerializeToString,
+                response_deserializer=repository__pb2.DownloadBentoResponse.FromString,
+                )
 
 
 class YataiServicer(object):
@@ -207,6 +217,18 @@ class YataiServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def UploadBento(self, request_iterator, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DownloadBento(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_YataiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -274,6 +296,16 @@ def add_YataiServicer_to_server(servicer, server):
                     servicer.ContainerizeBento,
                     request_deserializer=repository__pb2.ContainerizeBentoRequest.FromString,
                     response_serializer=repository__pb2.ContainerizeBentoResponse.SerializeToString,
+            ),
+            'UploadBento': grpc.stream_unary_rpc_method_handler(
+                    servicer.UploadBento,
+                    request_deserializer=repository__pb2.UploadBentoRequest.FromString,
+                    response_serializer=repository__pb2.UploadBentoResponse.SerializeToString,
+            ),
+            'DownloadBento': grpc.unary_stream_rpc_method_handler(
+                    servicer.DownloadBento,
+                    request_deserializer=repository__pb2.DownloadBentoRequest.FromString,
+                    response_serializer=repository__pb2.DownloadBentoResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -514,5 +546,39 @@ class Yatai(object):
         return grpc.experimental.unary_unary(request, target, '/bentoml.Yatai/ContainerizeBento',
             repository__pb2.ContainerizeBentoRequest.SerializeToString,
             repository__pb2.ContainerizeBentoResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UploadBento(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.stream_unary(request_iterator, target, '/bentoml.Yatai/UploadBento',
+            repository__pb2.UploadBentoRequest.SerializeToString,
+            repository__pb2.UploadBentoResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def DownloadBento(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/bentoml.Yatai/DownloadBento',
+            repository__pb2.DownloadBentoRequest.SerializeToString,
+            repository__pb2.DownloadBentoResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

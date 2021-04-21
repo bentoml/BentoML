@@ -8,10 +8,6 @@ from bentoml.yatai.client import YataiClient
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(np.asfarray(test_data))
 
-ragged_data = [[15], [7, 8], [1, 2, 3, 4, 5]]
-ragged_tensor = tf.ragged.constant(ragged_data, dtype=tf.float64)
-
-
 class TfNativeModel(tf.Module):
     def __init__(self):
         super().__init__()
@@ -25,18 +21,19 @@ class TfNativeModel(tf.Module):
         return self.dense(inputs)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def tensorflow_model(tmp_path_factory):
     model1 = TfNativeModel()
-    tmpdir = str(tmp_path_factory.mktemp("tf2_model"))
+    tmpdir = tmp_path_factory.mktemp("tf2_model")
     tf.saved_model.save(model1, tmpdir)
+    print(tmpdir)
     return tmpdir
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def convert_to_onnx(tensorflow_model, tmp_path_factory):
     tf_model = tensorflow_model()
-    tmpdir = str(tmp_path_factory.mktemp("onnx_model"))
+    tmpdir = tmp_path_factory.mktemp("onnx_model")
     modelpath = tmpdir + '/model.onnx'
     command = [
         'python -m tf2onnx.convert',
@@ -53,7 +50,7 @@ def convert_to_onnx(tensorflow_model, tmp_path_factory):
     return modelpath
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def compile_model(convert_to_onnx, tmp_path_factory):
     command = [
         './onnx-mlir',
@@ -70,7 +67,7 @@ def compile_model(convert_to_onnx, tmp_path_factory):
     return modelname
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def get_onnx_mlir_svc(compile_model):
     svc = OnnxMlirClassifier()
     # need to check compile output location from compile_model

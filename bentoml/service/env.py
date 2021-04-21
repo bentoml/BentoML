@@ -172,8 +172,9 @@ class BentoServiceEnv(object):
         self._requirements_txt_content = None
 
         if conda_overwrite_channels is None and conda_override_channels is None:
-            if config('env').getboolean('conda_overwrite_channels') \
-                    or config('env').getboolean('conda_override_channels'):
+            if config('env').getboolean('conda_overwrite_channels') or config(
+                'env'
+            ).getboolean('conda_override_channels'):
                 conda_overwrite_channels = conda_override_channels = True
             else:
                 conda_overwrite_channels = conda_override_channels = False

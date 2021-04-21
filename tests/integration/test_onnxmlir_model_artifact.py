@@ -35,12 +35,13 @@ def tensorflow_model(tmp_path_factory):
 
 @pytest.fixture(scope="module")
 def convert_to_onnx(tensorflow_model, tmp_path_factory):
+    tf_model = tensorflow_model()
     tmpdir = str(tmp_path_factory.mktemp("onnx_model"))
-    modelpath = tmpdir + 'model.onnx'
+    modelpath = tmpdir + '/model.onnx'
     command = [
         'python -m tf2onnx.convert',
         '--saved-model',
-        tensorflow_model,
+        tf_model,
         '--output',
         modelpath,
     ]
@@ -73,7 +74,8 @@ def compile_model(convert_to_onnx, tmp_path_factory):
 def get_onnx_mlir_svc(compile_model):
     svc = OnnxMlirClassifier()
     # need to check compile output location from compile_model
-    svc.pack('model', compile_model)
+    model = compile_model()
+    svc.pack('model', model)
     return svc
 
 

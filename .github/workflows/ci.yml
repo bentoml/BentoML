@@ -336,6 +336,10 @@ jobs:
       - name: issue debug commands
         run: |
           pwd
+          ls -l 
+          cd ci 
+          ls -l
+          cd .. 
           cd ..
           ls -l
           cd ..
@@ -347,10 +351,7 @@ jobs:
           cd workdir
           ls -l
       - name: Install test dependencies
-        run: | 
-          pwd
-          ls -l /__w/BentoML/BentoML/ci/install_test_deps.sh
-          /__w/BentoML/BentoML/ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/onnxmlir_integration_tests.sh
       - name: Upload test coverage to Codecov

@@ -19,7 +19,7 @@ class TfNativeModel(tf.Module):
         self.dense = lambda inputs: tf.matmul(inputs, self.weights)
 
     @tf.function(
-        input_signature=[tf.TensorSpec(shape=[1, 5], dtype=tf.float32, name='inputs')]
+        input_signature=[tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name='inputs')]
     )
     def __call__(self, inputs):
         return self.dense(inputs)

@@ -156,8 +156,8 @@ class BentoServiceEnv(object):
         infer_pip_packages: bool = False,
         requirements_txt_file: str = None,
         conda_channels: List[str] = None,
-        conda_overwrite_channels: bool = False,
-        conda_override_channels: bool = False,
+        conda_overwrite_channels: bool = None,
+        conda_override_channels: bool = None,
         conda_dependencies: List[str] = None,
         conda_env_yml_file: str = None,
         setup_sh: str = None,
@@ -170,6 +170,13 @@ class BentoServiceEnv(object):
         self._pip_extra_index_url = pip_extra_index_url
         self._requirements_txt_file = requirements_txt_file
         self._requirements_txt_content = None
+
+        if conda_overwrite_channels is None and conda_override_channels is None:
+            if config('env').getboolean('conda_overwrite_channels') \
+                    or config('env').getboolean('conda_override_channels'):
+                conda_overwrite_channels = conda_override_channels = True
+            else:
+                conda_overwrite_channels = conda_override_channels = False
 
         self._conda_env = CondaEnv(
             channels=conda_channels,

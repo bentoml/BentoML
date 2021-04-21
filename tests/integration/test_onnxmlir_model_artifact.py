@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 import subprocess
 from tests.bento_service_examples.onnxmlir_classifier import OnnxMlirClassifier
+from bentoml.yatai.client import YataiClient
 
 test_data = [[1, 2, 3, 4, 5]]
 test_tensor = tf.constant(np.asfarray(test_data))
@@ -80,3 +81,7 @@ def test_onnxmlir_artifact(get_onnx_mlir_svc):
     assert (
         get_onnx_mlir_svc.predict(test_tensor) == 15.0
     ), 'Inference on onnx-mlir artifact does not match expected'
+
+    # clean up saved bundle
+    yc = YataiClient()
+    yc.repository.delete(f'{svc.name}:{svc.version}')

@@ -350,7 +350,7 @@ jobs:
         run: | 
           pwd
           ls -l 
-          ./ci/install_test_deps.sh
+          /__w/BentoML/BentoML/ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/onnxmlir_integration_tests.sh
       - name: Upload test coverage to Codecov

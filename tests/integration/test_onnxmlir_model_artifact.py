@@ -78,6 +78,7 @@ def get_onnx_mlir_svc(compile_model):
 
 
 def test_onnxmlir_artifact(get_onnx_mlir_svc):
+    svc = get_onnx_mlir_svc()
     assert (
         get_onnx_mlir_svc.predict(test_tensor) == 15.0
     ), 'Inference on onnx-mlir artifact does not match expected'

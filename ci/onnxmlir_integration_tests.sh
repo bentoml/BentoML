@@ -16,9 +16,9 @@ export PATH=/workdir/onnx-mlir/build/bin:${PATH}
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-pip install pip --upgrade
-pip install tensorflow==2.2.0
-pip install -U tf2onnx
+python3 -m pip install pip --upgrade
+python3 -m pip install tensorflow==2.2.0
+python3 -m pip install -U tf2onnx
 
 # Install required packages for onnx-mlir model artifacts test
 # not here: pip install onnx onnxruntime skl2onnx

@@ -349,7 +349,7 @@ jobs:
       - name: Install test dependencies
         run: | 
           pwd
-          ls -l 
+          ls -l /__w/BentoML/BentoML/ci/install_test_deps.sh
           /__w/BentoML/BentoML/ci/install_test_deps.sh
       - name: Run tests
         run: ./ci/onnxmlir_integration_tests.sh

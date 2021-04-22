@@ -353,6 +353,12 @@ jobs:
           cd workdir
           ls -l
           pwd
+          cd onnx-mlir 
+          ls -l 
+          cd build 
+          cd bin 
+          ls -l 
+          onnx-mlir
       - name: Run tests
         run: ./ci/onnxmlir_integration_tests.sh
       - name: Upload test coverage to Codecov

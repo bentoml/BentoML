@@ -336,7 +336,23 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/onnxmlir_integration_tests.sh
+        run: |
+          pwd
+          ls -l 
+          cd ci 
+          ls -l
+          cd .. 
+          cd ..
+          ls -l
+          cd ..
+          pwd
+          ls -l 
+          cd ..
+          pwd
+          ls -l 
+          cd workdir
+          ls -l
+          ./ci/onnxmlir_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

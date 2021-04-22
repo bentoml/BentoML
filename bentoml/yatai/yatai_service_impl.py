@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import io
+import math
 import os
 import shutil
 import tarfile
@@ -48,6 +49,7 @@ from bentoml.yatai.proto.repository_pb2 import (
     BentoUri,
     ContainerizeBentoResponse,
     UploadBentoResponse,
+    DownloadBentoResponse,
 )
 from bentoml.yatai.proto.yatai_service_pb2 import (
     HealthCheckResponse,
@@ -595,7 +597,7 @@ def get_yatai_service_impl(base=object):
             # 5. return response
             with self.db.create_session() as sess:
                 try:
-                    with TempDirectory(cleanup=False) as temp_dir:
+                    with TempDirectory() as temp_dir:
                         temp_tar_path = os.path.join(
                             temp_dir, f'{uuid.uuid4().hex[:12]}.tar'
                         )
@@ -638,6 +640,41 @@ def get_yatai_service_impl(base=object):
                     return UploadBentoResponse(status=Status.INTERNAL())
 
         def DownloadBento(self, request, context=None):
-            pass
+            with self.db.create_session() as sess:
+                try:
+                    bento_pb = self.db.metadata_store.get(
+                        sess, request.bento_name, request.bento_version
+                    )
+                    with TempDirectory() as temp_dir:
+                        tarfile_path = os.path.join(
+                            temp_dir, f'{bento_pb.name}_{bento_pb.version}.tar'
+                        )
+                        file = open(tarfile_path, 'wb+')
+                        with tarfile.open(mode='w:gz', fileobj=file) as tar:
+                            tar.add(
+                                bento_pb.uri.uri,
+                                arcname=f'{bento_pb.name}_{bento_pb.version}',
+                            )
+                        file.seek(0)
+                        file_size = os.path.getsize(tarfile_path)
+                        chunk_size = 1024 * 1024 # 1M
+                        chunk_count = math.ceil(float(file_size) / chunk_size)
+                        sent_chunk_count = 0
+                        file_index = 0
+                        while sent_chunk_count < chunk_count:
+                            current_file_end = min(file_size, file_index + chunk_size)
+                            file.seek(file_index)
+                            chunk = file.read(chunk_size)
+                            file_index = current_file_end
+                            sent_chunk_count += 1
+                            response = DownloadBentoResponse(bento_bundle=chunk)
+                            yield response
+                        file.close()
+                except BentoMLException as e:
+                    logger.error("RPC ERROR GetBento: %s", e)
+                    return DownloadBentoResponse(status=e.status_proto)
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.error("RPC ERROR GetBento: %s", e)
+                    return DownloadBentoResponse(status=Status.INTERNAL())
 
     return YataiServiceImpl

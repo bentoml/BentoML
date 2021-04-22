@@ -24,9 +24,9 @@ class TfNativeModel(tf.Module):
 @pytest.fixture()
 def tensorflow_model(tmp_path_factory):
     model1 = TfNativeModel()
-    tmpdir = tmp_path_factory.mktemp("tf2_model")
-    tf.saved_model.save(model1, tmpdir)
+    tmpdir = str(tmp_path_factory.mktemp("tf2_model"))
     print(tmpdir)
+    tf.saved_model.save(model1, tmpdir)
     return tmpdir
 
 

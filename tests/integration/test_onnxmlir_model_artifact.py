@@ -70,9 +70,10 @@ def compile_model(convert_to_onnx, tmp_path_factory):
         '--EmitLib',
         onnxmodelloc
     ]
+    onnx_mlir_loc = '/workdir/onnx-mlir/build/bin'
     docker_proc = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True
+        text=True, cwd=onnx_mlir_loc
     )
     stdout, stderr = docker_proc.communicate()
     # should return something like: 'Shared library model.so has been compiled.'

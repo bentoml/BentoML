@@ -17,7 +17,7 @@ import os
 import stat
 from pathlib import Path
 from sys import version_info
-from typing import List
+from typing import List, Optional
 
 from pkg_resources import Requirement
 
@@ -156,8 +156,8 @@ class BentoServiceEnv(object):
         infer_pip_packages: bool = False,
         requirements_txt_file: str = None,
         conda_channels: List[str] = None,
-        conda_overwrite_channels: bool = None,
-        conda_override_channels: bool = None,
+        conda_overwrite_channels: Optional[bool] = None,
+        conda_override_channels: Optional[bool] = None,
         conda_dependencies: List[str] = None,
         conda_env_yml_file: str = None,
         setup_sh: str = None,

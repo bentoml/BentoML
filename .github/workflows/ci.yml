@@ -357,8 +357,10 @@ jobs:
           ls -l 
           cd build 
           ls -l
+          pwd
           cd bin 
           ls -l 
+          pwd
           onnx-mlir
       - name: Run tests
         run: ./ci/onnxmlir_integration_tests.sh

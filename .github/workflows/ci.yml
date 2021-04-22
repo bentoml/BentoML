@@ -335,7 +335,7 @@ jobs:
           python-version: 3.7
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
-      - name: Run tests
+      - name: Check lists
         run: |
           pwd
           ls -l 
@@ -352,7 +352,9 @@ jobs:
           ls -l 
           cd workdir
           ls -l
-          ./ci/onnxmlir_integration_tests.sh
+          pwd
+      - name: Run tests
+        run: ./ci/onnxmlir_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

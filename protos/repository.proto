@@ -174,4 +174,5 @@ message DownloadBentoRequest {
 
 message DownloadBentoResponse {
   bytes bento_bundle = 1;
+  Status status=2;
 }

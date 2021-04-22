@@ -4750,6 +4750,9 @@ export namespace bentoml {
 
         /** DownloadBentoResponse bento_bundle */
         bento_bundle?: (Uint8Array|null);
+
+        /** DownloadBentoResponse status */
+        status?: (bentoml.IStatus|null);
     }
 
     /** Represents a DownloadBentoResponse. */
@@ -4763,6 +4766,9 @@ export namespace bentoml {
 
         /** DownloadBentoResponse bento_bundle. */
         public bento_bundle: Uint8Array;
+
+        /** DownloadBentoResponse status. */
+        public status?: (bentoml.IStatus|null);
 
         /**
          * Creates a new DownloadBentoResponse instance using the specified properties.

@@ -11753,6 +11753,7 @@ export const bentoml = $root.bentoml = (() => {
          * @memberof bentoml
          * @interface IDownloadBentoResponse
          * @property {Uint8Array|null} [bento_bundle] DownloadBentoResponse bento_bundle
+         * @property {bentoml.IStatus|null} [status] DownloadBentoResponse status
          */
 
         /**
@@ -11777,6 +11778,14 @@ export const bentoml = $root.bentoml = (() => {
          * @instance
          */
         DownloadBentoResponse.prototype.bento_bundle = $util.newBuffer([]);
+
+        /**
+         * DownloadBentoResponse status.
+         * @member {bentoml.IStatus|null|undefined} status
+         * @memberof bentoml.DownloadBentoResponse
+         * @instance
+         */
+        DownloadBentoResponse.prototype.status = null;
 
         /**
          * Creates a new DownloadBentoResponse instance using the specified properties.
@@ -11804,6 +11813,8 @@ export const bentoml = $root.bentoml = (() => {
                 writer = $Writer.create();
             if (message.bento_bundle != null && Object.hasOwnProperty.call(message, "bento_bundle"))
                 writer.uint32(/* id 1, wireType 2 =*/10).bytes(message.bento_bundle);
+            if (message.status != null && Object.hasOwnProperty.call(message, "status"))
+                $root.bentoml.Status.encode(message.status, writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
             return writer;
         };
 
@@ -11840,6 +11851,9 @@ export const bentoml = $root.bentoml = (() => {
                 switch (tag >>> 3) {
                 case 1:
                     message.bento_bundle = reader.bytes();
+                    break;
+                case 2:
+                    message.status = $root.bentoml.Status.decode(reader, reader.uint32());
                     break;
                 default:
                     reader.skipType(tag & 7);
@@ -11879,6 +11893,11 @@ export const bentoml = $root.bentoml = (() => {
             if (message.bento_bundle != null && message.hasOwnProperty("bento_bundle"))
                 if (!(message.bento_bundle && typeof message.bento_bundle.length === "number" || $util.isString(message.bento_bundle)))
                     return "bento_bundle: buffer expected";
+            if (message.status != null && message.hasOwnProperty("status")) {
+                let error = $root.bentoml.Status.verify(message.status);
+                if (error)
+                    return "status." + error;
+            }
             return null;
         };
 
@@ -11899,6 +11918,11 @@ export const bentoml = $root.bentoml = (() => {
                     $util.base64.decode(object.bento_bundle, message.bento_bundle = $util.newBuffer($util.base64.length(object.bento_bundle)), 0);
                 else if (object.bento_bundle.length)
                     message.bento_bundle = object.bento_bundle;
+            if (object.status != null) {
+                if (typeof object.status !== "object")
+                    throw TypeError(".bentoml.DownloadBentoResponse.status: object expected");
+                message.status = $root.bentoml.Status.fromObject(object.status);
+            }
             return message;
         };
 
@@ -11915,7 +11939,7 @@ export const bentoml = $root.bentoml = (() => {
             if (!options)
                 options = {};
             let object = {};
-            if (options.defaults)
+            if (options.defaults) {
                 if (options.bytes === String)
                     object.bento_bundle = "";
                 else {
@@ -11923,8 +11947,12 @@ export const bentoml = $root.bentoml = (() => {
                     if (options.bytes !== Array)
                         object.bento_bundle = $util.newBuffer(object.bento_bundle);
                 }
+                object.status = null;
+            }
             if (message.bento_bundle != null && message.hasOwnProperty("bento_bundle"))
                 object.bento_bundle = options.bytes === String ? $util.base64.encode(message.bento_bundle, 0, message.bento_bundle.length) : options.bytes === Array ? Array.prototype.slice.call(message.bento_bundle) : message.bento_bundle;
+            if (message.status != null && message.hasOwnProperty("status"))
+                object.status = $root.bentoml.Status.toObject(message.status, options);
             return object;
         };
 

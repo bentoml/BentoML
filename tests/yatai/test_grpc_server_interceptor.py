@@ -2,11 +2,12 @@ from unittest import TestCase
 from unittest.mock import Mock
 from parameterized import parameterized
 
-from bentoml.yatai.client.interceptor.prom_server_interceptor import (
+from bentoml.yatai.grpc_interceptor.prom_server_interceptor import (
     PromServerInterceptor,
     ServiceLatencyInterceptor,
     _wrap_rpc_behaviour,
 )
+
 from bentoml.yatai.utils import parse_method_name, MethodName
 
 import requests

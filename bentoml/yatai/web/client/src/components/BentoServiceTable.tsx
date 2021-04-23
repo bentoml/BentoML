@@ -60,8 +60,8 @@ const BentoServiceTable = (props) => {
           null,
           null,
           <Link to={`/repository/${bento.name}/${bento.version}`}>Detail</Link>,
-        ]
-      }
+        ],
+      };
     } else {
       const apis = apisToDisplayFormat(metadata.apis);
       const artifacts = artifactsToDisplayFormat(metadata.artifacts);

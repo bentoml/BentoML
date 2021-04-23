@@ -65,7 +65,7 @@ const ApisTable: React.FC<{ apis: Array<IApiProps> }> = ({ apis }) => {
     content: [
       api.name,
       api.route ? api.route : `/${api.name}`,
-      api.batch ? 'Yes' : 'No',
+      api.batch ? "Yes" : "No",
       api.input_type,
       inputConfigToTableContent(api.input_config),
       api.output_type,

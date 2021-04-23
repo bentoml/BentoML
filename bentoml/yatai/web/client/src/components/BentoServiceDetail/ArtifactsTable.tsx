@@ -85,8 +85,8 @@ const ArtifactsTable: React.FC<{ artifacts: Array<IArtifactProps> }> = ({
         content: [
           artifact.name,
           artifact.artifact_type,
-          artifactMetadataToTableContent(artifact.metadata)
-        ]
+          artifactMetadataToTableContent(artifact.metadata),
+        ],
       };
     });
     return (
@@ -105,7 +105,7 @@ const ArtifactsTable: React.FC<{ artifacts: Array<IArtifactProps> }> = ({
         <h2>Artifacts</h2>
         <p>No Artifacts</p>
       </Section>
-    )
+    );
   }
 };
 

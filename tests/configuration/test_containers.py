@@ -173,7 +173,15 @@ def test_prometheus_multiproc_dir():
     )
 
 
-def test_bento_bundle_deployment_version():
+def test_default_bento_bundle_deployment_version():
+    container = BentoMLContainer()
+    config = BentoMLConfiguration().as_dict()
+    container.config.from_dict(config)
+
+    assert container.bento_bundle_deployment_version() is not None
+
+
+def test_customized_bento_bundle_deployment_version():
     override_config = tempfile.NamedTemporaryFile(delete=False)
     override_config.write(
         b"""
@@ -189,16 +197,6 @@ bento_bundle:
 
     assert container.bento_bundle_deployment_version() == "0.0.1"
     os.remove(override_config.name)
-
-
-def test_yatai_repository_base_url():
-    container = BentoMLContainer()
-    config = BentoMLConfiguration().as_dict()
-    container.config.from_dict(config)
-
-    assert container.yatai_repository_base_url() == os.path.expanduser(
-        "~/bentoml/repository"
-    )
 
 
 def test_yatai_database_url():
@@ -224,5 +222,61 @@ yatai:
     container.config.from_dict(config)
 
     assert container.yatai_database_url() == "customized_url"
+
+    os.remove(override_config.name)
+
+
+# def test_yatai_repository():
+#     container = BentoMLContainer()
+#     config = BentoMLConfiguration().as_dict()
+#     container.config.from_dict(config)
+
+#     assert container.yatai_file_system_directory() == os.path.expanduser(
+#         "~/bentoml/repository"
+#     )
+#     assert container.yatai.repository() is not None
+
+
+def test_yatai_tls_root_ca_cert():
+    container = BentoMLContainer()
+    config = BentoMLConfiguration().as_dict()
+    container.config.from_dict(config)
+
+    assert container.yatai_tls_root_ca_cert() is None
+
+    override_config = tempfile.NamedTemporaryFile(delete=False)
+    override_config.write(
+        b"""
+yatai:
+  remote:
+    tls:
+      client_certificate_file: value1
+"""
+    )
+    override_config.close()
+
+    config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
+    container.config.from_dict(config)
+
+    assert container.yatai_tls_root_ca_cert() == "value1"
+
+    os.remove(override_config.name)
+
+    override_config = tempfile.NamedTemporaryFile(delete=False)
+    override_config.write(
+        b"""
+yatai:
+  remote:
+    tls:
+      root_ca_cert: value1
+      client_certificate_file: value2
+"""
+    )
+    override_config.close()
+
+    config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
+    container.config.from_dict(config)
+
+    assert container.yatai_tls_root_ca_cert() == "value1"
 
     os.remove(override_config.name)

@@ -11,10 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime
 import logging
+from datetime import datetime
+from dependency_injector.wiring import Provide, inject
 
-from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.saved_bundle import safe_retrieve
 from bentoml.utils.docker_utils import (
     to_valid_docker_image_name,
@@ -50,7 +51,7 @@ from bentoml.exceptions import (
     InvalidArgument,
     YataiRepositoryException,
 )
-from bentoml.yatai.repository.repository import Repository
+from bentoml.yatai.repository.base_repository import BaseRepository
 from bentoml.yatai.db import DB
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
@@ -78,21 +79,16 @@ def get_yatai_service_impl(base=object):
 
         # pylint: disable=unused-argument
         # pylint: disable=broad-except
-
+        @inject
         def __init__(
             self,
-            db_url=None,
-            repo_base_url=None,
-            s3_endpoint_url=None,
-            default_namespace=None,
+            database: DB,
+            repository: BaseRepository,
+            default_namespace: str = Provide[BentoMLContainer.config.yatai.namespace],
         ):
-            cfg = config('yatai_service')
-            s3_endpoint_url = s3_endpoint_url or cfg.get('s3_endpoint_url') or None
-
             self.default_namespace = default_namespace
-            self.repo = Repository(repo_base_url, s3_endpoint_url)
-
-            self.db = DB(db_url)
+            self.repo = repository
+            self.db = database
 
         def HealthCheck(self, request, context=None):
             return HealthCheckResponse(status=Status.OK())

@@ -407,7 +407,7 @@ def save(bento_service, base_path=None, version=None, labels=None):
     from bentoml.yatai.yatai_service import get_yatai_service
 
     if base_path:
-        yatai_service = get_yatai_service(repo_base_url=base_path)
+        yatai_service = get_yatai_service(file_system_directory=base_path)
         yatai_client = YataiClient(yatai_service)
     else:
         yatai_client = YataiClient()

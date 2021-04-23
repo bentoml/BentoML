@@ -13,15 +13,29 @@
 # limitations under the License.
 
 
-import logging
-
 import click
+import logging
+from dependency_injector.wiring import Provide, inject
+
+from bentoml.configuration.containers import BentoMLContainer
 
 
 logger = logging.getLogger(__name__)
 
 
-def add_yatai_service_sub_command(cli):
+@inject
+def add_yatai_service_sub_command(
+    cli,
+    default_db_url: str = Provide[BentoMLContainer.yatai_database_url],
+    default_repository_type: str = Provide[
+        BentoMLContainer.config.yatai.repository.type
+    ],
+    default_file_system_directory: str = Provide[
+        BentoMLContainer.yatai_file_system_directory
+    ],
+    default_s3_url: str = Provide[BentoMLContainer.config.yatai.repository.s3.url],
+    default_gcs_url: str = Provide[BentoMLContainer.config.yatai.repository.gcs.url],
+):
     # pylint: disable=unused-variable
 
     @cli.command(help='Start BentoML YataiService for model management and deployment')
@@ -32,12 +46,14 @@ def add_yatai_service_sub_command(cli):
         'password, hostname, database name as well as optional keyword arguments '
         'for additional configuration',
         envvar='BENTOML_DB_URL',
+        default=default_db_url,
     )
     @click.option(
         '--repo-base-url',
         type=click.STRING,
-        help='Base URL for storing BentoML saved bundle files, this can be a file '
-        'system path(POSIX/Windows), or a S3 URL, usually starting with "s3://"',
+        help='Deprecated option for base URL for storing BentoML saved bundle files, '
+        'this can be a file system path(POSIX/Windows), or a S3 URL, '
+        'usually starting with "s3://"',
         envvar='BENTOML_REPO_BASE_URL',
     )
     @click.option(
@@ -62,13 +78,6 @@ def add_yatai_service_sub_command(cli):
         envvar='BENTOML_ENABLE_WEB_UI',
     )
     @click.option(
-        '--s3-endpoint-url',
-        type=click.STRING,
-        help='S3 Endpoint URL is used for deploying with storage services that are '
-        'compatible with Amazon S3, such as MinIO',
-        envvar='BENTOML_S3_ENDPOINT_URL',
-    )
-    @click.option(
         '--web-prefix-path',
         type=click.STRING,
         default='.',
@@ -76,17 +85,75 @@ def add_yatai_service_sub_command(cli):
         'behind a reverse proxy server',
         envvar='BENTOML_YATAI_WEB_PREFIX_PATH',
     )
+    @click.option(
+        '--repository-type',
+        type=click.Choice(['file_system', 's3', 'gcs'], case_sensitive=False),
+        default=default_repository_type,
+        help='Type of the repository implementation',
+        envvar='BENTOML_YATAI_REPOSITORY_TYPE',
+    )
+    @click.option(
+        '--file-system-directory',
+        type=click.STRING,
+        default=default_file_system_directory,
+        help='Specifies the directory path for the file system repository type',
+        envvar='BENTOML_YATAI_FILE_SYSTEM_DIRECTORY',
+    )
+    @click.option(
+        '--s3-url',
+        type=click.STRING,
+        default=default_s3_url,
+        help='Specifies the S3 URL for the S3 repository type',
+        envvar='BENTOML_YATAI_S3_URL',
+    )
+    @click.option(
+        '--gcs-url',
+        type=click.STRING,
+        default=default_gcs_url,
+        help='Specifies the GCS URL for the GCS repository type',
+        envvar='BENTOML_YATAI_GCS_URL',
+    )
     def yatai_service_start(
-        db_url, repo_base_url, grpc_port, ui_port, ui, s3_endpoint_url, web_prefix_path
+        db_url,
+        repo_base_url,
+        grpc_port,
+        ui_port,
+        ui,
+        web_prefix_path,
+        repository_type,
+        file_system_directory,
+        s3_url,
+        gcs_url,
     ):
+        from bentoml.utils.s3 import is_s3_url
+        from bentoml.utils.gcs import is_gcs_url
+
+        if repo_base_url:
+            logger.warning(
+                "Option --repo-base-url has been deprecated but is still supported "
+                "in the current release. Consider using --repository-type and its "
+                "corresponding options in the upcoming releases. "
+            )
+            if is_s3_url(repo_base_url):
+                repository_type = "s3"
+                s3_url = repo_base_url
+            elif is_gcs_url(repo_base_url):
+                repository_type = "gcs"
+                gcs_url = repo_base_url
+            else:
+                repository_type = "file_system"
+                file_system_directory = repo_base_url
+
         from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 
         start_yatai_service_grpc_server(
             db_url,
-            repo_base_url,
             grpc_port,
             ui_port,
             ui,
-            s3_endpoint_url,
             web_prefix_path,
+            repository_type,
+            file_system_directory,
+            s3_url,
+            gcs_url,
         )

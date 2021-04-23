@@ -6,7 +6,6 @@ from dependency_injector.wiring import Provide, inject
 from flask import Request
 from timeit import default_timer
 
-from bentoml.configuration import config
 from bentoml.configuration.containers import BentoMLContainer
 
 
@@ -14,14 +13,21 @@ logger = logging.getLogger(__name__)
 
 
 class InstrumentMiddleware:
-    def __init__(self, app, bento_service):
+    @inject
+    def __init__(
+        self,
+        app,
+        bento_service,
+        namespace: str = Provide[
+            BentoMLContainer.config.bento_server.metrics.namespace
+        ],
+    ):
         self.app = app
         self.bento_service = bento_service
 
         from prometheus_client import Histogram, Counter, Gauge, CollectorRegistry
 
         service_name = self.bento_service.name
-        namespace = config('instrument').get('default_namespace')
         # Use local registry instead of the global one to avoid duplicated metrics
         # register
         self.collector_registry = CollectorRegistry()

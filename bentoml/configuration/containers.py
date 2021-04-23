@@ -20,9 +20,12 @@ from deepmerge import always_merger
 from dependency_injector import containers, providers
 from schema import And, Or, Schema, SchemaError, Optional, Use
 
+from bentoml import __version__
 from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils.ruamel_yaml import YAML
+
+# from bentoml.yatai.container import YataiContainer
 
 
 LOGGER = logging.getLogger(__name__)
@@ -59,7 +62,28 @@ SCHEMA = Schema(
         },
         "adapters": {"image_input": {"default_extensions": [str]}},
         "yatai": {
-            "repository": {"directory": str},
+            "remote": {
+                "url": Or(str, None),
+                "access_token": Or(str, None),
+                "access_token_header": Or(str, None),
+                "tls": {
+                    "root_ca_cert": Or(str, None),
+                    "client_key": Or(str, None),
+                    "client_cert": Or(str, None),
+                    "client_certificate_file": Or(str, None),
+                },
+            },
+            "repository": {
+                "type": str,
+                "file_system": {"directory": Or(str, None)},
+                "s3": {
+                    "url": Or(str, None),
+                    "endpoint_url": Or(str, None),
+                    "signature_version": Or(str, None),
+                    "expiration": Or(int, None),
+                },
+                "gcs": {"url": Or(str, None), "expiration": Or(int, None)},
+            },
             "database": {"url": Or(str, None)},
             "namespace": str,
         },
@@ -147,7 +171,7 @@ class BentoMLContainer(containers.DeclarativeContainer):
     config = providers.Configuration(strict=True)
 
     api_server_workers = providers.Callable(
-        lambda workers: workers if workers else (multiprocessing.cpu_count() // 2) + 1,
+        lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
         config.bento_server.workers,
     )
 
@@ -160,18 +184,42 @@ class BentoMLContainer(containers.DeclarativeContainer):
     )
 
     bento_bundle_deployment_version = providers.Callable(
-        get_bentoml_deploy_version, config.bento_bundle.deployment_version,
-    )
-
-    yatai_repository_base_url = providers.Callable(
-        os.path.join, bentoml_home, config.yatai.repository.directory,
+        get_bentoml_deploy_version,
+        providers.Callable(
+            lambda default, customized: customized or default,
+            __version__.split('+')[0],
+            config.bento_bundle.deployment_version,
+        ),
     )
 
     yatai_database_url = providers.Callable(
-        lambda default, customized: customized if customized else default,
+        lambda default, customized: customized or default,
         providers.Callable(
             "sqlite:///{}".format,
             providers.Callable(os.path.join, bentoml_home, "storage.db"),
         ),
         config.yatai.database.url,
+    )
+
+    yatai_file_system_directory = providers.Callable(
+        lambda default, customized: customized or default,
+        providers.Callable(os.path.join, bentoml_home, "repository"),
+        config.yatai.repository.file_system.directory,
+    )
+
+    # yatai = providers.Container(
+    #     YataiContainer,
+    #     repository_type=config.yatai.repository.type,
+    #     file_system_directory=yatai_file_system_directory,
+    #     s3_base_url=config.yatai.repository.s3.url,
+    #     s3_endpoint_url=config.yatai.repository.s3.endpoint_url,
+    #     s3_signature_version=config.yatai.repository.s3.signature_version,
+    #     gcs_base_url=config.yatai.repository.gcs.url,
+    #     database_url=yatai_database_url,
+    # )
+
+    yatai_tls_root_ca_cert = providers.Callable(
+        lambda current, deprecated: current or deprecated,
+        config.yatai.remote.tls.root_ca_cert,
+        config.yatai.remote.tls.client_certificate_file,
     )

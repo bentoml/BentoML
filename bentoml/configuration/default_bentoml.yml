@@ -48,18 +48,27 @@ adapters:
       - .bmp
 
 yatai:
+  remote:
+    url: Null
+    access_token: Null
+    access_token_header: access_token
+    tls:
+      root_ca_cert: Null
+      client_certificate_file: Null
+      client_key: Null
+      client_cert: Null
   repository:
-    directory: repository
-    # type: local
-    # local:
-    #   directory: Null
-    # s3:
-    #   url: Null
-    #   endpoint_url: Null
-    # gcs:
-    #   url: Null
+    type: file_system
+    file_system:
+      directory: Null
+    s3:
+      url: Null
+      endpoint_url: Null
+      signature_version: s3v4
+      expiration: 3000
+    gcs:
+      url: Null
+      expiration: 3000
   database:
     url: Null
   namespace: dev
-
-#  --web-prefix-path

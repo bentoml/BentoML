@@ -218,9 +218,10 @@ def inject_dependencies():
         service,
     )
     from bentoml.yatai import yatai_service
+    from bentoml.yatai.repository import s3_repository, gcs_repository
 
     container.wire(
-        modules=[yatai_service],
+        modules=[yatai_service, s3_repository, gcs_repository],
         packages=[marshal, server, tracing, cli, adapters, saved_bundle, service],
     )
 

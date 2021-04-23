@@ -324,7 +324,7 @@ jobs:
   onnxmlir_integration_tests:
     runs-on: ubuntu-latest
     container:
-      image: onnxmlirczar/onnx-mlir-dev
+      image: onnxmlirczar/onnx-mlir-build
     steps:
       - uses: actions/checkout@v2
         with:

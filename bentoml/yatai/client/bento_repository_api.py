@@ -23,7 +23,6 @@ import uuid
 
 import click
 import requests
-import shutil
 
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import (
@@ -254,6 +253,7 @@ class BentoRepositoryAPIClient:
                 else:
                     upload_status = UploadStatus.ERROR
             else:
+                # TODO remove this as for test only
                 upload_result = self.upload_bento(
                     bento_service_metadata.name,
                     bento_service_metadata.version,

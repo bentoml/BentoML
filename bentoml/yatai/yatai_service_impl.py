@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import io
 import math
 import os
 import shutil
@@ -587,8 +586,6 @@ def get_yatai_service_impl(base=object):
                     logger.error(f"RPC ERROR ContainerizeBento: {e}")
                     return ContainerizeBentoResponse(status=Status.INTERNAL(e))
 
-            # pylint: enable=unused-argument
-
         def UploadBento(self, request_iterator, context=None):
             # 1. create temp directory for the file
             # 2. write bytes into the tar file
@@ -657,7 +654,7 @@ def get_yatai_service_impl(base=object):
                             )
                         file.seek(0)
                         file_size = os.path.getsize(tarfile_path)
-                        chunk_size = 1024 * 1024 # 1M
+                        chunk_size = 1024 * 1024  # 1M
                         chunk_count = math.ceil(float(file_size) / chunk_size)
                         sent_chunk_count = 0
                         file_index = 0
@@ -676,5 +673,7 @@ def get_yatai_service_impl(base=object):
                 except Exception as e:  # pylint: disable=broad-except
                     logger.error("RPC ERROR GetBento: %s", e)
                     return DownloadBentoResponse(status=Status.INTERNAL())
+
+    # pylint: enable=unused-argument
 
     return YataiServiceImpl

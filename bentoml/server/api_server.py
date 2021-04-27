@@ -365,6 +365,21 @@ class BentoAPIServer:
 
         self.setup_bento_service_api_routes()
 
+        self.app.add_url_rule(
+            rule="/ngsi-ld/ml/processing",
+            endpoint="processing",
+            view_func=self.handle_ml_processing,
+            methods=["POST"]
+        )
+
+    def handle_ml_processing(self):
+        response = make_response(
+            'Hello from NGSI-LD ML Processing endpoint!',
+            200,
+        )
+
+        return response
+
     def setup_bento_service_api_routes(self):
         """
         Setup a route for each InferenceAPI object defined in bento_service

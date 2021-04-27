@@ -176,6 +176,59 @@ def test_pull(yatai_server_container, example_bento_service_class):
 
 @pytest.mark.skipif(
     sys.platform == "darwin",
+    reason="Requires docker, skipping test for Mac OS on Github Action",
+)
+@pytest.mark.skipif('not psutil.POSIX')
+def test_push_with_labels(yatai_server_container, example_bento_service_class):
+    example_bento_service_class = bentoml.ver(major=2, minor=2)(
+        example_bento_service_class
+    )
+
+    yc = get_yatai_client(yatai_server_container)
+    test_model = TestModel()
+    svc = example_bento_service_class()
+    svc.pack('model', test_model)
+    saved_path = svc.save(labels={'foo': 'bar', 'abc': '123'})
+
+    pushed_path = yc.repository.push(f'{svc.name}:{svc.version}')
+    assert pushed_path != saved_path
+    remote_bento_pb = yc.repository.get(f'{svc.name}:{svc.version}')
+    assert remote_bento_pb.bento_service_metadata.labels
+    labels = dict(remote_bento_pb.bento_service_metadata.labels)
+    assert labels['foo'] == 'bar'
+    assert labels['abc'] == '123'
+
+
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="Requires docker, skipping test for Mac OS on Github Action",
+)
+@pytest.mark.skipif('not psutil.POSIX')
+def test_pull_with_labels(yatai_server_container, example_bento_service_class):
+    example_bento_service_class = bentoml.ver(major=2, minor=3)(
+        example_bento_service_class
+    )
+
+    yc = get_yatai_client(yatai_server_container)
+    test_model = TestModel()
+    svc = example_bento_service_class()
+    svc.pack('model', test_model)
+    saved_path = svc.save(
+        yatai_url=yatai_server_container, labels={'foo': 'bar', 'abc': '123'}
+    )
+
+    pulled_local_path = yc.repository.pull(f'{svc.name}:{svc.version}')
+    assert pulled_local_path != saved_path
+    local_yc = get_yatai_client()
+    local_bento_pb = local_yc.repository.get(f'{svc.name}:{svc.version}')
+    assert local_bento_pb.bento_service_metadata.labels
+    labels = dict(local_bento_pb.bento_service_metadata.labels)
+    assert labels['foo'] == 'bar'
+    assert labels['abc'] == '123'
+
+
+@pytest.mark.skipif(
+    sys.platform == "darwin",
     reason="Requires docker, skipping test for Mac OS for Github Action",
 )
 @pytest.mark.skipif('not psutil.POSIX')

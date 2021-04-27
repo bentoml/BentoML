@@ -263,7 +263,7 @@ def test_list(yatai_server_container, example_bento_service_class):
     svc.save(yatai_url=yatai_server_container)
 
     bentos = yc.repository.list(bento_name=svc.name)
-    assert len(bentos) == 5
+    assert len(bentos) == 7
 
 
 @pytest.mark.skipif(

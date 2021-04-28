@@ -25,8 +25,6 @@ from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils.ruamel_yaml import YAML
 
-# from bentoml.yatai.container import YataiContainer
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,6 +50,16 @@ SCHEMA = Schema(
             "metrics": {"enabled": bool, "namespace": str},
             "feedback": {"enabled": bool},
             "logging": {"level": str},
+        },
+        "logging": {
+            "level": And(
+                str,
+                lambda level: level.isupper(),
+                error="logging.level must be all upper case letters",
+            ),
+            "console": {"enabled": bool},
+            "file": {"enabled": bool, "directory": Or(str, None)},
+            "advanced": {"enabled": bool, "config": Or(dict, None)},
         },
         "tracing": {
             "type": Or(
@@ -86,6 +94,7 @@ SCHEMA = Schema(
             },
             "database": {"url": Or(str, None)},
             "namespace": str,
+            "logging": {"path": Or(str, None)},
         },
     }
 )
@@ -207,19 +216,20 @@ class BentoMLContainer(containers.DeclarativeContainer):
         config.yatai.repository.file_system.directory,
     )
 
-    # yatai = providers.Container(
-    #     YataiContainer,
-    #     repository_type=config.yatai.repository.type,
-    #     file_system_directory=yatai_file_system_directory,
-    #     s3_base_url=config.yatai.repository.s3.url,
-    #     s3_endpoint_url=config.yatai.repository.s3.endpoint_url,
-    #     s3_signature_version=config.yatai.repository.s3.signature_version,
-    #     gcs_base_url=config.yatai.repository.gcs.url,
-    #     database_url=yatai_database_url,
-    # )
-
     yatai_tls_root_ca_cert = providers.Callable(
         lambda current, deprecated: current or deprecated,
         config.yatai.remote.tls.root_ca_cert,
         config.yatai.remote.tls.client_certificate_file,
+    )
+
+    yatai_logging_path = providers.Callable(
+        lambda default, customized: customized or default,
+        providers.Callable(os.path.join, bentoml_home, "yatai_web_server.log"),
+        config.yatai.logging.path,
+    )
+
+    logging_file_directory = providers.Callable(
+        lambda default, customized: customized or default,
+        providers.Callable(os.path.join, bentoml_home, "logs",),
+        config.logging.file.directory,
     )

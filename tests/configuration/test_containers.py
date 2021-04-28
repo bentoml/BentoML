@@ -280,3 +280,55 @@ yatai:
     assert container.yatai_tls_root_ca_cert() == "value1"
 
     os.remove(override_config.name)
+
+
+def test_yatai_logging_path():
+    container = BentoMLContainer()
+    config = BentoMLConfiguration().as_dict()
+    container.config.from_dict(config)
+
+    assert container.yatai_logging_path() == os.path.expanduser(
+        "~/bentoml/yatai_web_server.log"
+    )
+
+    override_config = tempfile.NamedTemporaryFile(delete=False)
+    override_config.write(
+        b"""
+yatai:
+  logging:
+    path: /tmp/customized.log
+"""
+    )
+    override_config.close()
+
+    config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
+    container.config.from_dict(config)
+
+    assert container.yatai_logging_path() == "/tmp/customized.log"
+
+    os.remove(override_config.name)
+
+
+def test_logging_file_directory():
+    container = BentoMLContainer()
+    config = BentoMLConfiguration().as_dict()
+    container.config.from_dict(config)
+
+    assert container.logging_file_directory() == os.path.expanduser("~/bentoml/logs")
+
+    override_config = tempfile.NamedTemporaryFile(delete=False)
+    override_config.write(
+        b"""
+logging:
+  file:
+    directory: /tmp/logs
+"""
+    )
+    override_config.close()
+
+    config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
+    container.config.from_dict(config)
+
+    assert container.logging_file_directory() == "/tmp/logs"
+
+    os.remove(override_config.name)

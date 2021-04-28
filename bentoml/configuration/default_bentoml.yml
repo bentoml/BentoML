@@ -1,8 +1,3 @@
-#
-# default_bentoml.yml is currently working-in-progress. Configuration changes
-# should still be made to default_bentoml.cfg.
-#
-
 bento_bundle:
   deployment_version: Null
   default_docker_base_image: Null
@@ -28,6 +23,17 @@ bento_server:
     enabled: True
   logging:
     level: INFO
+
+logging:
+  level: INFO
+  console:
+    enabled: True
+  file:
+    enabled: True
+    directory: Null
+  advanced:
+    enabled: False
+    config: Null
 
 tracing:
   type: zipkin
@@ -72,3 +78,5 @@ yatai:
   database:
     url: Null
   namespace: dev
+  logging:
+    path: Null

@@ -15,11 +15,8 @@
 import os
 import logging
 from functools import lru_cache
-from pathlib import Path
 
 from bentoml import __version__, _version as version_mod
-from bentoml.exceptions import BentoMLConfigException
-from bentoml.configuration.configparser import BentoMLConfigParser
 
 # from bentoml.configuration.containers import BentoMLContainer
 
@@ -28,10 +25,6 @@ from bentoml.configuration.configparser import BentoMLConfigParser
 logger = logging.getLogger(__name__)
 
 
-# Default bentoml config comes with the library bentoml/config/default_bentoml.cfg
-DEFAULT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "default_bentoml.cfg")
-
-CONFIG_FILE_ENCODING = "utf-8"
 DEBUG_ENV_VAR = "BENTOML_DEBUG"
 
 
@@ -48,22 +41,6 @@ def expand_env_var(env_var):
         else:
             env_var = interpolated
 
-
-def parameterized_config(template):
-    """Generates a configuration from the provided template + variables defined in
-    current scope
-
-    Args:
-        :param template: a config content templated with {{variables}}
-    Returns:
-        string: config content after templated with locals() and globals()
-    """
-    all_vars = {k: v for d in [globals(), locals()] for k, v in d.items()}
-    return template.format(**all_vars)
-
-
-DEFAULT_BENTOML_HOME = expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
-BENTOML_HOME = DEFAULT_BENTOML_HOME
 
 # This is used as default for config('core', 'bentoml_deploy_version') - which is used
 # for getting the BentoML PyPI version string or the URL to a BentoML sdist, indicating
@@ -86,55 +63,7 @@ def get_local_config_file():
     if "BENTOML_CONFIG" in os.environ:
         # User local config file for customizing bentoml
         return expand_env_var(os.environ.get("BENTOML_CONFIG"))
-    else:
-        return os.path.join(BENTOML_HOME, "bentoml.cfg")
-
-
-def load_config():
-    global BENTOML_HOME  # pylint: disable=global-statement
-
-    try:
-        Path(BENTOML_HOME).mkdir(exist_ok=True)
-    except OSError as err:
-        raise BentoMLConfigException(
-            "Error creating bentoml home directory '{}': {}".format(
-                BENTOML_HOME, err.strerror
-            )
-        )
-
-    with open(DEFAULT_CONFIG_FILE, "rb") as f:
-        DEFAULT_CONFIG = f.read().decode(CONFIG_FILE_ENCODING)
-
-    loaded_config = BentoMLConfigParser(
-        default_config=parameterized_config(DEFAULT_CONFIG)
-    )
-
-    local_config_file = get_local_config_file()
-    if os.path.isfile(local_config_file) and not local_config_file.endswith(".yml"):
-        logger.info("Loading local BentoML config file: %s", local_config_file)
-        with open(local_config_file, "rb") as f:
-            loaded_config.read_string(
-                parameterized_config(f.read().decode(CONFIG_FILE_ENCODING))
-            )
-    else:
-        logger.info("No local BentoML config file found, using default configurations")
-
-    return loaded_config
-
-
-_config = None
-
-
-def config(section=None):
-    global _config  # pylint: disable=global-statement
-
-    if _config is None:
-        _config = load_config()
-
-    if section is not None:
-        return _config[section]
-    else:
-        return _config
+    return None
 
 
 @lru_cache(maxsize=1)
@@ -200,7 +129,7 @@ def inject_dependencies():
     from bentoml.configuration.containers import BentoMLContainer, BentoMLConfiguration
 
     config_file = get_local_config_file()
-    if config_file.endswith(".yml"):
+    if config_file and config_file.endswith(".yml"):
         configuration = BentoMLConfiguration(override_config_file=config_file)
     else:
         configuration = BentoMLConfiguration()

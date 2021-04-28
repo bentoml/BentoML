@@ -9,7 +9,6 @@ from dependency_injector.wiring import Provide, inject
 import certifi
 import click
 
-from bentoml import config
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
@@ -87,6 +86,7 @@ def get_yatai_service(
         )
 
 
+@inject
 def start_yatai_service_grpc_server(
     db_url,
     grpc_port,
@@ -97,6 +97,7 @@ def start_yatai_service_grpc_server(
     file_system_directory,
     s3_url,
     gcs_url,
+    web_ui_log_path: str = Provide[BentoMLContainer.yatai_logging_path],
 ):
     # Lazily import grpcio for YataiSerivce gRPC related actions
     import grpc
@@ -135,11 +136,6 @@ def start_yatai_service_grpc_server(
     server.add_insecure_port(f'[::]:{grpc_port}')
     server.start()
     if with_ui:
-        web_ui_log_path = os.path.join(
-            config("logging").get("BASE_LOG_DIR"),
-            config('logging').get("yatai_web_server_log_filename"),
-        )
-
         ensure_node_available_or_raise()
         yatai_grpc_server_address = f'localhost:{grpc_port}'
         async_start_yatai_service_web_ui(

@@ -301,7 +301,7 @@ Specify target service bundles to remove:
         default=True,
         help="Retain bento bundle's labels or not for push Bento bundle to remote "
         "yatai. When running with --without-labels, labels are not retained in the "
-        "remote yatai server"
+        "remote yatai server",
     )
     def push(bento, yatai_url, with_labels):
         if ':' not in bento:

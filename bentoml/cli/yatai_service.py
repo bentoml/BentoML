@@ -35,7 +35,7 @@ def add_yatai_service_sub_command(
     ],
     default_s3_url: str = Provide[BentoMLContainer.config.yatai.repository.s3.url],
     default_s3_endpoint_url: str = Provide[
-        BentoMLContainer.config.yatai.repository.s3.url_endpoint
+        BentoMLContainer.config.yatai.repository.s3.endpoint_url
     ],
     default_gcs_url: str = Provide[BentoMLContainer.config.yatai.repository.gcs.url],
 ):

@@ -185,7 +185,9 @@ class BentoMLContainer(containers.DeclarativeContainer):
     )
 
     bentoml_home = providers.Callable(
-        lambda: expand_env_var(os.environ.get("BENTOML_HOME", "~/bentoml"))
+        lambda: expand_env_var(
+            os.environ.get("BENTOML_HOME", os.path.join("~", "bentoml"))
+        )
     )
 
     prometheus_multiproc_dir = providers.Callable(
@@ -222,14 +224,16 @@ class BentoMLContainer(containers.DeclarativeContainer):
         config.yatai.remote.tls.client_certificate_file,
     )
 
-    yatai_logging_path = providers.Callable(
-        lambda default, customized: customized or default,
-        providers.Callable(os.path.join, bentoml_home, "yatai_web_server.log"),
-        config.yatai.logging.path,
-    )
-
     logging_file_directory = providers.Callable(
         lambda default, customized: customized or default,
         providers.Callable(os.path.join, bentoml_home, "logs",),
         config.logging.file.directory,
+    )
+
+    yatai_logging_path = providers.Callable(
+        lambda default, customized: customized or default,
+        providers.Callable(
+            os.path.join, logging_file_directory, "yatai_web_server.log"
+        ),
+        config.yatai.logging.path,
     )

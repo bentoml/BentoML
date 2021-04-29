@@ -153,9 +153,13 @@ key1:
     assert config["key1"]["key2"]["key5"] == "override5"
 
 
+def mock_bentoml_home():
+    return os.path.expanduser(os.path.join("~", "bentoml"))
+
+
 def test_bentoml_home():
     container = BentoMLContainer()
-    assert container.bentoml_home() == os.path.expanduser("~/bentoml")
+    assert container.bentoml_home() == mock_bentoml_home()
 
     os.environ["BENTOML_HOME"] = "/tmp/bentoml"
     assert container.bentoml_home() == "/tmp/bentoml"
@@ -168,8 +172,8 @@ def test_prometheus_multiproc_dir():
     config = BentoMLConfiguration().as_dict()
     container.config.from_dict(config)
 
-    assert container.prometheus_multiproc_dir() == os.path.expanduser(
-        "~/bentoml/prometheus_multiproc_dir"
+    assert container.prometheus_multiproc_dir() == os.path.join(
+        mock_bentoml_home(), "prometheus_multiproc_dir"
     )
 
 
@@ -205,7 +209,7 @@ def test_yatai_database_url():
     container.config.from_dict(config)
 
     assert container.yatai_database_url() == "{}:///{}".format(
-        "sqlite", os.path.expanduser("~/bentoml/storage.db")
+        "sqlite", os.path.join(mock_bentoml_home(), "storage.db")
     )
 
     override_config = tempfile.NamedTemporaryFile(delete=False)
@@ -224,17 +228,6 @@ yatai:
     assert container.yatai_database_url() == "customized_url"
 
     os.remove(override_config.name)
-
-
-# def test_yatai_repository():
-#     container = BentoMLContainer()
-#     config = BentoMLConfiguration().as_dict()
-#     container.config.from_dict(config)
-
-#     assert container.yatai_file_system_directory() == os.path.expanduser(
-#         "~/bentoml/repository"
-#     )
-#     assert container.yatai.repository() is not None
 
 
 def test_yatai_tls_root_ca_cert():
@@ -287,8 +280,8 @@ def test_yatai_logging_path():
     config = BentoMLConfiguration().as_dict()
     container.config.from_dict(config)
 
-    assert container.yatai_logging_path() == os.path.expanduser(
-        "~/bentoml/yatai_web_server.log"
+    assert container.yatai_logging_path() == os.path.join(
+        mock_bentoml_home(), "logs", "yatai_web_server.log"
     )
 
     override_config = tempfile.NamedTemporaryFile(delete=False)
@@ -314,7 +307,9 @@ def test_logging_file_directory():
     config = BentoMLConfiguration().as_dict()
     container.config.from_dict(config)
 
-    assert container.logging_file_directory() == os.path.expanduser("~/bentoml/logs")
+    assert container.logging_file_directory() == os.path.join(
+        mock_bentoml_home(), "logs"
+    )
 
     override_config = tempfile.NamedTemporaryFile(delete=False)
     override_config.write(

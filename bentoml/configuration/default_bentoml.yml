@@ -24,7 +24,7 @@ bento_server:
   logging:
     level: INFO
   cors:  # standard: https://fetch.spec.whatwg.org/#http-cors-protocol
-    access_control_allow_origin: "*"
+    access_control_allow_origin: Null
     access_control_allow_credentials: Null
     access_control_allow_methods:
       - POST

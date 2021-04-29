@@ -23,6 +23,26 @@ bento_server:
     enabled: True
   logging:
     level: INFO
+  cors:  # standard: https://fetch.spec.whatwg.org/#http-cors-protocol
+    access_control_allow_origin: "*"
+    access_control_allow_credentials: Null
+    access_control_allow_methods:
+      - POST
+      - GET
+      - OPTIONS
+    access_control_allow_headers: []
+    access_control_max_age: 5
+    access_control_expose_headers: []
+    #
+    Access-Control-Allow-Origin: "*"
+    Access-Control-Allow-Credentials: Null
+    Access-Control-Allow-Methods:
+      - POST
+      - GET
+      - OPTIONS
+    Access-Control-Allow-Headers: []
+    Access-Control-Max-Age: 5
+    Access-Control-Expose-Headers: []
 
 logging:
   level: INFO

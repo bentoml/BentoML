@@ -343,8 +343,8 @@ class InferenceAPI(object):
         inf_task = self.input_adapter.from_aws_lambda_event(event)
         result = next(iter(self.infer((inf_task,))))
         out_event = self.output_adapter.to_aws_lambda_event(result)
-        if self.cors and isinstance(out_event, dict):
+        if isinstance(out_event, dict) and "headers" in out_event:
             headers = out_event.get("headers", dict())
-            headers["Access-Control-Allow-Origin"] = self.cors
+            headers["Access-Control-Allow-Origin"] = "*"  # TODO: make it configurable
             out_event["headers"] = headers
         return out_event

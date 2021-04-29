@@ -18,9 +18,10 @@ import logging
 import multiprocessing
 import time
 import traceback
+from typing import Optional, Sequence
 
-import psutil
 from dependency_injector.wiring import Provide, inject
+import psutil
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
@@ -157,6 +158,24 @@ class MarshalService:
         enable_microbatch: bool = Provide[
             BentoMLContainer.config.bento_server.microbatch.enabled
         ],
+        access_control_allow_origin: Optional[str] = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_allow_origin
+        ],
+        access_control_allow_credentials: bool = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_allow_credentials
+        ],
+        access_control_allow_methods: Optional[Sequence] = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_allow_methods
+        ],
+        access_control_allow_headers: Optional[Sequence] = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_allow_headers
+        ],
+        access_control_max_age: int = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_max_age
+        ],
+        access_control_expose_headers: Optional[Sequence] = Provide[
+            BentoMLContainer.config.bento_server.access_control_expose_headers
+        ],
     ):
         self._client = None
         self.outbound_unix_socket = outbound_unix_socket
@@ -170,6 +189,13 @@ class MarshalService:
         self.max_request_size = max_request_size
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
+
+        self.access_control_allow_origin = access_control_allow_origin
+        self.access_control_allow_credentials = access_control_allow_credentials
+        self.access_control_allow_methods = access_control_allow_methods
+        self.access_control_allow_headers = access_control_allow_headers
+        self.access_control_max_age = access_control_max_age
+        self.access_control_expose_headers = access_control_expose_headers
 
         if enable_microbatch:
             self.setup_routes_from_pb(self.bento_service_metadata_pb)
@@ -368,6 +394,27 @@ class MarshalService:
         app = Application(client_max_size=self.max_request_size)
         app.router.add_view("/", self.relay_handler)
         app.router.add_view("/{path:.*}", self.request_dispatcher)
+
+        if self.access_control_allow_origin is not None:
+            import aiohttp_cors
+
+            # Configure default CORS settings.
+            cors = aiohttp_cors.setup(
+                app,
+                defaults={
+                    self.access_control_allow_origin: aiohttp_cors.ResourceOptions(
+                        allow_credentials=self.access_control_allow_credentials,
+                        expose_headers=self.access_control_expose_headers,
+                        allow_methods=self.access_control_allow_methods,
+                        allow_headers=self.access_control_allow_headers,
+                        max_age=self.access_control_max_age,
+                    )
+                },
+            )
+            # Configure CORS on all routes.
+            for route in list(app.router.routes()):
+                cors.add(route)
+
         return app
 
     @inject

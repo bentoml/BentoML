@@ -84,6 +84,16 @@ class InvalidArgument(BentoMLException):
         return yatai_proto.status_pb2.Status.INVALID_ARGUMENT
 
 
+class APIDeprecated(BentoMLException):
+    """
+    Raise when trying to use deprecated APIs of BentoML
+    """
+
+    @property
+    def proto_status_code(self):
+        return yatai_proto.status_pb2.Status.INVALID_ARGUMENT
+
+
 class BadInput(InvalidArgument):
     """Raise when InputAdapter receiving bad input request"""
 

@@ -1,6 +1,4 @@
 import logging
-import os
-import tempfile
 
 from bentoml.utils.log import configure_logging
 
@@ -31,7 +29,7 @@ def test_configure_logging_default():
 
 
 def test_configure_logging_custom_level():
-    configure_logging(logging.ERROR)
+    configure_logging(logging_level=logging.ERROR)
 
     bentoml_logger = logging.getLogger("bentoml")
     assert bentoml_logger.level == logging.ERROR
@@ -55,10 +53,8 @@ def test_configure_logging_custom_level():
     assert feedback_logger.handlers[1].name == "feedback"
 
 
-def test_configure_logging_file_disabled():
-    os.environ["BENTOML__LOGGING__CONSOLE_LOGGING_ENABLED"] = "false"
-
-    configure_logging()
+def test_configure_logging_console_disabled():
+    configure_logging(console_logging_enabled=False)
 
     bentoml_logger = logging.getLogger("bentoml")
     assert bentoml_logger.level == logging.INFO
@@ -78,13 +74,9 @@ def test_configure_logging_file_disabled():
     assert len(feedback_logger.handlers) == 1
     assert feedback_logger.handlers[0].name == "feedback"
 
-    del os.environ["BENTOML__LOGGING__CONSOLE_LOGGING_ENABLED"]
 
-
-def test_configure_logging_console_disabled():
-    os.environ["BENTOML__LOGGING__FILE_LOGGING_ENABLED"] = "false"
-
-    configure_logging()
+def test_configure_logging_file_disabled():
+    configure_logging(file_logging_enabled=False)
 
     bentoml_logger = logging.getLogger("bentoml")
     assert bentoml_logger.level == logging.INFO
@@ -104,17 +96,13 @@ def test_configure_logging_console_disabled():
     assert len(feedback_logger.handlers) == 1
     assert feedback_logger.handlers[0].name == "console"
 
-    del os.environ["BENTOML__LOGGING__FILE_LOGGING_ENABLED"]
 
-
-def test_configure_logging_yaml():
-    advanced_config = {    
+def test_configure_logging_advanced():
+    advanced_config = {
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "test_formatter": {
-                "format": "[%(asctime)s] %(levelname)s - %(message)s"
-            }
+            "test_formatter": {"format": "[%(asctime)s] %(levelname)s - %(message)s"}
         },
         "handlers": {
             "test_handler": {

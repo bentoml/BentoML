@@ -297,17 +297,17 @@ Specify target service bundles to remove:
         help='Remote YataiService URL. Example: "--yatai-url http://localhost:50050"',
     )
     @click.option(
-        '--without-labels',
-        is_flag=True,
-        help="Do not retain bento service's labels when pushing to "
-        "remote yatai server",
+        '--with-labels/--without-labels',
+        default=True,
+        help="Retain bento bundle's labels or not for push Bento bundle to remote "
+        "yatai. When running with --without-labels, labels are not retained in the "
+        "remote yatai server"
     )
-    def push(bento, yatai_url, without_labels):
+    def push(bento, yatai_url, with_labels):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
         yc = get_yatai_client(yatai_url)
-        with_labels = not without_labels
         yc.repository.push(bento, with_labels)
         _echo(f'Pushed {bento} to {yatai_url}')
 

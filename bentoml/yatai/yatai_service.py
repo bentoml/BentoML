@@ -96,6 +96,7 @@ def start_yatai_service_grpc_server(
     repository_type,
     file_system_directory,
     s3_url,
+    s3_endpoint_url,
     gcs_url,
     web_ui_log_path: str = Provide[BentoMLContainer.yatai_logging_path],
 ):
@@ -110,7 +111,7 @@ def start_yatai_service_grpc_server(
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(
         repository=create_repository(
-            repository_type, file_system_directory, s3_url, gcs_url
+            repository_type, file_system_directory, s3_url, s3_endpoint_url, gcs_url
         ),
         database=DB(db_url),
     )

@@ -34,6 +34,9 @@ def add_yatai_service_sub_command(
         BentoMLContainer.yatai_file_system_directory
     ],
     default_s3_url: str = Provide[BentoMLContainer.config.yatai.repository.s3.url],
+    default_s3_endpoint_url: str = Provide[
+        BentoMLContainer.config.yatai.repository.s3.url_endpoint
+    ],
     default_gcs_url: str = Provide[BentoMLContainer.config.yatai.repository.gcs.url],
 ):
     # pylint: disable=unused-variable
@@ -107,6 +110,14 @@ def add_yatai_service_sub_command(
         envvar='BENTOML_YATAI_S3_URL',
     )
     @click.option(
+        '--s3-endpoint-url',
+        type=click.STRING,
+        default=default_s3_endpoint_url,
+        help='S3 Endpoint URL is used for deploying with storage services that are '
+        'compatible with Amazon S3, such as MinIO',
+        envvar='BENTOML_S3_ENDPOINT_URL',
+    )
+    @click.option(
         '--gcs-url',
         type=click.STRING,
         default=default_gcs_url,
@@ -123,6 +134,7 @@ def add_yatai_service_sub_command(
         repository_type,
         file_system_directory,
         s3_url,
+        s3_endpoint_url,
         gcs_url,
     ):
         from bentoml.utils.s3 import is_s3_url
@@ -155,5 +167,6 @@ def add_yatai_service_sub_command(
             repository_type,
             file_system_directory,
             s3_url,
+            s3_endpoint_url,
             gcs_url,
         )

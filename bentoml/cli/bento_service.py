@@ -2,14 +2,15 @@ import argparse
 import json
 import re
 import sys
+
 import click
-import psutil
 from dependency_injector.wiring import Provide, inject
+import psutil
 
 from bentoml import __version__
 from bentoml.cli.click_utils import (
-    CLI_COLOR_SUCCESS,
     BentoMLCommandGroup,
+    CLI_COLOR_SUCCESS,
     _echo,
     conditional_argument,
 )

@@ -18,11 +18,13 @@ import logging
 import multiprocessing
 import time
 import traceback
+from typing import List, Optional, Sequence
 
 import aiohttp
 import aiohttp.web
-import psutil
+import aiohttp_cors
 from dependency_injector.wiring import Provide, inject
+import psutil
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
@@ -157,6 +159,24 @@ class MarshalService:
         enable_microbatch: bool = Provide[
             BentoMLContainer.config.bento_server.microbatch.enabled
         ],
+        access_control_allow_origin: Optional[str] = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_allow_origin
+        ],
+        access_control_allow_credentials: bool = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_allow_credentials
+        ],
+        access_control_allow_methods: Optional[Sequence] = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_allow_methods
+        ],
+        access_control_allow_headers: Optional[Sequence] = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_allow_headers
+        ],
+        access_control_max_age: int = Provide[
+            BentoMLContainer.config.bento_server.cors.access_control_max_age
+        ],
+        access_control_expose_headers: Optional[Sequence] = Provide[
+            BentoMLContainer.config.bento_server.access_control_expose_headers
+        ],
     ):
         self._client = None
         self.outbound_unix_socket = outbound_unix_socket
@@ -170,6 +190,13 @@ class MarshalService:
         self.max_request_size = max_request_size
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
+
+        self.access_control_allow_origin = access_control_allow_origin
+        self.access_control_allow_credentials = access_control_allow_credentials
+        self.access_control_allow_methods = access_control_allow_methods
+        self.access_control_allow_headers = access_control_allow_headers
+        self.access_control_max_age = access_control_max_age
+        self.access_control_expose_headers = access_control_expose_headers
 
         if enable_microbatch:
             self.setup_routes_from_pb(self.bento_service_metadata_pb)
@@ -295,7 +322,7 @@ class MarshalService:
                     request.method, url, data=data, headers=request.headers
                 ) as resp:
                     body = await resp.read()
-            except aiohttp.client_exceptions.ClientConnectionError:
+            except aiohttp.ClientConnectionError:
                 return aiohttp.web.Response(status=503, body=b"Service Unavailable")
         return aiohttp.web.Response(
             status=resp.status, body=body, headers=resp.headers,
@@ -324,7 +351,7 @@ class MarshalService:
                 client = self.get_client()
                 async with client.post(api_url, data=reqs_s, headers=headers) as resp:
                     raw = await resp.read()
-            except aiohttp.client_exceptions.ClientConnectionError as e:
+            except aiohttp.ClientConnectionError as e:
                 raise RemoteException(
                     e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
                 )
@@ -359,6 +386,25 @@ class MarshalService:
         app = aiohttp.web.Application(client_max_size=self.max_request_size)
         app.router.add_view("/", self.relay_handler)
         app.router.add_view("/{path:.*}", self.request_dispatcher)
+
+        if self.access_control_allow_origin is not None:
+            # Configure default CORS settings.
+            cors = aiohttp_cors.setup(
+                app,
+                defaults={
+                    self.access_control_allow_origin: aiohttp_cors.ResourceOptions(
+                        allow_credentials=self.access_control_allow_credentials,
+                        expose_headers=self.access_control_expose_headers,
+                        allow_methods=self.access_control_allow_methods,
+                        allow_headers=self.access_control_allow_headers,
+                        max_age=self.access_control_max_age,
+                    )
+                },
+            )
+            # Configure CORS on all routes.
+            for route in list(app.router.routes()):
+                cors.add(route)
+
         return app
 
     @inject

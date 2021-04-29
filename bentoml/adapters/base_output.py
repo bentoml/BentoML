@@ -15,6 +15,7 @@
 import itertools
 from typing import Iterable, Iterator, Sequence, Tuple
 
+from bentoml.exceptions import APIDeprecated
 from bentoml.types import (
     ApiFuncReturnValue,
     AwsLambdaEvent,
@@ -49,13 +50,16 @@ class BaseOutputAdapter:
     such as HTTP response, command line stdout or AWS Lambda event object.
 
     Args:
-        cors (str): DEPRECATED. Use @api(cors="*") instead.
+        cors (str): DEPRECATED. For AWS Lambda, the cors header is always "*". For HTTP
+            server, <link to cors section of API server>
             The value of the Access-Control-Allow-Origin header set in the
             HTTP/AWS Lambda response object. If set to None, the header will not be set.
             Default is None.
     """
 
-    def __init__(self, cors=None):
+    def __init__(self, cors="*"):
+        if cors != "*":
+            raise APIDeprecated("setting cors from OutputAdapter is no more supported")
         self.cors = cors
 
     @property

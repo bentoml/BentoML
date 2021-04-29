@@ -21,6 +21,7 @@ with open("README.md", "r", encoding="utf8") as f:
 
 install_requires = [
     "aiohttp",
+    "aiohttp_cors==0.7.0",
     "alembic",
     "urllib3<=1.25.11",
     "boto3",

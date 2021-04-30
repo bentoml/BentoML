@@ -18,7 +18,6 @@ from functools import lru_cache
 
 from bentoml import __version__, _version as version_mod
 
-# from bentoml.configuration.containers import BentoMLContainer
 
 # Note this file is loaded prior to logging being configured, thus logger is only
 # used within functions in this file

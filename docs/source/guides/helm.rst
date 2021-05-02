@@ -1,5 +1,5 @@
 ==============================
-Install Yatai on K8w with Helm
+Install Yatai on K8s with Helm
 ==============================
 
 *Helm* is a tool that streamlines installing and managing K8s applications. It lets developers easily configure a set of K8s resources that make up an application -- YataiService in this case. Helm enables developers to

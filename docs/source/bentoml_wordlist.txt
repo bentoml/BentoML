@@ -106,4 +106,5 @@ jaeger
 gpu
 onnxruntime
 evalml
+Evalml
 EvalML

@@ -95,6 +95,7 @@ Standarlize model serving and deployment workflow for teams:
 * Gluon - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#gluon)
 * Detectron - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#detectron)
 * Paddle - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#paddle)
+* EvalML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#evalml)
 
 
 ### Deployment Options

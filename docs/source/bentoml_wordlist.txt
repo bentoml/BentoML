@@ -105,3 +105,4 @@ openzipkin
 jaeger
 gpu
 onnxruntime
+EvalML

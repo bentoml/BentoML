@@ -215,6 +215,13 @@ Example Projects:
 .. autoclass:: bentoml.frameworks.paddle.PaddlePaddleModelArtifact
 
 
+======
+EvalML
+======
+
+.. autoclass:: bentoml.frameworks.coreml.EvalMLModelArtifact
+
+
 .. spelling::
 
     MLModel
@@ -237,4 +244,5 @@ Example Projects:
     detectron
     Detectron
     DetectionCheckpointer
+    EvalML
 

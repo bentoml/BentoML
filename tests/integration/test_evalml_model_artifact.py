@@ -63,7 +63,8 @@ def test_evalml_artifact_pack(evalml_classifier_class, evalml_pipeline):
     yc.repository.delete(f'{svc.name}:{svc.version}')
 
 
-def test_evalml_artifact_pack_cloudpickle(evalml_classifier_cloudpickle_class, evalml_pipeline):
+def test_evalml_artifact_pack_cloudpickle(evalml_classifier_cloudpickle_class,
+                                          evalml_pipeline):
     svc = evalml_classifier_cloudpickle_class()
     svc.pack('model', evalml_pipeline)
     assert svc.predict(test_df) == 1.0, 'Run inference before save the artifact'

@@ -10,7 +10,9 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 # Install EvalML
-pip install evalml>=0.24.0
+# TODO uncomment once evalml 0.24.0 is released, which adds support for pickle
+#pip install evalml>=0.24.0
+pip install git+https://github.com/alteryx/evalml.git@main
 pytest "$GIT_ROOT"/tests/integration/test_evalml_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

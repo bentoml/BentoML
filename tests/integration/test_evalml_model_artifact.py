@@ -1,13 +1,14 @@
 import pandas
-import pickle
 import pytest
 
 import evalml
 
 import bentoml
-from bentoml.utils import cloudpickle
 from bentoml.yatai.client import YataiClient
-from tests.bento_service_examples.evalml_classifier import EvalMLClassifier, EvalMLClassifierCloudpickle
+from tests.bento_service_examples.evalml_classifier import (
+    EvalMLClassifier,
+    EvalMLClassifierCloudpickle
+)
 
 
 @pytest.fixture(scope="session")

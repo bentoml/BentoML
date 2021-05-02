@@ -5,6 +5,7 @@ from bentoml.exceptions import ArtifactLoadingException, MissingDependencyExcept
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.artifacts.common import PickleArtifact
 
+
 class EvalMLModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading EvalML models
@@ -80,8 +81,8 @@ class EvalMLModelArtifact(BentoServiceArtifact):
             model = pickle_artifact.get()
         except Exception:
             raise ArtifactLoadingException(
-                f'File {model_file_path} is not unpickleable with module ' +
-                f'{str(self._pickle_module)}.')
+                f'File {model_file_path} is not unpickleable with module '
+                + f'{str(self._pickle_module)}.')
         self.pack(model)
         return model
 
@@ -99,8 +100,8 @@ class EvalMLModelArtifact(BentoServiceArtifact):
             pickle_artifact.save(dst)
         except Exception:
             raise ArtifactLoadingException(
-                f'File {model_file_path} is not unpickleable with module ' +
-                f'{str(self._pickle_module)}.')
+                f'File {model_file_path} is not unpickleable with module '
+                + f'{str(self._pickle_module)}.')
 
     def set_dependencies(self, env):
         env.add_pip_packages(['evalml'])

@@ -244,5 +244,6 @@ EvalML
     detectron
     Detectron
     DetectionCheckpointer
+    evalml
+    Evalml
     EvalML
-

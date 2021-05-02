@@ -12,6 +12,7 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     Args:
         name (str): Name for the artifact
         pickle_extension (str): The extension format for pickled file
+        pickle_module (str, module): pickle format to use: 'pickle' or 'cloudpickle'
 
     Raises:
         MissingDependencyException: evalml package is required for EvalMLModelArtifact

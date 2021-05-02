@@ -2,8 +2,8 @@ import os
 import pickle
 
 from bentoml.exceptions import ArtifactLoadingException, MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact, PickleArtifact
-
+from bentoml.service.artifacts import BentoServiceArtifact
+from bentoml.service.artifacts.common import PickleArtifact
 
 class EvalMLModelArtifact(BentoServiceArtifact):
     """
@@ -72,14 +72,14 @@ class EvalMLModelArtifact(BentoServiceArtifact):
         self._validate_package()
         model_file_path = self._model_file_path(path)
         try:
-            pickle_artifact = PickleArtifact(model_file_path,
+            pickle_artifact = PickleArtifact(self.name,
                                              pickle_module=self._pickle_module,
                                              pickle_extension=self._pickle_extension)
-            pickle_artifact.load(model_file_path)
+            pickle_artifact.load(path)
             model = pickle_artifact.get()
         except Exception:
             raise ArtifactLoadingException(
-                f'File {model_file_path} is not unpickleable with module ' + \
+                f'File {model_file_path} is not unpickleable with module ' +
                 f'{str(self._pickle_module)}.')
         self.pack(model)
         return model
@@ -91,14 +91,14 @@ class EvalMLModelArtifact(BentoServiceArtifact):
         self._validate_package()
         model_file_path = self._model_file_path(dst)
         try:
-            pickle_artifact = PickleArtifact(model_file_path,
+            pickle_artifact = PickleArtifact(self.name,
                                              pickle_module=self._pickle_module,
                                              pickle_extension=self._pickle_extension)
             pickle_artifact.pack(self._model)
-            pickle_artifact.save(model_file_path)
+            pickle_artifact.save(dst)
         except Exception:
             raise ArtifactLoadingException(
-                f'File {model_file_path} is not unpickleable with module ' + \
+                f'File {model_file_path} is not unpickleable with module ' +
                 f'{str(self._pickle_module)}.')
 
     def set_dependencies(self, env):

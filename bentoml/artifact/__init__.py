@@ -22,7 +22,7 @@ from bentoml.service.artifacts.common import PickleArtifact
 
 from bentoml.frameworks.coreml import CoreMLModelArtifact
 from bentoml.frameworks.detectron import DetectronModelArtifact
-from bentoml.frameworks.evalml import EvalMLModelArtifact
+from bentoml.frameworks.evalml import EvalMLModelArtifact  # noqa: E402
 from bentoml.frameworks.fastai import (  # noqa: E402
     FastaiModelArtifact as Fastai2ModelArtifact,
 )  # noqa: E402

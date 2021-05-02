@@ -3,7 +3,6 @@ import pickle
 
 from bentoml.exceptions import ArtifactLoadingException, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact, PickleArtifact
-from bentoml.utils import cloudpickle
 
 
 class EvalMLModelArtifact(BentoServiceArtifact):
@@ -22,7 +21,8 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     >>> # import the EvalML base pipeline class corresponding to your ML task
     >>> from evalml.pipelines import BinaryClassificationPipeline
     >>> # create an EvalML pipeline instance with desired components
-    >>> model_to_save = BinaryClassificationPipeline(['Imputer', 'One Hot Encoder', 'Random Forest Classifier'])
+    >>> model_to_save = BinaryClassificationPipeline(
+    >>>     ['Imputer', 'One Hot Encoder', 'Random Forest Classifier'])
     >>> # Train model with data using model_to_save.fit(X, y)
     >>>
     >>> import bentoml
@@ -72,12 +72,17 @@ class EvalMLModelArtifact(BentoServiceArtifact):
         self._validate_package()
         model_file_path = self._model_file_path(path)
         try:
-            pickle_artifact = PickleArtifact(model_file_path, pickle_module=self._pickle_module, pickle_extension=pickle_extension)
+            pickle_artifact = PickleArtifact(model_file_path,
+                                             pickle_module=self._pickle_module,
+                                             pickle_extension=self._pickle_extension)
             pickle_artifact.load(model_file_path)
             model = pickle_artifact.get()
         except Exception:
-            raise ArtifactLoadingException(f'File {model_file_path} is not unpickleable with module {str(self._pickle_module)}.')
-        return self.pack(model)
+            raise ArtifactLoadingException(
+                f'File {model_file_path} is not unpickleable with module ' + \
+                f'{str(self._pickle_module)}.')
+        self.pack(model)
+        return model
 
     def get(self):
         return self._model
@@ -86,12 +91,15 @@ class EvalMLModelArtifact(BentoServiceArtifact):
         self._validate_package()
         model_file_path = self._model_file_path(dst)
         try:
-            pickle_artifact = PickleArtifact(model_file_path, pickle_module=self._pickle_module, pickle_extension=pickle_extension)
+            pickle_artifact = PickleArtifact(model_file_path,
+                                             pickle_module=self._pickle_module,
+                                             pickle_extension=self._pickle_extension)
             pickle_artifact.pack(self._model)
             pickle_artifact.save(model_file_path)
-            model = pickle_artifact.get()
         except Exception:
-            raise ArtifactLoadingException(f'File {model_file_path} is not unpickleable with module {str(self._pickle_module)}.')
+            raise ArtifactLoadingException(
+                f'File {model_file_path} is not unpickleable with module ' + \
+                f'{str(self._pickle_module)}.')
 
     def set_dependencies(self, env):
         env.add_pip_packages(['evalml'])

@@ -38,6 +38,7 @@ from bentoml.frameworks.pytorch import (  # noqa: E402
     PytorchLightningModelArtifact,
 )  # noqa: E402
 from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.frameworks.evalml import EvalMLModelArtifact
 from bentoml.frameworks.spacy import SpacyModelArtifact
 from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
 from bentoml.frameworks.xgboost import XgboostModelArtifact
@@ -49,6 +50,7 @@ __all__ = [
     "BentoServiceArtifactWrapper",
     "CoreMLModelArtifact",
     "DetectronModelArtifact",
+    "EvalMLModelArtifact",
     "Fastai2ModelArtifact",
     "FastaiModelArtifact",
     "FasttextModelArtifact",

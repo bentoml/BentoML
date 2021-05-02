@@ -41,7 +41,9 @@ def generate_docker_image_tag(image_name, version='latest', registry_url=None):
         return image_tag
 
 
-def build_docker_image(context_path, dockerfile, image_tag, additional_build_args=None):
+def build_docker_image(
+    context_path, image_tag, dockerfile='Dockerfile', additional_build_args=None
+):
     docker_client = docker.from_env()
     try:
         docker_client.images.build(

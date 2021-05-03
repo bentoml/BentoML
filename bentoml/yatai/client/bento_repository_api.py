@@ -18,6 +18,7 @@ import io
 import math
 import os
 import logging
+import shutil
 import tarfile
 import uuid
 
@@ -253,21 +254,11 @@ class BentoRepositoryAPIClient:
                 else:
                     upload_status = UploadStatus.ERROR
             else:
-                # TODO remove this as for test only
-                upload_result = self.upload_bento(
-                    bento_service_metadata.name,
-                    bento_service_metadata.version,
-                    saved_bento_path,
-                )
-                if upload_result.status.status_code == status_pb2.Status.OK:
-                    upload_status = UploadStatus.DONE
-                else:
-                    upload_status = UploadStatus.ERROR
-                # if os.path.exists(response.uri.uri):
-                #     # due to copytree dst must not already exist
-                #     shutil.rmtree(response.uri.uri)
-                # shutil.copytree(saved_bento_path, response.uri.uri)
-                # upload_status = UploadStatus.DONE
+                if os.path.exists(response.uri.uri):
+                    # due to copytree dst must not already exist
+                    shutil.rmtree(response.uri.uri)
+                shutil.copytree(saved_bento_path, response.uri.uri)
+                upload_status = UploadStatus.DONE
 
             self._update_bento_upload_progress(
                 bento_service_metadata, status=upload_status
@@ -351,11 +342,7 @@ class BentoRepositoryAPIClient:
                     bento_pb.name, bento_pb.version
                 )
             else:
-                # for testing
-                bento_service_bundle_path = self.download_bento(
-                    bento_pb.name, bento_pb.version
-                )
-                # bento_service_bundle_path = bento_pb.uri.uri
+                bento_service_bundle_path = bento_pb.uri.uri
 
         safe_retrieve(bento_service_bundle_path, target_dir)
 

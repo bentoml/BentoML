@@ -7,6 +7,7 @@ import uuid
 
 import docker
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
+from bentoml.utils import reserve_free_port
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 
@@ -57,26 +58,27 @@ RUN pip install -U /bentoml-local-repo
         )
 
         container_name = f'yatai-service-container-{uuid.uuid4().hex[:6]}'
-        yatai_service_url = 'localhost:50051'
         yatai_server_command = ['bentoml', 'yatai-service-start', '--no-ui']
         if db_url:
             yatai_server_command.extend(['--db-url', db_url])
         if repo_base_url:
             yatai_server_command.extend(['--repo-base-url', repo_base_url])
-        container = docker_client.containers.run(
-            image=yatai_docker_image_tag,
-            environment=['BENTOML_HOME=/tmp'],
-            ports={'50051/tcp': 50051},
-            command=yatai_server_command,
-            name=container_name,
-            detach=True,
-        )
+        with reserve_free_port() as port:
+            yatai_service_url = f'localhost:{port}'
+            container = docker_client.containers.run(
+                image=yatai_docker_image_tag,
+                environment=['BENTOML_HOME=/tmp'],
+                ports={f'{port}/tcp': port},
+                command=yatai_server_command,
+                name=container_name,
+                detach=True,
+            )
 
-        wait_until_container_ready(container)
-        yield yatai_service_url
+            wait_until_container_ready(container)
+            yield yatai_service_url
 
-        logger.info(f"Shutting down docker container: {container_name}")
-        container.kill()
+            logger.info(f"Shutting down docker container: {container_name}")
+            container.kill()
 
 
 @contextlib.contextmanager

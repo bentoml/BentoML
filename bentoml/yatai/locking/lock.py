@@ -45,7 +45,7 @@ def lock(
             sleep_seconds = timeout_seconds + random.random() * timeout_jitter_seconds
             time.sleep(sleep_seconds)
             logger.warning(
-                f"Failed to acquire lock: {e}."
+                f"Failed to acquire lock: {e}. "
                 f"Retrying {max_retry_count - i - 1} more times..."
             )
     raise LockUnavailable(f"Failed to acquire lock after {max_retry_count} attempts")

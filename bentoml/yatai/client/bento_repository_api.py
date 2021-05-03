@@ -592,7 +592,12 @@ class BentoRepositoryAPIClient:
             saved_bundle_path = bento
         else:
             bento_pb = self.get(bento)
-            saved_bundle_path = resolve_bento_bundle_uri(bento_pb)
+            if bento_pb.uri.type == BentoUri.LOCAL and isinstance(
+                self.yatai_service, YataiStub
+            ):
+                saved_bundle_path = self.download_bento(bento_pb.name, bento_pb.version)
+            else:
+                saved_bundle_path = resolve_bento_bundle_uri(bento_pb)
         svc = load_from_dir(saved_bundle_path)
         return svc
 

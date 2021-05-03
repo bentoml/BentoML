@@ -112,6 +112,7 @@ def test_deployment_labels():
                 'us-west-2',
             ],
         )
+        print(success_result.output)
         assert success_result.exit_code == 0
 
         list_result = runner.invoke(

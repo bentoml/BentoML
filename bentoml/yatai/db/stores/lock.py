@@ -30,6 +30,7 @@ class Lock(Base):
         self.ttl = now + datetime.timedelta(minutes=ttl_min)
         sess.commit()
 
+
 class LockStore(object):
     @staticmethod
     def _find_lock(sess, resource_id):

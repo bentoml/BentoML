@@ -28,10 +28,10 @@ def lock(
     for i in range(max_retry_count):
         try:
             with db.create_session() as sess:
-                LockStore.acquire(sess, lock_type, lock_identifier)
-                yield sess
-                LockStore.release(sess, lock_identifier)
-                break
+                lock_obj = LockStore.acquire(sess, lock_type, lock_identifier, 3)
+                yield sess, lock_obj
+                lock_obj.release(sess)
+                return
         except LockUnavailable as e:
             sleep_seconds = timeout_seconds + random.random() * timeout_jitter_seconds
             time.sleep(sleep_seconds)

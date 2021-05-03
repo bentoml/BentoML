@@ -19,27 +19,26 @@ class LockType:
 @contextmanager
 def lock(
     db,
-    lock_identifier,
-    lock_type=LockType.READ,
+    locks,
     timeout_seconds=10,
     timeout_jitter_seconds=1,
     max_retry_count=5,
     ttl_min=3,
-    sess=None,
 ):
+    if len(locks) < 1:
+        raise ValueError("At least one lock needs to be acquired")
     for i in range(max_retry_count):
         try:
-            if sess:
-                lock_obj = LockStore.acquire(sess, lock_type, lock_identifier, ttl_min)
-                yield lock_obj
-                lock_obj.release(sess)
-                return
-            else:
-                with db.create_session() as sess:
+            with db.create_session() as sess:
+                lock_objs = []
+                for (lock_identifier, lock_type) in locks:
                     lock_obj = LockStore.acquire(sess, lock_type, lock_identifier, ttl_min)
-                    yield sess, lock_obj
+                    lock_objs.append(lock_obj)
+                sess.commit()
+                yield sess, lock_objs
+                for lock_obj in lock_objs:
                     lock_obj.release(sess)
-                    return
+                return
         except LockUnavailable as e:
             sleep_seconds = timeout_seconds + random.random() * timeout_jitter_seconds
             time.sleep(sleep_seconds)

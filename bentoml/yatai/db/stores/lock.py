@@ -43,22 +43,20 @@ class LockStore(object):
         ttl = now + datetime.timedelta(minutes=ttl_min)
         lock = LockStore._find_lock(sess, resource_id)
 
-        # no lock found; free to acquire,
-        # or existing lock is expired
+        # no lock found; free to acquire
         if not lock:
             lock = Lock()
             lock.lock_status = lock_type
             lock.resource_id = resource_id
             lock.ttl = ttl
             sess.add(lock)
-            sess.commit()
             return lock
 
+        # existing lock expired
         if lock.ttl < now:
             lock.lock_status = lock_type
             lock.resource_id = resource_id
             lock.ttl = ttl
-            sess.commit()
             return lock
 
         # acquire read lock

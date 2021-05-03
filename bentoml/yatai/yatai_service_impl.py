@@ -110,10 +110,9 @@ def get_yatai_service_impl(base=object):
             deployment_id = f"{request.deployment.name}_{request.deployment.namespace}"
             spec = request.deployment.spec
             bento_id = f"{spec.bento_name}_{spec.bento_version}"
-            with lock(self.db, [
-                (deployment_id, LockType.WRITE),
-                (bento_id, LockType.READ),
-            ]) as (
+            with lock(
+                self.db, [(deployment_id, LockType.WRITE), (bento_id, LockType.READ)]
+            ) as (
                 sess,
                 _,
             ):
@@ -194,9 +193,7 @@ def get_yatai_service_impl(base=object):
 
         def DeleteDeployment(self, request, context=None):
             deployment_id = f"{request.deployment_name}_{request.namespace}"
-            with lock(self.db, [
-                (deployment_id, LockType.WRITE),
-            ]) as (
+            with lock(self.db, [(deployment_id, LockType.WRITE)]) as (
                 sess,
                 _,
             ):
@@ -269,9 +266,7 @@ def get_yatai_service_impl(base=object):
 
         def GetDeployment(self, request, context=None):
             deployment_id = f"{request.deployment_name}_{request.namespace}"
-            with lock(self.db, [
-                (deployment_id, LockType.READ),
-            ]) as (
+            with lock(self.db, [(deployment_id, LockType.READ)]) as (
                 sess,
                 _,
             ):
@@ -301,9 +296,7 @@ def get_yatai_service_impl(base=object):
 
         def DescribeDeployment(self, request, context=None):
             deployment_id = f"{request.deployment_name}_{request.namespace}"
-            with lock(self.db, [
-                (deployment_id, LockType.READ),
-            ]) as (
+            with lock(self.db, [(deployment_id, LockType.READ)]) as (
                 sess,
                 _,
             ):
@@ -367,9 +360,7 @@ def get_yatai_service_impl(base=object):
 
         def AddBento(self, request, context=None):
             bento_id = f"{request.bento_name}_{request.bento_version}"
-            with lock(self.db, [
-                (bento_id, LockType.WRITE),
-            ]) as (sess, _):
+            with lock(self.db, [(bento_id, LockType.WRITE)]) as (sess, _):
                 try:
                     # TODO: validate request
                     bento_pb = self.db.metadata_store.get(
@@ -404,9 +395,7 @@ def get_yatai_service_impl(base=object):
 
         def UpdateBento(self, request, context=None):
             bento_id = f"{request.bento_name}_{request.bento_version}"
-            with lock(self.db, [
-                (bento_id, LockType.WRITE),
-            ]) as (sess, _):
+            with lock(self.db, [(bento_id, LockType.WRITE)]) as (sess, _):
                 try:
                     # TODO: validate request
                     if request.upload_status:
@@ -433,9 +422,7 @@ def get_yatai_service_impl(base=object):
 
         def DangerouslyDeleteBento(self, request, context=None):
             bento_id = f"{request.bento_name}_{request.bento_version}"
-            with lock(self.db, [
-                (bento_id, LockType.WRITE),
-            ]) as (sess, _):
+            with lock(self.db, [(bento_id, LockType.WRITE)]) as (sess, _):
                 try:
                     # TODO: validate request
                     bento_pb = self.db.metadata_store.get(
@@ -472,9 +459,7 @@ def get_yatai_service_impl(base=object):
 
         def GetBento(self, request, context=None):
             bento_id = f"{request.bento_name}_{request.bento_version}"
-            with lock(self.db, [
-                (bento_id, LockType.READ),
-            ]) as (sess, _):
+            with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
                 try:
                     # TODO: validate request
                     bento_pb = self.db.metadata_store.get(
@@ -537,9 +522,7 @@ def get_yatai_service_impl(base=object):
 
         def ContainerizeBento(self, request, context=None):
             bento_id = f"{request.bento_name}_{request.bento_version}"
-            with lock(self.db, [
-                (bento_id, LockType.READ),
-            ]) as (sess, _):
+            with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
                 try:
                     ensure_docker_available_or_raise()
                     tag = request.tag

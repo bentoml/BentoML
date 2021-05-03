@@ -32,7 +32,9 @@ def lock(
             with db.create_session() as sess:
                 lock_objs = []
                 for (lock_identifier, lock_type) in locks:
-                    lock_obj = LockStore.acquire(sess, lock_type, lock_identifier, ttl_min)
+                    lock_obj = LockStore.acquire(
+                        sess, lock_type, lock_identifier, ttl_min
+                    )
                     lock_objs.append(lock_obj)
                 sess.commit()
                 yield sess, lock_objs

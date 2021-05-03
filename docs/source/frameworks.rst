@@ -116,6 +116,17 @@ Example Projects:
 
 
 ========
+CatBoost
+========
+
+Example Projects:
+
+* Titanic Survival Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`__
+
+.. autoclass:: bentoml.frameworks.catboost.CatBoostModelArtifact
+
+
+========
 FastText
 ========
 

@@ -2,14 +2,13 @@ name: BentoML-CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
   schedule:
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * *"
 
 jobs:
-
   lint_and_format:
     runs-on: ubuntu-latest
     steps:
@@ -22,7 +21,6 @@ jobs:
         run: ./ci/install_test_deps.sh.cmd
       - name: Run linting script
         run: ./ci/linter.sh
-
 
   documentation_spelling_check:
     runs-on: ubuntu-latest
@@ -42,7 +40,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [ '3.6.10', '3.7', '3.8' ]
+        python-version: ["3.6.10", "3.7", "3.8"]
         exclude:
           - os: macos-latest
             python-version: 3.8
@@ -55,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -78,7 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -95,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -111,7 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with: 
+        with:
           fetch-depth: 0
       - name: Setup python
         uses: actions/setup-python@v2
@@ -126,13 +124,12 @@ jobs:
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
-
   coreml_integration_tests:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -148,7 +145,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with: 
+        with:
           fetch-depth: 0
       - name: Setup python
         uses: actions/setup-python@v2
@@ -174,7 +171,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -198,7 +195,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -215,7 +212,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -232,7 +229,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -249,7 +246,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -266,7 +263,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -283,7 +280,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -295,13 +292,29 @@ jobs:
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
+  catboost_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6.10
+      - name: Install test dependencies
+        run: ./ci/install_test_deps.sh
+      - name: Run tests
+        run: ./ci/catboost_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
 
   detectron2_integration_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -318,7 +331,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -335,7 +348,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -352,7 +365,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -390,7 +403,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -419,7 +432,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -439,7 +452,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # fetch all tags and branches
+          fetch-depth: 0 # fetch all tags and branches
       - name: Setup python
         uses: actions/setup-python@v2
         with:

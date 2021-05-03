@@ -37,6 +37,7 @@ util
 backend
 coremltools
 xgboost
+catboost
 lightgbm
 keras
 tf

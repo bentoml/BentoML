@@ -24,14 +24,22 @@ def lock(
     timeout_seconds=10,
     timeout_jitter_seconds=1,
     max_retry_count=5,
+    ttl_min=3,
+    sess=None,
 ):
     for i in range(max_retry_count):
         try:
-            with db.create_session() as sess:
-                lock_obj = LockStore.acquire(sess, lock_type, lock_identifier, 3)
-                yield sess, lock_obj
+            if sess:
+                lock_obj = LockStore.acquire(sess, lock_type, lock_identifier, ttl_min)
+                yield lock_obj
                 lock_obj.release(sess)
                 return
+            else:
+                with db.create_session() as sess:
+                    lock_obj = LockStore.acquire(sess, lock_type, lock_identifier, ttl_min)
+                    yield sess, lock_obj
+                    lock_obj.release(sess)
+                    return
         except LockUnavailable as e:
             sleep_seconds = timeout_seconds + random.random() * timeout_jitter_seconds
             time.sleep(sleep_seconds)

@@ -45,12 +45,19 @@ class LockStore(object):
 
         # no lock found; free to acquire,
         # or existing lock is expired
-        if not lock or lock.ttl < now:
+        if not lock:
             lock = Lock()
             lock.lock_status = lock_type
             lock.resource_id = resource_id
             lock.ttl = ttl
             sess.add(lock)
+            sess.commit()
+            return lock
+
+        if lock.ttl < now:
+            lock.lock_status = lock_type
+            lock.resource_id = resource_id
+            lock.ttl = ttl
             sess.commit()
             return lock
 

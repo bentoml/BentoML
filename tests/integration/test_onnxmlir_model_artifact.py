@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-import pandas 
+import pandas
 import tensorflow as tf
 import subprocess
 from tests.bento_service_examples.onnxmlir_classifier import OnnxMlirClassifier
@@ -9,6 +9,7 @@ from bentoml.yatai.client import YataiClient
 test_data = [[1, 2, 3, 4, 5]]
 test_df = pandas.DataFrame([[1, 2, 3, 4, 5]])
 test_tensor = np.asfarray(test_data)
+
 
 class TfNativeModel(tf.Module):
     def __init__(self):
@@ -22,6 +23,7 @@ class TfNativeModel(tf.Module):
     def __call__(self, inputs):
         return self.dense(inputs)
 
+
 @pytest.fixture()
 def onnxmlir_classifier_class():
     # When the ExampleBentoService got saved and loaded again in the test, the two class
@@ -30,6 +32,7 @@ def onnxmlir_classifier_class():
     OnnxMlirClassifier._bento_service_bundle_path = None
     OnnxMlirClassifier._bento_service_bundle_version = None
     return OnnxMlirClassifier()
+
 
 @pytest.fixture()
 def tensorflow_model(tmp_path_factory):
@@ -51,11 +54,10 @@ def convert_to_onnx(tensorflow_model, tmp_path_factory):
         '--saved-model',
         '.',
         '--output',
-        modelpath
+        modelpath,
     ]
     docker_proc = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,cwd=tf_model,
-        text=True
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=tf_model, text=True
     )
     stdout, stderr = docker_proc.communicate()
     assert 'ONNX model is saved' in stderr, 'Failed to convert TF model'
@@ -64,22 +66,23 @@ def convert_to_onnx(tensorflow_model, tmp_path_factory):
 
 @pytest.fixture()
 def compile_model(convert_to_onnx, tmp_path_factory):
-    onnxmodelloc = convert_to_onnx+'/model.onnx'
-    command = [
-        'onnx-mlir',
-        '--EmitLib',
-        onnxmodelloc
-    ]
-    onnx_mlir_loc = '/workdir/onnx-mlir/build/bin'
+    onnxmodelloc = convert_to_onnx + '/model.onnx'
+    command = ['onnx-mlir', '--EmitLib', onnxmodelloc]
+    #onnx_mlir_loc = '/workdir/onnx-mlir/build/bin'
+    onnx_mlir_loc = '/onnx-mlir/build/bin'
     docker_proc = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        text=True, cwd=onnx_mlir_loc
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=onnx_mlir_loc,
     )
     stdout, stderr = docker_proc.communicate()
     # should return something like: 'Shared library model.so has been compiled.'
     assert 'has been compiled' in stdout, 'Failed to compile model'
-    #modelname = 'model.so'
+    # modelname = 'model.so'
     return convert_to_onnx
+
 
 @pytest.fixture()
 def get_onnx_mlir_svc(compile_model, onnxmlir_classifier_class):

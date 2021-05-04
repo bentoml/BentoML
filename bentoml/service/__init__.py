@@ -152,14 +152,17 @@ def api_decorator(
             # noinspection PyPep8Naming
             InputAdapter = args[0]
             input_adapter = InputAdapter(*args[1:], **kwargs)
-            output_adapter = DefaultOutput()
         else:
             assert isinstance(input, BaseInputAdapter), (
                 "API input parameter must be an instance of a class derived from "
                 "bentoml.adapters.BaseInputAdapter"
             )
             input_adapter = input
-            output_adapter = output or DefaultOutput()
+
+        if output:
+            output_adapter = output
+        else:
+            output_adapter = DefaultOutput()
 
         setattr(func, "_is_api", True)
         setattr(func, "_input_adapter", input_adapter)

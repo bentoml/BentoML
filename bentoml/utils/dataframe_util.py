@@ -15,6 +15,7 @@
 import io
 import itertools
 import json
+import sys
 from typing import Iterable, Iterator, Mapping
 
 from bentoml.exceptions import BadInput
@@ -168,7 +169,6 @@ def _dataframe_csv_from_input(table: str, fmt, orient, state):
             else:
                 guessed_orient = guess_orient(table, strict=True)
                 if orient != guessed_orient and orient not in guessed_orient:
-                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", orient)
                     return None
             if orient not in _ORIENT_MAP:
                 return None
@@ -222,3 +222,23 @@ def read_dataframes_from_json_n_csv(
         return df, lens
     except pandas.errors.EmptyDataError:
         return None, lens
+
+
+def read_dataframes_from_csv_by_chunk(
+    file_path: str, columns=None, dtype=None, chunksize=sys.maxsize,
+) -> "pandas.io.parsers.TextFileReader":
+    '''
+    load dataframes from csv chunk by chunk
+    '''
+    try:
+        df_reader = pandas.read_csv(
+            file_path,
+            index_col=None,
+            dtype=dtype,
+            names=columns,
+            chunksize=chunksize,
+            encoding="utf-8",
+        )
+        return df_reader
+    except pandas.errors.EmptyDataError:
+        return None

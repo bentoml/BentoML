@@ -12,14 +12,18 @@
 # limitations under the License.
 
 import argparse
+import chardet
+import sys
 from typing import Iterable, Iterator, Mapping, Optional, Sequence, Tuple
 
+from bentoml.adapters.base_input import parse_cli_input
 from bentoml.adapters.string_input import StringInput
 from bentoml.exceptions import MissingDependencyException
 from bentoml.types import HTTPHeaders, InferenceTask
 from bentoml.utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
     read_dataframes_from_json_n_csv,
+    read_dataframes_from_csv_by_chunk,
 )
 from bentoml.utils.lazy_loader import LazyLoader
 
@@ -246,6 +250,34 @@ class DataframeInput(StringInput):
 
         return "json"
 
+    def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[str]]:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--batch-size", default=sys.maxsize, type=int)
+        parser.add_argument('--format', type=str, choices=['csv', 'json'])
+        parsed_args, _ = parser.parse_known_args(cli_args)
+        chunksize = parsed_args.batch_size
+        input_data_format = parsed_args.format or "json"
+        inputs = parse_cli_input(cli_args)
+        return self.from_inference_job(
+            inputs,
+            input_data_format=input_data_format,
+            chunksize=chunksize,
+            cli_args=cli_args,
+        )
+
+    def __infer_data_type(self, datas: Iterable) -> str:
+        data_type = ""
+        for data in datas:
+            if isinstance(data, pandas.DataFrame):
+                # if there is one pandas DataFrame, then others
+                # should also be pandas DataFrame
+                data_type = "DataFrame"
+                break
+            elif isinstance(data, str):
+                data_type = "str"
+                break
+        return data_type
+
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]
     ) -> ApiFuncArgs:
@@ -253,9 +285,41 @@ class DataframeInput(StringInput):
             zip(*((self._detect_format(task), task.data) for task in tasks))
         )
 
-        df, batchs = read_dataframes_from_json_n_csv(
-            datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
-        )
+        data_type = self.__infer_data_type(datas)
+        df = None
+        if data_type == "str":
+            df, batches = read_dataframes_from_json_n_csv(
+                datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
+            )
+
+            if df is not None:
+                for task, batch, data in zip(tasks, batches, datas):
+                    if batch == 0:
+                        task.discard(
+                            http_status=400,
+                            err_msg=f"{self.__class__.__name__} "
+                            f"Wrong input format: {data}.",
+                        )
+                    else:
+                        task.batch = batch
+                return (df,)
+        elif data_type == "DataFrame":
+            df_merged = None
+            for task, df in zip(tasks, datas):
+                if df is None:
+                    task.discard(
+                        http_status=400,
+                        err_msg=f"{self.__class__.__name__} Input data frame is None.",
+                    )
+                else:
+                    task.batch = df.shape[0]
+                    # Make sure the data of a task can be serialized into a log
+                    task.data = task.data.to_json()
+                    if df_merged is None:
+                        df_merged = df
+                    else:
+                        df_merged = df_merged.append(df)
+            return (df_merged,)
 
         if df is None:
             for task in tasks:
@@ -265,20 +329,41 @@ class DataframeInput(StringInput):
                 )
             return (df,)
 
-        for task, batch, data in zip(tasks, batchs, datas):
-            if batch == 0:
-                task.discard(
-                    http_status=400,
-                    err_msg=f"{self.__class__.__name__} Wrong input format: {data}.",
-                )
-            else:
-                task.batch = batch
-        return (df,)
-
-    def from_inference_job(
-        self, input_=None, input_file=None, **extra_args,
+    def from_inference_job(  # pylint: disable=arguments-differ
+        self, inputs=None, **extra_args,
     ) -> Iterator[InferenceTask[str]]:
-        # TODO: generate small batches of InferenceTasks from large input files
-        return super().from_inference_job(
-            input_=input_, input_file=input_file, **extra_args
-        )
+        input_data_format = extra_args["input_data_format"]
+        chunksize = extra_args["chunksize"]
+        cli_args = extra_args["cli_args"]
+        for input_ in inputs:
+            try:
+                if input_data_format == "json":
+                    bytes_ = input_.read()
+                    charset = chardet.detect(bytes_)['encoding'] or "utf-8"
+                    yield InferenceTask(
+                        cli_args=cli_args, data=bytes_.decode(charset),
+                    )
+                else:
+                    df_reader = read_dataframes_from_csv_by_chunk(
+                        input_.path,
+                        columns=self.columns,
+                        dtype=self.dtype,
+                        chunksize=chunksize,
+                    )
+                    for df in df_reader:
+                        yield InferenceTask(
+                            cli_args=cli_args, data=df,
+                        )
+            except UnicodeDecodeError:
+                yield InferenceTask().discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__}: "
+                    f"Try decoding with {charset} but failed "
+                    f"with DecodeError.",
+                )
+            except LookupError:
+                return InferenceTask().discard(
+                    http_status=400,
+                    err_msg=f"{self.__class__.__name__}: Unsupported "
+                    f"charset {charset}",
+                )

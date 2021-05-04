@@ -62,8 +62,9 @@ class ExampleService(bentoml.BentoService):
     def predict_file(self, files):
         return self.artifacts.model.predict_file(files)
 
-    @bentoml.api(input=JsonInput(), batch=True)
+    @bentoml.api(input=JsonInput(), batch=True, mb_max_latency=500 * 1000)
     def predict_json(self, input_datas):
+        time.sleep(310)
         return self.artifacts.model.predict_json(input_datas)
 
     CUSTOM_ROUTE = "$~!@%^&*()_-+=[]\\|;:,./predict"

@@ -18,11 +18,12 @@ import logging
 import multiprocessing
 import time
 import traceback
+from typing import Optional
 
 import aiohttp
 import aiohttp.web
-import psutil
 from dependency_injector.wiring import Provide, inject
+import psutil
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
@@ -158,7 +159,8 @@ class MarshalService:
             BentoMLContainer.config.bento_server.microbatch.enabled
         ],
     ):
-        self._client = None
+        self._conn: Optional[aiohttp.BaseConnector] = None
+        self._client: Optional[aiohttp.ClientSession] = None
         self.outbound_unix_socket = outbound_unix_socket
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
@@ -195,21 +197,32 @@ class MarshalService:
             self._outbound_sema = NonBlockSema(self.outbound_workers)
         return self._outbound_sema
 
-    def get_client(self):
-        if self._client is None:
-            jar = aiohttp.DummyCookieJar()
+    def get_conn(self) -> aiohttp.BaseConnector:
+        if self._conn is None or self._conn.closed:
             if self.outbound_unix_socket:
-                conn = aiohttp.UnixConnector(path=self.outbound_unix_socket,)
+                self._conn = aiohttp.UnixConnector(path=self.outbound_unix_socket,)
             else:
-                conn = aiohttp.TCPConnector(limit=30)
+                self._conn = aiohttp.TCPConnector(limit=30)
+        return self._conn
+
+    def get_client(self):
+        if self._client is None or self._client.closed:
+            jar = aiohttp.DummyCookieJar()
             self._client = aiohttp.ClientSession(
-                connector=conn, auto_decompress=False, cookie_jar=jar,
+                connector=self.get_conn(),
+                auto_decompress=False,
+                cookie_jar=jar,
+                connector_owner=False,
             )
         return self._client
 
     def __del__(self):
+        loop = asyncio.get_event_loop()
         if getattr(self, '_client', None) is not None and not self._client.closed:
-            self._client.close()
+            loop.create_task(self._client.close())
+
+        # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
+        loop.create_task(asyncio.sleep(0))
 
     def add_batch_handler(self, api_route, max_latency, max_batch_size):
         '''
@@ -295,7 +308,7 @@ class MarshalService:
                     request.method, url, data=data, headers=request.headers
                 ) as resp:
                     body = await resp.read()
-            except aiohttp.client_exceptions.ClientConnectionError:
+            except aiohttp.ClientConnectionError:
                 return aiohttp.web.Response(status=503, body=b"Service Unavailable")
         return aiohttp.web.Response(
             status=resp.status, body=body, headers=resp.headers,
@@ -324,10 +337,18 @@ class MarshalService:
                 client = self.get_client()
                 async with client.post(api_url, data=reqs_s, headers=headers) as resp:
                     raw = await resp.read()
-            except aiohttp.client_exceptions.ClientConnectionError as e:
+            except aiohttp.ClientConnectionError as e:
                 raise RemoteException(
                     e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
                 )
+            except asyncio.CancelledError as e:
+                raise RemoteException(
+                    e,
+                    payload=HTTPResponse(
+                        status=500, body=b"Cancelled before upstream responses"
+                    ),
+                )
+
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",

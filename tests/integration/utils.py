@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+from contextlib import contextmanager
 import logging
 import os
 import subprocess
@@ -6,7 +7,6 @@ import sys
 import threading
 import time
 import urllib
-from contextlib import contextmanager
 
 import bentoml
 from bentoml.utils import cached_contextmanager
@@ -134,7 +134,7 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
         if port:
             cmd += ['--port', f'{port}']
         if enable_microbatch:
-            cmd += ['--enable-microbatch']
+            cmd += ['--enable-microbatch', "--timeout", "500"]
         cmd += [bundle_path]
 
     def print_log(p):

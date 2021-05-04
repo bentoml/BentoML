@@ -80,7 +80,7 @@ class SavedBundleConfig(object):
         self,
         bento_service=None,
         kind="BentoService",
-        bentoml_version: str = Provide[
+        bentoml_deployment_version: str = Provide[
             BentoMLContainer.bento_bundle_deployment_version
         ],
     ):
@@ -90,7 +90,7 @@ class SavedBundleConfig(object):
         self.config = self._yaml.load(
             BENTOML_CONFIG_YAML_TEMPLATE.format(
                 kind=self.kind,
-                bentoml_version=bentoml_version,
+                bentoml_version=bentoml_deployment_version,
                 created_at=str(datetime.utcnow()),
             )
         )

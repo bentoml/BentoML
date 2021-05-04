@@ -28,6 +28,15 @@ from bentoml.utils.ruamel_yaml import YAML
 
 LOGGER = logging.getLogger(__name__)
 
+YATAI_REPOSITORY_S3 = "s3"
+YATAI_REPOSITORY_GCS = "gcs"
+YATAI_REPOSITORY_FILE_SYSTEM = "file_system"
+YATAI_REPOSITORY_TYPES = [
+    YATAI_REPOSITORY_FILE_SYSTEM,
+    YATAI_REPOSITORY_S3,
+    YATAI_REPOSITORY_GCS,
+]
+
 SCHEMA = Schema(
     {
         "bento_bundle": {
@@ -82,7 +91,12 @@ SCHEMA = Schema(
                 },
             },
             "repository": {
-                "type": str,
+                "type": And(
+                    str,
+                    lambda type: type in YATAI_REPOSITORY_TYPES,
+                    error="yatai.repository.type must be one of %s"
+                    % YATAI_REPOSITORY_TYPES,
+                ),
                 "file_system": {"directory": Or(str, None)},
                 "s3": {
                     "url": Or(str, None),

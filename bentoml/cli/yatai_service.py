@@ -17,7 +17,13 @@ import click
 import logging
 from dependency_injector.wiring import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer
+from bentoml.configuration.containers import (
+    BentoMLContainer,
+    YATAI_REPOSITORY_TYPES,
+    YATAI_REPOSITORY_FILE_SYSTEM,
+    YATAI_REPOSITORY_S3,
+    YATAI_REPOSITORY_GCS,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -90,7 +96,7 @@ def add_yatai_service_sub_command(
     )
     @click.option(
         '--repository-type',
-        type=click.Choice(['file_system', 's3', 'gcs'], case_sensitive=False),
+        type=click.Choice(YATAI_REPOSITORY_TYPES, case_sensitive=False),
         default=default_repository_type,
         help='Type of the repository implementation',
         envvar='BENTOML_YATAI_REPOSITORY_TYPE',
@@ -147,14 +153,27 @@ def add_yatai_service_sub_command(
                 "corresponding options in the upcoming releases. "
             )
             if is_s3_url(repo_base_url):
-                repository_type = "s3"
+                repository_type = YATAI_REPOSITORY_S3
                 s3_url = repo_base_url
             elif is_gcs_url(repo_base_url):
-                repository_type = "gcs"
+                repository_type = YATAI_REPOSITORY_GCS
                 gcs_url = repo_base_url
             else:
-                repository_type = "file_system"
+                repository_type = YATAI_REPOSITORY_FILE_SYSTEM
                 file_system_directory = repo_base_url
+
+        if repository_type == YATAI_REPOSITORY_S3 and s3_url is None:
+            logger.error("--s3-url must be specified for S3 repository type")
+            return
+        elif repository_type == YATAI_REPOSITORY_GCS and gcs_url is None:
+            logger.error("--s3-url must be specified for S3 repository type")
+            return
+        elif repository_type == YATAI_REPOSITORY_FILE_SYSTEM and file_system_directory is None:
+            logger.error("--s3-url must be specified for S3 repository type")
+            return
+        else:
+            logger.error("Unrecognized --repository-type %s" % repository_type)
+            return
 
         from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 

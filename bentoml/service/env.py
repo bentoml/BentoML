@@ -167,7 +167,7 @@ class BentoServiceEnv(object):
             BentoMLContainer.config.bento_bundle.default_docker_base_image
         ],
         zipimport_archives: List[str] = None,
-        bentoml_version: str = Provide[
+        bentoml_deployment_version: str = Provide[
             BentoMLContainer.bento_bundle_deployment_version
         ],
     ):
@@ -188,7 +188,7 @@ class BentoServiceEnv(object):
         self._pip_packages = {}
 
         # add BentoML to pip packages list
-        bentoml_deploy_version = bentoml_version
+        bentoml_deploy_version = bentoml_deployment_version
         self.add_pip_package("bentoml=={}".format(bentoml_deploy_version))
 
         if pip_packages:

@@ -140,4 +140,4 @@ class StringInput(BaseInputAdapter):
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]
     ) -> ApiFuncArgs:
-        return [task.data for task in tasks]
+        return ([task.data for task in tasks],)

@@ -163,16 +163,21 @@ def add_yatai_service_sub_command(
                 file_system_directory = repo_base_url
 
         if repository_type == YATAI_REPOSITORY_S3 and s3_url is None:
-            logger.error("--s3-url must be specified for S3 repository type")
+            logger.error("'--s3-url' must be specified for S3 repository type")
             return
         elif repository_type == YATAI_REPOSITORY_GCS and gcs_url is None:
-            logger.error("--s3-url must be specified for S3 repository type")
+            logger.error("'--gcs-url' must be specified for GCS repository type")
             return
-        elif repository_type == YATAI_REPOSITORY_FILE_SYSTEM and file_system_directory is None:
-            logger.error("--s3-url must be specified for S3 repository type")
+        elif (
+            repository_type == YATAI_REPOSITORY_FILE_SYSTEM
+            and file_system_directory is None
+        ):
+            logger.error(
+                "'--file-system-directory' must be specified for file system repository type"
+            )
             return
         else:
-            logger.error("Unrecognized --repository-type %s" % repository_type)
+            logger.error("Unrecognized '--repository-type' %s" % repository_type)
             return
 
         from bentoml.yatai.yatai_service import start_yatai_service_grpc_server

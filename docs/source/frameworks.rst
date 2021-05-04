@@ -238,3 +238,8 @@ Example Projects:
     Detectron
     DetectionCheckpointer
 
+=========
+PySpark
+=========
+
+.. autoclass:: bentoml.frameworks.spark_mllib.PySparkModelArtifact

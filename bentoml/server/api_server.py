@@ -32,6 +32,11 @@ from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import InferenceAPI
 from bentoml.tracing import get_tracer
 
+import requests
+from datetime import datetime
+import pytz
+import numpy as np
+
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
 feedback_logger = logging.getLogger("bentoml.feedback")
@@ -372,12 +377,246 @@ class BentoAPIServer:
             methods=["POST"]
         )
 
-    def handle_ml_processing(self):
-        response = make_response(
-            'Hello from NGSI-LD ML Processing endpoint!',
-            200,
+        self.app.add_url_rule(
+            rule="/ngsi-ld/ml/predict",
+            endpoint="ml-predict",
+            view_func=self.handle_ml_predict,
+            methods=["POST"]
         )
 
+    def handle_ml_processing(self):
+        """
+        Handle receipt of a notification from subscription to
+        MLProcessing entities. It indicates a new entity is interested
+        in using this MLModel.
+        On receipt of this notification, the information on where to
+        find the input data for prediction is retrieve, and a subscription
+        is created to be notified when input data changes
+
+        The notification received looks like:
+
+        {
+            'id': 'urn:ngsi-ld:Notification:fadc5090-2425-42f8-b318-1966fa0e0011',
+            'type': 'Notification',
+            'subscriptionId': 'urn:ngsi-ld:Subscription:MLModel:flow:predict:71dba318-2989-4c76-a22c-52a53f04759b',
+            'notifiedAt': '2021-05-03T09:53:50.330686Z',
+            'data': [
+                {
+                    'id': 'urn:ngsi-ld:MLProcessing:4bbb2b09-ad6c-4fb9-8f40-8d37e4cddd3a',
+                    'type': 'MLProcessing',
+                    'refSubscriptionQuery':
+                        {
+                            'type': 'Relationship',
+                            'object': 'urn:ngsi-ld:MLProcessing:SubscriptionQuery:e7be459e-dcee-46ab-90da-fba3120db4ff'
+                        },
+                    '@context': [
+                        'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-compound.jsonl'
+                    ]
+                }
+            ]
+        }
+
+        We need to:
+        * GET the SubscriptionQuery entity referenced by 'refSubscriptionQuery',
+        * extract from the SubscriptionQuery entity, where to get the input data,
+        * Finally create a subscription to this data. 
+        """
+        # Hard coded notification for now ...
+        # Some generic configuration
+        access_token = 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJIS0xvcnlIcDN6VHlOY0EtNWYwQ19iVC1hbm5ldDFLSUhFT0U1VnN1NjRrIn0.eyJleHAiOjE2MjA2MzE2MDIsImlhdCI6MTYxOTc2NzYwMiwianRpIjoiYThhODhhOGMtM2Q5ZS00ZjEyLWFmNzQtMzNiNzM3ZmVlODAxIiwiaXNzIjoiaHR0cHM6Ly9zc28uZWdsb2JhbG1hcmsuY29tL2F1dGgvcmVhbG1zL3N0ZWxsaW8tZGV2IiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNhNDQxNzE0LTk3YjYtNGJiOS04Y2E3LTBiMjM5NDA0NDNmYSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImRpZGllci1jbGllbnQiLCJzZXNzaW9uX3N0YXRlIjoiNGQxNjgzNGEtNDU5My00YTc0LThjZDEtODYzZTU4OGFmODcyIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJzdGVsbGlvLWNyZWF0b3IiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiZGlkaWVyLWNsaWVudCI6eyJyb2xlcyI6WyJ1bWFfcHJvdGVjdGlvbiJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRJZCI6ImRpZGllci1jbGllbnQiLCJjbGllbnRIb3N0IjoiOTIuMTg0LjEwMi4yNDkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtZGlkaWVyLWNsaWVudCIsImNsaWVudEFkZHJlc3MiOiI5Mi4xODQuMTAyLjI0OSJ9.nWv9vQn0Gt6MnJYsdReSOpQUOweLIKcCZknuauQuWKI3UCqEpLcTLB6M175rUGAauiPe8IIdCnEENEnFOv_kri9tYa5RujKlgLxxoSKqjjV_G-E64VZKlKTi0iPLVm4thRsHRXl_DH-vaoQ8u53MiaHSIqY4IdXcvpNgLTxhNjPwlx887I8MZFDbn63a15NWM3QPbhOBkYnOdnCHif-CVRGu2e0aJ4Dk4g36e_au7DtWCXl7Kia0vR5_14wLUoWftyyjeKK7uelcLJs3eSNWXcjFnYgc9aYSD2I9rVahYZQmm8Niaqtp1DFEXCUrGFiZ9lNExOIItTdY8FJRsKR9zA'
+        headers = {
+            'Authorization': 'Bearer ' + access_token,
+            'Content-Type': 'application/ld+json'
+        }
+        URL_ENTITIES = 'https://stellio-dev.eglobalmark.com/ngsi-ld/v1/entities/'
+        URL_SUBSCRIPTION = 'https://stellio-dev.eglobalmark.com/ngsi-ld/v1/subscriptions/'
+        SUBSCRIPTION_INPUT_DATA = 'urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3'
+        ENDPOINT_INPUT_DATA_CHANGED = 'https://0ba2eb3a-2ff5-4a72-9a6f-f430f9f41ad3.mock.pstmn.io/mlprocessing'
+        AT_CONTEXT = [
+            'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-contexts.jsonld'
+        ]
+
+        mlprocessing_notification = {
+            'id': 'urn:ngsi-ld:Notification:fadc5090-2425-42f8-b318-1966fa0e0011',
+            'type': 'Notification',
+            'subscriptionId': 'urn:ngsi-ld:Subscription:MLModel:flow:predict:71dba318-2989-4c76-a22c-52a53f04759b',
+            'notifiedAt': '2021-05-03T09:53:50.330686Z',
+            'data': [
+                {
+                    'id': 'urn:ngsi-ld:MLProcessing:4bbb2b09-ad6c-4fb9-8f40-8d37e4cddd3a',
+                    'type': 'MLProcessing',
+                    'refSubscriptionQuery':
+                        {
+                            'type': 'Relationship',
+                            'object': 'urn:ngsi-ld:MLProcessing:SubscriptionQuery:e7be459e-dcee-46ab-90da-fba3120db4ff'
+                        },
+                    '@context': [
+                        'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-compound.jsonl'
+                    ]
+                }
+            ]
+        }
+
+        # Getting the SubscriptionQuery entity
+        refSubscriptionQuery = mlprocessing_notification['data'][0]['refSubscriptionQuery']['object']
+        r = requests.get(URL_ENTITIES+refSubscriptionQuery, headers=headers)
+        print(f'requests status_code GET subscriptionQuery: {r.status_code}')
+        print('r.json()')
+        print(r.json())
+        ENTITY_INPUT_DATA = r.json()['entityID']['value']
+
+        # We don't really use the content of the SubscriptionQuery entity for now ...
+        # Instead we build our own 'hard coded' Subscription to input data
+        json_ = {
+            '@context': AT_CONTEXT,
+            'id':SUBSCRIPTION_INPUT_DATA,
+            'type':'Subscription',
+            'entities': [
+                {
+                    'id': ENTITY_INPUT_DATA,
+                    'type': 'River'
+                }
+            ],
+            'watchedAttributes': ['precipitation'],
+            'notification': {
+                'endpoint': {
+                    'uri': ENDPOINT_INPUT_DATA_CHANGED,
+                    'accept': 'application/json'
+                },
+                'attributes': ['precipitation']
+            }
+        }
+
+        print('Creating subscription to precipitation')
+        # Creating the subscription to precipitation
+        r = requests.post(URL_SUBSCRIPTION, json=json_, headers=headers)
+        print(f'requests status_code POST Subscription Precipitation: {r.status_code}')
+
+        # Finally, respond to the initial received request (notification)
+        # with empty 200        
+        response = make_response(
+            '',
+            200,
+        )
+        return response
+
+    def handle_ml_predict(self):
+        """
+        Handle the request for a prediction. The request is actually a NGSI-LD
+        notification of the change of a particular property of an NGSI-LD
+        Entity.
+
+        The notification received looks like:
+
+        {
+            "id": "urn:ngsi-ld:Notification:cc231a15-d220-403c-bfc6-ad60bc49466f",
+            "type": "Notification",
+            "subscriptionId": "urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3",
+            "notifiedAt": "2021-05-04T06:45:32.83178Z",
+            "data": [
+                {
+                "id": "urn:ngsi-ld:River:014f5730-72ab-4554-a106-afbe5d4d9d26",
+                "type": "River",
+                "precipitation": {
+                    "type": "Property",
+                    "createdAt": "2021-05-04T06:45:32.674520Z",
+                    "value": 2.2,
+                    "observedAt": "2021-05-04T06:35:22.000Z",
+                    "unitCode": "MMT"
+                },
+                "@context": [
+                    "https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-compound.jsonld"
+                ]
+                }
+            ]
+        }
+
+        We need to:
+        * Extract the input_data from the NGSI-LD Notification,
+        * Reshape the data (2 dims array)
+        * Predict using the deployed BentoML service at /predict
+        * Create a NGSI-LD request to update the appropriate Entity/Property
+        * Update the Entity/Property via PATCH
+        """
+        # Some generic configuration
+        access_token = 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJIS0xvcnlIcDN6VHlOY0EtNWYwQ19iVC1hbm5ldDFLSUhFT0U1VnN1NjRrIn0.eyJleHAiOjE2MjA2MzE2MDIsImlhdCI6MTYxOTc2NzYwMiwianRpIjoiYThhODhhOGMtM2Q5ZS00ZjEyLWFmNzQtMzNiNzM3ZmVlODAxIiwiaXNzIjoiaHR0cHM6Ly9zc28uZWdsb2JhbG1hcmsuY29tL2F1dGgvcmVhbG1zL3N0ZWxsaW8tZGV2IiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNhNDQxNzE0LTk3YjYtNGJiOS04Y2E3LTBiMjM5NDA0NDNmYSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImRpZGllci1jbGllbnQiLCJzZXNzaW9uX3N0YXRlIjoiNGQxNjgzNGEtNDU5My00YTc0LThjZDEtODYzZTU4OGFmODcyIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJzdGVsbGlvLWNyZWF0b3IiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiZGlkaWVyLWNsaWVudCI6eyJyb2xlcyI6WyJ1bWFfcHJvdGVjdGlvbiJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRJZCI6ImRpZGllci1jbGllbnQiLCJjbGllbnRIb3N0IjoiOTIuMTg0LjEwMi4yNDkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtZGlkaWVyLWNsaWVudCIsImNsaWVudEFkZHJlc3MiOiI5Mi4xODQuMTAyLjI0OSJ9.nWv9vQn0Gt6MnJYsdReSOpQUOweLIKcCZknuauQuWKI3UCqEpLcTLB6M175rUGAauiPe8IIdCnEENEnFOv_kri9tYa5RujKlgLxxoSKqjjV_G-E64VZKlKTi0iPLVm4thRsHRXl_DH-vaoQ8u53MiaHSIqY4IdXcvpNgLTxhNjPwlx887I8MZFDbn63a15NWM3QPbhOBkYnOdnCHif-CVRGu2e0aJ4Dk4g36e_au7DtWCXl7Kia0vR5_14wLUoWftyyjeKK7uelcLJs3eSNWXcjFnYgc9aYSD2I9rVahYZQmm8Niaqtp1DFEXCUrGFiZ9lNExOIItTdY8FJRsKR9zA'
+        headers = {
+            'Authorization': 'Bearer ' + access_token,
+            'Content-Type': 'application/ld+json'
+        }
+        RIVER_SIAGNE_UUID = 'urn:ngsi-ld:River:014f5730-72ab-4554-a106-afbe5d4d9d26'
+        MLMODEL_UUID = 'urn:ngsi-ld:MLModel:flow:predict'
+        URL_ENTITIES = 'https://stellio-dev.eglobalmark.com/ngsi-ld/v1/entities/'
+        AT_CONTEXT = [
+            'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-contexts.jsonld'
+        ]
+
+        # Extract input data from NGSLI-LD notification
+        input_data_notification = {
+            "id": "urn:ngsi-ld:Notification:cc231a15-d220-403c-bfc6-ad60bc49466f",
+            "type": "Notification",
+            "subscriptionId": "urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3",
+            "notifiedAt": "2021-05-04T06:45:32.83178Z",
+            "data": [
+                {
+                    "id": "urn:ngsi-ld:River:014f5730-72ab-4554-a106-afbe5d4d9d26",
+                    "type": "River",
+                    "precipitation": {
+                        "type": "Property",
+                        "createdAt": "2021-05-04T06:45:32.674520Z",
+                        "value": 2.2,
+                        "observedAt": "2021-05-04T06:35:22.000Z",
+                        "unitCode": "MMT"
+                    },
+                    "@context": [
+                        "https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-compound.jsonld"
+                    ]
+                }
+            ]
+        }
+        input_data = input_data_notification['data'][0]['precipitation']['value']
+
+        # reshaping input data into a 2D array
+        input_data = np.array([input_data]).reshape(-1,1)
+
+        ### CALLING BENTOML PREDICT HERE ###
+        ###         HOW TO ???           ###
+        ### What do you get back? numpy? ###
+        ### More probably a list of list ###
+        ### as received through HTTP     ###
+        flow_prediction = [[2.3]]
+
+        # Create NGSI-LD request to update Entity/Property
+        # Here updating 'flow' Property of the Siagne Entity
+        flow_prediction = round(float(np.array(flow_prediction).squeeze()), 2)
+        timezone_France = pytz.timezone('Europe/Paris')
+        predictedAt = timezone_France.localize(datetime.now().replace(microsecond=0)).isoformat()
+
+        json_ = {
+            '@context': AT_CONTEXT,
+            'flow': [
+                {
+                    'type': 'Property',
+                    'value': flow_prediction,
+                    'unitCode': 'MQS',
+                    'observedAt': predictedAt,
+                    'conputedBy': {
+                        'type': 'Relationship',
+                        'object': MLMODEL_UUID
+                    }
+                }
+            ]
+        }
+
+        URL_PATCH_FLOW = URL_ENTITIES+RIVER_SIAGNE_UUID+'/attrs'
+        r = requests.post(URL_PATCH_FLOW, json=json_, headers=headers)
+
+        # Finally, respond to the initial received request (notification)
+        # with empty 200        
+        response = make_response(
+            '',
+            200,
+        )
         return response
 
     def setup_bento_service_api_routes(self):

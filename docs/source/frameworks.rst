@@ -219,7 +219,7 @@ Example Projects:
 EvalML
 ======
 
-.. autoclass:: bentoml.frameworks.coreml.EvalMLModelArtifact
+.. autoclass:: bentoml.frameworks.evalml.EvalMLModelArtifact
 
 
 .. spelling::

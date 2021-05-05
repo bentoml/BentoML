@@ -173,7 +173,8 @@ def add_yatai_service_sub_command(
             and file_system_directory is None
         ):
             logger.error(
-                "'--file-system-directory' must be specified for file system repository type"
+                "'--file-system-directory' must be specified for file system "
+                "repository type"
             )
             return
         else:

@@ -50,7 +50,6 @@ class EvalMLModelArtifact(BentoServiceArtifact):
 
         self._pickle_extension = pickle_extension
         self._model = None
-        self._pipeline_base_class = None
 
     def _validate_package(self):
         try:
@@ -71,12 +70,8 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     def load(self, path):
         self._validate_package()
         model_file_path = self._model_file_path(path)
-        if self._pipeline_base_class is None:
-            evalml_pipelines_module_name = 'evalml.pipelines'
-            evalml_pipelines_module = importlib.import_module(
-                evalml_pipelines_module_name)
-            self._pipeline_base_class = evalml_pipelines_module.PipelineBase
-        model = self._pipeline_base_class.load(model_file_path)
+        evalml_pipelines_module = importlib.import_module('evalml.pipelines')
+        model = evalml_pipelines_module.PipelineBase.load(model_file_path)
         self.pack(model)
         return model
 

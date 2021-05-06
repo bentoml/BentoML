@@ -1,3 +1,4 @@
+import importlib
 import os
 import pickle
 
@@ -13,7 +14,6 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     Args:
         name (str): Name for the artifact
         pickle_extension (str): The extension format for pickled file
-        pickle_module (str, module): pickle format to use: 'pickle' or 'cloudpickle'
 
     Raises:
         MissingDependencyException: evalml package is required for EvalMLModelArtifact
@@ -47,19 +47,19 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     >>> svc.save()
     """
 
-    def __init__(self, name, pickle_extension=".pkl", pickle_module=pickle):
+    def __init__(self, name, pickle_extension=".pkl"):
         super(EvalMLModelArtifact, self).__init__(name)
 
         self._pickle_extension = pickle_extension
-        self._pickle_module = pickle_module
         self._model = None
+        self._pipeline_base_class = None
 
     def _validate_package(self):
         try:
-            from evalml import __version__ as evalml_version  # noqa # pylint: disable=unused-import
+            evalml_module = importlib.import_module('evalml')  # noqa # pylint: disable=unused-variable
         except ImportError:
             raise MissingDependencyException(
-                "EvalML package is required to use EvalMLModelArtifact"
+                "Package 'evalml' is required to use EvalMLModelArtifact"
             )
 
     def _model_file_path(self, base_path):
@@ -73,16 +73,11 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     def load(self, path):
         self._validate_package()
         model_file_path = self._model_file_path(path)
-        try:
-            pickle_artifact = PickleArtifact(self.name,
-                                             pickle_module=self._pickle_module,
-                                             pickle_extension=self._pickle_extension)
-            pickle_artifact.load(path)
-            model = pickle_artifact.get()
-        except Exception:
-            raise ArtifactLoadingException(
-                f'File {model_file_path} is not unpickleable with module '
-                + f'{str(self._pickle_module)}.')
+        if self._pipeline_base_class is None:
+            evalml_pipelines_module_name = 'evalml.pipelines'
+            evalml_pipelines_module = importlib.import_module(evalml_pipelines_module_name)
+            self._pipeline_base_class = evalml_pipelines_module.PipelineBase
+        model = self._pipeline_base_class.load(model_file_path)
         self.pack(model)
         return model
 
@@ -92,16 +87,7 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     def save(self, dst):
         self._validate_package()
         model_file_path = self._model_file_path(dst)
-        try:
-            pickle_artifact = PickleArtifact(self.name,
-                                             pickle_module=self._pickle_module,
-                                             pickle_extension=self._pickle_extension)
-            pickle_artifact.pack(self._model)
-            pickle_artifact.save(dst)
-        except Exception:
-            raise ArtifactLoadingException(
-                f'File {model_file_path} is not unpickleable with module '
-                + f'{str(self._pickle_module)}.')
+        self._model.save(model_file_path)
 
     def set_dependencies(self, env):
         env.add_pip_packages(['evalml'])

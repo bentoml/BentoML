@@ -619,6 +619,17 @@ class BentoAPIServer:
         )
         return response
 
+    def handle_predict(self):
+        # TODO comment je peux appeler le /predict ?
+        # Bourrin : HTTP POST /predict
+        # Classe : appeler la route en interne
+        response = make_response(
+            'Hello from NGSI-LD ML Processing endpoint!',
+            200,
+        )
+
+        return response
+
     def setup_bento_service_api_routes(self):
         """
         Setup a route for each InferenceAPI object defined in bento_service

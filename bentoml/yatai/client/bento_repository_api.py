@@ -15,13 +15,15 @@
 # List of APIs for accessing remote or local yatai service via Python
 
 import io
+import math
 import os
 import logging
+import shutil
 import tarfile
+import uuid
 
 import click
 import requests
-import shutil
 
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import (
@@ -29,6 +31,7 @@ from bentoml.utils import (
     resolve_bento_bundle_uri,
     is_s3_url,
     is_gcs_url,
+    _archive_directory_to_tar,
 )
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.usage_stats import track
@@ -43,6 +46,8 @@ from bentoml.yatai.proto.repository_pb2 import (
     ListBentoRequest,
     DangerouslyDeleteBentoRequest,
     ContainerizeBentoRequest,
+    UploadBentoRequest,
+    DownloadBentoRequest,
 )
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
@@ -52,11 +57,54 @@ from bentoml.saved_bundle import (
     safe_retrieve,
     load_from_dir,
 )
+from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
 from bentoml.yatai.status import Status
 
 
 logger = logging.getLogger(__name__)
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
+
+
+# XXX This could be an yatai config
+DEFAULT_UPLOAD_CHUNK_SIZE = 1024 * 1024  # 1M
+
+
+class BentoBundleUploadRequest:
+    def __init__(
+        self,
+        bento_name,
+        bento_version,
+        bundle_path,
+        chunk_size=DEFAULT_UPLOAD_CHUNK_SIZE,
+    ):
+        self.bento_name = bento_name
+        self.bento_version = bento_version
+        self.chunk_size = chunk_size
+        self.bundle = open(bundle_path, 'rb')
+        self.bundle_size = os.path.getsize(bundle_path)
+        self.bundle_chunk_count = math.ceil(float(self.bundle_size) / self.chunk_size)
+        self.sent_chunk_count = 0
+        self.file_index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.sent_chunk_count < self.bundle_chunk_count:
+            current_file_end = min(self.bundle_size, self.file_index + self.chunk_size)
+            self.bundle.seek(self.file_index)
+            chunk = self.bundle.read(self.chunk_size)
+            self.file_index = current_file_end
+            request = UploadBentoRequest(
+                bento_name=self.bento_name,
+                bento_version=self.bento_version,
+                bento_bundle=chunk,
+            )
+            self.sent_chunk_count += 1
+            return request
+        else:
+            self.bundle.close()
+            raise StopIteration
 
 
 class BentoRepositoryAPIClient:
@@ -199,12 +247,26 @@ class BentoRepositoryAPIClient:
             )
 
         if response.uri.type == BentoUri.LOCAL:
-            if os.path.exists(response.uri.uri):
-                # due to copytree dst must not already exist
-                shutil.rmtree(response.uri.uri)
-            shutil.copytree(saved_bento_path, response.uri.uri)
+            if isinstance(self.yatai_service, YataiStub):
+                upload_result = self.upload_bento(
+                    bento_service_metadata.name,
+                    bento_service_metadata.version,
+                    saved_bento_path,
+                )
+                if upload_result.status.status_code == status_pb2.Status.OK:
+                    upload_status = UploadStatus.DONE
+                else:
+                    upload_status = UploadStatus.ERROR
+            else:
+                if os.path.exists(response.uri.uri):
+                    # due to copytree dst must not already exist
+                    shutil.rmtree(response.uri.uri)
+                shutil.copytree(saved_bento_path, response.uri.uri)
+                upload_status = UploadStatus.DONE
 
-            self._update_bento_upload_progress(bento_service_metadata)
+            self._update_bento_upload_progress(
+                bento_service_metadata, status=upload_status
+            )
 
             logger.info(
                 "BentoService bundle '%s:%s' saved to: %s",
@@ -278,7 +340,13 @@ class BentoRepositoryAPIClient:
         elif bento_pb.uri.gcs_presigned_url:
             bento_service_bundle_path = bento_pb.uri.gcs_presigned_url
         else:
-            bento_service_bundle_path = bento_pb.uri.uri
+            # Download from remote yatai otherwise provide the file path.
+            if isinstance(self.yatai_service, YataiStub):
+                bento_service_bundle_path = self.download_bento(
+                    bento_pb.name, bento_pb.version
+                )
+            else:
+                bento_service_bundle_path = bento_pb.uri.uri
 
         safe_retrieve(bento_service_bundle_path, target_dir)
 
@@ -534,6 +602,40 @@ class BentoRepositoryAPIClient:
             saved_bundle_path = bento
         else:
             bento_pb = self.get(bento)
-            saved_bundle_path = resolve_bento_bundle_uri(bento_pb)
+            if bento_pb.uri.type == BentoUri.LOCAL and isinstance(
+                self.yatai_service, YataiStub
+            ):
+                saved_bundle_path = self.download_bento(bento_pb.name, bento_pb.version)
+            else:
+                saved_bundle_path = resolve_bento_bundle_uri(bento_pb)
         svc = load_from_dir(saved_bundle_path)
         return svc
+
+    def upload_bento(self, bento_name, bento_version, saved_bento_bundle_path):
+        with TempDirectory() as tarfile_dir:
+            tarfile_path, _ = _archive_directory_to_tar(
+                saved_bento_bundle_path, tarfile_dir, bento_version
+            )
+            stream_request = BentoBundleUploadRequest(
+                bento_name, bento_version, tarfile_path
+            )
+            # TODO Need handle failed and retry
+            result = self.yatai_service.UploadBento(iter(stream_request))
+            return result
+
+    def download_bento(self, bento_name, bento_version):
+        with TempDirectory(cleanup=False) as temp_dir:
+            temp_tar_path = os.path.join(temp_dir, f'{uuid.uuid4().hex[:12]}.tar')
+            response_iterator = self.yatai_service.DownloadBento(
+                DownloadBentoRequest(bento_name=bento_name, bento_version=bento_version)
+            )
+            file = open(temp_tar_path, 'wb+')
+            for response in response_iterator:
+                file.write(response.bento_bundle)
+            file.seek(0)
+            tar = tarfile.open(fileobj=file, mode='r:gz')
+            tar.extractall(path=temp_dir)
+            tar.close()
+            file.close()
+            temp_bundle_path = os.path.join(temp_dir, f'{bento_name}_{bento_version}')
+            return temp_bundle_path

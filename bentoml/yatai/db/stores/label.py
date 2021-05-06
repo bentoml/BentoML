@@ -117,7 +117,6 @@ class LabelStore(object):
             if not labels.get(str(label.resource_id)):
                 labels[str(label.resource_id)] = {}
             labels[str(label.resource_id)][label.key] = label.value
-        print(labels)
         return labels
 
     @staticmethod

@@ -4457,6 +4457,390 @@ export namespace bentoml {
         public toJSON(): { [k: string]: any };
     }
 
+    /** Properties of an UploadBentoRequest. */
+    interface IUploadBentoRequest {
+
+        /** UploadBentoRequest bento_name */
+        bento_name?: (string|null);
+
+        /** UploadBentoRequest bento_version */
+        bento_version?: (string|null);
+
+        /** UploadBentoRequest bento_bundle */
+        bento_bundle?: (Uint8Array|null);
+    }
+
+    /** Represents an UploadBentoRequest. */
+    class UploadBentoRequest implements IUploadBentoRequest {
+
+        /**
+         * Constructs a new UploadBentoRequest.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: bentoml.IUploadBentoRequest);
+
+        /** UploadBentoRequest bento_name. */
+        public bento_name: string;
+
+        /** UploadBentoRequest bento_version. */
+        public bento_version: string;
+
+        /** UploadBentoRequest bento_bundle. */
+        public bento_bundle: Uint8Array;
+
+        /**
+         * Creates a new UploadBentoRequest instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns UploadBentoRequest instance
+         */
+        public static create(properties?: bentoml.IUploadBentoRequest): bentoml.UploadBentoRequest;
+
+        /**
+         * Encodes the specified UploadBentoRequest message. Does not implicitly {@link bentoml.UploadBentoRequest.verify|verify} messages.
+         * @param message UploadBentoRequest message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: bentoml.IUploadBentoRequest, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified UploadBentoRequest message, length delimited. Does not implicitly {@link bentoml.UploadBentoRequest.verify|verify} messages.
+         * @param message UploadBentoRequest message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: bentoml.IUploadBentoRequest, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an UploadBentoRequest message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns UploadBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.UploadBentoRequest;
+
+        /**
+         * Decodes an UploadBentoRequest message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns UploadBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.UploadBentoRequest;
+
+        /**
+         * Verifies an UploadBentoRequest message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an UploadBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns UploadBentoRequest
+         */
+        public static fromObject(object: { [k: string]: any }): bentoml.UploadBentoRequest;
+
+        /**
+         * Creates a plain object from an UploadBentoRequest message. Also converts values to other types if specified.
+         * @param message UploadBentoRequest
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: bentoml.UploadBentoRequest, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this UploadBentoRequest to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
+    /** Properties of an UploadBentoResponse. */
+    interface IUploadBentoResponse {
+
+        /** UploadBentoResponse status */
+        status?: (bentoml.IStatus|null);
+    }
+
+    /** Represents an UploadBentoResponse. */
+    class UploadBentoResponse implements IUploadBentoResponse {
+
+        /**
+         * Constructs a new UploadBentoResponse.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: bentoml.IUploadBentoResponse);
+
+        /** UploadBentoResponse status. */
+        public status?: (bentoml.IStatus|null);
+
+        /**
+         * Creates a new UploadBentoResponse instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns UploadBentoResponse instance
+         */
+        public static create(properties?: bentoml.IUploadBentoResponse): bentoml.UploadBentoResponse;
+
+        /**
+         * Encodes the specified UploadBentoResponse message. Does not implicitly {@link bentoml.UploadBentoResponse.verify|verify} messages.
+         * @param message UploadBentoResponse message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: bentoml.IUploadBentoResponse, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified UploadBentoResponse message, length delimited. Does not implicitly {@link bentoml.UploadBentoResponse.verify|verify} messages.
+         * @param message UploadBentoResponse message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: bentoml.IUploadBentoResponse, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an UploadBentoResponse message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns UploadBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.UploadBentoResponse;
+
+        /**
+         * Decodes an UploadBentoResponse message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns UploadBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.UploadBentoResponse;
+
+        /**
+         * Verifies an UploadBentoResponse message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an UploadBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns UploadBentoResponse
+         */
+        public static fromObject(object: { [k: string]: any }): bentoml.UploadBentoResponse;
+
+        /**
+         * Creates a plain object from an UploadBentoResponse message. Also converts values to other types if specified.
+         * @param message UploadBentoResponse
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: bentoml.UploadBentoResponse, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this UploadBentoResponse to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
+    /** Properties of a DownloadBentoRequest. */
+    interface IDownloadBentoRequest {
+
+        /** DownloadBentoRequest bento_name */
+        bento_name?: (string|null);
+
+        /** DownloadBentoRequest bento_version */
+        bento_version?: (string|null);
+    }
+
+    /** Represents a DownloadBentoRequest. */
+    class DownloadBentoRequest implements IDownloadBentoRequest {
+
+        /**
+         * Constructs a new DownloadBentoRequest.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: bentoml.IDownloadBentoRequest);
+
+        /** DownloadBentoRequest bento_name. */
+        public bento_name: string;
+
+        /** DownloadBentoRequest bento_version. */
+        public bento_version: string;
+
+        /**
+         * Creates a new DownloadBentoRequest instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DownloadBentoRequest instance
+         */
+        public static create(properties?: bentoml.IDownloadBentoRequest): bentoml.DownloadBentoRequest;
+
+        /**
+         * Encodes the specified DownloadBentoRequest message. Does not implicitly {@link bentoml.DownloadBentoRequest.verify|verify} messages.
+         * @param message DownloadBentoRequest message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: bentoml.IDownloadBentoRequest, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DownloadBentoRequest message, length delimited. Does not implicitly {@link bentoml.DownloadBentoRequest.verify|verify} messages.
+         * @param message DownloadBentoRequest message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: bentoml.IDownloadBentoRequest, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DownloadBentoRequest message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DownloadBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.DownloadBentoRequest;
+
+        /**
+         * Decodes a DownloadBentoRequest message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DownloadBentoRequest
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.DownloadBentoRequest;
+
+        /**
+         * Verifies a DownloadBentoRequest message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DownloadBentoRequest message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DownloadBentoRequest
+         */
+        public static fromObject(object: { [k: string]: any }): bentoml.DownloadBentoRequest;
+
+        /**
+         * Creates a plain object from a DownloadBentoRequest message. Also converts values to other types if specified.
+         * @param message DownloadBentoRequest
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: bentoml.DownloadBentoRequest, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DownloadBentoRequest to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
+    /** Properties of a DownloadBentoResponse. */
+    interface IDownloadBentoResponse {
+
+        /** DownloadBentoResponse bento_bundle */
+        bento_bundle?: (Uint8Array|null);
+
+        /** DownloadBentoResponse status */
+        status?: (bentoml.IStatus|null);
+    }
+
+    /** Represents a DownloadBentoResponse. */
+    class DownloadBentoResponse implements IDownloadBentoResponse {
+
+        /**
+         * Constructs a new DownloadBentoResponse.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: bentoml.IDownloadBentoResponse);
+
+        /** DownloadBentoResponse bento_bundle. */
+        public bento_bundle: Uint8Array;
+
+        /** DownloadBentoResponse status. */
+        public status?: (bentoml.IStatus|null);
+
+        /**
+         * Creates a new DownloadBentoResponse instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns DownloadBentoResponse instance
+         */
+        public static create(properties?: bentoml.IDownloadBentoResponse): bentoml.DownloadBentoResponse;
+
+        /**
+         * Encodes the specified DownloadBentoResponse message. Does not implicitly {@link bentoml.DownloadBentoResponse.verify|verify} messages.
+         * @param message DownloadBentoResponse message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: bentoml.IDownloadBentoResponse, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified DownloadBentoResponse message, length delimited. Does not implicitly {@link bentoml.DownloadBentoResponse.verify|verify} messages.
+         * @param message DownloadBentoResponse message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: bentoml.IDownloadBentoResponse, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes a DownloadBentoResponse message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns DownloadBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): bentoml.DownloadBentoResponse;
+
+        /**
+         * Decodes a DownloadBentoResponse message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns DownloadBentoResponse
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): bentoml.DownloadBentoResponse;
+
+        /**
+         * Verifies a DownloadBentoResponse message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates a DownloadBentoResponse message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns DownloadBentoResponse
+         */
+        public static fromObject(object: { [k: string]: any }): bentoml.DownloadBentoResponse;
+
+        /**
+         * Creates a plain object from a DownloadBentoResponse message. Also converts values to other types if specified.
+         * @param message DownloadBentoResponse
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: bentoml.DownloadBentoResponse, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this DownloadBentoResponse to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+    }
+
     /** Represents a Yatai */
     class Yatai extends $protobuf.rpc.Service {
 
@@ -4658,6 +5042,34 @@ export namespace bentoml {
          * @returns Promise
          */
         public containerizeBento(request: bentoml.IContainerizeBentoRequest): Promise<bentoml.ContainerizeBentoResponse>;
+
+        /**
+         * Calls UploadBento.
+         * @param request UploadBentoRequest message or plain object
+         * @param callback Node-style callback called with the error, if any, and UploadBentoResponse
+         */
+        public uploadBento(request: bentoml.IUploadBentoRequest, callback: bentoml.Yatai.UploadBentoCallback): void;
+
+        /**
+         * Calls UploadBento.
+         * @param request UploadBentoRequest message or plain object
+         * @returns Promise
+         */
+        public uploadBento(request: bentoml.IUploadBentoRequest): Promise<bentoml.UploadBentoResponse>;
+
+        /**
+         * Calls DownloadBento.
+         * @param request DownloadBentoRequest message or plain object
+         * @param callback Node-style callback called with the error, if any, and DownloadBentoResponse
+         */
+        public downloadBento(request: bentoml.IDownloadBentoRequest, callback: bentoml.Yatai.DownloadBentoCallback): void;
+
+        /**
+         * Calls DownloadBento.
+         * @param request DownloadBentoRequest message or plain object
+         * @returns Promise
+         */
+        public downloadBento(request: bentoml.IDownloadBentoRequest): Promise<bentoml.DownloadBentoResponse>;
     }
 
     namespace Yatai {
@@ -4752,6 +5164,20 @@ export namespace bentoml {
          * @param [response] ContainerizeBentoResponse
          */
         type ContainerizeBentoCallback = (error: (Error|null), response?: bentoml.ContainerizeBentoResponse) => void;
+
+        /**
+         * Callback as used by {@link bentoml.Yatai#uploadBento}.
+         * @param error Error, if any
+         * @param [response] UploadBentoResponse
+         */
+        type UploadBentoCallback = (error: (Error|null), response?: bentoml.UploadBentoResponse) => void;
+
+        /**
+         * Callback as used by {@link bentoml.Yatai#downloadBento}.
+         * @param error Error, if any
+         * @param [response] DownloadBentoResponse
+         */
+        type DownloadBentoCallback = (error: (Error|null), response?: bentoml.DownloadBentoResponse) => void;
     }
 
     /** Properties of a HealthCheckResponse. */

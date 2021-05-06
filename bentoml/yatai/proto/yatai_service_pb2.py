@@ -23,7 +23,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x13yatai_service.proto\x12\x07\x62\x65ntoml\x1a\x1bgoogle/protobuf/empty.proto\x1a\x0cstatus.proto\x1a\x10\x64\x65ployment.proto\x1a\x10repository.proto\"6\n\x13HealthCheckResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"R\n\x1eGetYataiServiceVersionResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x0f\n\x07version\x18\x02 \x01(\t\"\x18\n\x05\x43hunk\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x32\xb2\x08\n\x05Yatai\x12\x43\n\x0bHealthCheck\x12\x16.google.protobuf.Empty\x1a\x1c.bentoml.HealthCheckResponse\x12Y\n\x16GetYataiServiceVersion\x12\x16.google.protobuf.Empty\x1a\'.bentoml.GetYataiServiceVersionResponse\x12T\n\x0f\x41pplyDeployment\x12\x1f.bentoml.ApplyDeploymentRequest\x1a .bentoml.ApplyDeploymentResponse\x12W\n\x10\x44\x65leteDeployment\x12 .bentoml.DeleteDeploymentRequest\x1a!.bentoml.DeleteDeploymentResponse\x12N\n\rGetDeployment\x12\x1d.bentoml.GetDeploymentRequest\x1a\x1e.bentoml.GetDeploymentResponse\x12]\n\x12\x44\x65scribeDeployment\x12\".bentoml.DescribeDeploymentRequest\x1a#.bentoml.DescribeDeploymentResponse\x12T\n\x0fListDeployments\x12\x1f.bentoml.ListDeploymentsRequest\x1a .bentoml.ListDeploymentsResponse\x12?\n\x08\x41\x64\x64\x42\x65nto\x12\x18.bentoml.AddBentoRequest\x1a\x19.bentoml.AddBentoResponse\x12H\n\x0bUpdateBento\x12\x1b.bentoml.UpdateBentoRequest\x1a\x1c.bentoml.UpdateBentoResponse\x12?\n\x08GetBento\x12\x18.bentoml.GetBentoRequest\x1a\x19.bentoml.GetBentoResponse\x12i\n\x16\x44\x61ngerouslyDeleteBento\x12&.bentoml.DangerouslyDeleteBentoRequest\x1a\'.bentoml.DangerouslyDeleteBentoResponse\x12\x42\n\tListBento\x12\x19.bentoml.ListBentoRequest\x1a\x1a.bentoml.ListBentoResponse\x12Z\n\x11\x43ontainerizeBento\x12!.bentoml.ContainerizeBentoRequest\x1a\".bentoml.ContainerizeBentoResponseb\x06proto3'
+  serialized_pb=b'\n\x13yatai_service.proto\x12\x07\x62\x65ntoml\x1a\x1bgoogle/protobuf/empty.proto\x1a\x0cstatus.proto\x1a\x10\x64\x65ployment.proto\x1a\x10repository.proto\"6\n\x13HealthCheckResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"R\n\x1eGetYataiServiceVersionResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x0f\n\x07version\x18\x02 \x01(\t\"\x18\n\x05\x43hunk\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x32\xd0\t\n\x05Yatai\x12\x43\n\x0bHealthCheck\x12\x16.google.protobuf.Empty\x1a\x1c.bentoml.HealthCheckResponse\x12Y\n\x16GetYataiServiceVersion\x12\x16.google.protobuf.Empty\x1a\'.bentoml.GetYataiServiceVersionResponse\x12T\n\x0f\x41pplyDeployment\x12\x1f.bentoml.ApplyDeploymentRequest\x1a .bentoml.ApplyDeploymentResponse\x12W\n\x10\x44\x65leteDeployment\x12 .bentoml.DeleteDeploymentRequest\x1a!.bentoml.DeleteDeploymentResponse\x12N\n\rGetDeployment\x12\x1d.bentoml.GetDeploymentRequest\x1a\x1e.bentoml.GetDeploymentResponse\x12]\n\x12\x44\x65scribeDeployment\x12\".bentoml.DescribeDeploymentRequest\x1a#.bentoml.DescribeDeploymentResponse\x12T\n\x0fListDeployments\x12\x1f.bentoml.ListDeploymentsRequest\x1a .bentoml.ListDeploymentsResponse\x12?\n\x08\x41\x64\x64\x42\x65nto\x12\x18.bentoml.AddBentoRequest\x1a\x19.bentoml.AddBentoResponse\x12H\n\x0bUpdateBento\x12\x1b.bentoml.UpdateBentoRequest\x1a\x1c.bentoml.UpdateBentoResponse\x12?\n\x08GetBento\x12\x18.bentoml.GetBentoRequest\x1a\x19.bentoml.GetBentoResponse\x12i\n\x16\x44\x61ngerouslyDeleteBento\x12&.bentoml.DangerouslyDeleteBentoRequest\x1a\'.bentoml.DangerouslyDeleteBentoResponse\x12\x42\n\tListBento\x12\x19.bentoml.ListBentoRequest\x1a\x1a.bentoml.ListBentoResponse\x12Z\n\x11\x43ontainerizeBento\x12!.bentoml.ContainerizeBentoRequest\x1a\".bentoml.ContainerizeBentoResponse\x12J\n\x0bUploadBento\x12\x1b.bentoml.UploadBentoRequest\x1a\x1c.bentoml.UploadBentoResponse(\x01\x12P\n\rDownloadBento\x12\x1d.bentoml.DownloadBentoRequest\x1a\x1e.bentoml.DownloadBentoResponse0\x01\x62\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_empty__pb2.DESCRIPTOR,status__pb2.DESCRIPTOR,deployment__pb2.DESCRIPTOR,repository__pb2.DESCRIPTOR,])
 
@@ -170,7 +170,7 @@ _YATAI = _descriptor.ServiceDescriptor(
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
   serialized_start=278,
-  serialized_end=1352,
+  serialized_end=1510,
   methods=[
   _descriptor.MethodDescriptor(
     name='HealthCheck',
@@ -299,6 +299,26 @@ _YATAI = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=repository__pb2._CONTAINERIZEBENTOREQUEST,
     output_type=repository__pb2._CONTAINERIZEBENTORESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='UploadBento',
+    full_name='bentoml.Yatai.UploadBento',
+    index=13,
+    containing_service=None,
+    input_type=repository__pb2._UPLOADBENTOREQUEST,
+    output_type=repository__pb2._UPLOADBENTORESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='DownloadBento',
+    full_name='bentoml.Yatai.DownloadBento',
+    index=14,
+    containing_service=None,
+    input_type=repository__pb2._DOWNLOADBENTOREQUEST,
+    output_type=repository__pb2._DOWNLOADBENTORESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),

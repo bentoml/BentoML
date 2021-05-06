@@ -156,3 +156,23 @@ message ContainerizeBentoResponse {
   Status status = 1;
   string tag = 2;
 }
+
+message UploadBentoRequest {
+  string bento_name = 1;
+  string bento_version = 2;
+  bytes bento_bundle = 3;
+}
+
+message UploadBentoResponse {
+  Status status = 1;
+}
+
+message DownloadBentoRequest {
+  string bento_name = 1;
+  string bento_version = 2;
+}
+
+message DownloadBentoResponse {
+  bytes bento_bundle = 1;
+  Status status=2;
+}

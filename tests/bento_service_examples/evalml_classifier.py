@@ -1,9 +1,6 @@
-import pickle
-
 import bentoml
 from bentoml.adapters import DataframeInput
 from bentoml.frameworks.evalml import EvalMLModelArtifact
-from bentoml.utils import cloudpickle
 
 
 @bentoml.env(infer_pip_packages=True)

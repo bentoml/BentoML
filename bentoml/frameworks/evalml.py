@@ -1,10 +1,8 @@
 import importlib
 import os
-import pickle
 
-from bentoml.exceptions import ArtifactLoadingException, MissingDependencyException
+from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.artifacts.common import PickleArtifact
 
 
 class EvalMLModelArtifact(BentoServiceArtifact):
@@ -75,7 +73,8 @@ class EvalMLModelArtifact(BentoServiceArtifact):
         model_file_path = self._model_file_path(path)
         if self._pipeline_base_class is None:
             evalml_pipelines_module_name = 'evalml.pipelines'
-            evalml_pipelines_module = importlib.import_module(evalml_pipelines_module_name)
+            evalml_pipelines_module = importlib.import_module(
+                evalml_pipelines_module_name)
             self._pipeline_base_class = evalml_pipelines_module.PipelineBase
         model = self._pipeline_base_class.load(model_file_path)
         self.pack(model)

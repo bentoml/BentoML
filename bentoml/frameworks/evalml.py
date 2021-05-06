@@ -53,7 +53,9 @@ class EvalMLModelArtifact(BentoServiceArtifact):
 
     def _validate_package(self):
         try:
-            evalml_module = importlib.import_module('evalml')  # noqa # pylint: disable=unused-variable
+            evalml_module = importlib.import_module(
+                'evalml'
+            )  # noqa # pylint: disable=unused-variable
         except ImportError:
             raise MissingDependencyException(
                 "Package 'evalml' is required to use EvalMLModelArtifact"

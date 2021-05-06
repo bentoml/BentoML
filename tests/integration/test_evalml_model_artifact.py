@@ -5,22 +5,18 @@ import evalml
 
 import bentoml
 from bentoml.yatai.client import YataiClient
-from tests.bento_service_examples.evalml_classifier import (
-    EvalMLClassifier
-)
+from tests.bento_service_examples.evalml_classifier import EvalMLClassifier
 
 
 @pytest.fixture(scope="session")
 def evalml_pipeline():
-    X = pandas.DataFrame([[0, 'a'],
-                          [0, 'a'],
-                          [0, 'a'],
-                          [42, 'b'],
-                          [42, 'b'],
-                          [42, 'b']])
+    X = pandas.DataFrame(
+        [[0, 'a'], [0, 'a'], [0, 'a'], [42, 'b'], [42, 'b'], [42, 'b']]
+    )
     y = pandas.Series([0, 0, 0, 1, 1, 1], name='target')
     pipeline = evalml.pipelines.BinaryClassificationPipeline(
-        ['Imputer', 'One Hot Encoder', 'Random Forest Classifier'])
+        ['Imputer', 'One Hot Encoder', 'Random Forest Classifier']
+    )
     pipeline.fit(X, y)
     return pipeline
 

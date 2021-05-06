@@ -21,7 +21,7 @@ logger = logging.getLogger('bentoml.test')
 if sys.platform == "darwin" or not psutil.POSIX:
     pytest.skip(
         "Requires docker, skipping test for Mac OS on Github Actions",
-        allow_module_level=True
+        allow_module_level=True,
     )
 
 

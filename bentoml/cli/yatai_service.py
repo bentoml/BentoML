@@ -24,6 +24,7 @@ from bentoml.configuration.containers import (
     YATAI_REPOSITORY_S3,
     YATAI_REPOSITORY_GCS,
 )
+from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 
 
 logger = logging.getLogger(__name__)
@@ -178,20 +179,15 @@ def add_yatai_service_sub_command(
             )
             return
         else:
-            logger.error("Unrecognized '--repository-type' %s" % repository_type)
-            return
-
-        from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
-
-        start_yatai_service_grpc_server(
-            db_url,
-            grpc_port,
-            ui_port,
-            ui,
-            web_prefix_path,
-            repository_type,
-            file_system_directory,
-            s3_url,
-            s3_endpoint_url,
-            gcs_url,
-        )
+            start_yatai_service_grpc_server(
+                db_url=db_url,
+                grpc_port=grpc_port,
+                ui_port=ui_port,
+                with_ui=ui,
+                base_url=web_prefix_path,
+                repository_type=repository_type,
+                file_system_directory=file_system_directory,
+                s3_url=s3_url,
+                s3_endpoint_url=s3_endpoint_url,
+                gcs_url=gcs_url,
+            )

@@ -74,7 +74,7 @@ def compile_model(convert_to_onnx, tmp_path_factory):
     pwd_cmd = subprocess.Popen(
         ppwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=onnx_mlir_loc, text=True
     )
-    stdouta, stderra = docker_proc.communicate()
+    stdouta, stderra = pwd_cmd.communicate()
     print(stdouta)
     print(stderra)
 

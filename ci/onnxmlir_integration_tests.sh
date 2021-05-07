@@ -9,9 +9,9 @@ trap 'error=1' ERR
 cat /etc/os-release  
 
 # Export path to PyRuntime so file
-export PATH=/build/onnx-mlir/build/lib:${PATH}
+export PATH=/workdir/onnx-mlir/build/Debug/lib:${PATH}
 # Export path to onnx-mlir executable
-export PATH=/build/onnx-mlir/build/bin:${PATH}
+export PATH=/workdir/onnx-mlir/build/Debug/bin:${PATH}
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit

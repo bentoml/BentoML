@@ -77,7 +77,7 @@ def compile_model(convert_to_onnx, tmp_path_factory):
         cwd=onnx_mlir_loc,
     )
     stdout, stderr = docker_proc.communicate()
-    # should return something like: 'Shared library model.so has been compiled.'
+    # returns something like: 'Shared library model.so has been compiled.'
     assert 'has been compiled' in stdout, 'Failed to compile model'
     # modelname = 'model.so'
     return convert_to_onnx

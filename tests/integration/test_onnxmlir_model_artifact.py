@@ -72,7 +72,11 @@ def compile_model(convert_to_onnx, tmp_path_factory):
 
     ppwd = ['pwd']
     pwd_cmd = subprocess.Popen(
-        ppwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=onnx_mlir_loc, text=True
+        ppwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=onnx_mlir_loc,
+        text=True,
     )
     stdouta, stderra = pwd_cmd.communicate()
     print(stdouta)

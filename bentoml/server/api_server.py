@@ -436,26 +436,29 @@ class BentoAPIServer:
             'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-contexts.jsonld'
         ]
 
-        mlprocessing_notification = {
-            'id': 'urn:ngsi-ld:Notification:fadc5090-2425-42f8-b318-1966fa0e0011',
-            'type': 'Notification',
-            'subscriptionId': 'urn:ngsi-ld:Subscription:MLModel:flow:predict:71dba318-2989-4c76-a22c-52a53f04759b',
-            'notifiedAt': '2021-05-03T09:53:50.330686Z',
-            'data': [
-                {
-                    'id': 'urn:ngsi-ld:MLProcessing:4bbb2b09-ad6c-4fb9-8f40-8d37e4cddd3a',
-                    'type': 'MLProcessing',
-                    'refSubscriptionQuery':
-                        {
-                            'type': 'Relationship',
-                            'object': 'urn:ngsi-ld:MLProcessing:SubscriptionQuery:e7be459e-dcee-46ab-90da-fba3120db4ff'
-                        },
-                    '@context': [
-                        'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-compound.jsonl'
-                    ]
-                }
-            ]
-        }
+        # mlprocessing_notification = {
+        #     'id': 'urn:ngsi-ld:Notification:fadc5090-2425-42f8-b318-1966fa0e0011',
+        #     'type': 'Notification',
+        #     'subscriptionId': 'urn:ngsi-ld:Subscription:MLModel:flow:predict:71dba318-2989-4c76-a22c-52a53f04759b',
+        #     'notifiedAt': '2021-05-03T09:53:50.330686Z',
+        #     'data': [
+        #         {
+        #             'id': 'urn:ngsi-ld:MLProcessing:4bbb2b09-ad6c-4fb9-8f40-8d37e4cddd3a',
+        #             'type': 'MLProcessing',
+        #             'refSubscriptionQuery':
+        #                 {
+        #                     'type': 'Relationship',
+        #                     'object': 'urn:ngsi-ld:MLProcessing:SubscriptionQuery:e7be459e-dcee-46ab-90da-fba3120db4ff'
+        #                 },
+        #             '@context': [
+        #                 'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-compound.jsonl'
+        #             ]
+        #         }
+        #     ]
+        # }
+
+        # Get the POST data
+        mlprocessing_notification = request.get_json()
 
         # Getting the SubscriptionQuery entity
         refSubscriptionQuery = mlprocessing_notification['data'][0]['refSubscriptionQuery']['object']
@@ -552,29 +555,34 @@ class BentoAPIServer:
         ]
 
         # Extract input data from NGSLI-LD notification
-        input_data_notification = {
-            "id": "urn:ngsi-ld:Notification:cc231a15-d220-403c-bfc6-ad60bc49466f",
-            "type": "Notification",
-            "subscriptionId": "urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3",
-            "notifiedAt": "2021-05-04T06:45:32.83178Z",
-            "data": [
-                {
-                    "id": "urn:ngsi-ld:River:014f5730-72ab-4554-a106-afbe5d4d9d26",
-                    "type": "River",
-                    "precipitation": {
-                        "type": "Property",
-                        "createdAt": "2021-05-04T06:45:32.674520Z",
-                        "value": 2.2,
-                        "observedAt": "2021-05-04T06:35:22.000Z",
-                        "unitCode": "MMT"
-                    },
-                    "@context": [
-                        "https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-compound.jsonld"
-                    ]
-                }
-            ]
-        }
+        # input_data_notification = {
+        #     "id": "urn:ngsi-ld:Notification:cc231a15-d220-403c-bfc6-ad60bc49466f",
+        #     "type": "Notification",
+        #     "subscriptionId": "urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3",
+        #     "notifiedAt": "2021-05-04T06:45:32.83178Z",
+        #     "data": [
+        #         {
+        #             "id": "urn:ngsi-ld:River:014f5730-72ab-4554-a106-afbe5d4d9d26",
+        #             "type": "River",
+        #             "precipitation": {
+        #                 "type": "Property",
+        #                 "createdAt": "2021-05-04T06:45:32.674520Z",
+        #                 "value": 2.2,
+        #                 "observedAt": "2021-05-04T06:35:22.000Z",
+        #                 "unitCode": "MMT"
+        #             },
+        #             "@context": [
+        #                 "https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-compound.jsonld"
+        #             ]
+        #         }
+        #     ]
+        # }
+
+        # Get the POST data
+        input_data_notification = request.get_json()
+
         input_data = input_data_notification['data'][0]['precipitation']['value']
+        print(f'input_data {input_data}')
 
         # reshaping input data into a 2D array
         input_data = np.array([input_data]).reshape(-1,1)
@@ -584,7 +592,7 @@ class BentoAPIServer:
         ### What do you get back? numpy? ###
         ### More probably a list of list ###
         ### as received through HTTP     ###
-        flow_prediction = [[2.3]]
+        flow_prediction = [[15.3]]
 
         # Create NGSI-LD request to update Entity/Property
         # Here updating 'flow' Property of the Siagne Entity
@@ -610,6 +618,7 @@ class BentoAPIServer:
 
         URL_PATCH_FLOW = URL_ENTITIES+RIVER_SIAGNE_UUID+'/attrs'
         r = requests.post(URL_PATCH_FLOW, json=json_, headers=headers)
+        print(f'patch status code {r.status_code}')
 
         # Finally, respond to the initial received request (notification)
         # with empty 200        
@@ -617,17 +626,6 @@ class BentoAPIServer:
             '',
             200,
         )
-        return response
-
-    def handle_predict(self):
-        # TODO comment je peux appeler le /predict ?
-        # Bourrin : HTTP POST /predict
-        # Classe : appeler la route en interne
-        response = make_response(
-            'Hello from NGSI-LD ML Processing endpoint!',
-            200,
-        )
-
         return response
 
     def setup_bento_service_api_routes(self):

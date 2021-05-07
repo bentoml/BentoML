@@ -236,8 +236,8 @@ replace `{docker_username}` with your Docker Hub username:
           labels:
             app: pet-classifier
           annotations:
-            prometheus.io/scrape: true
-            prometheus.io/port: 5000
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "5000"
         spec:
           containers:
           - image: {docker_username}/pet-classifier

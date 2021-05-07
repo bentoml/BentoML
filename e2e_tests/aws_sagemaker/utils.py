@@ -1,6 +1,8 @@
 import logging
 import subprocess
 
+import boto3
+
 from e2e_tests.yatai_server.utils import modified_environ
 
 logger = logging.getLogger('bentoml.test')
@@ -31,32 +33,17 @@ def run_sagemaker_create_or_update_command(deploy_command):
 def send_test_data_to_endpoint(endpoint_name, sample_data=None, region="us-west-2"):
     logger.info(f'Test deployment with sample request for {endpoint_name}')
     sample_data = sample_data or '"[0]"'
-    test_command = [
-        'aws',
-        'sagemaker-runtime',
-        'invoke-endpoint',
-        '--endpoint-name',
-        endpoint_name,
-        '--content-type',
-        '"application/json"',
-        '--body',
-        sample_data,
-        '>(cat) 1>/dev/null',
-        '|',
-        'jq .',
-    ]
-    logger.info('Testing command: %s', ' '.join(test_command))
-
+    client = boto3.client('sagemaker-runtime')
     with modified_environ(AWS_REGION=region):
-        result = subprocess.run(
-            ' '.join(test_command),
-            capture_output=True,
-            shell=True,
-            check=True,
-            executable='/bin/bash',
+        result = client.invoke_endpoint(
+            EndpointName=endpoint_name.strip(),
+            ContentType='application/json',
+            Body=sample_data,
         )
-    logger.info(result)
-    if result.stderr.decode('utf-8'):
-        return False, None
-    else:
-        return True, result.stdout.decode('utf-8')
+        logger.info(result)
+        if result.get('ResponseMetadata', None) is None:
+            return False, None
+        if result['ResponseMetadata']['HTTPStatusCode'] != 200:
+            return False, None
+        body = result['Body'].read()
+        return True, body.decode('utf-8')

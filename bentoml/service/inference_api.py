@@ -25,7 +25,7 @@ import flask
 
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
 from bentoml.exceptions import BentoMLConfigException
-from bentoml.tracing import trace
+from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 
@@ -163,9 +163,9 @@ class InferenceAPI(object):
 
         @functools.wraps(self._user_func)
         def wrapped_func(*args, **kwargs):
-            with trace(
-                service_name=self.__class__.__name__,
-                span_name="user defined inference api callback function",
+            with get_tracer().span(
+                service_name=f"BentoService.{self.service.name}",
+                span_name=f"InferenceAPI {self.name} user defined callback function",
             ):
                 if append_arg and append_arg in kwargs:
                     tasks = kwargs.pop(append_arg)
@@ -203,7 +203,11 @@ class InferenceAPI(object):
         """
         :return: the HTTP API request schema in OpenAPI/Swagger format
         """
-        schema = self.input_adapter.request_schema
+        if self.input_adapter.custom_request_schema is None:
+            schema = self.input_adapter.request_schema
+        else:
+            schema = self.input_adapter.custom_request_schema
+
         if schema.get('application/json'):
             schema.get('application/json')[
                 'example'
@@ -297,9 +301,9 @@ class InferenceAPI(object):
         return response.to_flask_response()
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
-        with trace(
-            service_name=self.__class__.__name__,
-            span_name=f"call `{self.input_adapter.__class__.__name__}`",
+        with get_tracer().span(
+            service_name=f"BentoService.{self.service.name}",
+            span_name=f"InferenceAPI {self.name} handle batch requests",
         ):
             inf_tasks = map(self.input_adapter.from_http_request, requests)
             results = self.infer(inf_tasks)

@@ -17,8 +17,11 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-from bentoml.configuration import config
+from bentoml.configuration import config, inject_dependencies
 from bentoml.utils.log import configure_logging
+
+# Inject dependencies and configurations
+inject_dependencies()
 
 # Configuring logging properly before loading other modules
 configure_logging()
@@ -33,6 +36,10 @@ from bentoml.service import (  # noqa: E402
     ver_decorator as ver,
     save,
 )
+
+from bentoml.cli import create_bentoml_cli
+
+commandline_interface = create_bentoml_cli()
 
 load = load_from_dir
 

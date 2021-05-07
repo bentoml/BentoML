@@ -1,3 +1,5 @@
+.. _frameworks-page:
+
 Frameworks
 ==========
 
@@ -209,6 +211,24 @@ Detectron
 .. autoclass:: bentoml.frameworks.detectron.DetectronModelArtifact
 
 
+======
+Paddle
+======
+
+Example Projects:
+
+* Boston Housing Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__
+
+.. autoclass:: bentoml.frameworks.paddle.PaddlePaddleModelArtifact
+
+
+======
+EvalML
+======
+
+.. autoclass:: bentoml.frameworks.evalml.EvalMLModelArtifact
+
+
 .. spelling::
 
     MLModel
@@ -231,4 +251,6 @@ Detectron
     detectron
     Detectron
     DetectionCheckpointer
-
+    evalml
+    Evalml
+    EvalML

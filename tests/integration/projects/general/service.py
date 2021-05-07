@@ -4,16 +4,20 @@ import sys
 import time
 from typing import Sequence
 
+from packaging import version
+
 import bentoml
+from bentoml import __version__ as BENTOML_VERSION
 from bentoml.adapters import (
     DataframeInput,
     FileInput,
     ImageInput,
     JsonInput,
+    JsonOutput,
     MultiImageInput,
 )
 from bentoml.frameworks.sklearn import SklearnModelArtifact
-from bentoml.handlers import DataframeHandler  # deprecated
+from bentoml.handlers import DataframeHandler
 from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.types import InferenceResult, InferenceTask
 
@@ -70,6 +74,23 @@ class ExampleService(bentoml.BentoService):
     def customezed_route(self, input_datas):
         return input_datas
 
+    CUSTOM_SCHEMA = {
+        "application/json": {
+            "schema": {
+                "type": "object",
+                "required": ["field1", "field2"],
+                "properties": {
+                    "field1": {"type": "string"},
+                    "field2": {"type": "uuid"},
+                },
+            },
+        }
+    }
+
+    @bentoml.api(input=JsonInput(request_schema=CUSTOM_SCHEMA), batch=True)
+    def customezed_schema(self, input_datas):
+        return input_datas
+
     @bentoml.api(input=JsonInput(), batch=True)
     def predict_strict_json(self, input_datas, tasks: Sequence[InferenceTask] = None):
         filtered_jsons = []
@@ -98,6 +119,16 @@ class ExampleService(bentoml.BentoService):
         data = input_datas[0]
         time.sleep(data['b'] + data['a'] * len(input_datas))
         return input_datas
+
+    @bentoml.api(input=JsonInput())
+    def echo_json(self, input_data):
+        return input_data
+
+    if version.parse(BENTOML_VERSION) > version.parse("0.12.1+0"):
+
+        @bentoml.api(input=JsonInput(), output=JsonOutput(ensure_ascii=True))
+        def echo_json_ensure_ascii(self, input_data):
+            return input_data
 
 
 if __name__ == "__main__":

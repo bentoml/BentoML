@@ -52,8 +52,8 @@ class InstrumentMiddleware:
         endpoint = req.path
         start_time = default_timer()
 
-        def start_response_wrapper(status, headers):
-            ret = start_response(status, headers)
+        def start_response_wrapper(status, headers, exc_info=None):
+            ret = start_response(status, headers, exc_info)
             status_code = int(status.split()[0])
 
             # instrument request total count

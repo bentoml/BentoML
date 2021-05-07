@@ -12,31 +12,62 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# List of APIs for accessing remote or local yatai service via Python
+import logging
+from functools import lru_cache
 
-from contextlib import contextmanager
+from dependency_injector.wiring import Provide, inject
 
-from bentoml import config
-
-
-ZIPKIN_API_URL = config("tracing").get("zipkin_api_url")
+from bentoml.configuration.containers import BentoMLContainer
 
 
-@contextmanager
-def trace(*args, **kwargs):
-    if ZIPKIN_API_URL:
-        from bentoml.tracing.trace import trace as _trace
+logger = logging.getLogger(__name__)
 
-        return _trace(ZIPKIN_API_URL, *args, **kwargs)
+
+@inject
+@lru_cache(maxsize=1)
+def get_tracer(
+    tracer_type=Provide[BentoMLContainer.config.tracing.type],
+    zipkin_server_url: str = Provide[BentoMLContainer.config.tracing.zipkin.url],
+    jaeger_server_address: str = Provide[
+        BentoMLContainer.config.tracing.jaeger.address
+    ],
+    jaeger_server_port: str = Provide[BentoMLContainer.config.tracing.jaeger.port],
+):
+    # isinstance check here allow trace to be used where the top-level entry point has
+    # not yet implemented the wiring of BentoML config
+    # TODO: remove this check after PR1543 https://github.com/bentoml/BentoML/pull/1543
+    if isinstance(tracer_type, Provide):
+        tracer_type = None
+    if isinstance(zipkin_server_url, Provide):
+        zipkin_server_url = None
+    if isinstance(jaeger_server_address, Provide):
+        jaeger_server_address = None
+    if isinstance(jaeger_server_port, Provide):
+        jaeger_server_port = None
+
+    if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
+        from bentoml.tracing.zipkin import get_zipkin_tracer
+
+        logger.info(
+            "Initializing global zipkin tracer for collector endpoint: "
+            f"{zipkin_server_url}"
+        )
+        return get_zipkin_tracer(zipkin_server_url)
+    elif (
+        tracer_type
+        and tracer_type == 'jaeger'
+        and jaeger_server_address
+        and jaeger_server_port
+    ):
+        from bentoml.tracing.jaeger import get_jaeger_tracer
+
+        logger.info(
+            "Initializing global jaeger tracer for opentracing server at "
+            f"{jaeger_server_address}:{jaeger_server_port}"
+        )
+        return get_jaeger_tracer(jaeger_server_address, jaeger_server_port)
     else:
-        yield
+        from bentoml.tracing.noop import NoopTracer
 
-
-@contextmanager
-def async_trace(*args, **kwargs):
-    if ZIPKIN_API_URL:
-        from bentoml.tracing.trace import async_trace as _async_trace
-
-        return _async_trace(ZIPKIN_API_URL, *args, **kwargs)
-    else:
-        yield
+        logger.info("Tracing is disabled. Initializing no-op tracer")
+        return NoopTracer()

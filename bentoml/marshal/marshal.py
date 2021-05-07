@@ -20,16 +20,17 @@ import time
 import traceback
 
 import aiohttp
+import aiohttp.web
 import psutil
 from dependency_injector.wiring import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
-from bentoml.marshal.utils import DataLoader
+from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
-from bentoml.tracing.trace import async_trace, make_http_headers
+from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest, HTTPResponse
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,9 @@ def metrics_patch(cls):
         def __init__(
             self,
             *args,
-            namespace: str = Provide[BentoMLContainer.config.instrument.namespace],
+            namespace: str = Provide[
+                BentoMLContainer.config.bento_server.metrics.namespace
+            ],
             **kwargs,
         ):
             for attr_name in functools.WRAPPER_ASSIGNMENTS:
@@ -140,17 +143,23 @@ class MarshalService:
         bento_bundle_path,
         outbound_host="localhost",
         outbound_port=None,
-        outbound_workers=1,
-        mb_max_batch_size: int = None,
-        mb_max_latency: int = None,
-        request_header_flag: str = Provide[
-            BentoMLContainer.config.marshal_server.request_header_flag
+        outbound_workers: int = Provide[BentoMLContainer.api_server_workers],
+        mb_max_batch_size: int = Provide[
+            BentoMLContainer.config.bento_server.microbatch.max_batch_size
+        ],
+        mb_max_latency: int = Provide[
+            BentoMLContainer.config.bento_server.microbatch.max_latency
         ],
         max_request_size: int = Provide[
-            BentoMLContainer.config.api_server.max_request_size
+            BentoMLContainer.config.bento_server.max_request_size
         ],
-        zipkin_api_url: str = Provide[BentoMLContainer.config.tracing.zipkin_api_url],
+        outbound_unix_socket: str = None,
+        enable_microbatch: bool = Provide[
+            BentoMLContainer.config.bento_server.microbatch.enabled
+        ],
     ):
+        self._client = None
+        self.outbound_unix_socket = outbound_unix_socket
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
         self.outbound_workers = outbound_workers
@@ -158,13 +167,12 @@ class MarshalService:
         self.mb_max_latency = mb_max_latency
         self.batch_handlers = dict()
         self._outbound_sema = None  # the semaphore to limit outbound connections
-        self.request_header_flag = request_header_flag
         self.max_request_size = max_request_size
-        self.zipkin_api_url = zipkin_api_url
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
-        self.setup_routes_from_pb(self.bento_service_metadata_pb)
+        if enable_microbatch:
+            self.setup_routes_from_pb(self.bento_service_metadata_pb)
         if psutil.POSIX:
             import resource
 
@@ -186,6 +194,22 @@ class MarshalService:
         if self._outbound_sema is None:
             self._outbound_sema = NonBlockSema(self.outbound_workers)
         return self._outbound_sema
+
+    def get_client(self):
+        if self._client is None:
+            jar = aiohttp.DummyCookieJar()
+            if self.outbound_unix_socket:
+                conn = aiohttp.UnixConnector(path=self.outbound_unix_socket,)
+            else:
+                conn = aiohttp.TCPConnector(limit=30)
+            self._client = aiohttp.ClientSession(
+                connector=conn, auto_decompress=False, cookie_jar=jar,
+            )
+        return self._client
+
+    def __del__(self):
+        if getattr(self, '_client', None) is not None and not self._client.closed:
+            self._client.close()
 
     def add_batch_handler(self, api_route, max_latency, max_batch_size):
         '''
@@ -226,8 +250,7 @@ class MarshalService:
                 )
 
     async def request_dispatcher(self, request):
-        with async_trace(
-            self.zipkin_api_url,
+        with get_tracer().async_span(
             service_name=self.__class__.__name__,
             span_name="[1]http request",
             is_root=True,
@@ -259,20 +282,21 @@ class MarshalService:
 
     async def relay_handler(self, request):
         data = await request.read()
-        headers = dict(request.headers)
         url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)
 
-        with async_trace(
-            self.zipkin_api_url,
+        with get_tracer().async_span(
             service_name=self.__class__.__name__,
             span_name=f"[2]{url.path} relay",
-        ) as trace_ctx:
-            headers.update(make_http_headers(trace_ctx))
-            async with aiohttp.ClientSession(auto_decompress=False) as client:
+            request_headers=request.headers,
+        ):
+            try:
+                client = self.get_client()
                 async with client.request(
                     request.method, url, data=data, headers=request.headers
                 ) as resp:
                     body = await resp.read()
+            except aiohttp.client_exceptions.ClientConnectionError:
+                return aiohttp.web.Response(status=503, body=b"Service Unavailable")
         return aiohttp.web.Response(
             status=resp.status, body=body, headers=resp.headers,
         )
@@ -287,22 +311,19 @@ class MarshalService:
             * RemoteException: known exceptions from model server
             * Exception: other exceptions
         '''
-        headers = {self.request_header_flag: "true"}
+        headers = {MARSHAL_REQUEST_HEADER: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"
 
-        with async_trace(
-            self.zipkin_api_url,
+        with get_tracer().async_span(
             service_name=self.__class__.__name__,
             span_name=f"[2]merged {api_route}",
-        ) as trace_ctx:
-            headers.update(make_http_headers(trace_ctx))
+            request_headers=headers,
+        ):
             reqs_s = DataLoader.merge_requests(requests)
             try:
-                async with aiohttp.ClientSession(auto_decompress=False) as client:
-                    async with client.post(
-                        api_url, data=reqs_s, headers=headers
-                    ) as resp:
-                        raw = await resp.read()
+                client = self.get_client()
+                async with client.post(api_url, data=reqs_s, headers=headers) as resp:
+                    raw = await resp.read()
             except aiohttp.client_exceptions.ClientConnectionError as e:
                 raise RemoteException(
                     e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
@@ -340,7 +361,10 @@ class MarshalService:
         app.router.add_view("/{path:.*}", self.request_dispatcher)
         return app
 
-    def fork_start_app(self, port):
+    @inject
+    def fork_start_app(
+        self, port=Provide[BentoMLContainer.config.bento_server.port],
+    ):
         # Use new eventloop in the fork process to avoid problems on MacOS
         # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
         loop = asyncio.new_event_loop()

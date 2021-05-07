@@ -92,10 +92,13 @@ $ tox -e py36
 Add the following lines to the Python code that invokes BentoML:
 
 ```python
-import bentoml
-import logging
-bentoml.config().set('core', 'debug', 'true')
-bentoml.configure_logging(logging.DEBUG)
+from bentoml.configuration import set_debug_mode
+set_debug_mode(True)
+```
+
+And/or set the `BENTOML_DEBUG` environment variable to `TRUE`:
+```bash
+export BENTOML_DEBUG=TRUE
 ```
 
 And/or use the `--verbose` option when running `bentoml` CLI command, e.g.:

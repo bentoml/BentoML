@@ -1,3 +1,5 @@
+.. _deployments-page:
+
 Deployment Guides
 =================
 
@@ -14,10 +16,14 @@ platforms, and we've created a few step by step tutorials for doing that.
 
     This documentation is about deploying online serving workloads, essentially deploy
     API server that serves prediction calls via HTTP requests. For offline serving (or
-    batch serving, batch inference), see :ref:`Model Serving Guide <concepts-model-serving>`.
+    batch serving, batch inference), see
+    :ref:`Model Serving Guide <concepts-model-serving>`.
 
 
-Automated Deployment Management:
+If you are at a small team with limited DevOps support, BentoML provides a fully
+automated deployment management for AWS EC2, AWS Lambda, AWS SageMaker, and Azure
+Functions. It provides the basic model deployment functionalities with minimum setup.
+Here are the detailed guides for each platform:
 
 .. toctree::
   :glob:
@@ -25,24 +31,27 @@ Automated Deployment Management:
 
   aws_lambda
   aws_sagemaker
-  azure_functions
   aws_ec2
+  azure_functions
 
-Manual Deployment Tutorials:
+BentoML also makes it very easy to deploy your models on any cloud platforms or your
+in-house custom infrastructure. Here are deployment guides for popular cloud services
+and open source platforms:
 
 .. toctree::
   :glob:
   :maxdepth: 1
 
-  clipper
-  aws_ecs
-  google_cloud_run
-  azure_container_instance
   kubernetes
+  aws_ecs
+  heroku
+  google_cloud_run
+  google_cloud_ai_platform
+  azure_container_instance
   knative
   kubeflow
   kfserving
-  heroku
+  clipper
   sql_server
 
 

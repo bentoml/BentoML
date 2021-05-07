@@ -1,11 +1,11 @@
-Understanding BentoML adaptive micro batching
-=============================================
+Adaptive Micro Batching
+=======================
 
 1. The overall architecture of BentoML's micro-batching server
-==============================================================
+--------------------------------------------------------------
 
 1.1 Why micro batching matters
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    While serving a TensorFlow model, batching individual model
    inference requests together can be important for performance. In
@@ -18,13 +18,13 @@ Plus, under BentoML's architecture, the HTTP handling and data
 preprocessing procedure will also benefit from micro-batching.
 
 1.2 Architecture & Data Flow
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. raw:: html
    :file: ../_static/img/batching-arch.svg
 
 1.3 Parameters & Concepts of micro batching
--------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  **inbound requests**: requests from user clients
 -  **outbound requests**: requests to upstream model servers
@@ -42,7 +42,7 @@ preprocessing procedure will also benefit from micro-batching.
    batch. Inferred from historical data and current batch size in queue.
 
 1.4 Sequence & How it works
----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Take bento service with single API and —workers=1 as example
 
@@ -74,7 +74,7 @@ If the outbound semaphore is still locked, requests may be canceled once
 reached ``mb_max_latency``.
 
 1.5 The main design decisions and trade-offs
---------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Throughput and latency are most concerned for API servers. BentoML will
 fine-tune batches **automatically** to(in the order priority):
@@ -85,7 +85,7 @@ fine-tune batches **automatically** to(in the order priority):
 -  Minimum the average Latency
 
 2. parameter tuning best practices & recommendations
-====================================================
+----------------------------------------------------
 
 Different from TensorFlow Serving, BentoML will **automatically adjust**
 the batch size and wait timeout, balancing the maximum throughput and
@@ -112,7 +112,7 @@ by default.
    throughput.
 
 3. How to implement batch mode for custom input adapters
-========================================================
+--------------------------------------------------------
 
 TL;DR: Implement the method ``handle_batch_request(requests)``
 following existent input adapters.
@@ -140,11 +140,11 @@ will be O(N) in time complexity. Thus we implemented an nearly O(1)
 function to concat DataFrame CSV strings, so that all DataFrames in
 requests could be loaded by calling ``pd.read_csv`` once.
 
-4. Comparison
-=============
+4. Comparisons
+--------------
 
 4.1 TensorFlow Serving
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 Tensorflow Serving employed similar approach to batch individual
 requests together. But the parameters of batching scheduling is static.
@@ -164,7 +164,7 @@ deployment. Once deployed, it won't change anymore.
    -- `tensorflow/serving <https://github.com/tensorflow/serving/blob/master/tensorflow_serving/batching/README.md#performance-tuning>`__
 
 4.2 Clipper
------------
+~~~~~~~~~~~
 
 Clipper applied a combination of TCP Nagle and AIMD algorithm. This
 approach is more similar with BentoML, the difference is scheduling

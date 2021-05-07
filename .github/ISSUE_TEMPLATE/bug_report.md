@@ -32,21 +32,13 @@ To give us more information for diagnosing the issue, make sure to enable debug 
 Enable via environment variable, e.g.:
 ```
 $ git clone git@github.com:bentoml/BentoML.git && cd bentoml
-$ BENTOML__CORE__DEBUG=true python guides/quick-start/main.py
-```
-
-Or enable for all python sessions on current machine:
-```bash
-$ bentoml config set core.debug=true
-$ python guides/quick-start/main.py
+$ BENTOML_DEBUG=TRUE python guides/quick-start/main.py
 ```
 
 Or set debug logging in your Python code:
 ```python
-import bentoml
-import logging
-bentoml.config().set('core', 'debug', 'true')
-bentoml.configure_logging(logging.DEBUG)
+from bentoml.configuration import set_debug_mode
+set_debug_mode(True)
 ```
 
 For BentoML CLI commands, simply add the `--verbose` flag, e.g.:

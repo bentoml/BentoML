@@ -37,10 +37,9 @@ from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
 
-from bentoml import config
 from bentoml.utils.dataclasses import json_serializer
 
-BATCH_HEADER = config("apiserver").get("batch_request_header")
+BATCH_HEADER = "Bentoml-Is-Batch-Request"
 
 # For non latin1 characters: https://tools.ietf.org/html/rfc8187
 # Also https://github.com/benoitc/gunicorn/issues/1778
@@ -134,7 +133,7 @@ class FileLike:
             self._stream.close()
 
     def __del__(self):
-        if self._stream and not self._stream.closed:
+        if getattr(self, "_stream", None) and not self._stream.closed:
             self._stream.close()
 
 

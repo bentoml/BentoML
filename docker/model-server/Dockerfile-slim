@@ -11,7 +11,7 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # pre-install BentoML requirements
-RUN pip install bentoml==$BENTOML_VERSION --no-cache-dir
+RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
 COPY entrypoint.sh .
 
 # multi-stage build to shave dependency cost

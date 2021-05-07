@@ -67,10 +67,10 @@ class LocalRepository(BaseRepository):
     def get(self, bento_name, bento_version):
         saved_path = os.path.join(self.base_path, bento_name, bento_version)
         if not os.path.exists(saved_path):
-            raise YataiRepositoryException(
-                "Bento {}:{} not found in target repository".format(
-                    bento_name, bento_version
-                )
+            logger.warning(
+                "BentoML bundle %s:%s not found in target repository",
+                bento_name,
+                bento_version,
             )
         return saved_path
 

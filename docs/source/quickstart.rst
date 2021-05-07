@@ -187,10 +187,12 @@ packaged models:
 
 .. code-block:: bash
 
-    docker run -v ~/bentoml:/root/bentoml \
-        -p 3000:3000 -p 50051:50051 \
-        bentoml/yatai-service
-
+    docker run \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -v ~/bentoml:/bentoml \
+      -p 3000:3000 \
+      -p 50051:50051 \
+      bentoml/yatai-service:latest
 
 .. note::
 
@@ -295,7 +297,7 @@ Start a container with the docker image built from the previous step:
 
 .. code-block:: bash
 
-    docker run -p 5000:5000 iris-classifier:latest --workers=1 --enable-microbatch
+    docker run -p 5000:5000 iris-classifier:latest --workers=2
 
 
 If you need fine-grained control over how the docker image is built, BentoML provides a
@@ -310,7 +312,7 @@ convenient way to containerize the model API server manually:
     docker build -t iris-classifier $saved_path
 
     # 3. Run the generated docker image to start a docker container serving the model
-    docker run -p 5000:5000 iris-classifier --enable-microbatch --workers=1
+    docker run -p 5000:5000 iris-classifier --workers=2
 
 
 This made it possible to deploy BentoML bundled ML models with platforms such as
@@ -326,65 +328,9 @@ scale-to-zero, canary rollout and multi-armed bandit.
   Instructions on installing docker: https://docs.docker.com/install
 
 
-Deployment Options
-------------------
-
-If you are at a small team with limited engineering or DevOps resources, try out automated deployment with BentoML CLI, currently supporting AWS Lambda, AWS SageMaker, and Azure Functions:
-
-- `AWS Lambda Deployment Guide <https://docs.bentoml.org/en/latest/deployment/aws_lambda.html>`_
-- `AWS SageMaker Deployment Guide <https://docs.bentoml.org/en/latest/deployment/aws_sagemaker.html>`_
-- `Azure Functions Deployment Guide <https://docs.bentoml.org/en/latest/deployment/azure_functions.html>`_
-
-If the cloud platform you are working with is not on the list above, try out these step-by-step guide on manually deploying BentoML packaged model to cloud platforms:
-
-- `AWS ECS Deployment <https://docs.bentoml.org/en/latest/deployment/aws_ecs.html>`_
-- `Google Cloud Run Deployment <https://docs.bentoml.org/en/latest/deployment/google_cloud_run.html>`_
-- `Azure container instance Deployment <https://docs.bentoml.org/en/latest/deployment/azure_container_instance.html>`_
-- `Heroku Deployment <https://docs.bentoml.org/en/latest/deployment/heroku.html>`_
-
-Lastly, if you have a DevOps or ML Engineering team who's operating a Kubernetes or OpenShift cluster, use the following guides as references for implementing your deployment strategy:
-
-- `Kubernetes Deployment <https://docs.bentoml.org/en/latest/deployment/kubernetes.html>`_
-- `Knative Deployment <https://docs.bentoml.org/en/latest/deployment/knative.html>`_
-- `Kubeflow Deployment <https://docs.bentoml.org/en/latest/deployment/kubeflow.html>`_
-- `KFServing Deployment <https://docs.bentoml.org/en/latest/deployment/kfserving.html>`_
-- `Clipper.ai Deployment Guide <https://docs.bentoml.org/en/latest/deployment/clipper.html>`_
-
-
-Distribute BentoML packaged model as a PyPI library
----------------------------------------------------
-
-The BentoService SavedBundle is pip-installable and can be directly distributed as a
-PyPI package if you plan to use the model in your python applications. You can install
-it as as a system-wide python package with :code:`pip`:
-
-.. code-block:: bash
-
-  saved_path=$(bentoml get IrisClassifier:latest --print-location --quiet)
-
-  pip install $saved_path
-
-
-.. code-block:: python
-
-  # Your bentoML model class name will become the package name
-  import IrisClassifier
-
-  installed_svc = IrisClassifier.load()
-  installed_svc.predict([[5.1, 3.5, 1.4, 0.2]])
-
-This also allow users to upload their BentoService to pypi.org as public python package
-or to their organization's private PyPi index to share with other developers.
-
-.. code-block:: bash
-
-    cd $saved_path & python setup.py sdist upload
-
-.. note::
-
-    You will have to configure ".pypirc" file before uploading to pypi index.
-    You can find more information about distributing python package at:
-    https://docs.python.org/3.7/distributing/index.html#distributing-index
+Other deployment options are documented in the
+:ref:`BentoML Deployment Guide <deployments-page>`, including Kubernetes, AWS, Azure,
+Google Cloud, Heroku, and etc.
 
 
 Learning more about BentoML

@@ -246,7 +246,7 @@ Specify target service bundles to remove:
         """  # noqa
         yc = get_yatai_client(yatai_url)
         # Backward compatible with the previous CLI, allows deletion with tag/s
-        if len(delete_targets) > 0:
+        if delete_targets is not None and len(delete_targets) > 0:
             for item in delete_targets:
                 if ':' in item:
                     if not _is_valid_bento_tag(item):
@@ -296,12 +296,19 @@ Specify target service bundles to remove:
         required=True,
         help='Remote YataiService URL. Example: "--yatai-url http://localhost:50050"',
     )
-    def push(bento, yatai_url):
+    @click.option(
+        '--with-labels/--without-labels',
+        default=True,
+        help="Retain bento bundle's labels or not for push Bento bundle to remote "
+        "yatai. When running with --without-labels, labels are not retained in the "
+        "remote yatai server",
+    )
+    def push(bento, yatai_url, with_labels):
         if ':' not in bento:
             _echo(f'BentoService {bento} invalid - specify name:version')
             return
         yc = get_yatai_client(yatai_url)
-        yc.repository.push(bento=bento)
+        yc.repository.push(bento, with_labels)
         _echo(f'Pushed {bento} to {yatai_url}')
 
     @cli.command(help='Retrieve')

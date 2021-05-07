@@ -14,22 +14,15 @@
 
 import logging
 import multiprocessing
-import psutil
+from typing import Optional
 
-from bentoml import config
+import psutil
+from dependency_injector.wiring import Provide as P
+from dependency_injector.wiring import inject
+
+from bentoml.configuration.containers import BentoMLContainer as C
 from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
-
-if psutil.POSIX:
-    # After Python 3.8, the default start method of multiprocessing for MacOS changed to
-    # spawn, which would cause RecursionError when launching Gunicorn Application.
-    # Ref:
-    # https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
-    #
-    # Note: https://bugs.python.org/issue33725 claims that fork method may cause crashes
-    # on MacOS.
-    multiprocessing.set_start_method('fork')
-
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 
@@ -38,29 +31,31 @@ if psutil.POSIX:
     from gunicorn.app.base import Application
 
     class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
+        @inject
         def __init__(
             self,
+            bundle_path,
             outbound_host,
             outbound_port,
-            bundle_path,
-            port=None,
-            workers=1,
-            timeout=None,
-            prometheus_lock=None,
-            outbound_workers=1,
-            mb_max_batch_size: int = None,
-            mb_max_latency: int = None,
+            workers: int = P[C.config.bento_server.microbatch.workers],
+            timeout: int = P[C.config.bento_server.timeout],
+            outbound_workers: int = P[C.api_server_workers],
+            max_request_size: int = P[C.config.bento_server.max_request_size],
+            port: int = P[C.config.bento_server.port],
+            enable_microbatch: bool = P[C.config.bento_server.microbatch.enabled],
+            mb_max_batch_size: int = P[C.config.bento_server.microbatch.max_batch_size],
+            mb_max_latency: int = P[C.config.bento_server.microbatch.max_latency],
+            prometheus_lock: Optional[multiprocessing.Lock] = None,
+            loglevel=P[C.config.bento_server.logging.level],
         ):
             self.bento_service_bundle_path = bundle_path
 
-            self.port = port or config("apiserver").getint("default_port")
-            timeout = timeout or config("apiserver").getint("default_timeout")
-            max_request_size = config("apiserver").getint("default_max_request_size")
+            self.port = port
             self.options = {
                 "bind": "%s:%s" % ("0.0.0.0", self.port),
                 "timeout": timeout,
                 "limit_request_line": max_request_size,
-                "loglevel": config("logging").get("LEVEL").upper(),
+                "loglevel": loglevel.upper(),
                 "worker_class": "aiohttp.worker.GunicornWebWorker",
             }
             if workers:
@@ -70,6 +65,7 @@ if psutil.POSIX:
             self.outbound_port = outbound_port
             self.outbound_host = outbound_host
             self.outbound_workers = outbound_workers
+            self.enable_microbatch = enable_microbatch
             self.mb_max_batch_size = mb_max_batch_size
             self.mb_max_latency = mb_max_latency
 
@@ -95,6 +91,7 @@ if psutil.POSIX:
                 self.outbound_host,
                 self.outbound_port,
                 outbound_workers=self.outbound_workers,
+                enable_microbatch=self.enable_microbatch,
                 mb_max_batch_size=self.mb_max_batch_size,
                 mb_max_latency=self.mb_max_latency,
             )
@@ -102,15 +99,8 @@ if psutil.POSIX:
 
         def run(self):
             setup_prometheus_multiproc_dir(self.prometheus_lock)
-            super(GunicornMarshalServer, self).run()
-
-        def async_run(self):
-            """
-            Start an micro batch server.
-            """
-            marshal_proc = multiprocessing.Process(target=self.run, daemon=True)
-            marshal_proc.start()
             marshal_logger.info("Running micro batch service on :%d", self.port)
+            super(GunicornMarshalServer, self).run()
 
 
 else:

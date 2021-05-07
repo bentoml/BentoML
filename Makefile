@@ -57,12 +57,10 @@ install-yatai-deps: ## Install dependencies to debug YataiService
 
 # BentoML Web UI
 watch-yatai-web-ui: ## Start BentoML Web UI server in dev mode
-	bentoml yatai-service-start --no-ui & \
 	cd bentoml/yatai/web && yarn dev 127.0.0.1:50051 3000 .
 build-yatai-web-ui: ## Build BentoML Web UI server and frontend
 	cd bentoml/yatai/web && yarn build
 run-yatai-web-ui: ## Run production BentoML Web UI server and frontend
-	bentoml yatai-service-start --no-ui & \
 	cd bentoml/yatai/web && yarn start 127.0.0.1:50051 3000 .
 install-web-deps: ## Install dependencies to run web server and frontend
 	cd bentoml/yatai/web && yarn install

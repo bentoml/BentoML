@@ -1,5 +1,6 @@
-Using Helm to install YataiService
-==================================
+==============================
+Install Yatai on K8s with Helm
+==============================
 
 *Helm* is a tool that streamlines installing and managing K8s applications. It lets developers easily configure a set of K8s resources that make up an application -- YataiService in this case. Helm enables developers to
 
@@ -84,9 +85,8 @@ Then, start a local K8s cluster running by doing `minikube start`.
 
     Before installing the chart, make sure to fetch the `ingress-nginx` dependency by doing `make helm-deps`
 
-=======
 Dry Run
-=======
+~~~~~~~
 Developers can do a dry run of the helm chart installation to see if the configuration is valid.
 
 .. code-block:: bash
@@ -147,9 +147,8 @@ Woo! You now have a `YataiService` instance running on a local K8s cluster :) To
 
 Keep reading for more info on configuring `YataiService` using Helm.
 
-=============
 Custom Values
-=============
+~~~~~~~~~~~~~
 
 To deploy a `YataiService` instance with a PostgreSQL DB instance within the cluster, developers can use the custom values found in `helm/YataiService/values.yaml`. If this doesn't match the your needs, feel free to create your own custom values files to configure `YataiService` in a way that works for you/your company.
 

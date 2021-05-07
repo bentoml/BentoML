@@ -69,6 +69,15 @@ def compile_model(convert_to_onnx, tmp_path_factory):
     onnxmodelloc = convert_to_onnx + '/model.onnx'
     command = ['onnx-mlir', '--EmitLib', onnxmodelloc]
     onnx_mlir_loc = '/workdir/onnx-mlir/build/Debug/bin'
+
+    ppwd = ['pwd']
+    pwd_cmd = subprocess.Popen(
+        ppwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=onnx_mlir_loc, text=True
+    )
+    stdouta, stderra = docker_proc.communicate()
+    print(stdouta)
+    print(stderra)
+
     docker_proc = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,

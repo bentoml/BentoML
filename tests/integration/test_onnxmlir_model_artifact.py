@@ -68,8 +68,7 @@ def convert_to_onnx(tensorflow_model, tmp_path_factory):
 def compile_model(convert_to_onnx, tmp_path_factory):
     onnxmodelloc = convert_to_onnx + '/model.onnx'
     command = ['onnx-mlir', '--EmitLib', onnxmodelloc]
-    #onnx_mlir_loc = '/workdir/onnx-mlir/build/bin'
-    onnx_mlir_loc = '/onnx-mlir/build/bin'
+    onnx_mlir_loc = '/workdir/onnx-mlir/build/Debug/bin'
     docker_proc = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,

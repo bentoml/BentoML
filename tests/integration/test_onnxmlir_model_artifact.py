@@ -67,7 +67,7 @@ def convert_to_onnx(tensorflow_model, tmp_path_factory):
 @pytest.fixture()
 def compile_model(convert_to_onnx, tmp_path_factory):
     onnxmodelloc = convert_to_onnx + '/model.onnx'
-    command = ['onnx-mlir', '--EmitLib', onnxmodelloc]
+    command = ['./onnx-mlir', '--EmitLib', onnxmodelloc]
     onnx_mlir_loc = '/workdir/onnx-mlir/build/Debug/bin'
 
     ppwd = ['pwd']

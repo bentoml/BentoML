@@ -23,6 +23,7 @@ from bentoml.utils.docker_utils import (
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
+from bentoml.yatai.locking.lock import LockType, lock
 from bentoml.yatai.proto.deployment_pb2 import (
     GetDeploymentResponse,
     DescribeDeploymentResponse,
@@ -106,7 +107,16 @@ def get_yatai_service_impl(base=object):
             )
 
         def ApplyDeployment(self, request, context=None):
-            with self.db.create_session() as sess:
+            deployment_id = f"{request.deployment.name}_{request.deployment.namespace}"
+            spec = request.deployment.spec
+            bento_id = f"{spec.bento_name}_{spec.bento_version}"
+            with lock(
+                self.db, [(deployment_id, LockType.WRITE), (bento_id, LockType.READ)]
+            ) as (
+                sess,
+                _,
+            ):
+                # to bento level lock
                 try:
                     # apply default namespace if not set
                     request.deployment.namespace = (
@@ -182,7 +192,11 @@ def get_yatai_service_impl(base=object):
                     return ApplyDeploymentResponse(status=Status.INTERNAL(str(e)))
 
         def DeleteDeployment(self, request, context=None):
-            with self.db.create_session() as sess:
+            deployment_id = f"{request.deployment_name}_{request.namespace}"
+            with lock(self.db, [(deployment_id, LockType.WRITE)]) as (
+                sess,
+                _,
+            ):
                 try:
                     request.namespace = request.namespace or self.default_namespace
                     deployment_pb = self.db.deployment_store.get(
@@ -251,7 +265,11 @@ def get_yatai_service_impl(base=object):
                     return DeleteDeploymentResponse(status=Status.INTERNAL(str(e)))
 
         def GetDeployment(self, request, context=None):
-            with self.db.create_session() as sess:
+            deployment_id = f"{request.deployment_name}_{request.namespace}"
+            with lock(self.db, [(deployment_id, LockType.READ)]) as (
+                sess,
+                _,
+            ):
                 try:
                     request.namespace = request.namespace or self.default_namespace
                     deployment_pb = self.db.deployment_store.get(
@@ -277,7 +295,11 @@ def get_yatai_service_impl(base=object):
                     return GetDeploymentResponse(status=Status.INTERNAL())
 
         def DescribeDeployment(self, request, context=None):
-            with self.db.create_session() as sess:
+            deployment_id = f"{request.deployment_name}_{request.namespace}"
+            with lock(self.db, [(deployment_id, LockType.READ)]) as (
+                sess,
+                _,
+            ):
                 try:
                     request.namespace = request.namespace or self.default_namespace
                     deployment_pb = self.db.deployment_store.get(
@@ -337,7 +359,8 @@ def get_yatai_service_impl(base=object):
                     return ListDeploymentsResponse(status=Status.INTERNAL())
 
         def AddBento(self, request, context=None):
-            with self.db.create_session() as sess:
+            bento_id = f"{request.bento_name}_{request.bento_version}"
+            with lock(self.db, [(bento_id, LockType.WRITE)]) as (sess, _):
                 try:
                     # TODO: validate request
                     bento_pb = self.db.metadata_store.get(
@@ -371,7 +394,8 @@ def get_yatai_service_impl(base=object):
                     return DeleteDeploymentResponse(status=Status.INTERNAL())
 
         def UpdateBento(self, request, context=None):
-            with self.db.create_session() as sess:
+            bento_id = f"{request.bento_name}_{request.bento_version}"
+            with lock(self.db, [(bento_id, LockType.WRITE)]) as (sess, _):
                 try:
                     # TODO: validate request
                     if request.upload_status:
@@ -397,7 +421,8 @@ def get_yatai_service_impl(base=object):
                     return UpdateBentoResponse(status=Status.INTERNAL())
 
         def DangerouslyDeleteBento(self, request, context=None):
-            with self.db.create_session() as sess:
+            bento_id = f"{request.bento_name}_{request.bento_version}"
+            with lock(self.db, [(bento_id, LockType.WRITE)]) as (sess, _):
                 try:
                     # TODO: validate request
                     bento_pb = self.db.metadata_store.get(
@@ -433,7 +458,8 @@ def get_yatai_service_impl(base=object):
                     return DangerouslyDeleteBentoResponse(status=Status.INTERNAL())
 
         def GetBento(self, request, context=None):
-            with self.db.create_session() as sess:
+            bento_id = f"{request.bento_name}_{request.bento_version}"
+            with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
                 try:
                     # TODO: validate request
                     bento_pb = self.db.metadata_store.get(
@@ -495,7 +521,8 @@ def get_yatai_service_impl(base=object):
                     return ListBentoResponse(status=Status.INTERNAL())
 
         def ContainerizeBento(self, request, context=None):
-            with self.db.create_session() as sess:
+            bento_id = f"{request.bento_name}_{request.bento_version}"
+            with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
                 try:
                     ensure_docker_available_or_raise()
                     tag = request.tag

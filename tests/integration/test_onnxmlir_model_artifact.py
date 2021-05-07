@@ -3,6 +3,7 @@ import numpy as np
 import pandas
 import tensorflow as tf
 import subprocess
+import sys
 from tests.bento_service_examples.onnxmlir_classifier import OnnxMlirClassifier
 from bentoml.yatai.client import YataiClient
 
@@ -107,6 +108,8 @@ def get_onnx_mlir_svc(compile_model, onnxmlir_classifier_class):
 
 def test_onnxmlir_artifact(get_onnx_mlir_svc):
     svc = get_onnx_mlir_svc
+    print(sys.path)
+    sys.path.insert(0, '/workdir/onnx-mlir/build/Debug/lib')
     assert (
         svc.predict(test_df) == 15.0
     ), 'Inference on onnx-mlir artifact does not match expected'

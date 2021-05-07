@@ -8,10 +8,10 @@ trap 'error=1' ERR
 
 cat /etc/os-release  
 
-# Export path to PyRuntime so file
-export PATH=/workdir/onnx-mlir/build/Debug/lib:${PATH}
 # Export path to onnx-mlir executable
 export PATH=/workdir/onnx-mlir/build/Debug/bin:${PATH}
+# Export path to PyRuntime so file
+export PATH=/workdir/onnx-mlir/build/Debug/lib:${PATH}
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit

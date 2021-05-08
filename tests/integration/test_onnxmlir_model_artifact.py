@@ -95,7 +95,7 @@ def get_onnx_mlir_svc(compile_model, onnxmlir_classifier_class):
 
 
 def test_onnxmlir_artifact(get_onnx_mlir_svc):
-    print("hi2"+sys.path)
+    print('hi2'+sys.path)
     svc = get_onnx_mlir_svc
     assert (
         svc.predict(test_df) == 15.0

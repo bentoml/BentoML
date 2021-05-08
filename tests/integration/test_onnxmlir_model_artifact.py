@@ -70,18 +70,6 @@ def compile_model(convert_to_onnx, tmp_path_factory):
     command = ['./onnx-mlir', '--EmitLib', onnxmodelloc]
     onnx_mlir_loc = '/workdir/onnx-mlir/build/Debug/bin'
 
-    ppwd = ['pwd']
-    pwd_cmd = subprocess.Popen(
-        ppwd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=onnx_mlir_loc,
-        text=True,
-    )
-    stdouta, stderra = pwd_cmd.communicate()
-    print(stdouta)
-    print(stderra)
-
     docker_proc = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
@@ -107,6 +95,7 @@ def get_onnx_mlir_svc(compile_model, onnxmlir_classifier_class):
 
 
 def test_onnxmlir_artifact(get_onnx_mlir_svc):
+    print("hi2"+sys.path)
     svc = get_onnx_mlir_svc
     assert (
         svc.predict(test_df) == 15.0

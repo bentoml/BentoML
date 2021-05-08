@@ -9,11 +9,13 @@ trap 'error=1' ERR
 cat /etc/os-release  
 
 # Export path to onnx-mlir executable
-export PATH=/workdir/onnx-mlir/build/Debug/bin:${PATH}
+export PATH="/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
 # Export path to PyRuntime so file
-export PATH=/workdir/onnx-mlir/build/Debug/lib:${PATH}
+export PATH="/workdir/onnx-mlir/build/Debug/lib/:${PATH}"
 
-cp /workdir/onnx-mlir/build/Debug/lib/PyRuntime.cpython-38-x86_64-linux-gnu.so /__w/BentoML/BentoML
+PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
+export PYTHONPATH
+
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit

@@ -67,6 +67,7 @@ def convert_to_onnx(tensorflow_model, tmp_path_factory):
 
 @pytest.fixture()
 def compile_model(convert_to_onnx, tmp_path_factory):
+    sys.path.append('/workdir/onnx-mlir/build/Debug/lib')
     onnxmodelloc = convert_to_onnx + '/model.onnx'
     command = ['./onnx-mlir', '--EmitLib', onnxmodelloc]
     onnx_mlir_loc = '/workdir/onnx-mlir/build/Debug/bin'
@@ -87,7 +88,6 @@ def compile_model(convert_to_onnx, tmp_path_factory):
 
 @pytest.fixture()
 def get_onnx_mlir_svc(compile_model, onnxmlir_classifier_class):
-    sys.path.insert(0, '/workdir/onnx-mlir/build/Debug/lib')
     svc = onnxmlir_classifier_class
     # need to check compile output location from compile_model
     model = compile_model + '/model.so'

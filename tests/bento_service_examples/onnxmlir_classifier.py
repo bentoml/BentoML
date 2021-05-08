@@ -4,6 +4,7 @@ import bentoml
 from bentoml.adapters import DataframeInput
 from bentoml.frameworks.onnxmlir import OnnxMlirModelArtifact
 
+sys.path.insert(0, '/workdir/onnx-mlir/build/Debug/lib')
 
 @bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([OnnxMlirModelArtifact('model')])

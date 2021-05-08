@@ -5,14 +5,13 @@ from bentoml.configuration import (
     get_local_config_file,
     get_debug_mode,
     set_debug_mode,
-    BENTOML_HOME,
 )
 
 
 def test_get_local_config_file():
     config_file = get_local_config_file()
 
-    assert config_file == os.path.join(BENTOML_HOME, "bentoml.cfg")
+    assert config_file is None
 
     os.environ["BENTOML_CONFIG"] = "/tmp/bentoml.cfg"
     config_file = get_local_config_file()

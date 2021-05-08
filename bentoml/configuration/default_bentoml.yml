@@ -1,7 +1,6 @@
-#
-# default_bentoml.yml is currently working-in-progress. Configuration changes
-# should still be made to default_bentoml.cfg.
-#
+bento_bundle:
+  deployment_version: Null
+  default_docker_base_image: Null
 
 bento_server:
   port: 5000
@@ -25,6 +24,17 @@ bento_server:
   logging:
     level: INFO
 
+logging:
+  level: INFO
+  console:
+    enabled: True
+  file:
+    enabled: True
+    directory: Null
+  advanced:
+    enabled: False
+    config: Null
+
 tracing:
   type: zipkin
   zipkin:
@@ -42,3 +52,31 @@ adapters:
       - .tiff
       - .webp
       - .bmp
+
+yatai:
+  remote:
+    url: Null
+    access_token: Null
+    access_token_header: access_token
+    tls:
+      root_ca_cert: Null
+      client_certificate_file: Null
+      client_key: Null
+      client_cert: Null
+  repository:
+    type: file_system
+    file_system:
+      directory: Null
+    s3:
+      url: Null
+      endpoint_url: Null
+      signature_version: s3v4
+      expiration: 3000
+    gcs:
+      url: Null
+      expiration: 3000
+  database:
+    url: Null
+  namespace: dev
+  logging:
+    path: Null

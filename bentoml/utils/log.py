@@ -15,30 +15,26 @@
 import logging.config
 import os
 import sys
+from dependency_injector.wiring import Provide, inject
 from pathlib import Path
 
-from bentoml import config
 from bentoml.configuration import get_debug_mode
-from bentoml.utils.ruamel_yaml import YAML
+from bentoml.configuration.containers import BentoMLContainer
 
 
-def get_logging_config_dict(logging_level, base_log_directory):
-    conf = config("logging")  # proxy to logging section in bentoml config file
-
-    LOG_FORMAT = conf.get("LOG_FORMAT")
-    DEV_LOG_FORMAT = conf.get("DEV_LOG_FORMAT")
-
-    PREDICTION_LOG_FILENAME = conf.get("prediction_log_filename")
-
-    FEEDBACK_LOG_FILENAME = conf.get("feedback_log_filename")
-
+def get_logging_config_dict(
+    logging_level: str,
+    base_log_directory: str,
+    console_logging_enabled: bool,
+    file_logging_enabled: bool,
+):
     MEGABYTES = 1024 * 1024
 
     handlers = {}
     bentoml_logger_handlers = []
     prediction_logger_handlers = []
     feedback_logger_handlers = []
-    if conf.getboolean("console_logging_enabled"):
+    if console_logging_enabled:
         handlers.update(
             {
                 "console": {
@@ -52,7 +48,7 @@ def get_logging_config_dict(logging_level, base_log_directory):
         bentoml_logger_handlers.append("console")
         prediction_logger_handlers.append("console")
         feedback_logger_handlers.append("console")
-    if conf.getboolean("file_logging_enabled"):
+    if file_logging_enabled:
         handlers.update(
             {
                 "local": {
@@ -67,9 +63,7 @@ def get_logging_config_dict(logging_level, base_log_directory):
                     "class": "logging.handlers.RotatingFileHandler",
                     "formatter": "prediction",
                     "level": "INFO",
-                    "filename": os.path.join(
-                        base_log_directory, PREDICTION_LOG_FILENAME
-                    ),
+                    "filename": os.path.join(base_log_directory, "prediction.log"),
                     "maxBytes": 100 * MEGABYTES,
                     "backupCount": 10,
                 },
@@ -77,7 +71,7 @@ def get_logging_config_dict(logging_level, base_log_directory):
                     "class": "logging.handlers.RotatingFileHandler",
                     "formatter": "feedback",
                     "level": "INFO",
-                    "filename": os.path.join(base_log_directory, FEEDBACK_LOG_FILENAME),
+                    "filename": os.path.join(base_log_directory, "feedback.log"),
                     "maxBytes": 100 * MEGABYTES,
                     "backupCount": 10,
                 },
@@ -91,18 +85,13 @@ def get_logging_config_dict(logging_level, base_log_directory):
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "console": {"format": LOG_FORMAT},
-            "dev": {"format": DEV_LOG_FORMAT},
-            "prediction": {
-                "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "fmt": "%%(service_name)s %%(service_version)s %%(api)s "
-                "%%(request_id)s %%(task)s %%(result)s %%(asctime)s",
+            "console": {"format": "[%(asctime)s] %(levelname)s - %(message)s"},
+            "dev": {
+                "format": "[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s"
+                " - %(message)s"
             },
-            "feedback": {
-                "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "fmt": "%%(service_name)s %%(service_version)s %%(request_id)s "
-                "%%(asctime)s",
-            },
+            "prediction": {"()": "pythonjsonlogger.jsonlogger.JsonFormatter"},
+            "feedback": {"()": "pythonjsonlogger.jsonlogger.JsonFormatter"},
         },
         "handlers": handlers,
         "loggers": {
@@ -125,30 +114,36 @@ def get_logging_config_dict(logging_level, base_log_directory):
     }
 
 
-def configure_logging(logging_level=None):
-    base_log_dir = os.path.expanduser(config("logging").get("BASE_LOG_DIR"))
+@inject
+def configure_logging(
+    logging_level: str = Provide[BentoMLContainer.config.logging.level],
+    base_log_dir: str = Provide[BentoMLContainer.logging_file_directory],
+    console_logging_enabled: bool = Provide[
+        BentoMLContainer.config.logging.console.enabled
+    ],
+    file_logging_enabled: bool = Provide[BentoMLContainer.config.logging.file.enabled],
+    advanced_enabled: bool = Provide[BentoMLContainer.config.logging.advanced.enabled],
+    advanced_config: dict = Provide[BentoMLContainer.config.logging.advanced.config],
+):
     Path(base_log_dir).mkdir(parents=True, exist_ok=True)
-    if os.path.exists(config("logging").get("logging_config")):
-        logging_config_path = config("logging").get("logging_config")
-        with open(logging_config_path, "rb") as f:
-            logging_config = YAML().load(f.read())
-        logging.config.dictConfig(logging_config)
+    if advanced_enabled:
+        logging.config.dictConfig(advanced_config)
         logging.getLogger(__name__).debug(
-            "Loaded logging configuration from %s." % logging_config_path
+            "Configured logging with advanced configuration, config=%s", advanced_config
         )
     else:
-        if logging_level is None:
-            logging_level = config("logging").get("LEVEL").upper()
-            if "LOGGING_LEVEL" in config("logging"):
-                # Support legacy config name e.g. BENTOML__LOGGING__LOGGING_LEVEL=debug
-                logging_level = config("logging").get("LOGGING_LEVEL").upper()
-
         if get_debug_mode():
             logging_level = logging.getLevelName(logging.DEBUG)
 
-        logging_config = get_logging_config_dict(logging_level, base_log_dir)
+        logging_config = get_logging_config_dict(
+            logging_level, base_log_dir, console_logging_enabled, file_logging_enabled
+        )
         logging.config.dictConfig(logging_config)
         logging.getLogger(__name__).debug(
-            "Loaded logging configuration from default configuration "
-            + "and environment variables."
+            "Configured logging with simple configuration, "
+            "level=%s, directory=%s, console_enabled=%s, file_enabled=%s",
+            logging_level,
+            base_log_dir,
+            console_logging_enabled,
+            file_logging_enabled,
         )

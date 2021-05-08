@@ -26,7 +26,9 @@ const HomePage = () => (
               rel="noopener noreferrer"
             >
               Learn about managing model serving deployments with BentoML
-              <span role="img" aria-label="note">🔗</span>
+              <span role="img" aria-label="note">
+                🔗
+              </span>
             </a>
           );
         }
@@ -62,7 +64,9 @@ const HomePage = () => (
                 rel="noopener noreferrer"
               >
                 Learn about packaging ML model for serving with BentoML
-                <span role="img" aria-label="note">🔗</span>
+                <span role="img" aria-label="note">
+                  🔗
+                </span>
               </a>
             </Section>
           );

@@ -1,10 +1,10 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import * as lodash from 'lodash';
+import * as lodash from "lodash";
 
 import { displayTimeInFromNowFormat } from "../utils";
 import Table from "../ui/Table";
-import Label from './Label';
+import Label from "./Label";
 
 const apisToDisplayFormat = (apis: any) => {
   if (!apis) {
@@ -28,13 +28,11 @@ const labelsToDisplayFormat = (labels) => {
   }
   return (
     <div>
-      {
-        lodash.map(labels, (value, name) => {
-          return (<Label name={name} value={value}/>);
-        })
-      }
+      {lodash.map(labels, (value, name) => {
+        return <Label name={name} value={value} />;
+      })}
     </div>
-  )
+  );
 };
 
 const BENTO_TABLE_HEADERS = [
@@ -62,8 +60,8 @@ const BentoServiceTable = (props) => {
           null,
           null,
           <Link to={`/repository/${bento.name}/${bento.version}`}>Detail</Link>,
-        ]
-      }
+        ],
+      };
     } else {
       const apis = apisToDisplayFormat(metadata.apis);
       const artifacts = artifactsToDisplayFormat(metadata.artifacts);

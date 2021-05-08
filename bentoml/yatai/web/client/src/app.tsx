@@ -10,39 +10,43 @@ import BentoServiceDetail from "./pages/BentoServiceDetail";
 import Layout from "./ui/Layout";
 import Breadcrumbs from "./components/Breadcrumbs";
 import NavigationBar from "./components/NavigationBar";
-import {setBaseUrl} from './utils/HttpRequestContainer';
-import {useCookies} from 'react-cookie';
+import { setBaseUrl } from "./utils/HttpRequestContainer";
+import { useCookies } from "react-cookie";
 
 export const App = () => {
   const [cookies] = useCookies();
-  const baseURL = cookies["baseURLCookie"] === undefined ? "/" : "/" + cookies["baseURLCookie"]
+  const baseURL =
+    cookies["baseURLCookie"] === undefined
+      ? "/"
+      : "/" + cookies["baseURLCookie"];
   setBaseUrl(baseURL);
   return (
-  <BrowserRouter basename={baseURL}>
-    <NavigationBar baseURL = {baseURL} />
-    <Layout>
-      <Breadcrumbs baseURL = {baseURL}/>
-      <div>
-        <Switch>
-          <Route
-            path="/deployments/:namespace/:name"
-            component={DeploymentDetails}
-          />
-          <Route path="/deployments/:namespace" component={DeploymentsList} />
-          <Route path="/deployments" component={DeploymentsList} />
+    <BrowserRouter basename={baseURL}>
+      <NavigationBar baseURL={baseURL} />
+      <Layout>
+        <Breadcrumbs baseURL={baseURL} />
+        <div>
+          <Switch>
+            <Route
+              path="/deployments/:namespace/:name"
+              component={DeploymentDetails}
+            />
+            <Route path="/deployments/:namespace" component={DeploymentsList} />
+            <Route path="/deployments" component={DeploymentsList} />
 
-          <Route
-            path="/repository/:name/:version"
-            component={BentoServiceDetail}
-          />
-          <Route path="/repository/:name" component={BentoServicesList} />
-          <Route path="/repository" component={Repository} />
+            <Route
+              path="/repository/:name/:version"
+              component={BentoServiceDetail}
+            />
+            <Route path="/repository/:name" component={BentoServicesList} />
+            <Route path="/repository" component={Repository} />
 
-          <Route path="/about" component={HomePage} />
-          <Route path="/config" component={HomePage} />
-          <Route exact path="/" component={HomePage} />
-        </Switch>
-      </div>
-    </Layout>
-  </BrowserRouter>
-  )};
+            <Route path="/about" component={HomePage} />
+            <Route path="/config" component={HomePage} />
+            <Route exact path="/" component={HomePage} />
+          </Switch>
+        </div>
+      </Layout>
+    </BrowserRouter>
+  );
+};

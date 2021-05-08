@@ -1,5 +1,5 @@
-import * as React from 'react'
-import { Tag } from '@blueprintjs/core';
+import * as React from "react";
+import { Tag } from "@blueprintjs/core";
 
 export interface ILabelProps {
   name: string;
@@ -9,8 +9,10 @@ export interface ILabelProps {
 const Label: React.FC<ILabelProps> = (props) => {
   const tagValue = `${props.name}:${props.value}`;
   return (
-    <Tag key={tagValue} style={{margin: 5}}>{tagValue}</Tag>
-  )
+    <Tag key={tagValue} style={{ margin: 5 }}>
+      {tagValue}
+    </Tag>
+  );
 };
 
 export default Label;

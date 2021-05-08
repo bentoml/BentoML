@@ -1,4 +1,4 @@
 [flake8]
 ignore = E203, E266, W503, E402
 max-line-length = 88
-exclude = proto, _version.py
+exclude = tests/yatai/proto, proto, _version.py

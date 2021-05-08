@@ -11,6 +11,7 @@ test_data = [[1, 2, 3, 4, 5]]
 test_df = pandas.DataFrame([[1, 2, 3, 4, 5]])
 test_tensor = np.asfarray(test_data)
 
+
 class TfNativeModel(tf.Module):
     def __init__(self):
         super().__init__()
@@ -95,7 +96,7 @@ def get_onnx_mlir_svc(compile_model, onnxmlir_classifier_class):
 
 
 def test_onnxmlir_artifact(get_onnx_mlir_svc):
-    print('hi2'+sys.path)
+    print(sys.path)
     svc = get_onnx_mlir_svc
     assert (
         svc.predict(test_df) == 15.0

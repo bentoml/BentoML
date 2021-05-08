@@ -13,6 +13,8 @@ export PATH=/workdir/onnx-mlir/build/Debug/bin:${PATH}
 # Export path to PyRuntime so file
 export PATH=/workdir/onnx-mlir/build/Debug/lib:${PATH}
 
+python -c "import sys; print(sys.path)"
+
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 

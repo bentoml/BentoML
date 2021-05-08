@@ -10,6 +10,7 @@ from bentoml.yatai.client import YataiClient
 test_data = [[1, 2, 3, 4, 5]]
 test_df = pandas.DataFrame([[1, 2, 3, 4, 5]])
 test_tensor = np.asfarray(test_data)
+sys.path.insert(0, '/workdir/onnx-mlir/build/Debug/lib')
 
 
 class TfNativeModel(tf.Module):
@@ -108,8 +109,6 @@ def get_onnx_mlir_svc(compile_model, onnxmlir_classifier_class):
 
 def test_onnxmlir_artifact(get_onnx_mlir_svc):
     svc = get_onnx_mlir_svc
-    print(sys.path)
-    sys.path.insert(0, '/workdir/onnx-mlir/build/Debug/lib')
     assert (
         svc.predict(test_df) == 15.0
     ), 'Inference on onnx-mlir artifact does not match expected'

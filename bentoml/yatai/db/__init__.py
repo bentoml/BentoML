@@ -81,6 +81,7 @@ class DB(object):
             yield session
             session.commit()
         except LockUnavailable as e:
+            # rollback if lock cannot be acquired, bubble error up
             session.rollback()
             raise LockUnavailable(e)
         except Exception as e:

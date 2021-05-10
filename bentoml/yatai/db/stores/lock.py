@@ -6,6 +6,7 @@ from bentoml.exceptions import LockUnavailable
 from bentoml.yatai.db import Base
 
 
+# LOCK_STATUS is an enum of the type of lock currently held
 class LOCK_STATUS(enum.Enum):
     read_lock = 1
     write_lock = 2
@@ -37,14 +38,17 @@ class LockStore(object):
         lock_obj = sess.query(Lock).filter_by(resource_id=resource_id).first()
         return lock_obj
 
+    # acquires a lock of type `lock_type` on `resource_id` that will expire in
+    # `ttl_min` minutes
     @staticmethod
     def acquire(sess, lock_type, resource_id, ttl_min):
         now = datetime.datetime.now()
         ttl = now + datetime.timedelta(minutes=ttl_min)
-        lock = LockStore._find_lock(sess, resource_id)
+        existing_lock = LockStore._find_lock(sess, resource_id)
 
         # no lock found; free to acquire
-        if not lock:
+        if not existing_lock:
+            # create lock with properties
             lock = Lock()
             lock.lock_status = lock_type
             lock.resource_id = resource_id
@@ -52,24 +56,25 @@ class LockStore(object):
             sess.add(lock)
             return lock
 
-        # existing lock expired
-        if lock.ttl < now:
-            lock.lock_status = lock_type
-            lock.resource_id = resource_id
-            lock.ttl = ttl
-            return lock
+        # existing lock expired, free to overwrite
+        if existing_lock.ttl < now:
+            existing_lock.lock_status = lock_type
+            existing_lock.resource_id = resource_id
+            existing_lock.ttl = ttl
+            return existing_lock
 
-        # acquire read lock
+        # lock already exists
         if lock_type == LOCK_STATUS.read_lock:
-            if lock.lock_status == LOCK_STATUS.write_lock:
+            # acquire read lock
+            if existing_lock.lock_status == LOCK_STATUS.write_lock:
                 raise LockUnavailable("Failed to acquire read lock, write lock held")
 
-            # read lock acquisition success, no change required
-            # as current state is already read_lock
-
+            # current state is already read_lock, free to acquire read_lock
+            # (multiple read_locks can be concurrently held)
             # bump ttl
-            lock.renew(sess, ttl_min)
-            return lock
+            existing_lock.renew(sess, ttl_min)
+            return existing_lock
         else:
-            # can't acquire read/write lock when any other lock is already held
+            # acquire write lock
+            # can't acquire write lock when any other lock is already held
             raise LockUnavailable("Failed to acquire write lock, another lock held")

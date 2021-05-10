@@ -363,6 +363,8 @@ jobs:
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/onnxmlir_integration_tests.sh
+      - name: Install curl
+        run: apt get curl
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

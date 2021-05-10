@@ -4,11 +4,12 @@ import pandas
 import tensorflow as tf
 import subprocess
 import sys
+import bentoml
 from tests.bento_service_examples.onnxmlir_classifier import OnnxMlirClassifier
 from bentoml.yatai.client import YataiClient
 
-test_data = [[1, 2, 3, 4, 5]]
-test_df = pandas.DataFrame([[1, 2, 3, 4, 5]])
+test_data = np.array([[1, 2, 3, 4, 5]], dtype=np.float64)
+test_df = pandas.DataFrame(test_data, columns=['A', 'B', 'C', 'D', 'E'])
 test_tensor = np.asfarray(test_data)
 
 
@@ -67,8 +68,9 @@ def convert_to_onnx(tensorflow_model, tmp_path_factory):
 
 @pytest.fixture()
 def compile_model(convert_to_onnx, tmp_path_factory):
-    sys.path.append('/workdir/onnx-mlir/build/Debug/lib')
+    sys.path.append('/workdir/onnx-mlir/build/Debug/lib/')
     onnxmodelloc = convert_to_onnx + '/model.onnx'
+    # command = ['onnx-mlir', '--EmitLib', onnxmodelloc]
     command = ['./onnx-mlir', '--EmitLib', onnxmodelloc]
     onnx_mlir_loc = '/workdir/onnx-mlir/build/Debug/bin'
 
@@ -96,11 +98,17 @@ def get_onnx_mlir_svc(compile_model, onnxmlir_classifier_class):
 
 
 def test_onnxmlir_artifact(get_onnx_mlir_svc):
-    print(sys.path)
     svc = get_onnx_mlir_svc
     assert (
-        svc.predict(test_df) == 15.0
+        svc.predict(test_df)[0] == 15.0
     ), 'Inference on onnx-mlir artifact does not match expected'
+
+    saved_path = svc.save()
+    loaded_svc = bentoml.load(saved_path)
+
+    assert (
+        loaded_svc.predict(test_df)[0] == 15.0
+    ), 'Run inference after save onnx-mlir model'
 
     # clean up saved bundle
     yc = YataiClient()

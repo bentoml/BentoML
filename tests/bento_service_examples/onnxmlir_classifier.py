@@ -7,7 +7,6 @@ from bentoml.frameworks.onnxmlir import OnnxMlirModelArtifact
 
 
 sys.path.insert(0, '/workdir/onnx-mlir/build/Debug/lib')
-print(sys.path)
 
 
 @bentoml.env(infer_pip_packages=True)
@@ -15,5 +14,5 @@ print(sys.path)
 class OnnxMlirClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):
-        input_data = df.to_numpy().astype(numpy.float32)
+        input_data = df.to_numpy().astype(numpy.float64)
         return self.artifacts.model.run(input_data)

@@ -393,23 +393,23 @@ class BentoAPIServer:
             methods=["POST"]
         )
 
-        self.app.add_url_rule(
-            rule="/ngsi-ld/ml/predict-test",
-            endpoint="ml-predict-test",
-            view_func=self.handle_ml_predict_test,
-            methods=["POST"]
-        )
+        # self.app.add_url_rule(
+        #     rule="/ngsi-ld/ml/predict-test",
+        #     endpoint="ml-predict-test",
+        #     view_func=self.handle_ml_predict_test,
+        #     methods=["POST"]
+        # )
 
-    def handle_ml_predict_test(self):
-        """
-        PoC of calling the embedded bento service.
+    # def handle_ml_predict_test(self):
+    #     """
+    #     PoC of calling the embedded bento service.
 
-        Works great if we have only running, what if more than one?
-        """
-        predict_api = self.bento_service.inference_apis[0]
-        predict_req = Request.from_values(data=str([[50.50]]))
-        response = predict_api.handle_request(predict_req)
-        return response
+    #     Works great if we have only running, what if more than one?
+    #     """
+    #     predict_api = self.bento_service.inference_apis[0]
+    #     predict_req = Request.from_values(data=str([[50.50]]))
+    #     response = predict_api.handle_request(predict_req)
+    #     return response
 
     def handle_ml_processing(self):
         """
@@ -449,6 +449,9 @@ class BentoAPIServer:
         * extract from the SubscriptionQuery entity, where to get the input data,
         * Finally create a subscription to this data. 
         """
+        logger.info("-- Entering handle_ml_processing ...")
+
+        # Some generic configuration
         access_token = self.ngsild_access_token
         headers = {
             'Authorization': 'Bearer ' + access_token,
@@ -456,29 +459,9 @@ class BentoAPIServer:
         }
         URL_ENTITIES = self.ngsild_cb_url + '/ngsi-ld/v1/entities/'
         URL_SUBSCRIPTION = self.ngsild_cb_url + '/ngsi-ld/v1/subscriptions/'
-        SUBSCRIPTION_INPUT_DATA = "urn:ngsi-ld:Subscription:input:data:{}".format(str(uuid.uuid4()))
+        SUBSCRIPTION_INPUT_DATA = 'urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3'
+        # SUBSCRIPTION_INPUT_DATA = "urn:ngsi-ld:Subscription:input:data:{}".format(str(uuid.uuid4()))
         AT_CONTEXT = [ self.ngsild_at_context ]
-
-        # mlprocessing_notification = {
-        #     'id': 'urn:ngsi-ld:Notification:fadc5090-2425-42f8-b318-1966fa0e0011',
-        #     'type': 'Notification',
-        #     'subscriptionId': 'urn:ngsi-ld:Subscription:MLModel:flow:predict:71dba318-2989-4c76-a22c-52a53f04759b',
-        #     'notifiedAt': '2021-05-03T09:53:50.330686Z',
-        #     'data': [
-        #         {
-        #             'id': 'urn:ngsi-ld:MLProcessing:4bbb2b09-ad6c-4fb9-8f40-8d37e4cddd3a',
-        #             'type': 'MLProcessing',
-        #             'refSubscriptionQuery':
-        #                 {
-        #                     'type': 'Relationship',
-        #                     'object': 'urn:ngsi-ld:MLProcessing:SubscriptionQuery:e7be459e-dcee-46ab-90da-fba3120db4ff'
-        #                 },
-        #             '@context': [
-        #                 'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-compound.jsonl'
-        #             ]
-        #         }
-        #     ]
-        # }
 
         # Get the POST data
         mlprocessing_notification = request.get_json()
@@ -486,13 +469,13 @@ class BentoAPIServer:
         # Getting the SubscriptionQuery entity
         refSubscriptionQuery = mlprocessing_notification['data'][0]['refSubscriptionQuery']['object']
         r = requests.get(URL_ENTITIES+refSubscriptionQuery, headers=headers)
-        print(f'requests status_code GET subscriptionQuery: {r.status_code}')
-        print('r.json()')
-        print(r.json())
+        logger.info('requests status_code for GET subscriptionQuery: %s', r.status_code)
+        logger.info('Data: %s', r.json())
         ENTITY_INPUT_DATA = r.json()['entityID']['value']
 
-        # We don't really use the content of the SubscriptionQuery entity for now ...
-        # Instead we build our own 'hard coded' Subscription to input data
+        # We use the content of the SubscriptionQuery only to get the entity ID for now. 
+        # Need to find a generic way to get the attributes as well.
+        # Hard coding attributes (precipitation) here.
         json_ = {
             '@context': AT_CONTEXT,
             'id': SUBSCRIPTION_INPUT_DATA,
@@ -513,10 +496,9 @@ class BentoAPIServer:
             }
         }
 
-        print('Creating subscription to precipitation')
         # Creating the subscription to precipitation
         r = requests.post(URL_SUBSCRIPTION, json=json_, headers=headers)
-        print(f'requests status_code POST Subscription Precipitation: {r.status_code}')
+        logger.info('requests status_code for POST Subscription to Precipitation: %s', r.status_code)
 
         # Finally, respond to the initial received request (notification)
         # with empty 200        
@@ -524,6 +506,7 @@ class BentoAPIServer:
             '',
             200,
         )
+        logger.info("-- Bye by from handle_ml_processing ...")
         return response
 
     def handle_ml_predict(self):
@@ -564,6 +547,7 @@ class BentoAPIServer:
         * Create a NGSI-LD request to update the appropriate Entity/Property
         * Update the Entity/Property via PATCH
         """
+        logger.info("-- Entering handle_ml_predict ...")
 
         # Some generic configuration
         access_token = self.ngsild_access_token
@@ -575,47 +559,27 @@ class BentoAPIServer:
         URL_ENTITIES = self.ngsild_cb_url + '/ngsi-ld/v1/entities/'
         AT_CONTEXT = [ self.ngsild_at_context ]
 
-
-        # Extract input data from NGSLI-LD notification
-        # input_data_notification = {
-        #     "id": "urn:ngsi-ld:Notification:cc231a15-d220-403c-bfc6-ad60bc49466f",
-        #     "type": "Notification",
-        #     "subscriptionId": "urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3",
-        #     "notifiedAt": "2021-05-04T06:45:32.83178Z",
-        #     "data": [
-        #         {
-        #             "id": "urn:ngsi-ld:River:014f5730-72ab-4554-a106-afbe5d4d9d26",
-        #             "type": "River",
-        #             "precipitation": {
-        #                 "type": "Property",
-        #                 "createdAt": "2021-05-04T06:45:32.674520Z",
-        #                 "value": 2.2,
-        #                 "observedAt": "2021-05-04T06:35:22.000Z",
-        #                 "unitCode": "MMT"
-        #             },
-        #             "@context": [
-        #                 "https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-compound.jsonld"
-        #             ]
-        #         }
-        #     ]
-        # }
-
         # Get the POST data
         input_data_notification = request.get_json()
 
         input_entity = input_data_notification['data'][0]['id']
         input_data = input_data_notification['data'][0]['precipitation']['value']
-        print(f'input_data {input_data}')
+        logger.info('input_data received from notification: %s', input_data)
 
         # reshaping input data into a 2D array
         input_data = np.array([input_data]).reshape(-1,1)
 
-        ### CALLING BENTOML PREDICT HERE ###
-        ###         HOW TO ???           ###
-        ### What do you get back? numpy? ###
-        ### More probably a list of list ###
-        ### as received through HTTP     ###
-        flow_prediction = [[15.3]]
+        ### CALLING BENTOML /predict HERE ###
+        # 1. get the inference API (behind /predict)
+        # 2. build a request object from tje input data
+        # 3. perform the prediction
+        logger.info('Calling bentoml /predict ...')
+        predict_api = self.bento_service.inference_apis[0]
+        predict_req = Request.from_values(data=str(input_data))
+        predict_res = predict_api.handle_request(predict_req)
+
+        flow_prediction = predict_res.get_json()
+        logger.info('raw (get_json()) prediction received from /predict: %s', flow_prediction)
 
         # Create NGSI-LD request to update Entity/Property
         # Here updating 'flow' Property of the Siagne Entity
@@ -641,7 +605,7 @@ class BentoAPIServer:
 
         URL_PATCH_FLOW = URL_ENTITIES + input_entity + '/attrs'
         r = requests.post(URL_PATCH_FLOW, json=json_, headers=headers)
-        print(f'patch status code {r.status_code}')
+        logger.info('requests status_code for (PATCH) Entity with prediction: %s', r.status_code)
 
         # Finally, respond to the initial received request (notification)
         # with empty 200
@@ -649,6 +613,7 @@ class BentoAPIServer:
             '',
             200,
         )
+        logger.info("-- Bye by from handle_ml_predict ...")
         return response
 
     def setup_bento_service_api_routes(self):

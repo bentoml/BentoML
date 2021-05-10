@@ -569,7 +569,6 @@ class BentoAPIServer:
             'Authorization': 'Bearer ' + access_token,
             'Content-Type': 'application/ld+json'
         }
-        RIVER_SIAGNE_UUID = 'urn:ngsi-ld:River:014f5730-72ab-4554-a106-afbe5d4d9d26'
         MLMODEL_UUID = 'urn:ngsi-ld:MLModel:flow:predict'
         URL_ENTITIES = self.ngsild_cb_url + '/ngsi-ld/v1/entities/'
         AT_CONTEXT = [ self.ngsild_at_context ]
@@ -602,6 +601,7 @@ class BentoAPIServer:
         # Get the POST data
         input_data_notification = request.get_json()
 
+        input_entity = input_data_notification['data'][0]['id']
         input_data = input_data_notification['data'][0]['precipitation']['value']
         print(f'input_data {input_data}')
 
@@ -637,7 +637,7 @@ class BentoAPIServer:
             ]
         }
 
-        URL_PATCH_FLOW = URL_ENTITIES + RIVER_SIAGNE_UUID + '/attrs'
+        URL_PATCH_FLOW = URL_ENTITIES + input_entity + '/attrs'
         r = requests.post(URL_PATCH_FLOW, json=json_, headers=headers)
         print(f'patch status code {r.status_code}')
 

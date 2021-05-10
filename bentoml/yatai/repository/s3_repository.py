@@ -14,11 +14,12 @@
 
 import logging
 from urllib.parse import urlparse
+from dependency_injector.wiring import Provide, inject
 
 import boto3
 from botocore.exceptions import ClientError
 
-from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.yatai.proto.repository_pb2 import BentoUri
 from bentoml.yatai.repository.base_repository import BaseRepository
@@ -27,7 +28,20 @@ logger = logging.getLogger(__name__)
 
 
 class S3Repository(BaseRepository):
-    def __init__(self, base_url, s3_endpoint_url=None):
+    @inject
+    def __init__(
+        self,
+        base_url,
+        endpoint_url: str = Provide[
+            BentoMLContainer.config.yatai.repository.s3.endpoint_url
+        ],
+        signature_version: str = Provide[
+            BentoMLContainer.config.yatai.repository.s3.signature_version
+        ],
+        expiration: int = Provide[
+            BentoMLContainer.config.yatai.repository.s3.expiration
+        ],
+    ):
         self.uri_type = BentoUri.S3
 
         parse_result = urlparse(base_url)
@@ -35,17 +49,13 @@ class S3Repository(BaseRepository):
         self.base_path = parse_result.path.lstrip('/')
 
         s3_client_args = {}
-        signature_version = config('yatai_service').get('S3_SIGNATURE_VERSION')
         s3_client_args['config'] = boto3.session.Config(
             signature_version=signature_version
         )
-        if s3_endpoint_url is not None:
-            s3_client_args['endpoint_url'] = s3_endpoint_url
+        if endpoint_url is not None:
+            s3_client_args['endpoint_url'] = endpoint_url
         self.s3_client = boto3.client("s3", **s3_client_args)
-
-    @property
-    def _expiration(self):
-        return config('yatai').getint('bento_uri_default_expiration')
+        self.expiration = expiration
 
     def _get_object_name(self, bento_name, bento_version):
         if self.base_path:
@@ -61,7 +71,7 @@ class S3Repository(BaseRepository):
             response = self.s3_client.generate_presigned_url(
                 'put_object',
                 Params={'Bucket': self.bucket, 'Key': object_name},
-                ExpiresIn=self._expiration,
+                ExpiresIn=self.expiration,
             )
         except Exception as e:
             raise YataiRepositoryException(
@@ -83,7 +93,7 @@ class S3Repository(BaseRepository):
             response = self.s3_client.generate_presigned_url(
                 'get_object',
                 Params={'Bucket': self.bucket, 'Key': object_name},
-                ExpiresIn=self._expiration,
+                ExpiresIn=self.expiration,
             )
             return response
         except Exception:  # pylint: disable=broad-except

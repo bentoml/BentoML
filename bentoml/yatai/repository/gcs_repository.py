@@ -14,8 +14,9 @@
 
 import logging
 from urllib.parse import urlparse
+from dependency_injector.wiring import Provide, inject
 
-from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import YataiRepositoryException
 from bentoml.yatai.proto.repository_pb2 import BentoUri
 from bentoml.yatai.repository.base_repository import BaseRepository
@@ -24,7 +25,14 @@ logger = logging.getLogger(__name__)
 
 
 class GCSRepository(BaseRepository):
-    def __init__(self, base_url):
+    @inject
+    def __init__(
+        self,
+        base_url,
+        expiration: int = Provide[
+            BentoMLContainer.config.yatai.repository.gcs.expiration
+        ],
+    ):
         try:
             from google.cloud import storage
         except ImportError:
@@ -39,10 +47,7 @@ class GCSRepository(BaseRepository):
         self.bucket = parse_result.netloc
         self.base_path = parse_result.path.lstrip('/')
         self.gcs_client = storage.Client()
-
-    @property
-    def _expiration(self):
-        return config('yatai').getint('bento_uri_default_expiration')
+        self.expiration = expiration
 
     def _get_object_name(self, bento_name, bento_version):
         if self.base_path:
@@ -57,7 +62,7 @@ class GCSRepository(BaseRepository):
             blob = bucket.blob(object_name)
 
             response = blob.generate_signed_url(
-                version="v4", expiration=self._expiration, method="PUT",
+                version="v4", expiration=self.expiration, method="PUT",
             )
         except Exception as e:
             raise YataiRepositoryException(
@@ -80,7 +85,7 @@ class GCSRepository(BaseRepository):
             blob = bucket.blob(object_name)
 
             response = blob.generate_signed_url(
-                version="v4", expiration=self._expiration, method="GET",
+                version="v4", expiration=self.expiration, method="GET",
             )
             return response
         except Exception:  # pylint: disable=broad-except

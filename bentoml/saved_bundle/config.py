@@ -15,13 +15,14 @@
 import logging
 import os
 from datetime import datetime
+from dependency_injector.wiring import Provide, inject
 from pathlib import Path
 from sys import version_info
 
 from google.protobuf.struct_pb2 import Struct
 
 from bentoml import __version__ as BENTOML_VERSION
-from bentoml.configuration import get_bentoml_deploy_version
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils import dump_to_yaml_str
 from bentoml.utils.ruamel_yaml import YAML
@@ -74,14 +75,22 @@ def _get_artifacts_list(bento_service):
 
 
 class SavedBundleConfig(object):
-    def __init__(self, bento_service=None, kind="BentoService"):
+    @inject
+    def __init__(
+        self,
+        bento_service=None,
+        kind="BentoService",
+        bentoml_deployment_version: str = Provide[
+            BentoMLContainer.bento_bundle_deployment_version
+        ],
+    ):
         self.kind = kind
         self._yaml = YAML()
         self._yaml.default_flow_style = False
         self.config = self._yaml.load(
             BENTOML_CONFIG_YAML_TEMPLATE.format(
                 kind=self.kind,
-                bentoml_version=get_bentoml_deploy_version(),
+                bentoml_version=bentoml_deployment_version,
                 created_at=str(datetime.utcnow()),
             )
         )

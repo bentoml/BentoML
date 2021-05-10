@@ -101,6 +101,11 @@ def test_aws_lambda_app_py(monkeypatch):
         'statusCode': 200,
     }
 
+    # Clean up environ set by lambda_app.py
+    del os.environ["BENTOML_HOME"]
+    del os.environ["BENTOML_BENTO_SERVICE_NAME"]
+    del os.environ["BENTOML_API_NAME"]
+
 
 @patch('shutil.rmtree', MagicMock())
 @patch('shutil.copytree', MagicMock())

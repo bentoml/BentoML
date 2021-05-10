@@ -347,6 +347,25 @@ jobs:
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
+  onnxmlir_integration_tests:
+    runs-on: ubuntu-latest
+    container:
+      image: onnxmlirczar/onnx-mlir-dev:latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8.5
+      - name: Install test dependencies
+        run: ./ci/install_test_deps.sh.cmd
+      - name: Run tests
+        run: ./ci/onnxmlir_integration_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
   bento_management_integration_tests:
     runs-on: ubuntu-latest
     steps:

@@ -221,6 +221,11 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.paddle.PaddlePaddleModelArtifact
 
+========
+EasyOCR
+========
+
+.. autoclass:: bentoml.frameworks.easyocr.EasyOCRArtifact
 
 ======
 EvalML
@@ -254,3 +259,5 @@ EvalML
     evalml
     Evalml
     EvalML
+    EasyOCR
+    easyocr

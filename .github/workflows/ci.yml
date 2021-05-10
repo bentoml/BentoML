@@ -358,10 +358,10 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8.5
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
-      - name: List
+      - name: List location of pyruntime
         run: |
           pwd
           cd /workdir/onnx-mlir/build/Debug/lib/

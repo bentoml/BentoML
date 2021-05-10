@@ -628,7 +628,7 @@ class BentoAPIServer:
                     'value': flow_prediction,
                     'unitCode': 'MQS',
                     'observedAt': predictedAt,
-                    'conputedBy': {
+                    'computedBy': {
                         'type': 'Relationship',
                         'object': MLMODEL_UUID
                     }

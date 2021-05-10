@@ -187,6 +187,7 @@ class BentoAPIServer:
         self.ngsild_cb_url = config('ngsild').get('cb_url')
         self.ngsild_at_context = config('ngsild').get('at_context')
         self.ngsild_access_token = config('ngsild').get('access_token')
+        self.ngsild_ml_model_id = config('ngsild').get('ml_model_id')
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static_content'
@@ -570,7 +571,7 @@ class BentoAPIServer:
             'Authorization': 'Bearer ' + access_token,
             'Content-Type': 'application/ld+json'
         }
-        MLMODEL_UUID = 'urn:ngsi-ld:MLModel:flow:predict'
+        MLMODEL_UUID = self.ngsild_ml_model_id
         URL_ENTITIES = self.ngsild_cb_url + '/ngsi-ld/v1/entities/'
         AT_CONTEXT = [ self.ngsild_at_context ]
 

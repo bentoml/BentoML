@@ -362,7 +362,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: List
-        run: 
+        run: |
           pwd
           cd /workdir/onnx-mlir/build/Debug/lib/
           ls -l

@@ -24,7 +24,8 @@ python3 -m pip install pip --upgrade
 python3 -m pip install tensorflow==2.2.0
 python3 -m pip install -U tf2onnx
 
-apt-get install curl
+apt-get update
+apt-get install curl -y
 
 # Install required packages for onnx-mlir model artifacts test
 # not here: pip install onnx onnxruntime skl2onnx

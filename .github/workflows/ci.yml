@@ -361,12 +361,6 @@ jobs:
           python-version: 3.8.5
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
-      - name: List location of pyruntime
-        run: |
-          pwd
-          cd /workdir/onnx-mlir/build/Debug/lib/
-          ls -l
-          pwd
       - name: Run tests
         run: ./ci/onnxmlir_integration_tests.sh
       - name: Upload test coverage to Codecov

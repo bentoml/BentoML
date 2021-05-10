@@ -27,24 +27,27 @@ def lock(
     ttl_min=3,
 ):
     """
-    Context manager to acquire operation-level locks on all resources defined in the locks parameter
+    Context manager to acquire operation-level locks on all
+    resources defined in the locks parameter
     :param db: instance of bentoml.yatai.db.DB
-    :param locks: [(lock_identifier: string, lock_type: bentoml.yatai.locking.lock.LockType)]
-    :param timeout_seconds: amount of time to wait between subsequent lock acquisitions
+    :param locks: [
+        (lock_identifier: string,
+        lock_type: bentoml.yatai.locking.lock.LockType)
+    ]
+    :param timeout_seconds: amount of time to wait between lock acquisitions
     :param timeout_jitter_seconds: amount of random jitter to add to timeout
-    :param max_retry_count: times to retry lock acquisition beforer failing with LockUnavailable
+    :param max_retry_count: times to retry lock acquisition before failing
     :param ttl_min: amount of time before lock expires
     :return: (sess, lock_objs)
+    :exception: LockUnavailable when lock cannot be acquired
 
-    example usage:
-    ```python
-        with lock(
-            db, [(deployment_id, LockType.WRITE), (bento_id, LockType.READ)]
-        ) as (
-            sess,
-            lock_objs,
-        ):
-            # begin critical section
+
+    Example Usage:
+    ```
+    with lock(
+        db, [(deployment_id, LockType.WRITE), (bento_id, LockType.READ)]
+    ) as (sess, lock_objs):
+        # begin critical section
     ```
     """
     if len(locks) < 1:

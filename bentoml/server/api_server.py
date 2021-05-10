@@ -38,6 +38,8 @@ from datetime import datetime
 import pytz
 import numpy as np
 
+import uuid
+
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
 feedback_logger = logging.getLogger("bentoml.feedback")
@@ -452,8 +454,7 @@ class BentoAPIServer:
         }
         URL_ENTITIES = self.ngsild_cb_url + '/ngsi-ld/v1/entities/'
         URL_SUBSCRIPTION = self.ngsild_cb_url + '/ngsi-ld/v1/subscriptions/'
-        SUBSCRIPTION_INPUT_DATA = 'urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3'
-        ENDPOINT_INPUT_DATA_CHANGED = 'https://0ba2eb3a-2ff5-4a72-9a6f-f430f9f41ad3.mock.pstmn.io/mlprocessing'
+        SUBSCRIPTION_INPUT_DATA = "urn:ngsi-ld:Subscription:input:data:{}".format(str(uuid.uuid4()))
         AT_CONTEXT = [ self.ngsild_at_context ]
 
         # mlprocessing_notification = {
@@ -503,7 +504,7 @@ class BentoAPIServer:
             'watchedAttributes': ['precipitation'],
             'notification': {
                 'endpoint': {
-                    'uri': ENDPOINT_INPUT_DATA_CHANGED,
+                    'uri': request.url_root + '/ngsi-ld/ml/predict',
                     'accept': 'application/json'
                 },
                 'attributes': ['precipitation']

@@ -18,7 +18,7 @@ import sys
 from functools import partial
 
 from dependency_injector.wiring import Provide, inject
-from flask import Flask, Response, jsonify, make_response, request, send_from_directory
+from flask import Flask, Response, Request, jsonify, make_response, request, send_from_directory
 from google.protobuf.json_format import MessageToJson
 from werkzeug.exceptions import BadRequest, NotFound
 
@@ -406,7 +406,8 @@ class BentoAPIServer:
         Works great if we have only running, what if more than one?
         """
         predict_api = self.bento_service.inference_apis[0]
-        response = predict_api.handle_request(request)
+        predict_req = Request.from_values(data=str([[50.50]]))
+        response = predict_api.handle_request(predict_req)
         return response
 
     def handle_ml_processing(self):

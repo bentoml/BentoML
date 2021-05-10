@@ -22,6 +22,7 @@ from flask import Flask, Response, jsonify, make_response, request, send_from_di
 from google.protobuf.json_format import MessageToJson
 from werkzeug.exceptions import BadRequest, NotFound
 
+from bentoml import config
 from bentoml import BentoService
 from bentoml.configuration import get_debug_mode
 from bentoml.configuration.containers import BentoMLContainer
@@ -179,6 +180,11 @@ class BentoAPIServer:
         self.enable_metrics = enable_metrics
         self.enable_feedback = enable_feedback
         self.request_header_flag = request_header_flag
+
+        # NGSI-LD configuration parameters
+        self.ngsild_cb_url = config('ngsild').get('cb_url')
+        self.ngsild_at_context = config('ngsild').get('at_context')
+        self.ngsild_access_token = config('ngsild').get('access_token')
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static_content'
@@ -406,9 +412,10 @@ class BentoAPIServer:
         Handle receipt of a notification from subscription to
         MLProcessing entities. It indicates a new entity is interested
         in using this MLModel.
+
         On receipt of this notification, the information on where to
-        find the input data for prediction is retrieve, and a subscription
-        is created to be notified when input data changes
+        find the input data for prediction is retrieved, and a subscription
+        is created to be notified when input data changes.
 
         The notification received looks like:
 
@@ -438,20 +445,16 @@ class BentoAPIServer:
         * extract from the SubscriptionQuery entity, where to get the input data,
         * Finally create a subscription to this data. 
         """
-        # Hard coded notification for now ...
-        # Some generic configuration
-        access_token = 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJIS0xvcnlIcDN6VHlOY0EtNWYwQ19iVC1hbm5ldDFLSUhFT0U1VnN1NjRrIn0.eyJleHAiOjE2MjA2MzE2MDIsImlhdCI6MTYxOTc2NzYwMiwianRpIjoiYThhODhhOGMtM2Q5ZS00ZjEyLWFmNzQtMzNiNzM3ZmVlODAxIiwiaXNzIjoiaHR0cHM6Ly9zc28uZWdsb2JhbG1hcmsuY29tL2F1dGgvcmVhbG1zL3N0ZWxsaW8tZGV2IiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNhNDQxNzE0LTk3YjYtNGJiOS04Y2E3LTBiMjM5NDA0NDNmYSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImRpZGllci1jbGllbnQiLCJzZXNzaW9uX3N0YXRlIjoiNGQxNjgzNGEtNDU5My00YTc0LThjZDEtODYzZTU4OGFmODcyIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJzdGVsbGlvLWNyZWF0b3IiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiZGlkaWVyLWNsaWVudCI6eyJyb2xlcyI6WyJ1bWFfcHJvdGVjdGlvbiJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRJZCI6ImRpZGllci1jbGllbnQiLCJjbGllbnRIb3N0IjoiOTIuMTg0LjEwMi4yNDkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtZGlkaWVyLWNsaWVudCIsImNsaWVudEFkZHJlc3MiOiI5Mi4xODQuMTAyLjI0OSJ9.nWv9vQn0Gt6MnJYsdReSOpQUOweLIKcCZknuauQuWKI3UCqEpLcTLB6M175rUGAauiPe8IIdCnEENEnFOv_kri9tYa5RujKlgLxxoSKqjjV_G-E64VZKlKTi0iPLVm4thRsHRXl_DH-vaoQ8u53MiaHSIqY4IdXcvpNgLTxhNjPwlx887I8MZFDbn63a15NWM3QPbhOBkYnOdnCHif-CVRGu2e0aJ4Dk4g36e_au7DtWCXl7Kia0vR5_14wLUoWftyyjeKK7uelcLJs3eSNWXcjFnYgc9aYSD2I9rVahYZQmm8Niaqtp1DFEXCUrGFiZ9lNExOIItTdY8FJRsKR9zA'
+        access_token = self.ngsild_access_token
         headers = {
             'Authorization': 'Bearer ' + access_token,
             'Content-Type': 'application/ld+json'
         }
-        URL_ENTITIES = 'https://stellio-dev.eglobalmark.com/ngsi-ld/v1/entities/'
-        URL_SUBSCRIPTION = 'https://stellio-dev.eglobalmark.com/ngsi-ld/v1/subscriptions/'
+        URL_ENTITIES = self.ngsild_cb_url + '/ngsi-ld/v1/entities/'
+        URL_SUBSCRIPTION = self.ngsild_cb_url + '/ngsi-ld/v1/subscriptions/'
         SUBSCRIPTION_INPUT_DATA = 'urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3'
         ENDPOINT_INPUT_DATA_CHANGED = 'https://0ba2eb3a-2ff5-4a72-9a6f-f430f9f41ad3.mock.pstmn.io/mlprocessing'
-        AT_CONTEXT = [
-            'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-contexts.jsonld'
-        ]
+        AT_CONTEXT = [ self.ngsild_at_context ]
 
         # mlprocessing_notification = {
         #     'id': 'urn:ngsi-ld:Notification:fadc5090-2425-42f8-b318-1966fa0e0011',
@@ -489,8 +492,8 @@ class BentoAPIServer:
         # Instead we build our own 'hard coded' Subscription to input data
         json_ = {
             '@context': AT_CONTEXT,
-            'id':SUBSCRIPTION_INPUT_DATA,
-            'type':'Subscription',
+            'id': SUBSCRIPTION_INPUT_DATA,
+            'type': 'Subscription',
             'entities': [
                 {
                     'id': ENTITY_INPUT_DATA,
@@ -558,18 +561,18 @@ class BentoAPIServer:
         * Create a NGSI-LD request to update the appropriate Entity/Property
         * Update the Entity/Property via PATCH
         """
+
         # Some generic configuration
-        access_token = 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJIS0xvcnlIcDN6VHlOY0EtNWYwQ19iVC1hbm5ldDFLSUhFT0U1VnN1NjRrIn0.eyJleHAiOjE2MjA2MzE2MDIsImlhdCI6MTYxOTc2NzYwMiwianRpIjoiYThhODhhOGMtM2Q5ZS00ZjEyLWFmNzQtMzNiNzM3ZmVlODAxIiwiaXNzIjoiaHR0cHM6Ly9zc28uZWdsb2JhbG1hcmsuY29tL2F1dGgvcmVhbG1zL3N0ZWxsaW8tZGV2IiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImNhNDQxNzE0LTk3YjYtNGJiOS04Y2E3LTBiMjM5NDA0NDNmYSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImRpZGllci1jbGllbnQiLCJzZXNzaW9uX3N0YXRlIjoiNGQxNjgzNGEtNDU5My00YTc0LThjZDEtODYzZTU4OGFmODcyIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJzdGVsbGlvLWNyZWF0b3IiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiZGlkaWVyLWNsaWVudCI6eyJyb2xlcyI6WyJ1bWFfcHJvdGVjdGlvbiJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRJZCI6ImRpZGllci1jbGllbnQiLCJjbGllbnRIb3N0IjoiOTIuMTg0LjEwMi4yNDkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtZGlkaWVyLWNsaWVudCIsImNsaWVudEFkZHJlc3MiOiI5Mi4xODQuMTAyLjI0OSJ9.nWv9vQn0Gt6MnJYsdReSOpQUOweLIKcCZknuauQuWKI3UCqEpLcTLB6M175rUGAauiPe8IIdCnEENEnFOv_kri9tYa5RujKlgLxxoSKqjjV_G-E64VZKlKTi0iPLVm4thRsHRXl_DH-vaoQ8u53MiaHSIqY4IdXcvpNgLTxhNjPwlx887I8MZFDbn63a15NWM3QPbhOBkYnOdnCHif-CVRGu2e0aJ4Dk4g36e_au7DtWCXl7Kia0vR5_14wLUoWftyyjeKK7uelcLJs3eSNWXcjFnYgc9aYSD2I9rVahYZQmm8Niaqtp1DFEXCUrGFiZ9lNExOIItTdY8FJRsKR9zA'
+        access_token = self.ngsild_access_token
         headers = {
             'Authorization': 'Bearer ' + access_token,
             'Content-Type': 'application/ld+json'
         }
         RIVER_SIAGNE_UUID = 'urn:ngsi-ld:River:014f5730-72ab-4554-a106-afbe5d4d9d26'
         MLMODEL_UUID = 'urn:ngsi-ld:MLModel:flow:predict'
-        URL_ENTITIES = 'https://stellio-dev.eglobalmark.com/ngsi-ld/v1/entities/'
-        AT_CONTEXT = [
-            'https://raw.githubusercontent.com/easy-global-market/ngsild-api-data-models/master/mlaas/jsonld-contexts/mlaas-precipitation-contexts.jsonld'
-        ]
+        URL_ENTITIES = self.ngsild_cb_url + '/ngsi-ld/v1/entities/'
+        AT_CONTEXT = [ self.ngsild_at_context ]
+
 
         # Extract input data from NGSLI-LD notification
         # input_data_notification = {
@@ -633,12 +636,12 @@ class BentoAPIServer:
             ]
         }
 
-        URL_PATCH_FLOW = URL_ENTITIES+RIVER_SIAGNE_UUID+'/attrs'
+        URL_PATCH_FLOW = URL_ENTITIES + RIVER_SIAGNE_UUID + '/attrs'
         r = requests.post(URL_PATCH_FLOW, json=json_, headers=headers)
         print(f'patch status code {r.status_code}')
 
         # Finally, respond to the initial received request (notification)
-        # with empty 200        
+        # with empty 200
         response = make_response(
             '',
             200,

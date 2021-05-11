@@ -8,22 +8,21 @@ logger = logging.getLogger('bentoml.test')
 
 
 class ThreadWithResult(threading.Thread):
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
+    def __init__(
+        self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None
+    ):
         def function():
             self.result = target(*args, **kwargs)
+
         super().__init__(group=group, target=function, name=name, daemon=daemon)
 
 
 def cli(svc, cmd, *args):
     bento_tag = f'{svc.name}:{svc.version}'
     proc = subprocess.Popen(
-        [
-            'bentoml',
-            cmd,
-            bento_tag,
-            *args,
-        ]
-        , stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        ['bentoml', cmd, bento_tag, *args],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     stdout = proc.stdout.read().decode('utf-8')
     stderr = proc.stderr.read().decode('utf-8')
@@ -35,21 +34,23 @@ def test_lock():
     svc.pack('model', [1, 2, 3])
     svc.save()
 
-    thread1 = ThreadWithResult(target=cli, args=(svc, 'containerize','-t','imagetag'))
-    thread2 = ThreadWithResult(target=cli, args=(svc, 'delete', '-y',))
+    containerize_thread = ThreadWithResult(
+        target=cli, args=(svc, 'containerize', '-t', 'imagetag')
+    )
+    delete_thread = ThreadWithResult(target=cli, args=(svc, 'delete', '-y'))
 
-    thread1.start()
-    time.sleep(1)
-    thread2.start()
+    containerize_thread.start()
+    time.sleep(0.1)
+    delete_thread.start()
 
-    thread1.join()
-    thread2.join()
-    containerize_output = "".join(list(thread1.result))
-    delete_output = "".join(list(thread2.result))
+    containerize_thread.join()
+    delete_thread.join()
+    containerize_output = "".join(list(containerize_thread.result))
+    delete_output = "".join(list(delete_thread.result))
 
     # make sure both commands run successfully
     print(containerize_output)
     print(delete_output)
-    assert(f'Build container image: imagetag:{svc.version}' in containerize_output)
-    assert("Failed to acquire write lock, another lock held. Retrying" in delete_output)
-    assert(f"Deleted {svc.name}:{svc.version}" in delete_output)
+    assert f'Build container image: imagetag:{svc.version}' in containerize_output
+    assert "Failed to acquire write lock, another lock held. Retrying" in delete_output
+    assert f"Deleted {svc.name}:{svc.version}" in delete_output

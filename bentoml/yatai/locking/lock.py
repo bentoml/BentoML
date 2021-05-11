@@ -1,6 +1,4 @@
 from contextlib import contextmanager
-from datetime import datetime
-
 from bentoml.exceptions import LockUnavailable
 
 import logging
@@ -69,12 +67,13 @@ def lock(
 
                 # try to commit all locks to db
                 sess.commit()
+                logger.debug("Session acquired")
+                for lck in locks:
+                    op = 'READ' if lck[1] == LOCK_STATUS.read_lock else 'WRITE'
+                    logger.debug(f"\t{op} on {lck[0]}")
+                start = time.time()
 
                 # return locked session to user
-                logger.debug("Session acquired")
-                for lock in locks:
-                    logger.debug(f"\t{'READ' if lock[1] == LOCK_STATUS.read_lock else 'WRITE'} on {lock[0]}")
-                start = time.time()
                 yield sess, lock_objs
 
                 # release all locks

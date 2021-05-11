@@ -30,7 +30,7 @@ class Lock(Base):
             sess.delete(self)
 
     # renews lock for `ttl_min` more min
-    def renew(self, sess, ttl_min):
+    def renew(self, ttl_min):
         now = datetime.datetime.now()
         self.ttl = now + datetime.timedelta(minutes=ttl_min)
 
@@ -79,7 +79,7 @@ class LockStore(object):
             # current state is already read_lock, free to acquire read_lock
             # (multiple read_locks can be concurrently held)
             # bump ttl
-            existing_lock.renew(sess, ttl_min)
+            existing_lock.renew(ttl_min)
             existing_lock.locks_held += 1
             return existing_lock
         else:

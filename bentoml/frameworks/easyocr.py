@@ -73,6 +73,7 @@ class EasyOCRArtifact(BentoServiceArtifact):
     ):  # pylint:disable=arguments-differ
         try:
             import easyocr  # noqa # pylint: disable=unused-import
+
             assert easyocr.__version__ >= "1.3"
         except ImportError:
             raise MissingDependencyException(

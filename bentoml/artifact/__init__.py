@@ -44,7 +44,7 @@ from bentoml.frameworks.spacy import SpacyModelArtifact
 from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
 from bentoml.frameworks.xgboost import XgboostModelArtifact
 from bentoml.frameworks.paddle import PaddlePaddleModelArtifact  # noqa: E402
-from bentoml.frameworks.easyocr import EasyOCRArtifact # noqa: E402
+from bentoml.frameworks.easyocr import EasyOCRArtifact  # noqa: E402
 
 __all__ = [
     "ArtifactCollection",

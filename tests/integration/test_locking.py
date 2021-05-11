@@ -2,8 +2,10 @@ import logging
 import time
 import threading
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
-import concurrent.futures
 import subprocess
+
+logger = logging.getLogger('bentoml.test')
+
 
 class ThreadWithResult(threading.Thread):
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
@@ -11,7 +13,6 @@ class ThreadWithResult(threading.Thread):
             self.result = target(*args, **kwargs)
         super().__init__(group=group, target=function, name=name, daemon=daemon)
 
-logger = logging.getLogger('bentoml.test')
 
 def cli(svc, cmd, *args):
     bento_tag = f'{svc.name}:{svc.version}'
@@ -28,27 +29,27 @@ def cli(svc, cmd, *args):
     stderr = proc.stderr.read().decode('utf-8')
     return stdout, stderr
 
+
 def test_lock():
     svc = ExampleBentoService()
     svc.pack('model', [1, 2, 3])
     svc.save()
 
-    thread1 = ThreadWithResult(target=cli, args=(svc, 'containerize',))
+    thread1 = ThreadWithResult(target=cli, args=(svc, 'containerize','-t','imagetag'))
     thread2 = ThreadWithResult(target=cli, args=(svc, 'delete', '-y',))
 
-    start = time.time()
     thread1.start()
-    time.sleep(5)
+    time.sleep(1)
     thread2.start()
 
     thread1.join()
     thread2.join()
-    end = time.time()
-    print(f">>> thread {end-start}s elapsed")
-    print("$ containerize")
-    for l in thread1.result:
-        print(l)
-    print("$ delete")
-    for l in thread2.result:
-        print(l)
-    assert(1 == 2)
+    containerize_output = "".join(list(thread1.result))
+    delete_output = "".join(list(thread2.result))
+
+    # make sure both commands run successfully
+    print(containerize_output)
+    print(delete_output)
+    assert(f'Build container image: imagetag:{svc.version}' in containerize_output)
+    assert("Failed to acquire write lock, another lock held. Retrying" in delete_output)
+    assert(f"Deleted {svc.name}:{svc.version}" in delete_output)

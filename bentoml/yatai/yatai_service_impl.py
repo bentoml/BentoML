@@ -525,7 +525,6 @@ def get_yatai_service_impl(base=object):
             bento_id = f"{request.bento_name}_{request.bento_version}"
             with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
                 try:
-                    start = time.time()
                     ensure_docker_available_or_raise()
                     tag = request.tag
                     if tag is None or len(tag) == 0:
@@ -579,8 +578,6 @@ def get_yatai_service_impl(base=object):
                                 )
                             except docker.errors.APIError as error:
                                 raise YataiRepositoryException(error)
-                        end = time.time()
-                        print(f"***** internal elapsed {end-start}s \n")
                         return ContainerizeBentoResponse(status=Status.OK(), tag=tag)
                 except BentoMLException as e:
                     logger.error(f"RPC ERROR ContainerizeBento: {e}")

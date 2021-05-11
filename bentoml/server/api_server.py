@@ -566,8 +566,10 @@ class BentoAPIServer:
         # Create NGSI-LD request to update Entity/Property
         # Here updating 'flow' Property of the Siagne Entity
         flow_prediction = round(float(np.array(flow_prediction).squeeze()), 2)
-        timezone_France = pytz.timezone('Europe/Paris')
-        predictedAt = timezone_France.localize(datetime.now().replace(microsecond=0)).isoformat()
+        # timezone_France = pytz.timezone('Europe/Paris')
+        timezone_GMT = pytz.timezone('GMT')
+        predictedAt = timezone_GMT.localize(datetime.now().replace(microsecond=0)).isoformat()
+        logger.info('predictedAt UTC: %s', predictedAt)
 
         json_ = {
             '@context': AT_CONTEXT,

@@ -18,18 +18,21 @@ class Lock(Base):
     id = Column(Integer, primary_key=True)
     resource_id = Column(Integer, nullable=False, unique=True)
     lock_status = Column(Enum(LOCK_STATUS))
+    locks_held = Column(Integer)
     ttl = Column(DateTime)
 
     # releases current lock
     def release(self, sess):
-        sess.delete(self)
-        sess.commit()
+        self.locks_held -= 1
+
+        # only delete lock row if no references left
+        if self.locks_held == 0:
+            sess.delete(self)
 
     # renews lock for `ttl_min` more min
     def renew(self, sess, ttl_min):
         now = datetime.datetime.now()
         self.ttl = now + datetime.timedelta(minutes=ttl_min)
-        sess.commit()
 
 
 class LockStore(object):
@@ -53,6 +56,7 @@ class LockStore(object):
             lock.lock_status = lock_type
             lock.resource_id = resource_id
             lock.ttl = ttl
+            lock.locks_held = 1
             sess.add(lock)
             return lock
 
@@ -61,6 +65,9 @@ class LockStore(object):
             existing_lock.lock_status = lock_type
             existing_lock.resource_id = resource_id
             existing_lock.ttl = ttl
+
+            # locks_held can be held constant, we're just
+            # overwriting existing lock
             return existing_lock
 
         # lock already exists
@@ -73,6 +80,7 @@ class LockStore(object):
             # (multiple read_locks can be concurrently held)
             # bump ttl
             existing_lock.renew(sess, ttl_min)
+            existing_lock.locks_held += 1
             return existing_lock
         else:
             # acquire write lock

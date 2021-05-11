@@ -393,24 +393,6 @@ class BentoAPIServer:
             methods=["POST"]
         )
 
-        # self.app.add_url_rule(
-        #     rule="/ngsi-ld/ml/predict-test",
-        #     endpoint="ml-predict-test",
-        #     view_func=self.handle_ml_predict_test,
-        #     methods=["POST"]
-        # )
-
-    # def handle_ml_predict_test(self):
-    #     """
-    #     PoC of calling the embedded bento service.
-
-    #     Works great if we have only running, what if more than one?
-    #     """
-    #     predict_api = self.bento_service.inference_apis[0]
-    #     predict_req = Request.from_values(data=str([[50.50]]))
-    #     response = predict_api.handle_request(predict_req)
-    #     return response
-
     def handle_ml_processing(self):
         """
         Handle receipt of a notification from subscription to

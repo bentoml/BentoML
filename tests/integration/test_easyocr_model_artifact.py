@@ -6,8 +6,10 @@ from tests.bento_service_examples.easyocr_service import EasyOCRService
 from bentoml.yatai.client import YataiClient
 
 import easyocr
+import imageio
 
 TEST_RESULT = ['西', '愚园路', '东', '315', '309', 'W', 'Yuyuan Rd。', 'E']
+IMAGE_PATH = "./integration/chinese.jpg"
 
 def test_easyocr_artifact_packs():
     svc = EasyOCRService()
@@ -19,14 +21,14 @@ def test_easyocr_artifact_packs():
         download_enabled=True, recog_network=recog_network )   
     svc.pack('chinese_small', model, lang_list=lang_list, recog_network= recog_network)
 
-    assert [x[1] for x in model.readtext("./chinese.jpg")] == 
+    assert [x[1] for x in model.readtext(IMAGE_PATH)] == (
      TEST_RESULT
     ), 'Run inference before saving the artifact'
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
     
-    assert [x[1] for x in loaded_svc.readtext("./chinese.jpg")] == 
+    assert loaded_svc.predict(imageio.imread(IMAGE_PATH))['text'] == (
      TEST_RESULT
     ),  'Run inference after saving the artifact'
 

@@ -14,10 +14,36 @@ class EasyOCRArtifact(BentoServiceArtifact):
 
     Raises:
         MissingDependencyError: easyocr>=1.3 package is required for EasyOCRArtifact 
+        InvalidArgument: invalid argument type, model being packed
+            must be easyocr.easyocr.Reader
 
-    Example Usage:
+    Example usage:
 
-    #TODO 
+    >>> import bentoml
+    >>> from bentoml.frameworks.easyocr import EasyOCRArtifact
+    >>> from bentoml.adapters import ImageInput
+    >>>
+    >>> @bentoml.env(pip_packages=["easyocr>=1.3.0"])
+    >>> @bentoml.artifacts([EasyOCRArtifact("chinese_small")])
+    >>> class EasyOCRService(bentoml.BentoService):
+    >>>     @bentoml.api(input=ImageInput(), batch=False)
+    >>>     def predict(self, image):
+    >>>         reader = self.artifacts.chinese_small
+    >>>         raw_results = reader.readtext(np.array(image))
+    >>>         text_instances = [x[1] for x in raw_results]
+    >>>         return {"text" : text_instances}
+    >>>
+    >>> import easyocr
+    >>> service = EasyOCRService()
+    >>>
+    >>> lang_list = ['ch_sim', 'en']
+    >>> recog_network = "zh_sim_g2"
+    >>>
+    >>> model = easyocr.Reader(lang_list=lang_list, download_enabled=True, recog_network=recog_network)   
+    >>> service.pack('chinese_small', model, lang_list=lang_list, recog_network= recog_network)
+    >>>
+    >>> saved_path = service.save()
+
     """
 
     def __init__(self, name):
@@ -39,6 +65,12 @@ class EasyOCRArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "easyocr>=1.3 package is required to use EasyOCRArtifact"
             )
+        
+        if not (type(easyocr_model) is easyocr.easyocr.Reader) :
+            raise InvalidArgument(
+                "'easyocr_model' must be of type  easyocr.easyocr.Reader"
+            )
+
         self._model = easyocr_model
         self._detect_model = detect_model
         self._recog_network = recog_network
@@ -50,7 +82,7 @@ class EasyOCRArtifact(BentoServiceArtifact):
 
         return self
 
-    def load(self, path, gpu=False):
+    def load(self, path):
         try:
             import easyocr  # noqa # pylint: disable=unused-import
             assert easyocr.__version__ >= "1.3"
@@ -62,7 +94,7 @@ class EasyOCRArtifact(BentoServiceArtifact):
         with open(os.path.join(path, f"{self._name}.json"), "r") as f:
             model_params = json.load(f)
 
-        model = easyocr.Reader(model_storage_directory=path, gpu=gpu, download_enabled=False, **model_params) 
+        model = easyocr.Reader(model_storage_directory=path, download_enabled=False, **model_params) 
         self._model = model
         
         return self.pack(model)

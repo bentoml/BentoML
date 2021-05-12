@@ -6,7 +6,7 @@ import imageio
 import easyocr
 
 TEST_RESULT = ['西', '愚园路', '东', '315', '309', 'W', 'Yuyuan Rd。', 'E']
-IMAGE_PATH = "./integration/chinese.jpg"
+IMAGE_PATH = "./tests/integration/chinese.jpg"
 
 
 def test_easyocr_artifact_packs():

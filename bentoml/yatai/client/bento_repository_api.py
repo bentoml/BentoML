@@ -32,6 +32,7 @@ from bentoml.utils import (
     is_s3_url,
     is_gcs_url,
     _archive_directory_to_tar,
+    _extract_tarfile_to_directory,
 )
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
@@ -67,19 +68,29 @@ yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 DEFAULT_UPLOAD_CHUNK_SIZE = 1024 * 1024  # 1M
 
 
-class BentoBundleUploadRequest:
+class BentoBundleUploadRequests:
+    """
+    A class for iterating over a file to generate upload bento requests
+
+    Args:
+        bento_name: str
+        bento_version: str
+        file_path: path
+        chunk_size optional: int
+    """
+
     def __init__(
         self,
         bento_name,
         bento_version,
-        bundle_path,
+        file_path,
         chunk_size=DEFAULT_UPLOAD_CHUNK_SIZE,
     ):
         self.bento_name = bento_name
         self.bento_version = bento_version
         self.chunk_size = chunk_size
-        self.bundle = open(bundle_path, 'rb')
-        self.bundle_size = os.path.getsize(bundle_path)
+        self.bundle = open(file_path, 'rb')
+        self.bundle_size = os.path.getsize(file_path)
         self.bundle_chunk_count = math.ceil(float(self.bundle_size) / self.chunk_size)
         self.sent_chunk_count = 0
         self.file_index = 0
@@ -243,15 +254,17 @@ class BentoRepositoryAPIClient:
             )
 
         if response.uri.type == BentoUri.LOCAL:
+            # For remote yatai service, call upload method.
             if isinstance(self.yatai_service, YataiStub):
-                upload_result = self.upload_bento(
-                    bento_service_metadata.name,
-                    bento_service_metadata.version,
-                    saved_bento_path,
-                )
-                if upload_result.status.status_code == status_pb2.Status.OK:
+                try:
+                    self.upload_bento(
+                        bento_service_metadata.name,
+                        bento_service_metadata.version,
+                        saved_bento_path,
+                    )
                     upload_status = UploadStatus.DONE
-                else:
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.error(e)
                     upload_status = UploadStatus.ERROR
             else:
                 if os.path.exists(response.uri.uri):
@@ -283,14 +296,12 @@ class BentoRepositoryAPIClient:
                 tar.add(saved_bento_path, arcname=bento_service_metadata.name)
             fileobj.seek(0, 0)
 
-            if response.uri.type == BentoUri.S3:
-                http_response = requests.put(
-                    response.uri.s3_presigned_url, data=fileobj
-                )
-            elif response.uri.type == BentoUri.GCS:
-                http_response = requests.put(
-                    response.uri.gcs_presigned_url, data=fileobj
-                )
+            upload_path = (
+                response.uri.s3_presigned_url
+                if response.uri.type == BentoUri.S3
+                else response.uri.gcs_presigned_url
+            )
+            http_response = requests.put(upload_path, data=fileobj)
 
             if http_response.status_code != 200:
                 self._update_bento_upload_progress(
@@ -331,11 +342,23 @@ class BentoRepositoryAPIClient:
         self.yatai_service.UpdateBento(update_bento_req)
 
     def download_to_directory(self, bento_pb, target_dir):
-        if bento_pb.uri.s3_presigned_url:
-            bento_service_bundle_path = bento_pb.uri.s3_presigned_url
-        elif bento_pb.uri.gcs_presigned_url:
-            bento_service_bundle_path = bento_pb.uri.gcs_presigned_url
-        else:
+        """
+        Download or move bundle bundle to target directory
+
+        Args:
+            bento_pb: bento bundle protobuf dict
+            target_dir: path
+
+        Returns:
+            None
+        """
+        if bento_pb.uri.type == BentoUri.S3 or bento_pb.uri.type == BentoUri.GCS:
+            bento_service_bundle_path = (
+                bento_pb.uri.s3_presigned_url
+                if bento_pb.uri.type == BentoUri.S3
+                else bento_pb.uri.gcs_presigned_url
+            )
+        elif bento_pb.uri.type == BentoUri.LOCAL:
             # Download from remote yatai otherwise provide the file path.
             if isinstance(self.yatai_service, YataiStub):
                 bento_service_bundle_path = self.download_bento(
@@ -343,6 +366,10 @@ class BentoRepositoryAPIClient:
                 )
             else:
                 bento_service_bundle_path = bento_pb.uri.uri
+        else:
+            raise BentoMLException(
+                f'Unrecognized Bento bundle storage type {bento_pb.uri.type}'
+            )
 
         safe_retrieve(bento_service_bundle_path, target_dir)
 
@@ -603,29 +630,48 @@ class BentoRepositoryAPIClient:
 
     def upload_bento(self, bento_name, bento_version, saved_bento_bundle_path):
         with TempDirectory() as tarfile_dir:
-            tarfile_path, _ = _archive_directory_to_tar(
-                saved_bento_bundle_path, tarfile_dir, bento_version
-            )
-            stream_request = BentoBundleUploadRequest(
-                bento_name, bento_version, tarfile_path
-            )
-            # TODO Need handle failed and retry
-            result = self.yatai_service.UploadBento(iter(stream_request))
-            return result
+            try:
+                tarfile_path, _ = _archive_directory_to_tar(
+                    saved_bento_bundle_path, tarfile_dir, bento_version
+                )
+                result = self.yatai_service.UploadBento(
+                    iter(
+                        BentoBundleUploadRequests(
+                            bento_name, bento_version, tarfile_path
+                        )
+                    )
+                )
+                if result.status.status_code != status_pb2.Status.OK:
+                    raise BentoMLException(result.status.error_message)
+            except BentoMLException as e:
+                raise BentoMLException(
+                    f'Failed to upload {bento_name}:{bento_version} to remote yatai '
+                    f'server {e}'
+                )
 
     def download_bento(self, bento_name, bento_version):
         with TempDirectory(cleanup=False) as temp_dir:
-            temp_tar_path = os.path.join(temp_dir, f'{uuid.uuid4().hex[:12]}.tar')
-            response_iterator = self.yatai_service.DownloadBento(
-                DownloadBentoRequest(bento_name=bento_name, bento_version=bento_version)
-            )
-            file = open(temp_tar_path, 'wb+')
-            for response in response_iterator:
-                file.write(response.bento_bundle)
-            file.seek(0)
-            tar = tarfile.open(fileobj=file, mode='r:gz')
-            tar.extractall(path=temp_dir)
-            tar.close()
-            file.close()
-            temp_bundle_path = os.path.join(temp_dir, f'{bento_name}_{bento_version}')
-            return temp_bundle_path
+            try:
+                temp_tar_path = os.path.join(temp_dir, f'{uuid.uuid4().hex[:12]}.tar')
+                response_iterator = self.yatai_service.DownloadBento(
+                    DownloadBentoRequest(
+                        bento_name=bento_name, bento_version=bento_version
+                    )
+                )
+                file = open(temp_tar_path, 'wb+')
+                for response in response_iterator:
+                    if response.status.status_code != status_pb2.Status.OK:
+                        raise BentoMLException(response.status.error_message)
+                    file.write(response.bento_bundle)
+                file.seek(0)
+                temp_bundle_path = os.path.join(
+                    temp_dir, f'{bento_name}_{bento_version}'
+                )
+                _extract_tarfile_to_directory(file, temp_bundle_path)
+                file.close()
+                return temp_bundle_path
+            except BentoMLException as e:
+                raise BentoMLException(
+                    f'Failed to download {bento_name}:{bento_version} from remote '
+                    f'yatai server {e}'
+                )

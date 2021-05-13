@@ -64,11 +64,17 @@ from bentoml.yatai.repository.base_repository import BaseRepository
 from bentoml.yatai.db import DB
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
-from bentoml.utils import ProtoMessageToDict
+from bentoml.utils import (
+    ProtoMessageToDict,
+    _extract_tarfile_to_directory,
+    _archive_directory_to_tar,
+)
 from bentoml.yatai.validator import validate_deployment_pb
 from bentoml import __version__ as BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_CHUNK_SIZE = 1024 * 1024  # 1M
 
 
 def track_deployment_delete(deployment_operator, created_at, force_delete=False):
@@ -587,11 +593,6 @@ def get_yatai_service_impl(base=object):
                     return ContainerizeBentoResponse(status=Status.INTERNAL(e))
 
         def UploadBento(self, request_iterator, context=None):
-            # 1. create temp directory for the file
-            # 2. write bytes into the tar file
-            # 3. unzip tar to the fs storage
-            # 4. update the path for the bento
-            # 5. return response
             with self.db.create_session() as sess:
                 try:
                     with TempDirectory() as temp_dir:
@@ -611,14 +612,12 @@ def get_yatai_service_impl(base=object):
                         )
                         file.seek(0)
                         if bento_pb:
-                            # save the content
+                            # If there is a directory exist, it will be removed for the
+                            # newly uploaded one.
                             if os.path.exists(bento_pb.uri.uri):
                                 shutil.rmtree(bento_pb.uri.uri)
-                            tar = tarfile.open(fileobj=file, mode='r:gz')
-                            # the tar is build an extra directory...
-                            bento_bundle_root, _ = os.path.split(bento_pb.uri.uri)
-                            tar.extractall(path=bento_bundle_root)
-                            tar.close()
+                            # Need to extract the bundle to the uri location.
+                            _extract_tarfile_to_directory(file, bento_pb.uri.uri)
                             file.close()
                             return UploadBentoResponse(status=Status.OK())
                         else:
@@ -647,21 +646,22 @@ def get_yatai_service_impl(base=object):
                             temp_dir, f'{bento_pb.name}_{bento_pb.version}.tar'
                         )
                         file = open(tarfile_path, 'wb+')
-                        with tarfile.open(mode='w:gz', fileobj=file) as tar:
-                            tar.add(
-                                bento_pb.uri.uri,
-                                arcname=f'{bento_pb.name}_{bento_pb.version}',
-                            )
+                        _archive_directory_to_tar(
+                            bento_pb.uri.uri,
+                            temp_dir,
+                            f'{bento_pb.name}_{bento_pb.version}',
+                        )
                         file.seek(0)
                         file_size = os.path.getsize(tarfile_path)
-                        chunk_size = 1024 * 1024  # 1M
-                        chunk_count = math.ceil(float(file_size) / chunk_size)
+                        chunk_count = math.ceil(float(file_size) / DEFAULT_CHUNK_SIZE)
                         sent_chunk_count = 0
                         file_index = 0
                         while sent_chunk_count < chunk_count:
-                            current_file_end = min(file_size, file_index + chunk_size)
+                            current_file_end = min(
+                                file_size, file_index + DEFAULT_CHUNK_SIZE
+                            )
                             file.seek(file_index)
-                            chunk = file.read(chunk_size)
+                            chunk = file.read(DEFAULT_CHUNK_SIZE)
                             file_index = current_file_end
                             sent_chunk_count += 1
                             response = DownloadBentoResponse(bento_bundle=chunk)

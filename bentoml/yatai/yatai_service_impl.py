@@ -13,6 +13,7 @@
 # limitations under the License.
 import os
 import shutil
+import tarfile
 import uuid
 import logging
 from datetime import datetime
@@ -63,8 +64,7 @@ from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import (
     ProtoMessageToDict,
-    _extract_tarfile_to_directory,
-    _archive_directory_to_tar,
+    archive_directory_to_tar,
     get_file_size_and_chunk_count,
 )
 from bentoml.yatai.validator import validate_deployment_pb
@@ -613,18 +613,17 @@ def get_yatai_service_impl(base=object):
                             # newly uploaded one.
                             if os.path.exists(bento_pb.uri.uri):
                                 shutil.rmtree(bento_pb.uri.uri)
-                            # Need to extract the bundle to the uri location.
-                            _extract_tarfile_to_directory(file, bento_pb.uri.uri)
-                            file.close()
-                            return UploadBentoResponse(status=Status.OK())
+                            with tarfile.open(fileobj=file, mode='r:gz') as tar:
+                                tar.extractall(path=bento_pb.uri.uri)
+                            result_status = Status.OK()
                         else:
-                            return UploadBentoResponse(
-                                status=Status.NOT_FOUND(
-                                    "BentoService `{}:{}` is not found".format(
-                                        bento_name, bento_version
-                                    )
+                            result_status = Status.NOT_FOUND(
+                                "BentoService `{}:{}` is not found".format(
+                                    bento_name, bento_version
                                 )
                             )
+                        file.close()
+                        return UploadBentoResponse(status=result_status)
                 except BentoMLException as e:
                     logger.error("RPC ERROR GetBento: %s", e)
                     return UploadBentoResponse(status=e.status_proto)
@@ -643,7 +642,7 @@ def get_yatai_service_impl(base=object):
                             temp_dir, f'{bento_pb.name}_{bento_pb.version}.tar'
                         )
                         file = open(tarfile_path, 'wb+')
-                        _archive_directory_to_tar(
+                        archive_directory_to_tar(
                             bento_pb.uri.uri,
                             temp_dir,
                             f'{bento_pb.name}_{bento_pb.version}',

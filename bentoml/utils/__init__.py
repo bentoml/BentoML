@@ -259,25 +259,14 @@ def resolve_bento_bundle_uri(bento_pb):
         return bento_pb.uri.uri
 
 
-def _archive_directory_to_tar(source_dir, tarfile_dir, arcname):
-    file_name = f'{arcname}.tar'
+def archive_directory_to_tar(source_dir, tarfile_dir, tarfile_name):
+    file_name = f'{tarfile_name}.tar'
     tarfile_path = f'{tarfile_dir}/{file_name}'
     with tarfile.open(tarfile_path, mode="w:gz") as tar:
         # Use arcname to prevent storing the full path to the bundle,
-        # from /root/.../bundle to {arcname}/bundle
-        tar.add(source_dir, arcname=arcname)
+        # from source_dir/path/to/file to path/to/file
+        tar.add(source_dir, arcname='')
     return tarfile_path, file_name
-
-
-def _extract_tarfile_to_directory(fileobj, target_dir, mode='r:gz'):
-    tar = tarfile.open(fileobj=fileobj, mode=mode)
-    for member in tar.getmembers():
-        if member.isreg():  # skip if the TarInfo is not files
-            # remove the arcname by reset the member name. From
-            # arcname/path/path/file to path/path/file
-            member.name = '/'.join(member.name.split('/')[1:])
-            tar.extract(member, target_dir)
-    tar.close()
 
 
 def get_file_size_and_chunk_count(file_path):

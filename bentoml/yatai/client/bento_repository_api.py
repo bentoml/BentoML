@@ -30,8 +30,7 @@ from bentoml.utils import (
     resolve_bento_bundle_uri,
     is_s3_url,
     is_gcs_url,
-    _archive_directory_to_tar,
-    _extract_tarfile_to_directory,
+    archive_directory_to_tar,
     get_file_size_and_chunk_count,
 )
 from bentoml.utils.lazy_loader import LazyLoader
@@ -625,19 +624,30 @@ class BentoRepositoryAPIClient:
     def upload_bento(self, bento_name, bento_version, saved_bento_bundle_path):
         with TempDirectory() as tarfile_dir:
             try:
-                tarfile_path, _ = _archive_directory_to_tar(
+                tarfile_path, _ = archive_directory_to_tar(
                     saved_bento_bundle_path, tarfile_dir, bento_version
+                )
+                initial_request = UploadBentoRequest(
+                    bento_name=bento_name, bento_version=bento_version
                 )
                 result = self.yatai_service.UploadBento(
                     iter(
+                        initial_request,
                         BentoUploadStreamingRequests(
                             bento_name, bento_version, tarfile_path
-                        )
+                        ),
                     )
                 )
                 if result.status.status_code != status_pb2.Status.OK:
                     raise BentoMLException(result.status.error_message)
             except BentoMLException as e:
+                logger.error(f'RPC ERROR upload bento: {e}')
+                raise BentoMLException(
+                    f'Failed to upload {bento_name}:{bento_version} to remote yatai '
+                    f'server {e}'
+                )
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(f'ERROR upload bento: {e}')
                 raise BentoMLException(
                     f'Failed to upload {bento_name}:{bento_version} to remote yatai '
                     f'server {e}'
@@ -661,11 +671,19 @@ class BentoRepositoryAPIClient:
                 temp_bundle_path = os.path.join(
                     temp_dir, f'{bento_name}_{bento_version}'
                 )
-                _extract_tarfile_to_directory(file, temp_bundle_path)
+                with tarfile.open(fileobj=file, mode='r:;gz') as tar:
+                    tar.extractall(path=temp_bundle_path)
                 file.close()
                 return temp_bundle_path
             except BentoMLException as e:
+                logger.error(f'RPC ERROR download bento: {e}')
                 raise BentoMLException(
                     f'Failed to download {bento_name}:{bento_version} from remote '
                     f'yatai server {e}'
+                )
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error(f'ERROR download bento: {e}')
+                raise BentoMLException(
+                    f'Failed to download {bento_name}:{bento_version} to remote yatai '
+                    f'server {e}'
                 )

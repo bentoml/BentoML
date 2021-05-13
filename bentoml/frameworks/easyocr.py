@@ -56,6 +56,7 @@ class EasyOCRArtifact(BentoServiceArtifact):
         self._detect_model = None
         self._recog_network = None
         self._model_params = None
+        self._gpu = None
 
     def set_dependencies(self, env: BentoServiceEnv):
         env.add_pip_packages(["easyocr>=1.3.0"])
@@ -70,6 +71,7 @@ class EasyOCRArtifact(BentoServiceArtifact):
         recog_network="english_g2",
         lang_list=None,
         detect_model="craft_mlt_25k",
+        gpu=False,
     ):  # pylint:disable=arguments-differ
         try:
             import easyocr  # noqa # pylint: disable=unused-import
@@ -90,7 +92,12 @@ class EasyOCRArtifact(BentoServiceArtifact):
         self._model = easyocr_model
         self._detect_model = detect_model
         self._recog_network = recog_network
-        self._model_params = {"lang_list": lang_list, "recog_network": recog_network}
+        self._gpu = gpu
+        self._model_params = {
+            "lang_list": lang_list,
+            "recog_network": recog_network,
+            "gpu": gpu,
+        }
 
         return self
 

@@ -76,10 +76,7 @@ class BentoUploadStreamingRequests:
     """
 
     def __init__(
-        self,
-        bento_name,
-        bento_version,
-        file_path,
+        self, bento_name, bento_version, file_path,
     ):
         self.bento_name = bento_name
         self.bento_version = bento_version

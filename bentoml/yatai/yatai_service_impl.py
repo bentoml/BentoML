@@ -11,12 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import math
 import os
 import shutil
-import tarfile
 import uuid
-from datetime import datetime
 import logging
 from datetime import datetime
 from dependency_injector.wiring import Provide, inject
@@ -68,13 +65,12 @@ from bentoml.utils import (
     ProtoMessageToDict,
     _extract_tarfile_to_directory,
     _archive_directory_to_tar,
+    get_file_size_and_chunk_count,
 )
 from bentoml.yatai.validator import validate_deployment_pb
 from bentoml import __version__ as BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_CHUNK_SIZE = 1024 * 1024  # 1M
 
 
 def track_deployment_delete(deployment_operator, created_at, force_delete=False):
@@ -652,16 +648,17 @@ def get_yatai_service_impl(base=object):
                             f'{bento_pb.name}_{bento_pb.version}',
                         )
                         file.seek(0)
-                        file_size = os.path.getsize(tarfile_path)
-                        chunk_count = math.ceil(float(file_size) / DEFAULT_CHUNK_SIZE)
+                        (
+                            file_size,
+                            chunk_count,
+                            chunk_size,
+                        ) = get_file_size_and_chunk_count(tarfile_path)
                         sent_chunk_count = 0
                         file_index = 0
                         while sent_chunk_count < chunk_count:
-                            current_file_end = min(
-                                file_size, file_index + DEFAULT_CHUNK_SIZE
-                            )
+                            current_file_end = min(file_size, file_index + chunk_size)
                             file.seek(file_index)
-                            chunk = file.read(DEFAULT_CHUNK_SIZE)
+                            chunk = file.read(chunk_size)
                             file_index = current_file_end
                             sent_chunk_count += 1
                             response = DownloadBentoResponse(bento_bundle=chunk)

@@ -15,7 +15,6 @@
 # List of APIs for accessing remote or local yatai service via Python
 
 import io
-import math
 import os
 import logging
 import shutil
@@ -33,6 +32,7 @@ from bentoml.utils import (
     is_gcs_url,
     _archive_directory_to_tar,
     _extract_tarfile_to_directory,
+    get_file_size_and_chunk_count,
 )
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
@@ -64,11 +64,7 @@ logger = logging.getLogger(__name__)
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
-# XXX This could be an yatai config
-DEFAULT_UPLOAD_CHUNK_SIZE = 1024 * 1024  # 1M
-
-
-class BentoBundleUploadRequests:
+class BentoUploadStreamingRequests:
     """
     A class for iterating over a file to generate upload bento requests
 
@@ -84,14 +80,15 @@ class BentoBundleUploadRequests:
         bento_name,
         bento_version,
         file_path,
-        chunk_size=DEFAULT_UPLOAD_CHUNK_SIZE,
     ):
         self.bento_name = bento_name
         self.bento_version = bento_version
-        self.chunk_size = chunk_size
         self.bundle = open(file_path, 'rb')
-        self.bundle_size = os.path.getsize(file_path)
-        self.bundle_chunk_count = math.ceil(float(self.bundle_size) / self.chunk_size)
+        (
+            self.bundle_size,
+            self.bundle_chunk_count,
+            self.chunk_size,
+        ) = get_file_size_and_chunk_count(file_path)
         self.sent_chunk_count = 0
         self.file_index = 0
 
@@ -636,7 +633,7 @@ class BentoRepositoryAPIClient:
                 )
                 result = self.yatai_service.UploadBento(
                     iter(
-                        BentoBundleUploadRequests(
+                        BentoUploadStreamingRequests(
                             bento_name, bento_version, tarfile_path
                         )
                     )

@@ -15,7 +15,7 @@
 import contextlib
 import functools
 import inspect
-from io import StringIO
+import math
 import os
 import socket
 import tarfile
@@ -44,6 +44,8 @@ __all__ = [
 ]
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
+
+DEFAULT_CHUNK_SIZE = 1024 * 1024  # 1M
 
 
 class _Missing(object):
@@ -276,3 +278,9 @@ def _extract_tarfile_to_directory(fileobj, target_dir, mode='r:gz'):
             member.name = '/'.join(member.name.split('/')[1:])
             tar.extract(member, target_dir)
     tar.close()
+
+
+def get_file_size_and_chunk_count(file_path):
+    file_size = os.path.getsize(file_path)
+    chunk_count = math.ceil(float(file_size) / DEFAULT_CHUNK_SIZE)
+    return file_size, chunk_count, DEFAULT_CHUNK_SIZE

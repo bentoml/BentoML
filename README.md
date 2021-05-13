@@ -96,6 +96,7 @@ Standarlize model serving and deployment workflow for teams:
 * Detectron - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#detectron)
 * Paddle - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#paddle)
 * EvalML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#evalml)
+* EasyOCR -[Docs](https://docs.bentoml.org/en/latest/frameworks.html#easyocr)
 
 
 ### Deployment Options

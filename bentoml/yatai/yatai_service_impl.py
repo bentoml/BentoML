@@ -598,10 +598,22 @@ def get_yatai_service_impl(base=object):
                         print(f'saved yatai tar path: {temp_tar_path}')
                         file = open(temp_tar_path, 'wb+')
                         for request in request_iterator:
-                            # XXX need a better way to do this.
-                            bento_name = request.bento_name
-                            bento_version = request.bento_version
-                            file.write(request.bento_bundle)
+                            if request.bento_bundle:
+                                if (
+                                    bento_name == request.bento_name
+                                    and bento_version == request.bento_version
+                                ):
+                                    file.write(request.bento_bundle)
+                                else:
+                                    raise BentoMLException(
+                                        f"Incoming stream request doesn't match with "
+                                        f"initial request info "
+                                        f"{bento_name}:{bento_version} - "
+                                        f"{request.bento_name}:{request.bento_version}"
+                                    )
+                            else:
+                                bento_name = request.bento_name
+                                bento_version = request.bento_version
                         if bento_name is None or bento_version is None:
                             return UploadBentoResponse(status=Status.ABORTED())
                         bento_pb = self.db.metadata_store.get(

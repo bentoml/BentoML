@@ -87,12 +87,19 @@ class BentoUploadStreamingRequests:
         ) = get_file_size_and_chunk_count(file_path)
         self.sent_chunk_count = 0
         self.file_index = 0
+        self.send_init_message = False
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.sent_chunk_count < self.bundle_chunk_count:
+        if self.sent_chunk_count == 0 and self.send_init_message is False:
+            request = UploadBentoRequest(
+                bento_name=self.bento_name, bento_version=self.bento_version,
+            )
+            self.send_init_message = True
+            return request
+        elif self.sent_chunk_count < self.bundle_chunk_count:
             current_file_end = min(self.bundle_size, self.file_index + self.chunk_size)
             self.bundle.seek(self.file_index)
             chunk = self.bundle.read(self.chunk_size)
@@ -627,12 +634,8 @@ class BentoRepositoryAPIClient:
                 tarfile_path, _ = archive_directory_to_tar(
                     saved_bento_bundle_path, tarfile_dir, bento_version
                 )
-                initial_request = UploadBentoRequest(
-                    bento_name=bento_name, bento_version=bento_version
-                )
                 result = self.yatai_service.UploadBento(
                     iter(
-                        initial_request,
                         BentoUploadStreamingRequests(
                             bento_name, bento_version, tarfile_path
                         ),

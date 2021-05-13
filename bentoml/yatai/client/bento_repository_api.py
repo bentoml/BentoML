@@ -671,7 +671,7 @@ class BentoRepositoryAPIClient:
                 temp_bundle_path = os.path.join(
                     temp_dir, f'{bento_name}_{bento_version}'
                 )
-                with tarfile.open(fileobj=file, mode='r:;gz') as tar:
+                with tarfile.open(fileobj=file, mode='r:gz') as tar:
                     tar.extractall(path=temp_bundle_path)
                 file.close()
                 return temp_bundle_path

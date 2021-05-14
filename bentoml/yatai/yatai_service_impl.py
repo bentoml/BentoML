@@ -595,46 +595,43 @@ def get_yatai_service_impl(base=object):
                         temp_tar_path = os.path.join(
                             temp_dir, f'{uuid.uuid4().hex[:12]}.tar'
                         )
-                        print(f'saved yatai tar path: {temp_tar_path}')
-                        file = open(temp_tar_path, 'wb+')
-                        for request in request_iterator:
-                            if not request.bento_bundle:
-                                bento_name = request.bento_name
-                                bento_version = request.bento_version
-                            else:
-                                if (
-                                    bento_name == request.bento_name
-                                    and bento_version == request.bento_version
-                                ):
-                                    file.write(request.bento_bundle)
+                        with open(temp_tar_path, 'wb+') as file:
+                            for request in request_iterator:
+                                if not request.bento_bundle:
+                                    bento_name = request.bento_name
+                                    bento_version = request.bento_version
                                 else:
-                                    raise BentoMLException(
-                                        f"Incoming stream request doesn't match with "
-                                        f"initial request info "
-                                        f"{bento_name}:{bento_version} - "
-                                        f"{request.bento_name}:{request.bento_version}"
-                                    )
-                        if bento_name is None or bento_version is None:
-                            return UploadBentoResponse(status=Status.ABORTED())
-                        bento_pb = self.db.metadata_store.get(
-                            sess, bento_name, bento_version
-                        )
-                        file.seek(0)
-                        if bento_pb:
-                            # If there is a directory exist, it will be removed for the
-                            # newly uploaded one.
-                            if os.path.exists(bento_pb.uri.uri):
-                                shutil.rmtree(bento_pb.uri.uri)
-                            with tarfile.open(fileobj=file, mode='r:gz') as tar:
-                                tar.extractall(path=bento_pb.uri.uri)
-                            result_status = Status.OK()
-                        else:
-                            result_status = Status.NOT_FOUND(
-                                "BentoService `{}:{}` is not found".format(
-                                    bento_name, bento_version
-                                )
+                                    if (
+                                        bento_name == request.bento_name
+                                        and bento_version == request.bento_version
+                                    ):
+                                        file.write(request.bento_bundle)
+                                    else:
+                                        raise BentoMLException(
+                                            f"Incoming stream request doesn't match "
+                                            f"with initial request info "
+                                            f"{bento_name}:{bento_version} - "
+                                            f"{request.bento_name}:"
+                                            f"{request.bento_version}"
+                                        )
+                            bento_pb = self.db.metadata_store.get(
+                                sess, bento_name, bento_version
                             )
-                        file.close()
+                            file.seek(0)
+                            if bento_pb:
+                                # If there is a directory exist, it will be removed
+                                # for the newly uploaded one.
+                                if os.path.exists(bento_pb.uri.uri):
+                                    shutil.rmtree(bento_pb.uri.uri)
+                                with tarfile.open(fileobj=file, mode='r:gz') as tar:
+                                    tar.extractall(path=bento_pb.uri.uri)
+                                result_status = Status.OK()
+                            else:
+                                result_status = Status.NOT_FOUND(
+                                    "BentoService `{}:{}` is not found".format(
+                                        bento_name, bento_version
+                                    )
+                                )
                         return UploadBentoResponse(status=result_status)
                 except BentoMLException as e:
                     logger.error("RPC ERROR GetBento: %s", e)
@@ -653,29 +650,30 @@ def get_yatai_service_impl(base=object):
                         tarfile_path = os.path.join(
                             temp_dir, f'{bento_pb.name}_{bento_pb.version}.tar'
                         )
-                        file = open(tarfile_path, 'wb+')
-                        archive_directory_to_tar(
-                            bento_pb.uri.uri,
-                            temp_dir,
-                            f'{bento_pb.name}_{bento_pb.version}',
-                        )
-                        file.seek(0)
-                        (
-                            file_size,
-                            chunk_count,
-                            chunk_size,
-                        ) = get_file_size_and_chunk_count(tarfile_path)
-                        sent_chunk_count = 0
-                        file_index = 0
-                        while sent_chunk_count < chunk_count:
-                            current_file_end = min(file_size, file_index + chunk_size)
-                            file.seek(file_index)
-                            chunk = file.read(chunk_size)
-                            file_index = current_file_end
-                            sent_chunk_count += 1
-                            response = DownloadBentoResponse(bento_bundle=chunk)
-                            yield response
-                        file.close()
+                        with open(tarfile_path, 'wb+') as file:
+                            archive_directory_to_tar(
+                                bento_pb.uri.uri,
+                                temp_dir,
+                                f'{bento_pb.name}_{bento_pb.version}',
+                            )
+                            file.seek(0)
+                            (
+                                file_size,
+                                chunk_count,
+                                chunk_size,
+                            ) = get_file_size_and_chunk_count(tarfile_path)
+                            sent_chunk_count = 0
+                            file_index = 0
+                            while sent_chunk_count < chunk_count:
+                                current_file_end = min(
+                                    file_size, file_index + chunk_size
+                                )
+                                file.seek(file_index)
+                                chunk = file.read(chunk_size)
+                                file_index = current_file_end
+                                sent_chunk_count += 1
+                                response = DownloadBentoResponse(bento_bundle=chunk)
+                                yield response
                 except BentoMLException as e:
                     logger.error("RPC ERROR GetBento: %s", e)
                     return DownloadBentoResponse(status=e.status_proto)

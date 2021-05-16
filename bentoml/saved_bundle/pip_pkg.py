@@ -20,7 +20,6 @@ import ast
 import zipimport
 import zipfile
 from typing import Dict
-from pkg_resources import Requirement
 
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1
@@ -39,7 +38,7 @@ def parse_requirement_string(rs):
     return name, version
 
 
-def verify_pkg(pkg_req: Requirement):
+def verify_pkg(pkg_req):
     global __mm  # pylint: disable=global-statement
     if __mm is None:
         __mm = ModuleManager()
@@ -133,7 +132,7 @@ class ModuleManager(object):
                     m.name, path, is_local, m.ispkg
                 )
 
-    def verify_pkg(self, pkg_req: Requirement):
+    def verify_pkg(self, pkg_req):
         if pkg_req.name not in self.pip_pkg_map:
             # package does not exist in the current python session
             return EPP_PKG_NOT_EXIST

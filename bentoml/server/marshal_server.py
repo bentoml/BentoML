@@ -14,20 +14,37 @@
 
 import logging
 import multiprocessing
+from dependency_injector.wiring import inject, Provide
 from typing import Optional
 
-import psutil
-from dependency_injector.wiring import Provide as P
-from dependency_injector.wiring import inject
-
-from bentoml.configuration.containers import BentoMLContainer as C
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.marshal.marshal import MarshalService
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 
 
-if psutil.POSIX:
+def gunicorn_marshal_server(
+    default_workers: int = Provide[
+        BentoMLContainer.config.bento_server.microbatch.workers
+    ],
+    default_timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
+    default_outbound_workers: int = Provide[BentoMLContainer.api_server_workers],
+    default_max_request_size: int = Provide[
+        BentoMLContainer.config.bento_server.max_request_size
+    ],
+    default_port: int = Provide[BentoMLContainer.config.bento_server.port],
+    default_enable_microbatch: bool = Provide[
+        BentoMLContainer.config.bento_server.microbatch.enabled
+    ],
+    default_mb_max_batch_size: int = Provide[
+        BentoMLContainer.config.bento_server.microbatch.max_batch_size
+    ],
+    default_mb_max_latency: int = Provide[
+        BentoMLContainer.config.bento_server.microbatch.max_latency
+    ],
+    default_loglevel: str = Provide[BentoMLContainer.config.bento_server.logging.level],
+):
     from gunicorn.app.base import Application
 
     class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
@@ -37,16 +54,16 @@ if psutil.POSIX:
             bundle_path,
             outbound_host,
             outbound_port,
-            workers: int = P[C.config.bento_server.microbatch.workers],
-            timeout: int = P[C.config.bento_server.timeout],
-            outbound_workers: int = P[C.api_server_workers],
-            max_request_size: int = P[C.config.bento_server.max_request_size],
-            port: int = P[C.config.bento_server.port],
-            enable_microbatch: bool = P[C.config.bento_server.microbatch.enabled],
-            mb_max_batch_size: int = P[C.config.bento_server.microbatch.max_batch_size],
-            mb_max_latency: int = P[C.config.bento_server.microbatch.max_latency],
+            workers: int = default_workers,
+            timeout: int = default_timeout,
+            outbound_workers: int = default_outbound_workers,
+            max_request_size: int = default_max_request_size,
+            port: int = default_port,
+            enable_microbatch: bool = default_enable_microbatch,
+            mb_max_batch_size: int = default_mb_max_batch_size,
+            mb_max_latency: int = default_mb_max_latency,
             prometheus_lock: Optional[multiprocessing.Lock] = None,
-            loglevel=P[C.config.bento_server.logging.level],
+            loglevel: str = default_loglevel,
         ):
             self.bento_service_bundle_path = bundle_path
 
@@ -102,11 +119,4 @@ if psutil.POSIX:
             marshal_logger.info("Running micro batch service on :%d", self.port)
             super(GunicornMarshalServer, self).run()
 
-
-else:
-
-    class GunicornMarshalServer:
-        def __init__(self, *args, **kwargs):
-            raise RuntimeError(
-                "GunicornMarshalServer is not supported in non-POSIX environments."
-            )
+    return GunicornMarshalServer

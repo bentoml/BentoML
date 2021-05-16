@@ -20,7 +20,6 @@ import logging
 import tarfile
 
 import click
-import requests
 import shutil
 
 from bentoml.exceptions import BentoMLException
@@ -156,6 +155,7 @@ class BentoRepositoryAPIClient:
             return self.upload_from_dir(tmpdir, labels)
 
     def upload_from_dir(self, saved_bento_path, labels=None):
+        import requests
         from bentoml.yatai.db.stores.label import _validate_labels
 
         bento_service_metadata = load_bento_service_metadata(saved_bento_path)

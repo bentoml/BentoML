@@ -49,19 +49,21 @@ spellcheck-doc: ## Spell check documentation
 start-yatai-debug: ## Start YataiService in debug mode
 	bentoml yatai-service-start --debug || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
 start-grpcui: ## Start gPRC Web UI
-	grpcui -plain text localhost:50051 || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
+	grpcui -plaintext localhost:50051 || (echo "Error starting... You may need to run 'make install-yatai-deps'"; exit 1)
 install-yatai-deps: ## Install dependencies to debug YataiService
 	pip install -e ".[dev]"
 	go get github.com/fullstorydev/grpcui
-	go install github.com/fullstorydev/grpcui/cmd/grpcui
+	go install github.com/fullstorydev/grpcui/cmd/grpcui@latest
 
 # BentoML Web UI
 watch-yatai-web-ui: ## Start BentoML Web UI server in dev mode
-	cd bentoml/yatai/web && yarn dev 127.0.0.1:50051 3000 .
+	bentoml yatai-service-start --no-ui & \
+	cd bentoml/yatai/web && yarn dev 127.0.0.1:50051 3000 . 127.0.0.1:50052
 build-yatai-web-ui: ## Build BentoML Web UI server and frontend
 	cd bentoml/yatai/web && yarn build
 run-yatai-web-ui: ## Run production BentoML Web UI server and frontend
-	cd bentoml/yatai/web && yarn start 127.0.0.1:50051 3000 .
+	bentoml yatai-service-start --no-ui & \
+	cd bentoml/yatai/web && yarn start 127.0.0.1:50051 3000 . 127.0.0.1:50052
 install-web-deps: ## Install dependencies to run web server and frontend
 	cd bentoml/yatai/web && yarn install
 	cd bentoml/yatai/web/client && yarn install

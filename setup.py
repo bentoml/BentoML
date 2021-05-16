@@ -85,6 +85,7 @@ test_requires = [
     "pytest-cov>=2.7.1",
     "pytest>=5.4.0",
     "pytest-asyncio",
+    "parameterized",
     "scikit-learn",
 ]
 

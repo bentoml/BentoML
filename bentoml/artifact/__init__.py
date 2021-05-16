@@ -22,6 +22,7 @@ from bentoml.service.artifacts.common import PickleArtifact
 
 from bentoml.frameworks.coreml import CoreMLModelArtifact
 from bentoml.frameworks.detectron import DetectronModelArtifact
+from bentoml.frameworks.evalml import EvalMLModelArtifact  # noqa: E402
 from bentoml.frameworks.fastai import (  # noqa: E402
     FastaiModelArtifact as Fastai2ModelArtifact,
 )  # noqa: E402
@@ -33,6 +34,7 @@ from bentoml.frameworks.h2o import H2oModelArtifact
 from bentoml.frameworks.keras import KerasModelArtifact
 from bentoml.frameworks.lightgbm import LightGBMModelArtifact
 from bentoml.frameworks.onnx import OnnxModelArtifact
+from bentoml.frameworks.onnxmlir import OnnxMlirModelArtifact
 from bentoml.frameworks.pytorch import (  # noqa: E402
     PytorchModelArtifact,
     PytorchLightningModelArtifact,
@@ -42,6 +44,7 @@ from bentoml.frameworks.spacy import SpacyModelArtifact
 from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
 from bentoml.frameworks.xgboost import XgboostModelArtifact
 from bentoml.frameworks.paddle import PaddlePaddleModelArtifact  # noqa: E402
+from bentoml.frameworks.easyocr import EasyOCRArtifact  # noqa: E402
 
 __all__ = [
     "ArtifactCollection",
@@ -49,6 +52,7 @@ __all__ = [
     "BentoServiceArtifactWrapper",
     "CoreMLModelArtifact",
     "DetectronModelArtifact",
+    "EvalMLModelArtifact",
     "Fastai2ModelArtifact",
     "FastaiModelArtifact",
     "FasttextModelArtifact",
@@ -57,6 +61,7 @@ __all__ = [
     "KerasModelArtifact",
     "LightGBMModelArtifact",
     "OnnxModelArtifact",
+    "OnnxMlirModelArtifact",
     "PickleArtifact",
     "PytorchModelArtifact",
     "SklearnModelArtifact",
@@ -66,4 +71,5 @@ __all__ = [
     "XgboostModelArtifact",
     "PytorchLightningModelArtifact",
     "PaddlePaddleModelArtifact",
+    "EasyOCRArtifact",
 ]

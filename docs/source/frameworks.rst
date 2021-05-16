@@ -156,6 +156,13 @@ Example Projects:
 
 
 =====
+ONNX-MLIR
+=====
+
+.. autoclass:: bentoml.frameworks.onnxmlir.OnnxMlirModelArtifact
+
+
+=====
 Spacy
 =====
 
@@ -214,6 +221,18 @@ Example Projects:
 
 .. autoclass:: bentoml.frameworks.paddle.PaddlePaddleModelArtifact
 
+========
+EasyOCR
+========
+
+.. autoclass:: bentoml.frameworks.easyocr.EasyOCRArtifact
+
+======
+EvalML
+======
+
+.. autoclass:: bentoml.frameworks.evalml.EvalMLModelArtifact
+
 
 .. spelling::
 
@@ -237,4 +256,8 @@ Example Projects:
     detectron
     Detectron
     DetectionCheckpointer
-
+    evalml
+    Evalml
+    EvalML
+    EasyOCR
+    easyocr

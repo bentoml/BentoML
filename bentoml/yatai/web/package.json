@@ -25,7 +25,7 @@
     "@types/lodash": "^4.14.149",
     "axios": "^0.21.1",
     "express": "^4.17.1",
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "morgan": "^1.10.0",
     "normalize.css": "^8.0.1",
     "protobufjs": "^6.9.0",

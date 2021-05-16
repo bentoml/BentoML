@@ -17,7 +17,7 @@ from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
-from bentoml.configuration import config, inject_dependencies
+from bentoml.configuration import inject_dependencies
 from bentoml.utils.log import configure_logging
 
 # Inject dependencies and configurations
@@ -47,7 +47,6 @@ __all__ = [
     "__version__",
     "api",
     "artifacts",
-    "config",
     "env",
     "web_static_content",
     "ver",

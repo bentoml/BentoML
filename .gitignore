@@ -140,3 +140,6 @@ helm/YataiService/charts
 
 # Integration test data
 tests/integration/data
+
+# Emacs buffers
+*~

@@ -33,7 +33,7 @@ class SklearnModelArtifact(BentoServiceArtifact):
         pickle_extension (str): The extension format for pickled file
 
     Raises:
-        MissingDependencyException: sklean package is required for SklearnModelArtifact
+        MissingDependencyException: sklearn package is required for SklearnModelArtifact
 
     Example usage:
 
@@ -59,6 +59,7 @@ class SklearnModelArtifact(BentoServiceArtifact):
     >>>
     >>> # Pack directly with sklearn model object
     >>> svc.pack('model', model_to_save)
+    >>> svc.save()
     """
 
     def __init__(self, name, pickle_extension=".pkl"):

@@ -20,15 +20,29 @@ from deepmerge import always_merger
 from dependency_injector import containers, providers
 from schema import And, Or, Schema, SchemaError, Optional, Use
 
-from bentoml.configuration import config
+from bentoml import __version__
+from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils.ruamel_yaml import YAML
 
 
 LOGGER = logging.getLogger(__name__)
 
+YATAI_REPOSITORY_S3 = "s3"
+YATAI_REPOSITORY_GCS = "gcs"
+YATAI_REPOSITORY_FILE_SYSTEM = "file_system"
+YATAI_REPOSITORY_TYPES = [
+    YATAI_REPOSITORY_FILE_SYSTEM,
+    YATAI_REPOSITORY_S3,
+    YATAI_REPOSITORY_GCS,
+]
+
 SCHEMA = Schema(
     {
+        "bento_bundle": {
+            "deployment_version": Or(str, None),
+            "default_docker_base_image": Or(str, None),
+        },
         "bento_server": {
             "port": And(int, lambda port: port > 0),
             "workers": Or(And(int, lambda workers: workers > 0), None),
@@ -46,6 +60,16 @@ SCHEMA = Schema(
             "feedback": {"enabled": bool},
             "logging": {"level": str},
         },
+        "logging": {
+            "level": And(
+                str,
+                lambda level: level.isupper(),
+                error="logging.level must be all upper case letters",
+            ),
+            "console": {"enabled": bool},
+            "file": {"enabled": bool, "directory": Or(str, None)},
+            "advanced": {"enabled": bool, "config": Or(dict, None)},
+        },
         "tracing": {
             "type": Or(
                 And(str, Use(str.lower), lambda s: s in ('zipkin', 'jaeger')), None
@@ -54,6 +78,38 @@ SCHEMA = Schema(
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
         "adapters": {"image_input": {"default_extensions": [str]}},
+        "yatai": {
+            "remote": {
+                "url": Or(str, None),
+                "access_token": Or(str, None),
+                "access_token_header": Or(str, None),
+                "tls": {
+                    "root_ca_cert": Or(str, None),
+                    "client_key": Or(str, None),
+                    "client_cert": Or(str, None),
+                    "client_certificate_file": Or(str, None),
+                },
+            },
+            "repository": {
+                "type": And(
+                    str,
+                    lambda type: type in YATAI_REPOSITORY_TYPES,
+                    error="yatai.repository.type must be one of %s"
+                    % YATAI_REPOSITORY_TYPES,
+                ),
+                "file_system": {"directory": Or(str, None)},
+                "s3": {
+                    "url": Or(str, None),
+                    "endpoint_url": Or(str, None),
+                    "signature_version": Or(str, None),
+                    "expiration": Or(int, None),
+                },
+                "gcs": {"url": Or(str, None), "expiration": Or(int, None)},
+            },
+            "database": {"url": Or(str, None)},
+            "namespace": str,
+            "logging": {"path": Or(str, None)},
+        },
     }
 )
 
@@ -64,7 +120,6 @@ class BentoMLConfiguration:
         default_config_file: str = None,
         override_config_file: str = None,
         validate_schema: bool = True,
-        legacy_compatibility: bool = True,
     ):
         # Default configuraiton
         if default_config_file is None:
@@ -83,53 +138,6 @@ class BentoMLConfiguration:
                     "Default configuration 'default_bentoml.yml' does not"
                     " conform to the required schema."
                 ) from e
-
-        # Legacy configuration compatibility
-        if legacy_compatibility:
-            try:
-                self.config["bento_server"]["port"] = config("apiserver").getint(
-                    "default_port"
-                )
-                self.config["bento_server"]["workers"] = config("apiserver").getint(
-                    "default_gunicorn_workers_count"
-                )
-                self.config["bento_server"]["max_request_size"] = config(
-                    "apiserver"
-                ).getint("default_max_request_size")
-
-                if "default_max_batch_size" in config("marshal_server"):
-                    self.config["bento_server"]["microbatch"][
-                        "max_batch_size"
-                    ] = config("marshal_server").getint("default_max_batch_size")
-
-                if "default_max_latency" in config("marshal_server"):
-                    self.config["bento_server"]["microbatch"]["max_latency"] = config(
-                        "marshal_server"
-                    ).getint("default_max_latency")
-
-                self.config["bento_server"]["metrics"]["namespace"] = config(
-                    "instrument"
-                ).get("default_namespace")
-
-                self.config["adapters"]["image_input"]["default_extensions"] = [
-                    extension.strip()
-                    for extension in config("apiserver")
-                    .get("default_image_input_accept_file_extensions")
-                    .split(",")
-                ]
-            except KeyError as e:
-                raise BentoMLConfigException(
-                    "Overriding a non-existent configuration key in compatibility mode."
-                ) from e
-
-            if validate_schema:
-                try:
-                    SCHEMA.validate(self.config)
-                except SchemaError as e:
-                    raise BentoMLConfigException(
-                        "Configuration after applying legacy compatibility"
-                        " does not conform to the required schema."
-                    ) from e
 
         # User override configuration
         if override_config_file is not None:
@@ -186,6 +194,60 @@ class BentoMLContainer(containers.DeclarativeContainer):
     config = providers.Configuration(strict=True)
 
     api_server_workers = providers.Callable(
-        lambda workers: workers if workers else (multiprocessing.cpu_count() // 2) + 1,
+        lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
         config.bento_server.workers,
+    )
+
+    bentoml_home = providers.Callable(
+        lambda: expand_env_var(
+            os.environ.get("BENTOML_HOME", os.path.join("~", "bentoml"))
+        )
+    )
+
+    prometheus_multiproc_dir = providers.Callable(
+        os.path.join, bentoml_home, "prometheus_multiproc_dir",
+    )
+
+    bento_bundle_deployment_version = providers.Callable(
+        get_bentoml_deploy_version,
+        providers.Callable(
+            lambda default, customized: customized or default,
+            __version__.split('+')[0],
+            config.bento_bundle.deployment_version,
+        ),
+    )
+
+    yatai_database_url = providers.Callable(
+        lambda default, customized: customized or default,
+        providers.Callable(
+            "sqlite:///{}".format,
+            providers.Callable(os.path.join, bentoml_home, "storage.db"),
+        ),
+        config.yatai.database.url,
+    )
+
+    yatai_file_system_directory = providers.Callable(
+        lambda default, customized: customized or default,
+        providers.Callable(os.path.join, bentoml_home, "repository"),
+        config.yatai.repository.file_system.directory,
+    )
+
+    yatai_tls_root_ca_cert = providers.Callable(
+        lambda current, deprecated: current or deprecated,
+        config.yatai.remote.tls.root_ca_cert,
+        config.yatai.remote.tls.client_certificate_file,
+    )
+
+    logging_file_directory = providers.Callable(
+        lambda default, customized: customized or default,
+        providers.Callable(os.path.join, bentoml_home, "logs",),
+        config.logging.file.directory,
+    )
+
+    yatai_logging_path = providers.Callable(
+        lambda default, customized: customized or default,
+        providers.Callable(
+            os.path.join, logging_file_directory, "yatai_web_server.log"
+        ),
+        config.yatai.logging.path,
     )

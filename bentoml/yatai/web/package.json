@@ -21,7 +21,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@grpc/grpc-js": "^0.7.5",
+    "@grpc/grpc-js": "^1.1.8",
     "@types/lodash": "^4.14.149",
     "axios": "^0.21.1",
     "express": "^4.17.1",

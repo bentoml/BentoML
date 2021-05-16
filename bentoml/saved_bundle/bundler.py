@@ -223,7 +223,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
                 tarfile_path = f'{tarfile_dir}/{file_name}'
                 with tarfile.open(tarfile_path, mode="w:gz") as tar:
                     tar.add(temp_dir, arcname=bento_service.name)
-            _upload_file_to_remote_path(path, tarfile_path, file_name)
+                _upload_file_to_remote_path(path, tarfile_path, file_name)
     else:
         _write_bento_content_to_dir(bento_service, path)
 

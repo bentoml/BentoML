@@ -13,11 +13,21 @@
 # limitations under the License.
 
 from collections import OrderedDict
+from dependency_injector.wiring import Provide, inject
 
-from bentoml import config
+from bentoml.configuration.containers import BentoMLContainer
 
 
-def get_open_api_spec_json(bento_service):
+@inject
+def get_open_api_spec_json(
+    bento_service,
+    enable_metrics: bool = Provide[
+        BentoMLContainer.config.bento_server.metrics.enabled
+    ],
+    enable_feedback: bool = Provide[
+        BentoMLContainer.config.bento_server.feedback.enabled
+    ],
+):
     """
     The docs for all endpoints in Open API format.
     """
@@ -55,7 +65,7 @@ def get_open_api_spec_json(bento_service):
         )
     )
 
-    if config("apiserver").getboolean("enable_metrics"):
+    if enable_metrics:
         paths["/metrics"] = OrderedDict(
             get=OrderedDict(
                 tags=["infra"],
@@ -63,7 +73,7 @@ def get_open_api_spec_json(bento_service):
                 responses=default_response,
             )
         )
-    if config("apiserver").getboolean("enable_feedback"):
+    if enable_feedback:
         paths["/feedback"] = OrderedDict(
             post=OrderedDict(
                 tags=["infra"],

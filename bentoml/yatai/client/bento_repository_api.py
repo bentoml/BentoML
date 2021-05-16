@@ -64,13 +64,12 @@ class BentoRepositoryAPIClient:
         # YataiService stub for accessing remote YataiService RPCs
         self.yatai_service = yatai_service
 
-    def push(self, bento, labels=None):
+    def push(self, bento, with_labels=True):
         """
         Push a local BentoService to a remote yatai server.
 
         Args:
             bento: a BentoService identifier in the format of NAME:VERSION
-            labels: optional. List of labels for the BentoService.
 
         Returns:
             BentoService saved path
@@ -97,6 +96,12 @@ class BentoRepositoryAPIClient:
             bento_bundle_path = local_bento_pb.uri.gcs_presigned_url
         else:
             bento_bundle_path = local_bento_pb.uri.uri
+        labels = (
+            dict(local_bento_pb.bento_service_metadata.labels)
+            if with_labels is True and local_bento_pb.bento_service_metadata.labels
+            else None
+        )
+
         return self.upload_from_dir(bento_bundle_path, labels=labels)
 
     def pull(self, bento):
@@ -125,8 +130,16 @@ class BentoRepositoryAPIClient:
 
             from bentoml.yatai.client import get_yatai_client
 
+            labels = (
+                dict(bento_pb.bento_service_metadata.labels)
+                if bento_pb.bento_service_metadata.labels
+                else None
+            )
+
             local_yc = get_yatai_client()
-            return local_yc.repository.upload_from_dir(target_bundle_path)
+            return local_yc.repository.upload_from_dir(
+                target_bundle_path, labels=labels
+            )
 
     def upload(self, bento_service, version=None, labels=None):
         """Save and upload given bento_service to yatai_service, which manages all your

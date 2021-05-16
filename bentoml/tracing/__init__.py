@@ -48,7 +48,7 @@ def get_tracer(
     if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
         from bentoml.tracing.zipkin import get_zipkin_tracer
 
-        logger.info(
+        logger.debug(
             "Initializing global zipkin tracer for collector endpoint: "
             f"{zipkin_server_url}"
         )
@@ -61,7 +61,7 @@ def get_tracer(
     ):
         from bentoml.tracing.jaeger import get_jaeger_tracer
 
-        logger.info(
+        logger.debug(
             "Initializing global jaeger tracer for opentracing server at "
             f"{jaeger_server_address}:{jaeger_server_port}"
         )
@@ -69,5 +69,5 @@ def get_tracer(
     else:
         from bentoml.tracing.noop import NoopTracer
 
-        logger.info("Tracing is disabled. Initializing no-op tracer")
+        logger.debug("Tracing is disabled. Initializing no-op tracer")
         return NoopTracer()

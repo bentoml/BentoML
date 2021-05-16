@@ -1,7 +1,7 @@
 CLI Reference
 =============
 
-.. click:: bentoml.cli:cli
+.. click:: bentoml:commandline_interface
   :prog: bentoml
   :show-nested:
 

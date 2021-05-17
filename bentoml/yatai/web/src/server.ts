@@ -6,7 +6,9 @@ import { bentoml } from "./generated/bentoml_grpc";
 import { createYataiClient } from "./yatai_client";
 import { getLogger } from "./logger";
 import axios from "axios";
+
 const logger = getLogger();
+const ALL_NAMESPACE_TAG = '__BENTOML_ALL_NAMESPACE';
 
 const createAPIRoutes = (app, yataiClient) => {
   let router = express.Router();
@@ -93,6 +95,9 @@ const createAPIRoutes = (app, yataiClient) => {
     const requestQuery: any = Object.assign({}, req.query);
     if (req.query.limit && typeof req.query.limit == "string") {
       requestQuery.limit = Number(req.query.limit);
+    }
+    if (!req.query.namespace) {
+      requestQuery.namespace = ALL_NAMESPACE_TAG;
     }
     let verifyError = bentoml.ListDeploymentsRequest.verify(requestQuery);
     if (verifyError) {

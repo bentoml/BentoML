@@ -4,8 +4,12 @@ import threading
 
 class ThreadWithResult(threading.Thread):
     def __init__(
-            self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None
+        self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None
     ):
+        if kwargs is None:
+            kwargs = {}
+        self.result = None
+
         def function():
             self.result = target(*args, **kwargs)
 

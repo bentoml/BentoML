@@ -43,19 +43,20 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
     >>>     # convert the input data into the float32 input
     >>>     # convert the input data into the float32 input
     >>>     img_data = np.stack(input_data).transpose(0, 3, 1, 2)
-    >>> 
+    >>>
     >>>     #normalize
     >>>     mean_vec = np.array([0.485, 0.456, 0.406])
     >>>     stddev_vec = np.array([0.229, 0.224, 0.225])
-    >>> 
-    >>> 
+    >>>
+    >>>
     >>>     norm_img_data = np.zeros(img_data.shape).astype('float32')
-    >>> 
-    >>> 
+    >>>
+    >>>
     >>>     for i in range(img_data.shape[0]):
     >>>         for j in range(img_data.shape[1]):
-    >>>             norm_img_data[i,j,:,:] = (img_data[i,j,:,:]/255 - mean_vec[j]) / stddev_vec[j]
-    >>> 
+    >>>             norm_img_data[i,j,:,:] =
+    >>>             (img_data[i,j,:,:]/255 - mean_vec[j]) / stddev_vec[j]
+    >>>
     >>>     #add batch channel
     >>>     norm_img_data = norm_img_data.reshape(-1, 3, 224, 224).astype('float32')
     >>>     return norm_img_data

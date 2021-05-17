@@ -97,6 +97,7 @@ Standarlize model serving and deployment workflow for teams:
 * Paddle - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#paddle)
 * EvalML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#evalml)
 * EasyOCR -[Docs](https://docs.bentoml.org/en/latest/frameworks.html#easyocr)
+* ONNX-MLIR - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#onnx-mlir)
 
 
 ### Deployment Options

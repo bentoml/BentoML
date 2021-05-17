@@ -1,32 +1,11 @@
 import logging
-import time
-import threading
-
 import pytest
-
-from tests.bento_service_examples.example_bento_service import ExampleBentoService
 import subprocess
 
+from tests.bento_service_examples.example_bento_service import ExampleBentoService
+from tests.threading_util import ThreadWithResult, run_delayed_thread
+
 logger = logging.getLogger('bentoml.test')
-
-
-class ThreadWithResult(threading.Thread):
-    def __init__(
-        self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None
-    ):
-        def function():
-            self.result = target(*args, **kwargs)
-
-        super().__init__(group=group, target=function, name=name, daemon=daemon)
-
-
-def run_delayed_thread(t1, t2):
-    t1.start()
-    time.sleep(1)
-    t2.start()
-
-    t1.join()
-    t2.join()
 
 
 def cli(svc, cmd, *args):

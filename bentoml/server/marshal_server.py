@@ -24,6 +24,7 @@ from bentoml.server.instruments import setup_prometheus_multiproc_dir
 marshal_logger = logging.getLogger("bentoml.marshal")
 
 
+@inject
 def gunicorn_marshal_server(
     default_workers: int = Provide[
         BentoMLContainer.config.bento_server.microbatch.workers

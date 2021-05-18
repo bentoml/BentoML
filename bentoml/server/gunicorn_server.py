@@ -26,6 +26,7 @@ from bentoml.server.instruments import setup_prometheus_multiproc_dir
 logger = logging.getLogger(__name__)
 
 
+@inject
 def gunicorn_bento_server(
     default_port: int = Provide[BentoMLContainer.config.bento_server.port],
     default_timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],

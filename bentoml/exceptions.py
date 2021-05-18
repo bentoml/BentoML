@@ -108,6 +108,16 @@ class FailedPrecondition(BentoMLException):
         return yatai_proto.status_pb2.Status.FAILED_PRECONDITION
 
 
+class LockUnavailable(BentoMLException):
+    """
+    Raise when a bundle/deployment resource is unable to be locked
+    """
+
+    @property
+    def proto_status_code(self):
+        return yatai_proto.status_pb2.Status.FAILED_PRECONDITION
+
+
 class ArtifactLoadingException(BentoMLException):
     """Raise when BentoService failed to load model artifacts from saved bundle"""
 

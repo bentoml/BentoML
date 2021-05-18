@@ -20,7 +20,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from urllib.parse import urlparse
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, LockUnavailable
 from bentoml.yatai.db.base import Base
 from bentoml.yatai.db.stores.deployment import DeploymentStore
 from bentoml.yatai.db.stores.label import LabelStore
@@ -80,6 +80,10 @@ class DB(object):
         try:
             yield session
             session.commit()
+        except LockUnavailable as e:
+            # rollback if lock cannot be acquired, bubble error up
+            session.rollback()
+            raise LockUnavailable(e)
         except Exception as e:
             session.rollback()
             raise BentoMLException(e)
@@ -99,7 +103,8 @@ class DB(object):
         inspector = inspect(self.engine)
         tables = inspector.get_table_names()
 
-        if 'deployments' not in tables or 'bentos' not in tables:
+        table_names = ['deployments', 'bentos', 'labels', 'locks']
+        if all([table_name not in tables for table_name in table_names]):
             logger.debug('Creating tables')
             Base.metadata.create_all(self.engine)
             command.stamp(alembic_config, 'head')

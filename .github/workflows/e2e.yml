@@ -75,7 +75,9 @@ jobs:
               ...context.repo,
               ref
             });
+            console.log(checks);
             const check = checks.check_runs.filter(c => c.name === process.env.job);
+            console.log(check);
             const { data: result } = await github.checks.update({
               ...context.repo,
               check_run_id: check[0].id,

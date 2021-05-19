@@ -10,6 +10,7 @@ from tests.yatai.local_yatai_service import local_yatai_service_from_cli
 logger = logging.getLogger('bentoml.test')
 
 
+@pytest.mark.skip('Postgres docker container issue')
 def test_yatai_server_with_postgres_and_local_storage(postgres_db_url):
     with local_yatai_service_from_cli(db_url=postgres_db_url) as yatai_server_url:
         logger.info('Saving bento service')

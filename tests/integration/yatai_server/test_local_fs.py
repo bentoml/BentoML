@@ -1,5 +1,7 @@
 import logging
 import time
+import uuid
+
 import pytest
 
 from bentoml.yatai.client import get_yatai_client
@@ -14,7 +16,9 @@ logger = logging.getLogger('bentoml.test')
 
 
 def test_sqlite_and_local_fs():
-    with local_yatai_service_container() as yatai_server_url:
+    with local_yatai_service_container(
+        image_tag=uuid.uuid4().hex[:8]
+    ) as yatai_server_url:
         yc = get_yatai_client(yatai_server_url)
         svc = ExampleBentoService()
         svc.pack('model', [1, 2, 3])

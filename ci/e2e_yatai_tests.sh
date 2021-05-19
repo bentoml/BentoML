@@ -9,6 +9,6 @@
  GIT_ROOT=$(git rev-parse --show-toplevel)
  cd "$GIT_ROOT" || exit
 
- sudo pytest "$GIT_ROOT"/tests/e2e/yatai/test_sqlite_local_fs.py -s
+ sudo pytest "$GIT_ROOT"/tests/e2e/yatai/test_sqlite.py -s
 
  test $error = 0 # Return non-zero if pytest failed

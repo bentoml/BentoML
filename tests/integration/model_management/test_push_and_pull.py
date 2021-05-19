@@ -1,4 +1,5 @@
 import os
+import uuid
 
 from bentoml.yatai.client import get_yatai_client
 from .example_bento_service_class import ExampleBentoService
@@ -6,7 +7,9 @@ from tests.yatai.local_yatai_service import local_yatai_service_container
 
 
 def test_push_and_pull():
-    with local_yatai_service_container() as yatai_server_url:
+    with local_yatai_service_container(
+        image_tag=uuid.uuid4().hex[:8]
+    ) as yatai_server_url:
         svc = ExampleBentoService()
         bento_tag = f'{svc.name}:{svc.version}'
         saved_path = svc.save()

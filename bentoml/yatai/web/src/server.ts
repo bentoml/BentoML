@@ -4,11 +4,12 @@ import { Request, Response } from "express";
 import express from "express";
 import { bentoml } from "./generated/bentoml_grpc";
 import { createYataiClient } from "./yatai_client";
+import { generateGrpcLabelSelectors } from "./label_utils";
 import { getLogger } from "./logger";
 import axios from "axios";
 
 const logger = getLogger();
-const ALL_NAMESPACE_TAG = '__BENTOML_ALL_NAMESPACE';
+const ALL_NAMESPACE_TAG = "__BENTOML_ALL_NAMESPACE";
 
 const createAPIRoutes = (app, yataiClient) => {
   let router = express.Router();
@@ -19,6 +20,11 @@ const createAPIRoutes = (app, yataiClient) => {
     }
     if (req.query.offset && typeof req.query.offset == "string") {
       requestQuery.offset = Number(req.query.offset);
+    }
+    if (req.query.labelSelectors) {
+      requestQuery.labelSelectors = generateGrpcLabelSelectors(
+        req.query.labelSelectors
+      );
     }
     let verifyError = bentoml.ListBentoRequest.verify(requestQuery);
     if (verifyError) {

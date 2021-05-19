@@ -103,8 +103,7 @@ class DB(object):
         inspector = inspect(self.engine)
         tables = inspector.get_table_names()
 
-        table_names = ['deployments', 'bentos', 'labels', 'locks']
-        if all([table_name not in tables for table_name in table_names]):
+        if 'deployments' not in tables or 'bentos' not in tables:
             logger.debug('Creating tables')
             Base.metadata.create_all(self.engine)
             command.stamp(alembic_config, 'head')

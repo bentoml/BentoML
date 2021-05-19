@@ -6,7 +6,6 @@ import time
 import uuid
 
 import docker
-from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 
@@ -44,7 +43,7 @@ def local_yatai_service_container(db_url=None, repo_base_url=None):
         with open(temp_docker_file_path, 'w') as f:
             f.write(
                 f"""\
-FROM bentoml/yatai-service:{LAST_PYPI_RELEASE_VERSION}
+FROM bentoml/yatai-service:latest
 ADD . /bentoml-local-repo
 RUN pip install -U /bentoml-local-repo
             """

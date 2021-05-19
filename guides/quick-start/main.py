@@ -19,4 +19,4 @@ if __name__ == "__main__":
     iris_classifier_service.pack('model', clf)
 
     # Save the prediction service to disk for model serving
-    saved_path = iris_classifier_service.save()
+    saved_path = iris_classifier_service.save(yatai_url='localhost:50051')

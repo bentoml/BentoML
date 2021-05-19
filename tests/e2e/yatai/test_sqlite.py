@@ -1,6 +1,8 @@
 import logging
 import uuid
 
+import pytest
+
 from bentoml.yatai.client import get_yatai_client
 from bentoml.yatai.proto.repository_pb2 import BentoUri
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
@@ -30,6 +32,7 @@ def test_sqlite_and_local_fs():
         assert delete_svc_result is None
 
 
+@pytest.skip('Need to double check S3 credentials')
 def test_yatai_server_with_sqlite_and_s3():
     # Note: Use pre-existing bucket instead of newly created bucket, because the
     # bucket's global DNS needs time to get set up.

@@ -1,5 +1,7 @@
 import logging
 
+import pytest
+
 from bentoml.yatai.client import get_yatai_client
 from bentoml.yatai.proto.repository_pb2 import BentoUri
 from tests.bento_service_examples.example_bento_service import ExampleBentoService

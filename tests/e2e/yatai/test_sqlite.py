@@ -32,7 +32,7 @@ def test_sqlite_and_local_fs():
         assert delete_svc_result is None
 
 
-@pytest.skip('Need to double check S3 credentials')
+@pytest.mark.skip('Need to double check S3 credentials')
 def test_yatai_server_with_sqlite_and_s3():
     # Note: Use pre-existing bucket instead of newly created bucket, because the
     # bucket's global DNS needs time to get set up.

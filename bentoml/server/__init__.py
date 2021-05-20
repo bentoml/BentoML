@@ -77,7 +77,7 @@ def _start_dev_server(
 
     bento_service = load_from_dir(saved_bundle_path)
     api_server = BentoAPIServer(bento_service, enable_swagger=enable_swagger)
-    api_server.start(port=api_server_port)
+    api_server.start(fastapi=True,port=api_server_port)
 
 
 def _start_dev_proxy(

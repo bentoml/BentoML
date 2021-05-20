@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from multipledispatch import dispatch
 import inspect
 import logging
 import multiprocessing
@@ -82,6 +82,7 @@ def validate_inference_api_route(route: str):
         )
 
 
+@dispatch(BaseInputAdapter,BaseOutputAdapter,str,str,str,int,int,bool)
 def api_decorator(
     *args,
     input: BaseInputAdapter = None,
@@ -171,6 +172,75 @@ def api_decorator(
         setattr(func, "_mb_max_batch_size", mb_max_batch_size)
         setattr(func, "_mb_max_latency", mb_max_latency)
         setattr(func, "_batch", batch)
+
+        return func
+
+    return decorator
+
+
+@dispatch(str,str,str,List[str],int,int)
+def api_decorator(
+    *args,
+    api_name: str = None,
+    route: str = None,
+    api_doc: str = None,
+    http_methods: List[str] = None,
+    mb_max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
+    mb_max_latency: int = DEFAULT_MAX_LATENCY,
+    **kwargs,
+):  # pylint: disable=redefined-builtin
+    """
+    A decorator exposed as `bentoml.api` for defining Inference API in a BentoService
+    class.
+    :param api_name: API name, default to the user-defined callback function's function
+        name
+    :param http_methods: the list of http methods for the API endpoint
+    :param route: Specify HTTP URL route of this inference API. By default,
+        `api.name` is used as the route.  This parameter can be used for customizing
+        the URL route, e.g. `route="/api/v2/model_a/predict"`
+        Default: None (the same as api_name)
+    :param api_doc: user-facing documentation of the inference API. default to the
+        user-defined callback function's docstring
+    :param mb_max_batch_size: The maximum size of requests batch accepted by this
+        inference API. This parameter governs the throughput/latency trade off, and
+        avoids having large batches that exceed some resource constraint (e.g. GPU
+        memory to hold the entire batch's data). Default: 1000.
+    :param mb_max_latency: The latency goal of this inference API in milliseconds.
+        Default: 10000.
+
+
+    Example usage:
+
+    >>> from bentoml import BentoService, api
+    >>> from bentoml.adapters import JsonInput, DataframeInput
+    >>>
+    >>> class FraudDetectionAndIdentityService(BentoService):
+    >>>
+    >>>     @api(api_name="fraud",route="fraud",http_methods=['GET'])
+    >>>     def fraud_detect(self, json_list):
+    >>>         # user-defined callback function that process inference requests
+    >>>
+    >>>     @api(route="identity_check",api_doc="This is the docs")
+    >>>     def identity(self, df):
+    >>>         # user-defined callback function that process inference requests
+    """
+
+    def decorator(func):
+        _api_name = func.__name__ if api_name is None else api_name
+        _api_route = _api_name if route is None else route
+        validate_inference_api_name(_api_name)
+        validate_inference_api_route(_api_route)
+        _api_doc = func.__doc__ if api_doc is None else api_doc
+        _http_methods = http_methods if http_methods else ['GET']
+
+        setattr(func, "_is_api", True)
+        setattr(func, "_api_name", _api_name)
+        setattr(func, "_api_route", _api_route)
+        setattr(func, "_api_doc", _api_doc)
+        setattr(func, "_http_methods", _http_methods)
+        # TODO: This could be a feature for scaling
+        # setattr(func, "_mb_max_batch_size", mb_max_batch_size)
+        # setattr(func, "_mb_max_latency", mb_max_latency)
 
         return func
 
@@ -434,7 +504,7 @@ class BentoService:
     >>>  @env(pip_packages=["scikit-learn"])
     >>>  class MyMLService(BentoService):
     >>>
-    >>>     @api(input=DataframeInput(), batch=True)
+    >>>     @api(http_methods=['GET'],api_name="predict")
     >>>     def predict(self, df):
     >>>         return self.artifacts.clf.predict(df)
     >>>
@@ -487,7 +557,7 @@ class BentoService:
         self._dev_server_process: subprocess.Process = None
 
         self._config_artifacts()
-        self._config_inference_apis()
+        self._config_inference_apis(fast_api=True)
         self._config_environments()
 
     def _config_environments(self):
@@ -500,6 +570,7 @@ class BentoService:
         for artifact in self.artifacts.get_artifact_list():
             artifact.set_dependencies(self.env)
 
+    @dispatch()
     def _config_inference_apis(self):
         self._inference_apis = []
 
@@ -531,6 +602,40 @@ class BentoService:
                         mb_max_latency=mb_max_latency,
                         mb_max_batch_size=mb_max_batch_size,
                         batch=batch,
+                        route=route,
+                    )
+                )
+
+    @dispatch(bool)
+    def _config_inference_apis(self,fast_api:bool):
+        self._inference_apis = []
+
+        for _, function in inspect.getmembers(
+            self.__class__,
+            predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
+        ):
+            if hasattr(function, "_is_api"):
+                api_name = getattr(function, "_api_name")
+                route = getattr(function, "_api_route", None)
+                api_doc = getattr(function, "_api_doc")
+                http_methods = getattr(function, "_http_methods")
+                # TODO: Add this while scaling
+                # mb_max_latency = getattr(function, "_mb_max_latency")
+                # mb_max_batch_size = getattr(function, "_mb_max_batch_size")
+
+                # Bind api method call with self(BentoService instance)
+                user_func = function.__get__(self)
+
+                self._inference_apis.append(
+                    InferenceAPI(
+                        self,
+                        api_name,
+                        api_doc,
+                        user_func=user_func,
+                        http_methods=http_methods,
+                        # TODO: Add this while scaling
+                        # mb_max_latency=mb_max_latency,
+                        # mb_max_batch_size=mb_max_batch_size,
                         route=route,
                     )
                 )

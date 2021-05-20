@@ -292,6 +292,9 @@ def artifacts_decorator(artifacts: List[BentoServiceArtifact]):
             artifact_names.add(artifact.name)
 
         bento_service_cls._declared_artifacts = artifacts
+        bento_service_cls._env = BentoServiceEnv(
+            infer_pip_packages=True
+        )
         return bento_service_cls
 
     return decorator

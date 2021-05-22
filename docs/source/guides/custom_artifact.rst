@@ -41,8 +41,8 @@ the model is valid.  It uses `cloudpickle` to `save` and `load`.
         def get(self):
             return self._model
 
-        def save(self):
-            with open(self._file_path, 'wb') as file:
+        def save(self, dst):
+            with open(self._file_path(dst), 'wb') as file:
                 cloudpickle.dump(self._model, file)
 
         def load(self, path):

@@ -22,6 +22,7 @@ from bentoml.types import (
     InferenceResult,
     InferenceTask,
 )
+
 ApiFuncReturnValue = Sequence[bytes]
 
 
@@ -34,13 +35,15 @@ class ImageOutput(BaseOutputAdapter):
             AWS Lambda response object. Default is "*". If set to None,
             the header will not be set.
     """
-    def pack_user_func_return_value(self, return_result: ApiFuncReturnValue,
-                                    tasks: Sequence[InferenceTask],) -> Sequence[InferenceResult[str]]:
+
+    def pack_user_func_return_value(
+        self, return_result: ApiFuncReturnValue, tasks: Sequence[InferenceTask],
+    ) -> Sequence[InferenceResult[str]]:
         """
         Pack the return value of user defined API function into InferenceResults
         """
         results = []
-        for bytes_, task in regroup_return_value(return_result, tasks):
+        for bytes_, _ in regroup_return_value(return_result, tasks):
             try:
                 results.append(
                     InferenceResult(

@@ -33,7 +33,6 @@ from bentoml.utils import (
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.usage_stats import track
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
-from bentoml.yatai.db.stores.label import _validate_labels
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoRequest,
     GetBentoRequest,
@@ -157,6 +156,8 @@ class BentoRepositoryAPIClient:
             return self.upload_from_dir(tmpdir, labels)
 
     def upload_from_dir(self, saved_bento_path, labels=None):
+        from bentoml.yatai.db.stores.label import _validate_labels
+
         bento_service_metadata = load_bento_service_metadata(saved_bento_path)
         if labels:
             _validate_labels(labels)

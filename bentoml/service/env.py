@@ -20,8 +20,6 @@ from pathlib import Path
 from sys import version_info
 from typing import List
 
-from pkg_resources import Requirement
-
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.pip_pkg import (
@@ -250,10 +248,14 @@ class BentoServiceEnv(object):
     def add_pip_package(self, pip_package: str):
         # str must be a valid pip requirement specifier
         # https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers
+        from pkg_resources import Requirement
+
         package_req = Requirement(pip_package)
         self._add_pip_package_requirement(package_req)
 
-    def _add_pip_package_requirement(self, pkg_req: Requirement):
+    def _add_pip_package_requirement(self, pkg_req):
+        from pkg_resources import Requirement
+
         if pkg_req.name in self._pip_packages:
             if (
                 pkg_req.specs

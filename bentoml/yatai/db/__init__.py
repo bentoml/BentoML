@@ -16,8 +16,6 @@ import logging
 import os
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from urllib.parse import urlparse
 
 from bentoml.exceptions import BentoMLException, LockUnavailable
@@ -45,7 +43,9 @@ def is_sqlite_db(db_url):
 
 class DB(object):
     def __init__(self, db_url):
+        from sqlalchemy import create_engine
         from sqlalchemy_utils import database_exists
+        from sqlalchemy.orm import sessionmaker
 
         extra_db_args = {'echo': True}
 

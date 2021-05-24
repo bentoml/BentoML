@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import subprocess
-import urllib3
-
 from typing import NamedTuple, Tuple
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
@@ -26,9 +23,11 @@ UNKNOWN = 'UNKNOWN'
 
 
 def ensure_node_available_or_raise():
+    from subprocess import CalledProcessError, check_output
+
     try:
-        subprocess.check_output(['node', '--version'])
-    except subprocess.CalledProcessError as error:
+        check_output(['node', '--version'])
+    except CalledProcessError as error:
         raise BentoMLException(
             'Error executing node command: {}'.format(error.output.decode())
         )
@@ -46,7 +45,9 @@ def parse_grpc_url(url):
     >>> parse_grpc_url("yatai.com:43/query")
     (None, 'yatai.com:43/query')
     '''
-    parts = urllib3.util.parse_url(url)
+    from urllib3.util import parse_url
+
+    parts = parse_url(url)
     return parts.scheme, url.replace(f"{parts.scheme}://", "", 1)
 
 

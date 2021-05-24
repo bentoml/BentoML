@@ -29,8 +29,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
 from bentoml.exceptions import YataiDeploymentException
-from bentoml.yatai.db import Base
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
+from bentoml.yatai.db.base import Base
 from bentoml.yatai.db.stores.label import (
     LabelStore,
     RESOURCE_TYPE,

@@ -105,7 +105,7 @@ dev_requires = [
 
 docs_requires = [
     "recommonmark",
-    "sphinx",
+    "sphinx<=3.5.4",
     "sphinx-click",
     "sphinx_rtd_theme",
     "sphinxcontrib-fulltoc",

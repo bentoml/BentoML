@@ -45,9 +45,10 @@ class InferenceAPI(object):
         service,
         name,
         doc,
-        input_adapter: BaseInputAdapter,
+        http_methods,
         user_func: callable,
-        output_adapter: BaseOutputAdapter,
+        input_adapter: BaseInputAdapter = None,
+        output_adapter: BaseOutputAdapter = None,
         mb_max_latency=10000,
         mb_max_batch_size=1000,
         batch=False,
@@ -62,6 +63,7 @@ class InferenceAPI(object):
             CLI options into parameters for API func
         :param user_func: the user-defined API callback function, this is
             typically the 'predict' method on a model
+        :param http_methods: the list of methods
         :param output_adapter: A OutputAdapter is an layer between result of user
             defined API callback function
             and final output in a variety of different forms,
@@ -86,18 +88,20 @@ class InferenceAPI(object):
         self.mb_max_latency = mb_max_latency
         self.mb_max_batch_size = mb_max_batch_size
         self.batch = batch
+        self._http_methods = http_methods
         self.route = name if route is None else route
 
-        if not self.input_adapter.BATCH_MODE_SUPPORTED and batch:
-            raise BentoMLConfigException(
-                f"{input_adapter.__class__.__name__} does not support `batch=True`"
-            )
+        if self.input_adapter is not None:
+            if not self.input_adapter.BATCH_MODE_SUPPORTED and batch:
+                raise BentoMLConfigException(
+                    f"{input_adapter.__class__.__name__} does not support `batch=True`"
+                )
 
-        if not self.input_adapter.SINGLE_MODE_SUPPORTED and not batch:
-            raise BentoMLConfigException(
-                f"{input_adapter.__class__.__name__} does not support `batch=False`, "
-                "its output passed to API functions could only be a batch of data."
-            )
+            if not self.input_adapter.SINGLE_MODE_SUPPORTED and not batch:
+                raise BentoMLConfigException(
+                    f"{input_adapter.__class__.__name__} does not support `batch=False`, "
+                    "its output passed to API functions could only be a batch of data."
+                )
 
         if doc is None:
             # generate a default doc string for this inference API
@@ -106,7 +110,15 @@ class InferenceAPI(object):
                 f"'{type(input_adapter).__name__}', output: "
                 f"'{type(output_adapter).__name__}'"
             )
+
         self._doc = doc
+
+    @property
+    def http_methods(self):
+        """
+        :return: the list of HTTP methods for the endpoint
+        """
+        return self._http_methods
 
     @property
     def service(self):

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from multipledispatch import dispatch
 import logging
 import os
 import sys
@@ -30,6 +31,9 @@ from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import BentoService, InferenceAPI
 from bentoml.tracing import get_tracer
+
+import uvicorn
+from fastapi import FastAPI
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
@@ -165,6 +169,7 @@ class BentoAPIServer:
 
         self.bento_service = bento_service
         self.app = Flask(app_name, static_folder=None)
+        self.fast_api_app = FastAPI(title=app_name)
         self.static_path = self.bento_service.get_web_static_content_path()
         self.enable_swagger = enable_swagger
         self.enable_metrics = enable_metrics
@@ -174,11 +179,12 @@ class BentoAPIServer:
             os.path.dirname(os.path.abspath(__file__)), 'static_content'
         )
 
-        for middleware in (InstrumentMiddleware,):
-            self.app.wsgi_app = middleware(self.app.wsgi_app, self.bento_service)
+        # for middleware in (InstrumentMiddleware,):
+        #     self.app.wsgi_app = middleware(self.app.wsgi_app, self.bento_service)
 
-        self.setup_routes()
+        self.setup_routes(fastapi=True)
 
+    @dispatch(int,str)
     def start(self, port: int, host: str = "127.0.0.1"):
         """
         Start an REST server at the specific port on the instance or parameter.
@@ -191,6 +197,23 @@ class BentoAPIServer:
             threaded=False,
             debug=get_debug_mode(),
             use_reloader=False,
+        )
+
+    @dispatch(bool,int,str)
+    def start(self, fastapi:bool,port: int, host: str = "127.0.0.1"):
+        """
+        Start an REST server at the specific port on the instance or parameter.
+        """
+        # Bentoml api service is not thread safe.
+        uvicorn.run(
+            app=self.fast_api_app,
+            host=host,
+            port=port,
+            threaded=False,
+            debug=get_debug_mode(),
+            use_reloader=False,
+            log_level="info",
+            reload=False
         )
 
     @staticmethod
@@ -293,6 +316,7 @@ class BentoAPIServer:
         feedback_logger.info(data)
         return "success"
 
+    @dispatch()
     def setup_routes(self):
         """
         Setup routes for bento model server, including:
@@ -359,6 +383,20 @@ class BentoAPIServer:
             )
 
         self.setup_bento_service_api_routes()
+
+    @dispatch(bool)
+    def setup_routes(self, fastapi: bool):
+        """
+        Setup routes for bento model server, including user defined InferenceAPI list into flask routes, e.g.:
+        /classify
+        /predict
+        """
+        for api in self.bento_service.inference_apis:
+            self.fast_api_app.add_api_route(
+                path="/{}".format(api.route),
+                endpoint=api.user_func,
+                methods=api.http_methods,
+            )
 
     def setup_bento_service_api_routes(self):
         """

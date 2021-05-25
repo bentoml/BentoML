@@ -589,31 +589,32 @@ def get_yatai_service_impl(base=object):
                     return ContainerizeBentoResponse(status=Status.INTERNAL(e))
 
         def UploadBento(self, request_iterator, context=None):
-            with self.db.create_session() as sess:
-                try:
-                    with TempDirectory() as temp_dir:
-                        temp_tar_path = os.path.join(
-                            temp_dir, f'{uuid.uuid4().hex[:12]}.tar'
-                        )
-                        with open(temp_tar_path, 'wb+') as file:
-                            for request in request_iterator:
-                                if not request.bento_bundle:
-                                    bento_name = request.bento_name
-                                    bento_version = request.bento_version
+            try:
+                with TempDirectory() as temp_dir:
+                    temp_tar_path = os.path.join(
+                        temp_dir, f'{uuid.uuid4().hex[:12]}.tar'
+                    )
+                    with open(temp_tar_path, 'wb+') as file:
+                        for request in request_iterator:
+                            if not request.bento_bundle:
+                                bento_name = request.bento_name
+                                bento_version = request.bento_version
+                            else:
+                                if (
+                                    bento_name == request.bento_name
+                                    and bento_version == request.bento_version
+                                ):
+                                    file.write(request.bento_bundle)
                                 else:
-                                    if (
-                                        bento_name == request.bento_name
-                                        and bento_version == request.bento_version
-                                    ):
-                                        file.write(request.bento_bundle)
-                                    else:
-                                        raise BentoMLException(
-                                            f"Incoming stream request doesn't match "
-                                            f"with initial request info "
-                                            f"{bento_name}:{bento_version} - "
-                                            f"{request.bento_name}:"
-                                            f"{request.bento_version}"
-                                        )
+                                    raise BentoMLException(
+                                        f"Incoming stream request doesn't match "
+                                        f"with initial request info "
+                                        f"{bento_name}:{bento_version} - "
+                                        f"{request.bento_name}:"
+                                        f"{request.bento_version}"
+                                    )
+                        bento_id = f"{bento_name}_{bento_version}"
+                        with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
                             bento_pb = self.db.metadata_store.get(
                                 sess, bento_name, bento_version
                             )
@@ -632,16 +633,17 @@ def get_yatai_service_impl(base=object):
                                         bento_name, bento_version
                                     )
                                 )
-                        return UploadBentoResponse(status=result_status)
-                except BentoMLException as e:
-                    logger.error("RPC ERROR UploadBento: %s", e)
-                    return UploadBentoResponse(status=e.status_proto)
-                except Exception as e:  # pylint: disable=broad-except
-                    logger.error("RPC ERROR UploadBento: %s", e)
-                    return UploadBentoResponse(status=Status.INTERNAL())
+                    return UploadBentoResponse(status=result_status)
+            except BentoMLException as e:
+                logger.error("RPC ERROR UploadBento: %s", e)
+                return UploadBentoResponse(status=e.status_proto)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error("RPC ERROR UploadBento: %s", e)
+                return UploadBentoResponse(status=Status.INTERNAL())
 
         def DownloadBento(self, request, context=None):
-            with self.db.create_session() as sess:
+            bento_id = f"{request.bento_name}_{request.bento_version}"
+            with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
                 try:
                     bento_pb = self.db.metadata_store.get(
                         sess, request.bento_name, request.bento_version

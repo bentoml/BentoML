@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
-class BentoUploadStreamingRequests:
+class BentoUploadStreamRequests:
     """
     A class for iterating over a file to generate upload bento requests
 
@@ -87,17 +87,17 @@ class BentoUploadStreamingRequests:
         ) = get_file_size_and_chunk_count(file_path)
         self.sent_chunk_count = 0
         self.file_index = 0
-        self.send_init_message = False
+        self.sent_init_message = False
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.sent_chunk_count == 0 and self.send_init_message is False:
+        if self.sent_chunk_count == 0 and self.sent_init_message is False:
             request = UploadBentoRequest(
                 bento_name=self.bento_name, bento_version=self.bento_version,
             )
-            self.send_init_message = True
+            self.sent_init_message = True
             return request
         elif self.sent_chunk_count < self.bundle_chunk_count:
             current_file_end = min(self.bundle_size, self.file_index + self.chunk_size)
@@ -636,7 +636,7 @@ class BentoRepositoryAPIClient:
                 )
                 result = self.yatai_service.UploadBento(
                     iter(
-                        BentoUploadStreamingRequests(
+                        BentoUploadStreamRequests(
                             bento_name, bento_version, tarfile_path
                         ),
                     )

@@ -634,10 +634,10 @@ def get_yatai_service_impl(base=object):
                                 )
                         return UploadBentoResponse(status=result_status)
                 except BentoMLException as e:
-                    logger.error("RPC ERROR GetBento: %s", e)
+                    logger.error("RPC ERROR UploadBento: %s", e)
                     return UploadBentoResponse(status=e.status_proto)
                 except Exception as e:  # pylint: disable=broad-except
-                    logger.error("RPC ERROR GetBento: %s", e)
+                    logger.error("RPC ERROR UploadBento: %s", e)
                     return UploadBentoResponse(status=Status.INTERNAL())
 
         def DownloadBento(self, request, context=None):
@@ -675,10 +675,10 @@ def get_yatai_service_impl(base=object):
                                 response = DownloadBentoResponse(bento_bundle=chunk)
                                 yield response
                 except BentoMLException as e:
-                    logger.error("RPC ERROR GetBento: %s", e)
+                    logger.error("RPC ERROR DownloadBento: %s", e)
                     return DownloadBentoResponse(status=e.status_proto)
                 except Exception as e:  # pylint: disable=broad-except
-                    logger.error("RPC ERROR GetBento: %s", e)
+                    logger.error("RPC ERROR DownloadBento: %s", e)
                     return DownloadBentoResponse(status=Status.INTERNAL())
 
     # pylint: enable=unused-argument

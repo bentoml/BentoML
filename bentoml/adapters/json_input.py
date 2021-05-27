@@ -36,7 +36,7 @@ class JsonInput(StringInput):
 
     .. code-block:: python
 
-        from typings import List
+        from typing import List
         from bentoml.types import JsonSerializable
 
         @bentoml.api(input=JsonInput(), batch=True)

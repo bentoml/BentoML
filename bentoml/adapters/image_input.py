@@ -12,112 +12,209 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Iterable, Sequence
+from typing import BinaryIO, Iterable, Sequence, Tuple
 
-from bentoml.adapters.base_output import (BaseOutputAdapter,
-                                          regroup_return_value)
-from bentoml.adapters.utils import get_default_accept_image_formats
-from bentoml.types import (AwsLambdaEvent, HTTPResponse, InferenceError,
-                           InferenceResult, InferenceTask)
+from bentoml.adapters.file_input import FileInput
+from bentoml.adapters.utils import (
+    check_file_extension,
+    get_default_accept_image_formats,
+)
+from bentoml.types import InferenceTask
+from bentoml.utils.lazy_loader import LazyLoader
 
-ApiFuncReturnValue = Sequence[bytes]
+# BentoML optional dependencies, using lazy load to avoid ImportError
+imageio = LazyLoader('imageio', globals(), 'imageio')
+numpy = LazyLoader('numpy', globals(), 'numpy')
 
 
-class ImageOutput(BaseOutputAdapter):
+ApiFuncArgs = Tuple[
+    Sequence['numpy.ndarray'],
+]
+
+
+class ImageInput(FileInput):
+    """Convert incoming image data from http request, cli or lambda event into imageio
+    array (a subclass of numpy.ndarray that has a meta attribute) and pass down to
+    user defined API functions.
+
+    ** To operate raw files or PIL.Image obj, use the low-level :class:`.FileInput`. **
+
+    Parameters
+    ----------
+    accept_image_formats : List[str]
+        A list of acceptable image formats.
+        Default value is loaded from bentoml config
+        'apiserver/default_image_input_accept_file_extensions', which is
+        set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
+        List of all supported format can be found here:
+        https://imageio.readthedocs.io/en/stable/formats.html
+    pilmode : str
+        The pilmode to be used for reading image file into numpy
+        array. Default value is 'RGB'.  Find more information at:
+        https://imageio.readthedocs.io/en/stable/format_png-pil.html
+
+    Raises
+    ----------
+    ImportError: imageio package is required to use ImageInput
+
+    Examples
+    ----------
+
+    Service using ImageInput:
+
+    .. code-block:: python
+
+        from typing import List
+
+        import numpy as np
+        from bentoml import BentoService, api, artifacts
+        from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
+        from bentoml.adapters import ImageInput
+
+        CLASS_NAMES = ['cat', 'dog']
+
+        @artifacts([TensorflowSavedModelArtifact('classifier')])
+        class PetClassification(BentoService):
+            @api(input=ImageInput(), batch=True)
+            def predict(
+                self, image_arrays: List[imageio.core.utils.Array]
+            ) -> List[str]:
+                results = self.artifacts.classifer.predict(image_arrays)
+                return [CLASS_NAMES[r] for r in results]
+
+    OR use ImageInput with ``batch=False`` (the default):
+
+    .. code-block:: python
+
+        @api(input=ImageInput(), batch=False)
+        def predict(self, image_array: imageio.core.utils.Array) -> str:
+            results = self.artifacts.classifer.predict([image_array])
+            return CLASS_NAMES[results[0]]
+
+    Query with HTTP request::
+
+        curl -i \\
+          --header "Content-Type: image/jpeg" \\
+          --request POST \\
+          --data-binary @test.jpg \\
+          localhost:5000/predict
+
+    OR::
+
+        curl -i \\
+          -F image=@test.jpg \\
+          localhost:5000/predict
+
+    OR by an HTML form that sends multipart data:
+
+    .. code-block:: html
+
+        <form action="http://localhost:8000" method="POST"
+              enctype="multipart/form-data">
+            <input name="image" type="file">
+            <input type="submit">
+        </form>
+
+    OR by python requests:
+
+    .. code-block:: python
+
+        import requests
+
+        with open("test.jpg", "rb") as f:
+            image_bytes = f.read()  # from file path
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+        }
+        response = requests.post(your_url, files=files)
+
+    .. code-block:: python
+
+        import requests
+        import PIL
+
+        pil_image = PIL.Image.open('test.jpg')
+
+        image_bytes = pil_image.tobytes()  # from PIL.Image
+
+        files = {
+            "image": ("test.jpg", image_bytes),
+        }
+        response = requests.post(your_url, files=files)
+
+    Query with CLI command::
+
+        bentoml run PyTorchFashionClassifier:latest predict --input-file test.jpg
+
+    OR infer all images under a folder with ten images each batch::
+
+        bentoml run PyTorchFashionClassifier:latest predict \\
+          --input-file folder/*.jpg --max-batch-size 10
     """
-    Converts result of user defined API function into image output.
 
-        Args:
-                cors (str): The value of the Access-Control-Allow-Origin header set in the AWS Lambda
-                        response object.Default is "*". If set to None,
-                        the header will not be set.
-                extension_format (str): Refers to the "Content-Type" value of the returned image.
-                        Default is "None". If set to None, an attempt is made to retrieve the
-                        "Content-Type" value from the incoming data.
-    """
+    def __init__(
+        self, accept_image_formats=None, pilmode="RGB", **base_kwargs,
+    ):
+        assert imageio, "`imageio` dependency can be imported"
 
-    def __init__(self, extension_format: str = None, **kwargs):
-        super().__init__(**kwargs)
-        self.extension_format = extension_format
+        super().__init__(**base_kwargs)
+        if 'input_names' in base_kwargs:
+            raise TypeError(
+                "ImageInput doesn't take input_names as parameters since bentoml 0.8."
+                "Update your Service definition "
+                "or use MultiImageInput instead."
+            )
 
-    def pack_user_func_return_value(
-            self, return_result: ApiFuncReturnValue, tasks: Sequence[InferenceTask],
-    ) -> Sequence[InferenceResult[str]]:
-        """
-        Pack the return value of user defined API function into InferenceResults
-        """
-        results = []
-        for bytes_, task in regroup_return_value(return_result, tasks):
-            try:
-                if self.extension_format is None and task.http_headers.get('Content-Type', None).lower() in get_default_accept_image_formats():
-                    return_type = task.http_headers.get('Content-Type', None)
-                    results.append(
-                        InferenceResult(
-                            data=bytes_,
-                            http_status=200,
-                            http_headers={
-                                "Content-Type": f"image/{return_type}"},
-                        )
-                    )
-                elif self.extension_format is not None and self.extension_format.lower() in get_default_accept_image_formats():
-                    return_type = self.extension_format
-                    results.append(
-                        InferenceResult(
-                            data=bytes_,
-                            http_status=200,
-                            http_headers={
-                                "Content-Type": f"image/{return_type}"},
-                        )
-                    )
-                else:
-                    results.append(InferenceError(
-                        err_msg=f"Current service only returns "
-                        f"{get_default_accept_image_formats()} formats", http_status=400,))
-
-            except AssertionError as e:
-                results.append(InferenceError(
-                    err_msg=str(e), http_status=400,))
-            except Exception as e:  # pylint: disable=broad-except
-                results.append(InferenceError(
-                    err_msg=str(e), http_status=500,))
-        return tuple(results)
-
-    def to_http_response(self, result: InferenceResult) -> HTTPResponse:
-        """
-        Converts InferenceResults into HTTP responses.
-        """
-        return HTTPResponse(
-            status=result.http_status,
-            headers=tuple(result.http_headers.items()),
-            body=result.err_msg or result.data,
+        self.pilmode = pilmode
+        self.accept_image_formats = set(
+            accept_image_formats or get_default_accept_image_formats()
         )
 
-    def to_cli(self, results: Iterable[InferenceResult]) -> int:
-        """
-        Converts InferenceResults into CLI output.
-        """
-        flag = 0
-        for result in results:
-            if result.err_msg:
-                print(result.err_msg)
-                flag = 1
-            else:
-                print(result.data)
-        return flag
+    @property
+    def config(self):
+        return {
+            # Converting to list, google.protobuf.Struct does not work with tuple type
+            "accept_image_formats": list(self.accept_image_formats),
+            "pilmode": self.pilmode,
+        }
 
-    def to_aws_lambda_event(self, result: InferenceResult) -> AwsLambdaEvent:
-        """
-        Converts InferenceResults into AWS lambda events.
-        """
-        # Allow disabling CORS by setting it to None
-        if self.cors:
-            return {
-                "statusCode": result.http_status,
-                "body": result.err_msg or result.data,
-                "headers": {"Access-Control-Allow-Origin": self.cors},
-            }
-        else:
-            return {
-                "statusCode": result.http_status,
-                "body": result.err_msg or result.data,
-            }
+    @property
+    def request_schema(self):
+        return {
+            "image/*": {"schema": {"type": "string", "format": "binary"}},
+            "multipart/form-data": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "image_file": {"type": "string", "format": "binary"}
+                    },
+                }
+            },
+        }
+
+    @property
+    def pip_dependencies(self):
+        return ["imageio"]
+
+    def extract_user_func_args(
+        self, tasks: Iterable[InferenceTask[BinaryIO]]
+    ) -> ApiFuncArgs:
+        img_list = []
+        for task in tasks:
+            if getattr(task.data, "name", None) and not check_file_extension(
+                task.data.name, self.accept_image_formats
+            ):
+                task.discard(
+                    http_status=400,
+                    err_msg=f"Current service only accepts "
+                    f"{self.accept_image_formats} formats",
+                )
+                continue
+            try:
+                img_array = imageio.imread(task.data, pilmode=self.pilmode)
+                img_list.append(img_array)
+            except ValueError as e:
+                task.discard(http_status=400, err_msg=str(e))
+
+        return (img_list,)

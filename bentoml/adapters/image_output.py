@@ -14,32 +14,31 @@
 
 from typing import Iterable, Sequence
 
-from bentoml.adapters.base_output import BaseOutputAdapter, regroup_return_value
-from bentoml.types import (
-    AwsLambdaEvent,
-    HTTPResponse,
-    InferenceError,
-    InferenceResult,
-    InferenceTask,
-)
+from bentoml.adapters.base_output import (BaseOutputAdapter,
+                                          regroup_return_value)
 from bentoml.adapters.utils import get_default_accept_image_formats
+from bentoml.types import (AwsLambdaEvent, HTTPResponse, InferenceError,
+                           InferenceResult, InferenceTask)
 
 ApiFuncReturnValue = Sequence[bytes]
 
 
 class ImageOutput(BaseOutputAdapter):
     """
-    Converts result of user defined API function into specific output.
+    Converts result of user defined API function into image output.
 
-    Args:
-            cors (str): The value of the Access-Control-Allow-Origin header set in the
-                    AWS Lambda response object. Default is "*". If set to None,
-                    the header will not be set.
+        Args:
+                cors (str): The value of the Access-Control-Allow-Origin header set in the AWS Lambda
+                        response object.Default is "*". If set to None,
+                        the header will not be set.
+                extension_format (str): Refers to the "Content-Type" value of the returned image.
+                        Default is "None". If set to None, an attempt is made to retrieve the
+                        "Content-Type" value from the incoming data.
     """
 
-    def __init__(self, extension, **kwargs):
+    def __init__(self, extension_format: str = None, **kwargs):
         super().__init__(**kwargs)
-        self.extension_format = extension
+        self.extension_format = extension_format
 
     def pack_user_func_return_value(
             self, return_result: ApiFuncReturnValue, tasks: Sequence[InferenceTask],
@@ -48,19 +47,39 @@ class ImageOutput(BaseOutputAdapter):
         Pack the return value of user defined API function into InferenceResults
         """
         results = []
-        for bytes_, _ in regroup_return_value(return_result, tasks):
+        for bytes_, task in regroup_return_value(return_result, tasks):
             try:
-                results.append(
-                    InferenceResult(
-                        data=bytes_,
-                        http_status=200,
-                        http_headers={"Content-Type": f"image/{self.extension_format}"},
+                if self.extension_format is None and task.http_headers.get('Content-Type', None).lower() in get_default_accept_image_formats():
+                    return_type = task.http_headers.get('Content-Type', None)
+                    results.append(
+                        InferenceResult(
+                            data=bytes_,
+                            http_status=200,
+                            http_headers={
+                                "Content-Type": f"image/{return_type}"},
+                        )
                     )
-                )
+                elif self.extension_format is not None and self.extension_format.lower() in get_default_accept_image_formats():
+                    return_type = self.extension_format
+                    results.append(
+                        InferenceResult(
+                            data=bytes_,
+                            http_status=200,
+                            http_headers={
+                                "Content-Type": f"image/{return_type}"},
+                        )
+                    )
+                else:
+                    results.append(InferenceError(
+                        err_msg=f"Current service only returns "
+                        f"{get_default_accept_image_formats()} formats", http_status=400,))
+
             except AssertionError as e:
-                results.append(InferenceError(err_msg=str(e), http_status=400,))
+                results.append(InferenceError(
+                    err_msg=str(e), http_status=400,))
             except Exception as e:  # pylint: disable=broad-except
-                results.append(InferenceError(err_msg=str(e), http_status=500,))
+                results.append(InferenceError(
+                    err_msg=str(e), http_status=500,))
         return tuple(results)
 
     def to_http_response(self, result: InferenceResult) -> HTTPResponse:

@@ -78,7 +78,8 @@ class ImageOutput(BaseOutputAdapter):
                 else:
                     results.append(InferenceError(
                         err_msg=f"Current service only returns "
-                        f"{get_default_accept_image_formats()} formats", http_status=400,))
+                        f"{get_default_accept_image_formats()} formats",
+                        http_status=400,))
 
             except AssertionError as e:
                 results.append(InferenceError(

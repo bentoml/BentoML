@@ -133,7 +133,7 @@ user-defined inference API function.
 
 This design allows BentoML to group API requests into small batches while serving online
 traffic. Comparing to a regular flask or FastAPI based model server, this can largely
-increases the overall throughput of the API server.
+increase the overall throughput of the API server.
 
 Besides `DataframeInput`, BentoML also supports API input types such as `JsonInput`,
 `ImageInput`, `FileInput` and

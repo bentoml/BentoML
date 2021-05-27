@@ -28,12 +28,12 @@ class ImageOutput(BaseOutputAdapter):
     Converts result of user defined API function into image output.
 
         Args:
-                cors (str): The value of the Access-Control-Allow-Origin header set in the AWS Lambda
-                        response object.Default is "*". If set to None,
-                        the header will not be set.
-                extension_format (str): Refers to the "Content-Type" value of the returned image.
-                        Default is "None". If set to None, an attempt is made to retrieve the
-                        "Content-Type" value from the incoming data.
+                cors (str): The value of the Access-Control-Allow-Origin header set
+                    in the AWS Lambda response object.Default is "*". If set to None,
+                    the header will not be set.
+                extension_format (str): Refers to the "Content-Type" value of the
+                    returned image. Default is "None". If set to None, an attempt is
+                    made to retrieve the "Content-Type" value from the incoming data.
     """
 
     def __init__(self, extension_format: str = None, **kwargs):
@@ -49,7 +49,10 @@ class ImageOutput(BaseOutputAdapter):
         results = []
         for bytes_, task in regroup_return_value(return_result, tasks):
             try:
-                if self.extension_format is None and task.http_headers.get('Content-Type', None).lower() in get_default_accept_image_formats():
+                if ((self.extension_format is None)
+                        and (task.http_headers.get('Content-Type', None).lower()
+                             in get_default_accept_image_formats())):
+
                     return_type = task.http_headers.get('Content-Type', None)
                     results.append(
                         InferenceResult(
@@ -59,7 +62,10 @@ class ImageOutput(BaseOutputAdapter):
                                 "Content-Type": f"image/{return_type}"},
                         )
                     )
-                elif self.extension_format is not None and self.extension_format.lower() in get_default_accept_image_formats():
+                elif ((self.extension_format is not None)
+                      and (self.extension_format.lower()
+                           in get_default_accept_image_formats())):
+
                     return_type = self.extension_format
                     results.append(
                         InferenceResult(

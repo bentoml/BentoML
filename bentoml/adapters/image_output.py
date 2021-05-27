@@ -22,6 +22,7 @@ from bentoml.types import (
     InferenceResult,
     InferenceTask,
 )
+from bentoml.adapters.utils import get_default_accept_image_formats
 
 ApiFuncReturnValue = Sequence[bytes]
 
@@ -31,13 +32,17 @@ class ImageOutput(BaseOutputAdapter):
     Converts result of user defined API function into specific output.
 
     Args:
-        cors (str): The value of the Access-Control-Allow-Origin header set in the
-            AWS Lambda response object. Default is "*". If set to None,
-            the header will not be set.
+            cors (str): The value of the Access-Control-Allow-Origin header set in the
+                    AWS Lambda response object. Default is "*". If set to None,
+                    the header will not be set.
     """
 
+    def __init__(self, extension, **kwargs):
+        super().__init__(**kwargs)
+        self.extension_format = extension
+
     def pack_user_func_return_value(
-        self, return_result: ApiFuncReturnValue, tasks: Sequence[InferenceTask],
+            self, return_result: ApiFuncReturnValue, tasks: Sequence[InferenceTask],
     ) -> Sequence[InferenceResult[str]]:
         """
         Pack the return value of user defined API function into InferenceResults
@@ -49,7 +54,7 @@ class ImageOutput(BaseOutputAdapter):
                     InferenceResult(
                         data=bytes_,
                         http_status=200,
-                        http_headers={"Content-Type": "image/png"},
+                        http_headers={"Content-Type": f"image/{self.extension_format}"},
                     )
                 )
             except AssertionError as e:

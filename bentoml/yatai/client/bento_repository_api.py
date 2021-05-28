@@ -649,7 +649,7 @@ class BentoRepositoryAPIClient:
                             bento_name, bento_version, tarfile_path
                         ),
                     ),
-                    timeout=6, # 6 seconds timeout
+                    timeout=6,  # 6 seconds timeout
                 )
                 if result.status.status_code != status_pb2.Status.OK:
                     raise BentoMLException(result.status.error_message)

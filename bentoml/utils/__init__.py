@@ -45,7 +45,7 @@ __all__ = [
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
-DEFAULT_CHUNK_SIZE = 1024 * 1024  # 1M
+DEFAULT_CHUNK_SIZE = 1024 * 8  # 8kb
 
 
 class _Missing(object):

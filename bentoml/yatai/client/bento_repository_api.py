@@ -22,6 +22,7 @@ import tarfile
 import uuid
 
 import click
+import grpc
 import requests
 
 from bentoml.exceptions import BentoMLException
@@ -114,6 +115,13 @@ class BentoUploadStreamRequests:
         else:
             self.bundle.close()
             raise StopIteration
+
+
+def process_grpc_error(grpc_error):
+    if grpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+        return 'request timeout'
+    else:
+        return grpc_error.details()
 
 
 class BentoRepositoryAPIClient:
@@ -277,14 +285,15 @@ class BentoRepositoryAPIClient:
                 bento_service_metadata, status=upload_status
             )
 
-            logger.info(
-                "BentoService bundle '%s:%s' saved to: %s",
-                bento_service_metadata.name,
-                bento_service_metadata.version,
-                response.uri.uri,
-            )
-            # Return URI to saved bento in repository storage
-            return response.uri.uri
+            if upload_status == UploadStatus.DONE:
+                logger.info(
+                    "BentoService bundle '%s:%s' saved to: %s",
+                    bento_service_metadata.name,
+                    bento_service_metadata.version,
+                    response.uri.uri,
+                )
+                # Return URI to saved bento in repository storage
+                return response.uri.uri
         elif response.uri.type == BentoUri.S3 or response.uri.type == BentoUri.GCS:
             uri_type = 'S3' if response.uri.type == BentoUri.S3 else 'GCS'
             self._update_bento_upload_progress(
@@ -639,7 +648,8 @@ class BentoRepositoryAPIClient:
                         BentoUploadStreamRequests(
                             bento_name, bento_version, tarfile_path
                         ),
-                    )
+                    ),
+                    timeout=6, # 6 seconds timeout
                 )
                 if result.status.status_code != status_pb2.Status.OK:
                     raise BentoMLException(result.status.error_message)
@@ -648,6 +658,12 @@ class BentoRepositoryAPIClient:
                 raise BentoMLException(
                     f'Failed to upload {bento_name}:{bento_version} to remote yatai '
                     f'server {e}'
+                )
+            except grpc.RpcError as e:
+                error_message = process_grpc_error(e)
+                raise BentoMLException(
+                    f'Failed to upload {bento_name}:{bento_version} to remote yatai '
+                    f'server {error_message}'
                 )
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(f'ERROR upload bento: {e}')
@@ -663,7 +679,8 @@ class BentoRepositoryAPIClient:
                 response_iterator = self.yatai_service.DownloadBento(
                     DownloadBentoRequest(
                         bento_name=bento_name, bento_version=bento_version
-                    )
+                    ),
+                    timeout=6,
                 )
                 file = open(temp_tar_path, 'wb+')
                 for response in response_iterator:
@@ -683,6 +700,12 @@ class BentoRepositoryAPIClient:
                 raise BentoMLException(
                     f'Failed to download {bento_name}:{bento_version} from remote '
                     f'yatai server {e}'
+                )
+            except grpc.RpcError as e:
+                error_message = process_grpc_error(e)
+                raise BentoMLException(
+                    f'Failed to upload {bento_name}:{bento_version} to remote yatai '
+                    f'server {error_message}'
                 )
             except Exception as e:  # pylint: disable=broad-except
                 logger.error(f'ERROR download bento: {e}')

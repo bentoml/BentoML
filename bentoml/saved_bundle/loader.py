@@ -29,7 +29,6 @@ from bentoml.utils.gcs import is_gcs_url
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.saved_bundle.pip_pkg import ZIPIMPORT_DIR
-from bentoml.utils.usage_stats import track_load_start, track_load_finish
 
 logger = logging.getLogger(__name__)
 
@@ -263,13 +262,8 @@ def load_from_dir(bundle_path):
     Returns:
         bentoml.service.BentoService: a loaded BentoService instance
     """
-    track_load_start()
-
     svc_cls = load_bento_service_class(bundle_path)
-    svc = svc_cls()
-
-    track_load_finish(svc)
-    return svc
+    return svc_cls()
 
 
 @resolve_remote_bundle

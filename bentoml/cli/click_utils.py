@@ -116,7 +116,7 @@ class BentoMLCommandGroup(click.Group):
         def wrapper(do_not_track: bool, *args, **kwargs):
             if do_not_track:
                 os.environ["BENTOML_DO_NOT_TRACK"] = str(True)
-                logger.info(
+                logger.debug(
                     "Executing '%s' command without usage tracking.", command_name
                 )
 

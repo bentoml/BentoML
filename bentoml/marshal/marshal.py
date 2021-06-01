@@ -19,8 +19,6 @@ import multiprocessing
 import time
 import traceback
 
-import aiohttp
-import aiohttp.web
 import psutil
 from dependency_injector.wiring import Provide, inject
 
@@ -91,6 +89,8 @@ def metrics_patch(cls):
             )
 
         async def request_dispatcher(self, request):
+            from aiohttp.web import Response
+
             func = super(_MarshalService, self).request_dispatcher
             api_route = request.match_info.get("path", "/")
             _metrics_request_in_progress = self.metrics_request_in_progress.labels(
@@ -101,13 +101,13 @@ def metrics_patch(cls):
             try:
                 resp = await func(request)
             except asyncio.CancelledError:
-                resp = aiohttp.web.Response(status=503)
+                resp = Response(status=503)
             except Exception as e:  # pylint: disable=broad-except
                 self.metrics_request_exception.labels(
                     endpoint=api_route, exception_class=e.__class__.__name__
                 ).inc()
                 logger.error(traceback.format_exc())
-                resp = aiohttp.web.Response(status=500)
+                resp = Response(status=500)
             self.metrics_request_total.labels(
                 endpoint=api_route, http_response_code=resp.status
             ).inc()
@@ -196,13 +196,15 @@ class MarshalService:
         return self._outbound_sema
 
     def get_client(self):
+        from aiohttp import ClientSession, DummyCookieJar, UnixConnector, TCPConnector
+
         if self._client is None:
-            jar = aiohttp.DummyCookieJar()
+            jar = DummyCookieJar()
             if self.outbound_unix_socket:
-                conn = aiohttp.UnixConnector(path=self.outbound_unix_socket,)
+                conn = UnixConnector(path=self.outbound_unix_socket,)
             else:
-                conn = aiohttp.TCPConnector(limit=30)
-            self._client = aiohttp.ClientSession(
+                conn = TCPConnector(limit=30)
+            self._client = ClientSession(
                 connector=conn, auto_decompress=False, cookie_jar=jar,
             )
         return self._client
@@ -219,13 +221,14 @@ class MarshalService:
 
         ** marshal server will give priority to meet these limits than efficiency
         '''
+        from aiohttp.web import HTTPTooManyRequests
 
         if api_route not in self.batch_handlers:
             _func = CorkDispatcher(
                 max_latency,
                 max_batch_size,
                 shared_sema=self.fetch_sema(),
-                fallback=aiohttp.web.HTTPTooManyRequests,
+                fallback=HTTPTooManyRequests,
             )(functools.partial(self._batch_handler_template, api_route=api_route))
             self.batch_handlers[api_route] = _func
 
@@ -250,6 +253,8 @@ class MarshalService:
                 )
 
     async def request_dispatcher(self, request):
+        from aiohttp.web import HTTPInternalServerError, Response
+
         with get_tracer().async_span(
             service_name=self.__class__.__name__,
             span_name="[1]http request",
@@ -268,19 +273,22 @@ class MarshalService:
                 except RemoteException as e:
                     # known remote exception
                     logger.error(traceback.format_exc())
-                    resp = aiohttp.web.Response(
+                    resp = Response(
                         status=e.payload.status,
                         headers=e.payload.headers,
                         body=e.payload.body,
                     )
                 except Exception:  # pylint: disable=broad-except
                     logger.error(traceback.format_exc())
-                    resp = aiohttp.web.HTTPInternalServerError()
+                    resp = HTTPInternalServerError()
             else:
                 resp = await self.relay_handler(request)
         return resp
 
     async def relay_handler(self, request):
+        from aiohttp.client_exceptions import ClientConnectionError
+        from aiohttp.web import Response
+
         data = await request.read()
         url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)
 
@@ -295,11 +303,9 @@ class MarshalService:
                     request.method, url, data=data, headers=request.headers
                 ) as resp:
                     body = await resp.read()
-            except aiohttp.client_exceptions.ClientConnectionError:
-                return aiohttp.web.Response(status=503, body=b"Service Unavailable")
-        return aiohttp.web.Response(
-            status=resp.status, body=body, headers=resp.headers,
-        )
+            except ClientConnectionError:
+                return Response(status=503, body=b"Service Unavailable")
+        return Response(status=resp.status, body=body, headers=resp.headers,)
 
     async def _batch_handler_template(self, requests, api_route):
         '''
@@ -311,6 +317,9 @@ class MarshalService:
             * RemoteException: known exceptions from model server
             * Exception: other exceptions
         '''
+        from aiohttp.client_exceptions import ClientConnectionError
+        from aiohttp.web import Response
+
         headers = {MARSHAL_REQUEST_HEADER: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"
 
@@ -324,7 +333,7 @@ class MarshalService:
                 client = self.get_client()
                 async with client.post(api_url, data=reqs_s, headers=headers) as resp:
                     raw = await resp.read()
-            except aiohttp.client_exceptions.ClientConnectionError as e:
+            except ClientConnectionError as e:
                 raise RemoteException(
                     e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
                 )
@@ -339,9 +348,7 @@ class MarshalService:
                 )
             merged = DataLoader.split_responses(raw)
             return tuple(
-                aiohttp.web.Response(
-                    body=i.body, headers=i.headers, status=i.status or 500
-                )
+                Response(body=i.body, headers=i.headers, status=i.status or 500)
                 for i in merged
             )
 
@@ -356,7 +363,9 @@ class MarshalService:
         logger.info("Running micro batch service on :%d", port)
 
     def make_app(self):
-        app = aiohttp.web.Application(client_max_size=self.max_request_size)
+        from aiohttp.web import Application
+
+        app = Application(client_max_size=self.max_request_size)
         app.router.add_view("/", self.relay_handler)
         app.router.add_view("/{path:.*}", self.request_dispatcher)
         return app
@@ -365,9 +374,11 @@ class MarshalService:
     def fork_start_app(
         self, port=Provide[BentoMLContainer.config.bento_server.port],
     ):
+        from aiohttp.web import run_app
+
         # Use new eventloop in the fork process to avoid problems on MacOS
         # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         app = self.make_app()
-        aiohttp.web.run_app(app, port=port)
+        run_app(app, port=port)

@@ -33,7 +33,6 @@ from bentoml.yatai.proto.deployment_pb2 import (
 )
 from bentoml.exceptions import BentoMLException, YataiDeploymentException
 from bentoml.yatai.proto import status_pb2
-from bentoml.yatai.validator import validate_deployment_pb
 from bentoml.yatai.deployment_utils import (
     deployment_yaml_string_to_pb,
     deployment_dict_to_pb,
@@ -113,6 +112,8 @@ class DeploymentAPIClient:
         )
 
     def create(self, deployment_info, wait):
+        from bentoml.yatai.validator import validate_deployment_pb
+
         if isinstance(deployment_info, dict):
             deployment_pb = deployment_dict_to_pb(deployment_info)
         elif isinstance(deployment_info, str):
@@ -160,6 +161,8 @@ class DeploymentAPIClient:
         return self.get(namespace=deployment_pb.namespace, name=deployment_pb.name)
 
     def apply(self, deployment_info, wait):
+        from bentoml.yatai.validator import validate_deployment_pb
+
         if isinstance(deployment_info, dict):
             deployment_pb = deployment_dict_to_pb(deployment_info)
         elif isinstance(deployment_info, str):

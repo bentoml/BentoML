@@ -3,7 +3,6 @@ import math
 import time
 from collections import defaultdict
 
-import aiohttp
 from tabulate import tabulate
 
 
@@ -290,9 +289,12 @@ class BenchmarkClient:
         self._stop_loop_flag = False
 
     async def _start(self):
+        from aiohttp import ClientSession
+        from aiohttp.client_exceptions import ServerDisconnectedError
+
         wait_time_suffix = 0
         url, method, headers, data = self.request_producer()
-        async with aiohttp.ClientSession() as sess:
+        async with ClientSession() as sess:
             while True:
                 req_start = time.time()
                 req_url = self.url_override or url
@@ -313,10 +315,7 @@ class BenchmarkClient:
                             err = f"<status: {r.status}>\n{msg}"
                 except asyncio.CancelledError:  # pylint: disable=try-except-raise
                     raise
-                except (
-                    aiohttp.client_exceptions.ServerDisconnectedError,
-                    TimeoutError,
-                ) as e:
+                except (ServerDisconnectedError, TimeoutError) as e:
                     group = repr(e.__class__)
                     err = repr(e)
                 except Exception as e:  # pylint: disable=broad-except

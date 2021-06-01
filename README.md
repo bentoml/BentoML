@@ -94,9 +94,10 @@ Standarlize model serving and deployment workflow for teams:
 * Transformers - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#transformers)
 * Gluon - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#gluon)
 * Detectron - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#detectron)
-* Paddle - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#paddle)
+* PaddlePaddle - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#paddle) | [Example](https://github.com/bentoml/gallery#paddlepaddle)
 * EvalML - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#evalml)
 * EasyOCR -[Docs](https://docs.bentoml.org/en/latest/frameworks.html#easyocr)
+* ONNX-MLIR - [Docs](https://docs.bentoml.org/en/latest/frameworks.html#onnx-mlir)
 
 
 ### Deployment Options
@@ -129,7 +130,7 @@ to understand which deployment option is best suited for your use case.
 ## Introduction
 
 BentoML provides APIs for defining a prediction service, a servable model so to speak, 
-which includes the traind ML model itself, plus its pre-processing, post-processing
+which includes the trained ML model itself, plus its pre-processing, post-processing
 code, input/output specifications and dependencies. Here's what a simple
 prediction service look like in BentoML: 
 

@@ -20,8 +20,7 @@ import itertools
 import logging
 import sys
 from typing import Iterable, Iterator, Sequence
-
-import flask
+from flask import Request
 
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
 from bentoml.exceptions import BentoMLConfigException
@@ -303,7 +302,7 @@ class InferenceAPI(object):
 
         return tuple(full_results)
 
-    def handle_request(self, request: flask.Request):
+    def handle_request(self, request: Request):
         req = HTTPRequest.from_flask_request(request)
         inf_task = self.input_adapter.from_http_request(req)
         results = self.infer((inf_task,))

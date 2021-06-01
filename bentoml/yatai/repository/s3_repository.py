@@ -13,11 +13,7 @@
 # limitations under the License.
 
 import logging
-from urllib.parse import urlparse
 from dependency_injector.wiring import Provide, inject
-
-import boto3
-from botocore.exceptions import ClientError
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import YataiRepositoryException
@@ -42,6 +38,9 @@ class S3Repository(BaseRepository):
             BentoMLContainer.config.yatai.repository.s3.expiration
         ],
     ):
+        import boto3
+        from urllib.parse import urlparse
+
         self.uri_type = BentoUri.S3
 
         parse_result = urlparse(base_url)
@@ -106,6 +105,8 @@ class S3Repository(BaseRepository):
 
     def dangerously_delete(self, bento_name, bento_version):
         # Remove s3 path containing related Bento files
+
+        from botocore.exceptions import ClientError
 
         object_name = self._get_object_name(bento_name, bento_version)
 

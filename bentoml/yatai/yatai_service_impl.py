@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import shutil
 import tarfile
 import uuid
 import logging
@@ -614,7 +613,7 @@ def get_yatai_service_impl(base=object):
                                         f"{request.bento_version}"
                                     )
                         bento_id = f"{bento_name}_{bento_version}"
-                        with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
+                        with lock(self.db, [(bento_id, LockType.WRITE)]) as (sess, _):
                             bento_pb = self.db.metadata_store.get(
                                 sess, bento_name, bento_version
                             )
@@ -623,7 +622,9 @@ def get_yatai_service_impl(base=object):
                                 # If there is a directory exist, it will be removed
                                 # for the newly uploaded one.
                                 if os.path.exists(bento_pb.uri.uri):
-                                    shutil.rmtree(bento_pb.uri.uri)
+                                    raise BentoMLException(
+                                        'Bento bundle path already exists'
+                                    )
                                 with tarfile.open(fileobj=file, mode='r:gz') as tar:
                                     tar.extractall(path=bento_pb.uri.uri)
                                 result_status = Status.OK()

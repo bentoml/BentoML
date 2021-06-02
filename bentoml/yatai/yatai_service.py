@@ -11,10 +11,6 @@ from bentoml.configuration import get_debug_mode
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import reserve_free_port
-from bentoml.yatai.grpc_interceptor import (
-    PromServerInterceptor,
-    ServiceLatencyInterceptor,
-)
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 from dependency_injector.wiring import Provide, inject
 from prometheus_client import start_http_server
@@ -112,6 +108,10 @@ def start_yatai_service_grpc_server(
     from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
     from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
     from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
+    from bentoml.yatai.grpc_interceptor import (
+        PromServerInterceptor,
+        ServiceLatencyInterceptor,
+    )
 
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(

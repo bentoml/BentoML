@@ -8,7 +8,7 @@ import { getLogger } from "./logger";
 import axios from "axios";
 
 const logger = getLogger();
-const ALL_NAMESPACE_TAG = '__BENTOML_ALL_NAMESPACE';
+const ALL_NAMESPACE_TAG = "__BENTOML_ALL_NAMESPACE";
 
 const createAPIRoutes = (app, yataiClient) => {
   let router = express.Router();

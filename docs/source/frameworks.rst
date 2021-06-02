@@ -155,9 +155,9 @@ Example Projects:
 .. autoclass:: bentoml.frameworks.onnx.OnnxModelArtifact
 
 
-=====
+=========
 ONNX-MLIR
-=====
+=========
 
 .. autoclass:: bentoml.frameworks.onnxmlir.OnnxMlirModelArtifact
 

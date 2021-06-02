@@ -81,6 +81,7 @@ BentoML saved bundle for deployment:
 Create a file with the following bash command which will train an iris sklearn model and package it in a Bento Service:
 
 .. code-block:: bash
+
     cd /tmp
     cat > iris_classifier.py <<EOF
     from sklearn import svm

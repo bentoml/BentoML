@@ -89,23 +89,7 @@ def _send_amplitude_event(event_type, event_properties):
 
 def _get_bento_service_event_properties(bento_service, properties=None):
     bento_service_metadata = bento_service.get_bento_service_metadata_pb()
-    return _bento_service_metadata_to_event_properties(
-        bento_service_metadata, properties
-    )
 
-
-def _get_bento_service_event_properties_from_bundle_path(bundle_path, properties=None):
-    from bentoml.saved_bundle import load_bento_service_metadata
-
-    bento_service_metadata = load_bento_service_metadata(bundle_path)
-    return _bento_service_metadata_to_event_properties(
-        bento_service_metadata, properties
-    )
-
-
-def _bento_service_metadata_to_event_properties(
-    bento_service_metadata, properties=None
-):
     if properties is None:
         properties = {}
 
@@ -155,12 +139,6 @@ def track(event_type, event_properties=None):
     if event_properties is None:
         event_properties = {}
 
-    if 'bento_service_bundle_path' in event_properties:
-        _get_bento_service_event_properties_from_bundle_path(
-            event_properties['bento_service_bundle_path'], event_properties
-        )
-        del event_properties['bento_service_bundle_path']
-
     event_properties['py_version'] = _py_version()
     event_properties["bento_version"] = BENTOML_VERSION
     event_properties["platform_info"] = _platform()
@@ -171,12 +149,3 @@ def track(event_type, event_properties=None):
 def track_save(bento_service, extra_properties=None):
     properties = _get_bento_service_event_properties(bento_service, extra_properties)
     return track("save", properties)
-
-
-def track_load_start():
-    return track('load-start', {})
-
-
-def track_load_finish(bento_service):
-    properties = _get_bento_service_event_properties(bento_service)
-    return track("load", properties)

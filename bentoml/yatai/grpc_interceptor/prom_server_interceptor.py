@@ -15,6 +15,10 @@ from bentoml.yatai.utils import (
     parse_method_name,
     wrap_interator_inc_counter,
 )
+from bentoml.utils.usage_stats import track
+
+
+YATAI_GRPC_USAGE_EVENT_NAME = "yatai-grpc-call"
 
 
 def _wrap_rpc_behaviour(handler, fn):
@@ -203,11 +207,16 @@ class ServiceLatencyInterceptor(grpc.ServerInterceptor):  # pylint: disable=W023
                 try:
                     return behaviour(request_or_iterator, servicer_context)
                 finally:
+                    duration = max(default_timer() - start, 0)
                     GRPC_SERVER_HANDLED_HISTOGRAM.labels(
                         grpc_type='UNARY',
                         grpc_service=grpc_service_name,
                         grpc_method=grpc_method_name,
-                    ).observe(max(default_timer() - start, 0))
+                    ).observe(duration)
+                    track(
+                        YATAI_GRPC_USAGE_EVENT_NAME,
+                        {"method": grpc_method_name, "duration": duration},
+                    )
 
             return new_behaviour
 

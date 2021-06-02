@@ -123,11 +123,11 @@ def _write_bento_content_to_dir(bento_service, path):
         f.write(MANIFEST_IN_TEMPLATE.format(service_name=bento_service.name))
 
     # write Dockerfile
-    logger.debug("Using Docker Base Image %s", bento_service._env._docker_base_image)
+    logger.debug("Using Docker Base Image %s", bento_service._env._python_version)
     with open(os.path.join(path, "Dockerfile"), "w") as f:
         f.write(
             MODEL_SERVER_DOCKERFILE_CPU.format(
-                docker_base_image=bento_service._env._docker_base_image
+                python_version=bento_service._env._python_version
             )
         )
 

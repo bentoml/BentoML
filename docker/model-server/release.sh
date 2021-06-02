@@ -56,4 +56,22 @@ do
     docker push bentoml/model-server:latest-slim-py${version//.}
 
 done
+
+echo "Building cuda-enabled docker base images for ${PYTHON_MAJOR_VERSIONS[*]}"
+for version in "${PYTHON_MAJOR_VERSIONS[@]}"
+do
+    echo "Releasing cuda-enabled docker base image for Python $version.."
+    docker build --pull \
+    --build-arg BENTOML_VERSION=$BENTOML_VERSION \
+    --build-arg PYTHON_VERSION=$version \
+    -t bentoml/model-server:$BENTOML_VERSION-py${version//.}-cuda \
+    -t bentoml/model-server:latest-slim-py${version//.} \
+    -f Dockerfile-slim \
+    --network=host \
+    .
+
+    docker push bentoml/model-server:$BENTOML_VERSION-slim-py${version//.}
+    docker push bentoml/model-server:latest-slim-py${version//.}
+
+done
 echo "Done"

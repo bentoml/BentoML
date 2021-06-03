@@ -1,10 +1,10 @@
 # BentoML will provide supports for CUDA 11.3 with CUDNN 8.2.0.53
 ARG PYTHON_VERSION
 
-ARG CUDA=11.1
+ARG CUDA=11.3
 ARG UBUNTU_VERSION=18.04
 
-FROM nvidia/cuda:${CUDA}-base-ubuntu${UBUNTU_VERSION} as base
+FROM nvidia/cuda:${CUDA}.0-base-ubuntu${UBUNTU_VERSION} as base
 # CUDA need to redefine here since FROM resets all ARGs except default values, which are retained
 ARG CUDA
 ARG CUDNN=8.2.0.53

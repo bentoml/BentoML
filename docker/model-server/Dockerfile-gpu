@@ -2,13 +2,12 @@
 ARG PYTHON_VERSION
 ARG CUDA=11.3
 ARG CUDNN_MAJOR_RELEASE=8
-ARG BENTOML_VERSION=0.12.1
+ARG BENTOML_VERSION
 
 FROM nvidia/cuda:${CUDA}.0-cudnn${CUDNN_MAJOR_RELEASE}-runtime-ubuntu18.04 as builder
 FROM bentoml/model-server:${BENTOML_VERSION}-slim-py${PYTHON_VERSION}
 # CUDA need to redefine here since FROM resets all ARGs except default values, which are retained
 ARG CUDA
-ARG CUDNN=8.2.0
 ARG LIB_DIR_PREFIX=x86_64-linux-gnu
 
 # needed for string substitutions

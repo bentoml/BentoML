@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
+get_latest_release() {
+  # get the latest release for bentoML
+  curl --silent "https://api.github.com/repos/BentoML/bentoml/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")'
+}
+
 if [ "$#" -eq 1 ]; then
   BENTOML_VERSION=$1
 else
@@ -25,34 +30,39 @@ do
         -t bentoml/model-server:"$BENTOML_VERSION"-py"${version//.}" \
         -t bentoml/model-server:latest-py"${version//.}" \
         .
-
-    docker push bentoml/model-server:"$BENTOML_VERSION"-py"${version//.}"
-    docker push bentoml/model-server:latest-py"${version//.}"
+    if ! [[ -t 1 ]]; then  # differentiate when developing Dockerfile and running ./dev/release_docker_images.sh
+      docker push bentoml/model-server:"$BENTOML_VERSION"-py"${version//.}"
+      docker push bentoml/model-server:latest-py"${version//.}"
+    fi
 
 done
 
 # tag the default version as both latest and unspecified python version
 docker tag bentoml/model-server:latest-py${PYTHON_LATEST_VERSION//.} bentoml/model-server:latest
-docker push bentoml/model-server:latest
+docker tag bentoml/model-server:"$BENTOML_VERSION"-py${PYTHON_LATEST_VERSION//.} bentoml/model-server:"$BENTOML_VERSION"
 
-docker tag bentoml/model-server:$BENTOML_VERSION-py${PYTHON_LATEST_VERSION//.} bentoml/model-server:$BENTOML_VERSION
-docker push bentoml/model-server:$BENTOML_VERSION
+if ! [[ -t 1 ]]; then
+  docker push bentoml/model-server:latest
+  docker push bentoml/model-server:"$BENTOML_VERSION"
+fi
 
 echo "Building slim docker base images for ${PYTHON_MAJOR_VERSIONS[*]}"
 for version in "${PYTHON_MAJOR_VERSIONS[@]}"
 do
     echo "Releasing slim docker base image for Python $version.."
     docker build --pull \
-    --build-arg BENTOML_VERSION=$BENTOML_VERSION \
-    --build-arg PYTHON_VERSION=$version \
-    -t bentoml/model-server:$BENTOML_VERSION-slim-py${version//.} \
-    -t bentoml/model-server:latest-slim-py${version//.} \
+    --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
+    --build-arg PYTHON_VERSION="$version" \
+    -t bentoml/model-server:"$BENTOML_VERSION"-slim-py"${version//.}" \
+    -t bentoml/model-server:latest-slim-py"${version//.}" \
     -f Dockerfile-slim \
     --network=host \
     .
 
-    docker push bentoml/model-server:$BENTOML_VERSION-slim-py${version//.}
-    docker push bentoml/model-server:latest-slim-py${version//.}
+    if ! [[ -t 1 ]]; then
+      docker push bentoml/model-server:"$BENTOML_VERSION"-slim-py"${version//.}"
+      docker push bentoml/model-server:latest-slim-py"${version//.}"
+    fi
 
 done
 
@@ -61,14 +71,16 @@ for version in "${PYTHON_MAJOR_VERSIONS[@]}"
 do
     echo "Releasing cuda-enabled docker base image for Python $version.."
     docker build --pull \
-    --build-arg BENTOML_VERSION=$BENTOML_VERSION \
-    --build-arg PYTHON_VERSION=$version \
-    -t bentoml/model-server:$BENTOML_VERSION${}-py${version//.}-gpu \
-    -t bentoml/model-server:latest-py${version//.}-gpu \
+    --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
+    --build-arg PYTHON_VERSION="$version" \
+    -t bentoml/model-server:"$BENTOML_VERSION"-py"${version//.}"-gpu \
+    -t bentoml/model-server:latest-py"${version//.}"-gpu \
     -f Dockerfile-gpu \
     .
 
-    docker push bentoml/model-server:$BENTOML_VERSION-py${version//.}-gpu
-    docker push bentoml/model-server:latest-py${version//.}-gpu
+    if ! [[ -t 1 ]]; then
+      docker push bentoml/model-server:"$BENTOML_VERSION"-py"${version//.}"-gpu
+      docker push bentoml/model-server:latest-py"${version//.}"-gpu
+    fi
 done
 echo "Done"

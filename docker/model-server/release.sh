@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-get_latest_release() {
-  # get the latest release for bentoML
-  curl --silent "https://api.github.com/repos/BentoML/bentoml/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")'
-}
 
 if [ "$#" -eq 1 ]; then
   BENTOML_VERSION=$1
@@ -70,9 +66,10 @@ echo "Building cuda-enabled docker base images for ${PYTHON_MAJOR_VERSIONS[*]}"
 for version in "${PYTHON_MAJOR_VERSIONS[@]}"
 do
     echo "Releasing cuda-enabled docker base image for Python $version.."
+    # for PYTHON_VERSION we are using bentoml/model-server:slim images to reduce boilerplate and decrease buildtime
     docker build --pull \
     --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
-    --build-arg PYTHON_VERSION="$version" \
+    --build-arg PYTHON_VERSION="${version//.}" \
     -t bentoml/model-server:"$BENTOML_VERSION"-py"${version//.}"-gpu \
     -t bentoml/model-server:latest-py"${version//.}"-gpu \
     -f Dockerfile-gpu \

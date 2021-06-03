@@ -1,38 +1,28 @@
-# NOTE: we will handle different CUDA and CUDNN version in future release.
-# For now we will use cuda11.3 with cudnn8.2.0
+# BentoML will provide supports for CUDA 11.3 with CUDNN 8.2.0.53
 ARG PYTHON_VERSION
 ARG CUDA=11.3
-ARG CUDNN_MAJOR_VERSION=8
-ARG UBUNTU_VERSION=20.04
-
-FROM nvidia/cuda:${CUDA}.0-cudnn${CUDNN_MAJOR_VERSION}-runtime-ubuntu${UBUNTU_VERSION} as compile-base
-
-FROM python:${PYTHON_VERSION}-slim as build-base
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential gcc
-
+ARG CUDNN_MAJOR_RELEASE=8
 ARG BENTOML_VERSION=0.12.1
-ENV BENTOML_VERSION=$BENTOML_VERSION
 
-RUN python -m venv /opt/venv
-# Make sure we use the virtualenv:
-ENV PATH="/opt/venv/bin:$PATH"
+FROM nvidia/cuda:${CUDA}.0-cudnn${CUDNN_MAJOR_RELEASE}-runtime-ubuntu18.04 as builder
+FROM bentoml/model-server:${BENTOML_VERSION}-slim-py${PYTHON_VERSION}
+# CUDA need to redefine here since FROM resets all ARGs except default values, which are retained
+ARG CUDA
+ARG CUDNN=8.2.0
+ARG LIB_DIR_PREFIX=x86_64-linux-gnu
 
-# pre-install BentoML requirements
-RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
-COPY entrypoint.sh .
+# needed for string substitutions
+SHELL ["/bin/bash", "-c"]
 
-# multi-stage build to shave dependency cost
-FROM python:${PYTHON_VERSION}-slim AS build-image
-COPY --from=build-base /opt/venv /opt/venv
-COPY --from=build-base entrypoint.sh /usr/local/bin
+COPY --from=builder /usr/local/cuda-${CUDA}/ /usr/local/cuda-${CUDA}/
+RUN ln -s /usr/local/cuda-${CUDA} /usr/local/cuda
 
-COPY --from=compile-base /usr/local/cuda /usr/local/cuda
-COPY --from=compile-base /usr/lib/x86_64-linux-gnu/libcudnn* /usr/local/cuda/lib64/
+COPY --from=builder /usr/lib/${LIB_DIR_PREFIX}/ /usr/lib/${LIB_DIR_PREFIX}/
 
+# Make sure we use the virtualenv
+ENV PATH /usr/local/cuda/bin:$PATH
 
-# Make sure we use the virtualenv:
-ENV PATH="/opt/venv/bin:/usr/local/cuda/bin:$PATH"
-ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
+ENV LD_LIBRARY_PATH /usr/local/cuda/lib64:/usr/include/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
 
-ENTRYPOINT [ "entrypoint.sh" ]
-CMD ["bentoml", "serve-gunicorn", "/bento"]
+COPY bashrc /etc/bash.bashrc
+RUN chmod a+rwx /etc/bash.bashrc

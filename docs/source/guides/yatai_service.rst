@@ -1,4 +1,4 @@
-Deploy yatai server behind NGINX
+Deploy Yatai server behind NGINX
 ================================
 
 The control service of yatai server is currently using insecure gRPC,
@@ -13,7 +13,7 @@ behind an Nginx server, and use our own certificate to encrypt it.
 
 To achieve this, we need to follow steps below.
 
-1. make NGINX proxying HTTP/2 from h2 to h2c
+1. Make NGINX proxying HTTP/2 from h2 to h2c
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 NGINX ≥ 1.13.9
 
@@ -58,14 +58,14 @@ NGINX ≥ 1.13.9
         }
     }
 
-2. config yatai client to use h2
+2. Config yatai client to use h2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: bash
 
     bentoml config set yatai_service.url=grpcs://yatai.yourdomain.com:1443
 
-3. (Optional) using self-signed certificates
+3. (Optional) Using self-signed certificates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: bash
@@ -73,7 +73,7 @@ NGINX ≥ 1.13.9
     bentoml config set yatai_service.tls_root_ca_cert=<path_to_your_ca_cert.pem>
 
 
-4. (Optional) using TLS client certificates
+4. (Optional) Using TLS client certificates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: bash

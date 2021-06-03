@@ -15,7 +15,6 @@ PYTHON_MAJOR_VERSIONS=(3.6 3.7 3.8)
 #which version to tag with latest tag
 PYTHON_LATEST_VERSION=3.7
 
-
 echo "Building debian based docker base images for ${PYTHON_MAJOR_VERSIONS[*]}"
 for version in "${PYTHON_MAJOR_VERSIONS[@]}"
 do
@@ -64,14 +63,12 @@ do
     docker build --pull \
     --build-arg BENTOML_VERSION=$BENTOML_VERSION \
     --build-arg PYTHON_VERSION=$version \
-    -t bentoml/model-server:$BENTOML_VERSION-py${version//.}-cuda \
-    -t bentoml/model-server:latest-slim-py${version//.} \
-    -f Dockerfile-slim \
-    --network=host \
+    -t bentoml/model-server:$BENTOML_VERSION${}-py${version//.}-gpu \
+    -t bentoml/model-server:latest-py${version//.}-gpu \
+    -f Dockerfile-gpu \
     .
 
-    docker push bentoml/model-server:$BENTOML_VERSION-slim-py${version//.}
-    docker push bentoml/model-server:latest-slim-py${version//.}
-
+    docker push bentoml/model-server:$BENTOML_VERSION-py${version//.}-gpu
+    docker push bentoml/model-server:latest-py${version//.}-gpu
 done
 echo "Done"

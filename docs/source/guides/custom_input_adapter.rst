@@ -7,7 +7,7 @@ This guide demonstrate how to extending how to create a custom InputAdapter that
 incoming data and then uses the customized InputAdapter to create and test with BentoService
 
 --------------------------
-Create custom InputAdapter
+1. Create custom InputAdapter
 --------------------------
 
 The following code create a subclass from the `StringInput` and throw an AttributeError
@@ -43,7 +43,7 @@ will discard the task with appropriate status code and message.
 
 
 -------------------------------------------------------------
-Define and save BentoService with the customized InputAdapter
+2. Define and save BentoService with the customized InputAdapter
 -------------------------------------------------------------
 
 .. code-block:: python
@@ -73,7 +73,7 @@ Define and save BentoService with the customized InputAdapter
 
 
 ----------------------
-Test with example data
+3. Test with example data
 ----------------------
 
 .. code-block:: shell
@@ -112,4 +112,3 @@ In another terminal to make a `curl` request
     Date: Wed, 10 Mar 2021 01:48:37 GMT
 
     "foo1"%
-

@@ -12,8 +12,8 @@ the console and file system under :code:`$BENTOML_HOME/logs` directory by defaul
 | feedback.log   | Inference feedback and corresponding requests   |
 +----------------+-------------------------------------------------+
 
-Basic Logging Configuration
----------------------------
+1. Basic Logging Configuration
+------------------------------
 
 BentoML supports basic logging configuring undder the :code:`logging` section of the configuration.
 
@@ -30,8 +30,8 @@ BentoML supports basic logging configuring undder the :code:`logging` section of
 
 Refer to the :ref:`configuration guide <configuration-page>` on how override configuration properties.
 
-Advanced Logging Configuration
-------------------------------
+2. Advanced Logging Configuration
+---------------------------------
 
 BentoML uses the standard `Python logging <https://docs.python.org/3/howto/logging.html>`_
 module and provides logging customization through advanced :code:`logging` section in the configuration. 

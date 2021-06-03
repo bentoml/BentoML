@@ -29,7 +29,7 @@ ifeq ($(OS),Darwin)
 install-watch-deps: ## Install MacOS dependencies for watching docs
 	brew install fswatch
 else
-install-watch-deps: ## Install Linux dependencies for watching docs
+install-watch-deps: ## Install Debian-based OS dependencies for watching docs
 	sudo apt install inotify-tools
 endif
 OS := $(shell uname)
@@ -38,7 +38,7 @@ install-spellchecker-deps: ## Install MacOS dependencies for spellchecker
 	brew install enchant
 	pip install sphinxcontrib-spelling
 else
-install-spellchecker-deps: ## Install Linux dependencies for spellchecker
+install-spellchecker-deps: ## Install Debian-based dependencies for spellchecker
 	sudo apt install libenchant-dev
 endif
 spellcheck-doc: ## Spell check documentation

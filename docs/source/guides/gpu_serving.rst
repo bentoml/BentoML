@@ -206,6 +206,9 @@ TLDR, Tensorflow code with ``tf.keras`` model will run transparently on a single
 Tensorflow Implementation
 """""""""""""""""""""""""
 
+.. note::
+    refers to `Tensorflow gallery <https://github.com/bentoml/gallery/blob/master/tensorflow/sentiment-analysis-gpu/sentiment-analysis-gpu.ipynb>`_ for the complete version.
+
 .. code-block:: python
 
     # bento_svc.py
@@ -273,6 +276,9 @@ However, make sure that in our BentoService definition every tensor that is need
 
 PyTorch Implementation
 """"""""""""""""""""""
+
+.. note::
+    refers to `PyTorch gallery <https://github.com/bentoml/gallery/blob/master/pytorch/news-classification-gpu/news-classification.ipynb>`_ for the complete version.
 
 .. code-block:: python
 
@@ -355,6 +361,9 @@ Some notes with regarding to building ONNX services:
 
 ONNX Implementation
 """""""""""""""""""
+
+.. note::
+    refers to `ONNX gallery <https://github.com/bentoml/gallery/blob/master/onnx/news-classification-gpu/news-classification-gpu.ipynb>`_ for the complete version.
 
 .. code-block:: python
 

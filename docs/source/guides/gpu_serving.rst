@@ -26,6 +26,7 @@ For instruction on how to use your package manager to install drivers from CUDA 
 
 .. seealso::
     NVIDIA provides `detailed instructions <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`_ for installing both ``Docker CE`` and ``nvidia-docker``.
+    Refers to ``nvidia-docker`` `wiki <https://github.com/NVIDIA/nvidia-docker/wiki>`_ for more information.
 
 .. note::
     For Arch users install ``nvidia-docker`` via `AUR <https://aur.archlinux.org/packages/nvidia-docker/>`_.

@@ -63,10 +63,13 @@ html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "collapse_navigation": True,
     "navigation_depth": 4,
+    "logo_only": True,
     "display_version": True,
     "includehidden": False,
     "titles_only": False,
 }
+
+html_logo = "_static/img/bentoml.png"
 
 
 # Add any paths that contain custom static files (such as style sheets) here,

@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 import asyncio
 import time
 
@@ -9,7 +7,7 @@ import pytest
 DEFAULT_MAX_LATENCY = 10 * 1000
 
 
-@pytest.mark.skipif('not psutil.POSIX')
+@pytest.mark.skipif(not psutil.POSIX, reason="production server only works on POSIX")
 @pytest.mark.asyncio
 async def test_slow_server(host):
     if not pytest.enable_microbatch:
@@ -36,7 +34,7 @@ async def test_slow_server(host):
     assert time.time() - time_start < 12
 
 
-@pytest.mark.skipif('not psutil.POSIX')
+@pytest.mark.skipif(not psutil.POSIX, reason="production server only works on POSIX")
 @pytest.mark.asyncio
 async def test_fast_server(host):
     if not pytest.enable_microbatch:

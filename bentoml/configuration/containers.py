@@ -23,7 +23,6 @@ from schema import And, Optional, Or, Schema, SchemaError, Use
 from bentoml import __version__
 from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
-from bentoml.utils import LazyLoader
 from bentoml.utils.ruamel_yaml import YAML
 
 

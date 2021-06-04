@@ -13,7 +13,7 @@ async def test_api_server_meta(host):
 async def test_no_cors(host):
     ORIGIN = "http://bentoml.ai"
 
-    def no_cors_headers(headers: "CIMultiDict"):
+    def no_cors_headers(headers):
         assert headers.get("Access-Control-Allow-Origin") not in ("*", ORIGIN)
         assert "Content-Length" not in headers.get("Access-Control-Expose-Headers", [])
         return True

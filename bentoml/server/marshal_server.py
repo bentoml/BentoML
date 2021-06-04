@@ -14,8 +14,9 @@
 
 import logging
 import multiprocessing
-from dependency_injector.wiring import inject, Provide
 from typing import Optional
+
+from dependency_injector.wiring import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.marshal.marshal import MarshalService
@@ -87,7 +88,7 @@ def gunicorn_marshal_server(
             self.mb_max_batch_size = mb_max_batch_size
             self.mb_max_latency = mb_max_latency
 
-            super(GunicornMarshalServer, self).__init__()
+            super().__init__()
 
         def load_config(self):
             self.load_config_from_file("python:bentoml.server.gunicorn_config")
@@ -118,6 +119,6 @@ def gunicorn_marshal_server(
         def run(self):
             setup_prometheus_multiproc_dir(self.prometheus_lock)
             marshal_logger.info("Running micro batch service on :%d", self.port)
-            super(GunicornMarshalServer, self).run()
+            super().run()
 
     return GunicornMarshalServer

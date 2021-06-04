@@ -3,7 +3,7 @@
 import asyncio
 import time
 
-import psutil  # noqa # pylint: disable=unused-import
+import psutil
 import pytest
 
 DEFAULT_MAX_LATENCY = 10 * 1000

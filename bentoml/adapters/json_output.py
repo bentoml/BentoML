@@ -77,9 +77,9 @@ class JsonOutput(BaseOutputAdapter):
         return tuple(results)
 
     def to_http_response(self, result: InferenceResult) -> HTTPResponse:
-        return HTTPResponse(
+        return HTTPResponse.new(
             status=result.http_status,
-            headers=tuple(result.http_headers.items()),
+            headers=result.http_headers,
             body=result.err_msg or result.data,
         )
 

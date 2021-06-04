@@ -65,8 +65,8 @@ async def test_api_server_file(host, bin_file):
 
 
 @pytest.mark.asyncio
-async def test_api_server_json(host):
-    req_count = 3 if pytest.enable_microbatch else 1
+async def test_api_server_json(host, enable_microbatch):
+    req_count = 3 if enable_microbatch else 1
     tasks = tuple(
         pytest.assert_request(
             "POST",
@@ -81,8 +81,8 @@ async def test_api_server_json(host):
 
 
 @pytest.mark.asyncio
-async def test_api_server_tasks_api(host):
-    req_count = 2 if pytest.enable_microbatch else 1
+async def test_api_server_tasks_api(host, enable_microbatch):
+    req_count = 2 if enable_microbatch else 1
     tasks = tuple(
         pytest.assert_request(
             "POST",
@@ -107,8 +107,8 @@ async def test_api_server_tasks_api(host):
 
 
 @pytest.mark.asyncio
-async def test_api_server_inference_result(host):
-    req_count = 2 if pytest.enable_microbatch else 1
+async def test_api_server_inference_result(host, enable_microbatch):
+    req_count = 2 if enable_microbatch else 1
     tasks = tuple(
         pytest.assert_request(
             "POST",

@@ -15,10 +15,9 @@
 import asyncio
 import functools
 import logging
-import multiprocessing
 import time
 import traceback
-from typing import Optional, Sequence
+from typing import Optional, TYPE_CHECKING
 
 from dependency_injector.wiring import Provide, inject
 import psutil
@@ -33,6 +32,11 @@ from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest, HTTPResponse
 
 logger = logging.getLogger(__name__)
+
+
+if TYPE_CHECKING:
+    from aiohttp_cors import ResourceOptions
+    from aiohttp.web import Application
 
 
 def metrics_patch(cls):
@@ -158,25 +162,19 @@ class MarshalService:
         enable_microbatch: bool = Provide[
             BentoMLContainer.config.bento_server.microbatch.enabled
         ],
+        enable_access_control: bool = Provide[
+            BentoMLContainer.config.bento_server.cors.enabled
+        ],
         access_control_allow_origin: Optional[str] = Provide[
             BentoMLContainer.config.bento_server.cors.access_control_allow_origin
         ],
-        access_control_allow_credentials: bool = Provide[
-            BentoMLContainer.config.bento_server.cors.access_control_allow_credentials
+        access_control_options: Optional["ResourceOptions"] = Provide[
+            BentoMLContainer.access_control_options
         ],
-        access_control_allow_methods: Optional[Sequence] = Provide[
-            BentoMLContainer.config.bento_server.cors.access_control_allow_methods
-        ],
-        access_control_allow_headers: Optional[Sequence] = Provide[
-            BentoMLContainer.config.bento_server.cors.access_control_allow_headers
-        ],
-        access_control_max_age: int = Provide[
-            BentoMLContainer.config.bento_server.cors.access_control_max_age
-        ],
-        access_control_expose_headers: Optional[Sequence] = Provide[
-            BentoMLContainer.config.bento_server.access_control_expose_headers
-        ],
+        **kwargs,
     ):
+        super().__init__(**kwargs)
+
         self._client = None
         self.outbound_unix_socket = outbound_unix_socket
         self.outbound_host = outbound_host
@@ -188,14 +186,11 @@ class MarshalService:
         self._outbound_sema = None  # the semaphore to limit outbound connections
         self.max_request_size = max_request_size
 
-        self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
-
+        self.enable_access_control = enable_access_control
         self.access_control_allow_origin = access_control_allow_origin
-        self.access_control_allow_credentials = access_control_allow_credentials
-        self.access_control_allow_methods = access_control_allow_methods
-        self.access_control_allow_headers = access_control_allow_headers
-        self.access_control_max_age = access_control_max_age
-        self.access_control_expose_headers = access_control_expose_headers
+        self.access_control_options = access_control_options
+
+        self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
         if enable_microbatch:
             self.setup_routes_from_pb(self.bento_service_metadata_pb)
@@ -361,12 +356,12 @@ class MarshalService:
                     raw = await resp.read()
             except ClientConnectionError as e:
                 raise RemoteException(
-                    e, payload=HTTPResponse(status=503, body=b"Service Unavailable")
+                    e, payload=HTTPResponse.new(status=503, body=b"Service Unavailable")
                 )
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",
-                    payload=HTTPResponse(
+                    payload=HTTPResponse.new(
                         status=resp.status,
                         headers=tuple(resp.headers.items()),
                         body=raw,
@@ -378,37 +373,35 @@ class MarshalService:
                 for i in merged
             )
 
-    def async_start(self, port):
-        """
-        Start an micro batch server at the specific port on the instance or parameter.
-        """
-        marshal_proc = multiprocessing.Process(
-            target=self.fork_start_app, kwargs=dict(port=port), daemon=True,
-        )
-        marshal_proc.start()
-        logger.info("Running micro batch service on :%d", port)
-
-    def make_app(self):
+    def make_app(self) -> "Application":
         from aiohttp.web import Application
+        from aiohttp import hdrs
+
+        methods = hdrs.METH_ALL.copy()
+
+        if self.enable_access_control:
+            # ref: https://github.com/aio-libs/aiohttp-cors/issues/241
+            methods.remove(hdrs.METH_OPTIONS)
 
         app = Application(client_max_size=self.max_request_size)
-        app.router.add_view("/", self.relay_handler)
-        app.router.add_view("/{path:.*}", self.request_dispatcher)
 
-        if self.access_control_allow_origin is not None:
+        for method in methods:
+            app.router.add_route(method, "/", self.relay_handler)
+            app.router.add_route(method, "/{path:.*}", self.request_dispatcher)
+
+        if self.enable_access_control:
+            assert (
+                self.access_control_allow_origin is not None
+            ), "To enable cors, access_control_allow_origin must be set"
+            assert self.access_control_options is not None
+
             import aiohttp_cors
 
             # Configure default CORS settings.
             cors = aiohttp_cors.setup(
                 app,
                 defaults={
-                    self.access_control_allow_origin: aiohttp_cors.ResourceOptions(
-                        allow_credentials=self.access_control_allow_credentials,
-                        expose_headers=self.access_control_expose_headers,
-                        allow_methods=self.access_control_allow_methods,
-                        allow_headers=self.access_control_allow_headers,
-                        max_age=self.access_control_max_age,
-                    )
+                    self.access_control_allow_origin: self.access_control_options
                 },
             )
             # Configure CORS on all routes.

@@ -29,21 +29,39 @@ from bentoml import __version__ as BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
 
-AMPLITUDE_URL = "https://api.amplitude.com/httpapi"
-PLATFORM = platform.platform()
-PY_VERSION = "{major}.{minor}.{micro}".format(
-    major=sys.version_info.major,
-    minor=sys.version_info.minor,
-    micro=sys.version_info.micro,
-)
-SESSION_ID = str(uuid.uuid4())  # uuid that marks current python session
+
+@lru_cache(maxsize=1)
+def _amplitude_url():
+    return "https://api.amplitude.com/httpapi"
 
 
-# Use dev amplitude key
-API_KEY = '7f65f2446427226eb86f6adfacbbf47a'
-if _is_pip_installed_bentoml():
-    # Use prod amplitude key
-    API_KEY = '1ad6ee0e81b9666761aebd55955bbd3a'
+@lru_cache(maxsize=1)
+def _platform():
+    return platform.platform()
+
+
+@lru_cache(maxsize=1)
+def _py_version():
+    return "{major}.{minor}.{micro}".format(
+        major=sys.version_info.major,
+        minor=sys.version_info.minor,
+        micro=sys.version_info.micro,
+    )
+
+
+@lru_cache(maxsize=1)
+def _session_id():
+    return str(uuid.uuid4())  # uuid that marks current python session
+
+
+@lru_cache(maxsize=1)
+def _api_key():
+    if _is_pip_installed_bentoml():
+        # Use prod amplitude key
+        return '1ad6ee0e81b9666761aebd55955bbd3a'
+    else:
+        # Use dev amplitude key
+        return '7f65f2446427226eb86f6adfacbbf47a'
 
 
 def _send_amplitude_event(event_type, event_properties):
@@ -53,17 +71,17 @@ def _send_amplitude_event(event_type, event_properties):
     event = [
         {
             "event_type": event_type,
-            "user_id": SESSION_ID,
+            "user_id": _session_id(),
             "event_properties": event_properties,
             "ip": "$remote",
         }
     ]
-    event_data = {"api_key": API_KEY, "event": json.dumps(event)}
+    event_data = {"api_key": _api_key(), "event": json.dumps(event)}
 
     try:
         import requests
 
-        return requests.post(AMPLITUDE_URL, data=event_data, timeout=1)
+        return requests.post(_amplitude_url(), data=event_data, timeout=1)
     except Exception as err:  # pylint:disable=broad-except
         # silently fail since this error does not concern BentoML end users
         logger.debug(str(err))
@@ -71,23 +89,7 @@ def _send_amplitude_event(event_type, event_properties):
 
 def _get_bento_service_event_properties(bento_service, properties=None):
     bento_service_metadata = bento_service.get_bento_service_metadata_pb()
-    return _bento_service_metadata_to_event_properties(
-        bento_service_metadata, properties
-    )
 
-
-def _get_bento_service_event_properties_from_bundle_path(bundle_path, properties=None):
-    from bentoml.saved_bundle import load_bento_service_metadata
-
-    bento_service_metadata = load_bento_service_metadata(bundle_path)
-    return _bento_service_metadata_to_event_properties(
-        bento_service_metadata, properties
-    )
-
-
-def _bento_service_metadata_to_event_properties(
-    bento_service_metadata, properties=None
-):
     if properties is None:
         properties = {}
 
@@ -137,15 +139,9 @@ def track(event_type, event_properties=None):
     if event_properties is None:
         event_properties = {}
 
-    if 'bento_service_bundle_path' in event_properties:
-        _get_bento_service_event_properties_from_bundle_path(
-            event_properties['bento_service_bundle_path'], event_properties
-        )
-        del event_properties['bento_service_bundle_path']
-
-    event_properties['py_version'] = PY_VERSION
+    event_properties['py_version'] = _py_version()
     event_properties["bento_version"] = BENTOML_VERSION
-    event_properties["platform_info"] = PLATFORM
+    event_properties["platform_info"] = _platform()
 
     return _send_amplitude_event(event_type, event_properties)
 
@@ -153,12 +149,3 @@ def track(event_type, event_properties=None):
 def track_save(bento_service, extra_properties=None):
     properties = _get_bento_service_event_properties(bento_service, extra_properties)
     return track("save", properties)
-
-
-def track_load_start():
-    return track('load-start', {})
-
-
-def track_load_finish(bento_service):
-    properties = _get_bento_service_event_properties(bento_service)
-    return track("load", properties)

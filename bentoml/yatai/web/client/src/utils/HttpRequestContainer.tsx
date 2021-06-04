@@ -42,13 +42,11 @@ const DisplayHttpError = ({ error }) => {
   );
 };
 
-
 export const setBaseUrl = (baseURL: string) => {
-    axios.defaults.baseURL = baseURL;
-}
+  axios.defaults.baseURL = baseURL;
+};
 
 const fetch = (options = {}, props, callback) => {
-  
   const { url, data, method, headers, params } = Object.assign(
     {},
     props,

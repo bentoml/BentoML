@@ -14,7 +14,6 @@
 
 
 import random
-import aiohttp
 import asyncio
 import requests
 from contextlib import contextmanager
@@ -114,7 +113,9 @@ def get_zipkin_tracer(server_url):
 
         @staticmethod
         async def _async_post(url, data, headers):
-            async with aiohttp.ClientSession() as client:
+            from aiohttp import ClientSession
+
+            async with ClientSession() as client:
                 async with client.post(url, data=data, headers=headers) as resp:
                     resp = await resp.text()
                     return resp

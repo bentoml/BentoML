@@ -595,7 +595,7 @@ or malformatted. Users can do this via the InferenceTask#discard API, here's an 
 
 .. code-block:: python
 
-    from typings import List
+    from typing import List
     from bentoml import env, artifacts, api, BentoService
     from bentoml.adapters import JsonInput
     from bentoml.types import JsonSerializable, InferenceTask  # type annotations are optional

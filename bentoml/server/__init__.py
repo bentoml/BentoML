@@ -167,9 +167,9 @@ def _start_prod_server(
 
     logger.info("Starting BentoML API server in production mode..")
 
-    from bentoml.server.gunicorn_server import GunicornBentoServer
+    from bentoml.server.gunicorn_server import gunicorn_bento_server
 
-    gunicorn_app = GunicornBentoServer(
+    gunicorn_app = gunicorn_bento_server()(
         saved_bundle_path,
         port=port,
         timeout=timeout,
@@ -195,10 +195,10 @@ def _start_prod_proxy(
 
     logger.info("Starting BentoML proxy in production mode..")
 
-    from bentoml.server.marshal_server import GunicornMarshalServer
+    from bentoml.server.marshal_server import gunicorn_marshal_server
 
     # avoid load model before gunicorn fork
-    marshal_server = GunicornMarshalServer(
+    marshal_server = gunicorn_marshal_server()(
         bundle_path=saved_bundle_path,
         prometheus_lock=prometheus_lock,
         port=port,

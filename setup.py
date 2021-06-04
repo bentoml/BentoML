@@ -85,6 +85,7 @@ test_requires = [
     "pytest-cov>=2.7.1",
     "pytest>=5.4.0",
     "pytest-asyncio",
+    "parameterized",
     "scikit-learn",
 ]
 
@@ -104,7 +105,7 @@ dev_requires = [
 
 docs_requires = [
     "recommonmark",
-    "sphinx",
+    "sphinx<=3.5.4",
     "sphinx-click",
     "sphinx_rtd_theme",
     "sphinxcontrib-fulltoc",

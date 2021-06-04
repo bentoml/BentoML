@@ -21,7 +21,12 @@ from bentoml.yatai.proto.deployment_pb2 import (
 from bentoml.yatai.status import Status
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
-from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.docker_utils import (
+    ensure_docker_available_or_raise,
+    generate_docker_image_tag,
+    build_docker_image,
+    push_docker_image_to_repository,
+)
 from bentoml.yatai.deployment.aws_utils import (
     generate_aws_compatible_string,
     get_default_aws_region,
@@ -37,7 +42,6 @@ from bentoml.yatai.deployment.aws_utils import (
     get_ecr_login_info,
     describe_cloudformation_stack,
 )
-from bentoml.utils.docker_utils import containerize_bento_service
 from bentoml.exceptions import (
     BentoMLException,
     InvalidArgument,
@@ -167,26 +171,17 @@ def deploy_ec2_service(
 
     with TempDirectory() as project_path:
         repository_id = create_ecr_repository_if_not_exists(region, repo_name)
-        repository_url, username, password = get_ecr_login_info(region, repository_id)
-
-        registry_domain = repository_url.replace("https://", "")
-        push_tag = f"{registry_domain}/{repo_name}"
-        pull_tag = push_tag + f":{deployment_spec.bento_version}"
-
-        logger.info("Containerizing service")
-        containerize_bento_service(
-            bento_name=deployment_spec.bento_name,
-            bento_version=deployment_spec.bento_version,
-            saved_bundle_path=bento_path,
-            push=True,
-            tag=push_tag,
-            build_arg={},
-            username=username,
-            password=password,
+        registry_url, username, password = get_ecr_login_info(region, repository_id)
+        ecr_tag = generate_docker_image_tag(
+            repo_name, deployment_spec.bento_version, registry_url
+        )
+        build_docker_image(context_path=bento_path, image_tag=ecr_tag)
+        push_docker_image_to_repository(
+            repository=ecr_tag, username=username, password=password
         )
 
         logger.info("Generating user data")
-        encoded_user_data = _make_user_data(repository_url, pull_tag, region)
+        encoded_user_data = _make_user_data(registry_url, ecr_tag, region)
 
         logger.info("Making template")
         template_file_path = _make_cloudformation_template(

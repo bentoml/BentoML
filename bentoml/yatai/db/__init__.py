@@ -16,11 +16,9 @@ import logging
 import os
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from urllib.parse import urlparse
 
-from bentoml.exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException, LockUnavailable
 from bentoml.yatai.db.base import Base
 from bentoml.yatai.db.stores.deployment import DeploymentStore
 from bentoml.yatai.db.stores.label import LabelStore
@@ -45,7 +43,9 @@ def is_sqlite_db(db_url):
 
 class DB(object):
     def __init__(self, db_url):
+        from sqlalchemy import create_engine
         from sqlalchemy_utils import database_exists
+        from sqlalchemy.orm import sessionmaker
 
         extra_db_args = {'echo': True}
 
@@ -80,6 +80,10 @@ class DB(object):
         try:
             yield session
             session.commit()
+        except LockUnavailable as e:
+            # rollback if lock cannot be acquired, bubble error up
+            session.rollback()
+            raise LockUnavailable(e)
         except Exception as e:
             session.rollback()
             raise BentoMLException(e)

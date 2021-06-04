@@ -14,14 +14,11 @@
 
 import logging
 import multiprocessing
+from dependency_injector.wiring import inject, Provide
+from flask import Response
 from typing import Optional
 
-import psutil
-from dependency_injector.wiring import Provide as P
-from dependency_injector.wiring import inject
-from flask import Response
-
-from bentoml.configuration.containers import BentoMLContainer as C
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.saved_bundle import load_from_dir
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
@@ -29,22 +26,33 @@ from bentoml.server.instruments import setup_prometheus_multiproc_dir
 logger = logging.getLogger(__name__)
 
 
-class GunicornBentoAPIServer(BentoAPIServer):
-    def metrics_view_func(self):
-        from prometheus_client import (
-            CONTENT_TYPE_LATEST,
-            CollectorRegistry,
-            generate_latest,
-            multiprocess,
-        )
-
-        registry = CollectorRegistry()
-        multiprocess.MultiProcessCollector(registry)
-        return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
-
-
-if psutil.POSIX:
+@inject
+def gunicorn_bento_server(
+    default_port: int = Provide[BentoMLContainer.config.bento_server.port],
+    default_timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
+    default_workers: int = Provide[BentoMLContainer.api_server_workers],
+    default_enable_swagger: bool = Provide[
+        BentoMLContainer.config.bento_server.swagger.enabled
+    ],
+    default_max_request_size: int = Provide[
+        BentoMLContainer.config.bento_server.max_request_size
+    ],
+    default_loglevel=Provide[BentoMLContainer.config.bento_server.logging.level],
+):
     from gunicorn.app.base import Application
+
+    class GunicornBentoAPIServer(BentoAPIServer):
+        def metrics_view_func(self):
+            from prometheus_client import (
+                CONTENT_TYPE_LATEST,
+                CollectorRegistry,
+                generate_latest,
+                multiprocess,
+            )
+
+            registry = CollectorRegistry()
+            multiprocess.MultiProcessCollector(registry)
+            return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
 
     class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         """
@@ -70,13 +78,13 @@ if psutil.POSIX:
             self,
             bundle_path,
             bind: str = None,
-            port: int = P[C.config.bento_server.port],
-            timeout: int = P[C.config.bento_server.timeout],
-            workers: int = P[C.api_server_workers],
+            port: int = default_port,
+            timeout: int = default_timeout,
+            workers: int = default_workers,
             prometheus_lock: Optional[multiprocessing.Lock] = None,
-            enable_swagger: bool = P[C.config.bento_server.swagger.enabled],
-            max_request_size: int = P[C.config.bento_server.max_request_size],
-            loglevel=P[C.config.bento_server.logging.level],
+            enable_swagger: bool = default_enable_swagger,
+            max_request_size: int = default_max_request_size,
+            loglevel: str = default_loglevel,
         ):
             self.bento_service_bundle_path = bundle_path
 
@@ -122,11 +130,4 @@ if psutil.POSIX:
             setup_prometheus_multiproc_dir(self.prometheus_lock)
             super(GunicornBentoServer, self).run()
 
-
-else:
-
-    class GunicornBentoServer:
-        def __init__(self, *args, **kwargs):
-            raise RuntimeError(
-                "GunicornBentoServer is not supported in non-POSIX environments."
-            )
+    return GunicornBentoServer

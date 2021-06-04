@@ -6,9 +6,9 @@ BentoML allows user to create customize InputAdapter to better suit for their sy
 This guide demonstrate how to extending how to create a custom InputAdapter that check the
 incoming data and then uses the customized InputAdapter to create and test with BentoService
 
---------------------------
+-----------------------------
 1. Create custom InputAdapter
---------------------------
+-----------------------------
 
 The following code create a subclass from the `StringInput` and throw an AttributeError
 if the `cohort_id` is missing in the data. If the incoming data is invalid, the input adapter
@@ -42,9 +42,9 @@ will discard the task with appropriate status code and message.
             return (json_inputs,)
 
 
--------------------------------------------------------------
+----------------------------------------------------------------
 2. Define and save BentoService with the customized InputAdapter
--------------------------------------------------------------
+----------------------------------------------------------------
 
 .. code-block:: python
 
@@ -72,9 +72,9 @@ will discard the task with appropriate status code and message.
     svc.save()
 
 
-----------------------
+-------------------------
 3. Test with example data
-----------------------
+-------------------------
 
 .. code-block:: shell
 

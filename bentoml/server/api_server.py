@@ -12,28 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from multipledispatch import dispatch
 import logging
 import os
 import sys
-from functools import partial
 
+import fastapi
+import uvicorn
 from dependency_injector.wiring import Provide, inject
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from google.protobuf.json_format import MessageToJson
 from werkzeug.exceptions import BadRequest, NotFound
 
 from bentoml.configuration.containers import BentoMLContainer
-from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
-from bentoml.server.instruments import InstrumentMiddleware
+from bentoml.saved_bundle.bundler import FASTAPI_FILE
 from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import BentoService, InferenceAPI
 from bentoml.tracing import get_tracer
-
-import uvicorn
-from fastapi import FastAPI
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 
@@ -167,9 +163,17 @@ class BentoAPIServer:
     ):
         app_name = bento_service.name if app_name is None else app_name
 
+        import sys
+        import importlib
+        sys.path.insert(0,bento_service._bento_service_bundle_path)
+        try:
+            mod = importlib.import_module(FASTAPI_FILE.split(".")[0])
+            self.fast_api_app = mod.app
+        except Exception as e:
+            raise BentoMLException(f"Couldn't locate the FastAPI file : {e}")
+
         self.bento_service = bento_service
         self.app = Flask(app_name, static_folder=None)
-        self.fast_api_app = FastAPI(title=app_name)
         self.static_path = self.bento_service.get_web_static_content_path()
         self.enable_swagger = enable_swagger
         self.enable_metrics = enable_metrics
@@ -182,25 +186,24 @@ class BentoAPIServer:
         # for middleware in (InstrumentMiddleware,):
         #     self.app.wsgi_app = middleware(self.app.wsgi_app, self.bento_service)
 
-        self.setup_routes(fastapi=True)
+        self.setup_routes()
 
-    @dispatch(int,str)
-    def start(self, port: int, host: str = "127.0.0.1"):
-        """
-        Start an REST server at the specific port on the instance or parameter.
-        """
-        # Bentoml api service is not thread safe.
-        # Flask dev server enabled threaded by default, disable it.
-        self.app.run(
-            host=host,
-            port=port,
-            threaded=False,
-            debug=get_debug_mode(),
-            use_reloader=False,
-        )
+    # def start(self, port: int, host: str = "127.0.0.1"):
+    #     """
+    #     Start an REST server at the specific port on the instance or parameter.
+    #     """
+    #     # Bentoml api service is not thread safe.
+    #     # Flask dev server enabled threaded by default, disable it.
+    #     self.app.run(
+    #         host=host,
+    #         port=port,
+    #         threaded=False,
+    #         debug=get_debug_mode(),
+    #         use_reloader=False,
+    #     )
+    #
 
-    @dispatch(bool,int,str)
-    def start(self, fastapi:bool,port: int, host: str = "127.0.0.1"):
+    def start(self,port: int,host: str = "0.0.0.0"):
         """
         Start an REST server at the specific port on the instance or parameter.
         """
@@ -208,12 +211,7 @@ class BentoAPIServer:
         uvicorn.run(
             app=self.fast_api_app,
             host=host,
-            port=port,
-            threaded=False,
-            debug=get_debug_mode(),
-            use_reloader=False,
-            log_level="info",
-            reload=False
+            port=8080
         )
 
     @staticmethod
@@ -316,84 +314,93 @@ class BentoAPIServer:
         feedback_logger.info(data)
         return "success"
 
-    @dispatch()
+    # def setup_routes(self):
+    #     """
+    #     Setup routes for bento model server, including:
+    #
+    #     /               Index Page
+    #     /docs           Swagger UI
+    #     /healthz        Health check ping
+    #     /feedback       Submitting feedback
+    #     /metrics        Prometheus metrics endpoint
+    #     /metadata       BentoService Artifact Metadata
+    #
+    #     And user defined InferenceAPI list into flask routes, e.g.:
+    #     /classify
+    #     /predict
+    #     """
+    #     if self.static_path:
+    #         # serve static files for any given path
+    #         # this will also serve index.html from directory /any_path/
+    #         # for path as /any_path/
+    #         self.app.add_url_rule(
+    #             "/<path:file_path>",
+    #             "static_proxy",
+    #             partial(self.static_serve, self.static_path),
+    #         )
+    #         # serve index.html from the directory /any_path
+    #         # for path as /any_path/index
+    #         self.app.add_url_rule(
+    #             "/<path:file_path>/index",
+    #             "static_proxy2",
+    #             partial(self.static_serve, self.static_path),
+    #         )
+    #         # serve index.html from root directory for path as /
+    #         self.app.add_url_rule(
+    #             "/", "index", partial(self.index_view_func, self.static_path)
+    #         )
+    #     else:
+    #         self.app.add_url_rule("/", "index", self.default_index_view_func)
+    #
+    #     self.app.add_url_rule("/docs", "swagger", self.swagger_ui_func)
+    #     self.app.add_url_rule(
+    #         "/static_content/<path:filename>",
+    #         "static_content",
+    #         partial(self.swagger_static, self.swagger_path),
+    #     )
+    #     self.app.add_url_rule(
+    #         "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
+    #     )
+    #     self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
+    #     self.app.add_url_rule(
+    #         "/metadata",
+    #         "metadata",
+    #         partial(self.metadata_json_func, self.bento_service),
+    #     )
+    #
+    #     if self.enable_metrics:
+    #         self.app.add_url_rule("/metrics", "metrics", self.metrics_view_func)
+    #
+    #     if self.enable_feedback:
+    #         self.app.add_url_rule(
+    #             "/feedback",
+    #             "feedback",
+    #             partial(self.feedback_view_func, self.bento_service),
+    #             methods=["POST"],
+    #         )
+    #
+    #     self.setup_bento_service_api_routes()
+
     def setup_routes(self):
-        """
-        Setup routes for bento model server, including:
-
-        /               Index Page
-        /docs           Swagger UI
-        /healthz        Health check ping
-        /feedback       Submitting feedback
-        /metrics        Prometheus metrics endpoint
-        /metadata       BentoService Artifact Metadata
-
-        And user defined InferenceAPI list into flask routes, e.g.:
-        /classify
-        /predict
-        """
-        if self.static_path:
-            # serve static files for any given path
-            # this will also serve index.html from directory /any_path/
-            # for path as /any_path/
-            self.app.add_url_rule(
-                "/<path:file_path>",
-                "static_proxy",
-                partial(self.static_serve, self.static_path),
-            )
-            # serve index.html from the directory /any_path
-            # for path as /any_path/index
-            self.app.add_url_rule(
-                "/<path:file_path>/index",
-                "static_proxy2",
-                partial(self.static_serve, self.static_path),
-            )
-            # serve index.html from root directory for path as /
-            self.app.add_url_rule(
-                "/", "index", partial(self.index_view_func, self.static_path)
-            )
-        else:
-            self.app.add_url_rule("/", "index", self.default_index_view_func)
-
-        self.app.add_url_rule("/docs", "swagger", self.swagger_ui_func)
-        self.app.add_url_rule(
-            "/static_content/<path:filename>",
-            "static_content",
-            partial(self.swagger_static, self.swagger_path),
-        )
-        self.app.add_url_rule(
-            "/docs.json", "docs", partial(self.docs_view_func, self.bento_service)
-        )
-        self.app.add_url_rule("/healthz", "healthz", self.healthz_view_func)
-        self.app.add_url_rule(
-            "/metadata",
-            "metadata",
-            partial(self.metadata_json_func, self.bento_service),
-        )
-
-        if self.enable_metrics:
-            self.app.add_url_rule("/metrics", "metrics", self.metrics_view_func)
-
-        if self.enable_feedback:
-            self.app.add_url_rule(
-                "/feedback",
-                "feedback",
-                partial(self.feedback_view_func, self.bento_service),
-                methods=["POST"],
-            )
-
-        self.setup_bento_service_api_routes()
-
-    @dispatch(bool)
-    def setup_routes(self, fastapi: bool):
         """
         Setup routes for bento model server, including user defined InferenceAPI list into flask routes, e.g.:
         /classify
         /predict
         """
+        paths_in_file = [r.path for r in self.fast_api_app.routes if type(r) == fastapi.routing.APIRoute]
+        names_in_file = [r.name for r in self.fast_api_app.routes if type(r) == fastapi.routing.APIRoute]
+
         for api in self.bento_service.inference_apis:
+            path = "/{}".format(api.route)
+            name = api.name
+            if path in paths_in_file or name in names_in_file:
+                get_indexes = lambda x, searchable: [i for (y, i) in zip(searchable, range(len(searchable))) if x == y.path or x==y.name]
+                idx = get_indexes(path,self.fast_api_app.routes)
+                if idx:
+                    del self.fast_api_app.routes[idx[0]]
+
             self.fast_api_app.add_api_route(
-                path="/{}".format(api.route),
+                path=path,
                 endpoint=api.user_func,
                 methods=api.http_methods,
             )

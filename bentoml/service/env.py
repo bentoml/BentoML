@@ -335,8 +335,8 @@ class BentoServiceEnv(object):
                     self.add_pip_package(f"{pkg_name}=={pkg_version}")
 
     def save(self, path):
-        conda_yml_file = os.path.join(path, "environment.yml")
-        self._conda_env.write_to_yaml_file(conda_yml_file)
+        # conda_yml_file = os.path.join(path, "environment.yml")
+        # self._conda_env.write_to_yaml_file(conda_yml_file)
 
         with open(os.path.join(path, "python_version"), "wb") as f:
             f.write(self._python_version.encode("utf-8"))

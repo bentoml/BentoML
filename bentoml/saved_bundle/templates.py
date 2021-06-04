@@ -147,3 +147,101 @@ def load():
 
 __all__ = ['__version__', '{service_name}', 'load']
 """
+
+ENTHIRE_BACKEND_DOCKERFILE_TEMPLATE="""\
+FROM python:3.8-slim
+
+# Configure PIP install arguments, e.g. --index-url, --trusted-url, --extra-index-url
+ARG EXTRA_PIP_INSTALL_ARGS=
+ENV EXTRA_PIP_INSTALL_ARGS $EXTRA_PIP_INSTALL_ARGS
+
+ARG UID=1034
+ARG GID=1034
+RUN groupadd -g $GID -o bentoml && useradd -m -u $UID -g $GID -o -r bentoml
+
+ARG BUNDLE_PATH=/home/bentoml/bundle
+ENV BUNDLE_PATH=$BUNDLE_PATH
+ENV BENTOML_HOME=/home/bentoml/
+
+RUN mkdir $BUNDLE_PATH && chown bentoml:bentoml $BUNDLE_PATH -R
+WORKDIR $BUNDLE_PATH
+
+RUN apt-get update
+RUN apt-get install \
+    'ffmpeg'\
+    'libsm6'\
+    'libxext6'  -y
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY BentoML-0.12.1+26.g404685a.dirty-py3-none-any.whl .
+RUN pip install BentoML-0.12.1+26.g404685a.dirty-py3-none-any.whl
+
+
+COPY . .
+
+# the env var $PORT is required by heroku container runtime
+EXPOSE 8080
+
+USER bentoml
+CMD ["bentoml", "serve", "./"]
+"""
+
+ENTHIRE_FRONTEND_DOCKERFILE_TEMPLATE="""\
+FROM python:3.8-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "main.py"]
+"""
+
+ENTHIRE_DOCKER_COMPOSE="""\
+version: '3'
+
+services:
+  frontend:
+    build: frontend
+    ports:
+      - 8501:8501
+    depends_on:
+      - backend
+    volumes:
+        - ./storage:/storage
+  backend:
+    build: backend
+    ports:
+      - 8080:8080
+    volumes:
+      - ./storage:/storage
+"""
+
+ENTHIRE_STREAMLIT_TEMPLATE = """\
+import requests
+import streamlit as st
+
+def return_input_type(input_selection=None, param=None):
+    if input_selection=="text_input":return st.text_input(f'Write some text for {param}'),
+    if input_selection=="num_input": return st.number_input(f'Enter a number for {param}'),
+    if input_selection=="text_area": return st.text_area(f'Area for textual entry for {param}'),
+    if input_selection=="date_input":return  st.date_input(f'Date input for {param}'),
+    if input_selection=="time_input":return  st.time_input(f'Time entry for {param}'),
+    if input_selection=="file_uploader":return  st.file_uploader(f'File uploader for {param}')
+
+def get_keys():
+    return ['text_input', 'num_input', 'text_area', 'date_input', 'time_input', 'file_uploader']
+
+def selection(param_title):
+    return st.selectbox(f'Input Type for -> {param_title}', options=get_keys())
+
+st.title("Your MODEL PLAYSTORE")
+
+st.sidebar.header("Your APIs")\n
+"""

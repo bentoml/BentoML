@@ -184,7 +184,7 @@ def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
         # assuming passing in BentoService in the form of Name:Version tag
         yatai_client = get_yatai_client(yatai_url)
         bento_pb = yatai_client.repository.get(bento)
-        return resolve_bento_bundle_uri(bento_pb)
+        return os.path.join(resolve_bento_bundle_uri(bento_pb),"backend")
     else:
         raise BentoMLException(
             f'BentoService "{bento}" not found - either specify the file path of '

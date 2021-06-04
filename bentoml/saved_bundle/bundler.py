@@ -25,6 +25,8 @@ import tarfile
 from urllib.parse import urlparse
 
 import requests
+from bentoml.saved_bundle.fastapi import create_fastapi_file
+from bentoml.saved_bundle.streamlit import create_streamlit_main
 
 from bentoml.configuration import _is_pip_installed_bentoml
 from bentoml.exceptions import BentoMLException
@@ -38,6 +40,9 @@ from bentoml.saved_bundle.templates import (
     INIT_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
+    ENTHIRE_BACKEND_DOCKERFILE_TEMPLATE,
+    ENTHIRE_DOCKER_COMPOSE,
+    ENTHIRE_FRONTEND_DOCKERFILE_TEMPLATE
 )
 from bentoml.utils import is_gcs_url, is_s3_url
 from bentoml.utils.tempdir import TempDirectory
@@ -54,6 +59,8 @@ code or files contained in this directory. Instead, edit the code that uses Bent
 to create this bundle, and save a new BentoService bundle.
 """
 
+FASTAPI_FILE = "fastapi_file.py"
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,7 +75,21 @@ def _write_bento_content_to_dir(bento_service, path):
                 artifact.name,
                 bento_service.name,
             )
-    module_base_path = os.path.join(path, bento_service.name)
+    backend_path = path + "\\backend"
+    frontend_path = path + "\\frontend"
+    try:
+        os.mkdir(backend_path)
+    except FileExistsError:
+        raise BentoMLException(
+            f"Existing module file found for BentoService {bento_service.name}"
+        )
+    try:
+        os.mkdir(frontend_path)
+    except FileExistsError:
+        raise BentoMLException(
+            f"Existing module file found for BentoService {bento_service.name}"
+        )
+    module_base_path = os.path.join(backend_path, bento_service.name)
     try:
         os.mkdir(module_base_path)
     except FileExistsError:
@@ -84,7 +105,7 @@ def _write_bento_content_to_dir(bento_service, path):
         saved_bundle_readme += "\n"
         saved_bundle_readme += bento_service.__class__.__doc__.strip()
 
-    with open(os.path.join(path, "README.md"), "w") as f:
+    with open(os.path.join(backend_path, "README.md"), "w") as f:
         f.write(saved_bundle_readme)
 
     # save all model artifacts to 'base_path/name/artifacts/' directory
@@ -92,16 +113,16 @@ def _write_bento_content_to_dir(bento_service, path):
 
     # write conda environment, requirement.txt
     bento_service.env.infer_pip_packages(bento_service)
-    bento_service.env.save(path)
+    bento_service.env.save(backend_path)
 
     # Copy all local python modules used by the module containing the `bento_service`'s
     # class definition to saved bundle directory
     module_name, module_file = copy_local_py_modules(
-        bento_service.__class__.__module__, os.path.join(path, bento_service.name)
+        bento_service.__class__.__module__, os.path.join(backend_path, bento_service.name)
     )
 
     # create __init__.py
-    with open(os.path.join(path, bento_service.name, "__init__.py"), "w") as f:
+    with open(os.path.join(backend_path, bento_service.name, "__init__.py"), "w") as f:
         f.write(
             INIT_PY_TEMPLATE.format(
                 service_name=bento_service.name,
@@ -110,26 +131,8 @@ def _write_bento_content_to_dir(bento_service, path):
             )
         )
 
-    # write setup.py, this make saved BentoService bundle pip installable
-    setup_py_content = BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE.format(
-        name=bento_service.name,
-        pypi_package_version=bento_service.version,
-        long_description=saved_bundle_readme,
-    )
-    with open(os.path.join(path, "setup.py"), "w") as f:
-        f.write(setup_py_content)
-
-    with open(os.path.join(path, "MANIFEST.in"), "w") as f:
-        f.write(MANIFEST_IN_TEMPLATE.format(service_name=bento_service.name))
-
-    # write Dockerfile
-    logger.debug("Using Docker Base Image %s", bento_service._env._docker_base_image)
-    with open(os.path.join(path, "Dockerfile"), "w") as f:
-        f.write(
-            MODEL_SERVER_DOCKERFILE_CPU.format(
-                docker_base_image=bento_service._env._docker_base_image
-            )
-        )
+    with open(os.path.join(backend_path, "Dockerfile"), "w") as f:
+        f.write(ENTHIRE_BACKEND_DOCKERFILE_TEMPLATE)
 
     # copy custom web_static_content if enabled
     if bento_service.web_static_content:
@@ -145,36 +148,23 @@ def _write_bento_content_to_dir(bento_service, path):
         )
         shutil.copytree(src_web_static_content_dir, dest_web_static_content_dir)
 
-    # Copy docker-entrypoint.sh
-    docker_entrypoint_sh_file_src = os.path.join(
-        os.path.dirname(__file__), "docker-entrypoint.sh"
-    )
-    docker_entrypoint_sh_file_dst = os.path.join(path, "docker-entrypoint.sh")
-    shutil.copyfile(docker_entrypoint_sh_file_src, docker_entrypoint_sh_file_dst)
-    # chmod +x docker-entrypoint.sh
-    st = os.stat(docker_entrypoint_sh_file_dst)
-    os.chmod(docker_entrypoint_sh_file_dst, st.st_mode | stat.S_IEXEC)
-
-    # copy bentoml-init.sh for install targz bundles
-    bentoml_init_sh_file_src = os.path.join(
-        os.path.dirname(__file__), "bentoml-init.sh"
-    )
-    bentoml_init_sh_file_dst = os.path.join(path, "bentoml-init.sh")
-    shutil.copyfile(bentoml_init_sh_file_src, bentoml_init_sh_file_dst)
-    # chmod +x bentoml_init_script file
-    st = os.stat(bentoml_init_sh_file_dst)
-    os.chmod(bentoml_init_sh_file_dst, st.st_mode | stat.S_IEXEC)
-
     # write bentoml.yml
     config = SavedBundleConfig(bento_service)
     config["metadata"].update({"module_name": module_name, "module_file": module_file})
 
-    config.write_to_path(path)
-    # Also write bentoml.yml to module base path to make it accessible
-    # as package data after pip installed as a python package
+    config.write_to_path(backend_path)
     config.write_to_path(module_base_path)
+    # Also write bentoml.yml to module base backend_path to make it accessible
+    # as package data after pip installed as a python package
+    config.write_to_path(path)
+    # config.write_to_path(os.path.join(path,bento_service.name))
+    create_fastapi_file(
+        class_name=bento_service.name,
+        module_name=module_name,
+        apis_list=bento_service.inference_apis,
+        store_path=os.path.join(backend_path,FASTAPI_FILE))
 
-    bundled_pip_dependencies_path = os.path.join(path, 'bundled_pip_dependencies')
+    bundled_pip_dependencies_path = os.path.join(backend_path, 'bundled_pip_dependencies')
     _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
     # delete mtime and sort file in tarballs to normalize the checksums
     for tarball_file_path in glob.glob(
@@ -182,6 +172,154 @@ def _write_bento_content_to_dir(bento_service, path):
     ):
         normalize_gztarball(tarball_file_path)
 
+    #------FRONTEND------
+    # create __init__.py file
+    try:
+        open(os.path.join(frontend_path,"__init__.py"),"x")
+    except FileExistsError:
+        raise BentoMLException(f"__init__.py already exists")
+
+    # create Dockerfile
+    with open(os.path.join(frontend_path,"Dockerfile"),"w") as f:
+        f.write(ENTHIRE_FRONTEND_DOCKERFILE_TEMPLATE)
+
+    # create requirements.txt
+    with open(os.path.join(frontend_path,"requirements.txt"),"w") as f:
+        f.write("requests==2.25.1\n")
+        f.write("streamlit==0.82.0")
+
+    # Create docker-compose:
+    with open(os.path.join(path,"docker-compose.yml"),"w") as f:
+        f.write(ENTHIRE_DOCKER_COMPOSE)
+
+    # Create Streamlit file
+    create_streamlit_main(fastapi_file=FASTAPI_FILE,fastapi_path=backend_path,store_path=frontend_path)
+
+
+# def _write_bento_content_to_dir(bento_service, path):
+#     if not os.path.exists(path):
+#         raise BentoMLException("Directory '{}' not found".format(path))
+#
+#     for artifact in bento_service.artifacts.get_artifact_list():
+#         if not artifact.packed:
+#             logger.warning(
+#                 "Missing declared artifact '%s' for BentoService '%s'",
+#                 artifact.name,
+#                 bento_service.name,
+#             )
+#     module_base_path = os.path.join(path, bento_service.name)
+#     try:
+#         os.mkdir(module_base_path)
+#     except FileExistsError:
+#         raise BentoMLException(
+#             f"Existing module file found for BentoService {bento_service.name}"
+#         )
+#
+#     # write README.md with custom BentoService's docstring if presented
+#     saved_bundle_readme = DEFAULT_SAVED_BUNDLE_README.format(
+#         bento_service.name, bento_service.version
+#     )
+#     if bento_service.__class__.__doc__:
+#         saved_bundle_readme += "\n"
+#         saved_bundle_readme += bento_service.__class__.__doc__.strip()
+#
+#     with open(os.path.join(path, "README.md"), "w") as f:
+#         f.write(saved_bundle_readme)
+#
+#     # save all model artifacts to 'base_path/name/artifacts/' directory
+#     bento_service.artifacts.save(module_base_path)
+#
+#     # write conda environment, requirement.txt
+#     bento_service.env.infer_pip_packages(bento_service)
+#     bento_service.env.save(path)
+#
+#     # Copy all local python modules used by the module containing the `bento_service`'s
+#     # class definition to saved bundle directory
+#     module_name, module_file = copy_local_py_modules(
+#         bento_service.__class__.__module__, os.path.join(path, bento_service.name)
+#     )
+#
+#     # create __init__.py
+#     with open(os.path.join(path, bento_service.name, "__init__.py"), "w") as f:
+#         f.write(
+#             INIT_PY_TEMPLATE.format(
+#                 service_name=bento_service.name,
+#                 module_name=module_name,
+#                 pypi_package_version=bento_service.version,
+#             )
+#         )
+#
+#     # write setup.py, this make saved BentoService bundle pip installable
+#     setup_py_content = BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE.format(
+#         name=bento_service.name,
+#         pypi_package_version=bento_service.version,
+#         long_description=saved_bundle_readme,
+#     )
+#     with open(os.path.join(path, "setup.py"), "w") as f:
+#         f.write(setup_py_content)
+#
+#     with open(os.path.join(path, "MANIFEST.in"), "w") as f:
+#         f.write(MANIFEST_IN_TEMPLATE.format(service_name=bento_service.name))
+#
+#     # write Dockerfile
+#     logger.debug("Using Docker Base Image %s", bento_service._env._docker_base_image)
+#     with open(os.path.join(path, "Dockerfile"), "w") as f:
+#         f.write(
+#             MODEL_SERVER_DOCKERFILE_CPU.format(
+#                 docker_base_image=bento_service._env._docker_base_image
+#             )
+#         )
+#
+#     # copy custom web_static_content if enabled
+#     if bento_service.web_static_content:
+#         src_web_static_content_dir = os.path.join(
+#             os.getcwd(), bento_service.web_static_content
+#         )
+#         if not os.path.isdir(src_web_static_content_dir):
+#             raise BentoMLException(
+#                 f'web_static_content directory {src_web_static_content_dir} not found'
+#             )
+#         dest_web_static_content_dir = os.path.join(
+#             module_base_path, 'web_static_content'
+#         )
+#         shutil.copytree(src_web_static_content_dir, dest_web_static_content_dir)
+#
+#     # Copy docker-entrypoint.sh
+#     docker_entrypoint_sh_file_src = os.path.join(
+#         os.path.dirname(__file__), "docker-entrypoint.sh"
+#     )
+#     docker_entrypoint_sh_file_dst = os.path.join(path, "docker-entrypoint.sh")
+#     shutil.copyfile(docker_entrypoint_sh_file_src, docker_entrypoint_sh_file_dst)
+#     # chmod +x docker-entrypoint.sh
+#     st = os.stat(docker_entrypoint_sh_file_dst)
+#     os.chmod(docker_entrypoint_sh_file_dst, st.st_mode | stat.S_IEXEC)
+#
+#     # copy bentoml-init.sh for install targz bundles
+#     bentoml_init_sh_file_src = os.path.join(
+#         os.path.dirname(__file__), "bentoml-init.sh"
+#     )
+#     bentoml_init_sh_file_dst = os.path.join(path, "bentoml-init.sh")
+#     shutil.copyfile(bentoml_init_sh_file_src, bentoml_init_sh_file_dst)
+#     # chmod +x bentoml_init_script file
+#     st = os.stat(bentoml_init_sh_file_dst)
+#     os.chmod(bentoml_init_sh_file_dst, st.st_mode | stat.S_IEXEC)
+#
+#     # write bentoml.yml
+#     config = SavedBundleConfig(bento_service)
+#     config["metadata"].update({"module_name": module_name, "module_file": module_file})
+#
+#     config.write_to_path(path)
+#     # Also write bentoml.yml to module base path to make it accessible
+#     # as package data after pip installed as a python package
+#     config.write_to_path(module_base_path)
+#
+#     bundled_pip_dependencies_path = os.path.join(path, 'bundled_pip_dependencies')
+#     _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
+#     # delete mtime and sort file in tarballs to normalize the checksums
+#     for tarball_file_path in glob.glob(
+#         os.path.join(bundled_pip_dependencies_path, '*.tar.gz')
+#     ):
+#         normalize_gztarball(tarball_file_path)
 
 def save_to_dir(bento_service, path, version=None, silent=False):
     """Save given BentoService along with all its artifacts, source code and
@@ -228,7 +366,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         _write_bento_content_to_dir(bento_service, path)
 
     copy_zip_import_archives(
-        os.path.join(path, bento_service.name, ZIPIMPORT_DIR),
+        os.path.join(path, "backend", bento_service.name, ZIPIMPORT_DIR),
         bento_service.__class__.__module__,
         list(get_zipmodules().keys()),
         bento_service.env._zipimport_archives or [],

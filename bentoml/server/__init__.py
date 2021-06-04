@@ -77,7 +77,7 @@ def _start_dev_server(
 
     bento_service = load_from_dir(saved_bundle_path)
     api_server = BentoAPIServer(bento_service, enable_swagger=enable_swagger)
-    api_server.start(fastapi=True,port=api_server_port)
+    api_server.start(port=api_server_port)
 
 
 def _start_dev_proxy(
@@ -91,7 +91,6 @@ def _start_dev_proxy(
     logger.info("Starting BentoML API proxy in development mode..")
 
     from bentoml.marshal.marshal import MarshalService
-
     marshal_server = MarshalService(
         saved_bundle_path,
         outbound_host="localhost",

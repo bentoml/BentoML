@@ -178,7 +178,7 @@ def api_decorator(
     return decorator
 
 
-@dispatch(str,str,str,List[str],int,int)
+@dispatch(api_name=str,route=str,api_doc=str,http_methods=list,module_path=str,mb_max_batch_size=int,mb_max_latency=int)
 def api_decorator(
     *args,
     api_name: str = None,
@@ -232,7 +232,6 @@ def api_decorator(
         validate_inference_api_route(_api_route)
         _api_doc = func.__doc__ if api_doc is None else api_doc
         _http_methods = http_methods if http_methods else ['GET']
-
         setattr(func, "_is_api", True)
         setattr(func, "_api_name", _api_name)
         setattr(func, "_api_route", _api_route)
@@ -292,6 +291,9 @@ def artifacts_decorator(artifacts: List[BentoServiceArtifact]):
             artifact_names.add(artifact.name)
 
         bento_service_cls._declared_artifacts = artifacts
+        bento_service_cls._env = BentoServiceEnv(
+            infer_pip_packages=True
+        )
         return bento_service_cls
 
     return decorator
@@ -557,57 +559,20 @@ class BentoService:
         self._dev_server_process: subprocess.Process = None
 
         self._config_artifacts()
-        self._config_inference_apis(fast_api=True)
+        self._config_inference_apis()
         self._config_environments()
 
     def _config_environments(self):
         self._env = self.__class__._env or BentoServiceEnv()
 
-        for api in self._inference_apis:
-            self._env.add_pip_packages(api.input_adapter.pip_dependencies)
-            self._env.add_pip_packages(api.output_adapter.pip_dependencies)
+        # for api in self._inference_apis:
+        #     self._env.add_pip_packages(api.input_adapter.pip_dependencies)
+        #     self._env.add_pip_packages(api.output_adapter.pip_dependencies)
 
         for artifact in self.artifacts.get_artifact_list():
             artifact.set_dependencies(self.env)
 
-    @dispatch()
     def _config_inference_apis(self):
-        self._inference_apis = []
-
-        for _, function in inspect.getmembers(
-            self.__class__,
-            predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
-        ):
-            if hasattr(function, "_is_api"):
-                api_name = getattr(function, "_api_name")
-                route = getattr(function, "_api_route", None)
-                api_doc = getattr(function, "_api_doc")
-                input_adapter = getattr(function, "_input_adapter")
-                output_adapter = getattr(function, "_output_adapter")
-                mb_max_latency = getattr(function, "_mb_max_latency")
-                mb_max_batch_size = getattr(function, "_mb_max_batch_size")
-                batch = getattr(function, "_batch")
-
-                # Bind api method call with self(BentoService instance)
-                user_func = function.__get__(self)
-
-                self._inference_apis.append(
-                    InferenceAPI(
-                        self,
-                        api_name,
-                        api_doc,
-                        input_adapter=input_adapter,
-                        user_func=user_func,
-                        output_adapter=output_adapter,
-                        mb_max_latency=mb_max_latency,
-                        mb_max_batch_size=mb_max_batch_size,
-                        batch=batch,
-                        route=route,
-                    )
-                )
-
-    @dispatch(bool)
-    def _config_inference_apis(self,fast_api:bool):
         self._inference_apis = []
 
         for _, function in inspect.getmembers(
@@ -639,6 +604,42 @@ class BentoService:
                         route=route,
                     )
                 )
+
+    # @dispatch()
+    # def _config_inference_apis(self):
+    #     self._inference_apis = []
+    #
+    #     for _, function in inspect.getmembers(
+    #         self.__class__,
+    #         predicate=lambda x: inspect.isfunction(x) or inspect.ismethod(x),
+    #     ):
+    #         if hasattr(function, "_is_api"):
+    #             api_name = getattr(function, "_api_name")
+    #             route = getattr(function, "_api_route", None)
+    #             api_doc = getattr(function, "_api_doc")
+    #             input_adapter = getattr(function, "_input_adapter")
+    #             output_adapter = getattr(function, "_output_adapter")
+    #             mb_max_latency = getattr(function, "_mb_max_latency")
+    #             mb_max_batch_size = getattr(function, "_mb_max_batch_size")
+    #             batch = getattr(function, "_batch")
+    #
+    #             # Bind api method call with self(BentoService instance)
+    #             user_func = function.__get__(self)
+    #
+    #             self._inference_apis.append(
+    #                 InferenceAPI(
+    #                     self,
+    #                     api_name,
+    #                     api_doc,
+    #                     input_adapter=input_adapter,
+    #                     user_func=user_func,
+    #                     output_adapter=output_adapter,
+    #                     mb_max_latency=mb_max_latency,
+    #                     mb_max_batch_size=mb_max_batch_size,
+    #                     batch=batch,
+    #                     route=route,
+    #                 )
+    #             )
 
     def _config_artifacts(self):
         self._artifacts = ArtifactCollection.from_artifact_list(

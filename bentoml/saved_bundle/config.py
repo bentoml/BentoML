@@ -103,7 +103,7 @@ class SavedBundleConfig(object):
                 }
             )
             self.config["env"] = bento_service.env.to_dict()
-            self.config['apis'] = _get_apis_list(bento_service)
+            # self.config['apis'] = _get_apis_list(bento_service)
             self.config['artifacts'] = _get_artifacts_list(bento_service)
 
     def write_to_path(self, path, filename="bentoml.yml"):

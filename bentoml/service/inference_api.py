@@ -45,7 +45,6 @@ class InferenceAPI(object):
         service,
         name,
         doc,
-        http_methods,
         user_func: callable,
         input_adapter: BaseInputAdapter = None,
         output_adapter: BaseOutputAdapter = None,
@@ -53,6 +52,7 @@ class InferenceAPI(object):
         mb_max_batch_size=1000,
         batch=False,
         route=None,
+        http_methods=None,
     ):
         """
         :param service: ref to service containing this API
@@ -157,21 +157,7 @@ class InferenceAPI(object):
 
     @cached_property
     def user_func(self):
-        """
-        :return: user-defined inference API callback function
-        """
-
-        # allow user to define handlers without 'tasks' kwargs
         _sig = inspect.signature(self._user_func)
-        if self.batch:
-            append_arg = "tasks"
-        else:
-            append_arg = "task"
-        try:
-            _sig.bind_partial(**{append_arg: None})
-            append_arg = None
-        except TypeError:
-            pass
 
         @functools.wraps(self._user_func)
         def wrapped_func(*args, **kwargs):
@@ -179,36 +165,69 @@ class InferenceAPI(object):
                 service_name=f"BentoService.{self.service.name}",
                 span_name=f"InferenceAPI {self.name} user defined callback function",
             ):
-                if append_arg and append_arg in kwargs:
-                    tasks = kwargs.pop(append_arg)
-                elif append_arg in kwargs:
-                    tasks = kwargs[append_arg]
-                else:
-                    tasks = []
                 try:
-                    return self._user_func(*args, **kwargs)
-                except Exception as e:  # pylint: disable=broad-except
-                    logger.error("Error caught in API function:", exc_info=1)
-                    if self.batch:
-                        for task in tasks:
-                            if not task.is_discarded:
-                                task.discard(
-                                    http_status=500,
-                                    err_msg=f"Exception happened in API function: {e}",
-                                )
-                        return [None] * sum(
-                            1 if t.batch is None else t.batch for t in tasks
-                        )
-                    else:
-                        task = tasks
-                        if not task.is_discarded:
-                            task.discard(
-                                http_status=500,
-                                err_msg=f"Exception happened in API function: {e}",
-                            )
-                        return [None] * (1 if task.batch is None else task.batch)
+                    results = self._user_func(*args, **kwargs)
+                    # TODO: add checks for datatype validation so that FastAPI doesn't trip
+                    return results
+                except Exception as e:
+                    return e
 
         return wrapped_func
+
+    # @cached_property
+    # def user_func(self):
+    #     """
+    #     :return: user-defined inference API callback function
+    #     """
+    #
+    #     # allow user to define handlers without 'tasks' kwargs
+    #     _sig = inspect.signature(self._user_func)
+    #     if self.batch:
+    #         append_arg = "tasks"
+    #     else:
+    #         append_arg = "task"
+    #     try:
+    #         _sig.bind_partial(**{append_arg: None})
+    #         append_arg = None
+    #     except TypeError:
+    #         pass
+    #
+    #     @functools.wraps(self._user_func)
+    #     def wrapped_func(*args, **kwargs):
+    #         with get_tracer().span(
+    #             service_name=f"BentoService.{self.service.name}",
+    #             span_name=f"InferenceAPI {self.name} user defined callback function",
+    #         ):
+    #             if append_arg and append_arg in kwargs:
+    #                 tasks = kwargs.pop(append_arg)
+    #             elif append_arg in kwargs:
+    #                 tasks = kwargs[append_arg]
+    #             else:
+    #                 tasks = []
+    #             try:
+    #                 return self._user_func(*args, **kwargs)
+    #             except Exception as e:  # pylint: disable=broad-except
+    #                 logger.error("Error caught in API function:", exc_info=1)
+    #                 if self.batch:
+    #                     for task in tasks:
+    #                         if not task.is_discarded:
+    #                             task.discard(
+    #                                 http_status=500,
+    #                                 err_msg=f"Exception happened in API function: {e}",
+    #                             )
+    #                     return [None] * sum(
+    #                         1 if t.batch is None else t.batch for t in tasks
+    #                     )
+    #                 else:
+    #                     task = tasks
+    #                     if not task.is_discarded:
+    #                         task.discard(
+    #                             http_status=500,
+    #                             err_msg=f"Exception happened in API function: {e}",
+    #                         )
+    #                     return [None] * (1 if task.batch is None else task.batch)
+    #
+    #     return wrapped_func
 
     @property
     def request_schema(self):

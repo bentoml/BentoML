@@ -25,8 +25,8 @@ import tarfile
 from urllib.parse import urlparse
 
 import requests
-from bentoml.saved_bundle.fastapi import create_fastapi_file
-from bentoml.saved_bundle.streamlit import create_streamlit_main
+from bentoml.saved_bundle.fastapi_create import create_fastapi_file
+from bentoml.saved_bundle.streamlit_create import create_streamlit_main
 
 from bentoml.configuration import _is_pip_installed_bentoml
 from bentoml.exceptions import BentoMLException

@@ -103,7 +103,7 @@ def run_api_server_docker_container(
         command_args = "--workers 1"
 
     if config_file is not None:
-        command_args += " -e BENTOML_CONFIG=/etc/bentoml_config.yml"
+        environment = dict(BENTOML_CONFIG="/etc/bentoml_config.yml")
         volumes = {
             os.path.abspath(config_file): {
                 "bind": "/etc/bentoml_config.yml",
@@ -111,17 +111,17 @@ def run_api_server_docker_container(
             }
         }
     else:
+        environment = None
         volumes = None
 
     container = client.containers.run(
         image=image.id,
         command=command_args,
-        auto_remove=True,
         tty=True,
         ports={'5000/tcp': port},
         detach=True,
-        remove=True,
         volumes=volumes,
+        environment=environment,
     )
 
     try:
@@ -131,6 +131,7 @@ def run_api_server_docker_container(
     finally:
         print(container.logs())
         container.stop()
+        container.remove()
         time.sleep(1)  # make sure container stopped & deleted
 
 

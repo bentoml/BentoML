@@ -54,9 +54,15 @@ def detect_suitable_adapter(result) -> Type[BaseOutputAdapter]:
 class DefaultOutput(BaseOutputAdapter):
     """
     Detect suitable output adapter automatically
-    """
+    OutputAdapter converts returns of user defined API function into specific output,
+    such as HTTP response, command line stdout or AWS Lambda event object.
 
-    __doc__ = (BaseOutputAdapter.__doc__ or "") + __doc__
+    Args:
+        cors (str): DEPRECATED. Moved to the configuration file.
+            The value of the Access-Control-Allow-Origin header set in the
+            HTTP/AWS Lambda response object. If set to None, the header will not be set.
+            Default is None.
+    """
 
     def __init__(self, **kwargs):
         super(DefaultOutput, self).__init__(**kwargs)

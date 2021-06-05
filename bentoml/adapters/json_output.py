@@ -32,10 +32,16 @@ ApiFuncReturnValue = Sequence[JsonSerializable]
 
 class JsonOutput(BaseOutputAdapter):
     """
+    OutputAdapter converts returns of user defined API function into specific output,
+    such as HTTP response, command line stdout or AWS Lambda event object.
+
+    Args:
+        cors (str): DEPRECATED. Moved to the configuration file.
+            The value of the Access-Control-Allow-Origin header set in the
+            HTTP/AWS Lambda response object. If set to None, the header will not be set.
+            Default is None.
         ensure_ascii(bool): Escape all non-ASCII characters. Default False.
     """
-
-    __doc__ = (BaseOutputAdapter.__doc__ or "") + __doc__
 
     def __init__(self, ensure_ascii=False, **kwargs):
         super().__init__(**kwargs)

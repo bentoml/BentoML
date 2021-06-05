@@ -46,7 +46,7 @@ def regroup_return_value(
 
 class BaseOutputAdapter:
     """
-    OutputAdapter converts returns of user defined API function into specific output,
+    Output adapters converts returns of user defined API function into specific output,
     such as HTTP response, command line stdout or AWS Lambda event object.
 
     Args:

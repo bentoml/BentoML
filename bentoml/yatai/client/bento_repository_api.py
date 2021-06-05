@@ -31,8 +31,6 @@ from bentoml.utils import (
     resolve_bento_bundle_uri,
     is_s3_url,
     is_gcs_url,
-    archive_directory_to_tar,
-    get_file_size_and_chunk_count,
 )
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
@@ -50,6 +48,7 @@ from bentoml.yatai.proto.repository_pb2 import (
 )
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
+from bentoml.yatai.grpc_stream_utils import BentoBundleStreamRequestsOrResponses
 from bentoml.saved_bundle import (
     save_to_dir,
     load_bento_service_metadata,
@@ -58,72 +57,12 @@ from bentoml.saved_bundle import (
 )
 from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
 from bentoml.yatai.status import Status
-
+from bentoml.yatai.utils import process_grpc_error
 
 logger = logging.getLogger(__name__)
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 DEFAULT_REQUEST_TIMEOUT = 6
-
-
-class BentoUploadStreamRequests:
-    def __init__(
-        self, bento_name, bento_version, file_path,
-    ):
-        """
-        A class for iterating over a file to generate upload bento requests
-
-        Args:
-            bento_name: str
-            bento_version: str
-            file_path: path
-            chunk_size optional: int
-        """
-
-        self.bento_name = bento_name
-        self.bento_version = bento_version
-        self.bundle_file_handler = open(file_path, 'rb')
-        (
-            self.bundle_size,
-            self.bundle_chunk_count,
-            self.chunk_size,
-        ) = get_file_size_and_chunk_count(file_path)
-        self.sent_chunk_count = 0
-        self.file_index = 0
-        self.sent_init_message = False
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.sent_chunk_count == 0 and self.sent_init_message is False:
-            request = UploadBentoRequest(
-                bento_name=self.bento_name, bento_version=self.bento_version,
-            )
-            self.sent_init_message = True
-            return request
-        elif self.sent_chunk_count < self.bundle_chunk_count:
-            current_file_end = min(self.bundle_size, self.file_index + self.chunk_size)
-            self.bundle_file_handler.seek(self.file_index)
-            chunk = self.bundle_file_handler.read(self.chunk_size)
-            self.file_index = current_file_end
-            request = UploadBentoRequest(
-                bento_name=self.bento_name,
-                bento_version=self.bento_version,
-                bento_bundle=chunk,
-            )
-            self.sent_chunk_count += 1
-            return request
-        else:
-            self.bundle_file_handler.close()
-            raise StopIteration
-
-
-def process_grpc_error(grpc_error):
-    if grpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
-        return 'request timeout'
-    else:
-        return grpc_error.details()
 
 
 class BentoRepositoryAPIClient:
@@ -639,13 +578,13 @@ class BentoRepositoryAPIClient:
     def _upload_bento(self, bento_name, bento_version, saved_bento_bundle_path):
         with TempDirectory() as tarfile_dir:
             try:
-                tarfile_path, _ = archive_directory_to_tar(
-                    saved_bento_bundle_path, tarfile_dir, bento_version
-                )
                 result = self.yatai_service.UploadBento(
                     iter(
-                        BentoUploadStreamRequests(
-                            bento_name, bento_version, tarfile_path
+                        BentoBundleStreamRequestsOrResponses(
+                            bento_name=bento_name,
+                            bento_version=bento_version,
+                            directory_path=saved_bento_bundle_path,
+                            is_request=True,
                         ),
                     ),
                     timeout=DEFAULT_REQUEST_TIMEOUT,
@@ -683,7 +622,7 @@ class BentoRepositoryAPIClient:
                 temp_bundle_path = os.path.join(
                     temp_dir, f'{bento_name}_{bento_version}'
                 )
-                with tarfile.open(fileobj=file, mode='r:gz') as tar:
+                with tarfile.open(fileobj=file, mode='r') as tar:
                     tar.extractall(path=temp_bundle_path)
                 file.close()
                 return temp_bundle_path

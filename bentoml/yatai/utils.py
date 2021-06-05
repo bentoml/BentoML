@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from typing import NamedTuple, Tuple
+
+import grpc
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 UNARY = 'UNARY'
@@ -110,3 +112,10 @@ def parse_method_name(method_name: str) -> Tuple[MethodName, bool]:
     *packages, service = package_service.rsplit(".", maxsplit=1)
     package = packages[0] if packages else ""
     return MethodName(package, service, method), True
+
+
+def process_grpc_error(grpc_error):
+    if grpc_error.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+        return 'request timeout'
+    else:
+        return grpc_error.details()

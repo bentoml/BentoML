@@ -66,6 +66,7 @@ from bentoml.utils import (
     archive_directory_to_tar,
     get_file_size_and_chunk_count,
 )
+from bentoml.yatai.grpc_stream_utils import BentoBundleStreamRequestsOrResponses
 from bentoml.yatai.validator import validate_deployment_pb
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -619,13 +620,7 @@ def get_yatai_service_impl(base=object):
                             )
                             file.seek(0)
                             if bento_pb:
-                                # If there is a directory exist, it will be removed
-                                # for the newly uploaded one.
-                                if os.path.exists(bento_pb.uri.uri):
-                                    raise BentoMLException(
-                                        'Bento bundle path already exists'
-                                    )
-                                with tarfile.open(fileobj=file, mode='r:gz') as tar:
+                                with tarfile.open(fileobj=file, mode='r') as tar:
                                     tar.extractall(path=bento_pb.uri.uri)
                                 result_status = Status.OK()
                             else:
@@ -649,34 +644,13 @@ def get_yatai_service_impl(base=object):
                     bento_pb = self.db.metadata_store.get(
                         sess, request.bento_name, request.bento_version
                     )
-                    with TempDirectory() as temp_dir:
-                        tarfile_path = os.path.join(
-                            temp_dir, f'{bento_pb.name}_{bento_pb.version}.tar'
-                        )
-                        with open(tarfile_path, 'wb+') as file:
-                            archive_directory_to_tar(
-                                bento_pb.uri.uri,
-                                temp_dir,
-                                f'{bento_pb.name}_{bento_pb.version}',
-                            )
-                            file.seek(0)
-                            (
-                                file_size,
-                                chunk_count,
-                                chunk_size,
-                            ) = get_file_size_and_chunk_count(tarfile_path)
-                            sent_chunk_count = 0
-                            file_index = 0
-                            while sent_chunk_count < chunk_count:
-                                current_file_end = min(
-                                    file_size, file_index + chunk_size
-                                )
-                                file.seek(file_index)
-                                chunk = file.read(chunk_size)
-                                file_index = current_file_end
-                                sent_chunk_count += 1
-                                response = DownloadBentoResponse(bento_bundle=chunk)
-                                yield response
+                    for response in BentoBundleStreamRequestsOrResponses(
+                        bento_name=request.bento_name,
+                        bento_version=request.bento_version,
+                        directory_path=bento_pb.uri.uri,
+                        is_request=False,
+                    ):
+                        yield response
                 except BentoMLException as e:
                     logger.error("RPC ERROR DownloadBento: %s", e)
                     return DownloadBentoResponse(status=e.status_proto)

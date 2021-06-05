@@ -113,19 +113,16 @@ def run_api_server_docker_container(
     else:
         volumes = None
 
-    try:
-        container = client.containers.run(
-            image=image.id,
-            command=command_args,
-            auto_remove=True,
-            tty=True,
-            ports={'5000/tcp': port},
-            detach=True,
-            remove=True,
-            volumes=volumes,
-        )
-    except Exception:  # pylint: disable=broad-except
-        return
+    container = client.containers.run(
+        image=image.id,
+        command=command_args,
+        auto_remove=True,
+        tty=True,
+        ports={'5000/tcp': port},
+        detach=True,
+        remove=True,
+        volumes=volumes,
+    )
 
     try:
         host_url = f"127.0.0.1:{port}"

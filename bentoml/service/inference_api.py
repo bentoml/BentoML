@@ -19,14 +19,14 @@ import inspect
 import itertools
 import logging
 import sys
-from typing import Iterable, Iterator, Sequence
-from flask import Request
+from typing import Callable, Iterable, Iterator, Sequence
 
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
 from bentoml.exceptions import BentoMLConfigException
 from bentoml.tracing import get_tracer
-from bentoml.types import HTTPRequest, InferenceResult, InferenceTask
+from bentoml.types import HTTPRequest, HTTPResponse, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
+
 
 logger = logging.getLogger(__name__)
 prediction_logger = logging.getLogger("bentoml.prediction")
@@ -45,7 +45,7 @@ class InferenceAPI(object):
         name,
         doc,
         input_adapter: BaseInputAdapter,
-        user_func: callable,
+        user_func: Callable,
         output_adapter: BaseOutputAdapter,
         mb_max_latency=10000,
         mb_max_batch_size=1000,
@@ -290,21 +290,20 @@ class InferenceAPI(object):
 
         return tuple(full_results)
 
-    def handle_request(self, request: Request):
-        req = HTTPRequest.from_flask_request(request)
-        inf_task = self.input_adapter.from_http_request(req)
+    def handle_request(self, request: HTTPRequest) -> HTTPResponse:
+        inf_task = self.input_adapter.from_http_request(request)
         results = self.infer((inf_task,))
         result = next(iter(results))
         response = self.output_adapter.to_http_response(result)
         response.headers['X-Request-Id'] = inf_task.task_id
-        return response.to_flask_response()
+        return response
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
         with get_tracer().span(
             service_name=f"BentoService.{self.service.name}",
             span_name=f"InferenceAPI {self.name} handle batch requests",
         ):
-            inf_tasks = map(self.input_adapter.from_http_request, requests)
+            inf_tasks = tuple(map(self.input_adapter.from_http_request, requests))
             results = self.infer(inf_tasks)
             responses = tuple(map(self.output_adapter.to_http_response, results))
             for inf_task, response in zip(inf_tasks, responses):
@@ -331,4 +330,9 @@ class InferenceAPI(object):
     def handle_aws_lambda_event(self, event):
         inf_task = self.input_adapter.from_aws_lambda_event(event)
         result = next(iter(self.infer((inf_task,))))
-        return self.output_adapter.to_aws_lambda_event(result)
+        out_event = self.output_adapter.to_aws_lambda_event(result)
+        if isinstance(out_event, dict) and "headers" in out_event:
+            headers = out_event.get("headers", dict())
+            headers["Access-Control-Allow-Origin"] = "*"  # TODO: make it configurable
+            out_event["headers"] = headers
+        return out_event

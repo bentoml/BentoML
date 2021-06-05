@@ -15,6 +15,7 @@
 import itertools
 from typing import Iterable, Iterator, Sequence, Tuple
 
+from bentoml.exceptions import APIDeprecated
 from bentoml.types import (
     ApiFuncReturnValue,
     AwsLambdaEvent,
@@ -45,17 +46,26 @@ def regroup_return_value(
 
 class BaseOutputAdapter:
     """
-    OutputAdapter is an layer between result of user defined API callback function
-    and final output in a variety of different forms,
+    Output adapters converts returns of user defined API function into specific output,
     such as HTTP response, command line stdout or AWS Lambda event object.
+
+    Args:
+        cors (str): DEPRECATED. Moved to the configuration file.
+            The value of the Access-Control-Allow-Origin header set in the
+            HTTP/AWS Lambda response object. If set to None, the header will not be set.
+            Default is None.
     """
 
-    def __init__(self, cors='*'):
-        self.cors = cors
+    def __init__(self, cors=None):
+        if cors is not None:
+            raise APIDeprecated(
+                "setting cors from OutputAdapter is no more supported."
+                "See cors option in the configuration file."
+            )
 
     @property
     def config(self):
-        return dict(cors=self.cors,)
+        return dict()
 
     @property
     def pip_dependencies(self):

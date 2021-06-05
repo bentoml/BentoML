@@ -23,12 +23,17 @@ def df_to_json(result, pandas_dataframe_orient="records"):
 
 class DataframeOutput(JsonOutput):
     """
-    Converts result of user defined API function into specific output.
+    Output adapters converts returns of user defined API function into specific output,
+    such as HTTP response, command line stdout or AWS Lambda event object.
 
     Args:
-        cors (str): The value of the Access-Control-Allow-Origin header set in the
-            AWS Lambda response object. Default is "*". If set to None,
-            the header will not be set.
+        cors (str): DEPRECATED. Moved to the configuration file.
+            The value of the Access-Control-Allow-Origin header set in the
+            HTTP/AWS Lambda response object. If set to None, the header will not be set.
+            Default is None.
+        ensure_ascii(bool): Escape all non-ASCII characters. Default False.
+        output_orient(str): The orient format of output dataframes.
+            Same as pd.DataFrame.to_json(orient=orient)
     """
 
     BATCH_MODE_SUPPORTED = True

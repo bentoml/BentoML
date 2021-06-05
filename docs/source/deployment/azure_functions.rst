@@ -84,9 +84,7 @@ above
               "typ": "frame",
               "dtype": null
             },
-            "outputConfig": {
-              "cors": "*"
-            },
+            "outputConfig": {},
             "outputType": "DefaultOutput",
             "mbMaxLatency": 10000,
             "mbMaxBatchSize": 2000

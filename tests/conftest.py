@@ -24,6 +24,7 @@ def pytest_configure():
         timeout=None,
         assert_status=None,
         assert_data=None,
+        assert_headers=None,
     ):
         if assert_status is None:
             assert_status = 200
@@ -50,6 +51,9 @@ def pytest_configure():
                 assert assert_data(r_body), r_body
             else:
                 assert r_body == assert_data
+
+        if assert_headers is not None:
+            assert assert_headers(r.headers), r.headers
 
     pytest.assert_request = assert_request
 

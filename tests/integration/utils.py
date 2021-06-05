@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+from contextlib import contextmanager
 import logging
 import os
 import subprocess
@@ -6,7 +7,6 @@ import sys
 import threading
 import time
 import urllib
-from contextlib import contextmanager
 
 import bentoml
 from bentoml.utils import cached_contextmanager
@@ -84,7 +84,9 @@ def build_api_server_docker_image(saved_bundle_path, image_tag="test_bentoml_ser
 
 
 @cached_contextmanager("{image.id}, {enable_microbatch}")
-def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
+def run_api_server_docker_container(
+    image, enable_microbatch=False, config_file=None, timeout=60
+):
     """
     Launch a bentoml service container from a docker image, yields the host URL.
     """
@@ -94,31 +96,49 @@ def run_api_server_docker_container(image, enable_microbatch=False, timeout=60):
 
     with bentoml.utils.reserve_free_port() as port:
         pass
+
     if enable_microbatch:
         command_args = "--enable-microbatch --workers 1 --mb-max-batch-size 2048"
     else:
         command_args = "--workers 1"
+
+    if config_file is not None:
+        environment = dict(BENTOML_CONFIG="/etc/bentoml_config.yml")
+        volumes = {
+            os.path.abspath(config_file): {
+                "bind": "/etc/bentoml_config.yml",
+                "mode": "rw",
+            }
+        }
+    else:
+        environment = None
+        volumes = None
+
+    container = client.containers.run(
+        image=image.id,
+        command=command_args,
+        tty=True,
+        ports={'5000/tcp': port},
+        detach=True,
+        volumes=volumes,
+        environment=environment,
+    )
+
     try:
-        container = client.containers.run(
-            image=image.id,
-            command=command_args,
-            auto_remove=True,
-            tty=True,
-            ports={'5000/tcp': port},
-            detach=True,
-            remove=True,
-        )
         host_url = f"127.0.0.1:{port}"
         _wait_until_api_server_ready(host_url, timeout, container)
         yield host_url
     finally:
         print(container.logs())
         container.stop()
+        container.remove()
         time.sleep(1)  # make sure container stopped & deleted
 
 
 @contextmanager
-def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeout=20):
+def run_api_server(
+    bundle_path, enable_microbatch=False, config_file=None, dev_server=False, timeout=20
+):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
@@ -128,8 +148,9 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
     else:
         serve_cmd = "serve-gunicorn"
 
+    my_env = os.environ.copy()
+
     with bentoml.utils.reserve_free_port() as port:
-        my_env = os.environ.copy()
         cmd = [sys.executable, "-m", "bentoml", serve_cmd]
         if port:
             cmd += ['--port', f'{port}']
@@ -143,6 +164,9 @@ def run_api_server(bundle_path, enable_microbatch=False, dev_server=False, timeo
                 print(line.decode(), end='')
         except ValueError:
             pass
+
+    if config_file is not None:
+        my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
     p = subprocess.Popen(
         cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=my_env,

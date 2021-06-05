@@ -48,3 +48,23 @@ async def test_customized_request_schema(host):
         headers=(("Content-Type", "application/json"),),
         assert_data=has_customized_schema,
     )
+
+
+@pytest.mark.asyncio
+async def test_cors(host):
+    ORIGIN = "http://bentoml.ai"
+
+    def has_cors_headers(headers):
+        assert headers["Access-Control-Allow-Origin"] in ("*", ORIGIN)
+        assert "Content-Length" in headers.get("Access-Control-Expose-Headers", [])
+        assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
+        return True
+
+    await pytest.assert_request(
+        "POST",
+        f"http://{host}/echo_json",
+        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
+        data='"hi"',
+        assert_status=200,
+        assert_headers=has_cors_headers,
+    )

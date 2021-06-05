@@ -14,9 +14,6 @@
 
 import io
 import os
-import urllib
-import uuid
-from dataclasses import dataclass, field
 from typing import (
     Any,
     BinaryIO,
@@ -32,7 +29,10 @@ from typing import (
     TypeVar,
     Union,
 )
+import urllib
+import uuid
 
+from dataclasses import dataclass, field
 from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
@@ -170,14 +170,17 @@ class HTTPHeaders(CIMultiDict):
 
     @property
     def charset(self) -> Optional[str]:
-        return parse_options_header(self.get('content-type'))[1].get('charset', None)
+        _, options = parse_options_header(self.get('content-type'))
+        charset = options.get('charset', None)
+        assert charset is None or isinstance(charset, str)
+        return charset
 
     @property
     def content_encoding(self) -> str:
         return parse_options_header(self.get('content-encoding'))[0].lower()
 
     @property
-    def is_batch_input(self) -> bool:
+    def is_batch_input(self) -> Optional[bool]:
         hv = parse_options_header(self.get(BATCH_HEADER))[0].lower()
         return hv == "true" if hv else None
 
@@ -256,6 +259,21 @@ class HTTPResponse:
     headers: HTTPHeaders = HTTPHeaders()
     body: bytes = b""
 
+    @classmethod
+    def new(
+        cls,
+        status: int = 200,
+        headers: Union[HTTPHeaders, dict, tuple, list] = None,
+        body: bytes = b"",
+    ):
+        if headers is None:
+            headers = HTTPHeaders()
+        elif isinstance(headers, dict):
+            headers = HTTPHeaders.from_dict(headers)
+        elif isinstance(headers, (tuple, list)):
+            headers = HTTPHeaders.from_sequence(headers)
+        return cls(status, headers, body)
+
     def __post_init__(self):
         if self.headers is None:
             self.headers = HTTPHeaders()
@@ -268,7 +286,7 @@ class HTTPResponse:
         import flask
 
         return flask.Response(
-            status=self.status, headers=self.headers.items(), response=self.body
+            status=self.status, headers=tuple(self.headers.items()), response=self.body
         )
 
 
@@ -298,14 +316,14 @@ class InferenceResult(Generic[Output]):
     version: int = 0
 
     # payload
-    data: Output = None
+    data: Optional[Output] = None
     err_msg: str = ''
 
     # meta
     task_id: Optional[str] = None
 
     # context
-    http_status: Optional[int] = None
+    http_status: int = 501
     http_headers: HTTPHeaders = HTTPHeaders()
     aws_lambda_event: Optional[dict] = None
     cli_status: Optional[int] = 0
@@ -331,6 +349,7 @@ class InferenceResult(Generic[Output]):
         try:
             for task in tasks:
                 if task.is_discarded:
+                    assert task.error
                     yield task.error
                 else:
                     yield next(iterable_results)
@@ -363,7 +382,7 @@ class InferenceTask(Generic[Input]):
     version: int = 0
 
     # payload
-    data: Input = None
+    data: Optional[Input] = None
     error: Optional[InferenceResult] = None
 
     # meta

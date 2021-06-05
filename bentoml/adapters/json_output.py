@@ -32,12 +32,14 @@ ApiFuncReturnValue = Sequence[JsonSerializable]
 
 class JsonOutput(BaseOutputAdapter):
     """
-    Converts result of user defined API function into specific output.
+    OutputAdapter converts returns of user defined API function into specific output,
+    such as HTTP response, command line stdout or AWS Lambda event object.
 
     Args:
-        cors (str): The value of the Access-Control-Allow-Origin header set in the
-            AWS Lambda response object. Default is "*". If set to None,
-            the header will not be set.
+        cors (str): DEPRECATED. Moved to the configuration file.
+            The value of the Access-Control-Allow-Origin header set in the
+            HTTP/AWS Lambda response object. If set to None, the header will not be set.
+            Default is None.
         ensure_ascii(bool): Escape all non-ASCII characters. Default False.
     """
 
@@ -81,9 +83,9 @@ class JsonOutput(BaseOutputAdapter):
         return tuple(results)
 
     def to_http_response(self, result: InferenceResult) -> HTTPResponse:
-        return HTTPResponse(
+        return HTTPResponse.new(
             status=result.http_status,
-            headers=tuple(result.http_headers.items()),
+            headers=result.http_headers,
             body=result.err_msg or result.data,
         )
 
@@ -104,16 +106,7 @@ class JsonOutput(BaseOutputAdapter):
         return flag
 
     def to_aws_lambda_event(self, result: InferenceResult) -> AwsLambdaEvent:
-
-        # Allow disabling CORS by setting it to None
-        if self.cors:
-            return {
-                "statusCode": result.http_status,
-                "body": result.err_msg or result.data,
-                "headers": {"Access-Control-Allow-Origin": self.cors},
-            }
-        else:
-            return {
-                "statusCode": result.http_status,
-                "body": result.err_msg or result.data,
-            }
+        return {
+            "statusCode": result.http_status,
+            "body": result.err_msg or result.data,
+        }

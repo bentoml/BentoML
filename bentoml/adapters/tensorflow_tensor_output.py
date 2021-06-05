@@ -43,12 +43,15 @@ def tf_to_numpy(tensor):
 
 class TfTensorOutput(JsonOutput):
     """
-    Converts result of user defined API function into specific output.
+    Output adapters converts returns of user defined API function into specific output,
+    such as HTTP response, command line stdout or AWS Lambda event object.
 
     Args:
-        cors (str): The value of the Access-Control-Allow-Origin header set in the
-            AWS Lambda response object. Default is "*". If set to None,
-            the header will not be set.
+        cors (str): DEPRECATED. Moved to the configuration file.
+            The value of the Access-Control-Allow-Origin header set in the
+            HTTP/AWS Lambda response object. If set to None, the header will not be set.
+            Default is None.
+        ensure_ascii(bool): Escape all non-ASCII characters. Default False.
     """
 
     BATCH_MODE_SUPPORTED = True

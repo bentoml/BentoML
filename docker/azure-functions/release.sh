@@ -24,9 +24,7 @@ do
         -t bentoml/azure-functions:$BENTOML_VERSION-py${version//.} \
         .
 
-    if ! [[ -t 1 ]]; then
-      docker push bentoml/azure-functions:$BENTOML_VERSION-py${version//.}
-    fi
+    # NOTE: comment this line out for now if you want to develop this Docker images.
+    docker push bentoml/azure-functions:"$BENTOML_VERSION"-py${version//.}
 done
-
-echo "Done"
+echo "Released bentoml/azure-functions for $BENTOML_VERSION"

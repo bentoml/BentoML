@@ -18,7 +18,6 @@ docker build --pull \
     -t bentoml/yatai-service:latest \
     .
 
-if ! [[ -t 1 ]]; then
-  docker push bentoml/yatai-service:"$BENTOML_VERSION"
-  docker push bentoml/yatai-service:latest
-fi
+# NOTE: comment this line out for now if you want to develop this Docker images.
+docker push bentoml/yatai-service:"$BENTOML_VERSION"
+docker push bentoml/yatai-service:latest

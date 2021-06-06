@@ -51,4 +51,4 @@ ENTRYPOINT [ "entrypoint.sh" ]
 CMD ["bentoml", "serve-gunicorn", "/bento"]
 
 COPY bashrc /etc/bash.bashrc
-RUN chmod a+rwx /etc/bash.bashrc
+RUN chmod a+r /etc/bash.bashrc

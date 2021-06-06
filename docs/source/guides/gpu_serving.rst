@@ -293,8 +293,7 @@ PyTorch Implementation
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    @env(conda_dependencies=['pytorch', 'torchtext', 'cudatoolkit=11.1'], conda_channels=['pytorch', 'nvidia'],
-     requirements_txt_file=None)
+    @env(conda_dependencies=['pytorch', 'torchtext', 'cudatoolkit=11.1'], conda_channels=['pytorch', 'nvidia'])
     @artifacts([PytorchModelArtifact("model"), PickleArtifact("tokenizer"), PickleArtifact("vocab")])
     class PytorchService(BentoService):
 

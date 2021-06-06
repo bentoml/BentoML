@@ -15,9 +15,9 @@
 import contextlib
 import functools
 import inspect
+from io import StringIO
 import os
 import socket
-from io import StringIO
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
@@ -100,7 +100,22 @@ class cached_property(property):
         return value
 
 
-class _CachedContextmanager:
+class cached_contextmanager:
+    """
+    Just like contextlib.contextmanager, but will cache the yield value for the same
+    arguments. When one instance of the contextmanager exits, the cache value will
+    also be poped.
+
+    Example Usage::
+    (To reuse the container based on the same iamge)
+
+    >>> @cached_contextmanager("{docker_image.id}")
+    >>> def start_docker_container_from_image(docker_image, timeout=60):
+    >>>     container = ...
+    >>>     yield container
+    >>>     container.stop()
+    """
+
     def __init__(self, cache_key_template=None):
         self._cache_key_template = cache_key_template
         self._cache = {}
@@ -126,28 +141,6 @@ class _CachedContextmanager:
                     self._cache.pop(cache_key)
 
         return _func
-
-
-def cached_contextmanager(*args, **kwargs):
-    """
-    Just like contextlib.contextmanager, but will cache the yield value for the same
-    arguments. When one instance of the contextmanager exits, the cache value will
-    also be poped.
-
-    Example Usage::
-    (To reuse the container based on the same iamge)
-
-    >>> @cached_contextmanager("{docker_image.id}")
-    >>> def start_docker_container_from_image(docker_image, timeout=60):
-    >>>     container = ...
-    >>>     yield container
-    >>>     container.stop()
-    """
-
-    if len(args) == 1 and callable(args[0]):
-        return _CachedContextmanager()(args[0])
-    else:
-        return _CachedContextmanager(*args, **kwargs)
 
 
 @contextlib.contextmanager

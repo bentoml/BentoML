@@ -107,7 +107,8 @@ class Fastai1ModelArtifact(BentoServiceArtifact):
             "BentoService definition file or manually add them via "
             "`@env(pip_packages=['torchvision'])` when defining a BentoService"
         )
-        env.add_pip_packages(['torch', "fastai<2.0.0"])
+        if env._infer_pip_packages:
+            env.add_pip_packages(['torch', "fastai<2.0.0"])
 
     def save(self, dst):
         self._model.export(file=self._file_name)

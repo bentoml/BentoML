@@ -138,10 +138,11 @@ class OnnxModelArtifact(BentoServiceArtifact):
         return self.pack(self._saved_model_file_path(path))
 
     def set_dependencies(self, env: BentoServiceEnv):
-        if self.backend == "onnxruntime":
-            env.add_pip_packages(["onnxruntime"])
-        elif self.backend == "onnxruntime-gpu":
-            env.add_pip_packages(["onnxruntime-gpu"])
+        if env._infer_pip_packages:
+            if self.backend == "onnxruntime":
+                env.add_pip_packages(["onnxruntime"])
+            elif self.backend == "onnxruntime-gpu":
+                env.add_pip_packages(["onnxruntime-gpu"])
 
     def _get_onnx_inference_session(self):
         if self.backend == "onnxruntime" or self.backend == "onnxruntime-gpu":

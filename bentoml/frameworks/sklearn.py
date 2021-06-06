@@ -1,5 +1,7 @@
 import os
 
+from bentoml.service.env import BentoServiceEnv
+
 from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 
@@ -90,5 +92,6 @@ class SklearnModelArtifact(BentoServiceArtifact):
 
         joblib.dump(self._model, self._model_file_path(dst))
 
-    def set_dependencies(self, env):
-        env.add_pip_packages(['scikit-learn'])
+    def set_dependencies(self, env: BentoServiceEnv):
+        if env._infer_pip_packages:
+            env.add_pip_packages(['scikit-learn'])

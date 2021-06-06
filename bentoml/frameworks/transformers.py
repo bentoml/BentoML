@@ -1,6 +1,8 @@
 import os
 from importlib import import_module
 
+from bentoml.service.env import BentoServiceEnv
+
 from bentoml.exceptions import (
     InvalidArgument,
     MissingDependencyException,
@@ -152,6 +154,10 @@ class TransformersModelArtifact(BentoServiceArtifact):
             raise NotFound(
                 "transformers has no model type called {}".format(self._model_type)
             )
+
+    def set_dependencies(self, env: BentoServiceEnv):
+        if env._infer_pip_packages:
+            env.add_pip_packages(['xgboost'])
 
     def pack(self, model, metadata=None):
         loaded_model = None

@@ -84,7 +84,7 @@ async def test_batch_size_limit(host):
     data = '{"a": %s, "b": %s}' % (A, B)
 
     # test for max_batch_size=1
-    req_count = 30
+    req_count = 100
     tasks = tuple(
         pytest.assert_request(
             "POST",
@@ -112,7 +112,7 @@ async def test_batch_size_limit(host):
     await asyncio.gather(*tasks)
 
     # test for max_batch_size=None
-    req_count = 50
+    req_count = 100
     tasks = tuple(
         pytest.assert_request(
             "POST",
@@ -125,7 +125,7 @@ async def test_batch_size_limit(host):
     )
     await asyncio.gather(*tasks)
 
-    req_count = 50
+    req_count = 30
     tasks = tuple(
         pytest.assert_request(
             "POST",

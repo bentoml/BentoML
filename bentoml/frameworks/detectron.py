@@ -77,7 +77,8 @@ class DetectronModelArtifact(BentoServiceArtifact):
         self._input_model_yaml = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_packages(['torch', "detectron2"])
+        if env._infer_pip_packages:
+            env.add_pip_packages(['torch', "detectron2"])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)

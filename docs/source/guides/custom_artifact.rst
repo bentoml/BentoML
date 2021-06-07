@@ -6,9 +6,9 @@ BentoML provides model artifact customizing...
 
 The guide will demonstrate how to create a custom model artifact class, and then use it in BentoService for prediction
 
-----------------------
-Create custom Artifact
-----------------------
+-------------------------
+1. Create custom Artifact
+-------------------------
 
 The following code creates a subclass from the `BentoServiceArtifact`. It implements how to
 save and load the model.  In the `pack` method, the model class does validation to make sure
@@ -54,9 +54,9 @@ the model is valid.  It uses `cloudpickle` to `save` and `load`.
             return os.path.join(base_path, self.name + '.json')
 
 
------------------------------------------------------
-Define and save BentoService with the custom Artifact
------------------------------------------------------
+--------------------------------------------------------
+2. Define and save BentoService with the custom Artifact
+--------------------------------------------------------
 
 .. code-block:: python
 
@@ -86,9 +86,9 @@ Define and save BentoService with the custom Artifact
     svc.pack('test_model', model)
     svc.save()
 
-----------------------
-Test with example data
-----------------------
+-------------------------
+3. Test with example data
+-------------------------
 
 .. code-block:: shell
 
@@ -112,4 +112,3 @@ In another terminal to make a `curl` request
     Date: Tue, 16 Mar 2021 01:47:38 GMT
 
     '{"result": 3}'%
-

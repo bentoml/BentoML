@@ -23,7 +23,8 @@ do
         --build-arg PYTHON_VERSION=$version \
         -t bentoml/azure-functions:$BENTOML_VERSION-py${version//.} \
         .
-    docker push bentoml/azure-functions:$BENTOML_VERSION-py${version//.}
-done
 
-echo "Done"
+    # NOTE: comment this line out for now if you want to develop this Docker images.
+    docker push bentoml/azure-functions:"$BENTOML_VERSION"-py${version//.}
+done
+echo "Released bentoml/azure-functions for $BENTOML_VERSION"

@@ -52,7 +52,8 @@ class XgboostModelArtifact(BentoServiceArtifact):
         self._model = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_packages(['xgboost'])
+        if env._infer_pip_packages:
+            env.add_pip_packages(['xgboost'])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + self._model_extension)

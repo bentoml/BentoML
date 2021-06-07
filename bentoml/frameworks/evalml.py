@@ -2,6 +2,7 @@ import importlib
 import os
 
 from bentoml.exceptions import MissingDependencyException
+from bentoml.service.env import BentoServiceEnv
 from bentoml.service.artifacts import BentoServiceArtifact
 
 
@@ -83,5 +84,6 @@ class EvalMLModelArtifact(BentoServiceArtifact):
         model_file_path = self._model_file_path(dst)
         self._model.save(model_file_path)
 
-    def set_dependencies(self, env):
-        env.add_pip_packages(['evalml'])
+    def set_dependencies(self, env: BentoServiceEnv):
+        if env._infer_pip_packages:
+            env.add_pip_packages(['evalml'])

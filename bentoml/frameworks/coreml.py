@@ -103,7 +103,8 @@ class CoreMLModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_packages(['coremltools>=4.0b2'])
+        if env._infer_pip_packages:
+            env.add_pip_packages(['coremltools>=4.0b2'])
 
     def get(self):
         return self._model

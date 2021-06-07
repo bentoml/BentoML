@@ -13,6 +13,9 @@
 Model Serving Made Easy
 =======================
 
+|pypi status| |Downloads| |Actions Status| |Documentation Status| |join BentoML Slack|
+
+
 BentoML is a flexible, high-performance framework for serving, managing, and deploying machine learning models.
 
 * Supports **Multiple ML frameworks**, including Tensorflow, PyTorch, Keras, XGBoost
@@ -56,3 +59,14 @@ ___________
 .. spelling::
 
    scalable
+
+.. |pypi status| image:: https://img.shields.io/pypi/v/bentoml.svg?style=flat-square
+   :target: https://pypi.org/project/BentoML
+.. |Downloads| image:: https://pepy.tech/badge/bentoml
+   :target: https://pepy.tech/project/bentoml
+.. |Actions Status| image:: https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg
+   :target: https://github.com/bentoml/bentoml/actions
+.. |Documentation Status| image:: https://readthedocs.org/projects/bentoml/badge/?version=latest&style=flat-square
+   :target: https://docs.bentoml.org/
+.. |join BentoML Slack| image:: https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack&style=flat-square
+   :target: https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg

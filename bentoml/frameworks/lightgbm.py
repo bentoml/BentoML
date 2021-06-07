@@ -79,7 +79,8 @@ class LightGBMModelArtifact(BentoServiceArtifact):
         return self.pack(bst)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_packages(['lightgbm'])
+        if env._infer_pip_packages:
+            env.add_pip_packages(['lightgbm'])
 
     def save(self, dst):
         return self._model.save_model(self._model_file_path(dst))

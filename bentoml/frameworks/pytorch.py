@@ -141,7 +141,8 @@ class PytorchModelArtifact(BentoServiceArtifact):
             "BentoService definition file or manually add them via "
             "`@env(pip_packages=['torchvision'])` when defining a BentoService"
         )
-        env.add_pip_packages(['torch'])
+        if env._infer_pip_packages:
+            env.add_pip_packages(['torch'])
 
     def get(self):
         return self._model

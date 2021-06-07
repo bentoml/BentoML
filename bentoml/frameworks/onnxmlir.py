@@ -105,7 +105,8 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
         return self.pack(self._saved_model_file_path(path))
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_packages(["numpy"])
+        if env._infer_pip_packages:
+            env.add_pip_packages(["numpy"])
 
     def _get_onnxmlir_inference_session(self):
         try:

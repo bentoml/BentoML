@@ -70,4 +70,5 @@ class GluonModelArtifact(BentoServiceArtifact):
         return self._model
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_packages(["mxnet"])
+        if env._infer_pip_packages:
+            env.add_pip_packages(["mxnet"])

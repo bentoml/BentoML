@@ -20,4 +20,4 @@ and ask in the bentoml-users channel.
   yatai_service
   tracing
   helm
-
+  gpu_serving

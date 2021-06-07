@@ -59,7 +59,8 @@ class EasyOCRArtifact(BentoServiceArtifact):
         self._gpu = None
 
     def set_dependencies(self, env: BentoServiceEnv):
-        env.add_pip_packages(["easyocr>=1.3.0"])
+        if env._infer_pip_packages:
+            env.add_pip_packages(["easyocr>=1.3.0"])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)

@@ -97,15 +97,14 @@ async def test_batch_size_limit(host):
     )
     await asyncio.gather(*tasks)
 
-    req_count = 30
+    req_count = 10
     tasks = tuple(
         pytest.assert_request(
             "POST",
             f"http://{host}/echo_batch_size_1",
             headers=(("Content-Type", "application/json"),),
             data=data,
-            assert_status=200,
-            assert_data=b"1",
+            assert_data=lambda i: i in (b'429: Too Many Requests', b"1"),
         )
         for i in range(req_count)
     )

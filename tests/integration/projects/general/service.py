@@ -120,6 +120,20 @@ class ExampleService(bentoml.BentoService):
         time.sleep(data['b'] + data['a'] * len(input_datas))
         return input_datas
 
+    @bentoml.api(input=JsonInput(), mb_max_batch_size=1, batch=True)
+    def echo_batch_size_1(self, input_datas):
+        data = input_datas[0]
+        time.sleep(data['b'] + data['a'] * len(input_datas))
+        batch_size = len(input_datas)
+        return [batch_size] * batch_size
+
+    @bentoml.api(input=JsonInput(), mb_max_latency=10000 * 1000, batch=True)
+    def echo_batch_size(self, input_datas=10):
+        data = input_datas[0]
+        time.sleep(data['b'] + data['a'] * len(input_datas))
+        batch_size = len(input_datas)
+        return [batch_size] * batch_size
+
     @bentoml.api(input=JsonInput())
     def echo_json(self, input_data):
         return input_data

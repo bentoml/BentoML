@@ -83,31 +83,6 @@ async def test_batch_size_limit(host):
     A, B = 0.0002, 0.01
     data = '{"a": %s, "b": %s}' % (A, B)
 
-    # test for max_batch_size=1
-    tasks = tuple(
-        pytest.assert_request(
-            "POST",
-            f"http://{host}/echo_batch_size_1",
-            headers=(("Content-Type", "application/json"),),
-            data=data,
-            assert_status=lambda i: i in (200, 429),
-        )
-        for i in range(100)
-    )
-    await asyncio.gather(*tasks)
-
-    tasks = tuple(
-        pytest.assert_request(
-            "POST",
-            f"http://{host}/echo_batch_size_1",
-            headers=(("Content-Type", "application/json"),),
-            data=data,
-            assert_data=lambda i: i in (b'429: Too Many Requests', b"1"),
-        )
-        for i in range(10)
-    )
-    await asyncio.gather(*tasks)
-
     # test for max_batch_size=None
     tasks = tuple(
         pytest.assert_request(
@@ -117,7 +92,7 @@ async def test_batch_size_limit(host):
             data=data,
             assert_status=lambda i: i in (200, 429),
         )
-        for i in range(100)
+        for _ in range(100)
     )
     await asyncio.gather(*tasks)
 
@@ -130,6 +105,6 @@ async def test_batch_size_limit(host):
             assert_status=200,
             assert_data=lambda d: d == b'429: Too Many Requests' or int(d.decode()) > 1,
         )
-        for i in range(30)
+        for _ in range(30)
     )
     await asyncio.gather(*tasks)

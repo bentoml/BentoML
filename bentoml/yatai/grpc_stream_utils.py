@@ -59,13 +59,12 @@ class BentoBundleStreamRequestsOrResponses:
     @staticmethod
     def _stream_file_into_tar(tarinfo, tar, file_handler, buf_size):
         out = tar.fileobj
-        """
-        For iter(), the second argument, sentinel, is given, then object must
-        be a callable object. The iterator created in this case will
-        call object with no arguments for each call to its __next__()
-        method; if the value returned is equal to sentinel, StopIteration
-        will be raised, otherwise the value will be returned.
-        """
+
+        # For iter(), the second argument, sentinel, is given, then object must
+        # be a callable object. The iterator created in this case will
+        # call object with no arguments for each call to its __next__()
+        # method; if the value returned is equal to sentinel, StopIteration
+        # will be raised, otherwise the value will be returned.
         for b in iter(lambda: file_handler.read(buf_size), b''):
             out.write(b)
             yield

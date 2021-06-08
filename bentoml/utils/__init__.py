@@ -16,7 +16,6 @@ import contextlib
 import functools
 import inspect
 from io import StringIO
-import math
 import os
 import socket
 import tarfile
@@ -268,9 +267,3 @@ def archive_directory_to_tar(source_dir, tarfile_dir, tarfile_name):
         # from source_dir/path/to/file to path/to/file
         tar.add(source_dir, arcname='')
     return tarfile_path, file_name
-
-
-def get_file_size_and_chunk_count(file_path):
-    file_size = os.path.getsize(file_path)
-    chunk_count = math.ceil(float(file_size) / DEFAULT_CHUNK_SIZE)
-    return file_size, chunk_count, DEFAULT_CHUNK_SIZE

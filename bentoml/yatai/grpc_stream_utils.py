@@ -55,6 +55,8 @@ class BentoBundleStreamRequestsOrResponses:
         self.directory_path = directory_path
         self.file_chunk_size = file_chunk_size
         self.is_request = is_request
+        self.out_stream = FileStream()
+        self.tar = tarfile.TarFile(fileobj=self.out_stream, mode='w')
 
     @staticmethod
     def _stream_file_into_tar(tarinfo, tar, file_handler, buf_size):
@@ -75,29 +77,30 @@ class BentoBundleStreamRequestsOrResponses:
         tar.offset += blocks * tarfile.BLOCKSIZE
         yield
 
-    def create_request_or_response(self, value):
+    def create_request_or_response(self):
         if self.is_request:
             return UploadBentoRequest(
                 bento_name=self.bento_name,
                 bento_version=self.bento_version,
-                bento_bundle=value,
+                bento_bundle=self.out_stream.read_value(),
             )
         else:
-            return DownloadBentoResponse(bento_bundle=value)
+            return DownloadBentoResponse(bento_bundle=self.out_stream.read_value())
+
+    def clear(self):
+        self.tar.close()
+        self.out_stream.close()
 
     def __iter__(self):
         if self.is_request:
             yield UploadBentoRequest(
                 bento_name=self.bento_name, bento_version=self.bento_version
             )
-
-        out_stream = FileStream()
-        tar = tarfile.TarFile(fileobj=out_stream, mode='w')
         # Include length of separator.
         prefix_len = len(self.directory_path) + len(os.path.sep)
 
         # Add the directory path to tar
-        tar.add(name=self.directory_path, arcname='', recursive=False)
+        self.tar.add(name=self.directory_path, arcname='', recursive=False)
 
         # Manually walk the directory and add to tarfile
         for path, dirs, files in os.walk(self.directory_path):
@@ -109,26 +112,27 @@ class BentoBundleStreamRequestsOrResponses:
                 with open(file_path, 'rb') as file:
                     # Reading the file info and generate tarinfo from that.
                     # No file content is added to the tar at this point
-                    tar_info = tar.gettarinfo(
+                    tar_info = self.tar.gettarinfo(
                         name=file_path, arcname=os.path.join(arc_path, f), fileobj=file,
                     )
-                    tar.addfile(tar_info)
+                    self.tar.addfile(tar_info)
                     # stream the file content into the tar
                     for _ in self._stream_file_into_tar(
-                        tar_info, tar, file, self.file_chunk_size
+                        tar_info, self.tar, file, self.file_chunk_size
                     ):
-                        # Stream out
-                        yield self.create_request_or_response(out_stream.read_value())
+                        # Stream out as tarfile
+                        yield self.create_request_or_response()
 
             # Add the directory path to tar
             for dir_path in dirs:
-                tar.add(
+                self.tar.add(
                     name=os.path.join(path, dir_path),
                     arcname=os.path.join(arc_path, dir_path),
                     recursive=False,
                 )
             # Stream out directories info in the tar
-            yield self.create_request_or_response(out_stream.read_value())
-        tar.close()
-        yield self.create_request_or_response(out_stream.read_value())
-        out_stream.close()
+            yield self.create_request_or_response()
+        self.tar.close()
+        # Stream out any value that are left over.
+        yield self.create_request_or_response()
+        self.out_stream.close()

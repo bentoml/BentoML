@@ -576,28 +576,30 @@ class BentoRepositoryAPIClient:
 
     def _upload_bento(self, bento_name, bento_version, saved_bento_bundle_path):
         try:
+            streaming_request_generator = BentoBundleStreamRequestsOrResponses(
+                bento_name=bento_name,
+                bento_version=bento_version,
+                directory_path=saved_bento_bundle_path,
+                is_request=True,
+            )
             result = self.yatai_service.UploadBento(
-                iter(
-                    BentoBundleStreamRequestsOrResponses(
-                        bento_name=bento_name,
-                        bento_version=bento_version,
-                        directory_path=saved_bento_bundle_path,
-                        is_request=True,
-                    ),
-                ),
+                iter(streaming_request_generator,),
                 timeout=DEFAULT_REQUEST_TIMEOUT,
             )
             if result.status.status_code != status_pb2.Status.OK:
                 raise BentoMLException(result.status.error_message)
             return UploadStatus.DONE
         except BentoMLException as e:
+            streaming_request_generator.clear()
             logger.error(f'BentoML ERROR upload bento: {e}')
             return UploadStatus.ERROR
         except grpc.RpcError as e:
+            streaming_request_generator.clear()
             error_message = process_grpc_error(e)
             logger.error(f'RPC ERROR upload bento: {error_message}')
             return UploadStatus.ERROR
         except Exception as e:  # pylint: disable=broad-except
+            streaming_request_generator.clear()
             logger.error(f'ERROR upload bento: {e}')
             return UploadStatus.ERROR
 

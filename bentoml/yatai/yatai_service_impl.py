@@ -640,17 +640,20 @@ def get_yatai_service_impl(base=object):
                     bento_pb = self.db.metadata_store.get(
                         sess, request.bento_name, request.bento_version
                     )
-                    for response in BentoBundleStreamRequestsOrResponses(
+                    responses_generator = BentoBundleStreamRequestsOrResponses(
                         bento_name=request.bento_name,
                         bento_version=request.bento_version,
                         directory_path=bento_pb.uri.uri,
                         is_request=False,
-                    ):
+                    )
+                    for response in responses_generator:
                         yield response
                 except BentoMLException as e:
+                    responses_generator.clear()
                     logger.error("RPC ERROR DownloadBento: %s", e)
                     return DownloadBentoResponse(status=e.status_proto)
                 except Exception as e:  # pylint: disable=broad-except
+                    responses_generator.clear()
                     logger.error("RPC ERROR DownloadBento: %s", e)
                     return DownloadBentoResponse(status=Status.INTERNAL())
 

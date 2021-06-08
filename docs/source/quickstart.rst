@@ -170,7 +170,7 @@ in the BentoML format for distribution and deployment, under *bento_packer.py*:
     # bento_packer.py
 
     # import the IrisClassifier class defined above
-    from iris_classifier import IrisClassifier
+    from bento_service import IrisClassifier
 
     # Create a iris classifier service instance
     iris_classifier_service = IrisClassifier()

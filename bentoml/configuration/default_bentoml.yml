@@ -10,7 +10,6 @@ bento_server:
   timeout: 60
   max_request_size: 20971520
   microbatch:
-    enabled: True
     workers: 1
     max_batch_size: Null
     max_latency: Null

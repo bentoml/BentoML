@@ -66,9 +66,6 @@ def create_bento_service_cli(
     pip_installed_bundle_path: str = None,
     default_yatai_url: str = None,
     default_port: int = Provide[BentoMLContainer.config.bento_server.port],
-    default_enable_microbatch: bool = Provide[
-        BentoMLContainer.config.bento_server.microbatch.enabled
-    ],
     default_mb_max_batch_size: int = Provide[
         BentoMLContainer.config.bento_server.microbatch.max_batch_size
     ],
@@ -251,7 +248,6 @@ def create_bento_service_cli(
         start_dev_server(
             saved_bundle_path,
             port=port,
-            enable_microbatch=default_enable_microbatch,
             mb_max_batch_size=mb_max_batch_size,
             mb_max_latency=mb_max_latency,
             run_with_ngrok=run_with_ngrok,
@@ -346,7 +342,6 @@ def create_bento_service_cli(
             port=port,
             workers=workers,
             timeout=timeout,
-            enable_microbatch=default_enable_microbatch,
             enable_swagger=enable_swagger,
             mb_max_batch_size=mb_max_batch_size,
             mb_max_latency=mb_max_latency,

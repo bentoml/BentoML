@@ -49,7 +49,7 @@ SCHEMA = Schema(
             "timeout": And(int, lambda timeout: timeout > 0),
             "max_request_size": And(int, lambda size: size > 0),
             "microbatch": {
-                "enabled": bool,
+                Optional("enabled", default=True): bool,
                 "workers": Or(And(int, lambda workers: workers > 0), None),
                 "max_batch_size": Or(And(int, lambda size: size > 0), None),
                 "max_latency": Or(And(int, lambda latency: latency > 0), None),

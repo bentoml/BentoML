@@ -32,14 +32,8 @@ def clean_context():
         yield stack
 
 
-@pytest.fixture(params=[True, False], scope="session")
-def enable_microbatch(request):
-    pytest.enable_microbatch = request.param
-    return request.param
-
-
 @pytest.fixture(scope="session")
-def host(pytestconfig, clean_context, enable_microbatch):
+def host(pytestconfig, clean_context):
     """
     Launch host from a
     """
@@ -61,13 +55,12 @@ def host(pytestconfig, clean_context, enable_microbatch):
             build_api_server_docker_image(test_svc_bundle, "example_service")
         )
         with run_api_server_docker_container(
-            image, enable_microbatch=enable_microbatch, config_file=config_file,
+            image, config_file=config_file,
         ) as host:
             yield host
     elif pytestconfig.getoption("dev_server"):
         with run_api_server(
             test_svc_bundle,
-            enable_microbatch=enable_microbatch,
             config_file=config_file,
             dev_server=True,
         ) as host:
@@ -75,7 +68,6 @@ def host(pytestconfig, clean_context, enable_microbatch):
     else:
         with run_api_server(
             test_svc_bundle,
-            enable_microbatch=enable_microbatch,
             config_file=config_file,
         ) as host:
             yield host

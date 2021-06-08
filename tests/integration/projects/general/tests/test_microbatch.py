@@ -10,8 +10,6 @@ DEFAULT_MAX_LATENCY = 10 * 1000
 @pytest.mark.skipif(not psutil.POSIX, reason="production server only works on POSIX")
 @pytest.mark.asyncio
 async def test_slow_server(host):
-    if not pytest.enable_microbatch:
-        pytest.skip()
 
     A, B = 0.2, 1
     data = '{"a": %s, "b": %s}' % (A, B)
@@ -37,8 +35,6 @@ async def test_slow_server(host):
 @pytest.mark.skipif(not psutil.POSIX, reason="production server only works on POSIX")
 @pytest.mark.asyncio
 async def test_fast_server(host):
-    if not pytest.enable_microbatch:
-        pytest.skip()
 
     A, B = 0.0002, 0.01
     data = '{"a": %s, "b": %s}' % (A, B)

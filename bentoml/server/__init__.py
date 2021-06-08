@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 def start_dev_server(
     bundle_path: str,
     port: Optional[int] = None,
-    enable_microbatch: Optional[bool] = None,
     mb_max_batch_size: Optional[int] = None,
     mb_max_latency: Optional[int] = None,
     run_with_ngrok: Optional[bool] = None,
@@ -59,7 +58,6 @@ def start_dev_server(
             port=port,
             api_server_port=api_server_port,
             saved_bundle_path=bundle_path,
-            enable_microbatch=enable_microbatch,
             mb_max_batch_size=mb_max_batch_size,
             mb_max_latency=mb_max_latency,
         )
@@ -84,7 +82,6 @@ def _start_dev_proxy(
     port: int,
     saved_bundle_path: str,
     api_server_port: int,
-    enable_microbatch: bool,
     mb_max_batch_size: int,
     mb_max_latency: int,
 ):
@@ -96,7 +93,6 @@ def _start_dev_proxy(
         saved_bundle_path,
         outbound_host="localhost",
         outbound_port=api_server_port,
-        enable_microbatch=enable_microbatch,
         mb_max_batch_size=mb_max_batch_size,
         mb_max_latency=mb_max_latency,
     )
@@ -109,7 +105,6 @@ def start_prod_server(
     port: Optional[int] = None,
     workers: Optional[int] = None,
     timeout: Optional[int] = None,
-    enable_microbatch: Optional[bool] = None,
     enable_swagger: Optional[bool] = None,
     mb_max_batch_size: Optional[int] = None,
     mb_max_latency: Optional[int] = None,
@@ -148,7 +143,6 @@ def start_prod_server(
             workers=microbatch_workers,
             timeout=timeout,
             outbound_workers=workers,
-            enable_microbatch=enable_microbatch,
             mb_max_batch_size=mb_max_batch_size,
             mb_max_latency=mb_max_latency,
             prometheus_lock=prometheus_lock,
@@ -188,7 +182,6 @@ def _start_prod_proxy(
     workers: int,
     timeout: int,
     outbound_workers: int,
-    enable_microbatch: bool,
     mb_max_batch_size: int,
     mb_max_latency: int,
     prometheus_lock: Optional[multiprocessing.Lock] = None,
@@ -208,7 +201,6 @@ def _start_prod_proxy(
         outbound_host="localhost",
         outbound_port=api_server_port,
         outbound_workers=outbound_workers,
-        enable_microbatch=enable_microbatch,
         mb_max_batch_size=mb_max_batch_size,
         mb_max_latency=mb_max_latency,
     )

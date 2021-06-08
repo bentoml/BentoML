@@ -43,7 +43,6 @@ from bentoml.yatai.proto.repository_pb2 import (
     ListBentoRequest,
     DangerouslyDeleteBentoRequest,
     ContainerizeBentoRequest,
-    UploadBentoRequest,
     DownloadBentoRequest,
 )
 from bentoml.yatai.proto import status_pb2
@@ -576,32 +575,31 @@ class BentoRepositoryAPIClient:
         return svc
 
     def _upload_bento(self, bento_name, bento_version, saved_bento_bundle_path):
-        with TempDirectory() as tarfile_dir:
-            try:
-                result = self.yatai_service.UploadBento(
-                    iter(
-                        BentoBundleStreamRequestsOrResponses(
-                            bento_name=bento_name,
-                            bento_version=bento_version,
-                            directory_path=saved_bento_bundle_path,
-                            is_request=True,
-                        ),
+        try:
+            result = self.yatai_service.UploadBento(
+                iter(
+                    BentoBundleStreamRequestsOrResponses(
+                        bento_name=bento_name,
+                        bento_version=bento_version,
+                        directory_path=saved_bento_bundle_path,
+                        is_request=True,
                     ),
-                    timeout=DEFAULT_REQUEST_TIMEOUT,
-                )
-                if result.status.status_code != status_pb2.Status.OK:
-                    raise BentoMLException(result.status.error_message)
-                return UploadStatus.DONE
-            except BentoMLException as e:
-                logger.error(f'BentoML ERROR upload bento: {e}')
-                return UploadStatus.ERROR
-            except grpc.RpcError as e:
-                error_message = process_grpc_error(e)
-                logger.error(f'RPC ERROR upload bento: {error_message}')
-                return UploadStatus.ERROR
-            except Exception as e:  # pylint: disable=broad-except
-                logger.error(f'ERROR upload bento: {e}')
-                return UploadStatus.ERROR
+                ),
+                timeout=DEFAULT_REQUEST_TIMEOUT,
+            )
+            if result.status.status_code != status_pb2.Status.OK:
+                raise BentoMLException(result.status.error_message)
+            return UploadStatus.DONE
+        except BentoMLException as e:
+            logger.error(f'BentoML ERROR upload bento: {e}')
+            return UploadStatus.ERROR
+        except grpc.RpcError as e:
+            error_message = process_grpc_error(e)
+            logger.error(f'RPC ERROR upload bento: {error_message}')
+            return UploadStatus.ERROR
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error(f'ERROR upload bento: {e}')
+            return UploadStatus.ERROR
 
     def _download_bento(self, bento_name, bento_version):
         with TempDirectory(cleanup=False) as temp_dir:

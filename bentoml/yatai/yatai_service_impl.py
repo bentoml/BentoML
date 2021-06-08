@@ -61,11 +61,7 @@ from bentoml.yatai.repository.base_repository import BaseRepository
 from bentoml.yatai.db import DB
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
-from bentoml.utils import (
-    ProtoMessageToDict,
-    archive_directory_to_tar,
-    get_file_size_and_chunk_count,
-)
+from bentoml.utils import ProtoMessageToDict
 from bentoml.yatai.grpc_stream_utils import BentoBundleStreamRequestsOrResponses
 from bentoml.yatai.validator import validate_deployment_pb
 from bentoml import __version__ as BENTOML_VERSION

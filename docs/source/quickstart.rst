@@ -67,8 +67,11 @@ for deploying with BentoML to avoid any potential errors (example project struct
     ├── bento_packer.py       # responsible for packing BentoService
     ├── bento_service.py      # BentoService definition
     ├── model.py               # DL Model definitions
-    ├── train.py               # training scripts
+    ├── train.py               # OPTIONAL: training scripts
     └── requirements.txt
+
+.. note::
+    For users who already have a DL project, users usually have a ``train.py`` scripts, and thus ``bento_deploy/train.py`` is not needed.
 
 
 We then need to prepare a trained model before serving with BentoML. Train a

@@ -24,6 +24,9 @@ async def test_batch_size_limit(host):
         for _ in range(100)
     )
     await asyncio.gather(*tasks)
+    await asyncio.sleep(1)
+
+    batch_bucket = []
 
     tasks = tuple(
         pytest.assert_request(
@@ -32,9 +35,13 @@ async def test_batch_size_limit(host):
             headers=(("Content-Type", "application/json"),),
             data=data,
             assert_status=200,
-            assert_data=lambda d: d == b'429: Too Many Requests'
-            or int(d.decode()) == 1,
+            assert_data=lambda d: (
+                d == b'429: Too Many Requests'
+                or batch_bucket.append(int(d.decode()))
+                or True
+            ),
         )
         for _ in range(30)
     )
     await asyncio.gather(*tasks)
+    assert all(b == 1 for b in batch_bucket), batch_bucket

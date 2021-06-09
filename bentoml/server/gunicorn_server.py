@@ -43,17 +43,13 @@ def gunicorn_bento_server(
 
     class GunicornBentoAPIServer(BentoAPIServer):
         def metrics_view_func(self):
-            from prometheus_client import (
-                CONTENT_TYPE_LATEST,
-                generate_latest,
-                multiprocess,
+            from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+            from bentoml.server.instruments import prometheus_collector_ctx
+
+            return Response(
+                generate_latest(prometheus_collector_ctx.get()),
+                mimetype=CONTENT_TYPE_LATEST,
             )
-
-            registry = self.app.wsgi_app.collector_registry
-            # This creates duplicates metrics since we are accessing our middleware's collector_registry
-            # multiprocess.MultiProcessCollector(registry)
-
-            return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
 
     class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         """

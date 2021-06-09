@@ -5,11 +5,14 @@ import shutil
 from dependency_injector.wiring import Provide, inject
 from flask import Request
 from timeit import default_timer
+from contextvars import ContextVar
 
 from bentoml.configuration.containers import BentoMLContainer
 
 
 logger = logging.getLogger(__name__)
+
+prometheus_collector_ctx = ContextVar('collector_registry')
 
 
 class InstrumentMiddleware:
@@ -25,11 +28,20 @@ class InstrumentMiddleware:
         self.app = app
         self.bento_service = bento_service
 
-        from prometheus_client import Histogram, Counter, Gauge, CollectorRegistry
+        from prometheus_client import (
+            Histogram,
+            Counter,
+            Gauge,
+            CollectorRegistry,
+            multiprocess,
+        )
 
         service_name = self.bento_service.name
-        # Use local registry instead of the global one to avoid duplicated metrics register
         self.collector_registry = CollectorRegistry()
+        # NOTE: enable mb metrics to be parsed.
+        multiprocess.MultiProcessCollector(self.collector_registry)
+        # provides context to collector_registry
+        prometheus_collector_ctx.set(self.collector_registry)
 
         self.metrics_request_duration = Histogram(
             name=service_name + '_request_duration_seconds',
@@ -50,6 +62,7 @@ class InstrumentMiddleware:
             documentation='Total number of HTTP requests in progress now',
             namespace=namespace,
             labelnames=['endpoint', 'service_version'],
+            multiprocess_mode='livesum',
             registry=self.collector_registry,
         )
 
@@ -111,7 +124,7 @@ def setup_prometheus_multiproc_dir(
         shutil.rmtree(prometheus_multiproc_dir, ignore_errors=True)
         os.makedirs(prometheus_multiproc_dir, exist_ok=True)
 
-        os.environ['PROMETHEUS_MULTIPROC_DIR'] = prometheus_multiproc_dir
+        os.environ['prometheus_multiproc_dir'] = prometheus_multiproc_dir
     finally:
         if lock is not None:
             lock.release()

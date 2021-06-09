@@ -45,13 +45,13 @@ def gunicorn_bento_server(
         def metrics_view_func(self):
             from prometheus_client import (
                 CONTENT_TYPE_LATEST,
-                CollectorRegistry,
                 generate_latest,
                 multiprocess,
             )
 
-            registry = CollectorRegistry()
+            registry = self.app.wsgi_app.collector_registry
             multiprocess.MultiProcessCollector(registry)
+
             return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
 
     class GunicornBentoServer(Application):  # pylint: disable=abstract-method

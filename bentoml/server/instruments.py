@@ -112,7 +112,7 @@ def setup_prometheus_multiproc_dir(
         shutil.rmtree(prometheus_multiproc_dir, ignore_errors=True)
         os.makedirs(prometheus_multiproc_dir, exist_ok=True)
 
-        os.environ['prometheus_multiproc_dir'] = prometheus_multiproc_dir
+        os.environ['PROMETHEUS_MULTIPROC_DIR'] = prometheus_multiproc_dir
     finally:
         if lock is not None:
             lock.release()

@@ -69,7 +69,7 @@ def metrics_patch(cls):
                 labelnames=['endpoint'],
             )
             self.metrics_request_duration = Histogram(
-                name=service_name + '_mb_requestmb_duration_seconds',
+                name=service_name + '_mb_request_duration_seconds',
                 documentation=service_name + "API HTTP request duration in seconds",
                 namespace=namespace,
                 labelnames=['endpoint', 'http_response_code'],

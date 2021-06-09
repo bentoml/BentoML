@@ -28,8 +28,7 @@ class InstrumentMiddleware:
         from prometheus_client import Histogram, Counter, Gauge, CollectorRegistry
 
         service_name = self.bento_service.name
-        # Use local registry instead of the global one to avoid duplicated metrics
-        # register
+        # Use local registry instead of the global one to avoid duplicated metrics register
         self.collector_registry = CollectorRegistry()
 
         self.metrics_request_duration = Histogram(

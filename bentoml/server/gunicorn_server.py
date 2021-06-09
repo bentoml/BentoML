@@ -50,7 +50,8 @@ def gunicorn_bento_server(
             )
 
             registry = self.app.wsgi_app.collector_registry
-            multiprocess.MultiProcessCollector(registry)
+            # This creates duplicates metrics since we are accessing our middleware's collector_registry
+            # multiprocess.MultiProcessCollector(registry)
 
             return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
 

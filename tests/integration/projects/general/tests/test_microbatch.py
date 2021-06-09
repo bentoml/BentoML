@@ -73,8 +73,6 @@ async def test_fast_server(host):
 @pytest.mark.skipif(not psutil.POSIX, reason="production server only works on POSIX")
 @pytest.mark.asyncio
 async def test_batch_size_limit(host):
-    if not pytest.enable_microbatch:
-        pytest.skip()
 
     A, B = 0.0002, 0.01
     data = '{"a": %s, "b": %s}' % (A, B)

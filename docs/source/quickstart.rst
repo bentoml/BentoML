@@ -73,6 +73,8 @@ for deploying with BentoML to avoid any potential errors (example project struct
 .. note::
     For users who already have a DL project, users usually have a ``train.py`` scripts, and thus ``bento_deploy/train.py`` is not needed.
 
+.. note::
+    For PyTorch usecase, users should have a ``bento_deploy/model.py`` class definition in order to deserialize the model correctly.
 
 We then need to prepare a trained model before serving with BentoML. Train a
 classifier model with Scikit-Learn on the

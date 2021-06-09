@@ -115,4 +115,7 @@ async def test_batch_size_limit(host):
         for _ in range(50)
     )
     await asyncio.gather(*tasks)
+
+    # batch size could be dynamic because of the bentoml_config.yml
+    # microbatch.max_batch_size=Null
     assert any(b > 1 for b in batch_bucket), batch_bucket

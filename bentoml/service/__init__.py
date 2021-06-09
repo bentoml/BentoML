@@ -779,13 +779,7 @@ class BentoService:
 
     pip_dependencies_map = None
 
-    def start_dev_server(
-        self, port=None, enable_microbatch=False, enable_ngrok=False, debug=False
-    ):
-        if enable_microbatch:
-            raise NotImplementedError(
-                "start_dev_server with enable_microbatch=True is not implemented"
-            )
+    def start_dev_server(self, port=None, enable_ngrok=False, debug=False):
         if self._dev_server_process:
             logger.warning(
                 "There is already a running dev server, "
@@ -806,10 +800,6 @@ class BentoService:
                 cmd = [sys.executable, "-m", "bentoml", "serve"]
                 if port:
                     cmd += ['--port', f'{port}']
-                if enable_microbatch:
-                    cmd += ['--enable-microbatch']
-                else:
-                    cmd += ['--disable-microbatch']
                 if enable_ngrok:
                     cmd += ['--run-with-ngrok']
                 if debug:

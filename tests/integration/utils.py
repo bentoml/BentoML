@@ -98,16 +98,16 @@ def run_api_server_docker_container(
         pass
 
     if enable_microbatch:
-        command_args = "--enable-microbatch --workers 1 --mb-max-batch-size 2048"
+        command_args = "--enable-microbatch --workers 1"
     else:
         command_args = "--workers 1"
 
     if config_file is not None:
-        environment = dict(BENTOML_CONFIG="/etc/bentoml_config.yml")
+        environment = ["BENTOML_CONFIG=/home/bentoml/bentoml_config.yml"]
         volumes = {
             os.path.abspath(config_file): {
-                "bind": "/etc/bentoml_config.yml",
-                "mode": "rw",
+                "bind": "/home/bentoml/bentoml_config.yml",
+                "mode": "ro",
             }
         }
     else:

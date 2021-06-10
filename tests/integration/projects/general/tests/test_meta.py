@@ -2,6 +2,7 @@
 import json
 
 import pytest
+import requests
 
 
 @pytest.mark.asyncio
@@ -68,3 +69,15 @@ async def test_cors(host):
         assert_status=200,
         assert_headers=has_cors_headers,
     )
+
+
+@pytest.mark.parametrize(
+    "metrics",
+    ['_mb_request_duration_seconds_count', '_request_duration_seconds_bucket'],
+)
+def test_api_server_metrics(host, metrics):
+    metrics_endpoint = f"http://{host}/metrics"
+    r = requests.get(metrics_endpoint)
+    assert (
+        metrics in r.text
+    ), f"expected metrics {metrics} not found in server response:\n{r.text}"

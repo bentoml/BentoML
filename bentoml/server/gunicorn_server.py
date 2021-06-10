@@ -43,13 +43,17 @@ def gunicorn_bento_server(
 
     class GunicornBentoAPIServer(BentoAPIServer):
         def metrics_view_func(self):
-            from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-            from bentoml.server.instruments import prometheus_collector_ctx
-
-            return Response(
-                generate_latest(prometheus_collector_ctx.get()),
-                mimetype=CONTENT_TYPE_LATEST,
+            from prometheus_client import (
+                CONTENT_TYPE_LATEST,
+                CollectorRegistry,
+                generate_latest,
+                multiprocess,
             )
+
+            registry = CollectorRegistry()
+            # NOTE: enable mb metrics to be parsed.
+            multiprocess.MultiProcessCollector(registry)
+            return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST,)
 
     class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         """

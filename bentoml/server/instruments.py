@@ -5,14 +5,11 @@ import shutil
 from dependency_injector.wiring import Provide, inject
 from flask import Request
 from timeit import default_timer
-from contextvars import ContextVar
 
 from bentoml.configuration.containers import BentoMLContainer
 
 
 logger = logging.getLogger(__name__)
-
-prometheus_collector_ctx = ContextVar('collector_registry')
 
 
 class InstrumentMiddleware:
@@ -38,10 +35,6 @@ class InstrumentMiddleware:
 
         service_name = self.bento_service.name
         self.collector_registry = CollectorRegistry()
-        # NOTE: enable mb metrics to be parsed.
-        multiprocess.MultiProcessCollector(self.collector_registry)
-        # provides context to collector_registry
-        prometheus_collector_ctx.set(self.collector_registry)
 
         self.metrics_request_duration = Histogram(
             name=service_name + '_request_duration_seconds',

@@ -108,25 +108,26 @@ Jump to :ref:`tensorflow-impl` | :ref:`pytorch-impl` | :ref:`onnx-impl`
     .. code-block:: bash
 
         # BentoService is running in another session
-        $ nvidia-smi
-        Thu Jun  3 17:02:06 2021
+        » nvidia-smi
+        Thu Jun 10 15:30:28 2021
         +-----------------------------------------------------------------------------+
-        | NVIDIA-SMI 465.31       Driver Version: 465.31       CUDA Version: 11.3          |
+        | NVIDIA-SMI 465.31       Driver Version: 465.31       CUDA Version: 11.3     |
         |-------------------------------+----------------------+----------------------+
-        | GPU  Name        Persistence-M  | Bus-Id        Disp.A    | Volatile Uncorr. ECC |
-        | Fan  Temp  Perf  Pwr:Usage/Cap |         Memory-Usage    | GPU-Util  Compute M. |
-        |                                     |                           |               MIG M.    |
+        | GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+        | Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+        |                               |                      |               MIG M. |
         |===============================+======================+======================|
-        |   0  NVIDIA GeForce ...  Off    | 00000000:01:00.0 Off  |                  N/A     |
-        | N/A   59C    P8    5W /  N/A     |      6MiB /  6078MiB   |      0%      Default    |
-        |                                     |                          |                  N/A     |
+        |   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |
+        | N/A   49C    P8     6W /  N/A |    753MiB /  6078MiB |      0%      Default |
+        |                               |                      |                  N/A |
         +-------------------------------+----------------------+----------------------+
+
         +-----------------------------------------------------------------------------+
-        | Processes:                                                                                |
-        |  GPU   GI   CI        PID   Type   Process name                       GPU Memory     |
-        |        ID   ID                                                            Usage           |
+        | Processes:                                                                  |
+        |  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+        |        ID   ID                                                   Usage      |
         |=============================================================================|
-        |    0   N/A  N/A      1418      G   /opt/conda/venv/bin/python       5781MiB        |
+        |    0   N/A  N/A    179346      C   /opt/conda/bin/python             745MiB |
         +-----------------------------------------------------------------------------+
 
 .. note::

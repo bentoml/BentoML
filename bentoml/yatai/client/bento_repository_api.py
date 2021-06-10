@@ -583,8 +583,7 @@ class BentoRepositoryAPIClient:
                 is_request=True,
             )
             result = self.yatai_service.UploadBento(
-                iter(streaming_request_generator,),
-                timeout=DEFAULT_REQUEST_TIMEOUT,
+                iter(streaming_request_generator,), timeout=DEFAULT_REQUEST_TIMEOUT,
             )
             if result.status.status_code != status_pb2.Status.OK:
                 raise BentoMLException(result.status.error_message)

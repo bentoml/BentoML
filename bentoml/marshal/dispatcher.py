@@ -186,7 +186,7 @@ class CorkDispatcher:
             except Exception:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc())
 
-    async def inbound_call(self, data) -> asyncio.Future:
+    async def inbound_call(self, data):
         t = time.time()
         future = self._loop.create_future()
         input_info = (t, data, future)

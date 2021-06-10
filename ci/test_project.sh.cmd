@@ -20,9 +20,9 @@ if [ "$(uname)" == "Darwin" ]; then
 	echo "Github Action doesn't have Docker installed on MacOS due to licensing issues."
 	echo "https://github.com/actions/virtual-environments/issues/17#issuecomment-614726536"
 	export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-	python -m pytest -s "$PROJECT_PATH" --bento-dist "$BUILD_PATH/dist" --cov=bentoml --cov-config=.coveragerc
+	python -m pytest -s "$PROJECT_PATH" --bento-dist "$BUILD_PATH/dist" --cov=bentoml --cov-config=.coveragerc $2
 else
-	python -m pytest -s "$PROJECT_PATH" --bento-dist "$BUILD_PATH/dist" --docker --cov=bentoml --cov-config=.coveragerc
+	python -m pytest -s "$PROJECT_PATH" --bento-dist "$BUILD_PATH/dist" --docker --cov=bentoml --cov-config=.coveragerc $2
 fi
 rm -r $BUILD_PATH
 

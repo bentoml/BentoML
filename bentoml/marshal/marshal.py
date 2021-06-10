@@ -31,12 +31,14 @@ from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATE
 from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest, HTTPResponse
 
+
 logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
     from aiohttp_cors import ResourceOptions
-    from aiohttp.web import Application
+    from aiohttp.web import Application, Request
+    from aiohttp import BaseConnector, ClientSession
 
 
 def metrics_patch(cls):
@@ -172,7 +174,8 @@ class MarshalService:
     ):
         super().__init__(**kwargs)
 
-        self._client = None
+        self._conn: Optional["BaseConnector"] = None
+        self._client: Optional["ClientSession"] = None
         self.outbound_unix_socket = outbound_unix_socket
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
@@ -213,23 +216,36 @@ class MarshalService:
             self._outbound_sema = NonBlockSema(self.outbound_workers)
         return self._outbound_sema
 
-    def get_client(self):
-        from aiohttp import ClientSession, DummyCookieJar, UnixConnector, TCPConnector
+    def get_conn(self) -> "BaseConnector":
+        import aiohttp
 
-        if self._client is None:
-            jar = DummyCookieJar()
+        if self._conn is None or self._conn.closed:
             if self.outbound_unix_socket:
-                conn = UnixConnector(path=self.outbound_unix_socket,)
+                self._conn = aiohttp.UnixConnector(path=self.outbound_unix_socket,)
             else:
-                conn = TCPConnector(limit=30)
-            self._client = ClientSession(
-                connector=conn, auto_decompress=False, cookie_jar=jar,
+                self._conn = aiohttp.TCPConnector(limit=30)
+        return self._conn
+
+    def get_client(self):
+        import aiohttp
+
+        if self._client is None or self._client.closed:
+            jar = aiohttp.DummyCookieJar()
+            self._client = aiohttp.ClientSession(
+                connector=self.get_conn(),
+                auto_decompress=False,
+                cookie_jar=jar,
+                connector_owner=False,
             )
         return self._client
 
     def __del__(self):
+        loop = asyncio.get_event_loop()
         if getattr(self, '_client', None) is not None and not self._client.closed:
-            self._client.close()
+            loop.create_task(self._client.close())
+
+        # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
+        loop.create_task(asyncio.sleep(0))
 
     def add_batch_handler(self, api_route, max_latency, max_batch_size):
         '''
@@ -270,7 +286,7 @@ class MarshalService:
                     max_batch_size,
                 )
 
-    async def request_dispatcher(self, request):
+    async def request_dispatcher(self, request: "Request"):
         from aiohttp.web import HTTPInternalServerError, Response
 
         with get_tracer().async_span(
@@ -355,6 +371,14 @@ class MarshalService:
                 raise RemoteException(
                     e, payload=HTTPResponse.new(status=503, body=b"Service Unavailable")
                 )
+            except asyncio.CancelledError as e:
+                raise RemoteException(
+                    e,
+                    payload=HTTPResponse(
+                        status=500, body=b"Cancelled before upstream responses"
+                    ),
+                )
+
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",

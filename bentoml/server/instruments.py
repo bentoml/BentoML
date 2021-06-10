@@ -30,7 +30,6 @@ class InstrumentMiddleware:
             Counter,
             Gauge,
             CollectorRegistry,
-            multiprocess,
         )
 
         service_name = self.bento_service.name

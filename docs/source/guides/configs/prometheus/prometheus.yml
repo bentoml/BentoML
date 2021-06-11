@@ -14,5 +14,6 @@ scrape_configs:
   static_configs:
   - targets: 
     - localhost:9090
-    - localhost:5000
-    - localhost:3000
+    - bentoml:5000
+    - grafana:3000
+    - localhost:50000 # alert test

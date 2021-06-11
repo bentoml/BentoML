@@ -115,7 +115,7 @@ explore given BentoService metrics by `importing dashboard on Grafana <https://g
 ======================
 
 .. warning::
-    Make sure you know what you are doing!
+    Make sure to setup correctly all dependencies before proceeding: `Docker Swarm <https://docs.docker.com/engine/swarm/swarm-tutorial/#set-up>`_, `kubectl <https://kubernetes.io/docs/tasks/tools/>`_.
 
 .. _docker-compose:
 .. include:: configs/README.rst
@@ -129,17 +129,18 @@ content of ``docker-compose.yml``:
     version: '3.7'
 
     volumes:
-      prometheus_data: {}
-      grafana_data: {}
+      prometheus_data:
+      grafana_data:
 
-    networks: front-tier: back-tier:
+    networks:
+      shared-network:
 
     services:
 
       prometheus:
         image: prom/prometheus
         volumes:
-          - configs/prometheus/:/etc/prometheus/
+          - ./prometheus/:/etc/prometheus/
           - prometheus_data:/prometheus
         command:
           - '--config.file=/etc/prometheus/prometheus.yml'
@@ -149,8 +150,12 @@ content of ``docker-compose.yml``:
         ports:
           - 9090:9090
         networks:
-          - back-tier
-        restart: always
+          - shared-network
+        deploy:
+          placement:
+            constraints:
+              - node.role==manager
+        restart: on-failure
 
       grafana:
         image: grafana/grafana
@@ -160,24 +165,25 @@ content of ``docker-compose.yml``:
           - 3000:3000
         volumes:
           - grafana_data:/var/lib/grafana
-          - configs/grafana/provisioning/:/etc/grafana/provisioning/
+          - ./grafana/provisioning/:/etc/grafana/provisioning/
         env_file:
-          - configs/grafana/config.monitoring
+          - ./grafana/config.monitoring
         networks:
-          - back-tier
-          - front-tier
-        restart: always
+          - shared-network
+        user: "472"
+        deploy:
+          mode: global
+        restart: on-failure
 
-      bentoml_service:
-        image: your_bentoml_service_bundle
-        build:
-          context: path/to/Dockerfile
-          dockerfile: Dockerfile
+      bentoml:
+        image: aarnphm/bentoml-sentiment-analysis:latest
         ports:
           - "5000:5000"
         networks:
-          - back-tier
-        restart: always
+          - shared-network
+        deploy:
+          mode: global
+        restart: on-failure
 
 .. seealso::
     `Alertmanager <https://prometheus.io/docs/alerting/latest/alertmanager/>`_ and `cAdvisor <https://github.com/google/cadvisor>`_ to setup alerts as well as monitor container resources.
@@ -186,5 +192,13 @@ content of ``docker-compose.yml``:
     `prom/node-exporter <https://github.com/prometheus/node_exporter>`_ for expose machine metrics.
 
 
-Deploying Prometheus on Kubernetes
-----------------------------------
+(Optional) Deploying Prometheus on Kubernetes
+---------------------------------------------
+
+.. seealso::
+    `configs/deployment <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/configs/deployment>`_ for k8s deployment config.
+
+(Optional) Exposing GPU Metrics on Kubernetes
+---------------------------------------------
+
+For monitoring GPU metrics on Kubernetes, it is recommended to use ``dcgm-exporter``.

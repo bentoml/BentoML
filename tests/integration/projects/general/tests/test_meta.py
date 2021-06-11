@@ -78,13 +78,13 @@ async def test_cors(host):
         pytest.param(
             '_mb_request_duration_seconds_count',
             marks=pytest.mark.skipif(
-                psutil.MACOS, "microbatch metrics is not enabled in MacOS tests"
+                psutil.MACOS, reason="microbatch metrics is not shown in MacOS tests"
             ),
         ),
         pytest.param(
             '_mb_request_total',
             marks=pytest.mark.skipif(
-                psutil.MACOS, "microbatch metrics is not enabled in MacOS tests"
+                psutil.MACOS, reason="microbatch metrics is not shown in MacOS tests"
             ),
         ),
         '_request_duration_seconds_bucket',

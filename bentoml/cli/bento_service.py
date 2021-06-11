@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import re
 import sys
 
@@ -39,6 +40,9 @@ except ImportError:
     shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
 
 
+logger = logging.getLogger(__name__)
+
+
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
 
@@ -62,9 +66,6 @@ def create_bento_service_cli(
     pip_installed_bundle_path: str = None,
     default_yatai_url: str = None,
     default_port: int = Provide[BentoMLContainer.config.bento_server.port],
-    default_enable_microbatch: bool = Provide[
-        BentoMLContainer.config.bento_server.microbatch.enabled
-    ],
     default_mb_max_batch_size: int = Provide[
         BentoMLContainer.config.bento_server.microbatch.max_batch_size
     ],
@@ -88,8 +89,8 @@ def create_bento_service_cli(
     batch_options = [
         click.option(
             '--enable-microbatch/--disable-microbatch',
-            default=default_enable_microbatch,
-            help="Run API server with micro-batch enabled.",
+            default=None,
+            help="Deprecated option for running API server with micro-batch enabled.",
             envvar='BENTOML_ENABLE_MICROBATCH',
         ),
         click.option(
@@ -231,6 +232,15 @@ def create_bento_service_cli(
         yatai_url,
         enable_swagger,
     ):
+
+        if enable_microbatch is not None:
+            logger.warning(
+                "Option --enable-microbatch/--disable-microbatch has been "
+                "deprecated in the current release. The micro-batching option "
+                "has become the default. Consider using --mb-max-batching=1 "
+                "to simulate the effect of --disable-microbatch"
+            )
+
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )
@@ -238,7 +248,6 @@ def create_bento_service_cli(
         start_dev_server(
             saved_bundle_path,
             port=port,
-            enable_microbatch=enable_microbatch,
             mb_max_batch_size=mb_max_batch_size,
             mb_max_latency=mb_max_latency,
             run_with_ngrok=run_with_ngrok,
@@ -317,6 +326,13 @@ def create_bento_service_cli(
             )
             return
 
+        if enable_microbatch is not None:
+            logger.warning(
+                "Option --enable-microbatch/--disable-microbatch has been "
+                "deprecated in the current release. The micro-batching option "
+                "has become the default. Consider using --mb-max-batching=1 "
+                "to simulate the effect of --disable-microbatch"
+            )
         saved_bundle_path = resolve_bundle_path(
             bento, pip_installed_bundle_path, yatai_url
         )
@@ -326,7 +342,6 @@ def create_bento_service_cli(
             port=port,
             workers=workers,
             timeout=timeout,
-            enable_microbatch=enable_microbatch,
             enable_swagger=enable_swagger,
             mb_max_batch_size=mb_max_batch_size,
             mb_max_latency=mb_max_latency,

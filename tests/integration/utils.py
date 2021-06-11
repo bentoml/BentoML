@@ -83,10 +83,8 @@ def build_api_server_docker_image(saved_bundle_path, image_tag="test_bentoml_ser
         raise
 
 
-@cached_contextmanager("{image.id}, {enable_microbatch}")
-def run_api_server_docker_container(
-    image, enable_microbatch=False, config_file=None, timeout=60
-):
+@cached_contextmanager("{image.id}")
+def run_api_server_docker_container(image, config_file=None, timeout=60):
     """
     Launch a bentoml service container from a docker image, yields the host URL.
     """
@@ -97,17 +95,14 @@ def run_api_server_docker_container(
     with bentoml.utils.reserve_free_port() as port:
         pass
 
-    if enable_microbatch:
-        command_args = "--enable-microbatch --workers 1 --mb-max-batch-size 2048"
-    else:
-        command_args = "--workers 1"
+    command_args = "--workers 1"
 
     if config_file is not None:
-        environment = dict(BENTOML_CONFIG="/etc/bentoml_config.yml")
+        environment = ["BENTOML_CONFIG=/home/bentoml/bentoml_config.yml"]
         volumes = {
             os.path.abspath(config_file): {
-                "bind": "/etc/bentoml_config.yml",
-                "mode": "rw",
+                "bind": "/home/bentoml/bentoml_config.yml",
+                "mode": "ro",
             }
         }
     else:
@@ -136,9 +131,7 @@ def run_api_server_docker_container(
 
 
 @contextmanager
-def run_api_server(
-    bundle_path, enable_microbatch=False, config_file=None, dev_server=False, timeout=20
-):
+def run_api_server(bundle_path, config_file=None, dev_server=False, timeout=20):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
@@ -154,8 +147,6 @@ def run_api_server(
         cmd = [sys.executable, "-m", "bentoml", serve_cmd]
         if port:
             cmd += ['--port', f'{port}']
-        if enable_microbatch:
-            cmd += ['--enable-microbatch']
         cmd += [bundle_path]
 
     def print_log(p):

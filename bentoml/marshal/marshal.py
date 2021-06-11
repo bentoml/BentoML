@@ -69,7 +69,7 @@ def metrics_patch(cls):
                 labelnames=['endpoint'],
             )
             self.metrics_request_duration = Histogram(
-                name=service_name + '_mb_requestmb_duration_seconds',
+                name=service_name + '_mb_request_duration_seconds',
                 documentation=service_name + "API HTTP request duration in seconds",
                 namespace=namespace,
                 labelnames=['endpoint', 'http_response_code'],
@@ -159,9 +159,6 @@ class MarshalService:
             BentoMLContainer.config.bento_server.max_request_size
         ],
         outbound_unix_socket: str = None,
-        enable_microbatch: bool = Provide[
-            BentoMLContainer.config.bento_server.microbatch.enabled
-        ],
         enable_access_control: bool = Provide[
             BentoMLContainer.config.bento_server.cors.enabled
         ],
@@ -192,8 +189,8 @@ class MarshalService:
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
-        if enable_microbatch:
-            self.setup_routes_from_pb(self.bento_service_metadata_pb)
+        self.setup_routes_from_pb(self.bento_service_metadata_pb)
+
         if psutil.POSIX:
             import resource
 

@@ -17,6 +17,8 @@ python "$PROJECT_PATH/model/model.py" "$BUILD_PATH/artifacts"
 python "$PROJECT_PATH/service.py" "$BUILD_PATH/artifacts" "$BUILD_PATH/dist"
 export BUNDLE_BENTOML_VERSION=$(python -c "import bentoml;print(bentoml.__version__)")
 if [ "$(uname)" == "Darwin" ]; then
+	echo "Github Action doesn't have Docker installed on MacOS due to licensing issues."
+	echo "https://github.com/actions/virtual-environments/issues/17#issuecomment-614726536"
 	export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 	python -m pytest -s "$PROJECT_PATH" --bento-dist "$BUILD_PATH/dist" --cov=bentoml --cov-config=.coveragerc
 else

@@ -225,7 +225,6 @@ def test_gunicorn_serve_command():
             port=5000,
             workers=1,
             timeout=60,
-            enable_microbatch=False,
             enable_swagger=True,
             mb_max_batch_size=None,
             mb_max_latency=None,
@@ -239,7 +238,6 @@ def test_gunicorn_serve_command():
                 "--port=5050",
                 "--workers=10",
                 "--timeout=120",
-                "--enable-microbatch",
                 "--enable-swagger",
                 "--mb-max-batch-size=10000",
                 "--mb-max-latency=20000",
@@ -252,7 +250,6 @@ def test_gunicorn_serve_command():
             port=5050,
             workers=10,
             timeout=120,
-            enable_microbatch=True,
             enable_swagger=True,
             mb_max_batch_size=10000,
             mb_max_latency=20000,
@@ -276,7 +273,6 @@ def test_serve_command():
         mocked_start_dev_server.assert_called_with(
             '/',
             port=5000,
-            enable_microbatch=False,
             mb_max_batch_size=None,
             mb_max_latency=None,
             run_with_ngrok=False,
@@ -288,7 +284,6 @@ def test_serve_command():
             [
                 "/",
                 "--port=5050",
-                "--enable-microbatch",
                 "--enable-swagger",
                 "--mb-max-batch-size=10000",
                 "--mb-max-latency=20000",
@@ -299,7 +294,6 @@ def test_serve_command():
         mocked_start_dev_server.assert_called_with(
             '/',
             port=5050,
-            enable_microbatch=True,
             mb_max_batch_size=10000,
             mb_max_latency=20000,
             run_with_ngrok=True,

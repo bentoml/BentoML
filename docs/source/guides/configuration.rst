@@ -35,26 +35,27 @@ Remaining properties will take their defaults values.
 Throughout the BentoML documentation, features that are customizable through configuration are demonstrated 
 like the example above. For a full configuration schema including all customizable properties, refer to 
 the BentoML configuration template defined in 
-`default_bentoml.yml <https://github.com/bentoml/BentoML/blob/master/bentoml/configuration/default_bentoml.yml>`_. 
+`default_configuration.yml <https://github.com/bentoml/BentoML/blob/master/bentoml/configuration/default_configuration.yml>`_. 
 
-1. Docker Deployment
---------------------
+Docker Deployment
+-----------------
 
-Configuration file can be mounted to Docker container using the `-v` option.
+Configuration file can be mounted to the Docker container using the `-v` option and specified to the BentoML 
+runtime using the `-e` environment variable option.
 
 .. code-block:: shell
 
-    $ docker run -v /local/path/bentoml.yml:/user/home/bentoml/bentoml.yml
+    $ docker run -v /local/path/configuration.yml:/home/bentoml/configuration.yml -e BENTOML_CONFIG=/home/bentoml/configuration.yml
 
-2. Configuration Priority
--------------------------
+Configuration Priority
+----------------------
 
 Some customizable properties in the configuration can also be specified in the BentoML CLI or Python API 
 parameters. Values specified through BentoML CLI and Python API parameters will always take precedence over 
 the values defined in the configuration.
 
-3. Legacy Property Mapping
---------------------------
+Legacy Property Mapping
+-----------------------
 
 Starting BentoML release `0.13.0`, the legacy `bentoml.cfg` based configuration is deprecated and no longer 
 compatible with the YAML based configuration system. Please refer to the mapping below to migrate to the 
@@ -133,8 +134,8 @@ YAML based configuration.
 |               |                                            | yatai.repository.gcs.expiration         |
 +---------------+--------------------------------------------+-----------------------------------------+
 
-3.1 Repository Base URL
-^^^^^^^^^^^^^^^^^^^^^^^
+Repository Base URL
+^^^^^^^^^^^^^^^^^^^
 
 The repository base URL property has been broken down into properties for the individual repository 
 implementations, instead of being derived automatically.

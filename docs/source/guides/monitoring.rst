@@ -14,10 +14,6 @@ whether it is running dev server locally or deployed with docker in the cloud, a
 be available for exposing prometheus metrics. This guide will introduce how you use Prometheus and Grafana to monitor
 your BentoService.
 
-.. note::
-    Currently custom metrics is not yet supported in current version of BentoML. We are working towards providing
-    support in future release.
-
 Preface
 -------
 

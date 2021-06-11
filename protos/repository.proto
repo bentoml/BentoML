@@ -14,7 +14,7 @@ message BentoUri {
     LOCAL = 1;
     S3 = 2;
     GCS = 3;
-    AZURE_BLOB_STORAGE = 4;
+    ABS = 4;
     HDFS = 5;
   }
 
@@ -22,6 +22,7 @@ message BentoUri {
   string uri = 2;
   string s3_presigned_url = 3;
   string gcs_presigned_url = 4;
+  string abs_presigned_url = 5;
 }
 
 message BentoServiceMetadata {

@@ -22,9 +22,10 @@ from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
 
-from bentoml.utils.gcs import is_gcs_url
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.s3 import is_s3_url
+from bentoml.utils.gcs import is_gcs_url
+from bentoml.utils.abs import is_abs_url
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -223,8 +224,13 @@ def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
         ), "pip installed BentoService commands should not have Bento argument"
         return pip_installed_bundle_path
 
-    if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
-        # saved_bundle already support loading local, s3 path and gcs path
+    if (
+        os.path.isdir(bento)
+        or is_s3_url(bento)
+        or is_gcs_url(bento)
+        or is_abs_url(bento)
+    ):
+        # saved_bundle already support loading local, s3 path, gcs path, abs path
         return bento
 
     elif ":" in bento:
@@ -252,5 +258,7 @@ def resolve_bento_bundle_uri(bento_pb):
         return bento_pb.uri.s3_presigned_url
     if bento_pb.uri.gcs_presigned_url:
         return bento_pb.uri.gcs_presigned_url
+    if bento_pb.uri.abs_presigned_url:
+        return bento_pb.uri.abs_presigned_url
     else:
         return bento_pb.uri.uri

@@ -211,7 +211,7 @@ into production systems.
 BentoML's model management component is called Yatai, it means food cart in Japanese, 
 and you can think of it as where you'd store your bentos 🍱. Yatai provides CLI, Web UI,
 and Python API for accessing BentoML bundles you have created, and you can start a Yatai
-server for your team to manage all models on cloud storage(S3, GCS, MinIO etc) and build
+server for your team to manage all models on cloud storage(S3, GCS, ABS, MinIO etc) and build
 CI/CD workflow around it. 
 [Learn more about it here](https://docs.bentoml.org/en/latest/concepts.html#model-management).
 

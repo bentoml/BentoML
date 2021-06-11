@@ -2412,6 +2412,9 @@ export namespace bentoml {
 
         /** BentoUri gcs_presigned_url */
         gcs_presigned_url?: (string|null);
+
+        /** BentoUri abs_presigned_url */
+        abs_presigned_url?: (string|null);
     }
 
     /** Represents a BentoUri. */
@@ -2434,6 +2437,9 @@ export namespace bentoml {
 
         /** BentoUri gcs_presigned_url. */
         public gcs_presigned_url: string;
+
+        /** BentoUri abs_presigned_url. */
+        public abs_presigned_url: string;
 
         /**
          * Creates a new BentoUri instance using the specified properties.
@@ -2514,7 +2520,7 @@ export namespace bentoml {
             LOCAL = 1,
             S3 = 2,
             GCS = 3,
-            AZURE_BLOB_STORAGE = 4,
+            ABS = 4,
             HDFS = 5
         }
     }

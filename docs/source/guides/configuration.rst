@@ -130,7 +130,8 @@ YAML based configuration.
 | apiserver     | default_gunicorn_workers_count             | bento_server.workers                    |
 +---------------+--------------------------------------------+-----------------------------------------+
 | yatai         | bento_uri_default_expiration               | yatai.repository.s3.expiration OR       |
-|               |                                            | yatai.repository.gcs.expiration         |
+|               |                                            | yatai.repository.gcs.expiration OR      |
+|               |                                            | yatai.repository.abs.expiration         |
 +---------------+--------------------------------------------+-----------------------------------------+
 
 3.1 Repository Base URL
@@ -151,7 +152,7 @@ the following in YAML.
             file_system:
                 directory: /user/home/bentoml/repository
 
-For S3 or GCS, what was previously specified as `s3://s3_address` should defined as the following in 
+For S3 or GCS or ABS, what was previously specified as `s3://s3_address` should defined as the following in 
 YAML.
 
 .. code-block:: yaml

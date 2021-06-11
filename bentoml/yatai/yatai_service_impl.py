@@ -473,6 +473,10 @@ def get_yatai_service_impl(base=object):
                             bento_pb.uri.gcs_presigned_url = self.repo.get(
                                 bento_pb.name, bento_pb.version
                             )
+                        elif bento_pb.uri.type == BentoUri.ABS:
+                            bento_pb.uri.abs_presigned_url = self.repo.get(
+                                bento_pb.name, bento_pb.bento_version
+                            )
                         return GetBentoResponse(status=Status.OK(), bento=bento_pb)
                     else:
                         return GetBentoResponse(
@@ -549,6 +553,10 @@ def get_yatai_service_impl(base=object):
                         elif bento_pb.uri.type == BentoUri.GCS:
                             bento_service_bundle_path = self.repo.get(
                                 bento_pb.name, bento_pb.version
+                            )
+                        elif bento_pb.uri.typee == BentoUri.ABS:
+                            bento_service_bundle_path = self.repo.get(
+                                bento_pb.name, bento_bp.bento_version
                             )
                         safe_retrieve(bento_service_bundle_path, temp_bundle_path)
                         try:

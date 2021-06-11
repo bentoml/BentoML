@@ -26,6 +26,7 @@ from pathlib import PureWindowsPath, PurePosixPath
 
 from bentoml.utils.s3 import is_s3_url
 from bentoml.utils.gcs import is_gcs_url
+from bentoml.utils.abs import is_abs_url
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.saved_bundle.pip_pkg import ZIPIMPORT_DIR
@@ -42,7 +43,10 @@ def _is_http_url(bundle_path):
 
 def _is_remote_path(bundle_path):
     return isinstance(bundle_path, str) and (
-        is_s3_url(bundle_path) or is_gcs_url(bundle_path) or _is_http_url(bundle_path)
+        is_s3_url(bundle_path)
+        or is_gcs_url(bundle_path)
+        or is_abs_url(bundle_path)
+        or _is_http_url(bundle_path)
     )
 
 
@@ -72,6 +76,9 @@ def _resolve_remote_bundle_path(bundle_path):
         fileobj = io.BytesIO()
         gcs.download_blob_to_file(bundle_path, fileobj)
         fileobj.seek(0, 0)
+    elif is_abs_url(bundle_path):
+        # NEED TO IMPLEMENT THE LOADER FOR AZURE BLOB SERVICE
+        pass
     elif _is_http_url(bundle_path):
         import requests
 

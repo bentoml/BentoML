@@ -30,11 +30,13 @@ LOGGER = logging.getLogger(__name__)
 
 YATAI_REPOSITORY_S3 = "s3"
 YATAI_REPOSITORY_GCS = "gcs"
+YATAI_REPOSITORY_ABS = "abs"
 YATAI_REPOSITORY_FILE_SYSTEM = "file_system"
 YATAI_REPOSITORY_TYPES = [
     YATAI_REPOSITORY_FILE_SYSTEM,
     YATAI_REPOSITORY_S3,
     YATAI_REPOSITORY_GCS,
+    YATAI_REPOSITORY_ABS,
 ]
 
 SCHEMA = Schema(
@@ -113,7 +115,14 @@ SCHEMA = Schema(
                     "signature_version": Or(str, None),
                     "expiration": Or(int, None),
                 },
-                "gcs": {"url": Or(str, None), "expiration": Or(int, None)},
+                "gcs": {
+                    "url": Or(str, None),
+                    "expiration": Or(int, None)
+                },
+                "abs": {
+                    "url": Or(str, None)
+                    "expiration": Or(int, None)
+                }
             },
             "database": {"url": Or(str, None)},
             "namespace": str,

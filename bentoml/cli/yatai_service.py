@@ -23,6 +23,7 @@ from bentoml.configuration.containers import (
     YATAI_REPOSITORY_FILE_SYSTEM,
     YATAI_REPOSITORY_S3,
     YATAI_REPOSITORY_GCS,
+    YATAI_REPOSITORY_ABS,
 )
 from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 
@@ -45,6 +46,7 @@ def add_yatai_service_sub_command(
         BentoMLContainer.config.yatai.repository.s3.endpoint_url
     ],
     default_gcs_url: str = Provide[BentoMLContainer.config.yatai.repository.gcs.url],
+    default_abs_url: str = Provide[BentoMLContainer.config.yatai.repository.abs.url],
 ):
     # pylint: disable=unused-variable
 
@@ -131,6 +133,13 @@ def add_yatai_service_sub_command(
         help='Specifies the GCS URL for the GCS repository type',
         envvar='BENTOML_YATAI_GCS_URL',
     )
+    @click.option(
+        '--abs-url',
+        type=click.STRING,
+        default=default_abs_url,
+        help='Specifies the ABS URL for the UBS repository type',
+        envvar='BENTOML_YATAI_ABS_URL',
+    )
     def yatai_service_start(
         db_url,
         repo_base_url,
@@ -143,9 +152,11 @@ def add_yatai_service_sub_command(
         s3_url,
         s3_endpoint_url,
         gcs_url,
+        abs_url,
     ):
         from bentoml.utils.s3 import is_s3_url
         from bentoml.utils.gcs import is_gcs_url
+        from bentoml.utils.abs import is_abs_url
 
         if repo_base_url:
             logger.warning(
@@ -159,6 +170,9 @@ def add_yatai_service_sub_command(
             elif is_gcs_url(repo_base_url):
                 repository_type = YATAI_REPOSITORY_GCS
                 gcs_url = repo_base_url
+            elif is_abs_url(repo_base_url):
+                repository_type = YATAI_REPOSITORY_ABS
+                abs_url = repo_base_url
             else:
                 repository_type = YATAI_REPOSITORY_FILE_SYSTEM
                 file_system_directory = repo_base_url
@@ -168,6 +182,9 @@ def add_yatai_service_sub_command(
             return
         elif repository_type == YATAI_REPOSITORY_GCS and gcs_url is None:
             logger.error("'--gcs-url' must be specified for GCS repository type")
+            return
+        elif repository_type == YATAI_REPOSITORY_ABS and abs_url is NONE:
+            logger.error("'--abs-url' must be specified for ABS repository type")
             return
         elif (
             repository_type == YATAI_REPOSITORY_FILE_SYSTEM
@@ -190,4 +207,5 @@ def add_yatai_service_sub_command(
                 s3_url=s3_url,
                 s3_endpoint_url=s3_endpoint_url,
                 gcs_url=gcs_url,
+                abs_url=abs_url,
             )

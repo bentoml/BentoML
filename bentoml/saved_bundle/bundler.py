@@ -39,7 +39,11 @@ from bentoml.saved_bundle.templates import (
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
 )
-from bentoml.utils import is_gcs_url, is_s3_url
+from bentoml.utils import (
+    is_s3_url,
+    is_gcs_url,
+    is_abs_url,
+)
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track_save
 from bentoml.saved_bundle.config import SavedBundleConfig
@@ -336,6 +340,9 @@ def _upload_file_to_remote_path(remote_path, file_path, file_name):
         bucket = gcs_client.bucket(bucket_name)
         blob = bucket.blob(object_path)
         blob.upload_from_filename(file_path)
+    elif is_abs_url(remote_path):
+        # NEED TO IMPLEMENT THE BUNDLER FOR AZURE BLOB SERVICE
+        pass
     else:
         http_response = requests.put(remote_path)
         if http_response.status_code != 200:

@@ -34,6 +34,7 @@ def get_yatai_service(
     file_system_directory: str = Provide[BentoMLContainer.yatai_file_system_directory],
     s3_url: str = Provide[BentoMLContainer.config.yatai.repository.s3.url],
     gcs_url: str = Provide[BentoMLContainer.config.yatai.repository.gcs.url],
+    abs_url: str = Provide[BentoMLContainer.config.yatai.repository.abs.url],
 ):
     if channel_address:
         # Lazily import grpcio for YataiSerivce gRPC related actions
@@ -80,7 +81,11 @@ def get_yatai_service(
         logger.debug("Creating local YataiService instance")
         return LocalYataiService(
             repository=create_repository(
-                repository_type, file_system_directory, s3_url, gcs_url
+                repository_type,
+                file_system_directory,
+                s3_url,
+                gcs_url,
+                abs_url,
             ),
             database=DB(db_url),
             default_namespace=default_namespace,
@@ -99,6 +104,7 @@ def start_yatai_service_grpc_server(
     s3_url,
     s3_endpoint_url,
     gcs_url,
+    abs_url,
     web_ui_log_path: str = Provide[BentoMLContainer.yatai_logging_path],
 ):
     # Lazily import grpcio for YataiSerivce gRPC related actions
@@ -116,7 +122,12 @@ def start_yatai_service_grpc_server(
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(
         repository=create_repository(
-            repository_type, file_system_directory, s3_url, s3_endpoint_url, gcs_url
+            repository_type,
+            file_system_directory,
+            s3_url,
+            s3_endpoint_url,
+            gcs_url,
+            abs_url,
         ),
         database=DB(db_url),
     )

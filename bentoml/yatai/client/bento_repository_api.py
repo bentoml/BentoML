@@ -29,6 +29,7 @@ from bentoml.utils import (
     resolve_bento_bundle_uri,
     is_s3_url,
     is_gcs_url,
+    is_abs_url,
 )
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
@@ -90,6 +91,8 @@ class BentoRepositoryAPIClient:
             bento_bundle_path = local_bento_pb.uri.s3_presigned_url
         elif local_bento_pb.uri.gcs_presigned_url:
             bento_bundle_path = local_bento_pb.uri.gcs_presigned_url
+        elif local_bento_pb.uri.abs_presigned_url:
+            bento_bundle_path = local_bento_pb.uri.abs_presigned_url
         else:
             bento_bundle_path = local_bento_pb.uri.uri
         labels = (
@@ -210,8 +213,18 @@ class BentoRepositoryAPIClient:
             )
             # Return URI to saved bento in repository storage
             return response.uri.uri
-        elif response.uri.type == BentoUri.S3 or response.uri.type == BentoUri.GCS:
-            uri_type = 'S3' if response.uri.type == BentoUri.S3 else 'GCS'
+        elif (
+            response.uri.type == BentoUri.S3
+            or response.uri.type == BentoUri.GCS
+            or response.uri.type == BentoUri.ABS
+        ):
+            uri_type = None
+            if response.uri.type == BentoUri.S3:
+                uri_type = 'S3'
+            elif response.uri.type == BentoUri.GCS:
+                uri_type = 'GCS'
+            elif response.uri.type == BentoUri.ABS:
+                uri_type = 'ABS'
             self._update_bento_upload_progress(
                 bento_service_metadata, UploadStatus.UPLOADING, 0
             )
@@ -228,6 +241,10 @@ class BentoRepositoryAPIClient:
             elif response.uri.type == BentoUri.GCS:
                 http_response = requests.put(
                     response.uri.gcs_presigned_url, data=fileobj
+                )
+            elif response.uri.type == BentoUri.ABS:
+                http_response = requests.put(
+                    response.uri.abs_presigned_url, data=fileobj
                 )
 
             if http_response.status_code != 200:
@@ -273,6 +290,8 @@ class BentoRepositoryAPIClient:
             bento_service_bundle_path = bento_pb.uri.s3_presigned_url
         elif bento_pb.uri.gcs_presigned_url:
             bento_service_bundle_path = bento_pb.uri.gcs_presigned_url
+        elif bento_pb.uri.abs_presigned_url:
+            bento_service_bundle_path = bento_pb.uri.abs_presigned_url
         else:
             bento_service_bundle_path = bento_pb.uri.uri
 
@@ -520,7 +539,12 @@ class BentoRepositoryAPIClient:
         >>> # Load BentoService from s3 storage
         >>> bento = yatai_client.repository.load('s3://bucket/path/bundle.tar.gz')
         """
-        if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
+        if (
+            os.path.isdir(bento)
+            or is_s3_url(bento)
+            or is_gcs_url(bento)
+            or is_abs_url(bento)
+        ):
             saved_bundle_path = bento
         else:
             bento_pb = self.get(bento)

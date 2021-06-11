@@ -37,6 +37,7 @@ def test_yatai_service_start():
             s3_url=None,
             s3_endpoint_url=None,
             gcs_url=None,
+            abs_url=None,
         )
 
         runner.invoke(yatai_service_start_cmd, ["--repo-base-url=s3://url_address"])
@@ -52,6 +53,7 @@ def test_yatai_service_start():
             s3_url="s3://url_address",
             s3_endpoint_url=None,
             gcs_url=None,
+            abs_url=None,
         )
 
         runner.invoke(yatai_service_start_cmd, ["--repo-base-url=gs://url_address"])
@@ -67,7 +69,10 @@ def test_yatai_service_start():
             s3_url=None,
             s3_endpoint_url=None,
             gcs_url="gs://url_address",
+            abs_url=None,
         )
+
+        # TODO: here's where the ABS Azure Blob Storage case would go, once i figure out what the addresses look like
 
 
 def test_yatai_service_start_repository_types():
@@ -87,9 +92,15 @@ def test_yatai_service_start_repository_types():
         runner.invoke(yatai_service_start_cmd, ["--repository-type=gcs"])
         mocked_start_yatai_service_grpc_server.assert_not_called()
 
+        runner.invoke(yatai_service_start_cmd, ["--repository-type=abs"])
+        mocked_start_yatai_service_grpc_server.assert_not_called()
+
         runner.invoke(
             yatai_service_start_cmd,
-            ["--repository-type=s3", "--s3-url=s3://url_address"],
+            [
+                "--repository-type=s3",
+                "--s3-url=s3://url_address",
+            ],
         )
         mocked_start_yatai_service_grpc_server.assert_called()
         mocked_start_yatai_service_grpc_server.assert_called_with(
@@ -103,6 +114,7 @@ def test_yatai_service_start_repository_types():
             s3_url="s3://url_address",
             s3_endpoint_url=None,
             gcs_url=None,
+            abs_url=None,
         )
 
         runner.invoke(
@@ -125,11 +137,15 @@ def test_yatai_service_start_repository_types():
             s3_url="s3://url_address",
             s3_endpoint_url="s3://endpoint_url_address",
             gcs_url=None,
+            abs_url=None,
         )
 
         runner.invoke(
             yatai_service_start_cmd,
-            ["--repository-type=gcs", "--gcs-url=gs://url_address"],
+            [
+                "--repository-type=gcs",
+                "--gcs-url=gs://url_address",
+            ],
         )
         mocked_start_yatai_service_grpc_server.assert_called()
         mocked_start_yatai_service_grpc_server.assert_called_with(
@@ -143,4 +159,8 @@ def test_yatai_service_start_repository_types():
             s3_url=None,
             s3_endpoint_url=None,
             gcs_url="gs://url_address",
+            abs_url=None,
         )
+
+        # TODO: here's where the ABS Azure Blob Storage case would go, once i figure out what the addresses look like
+

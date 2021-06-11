@@ -121,9 +121,7 @@ def _wait_until_ready(_host, timeout, check_interval=0.5):
 
 @pytest.fixture(scope="module")
 def xgboost_docker_host(xgboost_image):
-    with run_api_server_docker_container(
-        xgboost_image, enable_microbatch=False, timeout=60
-    ) as host:
+    with run_api_server_docker_container(xgboost_image, timeout=60) as host:
         yield host
 
 

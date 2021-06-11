@@ -49,7 +49,7 @@ SCHEMA = Schema(
             "timeout": And(int, lambda timeout: timeout > 0),
             "max_request_size": And(int, lambda size: size > 0),
             "microbatch": {
-                "enabled": bool,
+                Optional("enabled", default=True): bool,
                 "workers": Or(And(int, lambda workers: workers > 0), None),
                 "max_batch_size": Or(And(int, lambda size: size > 0), None),
                 "max_latency": Or(And(int, lambda latency: latency > 0), None),
@@ -133,7 +133,7 @@ class BentoMLConfiguration:
         # Default configuraiton
         if default_config_file is None:
             default_config_file = os.path.join(
-                os.path.dirname(__file__), "default_bentoml.yml"
+                os.path.dirname(__file__), "default_configuration.yml"
             )
 
         with open(default_config_file, "rb") as f:
@@ -144,7 +144,7 @@ class BentoMLConfiguration:
                 SCHEMA.validate(self.config)
             except SchemaError as e:
                 raise BentoMLConfigException(
-                    "Default configuration 'default_bentoml.yml' does not"
+                    "Default configuration 'default_configuration.yml' does not"
                     " conform to the required schema."
                 ) from e
 

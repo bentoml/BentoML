@@ -159,9 +159,6 @@ class MarshalService:
             BentoMLContainer.config.bento_server.max_request_size
         ],
         outbound_unix_socket: str = None,
-        enable_microbatch: bool = Provide[
-            BentoMLContainer.config.bento_server.microbatch.enabled
-        ],
         enable_access_control: bool = Provide[
             BentoMLContainer.config.bento_server.cors.enabled
         ],
@@ -192,8 +189,8 @@ class MarshalService:
 
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
-        if enable_microbatch:
-            self.setup_routes_from_pb(self.bento_service_metadata_pb)
+        self.setup_routes_from_pb(self.bento_service_metadata_pb)
+
         if psutil.POSIX:
             import resource
 

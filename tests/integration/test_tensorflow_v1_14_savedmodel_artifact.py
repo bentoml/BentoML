@@ -77,10 +77,8 @@ def image(svc, clean_context):
 
 
 @pytest.fixture(scope="module")
-def host(image, enable_microbatch):
-    with run_api_server_docker_container(
-        image, enable_microbatch=enable_microbatch, timeout=500
-    ) as host:
+def host(image):
+    with run_api_server_docker_container(image, timeout=500) as host:
         yield host
 
 

@@ -649,13 +649,13 @@ def get_yatai_service_impl(base=object):
                     for response in responses_generator:
                         yield response
                 except BentoMLException as e:
-                    responses_generator.clear()
                     logger.error("RPC ERROR DownloadBento: %s", e)
                     return DownloadBentoResponse(status=e.status_proto)
                 except Exception as e:  # pylint: disable=broad-except
-                    responses_generator.clear()
                     logger.error("RPC ERROR DownloadBento: %s", e)
                     return DownloadBentoResponse(status=Status.INTERNAL())
+                finally:
+                    responses_generator.close()
 
     # pylint: enable=unused-argument
 

@@ -589,18 +589,17 @@ class BentoRepositoryAPIClient:
                 raise BentoMLException(result.status.error_message)
             return UploadStatus.DONE
         except BentoMLException as e:
-            streaming_request_generator.clear()
             logger.error(f'BentoML ERROR upload bento: {e}')
             return UploadStatus.ERROR
         except grpc.RpcError as e:
-            streaming_request_generator.clear()
             error_message = process_grpc_error(e)
             logger.error(f'RPC ERROR upload bento: {error_message}')
             return UploadStatus.ERROR
         except Exception as e:  # pylint: disable=broad-except
-            streaming_request_generator.clear()
             logger.error(f'ERROR upload bento: {e}')
             return UploadStatus.ERROR
+        finally:
+            streaming_request_generator.close()
 
     def _download_bento(self, bento_name, bento_version):
         with TempDirectory(cleanup=False) as temp_dir:

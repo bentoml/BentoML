@@ -87,7 +87,7 @@ class BentoBundleStreamRequestsOrResponses:
         else:
             return DownloadBentoResponse(bento_bundle=self.out_stream.read_value())
 
-    def clear(self):
+    def close(self):
         self.tar.close()
         self.out_stream.close()
 

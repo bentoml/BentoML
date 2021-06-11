@@ -51,8 +51,9 @@ def gunicorn_bento_server(
             )
 
             registry = CollectorRegistry()
+            # NOTE: enable mb metrics to be parsed.
             multiprocess.MultiProcessCollector(registry)
-            return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
+            return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST,)
 
     class GunicornBentoServer(Application):  # pylint: disable=abstract-method
         """

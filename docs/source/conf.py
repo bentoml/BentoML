@@ -28,6 +28,8 @@ version = bentoml.__version__
 
 # -- General configuration ---------------------------------------------------
 
+source_suffix = ['.rst', '.md']
+
 # master_docs = 'index' is the default value for sphinx after version 2. Although
 # readthedocs.org by default will reset this to the old default value "contents"
 # which breaks the build. Hence explicitly setting it here to "index".
@@ -51,7 +53,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ['guides/configs/*.md']
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -66,16 +68,19 @@ html_theme_options = {
     "logo_only": True,
     "display_version": True,
     "includehidden": False,
+    "style_nav_header_background": 'white',
     "titles_only": False,
 }
 
-html_logo = "_static/img/bentoml.png"
+html_logo = "_static/img/bentoml-removebg.png"
 
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+html_css_files = ["css/custom.css"]
 
 # Private dictionary for spell checker
 spelling_word_list_filename = ['bentoml_wordlist.txt']

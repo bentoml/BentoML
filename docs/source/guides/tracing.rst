@@ -5,7 +5,7 @@ BentoML API server supports tracing with both `Zipkin <https://zipkin.io/>`_ and
 `Jaeger <https://www.jaegertracing.io/>`_. To config tracing server, user can provide a
 config YAML file specifying the tracer type and tracing server information:
 
-.. code-block:: yml
+.. code-block:: yaml
 
     tracing:
       type: jaeger
@@ -17,7 +17,7 @@ config YAML file specifying the tracer type and tracing server information:
 
 Here's an example config for tracing with a Zipkin server:
 
-.. code-block:: yml
+.. code-block:: yaml
 
     tracing:
        type: zipkin
@@ -30,7 +30,7 @@ to the server address.
 
 Here is another example config file for tracing with Jaeger and opentracing:
 
-.. code-block:: yml
+.. code-block:: yaml
 
     tracing:
       type: jaeger

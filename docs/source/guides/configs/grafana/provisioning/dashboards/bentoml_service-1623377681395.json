@@ -69,7 +69,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "BENTOML_PytorchService_mb_requestmb_duration_seconds_sum",
+          "expr": "BENTOML_PytorchService_mb_request_duration_seconds_sum",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -215,7 +215,7 @@
     },
     {
       "aliasColors": {
-        "histogram_quantile(0.95, sum(rate(BENTOML_PytorchService_mb_requestmb_duration_seconds_bucket[5m])) by (le))": "semi-dark-green"
+        "histogram_quantile(0.95, sum(rate(BENTOML_PytorchService_mb_request_duration_seconds_bucket[5m])) by (le))": "semi-dark-green"
       },
       "bars": false,
       "dashLength": 10,
@@ -262,7 +262,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(BENTOML_PytorchService_mb_requestmb_duration_seconds_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(BENTOML_PytorchService_mb_request_duration_seconds_bucket[5m])) by (le))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"

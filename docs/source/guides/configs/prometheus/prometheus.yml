@@ -4,6 +4,9 @@ global:
   evaluation_interval: 30s
   # scrape_timeout is set to the global default (10s).
 
+rule_files:
+  - 'alert.rules'
+
 scrape_configs:
 - job_name: prometheus
 

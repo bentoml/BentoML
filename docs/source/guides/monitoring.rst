@@ -17,9 +17,8 @@ your BentoService.
 Preface
 -------
 
-.. note::
-    Both `Prometheus <https://prometheus.io/docs/introduction/overview/>`_ and `Grafana <https://grafana.com/docs/grafana/latest/>`_ provide amazing documentation. Please refers to them for more in depth tutorials as BentoML will provide
-    a brief introduction to the toolset.
+.. seealso::
+    `Prometheus Docs <https://prometheus.io/docs/introduction/overview/>`_ and `Grafana Docs <https://grafana.com/docs/grafana/latest/>`_ for more in depth topics.
 
 .. note::
     This guide requires users to have a basic understanding of Prometheus' concept as well as its metrics type. Please refers
@@ -41,7 +40,7 @@ It is recommended to run Prometheus with Docker . Please make sure that you have
 Users can take advantage of having a ``prometheus.yml`` for configuration.
 Example of for monitoring BentoService is shown below:
 
-.. code-block:: yml
+.. code-block:: yaml
 
     # prometheus.yml
 
@@ -100,33 +99,32 @@ To log in to Grafana for the first time:
 
     #. Click OK on the prompt, then change your password.
 
-.. note::
-    Make sure to `Add Prometheus Datasource on Grafana <https://grafana.com/docs/grafana/latest/datasources/prometheus/>`_ in order to get metrics from Prometheus.
+.. seealso::
+    `Add Prometheus Datasource on Grafana <https://grafana.com/docs/grafana/latest/datasources/prometheus/>`_.
 
-.. note::
-    Please refers to `Best practice while creating dashboards on Grafana <https://grafana.com/docs/grafana/latest/best-practices/best-practices-for-creating-dashboards/>`_
+.. seealso::::
+    `Best practice while creating dashboards on Grafana <https://grafana.com/docs/grafana/latest/best-practices/best-practices-for-creating-dashboards/>`_
 
 Users can also import `BentoService Dashboard <https://github.com/bentoml/BentoML/tree/master/docs/source/configs/grafana/provisioning/dashboards/bentoml_service-1623377681395.json>`_ and
-explore given BentoService metrics with `Import dashboard on Grafana <https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard>`_.
+explore given BentoService metrics by `importing dashboard on Grafana <https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard>`_.
 
 .. image:: ../_static/img/bentoml-grafana-dashboard.png
 
 
-.. _docker-compose:
 
-``docker-compose`` stack for Prometheus and Grafana
----------------------------------------------------
+======================
 
 .. warning::
-    Please make sure you know what you are doing as this requires users to have deep
-    understanding about service orchestration.
+    Make sure you know what you are doing!
 
-.. note::
-    Refers to example configs_ directory for more details.
+.. _docker-compose:
+.. include:: configs/README.rst
+   :start-after: introduction-marker
+   :end-before: not-exposed-marker
 
-example ``docker-compose.yml``:
+content of ``docker-compose.yml``:
 
-.. code-block:: yml
+.. code-block:: yaml
 
     version: '3.7'
 
@@ -141,7 +139,7 @@ example ``docker-compose.yml``:
       prometheus:
         image: prom/prometheus
         volumes:
-          - ../configs/prometheus/:/etc/prometheus/
+          - configs/prometheus/:/etc/prometheus/
           - prometheus_data:/prometheus
         command:
           - '--config.file=/etc/prometheus/prometheus.yml'
@@ -162,9 +160,9 @@ example ``docker-compose.yml``:
           - 3000:3000
         volumes:
           - grafana_data:/var/lib/grafana
-          - ../configs/grafana/provisioning/:/etc/grafana/provisioning/
+          - configs/grafana/provisioning/:/etc/grafana/provisioning/
         env_file:
-          - ../configs/grafana/config.monitoring
+          - configs/grafana/config.monitoring
         networks:
           - back-tier
           - front-tier
@@ -181,4 +179,12 @@ example ``docker-compose.yml``:
           - back-tier
         restart: always
 
-.. _configs: https://github.com/bentoml/BentoML/tree/master/docs/source/configs/
+.. seealso::
+    `Alertmanager <https://prometheus.io/docs/alerting/latest/alertmanager/>`_ and `cAdvisor <https://github.com/google/cadvisor>`_ to setup alerts as well as monitor container resources.
+
+.. seealso::
+    `prom/node-exporter <https://github.com/prometheus/node_exporter>`_ for expose machine metrics.
+
+
+Deploying Prometheus on Kubernetes
+----------------------------------

@@ -137,6 +137,7 @@ __bentoml_tmp_sdist_build
 
 # Helm Dependencies
 helm/YataiService/charts
+**/*.values
 
 # Integration test data
 tests/integration/data

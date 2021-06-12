@@ -1,0 +1,50 @@
+---
+### Tensorflow Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bentoml_service
+  name: bentoml_service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bentoml_service
+  template:
+    metadata:
+      labels:
+        app: bentoml_service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+    spec:
+      containers:
+        - image: aarnphm/bentoml-sentiment-analysis:latest
+          imagePullPolicy: Always
+          name: bentoml_service
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+
+---
+### Tensorflow Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: bentoml_service
+  name: bentoml_service
+spec:
+  externalTrafficPolicy: Cluster
+  ports:
+    - name: predict
+      nodePort: 32610
+      port: 5000
+      protocol: TCP
+      targetPort: 5000
+  selector:
+    app: bentoml_service
+  sessionAffinity: None
+  type: LoadBalancer

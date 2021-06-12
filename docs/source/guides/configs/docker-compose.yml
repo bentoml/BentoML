@@ -29,7 +29,8 @@ services:
       placement:
         constraints:
           - node.role==manager
-    restart: on-failure
+      restart_policy:
+        condition: on-failure
 
   grafana:
     image: grafana/grafana
@@ -44,10 +45,14 @@ services:
       - ./grafana/config.monitoring
     networks:
       - shared-network
-    user: "472"
+    user: "472" # we don't need to extend to root, so this make sure we are using grafana group (id 472)
     deploy:
+      placement:
+        constraints:
+          - node.role==manager
       mode: global
-    restart: on-failure
+      restart_policy:
+        condition: on-failure
 
   bentoml:
     image: aarnphm/bentoml-sentiment-analysis:latest
@@ -57,4 +62,5 @@ services:
       - shared-network
     deploy:
       mode: global
-    restart: on-failure
+      restart_policy:
+        condition: on-failure

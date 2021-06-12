@@ -1,7 +1,7 @@
 .. introduction-marker
 
-(Optional) Prometheus - Grafana and *docker-compose* stack
-----------------------------------------------------------
+(Optional) Prometheus - Grafana - docker-compose stack
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Users can freely update `prometheus.yml <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/configs/prometheus/prometheus.yml>`_ target section to define what should be  monitored by Prometheus.
 
@@ -10,7 +10,7 @@ Users can freely update `prometheus.yml <https://github.com/bentoml/BentoML/tree
 If you would like to automate the installation of additional dashboards just copy the Dashboard JSON file to `grafana/provisioning/dashboards <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/grafana/provisioning/dashboards>`_ and it will be provisioned next time you stop and start Grafana.
 
 .. seealso::
-    `In-depth guide of using the stack <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/configs>`_
+    `Stack Implementation <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/configs>`_
 
     .. code-block:: bash
 
@@ -24,14 +24,16 @@ If you would like to automate the installation of additional dashboards just cop
         ├── prometheus
         │   ├── alert.rules
         │   └── prometheus.yml
+        ├── k8s.sh
         ├── docker-compose.yml
         └── README.rst
+
 
 
 .. not-exposed-marker
 
 Prerequisite
-------------
+^^^^^^^^^^^^
 
 * `Docker Swarm <https://docs.docker.com/engine/swarm/>`_ (bundled with Docker Desktop Mac/Windows)
 
@@ -44,10 +46,10 @@ Prerequisite
     » sudo chmod +x /usr/local/bin/docker-compose
 
 Installation
-------------
+^^^^^^^^^^^^
 
 Docker Swarm for Linux distribution
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""
 
 You have to specify ip-ports for ``docker swarm init``. Ex: 2402:800:6837:92f3::f
 
@@ -57,24 +59,26 @@ You have to specify ip-ports for ``docker swarm init``. Ex: 2402:800:6837:92f3::
 
 User can choose to either deploy with swarm (recommended) or run ``docker-compose``
 
-Run Locally
-^^^^^^^^^^^
+Run with ``docker-compose``
+"""""""""""""""""""""""""""
 
 .. code-block:: bash
 
-    » docker-compose up --remove-orphans
+    # docker-compose up --remove-orphans
+    » make start
 
 Deploy with Swarm
-^^^^^^^^^^^^^^^^^
+"""""""""""""""""
 
 .. code-block:: bash
 
-    » docker stack deploy -c docker-compose.yml bento-prom-stack
+    # docker stack deploy -c docker-compose.yml bentoml-prom-stack
+    » make swarm
 
 That's its !!! ``docker stack deploy`` deploys our entire stack automatically to Docker Swarm.
 
 Aftermath
-^^^^^^^^^
+"""""""""
 
 Grafana should be accessible via ``http://127.0.0.1:3000`` with credentials
 
@@ -88,11 +92,11 @@ Check status of our newly created stack:
 
 .. code-block:: bash
 
-    » docker stack ps bento-prom-stack
-    ID             NAME                                                 IMAGE                                       NODE        DESIRED STATE   CURRENT STATE           ERROR     PORTS
-    vcedt3c3nhpa   bento-prom-stack_bentoml.76q5j547rpxwlkbpqdzuh95ww   aarnphm/bentoml-sentiment-analysis:latest   archlinux   Running         Running 2 minutes ago
-    hyhx7fqmw8g8   bento-prom-stack_grafana.76q5j547rpxwlkbpqdzuh95ww   grafana/grafana:latest                      archlinux   Running         Running 2 minutes ago
-    yq6xbvwfqkri   bento-prom-stack_prometheus.1                        prom/prometheus:latest                      archlinux   Running         Running 2 minutes ago
+    » docker stack ps bentoml-prom-stack
+    ID             NAME                                                   IMAGE                                       NODE        DESIRED STATE   CURRENT STATE                ERROR     PORTS
+    ltm7u4tvdbv6   bentoml-prom-stack_bentoml.76q5j547rpxwlkbpqdzuh95ww   aarnphm/bentoml-sentiment-analysis:latest   archlinux   Running         Running about a minute ago
+    zzoao6ju5ug9   bentoml-prom-stack_grafana.76q5j547rpxwlkbpqdzuh95ww   grafana/grafana:latest                      archlinux   Running         Running about a minute ago
+    kid10uc0jamz   bentoml-prom-stack_prometheus.1                        prom/prometheus:latest                      archlinux   Running         Running about a minute ago
 
 View running services:
 
@@ -114,4 +118,23 @@ To stop the service when we are done:
 
 .. code-block:: bash
 
-    » docker stop <our_service>
+    » make clean
+
+Deploying on Kubernetes
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. seealso::
+    `Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/monitoring.html#deploying-on-kubernetes>`_.
+
+.. warning::
+    Make sure to install ``virtualbox`` before using the script.
+
+        * On MacOS ``brew install virtualbox``
+
+        * On Arch ``sudo pacman -S virtualbox``
+
+Deploy the stack on Kubernetes cluster locally in one single commandline: (If you believe me) :smile:
+
+.. code-block:: bash
+
+    » make k8s

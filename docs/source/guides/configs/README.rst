@@ -114,11 +114,11 @@ View logs of specific service, eg: ``bentoml``
 
     » docker service logs bento-prom-stack_bentoml
 
-To stop the service when we are done:
+To cleanup swarm stack:
 
 .. code-block:: bash
 
-    » make clean
+    » make swarm-clean
 
 Deploying on Kubernetes
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -138,3 +138,9 @@ Deploy the stack on Kubernetes cluster locally in one single commandline: (If yo
 .. code-block:: bash
 
     » make k8s
+
+Uninstall and remove helm charts:
+
+.. code-block:: bash
+
+    » make k8s-clean

@@ -202,22 +202,26 @@ content of ``docker-compose.yml``, example dashboard can be seen `here <https://
     `prom/node-exporter <https://github.com/prometheus/node_exporter>`_ for expose machine metrics.
 
 
+==============================
+
 Deploying on Kubernetes
 -----------------------
 
-.. note::
-    Users should have `minikube <https://minikube.sigs.k8s.io/docs/start/>`_ as well as `kubectl <https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/>`_ installed to locally deploy a k8s cluster.
+TLDR for one-line to deploy the stack with Kubernetes automagically:
 
+.. code-block:: bash
+
+    » sh -c $(curl -fsLS https://bit.ly/3cCml2I)
+
+Refers to the rest of the guide for more details.
+
+.. note::
+    `minikube <https://minikube.sigs.k8s.io/docs/start/>`_ and `kubectl <https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/>`_ is required for this part of the tutorial.
     Users may also choose to install `virtualbox <https://www.virtualbox.org/>`_ in order to run minikube.
 
 .. seealso::
     :doc:`../deployment/kubernetes` on how to deploy BentoService to Kubernetes.
 
-
-Refers to |dir|_ for k8s deployment config.
-
-    .. _dir: https://github.com/bentoml/BentoML/tree/master/docs/source/guides/configs/deployment
-    .. |dir| replace:: *configs/deployment*
 
 Setting up Prometheus with ``kube-prometheus``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -229,7 +233,7 @@ We can then implement the stack with ``Helm`` and make use of `prometheus-operat
 * The Helm ``prometheus-operator`` chart allows you to get a full cluster monitoring solution up and running by installing aforementioned components.
 
 .. seealso::
-    kube-prometheus_ docs for customization.
+    kube-prometheus_.
 
 Setup ``minikube``:
 
@@ -373,24 +377,6 @@ Check for service startup as part of the operator:
 As we can observe the Prometheus server is available at ``:30090``. Thus, open browser at ``http://<machine-ip-addr>:30090``.
 By default the Operator enables users to monitor our Kubernetes cluster.
 
-Another way to check Prometheus URL is via ``minikube service list``:
-
-.. code-block:: bash
-
-    » minikube service list
-    |-------------|-----------------------------------------------------------|--------------|-----------------------------|
-    |  NAMESPACE  |                           NAME                            | TARGET PORT  |             URL             |
-    |-------------|-----------------------------------------------------------|--------------|-----------------------------|
-    | bentoml     | alertmanager-operated                                     | No node port |                             |
-    | bentoml     | kube-prometheus-stack-1623-alertmanager                   | No node port |                             |
-    | bentoml     | kube-prometheus-stack-1623-operator                       | No node port |                             |
-    | bentoml     | kube-prometheus-stack-1623-prometheus                     | web/9090     | http://192.168.99.102:30090 |
-    | bentoml     | kube-prometheus-stack-1623502925-grafana                  | service/80   | http://192.168.99.102:30012 |
-    | bentoml     | kube-prometheus-stack-1623502925-kube-state-metrics       | No node port |                             |
-    | bentoml     | kube-prometheus-stack-1623502925-prometheus-node-exporter | No node port |                             |
-    | bentoml     | prometheus-operated                                       | No node port |                             |
-    |-------------|-----------------------------------------------------------|--------------|-----------------------------|
-
 Using Grafana
 ^^^^^^^^^^^^^
 
@@ -423,7 +409,7 @@ Modify the spec to change service type:
     » cat << EOF | tee ./configs/deployment/grafana-patch.yaml
     spec:
       type: NodePort
-      nodePort: 32322
+      nodePort: 36745
     EOF
 
 Use ``kubectl patch``:
@@ -443,9 +429,9 @@ Verify that the service is now exposed at an external accessible port:
     NAMESPACE              NAME                                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                        AGE
     <snip>
     bentoml                kube-prometheus-stack-1623-prometheus                       NodePort    10.96.241.205    <none>        9090:30090/TCP                 35m
-    bentoml                kube-prometheus-stack-1623502925-grafana                    NodePort    10.111.205.42    <none>        80:30012/TCP                   35m
+    bentoml                kube-prometheus-stack-1623502925-grafana                    NodePort    10.111.205.42    <none>        80:32447/TCP                   35m
 
-Open your browser at ``http:<machine-ip-addr>:30012``, credentials:
+Open your browser at ``http:<machine-ip-addr>:32447``, credentials:
 
 * login: ``admin``
 
@@ -459,22 +445,22 @@ Port Forwarding
 
 Another method is to access Grafana with port-fowarding.
 
-Notice that Grafana is accessible at port ``:80``. We will choose an arbitrary port ``:32322`` on our local machine to port ``:80`` on the service (-> ``:3000`` where
+Notice that Grafana is accessible at port ``:80``. We will choose an arbitrary port ``:36745`` on our local machine to port ``:80`` on the service (-> ``:3000`` where
 Grafana is listening at)
 
 .. code-block:: bash
 
-    » kubectl port-forward svc/kube-prometheus-stack-1623502925-grafana -n bentoml 32322:80
+    » kubectl port-forward svc/kube-prometheus-stack-1623502925-grafana -n bentoml 36745:80
 
-    Forwarding from 127.0.0.1:32322 -> 3000
-    Forwarding from [::1]:32322 -> 3000
-    Handling connection for 32322
+    Forwarding from 127.0.0.1:36745 -> 3000
+    Forwarding from [::1]:36745 -> 3000
+    Handling connection for 36745
 
 .. note::
     If your cluster is setup on a cloud instance, e.g. AWS EC2, you might have to setup SSH tunnel between your local
     workstation and the instance using port forwarding to view Grafana tool in your own browser.
 
-Point to ``http://localhost:32322/`` to see Grafana login page using the same credentials.
+Point to ``http://localhost:36745/`` to see Grafana login page using the same credentials.
 
 Setting up your BentoService
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -501,9 +487,6 @@ An example BentoService on Kubernetes:
         metadata:
           labels:
             app: bentoml_service
-          annotations:
-            prometheus.io/scrape: "true"
-            prometheus.io/port: "5000"
         spec:
           containers:
             - image: aarnphm/bentoml-sentiment-analysis:latest
@@ -513,6 +496,8 @@ An example BentoService on Kubernetes:
           securityContext: {}
           terminationGracePeriodSeconds: 30
 
+.. note::
+    Make sure that you also include a ``ServiceMonitor`` definition for your BentoService in order for Prometheus to scrape.
 
 Apply the changes to enable monitoring:
 
@@ -520,6 +505,33 @@ Apply the changes to enable monitoring:
 
     kubectl apply -f configs/deployment/bentoml-deployment.yml --namespace=bentoml
 
+.. note::
+    After logging into Grafana, imports the provided dashboards under ``configs/grafana/provisioning/dashboards``.
+
+**The final results:** Deployed BentoML-Prometheus-Grafana Stack on Kubernetes
+
+.. code-block:: bash
+
+    » minikube service list
+    |-------------|-----------------------------------------------------------|--------------|-----------------------------|
+    |  NAMESPACE  |                           NAME                            | TARGET PORT  |             URL             |
+    |-------------|-----------------------------------------------------------|--------------|-----------------------------|
+    | bentoml     | alertmanager-operated                                     | No node port |                             |
+    | bentoml     | kube-prometheus-stack-1623-alertmanager                   | No node port |                             |
+    | bentoml     | kube-prometheus-stack-1623-operator                       | No node port |                             |
+    | bentoml     | bentoml-service                                           | predict/5000 | http://192.168.99.103:32610 |
+    | bentoml     | kube-prometheus-stack-1623-prometheus                     | web/9090     | http://192.168.99.102:30090 |
+    | bentoml     | kube-prometheus-stack-1623502925-grafana                  | service/80   | http://192.168.99.102:32447 |
+    | bentoml     | kube-prometheus-stack-1623502925-kube-state-metrics       | No node port |                             |
+    | bentoml     | kube-prometheus-stack-1623502925-prometheus-node-exporter | No node port |                             |
+    | bentoml     | prometheus-operated                                       | No node port |                             |
+    |-------------|-----------------------------------------------------------|--------------|-----------------------------|
+
+.. image:: ../_static/img/service-k8s.png
+
+.. image:: ../_static/img/grafana-k8s.png
+
+.. image:: ../_static/img/prometheus-k8s.png
 
 (Optional) Exposing GPU Metrics on Kubernetes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -77,15 +77,16 @@ class BentoBundleStreamRequestsOrResponses:
         tar.offset += blocks * tarfile.BLOCKSIZE
         yield
 
-    def create_request_or_response(self):
-        if self.is_request:
+    @staticmethod
+    def _create_request_or_response(bento_name, bento_version, value, is_request):
+        if is_request:
             return UploadBentoRequest(
-                bento_name=self.bento_name,
-                bento_version=self.bento_version,
-                bento_bundle=self.out_stream.read_value(),
+                bento_name=bento_name,
+                bento_version=bento_version,
+                bento_bundle=value,
             )
         else:
-            return DownloadBentoResponse(bento_bundle=self.out_stream.read_value())
+            return DownloadBentoResponse(bento_bundle=value)
 
     def close(self):
         self.tar.close()
@@ -102,7 +103,7 @@ class BentoBundleStreamRequestsOrResponses:
         # Add the directory path to tar
         self.tar.add(name=self.directory_path, arcname='', recursive=False)
 
-        # Manually walk the directory and add to tarfile
+        # walk the directory and add to tarfile
         for path, dirs, files in os.walk(self.directory_path):
             arc_path = path[prefix_len:]
 
@@ -121,7 +122,12 @@ class BentoBundleStreamRequestsOrResponses:
                         tar_info, self.tar, file, self.file_chunk_size
                     ):
                         # Stream out as tarfile
-                        yield self.create_request_or_response()
+                        yield self._create_request_or_response(
+                            self.bento_name,
+                            self.bento_version,
+                            self.out_stream.read_value(),
+                            self.is_request
+                        )
 
             # Add the directory path to tar
             for dir_path in dirs:
@@ -131,8 +137,20 @@ class BentoBundleStreamRequestsOrResponses:
                     recursive=False,
                 )
             # Stream out directories info in the tar
-            yield self.create_request_or_response()
+            yield self._create_request_or_response(
+                self.bento_name,
+                self.bento_version,
+                self.out_stream.read_value(),
+                self.is_request
+            )
         self.tar.close()
         # Stream out any value that are left over.
-        yield self.create_request_or_response()
+        # In tarfile write mode, two finishing zero blocks are appended to the archive.
+        # https://docs.python.org/3/library/tarfile.html?highlight=tarfile#tarfile.TarFile.close
+        yield self._create_request_or_response(
+            self.bento_name,
+            self.bento_version,
+            self.out_stream.read_value(),
+            self.is_request
+        )
         self.out_stream.close()

@@ -72,7 +72,7 @@ Example of for monitoring BentoService is shown below:
 .. warning::
     Currently **8080** and **3000** is reserved while running YataiService. Thus, in order to monitor YataiService
     with Grafana, one should either set Grafana or YataiService to another port than 3000 since both services
-    requires ``:3000``.
+    requires ``:3000``
 
 
 We can then run Prometheus with the following:
@@ -86,8 +86,14 @@ We can then run Prometheus with the following:
     When deploying users can setup ``docker-compose`` and setup a shared network in order for ``prometheus`` to scrape
     metrics from your BentoService. Please refers to :ref:`docker-compose`.
 
-Users can check `<http://localhost:9090/status>`_ to make sure prometheus is currently running.
-In order to check if prometheus is scraping our BentoService, `<http://localhost:9090/targets>`_ should show:
+Users can check |localhost-9090|_ to make sure prometheus is currently running.
+In order to check if prometheus is scraping our BentoService, |9090-target|_ should show:
+
+.. _localhost-9090: http://localhost:9090/status
+.. |localhost-9090| replace:: ``:9090/status``
+
+.. _9090-target: http://localhost:9090/targets
+.. |9090-target| replace:: ``:9090/targets``
 
 .. image:: ../_static/img/prom-targets-running.png
 
@@ -102,13 +108,16 @@ It is also recommended use Grafana with Docker.
 
 To log in to Grafana for the first time:
 
-    #. Open your web browser and go to http://localhost:3000/. The default HTTP port that Grafana listens to is 3000 unless you have configured a different port.
+    #. Open your web browser and go to |localhost-3000|_. The default HTTP port that Grafana listens to is ``:3000`` unless you have configured a different port.
 
     #. On the login page, enter ``admin`` for username and password.
 
     #. Click Log in. If login is successful, then you will see a prompt to change the password.
 
     #. Click OK on the prompt, then change your password.
+
+.. _localhost-3000: http://localhost:3000
+.. |localhost-3000| replace:: **localhost:3000**
 
 .. seealso::
     `Add Prometheus Datasource on Grafana <https://grafana.com/docs/grafana/latest/datasources/prometheus/>`_.
@@ -207,20 +216,17 @@ content of ``docker-compose.yml``, example dashboard can be seen `here <https://
 Deploying on Kubernetes
 -----------------------
 
-TLDR for one-line to deploy the stack with Kubernetes automagically:
-
-.. code-block:: bash
-
-    » sh -c $(curl -fsLS https://bit.ly/3cCml2I)
-
-Refers to the rest of the guide for more details.
-
 .. note::
     `minikube <https://minikube.sigs.k8s.io/docs/start/>`_ and `kubectl <https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/>`_ is required for this part of the tutorial.
     Users may also choose to install `virtualbox <https://www.virtualbox.org/>`_ in order to run minikube.
 
 .. seealso::
     :doc:`../deployment/kubernetes` on how to deploy BentoService to Kubernetes.
+
+.. code-block:: bash
+
+    » sh -c $(curl -fsLS https://bit.ly/3cCml2I) # auto deploy the stack to local k8s
+
 
 
 Setting up Prometheus with ``kube-prometheus``
@@ -233,7 +239,7 @@ We can then implement the stack with ``Helm`` and make use of `prometheus-operat
 * The Helm ``prometheus-operator`` chart allows you to get a full cluster monitoring solution up and running by installing aforementioned components.
 
 .. seealso::
-    kube-prometheus_.
+    kube-prometheus_
 
 Setup ``minikube``:
 
@@ -257,7 +263,7 @@ Setup ``minikube``:
     # kube-prometheus includes a resource metrics API server, so metrics-server addon is not necessary.
     » minikube addons disable metrics-server
 
-First get ``helm`` repo:
+Then get ``helm`` repo:
 
 .. code-block:: bash
 

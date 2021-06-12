@@ -51,7 +51,7 @@ Installation
 Docker Swarm for Linux distribution
 """""""""""""""""""""""""""""""""""
 
-You have to specify ip-ports for ``docker swarm init``. Ex: 2402:800:6837:92f3::f
+You have to specify ip-ports for ``docker swarm init``. Ex: ``2402:800:6837:92f3::f``
 
 .. code-block:: bash
 
@@ -123,8 +123,7 @@ To cleanup swarm stack:
 Deploying on Kubernetes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. seealso::
-    `Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/monitoring.html#deploying-on-kubernetes>`_.
+`Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/monitoring.html#deploying-on-kubernetes>`_.
 
 .. warning::
     Make sure to install ``virtualbox`` before using the script.

@@ -344,6 +344,7 @@ Finally deploy Prometheus and Grafana pods using ``kube-prometheus-stack`` via H
         --generate-name --values ./configs/deployment/kube-prometheus-stack.values
 
 .. code-block:: bash
+
     NAME: kube-prometheus-stack-1623502925
     LAST DEPLOYED: Sat Jun 12 20:02:09 2021
     NAMESPACE: bentoml

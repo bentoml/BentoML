@@ -23,51 +23,66 @@ TMP_DIR=$(mktemp -d)
 
 trap 'rm -rf ${TMP_DIR}' EXIT
 
+usage () {
+  this="$1"
+  cat <<EOF
+${this}: Setup BentoService on K8s with Prometheus-Grafana stack
+
+Usage: ${this} [-d] [-h]
+  -d enables debug logging. (use this if you want to see the setup in action.)
+  -h show this help message
+EOF
+	exit 2
+}
+
 main() {
+  parse_args "$@"
+
   _NAMESPACE=bentoml
   if ! is_command virtualbox; then
     log_err "In order to run the script, you need to install virtualbox. Exitting."
     return 1
-  else
-    log_info "While this scripts help ease the some of the pain for the demo, it is recommend for users to go through every step provided by the guide."
-
-    log_info "Setting up binary..."
-    install_binary
-    cd "${K8S_CONFIG}"
-
-    log_info "setting up minikube..."
-    minikube config set driver virtualbox
-    minikube delete && minikube start \
-        --kubernetes-version=v1.20.0 \
-        --memory=6g --bootstrapper=kubeadm \
-        --extra-config=kubelet.authentication-token-webhook=true \
-        --extra-config=kubelet.authorization-mode=Webhook \
-        --extra-config=scheduler.address=0.0.0.0 \
-        --extra-config=controller-manager.address=0.0.0.0
-
-    log_info "setting up helm chart"
-    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-
-    # We will apply patches for both prometheus and grafana services.
-    helm install prometheus-community/kube-prometheus-stack --create-namespace \
-    --namespace "${_NAMESPACE}" --generate-name \
-    --set prometheus.service.type=NodePort \
-    --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
-    --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false
-
-    log_info "patching our grafana services being a true hacker..."
-    _GRAFANA_SVC=$(kubectl get svc -n "${_NAMESPACE}" | grep grafana | cut -d " " -f1)
-    kubectl patch svc "${_GRAFANA_SVC}" -n "${_NAMESPACE}" --patch "$(cat deployment/grafana-patch.yaml)"
-
-    log_info "setting up our BentoService..."
-    kubectl apply -f deployment/bentoml-deployment.yml --namespace=bentoml
-
-    log_debug "TODO: Added PersistentVolume for both Grafana (https://github.com/grafana/helm-charts/tree/main/charts/grafana#configuration) \
-     and Prometheus Operator (https://github.com/prometheus-operator/prometheus-operator)."
-
-    log_info "Done."
-    return
   fi
+  log_info "While this scripts help ease the some of the pain for the demo, it is recommend for users to go through every step provided by the guide."
+
+  log_info "Setting up binary..."
+  install_binary
+  cd "${K8S_CONFIG}"
+
+  log_info "Setting up minikube..."
+  if [ "$(minikube config get driver)" != "virtualbox" ]; then
+      minikube config set driver virtualbox
+  fi
+  minikube delete && minikube start \
+      --kubernetes-version=v1.20.0 \
+      --memory=6g --bootstrapper=kubeadm \
+      --extra-config=kubelet.authentication-token-webhook=true \
+      --extra-config=kubelet.authorization-mode=Webhook \
+      --extra-config=scheduler.address=0.0.0.0 \
+      --extra-config=controller-manager.address=0.0.0.0
+
+  log_info "setting up helm chart"
+  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+  # We will apply patches for both prometheus and grafana services.
+  helm install prometheus-community/kube-prometheus-stack --create-namespace \
+  --namespace "${_NAMESPACE}" --generate-name \
+  --set prometheus.service.type=NodePort \
+  --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+  --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false
+
+  log_info "patching our grafana services being a true hacker..."
+  _GRAFANA_SVC=$(kubectl get svc -n "${_NAMESPACE}" | grep grafana | cut -d " " -f1)
+  kubectl patch svc "${_GRAFANA_SVC}" -n "${_NAMESPACE}" --patch "$(cat deployment/grafana-patch.yaml)"
+
+  log_info "setting up our BentoService..."
+  kubectl apply -f deployment/bentoml-deployment.yml --namespace=bentoml
+
+  log_debug "TODO: Added PersistentVolume for both Grafana (https://github.com/grafana/helm-charts/tree/main/charts/grafana#configuration) \
+   and Prometheus Operator (https://github.com/prometheus-operator/prometheus-operator)."
+
+  log_info "Done."
+  return
 }
 
 install_binary() {
@@ -76,7 +91,7 @@ install_binary() {
   _ARCH=$(get_arch)
 
   if [ "${_OS}" != "windows" ]; then
-
+    log_info "This scripts may ask for your sudo password just for installing binary."
     ## minikube
     if ! is_command minikube; then
       _MINIKUBE_SCRIPTS="${TMP_DIR}/minikube"
@@ -95,6 +110,7 @@ install_binary() {
       http_download "${_KUBECTL_SCRIPTS}" "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/${_OS}/${_ARCH}/kubectl" || exit 1
 
       # validate checksum
+      log_info "Validating kubectl checksum..."
       http_download "${_CHECKSUM}" "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/${_OS}/${_ARCH}/kubectl.sha256" || exit 1
       hash_sha256_verify "${_KUBECTL_SCRIPTS}" "${_CHECKSUM}"
 
@@ -128,6 +144,23 @@ install_binary() {
 #####################
 # Helpers functions #
 #####################
+
+parse_args() {
+  while getopts ":dh?t:" arg; do
+    case "${arg}" in
+    d)
+      set -x
+      LOG_LEVEL=3
+      ;;
+    h | \?)
+      usage "$0"
+      ;;
+    *)
+      return 1
+      ;;
+    esac
+  done
+}
 
 get_os() {
 	os=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -239,22 +272,22 @@ is_command() {
 
 log_debug() {
 	[ 3 -le "${LOG_LEVEL}" ] || return 0
-	echo debug "$@" 1>&2
+	echo DEBUG "$@" 1>&2
 }
 
 log_info() {
 	[ 2 -le "${LOG_LEVEL}" ] || return 0
-	echo info "$@" 1>&2
+	echo INFO "$@" 1>&2
 }
 
 log_err() {
 	[ 1 -le "${LOG_LEVEL}" ] || return 0
-	echo error "$@" 1>&2
+	echo ERROR "$@" 1>&2
 }
 
 log_crit() {
 	[ 0 -le "${LOG_LEVEL}" ] || return 0
-	echo critical "$@" 1>&2
+	echo CRITICAL "$@" 1>&2
 }
 
-main
+main "$@"

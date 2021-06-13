@@ -90,54 +90,54 @@ install_binary() {
   _OS=$(get_os)
   _ARCH=$(get_arch)
 
-  if [ "${_OS}" != "windows" ]; then
-    log_info "This scripts may ask for your sudo password just for installing binary."
-    ## minikube
-    if ! is_command minikube; then
-      _MINIKUBE_SCRIPTS="${TMP_DIR}/minikube"
-      _MINIKUBE_BIN="${BIN_DIR}/minikube"
-      log_info "Installing minikube to ${_MINIKUBE_BIN}"
-      http_download "${_MINIKUBE_SCRIPTS}" "https://storage.googleapis.com/minikube/releases/latest/minikube-${_OS}-${_ARCH}" || exit 1
-      sudo install "${_MINIKUBE_SCRIPTS}" "${_MINIKUBE_BIN}"
-    fi
-
-    ## kubectl
-    if ! is_command kubectl; then
-      _KUBECTL_SCRIPTS="${TMP_DIR}/kubectl"
-      _KUBECTL_BIN="${BIN_DIR}/kubectl"
-      _CHECKSUM="${TMP_DIR}/kubectl.sha256"
-      log_info "Installing kubectl to ${_KUBECTL_BIN}"
-      http_download "${_KUBECTL_SCRIPTS}" "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/${_OS}/${_ARCH}/kubectl" || exit 1
-
-      # validate checksum
-      log_info "Validating kubectl checksum..."
-      http_download "${_CHECKSUM}" "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/${_OS}/${_ARCH}/kubectl.sha256" || exit 1
-      hash_sha256_verify "${_KUBECTL_SCRIPTS}" "${_CHECKSUM}"
-
-      # install as root
-      if [ "${_OS}" = "darwin" ]; then
-        chmod +x "${_KUBECTL_SCRIPTS}"
-        sudo mv "${_KUBECTL_SCRIPTS}" "${_KUBECTL_BIN}"
-        sudo chown root: "${_KUBECTL_BIN}"
-      else
-        sudo install -o root -g root -m 0755 "${_KUBECTL_SCRIPTS}" "${_KUBECTL_BIN}"
-      fi
-    fi
-
-    ## Helm
-    if ! is_command helm; then
-      log_info "Installing helm..."
-      _HELM_SCRIPTS="${TMP_DIR}/get_helm.sh"
-      http_download "${_HELM_SCRIPTS}" https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 || exit 1
-      # shellcheck disable=SC1090
-      chmod 700 "${_HELM_SCRIPTS}" && . "${_HELM_SCRIPTS}"
-    fi
-
-    return
-  else
+  if [ "${_OS}" = "windows" ]; then
     log_crit "windows is not supported while running this script."
     return 1
   fi
+  log_info "This scripts will ask for your sudo password for installing binary."
+
+  ## minikube
+  if ! is_command minikube; then
+    _MINIKUBE_SCRIPTS="${TMP_DIR}/minikube"
+    _MINIKUBE_BIN="${BIN_DIR}/minikube"
+    log_info "Installing minikube to ${_MINIKUBE_BIN}"
+    http_download "${_MINIKUBE_SCRIPTS}" "https://storage.googleapis.com/minikube/releases/latest/minikube-${_OS}-${_ARCH}" || exit 1
+    sudo install "${_MINIKUBE_SCRIPTS}" "${_MINIKUBE_BIN}"
+  fi
+
+  ## kubectl
+  if ! is_command kubectl; then
+    _KUBECTL_SCRIPTS="${TMP_DIR}/kubectl"
+    _KUBECTL_BIN="${BIN_DIR}/kubectl"
+    _CHECKSUM="${TMP_DIR}/kubectl.sha256"
+    log_info "Installing kubectl to ${_KUBECTL_BIN}"
+    http_download "${_KUBECTL_SCRIPTS}" "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/${_OS}/${_ARCH}/kubectl" || exit 1
+
+    # validate checksum
+    log_info "Validating kubectl checksum..."
+    http_download "${_CHECKSUM}" "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/${_OS}/${_ARCH}/kubectl.sha256" || exit 1
+    hash_sha256_verify "${_KUBECTL_SCRIPTS}" "${_CHECKSUM}"
+
+    # install as root
+    if [ "${_OS}" = "darwin" ]; then
+      chmod +x "${_KUBECTL_SCRIPTS}"
+      sudo mv "${_KUBECTL_SCRIPTS}" "${_KUBECTL_BIN}"
+      sudo chown root: "${_KUBECTL_BIN}"
+    else
+      sudo install -o root -g root -m 0755 "${_KUBECTL_SCRIPTS}" "${_KUBECTL_BIN}"
+    fi
+  fi
+
+  ## Helm
+  if ! is_command helm; then
+    log_info "Installing helm..."
+    _HELM_SCRIPTS="${TMP_DIR}/get_helm.sh"
+    http_download "${_HELM_SCRIPTS}" https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 || exit 1
+    # shellcheck disable=SC1090
+    chmod 700 "${_HELM_SCRIPTS}" && . "${_HELM_SCRIPTS}"
+  fi
+
+  return
 }
 
 

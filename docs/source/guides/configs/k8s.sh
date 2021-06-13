@@ -62,7 +62,7 @@ main() {
       --extra-config=controller-manager.address=0.0.0.0
 
   log_info "setting up helm chart"
-  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  helm repo list | grep prometheus >/dev/null || helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
   # We will apply patches for both prometheus and grafana services.
   helm install prometheus-community/kube-prometheus-stack --create-namespace \
@@ -71,7 +71,7 @@ main() {
   --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
   --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false
 
-  log_info "patching our grafana services being a true hacker..."
+  log_info "patching our grafana services..."
   _GRAFANA_SVC=$(kubectl get svc -n "${_NAMESPACE}" | grep grafana | cut -d " " -f1)
   kubectl patch svc "${_GRAFANA_SVC}" -n "${_NAMESPACE}" --patch "$(cat deployment/grafana-patch.yaml)"
 

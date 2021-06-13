@@ -123,7 +123,7 @@ To cleanup swarm stack:
 Deploying on Kubernetes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-`Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/monitoring.html#deploying-on-kubernetes>`_.
+Refers to `Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/monitoring.html#deploying-on-kubernetes>`_.
 
 .. warning::
     Make sure to install ``virtualbox`` before using the script.

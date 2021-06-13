@@ -225,28 +225,30 @@ Deploying on Kubernetes
 
 .. code-block:: bash
 
-    » sh -c $(curl -fsLS https://bit.ly/3cCml2I) # auto deploy the stack to local k8s
+    » sh -c $(curl -fsLS https://git.io/JZ5Mk) # auto deploy the stack to local k8s
 
 
+Deploy Prometheus on K8s
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-Setting up Prometheus with ``kube-prometheus``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-We can then implement the stack with ``Helm`` and make use of `prometheus-operator <https://github.com/prometheus-operator/prometheus-operator>`_ through kube-prometheus_:
+Setting Prometheus stack on Kubernetes could be an arduous task. However, we can take advantage of ``Helm`` package manager
+and make use of `prometheus-operator <https://github.com/prometheus-operator/prometheus-operator>`_ through kube-prometheus_:
 
 * The Operator uses standard configurations and dashboards for Prometheus and Grafana.
-
 * The Helm ``prometheus-operator`` chart allows you to get a full cluster monitoring solution up and running by installing aforementioned components.
 
 .. seealso::
     kube-prometheus_
 
-Setup ``minikube``:
+Setup virtualbox to be default driver for ``minikube``:
 
 .. code-block:: bash
 
-    # setup virtualbox to be default driver
     » minikube config set driver virtualbox
+
+Spin up our local K8s cluster:
+
+.. code-block:: bash
 
     # prometheus-operator/kube-prometheus
     » minikube delete && minikube start \
@@ -257,19 +259,14 @@ Setup ``minikube``:
         --extra-config=scheduler.address=0.0.0.0 \
         --extra-config=controller-manager.address=0.0.0.0
 
-    # check if your k8s is currently running (should return no error)
-    » kubectl cluster-info
-
-    # kube-prometheus includes a resource metrics API server, so metrics-server addon is not necessary.
-    » minikube addons disable metrics-server
-
 Then get ``helm`` repo:
 
 .. code-block:: bash
 
     » helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
-    # then run update
+.. code-block:: bash
+
     » helm repo update
 
 Search for available prometheus chart:
@@ -282,11 +279,12 @@ Once located the version of our stack (v16.7.0), inspect the chart to modify the
 
 .. code-block:: bash
 
-    » helm inspect values prometheus-community/kube-prometheus-stack > ./configs/deployment/kube-prometheus-stack.values
+    » helm inspect values prometheus-community/kube-prometheus-stack \
+        > ./configs/deployment/kube-prometheus-stack.values
 
 
-Next, we need to change the port at which the Prometheus server service is available, by changing our service type from ``ClusterIP`` to ``NodePort``.
-This enable Prometheus server to be accessible at your machine ``:30090``.
+Next, we need to change Prometheus server service type in order for us to access it from the browser,
+by changing our service type from ``ClusterIP`` to ``NodePort``. This enable Prometheus server to be accessible at your machine ``:30090``
 
 .. code-block:: yaml
 
@@ -314,7 +312,7 @@ This enable Prometheus server to be accessible at your machine ``:30090``.
         ##
         nodePort: 30090
 
-        ## Loadbalancer IP
+        ## LoadBalancer IP
         ## Only use if service.type is "LoadBalancer"
         loadBalancerIP: ""
         loadBalancerSourceRanges: []
@@ -322,15 +320,30 @@ This enable Prometheus server to be accessible at your machine ``:30090``.
         ##
         type: NodePort # changed this line from ClusterIP to NodePort
 
-Set ``prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues`` and ``prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues`` to ``false``.
+By default, Prometheus discover |PodMonitors|_ and |ServiceMonitors|_ within its namespace, that are labeled with same release tags as ``prometheus-operator`` release.
+Since we want to Prometheus to discover our BentoService (refers to :ref:`custom-service-monitor`), we need to create a custom PodMonitors/ServiceMonitors to scrape metrics from our services. Thus, one
+way to do this is to allow Prometheus to discover all PodMonitors/ServiceMonitors within its name, without apply label filtering. Set the following options:
+
+.. code-block:: yaml
+
+    - prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues: false
+    - prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues: false
+
+.. _PodMonitors: https://prometheus-operator.dev/docs/operator/api/#podmonitor
+.. |PodMonitors| replace:: PodMonitors
+.. _ServiceMonitors: https://prometheus-operator.dev/docs/operator/api/#servicemonitor
+.. |ServiceMonitors| replace:: ServiceMonitors
+
 
 Finally deploy Prometheus and Grafana pods using ``kube-prometheus-stack`` via Helm:
 
 .. code-block:: bash
 
-    » helm install prometheus-community/kube-prometheus-stack --create-namespace --namespace bentoml --generate-name --values ./configs/deployment/kube-prometheus-stack.values
+    » helm install prometheus-community/kube-prometheus-stack \
+        --create-namespace --namespace bentoml \
+        --generate-name --values ./configs/deployment/kube-prometheus-stack.values
 
-    # Output
+.. code-block:: bash
     NAME: kube-prometheus-stack-1623502925
     LAST DEPLOYED: Sat Jun 12 20:02:09 2021
     NAMESPACE: bentoml
@@ -349,6 +362,8 @@ Finally deploy Prometheus and Grafana pods using ``kube-prometheus-stack`` via H
 
     * ``--set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false``
 
+    * ``--set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false``
+
 
 Check for Prometheus and Grafana pods:
 
@@ -356,12 +371,11 @@ Check for Prometheus and Grafana pods:
 
     » kubectl get pods -A
 
+.. code-block:: bash
+
     NAMESPACE     NAME                                                              READY   STATUS    RESTARTS   AGE
-    bentoml       alertmanager-kube-prometheus-stack-1623-alertmanager-0            2/2     Running   0          4m5s
     bentoml       kube-prometheus-stack-1623-operator-5555798f4f-nghl8              1/1     Running   0          4m22s
     bentoml       kube-prometheus-stack-1623502925-grafana-57cdffccdc-n7lpk         2/2     Running   0          4m22s
-    bentoml       kube-prometheus-stack-1623502925-kube-state-metrics-7b74f6nw22w   1/1     Running   0          4m22s
-    bentoml       kube-prometheus-stack-1623502925-prometheus-node-exporter-mqtcj   1/1     Running   0          4m22s
     bentoml       prometheus-kube-prometheus-stack-1623-prometheus-0                2/2     Running   1          4m5s
 
 Check for service startup as part of the operator:
@@ -369,16 +383,15 @@ Check for service startup as part of the operator:
 .. code-block:: bash
 
     » kubectl get svc -A
+
+.. code-block:: bash
+
     NAMESPACE     NAME                                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                        AGE
     bentoml       alertmanager-operated                                       ClusterIP   None             <none>        9093/TCP,9094/TCP,9094/UDP     5m8s
-    bentoml       kube-prometheus-stack-1623-alertmanager                     ClusterIP   10.111.44.151    <none>        9093/TCP                       5m25s
     bentoml       kube-prometheus-stack-1623-operator                         ClusterIP   10.106.5.23      <none>        443/TCP                        5m25s
     bentoml       kube-prometheus-stack-1623-prometheus                       NodePort    10.96.241.205    <none>        9090:30090/TCP                 5m26s
     bentoml       kube-prometheus-stack-1623502925-grafana                    ClusterIP   10.111.205.42    <none>        80/TCP                         5m25s
-    bentoml       kube-prometheus-stack-1623502925-kube-state-metrics         ClusterIP   10.106.192.117   <none>        8080/TCP                       5m26s
-    bentoml       kube-prometheus-stack-1623502925-prometheus-node-exporter   ClusterIP   10.102.213.54    <none>        9100/TCP                       5m25s
     bentoml       prometheus-operated                                         ClusterIP   None             <none>        9090/TCP                       5m8s
-    default       kubernetes                                                  ClusterIP   10.96.0.1        <none>        443/TCP                        21m
 
 As we can observe the Prometheus server is available at ``:30090``. Thus, open browser at ``http://<machine-ip-addr>:30090``.
 By default the Operator enables users to monitor our Kubernetes cluster.
@@ -432,10 +445,11 @@ Verify that the service is now exposed at an external accessible port:
 
     » kubectl get svc -A
 
-    NAMESPACE              NAME                                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                        AGE
-    <snip>
-    bentoml                kube-prometheus-stack-1623-prometheus                       NodePort    10.96.241.205    <none>        9090:30090/TCP                 35m
-    bentoml                kube-prometheus-stack-1623502925-grafana                    NodePort    10.111.205.42    <none>        80:32447/TCP                   35m
+.. code-block:: bash
+
+    NAMESPACE    NAME                                          TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+    bentoml      kube-prometheus-stack-1623-prometheus         NodePort    10.96.241.205    <none>        9090:30090/TCP   35m
+    bentoml      kube-prometheus-stack-1623502925-grafana      NodePort    10.111.205.42    <none>        80:32447/TCP     35m
 
 Open your browser at ``http:<machine-ip-addr>:32447``, credentials:
 
@@ -468,42 +482,54 @@ Grafana is listening at)
 
 Point to ``http://localhost:36745/`` to see Grafana login page using the same credentials.
 
+.. _custom-service-monitor:
+
 Setting up your BentoService
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An example BentoService on Kubernetes:
+An example BentoService with custom ServiceMonitor on Kubernetes:
 
-.. code-block:: bash
+.. code-block:: yaml
 
     ---
-    ### Tensorflow Deployment
-    apiVersion: apps/v1
-    kind: Deployment
+    ### BentoService
+    apiVersion: v1
+    kind: Service
     metadata:
       labels:
-        app: bentoml_service
-      name: bentoml_service
-      namespace: default
+        app: bentoml-service
+      name: bentoml-service
+      namespace: bentoml
     spec:
-      replicas: 1
+      externalTrafficPolicy: Cluster
+      ports:
+        - name: predict
+          nodePort: 32610
+          port: 5000
+          protocol: TCP
+          targetPort: 5000
+      selector:
+        app: bentoml-service
+      sessionAffinity: None
+      type: NodePort
+
+    ---
+    ### BentoService ServiceMonitor
+    apiVersion: monitoring.coreos.com/v1
+    kind: ServiceMonitor
+    metadata:
+      name: bentoml-service
+      namespace: bentoml
+    spec:
       selector:
         matchLabels:
-          app: bentoml_service
-      template:
-        metadata:
-          labels:
-            app: bentoml_service
-        spec:
-          containers:
-            - image: aarnphm/bentoml-sentiment-analysis:latest
-              imagePullPolicy: Always
-              name: bentoml_service
-          restartPolicy: Always
-          securityContext: {}
-          terminationGracePeriodSeconds: 30
+          app: bentoml-service
+      endpoints:
+      - port: predict
 
 .. note::
-    Make sure that you also include a ``ServiceMonitor`` definition for your BentoService in order for Prometheus to scrape.
+    Make sure that you also include a custom ServiceMonitor definition for your BentoService. For information on
+    how to use ServiceMonitor CRD, please see the `documentation <https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#include-servicemonitors>`_.
 
 Apply the changes to enable monitoring:
 
@@ -522,15 +548,9 @@ Apply the changes to enable monitoring:
     |-------------|-----------------------------------------------------------|--------------|-----------------------------|
     |  NAMESPACE  |                           NAME                            | TARGET PORT  |             URL             |
     |-------------|-----------------------------------------------------------|--------------|-----------------------------|
-    | bentoml     | alertmanager-operated                                     | No node port |                             |
-    | bentoml     | kube-prometheus-stack-1623-alertmanager                   | No node port |                             |
-    | bentoml     | kube-prometheus-stack-1623-operator                       | No node port |                             |
     | bentoml     | bentoml-service                                           | predict/5000 | http://192.168.99.103:32610 |
     | bentoml     | kube-prometheus-stack-1623-prometheus                     | web/9090     | http://192.168.99.102:30090 |
     | bentoml     | kube-prometheus-stack-1623502925-grafana                  | service/80   | http://192.168.99.102:32447 |
-    | bentoml     | kube-prometheus-stack-1623502925-kube-state-metrics       | No node port |                             |
-    | bentoml     | kube-prometheus-stack-1623502925-prometheus-node-exporter | No node port |                             |
-    | bentoml     | prometheus-operated                                       | No node port |                             |
     |-------------|-----------------------------------------------------------|--------------|-----------------------------|
 
 .. image:: ../_static/img/service-k8s.png
@@ -538,6 +558,9 @@ Apply the changes to enable monitoring:
 .. image:: ../_static/img/grafana-k8s.png
 
 .. image:: ../_static/img/prometheus-k8s.png
+
+.. note::
+    Mounting PersistentVolume for Prometheus and Grafana on K8s is currently working in progress.
 
 (Optional) Exposing GPU Metrics on Kubernetes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -548,3 +571,9 @@ Apply the changes to enable monitoring:
 .. _kube-prometheus: https://github.com/prometheus-operator/kube-prometheus#readme
 .. _Prometheus: https://prometheus.io/docs/introduction/overview/
 .. _Grafana: https://grafana.com/docs/grafana/latest/
+
+.. spelling::
+
+    Yatai
+    tsdb
+    Alertmanager

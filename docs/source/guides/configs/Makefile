@@ -18,7 +18,7 @@ swarm-clean: ## stop swarm
 
 .PHONY: k8s
 k8s: ## setup k8s automagically
-	sh -c "$(curl -fsLS https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/guides/configs/k8s.sh)"
+	sh -c "$(curl -fsLS https://git.io/JZ5Mk)"
 
 .PHONY: k8s-clean
 k8s-clean: ## cleanup k8s

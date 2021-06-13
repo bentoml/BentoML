@@ -11,7 +11,7 @@
 # - This only works on POSIX system as we will install binary for most of dependency (skip if users already have dependencies)
 
 # Contains functions from https://github.com/client9/shlib
-set -ex
+set -e
 
 LOG_LEVEL=2
 
@@ -65,7 +65,7 @@ main() {
     log_debug "TODO: Added PersistentVolume for both Grafana (https://github.com/grafana/helm-charts/tree/main/charts/grafana#configuration) \
      and Prometheus Operator (https://github.com/prometheus-operator/prometheus-operator)."
 
-    log_info "Our stack BentoML-Prometheus-Grafana has been set up on Kubernetes using Prometheus Operator."
+    log_info "Done."
     return
   fi
 }

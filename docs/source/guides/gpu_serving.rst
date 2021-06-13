@@ -47,7 +47,7 @@ General workaround (Recommended)
                        --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
                        --device /dev/nvidia-modeset --device /dev/nvidiactl <docker-args>
 
-    If one choose to make use of :code:`Makefile`_ then add the following:
+    If one choose to make use of ``Makefile`` then add the following:
 
     .. code-block::
 

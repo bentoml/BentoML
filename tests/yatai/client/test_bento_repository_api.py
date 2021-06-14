@@ -4,20 +4,14 @@ import os
 import sys
 import uuid
 
-import docker
 import psutil
 import pytest
 
 import bentoml
-from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.saved_bundle.loader import load_from_dir
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.client import get_yatai_client
-from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
-from tests.yatai.local_yatai_service import (
-    wait_until_container_ready,
-    local_yatai_service_container,
-)
+from tests.yatai.local_yatai_service import local_yatai_service_container
 
 logger = logging.getLogger('bentoml.test')
 

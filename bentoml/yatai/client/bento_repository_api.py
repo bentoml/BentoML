@@ -212,6 +212,12 @@ class BentoRepositoryAPIClient:
                     bento_service_metadata.version,
                     saved_bento_path,
                 )
+                update_bento_service = UpdateBentoRequest(
+                    bento_name=bento_service_metadata.name,
+                    bento_version=bento_service_metadata.version,
+                    service_metadata=bento_service_metadata,
+                )
+                self.yatai_service.UpdateBento(update_bento_service)
             else:
                 if os.path.exists(response.uri.uri):
                     # due to copytree dst must not already exist
@@ -279,6 +285,7 @@ class BentoRepositoryAPIClient:
     def _update_bento_upload_progress(
         self, bento_service_metadata, status=UploadStatus.DONE, percentage=None
     ):
+        # TODO separate update upload progress and bento metadata.
         upload_status = UploadStatus(status=status, percentage=percentage)
         upload_status.updated_at.GetCurrentTime()
         update_bento_req = UpdateBentoRequest(

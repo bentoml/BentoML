@@ -44,7 +44,7 @@ It is recommended to run Prometheus with Docker . Please make sure that you have
 `Docker <https://docs.docker.com/engine/install/>`_ installed on your system.
 
 Users can take advantage of having a ``prometheus.yml`` for configuration.
-Example of for monitoring BentoService is shown below:
+An example to monitor multiple BentoServices is shown below:
 
 .. code-block:: yaml
 
@@ -61,18 +61,12 @@ Example of for monitoring BentoService is shown below:
       honor_labels: true
       static_configs:
       - targets:
-        - localhost:9090  # metrics from prom/prometheus
-        - localhost:5000  # BentoService metrics
-        - localhost:3000  # YataiService metrics
+        - localhost:5000  # metrics from SentimentClassifier service
+        - localhost:6000  # metrics from IrisClassifier service
 
 .. note::
-    Make sure you have targets port for your BentoService setup correctly according to your use case. For the
-    demo we will use BentoService default port **5000**.
-
-.. warning::
-    Currently **8080** and **3000** is reserved while running YataiService. Thus, in order to monitor YataiService
-    with Grafana, one should either set Grafana or YataiService to another port than 3000 since both services
-    requires ``:3000``
+    In order to monitor multiple BentoServices, make sure to setup different ports for each BentoService and add
+    correct targets under ``static_configs`` as shown above.
 
 
 We can then run Prometheus with the following:

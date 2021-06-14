@@ -24,7 +24,7 @@ If you would like to automate the installation of additional dashboards just cop
         ├── prometheus
         │   ├── alert.rules
         │   └── prometheus.yml
-        ├── k8s.sh
+        ├── Makefile
         ├── docker-compose.yml
         └── README.rst
 

@@ -18,8 +18,8 @@ spec:
         app: bentoml-service
     spec:
       containers:
-        - image: aarnphm/bentoml-sentiment-analysis:latest
-          imagePullPolicy: Always
+        - image: bentoml/fashion-mnist-classifier:latest
+          imagePullPolicy: IfNotPresent
           name: bentoml-service
       restartPolicy: Always
       securityContext: {}

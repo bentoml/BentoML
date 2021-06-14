@@ -119,7 +119,7 @@ To log in to Grafana for the first time:
 .. seealso::::
     `Best practice while creating dashboards on Grafana <https://grafana.com/docs/grafana/latest/best-practices/best-practices-for-creating-dashboards/>`_
 
-Users can also import `BentoService Dashboard <https://github.com/bentoml/BentoML/tree/master/docs/source/configs/grafana/provisioning/dashboards/bentoml-dashboard-1623445349552.json>`_ and
+Users can also import `BentoService Dashboard <https://github.com/bentoml/BentoML/tree/master/docs/source/configs/grafana/provisioning/dashboards/bentoml-dashboard-docker-swarm-1623677587070.json>`_ and
 explore given BentoService metrics by `importing dashboard <https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard>`_.
 
 .. image:: ../_static/img/bentoml-grafana-dashboard.png
@@ -135,7 +135,7 @@ explore given BentoService metrics by `importing dashboard <https://grafana.com/
    :start-after: introduction-marker
    :end-before: not-exposed-marker
 
-content of ``docker-compose.yml``, example dashboard can be seen `here <https://snapshot.raintank.io/dashboard/snapshot/hcYDylsRTz1Md5W4FpjkEc0Ldm5zygDr?orgId=2>`_:
+content of ``docker-compose.yml``, example dashboard can be seen `here <https://snapshot.raintank.io/dashboard/snapshot/yZQSlxxQ7VPjBmTbnGOUxVyIkpLJqnU5>`_:
 
 .. code-block:: yaml
 
@@ -189,7 +189,7 @@ content of ``docker-compose.yml``, example dashboard can be seen `here <https://
         restart: on-failure
 
       bentoml:
-        image: aarnphm/bentoml-sentiment-analysis:latest
+        image: bentoml/fashion-mnist-classifier:latest
         ports:
           - "5000:5000"
         networks:
@@ -217,10 +217,6 @@ Deploying on Kubernetes
 .. seealso::
     :doc:`../deployment/kubernetes` on how to deploy BentoService to Kubernetes.
 
-.. code-block:: bash
-
-    » sh -c $(curl -fsLS https://git.io/JZ5Mk) # auto deploy the stack to local k8s
-
 
 Deploy Prometheus on K8s
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -233,6 +229,9 @@ and make use of `prometheus-operator <https://github.com/prometheus-operator/pro
 
 .. seealso::
     kube-prometheus_
+
+.. warning::
+    Your local minikube cluster will be delete in order to setup ``kube-prometheus-stack`` correctly.
 
 Setup virtualbox to be default driver for ``minikube``:
 
@@ -253,6 +252,10 @@ Spin up our local K8s cluster:
         --extra-config=scheduler.address=0.0.0.0 \
         --extra-config=controller-manager.address=0.0.0.0
 
+.. note::
+    We are allocate 6Gb of memory via ``--memory`` for this K8s cluster.
+    Change the value to whatever fits with your use-case.
+
 Then get ``helm`` repo:
 
 .. code-block:: bash
@@ -269,7 +272,7 @@ Search for available prometheus chart:
 
     » helm search repo kube-prometheus
 
-Once located the version of our stack (v16.7.0), inspect the chart to modify the settings:
+Once located the version, inspect the chart to modify the settings:
 
 .. code-block:: bash
 
@@ -414,7 +417,7 @@ with Prometheus dashboard.
 We can take advantage of |kubectl_patch|_ to update the service API to expose a ``NodePort`` instead.
 
 .. _kubectl_patch: https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/
-.. |kubectl_patch| replace:: ``kubectl patch``
+.. |kubectl_patch| replace:: **kubectl patch**
 
 Modify the spec to change service type:
 
@@ -430,7 +433,13 @@ Use ``kubectl patch``:
 
 .. code-block:: bash
 
-    » kubectl patch svc kube-prometheus-stack-1623502925-grafana -n bentoml --patch "$(cat configs/deployment/grafana-patch.yaml)"
+    # This is how we get grafana pod name
+
+    » _GRAFANA_SVC=$(kubectl get svc -n bentoml | grep grafana | cut -d " " -f1)
+
+.. code-block:: bash
+
+    » kubectl patch svc "${_GRAFANA_SVC}" -n bentoml --patch "$(cat configs/deployment/grafana-patch.yaml)"
 
     service/kube-prometheus-stack-1623502925-grafana patched
 
@@ -533,7 +542,7 @@ Apply the changes to enable monitoring:
     kubectl apply -f configs/deployment/bentoml-deployment.yml --namespace=bentoml
 
 .. note::
-    After logging into Grafana, imports the provided dashboards under ``configs/grafana/provisioning/dashboards``.
+    After logging into Grafana, imports the provided kubernetes dashboards under ``configs/grafana/provisioning/dashboards``.
 
 **The final results:** Deployed BentoML-Prometheus-Grafana Stack on Kubernetes
 
@@ -555,9 +564,11 @@ Apply the changes to enable monitoring:
 .. image:: ../_static/img/k8s-prometheus.png
 
 .. note::
-    You might have to wait a few minutes for everything to spin up. You can check your namespace pods health with ``minikube dashboard``:
+    You might have to wait a few minutes for everything to spin up. In the meantime, an example dashboard on `Kubernetes <https://snapshot.raintank.io/dashboard/snapshot/qZRYdOb5UqmrZ4QU5RspbJeZOqkOJYLH>`_.
+    You can check your namespace pods health with ``minikube dashboard``:
 
     .. image:: ../_static/img/k8s-minikube.png
+
 
 .. note::
     Mounting `PersistentVolume` for Prometheus and Grafana on K8s is currently working in progress.

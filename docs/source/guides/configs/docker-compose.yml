@@ -55,7 +55,7 @@ services:
         condition: on-failure
 
   bentoml:
-    image: aarnphm/bentoml-sentiment-analysis:latest
+    image: bentoml/fashion-mnist-classifier:latest
     ports:
       - "5000:5000"
     networks:

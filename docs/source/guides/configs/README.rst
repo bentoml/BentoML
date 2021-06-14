@@ -123,7 +123,7 @@ To cleanup swarm stack:
 Deploying on Kubernetes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Refers to `Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/monitoring.html#deploying-on-kubernetes>`_.
+Refers to `Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoML/tree/master/docs/source/guides/monitoring.html#deploy-prometheus-on-k8s>`_.
 
 .. warning::
     Make sure to install ``virtualbox`` before using the script.
@@ -131,15 +131,3 @@ Refers to `Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoM
         * On MacOS ``brew install virtualbox``
 
         * On Arch ``sudo pacman -S virtualbox``
-
-Deploy the stack on Kubernetes cluster locally in one single commandline: (If you believe me) :smile:
-
-.. code-block:: bash
-
-    » make k8s
-
-Uninstall and remove helm charts:
-
-.. code-block:: bash
-
-    » make k8s-clean

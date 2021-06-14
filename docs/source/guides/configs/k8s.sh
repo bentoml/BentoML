@@ -28,8 +28,9 @@ usage () {
   cat <<EOF
 ${this}: Setup BentoService on K8s with Prometheus-Grafana stack
 
-Usage: ${this} [-d] [-h]
-  -d enables debug logging. (use this if you want to see the setup in action.)
+Usage: ${this} [-d | -t] [-h]
+  -t enables trace.
+  -d enables debug logging.
   -h show this help message
 EOF
 	exit 2
@@ -37,13 +38,12 @@ EOF
 
 main() {
   parse_args "$@"
-
   _NAMESPACE=bentoml
   if ! is_command virtualbox; then
-    log_err "In order to run the script, you need to install virtualbox. Exitting."
+    log_err "In order to run the script, you need to install virtualbox. Exiting."
     return 1
   fi
-  log_info "While this scripts help ease the some of the pain for the demo, it is recommend for users to go through every step provided by the guide."
+  log_warn "While this scripts help ease the some of the pain for the demo, it is recommend for users to go through setup steps provided in the guide."
 
   log_info "Setting up binary..."
   install_binary
@@ -94,7 +94,7 @@ install_binary() {
     log_crit "windows is not supported while running this script."
     return 1
   fi
-  log_info "This scripts will ask for your sudo password for installing binary."
+  log_info "This script may ask for your sudo password for installing binary if you don't have one."
 
   ## minikube
   if ! is_command minikube; then
@@ -149,8 +149,10 @@ parse_args() {
   while getopts ":dh?t:" arg; do
     case "${arg}" in
     d)
-      set -x
       LOG_LEVEL=3
+      ;;
+    t)
+      set -x
       ;;
     h | \?)
       usage "$0"
@@ -272,22 +274,27 @@ is_command() {
 
 log_debug() {
 	[ 3 -le "${LOG_LEVEL}" ] || return 0
-	echo DEBUG "$@" 1>&2
+	echo -e "\033[2mDEBUG::\033[0m \e[1;32m$*\e[m" 1>&2
+}
+
+log_warn() {
+	[ 2 -le "${LOG_LEVEL}" ] || return 0
+	echo -e "\033[2mWARN::\033[0m \e[1;33m$*\e[m" 1>&2
 }
 
 log_info() {
 	[ 2 -le "${LOG_LEVEL}" ] || return 0
-	echo INFO "$@" 1>&2
+	echo -e "\033[2mINFO::\033[0m \e[1;34m$*\e[m" 1>&2
 }
 
 log_err() {
 	[ 1 -le "${LOG_LEVEL}" ] || return 0
-	echo ERROR "$@" 1>&2
+	echo -e "\033[2mERROR::\033[0m \e[1;31m$*\e[m" 1>&2
 }
 
 log_crit() {
 	[ 0 -le "${LOG_LEVEL}" ] || return 0
-	echo CRITICAL "$@" 1>&2
+	echo -e "\033[2mCRITICAL::\033[0m \e[1;35m$*\e[m" 1>&2
 }
 
 main "$@"

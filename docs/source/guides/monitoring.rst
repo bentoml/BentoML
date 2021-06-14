@@ -554,14 +554,19 @@ Apply the changes to enable monitoring:
     | bentoml     | kube-prometheus-stack-1623502925-grafana                  | service/80   | http://192.168.99.102:32447 |
     |-------------|-----------------------------------------------------------|--------------|-----------------------------|
 
-.. image:: ../_static/img/service-k8s.png
+.. image:: ../_static/img/k8s-bentoml.png
 
-.. image:: ../_static/img/grafana-k8s.png
+.. image:: ../_static/img/k8s-grafana.png
 
-.. image:: ../_static/img/prometheus-k8s.png
+.. image:: ../_static/img/k8s-prometheus.png
 
 .. note::
-    Mounting PersistentVolume for Prometheus and Grafana on K8s is currently working in progress.
+    You might have to wait a few minutes for everything to spin up. You can check your namespace pods health with ``minikube dashboard``:
+
+    .. image:: ../_static/img/k8s-minikube.png
+
+.. note::
+    Mounting `PersistentVolume` for Prometheus and Grafana on K8s is currently working in progress.
 
 (Optional) Exposing GPU Metrics on Kubernetes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

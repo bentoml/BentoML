@@ -79,3 +79,7 @@ helm-install: ## Helm Install
 	@cd helm && helm install -f YataiService/values/postgres.yaml yatai-service YataiService
 helm-uninstall: ## Helm Uninstall
 	helm uninstall yatai-service
+
+# Kubernetes
+k8s: ## Monitoring BentoService on K8s with Prometheus
+	@cd docs/source/guides/configs && ./k8s.sh -d

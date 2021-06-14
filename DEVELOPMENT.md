@@ -212,6 +212,42 @@ gRPC Web UI available at http://127.0.0.1:60551/...
 ```
 Navigate to the URL from above
 
+## How to use `YataiService` helm chart
+
+BentoML also provides a Helm charts for installing YataiService on Kubernetes. 
+
+Install Helm dependencies:
+```bash
+$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx && helm dependencies build helm/YataiService
+```
+
+Lint helm after making changes to the chart:
+```bash
+$ helm lint ./helm/YataiService
+```
+
+Dry-run helm installation to test out development:
+```bash
+$ cd helm && helm install -f YataiService/values/postgres.yaml --dry-run --debug yatai-service YataiService
+```
+
+Install the helm charts:
+```bash
+$ cd helm && helm install -f YataiService/values/postgres.yaml yatai-service YataiService
+```
+
+Uninstall the charts:
+```bash
+$ helm uninstall yatai-service
+```
+
+## Monitoring with Prometheus on Kubernetes
+
+To quickly spin up a local Kubernetes cluster with Prometheus and Grafana to monitor BentoService (refers to [Monitoring with Prometheus](https://docs.bentoml.org/en/latest/guides/monitoring.html)):
+```bash
+# ./k8s.sh -h for more information.
+$ cd docs/source/guides/configs && ./k8s.sh -d
+```
 
 ## How to run and develop BentoML Web UI
 

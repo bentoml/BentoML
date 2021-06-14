@@ -55,6 +55,7 @@ class BentoBundleStreamRequestsOrResponses:
         self.directory_path = directory_path
         self.file_chunk_size = file_chunk_size
         self.is_request = is_request
+        self.sent_init_message = False
         self.out_stream = FileStream()
         self.tar = tarfile.TarFile(fileobj=self.out_stream, mode='w')
 
@@ -81,9 +82,7 @@ class BentoBundleStreamRequestsOrResponses:
     def _create_request_or_response(bento_name, bento_version, value, is_request):
         if is_request:
             return UploadBentoRequest(
-                bento_name=bento_name,
-                bento_version=bento_version,
-                bento_bundle=value,
+                bento_name=bento_name, bento_version=bento_version, bento_bundle=value,
             )
         else:
             return DownloadBentoResponse(bento_bundle=value)
@@ -93,7 +92,8 @@ class BentoBundleStreamRequestsOrResponses:
         self.out_stream.close()
 
     def __iter__(self):
-        if self.is_request:
+        if self.is_request and not self.sent_init_message:
+            self.sent_init_message = True
             yield UploadBentoRequest(
                 bento_name=self.bento_name, bento_version=self.bento_version
             )
@@ -126,7 +126,7 @@ class BentoBundleStreamRequestsOrResponses:
                             self.bento_name,
                             self.bento_version,
                             self.out_stream.read_value(),
-                            self.is_request
+                            self.is_request,
                         )
 
             # Add the directory path to tar
@@ -141,7 +141,7 @@ class BentoBundleStreamRequestsOrResponses:
                 self.bento_name,
                 self.bento_version,
                 self.out_stream.read_value(),
-                self.is_request
+                self.is_request,
             )
         self.tar.close()
         # Stream out any value that are left over.
@@ -151,6 +151,6 @@ class BentoBundleStreamRequestsOrResponses:
             self.bento_name,
             self.bento_version,
             self.out_stream.read_value(),
-            self.is_request
+            self.is_request,
         )
         self.out_stream.close()

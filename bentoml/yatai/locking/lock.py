@@ -9,6 +9,11 @@ from bentoml.yatai.db.stores.lock import LockStore, LOCK_STATUS
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_TIMEOUT_SECONDS = 10
+DEFAULT_TIMEOUT_JITTER_SECONDS = 1
+DEFAULT_MAX_RETRY_COUNT = 5
+DEFAULT_TTL_MIN = 3
+
 
 # enum of read or write lock
 class LockType:
@@ -20,10 +25,10 @@ class LockType:
 def lock(
     db,
     locks,
-    timeout_seconds=10,
-    timeout_jitter_seconds=1,
-    max_retry_count=5,
-    ttl_min=3,
+    timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
+    timeout_jitter_seconds=DEFAULT_TIMEOUT_JITTER_SECONDS,
+    max_retry_count=DEFAULT_MAX_RETRY_COUNT,
+    ttl_min=DEFAULT_TTL_MIN,
 ):
     """
     Context manager to acquire operation-level locks on all

@@ -439,3 +439,11 @@ ONNX Implementation
     bento_svc.pack("tokenizer", tokenizer)
     bento_svc.pack("vocab", vocab)
     saved_path = bento_svc.save()
+
+
+
+.. spelling::
+
+    pythonic
+    mose
+    cuda

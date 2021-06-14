@@ -350,3 +350,4 @@ Clean up deployed service on Google Cloud AI Platform Unified
 .. spelling::
 
     projectID
+    explainability

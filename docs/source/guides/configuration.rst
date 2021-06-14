@@ -3,7 +3,7 @@
 Configuration
 =============
 
-BentoML starts with an out-of-the-box coniguration that works for common use cases. For advanced users, many 
+BentoML starts with an out-of-the-box configuration that works for common use cases. For advanced users, many
 features can be customized through configuration. Both BentoML CLI and Python APIs can be customized 
 by the configuration. Configuration is best used for scenarios where the customizations can be specified once 
 and applied to the entire team.
@@ -163,3 +163,17 @@ YAML.
             type: s3
             s3:
                 url: s3://s3_address
+
+
+.. spelling::
+
+    customizations
+    microbatching
+    customizable
+    multiproc
+    dir
+    tls
+    apiserver
+    gunicorn
+    uri
+    gcs

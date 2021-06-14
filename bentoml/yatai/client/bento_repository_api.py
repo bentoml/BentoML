@@ -598,7 +598,8 @@ class BentoRepositoryAPIClient:
                 raise BentoMLException(result.status.error_message)
         except grpc.RpcError as e:
             raise BentoMLRpcError(
-                e, f'Failed to upload {bento_name}:{bento_version} to remote yatai'
+                e, f'Failed to upload {bento_name}:{bento_version} to '
+                   f'the remote yatai server'
             )
         finally:
             streaming_request_generator.close()
@@ -629,5 +630,6 @@ class BentoRepositoryAPIClient:
             except grpc.RpcError as e:
                 raise BentoMLRpcError(
                     e,
-                    f'Failed to download {bento_name}:{bento_version} from remote yatai',
+                    f'Failed to download {bento_name}:{bento_version} from '
+                    f'the remote yatai server',
                 )

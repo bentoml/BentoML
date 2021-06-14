@@ -64,6 +64,7 @@ class RemoteException(BentoMLException):
 
 class BentoMLRpcError(BentoMLException):
     def __init__(self, grpc_error, message):
+        super(BentoMLRpcError, self).__init__()
         self.grpc_error = grpc_error
         self.message = message
         if self.grpc_error.code == grpc.StatusCode.DEADLINE_EXCEEDED:

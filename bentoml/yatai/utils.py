@@ -14,7 +14,6 @@
 
 from typing import NamedTuple, Tuple
 
-import grpc
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 UNARY = 'UNARY'

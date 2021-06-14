@@ -1160,14 +1160,42 @@ as AWS credentials for managing deployments created on AWS:
     * Debug mode: off
     * Web UI: running on http://127.0.0.1:3000
     * Running on 127.0.0.1:50051 (Press CTRL+C to quit)
-    * Usage: `bentoml config set yatai_service.url=127.0.0.1:50051`
+    * Prometheus: running on http://127.0.0.1:3000/metrics
+
     * Help and instructions: https://docs.bentoml.org/en/latest/guides/yatai_service.html
-    * Web server log can be found here: /Users/chaoyu/bentoml/logs/yatai_web_server.log
+    * Web server log can be found here: /Users/bozhaoyu/bentoml/logs/yatai_web_server.log
+
+
+
+Example Yatai URL usage in BentoML Python API:
+
+.. code-block:: python
+
+    # yatai_url is available to all BentoML python APIs as an option.
+    #
+    # Save Bento bundle to Yatai server
+    bento_svc.save(yatai_url="127.0.0.1:50051")
+    # List remote Bento bundles from Yatai server
+    from bentoml.yatai.client import get_yatai_client
+    get_yatai_client('127.0.0.1:5001').repository.list()
+
+
+Example Yatai URL usage in BentoML CLI:
+
+.. code-block:: bash
+
+    > bentoml list --yatai-url=127.0.0.1:50051
+    > bentoml containerize IrisClassifier:latest --yatai-url=127.0.0.1:50051
+    > bentoml push IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:50051
+    > bentoml pull IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:50051
+    > bentoml retrieve IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:50051 --target_dir="/tmp/foo/bar"
+    > bentoml delete IrisClassifier:20200918001645_CD2886 --yatai-url=127.0.0.1:50051
+
 
 
 After deploying the YataiService server, get the server IP address and run the following 
 command to configure BentoML client to use this remote YataiService for model management
-and deployments. You will need to replace ``127.0.0.1`` with an IP address or URL
+and deployments. Replace ``127.0.0.1`` with an IP address or URL
 that is accessible for your team:
 
 .. code-block:: bash
@@ -1331,3 +1359,4 @@ This command extends BentoML to be useful in a CI workflow or to provide a rapid
     jupyter
     installable
     zA
+    mb

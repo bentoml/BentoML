@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+import tarfile
+import uuid
 import logging
 from datetime import datetime
 from dependency_injector.wiring import Provide, inject
@@ -41,6 +44,9 @@ from bentoml.yatai.proto.repository_pb2 import (
     ListBentoResponse,
     BentoUri,
     ContainerizeBentoResponse,
+    UploadBentoResponse,
+    DownloadBentoResponse,
+    UploadStatus,
 )
 from bentoml.yatai.proto.yatai_service_pb2 import (
     HealthCheckResponse,
@@ -51,13 +57,18 @@ from bentoml.exceptions import (
     BentoMLException,
     InvalidArgument,
     YataiRepositoryException,
+    BadInput,
 )
 from bentoml.yatai.repository.base_repository import BaseRepository
 from bentoml.yatai.db import DB
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import ProtoMessageToDict
+from bentoml.yatai.grpc_stream_utils import DownloadBentoStreamResponses
 from bentoml.yatai.validator import validate_deployment_pb
+from bentoml.yatai.repository.file_system_repository import FileSystemRepository
+from bentoml.yatai.db.stores.lock import LockStore
+from bentoml.yatai.locking.lock import DEFAULT_TTL_MIN
 from bentoml import __version__ as BENTOML_VERSION
 
 logger = logging.getLogger(__name__)
@@ -70,6 +81,10 @@ def track_deployment_delete(deployment_operator, created_at, force_delete=False)
         f'deployment-{operator_name}-stop',
         {'up_time': up_time, 'force_delete': force_delete},
     )
+
+
+def is_file_system_repo(repo_instance):
+    return isinstance(repo_instance, FileSystemRepository)
 
 
 def get_yatai_service_impl(base=object):
@@ -578,6 +593,126 @@ def get_yatai_service_impl(base=object):
                     logger.error(f"RPC ERROR ContainerizeBento: {e}")
                     return ContainerizeBentoResponse(status=Status.INTERNAL(e))
 
-            # pylint: enable=unused-argument
+        def UploadBento(self, request_iterator, context=None):
+            if not is_file_system_repo(self.repo):
+                logger.error(
+                    "UploadBento RPC only works with File System based repository, "
+                    "for other types of repositories(s3, gcs, minio), "
+                    "use pre-signed URL for upload"
+                )
+                return UploadBentoResponse(status=Status.INTERNAL(''))
+            try:
+                with self.db.create_session() as sess:
+                    lock_obj = None
+                    bento_pb = None
+                    with TempDirectory() as temp_dir:
+                        temp_tar_path = os.path.join(
+                            temp_dir, f'{uuid.uuid4().hex[:12]}.tar'
+                        )
+                        file = open(temp_tar_path, 'wb+')
+                        for request in request_iterator:
+                            # Initial request is without bundle
+                            if not request.bento_bundle:
+                                bento_name = request.bento_name
+                                bento_version = request.bento_version
+                                bento_pb = self.db.metadata_store.get(
+                                    sess, bento_name, bento_version
+                                )
+                                if not bento_pb:
+                                    result_status = Status.NOT_FOUND(
+                                        "BentoService `{}:{}` is not found".format(
+                                            bento_name, bento_version
+                                        )
+                                    )
+                                    return UploadBentoResponse(status=result_status)
+                                if bento_pb.status:
+                                    if bento_pb.status.status == UploadStatus.DONE:
+                                        return UploadStatus(
+                                            status=Status.CANCELLED(
+                                                f"Bento bundle `{bento_name}:"
+                                                f"{bento_version}` is uploaded"
+                                            )
+                                        )
+                                    if bento_pb.status.status == UploadStatus.UPLOADING:
+                                        return UploadStatus(
+                                            status=Status.CANCELLED(
+                                                f"Bento bundle `{bento_name}:"
+                                                f"{bento_version}` is currently "
+                                                f"uploading"
+                                            )
+                                        )
+                                if lock_obj is None:
+                                    lock_obj = LockStore.acquire(
+                                        sess=sess,
+                                        lock_type=LockType.WRITE,
+                                        resource_id=f'{bento_name}_{bento_version}',
+                                        ttl_min=DEFAULT_TTL_MIN,
+                                    )
+                            else:
+                                if (
+                                    bento_name == request.bento_name
+                                    and bento_version == request.bento_version
+                                ):
+                                    file.write(request.bento_bundle)
+                                else:
+                                    lock_obj.release(sess)
+                                    raise BadInput(
+                                        f"Incoming stream request doesn't match "
+                                        f"with initial request info "
+                                        f"{bento_name}:{bento_version} - "
+                                        f"{request.bento_name}:"
+                                        f"{request.bento_version}"
+                                    )
+                        file.seek(0)
+                        with tarfile.open(fileobj=file, mode='r') as tar:
+                            tar.extractall(path=bento_pb.uri.uri)
+                        upload_status = UploadStatus(status=UploadStatus.DONE)
+                        upload_status.updated_at.GetCurrentTime()
+                        self.db.metadata_store.update_upload_status(
+                            sess, bento_name, bento_version, upload_status
+                        )
+                        lock_obj.release(sess)
+                        return UploadBentoResponse(status=Status.OK())
+            except BentoMLException as e:
+                logger.error("RPC ERROR UploadBento: %s", e)
+                return UploadBentoResponse(status=e.status_proto)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error("RPC ERROR UploadBento: %s", e)
+                return UploadBentoResponse(status=Status.INTERNAL())
+            finally:
+                if file is not None:
+                    file.close()
+
+        def DownloadBento(self, request, context=None):
+            if not is_file_system_repo(self.repo):
+                logger.error(
+                    "DownloadBento RPC only works with File System based repository, "
+                    "for other types of repositories(s3, gcs, minio), "
+                    "use pre-signed URL for download"
+                )
+                return DownloadBentoResponse(status=Status.INTERNAL(''))
+            bento_id = f"{request.bento_name}_{request.bento_version}"
+            with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
+                try:
+                    bento_pb = self.db.metadata_store.get(
+                        sess, request.bento_name, request.bento_version
+                    )
+                    responses_generator = DownloadBentoStreamResponses(
+                        bento_name=request.bento_name,
+                        bento_version=request.bento_version,
+                        bento_bundle_path=bento_pb.uri.uri,
+                    )
+                    for response in responses_generator:
+                        yield response
+                except BentoMLException as e:
+                    logger.error("RPC ERROR DownloadBento: %s", e)
+                    return DownloadBentoResponse(status=e.status_proto)
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.error("RPC ERROR DownloadBento: %s", e)
+                    return DownloadBentoResponse(status=Status.INTERNAL())
+                finally:
+                    responses_generator.close()
+
+    # pylint: enable=unused-argument
 
     return YataiServiceImpl

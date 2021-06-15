@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import grpc
 from bentoml.utils.lazy_loader import LazyLoader
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
@@ -60,6 +60,20 @@ class RemoteException(BentoMLException):
     def __init__(self, *args, payload, **kwargs):
         super(RemoteException, self).__init__(*args, **kwargs)
         self.payload = payload
+
+
+class BentoMLRpcError(BentoMLException):
+    def __init__(self, grpc_error, message):
+        super(BentoMLRpcError, self).__init__()
+        self.grpc_error = grpc_error
+        self.message = message
+        if self.grpc_error.code == grpc.StatusCode.DEADLINE_EXCEEDED:
+            self.grpc_error_message = 'Request time out'
+        else:
+            self.grpc_error_message = self.grpc_error.details()
+
+    def __str__(self):
+        return f'{self.message}: {self.grpc_error_message}'
 
 
 class Unauthenticated(BentoMLException):

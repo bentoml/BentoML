@@ -18,6 +18,7 @@ import inspect
 from io import StringIO
 import os
 import socket
+import tarfile
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
@@ -43,6 +44,8 @@ __all__ = [
 ]
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
+
+DEFAULT_CHUNK_SIZE = 1024 * 8  # 8kb
 
 
 class _Missing(object):
@@ -254,3 +257,13 @@ def resolve_bento_bundle_uri(bento_pb):
         return bento_pb.uri.gcs_presigned_url
     else:
         return bento_pb.uri.uri
+
+
+def archive_directory_to_tar(source_dir, tarfile_dir, tarfile_name):
+    file_name = f'{tarfile_name}.tar'
+    tarfile_path = os.path.join(tarfile_dir, file_name)
+    with tarfile.open(tarfile_path, mode="w:gz") as tar:
+        # Use arcname to prevent storing the full path to the bundle,
+        # from source_dir/path/to/file to path/to/file
+        tar.add(source_dir, arcname='')
+    return tarfile_path, file_name

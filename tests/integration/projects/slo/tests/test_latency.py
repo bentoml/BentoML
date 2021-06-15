@@ -21,7 +21,7 @@ async def test_SLO(host):
     await pytest.assert_request(
         "POST",
         f"http://{host}/echo_with_delay_max3",
-        data=f'"2.9"',
+        data='"2.9"',
         timeout=SLO * 2,
         headers=(("Content-Type", "application/json"),),
         assert_status=200,
@@ -32,7 +32,7 @@ async def test_SLO(host):
     await pytest.assert_request(
         "POST",
         f"http://{host}/echo_with_delay_max3",
-        data=f'"3.5"',
+        data='"3.5"',
         timeout=SLO * 2,
         headers=(("Content-Type", "application/json"),),
         assert_status=408,

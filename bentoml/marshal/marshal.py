@@ -377,7 +377,6 @@ class MarshalService:
                 client = self.get_client()
                 async with client.post(api_url, data=reqs_s, headers=headers) as resp:
                     raw = await resp.read()
-                await asyncio.sleep(0)
             except ClientConnectionError as e:
                 raise RemoteException(
                     e, payload=HTTPResponse.new(status=503, body=b"Service Unavailable")

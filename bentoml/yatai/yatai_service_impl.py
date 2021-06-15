@@ -63,7 +63,7 @@ from bentoml.yatai.db import DB
 from bentoml.yatai.status import Status
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.grpc_stream_utils import BentoBundleStreamRequestsOrResponses
+from bentoml.yatai.grpc_stream_utils import DownloadBentoStreamResponses
 from bentoml.yatai.validator import validate_deployment_pb
 from bentoml.yatai.repository.file_system_repository import FileSystemRepository
 from bentoml.yatai.db.stores.lock import LockStore
@@ -624,23 +624,21 @@ def get_yatai_service_impl(base=object):
                                         )
                                     )
                                     return UploadBentoResponse(status=result_status)
-                                if bento_pb.upload_status.status == UploadStatus.DONE:
-                                    return UploadStatus(
-                                        status=Status.CANCELLED(
-                                            f"Bento bundle `{bento_name}:"
-                                            f"{bento_version}` is uploaded"
+                                if bento_pb.status:
+                                    if bento_pb.status.status == UploadStatus.DONE:
+                                        return UploadStatus(
+                                            status=Status.CANCELLED(
+                                                f"Bento bundle `{bento_name}:"
+                                                f"{bento_version}` is uploaded"
+                                            )
                                         )
-                                    )
-                                if (
-                                    bento_pb.upload_status.status
-                                    == UploadStatus.UPLOADING
-                                ):
-                                    return UploadStatus(
-                                        status=Status.CANCELLED(
-                                            f"Bento bundle `{bento_name}:"
-                                            f"{bento_version}` is currently uploading"
+                                    if bento_pb.status.status == UploadStatus.UPLOADING:
+                                        return UploadStatus(
+                                            status=Status.CANCELLED(
+                                                f"Bento bundle `{bento_name}:"
+                                                f"{bento_version}` is currently uploading"
+                                            )
                                         )
-                                    )
                                 if lock_obj is None:
                                     lock_obj = LockStore.acquire(
                                         sess=sess,
@@ -671,6 +669,7 @@ def get_yatai_service_impl(base=object):
                         self.db.metadata_store.update_upload_status(
                             sess, bento_name, bento_version, upload_status
                         )
+                        lock_obj.release(sess)
                         return UploadBentoResponse(status=Status.OK())
             except BentoMLException as e:
                 logger.error("RPC ERROR UploadBento: %s", e)
@@ -681,8 +680,6 @@ def get_yatai_service_impl(base=object):
             finally:
                 if file is not None:
                     file.close()
-                if lock_obj is not None:
-                    lock_obj.release(sess)
 
         def DownloadBento(self, request, context=None):
             if not is_file_system_repo(self.repo):
@@ -698,11 +695,10 @@ def get_yatai_service_impl(base=object):
                     bento_pb = self.db.metadata_store.get(
                         sess, request.bento_name, request.bento_version
                     )
-                    responses_generator = BentoBundleStreamRequestsOrResponses(
+                    responses_generator = DownloadBentoStreamResponses(
                         bento_name=request.bento_name,
                         bento_version=request.bento_version,
                         directory_path=bento_pb.uri.uri,
-                        is_request=False,
                     )
                     for response in responses_generator:
                         yield response

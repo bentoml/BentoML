@@ -30,7 +30,7 @@ class FileStream:
             self.buffer = io.BytesIO()
 
 
-class BentoBundleStreamRequestsOrResponses:
+class _BentoBundleStreamRequestsOrResponses:
     def __init__(
         self,
         bento_name,
@@ -154,3 +154,37 @@ class BentoBundleStreamRequestsOrResponses:
             self.is_request,
         )
         self.out_stream.close()
+
+
+class UploadBentoStreamRequests(_BentoBundleStreamRequestsOrResponses):
+    def __init__(
+        self,
+        bento_name,
+        bento_version,
+        directory_path,
+        file_chunk_size=DEFAULT_FILE_CHUNK_SIZE,
+    ):
+        super().__init__(
+            bento_name=bento_name,
+            bento_version=bento_version,
+            directory_path=directory_path,
+            file_chunk_size=file_chunk_size,
+            is_request=True,
+        )
+
+
+class DownloadBentoStreamResponses(_BentoBundleStreamRequestsOrResponses):
+    def __init__(
+        self,
+        bento_name,
+        bento_version,
+        directory_path,
+        file_chunk_size=DEFAULT_FILE_CHUNK_SIZE,
+    ):
+        super().__init__(
+            bento_name=bento_name,
+            bento_version=bento_version,
+            directory_path=directory_path,
+            file_chunk_size=file_chunk_size,
+            is_request=False,
+        )

@@ -47,7 +47,7 @@ from bentoml.yatai.proto.repository_pb2 import (
 )
 from bentoml.yatai.proto import status_pb2
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.yatai.grpc_stream_utils import BentoBundleStreamRequestsOrResponses
+from bentoml.yatai.grpc_stream_utils import UploadBentoStreamRequests
 from bentoml.saved_bundle import (
     save_to_dir,
     load_bento_service_metadata,
@@ -287,7 +287,6 @@ class BentoRepositoryAPIClient:
     def _update_bento_upload_progress(
         self, bento_service_metadata, status=UploadStatus.DONE, percentage=None
     ):
-        # TODO separate update upload progress and bento metadata.
         upload_status = UploadStatus(status=status, percentage=percentage)
         upload_status.updated_at.GetCurrentTime()
         update_bento_req = UpdateBentoRequest(
@@ -587,11 +586,10 @@ class BentoRepositoryAPIClient:
 
     def _upload_bento(self, bento_name, bento_version, saved_bento_bundle_path):
         try:
-            streaming_request_generator = BentoBundleStreamRequestsOrResponses(
+            streaming_request_generator = UploadBentoStreamRequests(
                 bento_name=bento_name,
                 bento_version=bento_version,
                 directory_path=saved_bento_bundle_path,
-                is_request=True,
             )
             result = self.yatai_service.UploadBento(
                 iter(streaming_request_generator,), timeout=DEFAULT_REQUEST_TIMEOUT,

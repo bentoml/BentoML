@@ -595,8 +595,9 @@ def get_yatai_service_impl(base=object):
         def UploadBento(self, request_iterator, context=None):
             if not is_file_system_repo(self.repo):
                 logger.error(
-                    "Yatai only supports file system repository for uploading "
-                    "at the moment"
+                    "UploadBento RPC only works with File System based repository, "
+                    "for other types of repositories(s3, gcs, minio), "
+                    "use pre-signed URL for upload"
                 )
                 return UploadBentoResponse(status=Status.INTERNAL(''))
             try:
@@ -611,11 +612,9 @@ def get_yatai_service_impl(base=object):
                         for request in request_iterator:
                             # Initial request is without bundle
                             if not request.bento_bundle:
-                                print('in init request')
                                 bento_name = request.bento_name
                                 bento_version = request.bento_version
                                 if lock_obj is None:
-                                    print('we are getting lock obj')
                                     lock_obj = LockStore.acquire(
                                         sess=sess,
                                         lock_type=LockType.WRITE,
@@ -673,8 +672,9 @@ def get_yatai_service_impl(base=object):
         def DownloadBento(self, request, context=None):
             if not is_file_system_repo(self.repo):
                 logger.error(
-                    "Yatai only supports file system repository for download at the "
-                    "moment"
+                    "DownloadBento RPC only works with File System based repository, "
+                    "for other types of repositories(s3, gcs, minio), "
+                    "use pre-signed URL for download"
                 )
                 return DownloadBentoResponse(status=Status.INTERNAL(''))
             bento_id = f"{request.bento_name}_{request.bento_version}"

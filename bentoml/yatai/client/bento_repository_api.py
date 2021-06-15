@@ -222,6 +222,9 @@ class BentoRepositoryAPIClient:
                 )
                 self.yatai_service.UpdateBento(update_bento_service)
             else:
+                # Yatai with FS repo created the directory path during the
+                # `AddBento` call. For the local yatai case, both share the same FS,
+                # remove the path if exists
                 if os.path.exists(response.uri.uri):
                     # due to copytree dst must not already exist
                     shutil.rmtree(response.uri.uri)

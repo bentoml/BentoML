@@ -405,6 +405,10 @@ class MarshalService:
                         status=500, body=b"Cancelled before upstream responses"
                     ),
                 )
+            except asyncio.TimeoutError as e:
+                raise RemoteException(
+                    e, payload=HTTPResponse(status=408, body=b"Request timeout"),
+                )
 
             if resp.status != 200:
                 raise RemoteException(

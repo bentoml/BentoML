@@ -273,7 +273,7 @@ class MarshalService:
             _func = dispatcher(
                 functools.partial(self._batch_handler_template, api_route=api_route)
             )
-            self.cleanup_tasks.append(dispatcher.cleanup)
+            self.cleanup_tasks.append(dispatcher.shutdown)
             self.batch_handlers[api_route] = _func
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):

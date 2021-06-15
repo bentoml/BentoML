@@ -120,7 +120,7 @@ class CorkDispatcher:
         self._queue = collections.deque()  # TODO(hrmthw): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
-    async def cleanup(self):
+    async def shutdown(self):
         if self._controller is not None:
             self._controller.cancel()
         try:

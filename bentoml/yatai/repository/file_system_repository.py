@@ -59,9 +59,6 @@ class FileSystemRepository(BaseRepository):
                 )
             )
 
-        # Create target directory for upload
-        os.mkdir(target_dir)
-
         return BentoUri(type=self.uri_type, uri=target_dir)
 
     def get(self, bento_name, bento_version):

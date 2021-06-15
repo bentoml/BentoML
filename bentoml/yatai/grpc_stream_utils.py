@@ -26,7 +26,8 @@ class FileStream:
         try:
             return self.buffer.getvalue()
         finally:
-            self.buffer.flush()
+            self.buffer.close()
+            self.buffer = io.BytesIO()
 
 
 class _BentoBundleStreamRequestsOrResponses:

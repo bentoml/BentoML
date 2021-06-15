@@ -17,3 +17,4 @@ CLI Reference
     filesystem
     gRPC
     ec
+    gcs

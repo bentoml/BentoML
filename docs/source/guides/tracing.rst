@@ -66,4 +66,10 @@ Similarly when serving with BentoML API server docker image, assuming you have a
 
 BentoML has already implemented basic tracing information for its micro-batching server
 and model server. If there's additional tracing that you'd like to add to your BentoML
+
 model server, you may import
+
+
+.. spelling::
+
+    opentracing

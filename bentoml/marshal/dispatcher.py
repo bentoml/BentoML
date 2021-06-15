@@ -123,7 +123,6 @@ class CorkDispatcher:
     async def cleanup(self):
         if self._controller is not None:
             self._controller.cancel()
-            await asyncio.sleep(0)
         try:
             while True:
                 _, _, fut = self._queue.pop()

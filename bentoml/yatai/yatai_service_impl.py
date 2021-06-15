@@ -614,13 +614,6 @@ def get_yatai_service_impl(base=object):
                             if not request.bento_bundle:
                                 bento_name = request.bento_name
                                 bento_version = request.bento_version
-                                if lock_obj is None:
-                                    lock_obj = LockStore.acquire(
-                                        sess=sess,
-                                        lock_type=LockType.WRITE,
-                                        resource_id=f'{bento_name}_{bento_version}',
-                                        ttl_min=DEFAULT_TTL_MIN,
-                                    )
                                 bento_pb = self.db.metadata_store.get(
                                     sess, bento_name, bento_version
                                 )
@@ -630,9 +623,31 @@ def get_yatai_service_impl(base=object):
                                             bento_name, bento_version
                                         )
                                     )
-                                    lock_obj.release(sess)
-                                    file.close()
                                     return UploadBentoResponse(status=result_status)
+                                if bento_pb.upload_status.status == UploadStatus.DONE:
+                                    return UploadStatus(
+                                        status=Status.CANCELLED(
+                                            f"Bento bundle `{bento_name}:"
+                                            f"{bento_version}` is uploaded"
+                                        )
+                                    )
+                                if (
+                                    bento_pb.upload_status.status
+                                    == UploadStatus.UPLOADING
+                                ):
+                                    return UploadStatus(
+                                        status=Status.CANCELLED(
+                                            f"Bento bundle `{bento_name}:"
+                                            f"{bento_version}` is currently uploading"
+                                        )
+                                    )
+                                if lock_obj is None:
+                                    lock_obj = LockStore.acquire(
+                                        sess=sess,
+                                        lock_type=LockType.WRITE,
+                                        resource_id=f'{bento_name}_{bento_version}',
+                                        ttl_min=DEFAULT_TTL_MIN,
+                                    )
                             else:
                                 if (
                                     bento_name == request.bento_name
@@ -656,8 +671,6 @@ def get_yatai_service_impl(base=object):
                         self.db.metadata_store.update_upload_status(
                             sess, bento_name, bento_version, upload_status
                         )
-                        lock_obj.release(sess)
-                        file.close()
                         return UploadBentoResponse(status=Status.OK())
             except BentoMLException as e:
                 logger.error("RPC ERROR UploadBento: %s", e)
@@ -666,8 +679,10 @@ def get_yatai_service_impl(base=object):
                 logger.error("RPC ERROR UploadBento: %s", e)
                 return UploadBentoResponse(status=Status.INTERNAL())
             finally:
-                file.close()
-                lock_obj.release(sess)
+                if file is not None:
+                    file.close()
+                if lock_obj is not None:
+                    lock_obj.release(sess)
 
         def DownloadBento(self, request, context=None):
             if not is_file_system_repo(self.repo):

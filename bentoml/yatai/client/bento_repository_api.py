@@ -205,7 +205,9 @@ class BentoRepositoryAPIClient:
             )
 
         if response.uri.type == BentoUri.LOCAL:
-            # For remote yatai service, call upload method.
+            # When using Yatai backed by File System repository,
+            # if Yatai is a local instance, copy the files directly.
+            # Otherwise, use UploadBento RPC to stream files to remote Yatai server
             if is_remote_yatai(self.yatai_service):
                 self._upload_bento(
                     bento_service_metadata.name,

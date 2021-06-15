@@ -31,7 +31,7 @@ def wait_until_container_ready(docker_container, timeout_seconds=120):
 
 
 @contextlib.contextmanager
-def local_yatai_service_container(db_url=None, repo_base_url=None):
+def yatai_service_container(db_url=None, repo_base_url=None):
     ensure_docker_available_or_raise()
     docker_client = docker.from_env()
     local_bentoml_repo_path = os.path.abspath(__file__ + "/../../../")

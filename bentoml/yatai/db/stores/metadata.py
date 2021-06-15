@@ -109,7 +109,7 @@ def _bento_orm_obj_to_pb(bento_obj, labels=None):
         upload_status = DEFAULT_UPLOAD_STATUS
     else:
         upload_status = UploadStatus(
-            status=UploadStatus.Status.Value(bento_obj.upload_status.status)
+            status=UploadStatus.Status.Value(bento_obj.upload_status['status'])
         )
     if labels is not None:
         bento_service_metadata_pb.labels.update(labels)

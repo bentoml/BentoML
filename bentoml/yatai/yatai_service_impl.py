@@ -57,6 +57,7 @@ from bentoml.exceptions import (
     BentoMLException,
     InvalidArgument,
     YataiRepositoryException,
+    BadInput,
 )
 from bentoml.yatai.repository.base_repository import BaseRepository
 from bentoml.yatai.db import DB
@@ -636,7 +637,8 @@ def get_yatai_service_impl(base=object):
                                         return UploadStatus(
                                             status=Status.CANCELLED(
                                                 f"Bento bundle `{bento_name}:"
-                                                f"{bento_version}` is currently uploading"
+                                                f"{bento_version}` is currently "
+                                                f"uploading"
                                             )
                                         )
                                 if lock_obj is None:
@@ -654,7 +656,7 @@ def get_yatai_service_impl(base=object):
                                     file.write(request.bento_bundle)
                                 else:
                                     lock_obj.release(sess)
-                                    raise BentoMLException(
+                                    raise BadInput(
                                         f"Incoming stream request doesn't match "
                                         f"with initial request info "
                                         f"{bento_name}:{bento_version} - "
@@ -698,7 +700,7 @@ def get_yatai_service_impl(base=object):
                     responses_generator = DownloadBentoStreamResponses(
                         bento_name=request.bento_name,
                         bento_version=request.bento_version,
-                        directory_path=bento_pb.uri.uri,
+                        bento_bundle_path=bento_pb.uri.uri,
                     )
                     for response in responses_generator:
                         yield response

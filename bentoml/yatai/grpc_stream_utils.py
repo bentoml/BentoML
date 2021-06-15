@@ -26,8 +26,7 @@ class FileStream:
         try:
             return self.buffer.getvalue()
         finally:
-            self.buffer.close()
-            self.buffer = io.BytesIO()
+            self.buffer.flush()
 
 
 class _BentoBundleStreamRequestsOrResponses:
@@ -35,7 +34,7 @@ class _BentoBundleStreamRequestsOrResponses:
         self,
         bento_name,
         bento_version,
-        directory_path,
+        bento_bundle_path,
         file_chunk_size=DEFAULT_FILE_CHUNK_SIZE,
         is_request=True,
     ):
@@ -46,13 +45,13 @@ class _BentoBundleStreamRequestsOrResponses:
         Args:
             bento_name:
             bento_version:
-            directory_path:
+            bento_bundle_path:
             file_chunk_size:
             is_request:
         """
         self.bento_name = bento_name
         self.bento_version = bento_version
-        self.directory_path = directory_path
+        self.directory_path = bento_bundle_path
         self.file_chunk_size = file_chunk_size
         self.is_request = is_request
         self.sent_init_message = False
@@ -161,13 +160,13 @@ class UploadBentoStreamRequests(_BentoBundleStreamRequestsOrResponses):
         self,
         bento_name,
         bento_version,
-        directory_path,
+        bento_bundle_path,
         file_chunk_size=DEFAULT_FILE_CHUNK_SIZE,
     ):
         super().__init__(
             bento_name=bento_name,
             bento_version=bento_version,
-            directory_path=directory_path,
+            bento_bundle_path=bento_bundle_path,
             file_chunk_size=file_chunk_size,
             is_request=True,
         )
@@ -178,13 +177,13 @@ class DownloadBentoStreamResponses(_BentoBundleStreamRequestsOrResponses):
         self,
         bento_name,
         bento_version,
-        directory_path,
+        bento_bundle_path,
         file_chunk_size=DEFAULT_FILE_CHUNK_SIZE,
     ):
         super().__init__(
             bento_name=bento_name,
             bento_version=bento_version,
-            directory_path=directory_path,
+            bento_bundle_path=bento_bundle_path,
             file_chunk_size=file_chunk_size,
             is_request=False,
         )

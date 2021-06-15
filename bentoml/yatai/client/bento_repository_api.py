@@ -60,7 +60,8 @@ from bentoml.yatai.status import Status
 logger = logging.getLogger(__name__)
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
-DEFAULT_REQUEST_TIMEOUT = 6
+# Default timeout in seconds per grpc request.
+DEFAULT_GRPC_REQUEST_TIMEOUT = 6
 
 
 def is_remote_yatai(yatai_service):
@@ -589,10 +590,11 @@ class BentoRepositoryAPIClient:
             streaming_request_generator = UploadBentoStreamRequests(
                 bento_name=bento_name,
                 bento_version=bento_version,
-                directory_path=saved_bento_bundle_path,
+                bento_bundle_path=saved_bento_bundle_path,
             )
             result = self.yatai_service.UploadBento(
-                iter(streaming_request_generator,), timeout=DEFAULT_REQUEST_TIMEOUT,
+                iter(streaming_request_generator,),
+                timeout=DEFAULT_GRPC_REQUEST_TIMEOUT,
             )
             if result.status.status_code != status_pb2.Status.OK:
                 raise BentoMLException(result.status.error_message)
@@ -613,20 +615,19 @@ class BentoRepositoryAPIClient:
                     DownloadBentoRequest(
                         bento_name=bento_name, bento_version=bento_version
                     ),
-                    timeout=DEFAULT_REQUEST_TIMEOUT,
+                    timeout=DEFAULT_GRPC_REQUEST_TIMEOUT,
                 )
-                file = open(temp_tar_path, 'wb+')
-                for response in response_iterator:
-                    if response.status.status_code != status_pb2.Status.OK:
-                        raise BentoMLException(response.status.error_message)
-                    file.write(response.bento_bundle)
-                file.seek(0)
-                temp_bundle_path = os.path.join(
-                    temp_dir, f'{bento_name}_{bento_version}'
-                )
-                with tarfile.open(fileobj=file, mode='r') as tar:
-                    tar.extractall(path=temp_bundle_path)
-                file.close()
+                with open(temp_tar_path, 'wb+') as file:
+                    for response in response_iterator:
+                        if response.status.status_code != status_pb2.Status.OK:
+                            raise BentoMLException(response.status.error_message)
+                        file.write(response.bento_bundle)
+                    file.seek(0)
+                    temp_bundle_path = os.path.join(
+                        temp_dir, f'{bento_name}_{bento_version}'
+                    )
+                    with tarfile.open(fileobj=file, mode='r') as tar:
+                        tar.extractall(path=temp_bundle_path)
                 return temp_bundle_path
             except grpc.RpcError as e:
                 raise BentoMLRpcError(

@@ -23,7 +23,7 @@ async def test_api_echo_json(host):
         )
 
 
-@pytest.since_bentoml_version("0.12.1+0")
+@pytest.since_bentoml_version("0.12.1+0", skip_by_default=True)
 @pytest.mark.asyncio
 async def test_api_echo_json_ensure_ascii(host):
     for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):

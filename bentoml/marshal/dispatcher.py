@@ -120,6 +120,16 @@ class CorkDispatcher:
         self._queue = collections.deque()  # TODO(hrmthw): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
+    async def shutdown(self):
+        if self._controller is not None:
+            self._controller.cancel()
+        try:
+            while True:
+                _, _, fut = self._queue.pop()
+                fut.cancel()
+        except IndexError:
+            pass
+
     @cached_property
     def _loop(self):
         return asyncio.get_event_loop()
@@ -186,7 +196,7 @@ class CorkDispatcher:
             except Exception:  # pylint: disable=broad-except
                 logger.error(traceback.format_exc())
 
-    async def inbound_call(self, data) -> asyncio.Future:
+    async def inbound_call(self, data):
         t = time.time()
         future = self._loop.create_future()
         input_info = (t, data, future)

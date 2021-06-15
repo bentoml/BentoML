@@ -120,6 +120,17 @@ class CorkDispatcher:
         self._queue = collections.deque()  # TODO(hrmthw): maxlen
         self._sema = shared_sema if shared_sema else NonBlockSema(1)
 
+    async def cleanup(self):
+        if self._controller is not None:
+            self._controller.cancel()
+            await asyncio.sleep(0)
+        try:
+            while True:
+                _, _, fut = self._queue.pop()
+                fut.cancel()
+        except IndexError:
+            pass
+
     @cached_property
     def _loop(self):
         return asyncio.get_event_loop()

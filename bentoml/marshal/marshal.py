@@ -184,6 +184,7 @@ class MarshalService:
         self.mb_max_latency = mb_max_latency
         self.batch_handlers = dict()
         self._outbound_sema = None  # the semaphore to limit outbound connections
+        self._cleanup_tasks = None
         self.max_request_size = max_request_size
 
         self.enable_access_control = enable_access_control
@@ -207,6 +208,19 @@ class MarshalService:
             "or launch more microbatch instances to accept more concurrent connection.",
             self.CONNECTION_LIMIT,
         )
+
+    @property
+    def cleanup_tasks(self):
+        if self._cleanup_tasks is None:
+            self._cleanup_tasks = []
+        return self._cleanup_tasks
+
+    async def cleanup(self, _):
+        # clean up futures for gracefully shutting down
+        for task in self.cleanup_tasks:
+            await task()
+        if getattr(self, '_client', None) is not None and not self._client.closed:
+            await self._client.close()
 
     def set_outbound_port(self, outbound_port):
         self.outbound_port = outbound_port
@@ -239,14 +253,6 @@ class MarshalService:
             )
         return self._client
 
-    def __del__(self):
-        loop = asyncio.get_event_loop()
-        if getattr(self, '_client', None) is not None and not self._client.closed:
-            loop.create_task(self._client.close())
-
-        # https://docs.aiohttp.org/en/stable/client_advanced.html#graceful-shutdown
-        loop.create_task(asyncio.sleep(0))
-
     def add_batch_handler(self, api_route, max_latency, max_batch_size):
         '''
         Params:
@@ -258,12 +264,16 @@ class MarshalService:
         from aiohttp.web import HTTPTooManyRequests
 
         if api_route not in self.batch_handlers:
-            _func = CorkDispatcher(
+            dispatcher = CorkDispatcher(
                 max_latency,
                 max_batch_size,
                 shared_sema=self.fetch_sema(),
                 fallback=HTTPTooManyRequests,
-            )(functools.partial(self._batch_handler_template, api_route=api_route))
+            )
+            _func = dispatcher(
+                functools.partial(self._batch_handler_template, api_route=api_route)
+            )
+            self.cleanup_tasks.append(dispatcher.cleanup)
             self.batch_handlers[api_route] = _func
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
@@ -367,6 +377,7 @@ class MarshalService:
                 client = self.get_client()
                 async with client.post(api_url, data=reqs_s, headers=headers) as resp:
                     raw = await resp.read()
+                await asyncio.sleep(0)
             except ClientConnectionError as e:
                 raise RemoteException(
                     e, payload=HTTPResponse.new(status=503, body=b"Service Unavailable")
@@ -405,6 +416,7 @@ class MarshalService:
             methods.remove(hdrs.METH_OPTIONS)
 
         app = Application(client_max_size=self.max_request_size)
+        app.on_cleanup.append(self.cleanup)
 
         for method in methods:
             app.router.add_route(method, "/", self.relay_handler)

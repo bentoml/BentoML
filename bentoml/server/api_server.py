@@ -27,10 +27,10 @@ from bentoml.configuration import get_debug_mode
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
 from bentoml.server.instruments import InstrumentMiddleware
-from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.service import BentoService, InferenceAPI
 from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest
+from bentoml.utils.open_api import get_open_api_spec_json
 
 CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
 

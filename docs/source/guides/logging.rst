@@ -15,7 +15,7 @@ the console and file system under :code:`$BENTOML_HOME/logs` directory by defaul
 1. Basic Logging Configuration
 ------------------------------
 
-BentoML supports basic logging configuring undder the :code:`logging` section of the configuration.
+BentoML supports basic logging configuring under the :code:`logging` section of the configuration.
 
 .. code-block:: yaml
     :caption: BentoML Configuration
@@ -185,3 +185,9 @@ Please see below configuration examples of different logging scenarios in YAML f
                         propagate: False
 
 Refer to the :ref:`configuration guide <configuration-page>` on how override configuration properties.
+
+
+.. spelling::
+
+    opentracing
+

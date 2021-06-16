@@ -105,6 +105,12 @@ def _bento_orm_obj_to_pb(bento_obj, labels=None):
     bento_uri = BentoUri(
         uri=bento_obj.uri, type=BentoUri.StorageType.Value(bento_obj.uri_type)
     )
+    if not bento_obj.upload_status:
+        upload_status = DEFAULT_UPLOAD_STATUS
+    else:
+        upload_status = UploadStatus(
+            status=UploadStatus.Status.Value(bento_obj.upload_status['status'])
+        )
     if labels is not None:
         bento_service_metadata_pb.labels.update(labels)
     return BentoPB(
@@ -112,6 +118,7 @@ def _bento_orm_obj_to_pb(bento_obj, labels=None):
         version=bento_obj.version,
         uri=bento_uri,
         bento_service_metadata=bento_service_metadata_pb,
+        status=upload_status,
     )
 
 

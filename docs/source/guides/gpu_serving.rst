@@ -7,22 +7,22 @@ tasks, as shown `by NVIDIA <https://www.nvidia.com/content/tegra/embedded-system
 
 Almost every deep learning frameworks (Tensorflow, PyTorch, ONNX, etc.) have supports for GPU, this guide demonstrates how to serve your ``BentoService`` with GPU.
 
-1. Prerequisite
----------------
+Prerequisite
+------------
 
 - ``GNU/Linux x86_64`` with kernel version ``>=3.10``. (``uname -a`` to check)
 - Docker >=19.03
 - NVIDIA GPU that has compute capability ``>=3.0`` (find yours `from NVIDIA <https://developer.nvidia.com/cuda-gpus>`_)
 
 
-1.1 NVIDIA Drivers
-^^^^^^^^^^^^^^^^^^
+NVIDIA Drivers
+^^^^^^^^^^^^^^
 Make sure you have installed NVIDIA driver for your Linux distribution. The recommended way to install drivers is to use the package manager of your distribution but other alternatives are also `available <https://www.nvidia.com/Download/index.aspx?lang=en-us>`_.
 
 For instruction on how to use your package manager to install drivers from CUDA network repository, follow this `guide <https://docs.nvidia.com/datacenter/tesla/tesla-installation-notes/index.html>`_.
 
-1.2 NVIDIA Container Toolkit
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NVIDIA Container Toolkit
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. seealso::
     NVIDIA provides `detailed instructions <https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker>`_ for installing both ``Docker CE`` and ``nvidia-docker``.
@@ -47,7 +47,7 @@ General workaround (Recommended)
                        --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
                        --device /dev/nvidia-modeset --device /dev/nvidiactl <docker-args>
 
-    If one choose to make use of :code:`Makefile`_ then add the following:
+    If one choose to make use of ``Makefile`` then add the following:
 
     .. code-block::
 
@@ -85,8 +85,8 @@ docker-compose
           - /dev/nvidia-uvm:/dev/nvidia-uvm
           - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
 
-2. Framework Support for GPU Inference with Implementation
-----------------------------------------------------------
+Framework Support for GPU Inference with Implementation
+-------------------------------------------------------
 
 Jump to :ref:`tensorflow-impl` | :ref:`pytorch-impl` | :ref:`onnx-impl`
 
@@ -96,8 +96,8 @@ Jump to :ref:`tensorflow-impl` | :ref:`pytorch-impl` | :ref:`onnx-impl`
 
 .. seealso:: Please refers to BentoML's `gallery <https://github.com/bentoml/gallery>`_ for more detailed use-case on GPU Serving.
 
-2.1 Preface
-^^^^^^^^^^^
+Preface
+^^^^^^^
 
 .. warning::
     As of **0.13.0**, Multiple GPUs Inference is currently not supported. (However, it is within our future roadmap to provide support for such feature)
@@ -108,25 +108,26 @@ Jump to :ref:`tensorflow-impl` | :ref:`pytorch-impl` | :ref:`onnx-impl`
     .. code-block:: bash
 
         # BentoService is running in another session
-        $ nvidia-smi
-        Thu Jun  3 17:02:06 2021
+        » nvidia-smi
+        Thu Jun 10 15:30:28 2021
         +-----------------------------------------------------------------------------+
-        | NVIDIA-SMI 465.31       Driver Version: 465.31       CUDA Version: 11.3          |
+        | NVIDIA-SMI 465.31       Driver Version: 465.31       CUDA Version: 11.3     |
         |-------------------------------+----------------------+----------------------+
-        | GPU  Name        Persistence-M  | Bus-Id        Disp.A    | Volatile Uncorr. ECC |
-        | Fan  Temp  Perf  Pwr:Usage/Cap |         Memory-Usage    | GPU-Util  Compute M. |
-        |                                     |                           |               MIG M.    |
+        | GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+        | Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+        |                               |                      |               MIG M. |
         |===============================+======================+======================|
-        |   0  NVIDIA GeForce ...  Off    | 00000000:01:00.0 Off  |                  N/A     |
-        | N/A   59C    P8    5W /  N/A     |      6MiB /  6078MiB   |      0%      Default    |
-        |                                     |                          |                  N/A     |
+        |   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |
+        | N/A   49C    P8     6W /  N/A |    753MiB /  6078MiB |      0%      Default |
+        |                               |                      |                  N/A |
         +-------------------------------+----------------------+----------------------+
+
         +-----------------------------------------------------------------------------+
-        | Processes:                                                                                |
-        |  GPU   GI   CI        PID   Type   Process name                       GPU Memory     |
-        |        ID   ID                                                            Usage           |
+        | Processes:                                                                  |
+        |  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+        |        ID   ID                                                   Usage      |
         |=============================================================================|
-        |    0   N/A  N/A      1418      G   /opt/conda/venv/bin/python       5781MiB        |
+        |    0   N/A  N/A    179346      C   /opt/conda/bin/python             745MiB |
         +-----------------------------------------------------------------------------+
 
 .. note::
@@ -151,8 +152,8 @@ Jump to :ref:`tensorflow-impl` | :ref:`pytorch-impl` | :ref:`onnx-impl`
     see :ref:`general-workaround` for ``$DEVICE_ARGS``.
 
 
-2.2 Docker Images Options
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Docker Images Options
+^^^^^^^^^^^^^^^^^^^^^
 
 Users have options to build their own customized docker images to serve with ``BentoService`` via ``@env(docker_base_images="")``.
 Make sure that your custom docker images have Python and CUDA library in order to run with GPU.
@@ -160,8 +161,8 @@ Make sure that your custom docker images have Python and CUDA library in order t
 BentoML also provides three `CUDA-enabled images <https://hub.docker.com/r/bentoml/model-server/tags?page=1&ordering=last_updated&name=gpu>`_
 with CUDA 11.3 and CUDNN 8.2.0 (refers to this `support matrix <https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html>`_ for CUDA and CUDNN version matching).
 
-2.3 Tensorflow
-^^^^^^^^^^^^^^
+Tensorflow
+^^^^^^^^^^
 
 .. note::
     If users want to utilize multiple GPUs while training, refers to Tensorflow's `distributed strategies <https://www.tensorflow.org/guide/distributed_training>`_.
@@ -245,8 +246,8 @@ Tensorflow Implementation
     saved_path = bento_svc.save()
 
 
-2.4 PyTorch
-^^^^^^^^^^^
+PyTorch
+^^^^^^^
 
 .. note::
     Since PyTorch bundled CUDNN and NCCL runtime with the python library the *RECOMMENDED* way to run your PyTorch service is to install PyTorch with conda
@@ -337,8 +338,8 @@ PyTorch Implementation
     bento_svc.pack("vocab", vocab)
     saved_path = bento_svc.save()
 
-2.5 ONNX
-^^^^^^^^
+ONNX
+^^^^
 
 User only need to install ``onnxruntime-gpu`` to be able to run their ONNX model with GPU. It will automatically fallback to CPU if no GPUs are found.
 
@@ -439,3 +440,11 @@ ONNX Implementation
     bento_svc.pack("tokenizer", tokenizer)
     bento_svc.pack("vocab", vocab)
     saved_path = bento_svc.save()
+
+
+
+.. spelling::
+
+    pythonic
+    mose
+    cuda

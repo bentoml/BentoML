@@ -64,16 +64,16 @@ the model is valid.  It uses `cloudpickle` to `save` and `load`.
 
     from my_model_artifact import MyModelArtifact
     from bentoml import BentoService, env, api, artifacts
-    from bentoml.adapters import JsonInputAdapter
+    from bentoml.adapters import JsonInput
     import bentoml
 
     @env(infer_pip_packages=True)
     @artifacts([MyModelArtifact('test_model')])
     class MyService(bentoml.BentoService):
 
-        @api(input=JsonInput, batch=False)
+        @api(input=JsonInput(), batch=False)
         def predict(self, input_data):
-            result = input_data['foo'] + self.artifacts.test_model['bar']
+            result = input_data['bar'] + self.artifacts.test_model['foo']
             return {'result': result}
 
 
@@ -103,6 +103,7 @@ In another terminal to make a `curl` request
       --request POST --data '{"bar": 1}' \
       http://localhost:5000/predict
 
+.. code-block:: shell
     # Output
     HTTP/1.0 400 BAD REQUEST
     X-Request-Id: cb63a61e-dc2a-4e12-a91c-8b15316a99df

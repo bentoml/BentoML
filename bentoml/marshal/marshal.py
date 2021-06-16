@@ -31,12 +31,14 @@ from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATE
 from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest, HTTPResponse
 
+
 logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
     from aiohttp_cors import ResourceOptions
-    from aiohttp.web import Application
+    from aiohttp.web import Application, Request
+    from aiohttp import BaseConnector, ClientSession
 
 
 def metrics_patch(cls):
@@ -172,7 +174,8 @@ class MarshalService:
     ):
         super().__init__(**kwargs)
 
-        self._client = None
+        self._conn: Optional["BaseConnector"] = None
+        self._client: Optional["ClientSession"] = None
         self.outbound_unix_socket = outbound_unix_socket
         self.outbound_host = outbound_host
         self.outbound_port = outbound_port
@@ -181,6 +184,7 @@ class MarshalService:
         self.mb_max_latency = mb_max_latency
         self.batch_handlers = dict()
         self._outbound_sema = None  # the semaphore to limit outbound connections
+        self._cleanup_tasks = None
         self.max_request_size = max_request_size
 
         self.enable_access_control = enable_access_control
@@ -205,6 +209,19 @@ class MarshalService:
             self.CONNECTION_LIMIT,
         )
 
+    @property
+    def cleanup_tasks(self):
+        if self._cleanup_tasks is None:
+            self._cleanup_tasks = []
+        return self._cleanup_tasks
+
+    async def cleanup(self, _):
+        # clean up futures for gracefully shutting down
+        for task in self.cleanup_tasks:
+            await task()
+        if getattr(self, '_client', None) is not None and not self._client.closed:
+            await self._client.close()
+
     def set_outbound_port(self, outbound_port):
         self.outbound_port = outbound_port
 
@@ -213,23 +230,28 @@ class MarshalService:
             self._outbound_sema = NonBlockSema(self.outbound_workers)
         return self._outbound_sema
 
-    def get_client(self):
-        from aiohttp import ClientSession, DummyCookieJar, UnixConnector, TCPConnector
+    def get_conn(self) -> "BaseConnector":
+        import aiohttp
 
-        if self._client is None:
-            jar = DummyCookieJar()
+        if self._conn is None or self._conn.closed:
             if self.outbound_unix_socket:
-                conn = UnixConnector(path=self.outbound_unix_socket,)
+                self._conn = aiohttp.UnixConnector(path=self.outbound_unix_socket,)
             else:
-                conn = TCPConnector(limit=30)
-            self._client = ClientSession(
-                connector=conn, auto_decompress=False, cookie_jar=jar,
+                self._conn = aiohttp.TCPConnector(limit=30)
+        return self._conn
+
+    def get_client(self):
+        import aiohttp
+
+        if self._client is None or self._client.closed:
+            jar = aiohttp.DummyCookieJar()
+            self._client = aiohttp.ClientSession(
+                connector=self.get_conn(),
+                auto_decompress=False,
+                cookie_jar=jar,
+                connector_owner=False,
             )
         return self._client
-
-    def __del__(self):
-        if getattr(self, '_client', None) is not None and not self._client.closed:
-            self._client.close()
 
     def add_batch_handler(self, api_route, max_latency, max_batch_size):
         '''
@@ -242,12 +264,16 @@ class MarshalService:
         from aiohttp.web import HTTPTooManyRequests
 
         if api_route not in self.batch_handlers:
-            _func = CorkDispatcher(
+            dispatcher = CorkDispatcher(
                 max_latency,
                 max_batch_size,
                 shared_sema=self.fetch_sema(),
                 fallback=HTTPTooManyRequests,
-            )(functools.partial(self._batch_handler_template, api_route=api_route))
+            )
+            _func = dispatcher(
+                functools.partial(self._batch_handler_template, api_route=api_route)
+            )
+            self.cleanup_tasks.append(dispatcher.shutdown)
             self.batch_handlers[api_route] = _func
 
     def setup_routes_from_pb(self, bento_service_metadata_pb):
@@ -270,7 +296,7 @@ class MarshalService:
                     max_batch_size,
                 )
 
-    async def request_dispatcher(self, request):
+    async def request_dispatcher(self, request: "Request"):
         from aiohttp.web import HTTPInternalServerError, Response
 
         with get_tracer().async_span(
@@ -355,6 +381,14 @@ class MarshalService:
                 raise RemoteException(
                     e, payload=HTTPResponse.new(status=503, body=b"Service Unavailable")
                 )
+            except asyncio.CancelledError as e:
+                raise RemoteException(
+                    e,
+                    payload=HTTPResponse(
+                        status=500, body=b"Cancelled before upstream responses"
+                    ),
+                )
+
             if resp.status != 200:
                 raise RemoteException(
                     f"Bad response status from model server:\n{resp.status}\n{raw}",
@@ -381,6 +415,7 @@ class MarshalService:
             methods.remove(hdrs.METH_OPTIONS)
 
         app = Application(client_max_size=self.max_request_size)
+        app.on_cleanup.append(self.cleanup)
 
         for method in methods:
             app.router.add_route(method, "/", self.relay_handler)

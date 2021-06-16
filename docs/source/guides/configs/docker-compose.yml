@@ -1,0 +1,66 @@
+version: '3.7'
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  shared-network:
+
+services:
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    ports:
+      - 9090:9090
+    networks:
+      - shared-network
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+      restart_policy:
+        condition: on-failure
+
+  grafana:
+    image: grafana/grafana
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.monitoring
+    networks:
+      - shared-network
+    user: "472" # we don't need to extend to root, so this make sure we are using grafana group (id 472)
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+      mode: global
+      restart_policy:
+        condition: on-failure
+
+  bentoml:
+    image: bentoml/fashion-mnist-classifier:latest
+    ports:
+      - "5000:5000"
+    networks:
+      - shared-network
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import NamedTuple, Tuple
+
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 UNARY = 'UNARY'

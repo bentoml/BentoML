@@ -115,4 +115,6 @@ The following adapter types are on our roadmap:
     numpy
     ndarray
     charset
+    dataframes
+    DataFrame
 

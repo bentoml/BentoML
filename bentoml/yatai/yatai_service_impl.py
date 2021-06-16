@@ -627,14 +627,14 @@ def get_yatai_service_impl(base=object):
                                     return UploadBentoResponse(status=result_status)
                                 if bento_pb.status:
                                     if bento_pb.status.status == UploadStatus.DONE:
-                                        return UploadStatus(
+                                        return UploadBentoResponse(
                                             status=Status.CANCELLED(
                                                 f"Bento bundle `{bento_name}:"
                                                 f"{bento_version}` is uploaded"
                                             )
                                         )
                                     if bento_pb.status.status == UploadStatus.UPLOADING:
-                                        return UploadStatus(
+                                        return UploadBentoResponse(
                                             status=Status.CANCELLED(
                                                 f"Bento bundle `{bento_name}:"
                                                 f"{bento_version}` is currently "

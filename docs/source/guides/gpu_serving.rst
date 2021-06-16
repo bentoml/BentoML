@@ -47,7 +47,7 @@ General workaround (Recommended)
                        --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools \
                        --device /dev/nvidia-modeset --device /dev/nvidiactl <docker-args>
 
-    If one choose to make use of ``Makefile`` then add the following:
+    If one chooses to make use of ``Makefile`` then adds the following:
 
     .. code-block::
 
@@ -65,13 +65,13 @@ Debian-based OS
 
         GRUB_CMDLINE_LINUX_DEFAULT="quiet systemd.unified_cgroup_hierarchy=0"
 
-Others OS
+Other OS
 """""""""
     Change ``#no-cgroups=false`` to ``no-cgroups=true`` under ``/etc/nvidia-container-runtime/config.toml``.
 
 docker-compose
 """"""""""""""
-    Added the following:
+    Add the following:
 
     .. code-block::
 
@@ -94,7 +94,7 @@ Jump to :ref:`tensorflow-impl` | :ref:`pytorch-impl` | :ref:`onnx-impl`
 .. note::
     The examples we show here are merely demonstration on how GPU inference works among different frameworks to avoid bloating the guide.
 
-.. seealso:: Please refers to BentoML's `gallery <https://github.com/bentoml/gallery>`_ for more detailed use-case on GPU Serving.
+.. seealso:: Please refers to BentoML's `gallery <https://github.com/bentoml/gallery>`_ for more detailed use-cases on GPU Serving.
 
 Preface
 ^^^^^^^
@@ -145,7 +145,7 @@ Preface
 
     .. code-block:: bash
 
-        # Start our container and check for GPU usages:
+        # start our container and check for GPU usages:
         $ docker run --gpus all ${DEVICE_ARGS} -p 5000:5000 tf_svc:latest --workers=2
 
 .. note::
@@ -173,7 +173,7 @@ TLDR, Tensorflow code with ``tf.keras`` model will run transparently on a single
 
     **NOT RECOMMEND** to manually set device placement unless you know what you are doing!
 
-        During training, if one choose to manually set device placement for specific operations, e.g:
+        During training, if one chooses to manually set device placement for specific operations, e.g:
 
         .. code-block:: python
 
@@ -194,7 +194,7 @@ TLDR, Tensorflow code with ``tf.keras`` model will run transparently on a single
                 ... # inference code goes here.
 
 .. note::
-    Tensorflow provides ``/GPU:{device_id}`` where ``device_id`` is our GPU/CPU ids. This is useful if you have a multiple CPUs/GPUs setup.
+    Tensorflow provides ``/GPU:{device_id}`` where ``device_id`` is our GPU/CPU id. This is useful if you have a multiple CPUs/GPUs setup.
     For most use-case ``/GPU:0`` will do the job.
 
     You can get the specific device with
@@ -250,12 +250,12 @@ PyTorch
 ^^^^^^^
 
 .. note::
-    Since PyTorch bundled CUDNN and NCCL runtime with the python library the *RECOMMENDED* way to run your PyTorch service is to install PyTorch with conda
+    Since PyTorch bundles CUDNN and NCCL runtime with the python library, the *RECOMMENDED* way to run your PyTorch service is to install PyTorch with conda
     via BentoML `@env <http://localhost:8000/api/bentoml.html#env>`_:
 
     .. code-block:: python
 
-        @env(conda_dependencies=['pytorch', 'torchtext', 'cudatoolkit=11.1'], conda_channels=['pytorch', 'nvidia'],
+        @env(conda_dependencies=['pytorch', 'torchtext', 'cudatoolkit=11.1'], conda_channels=['pytorch', 'nvidia'])
 
 PyTorch provides a more pythonic way to define device for our deep learning model. This can be used through training and inference tasks
 
@@ -341,10 +341,10 @@ PyTorch Implementation
 ONNX
 ^^^^
 
-User only need to install ``onnxruntime-gpu`` to be able to run their ONNX model with GPU. It will automatically fallback to CPU if no GPUs are found.
+Users only need to install ``onnxruntime-gpu`` to be able to run their ONNX model with GPU. It will automatically fallback to CPUs if no GPUs are found.
 
 .. note::
-    ONNX use-case is dependent on the base deep learning framework user choose to build their model on. This guide will provide
+    ONNX use-case is dependent on the base deep learning framework user chooses to build their model on. This guide will provide
     PyTorch to ONNX use-case. Contributions are welcome for others deep learning frameworks.
 
 User can check if GPU is running for their ``InferenceSession`` with ``get_providers()``:
@@ -423,7 +423,7 @@ ONNX Implementation
     #
     # an alexnet models will take in a 224x224 images so dummy inputs will have a static shape [3, 224,224].
     #
-    # however, our new categorization tasks requires a variable in length of our input variables, thus
+    # however, our new categorization task requires a variable in length of our input variables, thus
     # our dummy input should have a dynamic shape [vocab_size].
     #
     # ONNX also only takes torch.LongTensor or torch.cuda.LongTensor so remember to cast correctly.

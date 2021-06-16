@@ -1,0 +1,10 @@
+python_version:
+  - 3.6
+  - 3.7
+  - 3.8
+
+type:
+  - runtime
+  - devel
+  - slim
+  - gpu

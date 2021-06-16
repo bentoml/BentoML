@@ -1,4 +1,4 @@
-#  Copyright (c) 2021. Atalaya Tech, Inc.
+#  Copyright (c) 2021 Atalaya Tech, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -13,13 +13,3 @@
 #  limitations under the License.
 #  ==========================================================================
 #
-"""
-BentoML's Docker images builder
-
-- Assembles Dockerfile
-- Builds images
-- run integration tests
-- then push with the correct credentials.
-
-Refers to README.md for more information
-"""

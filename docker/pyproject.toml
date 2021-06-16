@@ -2,10 +2,12 @@
 name = "bentoml-docker"
 version = "0.1.0"
 description = "BentoML's Docker Images Management"
-authors = ["Aaron Pham <aaronpham0103@gmail.com>"]
+authors = ["BentoML Contributors<contact@bentoml.ai>"]
 
 [tool.poetry.dependencies]
 python = "^3.6"
+docker = "^5.0.0"
+Jinja2 = "^3.0.1"
 
 [tool.poetry.dev-dependencies]
 

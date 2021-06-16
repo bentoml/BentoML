@@ -27,4 +27,7 @@ def upgrade():
 
 
 def downgrade():
-    pass
+    with op.batch_alter_table('locks') as batch_op:
+        batch_op.alter_column(
+            column_name='resource_id', type_=sa.INTEGER, existing_type=sa.String
+        )

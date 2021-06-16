@@ -33,7 +33,9 @@ def test_yatai_server_with_postgres_and_gcs(postgres_db_container_url):
         ), 'BentoService storage type mismatched, expect GCS'
 
         logger.info('Validate BentoService prediction result')
-        run_result = execute_bentoml_run_command(bento_tag, '[]')
+        run_result = execute_bentoml_run_command(
+            bento_tag=bento_tag, data='[]', yatai_url=yatai_service_url
+        )
         assert 'cat' in run_result, 'Unexpected BentoService prediction result'
 
         logger.info(f'Deleting saved bundle {bento_tag}')

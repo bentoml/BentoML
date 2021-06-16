@@ -14,9 +14,10 @@
 
 import logging
 import multiprocessing
-from dependency_injector.wiring import inject, Provide
-from flask import Response
 from typing import Optional
+
+from dependency_injector.wiring import Provide, inject
+from flask import Response
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.saved_bundle import load_from_dir
@@ -96,7 +97,7 @@ def gunicorn_bento_server(
 
             self.options = {
                 "bind": self.bind,
-                "timeout": timeout,
+                "timeout": timeout,  # TODO
                 "limit_request_line": max_request_size,
                 "loglevel": loglevel.upper(),
             }

@@ -1,13 +1,3 @@
-FROM python:3.7-buster
-
-# YataiService GRPC port
-EXPOSE 50051
-
-# YataiService Web UI port
-EXPOSE 3000
-
-COPY entrypoint.sh /usr/local/bin/
-
 # Install Node, required by the Web UI Server
 # https://github.com/nodejs/docker-node/tree/4ef13799abb9bb37193be39621fedd52e0da6805/15/buster
 ENV NODE_VERSION 15.12.0
@@ -50,11 +40,3 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   # smoke tests
   && node --version \
   && npm --version
-
-# Build time argument - the BentoML version to be used in this image
-ARG BENTOML_VERSION
-ENV BENTOML_VERSION=$BENTOML_VERSION
-RUN pip install "bentoml[yatai_service]==$BENTOML_VERSION" --no-cache-dir
-
-ENTRYPOINT ["entrypoint.sh"]
-CMD ["bentoml", "yatai-service-start"]

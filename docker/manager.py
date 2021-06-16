@@ -12,4 +12,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #  ==========================================================================
-#
+
+from absl import flags
+
+UBUNTU_NAME_REVER = {
+    "focal": "20.04",
+    "bionic": "18.04",
+}
+
+DEBIAN_NAME_REVER = {
+    "buster": 10,
+    "bullseye": 11
+}

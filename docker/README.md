@@ -1,1 +1,0 @@
-# BentoML Docker Images Manager

@@ -1,0 +1,31 @@
+header: |
+  # syntax=docker/dockerfile:1.2
+  #
+  # ===========================================
+  #
+  # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
+
+releases:
+  devel:
+    spec:
+      - "{_PREFIX}{ubuntu-devel}"
+      - "{_PREFIX}{centos-devel}"
+  runtime:
+    spec:
+      - "{_PREFIX}{ubuntu}"
+      - "{_PREFIX}{debian}"
+      - "{_PREFIX}{centos}"
+      - "{_PREFIX}{amazonlinux}"
+      - "{_PREFIX}{alpine}"
+  dockerfiles:
+    target_dir: generated/
+
+components:
+    ubuntu:
+      - image_tag: focal
+        add_to_name: ""
+        args:
+        partials:
+        cuda:
+          - url_prefix:
+      - image_tag: bionic

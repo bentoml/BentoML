@@ -1,0 +1,65 @@
+notes:
+- GPU supports only for ubuntu, centos
+
+# of images:
+os : 9
+type: runtime - devel - slim - gpu
+python_version: 3.6 3.7 3.8
+->  images/release per package (model-server, yatai-service)
+->  only support x86_64 atm -> arm can add over dockerfile
+
+workflow:
+- base images
+    - ubuntu:
+        hirsute ([NS]: waiting for CUDA)
+        bionic (18.04)
+        focal (20.04)
+    - debian-slim:
+        bullseye (future release of Debian 11)
+        buster (Debian 10)
+    - centos
+        8
+        7
+    - alpine
+        3.14 -> latest
+    - amazonlinux
+        2
+
+- install deps:
+    curl bash gcc build-essential
+    - for gpu:
+        since we build from base -> install deps with correct hash?
+        cudnn & cublas
+        version:
+        https://developer.download.nvidia.com/compute/cuda/repos/ -> creates a structure for repo url
+
+- install conda via miniconda -> python from conda
+
+- setup node.js for yatai-service
+
+- install bentoml from pypi
+    dev -> git clone & install from source
+
+ci -> release nightly images
+
+image metadata:
+release:
+  nightly:
+   spec:
+
+  release:
+    spec:
+      # contains images release tag that compose of multiple components
+
+  dockerfile:
+    target_dir:
+    keep_previous: false # overwrite our current generated/ for newer release
+
+components:
+    os_name:
+      - add_to_name: "" # contributes to final image tag
+        exclusive:
+        args:
+        partials:
+
+devel for amazonlinux and centos

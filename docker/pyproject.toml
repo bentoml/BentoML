@@ -8,6 +8,9 @@ authors = ["BentoML Contributors<contact@bentoml.ai>"]
 python = "^3.6"
 docker = "^5.0.0"
 Jinja2 = "^3.0.1"
+cerebrus = "^0.2"
+PyYAML = "^5.4.1"
+absl-py = "^0.13.0"
 
 [tool.poetry.dev-dependencies]
 

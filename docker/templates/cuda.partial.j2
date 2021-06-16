@@ -1,3 +1,5 @@
+ARG CUDA={{ version }}
+
 # needed for string substitutions
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \

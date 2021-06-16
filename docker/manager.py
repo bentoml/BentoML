@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+#
+#  ==========================================================================
+#
 #  Copyright (c) 2021 Atalaya Tech, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +16,50 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #  ==========================================================================
+#
 
 from absl import flags
+import yaml
 
-UBUNTU_NAME_REVER = {
-    "focal": "20.04",
-    "bionic": "18.04",
-}
+NVIDIA_REPO_URL = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
+NVIDIA_ML_REPO_URL = "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
 
-DEBIAN_NAME_REVER = {
-    "buster": 10,
-    "bullseye": 11
-}
+SPEC_MANIFEST = """
+header: 
+
+releases:
+  model_server:
+    devel:
+      spec:
+        - "{_PREFIX}{ubuntu2004-devel}"
+        - "{_PREFIX}{centos8-devel}"
+    runtime:
+      spec:
+        - "{_PREFIX}{ubuntu-2004}"
+        - "{_PREFIX}{ubuntu-1804}"
+        - "{_PREFIX}{centos8}"
+        - "{_PREFIX}{amazonlinux2}"
+        - "{_PREFIX}{alpine-3.14}"
+    slim:
+      spec:
+        - "{_PREFIX}{debian10}"
+
+components:
+  ubuntu2004:
+    - base_image: ubuntu:focal
+    - add_to_name: ""
+      args:
+      partials:
+    - add_to_name: "gpu"
+      args:
+      partials:
+        -ubuntu/version
+      cuda:
+        - version: 11.3
+
+"""
+
+with open("manifests/specs.yml", 'r') as spec_file:
+    manifest = yaml.safe_load(spec_file)
+
+print(manifest)

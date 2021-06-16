@@ -3,13 +3,13 @@ Monitoring with Prometheus
 ==========================
 
 Monitoring stacks usually consist of a metrics collector, a time-series database to store metrics
-and a visualization layer. A popular stack is Prometheus_ with Grafana_ used as the visualization layer
+and a visualization layer. A popular stack of Prometheus_ with Grafana_ is used as the visualization layer
 to create rich dashboards.
 
 BentoML API server comes with Prometheus support out of the box. When launching an API model server with BentoML,
 whether it is running dev server locally or deployed with docker in the cloud, a ``/metrics`` endpoint will always
 be available, which includes the essential metrics for model serving and the ability to create
-and customize new metrics base on needs. This guide will introduce how you use Prometheus and Grafana to monitor
+and customize new metrics base on needs. This guide will introduce how to use Prometheus and Grafana to monitor
 your BentoService.
 
 Preface
@@ -32,13 +32,13 @@ Preface
 Local Deployment
 ----------------
 
-This section will walk you through how to setup the stack locally, with the optional guide on using ``docker-compose`` for easy deployment of the stack.
+This section will walk you through how to set up the stack locally, with the optional guide on using ``docker-compose`` for easy deployment of the stack.
 
 
 Setting up Prometheus
 ^^^^^^^^^^^^^^^^^^^^^
 
-It is recommended to run Prometheus with Docker . Please make sure that you have
+It is recommended to run Prometheus with Docker. Please make sure that you have
 `Docker <https://docs.docker.com/engine/install/>`_ installed on your system.
 
 Users can take advantage of having a ``prometheus.yml`` for configuration.
@@ -63,7 +63,7 @@ An example to monitor multiple BentoServices is shown below:
         - localhost:6000  # metrics from IrisClassifier service
 
 .. note::
-    In order to monitor multiple BentoServices, make sure to setup different ports for each BentoService and add
+    In order to monitor multiple BentoServices, make sure to set up different ports for each BentoService and add
     correct targets under ``static_configs`` as shown above.
 
 
@@ -75,10 +75,10 @@ We can then run Prometheus with the following:
     » docker run --network=host -v path/to/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
 
 .. note::
-    When deploying users can setup ``docker-compose`` and setup a shared network in order for ``prometheus`` to scrape
+    When deploying, users can set up ``docker-compose`` and a shared network in order for ``prometheus`` to scrape
     metrics from your BentoService. Please refers to :ref:`docker-compose`.
 
-Users can check |localhost-9090|_ to make sure prometheus is currently running.
+Users can check |localhost-9090|_ to make sure prometheus is running.
 In order to check if prometheus is scraping our BentoService, |9090-target|_ should show:
 
 .. _localhost-9090: http://localhost:9090/status
@@ -92,7 +92,7 @@ In order to check if prometheus is scraping our BentoService, |9090-target|_ sho
 Setting up Grafana
 ^^^^^^^^^^^^^^^^^^
 
-It is also recommended use Grafana with Docker.
+It is also recommended to use Grafana with Docker.
 
 .. code-block:: bash
 
@@ -104,7 +104,7 @@ To log in to Grafana for the first time:
 
     #. On the login page, enter ``admin`` for username and password.
 
-    #. Click Log in. If login is successful, then you will see a prompt to change the password.
+    #. Click Log in. If login is successful, you will see a prompt to change the password.
 
     #. Click OK on the prompt, then change your password.
 
@@ -126,14 +126,14 @@ explore given BentoService metrics by `importing dashboard <https://grafana.com/
 ======================
 
 .. warning::
-    Make sure to setup `Docker Swarm <https://docs.docker.com/engine/swarm/swarm-tutorial/#set-up>`_ before proceeding.
+    Make sure to set up `Docker Swarm <https://docs.docker.com/engine/swarm/swarm-tutorial/#set-up>`_ before proceeding.
 
 .. _docker-compose:
 .. include:: configs/README.rst
    :start-after: introduction-marker
    :end-before: not-exposed-marker
 
-content of ``docker-compose.yml``, example dashboard can be seen `here <https://snapshot.raintank.io/dashboard/snapshot/yZQSlxxQ7VPjBmTbnGOUxVyIkpLJqnU5>`_:
+content of ``docker-compose.yml``, a sample dashboard can be seen `here <https://snapshot.raintank.io/dashboard/snapshot/yZQSlxxQ7VPjBmTbnGOUxVyIkpLJqnU5>`_:
 
 .. code-block:: yaml
 
@@ -197,7 +197,7 @@ content of ``docker-compose.yml``, example dashboard can be seen `here <https://
         restart: on-failure
 
 .. seealso::
-    `Alertmanager <https://prometheus.io/docs/alerting/latest/alertmanager/>`_ and `cAdvisor <https://github.com/google/cadvisor>`_ to setup alerts as well as monitor container resources.
+    `Alertmanager <https://prometheus.io/docs/alerting/latest/alertmanager/>`_ and `cAdvisor <https://github.com/google/cadvisor>`_ to set up alerts as well as monitor container resources.
 
 .. seealso::
     `prom/node-exporter <https://github.com/prometheus/node_exporter>`_ for expose machine metrics.
@@ -205,11 +205,11 @@ content of ``docker-compose.yml``, example dashboard can be seen `here <https://
 
 ==============================
 
-Deploying on Kubernetes
+Deploy on Kubernetes
 -----------------------
 
 .. note::
-    `minikube <https://minikube.sigs.k8s.io/docs/start/>`_ and `kubectl <https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/>`_ is required for this part of the tutorial.
+    `minikube <https://minikube.sigs.k8s.io/docs/start/>`_ and `kubectl <https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/>`_ are required for this part of the tutorial.
     Users may also choose to install `virtualbox <https://www.virtualbox.org/>`_ in order to run minikube.
 
 .. seealso::
@@ -229,9 +229,9 @@ and make use of `prometheus-operator <https://github.com/prometheus-operator/pro
     kube-prometheus_
 
 .. warning::
-    Your local minikube cluster will be delete in order to setup ``kube-prometheus-stack`` correctly.
+    Your local minikube cluster will be delete in order to set up ``kube-prometheus-stack`` correctly.
 
-Setup virtualbox to be default driver for ``minikube``:
+Set up virtualbox to be default driver for ``minikube``:
 
 .. code-block:: bash
 
@@ -251,8 +251,8 @@ Spin up our local K8s cluster:
         --extra-config=controller-manager.address=0.0.0.0
 
 .. note::
-    We are allocate 6Gb of memory via ``--memory`` for this K8s cluster.
-    Change the value to whatever fits with your use-case.
+    We allocate 6Gb of memory via ``--memory`` for this K8s cluster.
+    Change the value to fit your use-case.
 
 Then get ``helm`` repo:
 
@@ -278,8 +278,8 @@ Once located the version, inspect the chart to modify the settings:
         > ./configs/deployment/kube-prometheus-stack.values
 
 
-Next, we need to change Prometheus server service type in order for us to access it from the browser,
-by changing our service type from ``ClusterIP`` to ``NodePort``. This enable Prometheus server to be accessible at your machine ``:30090``
+Next, we need to change Prometheus server service type in order to access it from the browser,
+by changing our service type from ``ClusterIP`` to ``NodePort``. This enables Prometheus server to be accessible at your machine ``:30090``
 
 .. code-block:: yaml
 
@@ -315,9 +315,9 @@ by changing our service type from ``ClusterIP`` to ``NodePort``. This enable Pro
         ##
         type: NodePort # changed this line from ClusterIP to NodePort
 
-By default, Prometheus discover |PodMonitors|_ and |ServiceMonitors|_ within its namespace, that are labeled with same release tags as ``prometheus-operator`` release.
+By default, Prometheus discovers |PodMonitors|_ and |ServiceMonitors|_ within its namespace, with same release tags labelled as ``prometheus-operator`` release.
 Since we want to Prometheus to discover our BentoService (refers to :ref:`custom-service-monitor`), we need to create a custom PodMonitors/ServiceMonitors to scrape metrics from our services. Thus, one
-way to do this is to allow Prometheus to discover all PodMonitors/ServiceMonitors within its name, without apply label filtering. Set the following options:
+way to do this is to allow Prometheus to discover all PodMonitors/ServiceMonitors within its name, without applying label filtering. Set the following options:
 
 .. code-block:: yaml
 
@@ -389,7 +389,7 @@ Check for service startup as part of the operator:
     bentoml       kube-prometheus-stack-1623502925-grafana                    ClusterIP   10.111.205.42    <none>        80/TCP                         5m25s
     bentoml       prometheus-operated                                         ClusterIP   None             <none>        9090/TCP                       5m8s
 
-As we can observe the Prometheus server is available at ``:30090``. Thus, open browser at ``http://<machine-ip-addr>:30090``.
+As we can observe that the Prometheus server is available at ``:30090``. Thus, open browser at ``http://<machine-ip-addr>:30090``.
 By default the Operator enables users to monitor our Kubernetes cluster.
 
 Using Grafana
@@ -397,7 +397,7 @@ Using Grafana
 
 Users can also launch the Grafana tools for visualization.
 
-There are two ways to dealing with exposing Grafana ports, either is recommended based on preference:
+There are two ways to deal with exposing Grafana ports, either is recommended based on preference:
 
 * :ref:`patching`.
 
@@ -408,7 +408,7 @@ There are two ways to dealing with exposing Grafana ports, either is recommended
 Patching Grafana Service
 """"""""""""""""""""""""
 
-By default, Every services in the Operator uses ``ClusterIP`` to expose the ports on which the service is accessible, including
+By default, Every services in the Operator uses ``ClusterIP`` to expose the ports where the service is accessible, including
 Grafana. This can be changed to a ``NodePort`` instead, so the page is accessible from the browser, similar to what we did earlier
 with Prometheus dashboard.
 
@@ -479,7 +479,7 @@ Grafana is listening at)
     Handling connection for 36745
 
 .. note::
-    If your cluster is setup on a cloud instance, e.g. AWS EC2, you might have to setup SSH tunnel between your local
+    If your cluster is set up on a cloud instance, e.g. AWS EC2, you might have to set up SSH tunnel between your local
     workstation and the instance using port forwarding to view Grafana tool in your own browser.
 
 Point to ``http://localhost:36745/`` to see Grafana login page using the same credentials.

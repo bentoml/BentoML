@@ -8,28 +8,31 @@ header: |
 releases:
   model_server:
     devel:
-      spec:
-        - "{_PREFIX}{ubuntu20.04}"
-        - "{_PREFIX}{centos8}"
-    runtime:
-      spec:
+      spec: &devel_spec
         - "{_PREFIX}{ubuntu20.04}"
         - "{_PREFIX}{ubuntu18.04}"
         - "{_PREFIX}{centos8}"
+        - "{_PREFIX}{centos7}"
+    runtime:
+      spec: &runtime_spec
+        - *devel_spec
         - "{_PREFIX}{amazonlinux2}"
         - "{_PREFIX}{alpine-3.14}"
-    slim:
+    slim: &slim_spec
       spec:
         - "{_PREFIX}{debian-10}"
   yatai_service:
     devel:
       spec:
+        - *devel_spec
     runtime:
       spec:
+        - *runtime_spec
     slim:
       spec:
+        - *slim_spec
 
-components:
+dist:
   ubuntu20.04:
     - base_image: ubuntu:focal
     - add_to_name: ""
@@ -38,7 +41,6 @@ components:
     - add_to_name: "gpu"
       args:
       partials:
-        - ubuntu/version
       cuda:
         - version: 11.3
   centos8:

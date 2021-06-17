@@ -59,7 +59,7 @@ components:
 
 """
 
-with open("manifests/specs.yml", 'r') as spec_file:
+with open("manifest.yml", 'r') as spec_file:
     manifest = yaml.safe_load(spec_file)
 
 print(manifest)

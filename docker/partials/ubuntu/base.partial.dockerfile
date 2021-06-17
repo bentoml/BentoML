@@ -1,4 +1,4 @@
-FROM ubuntu:${UBUNTU_VERSION} as os-base
+FROM ubuntu:${OS_VERSION} as os-base
 
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 

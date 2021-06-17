@@ -1,3 +1,9 @@
+# YataiService GRPC port
+EXPOSE 50051
+
+# YataiService Web UI port
+EXPOSE 3000
+
 # Install Node, required by the Web UI Server
 # https://github.com/nodejs/docker-node/tree/4ef13799abb9bb37193be39621fedd52e0da6805/15/buster
 ENV NODE_VERSION 15.12.0
@@ -40,3 +46,11 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   # smoke tests
   && node --version \
   && npm --version
+
+RUN pip install bentoml[yatai-service]==${BENTOML_VERSION} --no-cache-dir
+
+COPY tools/yatai-service/entrypoint.sh /usr/local/bin/
+
+ENTRYPOINT [ "entrypoint.sh" ]
+
+CMD ["bentoml", "yatai-service-start"]

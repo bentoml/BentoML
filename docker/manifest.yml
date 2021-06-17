@@ -5,32 +5,35 @@ header: |
   #
   # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
 
+# 0.13.1-py{3.8}-os-{gpu/slim}
+# 0.13.1-py{3.8}-os-{gpu}-cudnn
+# 0.13.1-py{3.8}-os-{gpu}
+
+
+# devel-py-os
+
+# 0.13.1-py{3.8}-alpine
 releases:
   model_server:
     devel:
       spec: &devel_spec
-        - "{_PREFIX}{ubuntu20.04}"
-        - "{_PREFIX}{ubuntu18.04}"
-        - "{_PREFIX}{centos8}"
-        - "{_PREFIX}{centos7}"
+        - "{_BENTO_VERSION}{ubuntu20.04}"
+        - "{_BENTO_VERSION}{ubuntu18.04}"
+        - "{_BENTO_VERSION}{centos8}"
+        - "{_BENTO_VERSION}{centos7}"
     runtime:
-      spec: &runtime_spec
+      spec:
         - *devel_spec
-        - "{_PREFIX}{amazonlinux2}"
-        - "{_PREFIX}{alpine-3.14}"
+        - "{_BENTO_VERSION}{amazonlinux2}"
+        - "{_BENTO_VERSION}{alpine-3.14}"
     slim: &slim_spec
       spec:
         - "{_PREFIX}{debian-10}"
   yatai_service:
-    devel:
-      spec:
-        - *devel_spec
     runtime:
       spec:
-        - *runtime_spec
-    slim:
-      spec:
-        - *slim_spec
+        - "{_PREFIX}{centos8}"
+        - "{_PREFIX}{ubuntu20.04}"
 
 dist:
   ubuntu20.04:
@@ -40,9 +43,15 @@ dist:
       partials:
     - add_to_name: "gpu"
       args:
+        - CUDA_VERSION: 11.3.1
+        - CUDNN_VERSION: 8.2
       partials:
-      cuda:
-        - version: 11.3
+        - base os
+        - deps
+        - gpu
+        - ubuntu/conda
+        - bentoml
+        - shell
   centos8:
     - base_image: ubuntu:focal
     - add_to_name: ""
@@ -52,5 +61,4 @@ dist:
       args:
       partials:
       cuda:
-        - override_namespace: "rhel8"
         - version: 11.3

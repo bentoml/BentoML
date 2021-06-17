@@ -1,6 +1,8 @@
-FROM ${BASE_IMAGE} as builder
+FROM os-base as conda-builder
+
 ENV PATH /opt/conda/bin:$PATH
 
+# we will install conda and python from conda
 RUN curl -fSsL -v -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     chmod +x ~/miniconda.sh && \
     ~/miniconda.sh -b -p /opt/conda && \

@@ -5,60 +5,50 @@ header: |
   #
   # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
 
-# 0.13.1-py{3.8}-os-{gpu/slim}
-# 0.13.1-py{3.8}-os-{gpu}-cudnn
-# 0.13.1-py{3.8}-os-{gpu}
-
-
-# devel-py-os
-
-# 0.13.1-py{3.8}-alpine
 releases:
-  model_server:
-    devel:
-      spec: &devel_spec
-        - "{_BENTO_VERSION}{ubuntu20.04}"
-        - "{_BENTO_VERSION}{ubuntu18.04}"
-        - "{_BENTO_VERSION}{centos8}"
-        - "{_BENTO_VERSION}{centos7}"
-    runtime:
-      spec:
-        - *devel_spec
-        - "{_BENTO_VERSION}{amazonlinux2}"
-        - "{_BENTO_VERSION}{alpine-3.14}"
-    slim: &slim_spec
-      spec:
-        - "{_PREFIX}{debian-10}"
-  yatai_service:
-    runtime:
-      spec:
-        - "{_PREFIX}{centos8}"
-        - "{_PREFIX}{ubuntu20.04}"
+  devel:
+    spec:
+      - "{ubuntu-devel}"
+      - "{centos-devel}"
+  versioned:
+    spec:
+      - "{ubuntu}"
+      - "{centos}"
+      - "{slim}"
+      - "{amazonlinux2}"
+      - "{ubuntu-ys}"
+      - "{centos-ys}"
 
 dist:
-  ubuntu20.04:
-    - base_image: ubuntu:focal
-    - add_to_name: ""
+  ubuntu:
+    - add_to_name: "ubuntu20.04"
       args:
+        - UBUNTU_VERSION=20.04
       partials:
-    - add_to_name: "gpu"
-      args:
-        - CUDA_VERSION: 11.3.1
-        - CUDNN_VERSION: 8.2
-      partials:
-        - base os
-        - deps
-        - gpu
-        - ubuntu/conda
-        - bentoml
+        - ubuntu/base
+        - env
+        - conda
         - shell
-  centos8:
-    - base_image: ubuntu:focal
-    - add_to_name: ""
+        - bentoml
+    - add_to_name: "ubuntu18.04"
       args:
+        - UBUNTU_VERSION=18.04
       partials:
+        - ubuntu/base
+        - env
+        - conda
+        - shell
+        - bentoml
     - add_to_name: "gpu"
+      overwrite_dockerfile_name: "gpu"
       args:
+        - UBUNTU_VERSION=18.04
+        - CUDA_VERSION=11.3.1
+        - CUDNN_VERSION=8.2.0.53
       partials:
-      cuda:
-        - version: 11.3
+        - ubuntu/base
+        - env
+        - ubuntu/nvidia
+        - conda
+        - shell
+        - bentoml

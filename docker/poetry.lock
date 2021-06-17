@@ -10,12 +10,12 @@ python-versions = "*"
 six = "*"
 
 [[package]]
-name = "cerebrus"
-version = "0.2"
-description = "cerebrus"
+name = "cerberus"
+version = "1.3.4"
+description = "Lightweight, extensible schema and data validation tool for Python dictionaries."
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=2.7"
 
 [[package]]
 name = "certifi"
@@ -146,16 +146,15 @@ python-versions = ">=3.6"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "e6986e321971d7ea2c7bcb2bb23754f65bec97e5268be17565acbc7864171a59"
+content-hash = "8ba295cff568acf8accda3bdfd9c80767c9e9064605c6d5f9e6a0e6db6409909"
 
 [metadata.files]
 absl-py = [
     {file = "absl-py-0.13.0.tar.gz", hash = "sha256:6953272383486044699fd0e9f00aad167a27e08ce19aae66c6c4b10e7e767793"},
     {file = "absl_py-0.13.0-py3-none-any.whl", hash = "sha256:62bd4e248ddb19d81aec8f9446b407ff37c8175c2ba88266a7afa9b4ce4a333b"},
 ]
-cerebrus = [
-    {file = "cerebrus-0.2-py3-none-any.whl", hash = "sha256:4d7a295399f16bce38ff7cf859aae70bbd932cee0ab38c9375334fc17086ae07"},
-    {file = "cerebrus-0.2.tar.gz", hash = "sha256:d8cfb40590a1a478a54e96d65832fffef1f872430a9e525df0bf59c356fc1706"},
+cerberus = [
+    {file = "Cerberus-1.3.4.tar.gz", hash = "sha256:d1b21b3954b2498d9a79edf16b3170a3ac1021df88d197dc2ce5928ba519237c"},
 ]
 certifi = [
     {file = "certifi-2021.5.30-py2.py3-none-any.whl", hash = "sha256:50b1e4f8446b06f41be7dd6338db18e0990601dce795c2b1686458aa7e8fa7d8"},

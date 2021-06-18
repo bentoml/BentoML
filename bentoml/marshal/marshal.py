@@ -124,12 +124,12 @@ def metrics_patch(cls):
             _metrics_request_in_progress.dec()
             return resp
 
-        async def _batch_handler_template(self, requests, api_route):
+        async def _batch_handler_template(self, requests, api_route, max_latency):
             func = super(_MarshalService, self)._batch_handler_template
             self.metrics_request_batch_size.labels(endpoint=api_route).observe(
                 len(requests)
             )
-            return await func(requests, api_route)
+            return await func(requests, api_route, max_latency)
 
     return _MarshalService
 
@@ -170,6 +170,7 @@ class MarshalService:
         access_control_options: Optional["ResourceOptions"] = Provide[
             BentoMLContainer.access_control_options
         ],
+        timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -194,6 +195,7 @@ class MarshalService:
         self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
         self.setup_routes_from_pb(self.bento_service_metadata_pb)
+        self.timeout = timeout
 
         if psutil.POSIX:
             import resource
@@ -245,11 +247,16 @@ class MarshalService:
 
         if self._client is None or self._client.closed:
             jar = aiohttp.DummyCookieJar()
+            if self.timeout:
+                timeout = aiohttp.ClientTimeout(total=self.timeout)
+            else:
+                timeout = None
             self._client = aiohttp.ClientSession(
                 connector=self.get_conn(),
                 auto_decompress=False,
                 cookie_jar=jar,
                 connector_owner=False,
+                timeout=timeout,
             )
         return self._client
 
@@ -271,7 +278,11 @@ class MarshalService:
                 fallback=HTTPTooManyRequests,
             )
             _func = dispatcher(
-                functools.partial(self._batch_handler_template, api_route=api_route)
+                functools.partial(
+                    self._batch_handler_template,
+                    api_route=api_route,
+                    max_latency=max_latency,
+                )
             )
             self.cleanup_tasks.append(dispatcher.shutdown)
             self.batch_handlers[api_route] = _func
@@ -351,7 +362,7 @@ class MarshalService:
                 return Response(status=503, body=b"Service Unavailable")
         return Response(status=resp.status, body=body, headers=resp.headers,)
 
-    async def _batch_handler_template(self, requests, api_route):
+    async def _batch_handler_template(self, requests, api_route, max_latency):
         '''
         batch request handler
         params:
@@ -362,6 +373,7 @@ class MarshalService:
             * Exception: other exceptions
         '''
         from aiohttp.client_exceptions import ClientConnectionError
+        from aiohttp import ClientTimeout
         from aiohttp.web import Response
 
         headers = {MARSHAL_REQUEST_HEADER: "true"}
@@ -375,7 +387,12 @@ class MarshalService:
             reqs_s = DataLoader.merge_requests(requests)
             try:
                 client = self.get_client()
-                async with client.post(api_url, data=reqs_s, headers=headers) as resp:
+                timeout = ClientTimeout(
+                    total=(self.mb_max_latency or max_latency) // 1000
+                )
+                async with client.post(
+                    api_url, data=reqs_s, headers=headers, timeout=timeout
+                ) as resp:
                     raw = await resp.read()
             except ClientConnectionError as e:
                 raise RemoteException(
@@ -387,6 +404,10 @@ class MarshalService:
                     payload=HTTPResponse(
                         status=500, body=b"Cancelled before upstream responses"
                     ),
+                )
+            except asyncio.TimeoutError as e:
+                raise RemoteException(
+                    e, payload=HTTPResponse(status=408, body=b"Request timeout"),
                 )
 
             if resp.status != 200:

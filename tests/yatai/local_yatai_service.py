@@ -6,6 +6,7 @@ import time
 import uuid
 
 import docker
+
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
@@ -30,7 +31,7 @@ def wait_until_container_ready(docker_container, timeout_seconds=120):
 
 
 @contextlib.contextmanager
-def local_yatai_service_container(db_url=None, repo_base_url=None):
+def yatai_service_container(db_url=None, repo_base_url=None):
     ensure_docker_available_or_raise()
     docker_client = docker.from_env()
     local_bentoml_repo_path = os.path.abspath(__file__ + "/../../../")
@@ -57,16 +58,17 @@ RUN pip install -U /bentoml-local-repo
         )
 
         container_name = f'yatai-service-container-{uuid.uuid4().hex[:6]}'
-        yatai_service_url = 'localhost:50051'
         yatai_server_command = ['bentoml', 'yatai-service-start', '--no-ui']
         if db_url:
             yatai_server_command.extend(['--db-url', db_url])
         if repo_base_url:
             yatai_server_command.extend(['--repo-base-url', repo_base_url])
+        port = 50051
+        yatai_service_url = f'localhost:{port}'
         container = docker_client.containers.run(
             image=yatai_docker_image_tag,
             environment=['BENTOML_HOME=/tmp'],
-            ports={'50051/tcp': 50051},
+            ports={f'{port}/tcp': port},
             command=yatai_server_command,
             name=container_name,
             detach=True,

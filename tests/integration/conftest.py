@@ -10,12 +10,6 @@ def clean_context():
         yield stack
 
 
-@pytest.fixture(params=[True, False], scope="module")
-def enable_microbatch(request):
-    pytest.enable_microbatch = request.param
-    return request.param
-
-
 @pytest.fixture()
 def trained_pytorch_classifier():
     import torch

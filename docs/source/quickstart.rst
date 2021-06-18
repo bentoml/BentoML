@@ -13,7 +13,7 @@ Try out this quickstart guide interactively on Google Colab:
 
 Note that Docker containerization does not work in the Colab environment.
 
-Run notebook locally
+Run Notebook Locally
 --------------------
 
 Install `BentoML <https://github.com/bentoml/BentoML>`_. This requires python 3.6 or
@@ -55,15 +55,34 @@ To build a model server docker image, you will also need to install
 `here <https://docs.docker.com/install/>`_.
 
 
-Hello World
------------
+Preface
+-------
 
-Before starting, let's prepare a trained model for serving with BentoML. Train a
+Before started, let's discuss how BentoML's project structure would look like. For most use-cases, users can follow this minimal scaffold
+for deploying with BentoML to avoid any potential errors (example project structure can be found under `guides/quick-start <https://github.com/bentoml/BentoML/tree/master/guides/quick-start>`_):
+
+.. code-block:: bash
+
+    bento_deploy/
+    ├── bento_packer.py       # responsible for packing BentoService
+    ├── bento_service.py      # BentoService definition
+    ├── model.py               # DL Model definitions
+    ├── train.py               # OPTIONAL: training scripts
+    └── requirements.txt
+
+.. note::
+    For users who already have a DL project, users usually have a ``train.py`` scripts, and thus ``bento_deploy/train.py`` is not needed.
+
+.. note::
+    For PyTorch use case, users should have a ``bento_deploy/model.py`` class definition in order to deserialize the model correctly.
+
+We then need to prepare a trained model before serving with BentoML. Train a
 classifier model with Scikit-Learn on the
 `Iris data set <https://en.wikipedia.org/wiki/Iris_flower_data_set>`_:
 
 .. code-block:: python
 
+    # train.py
     from sklearn import svm
     from sklearn import datasets
 
@@ -75,15 +94,17 @@ classifier model with Scikit-Learn on the
     clf = svm.SVC(gamma='scale')
     clf.fit(X, y)
 
+Example: Hello World
+--------------------
 
 Model serving with BentoML comes after a model is trained. The first step is creating a
 prediction service class, which defines the models required and the inference APIs which
 contains the serving logic code. Here is a minimal prediction service created for
-serving the iris classifier model trained above:
+serving the iris classifier model trained above, which is saved under *bento_service.py*:
 
 .. code-block:: python
 
-    # iris_classifier.py
+    # bento_service.py
     import pandas as pd
 
     from bentoml import env, artifacts, api, BentoService
@@ -147,12 +168,14 @@ Save prediction service for distribution
 
 The following code packages the trained model with the prediction service class
 :code:`IrisClassifier` defined above, and then saves the IrisClassifier instance to disk
-in the BentoML format for distribution and deployment:
+in the BentoML format for distribution and deployment, under *bento_packer.py*:
 
 .. code-block:: python
 
+    # bento_packer.py
+
     # import the IrisClassifier class defined above
-    from iris_classifier import IrisClassifier
+    from bento_service import IrisClassifier
 
     # Create a iris classifier service instance
     iris_classifier_service = IrisClassifier()
@@ -349,3 +372,4 @@ latest development updates and be part of the roadmap discussions.
     pypirc
     pre
     installable
+    deserialize

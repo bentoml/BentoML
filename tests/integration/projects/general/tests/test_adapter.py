@@ -23,7 +23,7 @@ async def test_api_echo_json(host):
         )
 
 
-@pytest.since_bentoml_version("0.12.1+0")
+@pytest.since_bentoml_version("0.12.1+0", skip_by_default=True)
 @pytest.mark.asyncio
 async def test_api_echo_json_ensure_ascii(host):
     for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
@@ -119,7 +119,7 @@ async def test_api_server_file(host, bin_file):
 
 @pytest.mark.asyncio
 async def test_api_server_json(host):
-    req_count = 3 if pytest.enable_microbatch else 1
+    req_count = 3
     tasks = tuple(
         pytest.assert_request(
             "POST",
@@ -135,7 +135,7 @@ async def test_api_server_json(host):
 
 @pytest.mark.asyncio
 async def test_api_server_tasks_api(host):
-    req_count = 2 if pytest.enable_microbatch else 1
+    req_count = 2
     tasks = tuple(
         pytest.assert_request(
             "POST",
@@ -161,7 +161,7 @@ async def test_api_server_tasks_api(host):
 
 @pytest.mark.asyncio
 async def test_api_server_inference_result(host):
-    req_count = 2 if pytest.enable_microbatch else 1
+    req_count = 2
     tasks = tuple(
         pytest.assert_request(
             "POST",

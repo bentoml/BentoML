@@ -1,28 +1,4 @@
-bento_bundle:
-  deployment_version: Null
-  default_docker_base_image: Null
-
 bento_server:
-  port: 5000
-  ngrok:
-    enabled: False
-  workers: 1
-  timeout: 60
-  max_request_size: 20971520
-  microbatch:
-    enabled: False
-    workers: 1
-    max_batch_size: Null
-    max_latency: Null
-  swagger:
-    enabled: True
-  metrics:
-    enabled: True
-    namespace: BENTOML
-  feedback:
-    enabled: True
-  logging:
-    level: INFO
   cors:  # standard: https://fetch.spec.whatwg.org/#http-cors-protocol
     enabled: True
     access_control_allow_origin: "*"
@@ -31,60 +7,3 @@ bento_server:
     access_control_allow_headers: Null
     access_control_max_age: Null
     access_control_expose_headers: ["Content-Length"]
-
-logging:
-  level: INFO
-  console:
-    enabled: True
-  file:
-    enabled: True
-    directory: Null
-  advanced:
-    enabled: False
-    config: Null
-
-tracing:
-  type: zipkin
-  zipkin:
-    url: Null
-  jaeger:
-    address: Null
-    port: Null
-
-adapters:
-  image_input:
-    default_extensions:
-      - .jpg
-      - .png
-      - .jpeg
-      - .tiff
-      - .webp
-      - .bmp
-
-yatai:
-  remote:
-    url: Null
-    access_token: Null
-    access_token_header: access_token
-    tls:
-      root_ca_cert: Null
-      client_certificate_file: Null
-      client_key: Null
-      client_cert: Null
-  repository:
-    type: file_system
-    file_system:
-      directory: Null
-    s3:
-      url: Null
-      endpoint_url: Null
-      signature_version: s3v4
-      expiration: 3000
-    gcs:
-      url: Null
-      expiration: 3000
-  database:
-    url: Null
-  namespace: dev
-  logging:
-    path: Null

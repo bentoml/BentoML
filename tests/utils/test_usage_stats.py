@@ -47,7 +47,6 @@ def mock_get_operator_func():
 def mock_start_dev_server(
     bundle_path: str,
     port: int = 5000,
-    enable_microbatch: bool = False,
     mb_max_latency: int = 0,
     mb_max_batch_size: int = 0,
     run_with_ngrok: bool = False,

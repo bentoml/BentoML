@@ -201,57 +201,8 @@ Make prediction with `curl`:
 Monitor model server metrics with Prometheus
 ============================================
 
-Setup:
-
-Before starting this section, make sure you have the following:
-
-* Prometheus installed on your Kubernetes cluster
-
-  * installation instruction: https://github.com/coreos/kube-prometheus
-
-
-BentoML API server provides Prometheus support out of the box. It comes with a “/metrics”
-endpoint which includes the essential metrics for model serving and the ability to create
-and customize new metrics base on needs.
-
-To enable Prometheus monitoring on the deployed model API server, update the YAML file
-with Prometheus related annotations. Change the deployment spec as the following, and
-replace `{docker_username}` with your Docker Hub username:
-
-
-.. code-block:: bash
-
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      labels:
-        app: pet-classifier
-      name: pet-classifier
-    spec:
-      selector:
-        matchLabels:
-          app: pet-classifier
-      template:
-        metadata:
-          labels:
-            app: pet-classifier
-          annotations:
-            prometheus.io/scrape: "true"
-            prometheus.io/port: "5000"
-        spec:
-          containers:
-          - image: {docker_username}/pet-classifier
-            name: pet-classifier
-            ports:
-            - containerPort: 5000
-
-
-Apply the changes to enable monitoring:
-
-.. code-block:: bash
-
-    kubectl apply -f iris-classifier.yaml
-
+.. seealso::
+    :doc:`../guides/monitoring`
 
 
 =================
@@ -267,4 +218,3 @@ Remove deployment
 
     de
     facto
-

@@ -67,15 +67,3 @@ run-yatai-web-ui: ## Run production BentoML Web UI server and frontend
 install-web-deps: ## Install dependencies to run web server and frontend
 	cd bentoml/yatai/web && yarn install
 	cd bentoml/yatai/web/client && yarn install
-
-# Helm
-helm-lint: ## Helm Lint
-	helm lint ./helm/YataiService
-helm-deps: ## Helm installed dependencies
-	helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx && helm dependencies build helm/YataiService
-helm-dry: ## Helm Dry Install
-	cd helm && helm install -f YataiService/values/postgres.yaml --dry-run --debug yatai-service YataiService
-helm-install: ## Helm Install
-	@cd helm && helm install -f YataiService/values/postgres.yaml yatai-service YataiService
-helm-uninstall: ## Helm Uninstall
-	helm uninstall yatai-service

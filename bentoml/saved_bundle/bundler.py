@@ -43,6 +43,7 @@ from bentoml.utils import (
     is_s3_url,
     is_gcs_url,
     is_abs_url,
+    archive_directory_to_tar,
 )
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track_save
@@ -223,11 +224,10 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         with TempDirectory() as temp_dir:
             _write_bento_content_to_dir(bento_service, temp_dir)
             with TempDirectory() as tarfile_dir:
-                file_name = f'{bento_service.name}.tar'
-                tarfile_path = f'{tarfile_dir}/{file_name}'
-                with tarfile.open(tarfile_path, mode="w:gz") as tar:
-                    tar.add(temp_dir, arcname=bento_service.name)
-                _upload_file_to_remote_path(path, tarfile_path, file_name)
+                tarfile_path, tarfile_name = archive_directory_to_tar(
+                    temp_dir, tarfile_dir, bento_service.name
+                )
+                _upload_file_to_remote_path(path, tarfile_path, tarfile_name)
     else:
         _write_bento_content_to_dir(bento_service, path)
 

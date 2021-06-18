@@ -1,7 +1,7 @@
 import datetime
 import enum
 
-from sqlalchemy import UniqueConstraint, Column, Integer, Enum, DateTime
+from sqlalchemy import UniqueConstraint, Column, Integer, Enum, DateTime, String
 from bentoml.exceptions import LockUnavailable
 from bentoml.yatai.db import Base
 
@@ -16,7 +16,7 @@ class Lock(Base):
     __tablename__ = 'locks'
     __table_args__ = tuple(UniqueConstraint('resource_id', name='_resource_id_uc',))
     id = Column(Integer, primary_key=True)
-    resource_id = Column(Integer, nullable=False, unique=True)
+    resource_id = Column(String, nullable=False, unique=True)
     lock_status = Column(Enum(LOCK_STATUS))
     locks_held = Column(Integer)
     ttl = Column(DateTime)

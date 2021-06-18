@@ -15,7 +15,7 @@ Prerequisites
 
 * Google cloud CLI tool
 
-  * Install instruction: https://cloud.googl.com/sdk/install
+  * Install instruction: https://cloud.google.com/sdk/docs/install
 
 * Docker is installed and running on the machine.
 

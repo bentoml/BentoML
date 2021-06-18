@@ -120,9 +120,9 @@ SCHEMA = Schema(
                     "expiration": Or(int, None)
                 },
                 "abs": {
-                    "url": Or(str, None)
+                    "url": Or(str, None),
                     "expiration": Or(int, None)
-                }
+                },
             },
             "database": {"url": Or(str, None)},
             "namespace": str,

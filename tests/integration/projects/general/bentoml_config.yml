@@ -83,6 +83,9 @@ yatai:
     gcs:
       url: Null
       expiration: 3000
+    abs:
+      url: Null
+      expiration: 3000
   database:
     url: Null
   namespace: dev

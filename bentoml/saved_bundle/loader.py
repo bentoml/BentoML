@@ -77,8 +77,26 @@ def _resolve_remote_bundle_path(bundle_path):
         gcs.download_blob_to_file(bundle_path, fileobj)
         fileobj.seek(0, 0)
     elif is_abs_url(bundle_path):
-        # NEED TO IMPLEMENT THE LOADER FOR AZURE BLOB SERVICE
-        pass
+        # TODO: NEED TO IMPLEMENT THE LOADER FOR AZURE BLOB SERVICE
+        try:
+            from azure.storage.blob import BlobServiceClient
+        except ImportError:
+            raise BentoMLException(
+                '"azure-storage-blob" package is required for Azure Blob Storage.'
+                'You can install it with pip: '
+                '"pip install pip install azure-storage-blob"'
+                'Find out more at https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python'
+            )
+        connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        parsed_url = urlparse(bundle_path)
+        container, blob = parsed_url.path.split("/", 1)
+        fileobj = io.BytesIO()
+        abs_blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        abs_container_client = abs_blob_service_client.get_container_client(container)
+        abs_blob_client = abs_container_client.get_blob_client(blob)
+        download_stream = abs_blob_client.download_blob()
+        fileobj.write(download_stream.readall())
+        fileobj.seek(0, 0)
     elif _is_http_url(bundle_path):
         import requests
 

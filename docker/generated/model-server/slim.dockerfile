@@ -7,8 +7,6 @@
 # ===========================================
 
 
-ARG OS_VERSION
-
 FROM ubuntu:${OS_VERSION} as os-base
 
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
@@ -20,6 +18,8 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     apt-get update -q && \
     apt-get install -q -y --no-install-recommends \
     ca-certificates gnupg2 curl
+
+ARG OS_VERSION
 
 ARG PYTHON_VERSION
 ARG BENTOML_VERSION

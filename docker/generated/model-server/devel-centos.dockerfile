@@ -34,6 +34,9 @@ RUN curl -fSsL -v -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Minic
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
     /opt/conda/bin/conda clean -ya
 
+COPY tools/bashrc /etc/bash.bashrc
+RUN chmod a+r /etc/bash.bashrc
+
 RUN pip install bentoml[model-server]==${BENTOML_VERSION} --no-cache-dir
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/

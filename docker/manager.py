@@ -33,8 +33,8 @@
 #     dist: dict
 #       key: str -> os bentoml going to support
 #       value: dict -> contains options to parse directly back to release
-#         add_to_name: str -> handle tag naming
-#         overwrite_dockerfile_name: str -> overwrite our generated dockerfile for this given image
+#         add_to_tags: str -> handle tag naming
+#         write_to_dockerfile: str -> overwrite our generated dockerfile for this given image
 #         args: list[str] this will be parsed at docker build
 #         partials: list[str] components needed to build our dockerfile
 
@@ -73,7 +73,7 @@ flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file")
 
 flags.DEFINE_multi_string(
     "supported_python_version",
-    ["3.6","3.7","3.8"],
+    ["3.6", "3.7", "3.8"],
     "Supported Python version",
     short_name='p',
 )
@@ -109,9 +109,11 @@ dist:
     schema:
       type: dict
       schema:
-        add_to_name:
+        add_to_tags:
           type: string
-        overwrite_dockerfile_name: 
+        write_to_dockerfile:
+          type: string
+        dockerfile_subdirectory:
           type: string
         args:
           type: list
@@ -174,7 +176,7 @@ class DockerTagValidator(Validator):
             )
 
 
-def aggregate_all_combinations_from_dist_spec(release_spec, used_dist):
+def aggregate_dist_combinations(release_spec, used_dist):
     """Get all possible groupings for a tag spec."""
     dist_sets = deepcopy(release_spec['dist'])
     for name in used_dist:
@@ -199,14 +201,7 @@ def build_release_tags(string, dists, bento_version, python_version):
         Release tag of images
     """
     formatter = {}
-    formatter.update({d['set_name']: d['add_to_name'] for d in dists})
-    formatter.update(
-        {
-            d['set_name']: d['overwrite_dockerfile_name']
-            for d in dists
-            if 'overwrite_dockerfile_name' in d
-        }
-    )
+    formatter.update({d['set_name']: d['add_to_tags'] for d in dists})
     name = string.format(**formatter)
 
     if "devel" in name:
@@ -239,7 +234,7 @@ def get_dist_spec(dist_specs, tag_spec):
     return used_dist
 
 
-def build_dist_args(dists, ver):
+def build_release_args(dists, python_ver):
     """Build dictionary of required args for each dist."""
 
     def update_args_dict(args_dict, updater):
@@ -258,14 +253,20 @@ def build_dist_args(dists, ver):
     for d in dists:
         args = update_args_dict(args, d['args'])
     # creates args for python version.
-    args["PYTHON_VERSION"] = ver
+    args["PYTHON_VERSION"] = python_ver
     return args
 
 
-def get_key_from_dists(dists, key):
+def get_key_from_dist_spec(dists, key):
     """Get flattened list of certain key in list of dist."""
     return list(itertools.chain(*[d[key] for d in dists if key in d]))
 
+
+def get_first_key_value(dists, key):
+    for d in dists:
+        if key in d and d[key] is not None:
+            return d[key]
+    return None
 
 def generate_tag_metadata(release_spec, bento_ver, supported_py_ver, all_partials):
     """
@@ -281,32 +282,29 @@ def generate_tag_metadata(release_spec, bento_ver, supported_py_ver, all_partial
         Dict of tags and content of Dockerfile.
     """
     tag_metadata = defaultdict(list)
-    for package, release in release_spec["releases"].items():
-        # package: model-server or yatai-service -> release: devel, versioned
-        for release_type, distro in release.items():
-            for tag_spec in distro["spec"]:
-                used_dist = get_dist_spec(release_spec["dist"], tag_spec)
+    for package, release_type in release_spec["releases"].items():
+        # package: model-server/yatai-service -> release: devel, versioned
+        for image_type, target_dists in release_type.items():
+            for dist_spec in target_dists["spec"]:
+                target_dist = get_dist_spec(release_spec["dist"], dist_spec)
+                target_releases = aggregate_dist_combinations(release_spec, target_dist)
 
-                dist_combos = aggregate_all_combinations_from_dist_spec(
-                    release_spec, used_dist
-                )
-
-                for dists in dist_combos:
-                    for pyver in supported_py_ver:
-                        tag_args = build_dist_args(dists, pyver)
-                        tag_name = build_release_tags(tag_spec, dists, bento_ver, pyver)
-                        used_partials = get_key_from_dists(dists, 'partials')
-                        dockerfile_contents = merge_partials(
-                            release_spec["header"], used_partials, all_partials
-                        )
+                for dist in target_releases:
+                    for py_ver in supported_py_ver:
+                        tag_args = build_release_args(dist, py_ver)
+                        tag_name = build_release_tags(dist_spec, dist, bento_ver, py_ver)
+                        used_partials = get_key_from_dist_spec(dist, 'partials')
+                        dockerfile_name = get_first_key_value(dist, 'write_to_dockerfile')
+                        dockerfile_contents = merge_partials(release_spec["header"], used_partials, all_partials)
 
                         tag_metadata[tag_name].append(
                             {
                                 'package': package,
-                                'release': release_type,
-                                'tag_spec': tag_spec,
+                                'release': image_type,
+                                'dist_spec': dist_spec,
                                 'docker_args': tag_args,
                                 'partials': used_partials,
+                                'dockerfile_name': dockerfile_name,
                                 'dockerfile_contents': dockerfile_contents,
                             }
                         )
@@ -331,7 +329,7 @@ def get_partials_content(partial_path):
                 logger.debug(f"skipping {full_path} since it is not a partial")
                 continue
             # partial/foo/bar.partial.dockerfile -> foo/bar
-            _simple = full_path[len(partial_path) + 1 : -len(".partial.dockerfile")]
+            _simple = full_path[len(partial_path) + 1: -len(".partial.dockerfile")]
             with open(full_path, "r") as f:
                 contents = f.read()
             partials[_simple] = contents
@@ -360,6 +358,7 @@ def main(argv):
     schema = yaml.safe_load(SPEC_SCHEMA)
     with open(FLAGS.manifest_file, "r") as manifest_file:
         spec = yaml.safe_load(manifest_file)
+        manifest_file.close()
 
     # validate manifest configs and parse partial contents and spec
     partials = get_partials_content(FLAGS.partial_dir)
@@ -394,8 +393,10 @@ def main(argv):
         for spec in tag_specs:
             logger.info(f"Working on {release_tag}")
 
+            if spec['dockerfile_name'] is None:
+                continue
             path = os.path.join(
-                FLAGS.dockerfile_dir, spec['package'], release_tag + ".dockerfile"
+                FLAGS.dockerfile_dir, spec['package'], spec['dockerfile_name'] + ".dockerfile"
             )
             logger.info(f"> Writting to {path} ...")
             if not FLAGS.dry_run:

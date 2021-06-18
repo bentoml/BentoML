@@ -1,4 +1,5 @@
-FROM os-base as conda-builder
+ARG PYTHON_VERSION
+ARG BENTOML_VERSION
 
 ENV PATH /opt/conda/bin:$PATH
 

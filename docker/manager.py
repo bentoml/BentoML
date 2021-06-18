@@ -6,7 +6,7 @@
 #   assemble tags and images given from manifest.yml
 #   Empty our generated directory and generate new Dockerfile
 #
-# naming covention: ${release_version | devel}-${python_version}-${os}-cuda${cuda_version}
+# naming convention: ${release_version | devel}-${python_version}-${os}-cuda${cuda_version}
 #   where optional_args can be:
 #     - cudnn${cudnn_major_version} includes cudart and cudnn
 #     - cuda${cuda_version} that only contain cudart and cublas
@@ -28,21 +28,23 @@
 #       value: list
 #         value: defined spec under dist
 #         -> this will allow us to how to build tags and ensemble our images from partial files
-#         - for now we are introducing spec system based on supported OS and its coresponding GPU support
+#         - for now we are introducing spec system based on supported OS and its corresponding GPU support
 #
 #     dist: dict
 #       key: str -> os bentoml going to support
 #       value: dict -> contains options to parse directly back to release
 #         add_to_name: str -> handle tag naming
 #         overwrite_dockerfile_name: str -> overwrite our generated dockerfile for this given image
-#         args: list[str] this will be parsed at docker buildtime
+#         args: list[str] this will be parsed at docker build
 #         partials: list[str] components needed to build our dockerfile
 
 
+import errno
 import itertools
 import logging
 import os
 import re
+import shutil
 from collections import defaultdict
 from copy import deepcopy
 
@@ -54,12 +56,27 @@ logger = logging.getLogger(__name__)
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string("generated", "./generated",
-                    "path to generated Dockerfile. Existing files will be deleted with new Dockerfiles")
+flags.DEFINE_boolean(
+    "dump_metadata", False, "Whether to dump all tags metadata to file."
+)
+flags.DEFINE_boolean(
+    "dry_run", False, "Whether to dry run. This won't create Dockerfile."
+)
+
+flags.DEFINE_string(
+    "dockerfile_dir",
+    "./generated",
+    "path to generated Dockerfile. Existing files will be deleted with new Dockerfiles",
+)
 flags.DEFINE_string("partial_dir", "./partials", "Partials directory")
 flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file")
 
-flags.DEFINE_multi_string("supported_python_version", ["3.6", "3.7", "3.8"], "Supported Python version", short_name='p')
+flags.DEFINE_multi_string(
+    "supported_python_version",
+    ["3.6","3.7","3.8"],
+    "Supported Python version",
+    short_name='p',
+)
 flags.DEFINE_string("bentoml_version", None, "BentoML release version", required=True)
 
 SPEC_SCHEMA = """
@@ -183,7 +200,13 @@ def build_release_tags(string, dists, bento_version, python_version):
     """
     formatter = {}
     formatter.update({d['set_name']: d['add_to_name'] for d in dists})
-    formatter.update({d['set_name']: d['overwrite_dockerfile_name'] for d in dists if 'overwrite_dockerfile_name' in d})
+    formatter.update(
+        {
+            d['set_name']: d['overwrite_dockerfile_name']
+            for d in dists
+            if 'overwrite_dockerfile_name' in d
+        }
+    )
     name = string.format(**formatter)
 
     if "devel" in name:
@@ -194,7 +217,7 @@ def build_release_tags(string, dists, bento_version, python_version):
 
 def get_dist_spec(dist_specs, tag_spec):
     """
-    Extract dist spec and args for that dist string:
+    Extract list of dist spec and args for that dist string:
     {foo}{bar} will find foo and bar, assuming foo and bar are named dist sets.
 
     Args:
@@ -239,14 +262,14 @@ def build_dist_args(dists, ver):
     return args
 
 
-def get_dist_items(dists, key):
+def get_key_from_dists(dists, key):
     """Get flattened list of certain key in list of dist."""
     return list(itertools.chain(*[d[key] for d in dists if key in d]))
 
 
-def assemble_tag(release_spec, bento_ver, supported_py_ver, all_partials):
+def generate_tag_metadata(release_spec, bento_ver, supported_py_ver, all_partials):
     """
-    Assemble all tags based on given spec.
+    Generate all tag metadata based on given spec.
 
     Args:
         release_spec: Nested dict containing tag spec
@@ -264,23 +287,29 @@ def assemble_tag(release_spec, bento_ver, supported_py_ver, all_partials):
             for tag_spec in distro["spec"]:
                 used_dist = get_dist_spec(release_spec["dist"], tag_spec)
 
-                dist_combos = aggregate_all_combinations_from_dist_spec(release_spec, used_dist)
+                dist_combos = aggregate_all_combinations_from_dist_spec(
+                    release_spec, used_dist
+                )
 
                 for dists in dist_combos:
                     for pyver in supported_py_ver:
                         tag_args = build_dist_args(dists, pyver)
                         tag_name = build_release_tags(tag_spec, dists, bento_ver, pyver)
-                        used_partials = get_dist_items(dists, 'partials')
-                        dockerfile_contents = merge_partials(release_spec["header"], used_partials, all_partials)
+                        used_partials = get_key_from_dists(dists, 'partials')
+                        dockerfile_contents = merge_partials(
+                            release_spec["header"], used_partials, all_partials
+                        )
 
-                        tag_metadata[tag_name].append({
-                            'package': package,
-                            'release': release_type,
-                            'tag_spec': tag_spec,
-                            'docker_args': tag_args,
-                            'partials': used_partials,
-                            'dockerfile_contents': dockerfile_contents,
-                        })
+                        tag_metadata[tag_name].append(
+                            {
+                                'package': package,
+                                'release': release_type,
+                                'tag_spec': tag_spec,
+                                'docker_args': tag_args,
+                                'partials': used_partials,
+                                'dockerfile_contents': dockerfile_contents,
+                            }
+                        )
 
     return tag_metadata
 
@@ -302,7 +331,7 @@ def get_partials_content(partial_path):
                 logger.debug(f"skipping {full_path} since it is not a partial")
                 continue
             # partial/foo/bar.partial.dockerfile -> foo/bar
-            _simple = full_path[len(partial_path) + 1: -len(".partial.dockerfile")]
+            _simple = full_path[len(partial_path) + 1 : -len(".partial.dockerfile")]
             with open(full_path, "r") as f:
                 contents = f.read()
             partials[_simple] = contents
@@ -312,7 +341,15 @@ def get_partials_content(partial_path):
 def merge_partials(headers, used_partials, all_partials):
     """Merge required partials with headers to generate Dockerfile"""
     used_partials = list(used_partials)
-    return "\n".join([headers] + [all_partials[u] for u in used_partials])
+    return "\n\n".join([headers] + [all_partials[u] for u in used_partials])
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
 
 def main(argv):
@@ -334,8 +371,37 @@ def main(argv):
     release_spec = v.normalized(spec)
 
     # assemble tags and dockerfile used to build required images.
-    all_tags = assemble_tag(release_spec, FLAGS.bentoml_version, FLAGS.supported_python_version, partials)
-    logger.info(all_tags['devel-python3.6-ubuntu18.04'])
+    all_tags = generate_tag_metadata(
+        release_spec, FLAGS.bentoml_version, FLAGS.supported_python_version, partials
+    )
+    if FLAGS.dump_metadata:
+        import json
+
+        with open("metadata.json", "w+") as of:
+            of.write(json.dumps(all_tags, indent=4))
+        of.close()
+
+    # Empty Dockerfile directory when building new Dockerfile
+    shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
+    mkdir_p(FLAGS.dockerfile_dir)
+
+    # Setup Docker credentials
+
+    # each tag has a release_tag and tag_spec containing args, dockerfile content, etc. use --dump_metadata for more
+    # information.
+    failed_tags, succeed_tags = [], []
+    for release_tag, tag_specs in all_tags.items():
+        for spec in tag_specs:
+            logger.info(f"Working on {release_tag}")
+
+            path = os.path.join(
+                FLAGS.dockerfile_dir, spec['package'], release_tag + ".dockerfile"
+            )
+            logger.info(f"> Writting to {path} ...")
+            if not FLAGS.dry_run:
+                mkdir_p(os.path.dirname(path))
+                with open(path, "w") as of:
+                    of.write(spec["dockerfile_contents"])
 
 
 if __name__ == "__main__":

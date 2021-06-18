@@ -341,8 +341,23 @@ def _upload_file_to_remote_path(remote_path, file_path, file_name):
         blob = bucket.blob(object_path)
         blob.upload_from_filename(file_path)
     elif is_abs_url(remote_path):
-        # NEED TO IMPLEMENT THE BUNDLER FOR AZURE BLOB SERVICE
-        pass
+        try:
+            from azure.storage.blob import BlobServiceClient
+        except ImportError:
+            # TODO: convert these exceptions to named constants, add documentation to function headers
+            raise BentoMLException(
+                '"azure-storage-blob" package is required for Azure Blob Storage Repository.'
+                'You can install it with pip: '
+                '"pip install pip install azure-storage-blob"'
+                'Find out more at https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python'
+            )
+        connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        container, blob = parsed_url.path.split("/", 1)
+        abs_blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        abs_container_client = abs_blob_service_client.get_container_client(container)
+        abs_blob_client = abs_container_client.get_blob_client(blob)
+        with open(file_path, "rb") as data:
+            abs_blob_client.upload_blob(data, blob_type="BlockBlob")
     else:
         http_response = requests.put(remote_path)
         if http_response.status_code != 200:

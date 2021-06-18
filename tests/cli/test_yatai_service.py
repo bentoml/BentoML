@@ -72,8 +72,21 @@ def test_yatai_service_start():
             abs_url=None,
         )
 
-        # TODO: here's where the ABS Azure Blob Storage case would go, once i figure out what the addresses look like
-
+        runner.invoke(yatai_service_start_cmd, ["--repo-base-url=https://myaccount.blob.core.windows.net/mycontainer/myblob"])
+        mocked_start_yatai_service_grpc_server.assert_called()
+        mocked_start_yatai_service_grpc_server.assert_called_with(
+            db_url=SQLITE_DATABASE_URL,
+            grpc_port=50051,
+            ui_port=3000,
+            with_ui=True,
+            base_url=".",
+            repository_type="abs",
+            file_system_directory=FILE_SYSTEM_REPOSITORY,
+            s3_url=None,
+            s3_endpoint_url=None,
+            gcs_url=None,
+            abs_url="https://myaccount.blob.core.windows.net/mycontainer/myblob",
+        )
 
 def test_yatai_service_start_repository_types():
     runner = CliRunner()
@@ -162,5 +175,24 @@ def test_yatai_service_start_repository_types():
             abs_url=None,
         )
 
-        # TODO: here's where the ABS Azure Blob Storage case would go, once i figure out what the addresses look like
-
+        runner.invoke(
+            yatai_service_start_cmd,
+            [
+                "--repository-type=abs",
+                "--abs-url=https://myaccount.blob.core.windows.net/mycontainer/myblob",
+            ],
+        )
+        mocked_start_yatai_service_grpc_server.assert_called()
+        mocked_start_yatai_service_grpc_server.assert_called_with(
+            db_url=SQLITE_DATABASE_URL,
+            grpc_port=50051,
+            ui_port=3000,
+            with_ui=True,
+            base_url=".",
+            repository_type="abs",
+            file_system_directory=FILE_SYSTEM_REPOSITORY,
+            s3_url=None,
+            s3_endpoint_url=None,
+            gcs_url=None,
+            abs_url="https://myaccount.blob.core.windows.net/mycontainer/myblob",
+        )

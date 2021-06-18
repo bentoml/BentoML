@@ -37,7 +37,7 @@ dist:
         - ubuntu/base
         - conda
         - bentoml/model-server
-    - add_to_tags: "gpu"
+    - add_to_tags: "ubuntu20.04-gpu"
       write_to_dockerfile: "ubuntu-gpu"
       args:
         - OS_VERSION=20.04
@@ -46,7 +46,7 @@ dist:
         - CUDNN_VERSION=8.2.0.53
       partials:
         - env
-        - ubuntu/nvidia
+        - ubuntu/base-nvidia
         - conda
         - bentoml/model-server
 
@@ -66,7 +66,7 @@ dist:
         - CUDNN_MAJOR_VERSION=8
       partials:
         - env
-        - ubuntu/nvidia
+        - ubuntu/base-nvidia
         - conda
         - bentoml/model-server
 
@@ -85,12 +85,12 @@ dist:
       write_to_dockerfile: "devel-ubuntu-gpu"
       args:
         - OS_VERSION=18.04
-        - CUDA_VERSION=11.3.1
+        - CUDA_VERSION=11.3
         - CUDNN_VERSION=8.2.0.53
         - CUDNN_MAJOR_VERSION=8
       partials:
         - env
-        - ubuntu/nvidia
+        - ubuntu/base-nvidia
         - conda
         - shell
         - bentoml/devel-model-server
@@ -102,7 +102,7 @@ dist:
         - OS_VERSION=8
       partials:
         - env
-        - ubuntu/base
+        - centos/base
         - conda
         - bentoml/model-server
     - add_to_tags: "centos8-gpu"
@@ -112,9 +112,14 @@ dist:
         - CUDA_VERSION=11.3
         - CUDNN_VERSION=8.2.0.53
         - CUDNN_MAJOR_VERSION=8
+        - CUBLAS_VERSION=11.5.1.109
+        - CURAND_VERSION=10.2.4.109
+        - CUSPARSE_VERSION=11.6.0.109
+        - CUFFT_VERSION=10.4.2.109
+        - CUSOLVER_VERSION=11.1.2.109
       partials:
         - env
-        - ubuntu/nvidia
+        - centos/base-nvidia
         - conda
         - bentoml/model-server
     - add_to_tags: "centos7"
@@ -122,7 +127,7 @@ dist:
         - OS_VERSION=7
       partials:
         - env
-        - ubuntu/base
+        - centos/base
         - conda
         - bentoml/model-server
     - add_to_tags: "centos7-gpu"
@@ -131,9 +136,14 @@ dist:
         - CUDA_VERSION=11.3
         - CUDNN_VERSION=8.2.0.53
         - CUDNN_MAJOR_VERSION=8
+        - CUBLAS_VERSION=11.5.1.109
+        - CURAND_VERSION=10.2.4.109
+        - CUSPARSE_VERSION=11.6.0.109
+        - CUFFT_VERSION=10.4.2.109
+        - CUSOLVER_VERSION=11.1.2.109
       partials:
         - env
-        - ubuntu/nvidia
+        - centos/base-nvidia
         - conda
         - bentoml/model-server
 
@@ -144,10 +154,10 @@ dist:
         - OS_VERSION=8
       partials:
         - env
-        - ubuntu/base
+        - centos/base
         - conda
         - shell
-        - bentoml/model-server
+        - bentoml/devel-model-server
     - add_to_tags: "devel-centos-gpu"
       write_to_dockerfile: "devel-centos-gpu"
       args:
@@ -155,9 +165,14 @@ dist:
         - CUDA_VERSION=11.3
         - CUDNN_VERSION=8.2.0.53
         - CUDNN_MAJOR_VERSION=8
+        - CUBLAS_VERSION=11.5.1.109
+        - CURAND_VERSION=10.2.4.109
+        - CUSPARSE_VERSION=11.6.0.109
+        - CUFFT_VERSION=10.4.2.109
+        - CUSOLVER_VERSION=11.1.2.109
       partials:
         - env
-        - ubuntu/base
+        - centos/base-nvidia
         - conda
         - shell
         - bentoml/devel-model-server
@@ -190,10 +205,8 @@ dist:
       partials:
         - ubuntu/base
         - env
-        - ubuntu/nvidia
         - conda
         - bentoml/model-server
-
 
   amazonlinux2:
     - add_to_tags: "ami2"

@@ -12,7 +12,7 @@ ARG CUDNN_MAJOR_VERSION=${CUDNN_MAJOR_VERSION}
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     apt-get update -q \
     && apt-get install -q -y --no-install-recommends \
-            ca-certificates gnupg2 curl build-essential \
+            ca-certificates gnupg2 curl build-essential git \
             libcublas-${CUDA_VERSION/./-} \
             libcurand-${CUDA_VERSION/./-} \
             libcusparse-${CUDA_VERSION/./-} \

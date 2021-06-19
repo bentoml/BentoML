@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 import uuid
 
 import mock
@@ -9,6 +11,7 @@ import bentoml
 from bentoml.adapters import DataframeInput
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle import load_bento_service_metadata
+from bentoml.utils.open_api import get_open_api_spec_json
 from tests.conftest import delete_saved_bento_service
 
 
@@ -128,6 +131,24 @@ def test_pack_metadata(tmpdir, example_bento_service_class):
 
     # check loaded metadata is correct
     assert model_service.artifacts.get('model').metadata == model_metadata
+
+
+def test_open_api_spec_json(tmpdir, example_bento_service_class):
+    example_bento_service_class = bentoml.ver(major=2, minor=10)(
+        example_bento_service_class
+    )
+    test_model = TestModel()
+    svc = example_bento_service_class()
+
+    svc.pack("model", test_model)
+    before_json_d = get_open_api_spec_json(svc)
+
+    svc.save_to_dir(str(tmpdir))
+    with open(os.path.join(str(tmpdir), 'docs.json')) as f:
+        after_json_d = json.load(f)
+
+    # check loaded json dictionary is the same as before saving
+    assert before_json_d == after_json_d
 
 
 class TestBentoWithOutArtifact(bentoml.BentoService):

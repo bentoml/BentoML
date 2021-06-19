@@ -50,7 +50,13 @@ class ABSRepository(BaseRepository):
                 'Find out more at https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python'
             )
         self.generate_blob_sas = generate_blob_sas
-        self.sas_permission = AccountSasPermissions(read=True)
+        self.sas_permission_add = AccountSasPermissions(
+            create=True,
+            write=True,
+        )
+        self.sas_permission_get = AccountSasPermissions(
+            read=True,
+        )
 
         self.uri_type = BentoUri.ABS
         self.base_url = base_url
@@ -96,7 +102,7 @@ class ABSRepository(BaseRepository):
                 account_key=abs_blob_client.credential.account_key,
                 container_name=self.container,
                 blob_name=object_name,
-                permission=self.sas_permission,
+                permission=self.sas_permission_add,
                 expiry=datetime.utcnow() + timedelta(0, self.expiration)
             )
             sas_url = f"{url}?{sas_token}"
@@ -125,7 +131,7 @@ class ABSRepository(BaseRepository):
                 account_key=abs_blob_client.credential.account_key,
                 container_name=self.container,
                 blob_name=object_name,
-                permission=self.sas_permission,
+                permission=self.sas_permission_get,
                 expiry=datetime.utcnow() + timedelta(0, self.expiration)
             )
             return f"{url}?{sas_token}"

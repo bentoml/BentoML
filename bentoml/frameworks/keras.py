@@ -11,15 +11,16 @@ from bentoml.service.env import BentoServiceEnv
 from bentoml.utils import cloudpickle
 
 MODULE_NAME_FILE_ENCODING = "utf-8"
+KERAS_MODEL_EXTENSION = (".h5",)
 
 
 class KerasModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading Keras model
+    Artifact class for saving and loading Keras Model
 
     Args:
         name (string): name of the artifact
-        custom_objects (dict): dictionary of Keras custom objects for model
+        default_custom_objects (dict): dictionary of Keras custom objects for model
         store_as_json_and_weights (bool): flag allowing storage of the Keras
             model as JSON and weights
 
@@ -56,11 +57,7 @@ class KerasModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(
-        self,
-        name,
-        custom_objects=None,
-        model_extension=".h5",
-        store_as_json_and_weights=False,
+        self, name, default_custom_objects=None, store_as_json_and_weights=False,
     ):
         super(KerasModelArtifact, self).__init__(name)
 
@@ -72,13 +69,12 @@ class KerasModelArtifact(BentoServiceArtifact):
                 "currently only support using Keras with Tensorflow backend."
             )
 
-        self._model_extension = model_extension
         self._store_as_json_and_weights = store_as_json_and_weights
 
         # By default assume using tf.keras module
         self._keras_module_name = tf.keras.__name__
 
-        self._default_custom_objects = custom_objects
+        self._default_custom_objects = default_custom_objects
         self.graph = None
         self.sess = None
 
@@ -103,7 +99,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '_custom_objects.pkl')
 
     def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + self._model_extension)
+        return os.path.join(base_path, self.name + KERAS_MODEL_EXTENSION)
 
     def _model_weights_path(self, base_path):
         return os.path.join(base_path, self.name + '_weights.hdf5')

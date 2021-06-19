@@ -30,12 +30,14 @@ def _is_onnx_model_file(path):
 
 
 class OnnxModelArtifact(BentoServiceArtifact):
-    """Abstraction for saving/loading onnx model
+    """
+    Artifact class for saving and loading ONNX Model
 
     Args:
         name (string): Name of the artifact
         backend (string): Name of ONNX inference runtime. ["onnxruntime",
                             "onnxruntime-gpu"]
+
     Raises:
         MissingDependencyException: onnx package is required for packing a ModelProto
                                     object
@@ -92,7 +94,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name, backend="onnxruntime"):
-        super(OnnxModelArtifact, self).__init__(name)
+        super().__init__(name)
         if backend not in SUPPORTED_ONNX_BACKEND:
             raise BentoMLException(
                 f'"{backend}" runtime is currently not supported for OnnxModelArtifact'

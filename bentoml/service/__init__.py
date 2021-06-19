@@ -536,7 +536,7 @@ class BentoService:
                 )
 
     def _config_artifacts(self):
-        self._artifacts = ArtifactCollection.from_artifact_list(
+        self._artifacts = ArtifactCollection.from_declared_artifact_list(
             self._declared_artifacts
         )
 

@@ -101,13 +101,6 @@ class BentoServiceArtifact:
         :param env: target BentoServiceEnv instance to modify
         """
 
-    def _copy(self):
-        """Create a new empty artifact instance with the same name, this is only used
-        internally for BentoML to create new artifact instances when create a new
-        BentoService instance
-        """
-        return self.__class__(self.name)
-
     def __getattribute__(self, item):
         if item == 'pack':
             original = object.__getattribute__(self, item)
@@ -264,10 +257,10 @@ class ArtifactCollection(dict):
                 )
 
     @classmethod
-    def from_artifact_list(cls, artifacts_list: List[BentoServiceArtifact]):
+    def from_declared_artifact_list(cls, artifacts_list: List[BentoServiceArtifact]):
         artifact_collection = cls()
         for artifact in artifacts_list:
-            artifact_collection.add(artifact._copy())
+            artifact_collection.add(artifact)
         return artifact_collection
 
     def load_all(self, path):

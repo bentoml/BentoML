@@ -11,7 +11,7 @@ from bentoml.service.env import BentoServiceEnv
 from bentoml.utils import cloudpickle
 
 MODULE_NAME_FILE_ENCODING = "utf-8"
-KERAS_MODEL_EXTENSION = (".h5",)
+KERAS_MODEL_EXTENSION = ".h5"
 
 
 class KerasModelArtifact(BentoServiceArtifact):

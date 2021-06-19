@@ -77,7 +77,6 @@ def _resolve_remote_bundle_path(bundle_path):
         gcs.download_blob_to_file(bundle_path, fileobj)
         fileobj.seek(0, 0)
     elif is_abs_url(bundle_path):
-        # TODO: NEED TO IMPLEMENT THE LOADER FOR AZURE BLOB SERVICE
         try:
             from azure.storage.blob import BlobServiceClient
         except ImportError:

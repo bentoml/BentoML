@@ -72,7 +72,6 @@ class ABSRepository(BaseRepository):
     def _get_object_name(self, bento_name, bento_version):
         if self.blob:
             return "/".join([
-                #self.base_path,
                 self.blob,
                 bento_name,
                 bento_version
@@ -87,14 +86,6 @@ class ABSRepository(BaseRepository):
         object_name = self._get_object_name(bento_name, bento_version)
         url = f"https://{self.account}.blob.core.windows.net/{self.container}/{object_name}"
         try:
-            # bucket = self.abs_client.bucket(self.bucket)
-            # blob = bucket.blob(object_name)
-
-            # response = blob.generate_signed_url(
-            #     version="v4",
-            #     expiration=self.expiration,
-            #     method="PUT",
-            # )
             abs_container_client = self.azure_blob_service_client.get_container_client(self.container)
             abs_blob_client = abs_container_client.get_blob_client(object_name)
             sas_token = self.generate_blob_sas(
@@ -113,7 +104,6 @@ class ABSRepository(BaseRepository):
 
         return BentoUri(
             type=self.uri_type,
-            #uri='gs://{}/{}'.format(self.bucket, object_name),
             uri=url,
             abs_presigned_url=sas_url,
         )

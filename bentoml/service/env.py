@@ -30,6 +30,8 @@ from bentoml.saved_bundle.pip_pkg import (
     verify_pkg,
 )
 from bentoml.utils.ruamel_yaml import YAML
+from bentoml.utils import cached_property
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,17 +69,7 @@ class CondaEnv(object):
     ):
         self._yaml = YAML()
         self._yaml.default_flow_style = False
-
-        if default_env_yaml_file:
-            env_yml_file = Path(default_env_yaml_file)
-            if not env_yml_file.is_file():
-                raise BentoMLException(
-                    f"Can not find conda environment config yaml file at: "
-                    f"`{default_env_yaml_file}`"
-                )
-            self._conda_env = self._yaml.load(env_yml_file)
-        else:
-            self._conda_env = self._yaml.load(DEFAULT_CONDA_ENV_BASE_YAML)
+        self.default_env_yaml_file = default_env_yaml_file
 
         if name:
             self.set_name(name)
@@ -92,6 +84,19 @@ class CondaEnv(object):
 
         if dependencies:
             self.add_conda_dependencies(dependencies)
+
+    @cached_property
+    def _conda_env(self):
+        if self.default_env_yaml_file:
+            env_yml_file = Path(self.default_env_yaml_file)
+            if not env_yml_file.is_file():
+                raise BentoMLException(
+                    f"Can not find conda environment config yaml file at: "
+                    f"`{self.default_env_yaml_file}`"
+                )
+            return self._yaml.load(env_yml_file)
+        else:
+            return self._yaml.load(DEFAULT_CONDA_ENV_BASE_YAML)
 
     def set_name(self, name):
         self._conda_env["name"] = name

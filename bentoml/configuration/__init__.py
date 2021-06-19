@@ -136,19 +136,6 @@ def inject_dependencies():
     container = BentoMLContainer()
     container.config.set(configuration.as_dict())
 
-    from bentoml import (
-        marshal,
-        server,
-        tracing,
-        cli,
-        adapters,
-        saved_bundle,
-        service,
-    )
-    from bentoml.yatai import yatai_service
-    from bentoml.yatai import yatai_service_impl
-    from bentoml.yatai.repository import s3_repository, gcs_repository
-
     end = timer()
 
     logger.debug("Dependency injection completed in %.3f seconds", end - start)

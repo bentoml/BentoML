@@ -289,7 +289,7 @@ dependencies:
 def test_conda_default_file_lazy_read():
     # should not raise
     @bentoml.env(conda_env_yml_file="a_file_that_does_not_exist.yml",)
-    class ExampleSvc(bentoml.BentoService):
+    class ExampleSvc(bentoml.BentoService):  # pylint: disable=unused-variable
         pass
 
     # should raise when yml file not found in "save"

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import errno
+import functools
 import itertools
 import logging
 import multiprocessing
@@ -7,6 +8,7 @@ import os
 import re
 import shutil
 from collections import defaultdict
+from collections.abc import Iterable
 from copy import deepcopy
 
 import json
@@ -47,16 +49,13 @@ flags.DEFINE_boolean(
     "dry_run", False, "Whether to dry run. This won't create Dockerfile."
 )
 flags.DEFINE_boolean(
+    "generate_dockerfile", False, "Whether to just generate dockerfile."
+)
+flags.DEFINE_boolean(
     "stop_on_failure",
     False,
     "Stop processing tags if any one build fails. If False or not specified, failures are reported but do not affect "
     "the other images.",
-)
-flags.DEFINE_boolean(
-    "stop_at_generate_dockerfile",
-    True,
-    "Stop at generating dockerfile",
-    short_name="sd",
 )
 
 # directory and files
@@ -69,10 +68,7 @@ flags.DEFINE_string("partials_dir", "./partials", "Partials directory")
 flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file")
 
 flags.DEFINE_multi_string(
-    "supported_python_version",
-    ["3.6", "3.7", "3.8"],
-    "Supported Python version",
-    short_name='p',
+    "supported_python_version", ["3.8"], "Supported Python version", short_name='p',
 )
 flags.DEFINE_string("bentoml_version", None, "BentoML release version", required=True)
 
@@ -97,6 +93,29 @@ releases:
           schema: 
             type: string
 
+dependencies:
+  type: dict
+  keysrules:
+    type: string
+  valuesrules:
+    type: dict
+    keysrules:
+      type: string
+    valuesrules:
+      type: list
+      schema:
+        type: string
+        isargs: true
+
+partials:
+  type: dict
+  keysrules:
+    type: string
+  valuesrules:
+    type: list
+    schema:
+      type: string
+
 dist:
   type: dict
   keysrules:
@@ -108,22 +127,19 @@ dist:
       schema:
         add_to_tags:
           type: string
-        write_to_dockerfile:
-          type: string
-        dockerfile_subdirectory:
+        dockerfile_name:
           type: string
         args:
           type: list
           default: []
           schema:
-            type: string
+            type: [string, list]
             isargs: true
         partials:
           type: list
           schema:
-            type: string
+            type: [string, list]
             ispartial: true
-
 """
 
 
@@ -131,10 +147,10 @@ class DockerTagValidator(Validator):
     """
     Custom cerberus validator for BentoML docker release spec.
 
-    Refers to https://docs.python-cerberus.org/en/stable/customize.html#custom-rules.[
+    Refers to https://docs.python-cerberus.org/en/stable/customize.html#custom-rules.
     This will add two rules:
     - args should have the correct format: ARG=foobar
-    - partial file that construct docker images should have correct format: *.partial.Dockerfile
+    - partial shorten file name from get_partials_content
 
     Args:
         partials: directory containing all partial files
@@ -147,30 +163,41 @@ class DockerTagValidator(Validator):
 
     def _validate_ispartial(self, ispartial, field, value):
         """
-        Validate the partial references of a partial spec
-        
-        
+        Validate the partial references of a partial spec.
+        This will accept str and list, which will allow YAML references.
+
         The rule's arguments are validated against this schema:
             {'type': 'boolean'}
         """
-        if ispartial and value not in self.partials:
-            self._error(field, f"{value} is not present in partials directory")
+        if isinstance(value, str):
+            if ispartial and value not in self.partials:
+                self._error(field, f"{value} is not present in partials directory")
+        if isinstance(value, list):
+            for v in value:
+                self._validate_ispartial(ispartial, field, v)
 
     def _validate_isargs(self, isargs, field, value):
         """
-        Validate a string is either ARG=foobar ARG foobar.
+        Validate a string is either in format 'ARG=foobar' or 'ARG foobar'.
+        This will accept str and list, which will allow YAML references.
 
         The rule's arguments are validated against this schema:
             {'type': 'boolean'}
         """
-        if isargs and "=" not in value:
-            self._error(
-                field, f"{value} should have format ARG=foobar since isargs={isargs}"
-            )
-        if not isargs and "=" in value:
-            self._error(
-                field, f"{value} should have format ARG foobar since isargs={isargs}"
-            )
+        if isinstance(value, str):
+            if isargs and "=" not in value:
+                self._error(
+                    field,
+                    f"{value} should have format ARG=foobar since isargs={isargs}",
+                )
+            if not isargs and "=" in value:
+                self._error(
+                    field,
+                    f"{value} should have format ARG foobar since isargs={isargs}",
+                )
+        if isinstance(value, list):
+            for v in value:
+                self._validate_isargs(isargs, field, v)
 
 
 def aggregate_dist_combinations(release_spec, used_dist):
@@ -182,6 +209,78 @@ def aggregate_dist_combinations(release_spec, used_dist):
 
     grouped_but_not_keyed = [dist_sets[name] for name in used_dist]
     return list(itertools.product(*grouped_but_not_keyed))
+
+
+def get_dist_spec(dist_specs, tag_spec):
+    """
+    Extract list of dist spec and args for that dist string:
+    {foo}{bar} will find foo and bar, assuming foo and bar are named dist sets.
+
+    Args:
+        dist_specs: Dict of named dist sets
+        tag_spec: spec string {foo}{bar}
+
+    Returns:
+        used_dist
+    """
+    used_dist = []
+    loaded_bracket = re.compile(r"{([^{}]+)}")
+    possible_dist_and_args = loaded_bracket.findall(tag_spec)
+    for name in possible_dist_and_args:
+        if name in dist_specs:
+            used_dist.append(name)
+        else:
+            logger.warning(f"WARNING: {name} is not yet defined under dist")
+    return used_dist
+
+
+def update_args_dict(args_dict, updater):
+    """
+    Update dict of args from a list or a dict.
+    """
+    if isinstance(updater, list):
+        if any(isinstance(_u, list) for _u in updater):
+            raise AttributeError(
+                f"{updater} is nested. Consider using flatten() before."
+            )
+        for u in updater:
+            key, sep, value = u.partition("=")
+            if sep == "=":
+                args_dict[key] = value
+    if isinstance(updater, dict):
+        for key, value in updater.items():
+            args_dict[key] = value
+    return args_dict
+
+
+def _flatten_list(l):
+    for it in l:
+        if isinstance(it, Iterable) and not isinstance(it, str):
+            for x in _flatten_list(it):
+                yield x
+        else:
+            yield it
+
+
+def flatten(func):
+    # creates a wrapper around _flatten_list to call with function.
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return list(_flatten_list(func(*args, **kwargs)))
+
+    return wrapper
+
+
+def build_release_args(dists, python_ver):
+    """Build dictionary of required args for each dist."""
+
+    args = {}
+    for d in dists:
+        # flatten a nested list if using YAML reference.
+        args = update_args_dict(args, list(_flatten_list(d['args'])))
+    # creates args for python version.
+    args["PYTHON_VERSION"] = python_ver
+    return args
 
 
 def build_release_tags(string, dists, bento_version, python_version):
@@ -207,53 +306,7 @@ def build_release_tags(string, dists, bento_version, python_version):
     return "-".join([bento_version, f"python{python_version}", name])
 
 
-def get_dist_spec(dist_specs, tag_spec):
-    """
-    Extract list of dist spec and args for that dist string:
-    {foo}{bar} will find foo and bar, assuming foo and bar are named dist sets.
-
-    Args:
-        dist_specs: Dict of named dist sets
-        tag_spec: spec string {foo}{bar}
-
-    Returns:
-        used_dist
-    """
-    used_dist = []
-    loaded_bracket = re.compile(r"{([^{}]+)}")
-    possible_dist_and_args = loaded_bracket.findall(tag_spec)
-    for name in possible_dist_and_args:
-        if name in dist_specs:
-            used_dist.append(name)
-        else:
-            logger.warning(f"WARNING: {name} is not yet defined under dist")
-
-    return used_dist
-
-
-def build_release_args(dists, python_ver):
-    """Build dictionary of required args for each dist."""
-
-    def update_args_dict(args_dict, updater):
-        """Update dict of args from a list or a dict."""
-        if isinstance(updater, list):
-            for u in updater:
-                key, sep, value = u.partition("=")
-                if sep == "=":
-                    args_dict[key] = value
-        if isinstance(updater, dict):
-            for key, value in updater.items():
-                args_dict[key] = value
-        return args_dict
-
-    args = {}
-    for d in dists:
-        args = update_args_dict(args, d['args'])
-    # creates args for python version.
-    args["PYTHON_VERSION"] = python_ver
-    return args
-
-
+@flatten
 def get_key_from_dist_spec(dists, key):
     """Get flattened list of certain key in list of dist."""
     return list(itertools.chain(*[d[key] for d in dists if key in d]))
@@ -291,10 +344,10 @@ def generate_tag_metadata(release_spec, bento_ver, supported_py_ver, all_partial
                     for py_ver in supported_py_ver:
                         tag_args = build_release_args(dist, py_ver)
                         tag_name = build_release_tags(
-                            dist_spec, dist, bento_ver, py_ver
+                            dist_spec, dist, FLAGS.bentoml_version, py_ver
                         )
                         used_partials = get_key_from_dist_spec(dist, 'partials')
-                        write_to_file = get_first_key_value(dist, 'write_to_dockerfile')
+                        dockerfile_name = get_first_key_value(dist, 'dockerfile_name')
                         dockerfile_contents = merge_partials(
                             release_spec["header"], used_partials, all_partials
                         )
@@ -306,7 +359,7 @@ def generate_tag_metadata(release_spec, bento_ver, supported_py_ver, all_partial
                                 'dist_spec': dist_spec,
                                 'docker_args': tag_args,
                                 'partials': used_partials,
-                                'write_to_file': write_to_file,
+                                'write_to_dockerfile': dockerfile_name,
                                 'dockerfile_contents': dockerfile_contents,
                             }
                         )
@@ -352,10 +405,10 @@ def mkdir_p(path):
             raise
 
 
-def upload_in_background(hub_repository, dock, image, tag):
+def upload_in_background(hub_repository, docker_client, image, tag):
     """Upload a docker image (to be used by multiprocessing)."""
     image.tag(hub_repository, tag=tag)
-    logger.info(dock.images.push(hub_repository, tag=tag))
+    logger.debug(docker_client.images.push(hub_repository, tag=tag))
 
 
 def main(argv):
@@ -366,7 +419,6 @@ def main(argv):
     schema = yaml.safe_load(SPEC_SCHEMA)
     with open(FLAGS.manifest_file, "r") as manifest_file:
         spec = yaml.safe_load(manifest_file)
-        manifest_file.close()
 
     # validate manifest configs and parse partial contents and spec
     partials = get_partials_content(FLAGS.partials_dir)
@@ -386,9 +438,11 @@ def main(argv):
             of.write(json.dumps(all_tags, indent=4))
         of.close()
 
-    # Empty Dockerfile directory when building new Dockerfile
-    shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
-    mkdir_p(FLAGS.dockerfile_dir)
+    if FLAGS.generate_dockerfile:
+        # Empty Dockerfile directory when building new Dockerfile
+        logger.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}")
+        shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
+        mkdir_p(FLAGS.dockerfile_dir)
 
     # Setup Docker credentials
     docker_client = docker.from_env()
@@ -409,12 +463,13 @@ def main(argv):
     failed_tags, succeeded_tags = [], []
     for release_tag, tag_specs in all_tags.items():
         for spec in tag_specs:
+            logger.info(f"Working on {release_tag}")
             # Generate required dockerfile for each distro.
-            if spec['write_to_file'] is not None:
+            if FLAGS.generate_dockerfile and spec['write_to_dockerfile'] is not None:
                 path = os.path.join(
                     FLAGS.dockerfile_dir,
                     spec['package'],
-                    spec['write_to_file'] + ".dockerfile",
+                    spec['write_to_dockerfile'] + ".dockerfile",
                 )
                 if os.path.exists(path):
                     continue
@@ -424,16 +479,10 @@ def main(argv):
                     with open(path, "w") as of:
                         of.write(spec["dockerfile_contents"])
 
-                if FLAGS.stop_at_generate_dockerfile:
-                    logger.info(
-                        "> Stopping at generating dockerfile since --stop_at_generate_dockerfile=True"
-                    )
-                    return
-
             # Generate temp Dockerfile for docker-py to build, since it needs
-            # a file path relative to build context
+            # a file path relative to build context.
             temp_dockerfile = os.path.join(
-                FLAGS.dockerfile_dir, release_tag + ".tmp.Dockerfile"
+                FLAGS.dockerfile_dir, release_tag + ".tmp.dockerfile"
             )
             if not FLAGS.dry_run:
                 with open(temp_dockerfile, "w") as of:
@@ -442,14 +491,11 @@ def main(argv):
 
             local_repo_tag = f"{spec['package']}:{release_tag}"
             logger.info(f">> Building {temp_dockerfile} with args:")
-            for arg, value in spec['docker_args']:
+            for arg, value in spec['docker_args'].items():
                 logger.info(f">>> {arg}={value}")
 
-            # TODO: test with no_cache.
-            # This part is copy-pasta from tensorflow/tensorflow
-            tag_failed = False
-            image = None
-            logs = []
+            # we don't use cache_from since layers between releases are similar and thus
+            # we can make use of implied local build cache
             if not FLAGS.dry_run:
                 try:
                     resp = docker_client.api.build(
@@ -460,46 +506,11 @@ def main(argv):
                         buildargs=spec['docker_args'],
                         tag=local_repo_tag,
                     )
-                    last_event, image_id = None, None
-                    while True:
-                        try:
-                            output = next(resp).decode('utf-8')
-                            json_output = json.loads(output.strip('\r\n'))
-                            if 'stream' in json_output:
-                                logger.info(json_output['stream'], end='')
-                                match = re.search(
-                                    r'(^Successfully built |sha256:)([0-9a-f]+)$',
-                                    json_output['stream'],
-                                )
-                                if match:
-                                    image_id = match.group(2)
-                                last_event = json_output['stream']
-                                # collect all log lines into the logs object
-                                logs.append(json_output)
-                        except StopIteration:
-                            logger.info('Docker image build complete.')
-                            break
-                        except ValueError:
-                            logger.error(
-                                'Error parsing from docker image build: {}'.format(
-                                    output
-                                )
-                            )
-                    # If Image ID is not set, the image failed to built properly. Raise
-                    # an error in this case with the last log line and all logs
-                    if image_id:
-                        image = docker_client.images.get(image_id)
-                    else:
-                        raise docker.errors.BuildError(last_event or 'Unknown', logs)
                 except docker.errors.BuildError as e:
-                    logger.error(
-                        f'>> {local_repo_tag} failed to build with message: "{e.msg}"'
-                    )
-                    logger.info('>> Build logs follow:')
-                    log_lines = [l.get('stream', '') for l in e.build_log]
-                    logger.info(''.join(log_lines))
+                    for line in e.build_log:
+                        if 'stream' in line:
+                            logger.error(line['stream'].strip())
                     failed_tags.append(local_repo_tag)
-                    tag_failed = True
                     if FLAGS.stop_on_failure:
                         logger.info('>> ABORTING due to --stop_on_failure!')
                         exit(1)
@@ -508,25 +519,6 @@ def main(argv):
                 os.remove(temp_dockerfile)
 
                 # Upload new images to DockerHub as long as they built + passed tests
-                if FLAGS.upload_to_hub:
-                    if tag_failed:
-                        continue
-
-                    logger.info(f'>> Uploading to {FLAGS.hub_repository}:{release_tag}')
-                    if not FLAGS.dry_run:
-                        p = multiprocessing.Process(
-                            target=upload_in_background,
-                            args=(
-                                FLAGS.hub_repository,
-                                docker_client,
-                                image,
-                                release_tag,
-                            ),
-                        )
-                        p.start()
-
-                if not tag_failed:
-                    succeeded_tags.append(release_tag)
 
     if failed_tags:
         logger.error(

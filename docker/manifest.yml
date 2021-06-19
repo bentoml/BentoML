@@ -1,5 +1,6 @@
+---
 header: |
-  # syntax=docker/dockerfile:1.2
+  # syntax = docker/dockerfile:experimental
   #
   # ===========================================
   #
@@ -13,167 +14,146 @@ releases:
       spec:
         - "{devel-ubuntu}"
         - "{devel-centos}"
-    semver:
+    runtime:
       spec:
         - "{ubuntu}"
         - "{centos}"
         - "{alpine}"
         - "{slim}"
         - "{amazonlinux2}"
-  yatai-service:
-    versioned:
-      spec:
-        - "{yatai-ubuntu}"
-        - "{yatai-centos}"
+
+dependencies:
+  cuda:
+    general: &cuda_cudnn
+      - CUDA=11.3
+      - CUDNN_MAJOR_VERSION=8
+      - CUDNN_VERSION=8.2.0.53
+    centos: &cuda_centos
+      - CUBLAS_VERSION=11.5.1.109
+      - CURAND_VERSION=10.2.4.109
+      - CUSPARSE_VERSION=11.6.0.109
+      - CUFFT_VERSION=10.4.2.109
+      - CUSOLVER_VERSION=11.1.2.109
+
+partials:
+  ubuntu: &ubuntu_general_partials
+    - env
+    - ubuntu/base
+    - conda
+  ubuntu-gpu: &ubuntu_general_gpu_partials
+    - env
+    - ubuntu/base-nvidia
+    - conda
+  centos: &centos_general_partials
+    - env
+    - centos/base
+    - conda
+  centos-gpu: &centos_general_gpu_partials
+    - env
+    - centos/base-nvidia
+    - conda
+
 
 dist:
   ubuntu:
     - add_to_tags: "ubuntu20.04"
-      write_to_dockerfile: "ubuntu"
-      args:
+      dockerfile_name: "ubuntu"
+      args: &ubuntu20_04_args
         - OS_VERSION=20.04
-      partials:
-        - env
-        - ubuntu/base
-        - conda
+      partials: &ubuntu20_04_partials
+        - *ubuntu_general_partials
         - bentoml/model-server
+
     - add_to_tags: "ubuntu20.04-gpu"
-      write_to_dockerfile: "ubuntu-gpu"
+      dockerfile_name: "ubuntu-gpu"
       args:
-        - OS_VERSION=20.04
-        - CUDA_VERSION=11.3
-        - CUDNN_MAJOR_VERSION=8
-        - CUDNN_VERSION=8.2.0.53
-      partials:
-        - env
-        - ubuntu/base-nvidia
-        - conda
+        - *ubuntu20_04_args
+        - *cuda_cudnn
+      partials: &ubuntu20_04_gpu_partials
+        - *ubuntu_general_gpu_partials
         - bentoml/model-server
 
     - add_to_tags: "ubuntu18.04"
-      args:
+      args: &ubuntu18_04_args
         - OS_VERSION=18.04
       partials:
-        - env
-        - ubuntu/base
-        - conda
-        - bentoml/model-server
+        - *ubuntu20_04_partials
+
     - add_to_tags: "ubuntu18.04-gpu"
-      args:
-        - OS_VERSION=18.04
-        - CUDA_VERSION=11.3
-        - CUDNN_VERSION=8.2.0.53
-        - CUDNN_MAJOR_VERSION=8
+      args: &ubuntu18_04_gpu
+        - *ubuntu18_04_args
+        - *cuda_cudnn
       partials:
-        - env
-        - ubuntu/base-nvidia
-        - conda
-        - bentoml/model-server
+        - *ubuntu20_04_gpu_partials
 
   devel-ubuntu:
     - add_to_tags: "devel-ubuntu"
-      write_to_dockerfile: "devel-ubuntu"
+      dockerfile_name: "devel-ubuntu"
       args:
-        - OS_VERSION=18.04
+        - *ubuntu18_04_args
       partials:
-        - env
-        - ubuntu/base
-        - conda
+        - *ubuntu_general_partials
         - shell
         - bentoml/devel-model-server
+
     - add_to_tags: "devel-ubuntu-gpu"
-      write_to_dockerfile: "devel-ubuntu-gpu"
+      dockerfile_name: "devel-ubuntu-gpu"
       args:
-        - OS_VERSION=18.04
-        - CUDA_VERSION=11.3
-        - CUDNN_VERSION=8.2.0.53
-        - CUDNN_MAJOR_VERSION=8
+        - *ubuntu18_04_gpu
       partials:
-        - env
-        - ubuntu/base-nvidia
-        - conda
+        - *ubuntu_general_gpu_partials
         - shell
         - bentoml/devel-model-server
 
   centos:
     - add_to_tags: "centos8"
-      write_to_dockerfile: "centos"
-      args:
+      dockerfile_name: "centos"
+      args: &centos8_args
         - OS_VERSION=8
-      partials:
-        - env
-        - centos/base
-        - conda
+      partials: &centos8_partials
+        - *centos_general_partials
         - bentoml/model-server
+
     - add_to_tags: "centos8-gpu"
-      write_to_dockerfile: "centos-gpu"
-      args:
-        - OS_VERSION=8
-        - CUDA_VERSION=11.3
-        - CUDNN_VERSION=8.2.0.53
-        - CUDNN_MAJOR_VERSION=8
-        - CUBLAS_VERSION=11.5.1.109
-        - CURAND_VERSION=10.2.4.109
-        - CUSPARSE_VERSION=11.6.0.109
-        - CUFFT_VERSION=10.4.2.109
-        - CUSOLVER_VERSION=11.1.2.109
-      partials:
-        - env
-        - centos/base-nvidia
-        - conda
+      dockerfile_name: "centos-gpu"
+      args: &centos8_gpu_args
+        - *centos8_args
+        - *cuda_cudnn
+        - *cuda_centos
+      partials: &centos8_gpu_partials
+        - *centos_general_gpu_partials
         - bentoml/model-server
+
     - add_to_tags: "centos7"
-      args:
+      args: &centos7_args
         - OS_VERSION=7
       partials:
-        - env
-        - centos/base
-        - conda
-        - bentoml/model-server
+        - *centos8_partials
+
     - add_to_tags: "centos7-gpu"
       args:
-        - OS_VERSION=7
-        - CUDA_VERSION=11.3
-        - CUDNN_VERSION=8.2.0.53
-        - CUDNN_MAJOR_VERSION=8
-        - CUBLAS_VERSION=11.5.1.109
-        - CURAND_VERSION=10.2.4.109
-        - CUSPARSE_VERSION=11.6.0.109
-        - CUFFT_VERSION=10.4.2.109
-        - CUSOLVER_VERSION=11.1.2.109
+        - *centos7_args
+        - *cuda_cudnn
+        - *cuda_centos
       partials:
-        - env
-        - centos/base-nvidia
-        - conda
-        - bentoml/model-server
+        - *centos8_gpu_partials
 
   devel-centos:
     - add_to_tags: "devel-centos"
-      write_to_dockerfile: "devel-centos"
+      dockerfile_name: "devel-centos"
       args:
-        - OS_VERSION=8
+        - *centos8_args
       partials:
-        - env
-        - centos/base
-        - conda
+        - *centos_general_partials
         - shell
         - bentoml/devel-model-server
+
     - add_to_tags: "devel-centos-gpu"
-      write_to_dockerfile: "devel-centos-gpu"
+      dockerfile_name: "devel-centos-gpu"
       args:
-        - OS_VERSION=8
-        - CUDA_VERSION=11.3
-        - CUDNN_VERSION=8.2.0.53
-        - CUDNN_MAJOR_VERSION=8
-        - CUBLAS_VERSION=11.5.1.109
-        - CURAND_VERSION=10.2.4.109
-        - CUSPARSE_VERSION=11.6.0.109
-        - CUFFT_VERSION=10.4.2.109
-        - CUSOLVER_VERSION=11.1.2.109
+        - *centos8_gpu_args
       partials:
-        - env
-        - centos/base-nvidia
-        - conda
+        - *centos_general_gpu_partials
         - shell
         - bentoml/devel-model-server
 
@@ -182,26 +162,16 @@ dist:
       args:
         - OS_VERSION=3.14
       partials:
-        - ubuntu/base
         - env
+        - alpine/base
         - conda
         - bentoml/model-server
 
   slim:
     - add_to_tags: "slim"
-      write_to_dockerfile: "slim"
+      dockerfile_name: "slim"
       args:
         - OS_VERSION=buster-slim
-      partials:
-        - ubuntu/base
-        - env
-        - conda
-        - bentoml/model-server
-    - add_to_tags: "slim-gpu"
-      write_to_dockerfile: "slim-gpu"
-      args:
-        - OS_VERSION=buster-slim
-        - CUDA_VERSION=11.3.1
       partials:
         - ubuntu/base
         - env
@@ -210,29 +180,9 @@ dist:
 
   amazonlinux2:
     - add_to_tags: "ami2"
-      write_to_dockerfile: "amazonlinux2"
+      dockerfile_name: "amazonlinux2"
       partials:
         - ubuntu/base
         - env
         - conda
         - bentoml/model-server
-
-  yatai-ubuntu:
-    - add_to_tags: "yatai-ubuntu18.04"
-      args:
-        - OS_VERSION=18.04
-      partials:
-        - ubuntu/base
-        - env
-        - conda
-        - bentoml/yatai-service
-
-  yatai-centos:
-    - add_to_tags: "yatai-centos8"
-      args:
-        - OS_VERSION=8
-      partials:
-        - centos/base
-        - env
-        - conda
-        - bentoml/yatai-service

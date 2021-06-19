@@ -6,6 +6,7 @@ import pytest
 
 import bentoml
 from bentoml.adapters import DataframeInput
+from bentoml.exceptions import BentoMLException
 from bentoml.frameworks.sklearn import SklearnModelArtifact
 
 
@@ -283,3 +284,20 @@ dependencies:
 
     assert 'test-dep-1' in env_yml['dependencies']
     assert 'bentoml-test-lib' in env_yml['dependencies']
+
+
+def test_conda_default_file_lazy_read():
+    # should not raise
+    @bentoml.env(conda_env_yml_file="a_file_that_does_not_exist.yml",)
+    class ExampleSvc(bentoml.BentoService):
+        pass
+
+    # should raise when yml file not found in "save"
+    with pytest.raises(BentoMLException):
+
+        @bentoml.env(conda_env_yml_file="a_file_that_does_not_exist.yml",)
+        class ExampleSvcII(bentoml.BentoService):
+            pass
+
+        svc = ExampleSvcII()
+        svc.save()

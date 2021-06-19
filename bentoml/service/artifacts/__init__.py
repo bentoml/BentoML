@@ -19,6 +19,24 @@ class BentoServiceArtifact:
     serialization and deserialization process.
     """
 
+    def __new__(cls, *args, **kwargs):
+        obj = super(BentoServiceArtifact, cls).__new__(cls)
+
+        # store the args and kwargs used for creating this artifact instance - this is
+        # used internally for the _copy method below
+        obj.__args = args
+        obj.__kwargs = kwargs
+        
+        return obj
+
+    def _copy(self):
+        """
+        Create a new empty artifact instance with the same name and arguments, this
+        is only used internally for BentoML to create new artifact instances when
+        creating a new BentoService instance
+        """
+        return self.__class__(*self.__args, **self.__kwargs)
+
     def __init__(self, name: str):
         if not name.isidentifier():
             raise ValueError(
@@ -192,18 +210,6 @@ class BentoServiceArtifact:
         return object.__getattribute__(self, item)
 
 
-class BentoServiceArtifactWrapper:
-    """
-    Deprecated: use only the BentoServiceArtifact to define artifact operations
-    """
-
-    def __init__(self):
-        logger.warning(
-            "BentoServiceArtifactWrapper is deprecated now, use BentoServiceArtifact "
-            "to define artifact operations"
-        )
-
-
 class ArtifactCollection(dict):
     """
     A dict of artifact instances (artifact.name -> artifact_instance)
@@ -260,7 +266,7 @@ class ArtifactCollection(dict):
     def from_declared_artifact_list(cls, artifacts_list: List[BentoServiceArtifact]):
         artifact_collection = cls()
         for artifact in artifacts_list:
-            artifact_collection.add(artifact)
+            artifact_collection.add(artifact._copy())
         return artifact_collection
 
     def load_all(self, path):

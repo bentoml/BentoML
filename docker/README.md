@@ -6,7 +6,6 @@ os : 9
 type: runtime - devel - slim - gpu
 python_version: 3.6 3.7 3.8
 ->  images/release per package (model-server, yatai-service)
-->  only support x86_64 atm -> arm can add over dockerfile
 
 workflow
   parse manifest.yml
@@ -25,9 +24,8 @@ naming convention: ${release_version | devel}-${python_version}-${os}-cuda${cuda
 example: 0.13.1-python3.8-ubuntu20.04-gpu
          0.13.1-python3.8-alpine3.14
          0.13.1-python3.7-slim
-         0.13.1-python3.7-slim-gpu
          0.13.1-python3.6-amazonlinux2
-NOTE: cuda is only supported for slim, ubuntu, and centos
+NOTE: cuda is only supported on ubuntu, and centos
 
 content structure of manifest.yml (only for my sanity)
 
@@ -45,20 +43,3 @@ content structure of manifest.yml (only for my sanity)
         write_to_dockerfile: str -> overwrite our generated dockerfile for this given image
         args: list[str] this will be parsed at docker build
         partials: list[str] components needed to build our dockerfile
-
-- install deps:
-    curl bash gcc build-essential
-    - for gpu:
-        since we build from base -> install deps with correct hash?
-        cudnn & cublas
-        version:
-        https://developer.download.nvidia.com/compute/cuda/repos/ -> creates a structure for repo url
-
-- install conda via miniconda -> python from conda
-
-- setup node.js for yatai-service
-
-- install bentoml from pypi
-    dev -> git clone & install from source
-
-ci -> release nightly images

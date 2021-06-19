@@ -7,6 +7,7 @@ import multiprocessing
 import os
 import re
 import shutil
+import sys
 from collections import defaultdict
 from collections.abc import Iterable
 from copy import deepcopy
@@ -32,7 +33,7 @@ flags.DEFINE_string(
     "hub_username", None, "Docker Hub username, only used with --upload_to_hub"
 )
 flags.DEFINE_string(
-    "hub_repository", None, "Docker Hub repository, only used with --upload_to_hub"
+    "hub_org", "bentoml", "Docker Hub repository, only used with --upload_to_hub"
 )
 flags.DEFINE_boolean(
     "upload_to_hub",
@@ -50,6 +51,9 @@ flags.DEFINE_boolean(
 )
 flags.DEFINE_boolean(
     "generate_dockerfile", False, "Whether to just generate dockerfile."
+)
+flags.DEFINE_boolean(
+    "build_images", False, "Whether to build images."
 )
 flags.DEFINE_boolean(
     "stop_on_failure",
@@ -253,8 +257,8 @@ def update_args_dict(args_dict, updater):
     return args_dict
 
 
-def _flatten_list(l):
-    for it in l:
+def _flatten_list(_list):
+    for it in _list:
         if isinstance(it, Iterable) and not isinstance(it, str):
             for x in _flatten_list(it):
                 yield x
@@ -280,6 +284,7 @@ def build_release_args(dists, python_ver):
         args = update_args_dict(args, list(_flatten_list(d['args'])))
     # creates args for python version.
     args["PYTHON_VERSION"] = python_ver
+    args["BENTOML_VERSION"] = FLAGS.bentoml_version
     return args
 
 
@@ -319,20 +324,20 @@ def get_first_key_value(dists, key):
     return None
 
 
-def generate_tag_metadata(release_spec, bento_ver, supported_py_ver, all_partials):
+def generate_tag_metadata(release_spec, bentoml_version, python_version, all_partials):
     """
     Generate all tag metadata based on given spec.
 
     Args:
         release_spec: Nested dict containing tag spec
-        bento_ver: Bentoml release version
-        supported_py_ver: Supported python release version
+        bentoml_version: Bentoml release version
+        python_version: Supported python release version
         all_partials: Dict containing every partials with its content.
 
     Returns:
-        Dict of tags and content of Dockerfile.
+        Metadata of tags and content of Dockerfile.
     """
-    tag_metadata = defaultdict(list)
+    tag_metadata = defaultdict()
     for package, release_type in release_spec["releases"].items():
         # package: model-server/yatai-service -> release: devel, versioned
         for image_type, target_dists in release_type.items():
@@ -341,10 +346,10 @@ def generate_tag_metadata(release_spec, bento_ver, supported_py_ver, all_partial
                 target_releases = aggregate_dist_combinations(release_spec, target_dist)
 
                 for dist in target_releases:
-                    for py_ver in supported_py_ver:
+                    for py_ver in python_version:
                         tag_args = build_release_args(dist, py_ver)
                         tag_name = build_release_tags(
-                            dist_spec, dist, FLAGS.bentoml_version, py_ver
+                            dist_spec, dist, bentoml_version, py_ver
                         )
                         used_partials = get_key_from_dist_spec(dist, 'partials')
                         dockerfile_name = get_first_key_value(dist, 'dockerfile_name')
@@ -352,8 +357,10 @@ def generate_tag_metadata(release_spec, bento_ver, supported_py_ver, all_partial
                             release_spec["header"], used_partials, all_partials
                         )
 
-                        tag_metadata[tag_name].append(
-                            {
+                        # use tag_metadata[tag_name].append() is probably
+                        # better if we add name into metadata and refers it to a dockerfile
+                        # instead of writing it all out.
+                        tag_metadata[tag_name] = {
                                 'package': package,
                                 'release': image_type,
                                 'dist_spec': dist_spec,
@@ -362,7 +369,6 @@ def generate_tag_metadata(release_spec, bento_ver, supported_py_ver, all_partial
                                 'write_to_dockerfile': dockerfile_name,
                                 'dockerfile_contents': dockerfile_contents,
                             }
-                        )
 
     return tag_metadata
 
@@ -384,7 +390,7 @@ def get_partials_content(partial_path):
                 logger.debug(f"skipping {full_path} since it is not a partial")
                 continue
             # partial/foo/bar.partial.dockerfile -> foo/bar
-            _simple = full_path[len(partial_path) + 1 : -len(".partial.dockerfile")]
+            _simple = full_path[len(partial_path) + 1: -len(".partial.dockerfile")]
             with open(full_path, "r") as f:
                 contents = f.read()
             partials[_simple] = contents
@@ -405,67 +411,69 @@ def mkdir_p(path):
             raise
 
 
-def upload_in_background(hub_repository, docker_client, image, tag):
+def upload_in_background(hub_org, package, docker_client, image, tag):
     """Upload a docker image (to be used by multiprocessing)."""
-    image.tag(hub_repository, tag=tag)
-    logger.debug(docker_client.images.push(hub_repository, tag=tag))
+    registry = f"{hub_org}/{package}"
+    image.tag(registry, tag=tag)
+    logger.debug(docker_client.images.push(registry, tag=tag))
 
 
 def main(argv):
     if len(argv) > 1:
         app.UsageError("Too many command line args.")
 
-    # parse manifest.yml
-    schema = yaml.safe_load(SPEC_SCHEMA)
-    with open(FLAGS.manifest_file, "r") as manifest_file:
-        spec = yaml.safe_load(manifest_file)
+    try:
+        # parse manifest.yml
+        schema = yaml.safe_load(SPEC_SCHEMA)
+        with open(FLAGS.manifest_file, "r") as manifest_file:
+            spec = yaml.safe_load(manifest_file)
 
-    # validate manifest configs and parse partial contents and spec
-    partials = get_partials_content(FLAGS.partials_dir)
-    v = DockerTagValidator(schema, partials=partials)
-    if not v.validate(spec):
-        logger.error(f"{FLAGS.manifest_file} is invalid.")
-        logger.error(yaml.dump(v.errors, indent=2))
-        exit(1)
-    release_spec = v.normalized(spec)
-
-    # assemble tags and dockerfile used to build required images.
-    all_tags = generate_tag_metadata(
-        release_spec, FLAGS.bentoml_version, FLAGS.supported_python_version, partials
-    )
-    if FLAGS.dump_metadata:
-        with open("metadata.json", "w+") as of:
-            of.write(json.dumps(all_tags, indent=4))
-        of.close()
-
-    if FLAGS.generate_dockerfile:
-        # Empty Dockerfile directory when building new Dockerfile
-        logger.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}")
-        shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
-        mkdir_p(FLAGS.dockerfile_dir)
-
-    # Setup Docker credentials
-    docker_client = docker.from_env()
-    if FLAGS.upload_to_hub:
-        if not FLAGS.hub_username:
-            logger.error("> ERROR: please set --hub_username when uploading images.")
+        # validate manifest configs and parse partial contents and spec
+        partials = get_partials_content(FLAGS.partials_dir)
+        v = DockerTagValidator(schema, partials=partials)
+        if not v.validate(spec):
+            logger.error(f"{FLAGS.manifest_file} is invalid.")
+            logger.error(yaml.dump(v.errors, indent=2))
             exit(1)
-        if not FLAGS.hub_password:
-            logger.error("> ERROR: please set --hub_password when uploading images.")
-            exit(1)
-        if not FLAGS.hub_repository:
-            logger.error("> ERROR: please set --hub_repository when uploading images.")
-            exit(1)
-        docker_client.login(username=FLAGS.hub_username, password=FLAGS.hub_password)
+        release_spec = v.normalized(spec)
 
-    # each tag has a release_tag and tag_spec containing args, dockerfile content, etc. use --dump_metadata for more
-    # information.
-    failed_tags, succeeded_tags = [], []
-    for release_tag, tag_specs in all_tags.items():
-        for spec in tag_specs:
-            logger.info(f"Working on {release_tag}")
+        # assemble tags and dockerfile used to build required images.
+        tag_registry = generate_tag_metadata(
+            release_spec, FLAGS.bentoml_version, FLAGS.supported_python_version, partials
+        )
+        if FLAGS.dump_metadata:
+            with open("metadata.json", "w+") as of:
+                of.write(json.dumps(tag_registry, indent=4))
+            of.close()
+
+        if FLAGS.generate_dockerfile:
+            # Empty Dockerfile directory when building new Dockerfile
+            logger.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}")
+            shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
+            mkdir_p(FLAGS.dockerfile_dir)
+
+        # Setup Docker credentials
+        docker_client = docker.from_env()
+        if FLAGS.upload_to_hub:
+            if not FLAGS.hub_username:
+                logger.error("> ERROR: please set --hub_username when uploading images.")
+                exit(1)
+            if not FLAGS.hub_password:
+                logger.error("> ERROR: please set --hub_password when uploading images.")
+                exit(1)
+            if not FLAGS.hub_org:
+                logger.error("> ERROR: please set --hub_org when uploading images.")
+                exit(1)
+            logger.info("> Logging into Docker with credentials...")
+            docker_client.login(username=FLAGS.hub_username, password=FLAGS.hub_password)
+
+        # each tag has a release_tag and tag_spec containing args, dockerfile content, etc. use --dump_metadata for more
+        # information.
+        failed_tags, succeeded_tags = [], []
+        for release_tag, spec in tag_registry.items():
+            logger.info(f"Working on {release_tag}\n")
             # Generate required dockerfile for each distro.
-            if FLAGS.generate_dockerfile and spec['write_to_dockerfile'] is not None:
+            if spec['write_to_dockerfile'] is not None:
                 path = os.path.join(
                     FLAGS.dockerfile_dir,
                     spec['package'],
@@ -473,11 +481,15 @@ def main(argv):
                 )
                 if os.path.exists(path):
                     continue
-                logger.info(f"> Writing to {path} ...")
-                if not FLAGS.dry_run:
-                    mkdir_p(os.path.dirname(path))
-                    with open(path, "w") as of:
-                        of.write(spec["dockerfile_contents"])
+                else:
+                    logger.info(f"> Writing to {path} ...")
+                    if not FLAGS.dry_run:
+                        mkdir_p(os.path.dirname(path))
+                        with open(path, "w") as of:
+                            of.write(spec["dockerfile_contents"])
+            if FLAGS.generate_dockerfile:
+                logger.info("--generate_dockerfile passed --build_image will get ignored if passed.")
+                continue
 
             # Generate temp Dockerfile for docker-py to build, since it needs
             # a file path relative to build context.
@@ -487,16 +499,18 @@ def main(argv):
             if not FLAGS.dry_run:
                 with open(temp_dockerfile, "w") as of:
                     of.write(spec["dockerfile_contents"])
-            logger.debug(f">> TMP: writing {temp_dockerfile} ...")
 
-            local_repo_tag = f"{spec['package']}:{release_tag}"
+            logger.info(f">> Building image: {spec['package']}:{release_tag}")
             logger.info(f">> Building {temp_dockerfile} with args:")
             for arg, value in spec['docker_args'].items():
                 logger.info(f">>> {arg}={value}")
 
+            # Creating each images for each releases from tag_metadata registry.
             # we don't use cache_from since layers between releases are similar and thus
             # we can make use of implied local build cache
-            if not FLAGS.dry_run:
+            tag_failed = False
+            image, logs = None, []
+            if FLAGS.build_images:
                 try:
                     resp = docker_client.api.build(
                         timeout=3600,
@@ -504,30 +518,84 @@ def main(argv):
                         nocache=False,
                         dockerfile=temp_dockerfile,
                         buildargs=spec['docker_args'],
-                        tag=local_repo_tag,
+                        tag=release_tag,
                     )
+                    last_event, image_id = None, None
+                    while True:
+                        try:
+                            output = next(resp).decode('utf-8')
+                            json_output = json.loads(output.strip('\r\n'))
+                            if 'stream' in json_output:
+                                print(json_output['stream'], file=sys.stderr)
+                                match = re.search(
+                                    r'(^Successfully built |sha256:)([0-9a-f]+)$',
+                                    json_output['stream'],
+                                )
+                                if match:
+                                    image_id = match.group(2)
+                                last_event = json_output['stream']
+                                logs.append(json_output)
+                        except StopIteration:
+                            logger.debug(
+                                f">>> Successfully built {temp_dockerfile.strip('.')[0]}."
+                            )
+                            break
+                        except ValueError:
+                            logger.error(f">>> Errors while building image:\n{output}")
+                    if image_id:
+                        image = docker_client.images.get(image_id)
+                    else:
+                        raise docker.errors.BuildError(last_event or 'Unknown', logs)
                 except docker.errors.BuildError as e:
+                    logger.error(f">> Failed to build {release_tag}:\n{e.msg}")
                     for line in e.build_log:
                         if 'stream' in line:
                             logger.error(line['stream'].strip())
-                    failed_tags.append(local_repo_tag)
+                    tag_failed = True
+                    failed_tags.append(release_tag)
                     if FLAGS.stop_on_failure:
                         logger.info('>> ABORTING due to --stop_on_failure!')
                         exit(1)
 
                 # Clean temporary dockerfiles if they were created earlier
                 os.remove(temp_dockerfile)
+            else:
+                logger.info(">>> --build-image is disabled. Continue")
 
-                # Upload new images to DockerHub as long as they built + passed tests
+            # Upload new images to DockerHub as long as they built + passed tests
+            if FLAGS.upload_to_hub:
+                if tag_failed:
+                    continue
 
-    if failed_tags:
-        logger.error(
-            f"> Some tags failed to build or failed testing, check scroll back for errors: {','.join(failed_tags)}"
-        )
-        exit(1)
+                logger.info(
+                    f">> Uploading to {FLAGS.hub_org}/{spec['package']}:{release_tag}"
+                )
+                if not FLAGS.dry_run:
+                    p = multiprocessing.Process(
+                        target=upload_in_background,
+                        args=(FLAGS.hub_org, spec['package'], docker_client, image, release_tag),
+                    )
+                    p.start()
 
-    for tag in succeeded_tags:
-        logger.info(tag)
+            if not tag_failed:
+                succeeded_tags.append(release_tag)
+
+        if failed_tags:
+            logger.error(
+                f"> Some tags failed to build or failed testing, check scroll back for errors: {','.join(failed_tags)}"
+            )
+            exit(1)
+
+        if not FLAGS.generate_dockerfile:
+            logger.info("Success tags:")
+            for tag in succeeded_tags:
+                print(f"\t{tag}")
+    except KeyboardInterrupt:
+        logger.error("Keyboard interrupt. Cleaning cache files...")
+        for root, _, files in os.walk(FLAGS.dockerfile_dir):
+            for file in files:
+                if file.endswith(".tmp.dockerfile"):
+                    os.remove(os.path.join(root, file))
 
 
 if __name__ == "__main__":

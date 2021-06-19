@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile:experimental
+# syntax = docker/dockerfile:1.2
 #
 # ===========================================
 #
@@ -9,14 +9,14 @@
 
 ARG OS_VERSION
 
-ARG CUDA_VERSION=${CUDA_VERSION}
+ARG CUDA=${CUDA}
 
-FROM nvidia/cuda:${CUDA_VERSION}.0-base-centos${OS_VERSION}
+FROM nvidia/cuda:${CUDA}.0-base-centos${OS_VERSION}
 
 # needed for string substitutions
 SHELL ["/bin/bash", "-c"]
 
-ARG CUDA_VERSION
+ARG CUDA
 
 # define all cuda-related deps.
 ARG CUDNN_VERSION=${CUDNN_VERSION}
@@ -28,13 +28,13 @@ ARG CUFFT_VERSION=${CUFFT_VERSION}
 ARG CUSOLVER_VERSION=${CUSOLVER_VERSION}
 
 RUN yum install -y \
-        wget git gcc gcc-c++ make \
-        libcublas-${CUDA_VERSION/./-}-${CUBLAS_VERSION}-1 \
-        libcurand-${CUDA_VERSION/./-}-${CURAND_VERSION}-1 \
-        libcusparse-${CUDA_VERSION/./-}-${CUSPARSE_VERSION}-1 \
-        libcufft-${CUDA_VERSION/./-}-${CUFFT_VERSION}-1 \
-        libcusolver-${CUDA_VERSION/./-}-${CUSOLVER_VERSION}-1 \
-        libcudnn${CUDNN_MAJOR_VERSION}=${CUDNN_VERSION}-1.cuda${CUDA_VERSION} \
+        wget git gcc gcc-c++ make ca-certificates \
+        libcublas-${CUDA/./-}-${CUBLAS_VERSION}-1 \
+        libcurand-${CUDA/./-}-${CURAND_VERSION}-1 \
+        libcusparse-${CUDA/./-}-${CUSPARSE_VERSION}-1 \
+        libcufft-${CUDA/./-}-${CUFFT_VERSION}-1 \
+        libcusolver-${CUDA/./-}-${CUSOLVER_VERSION}-1 \
+        libcudnn${CUDNN_MAJOR_VERSION}-${CUDNN_VERSION}-1.cuda${CUDA} \
     && yum clean all \
     && rm -rf /var/cache/yum/*
 
@@ -46,7 +46,7 @@ ARG BENTOML_VERSION
 ENV PATH /opt/conda/bin:$PATH
 
 # we will install python from conda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh \
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh \
     && chmod +x ~/miniconda.sh \
     && ~/miniconda.sh -b -p /opt/conda \
     && rm ~/miniconda.sh \

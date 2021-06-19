@@ -1,10 +1,9 @@
-FROM centos:${OS_VERSION}
-
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+FROM centos:${OS_VERSION} as base-image
 
 # needed for string substitutions
 SHELL ["/bin/bash", "-c"]
 
-RUN yum install -y wget git gcc gcc-c++ make \
+RUN yum upgrade -y \
+    && yum install -y wget git gcc gcc-c++ ca-certificates make \
     && yum clean all \
     && rm -rf /var/cache/yum/*

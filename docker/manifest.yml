@@ -1,6 +1,6 @@
 ---
 header: |
-  # syntax = docker/dockerfile:experimental
+  # syntax = docker/dockerfile:1.2
   #
   # ===========================================
   #
@@ -18,9 +18,8 @@ releases:
       spec:
         - "{ubuntu}"
         - "{centos}"
-        - "{alpine}"
         - "{slim}"
-        - "{amazonlinux2}"
+        - "{alpine}"
 
 dependencies:
   cuda:
@@ -35,23 +34,27 @@ dependencies:
       - CUFFT_VERSION=10.4.2.109
       - CUSOLVER_VERSION=11.1.2.109
 
+# ORDERS MATTER !!!
 partials:
-  ubuntu: &ubuntu_general_partials
+  ubuntu: &ubuntu_partials
     - env
     - ubuntu/base
     - conda
-  ubuntu-gpu: &ubuntu_general_gpu_partials
+  ubuntu-gpu: &ubuntu_gpu_partials
     - env
     - ubuntu/base-nvidia
     - conda
-  centos: &centos_general_partials
+  centos: &centos_partials
     - env
     - centos/base
     - conda
-  centos-gpu: &centos_general_gpu_partials
+  centos-gpu: &centos_gpu_partials
     - env
     - centos/base-nvidia
     - conda
+  bentoml-devel: &bentoml_devel
+    - shell
+    - bentoml/devel-model-server
 
 
 dist:
@@ -61,7 +64,8 @@ dist:
       args: &ubuntu20_04_args
         - OS_VERSION=20.04
       partials: &ubuntu20_04_partials
-        - *ubuntu_general_partials
+        - *ubuntu_partials
+        - ubuntu/multi-conda
         - bentoml/model-server
 
     - add_to_tags: "ubuntu20.04-gpu"
@@ -70,7 +74,7 @@ dist:
         - *ubuntu20_04_args
         - *cuda_cudnn
       partials: &ubuntu20_04_gpu_partials
-        - *ubuntu_general_gpu_partials
+        - *ubuntu_gpu_partials
         - bentoml/model-server
 
     - add_to_tags: "ubuntu18.04"
@@ -80,7 +84,7 @@ dist:
         - *ubuntu20_04_partials
 
     - add_to_tags: "ubuntu18.04-gpu"
-      args: &ubuntu18_04_gpu
+      args: &ubuntu18_04_gpu_args
         - *ubuntu18_04_args
         - *cuda_cudnn
       partials:
@@ -92,18 +96,16 @@ dist:
       args:
         - *ubuntu18_04_args
       partials:
-        - *ubuntu_general_partials
-        - shell
-        - bentoml/devel-model-server
+        - *ubuntu_partials
+        - *bentoml_devel
 
     - add_to_tags: "devel-ubuntu-gpu"
       dockerfile_name: "devel-ubuntu-gpu"
       args:
-        - *ubuntu18_04_gpu
+        - *ubuntu18_04_gpu_args
       partials:
-        - *ubuntu_general_gpu_partials
-        - shell
-        - bentoml/devel-model-server
+        - *ubuntu_gpu_partials
+        - *bentoml_devel
 
   centos:
     - add_to_tags: "centos8"
@@ -111,7 +113,7 @@ dist:
       args: &centos8_args
         - OS_VERSION=8
       partials: &centos8_partials
-        - *centos_general_partials
+        - *centos_partials
         - bentoml/model-server
 
     - add_to_tags: "centos8-gpu"
@@ -121,7 +123,7 @@ dist:
         - *cuda_cudnn
         - *cuda_centos
       partials: &centos8_gpu_partials
-        - *centos_general_gpu_partials
+        - *centos_gpu_partials
         - bentoml/model-server
 
     - add_to_tags: "centos7"
@@ -144,45 +146,36 @@ dist:
       args:
         - *centos8_args
       partials:
-        - *centos_general_partials
-        - shell
-        - bentoml/devel-model-server
+        - *centos_partials
+        - *bentoml_devel
 
     - add_to_tags: "devel-centos-gpu"
       dockerfile_name: "devel-centos-gpu"
       args:
         - *centos8_gpu_args
       partials:
-        - *centos_general_gpu_partials
-        - shell
-        - bentoml/devel-model-server
+        - *centos_gpu_partials
+        - *bentoml_devel
+
+  slim:
+      - add_to_tags: "slim"
+        dockerfile_name: "slim"
+        args:
+          - OS_VERSION=buster-slim
+        partials:
+          - env
+          - debian/base
+          - conda
+          - debian/multi-conda
+          - bentoml/model-server
 
   alpine:
     - add_to_tags: "alpine"
+      dockerfile_name: "alpine"
       args:
         - OS_VERSION=3.14
       partials:
         - env
         - alpine/base
-        - conda
-        - bentoml/model-server
-
-  slim:
-    - add_to_tags: "slim"
-      dockerfile_name: "slim"
-      args:
-        - OS_VERSION=buster-slim
-      partials:
-        - ubuntu/base
-        - env
-        - conda
-        - bentoml/model-server
-
-  amazonlinux2:
-    - add_to_tags: "ami2"
-      dockerfile_name: "amazonlinux2"
-      partials:
-        - ubuntu/base
-        - env
         - conda
         - bentoml/model-server

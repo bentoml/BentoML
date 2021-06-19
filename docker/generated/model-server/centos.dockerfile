@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile:experimental
+# syntax = docker/dockerfile:1.2
 #
 # ===========================================
 #
@@ -9,14 +9,13 @@
 
 ARG OS_VERSION
 
-FROM centos:${OS_VERSION}
-
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+FROM centos:${OS_VERSION} as base-image
 
 # needed for string substitutions
 SHELL ["/bin/bash", "-c"]
 
-RUN yum install -y wget git gcc gcc-c++ make \
+RUN yum upgrade -y \
+    && yum install -y wget git gcc gcc-c++ ca-certificates make \
     && yum clean all \
     && rm -rf /var/cache/yum/*
 
@@ -26,7 +25,7 @@ ARG BENTOML_VERSION
 ENV PATH /opt/conda/bin:$PATH
 
 # we will install python from conda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh \
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh \
     && chmod +x ~/miniconda.sh \
     && ~/miniconda.sh -b -p /opt/conda \
     && rm ~/miniconda.sh \

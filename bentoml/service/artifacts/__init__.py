@@ -26,7 +26,7 @@ class BentoServiceArtifact:
         # used internally for the _copy method below
         obj.__args = args
         obj.__kwargs = kwargs
-        
+
         return obj
 
     def _copy(self):

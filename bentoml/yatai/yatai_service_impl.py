@@ -11,65 +11,66 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from datetime import datetime
+import logging
 import os
 import tarfile
 import uuid
-import logging
-from datetime import datetime
-from dependency_injector.wiring import Provide, inject
 
+from simple_di import Provide, inject
+
+from bentoml import __version__ as BENTOML_VERSION
 from bentoml.configuration.containers import BentoMLContainer
+from bentoml.exceptions import (
+    BadInput,
+    BentoMLException,
+    InvalidArgument,
+    YataiRepositoryException,
+)
 from bentoml.saved_bundle import safe_retrieve
+from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.docker_utils import (
     to_valid_docker_image_name,
     to_valid_docker_image_version,
 )
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track
+from bentoml.yatai.db import DB
+from bentoml.yatai.db.stores.lock import LockStore
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.operator import get_deployment_operator
+from bentoml.yatai.grpc_stream_utils import DownloadBentoStreamResponses
 from bentoml.yatai.locking.lock import LockType, lock
+from bentoml.yatai.locking.lock import DEFAULT_TTL_MIN
+from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import (
-    GetDeploymentResponse,
-    DescribeDeploymentResponse,
-    ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentSpec,
+    DescribeDeploymentResponse,
+    GetDeploymentResponse,
+    ListDeploymentsResponse,
 )
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoResponse,
-    DangerouslyDeleteBentoResponse,
-    GetBentoResponse,
-    UpdateBentoResponse,
-    ListBentoResponse,
     BentoUri,
     ContainerizeBentoResponse,
-    UploadBentoResponse,
+    DangerouslyDeleteBentoResponse,
     DownloadBentoResponse,
+    GetBentoResponse,
+    ListBentoResponse,
+    UpdateBentoResponse,
+    UploadBentoResponse,
     UploadStatus,
 )
 from bentoml.yatai.proto.yatai_service_pb2 import (
-    HealthCheckResponse,
     GetYataiServiceVersionResponse,
-)
-from bentoml.yatai.deployment.operator import get_deployment_operator
-from bentoml.exceptions import (
-    BentoMLException,
-    InvalidArgument,
-    YataiRepositoryException,
-    BadInput,
+    HealthCheckResponse,
 )
 from bentoml.yatai.repository.base_repository import BaseRepository
-from bentoml.yatai.db import DB
-from bentoml.yatai.status import Status
-from bentoml.yatai.proto import status_pb2
-from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.grpc_stream_utils import DownloadBentoStreamResponses
-from bentoml.yatai.validator import validate_deployment_pb
 from bentoml.yatai.repository.file_system_repository import FileSystemRepository
-from bentoml.yatai.db.stores.lock import LockStore
-from bentoml.yatai.locking.lock import DEFAULT_TTL_MIN
-from bentoml import __version__ as BENTOML_VERSION
+from bentoml.yatai.status import Status
+from bentoml.yatai.validator import validate_deployment_pb
 
 logger = logging.getLogger(__name__)
 

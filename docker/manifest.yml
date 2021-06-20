@@ -20,6 +20,7 @@ releases:
         - "{centos}"
         - "{slim}"
         - "{alpine}"
+        - "{amazonlinux}"
 
 dependencies:
   cuda:
@@ -39,20 +40,20 @@ partials:
   ubuntu: &ubuntu_partials
     - env
     - ubuntu/base
-    - conda
   ubuntu-gpu: &ubuntu_gpu_partials
     - env
     - ubuntu/base-nvidia
-    - conda
   centos: &centos_partials
     - env
     - centos/base
-    - conda
   centos-gpu: &centos_gpu_partials
     - env
     - centos/base-nvidia
+  bentoml: &bentoml_partials
     - conda
-  bentoml-devel: &bentoml_devel
+    - bentoml/model-server
+  bentoml-devel: &bentoml_devel_partials
+    - conda
     - shell
     - bentoml/devel-model-server
 
@@ -65,6 +66,7 @@ dist:
         - OS_VERSION=20.04
       partials: &ubuntu20_04_partials
         - *ubuntu_partials
+        - conda
         - ubuntu/multi-conda
         - bentoml/model-server
 
@@ -75,6 +77,8 @@ dist:
         - *cuda_cudnn
       partials: &ubuntu20_04_gpu_partials
         - *ubuntu_gpu_partials
+        - conda
+        - ubuntu/multi-conda
         - bentoml/model-server
 
     - add_to_tags: "ubuntu18.04"
@@ -97,7 +101,7 @@ dist:
         - *ubuntu18_04_args
       partials:
         - *ubuntu_partials
-        - *bentoml_devel
+        - *bentoml_devel_partials
 
     - add_to_tags: "devel-ubuntu-gpu"
       dockerfile_name: "devel-ubuntu-gpu"
@@ -105,7 +109,7 @@ dist:
         - *ubuntu18_04_gpu_args
       partials:
         - *ubuntu_gpu_partials
-        - *bentoml_devel
+        - *bentoml_devel_partials
 
   centos:
     - add_to_tags: "centos8"
@@ -114,7 +118,7 @@ dist:
         - OS_VERSION=8
       partials: &centos8_partials
         - *centos_partials
-        - bentoml/model-server
+        - *bentoml_partials
 
     - add_to_tags: "centos8-gpu"
       dockerfile_name: "centos-gpu"
@@ -124,7 +128,7 @@ dist:
         - *cuda_centos
       partials: &centos8_gpu_partials
         - *centos_gpu_partials
-        - bentoml/model-server
+        - *bentoml_partials
 
     - add_to_tags: "centos7"
       args: &centos7_args
@@ -147,7 +151,7 @@ dist:
         - *centos8_args
       partials:
         - *centos_partials
-        - *bentoml_devel
+        - *bentoml_devel_partials
 
     - add_to_tags: "devel-centos-gpu"
       dockerfile_name: "devel-centos-gpu"
@@ -155,7 +159,7 @@ dist:
         - *centos8_gpu_args
       partials:
         - *centos_gpu_partials
-        - *bentoml_devel
+        - *bentoml_devel_partials
 
   slim:
       - add_to_tags: "slim"
@@ -177,5 +181,16 @@ dist:
       partials:
         - env
         - alpine/base
-        - conda
+        - alpine/conda
+        - bentoml/model-server
+
+  amazonlinux:
+    - add_to_tags: "ami2"
+      dockerfile_name: "ami2"
+      args:
+        - OS_VERSION=2
+      partials:
+        - env
+        - amazonlinux/base
+        - amazonlinux/conda
         - bentoml/model-server

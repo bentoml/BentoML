@@ -60,6 +60,7 @@ flags.DEFINE_boolean(
     False,
     "Stop processing tags if any one build fails. If False or not specified, failures are reported but do not affect "
     "the other images.",
+    short_name="s"
 )
 
 # directory and files
@@ -67,12 +68,13 @@ flags.DEFINE_string(
     "dockerfile_dir",
     "./generated",
     "path to generated Dockerfile. Existing files will be deleted with new Dockerfiles",
+    short_name="g"
 )
-flags.DEFINE_string("partials_dir", "./partials", "Partials directory")
-flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file")
+flags.DEFINE_string("partials_dir", "./partials", "Partials directory", short_name="d")
+flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file", short_name="m")
 
 flags.DEFINE_multi_string(
-    "supported_python_version", ["3.8"], "Supported Python version", short_name='p',
+    "supported_python_version", ["3.8"], "Supported Python version", short_name="p",
 )
 flags.DEFINE_string("bentoml_version", None, "BentoML release version", required=True)
 

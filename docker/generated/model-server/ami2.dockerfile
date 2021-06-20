@@ -9,21 +9,15 @@
 
 ARG OS_VERSION
 
-FROM ubuntu:${OS_VERSION} as base-image
-
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+FROM amazonlinux:${OS_VERSION} as base-image
 
 # needed for string substitutions
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update -q \
-    && apt-get install -q -y --no-install-recommends \
-        ca-certificates gnupg2 wget git \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-ARG PYTHON_VERSION
-ARG BENTOML_VERSION
+RUN yum upgrade -y \
+    && yum install -y wget ca-certificates \
+    && yum clean all \
+    && rm -rf /var/cache/yum/*
 
 ENV PATH /opt/conda/bin:$PATH
 
@@ -39,12 +33,12 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     && /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip \
     && /opt/conda/bin/conda clean -afy
 
-FROM ubuntu:${OS_VERSION} as build-image
-
-# Redefine BENTOML_VERSION because of multistage
-ARG BENTOML_VERSION
+FROM amazonlinux:${OS_VERSION} as build-image
 
 COPY --from=base-image /opt/conda /opt/conda
+
+ARG PYTHON_VERSION
+ARG BENTOML_VERSION
 
 ENV PATH /opt/conda/bin:$PATH
 

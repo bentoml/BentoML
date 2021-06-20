@@ -21,7 +21,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
     ex = None
     while time.time() - start_time < timeout:
         try:
-            if opener.open(f'http://{host_url}/healthz', timeout=1).status == 200:
+            if opener.open(f"http://{host_url}/healthz", timeout=1).status == 200:
                 return
             elif container and container.status != "running":
                 break
@@ -37,7 +37,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
                 container_logs = container.logs()
                 if container_logs:
                     logger.info(f"Container {container.id} logs:")
-                    for log_record in container_logs.decode().split('\r\n'):
+                    for log_record in container_logs.decode().split("\r\n"):
                         logger.info(f">>> {log_record}")
     else:
         logger.info("Timeout!")
@@ -78,8 +78,8 @@ def build_api_server_docker_image(saved_bundle_path, image_tag="test_bentoml_ser
         client.images.remove(image.id)
     except docker.errors.BuildError as e:
         for line in e.build_log:
-            if 'stream' in line:
-                print(line['stream'].strip())
+            if "stream" in line:
+                print(line["stream"].strip())
         raise
 
 
@@ -113,7 +113,7 @@ def run_api_server_docker_container(image, config_file=None, timeout=60):
         image=image.id,
         command=command_args,
         tty=True,
-        ports={'5000/tcp': port},
+        ports={"5000/tcp": port},
         detach=True,
         volumes=volumes,
         environment=environment,
@@ -146,13 +146,13 @@ def run_api_server(bundle_path, config_file=None, dev_server=False, timeout=20):
     with bentoml.utils.reserve_free_port() as port:
         cmd = [sys.executable, "-m", "bentoml", serve_cmd]
         if port:
-            cmd += ['--port', f'{port}']
+            cmd += ["--port", f"{port}"]
         cmd += [bundle_path]
 
     def print_log(p):
         try:
             for line in p.stdout:
-                print(line.decode(), end='')
+                print(line.decode(), end="")
         except ValueError:
             pass
 
@@ -160,7 +160,10 @@ def run_api_server(bundle_path, config_file=None, dev_server=False, timeout=20):
         my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
     p = subprocess.Popen(
-        cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=my_env,
+        cmd,
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
+        env=my_env,
     )
     try:
         threading.Thread(target=print_log, args=(p,), daemon=True).start()

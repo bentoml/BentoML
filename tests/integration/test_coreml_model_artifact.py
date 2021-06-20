@@ -38,13 +38,13 @@ def test_pytorch_artifact_pack(coreml_classifier_class):
     svc = coreml_classifier_class()
     pytorch_model = PytorchModel()
     model = convert_pytorch_to_coreml(pytorch_model)
-    svc.pack('model', model)
-    assert svc.predict(test_df) == 5.0, 'Run inference before save the artifact'
+    svc.pack("model", model)
+    assert svc.predict(test_df) == 5.0, "Run inference before save the artifact"
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
-    assert loaded_svc.predict(test_df) == 5.0, 'Run inference from saved artifact'
+    assert loaded_svc.predict(test_df) == 5.0, "Run inference from saved artifact"
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{svc.name}:{svc.version}')
+    yc.repository.delete(f"{svc.name}:{svc.version}")

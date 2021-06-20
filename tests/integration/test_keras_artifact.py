@@ -14,7 +14,7 @@ from tests.integration.utils import (
     run_api_server_docker_container,
 )
 
-TF2 = tf.__version__.startswith('2')
+TF2 = tf.__version__.startswith("2")
 
 if TF2:
     from tests.bento_service_examples.keras_classifier import KerasClassifier
@@ -37,7 +37,7 @@ def keras_model(request):
             ),
         )
     )
-    net.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    net.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
     return net
 
 
@@ -53,8 +53,8 @@ def svc(keras_model):
 
     svc = KerasClassifier()
     keras_model.predict(np.array([test_data]))
-    svc.pack('model', keras_model)
-    svc.pack('model2', keras_model)
+    svc.pack("model", keras_model)
+    svc.pack("model2", keras_model)
     return svc
 
 
@@ -73,10 +73,10 @@ def host(image):
 def test_keras_artifact(svc):
     assert svc.predict([test_data]) == [
         15.0
-    ], 'Inference on unsaved Keras artifact does not match expected'
+    ], "Inference on unsaved Keras artifact does not match expected"
     assert svc.predict2([test_data]) == [
         15.0
-    ], 'Inference on unsaved Keras artifact does not match expected'
+    ], "Inference on unsaved Keras artifact does not match expected"
 
 
 def test_keras_artifact_loaded(svc):
@@ -84,10 +84,10 @@ def test_keras_artifact_loaded(svc):
         loaded = bentoml.load(saved_path)
         assert (
             loaded.predict([test_data]) == 15.0
-        ), 'Inference on saved and loaded Keras artifact does not match expected'
+        ), "Inference on saved and loaded Keras artifact does not match expected"
         assert (
             loaded.predict2([test_data]) == 15.0
-        ), 'Inference on saved and loaded Keras artifact does not match expected'
+        ), "Inference on saved and loaded Keras artifact does not match expected"
 
 
 @pytest.mark.asyncio
@@ -98,7 +98,7 @@ async def test_keras_artifact_with_docker(host):
         headers=(("Content-Type", "application/json"),),
         data=json.dumps(test_data),
         assert_status=200,
-        assert_data=b'[15.0]',
+        assert_data=b"[15.0]",
     )
     await pytest.assert_request(
         "POST",
@@ -106,5 +106,5 @@ async def test_keras_artifact_with_docker(host):
         headers=(("Content-Type", "application/json"),),
         data=json.dumps(test_data),
         assert_status=200,
-        assert_data=b'[15.0]',
+        assert_data=b"[15.0]",
     )

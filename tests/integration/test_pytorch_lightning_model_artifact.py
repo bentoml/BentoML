@@ -33,9 +33,9 @@ def test_pytorch_lightning_model_artifact_with_saved_lightning_model():
         svc = PytorchLightningService()
         model = TorchLightningModel()
         script = model.to_torchscript()
-        script_path = f'{temp_dir}/model.pt'
+        script_path = f"{temp_dir}/model.pt"
         torch.jit.save(script, script_path)
-        svc.pack('model', script_path)
+        svc.pack("model", script_path)
 
         saved_path = svc.save(version=uuid.uuid4().hex[0:8])
         svc = bentoml.load(saved_path)
@@ -46,7 +46,7 @@ def test_pytorch_lightning_model_artifact_with_saved_lightning_model():
 def test_pytorch_lightning_model_artifact():
     svc = PytorchLightningService()
     model = TorchLightningModel()
-    svc.pack('model', model)
+    svc.pack("model", model)
 
     saved_path = svc.save(version=uuid.uuid4().hex[0:8])
     svc = bentoml.load(saved_path)
@@ -54,29 +54,30 @@ def test_pytorch_lightning_model_artifact():
     assert result.tolist() == [[6, 5, 4, 3]]
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def image(clean_context):
     svc = PytorchLightningService()
     model = TorchLightningModelTwo()
-    svc.pack('model', model)
+    svc.pack("model", model)
     saved_path = svc.save(version=uuid.uuid4().hex[0:8])
 
     yield clean_context.enter_context(build_api_server_docker_image(saved_path))
 
 
-@pytest.fixture(scope='module')
-def host(image):
-    with run_api_server_docker_container(image, timeout=500) as host:
-        yield host
+@pytest.fixture(scope="module")
+def host(image_name):
+    # pylint: disable=not-context-manager
+    with run_api_server_docker_container(image_name, timeout=500) as host_name:
+        yield host_name
 
 
 @pytest.mark.asyncio
-async def test_pytorch_lightning_with_docker(host):
+async def test_pytorch_lightning_with_docker(host_name):
     await pytest.assert_request(
         "POST",
-        f"http://{host}/predict",
+        f"http://{host_name}/predict",
         headers=(("Content-Type", "application/json"),),
         data=json.dumps([[5, 4, 3, 2]]),
         assert_status=200,
-        assert_data=b'[[7, 6, 5, 4]]',
+        assert_data=b"[[7, 6, 5, 4]]",
     )

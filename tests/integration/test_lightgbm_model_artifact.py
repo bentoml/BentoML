@@ -23,7 +23,7 @@ def get_trained_lgbm_model():
 def test_lgbm_artifact_pack():
     model = get_trained_lgbm_model()
     svc = LgbModelService()
-    svc.pack('model', model)
+    svc.pack("model", model)
 
     assert svc.predict(DataFrame([[0]])) == [0]
 

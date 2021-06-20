@@ -24,5 +24,5 @@ test_df = pd.DataFrame(
 
 def test_paddle_artifact_pack(service):
     pred = service.predict(test_df)
-    assert isinstance(pred, np.ndarray), 'Run inference'
+    assert isinstance(pred, np.ndarray), "Run inference"
     assert pred.shape == (1, 1)

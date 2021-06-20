@@ -101,7 +101,7 @@ async def test_batch_size_limit(host):
             data=data,
             assert_status=200,
             assert_data=lambda d: (
-                d == b'429: Too Many Requests'
+                d == b"429: Too Many Requests"
                 or batch_bucket.append(int(d.decode()))
                 or True
             ),

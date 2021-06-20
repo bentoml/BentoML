@@ -11,11 +11,11 @@ from tests.bento_service_examples.evalml_classifier import EvalMLClassifier
 @pytest.fixture(scope="session")
 def evalml_pipeline():
     X = pandas.DataFrame(
-        [[0, 'a'], [0, 'a'], [0, 'a'], [42, 'b'], [42, 'b'], [42, 'b']]
+        [[0, "a"], [0, "a"], [0, "a"], [42, "b"], [42, "b"], [42, "b"]]
     )
-    y = pandas.Series([0, 0, 0, 1, 1, 1], name='target')
+    y = pandas.Series([0, 0, 0, 1, 1, 1], name="target")
     pipeline = evalml.pipelines.BinaryClassificationPipeline(
-        ['Imputer', 'One Hot Encoder', 'Random Forest Classifier']
+        ["Imputer", "One Hot Encoder", "Random Forest Classifier"]
     )
     pipeline.fit(X, y)
     return pipeline
@@ -31,18 +31,18 @@ def evalml_classifier_class():
     return EvalMLClassifier
 
 
-test_df = pandas.DataFrame([[42, 'b']])
+test_df = pandas.DataFrame([[42, "b"]])
 
 
 def test_evalml_artifact_pack(evalml_classifier_class, evalml_pipeline):
     svc = evalml_classifier_class()
-    svc.pack('model', evalml_pipeline)
-    assert svc.predict(test_df) == 1.0, 'Run inference before save the artifact'
+    svc.pack("model", evalml_pipeline)
+    assert svc.predict(test_df) == 1.0, "Run inference before save the artifact"
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
-    assert loaded_svc.predict(test_df) == 1.0, 'Run inference from saved artifact'
+    assert loaded_svc.predict(test_df) == 1.0, "Run inference from saved artifact"
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{svc.name}:{svc.version}')
+    yc.repository.delete(f"{svc.name}:{svc.version}")

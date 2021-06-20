@@ -21,16 +21,16 @@ def trained_gluon_model():
     return net
 
 
-def test_gluon_artifact_pack(gluon_classifier, trained_gluon_model):
-    gluon_classifier.pack('model', trained_gluon_model)
+def test_gluon_artifact_pack(gluon_classifier_fn, trained_gluon_model_obj):
+    gluon_classifier.pack("model", trained_gluon_model_obj)
 
     assert gluon_classifier.predict([0]) == [0]
 
-    saved_path = gluon_classifier.save()
+    saved_path = gluon_classifier_fn.save()
     loaded_svc = bentoml.load(saved_path)
 
     assert loaded_svc.predict([0]) == [0]
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{gluon_classifier.name}:{gluon_classifier.version}')
+    yc.repository.delete(f"{gluon_classifier.name}:{gluon_classifier.version}")

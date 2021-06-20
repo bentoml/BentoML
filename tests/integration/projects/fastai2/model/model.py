@@ -24,7 +24,7 @@ class Model(nn.Module):
 
 
 class Loss(Module):
-    reduction = 'none'
+    reduction = "none"
 
     def forward(self, x, _y):
         return x

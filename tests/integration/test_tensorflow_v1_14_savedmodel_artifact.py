@@ -27,7 +27,7 @@ def tf1_model_path():
         p = tf.argmax(input=inter1, axis=1)
 
         # loss
-        y = tf.placeholder(tf.float32, shape=[None, 1], name='y')
+        y = tf.placeholder(tf.float32, shape=[None, 1], name="y")
         loss = tf.losses.softmax_cross_entropy(y, inter1)
 
         # training operartion
@@ -45,8 +45,8 @@ def tf1_model_path():
             prediction = sess.run(cnn_model["p"], {cnn_model["X"]: test_data})
             print(prediction)
 
-            inputs = {"X": cnn_model['X']}
-            outputs = {"prediction": cnn_model['p']}
+            inputs = {"X": cnn_model["X"]}
+            outputs = {"prediction": cnn_model["p"]}
 
             tf.saved_model.simple_save(sess, temp_dir, inputs=inputs, outputs=outputs)
         yield temp_dir
@@ -66,7 +66,7 @@ def svc(tf1_model_path):
     Tensorflow1Classifier._bento_service_bundle_version = None
 
     svc = Tensorflow1Classifier()
-    svc.pack('model', tf1_model_path)
+    svc.pack("model", tf1_model_path)
     return svc
 
 
@@ -90,5 +90,5 @@ async def test_tensorflow_1_artifact_with_docker(host):
         headers=(("Content-Type", "application/json"),),
         data=json.dumps({"instances": test_data}),
         assert_status=200,
-        assert_data=b'[0]',
+        assert_data=b"[0]",
     )

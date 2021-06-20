@@ -7,7 +7,7 @@ from bentoml.service.artifacts.pickle import PickleArtifact
 
 class PickleModel:
     def predict_dataframe(self, df):
-        return df['col1'] * 2
+        return df["col1"] * 2
 
     def predict_image(self, input_datas):
         return [input_data.shape for input_data in input_datas]

@@ -8,7 +8,7 @@ from tests.yatai.local_yatai_service import yatai_service_container
 def test_push_and_pull():
     with yatai_service_container() as yatai_server_url:
         svc = ExampleBentoService()
-        bento_tag = f'{svc.name}:{svc.version}'
+        bento_tag = f"{svc.name}:{svc.version}"
         saved_path = svc.save()
         yc = get_yatai_client(yatai_server_url)
 

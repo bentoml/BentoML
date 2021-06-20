@@ -34,10 +34,6 @@ class TestModel(object):
 
 
 def test_save_load(yatai_service_url, example_bento_service_class):
-    example_bento_service_class = bentoml.ver(major=2, minor=1)(
-        example_bento_service_class
-    )
-
     yc = get_yatai_client(yatai_service_url)
     test_model = TestModel()
     svc = example_bento_service_class()
@@ -55,10 +51,6 @@ def test_save_load(yatai_service_url, example_bento_service_class):
 
 
 def test_push(yatai_service_url, example_bento_service_class):
-    example_bento_service_class = bentoml.ver(major=2, minor=2)(
-        example_bento_service_class
-    )
-
     yc = get_yatai_client(yatai_service_url)
     test_model = TestModel()
     svc = example_bento_service_class()
@@ -70,10 +62,6 @@ def test_push(yatai_service_url, example_bento_service_class):
 
 
 def test_pull(yatai_service_url, example_bento_service_class):
-    example_bento_service_class = bentoml.ver(major=2, minor=3)(
-        example_bento_service_class
-    )
-
     yc = get_yatai_client(yatai_service_url)
     test_model = TestModel()
     svc = example_bento_service_class()
@@ -85,10 +73,6 @@ def test_pull(yatai_service_url, example_bento_service_class):
 
 
 def test_push_with_labels(yatai_service_url, example_bento_service_class):
-    example_bento_service_class = bentoml.ver(major=2, minor=2)(
-        example_bento_service_class
-    )
-
     yc = get_yatai_client(yatai_service_url)
     test_model = TestModel()
     svc = example_bento_service_class()
@@ -105,10 +89,6 @@ def test_push_with_labels(yatai_service_url, example_bento_service_class):
 
 
 def test_pull_with_labels(yatai_service_url, example_bento_service_class):
-    example_bento_service_class = bentoml.ver(major=2, minor=3)(
-        example_bento_service_class
-    )
-
     yc = get_yatai_client(yatai_service_url)
     test_model = TestModel()
     svc = example_bento_service_class()
@@ -128,10 +108,6 @@ def test_pull_with_labels(yatai_service_url, example_bento_service_class):
 
 
 def test_get(yatai_service_url, example_bento_service_class):
-    example_bento_service_class = bentoml.ver(major=2, minor=4)(
-        example_bento_service_class
-    )
-
     yc = get_yatai_client(yatai_service_url)
     test_model = TestModel()
     svc = example_bento_service_class()
@@ -142,24 +118,19 @@ def test_get(yatai_service_url, example_bento_service_class):
     assert svc_pb.bento_service_metadata.version == svc.version
 
 
-def test_list(yatai_service_url, example_bento_service_class):
-    example_bento_service_class = bentoml.ver(major=2, minor=5)(
-        example_bento_service_class
-    )
+def test_list_by_name(yatai_service_url, example_bento_service_class):
+    class ListByNameSvc(bentoml.BentoService):
+        pass
+
     yc = get_yatai_client(yatai_service_url)
-    test_model = TestModel()
-    svc = example_bento_service_class()
-    svc.pack('model', test_model)
+    svc = ListByNameSvc()
     svc.save(yatai_url=yatai_service_url)
 
     bentos = yc.repository.list(bento_name=svc.name)
-    assert len(bentos) == 7
+    assert len(bentos) == 1
 
 
 def test_load(yatai_service_url, example_bento_service_class):
-    example_bento_service_class = bentoml.ver(major=2, minor=5)(
-        example_bento_service_class
-    )
     yc = get_yatai_client(yatai_service_url)
     test_model = TestModel()
     svc = example_bento_service_class()
@@ -171,9 +142,6 @@ def test_load(yatai_service_url, example_bento_service_class):
 
 
 def test_load_from_dir(example_bento_service_class):
-    example_bento_service_class = bentoml.ver(major=2, minor=6)(
-        example_bento_service_class
-    )
     yc = get_yatai_client()
     test_model = TestModel()
     svc = example_bento_service_class()

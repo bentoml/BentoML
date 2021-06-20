@@ -5,5 +5,5 @@ SHELL ["/bin/bash", "-c"]
 
 RUN yum upgrade -y \
     && yum install -y wget ca-certificates \
-    && yum clean all \
+    && yum clean all -y \
     && rm -rf /var/cache/yum

@@ -73,6 +73,7 @@ RUN apk add --no-cache --virtual .build-dependencies ca-certificates wget \
     && ~/miniconda.sh -f -b -p /opt/conda \
     && conda update --all --yes \
     && conda config --set auto_update_conda False \
+    \
     && apk del --purge .build-dependencies \
     && rm -f ~/miniconda.sh \
     && conda clean --all --force-pkgs-dirs --yes \

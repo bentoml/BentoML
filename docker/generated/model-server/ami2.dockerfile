@@ -16,10 +16,8 @@ SHELL ["/bin/bash", "-c"]
 
 RUN yum upgrade -y \
     && yum install -y wget ca-certificates \
-    && yum clean all \
-    && rm -rf /var/cache/yum/*
-
-ENV PATH /opt/conda/bin:$PATH
+    && yum clean all -y \
+    && rm -rf /var/cache/yum
 
 ENV PYTHONDONTWRITEBYTECODE=1
 

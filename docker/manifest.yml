@@ -21,10 +21,15 @@ releases:
         - "{slim}"
         - "{alpine}"
         - "{amazonlinux}"
+  yatai-service:
+    runtime:
+      spec:
+        - "{yatai-ubuntu}"
+        - "{yatai-centos}"
 
 dependencies:
   cuda:
-    general: &cuda_cudnn
+    versioned: &cuda_cudnn
       - CUDA=11.3
       - CUDNN_MAJOR_VERSION=8
       - CUDNN_VERSION=8.2.0.53
@@ -194,3 +199,25 @@ dist:
         - amazonlinux/base
         - amazonlinux/conda
         - bentoml/model-server
+
+  yatai-ubuntu:
+    - add_to_tags: "ubuntu18.04"
+      dockerfile_name: "ubuntu"
+      args:
+        - OS_VERSION=18.04
+      partials:
+        - env
+        - ubuntu/base
+        - conda
+        - bentoml/yatai-service
+
+  yatai-centos:
+    - add_to_tags: "centos8"
+      dockerfile_name: "centos"
+      args:
+        - OS_VERSION=8
+      partials:
+        - env
+        - centos/base
+        - conda
+        - bentoml/yatai-service

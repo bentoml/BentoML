@@ -1,5 +1,3 @@
-ENV PATH /opt/conda/bin:$PATH
-
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # we will install python from conda

@@ -15,7 +15,7 @@ ARG LIB_DIR_PREFIX=x86_64-linux-gnu
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
+    curl git \
     libcublas-${CUDA/./-} \
     libcurand-${CUDA/./-} \
     libcusparse-${CUDA/./-} \
@@ -35,6 +35,8 @@ RUN curl -fSsL -v -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Minic
     chmod +x ~/miniconda.sh && \
     ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
+    find /opt/conda/ -follow -type f -name '*.a' -delete && \
+    find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
     /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
     /opt/conda/bin/conda clean -ya
 

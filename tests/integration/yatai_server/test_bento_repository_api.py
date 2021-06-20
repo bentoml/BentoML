@@ -14,7 +14,6 @@ from tests.yatai.local_yatai_service import yatai_service_container
 logger = logging.getLogger('bentoml.test')
 
 
-
 @pytest.fixture(scope='session')
 def yatai_service_url():
     with yatai_service_container() as yatai_url:

@@ -52,15 +52,13 @@ flags.DEFINE_boolean(
 flags.DEFINE_boolean(
     "generate_dockerfile", False, "Whether to just generate dockerfile."
 )
-flags.DEFINE_boolean(
-    "build_images", False, "Whether to build images."
-)
+flags.DEFINE_boolean("build_images", False, "Whether to build images.")
 flags.DEFINE_boolean(
     "stop_on_failure",
     False,
     "Stop processing tags if any one build fails. If False or not specified, failures are reported but do not affect "
     "the other images.",
-    short_name="s"
+    short_name="s",
 )
 
 # directory and files
@@ -68,7 +66,7 @@ flags.DEFINE_string(
     "dockerfile_dir",
     "./generated",
     "path to generated Dockerfile. Existing files will be deleted with new Dockerfiles",
-    short_name="g"
+    short_name="g",
 )
 flags.DEFINE_string("partials_dir", "./partials", "Partials directory", short_name="d")
 flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file", short_name="m")
@@ -82,6 +80,17 @@ SPEC_SCHEMA = """
 header: 
   type: string
 
+hub_repository:
+  type: dict
+  keysrules:
+    type: string
+  valuesrules:
+    type: dict
+    keysrules:
+      type: string
+    valuesrules:
+    
+    
 releases:
   type: dict
   keysrules:
@@ -277,16 +286,17 @@ def flatten(func):
     return wrapper
 
 
-def build_release_args(dists, python_ver):
+def build_release_args(dists, bentoml_version, python_version):
     """Build dictionary of required args for each dist."""
 
     args = {}
     for d in dists:
         # flatten a nested list if using YAML reference.
         args = update_args_dict(args, list(_flatten_list(d['args'])))
-    # creates args for python version.
-    args["PYTHON_VERSION"] = python_ver
-    args["BENTOML_VERSION"] = FLAGS.bentoml_version
+
+    # BentoML related args.
+    args["PYTHON_VERSION"] = python_version
+    args["BENTOML_VERSION"] = bentoml_version
     return args
 
 
@@ -349,7 +359,9 @@ def generate_tag_metadata(release_spec, bentoml_version, python_version, all_par
 
                 for dist in target_releases:
                     for py_ver in python_version:
-                        tag_args = build_release_args(dist, py_ver)
+                        tag_args = build_release_args(
+                            dist, FLAGS.bentoml_version, py_ver
+                        )
                         tag_name = build_release_tags(
                             dist_spec, dist, bentoml_version, py_ver
                         )
@@ -363,14 +375,14 @@ def generate_tag_metadata(release_spec, bentoml_version, python_version, all_par
                         # better if we add name into metadata and refers it to a dockerfile
                         # instead of writing it all out.
                         tag_metadata[tag_name] = {
-                                'package': package,
-                                'release': image_type,
-                                'dist_spec': dist_spec,
-                                'docker_args': tag_args,
-                                'partials': used_partials,
-                                'write_to_dockerfile': dockerfile_name,
-                                'dockerfile_contents': dockerfile_contents,
-                            }
+                            'package': package,
+                            'release': image_type,
+                            'dist_spec': dist_spec,
+                            'docker_args': tag_args,
+                            'partials': used_partials,
+                            'write_to_dockerfile': dockerfile_name,
+                            'dockerfile_contents': dockerfile_contents,
+                        }
 
     return tag_metadata
 
@@ -392,7 +404,7 @@ def get_partials_content(partial_path):
                 logger.debug(f"skipping {full_path} since it is not a partial")
                 continue
             # partial/foo/bar.partial.dockerfile -> foo/bar
-            _simple = full_path[len(partial_path) + 1: -len(".partial.dockerfile")]
+            _simple = full_path[len(partial_path) + 1 : -len(".partial.dockerfile")]
             with open(full_path, "r") as f:
                 contents = f.read()
             partials[_simple] = contents
@@ -441,7 +453,10 @@ def main(argv):
 
         # assemble tags and dockerfile used to build required images.
         tag_registry = generate_tag_metadata(
-            release_spec, FLAGS.bentoml_version, FLAGS.supported_python_version, partials
+            release_spec,
+            FLAGS.bentoml_version,
+            FLAGS.supported_python_version,
+            partials,
         )
         if FLAGS.dump_metadata:
             with open("metadata.json", "w+") as of:
@@ -458,16 +473,22 @@ def main(argv):
         docker_client = docker.from_env()
         if FLAGS.upload_to_hub:
             if not FLAGS.hub_username:
-                logger.error("> ERROR: please set --hub_username when uploading images.")
+                logger.error(
+                    "> ERROR: please set --hub_username when uploading images."
+                )
                 exit(1)
             if not FLAGS.hub_password:
-                logger.error("> ERROR: please set --hub_password when uploading images.")
+                logger.error(
+                    "> ERROR: please set --hub_password when uploading images."
+                )
                 exit(1)
             if not FLAGS.hub_org:
                 logger.error("> ERROR: please set --hub_org when uploading images.")
                 exit(1)
             logger.info("> Logging into Docker with credentials...")
-            docker_client.login(username=FLAGS.hub_username, password=FLAGS.hub_password)
+            docker_client.login(
+                username=FLAGS.hub_username, password=FLAGS.hub_password
+            )
 
         # each tag has a release_tag and tag_spec containing args, dockerfile content, etc. use --dump_metadata for more
         # information.
@@ -490,7 +511,9 @@ def main(argv):
                         with open(path, "w") as of:
                             of.write(spec["dockerfile_contents"])
             if FLAGS.generate_dockerfile:
-                logger.info("--generate_dockerfile passed --build_image will get ignored if passed.")
+                logger.info(
+                    "--generate_dockerfile passed --build_image will get ignored if passed."
+                )
                 continue
 
             # Generate temp Dockerfile for docker-py to build, since it needs
@@ -575,7 +598,13 @@ def main(argv):
                 if not FLAGS.dry_run:
                     p = multiprocessing.Process(
                         target=upload_in_background,
-                        args=(FLAGS.hub_org, spec['package'], docker_client, image, release_tag),
+                        args=(
+                            FLAGS.hub_org,
+                            spec['package'],
+                            docker_client,
+                            image,
+                            release_tag,
+                        ),
                     )
                     p.start()
 

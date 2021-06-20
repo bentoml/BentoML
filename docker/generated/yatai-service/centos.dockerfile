@@ -85,7 +85,7 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && node --version \
   && npm --version
 
-RUN pip install bentoml[yatai-service]==${BENTOML_VERSION} --no-cache-dir
+RUN pip install bentoml[yatai_service]==${BENTOML_VERSION} --no-cache-dir
 
 COPY tools/yatai-service/entrypoint.sh /usr/local/bin/
 

@@ -1,12 +1,19 @@
 ---
 header: |
-  # syntax = docker/dockerfile:1.2
-  #
   # ===========================================
   #
   # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
   #
   # ===========================================
+
+hub_repository:
+  docker.io:
+    only_if: HUB_PASSWORD
+    user: HUB_USERNAME
+    pwd: HUB_PASSWORD
+    registry:
+      model-server: bentoml/model-server
+      yatai-service: bentoml/yatai-service
 
 releases:
   model-server:

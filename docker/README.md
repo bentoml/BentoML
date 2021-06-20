@@ -2,18 +2,20 @@ notes:
 - GPU supports only for ubuntu, centos
 
 # of images:
-os : 9
-type: runtime - devel - slim - gpu
-python_version: 3.6 3.7 3.8
-->  images/release per package (model-server, yatai-service)
+
+- os : 7 &rarr; ubuntu(2004,1804), debian-slim, alpine, centos(8,7), ami
+- type: runtime - devel -gpu (for centos & ubuntu)
+- python_version: [3.6 3.7 3.8]
+- &rarr;  42 images/release per package (model-server, yatai-service)
 
 workflow
-  parse manifest.yml
-  get content from partials, and check if the file is correctly format
-  assemble tags and images given from manifest.yml
-  Empty our generated directory and generate new Dockerfile
 
-naming convention: ${release_version | devel}-${python_version}-${os}-cuda${cuda_version}
+  &rarr; parse manifest.yml
+  &rarr; get content from partials, and check if the file is correctly format
+  &rarr; assemble tags and images given from manifest.yml
+  &rarr; Empty our generated directory and generate new Dockerfile
+
+naming convention: ${release_version | devel}-${python_version}-${os}-gpu
   where optional_args can be:
     - cudnn${cudnn_major_version} includes cudart and cudnn
     - cuda${cuda_version} that only contain cudart and cublas
@@ -25,9 +27,8 @@ example: 0.13.1-python3.8-ubuntu20.04-gpu
          0.13.1-python3.8-alpine3.14
          0.13.1-python3.7-slim
          0.13.1-python3.6-amazonlinux2
-NOTE: cuda is only supported on ubuntu, and centos
 
-content structure of manifest.yml (only for my sanity)
+content structure of manifest.yml
 
     release: dict
       key: str -> type of image {devel/release}

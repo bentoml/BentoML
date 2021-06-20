@@ -19,6 +19,26 @@ class BentoServiceArtifact:
     serialization and deserialization process.
     """
 
+    def __new__(cls, *args, **kwargs):
+        obj = super(BentoServiceArtifact, cls).__new__(cls)
+
+        # store the args and kwargs used for creating this artifact instance - this is
+        # used internally for the _copy method below
+        obj.__args = args
+        obj.__kwargs = kwargs
+
+        return obj
+
+    def _copy(self):
+        """
+        Create a new empty artifact instance with the same name and arguments, this
+        is only used internally for BentoML to create new artifact instances when
+        creating a new BentoService instance. BentoML stores a reference to the
+        arguments provided for initializing this artifact class for the purpose of
+        recreating a new instance with the same config
+        """
+        return self.__class__(*self.__args, **self.__kwargs)
+
     def __init__(self, name: str):
         if not name.isidentifier():
             raise ValueError(
@@ -100,13 +120,6 @@ class BentoServiceArtifact:
 
         :param env: target BentoServiceEnv instance to modify
         """
-
-    def _copy(self):
-        """Create a new empty artifact instance with the same name, this is only used
-        internally for BentoML to create new artifact instances when create a new
-        BentoService instance
-        """
-        return self.__class__(self.name)
 
     def __getattribute__(self, item):
         if item == 'pack':
@@ -199,18 +212,6 @@ class BentoServiceArtifact:
         return object.__getattribute__(self, item)
 
 
-class BentoServiceArtifactWrapper:
-    """
-    Deprecated: use only the BentoServiceArtifact to define artifact operations
-    """
-
-    def __init__(self):
-        logger.warning(
-            "BentoServiceArtifactWrapper is deprecated now, use BentoServiceArtifact "
-            "to define artifact operations"
-        )
-
-
 class ArtifactCollection(dict):
     """
     A dict of artifact instances (artifact.name -> artifact_instance)
@@ -264,7 +265,7 @@ class ArtifactCollection(dict):
                 )
 
     @classmethod
-    def from_artifact_list(cls, artifacts_list: List[BentoServiceArtifact]):
+    def from_declared_artifact_list(cls, artifacts_list: List[BentoServiceArtifact]):
         artifact_collection = cls()
         for artifact in artifacts_list:
             artifact_collection.add(artifact._copy())

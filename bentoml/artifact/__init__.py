@@ -12,7 +12,6 @@ Importing from "bentoml.artifact.*" has been deprecated. Instead, use\
 
 from bentoml.service.artifacts import (
     BentoServiceArtifact,
-    BentoServiceArtifactWrapper,
     ArtifactCollection,
 )
 
@@ -49,7 +48,6 @@ from bentoml.frameworks.easyocr import EasyOCRArtifact  # noqa: E402
 __all__ = [
     "ArtifactCollection",
     "BentoServiceArtifact",
-    "BentoServiceArtifactWrapper",
     "CoreMLModelArtifact",
     "DetectronModelArtifact",
     "EvalMLModelArtifact",

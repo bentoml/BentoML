@@ -4,13 +4,14 @@ import re
 from bentoml.service import BentoServiceArtifact
 
 
+JSON_ARTIFACT_EXTENSION = ".json"
+
+
 class JSONArtifact(BentoServiceArtifact):
     """Abstraction for saving/loading objects to/from JSON files.
 
     Args:
         name (str): Name of the artifact
-        file_extension (:obj:`str`, optional): The file extension used for the saved
-            text file. Defaults to ".txt"
         encoding (:obj:`str`, optional): The encoding will be used for saving/loading
             text. Defaults to "utf8"
         json_module (module|object, optional): Namespace/object implementing `loads()`
@@ -18,14 +19,11 @@ class JSONArtifact(BentoServiceArtifact):
             Defaults to stdlib's json module.
     """
 
-    def __init__(
-        self, name, file_extension=".json", encoding="utf-8", json_module=None
-    ):
+    def __init__(self, name, encoding="utf-8", json_module=None):
         super().__init__(name)
         self._content = None
         self._json_dumps_kwargs = None
 
-        self._file_extension = file_extension
         self._encoding = encoding
         if json_module:
             self.json_module = json_module
@@ -37,7 +35,7 @@ class JSONArtifact(BentoServiceArtifact):
     def _file_path(self, base_path):
         return os.path.join(
             base_path,
-            re.sub("[^-a-zA-Z0-9_.() ]+", "", self.name) + self._file_extension,
+            re.sub("[^-a-zA-Z0-9_.() ]+", "", self.name) + JSON_ARTIFACT_EXTENSION,
         )
 
     def load(self, path):

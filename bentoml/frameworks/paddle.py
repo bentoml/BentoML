@@ -14,7 +14,8 @@ except ImportError:
 
 
 class PaddlePaddleModelArtifact(BentoServiceArtifact):
-    """Abstraction for saving/loading PaddlePaddle models
+    """
+    Artifact class for saving and loading PaddlePaddle's PaddleInference model
 
     Args:
         name (string): name of the artifact
@@ -57,7 +58,7 @@ class PaddlePaddleModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name: str):
-        super(PaddlePaddleModelArtifact, self).__init__(name)
+        super().__init__(name)
         self._model = None
         self._predictor = None
         self._model_path = None

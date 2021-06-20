@@ -4,14 +4,15 @@ from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 
+LIGHTGBM_MODEL_EXTENTION = ".txt"
+
 
 class LightGBMModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for save/load object with LightGBM.
+    Artifact class for saving and loading LightGBM Model
 
     Args:
         name (string): name of the artifact
-        model_extension (string): Extension name for saved xgboost model
 
     Raises:
         MissingDependencyException: lightgbm package is required for using
@@ -43,13 +44,12 @@ class LightGBMModelArtifact(BentoServiceArtifact):
     >>> svc.pack('model', model)
     """
 
-    def __init__(self, name, model_extension=".txt"):
+    def __init__(self, name):
         super(LightGBMModelArtifact, self).__init__(name)
-        self.model_extension = model_extension
         self._model = None
 
     def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + self.model_extension)
+        return os.path.join(base_path, self.name + LIGHTGBM_MODEL_EXTENTION)
 
     def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
         try:

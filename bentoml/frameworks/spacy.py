@@ -10,14 +10,17 @@ logger = logging.getLogger(__name__)
 
 class SpacyModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading spacy models
-    with to_disk and spacy.util.load_model methods.
+    Artifact class for saving/loading spacy models with Language.to_disk and
+    spacy.util.load_model methods
+
     Args:
         name (string): name of the artifact
+
     Raises:
         MissingDependencyException: spacy package is required for SpacyModelArtifact
         InvalidArgument: invalid argument type, model being packed must be instance of
             spacy.language.Language
+
     Example usage:
 
     >>> import spacy
@@ -55,7 +58,7 @@ class SpacyModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        super(SpacyModelArtifact, self).__init__(name)
+        super().__init__(name)
 
         self._model = None
 

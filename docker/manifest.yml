@@ -18,21 +18,18 @@ hub_repository:
 releases:
   model-server:
     devel:
-      spec:
-        - "{devel-ubuntu}"
-        - "{devel-centos}"
+      - "{devel-ubuntu}"
+      - "{devel-centos}"
     runtime:
-      spec:
-        - "{ubuntu}"
-        - "{centos}"
-        - "{slim}"
-        - "{alpine}"
-        - "{amazonlinux}"
+      - "{ubuntu}"
+      - "{centos}"
+      - "{slim}"
+      - "{alpine}"
+      - "{amazonlinux}"
   yatai-service:
     runtime:
-      spec:
-        - "{yatai-ubuntu}"
-        - "{yatai-centos}"
+      - "{yatai-ubuntu}"
+      - "{yatai-centos}"
 
 dependencies:
   cuda:

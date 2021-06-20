@@ -1,5 +1,3 @@
-# syntax = docker/dockerfile:1.2
-#
 # ===========================================
 #
 # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.

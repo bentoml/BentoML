@@ -86,10 +86,22 @@ hub_repository:
     type: string
   valuesrules:
     type: dict
-    keysrules:
-      type: string
-    valuesrules:
-    
+    schema:
+      only_if: 
+        type: string
+        isenv: true
+      user:
+        type: string
+        isenv: true
+      pwd:
+        type: string
+        isenv: true
+      registry:
+        type: dict
+        keysrules:
+          type: string
+        valuesrules:
+          type: string
     
 releases:
   type: dict
@@ -97,16 +109,19 @@ releases:
     type: string
   valuesrules:
     type: dict
-    keysrules:
-      type: string
-    valuesrules:
-      type: dict
-      schema:
-        spec:
-          type: list
-          required: true
-          schema: 
-            type: string
+    schema:
+      devel:
+        type: list
+        default: []
+        schema:
+          type: string
+          isdist: true
+      runtime:
+        type: list
+        required: true
+        schema:
+          type: string
+          isdist: true
 
 dependencies:
   type: dict
@@ -174,6 +189,8 @@ class DockerTagValidator(Validator):
     def __init__(self, *args, **kwargs):
         if 'partials' in kwargs:
             self.partials = kwargs['partials']
+        if 'dist' in kwargs:
+            self.dist = kwargs['dist']
         super(Validator, self).__init__(*args, **kwargs)
 
     def _validate_ispartial(self, ispartial, field, value):
@@ -190,6 +207,29 @@ class DockerTagValidator(Validator):
         if isinstance(value, list):
             for v in value:
                 self._validate_ispartial(ispartial, field, v)
+
+    def _validate_isenv(self, isenv, field, value):
+        """
+        Validate if given is a environment variable.
+
+        The rule's arguments are validated against this schema:
+            {'type': 'boolean'}
+        """
+        if isinstance(value, str):
+            if isenv and not value.isupper():
+                self._error(field, f"{value} cannot be parsed to envars.")
+        else:
+            self._error(field, f"{value} cannot be parsed as string.")
+
+    def _validate_isdist(self, isdist, field, value):
+        """
+        Validate if given is a valid distro definition.
+
+        The rule's arguments are validated against this schema:
+            {'type': 'boolean'}
+        """
+        if isdist and value not in self.dist:
+            self._error(field, f"{value} is not defined under dist.")
 
     def _validate_isargs(self, isargs, field, value):
         """
@@ -352,37 +392,36 @@ def generate_tag_metadata(release_spec, bentoml_version, python_version, all_par
     tag_metadata = defaultdict()
     for package, release_type in release_spec["releases"].items():
         # package: model-server/yatai-service -> release: devel, versioned
-        for image_type, target_dists in release_type.items():
-            for dist_spec in target_dists["spec"]:
-                target_dist = get_dist_spec(release_spec["dist"], dist_spec)
-                target_releases = aggregate_dist_combinations(release_spec, target_dist)
+        for image_type, dist_spec in release_type.items():
+            target_dist = get_dist_spec(release_spec["dist"], dist_spec)
+            target_releases = aggregate_dist_combinations(release_spec, target_dist)
 
-                for dist in target_releases:
-                    for py_ver in python_version:
-                        tag_args = build_release_args(
-                            dist, FLAGS.bentoml_version, py_ver
-                        )
-                        tag_name = build_release_tags(
-                            dist_spec, dist, bentoml_version, py_ver
-                        )
-                        used_partials = get_key_from_dist_spec(dist, 'partials')
-                        dockerfile_name = get_first_key_value(dist, 'dockerfile_name')
-                        dockerfile_contents = merge_partials(
-                            release_spec["header"], used_partials, all_partials
-                        )
+            for dist in target_releases:
+                for py_ver in python_version:
+                    tag_args = build_release_args(
+                        dist, FLAGS.bentoml_version, py_ver
+                    )
+                    tag_name = build_release_tags(
+                        dist_spec, dist, bentoml_version, py_ver
+                    )
+                    used_partials = get_key_from_dist_spec(dist, 'partials')
+                    dockerfile_name = get_first_key_value(dist, 'dockerfile_name')
+                    dockerfile_contents = merge_partials(
+                        release_spec["header"], used_partials, all_partials
+                    )
 
-                        # use tag_metadata[tag_name].append() is probably
-                        # better if we add name into metadata and refers it to a dockerfile
-                        # instead of writing it all out.
-                        tag_metadata[tag_name] = {
-                            'package': package,
-                            'release': image_type,
-                            'dist_spec': dist_spec,
-                            'docker_args': tag_args,
-                            'partials': used_partials,
-                            'write_to_dockerfile': dockerfile_name,
-                            'dockerfile_contents': dockerfile_contents,
-                        }
+                    # use tag_metadata[tag_name].append() is probably
+                    # better if we add name into metadata and refers it to a dockerfile
+                    # instead of writing it all out.
+                    tag_metadata[tag_name] = {
+                        'package': package,
+                        'release': image_type,
+                        'dist_spec': dist_spec,
+                        'docker_args': tag_args,
+                        'partials': used_partials,
+                        'write_to_dockerfile': dockerfile_name,
+                        'dockerfile_contents': dockerfile_contents,
+                    }
 
     return tag_metadata
 
@@ -444,7 +483,9 @@ def main(argv):
 
         # validate manifest configs and parse partial contents and spec
         partials = get_partials_content(FLAGS.partials_dir)
-        v = DockerTagValidator(schema, partials=partials)
+        dists = spec['dist'].keys()
+        print(dists)
+        v = DockerTagValidator(schema, partials=partials, dist=dists)
         if not v.validate(spec):
             logger.error(f"{FLAGS.manifest_file} is invalid.")
             logger.error(yaml.dump(v.errors, indent=2))

@@ -14,8 +14,7 @@ ARG LIB_DIR_PREFIX=x86_64-linux-gnu
 # needed for string substitutions
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl git \
+    ca-certificates build-essential curl git \
     libcublas-${CUDA/./-} \
     libcurand-${CUDA/./-} \
     libcusparse-${CUDA/./-} \

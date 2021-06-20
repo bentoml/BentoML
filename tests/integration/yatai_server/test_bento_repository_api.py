@@ -1,10 +1,8 @@
 # pylint: disable=redefined-outer-name
 import logging
 import os
-import sys
 import uuid
 
-import psutil
 import pytest
 
 import bentoml
@@ -15,11 +13,6 @@ from tests.yatai.local_yatai_service import yatai_service_container
 
 logger = logging.getLogger('bentoml.test')
 
-if sys.platform == "darwin" or not psutil.POSIX:
-    pytest.skip(
-        "Requires docker, skipping test for Mac OS on Github Actions",
-        allow_module_level=True,
-    )
 
 
 @pytest.fixture(scope='session')

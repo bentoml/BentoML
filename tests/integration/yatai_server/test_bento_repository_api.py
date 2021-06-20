@@ -110,7 +110,7 @@ def test_get(yatai_service_url, example_bento_service_class):
     assert svc_pb.bento_service_metadata.version == svc.version
 
 
-def test_list_by_name(yatai_service_url, example_bento_service_class):
+def test_list_by_name(yatai_service_url):
     class ListByNameSvc(bentoml.BentoService):
         pass
 

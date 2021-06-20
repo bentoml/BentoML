@@ -33,7 +33,9 @@ class BentoServiceArtifact:
         """
         Create a new empty artifact instance with the same name and arguments, this
         is only used internally for BentoML to create new artifact instances when
-        creating a new BentoService instance
+        creating a new BentoService instance. BentoML stores a reference to the
+        arguments provided for initializing this artifact class for the purpose of
+        recreating a new instance with the same config
         """
         return self.__class__(*self.__args, **self.__kwargs)
 

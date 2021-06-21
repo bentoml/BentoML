@@ -7,8 +7,8 @@ from tests.bento_service_examples.example_bento_service import ExampleBentoServi
 logger = logging.getLogger('bentoml.test')
 
 
-def test_yatai_server_containerize_without_push():
-    svc = ExampleBentoService()
+def test_yatai_server_containerize_without_push(example_bento_service_class):
+    svc = example_bento_service_class()
     svc.pack('model', [1, 2, 3])
     logger.info('Saving bento service to local yatai server')
     svc.save()
@@ -19,8 +19,8 @@ def test_yatai_server_containerize_without_push():
     assert built_tag == f'{tag}:{svc.version}'
 
 
-def test_yatai_server_containerize_from_cli():
-    svc = ExampleBentoService()
+def test_yatai_server_containerize_from_cli(example_bento_service_class):
+    svc = example_bento_service_class()
     svc.pack('model', [1, 2, 3])
     logger.info('Saving bento service to local yatai server')
     svc.save()

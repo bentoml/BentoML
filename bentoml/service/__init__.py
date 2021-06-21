@@ -624,9 +624,10 @@ class BentoService:
         """
         :return: BentoService name
         """
-        return self.__class__.name()  # pylint: disable=no-value-for-parameter
+        return self.__class__.name  # pylint: disable=no-value-for-parameter
 
     @name.classmethod
+    @property
     def name(cls):  # pylint: disable=no-self-argument,invalid-overridden-method
         """
         :return: BentoService name

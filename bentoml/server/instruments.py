@@ -3,11 +3,16 @@ import multiprocessing
 import os
 import shutil
 from timeit import default_timer
+from typing import TYPE_CHECKING
 
 from flask import Request
 from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
+
+
+if TYPE_CHECKING:
+    Lock = multiprocessing.synchronize.Lock
 
 
 logger = logging.getLogger(__name__)
@@ -93,7 +98,7 @@ class InstrumentMiddleware:
 
 @inject
 def setup_prometheus_multiproc_dir(
-    lock: multiprocessing.Lock = None,
+    lock: "Lock" = None,
     prometheus_multiproc_dir: str = Provide[BentoMLContainer.prometheus_multiproc_dir],
 ):
     """

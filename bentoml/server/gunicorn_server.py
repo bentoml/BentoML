@@ -14,7 +14,7 @@
 
 import logging
 import multiprocessing
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from flask import Response
 from simple_di import Provide, inject
@@ -25,6 +25,9 @@ from bentoml.server.api_server import BentoAPIServer
 from bentoml.server.instruments import setup_prometheus_multiproc_dir
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    Lock = multiprocessing.synchronize.Lock
 
 
 @inject
@@ -83,7 +86,7 @@ def gunicorn_bento_server(
             port: int = default_port,
             timeout: int = default_timeout,
             workers: int = default_workers,
-            prometheus_lock: Optional[multiprocessing.Lock] = None,
+            prometheus_lock: Optional["Lock"] = None,
             enable_swagger: bool = default_enable_swagger,
             max_request_size: int = default_max_request_size,
             loglevel: str = default_loglevel,

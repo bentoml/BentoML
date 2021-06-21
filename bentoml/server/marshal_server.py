@@ -14,7 +14,7 @@
 
 import logging
 import multiprocessing
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from simple_di import Provide, inject
 
@@ -25,94 +25,89 @@ from bentoml.server.instruments import setup_prometheus_multiproc_dir
 marshal_logger = logging.getLogger("bentoml.marshal")
 
 
-@inject
-def gunicorn_marshal_server(
-    default_workers: int = Provide[
-        BentoMLContainer.config.bento_server.microbatch.workers
-    ],
-    default_timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
-    default_outbound_workers: int = Provide[BentoMLContainer.api_server_workers],
-    default_max_request_size: int = Provide[
-        BentoMLContainer.config.bento_server.max_request_size
-    ],
-    default_port: int = Provide[BentoMLContainer.config.bento_server.port],
-    default_mb_max_batch_size: int = Provide[
-        BentoMLContainer.config.bento_server.microbatch.max_batch_size
-    ],
-    default_mb_max_latency: int = Provide[
-        BentoMLContainer.config.bento_server.microbatch.max_latency
-    ],
-    default_loglevel: str = Provide[BentoMLContainer.config.bento_server.logging.level],
-):
+try:
+    from gunicorn.app.base import Application
+except ImportError:
+    Application = object
+
+
+if TYPE_CHECKING:  # make type checkers happy
     from gunicorn.app.base import Application
 
-    class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
-        @inject
-        def __init__(
-            self,
-            bundle_path,
-            outbound_host,
-            outbound_port,
-            workers: int = default_workers,
-            timeout: int = default_timeout,
-            outbound_workers: int = default_outbound_workers,
-            max_request_size: int = default_max_request_size,
-            port: int = default_port,
-            mb_max_batch_size: int = default_mb_max_batch_size,
-            mb_max_latency: int = default_mb_max_latency,
-            prometheus_lock: Optional[multiprocessing.Lock] = None,
-            loglevel: str = default_loglevel,
-        ):
-            self.bento_service_bundle_path = bundle_path
+    Lock = multiprocessing.synchronize.Lock
 
-            self.port = port
-            self.options = {
-                "bind": "%s:%s" % ("0.0.0.0", self.port),
-                "timeout": timeout,
-                "limit_request_line": max_request_size,
-                "loglevel": loglevel.upper(),
-                "worker_class": "aiohttp.worker.GunicornWebWorker",
-            }
-            if workers:
-                self.options['workers'] = workers
-            self.prometheus_lock = prometheus_lock
 
-            self.outbound_port = outbound_port
-            self.outbound_host = outbound_host
-            self.outbound_workers = outbound_workers
-            self.mb_max_batch_size = mb_max_batch_size
-            self.mb_max_latency = mb_max_latency
+class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
+    @inject
+    def __init__(
+        self,
+        bundle_path,
+        outbound_host,
+        outbound_port,
+        workers: int = Provide[BentoMLContainer.config.bento_server.microbatch.workers],
+        timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
+        outbound_workers: int = Provide[BentoMLContainer.config.api_server_workers],
+        max_request_size: int = Provide[
+            BentoMLContainer.config.bento_server.max_request_size
+        ],
+        port: int = Provide[BentoMLContainer.config.bento_server.port],
+        mb_max_batch_size: int = Provide[
+            BentoMLContainer.config.bento_server.microbatch.max_batch_size
+        ],
+        mb_max_latency: int = Provide[
+            BentoMLContainer.config.bento_server.microbatch.max_latency
+        ],
+        prometheus_lock: Optional["Lock"] = None,
+        loglevel: str = Provide[BentoMLContainer.config.bento_server.logging.level],
+    ):
+        self.bento_service_bundle_path = bundle_path
 
-            super().__init__()
+        self.port = port
+        self.options = {
+            "bind": "%s:%s" % ("0.0.0.0", self.port),
+            "timeout": timeout,
+            "limit_request_line": max_request_size,
+            "loglevel": loglevel.upper(),
+            "worker_class": "aiohttp.worker.GunicornWebWorker",
+        }
+        if workers:
+            self.options['workers'] = workers
+        self.prometheus_lock = prometheus_lock
 
-        def load_config(self):
-            self.load_config_from_file("python:bentoml.server.gunicorn_config")
+        self.outbound_port = outbound_port
+        self.outbound_host = outbound_host
+        self.outbound_workers = outbound_workers
+        self.mb_max_batch_size = mb_max_batch_size
+        self.mb_max_latency = mb_max_latency
 
-            # override config with self.options
-            gunicorn_config = dict(
-                [
-                    (key, value)
-                    for key, value in self.options.items()
-                    if key in self.cfg.settings and value is not None
-                ]
-            )
-            for key, value in gunicorn_config.items():
-                self.cfg.set(key.lower(), value)
+        super().__init__()
 
-        def load(self):
-            server = MarshalService(
-                self.bento_service_bundle_path,
-                self.outbound_host,
-                self.outbound_port,
-                outbound_workers=self.outbound_workers,
-                mb_max_batch_size=self.mb_max_batch_size,
-                mb_max_latency=self.mb_max_latency,
-            )
-            return server.make_app()
+    def load_config(self):
+        self.load_config_from_file("python:bentoml.server.gunicorn_config")
 
-        def run(self):
-            setup_prometheus_multiproc_dir(self.prometheus_lock)
-            marshal_logger.info("Running micro batch service on :%d", self.port)
-            super().run()
+        # override config with self.options
+        gunicorn_config = dict(
+            [
+                (key, value)
+                for key, value in self.options.items()
+                if key in self.cfg.settings and value is not None
+            ]
+        )
+        for key, value in gunicorn_config.items():
+            self.cfg.set(key.lower(), value)
 
-    return GunicornMarshalServer
+    def load(self):
+        server = MarshalService(
+            self.bento_service_bundle_path,
+            self.outbound_host,
+            self.outbound_port,
+            outbound_workers=self.outbound_workers,
+            mb_max_batch_size=self.mb_max_batch_size,
+            mb_max_latency=self.mb_max_latency,
+        )
+        return server.make_app()
+
+    def run(self):
+        setup_prometheus_multiproc_dir(self.prometheus_lock)
+        marshal_logger.info("Running micro batch service on :%d", self.port)
+        super().run()

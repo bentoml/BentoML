@@ -1,1 +1,0 @@
-ARG OS_VERSION

@@ -36,24 +36,17 @@ packages:
 dependencies:
   cuda:
     v11.3.1: &cuda11_3_1_deps
-      cudart:
-        version: 11.3.109-1
-      cudnn8:
-        version: 8.2.0.53-1
-      libcublas:
-        version: 11.5.1.109-1
-      libcurand:
-        version: 10.2.4.109-1
-      libcusparse:
-        version: 11.6.0.109-1
-      libcufft:
-        version: 10.4.2.109-1
-      libcusolver:
-        version: 11.1.2.109-1
+      cudart: 11.3.109-1
+      cudnn8: 8.2.0.53-1
+      libcublas: 11.5.1.109-1
+      libcurand: 10.2.4.109-1
+      libcusparse: 11.6.0.109-1
+      libcufft: 10.4.2.109-1
+      libcusolver: 11.1.2.109-1
 
 release_spec: &tmpl_spec
   templates_dir: ""
-  envars: &global_env
+  envars:
     - LANG=C.UTF-8
     - LC_ALL=C.UTF-8
     - PYTHONDONTWRITEBYTECODE=1

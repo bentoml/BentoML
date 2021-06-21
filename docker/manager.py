@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
-import inspect
-import logging
-import sys
+import logging.config
 from collections.abc import Iterable
 
 from absl import flags, app
 from cerberus import Validator
 from ruamel import yaml
+from jinja2 import Template, Environment
 
+logger = logging.getLogger()
 # defined global vars.
-# logging.basicConfig(level=logging.DEBUG,
-#                     format='[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s',
-#                     datefmt="%d/%b/%Y %H:%M:%S", stream=sys.stdout)
-logger = logging.getLogger(__name__)
 FLAGS = flags.FLAGS
 SUPPORTED_OS = ['ubuntu', 'slim', 'centos', 'alpine', 'amazonlinux']
 
@@ -133,16 +129,13 @@ dependencies:
       type: dict
       keysrules: 
         type: string
-        regex: '(v\d{1,2}\.\d{1}\.\d)'
+        regex: 'v(\d{1,2}\.\d{1}\.\d)?$'
       valuesrules: 
         type: dict
         keysrules: 
           type: string
         valuesrules: 
-          type: dict
-          schema:
-            version:
-              type: string
+          type: string
     
 release_spec: 
   required: true
@@ -258,27 +251,31 @@ class DockerTagValidator(Validator):
                 self._validate_supported_dists(supported_dists, field, v)
 
 
+def load_manifest_yaml(file):
+    with open(file, 'r') as input_file:
+        manifest = yaml.safe_load(input_file)
+
+    packages = manifest['packages'].keys()
+    v_schema = yaml.safe_load(SPEC_SCHEMA)
+    v = DockerTagValidator(v_schema, packages=packages)
+
+    if not v.validate(manifest):
+        logger.error(f"{file} is invalid. Errors as follow:")
+        logger.error(yaml.dump(v.errors, indent=2))
+        exit(1)
+
+    release_spec = v.normalized(manifest)
+    return release_spec
+
+
 # TODO: custom check for releases.valuesrules
 def main(argv):
     if len(argv) > 1:
         raise RuntimeError("Too much arguments")
-    try:
-        with open(FLAGS.manifest_file, "r") as input_file:
-            manifest = yaml.safe_load(input_file)
+    release_spec = load_manifest_yaml(FLAGS.manifest_file)
 
-        v_schema = yaml.safe_load(SPEC_SCHEMA)
-        v = DockerTagValidator(v_schema, packages=manifest['packages'].keys())
-
-        if not v.validate(manifest):
-            logger.error(f"{FLAGS.manifest_file} is invalid. Errors as follow:")
-            print(yaml.dump(v.errors, indent=2))
-            exit(1)
-        release_spec = v.normalized(manifest)
-
-        print(yaml.dump(release_spec, indent=2))
-    except KeyboardInterrupt:
-        logger.error("Interrupt. Cleaning cache file...")
-
-
+    for k, v in release_spec['releases'].items():
+        print(k)
+        print(v)
 if __name__ == "__main__":
     app.run(main)

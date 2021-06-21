@@ -15,10 +15,13 @@ _main() {
     set -- bentoml serve-gunicorn "$@" $BUNDLE_PATH
   fi
 
-  # Set BentoML API server port via env var
-  export BENTOML_PORT=$PORT \
+  # Overide the BENTOML_PORT if PORT env var is present. Used for Heroku
+  if [[ -v PORT ]]; then
+    echo "\$PORT is set! Overiding \$BENTOML_PORT with \$PORT ($PORT)"
+    export BENTOML_PORT=$PORT
+  fi
   # Backward compatibility for BentoML prior to 0.7.5
-  export BENTOML__APISERVER__DEFAULT_PORT=$PORT \
+  export BENTOML__APISERVER__DEFAULT_PORT=$BENTOML_PORT
 
   exec "$@"
 }

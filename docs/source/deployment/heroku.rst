@@ -105,6 +105,10 @@ BentoService and available for sending test request:
 Build and deploy to Heroku
 ==========================
 
+.. note::
+  Apps deployed on Heroku must listen to a specific port number which is
+  specified by the $PORT environment variable in the dyno. Bentoml will
+  automatically overide the $BENTOML_PORT to listen on that specifed port.  
 
 Follow the CLI instruction and login to a Heroku account:
 

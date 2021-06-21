@@ -109,9 +109,9 @@ RUN rm ./bundled_pip_dependencies/docker-entrypoint.sh && ./bentoml-init.sh inst
 # copy over model files
 COPY --chown=bentoml:bentoml . ./
 
-# the env var $PORT is required by heroku container runtime
-ENV PORT 5000
-EXPOSE $PORT
+# Default port for service
+ENV BENTOML_PORT 5000
+EXPOSE $BENTOML_PORT
 
 USER bentoml
 RUN chmod +x ./docker-entrypoint.sh

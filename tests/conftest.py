@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import functools
 import glob
 import inspect
@@ -209,7 +210,7 @@ def example_bento_service_class():
 
 
 @pytest.fixture()
-def bento_service(example_bento_service_class):  # pylint:disable=redefined-outer-name
+def bento_service(example_bento_service_class):
     """Create a new ExampleBentoService
     """
     test_model = TestModel()
@@ -219,7 +220,7 @@ def bento_service(example_bento_service_class):  # pylint:disable=redefined-oute
 
 
 @pytest.fixture()
-def bento_bundle_path(bento_service):  # pylint:disable=redefined-outer-name
+def bento_bundle_path(bento_service):
     """Create a new ExampleBentoService, saved it to tmpdir, and return full saved_path
     """
     saved_path = bento_service.save()

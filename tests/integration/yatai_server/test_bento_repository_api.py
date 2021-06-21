@@ -9,12 +9,12 @@ import bentoml
 from bentoml.saved_bundle.loader import load_from_dir
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.client import get_yatai_client
-from tests.yatai.local_yatai_service import yatai_service_container
+from tests.integration.yatai_server.utils import yatai_service_container
 
 logger = logging.getLogger('bentoml.test')
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='module')
 def yatai_service_url():
     with yatai_service_container() as yatai_url:
         yield yatai_url

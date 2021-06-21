@@ -2,7 +2,7 @@ import os
 
 from bentoml.yatai.client import get_yatai_client
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
-from tests.yatai.local_yatai_service import yatai_service_container
+from tests.integration.yatai_server.utils import yatai_service_container
 
 
 def test_push_and_pull():

@@ -271,7 +271,7 @@ class BentoServiceEnv(object):
                     f"'{self._pip_packages[pkg_req.name]}' to '{pkg_req}'"
                 )
             else:
-                logger.warning(f"pip package requirement {pkg_req} already exist")
+                logger.debug(f"pip package requirement '{pkg_req}' already exist")
                 return
 
         verification_result = verify_pkg(pkg_req)

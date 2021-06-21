@@ -48,11 +48,11 @@ RUN pip install -U /bentoml-local-repo
         if repo_base_url:
             yatai_server_command.extend(['--repo-base-url', repo_base_url])
 
-        with reserve_free_port() as free_port:
+        host = "127.0.0.1"
+        with reserve_free_port(host) as free_port:
             # find free port on host
             port = free_port
 
-        host = "127.0.0.1"
         container = docker_client.containers.run(
             image=yatai_docker_image_tag,
             remove=True,

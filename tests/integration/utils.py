@@ -27,11 +27,16 @@ def wait_until_container_ready(container_name, check_message, timeout_seconds=12
         if time.time() - start_time > timeout_seconds:
             raise TimeoutError(f'Waiting for container "{container_name}" timed out')
 
-        container_list = docker_client.containers.list(filters={'name': container_name})
-        logger.info("Container list: " + str(container_list))
-        if not container_list:
+        try:
+            container_list = docker_client.containers.list(
+                filters={'name': container_name}
+            )
+            if not container_list:
+                continue
+        except docker.errors.NotFound:
             continue
 
+        logger.info("Container list: " + str(container_list))
         assert (
             len(container_list) == 1
         ), f'should be exact one container with name {container_name}'

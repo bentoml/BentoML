@@ -1,4 +1,4 @@
-import logging
+# pylint: disable=redefined-outer-name
 import uuid
 import pytest
 
@@ -10,11 +10,8 @@ from bentoml.yatai.client import get_yatai_client
 from bentoml.exceptions import BentoMLException
 
 
-logger = logging.getLogger('bentoml.test')
-
-
 @pytest.fixture()
-def yatai_client():  # pylint:disable=redefined-outer-name
+def yatai_client():
     yc = get_yatai_client()
     yc.repository.delete(prune=True)
     assert len(yc.repository.list()) == 0
@@ -101,18 +98,21 @@ def test_delete_multiple_bentos_by_tag_from_cli(bento_service, yatai_client):
 
     runner = CliRunner()
     cli = create_bentoml_cli()
-    runner.invoke(
+    result = runner.invoke(
         cli.commands['delete'], [f'{bento_service.name}:{version_one}', '-y'],
     )
+    assert result.exit_code == 0
+    assert "Deleted" in result.output
     assert len(yatai_client.repository.list(bento_name=bento_service.name)) == 2
 
-    runner.invoke(
+    result = runner.invoke(
         cli.commands['delete'],
         [
             f'{bento_service.name}:{version_two},{bento_service.name}:{version_three}',
             '-y',
         ],
     )
+    assert result.exit_code == 0
     assert len(yatai_client.repository.list(bento_name=bento_service.name)) == 0
 
 
@@ -134,7 +134,6 @@ def test_delete_all_bentos_from_cli(bento_service, yatai_client):
 
     runner = CliRunner()
     cli = create_bentoml_cli()
-    runner.invoke(
-        cli.commands['delete'], ['--all', '-y'],
-    )
+    result = runner.invoke(cli.commands['delete'], ['--all', '-y'],)
+    assert result.exit_code == 0
     assert len(yatai_client.repository.list()) == 0

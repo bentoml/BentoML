@@ -1,99 +1,111 @@
 import logging
 import uuid
+import pytest
 
 from click.testing import CliRunner
 
+from bentoml import BentoService
 from bentoml.cli import create_bentoml_cli
-from tests.bento_service_examples.iris_classifier import IrisClassifier
 from bentoml.yatai.client import get_yatai_client
+from bentoml.exceptions import BentoMLException
+
 
 logger = logging.getLogger('bentoml.test')
 
 
-def test_delete_single_bento(bento_service):
+@pytest.fixture()
+def yatai_client():  # pylint:disable=redefined-outer-name
     yc = get_yatai_client()
-    # Remove all other bentos. Clean state
-    deleted_version = uuid.uuid4().hex[0:8]
+    yc.repository.delete(prune=True)
+    assert len(yc.repository.list()) == 0
+    yield yc
     yc.repository.delete(prune=True)
 
-    bento_service.save(version=deleted_version)
-    yc.repository.delete(
-        bento_name=bento_service.name, bento_version=deleted_version,
+
+def test_delete_bento_by_tag(bento_service, yatai_client):
+    bento_service.save()
+    bento_tag = f"{bento_service.name}:{bento_service.version}"
+
+    yatai_client.repository.get(bento_tag)
+    yatai_client.repository.delete(
+        bento_name=bento_service.name, bento_version=bento_service.version,
     )
-    bentos = yc.repository.list()
-    assert len(bentos) == 0
-
-    another_deleted_version = uuid.uuid4().hex[0:10]
-    bento_service.save(version=another_deleted_version)
-    yc.repository.delete(f'{bento_service.name}:{bento_service.version}')
-    bentos = yc.repository.list()
-    assert len(bentos) == 0
-
-    # Clean up existing bentos
-    yc.repository.delete(prune=True)
+    with pytest.raises(BentoMLException) as excinfo:
+        yatai_client.repository.get(bento_tag)
+    assert f"{bento_tag} not found" in str(excinfo.value)
 
 
-def test_delete_bentos_base_on_labels(bento_service):
-    yc = get_yatai_client()
-    yc.repository.delete(prune=True)
+def test_delete_bentos_by_labels(bento_service, yatai_client):
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'cohort': '100'})
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'cohort': '110'})
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'cohort': '120'})
 
-    yc.repository.delete(labels='cohort in (100, 110)')
-    bentos = yc.repository.list()
+    bentos = yatai_client.repository.list(labels='cohort')
+    assert len(bentos) == 3
+
+    yatai_client.repository.delete(labels='cohort in (100, 110)')
+    bentos = yatai_client.repository.list(labels='cohort')
     assert len(bentos) == 1
-    # Clean up existing bentos
-    yc.repository.delete(prune=True)
+
+    yatai_client.repository.delete(labels='cohort')
+    bentos = yatai_client.repository.list(labels='cohort')
+    assert len(bentos) == 0
 
 
-def test_delete_bentos_base_on_name(bento_service):
-    yc = get_yatai_client()
-    yc.repository.delete(prune=True)
-    bento_service.save(version=uuid.uuid4().hex[0:8])
-    bento_service.save(version=uuid.uuid4().hex[0:8])
-    iris = IrisClassifier()
-    iris.save()
+def test_delete_bento_by_name(yatai_client):
+    class DeleteBentoByNameTest(BentoService):
+        pass
 
-    yc.repository.delete(bento_name=bento_service.name)
-    bentos = yc.repository.list()
-    assert len(bentos) == 1
-    # Clean up existing bentos
-    yc.repository.delete(prune=True)
+    svc = DeleteBentoByNameTest()
+    svc.save()
+
+    assert yatai_client.repository.get(svc.tag).version == svc.version
+    assert len(yatai_client.repository.list(bento_name=svc.name)) == 1
+
+    yatai_client.repository.delete(bento_name=svc.name)
+    with pytest.raises(BentoMLException) as excinfo:
+        yatai_client.repository.get(svc.tag)
+    assert f"{svc.tag} not found" in str(excinfo.value)
+    assert len(yatai_client.repository.list(bento_name=svc.name)) == 0
 
 
-def test_delete_bentos_on_name_and_labels(bento_service):
-    yc = get_yatai_client()
-    yc.repository.delete(prune=True)
+def test_delete_bentos_by_name_and_labels(bento_service, yatai_client):
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'dataset': '20201212'})
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'dataset': '20201212'})
     bento_service.save(version=uuid.uuid4().hex[0:8], labels={'dataset': '20210101'})
-    iris = IrisClassifier()
-    iris.save()
 
-    yc.repository.delete(bento_name=bento_service.name, labels='dataset=20201212')
-    bentos = yc.repository.list()
-    assert len(bentos) == 2
-    # Clean up existing bentos
-    yc.repository.delete(prune=True)
+    class ThisShouldNotBeDeleted(BentoService):
+        pass
+
+    svc2 = ThisShouldNotBeDeleted()
+    svc2.save()
+
+    yatai_client.repository.delete(
+        bento_name=bento_service.name, labels='dataset=20201212'
+    )
+    assert len(yatai_client.repository.list(bento_name=bento_service.name)) == 1
+
+    # other services should not be deleted
+    assert yatai_client.repository.get(svc2.tag).version == svc2.version
+    yatai_client.repository.delete(svc2.tag)
+    assert len(yatai_client.repository.list(bento_name=svc2.name)) == 0
 
 
-def test_delete_bentos_with_tags(bento_service):
-    yc = get_yatai_client()
-    yc.repository.delete(prune=True)
+def test_delete_multiple_bentos_by_tag_from_cli(bento_service, yatai_client):
     version_one = uuid.uuid4().hex[0:8]
     version_two = uuid.uuid4().hex[0:8]
     version_three = uuid.uuid4().hex[0:8]
     bento_service.save(version=version_one)
     bento_service.save(version=version_two)
     bento_service.save(version=version_three)
-    yc.repository.delete(bento_tag=f'{bento_service.name}:{version_one}')
-    bentos = yc.repository.list()
-    assert len(bentos) == 2
 
     runner = CliRunner()
     cli = create_bentoml_cli()
-    print(cli.commands['delete'])
+    runner.invoke(
+        cli.commands['delete'], [f'{bento_service.name}:{version_one}', '-y'],
+    )
+    assert len(yatai_client.repository.list(bento_name=bento_service.name)) == 2
+
     runner.invoke(
         cli.commands['delete'],
         [
@@ -101,30 +113,28 @@ def test_delete_bentos_with_tags(bento_service):
             '-y',
         ],
     )
-    bentos = yc.repository.list()
-    assert len(bentos) == 0
-    # Clean up existing bentos
-    yc.repository.delete(prune=True)
+    assert len(yatai_client.repository.list(bento_name=bento_service.name)) == 0
 
 
-def test_delete_all_bentos(bento_service):
+def test_delete_all_bentos(bento_service, yatai_client):
     bento_service.save(version=uuid.uuid4().hex[0:8])
     bento_service.save(version=uuid.uuid4().hex[0:8])
     bento_service.save(version=uuid.uuid4().hex[0:8])
+    assert len(yatai_client.repository.list()) == 3
 
-    yc = get_yatai_client()
-    yc.repository.delete(prune=True)
-    bentos = yc.repository.list()
-    assert len(bentos) == 0
+    yatai_client.repository.delete(prune=True)
+    assert len(yatai_client.repository.list()) == 0
 
+
+def test_delete_all_bentos_from_cli(bento_service, yatai_client):
     bento_service.save(version=uuid.uuid4().hex[0:8])
     bento_service.save(version=uuid.uuid4().hex[0:8])
     bento_service.save(version=uuid.uuid4().hex[0:8])
+    assert len(yatai_client.repository.list()) == 3
 
     runner = CliRunner()
     cli = create_bentoml_cli()
     runner.invoke(
         cli.commands['delete'], ['--all', '-y'],
     )
-    bentos = yc.repository.list()
-    assert len(bentos) == 0
+    assert len(yatai_client.repository.list()) == 0

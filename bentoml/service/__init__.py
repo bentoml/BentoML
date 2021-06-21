@@ -719,6 +719,14 @@ class BentoService:
 
         return self._bento_service_version
 
+    @property
+    def tag(self):
+        """
+        Bento tag is simply putting its name and version together, separated by a colon
+        `tag` is mostly used in Yatai model management related APIs and operations
+        """
+        return f"{self.name}:{self.version}"
+
     def save(self, yatai_url=None, version=None, labels=None):
         """
         Save and register this BentoService via BentoML's built-in model management

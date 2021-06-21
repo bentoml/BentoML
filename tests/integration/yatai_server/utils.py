@@ -16,7 +16,7 @@ logger = logging.getLogger('bentoml.test')
 
 def build_yatai_service_image():
     docker_client = docker.from_env()
-    local_bentoml_repo_path = os.path.abspath(__file__ + "/../../../")
+    local_bentoml_repo_path = os.path.abspath(__file__ + "/../../../../")
     yatai_docker_image_tag = f'bentoml/yatai-service:test-{uuid.uuid4().hex[:6]}'
 
     # Note: When set both `custom_context` and `fileobj`, docker api will not use the
@@ -48,7 +48,7 @@ _yatai_docker_image_tag = None
 
 @contextlib.contextmanager
 def yatai_service_container(db_url=None, repo_base_url=None):
-    global _yatai_docker_image_tag
+    global _yatai_docker_image_tag  # pylint: disable=global-statement
     if _yatai_docker_image_tag is None:
         _yatai_docker_image_tag = build_yatai_service_image()
 

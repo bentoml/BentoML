@@ -165,9 +165,9 @@ def _start_prod_server(
 
     logger.info("Starting BentoML API server in production mode..")
 
-    from bentoml.server.gunicorn_server import gunicorn_bento_server
+    from bentoml.server.gunicorn_server import GunicornBentoServer
 
-    gunicorn_app = gunicorn_bento_server()(
+    gunicorn_app = GunicornBentoServer(
         saved_bundle_path,
         port=port,
         timeout=timeout,

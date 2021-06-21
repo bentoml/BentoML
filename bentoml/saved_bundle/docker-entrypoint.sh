@@ -18,10 +18,11 @@ _main() {
   # Overide the BENTOML_PORT if PORT env var is present. Used for Heroku
   if [[ -v PORT ]]; then
     echo "\$PORT is set! Overiding \$BENTOML_PORT with \$PORT ($PORT)"
-    export BENTOML_PORT=$PORT
+    export BENTOML_PORT=$PORT \
+
+    # Backward compatibility for BentoML prior to 0.7.5
+    export BENTOML__APISERVER__DEFAULT_PORT=$PORT
   fi
-  # Backward compatibility for BentoML prior to 0.7.5
-  export BENTOML__APISERVER__DEFAULT_PORT=$BENTOML_PORT
 
   exec "$@"
 }

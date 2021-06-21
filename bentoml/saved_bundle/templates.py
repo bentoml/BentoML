@@ -109,9 +109,8 @@ RUN rm ./bundled_pip_dependencies/docker-entrypoint.sh && ./bentoml-init.sh inst
 # copy over model files
 COPY --chown=bentoml:bentoml . ./
 
-# Default port for service
-ENV BENTOML_PORT 5000
-EXPOSE $BENTOML_PORT
+# Default port for BentoML Service
+EXPOSE 5000
 
 USER bentoml
 RUN chmod +x ./docker-entrypoint.sh

@@ -14,8 +14,7 @@ from tests.integration.utils import wait_until_container_ready
 logger = logging.getLogger('bentoml.test')
 
 
-@contextlib.contextmanager
-def yatai_service_container(db_url=None, repo_base_url=None):
+def build_yatai_service_image():
     docker_client = docker.from_env()
     local_bentoml_repo_path = os.path.abspath(__file__ + "/../../../")
     yatai_docker_image_tag = f'bentoml/yatai-service:test-{uuid.uuid4().hex[:6]}'
@@ -30,8 +29,7 @@ def yatai_service_container(db_url=None, repo_base_url=None):
                 f"""\
 FROM bentoml/yatai-service:{LAST_PYPI_RELEASE_VERSION}
 ADD . /bentoml-local-repo
-RUN pip install -U /bentoml-local-repo
-            """
+RUN pip install -U /bentoml-local-repo"""
             )
         logger.info(f'Building docker image {yatai_docker_image_tag}')
         docker_client.images.build(
@@ -40,36 +38,50 @@ RUN pip install -U /bentoml-local-repo
             tag=yatai_docker_image_tag,
         )
 
-        yatai_docker_image_tag = "bentoml/yatai-service:test-723510"
-        container_name = f'yatai-test-{uuid.uuid4().hex[:6]}'
-        yatai_server_command = ['bentoml', 'yatai-service-start', '--no-ui']
-        if db_url:
-            yatai_server_command.extend(['--db-url', db_url])
-        if repo_base_url:
-            yatai_server_command.extend(['--repo-base-url', repo_base_url])
+    return yatai_docker_image_tag
 
-        host = "127.0.0.1"
-        with reserve_free_port(host) as free_port:
-            # find free port on host
-            port = free_port
 
-        container = docker_client.containers.run(
-            image=yatai_docker_image_tag,
-            remove=True,
-            environment=['BENTOML_HOME=/tmp'],
-            ports={'50051/tcp': (host, port)},
-            command=yatai_server_command,
-            name=container_name,
-            detach=True,
-        )
+# Cache the yatai docker image built for each test run session, since the source code
+# of yatai will not be modified during a test run
+_yatai_docker_image_tag = None
 
-        wait_until_container_ready(
-            container_name, "Starting BentoML YataiService gRPC Server"
-        )
-        yield f'{host}:{port}'
 
-        logger.info(f"Shutting down docker container: {container_name}")
-        container.kill()
+@contextlib.contextmanager
+def yatai_service_container(db_url=None, repo_base_url=None):
+    global _yatai_docker_image_tag
+    if _yatai_docker_image_tag is None:
+        _yatai_docker_image_tag = build_yatai_service_image()
+
+    docker_client = docker.from_env()
+    container_name = f'yatai-test-{uuid.uuid4().hex[:6]}'
+    yatai_server_command = ['bentoml', 'yatai-service-start', '--no-ui']
+    if db_url:
+        yatai_server_command.extend(['--db-url', db_url])
+    if repo_base_url:
+        yatai_server_command.extend(['--repo-base-url', repo_base_url])
+
+    host = "127.0.0.1"
+    with reserve_free_port(host) as free_port:
+        # find free port on host
+        port = free_port
+
+    container = docker_client.containers.run(
+        image=_yatai_docker_image_tag,
+        remove=True,
+        environment=['BENTOML_HOME=/tmp'],
+        ports={'50051/tcp': (host, port)},
+        command=yatai_server_command,
+        name=container_name,
+        detach=True,
+    )
+
+    wait_until_container_ready(
+        container_name, "Starting BentoML YataiService gRPC Server"
+    )
+    yield f'{host}:{port}'
+
+    logger.info(f"Shutting down docker container: {container_name}")
+    container.kill()
 
 
 @contextlib.contextmanager

@@ -67,6 +67,7 @@ RUN pip install -U /bentoml-local-repo
         yatai_service_url = f'localhost:{port}'
         container = docker_client.containers.run(
             image=yatai_docker_image_tag,
+            remove=True,
             environment=['BENTOML_HOME=/tmp'],
             ports={f'{port}/tcp': port},
             command=yatai_server_command,

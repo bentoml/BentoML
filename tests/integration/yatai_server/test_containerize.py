@@ -2,7 +2,6 @@ import logging
 import subprocess
 
 from bentoml.yatai.client import get_yatai_client
-from tests.bento_service_examples.example_bento_service import ExampleBentoService
 
 logger = logging.getLogger('bentoml.test')
 

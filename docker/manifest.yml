@@ -1,11 +1,6 @@
 ---
-header: |
-  # ===========================================
-  #
-  # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
-  #
-  # ===========================================
-
+# allows users to define custom registries
+# this can also include GCR, NVCR, Heroku, etc.
 repository:
   docker.io:
     only_if: HUB_PASSWORD
@@ -20,38 +15,44 @@ packages:
     devel: &default_specs
       - ubuntu
       - centos
-    cudnn:
+    cudnn: &cudnn_specs
       - *default_specs
       - amazonlinux
     runtime:
-      - *default_specs
-      - amazonlinux
+      - *cudnn_specs
       - debian
       - alpine
   yatai-service:
     runtime:
       - *default_specs
 
-dependencies:
-  cuda:
-    v11.3.1: &cuda11_3_1_deps
-      cudart: 11.3.109-1
-      cudnn8: 8.2.0.53-1
-      libcublas: 11.5.1.109-1
-      libcurand: 10.2.4.109-1
-      libcusparse: 11.6.0.109-1
-      libcufft: 10.4.2.109-1
-      libcusolver: 11.1.2.109-1
+cuda_dependencies:
+  11.3.1: &cuda11_3_1_deps
+    cudart: 11.3.109-1
+    cudnn8: 8.2.0.53-1
+    libcublas: 11.5.1.109-1
+    libcurand: 10.2.4.109-1
+    libcusparse: 11.6.0.109-1
+    libcufft: 10.4.2.109-1
+    libcusolver: 11.1.2.109-1
 
 # http://yaml.org/type/merge.html
 release_spec: &tmpl_spec
   templates_dir: ""
+  base_image: ""
+  add_to_tags: ""
+  header: |
+    # ===========================================
+    #
+    # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
+    #
+    # ===========================================
   envars:
     - LANG=C.UTF-8
     - LC_ALL=C.UTF-8
     - PYTHONDONTWRITEBYTECODE=1
-  base_image: ""
-  add_to_tags: ""
+  requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
+  cuda_prefix_url: ""
   cuda:
     <<: *cuda11_3_1_deps
 
@@ -62,10 +63,12 @@ releases:
       templates_dir: templates/debian
       base_image: ubuntu:20.04
       add_to_tags: "ubuntu20.04"
+      cuda_prefix_url: "ubuntu2004"
     18.04:
       <<: *ubuntu
       base_image: ubuntu:18.04
       add_to_tags: "ubuntu18.04"
+      cuda_prefix_url: "ubuntu1804"
   debian:
     10:
       <<: *ubuntu
@@ -78,18 +81,22 @@ releases:
       templates_dir: templates/rhel
       base_image: centos:8
       add_to_tags: "centos8"
+      cuda_prefix_url: "rhel8"
     7:
       <<: *centos
       base_image: centos:7
       add_to_tags: "centos7"
+      cuda_prefix_url: "rhel7"
   amazonlinux:
     2:
       <<: *centos
       base_image: amazonlinux:2
       add_to_tags: "ami2"
+      cuda:
   alpine:
     3.14:
       <<: *tmpl_spec
       templates_dir: templates/alpine
       base_image: alpine:3.14
       add_to_tags: "alpine"
+      cuda:

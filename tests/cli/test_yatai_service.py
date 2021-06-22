@@ -40,7 +40,12 @@ def test_yatai_service_start():
             abs_url=None,
         )
 
-        runner.invoke(yatai_service_start_cmd, ["--repo-base-url=s3://url_address"])
+        # fmt: off
+        runner.invoke(
+            yatai_service_start_cmd,
+            ["--repo-base-url=s3://url_address"],
+        )
+        # fmt: on
         mocked_start_yatai_service_grpc_server.assert_called()
         mocked_start_yatai_service_grpc_server.assert_called_with(
             db_url=SQLITE_DATABASE_URL,
@@ -56,7 +61,12 @@ def test_yatai_service_start():
             abs_url=None,
         )
 
-        runner.invoke(yatai_service_start_cmd, ["--repo-base-url=gs://url_address"])
+        # fmt: off
+        runner.invoke(
+            yatai_service_start_cmd,
+            ["--repo-base-url=gs://url_address"],
+        )
+        # fmt: on
         mocked_start_yatai_service_grpc_server.assert_called()
         mocked_start_yatai_service_grpc_server.assert_called_with(
             db_url=SQLITE_DATABASE_URL,
@@ -72,7 +82,12 @@ def test_yatai_service_start():
             abs_url=None,
         )
 
-        runner.invoke(yatai_service_start_cmd, ["--repo-base-url=https://myaccount.blob.core.windows.net/mycontainer/myblob"])
+        runner.invoke(
+            yatai_service_start_cmd,
+            [
+                "--repo-base-url=https://myaccount.blob.core.windows.net/mycontainer/myblob"  # noqa: E501
+            ],
+        )
         mocked_start_yatai_service_grpc_server.assert_called()
         mocked_start_yatai_service_grpc_server.assert_called_with(
             db_url=SQLITE_DATABASE_URL,
@@ -87,6 +102,7 @@ def test_yatai_service_start():
             gcs_url=None,
             abs_url="https://myaccount.blob.core.windows.net/mycontainer/myblob",
         )
+
 
 def test_yatai_service_start_repository_types():
     runner = CliRunner()
@@ -108,6 +124,7 @@ def test_yatai_service_start_repository_types():
         runner.invoke(yatai_service_start_cmd, ["--repository-type=abs"])
         mocked_start_yatai_service_grpc_server.assert_not_called()
 
+        # fmt: off
         runner.invoke(
             yatai_service_start_cmd,
             [
@@ -115,6 +132,7 @@ def test_yatai_service_start_repository_types():
                 "--s3-url=s3://url_address",
             ],
         )
+        # fmt: on
         mocked_start_yatai_service_grpc_server.assert_called()
         mocked_start_yatai_service_grpc_server.assert_called_with(
             db_url=SQLITE_DATABASE_URL,
@@ -153,6 +171,7 @@ def test_yatai_service_start_repository_types():
             abs_url=None,
         )
 
+        # fmt: off
         runner.invoke(
             yatai_service_start_cmd,
             [
@@ -160,6 +179,7 @@ def test_yatai_service_start_repository_types():
                 "--gcs-url=gs://url_address",
             ],
         )
+        # fmt: on
         mocked_start_yatai_service_grpc_server.assert_called()
         mocked_start_yatai_service_grpc_server.assert_called_with(
             db_url=SQLITE_DATABASE_URL,

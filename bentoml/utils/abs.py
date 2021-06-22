@@ -17,6 +17,7 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
+
 def is_abs_url(url):
     """
     Check if the url is a abs url

@@ -78,6 +78,7 @@ def get_yatai_service(
         LocalYataiService = get_yatai_service_impl()
 
         logger.debug("Creating local YataiService instance")
+        # fmt: off
         return LocalYataiService(
             repository=create_repository(
                 repository_type,
@@ -89,6 +90,7 @@ def get_yatai_service(
             database=DB(db_url),
             default_namespace=default_namespace,
         )
+        # fmt: on
 
 
 @inject

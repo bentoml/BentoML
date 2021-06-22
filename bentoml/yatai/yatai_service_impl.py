@@ -571,7 +571,7 @@ def get_yatai_service_impl(base=object):
                             )
                         elif bento_pb.uri.typee == BentoUri.ABS:
                             bento_service_bundle_path = self.repo.get(
-                                bento_pb.name, bento_bp.bento_version
+                                bento_pb.name, bento_pb.bento_version
                             )
                         safe_retrieve(bento_service_bundle_path, temp_bundle_path)
                         try:

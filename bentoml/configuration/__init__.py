@@ -153,6 +153,7 @@ def inject_dependencies():
         abs_repository,
     )
 
+    # fmt: off
     container.wire(
         modules=[
             yatai_service,
@@ -171,6 +172,7 @@ def inject_dependencies():
             service,
         ],
     )
+    # fmt: on
 
     end = timer()
 

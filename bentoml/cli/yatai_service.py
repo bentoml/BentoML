@@ -183,7 +183,7 @@ def add_yatai_service_sub_command(
         elif repository_type == YATAI_REPOSITORY_GCS and gcs_url is None:
             logger.error("'--gcs-url' must be specified for GCS repository type")
             return
-        elif repository_type == YATAI_REPOSITORY_ABS and abs_url is NONE:
+        elif repository_type == YATAI_REPOSITORY_ABS and abs_url is None:
             logger.error("'--abs-url' must be specified for ABS repository type")
             return
         elif (

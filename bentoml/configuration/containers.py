@@ -39,6 +39,7 @@ YATAI_REPOSITORY_TYPES = [
     YATAI_REPOSITORY_ABS,
 ]
 
+# fmt: off
 SCHEMA = Schema(
     {
         "bento_bundle": {
@@ -117,11 +118,11 @@ SCHEMA = Schema(
                 },
                 "gcs": {
                     "url": Or(str, None),
-                    "expiration": Or(int, None)
+                    "expiration": Or(int, None),
                 },
                 "abs": {
                     "url": Or(str, None),
-                    "expiration": Or(int, None)
+                    "expiration": Or(int, None),
                 },
             },
             "database": {"url": Or(str, None)},
@@ -130,6 +131,7 @@ SCHEMA = Schema(
         },
     }
 )
+# fmt: on
 
 
 class BentoMLConfiguration:

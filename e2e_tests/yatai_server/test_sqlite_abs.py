@@ -10,8 +10,11 @@ from e2e_tests.yatai_server.utils import (
 
 logger = logging.getLogger('bentoml.test')
 
+
 def test_yatai_server_with_sqlite_and_abs():
-    abs_bucket_name = "https://myaccount.blob.core.windows.net/mycontainer/myblob-bentoml-e2e-tests"
+    abs_bucket_name = (
+        "https://myaccount.blob.core.windows.net/mycontainer/myblob-bentoml-e2e-tests"
+    )
 
     with local_yatai_server(repo_base_url=abs_bucket_name) as yatai_service_url:
         yc = get_yatai_client(yatai_service_url)

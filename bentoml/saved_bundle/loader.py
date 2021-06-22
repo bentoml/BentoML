@@ -84,13 +84,15 @@ def _resolve_remote_bundle_path(bundle_path):
                 '"azure-storage-blob" package is required for Azure Blob Storage.'
                 'You can install it with pip: '
                 '"pip install pip install azure-storage-blob"'
-                'Find out more at https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python'
+                'Find out more at docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python'  # noqa: E501
             )
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         parsed_url = urlparse(bundle_path)
         container, blob = parsed_url.path.split("/", 1)
         fileobj = io.BytesIO()
-        abs_blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        abs_blob_service_client = BlobServiceClient.from_connection_string(
+            connection_string
+        )
         abs_container_client = abs_blob_service_client.get_container_client(container)
         abs_blob_client = abs_container_client.get_blob_client(blob)
         download_stream = abs_blob_client.download_blob()

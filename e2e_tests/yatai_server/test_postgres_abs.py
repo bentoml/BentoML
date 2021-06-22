@@ -10,8 +10,11 @@ from e2e_tests.yatai_server.utils import (
 
 logger = logging.getLogger('bentoml.test')
 
+
 def test_yatai_server_with_postgres_and_abs(postgres_db_container_url):
-    abs_bucket_name = "https://myaccount.blob.core.windows.net/mycontainer/myblob-bentoml-e2e-tests"
+    abs_bucket_name = (
+        "https://myaccount.blob.core.windows.net/mycontainer/myblob-bentoml-e2e-tests"
+    )
 
     with local_yatai_server(
         db_url=postgres_db_container_url, repo_base_url=abs_bucket_name

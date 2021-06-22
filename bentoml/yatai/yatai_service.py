@@ -32,6 +32,9 @@ def get_yatai_service(
     repository_type: str = Provide[BentoMLContainer.config.yatai.repository.type],
     file_system_directory: str = Provide[BentoMLContainer.yatai_file_system_directory],
     s3_url: str = Provide[BentoMLContainer.config.yatai.repository.s3.url],
+    s3_endpoint_url: str = Provide[
+        BentoMLContainer.config.yatai.repository.s3.endpoint_url
+    ],
     gcs_url: str = Provide[BentoMLContainer.config.yatai.repository.gcs.url],
 ):
     if channel_address:
@@ -79,7 +82,7 @@ def get_yatai_service(
         logger.debug("Creating local YataiService instance")
         return LocalYataiService(
             repository=create_repository(
-                repository_type, file_system_directory, s3_url, gcs_url
+                repository_type, file_system_directory, s3_url, s3_endpoint_url, gcs_url
             ),
             database=DB(db_url),
             default_namespace=default_namespace,

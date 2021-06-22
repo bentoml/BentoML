@@ -3,16 +3,17 @@ import logging.config
 from collections.abc import Iterable
 
 from absl import flags, app
-from cerberus import Validator
+from cerberus import Validator, TypeDefinition
 from ruamel import yaml
 from jinja2 import Template, Environment
+from decimal import Decimal
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 # defined global vars.
 FLAGS = flags.FLAGS
-SUPPORTED_OS = ['ubuntu', 'slim', 'centos', 'alpine', 'amazonlinux']
+SUPPORTED_OS = ['ubuntu', 'debian', 'centos', 'alpine', 'amazonlinux']
+DECIMAL_TYPE = TypeDefinition('decimal', (Decimal, str), ())
 
-# CLI Flags
 # Docker-related
 flags.DEFINE_string(
     "hub_password",
@@ -73,75 +74,74 @@ flags.DEFINE_multi_string(
 flags.DEFINE_string("bentoml_version", None, "BentoML release version")
 
 SPEC_SCHEMA = """
---- 
-header: 
+--- header:
   type: string
-  
-repository: 
+
+repository:
   type: dict
-  keysrules: 
+  keysrules:
     type: string
-  valuesrules: 
+  valuesrules:
     type: dict
-    schema: 
-      only_if: 
+    schema:
+      only_if:
         env_vars: true
         type: string
-      pwd: 
+      pwd:
         env_vars: true
         type: string
-      registry: 
-        keysrules: 
+      registry:
+        keysrules:
           check_with: packages
           type: string
         type: dict
-        valuesrules: 
+        valuesrules:
           type: string
-      user: 
+      user:
         env_vars: true
         type: string
-        
-packages: 
+
+packages:
   type: dict
-  keysrules: 
+  keysrules:
     type: string
-  valuesrules: 
+  valuesrules:
     type: dict
     allowed: [devel, cudnn, runtime]
-    schema: 
-      devel: 
+    schema:
+      devel:
         type: list
-        schema: 
+        schema:
           type: string
         supported_dists: true
-      cudnn: 
+      cudnn:
         type: [string, list]
         supported_dists: true
-      runtime: 
+      runtime:
         required: true
         type: [string, list]
         supported_dists: true
-  
-dependencies: 
+
+dependencies:
   type: dict
   schema:
-    cuda: 
+    cuda:
       type: dict
-      keysrules: 
+      keysrules:
         type: string
         regex: 'v(\d{1,2}\.\d{1}\.\d)?$'
-      valuesrules: 
+      valuesrules:
         type: dict
-        keysrules: 
+        keysrules:
           type: string
-        valuesrules: 
+        valuesrules:
           type: string
-    
-release_spec: 
+
+release_spec:
   required: true
   type: dict
-  schema: 
-    templates_dir: 
+  schema:
+    templates_dir:
       type: string
     envars:
       type: list
@@ -156,15 +156,20 @@ release_spec:
       required: true
     cuda:
       type: dict
-        
-releases: 
+
+releases:
   type: dict
-  keysrules: 
+  keysrules:
     supported_dists: true
     type: string
-  valuesrules: 
+  valuesrules:
     type: dict
-        
+    # keysrules:
+    #   type: [integer, decimal, string]
+    #   regex: '\d+'
+    # valuesrules:
+    #   type: dict
+
 """
 
 
@@ -189,6 +194,8 @@ class DockerTagValidator(Validator):
     Args:
         packages: bentoml release packages, model-server, yatai-service, etc
     """
+    types_mapping = Validator.types_mapping.copy()
+    types_mapping['decimal'] = DECIMAL_TYPE
 
     def __init__(self, *args, **kwargs):
         if 'packages' in kwargs:
@@ -268,14 +275,28 @@ def load_manifest_yaml(file):
     return release_spec
 
 
+def update_args_dict(args_dict, updater):
+    # Args will have format ARG=foobar
+    if isinstance(updater, str):
+        args, _, value = updater.partition("=")
+        args_dict[args] = value
+        return
+    elif isinstance(updater, list):
+        for v in updater:
+            update_args_dict(args_dict, v)
+
+
 # TODO: custom check for releases.valuesrules
 def main(argv):
     if len(argv) > 1:
         raise RuntimeError("Too much arguments")
     release_spec = load_manifest_yaml(FLAGS.manifest_file)
 
-    for k, v in release_spec['releases'].items():
-        print(k)
-        print(v)
+    print(yaml.dump(release_spec, indent=2))
+    # for k, v in release_spec['releases'].items():
+    #     print(k)
+    #     print(v)
+
+
 if __name__ == "__main__":
     app.run(main)

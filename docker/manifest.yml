@@ -6,7 +6,6 @@ header: |
   #
   # ===========================================
 
-# http://yaml.org/type/merge.html
 repository:
   docker.io:
     only_if: HUB_PASSWORD
@@ -27,7 +26,7 @@ packages:
     runtime:
       - *default_specs
       - amazonlinux
-      - slim
+      - debian
       - alpine
   yatai-service:
     runtime:
@@ -44,6 +43,7 @@ dependencies:
       libcufft: 10.4.2.109-1
       libcusolver: 11.1.2.109-1
 
+# http://yaml.org/type/merge.html
 release_spec: &tmpl_spec
   templates_dir: ""
   envars:
@@ -66,8 +66,8 @@ releases:
       <<: *ubuntu
       base_image: ubuntu:18.04
       add_to_tags: "ubuntu18.04"
-  slim:
-    buster:
+  debian:
+    10:
       <<: *ubuntu
       base_image: debian:buster-slim
       add_to_tags: "slim"

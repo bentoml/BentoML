@@ -28,7 +28,6 @@ from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.service import BentoService, InferenceAPI
-from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest
 from bentoml.utils.open_api import get_open_api_spec_json
 
@@ -419,7 +418,7 @@ class BentoAPIServer:
             return response
 
         def api_func_with_tracing():
-            with get_tracer().span(
+            with BentoMLContainer.tracer.get().span(
                 service_name=f"BentoService.{self.bento_service.name}",
                 span_name=f"InferenceAPI {api.name} HTTP route",
                 request_headers=request.headers,

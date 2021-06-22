@@ -22,8 +22,8 @@ import sys
 from typing import Callable, Iterable, Iterator, Sequence
 
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLConfigException
-from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest, HTTPResponse, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 
@@ -162,7 +162,7 @@ class InferenceAPI(object):
 
         @functools.wraps(self._user_func)
         def wrapped_func(*args, **kwargs):
-            with get_tracer().span(
+            with BentoMLContainer.tracer.get().span(
                 service_name=f"BentoService.{self.service.name}",
                 span_name=f"InferenceAPI {self.name} user defined callback function",
             ):
@@ -299,7 +299,7 @@ class InferenceAPI(object):
         return response
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
-        with get_tracer().span(
+        with BentoMLContainer.tracer.get().span(
             service_name=f"BentoService.{self.service.name}",
             span_name=f"InferenceAPI {self.name} handle batch requests",
         ):

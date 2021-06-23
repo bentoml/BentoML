@@ -133,7 +133,7 @@ def inject_dependencies():
     else:
         configuration = BentoMLConfiguration()
 
-    container = BentoMLContainer()
+    container = BentoMLContainer
     container.config.set(configuration.as_dict())
 
     end = timer()

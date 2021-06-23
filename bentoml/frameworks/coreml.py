@@ -8,9 +8,12 @@ from bentoml.service.env import BentoServiceEnv
 logger = logging.getLogger(__name__)
 
 
+COREML_MODEL_FILE_EXTENTION = ".mlmodel"
+
+
 class CoreMLModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading coreml.models.MLModel objects
+    Artifact class for saving/loading coreml.models.MLModel objects
     with coremltools.models.MLModel.save and coremltools.models.MLModel(path).
 
     Args:
@@ -60,13 +63,12 @@ class CoreMLModelArtifact(BentoServiceArtifact):
     >>> svc.pack('model', model)
     """
 
-    def __init__(self, name, file_extension=".mlmodel"):
-        super(CoreMLModelArtifact, self).__init__(name)
-        self._file_extension = file_extension
+    def __init__(self, name: str):
+        super().__init__(name)
         self._model = None
 
     def _file_path(self, base_path):
-        return os.path.join(base_path, self.name + self._file_extension)
+        return os.path.join(base_path, self.name + COREML_MODEL_FILE_EXTENTION)
 
     def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
         try:

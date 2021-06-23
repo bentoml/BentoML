@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-import azure.functions as func  # pylint: disable=import-error
+import azure.functions as func  # pylint: disable=import-error, no-name-in-module
 
 from bentoml.server.api_server import BentoAPIServer
 from bentoml.saved_bundle import load_from_dir

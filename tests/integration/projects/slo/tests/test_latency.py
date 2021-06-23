@@ -1,10 +1,12 @@
 # pylint: disable=redefined-outer-name
 import time
+import sys
 
 import pytest
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(sys.platform == "darwin", reason="Test being flaky on Mac OS")
 async def test_SLO(host):
     await pytest.assert_request(
         "POST",

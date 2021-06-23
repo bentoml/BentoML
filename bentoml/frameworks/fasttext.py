@@ -7,7 +7,7 @@ from bentoml.service.env import BentoServiceEnv
 
 class FasttextModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading fasttext models
+    Artifact class for saving and loading fasttext models
 
     Args:
         name (str): Name for the artifact
@@ -40,8 +40,8 @@ class FasttextModelArtifact(BentoServiceArtifact):
     >>> svc.pack('model', model)
     """
 
-    def __init__(self, name):
-        super(FasttextModelArtifact, self).__init__(name)
+    def __init__(self, name: str):
+        super().__init__(name)
 
         self._model = None
 

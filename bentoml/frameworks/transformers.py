@@ -17,7 +17,8 @@ except ImportError:
 
 
 class TransformersModelArtifact(BentoServiceArtifact):
-    """Abstraction for saving/loading Transformers models
+    """
+    Artifact class for saving/loading Transformers models
 
     Args:
         name (string): name of the artifact
@@ -74,7 +75,7 @@ class TransformersModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        super(TransformersModelArtifact, self).__init__(name)
+        super().__init__(name)
         self._model = None
         self._tokenizer_type = None
         self._model_type = "AutoModelWithLMHead"

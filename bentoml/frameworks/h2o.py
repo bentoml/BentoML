@@ -7,7 +7,9 @@ from bentoml.service.env import BentoServiceEnv
 
 
 class H2oModelArtifact(BentoServiceArtifact):
-    """Abstraction for saving/loading objects with h2o.save_model and h2o.load_model
+    """
+    Artifact class for saving and loading h2o models using h2o.save_model and
+    h2o.load_model
 
     Args:
         name (str): Name for this h2o artifact..
@@ -46,7 +48,7 @@ class H2oModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        super(H2oModelArtifact, self).__init__(name)
+        super().__init__(name)
 
         self._model = None
 

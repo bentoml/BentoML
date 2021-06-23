@@ -23,10 +23,10 @@ from bentoml.saved_bundle import (
     load_from_dir,
 )
 from bentoml.server import start_dev_server, start_prod_server
-from bentoml.server.open_api import get_open_api_spec_json
 from bentoml.utils import ProtoMessageToDict, resolve_bundle_path
 from bentoml.utils.docker_utils import validate_tag
 from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.utils.open_api import get_open_api_spec_json
 from bentoml.yatai.client import get_yatai_client
 
 try:

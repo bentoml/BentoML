@@ -5,12 +5,15 @@ from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 
 
+XGBOOST_MODEL_EXTENSION = ".model"
+
+
 class XgboostModelArtifact(BentoServiceArtifact):
-    """Abstraction for save/load object with Xgboost.
+    """
+    Artifact class for saving and loading Xgboost model
 
     Args:
         name (string): name of the artifact
-        model_extension (string): Extension name for saved xgboost model
 
     Raises:
         ImportError: xgboost package is required for using XgboostModelArtifact
@@ -46,9 +49,8 @@ class XgboostModelArtifact(BentoServiceArtifact):
     >>> svc.pack('model', model_to_save)
     """
 
-    def __init__(self, name, model_extension=".model"):
+    def __init__(self, name):
         super(XgboostModelArtifact, self).__init__(name)
-        self._model_extension = model_extension
         self._model = None
 
     def set_dependencies(self, env: BentoServiceEnv):
@@ -56,7 +58,7 @@ class XgboostModelArtifact(BentoServiceArtifact):
             env.add_pip_packages(['xgboost'])
 
     def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + self._model_extension)
+        return os.path.join(base_path, self.name + XGBOOST_MODEL_EXTENSION)
 
     def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
         try:

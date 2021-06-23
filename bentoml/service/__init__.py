@@ -536,7 +536,7 @@ class BentoService:
                 )
 
     def _config_artifacts(self):
-        self._artifacts = ArtifactCollection.from_artifact_list(
+        self._artifacts = ArtifactCollection.from_declared_artifact_list(
             self._declared_artifacts
         )
 
@@ -624,9 +624,10 @@ class BentoService:
         """
         :return: BentoService name
         """
-        return self.__class__.name()  # pylint: disable=no-value-for-parameter
+        return self.__class__.name  # pylint: disable=no-value-for-parameter
 
     @name.classmethod
+    @property
     def name(cls):  # pylint: disable=no-self-argument,invalid-overridden-method
         """
         :return: BentoService name
@@ -718,6 +719,14 @@ class BentoService:
             self.set_version(self.versioneer())
 
         return self._bento_service_version
+
+    @property
+    def tag(self):
+        """
+        Bento tag is simply putting its name and version together, separated by a colon
+        `tag` is mostly used in Yatai model management related APIs and operations
+        """
+        return f"{self.name}:{self.version}"
 
     def save(self, yatai_url=None, version=None, labels=None):
         """

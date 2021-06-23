@@ -6,6 +6,9 @@ from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 
 
+DEFAULT_PICKLE_EXTENSION = ".pkl"
+
+
 def _import_joblib_module():
     try:
         import joblib
@@ -28,7 +31,7 @@ def _import_joblib_module():
 
 class SklearnModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading scikit learn models using sklearn.externals.joblib
+    Artifact class for saving/loading scikit learn models using sklearn.externals.joblib
 
     Args:
         name (str): Name for the artifact
@@ -64,14 +67,12 @@ class SklearnModelArtifact(BentoServiceArtifact):
     >>> svc.save()
     """
 
-    def __init__(self, name, pickle_extension=".pkl"):
-        super(SklearnModelArtifact, self).__init__(name)
-
-        self._pickle_extension = pickle_extension
+    def __init__(self, name):
+        super().__init__(name)
         self._model = None
 
     def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + self._pickle_extension)
+        return os.path.join(base_path, self.name + DEFAULT_PICKLE_EXTENSION)
 
     def pack(self, sklearn_model, metadata=None):  # pylint:disable=arguments-differ
         self._model = sklearn_model
@@ -89,7 +90,6 @@ class SklearnModelArtifact(BentoServiceArtifact):
 
     def save(self, dst):
         joblib = _import_joblib_module()
-
         joblib.dump(self._model, self._model_file_path(dst))
 
     def set_dependencies(self, env: BentoServiceEnv):

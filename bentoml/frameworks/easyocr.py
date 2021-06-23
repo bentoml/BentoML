@@ -8,7 +8,7 @@ from bentoml.service.env import BentoServiceEnv
 
 class EasyOCRArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading EasyOCR models
+    Artifact class  for saving/loading EasyOCR models
 
     Args:
         name (str): Name for the artifact
@@ -50,7 +50,7 @@ class EasyOCRArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        super(EasyOCRArtifact, self).__init__(name)
+        super().__init__(name)
 
         self._model = None
         self._detect_model = None

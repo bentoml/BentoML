@@ -4,6 +4,9 @@ from bentoml.service import BentoServiceArtifact
 from bentoml.utils import cloudpickle
 
 
+PICKLE_FILE_EXTENSION = ".pkl"
+
+
 class PickleArtifact(BentoServiceArtifact):
     """Abstraction for saving/loading python objects with pickle serialization
 
@@ -15,10 +18,9 @@ class PickleArtifact(BentoServiceArtifact):
         pickle_extension (str): The extension format for pickled file.
     """
 
-    def __init__(self, name, pickle_module=cloudpickle, pickle_extension=".pkl"):
+    def __init__(self, name, pickle_module=cloudpickle):
         super(PickleArtifact, self).__init__(name)
 
-        self._pickle_extension = pickle_extension
         self._obj = None
 
         if isinstance(pickle_module, str):
@@ -27,7 +29,7 @@ class PickleArtifact(BentoServiceArtifact):
             self._pickle = pickle_module
 
     def _pkl_file_path(self, base_path):
-        return os.path.join(base_path, self.name + self._pickle_extension)
+        return os.path.join(base_path, self.name + PICKLE_FILE_EXTENSION)
 
     def pack(self, obj, metadata=None):  # pylint:disable=arguments-differ
         self._obj = obj

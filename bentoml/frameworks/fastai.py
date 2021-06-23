@@ -33,7 +33,8 @@ def _import_fastai2_module():
 
 
 class Fastai1ModelArtifact(BentoServiceArtifact):
-    """Saving and Loading FastAI Model
+    """
+    Artifact class for saving and loading FastAI v1 Model
 
     Args:
         name (str): Name for the fastai model
@@ -75,7 +76,7 @@ class Fastai1ModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        super(Fastai1ModelArtifact, self).__init__(name)
+        super().__init__(name)
         self._file_name = name + '.pkl'
         self._model = None
 
@@ -100,14 +101,14 @@ class Fastai1ModelArtifact(BentoServiceArtifact):
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        logger.warning(
-            "BentoML by default does not include spacy and torchvision package when "
-            "using FastaiModelArtifact. To make sure BentoML bundle those packages if "
-            "they are required for your model, either import those packages in "
-            "BentoService definition file or manually add them via "
-            "`@env(pip_packages=['torchvision'])` when defining a BentoService"
-        )
         if env._infer_pip_packages:
+            logger.warning(
+                "BentoML by default does not include spacy and torchvision package "
+                "when using FastaiModelArtifact. To make sure BentoML bundle those "
+                "packages if they are required for your model, either import those "
+                "packages in BentoService definition file or manually add them via "
+                "`@env(pip_packages=['torchvision'])` when defining a BentoService"
+            )
             env.add_pip_packages(['torch', "fastai<2.0.0"])
 
     def save(self, dst):
@@ -122,7 +123,8 @@ class Fastai1ModelArtifact(BentoServiceArtifact):
 
 
 class FastaiModelArtifact(BentoServiceArtifact):
-    """Saving and Loading FastAI v2 Model
+    """
+    Artifact class for saving and loading FastAI v2 Model
 
     Args:
         name (str): Name for the fastai v2 model
@@ -160,7 +162,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        super(FastaiModelArtifact, self).__init__(name)
+        super().__init__(name)
         self._file_name = name + '.pkl'
         self._model = None
 
@@ -181,18 +183,19 @@ class FastaiModelArtifact(BentoServiceArtifact):
     def load(self, path):
         fastai2_module = _import_fastai2_module()
 
-        model = fastai2_module.basics.load_learner(path + '/' + self._file_name)
+        model = fastai2_module.basics.load_learner(os.path.join(path, self._file_name))
         return self.pack(model)
 
     def set_dependencies(self, env: BentoServiceEnv):
-        logger.warning(
-            "BentoML by default does not include spacy and torchvision package when "
-            "using FastaiModelArtifact. To make sure BentoML bundle those packages if "
-            "they are required for your model, either import those packages in "
-            "BentoService definition file or manually add them via "
-            "`@env(pip_packages=['torchvision'])` when defining a BentoService"
-        )
-        env.add_pip_packages(['torch', "fastcore", "fastai>=2.0.0"])
+        if env._infer_pip_packages:
+            logger.warning(
+                "BentoML by default does not include spacy and torchvision package "
+                "when using FastaiModelArtifact. To make sure BentoML bundle those "
+                "packages if they are required for your model, either import those "
+                "packages in BentoService definition file or manually add them via "
+                "`@env(pip_packages=['torchvision'])` when defining a BentoService"
+            )
+            env.add_pip_packages(['torch', "fastcore", "fastai>=2.0.0"])
 
     def save(self, dst):
         self._model.export(fname=self._file_name)

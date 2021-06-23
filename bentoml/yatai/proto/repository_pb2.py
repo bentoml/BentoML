@@ -23,7 +23,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x10repository.proto\x12\x07\x62\x65ntoml\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0cstatus.proto\x1a\x15label_selectors.proto\"\xd1\x01\n\x08\x42\x65ntoUri\x12+\n\x04type\x18\x01 \x01(\x0e\x32\x1d.bentoml.BentoUri.StorageType\x12\x0b\n\x03uri\x18\x02 \x01(\t\x12\x18\n\x10s3_presigned_url\x18\x03 \x01(\t\x12\x19\n\x11gcs_presigned_url\x18\x04 \x01(\t\"V\n\x0bStorageType\x12\t\n\x05UNSET\x10\x00\x12\t\n\x05LOCAL\x10\x01\x12\x06\n\x02S3\x10\x02\x12\x07\n\x03GCS\x10\x03\x12\x16\n\x12\x41ZURE_BLOB_STORAGE\x10\x04\x12\x08\n\x04HDFS\x10\x05\"\xa8\x07\n\x14\x42\x65ntoServiceMetadata\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12.\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12:\n\x03\x65nv\x18\x04 \x01(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceEnv\x12>\n\tartifacts\x18\x05 \x03(\x0b\x32+.bentoml.BentoServiceMetadata.BentoArtifact\x12;\n\x04\x61pis\x18\x06 \x03(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceApi\x12\x39\n\x06labels\x18\x07 \x03(\x0b\x32).bentoml.BentoServiceMetadata.LabelsEntry\x1a\xb3\x01\n\x0f\x42\x65ntoServiceEnv\x12\x10\n\x08setup_sh\x18\x01 \x01(\t\x12\x11\n\tconda_env\x18\x02 \x01(\t\x12\x18\n\x10pip_dependencies\x18\x03 \x01(\t\x12\x16\n\x0epython_version\x18\x04 \x01(\t\x12\x19\n\x11\x64ocker_base_image\x18\x05 \x01(\t\x12\x14\n\x0cpip_packages\x18\x06 \x03(\t\x12\x18\n\x10requirements_txt\x18\x07 \x01(\t\x1a_\n\rBentoArtifact\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x15\n\rartifact_type\x18\x02 \x01(\t\x12)\n\x08metadata\x18\x03 \x01(\x0b\x32\x17.google.protobuf.Struct\x1a\x86\x02\n\x0f\x42\x65ntoServiceApi\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x12\n\ninput_type\x18\x02 \x01(\t\x12\x0c\n\x04\x64ocs\x18\x03 \x01(\t\x12-\n\x0cinput_config\x18\x04 \x01(\x0b\x32\x17.google.protobuf.Struct\x12.\n\routput_config\x18\x05 \x01(\x0b\x32\x17.google.protobuf.Struct\x12\x13\n\x0boutput_type\x18\x06 \x01(\t\x12\x16\n\x0emb_max_latency\x18\x07 \x01(\x05\x12\x19\n\x11mb_max_batch_size\x18\x08 \x01(\x05\x12\r\n\x05\x62\x61tch\x18\t \x01(\x08\x12\r\n\x05route\x18\n \x01(\t\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xac\x01\n\x05\x42\x65nto\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x1e\n\x03uri\x18\x03 \x01(\x0b\x32\x11.bentoml.BentoUri\x12=\n\x16\x62\x65nto_service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\x12%\n\x06status\x18\x05 \x01(\x0b\x32\x15.bentoml.UploadStatus\"<\n\x0f\x41\x64\x64\x42\x65ntoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"S\n\x10\x41\x64\x64\x42\x65ntoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x03uri\x18\x02 \x01(\x0b\x32\x11.bentoml.BentoUri\"\xe5\x01\n\x0cUploadStatus\x12,\n\x06status\x18\x01 \x01(\x0e\x32\x1c.bentoml.UploadStatus.Status\x12.\n\nupdated_at\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x12\n\npercentage\x18\x03 \x01(\x05\x12\x15\n\rerror_message\x18\x04 \x01(\t\"L\n\x06Status\x12\x11\n\rUNINITIALIZED\x10\x00\x12\r\n\tUPLOADING\x10\x01\x12\x08\n\x04\x44ONE\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x12\x0b\n\x07TIMEOUT\x10\x04\"\xa6\x01\n\x12UpdateBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12,\n\rupload_status\x18\x03 \x01(\x0b\x32\x15.bentoml.UploadStatus\x12\x37\n\x10service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\"6\n\x13UpdateBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"J\n\x1d\x44\x61ngerouslyDeleteBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"A\n\x1e\x44\x61ngerouslyDeleteBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"<\n\x0fGetBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"R\n\x10GetBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1d\n\x05\x62\x65nto\x18\x02 \x01(\x0b\x32\x0e.bentoml.Bento\"\xfa\x01\n\x10ListBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x05\x12\r\n\x05limit\x18\x03 \x01(\x05\x12;\n\x08order_by\x18\x04 \x01(\x0e\x32).bentoml.ListBentoRequest.SORTABLE_COLUMN\x12\x17\n\x0f\x61scending_order\x18\x05 \x01(\x08\x12\x30\n\x0flabel_selectors\x18\x06 \x01(\x0b\x32\x17.bentoml.LabelSelectors\"+\n\x0fSORTABLE_COLUMN\x12\x0e\n\ncreated_at\x10\x00\x12\x08\n\x04name\x10\x01\"T\n\x11ListBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x06\x62\x65ntos\x18\x02 \x03(\x0b\x32\x0e.bentoml.Bento\"\xd8\x01\n\x18\x43ontainerizeBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12\x0b\n\x03tag\x18\x03 \x01(\t\x12\x44\n\nbuild_args\x18\x04 \x03(\x0b\x32\x30.bentoml.ContainerizeBentoRequest.BuildArgsEntry\x12\x0c\n\x04push\x18\x05 \x01(\x08\x1a\x30\n\x0e\x42uildArgsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"I\n\x19\x43ontainerizeBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x0b\n\x03tag\x18\x02 \x01(\t\"U\n\x12UploadBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12\x14\n\x0c\x62\x65nto_bundle\x18\x03 \x01(\x0c\"6\n\x13UploadBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"A\n\x14\x44ownloadBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"N\n\x15\x44ownloadBentoResponse\x12\x14\n\x0c\x62\x65nto_bundle\x18\x01 \x01(\x0c\x12\x1f\n\x06status\x18\x02 \x01(\x0b\x32\x0f.bentoml.Statusb\x06proto3'
+  serialized_pb=b'\n\x10repository.proto\x12\x07\x62\x65ntoml\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0cstatus.proto\x1a\x15label_selectors.proto\"\xdd\x01\n\x08\x42\x65ntoUri\x12+\n\x04type\x18\x01 \x01(\x0e\x32\x1d.bentoml.BentoUri.StorageType\x12\x0b\n\x03uri\x18\x02 \x01(\t\x12\x18\n\x10s3_presigned_url\x18\x03 \x01(\t\x12\x19\n\x11gcs_presigned_url\x18\x04 \x01(\t\x12\x19\n\x11\x61\x62s_presigned_url\x18\x05 \x01(\t\"G\n\x0bStorageType\x12\t\n\x05UNSET\x10\x00\x12\t\n\x05LOCAL\x10\x01\x12\x06\n\x02S3\x10\x02\x12\x07\n\x03GCS\x10\x03\x12\x07\n\x03\x41\x42S\x10\x04\x12\x08\n\x04HDFS\x10\x05\"\xa8\x07\n\x14\x42\x65ntoServiceMetadata\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12.\n\ncreated_at\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12:\n\x03\x65nv\x18\x04 \x01(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceEnv\x12>\n\tartifacts\x18\x05 \x03(\x0b\x32+.bentoml.BentoServiceMetadata.BentoArtifact\x12;\n\x04\x61pis\x18\x06 \x03(\x0b\x32-.bentoml.BentoServiceMetadata.BentoServiceApi\x12\x39\n\x06labels\x18\x07 \x03(\x0b\x32).bentoml.BentoServiceMetadata.LabelsEntry\x1a\xb3\x01\n\x0f\x42\x65ntoServiceEnv\x12\x10\n\x08setup_sh\x18\x01 \x01(\t\x12\x11\n\tconda_env\x18\x02 \x01(\t\x12\x18\n\x10pip_dependencies\x18\x03 \x01(\t\x12\x16\n\x0epython_version\x18\x04 \x01(\t\x12\x19\n\x11\x64ocker_base_image\x18\x05 \x01(\t\x12\x14\n\x0cpip_packages\x18\x06 \x03(\t\x12\x18\n\x10requirements_txt\x18\x07 \x01(\t\x1a_\n\rBentoArtifact\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x15\n\rartifact_type\x18\x02 \x01(\t\x12)\n\x08metadata\x18\x03 \x01(\x0b\x32\x17.google.protobuf.Struct\x1a\x86\x02\n\x0f\x42\x65ntoServiceApi\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x12\n\ninput_type\x18\x02 \x01(\t\x12\x0c\n\x04\x64ocs\x18\x03 \x01(\t\x12-\n\x0cinput_config\x18\x04 \x01(\x0b\x32\x17.google.protobuf.Struct\x12.\n\routput_config\x18\x05 \x01(\x0b\x32\x17.google.protobuf.Struct\x12\x13\n\x0boutput_type\x18\x06 \x01(\t\x12\x16\n\x0emb_max_latency\x18\x07 \x01(\x05\x12\x19\n\x11mb_max_batch_size\x18\x08 \x01(\x05\x12\r\n\x05\x62\x61tch\x18\t \x01(\x08\x12\r\n\x05route\x18\n \x01(\t\x1a-\n\x0bLabelsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xac\x01\n\x05\x42\x65nto\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x1e\n\x03uri\x18\x03 \x01(\x0b\x32\x11.bentoml.BentoUri\x12=\n\x16\x62\x65nto_service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\x12%\n\x06status\x18\x05 \x01(\x0b\x32\x15.bentoml.UploadStatus\"<\n\x0f\x41\x64\x64\x42\x65ntoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"S\n\x10\x41\x64\x64\x42\x65ntoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x03uri\x18\x02 \x01(\x0b\x32\x11.bentoml.BentoUri\"\xe5\x01\n\x0cUploadStatus\x12,\n\x06status\x18\x01 \x01(\x0e\x32\x1c.bentoml.UploadStatus.Status\x12.\n\nupdated_at\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x12\n\npercentage\x18\x03 \x01(\x05\x12\x15\n\rerror_message\x18\x04 \x01(\t\"L\n\x06Status\x12\x11\n\rUNINITIALIZED\x10\x00\x12\r\n\tUPLOADING\x10\x01\x12\x08\n\x04\x44ONE\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x12\x0b\n\x07TIMEOUT\x10\x04\"\xa6\x01\n\x12UpdateBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12,\n\rupload_status\x18\x03 \x01(\x0b\x32\x15.bentoml.UploadStatus\x12\x37\n\x10service_metadata\x18\x04 \x01(\x0b\x32\x1d.bentoml.BentoServiceMetadata\"6\n\x13UpdateBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"J\n\x1d\x44\x61ngerouslyDeleteBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"A\n\x1e\x44\x61ngerouslyDeleteBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"<\n\x0fGetBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"R\n\x10GetBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1d\n\x05\x62\x65nto\x18\x02 \x01(\x0b\x32\x0e.bentoml.Bento\"\xfa\x01\n\x10ListBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x0e\n\x06offset\x18\x02 \x01(\x05\x12\r\n\x05limit\x18\x03 \x01(\x05\x12;\n\x08order_by\x18\x04 \x01(\x0e\x32).bentoml.ListBentoRequest.SORTABLE_COLUMN\x12\x17\n\x0f\x61scending_order\x18\x05 \x01(\x08\x12\x30\n\x0flabel_selectors\x18\x06 \x01(\x0b\x32\x17.bentoml.LabelSelectors\"+\n\x0fSORTABLE_COLUMN\x12\x0e\n\ncreated_at\x10\x00\x12\x08\n\x04name\x10\x01\"T\n\x11ListBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x1e\n\x06\x62\x65ntos\x18\x02 \x03(\x0b\x32\x0e.bentoml.Bento\"\xd8\x01\n\x18\x43ontainerizeBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12\x0b\n\x03tag\x18\x03 \x01(\t\x12\x44\n\nbuild_args\x18\x04 \x03(\x0b\x32\x30.bentoml.ContainerizeBentoRequest.BuildArgsEntry\x12\x0c\n\x04push\x18\x05 \x01(\x08\x1a\x30\n\x0e\x42uildArgsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"I\n\x19\x43ontainerizeBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\x12\x0b\n\x03tag\x18\x02 \x01(\t\"U\n\x12UploadBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\x12\x14\n\x0c\x62\x65nto_bundle\x18\x03 \x01(\x0c\"6\n\x13UploadBentoResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0b\x32\x0f.bentoml.Status\"A\n\x14\x44ownloadBentoRequest\x12\x12\n\nbento_name\x18\x01 \x01(\t\x12\x15\n\rbento_version\x18\x02 \x01(\t\"N\n\x15\x44ownloadBentoResponse\x12\x14\n\x0c\x62\x65nto_bundle\x18\x01 \x01(\x0c\x12\x1f\n\x06status\x18\x02 \x01(\x0b\x32\x0f.bentoml.Statusb\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,status__pb2.DESCRIPTOR,label__selectors__pb2.DESCRIPTOR,])
 
@@ -57,7 +57,7 @@ _BENTOURI_STORAGETYPE = _descriptor.EnumDescriptor(
       type=None,
       create_key=_descriptor._internal_create_key),
     _descriptor.EnumValueDescriptor(
-      name='AZURE_BLOB_STORAGE', index=4, number=4,
+      name='ABS', index=4, number=4,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
@@ -69,8 +69,8 @@ _BENTOURI_STORAGETYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=253,
-  serialized_end=339,
+  serialized_start=280,
+  serialized_end=351,
 )
 _sym_db.RegisterEnumDescriptor(_BENTOURI_STORAGETYPE)
 
@@ -109,8 +109,8 @@ _UPLOADSTATUS_STATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1756,
-  serialized_end=1832,
+  serialized_start=1768,
+  serialized_end=1844,
 )
 _sym_db.RegisterEnumDescriptor(_UPLOADSTATUS_STATUS)
 
@@ -134,8 +134,8 @@ _LISTBENTOREQUEST_SORTABLE_COLUMN = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2556,
-  serialized_end=2599,
+  serialized_start=2568,
+  serialized_end=2611,
 )
 _sym_db.RegisterEnumDescriptor(_LISTBENTOREQUEST_SORTABLE_COLUMN)
 
@@ -176,6 +176,13 @@ _BENTOURI = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='abs_presigned_url', full_name='bentoml.BentoUri.abs_presigned_url', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -190,7 +197,7 @@ _BENTOURI = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=130,
-  serialized_end=339,
+  serialized_end=351,
 )
 
 
@@ -263,8 +270,8 @@ _BENTOSERVICEMETADATA_BENTOSERVICEENV = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=690,
-  serialized_end=869,
+  serialized_start=702,
+  serialized_end=881,
 )
 
 _BENTOSERVICEMETADATA_BENTOARTIFACT = _descriptor.Descriptor(
@@ -308,8 +315,8 @@ _BENTOSERVICEMETADATA_BENTOARTIFACT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=871,
-  serialized_end=966,
+  serialized_start=883,
+  serialized_end=978,
 )
 
 _BENTOSERVICEMETADATA_BENTOSERVICEAPI = _descriptor.Descriptor(
@@ -402,8 +409,8 @@ _BENTOSERVICEMETADATA_BENTOSERVICEAPI = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=969,
-  serialized_end=1231,
+  serialized_start=981,
+  serialized_end=1243,
 )
 
 _BENTOSERVICEMETADATA_LABELSENTRY = _descriptor.Descriptor(
@@ -440,8 +447,8 @@ _BENTOSERVICEMETADATA_LABELSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1233,
-  serialized_end=1278,
+  serialized_start=1245,
+  serialized_end=1290,
 )
 
 _BENTOSERVICEMETADATA = _descriptor.Descriptor(
@@ -513,8 +520,8 @@ _BENTOSERVICEMETADATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=342,
-  serialized_end=1278,
+  serialized_start=354,
+  serialized_end=1290,
 )
 
 
@@ -573,8 +580,8 @@ _BENTO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1281,
-  serialized_end=1453,
+  serialized_start=1293,
+  serialized_end=1465,
 )
 
 
@@ -612,8 +619,8 @@ _ADDBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1455,
-  serialized_end=1515,
+  serialized_start=1467,
+  serialized_end=1527,
 )
 
 
@@ -651,8 +658,8 @@ _ADDBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1517,
-  serialized_end=1600,
+  serialized_start=1529,
+  serialized_end=1612,
 )
 
 
@@ -705,8 +712,8 @@ _UPLOADSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1603,
-  serialized_end=1832,
+  serialized_start=1615,
+  serialized_end=1844,
 )
 
 
@@ -758,8 +765,8 @@ _UPDATEBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1835,
-  serialized_end=2001,
+  serialized_start=1847,
+  serialized_end=2013,
 )
 
 
@@ -790,8 +797,8 @@ _UPDATEBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2003,
-  serialized_end=2057,
+  serialized_start=2015,
+  serialized_end=2069,
 )
 
 
@@ -829,8 +836,8 @@ _DANGEROUSLYDELETEBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2059,
-  serialized_end=2133,
+  serialized_start=2071,
+  serialized_end=2145,
 )
 
 
@@ -861,8 +868,8 @@ _DANGEROUSLYDELETEBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2135,
-  serialized_end=2200,
+  serialized_start=2147,
+  serialized_end=2212,
 )
 
 
@@ -900,8 +907,8 @@ _GETBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2202,
-  serialized_end=2262,
+  serialized_start=2214,
+  serialized_end=2274,
 )
 
 
@@ -939,8 +946,8 @@ _GETBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2264,
-  serialized_end=2346,
+  serialized_start=2276,
+  serialized_end=2358,
 )
 
 
@@ -1007,8 +1014,8 @@ _LISTBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2349,
-  serialized_end=2599,
+  serialized_start=2361,
+  serialized_end=2611,
 )
 
 
@@ -1046,8 +1053,8 @@ _LISTBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2601,
-  serialized_end=2685,
+  serialized_start=2613,
+  serialized_end=2697,
 )
 
 
@@ -1085,8 +1092,8 @@ _CONTAINERIZEBENTOREQUEST_BUILDARGSENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2856,
-  serialized_end=2904,
+  serialized_start=2868,
+  serialized_end=2916,
 )
 
 _CONTAINERIZEBENTOREQUEST = _descriptor.Descriptor(
@@ -1144,8 +1151,8 @@ _CONTAINERIZEBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2688,
-  serialized_end=2904,
+  serialized_start=2700,
+  serialized_end=2916,
 )
 
 
@@ -1183,8 +1190,8 @@ _CONTAINERIZEBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2906,
-  serialized_end=2979,
+  serialized_start=2918,
+  serialized_end=2991,
 )
 
 
@@ -1229,8 +1236,8 @@ _UPLOADBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2981,
-  serialized_end=3066,
+  serialized_start=2993,
+  serialized_end=3078,
 )
 
 
@@ -1261,8 +1268,8 @@ _UPLOADBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3068,
-  serialized_end=3122,
+  serialized_start=3080,
+  serialized_end=3134,
 )
 
 
@@ -1300,8 +1307,8 @@ _DOWNLOADBENTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3124,
-  serialized_end=3189,
+  serialized_start=3136,
+  serialized_end=3201,
 )
 
 
@@ -1339,8 +1346,8 @@ _DOWNLOADBENTORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3191,
-  serialized_end=3269,
+  serialized_start=3203,
+  serialized_end=3281,
 )
 
 _BENTOURI.fields_by_name['type'].enum_type = _BENTOURI_STORAGETYPE

@@ -6347,7 +6347,7 @@ export const bentoml = $root.bentoml = (() => {
          * @property {number} LOCAL=1 LOCAL value
          * @property {number} S3=2 S3 value
          * @property {number} GCS=3 GCS value
-         * @property {number} ABS=4 AZURE_BLOB_STORAGE value
+         * @property {number} ABS=4 ABS value
          * @property {number} HDFS=5 HDFS value
          */
         BentoUri.StorageType = (function() {

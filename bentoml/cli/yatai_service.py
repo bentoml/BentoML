@@ -137,7 +137,7 @@ def add_yatai_service_sub_command(
         '--abs-url',
         type=click.STRING,
         default=default_abs_url,
-        help='Specifies the ABS URL for the UBS repository type',
+        help='Specifies the Azure Blob Storage URL for the Yatai repository type',
         envvar='BENTOML_YATAI_ABS_URL',
     )
     def yatai_service_start(

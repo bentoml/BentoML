@@ -4,11 +4,11 @@ FROM {{ metadata.base_image }}
 
 # setup ENV and ARG
 {% for key, value in metadata.envars.items() %}
-{% if key not in ["PYTHON_VERSION"] %}
-ENV {{ key }}={{ value }}
-{% else %}
-ARG {{ key }}
-{% endif %}
+    {% if key not in ["PYTHON_VERSION"] %}
+        ENV {{ key }}={{ value }}
+    {% else %}
+        ARG {{ key }}
+    {% endif %}
 {% endfor %}
 
 ENV PATH /opt/conda/bin:$PATH
@@ -17,36 +17,36 @@ ENV PATH /opt/conda/bin:$PATH
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update -q && \
-    apt-get install -q -y --no-install-recommends \
-      ca-certificates curl wget git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+apt-get install -q -y --no-install-recommends \
+ca-certificates curl wget git && \
+apt-get clean && \
+rm -rf /var/lib/apt/lists/*
 
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    chmod +x ~/miniconda.sh && \
-    ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh && \
-    find /opt/conda/ -follow -type f -name '*.a' -delete && \
-    find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
-    /opt/conda/bin/conda clean -afy && \
-    apt-get clean && apt-get autoremove -y && \
-    apt-get purge -y wget
+chmod +x ~/miniconda.sh && \
+~/miniconda.sh -b -p /opt/conda && \
+rm ~/miniconda.sh && \
+find /opt/conda/ -follow -type f -name '*.a' -delete && \
+find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
+/opt/conda/bin/conda clean -afy && \
+apt-get clean && apt-get autoremove -y && \
+apt-get purge -y wget
 
 RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
-    /opt/conda/bin/conda clean -afy
+/opt/conda/bin/conda clean -afy
 
 {% if metadata.package == "yatai-service" %}
-# YataiService GRPC port
-EXPOSE 50051
+    # YataiService GRPC port
+    EXPOSE 50051
 
-# YataiService Web UI port
-EXPOSE 3000
+    # YataiService Web UI port
+    EXPOSE 3000
 
-# Install Node, required by the Web UI Server
-# https://github.com/nodejs/docker-node/tree/4ef13799abb9bb37193be39621fedd52e0da6805/15/buster
-ENV NODE_VERSION 15.12.0
-RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
-  && case "${dpkgArch##*-}" in \
+    # Install Node, required by the Web UI Server
+    # https://github.com/nodejs/docker-node/tree/4ef13799abb9bb37193be39621fedd52e0da6805/15/buster
+    ENV NODE_VERSION 15.12.0
+    RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
+    && case "${dpkgArch##*-}" in \
     amd64) ARCH='x64';; \
     ppc64el) ARCH='ppc64le';; \
     s390x) ARCH='s390x';; \
@@ -54,10 +54,10 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
     armhf) ARCH='armv7l';; \
     i386) ARCH='x86';; \
     *) echo "unsupported architecture"; exit 1 ;; \
-  esac \
-  # gpg keys listed at https://github.com/nodejs/node#release-keys
-  && set -ex \
-  && for key in \
+    esac \
+    # gpg keys listed at https://github.com/nodejs/node#release-keys
+    && set -ex \
+    && for key in \
     4ED778F539E3634C779C87C6D7062848A1AB005C \
     94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \
     74F12602B6F1C4E913FAA37AD3A89613643B6201 \
@@ -69,21 +69,21 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
     A48C2BEE680E841632CD4E44F07496B3EB3C1762 \
     108F52B48DB57BB0CC439B2997B01419BD92F80A \
     B9E2F5981AA6E0CD28160D9FF13993A75599653C \
-  ; do \
+    ; do \
     gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" || \
     gpg --batch --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys "$key" || \
     gpg --batch --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" ; \
-  done \
-  && curl -fsSLO --compressed "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH.tar.xz" \
-  && curl -fsSLO --compressed "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
-  && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \
-  && grep " node-v$NODE_VERSION-linux-$ARCH.tar.xz\$" SHASUMS256.txt | sha256sum -c - \
-  && tar -xJf "node-v$NODE_VERSION-linux-$ARCH.tar.xz" -C /usr/local --strip-components=1 --no-same-owner \
-  && rm "node-v$NODE_VERSION-linux-$ARCH.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt \
-  && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
-  # smoke tests
-  && node --version \
-  && npm --version
+    done \
+    && curl -fsSLO --compressed "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH.tar.xz" \
+    && curl -fsSLO --compressed "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" \
+    && gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc \
+    && grep " node-v$NODE_VERSION-linux-$ARCH.tar.xz\$" SHASUMS256.txt | sha256sum -c - \
+    && tar -xJf "node-v$NODE_VERSION-linux-$ARCH.tar.xz" -C /usr/local --strip-components=1 --no-same-owner \
+    && rm "node-v$NODE_VERSION-linux-$ARCH.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt \
+    && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
+    # smoke tests
+    && node --version \
+    && npm --version
 
 {% endif %}
 COPY tools/bashrc /etc/bash.bashrc

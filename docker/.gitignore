@@ -1,1 +1,4 @@
 **/*.tmp.*
+
+# Ignore Docker metadata.json
+**/*.json

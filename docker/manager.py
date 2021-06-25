@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import errno
+import inspect
 import json
 import logging
 import os
@@ -7,18 +7,22 @@ import pathlib
 import re
 from collections import defaultdict
 from collections.abc import Iterable
+from copy import deepcopy
 from typing import Dict, Optional
 
 from absl import flags, app
 from cerberus import Validator
-from glom import glom, Path, PathAccessError
+from glom import glom, Path, PathAccessError, Assign, PathAssignError
 from jinja2 import Environment
 from ruamel import yaml
+
+logging.basicConfig(level=logging.DEBUG)
 
 # defined global vars.
 FLAGS = flags.FLAGS
 
 DOCKERFILE_PREFIX = ".Dockerfile.j2"
+REPO_PREFIX = ".repo.j2"
 DOCKERFILE_ALLOWED_NAMES = ['base', 'cudnn', 'devel', 'runtime']
 
 SUPPORTED_PYTHON_VERSION = ["3.6", "3.7", "3.8"]
@@ -176,14 +180,23 @@ releases:
 """
 
 
-def validate_dockerfile_name(name: str):
+def validate_template_name(name: str):
     """Validate our input file name for Dockerfile templates."""
-    if DOCKERFILE_PREFIX in name:
+    if REPO_PREFIX in name:
+        # ignore .repo.j2 for centos
+        pass
+    elif DOCKERFILE_PREFIX in name:
         name, _, _ = name.partition(DOCKERFILE_PREFIX)
         if name not in DOCKERFILE_ALLOWED_NAMES:
             raise RuntimeError(
-                f"Unable to parse dockerfile: {name}. Dockerfile directory should only consists of {DOCKERFILE_ALLOWED_NAMES}"
+                f"Unable to parse {name}. Dockerfile directory should consists of {', '.join(DOCKERFILE_ALLOWED_NAMES)}"
             )
+    else:
+        raise RuntimeWarning(
+            f"{inspect.currentframe().f_code.co_name} is being used to validate {name}, which has unknown extensions, "
+            f"thus will have no effects. "
+        )
+        pass
 
 
 def get_data(obj, *path, skip=False):
@@ -203,7 +216,20 @@ def get_data(obj, *path, skip=False):
         return data
 
 
-def build_release_args(bentoml_version):
+def update_data(obj, value, *path):
+    """
+    Update data from the object with given value.
+    e.g: dependencies.cuda."11.3.1"
+    """
+    try:
+        _ = glom(obj, Assign(Path(*path), value))
+    except PathAssignError:
+        logging.error(
+            f"Exception occurred in update_data, unable to update {Path(*path)} with {value}"
+        )
+
+
+def _build_release_args(bentoml_version):
     """
     Create a dictionary of args that will be parsed during runtime
 
@@ -238,6 +264,45 @@ def build_release_args(bentoml_version):
     return update_args_dict
 
 
+def _build_release_tags(build_ctx, release_type):
+    """
+    Our tags will have format: {bentoml_release_version}-{python_version}-{distros}-{image_type}
+    eg:
+    - python3.8-ubuntu20.04-base -> contains conda and python preinstalled
+    - devel-python3.8-ubuntu20.04
+    - 0.13.0-python3.7-centos8-{runtime,cudnn}
+    """
+
+    _python_version = get_data(build_ctx, 'envars', 'PYTHON_VERSION')
+
+    # check if PYTHON_VERSION is set.
+    if not _python_version:
+        raise RuntimeError("PYTHON_VERSION should be set before generating Dockerfile.")
+    if _python_version not in SUPPORTED_PYTHON_VERSION:
+        raise ValueError(
+            f"{_python_version} is not supported. Supported versions: {SUPPORTED_PYTHON_VERSION}"
+        )
+
+    _tag = ""
+    core_string = '-'.join([f"python{_python_version}", build_ctx['add_to_tags']])
+
+    base_tag = '-'.join([core_string, 'base'])
+
+    if release_type == "devel":
+        _tag = "-".join([release_type, core_string])
+    elif release_type == "base":
+        pass
+    else:
+        _tag = "-".join(
+            [
+                get_data(build_ctx, 'envars', 'BENTOML_VERSION'),
+                core_string,
+                release_type,
+            ]
+        )
+    return _tag, base_tag
+
+
 def flatten(arr):
     for it in arr:
         if isinstance(it, Iterable) and not isinstance(it, str):
@@ -263,6 +328,22 @@ def load_manifest_yaml(file):
 
     release_spec = v.normalized(manifest)
     return release_spec
+
+
+def _update_build_ctx(ctx_dict, spec_dict: Dict, *ignore_keys):
+    # flatten release_spec to template context.
+    for k, v in spec_dict.items():
+        if k in list(flatten([*ignore_keys])):
+            continue
+        ctx_dict[k] = v
+
+
+def _add_base_release_type(build_ctx, release_type: list):
+    try:
+        return release_type + [build_ctx['base_tags']]
+    except KeyError as e:
+        # when base_tags is either not set or available
+        return release_type
 
 
 class MetadataSpecValidator(Validator):
@@ -364,9 +445,7 @@ class cached_property(property):
 
     _missing = _Missing()
 
-    def __init__(
-            self, func, name=None, doc=None
-    ):  # pylint:disable=super-init-not-called
+    def __init__(self, func, name=None, doc=None):
         super().__init__(doc)
         self.__name__ = name or func.__name__
         self.__module__ = func.__module__
@@ -376,7 +455,7 @@ class cached_property(property):
     def __set__(self, obj, value):
         obj.__dict__[self.__name__] = value
 
-    def __get__(self, obj, types=None):  # pylint:disable=redefined-builtin
+    def __get__(self, obj, types=None):
         if obj is None:
             return self
         value = obj.__dict__.get(self.__name__, self._missing)
@@ -390,46 +469,53 @@ class TemplatesMixin(object):
     """Mixin for generating Dockerfile from templates."""
 
     _build_ctx = {}
+    # _build_path will consist of
+    #   key: package_tag
+    #   value: path to dockerfile
     _build_path = {}
 
     _template_env = Environment(
         extensions=['jinja2.ext.do'], trim_blocks=True, lstrip_blocks=True
     )
 
-    def __init__(self, release_spec):
+    def __init__(self, release_spec, cuda_version):
         # set private class attributes to be manifest.yml keys
         for keys, values in release_spec.items():
             super().__setattr__(f"_{keys}", values)
 
         # setup default keys for build context
-        self._update_build_ctx(self._release_spec, 'cuda')
+        _update_build_ctx(self._build_ctx, self._release_spec, 'cuda')
 
         # setup cuda_version and cuda_components
-        if self._check_cuda_version(FLAGS.cuda_version):
-            self._cuda_version = FLAGS.cuda_version
+        if self._check_cuda_version(cuda_version):
+            self._cuda_version = cuda_version
         else:
             raise RuntimeError(
-                f"CUDA {FLAGS.cuda_version} is either not supported or defined in {self._cuda_dependencies}"
+                f"CUDA {cuda_version} is either not supported or not defined in {self._cuda_dependencies.keys()}"
             )
         self._cuda_components = get_data(self._cuda_dependencies, self._cuda_version)
 
     def __call__(self, *args, **kwargs):
-        self.generate_dockerfiles()
+        if FLAGS.python_version is not None:
+            supported_python = [FLAGS.python_version]
+        else:
+            supported_python = SUPPORTED_PYTHON_VERSION
+        self.generate_dockerfiles(
+            target_dir=FLAGS.dockerfile_dir, python_version=supported_python
+        )
 
     @cached_property
     def build_path(self):
         return self._build_path
 
+    def _cudnn_versions(self):
+        for k, v in self._cuda_components.items():
+            if k.startswith('cudnn') and v:
+                return k, v
+
     def _check_cuda_version(self, cuda_version):
         # get defined cuda version for cuda
         return True if cuda_version in self._cuda_dependencies.keys() else False
-
-    def _update_build_ctx(self, spec_dict: Dict, *ignore_keys):
-        # flatten release_spec to template context.
-        for k, v in spec_dict.items():
-            if k in list(flatten([*ignore_keys])):
-                continue
-            self._build_ctx[k] = v
 
     def _get_distro_for_supported_package(self, package):
         """Return a dict containing keys as distro and values as release type (devel, cudnn, runtime)"""
@@ -440,11 +526,9 @@ class TemplatesMixin(object):
                 releases[distro].append(k)
         return releases
 
-    def prepare_tags(self, distro, distro_version):
-        tags = ""
-        return tags
-
-    def prepare_template_context(self, distro, distro_version, distro_release_spec):
+    def prepare_template_context(
+            self, distro, distro_version, distro_release_spec, python_version
+    ):
         """
         Generate template context for each distro releases.
 
@@ -463,50 +547,68 @@ class TemplatesMixin(object):
               }
             }
         """
+        _build_ctx = deepcopy(self._build_ctx)
+
         cuda_regex = re.compile(r"cuda*")
+        cudnn_regex = re.compile(r"(cudnn)(\w+)")
 
-        self._update_build_ctx(get_data(self._releases, distro, distro_version), 'cuda')
+        _update_build_ctx(
+            _build_ctx, get_data(self._releases, distro, distro_version), 'cuda'
+        )
 
-        self._build_ctx['envars'] = build_release_args(FLAGS.bentoml_version)(
+        _build_ctx['envars'] = _build_release_args(FLAGS.bentoml_version)(
             distro_release_spec['envars']
         )
 
-        if self._build_ctx['needs_deps_image'] is True:
-            self._build_ctx['base_tags'] = 'base'
-            self._build_ctx.pop('needs_deps_image')
-        else:
-            self._build_ctx.pop('base_tags')
+        # setup base_tags if needed
+        if _build_ctx['needs_deps_image'] is True:
+            _build_ctx['base_tags'] = 'base'
+        _build_ctx.pop('needs_deps_image')
+
+        # setup python version
+        update_data(
+            _build_ctx, python_version, "envars", "PYTHON_VERSION",
+        )
 
         # setup cuda deps
-        if self._build_ctx['cuda_prefix_url'] not in ["", None]:
+        if _build_ctx['cuda_prefix_url']:
             major, minor, _ = self._cuda_version.rsplit(".")
-            self._build_ctx['cuda'] = {
-                'ml_repo': NVIDIA_ML_REPO_URL.format(
-                    self._build_ctx['cuda_prefix_url']
-                ),
-                'base_repo': NVIDIA_REPO_URL.format(self._build_ctx['cuda_prefix_url']),
+            cudnn_version_name, cudnn_release_version = self._cudnn_versions()
+            cudnn_groups = cudnn_regex.match(cudnn_version_name).groups()
+            cudnn_namespace, cudnn_major_version = [
+                cudnn_groups[i] for i in range(len(cudnn_groups))
+            ]
+            _build_ctx['cuda'] = {
+                'ml_repo': NVIDIA_ML_REPO_URL.format(_build_ctx['cuda_prefix_url']),
+                'base_repo': NVIDIA_REPO_URL.format(_build_ctx['cuda_prefix_url']),
                 'version': {
                     'release': self._cuda_version,
                     'major': major,
                     'minor': minor,
                     'shortened': ".".join([major, minor]),
                 },
+                cudnn_namespace: {
+                    'version': cudnn_release_version,
+                    'major_version': cudnn_major_version,
+                },
                 'components': self._cuda_components,
             }
-            self._build_ctx.pop('cuda_prefix_url')
+            _build_ctx.pop('cuda_prefix_url')
         else:
             logging.debug("distro doesn't enable CUDA. Skipping...")
-            for key in list(self._build_ctx.keys()):
+            for key in list(_build_ctx.keys()):
                 if cuda_regex.match(key):
-                    self._build_ctx.pop(key)
+                    _build_ctx.pop(key)
+
+        return _build_ctx
 
     def render_dockerfile_from_templates(
             self,
             input_tmpl_path: pathlib.Path,
-            build_path: pathlib.Path,
-            ctx: Optional[Dict] = None,
+            output_path: pathlib.Path,
+            ctx: Dict,
+            tags: Optional[Dict[str, str]] = None,
     ):
-        ctx = ctx if ctx is not None else self._build_ctx
         with open(input_tmpl_path, 'r') as inf:
             logging.debug(f"Processing template: {input_tmpl_path}")
             if DOCKERFILE_PREFIX not in input_tmpl_path.name:
@@ -516,25 +618,25 @@ class TemplatesMixin(object):
                 output_name = DOCKERFILE_PREFIX.split('.')[1]
 
             template = self._template_env.from_string(inf.read())
-            if not build_path.exists():
-                logging.debug(f"Creating {build_path}")
-                build_path.mkdir(parents=True, exist_ok=True)
+            if not output_path.exists():
+                logging.debug(f"Creating {output_path}")
+                output_path.mkdir(parents=True, exist_ok=True)
 
-            with open(f"{build_path}/{output_name}", 'w') as ouf:
-                ouf.write(template.render(metadata=ctx))
+            with open(f"{output_path}/{output_name}", 'w') as ouf:
+                ouf.write(template.render(metadata=ctx, tags=tags))
             ouf.close()
         inf.close()
 
-    def generate_dockerfiles(self):
+    def generate_dockerfiles(self, target_dir, python_version):
         """
         Workflow:
         walk all templates dir from given context
 
         our targeted generate directory should look like:
         generated
-            -- model-server
-                -- ubuntu
-                    -- 20.04
+            -- packages (model-server, yatai-service)
+                -- python_version (3.8,3.7,etc)
+                    -- {distro}{distro_version} (ubuntu20.04, ubuntu18.04, centos8, centos7, amazonlinux2, etc)
                         -- runtime
                             -- Dockerfile
                         -- devel
@@ -542,38 +644,82 @@ class TemplatesMixin(object):
                         -- cudnn
                             -- Dockerfile
                         -- Dockerfile (for base deps images)
-                    -- 18.04
-                -- centos
-            -- yatai-service
+
+        Args:
+            target_dir: parent directory of generated Dockerfile. Default: ./generated.
+            python_version: target list of supported python version. Overwrite default supports list if
+                            FLAGS.python_version is given.
+
+        Returns:
+            Let the magic happens.
         """
+        _metadata = defaultdict(list)
+
         for package in self._packages.keys():
             # update our packages ctx.
-            self._build_ctx['packages'] = package
-            _distros_release_type = self._get_distro_for_supported_package(package)
-            for distro, release_type in _distros_release_type.items():
-                for distro_version, distro_spec in self._releases[distro].items():
-                    logging.info(f"Processing: {distro}{distro_version} for {package}")
-                    # setup our build context
-                    self.prepare_template_context(distro, distro_version, distro_spec)
-                    logging.info("\n" + json.dumps(self._build_ctx, indent=2))
+            update_data(self._build_ctx, package, "package")
+            for _py_ver in python_version:
+                _distro_release_mapping = self._get_distro_for_supported_package(
+                    package
+                )
+                for distro, _release_type in _distro_release_mapping.items():
+                    for distro_version, distro_spec in self._releases[distro].items():
+                        logging.info(
+                            f"Processing: {distro}{distro_version} for {package}"
+                        )
 
-                    for root, _, files in os.walk(self._build_ctx['templates_dir']):
-                        for f in files:
-                            validate_dockerfile_name(f)
+                        # setup our build context
+                        _build_ctx = self.prepare_template_context(
+                            distro, distro_version, distro_spec, _py_ver
+                        )
+                        _metadata[package].append(_build_ctx)
 
-                    # setup directory correspondingly, and add these paths
-                    # with correct tags name under self._build_path
+                        for _re_type in _add_base_release_type(
+                                _build_ctx, _release_type
+                        ):
+                            for root, _, files in os.walk(_build_ctx['templates_dir']):
+                                for f in files:
+                                    validate_template_name(f)
 
-        # self.output_template(
-        #     input_tmpl_path=pathlib.Path(
-        #         pathlib.Path(
-        #             self._build_ctx['templates_dir'], f'base{DOCKERFILE_PREFIX}'
-        #         )
-        #     ),
-        #     build_path=pathlib.Path(
-        #         f"{FLAGS.dockerfile_dir}/model-server/ubuntu/20.04"
-        #     ),
-        # )
+                            # setup filepath
+                            input_tmpl_path = pathlib.Path(
+                                _build_ctx['templates_dir'],
+                                f'{_re_type}{DOCKERFILE_PREFIX}',
+                            )
+
+                            # update our build_path
+                            tag, basetag = _build_release_tags(_build_ctx, _re_type)
+                            tag_ctx = {"basename": basetag}
+                            self._build_path[
+                                f"{_build_ctx['package']}:{tag}"
+                            ] = input_tmpl_path
+
+                            base_output_path = pathlib.Path(
+                                target_dir,
+                                package,
+                                _py_ver,
+                                f'{distro}{distro_version}',
+                            )
+                            if _re_type != "base":
+                                output_path = pathlib.Path(base_output_path, _re_type)
+                            else:
+                                output_path = base_output_path
+
+                            # setup directory correspondingly, and add these paths
+                            # with correct tags name under self._build_path
+                            # setup our tags with Dockerfile path
+                            # generate our Dockerfile from templates.
+                            self.render_dockerfile_from_templates(
+                                input_tmpl_path=input_tmpl_path,
+                                output_path=output_path,
+                                ctx=_build_ctx,
+                                tags=tag_ctx,
+                            )
+
+        if FLAGS.dump_metadata:
+            with open("./metadata.json", "w") as ouf:
+                ouf.write(json.dumps(_metadata, indent=2))
+            ouf.close()
 
 
 def main(argv):
@@ -583,7 +729,7 @@ def main(argv):
     # Parse specs from manifest.yml and validate it.
     release_spec = load_manifest_yaml(FLAGS.manifest_file)
 
-    tmpl_mixin = TemplatesMixin(release_spec)
+    tmpl_mixin = TemplatesMixin(release_spec, cuda_version=FLAGS.cuda_version)
     tmpl_mixin()
 
     if FLAGS.generate_dockerfile:

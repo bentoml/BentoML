@@ -1,15 +1,20 @@
-{{ metadata.header }}
+# syntax = docker/dockerfile:experimental
+#
+# ===========================================
+#
+# THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
+#
+# ===========================================
 
-FROM {{ metadata.base_image }}
+
+FROM ubuntu:18.04
 
 # setup ENV and ARG
-{% for key, value in metadata.envars.items() %}
-{% if key not in ["PYTHON_VERSION"] %}
-ENV {{ key }}={{ value }}
-{% else %}
-ARG {{ key }}
-{% endif %}
-{% endfor %}
+ARG PYTHON_VERSION
+ENV BENTOML_VERSION=0.13.0
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONDONTWRITEBYTECODE=1
 
 ENV PATH /opt/conda/bin:$PATH
 
@@ -35,7 +40,6 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
     /opt/conda/bin/conda clean -afy
 
-{% if metadata.package == "yatai-service" %}
 # YataiService GRPC port
 EXPOSE 50051
 
@@ -85,6 +89,5 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && node --version \
   && npm --version
 
-{% endif %}
 COPY tools/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc

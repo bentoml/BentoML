@@ -144,6 +144,3 @@ tests/integration/data
 
 # Emacs buffers
 *~
-
-# Ignore Docker metadata.json
-docker/metadata.json

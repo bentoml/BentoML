@@ -7,19 +7,14 @@
 # ===========================================
 
 
-FROM ubuntu:20.04
+FROM debian:buster-slim
 
-# setup ENV here
+# setup ENV and ARG
 ARG PYTHON_VERSION
-
 ENV BENTOML_VERSION=0.13.0
-
 ENV LANG=C.UTF-8
-
 ENV LC_ALL=C.UTF-8
-
 ENV PYTHONDONTWRITEBYTECODE=1
-
 
 ENV PATH /opt/conda/bin:$PATH
 

@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 
 def metrics_patch(cls):
-    class _MarshalService(cls):
+    class _MarshalApp(cls):
         @inject
         def __init__(
             self,
@@ -59,7 +59,7 @@ def metrics_patch(cls):
 
             from prometheus_client import Counter, Gauge, Histogram
 
-            super(_MarshalService, self).__init__(*args, **kwargs)
+            super(_MarshalApp, self).__init__(*args, **kwargs)
             # its own namespace?
             service_name = self.bento_service_metadata_pb.name
 
@@ -97,7 +97,7 @@ def metrics_patch(cls):
         async def request_dispatcher(self, request):
             from aiohttp.web import Response
 
-            func = super(_MarshalService, self).request_dispatcher
+            func = super(_MarshalApp, self).request_dispatcher
             api_route = request.match_info.get("path", "/")
             _metrics_request_in_progress = self.metrics_request_in_progress.labels(
                 endpoint=api_route, http_method=request.method,
@@ -124,19 +124,19 @@ def metrics_patch(cls):
             return resp
 
         async def _batch_handler_template(self, requests, api_route, max_latency):
-            func = super(_MarshalService, self)._batch_handler_template
+            func = super(_MarshalApp, self)._batch_handler_template
             self.metrics_request_batch_size.labels(endpoint=api_route).observe(
                 len(requests)
             )
             return await func(requests, api_route, max_latency)
 
-    return _MarshalService
+    return _MarshalApp
 
 
 @metrics_patch
-class MarshalService:
+class MarshalApp:
     """
-    MarshalService creates a reverse proxy server in front of actual API server,
+    MarshalApp creates a reverse proxy server in front of actual API server,
     implementing the micro batching feature.
     It wait a short period and packed multiple requests in a single batch
     before sending to the API server.
@@ -146,9 +146,9 @@ class MarshalService:
     @inject
     def __init__(
         self,
-        bento_bundle_path,
-        outbound_host="localhost",
-        outbound_port=None,
+        bento_bundle_path: str = Provide[BentoMLContainer.bundle_path],
+        outbound_host: str = Provide[BentoMLContainer.forward_host],
+        outbound_port: int = Provide[BentoMLContainer.forward_port],
         outbound_workers: int = Provide[BentoMLContainer.api_server_workers],
         mb_max_batch_size: int = Provide[
             BentoMLContainer.config.bento_server.microbatch.max_batch_size
@@ -220,9 +220,6 @@ class MarshalService:
             await task()
         if getattr(self, '_client', None) is not None and not self._client.closed:
             await self._client.close()
-
-    def set_outbound_port(self, outbound_port):
-        self.outbound_port = outbound_port
 
     def fetch_sema(self):
         if self._outbound_sema is None:
@@ -337,7 +334,7 @@ class MarshalService:
                 resp = await self.relay_handler(request)
         return resp
 
-    async def relay_handler(self, request):
+    async def relay_handler(self, request: "Request"):
         from aiohttp.client_exceptions import ClientConnectionError
         from aiohttp.web import Response
 
@@ -422,7 +419,7 @@ class MarshalService:
                 for i in merged
             )
 
-    def make_app(self) -> "Application":
+    def make_aiohttp_app(self) -> "Application":
         from aiohttp.web import Application
         from aiohttp import hdrs
 
@@ -461,14 +458,15 @@ class MarshalService:
         return app
 
     @inject
-    def fork_start_app(
+    def run(
         self, port=Provide[BentoMLContainer.config.bento_server.port],
     ):
+        logger.info("Starting BentoML API proxy in development mode..")
         from aiohttp.web import run_app
 
         # Use new eventloop in the fork process to avoid problems on MacOS
         # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        app = self.make_app()
+        app = self.make_aiohttp_app()
         run_app(app, port=port)

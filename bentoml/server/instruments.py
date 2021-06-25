@@ -5,7 +5,6 @@ import shutil
 from timeit import default_timer
 from typing import TYPE_CHECKING
 
-from flask import Request
 from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
@@ -65,6 +64,8 @@ class InstrumentMiddleware:
         )
 
     def __call__(self, environ, start_response):
+        from flask import Request
+
         req = Request(environ)
         endpoint = req.path
         start_time = default_timer()

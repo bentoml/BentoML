@@ -1,8 +1,9 @@
+from io import BytesIO
 import json
 import os
-from io import BytesIO
 
-from bentoml.server.api_server import BentoAPIServer
+from bentoml.server.model_app import ModelApp
+
 
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -13,7 +14,7 @@ def test_api_function_route(bento_service, img_file):
     import imageio  # noqa # pylint: disable=unused-import
     import numpy as np  # noqa # pylint: disable=unused-import
 
-    rest_server = BentoAPIServer(
+    rest_server = ModelApp(
         bento_service=bento_service,
         enable_swagger=True,
         enable_metrics=True,
@@ -93,7 +94,7 @@ def test_api_function_route(bento_service, img_file):
 
 
 def test_api_function_route_with_disabled_swagger(bento_service):
-    rest_server = BentoAPIServer(
+    rest_server = ModelApp(
         bento_service=bento_service,
         enable_swagger=False,
         enable_metrics=True,

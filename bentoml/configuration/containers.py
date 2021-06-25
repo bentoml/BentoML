@@ -15,17 +15,21 @@
 import logging
 import multiprocessing
 import os
+from typing import TYPE_CHECKING
 
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
-from simple_di import container, providers
-from simple_di import Container, Provide, providers
+from simple_di import Provide, Provider, container, providers
 
 from bentoml import __version__
 from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
+from bentoml.utils import get_free_port
 from bentoml.utils.ruamel_yaml import YAML
 
+
+if TYPE_CHECKING:
+    from bentoml.marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
 
@@ -273,6 +277,44 @@ class BentoMLContainerClass:
             os.environ.get("BENTOML_HOME", os.path.join("~", "bentoml"))
         )
     )
+
+    bundle_path: Provider[str] = providers.Static("")
+
+    service_host: Provider[str] = providers.Static("0.0.0.0")
+    service_port: Provider[int] = config.bento_server.port
+
+    forward_host: Provider[str] = providers.Static("localhost")
+    forward_port: Provider[int] = providers.SingletonFactory(get_free_port)
+
+    prometheus_lock = providers.SingletonFactory(multiprocessing.Lock)
+
+    @providers.Factory
+    @staticmethod
+    def model_server():
+        from bentoml.server.gunicorn_model_server import GunicornModelServer
+
+        return GunicornModelServer()
+
+    @providers.Factory
+    @staticmethod
+    def proxy_server():
+        from bentoml.server.gunicorn_marshal_server import GunicornMarshalServer
+
+        return GunicornMarshalServer()
+
+    @providers.Factory
+    @staticmethod
+    def proxy_app() -> "MarshalApp":
+        from bentoml.marshal.marshal import MarshalApp
+
+        return MarshalApp()
+
+    @providers.Factory
+    @staticmethod
+    def model_app():
+        from bentoml.server.model_app import ModelApp
+
+        return ModelApp()
 
     prometheus_multiproc_dir = providers.Factory(
         os.path.join, bentoml_home, "prometheus_multiproc_dir",

@@ -161,6 +161,9 @@ Make sure that your custom docker images have Python and CUDA library in order t
 BentoML also provides three `CUDA-enabled images <https://hub.docker.com/r/bentoml/model-server/tags?page=1&ordering=last_updated&name=gpu>`_
 with CUDA 11.3 and CUDNN 8.2.0 (refers to this `support matrix <https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html>`_ for CUDA and CUDNN version matching).
 
+.. note::
+    See :ref:`gpu-impl-warning`'s notes on GPU serving.
+
 Tensorflow
 ^^^^^^^^^^
 
@@ -245,6 +248,8 @@ Tensorflow Implementation
 
     saved_path = bento_svc.save()
 
+
+.. _gpu-impl-warning:
 
 PyTorch
 ^^^^^^^

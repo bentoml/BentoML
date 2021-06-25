@@ -190,7 +190,8 @@ TLDR, Tensorflow code with ``tf.keras`` model will run transparently on a single
 
         .. code-block:: python
 
-            # my_model_gpu is a trained on GPU:0, with weight and tokenizer to file
+            # my_model_gpu is a trained on GPU:1, with weight and tokenizer to file
+            # now I want to run model on GPU:0
             with tf.device("/GPU:0"):
                 my_inference_model = build_model() # build_model
                 my_inference_model.set_weights(my_model_gpu.get_weights())

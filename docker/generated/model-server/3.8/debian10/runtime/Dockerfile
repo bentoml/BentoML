@@ -9,7 +9,9 @@
 
 FROM model-server:python3.8-slim-base
 
-RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
+RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir && \
+    apt-get purge --autoremove -y curl build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/
 

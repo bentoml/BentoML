@@ -97,7 +97,6 @@ releases:
       <<: *no_cuda
       templates_dir: templates/rhel
       base_image: amazonlinux:2
-      needs_deps_image: False
       add_to_tags: "ami2"
   alpine:
     3.14:

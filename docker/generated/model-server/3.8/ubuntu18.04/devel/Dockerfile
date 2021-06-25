@@ -13,7 +13,8 @@ WORKDIR /
 RUN git clone https://github.com/bentoml/BentoML.git && \
     cd BentoML && \
     pip install --editable . && \
-    apt-get purge --autoremove -y curl build-essential
+    apt-get purge --autoremove -y curl build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/
 

@@ -8,7 +8,9 @@ FROM {{ metadata.package }}:{{ tags.basename }}
 FROM {{ metadata.package }}:{{ base_img }}
 {% endif %}
 
-RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir
+RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir && \
+    apt-get purge --autoremove -y curl build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
 

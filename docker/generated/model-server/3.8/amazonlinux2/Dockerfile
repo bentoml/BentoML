@@ -7,7 +7,7 @@
 # ===========================================
 
 
-FROM centos:8
+FROM amazonlinux:2
 
 # setup ENV and ARG
 ENV PYTHON_VERSION=3.8

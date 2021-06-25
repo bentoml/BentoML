@@ -38,7 +38,9 @@ ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
 FROM build_image as release_image
 
-RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
+RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir && \
+    apt-get purge --autoremove -y curl build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/
 

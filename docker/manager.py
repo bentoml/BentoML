@@ -18,7 +18,7 @@ from glom import glom, Path, PathAccessError, Assign, PathAssignError
 from jinja2 import Environment
 from ruamel import yaml
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.NOTSET)
 
 # defined global vars.
 FLAGS = flags.FLAGS
@@ -198,23 +198,29 @@ releases:
 """
 
 
-def validate_template_name(name: str):
+def validate_template_name(names):
     """Validate our input file name for Dockerfile templates."""
-    if REPO_PREFIX in name:
-        # ignore .repo.j2 for centos
-        pass
-    elif DOCKERFILE_PREFIX in name:
-        name, _, _ = name.partition(DOCKERFILE_PREFIX)
-        if name not in DOCKERFILE_ALLOWED_NAMES:
-            raise RuntimeError(
-                f"Unable to parse {name}. Dockerfile directory should consists of {', '.join(DOCKERFILE_ALLOWED_NAMES)}"
+    if isinstance(names, str):
+        if REPO_PREFIX in names:
+            # ignore .repo.j2 for centos
+            pass
+        elif DOCKERFILE_PREFIX in names:
+            names, _, _ = names.partition(DOCKERFILE_PREFIX)
+            if names not in DOCKERFILE_ALLOWED_NAMES:
+                raise RuntimeError(
+                    f"Unable to parse {names}. Dockerfile directory should consists of {', '.join(DOCKERFILE_ALLOWED_NAMES)}"
+                )
+        else:
+            raise RuntimeWarning(
+                f"{inspect.currentframe().f_code.co_name} is being used to validate {names}, which has unknown extensions, "
+                f"thus will have no effects. "
             )
+            pass
+    elif isinstance(names, list):
+        for _name in names:
+            validate_template_name(_name)
     else:
-        raise RuntimeWarning(
-            f"{inspect.currentframe().f_code.co_name} is being used to validate {name}, which has unknown extensions, "
-            f"thus will have no effects. "
-        )
-        pass
+        raise TypeError(f"{names} has unknown type {type(names)}")
 
 
 def get_data(obj, *path, skip=False):
@@ -559,7 +565,7 @@ class TemplatesMixin(object):
         return releases
 
     def prepare_template_context(
-        self, distro, distro_version, distro_release_spec, python_version
+            self, distro, distro_version, distro_release_spec, python_version
     ):
         """
         Generate template context for each distro releases.
@@ -635,17 +641,18 @@ class TemplatesMixin(object):
         return _build_ctx
 
     def render_dockerfile_from_templates(
-        self,
-        input_tmpl_path: pathlib.Path,
-        output_path: pathlib.Path,
-        ctx: Dict,
-        tags: Optional[Dict[str, str]] = None,
+            self,
+            input_tmpl_path: pathlib.Path,
+            output_path: pathlib.Path,
+            ctx: Dict,
+            tags: Optional[Dict[str, str]] = None,
     ):
         with open(input_tmpl_path, 'r') as inf:
             logging.debug(f"Processing template: {input_tmpl_path}")
-            if DOCKERFILE_PREFIX not in input_tmpl_path.name:
-                logging.debug(f"Processing {input_tmpl_path.name}")
-                output_name = input_tmpl_path[: -len(DOCKERFILE_PREFIX.split('.')[2])]
+            name = input_tmpl_path.name
+            if DOCKERFILE_PREFIX not in name:
+                logging.debug(f"Processing {name}")
+                output_name = name[: -len('.j2')]
             else:
                 output_name = DOCKERFILE_PREFIX.split('.')[1]
 
@@ -685,7 +692,7 @@ class TemplatesMixin(object):
         Returns:
             Let the magic happens.
         """
-        _metadata = defaultdict(list)
+        _tag_metadata = defaultdict(list)
 
         logging.info(f"Generating dockerfile to {target_dir}...\n")
         for package in self._packages.keys():
@@ -695,7 +702,7 @@ class TemplatesMixin(object):
             for _py_ver in python_version:
                 logging.info(f">> Using python{_py_ver}")
                 for distro, _release_type in self._generate_distro_release_mapping(
-                    package
+                        package
                 ).items():
                     for distro_version, distro_spec in self._releases[distro].items():
                         # setup our build context
@@ -704,51 +711,54 @@ class TemplatesMixin(object):
                         )
 
                         logging.info(f">>> Generating: {distro}{distro_version}")
-                        _metadata[package].append({_py_ver: _build_ctx})
 
-                        for _re_type in _add_base_release_type(
-                            _build_ctx, _release_type
-                        ):
-                            for root, _, files in os.walk(_build_ctx['templates_dir']):
-                                for f in files:
-                                    validate_template_name(f)
+                        # validate our template directory.
+                        for _, _, files in os.walk(_build_ctx['templates_dir']):
+                            validate_template_name(files)
 
-                            # setup filepath
-                            input_tmpl_path = pathlib.Path(
-                                _build_ctx['templates_dir'],
-                                f'{_re_type}{DOCKERFILE_PREFIX}',
-                            )
+                            for f in files:
+                                print(f)
+                                for _re_type in _add_base_release_type(
+                                        _build_ctx, _release_type
+                                ):
+                                    # setup filepath
+                                    input_tmpl_path = pathlib.Path(
+                                        _build_ctx['templates_dir'],
+                                        f'{_re_type}{DOCKERFILE_PREFIX}',
+                                    )
 
-                            # generate our image tag.
-                            tag, basetag = _build_release_tags(_build_ctx, _re_type)
-                            tag_ctx = {"basename": basetag}
+                                    # generate our image tag.
+                                    tag, basetag = _build_release_tags(_build_ctx, _re_type)
+                                    tag_ctx = {"basename": basetag}
 
-                            base_output_path = pathlib.Path(
-                                target_dir,
-                                package,
-                                _py_ver,
-                                f'{distro}{distro_version}',
-                            )
-                            if _re_type != "base":
-                                output_path = pathlib.Path(base_output_path, _re_type)
-                            else:
-                                output_path = base_output_path
+                                    base_output_path = pathlib.Path(
+                                        target_dir,
+                                        package,
+                                        _py_ver,
+                                        f'{distro}{distro_version}',
+                                    )
+                                    if _re_type != "base":
+                                        output_path = pathlib.Path(base_output_path, _re_type)
+                                    else:
+                                        output_path = base_output_path
 
-                            # setup directory correspondingly, and add these paths
-                            # with correct tags name under self._build_path
-                            if tag:
-                                tag_keys = f"{_build_ctx['package']}:{tag}"
-                            else:
-                                tag_keys = f"{_build_ctx['package']}:{basetag}"
+                                    # setup directory correspondingly, and add these paths
+                                    # with correct tags name under self._build_path
+                                    if tag:
+                                        tag_keys = f"{_build_ctx['package']}:{tag}"
+                                    else:
+                                        tag_keys = f"{_build_ctx['package']}:{basetag}"
+                                    print(output_path)
 
-                            self._build_path[tag_keys] = str(pathlib.Path(output_path, 'Dockerfile'))
-                            # generate our Dockerfile from templates.
-                            self.render_dockerfile_from_templates(
-                                input_tmpl_path=input_tmpl_path,
-                                output_path=output_path,
-                                ctx=_build_ctx,
-                                tags=tag_ctx,
-                            )
+                                    _tag_metadata[tag_keys].append(_build_ctx)
+                                    self._build_path[tag_keys] = str(pathlib.Path(output_path, 'Dockerfile'))
+                                    # generate our Dockerfile from templates.
+                                    self.render_dockerfile_from_templates(
+                                        input_tmpl_path=input_tmpl_path,
+                                        output_path=output_path,
+                                        ctx=_build_ctx,
+                                        tags=tag_ctx,
+                                    )
 
                 logging.info(
                     f">> target directory for python{_py_ver}: {target_dir}/{package}/{_py_ver}\n"
@@ -756,8 +766,10 @@ class TemplatesMixin(object):
             logging.info(">" * 50 + "\n")
 
         if FLAGS.dump_metadata:
-            with open("./metadata.json", "w") as ouf:
-                ouf.write(json.dumps(_metadata, indent=2))
+            file = "./metadata.json"
+            logging.info(f"> Dumping metadata to {file}")
+            with open(file, "w") as ouf:
+                ouf.write(json.dumps(_tag_metadata, indent=2))
             ouf.close()
 
 

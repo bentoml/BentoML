@@ -40,7 +40,7 @@ Preface
         @artifacts([KerasModelArtifact('model'), PickleArtifact('tokenizer')])
         class TensorflowService(BentoService):
 
-            @TEST_METRICS.time()
+            @REQUEST_TIME.time()
             @api(input=JsonInput())
             def predict(self, parsed_json):
                 raw = self.preprocessing(parsed_json['text'])

@@ -249,9 +249,9 @@ Tensorflow Implementation
 PyTorch
 ^^^^^^^
 
-.. note::
-    Since PyTorch bundles CUDNN and NCCL runtime with the python library, the *RECOMMENDED* way to run your PyTorch service is to install PyTorch with conda
-    via BentoML `@env <http://localhost:8000/api/bentoml.html#env>`_:
+.. warning::
+    Since PyTorch bundles CUDNN and NCCL runtime with its python library, we **recommend** users install PyTorch with ``conda``
+    via BentoML `@env <http://localhost:8000/api/bentoml.html#env>`_ instead of using GPU images provided by BentoML:
 
     .. code-block:: python
 

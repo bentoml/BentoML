@@ -7,19 +7,26 @@ import os
 import pathlib
 import re
 import shutil
+import subprocess
+import sys
 from collections import defaultdict
 from collections.abc import Iterable
 from copy import deepcopy
 from typing import Dict, Optional
 
+import absl.logging
+import docker
 from absl import flags, app
 from cerberus import Validator
 from glom import glom, Path, PathAccessError, Assign, PathAssignError
 from jinja2 import Environment
 from ruamel import yaml
-from prettytable import PrettyTable
 
-logging.basicConfig(level=logging.NOTSET)
+_formatter = logging.Formatter(
+    "%(levelname)s [%(name)s.%(funcName)s:%(lineno)d] :: %(message)s"
+)
+absl.logging.set_verbosity(logging.DEBUG)
+absl.logging.get_absl_handler().setFormatter(_formatter)
 
 # defined global vars.
 FLAGS = flags.FLAGS
@@ -199,6 +206,64 @@ releases:
 """
 
 
+def auth_registries(repository, docker_client):
+    repos = {}
+    _required = []
+    for registry, metadata in repository.items():
+        _required.append(metadata['only_if'])
+        if metadata.get('only_if', False) and not os.getenv(metadata['only_if']):
+            logging.warning(
+                f"{registry}: {metadata['only_if']} is not set or not found."
+            )
+            continue
+        user = os.getenv(metadata['user'])
+        if not user:
+            user = subprocess.Popen(['whoami'])
+        pwd = os.getenv(metadata['pwd'])
+        for _, docker_image in metadata['registry'].items():
+            repos[docker_image] = {"user": user, "pwd": pwd}
+    if not repos:
+        logging.fatal(
+            f"Could not retrieve registry credentials. Make sure to setup correct envars. Required: {_required}"
+        )
+        sys.exit(1)
+
+    for repos, data in repos.items():
+        print(repos)
+        # print(data)
+
+    if FLAGS.push_to_hub:
+        logging.info("> Logging into Docker with credentials...")
+        docker_client.login(username=FLAGS.hub_username, password=FLAGS.hub_password)
+
+
+def flatten(arr):
+    for it in arr:
+        if isinstance(it, Iterable) and not isinstance(it, str):
+            for x in flatten(it):
+                yield x
+        else:
+            yield it
+
+
+def load_manifest_yaml(file):
+    with open(file, 'r') as input_file:
+        manifest = yaml.safe_load(input_file)
+
+    v_schema = yaml.safe_load(SPEC_SCHEMA)
+    v = MetadataSpecValidator(
+        v_schema, packages=manifest['packages'], releases=manifest['releases']
+    )
+
+    if not v.validate(manifest):
+        logging.error(f"{file} is invalid. Errors as follow:\n")
+        logging.error(yaml.dump(v.errors, indent=2))
+        exit(1)
+
+    release_spec = v.normalized(manifest)
+    return release_spec
+
+
 def validate_template_name(names):
     """Validate our input file name for Dockerfile templates."""
     if isinstance(names, str):
@@ -326,33 +391,6 @@ def _build_release_tags(build_ctx, release_type):
             ]
         )
     return _tag, base_tag
-
-
-def flatten(arr):
-    for it in arr:
-        if isinstance(it, Iterable) and not isinstance(it, str):
-            for x in flatten(it):
-                yield x
-        else:
-            yield it
-
-
-def load_manifest_yaml(file):
-    with open(file, 'r') as input_file:
-        manifest = yaml.safe_load(input_file)
-
-    v_schema = yaml.safe_load(SPEC_SCHEMA)
-    v = MetadataSpecValidator(
-        v_schema, packages=manifest['packages'], releases=manifest['releases']
-    )
-
-    if not v.validate(manifest):
-        logging.error(f"{file} is invalid. Errors as follow:\n")
-        logging.error(yaml.dump(v.errors, indent=2))
-        exit(1)
-
-    release_spec = v.normalized(manifest)
-    return release_spec
 
 
 def _update_build_ctx(ctx_dict, spec_dict: Dict, *ignore_keys):
@@ -556,7 +594,32 @@ class TemplatesMixin(object):
         # get defined cuda version for cuda
         return True if cuda_version in self._cuda_dependencies.keys() else False
 
-    def _generate_distro_release_mapping(self, package):
+    def render_dockerfile_from_templates(
+        self,
+        input_tmpl_path: pathlib.Path,
+        output_path: pathlib.Path,
+        ctx: Dict,
+        tags: Optional[Dict[str, str]] = None,
+    ):
+        with open(input_tmpl_path, 'r') as inf:
+            logging.debug(f">>>> Processing template: {input_tmpl_path}\n")
+            name = input_tmpl_path.name
+            if DOCKERFILE_PREFIX not in name:
+                output_name = name[: -len('.j2')]
+            else:
+                output_name = DOCKERFILE_PREFIX.split('.')[1]
+
+            template = self._template_env.from_string(inf.read())
+            if not output_path.exists():
+                logging.debug(f">>>> Rendering to {output_path}/{output_name}")
+                output_path.mkdir(parents=True, exist_ok=True)
+
+            with open(f"{output_path}/{output_name}", 'w') as ouf:
+                ouf.write(template.render(metadata=ctx, tags=tags))
+            ouf.close()
+        inf.close()
+
+    def generate_distro_release_mapping(self, package):
         """Return a dict containing keys as distro and values as release type (devel, cudnn, runtime)"""
         releases = defaultdict(list)
         for k, v in self._packages[package].items():
@@ -565,7 +628,7 @@ class TemplatesMixin(object):
                 releases[distro].append(k)
         return releases
 
-    def prepare_template_context(
+    def generate_template_context(
         self, distro, distro_version, distro_release_spec, python_version
     ):
         """
@@ -634,38 +697,12 @@ class TemplatesMixin(object):
             }
             _build_ctx.pop('cuda_prefix_url')
         else:
-            logging.debug("distro doesn't enable CUDA. Skipping...")
+            logging.debug(f">>>> {distro} doesn't enable CUDA. Skipping...")
             for key in list(_build_ctx.keys()):
                 if cuda_regex.match(key):
                     _build_ctx.pop(key)
 
         return _build_ctx
-
-    def render_dockerfile_from_templates(
-        self,
-        input_tmpl_path: pathlib.Path,
-        output_path: pathlib.Path,
-        ctx: Dict,
-        tags: Optional[Dict[str, str]] = None,
-    ):
-        with open(input_tmpl_path, 'r') as inf:
-            logging.debug(f"Processing template: {input_tmpl_path}")
-            name = input_tmpl_path.name
-            if DOCKERFILE_PREFIX not in name:
-                logging.debug(f"Processing {name}")
-                output_name = name[: -len('.j2')]
-            else:
-                output_name = DOCKERFILE_PREFIX.split('.')[1]
-
-            template = self._template_env.from_string(inf.read())
-            if not output_path.exists():
-                logging.debug(f"Creating {output_path}")
-                output_path.mkdir(parents=True, exist_ok=True)
-
-            with open(f"{output_path}/{output_name}", 'w') as ouf:
-                ouf.write(template.render(metadata=ctx, tags=tags))
-            ouf.close()
-        inf.close()
 
     def generate_dockerfiles(self, target_dir, python_version):
         """
@@ -690,8 +727,6 @@ class TemplatesMixin(object):
             python_version: target list of supported python version. Overwrite default supports list if
                             FLAGS.python_version is given.
 
-        Returns:
-            Let the magic happens.
         """
         _tag_metadata = defaultdict(list)
 
@@ -701,17 +736,17 @@ class TemplatesMixin(object):
             logging.info(f"> Working on {package}")
             update_data(self._build_ctx, package, "package")
             for _py_ver in python_version:
-                logging.info(f">> Using python{_py_ver}")
-                for distro, _release_type in self._generate_distro_release_mapping(
+                logging.info(f">> For python{_py_ver}")
+                for distro, _release_type in self.generate_distro_release_mapping(
                     package
                 ).items():
                     for distro_version, distro_spec in self._releases[distro].items():
                         # setup our build context
-                        _build_ctx = self.prepare_template_context(
+                        _build_ctx = self.generate_template_context(
                             distro, distro_version, distro_spec, _py_ver
                         )
 
-                        logging.info(f">>> Generating: {distro}{distro_version}")
+                        logging.debug(f">>> Generating: {distro}{distro_version}")
 
                         # validate our template directory.
                         for _, _, files in os.walk(_build_ctx['templates_dir']):
@@ -743,7 +778,6 @@ class TemplatesMixin(object):
                                         _build_ctx['templates_dir'],
                                         f"{_n}{REPO_PREFIX}",
                                     )
-                                    print(repo_tmpl_path)
                                     repo_output_path = pathlib.Path(
                                         base_output_path, _re_type
                                     )
@@ -799,6 +833,10 @@ def main(argv):
 
     # Parse specs from manifest.yml and validate it.
     release_spec = load_manifest_yaml(FLAGS.manifest_file)
+    docker_client = docker.from_env()
+
+    # Login Docker credentials
+    auth_registries(release_spec['repository'], docker_client)
 
     # generate templates to correct directory.
     tmpl_mixin = TemplatesMixin(release_spec, cuda_version=FLAGS.cuda_version)
@@ -808,13 +846,24 @@ def main(argv):
         logging.info("--stop_at_generate is parsed. Stopping now...")
         return
 
-    t = PrettyTable(["image_tag", "dockerfile_path"])
-    for k, v in tmpl_mixin.build_path.items():
-        t.add_row([k, v])
-    print(t)
-
-    # Setup Docker credentials
-    # this includes push directory, envars
+    # build image from given tags and Dockerfile
+    build_path = tmpl_mixin.build_path
+    tag_failed = False
+    image, logs = None, []
+    for image_tag, dockerfile_path in build_path.items():
+        if FLAGS.build_images:
+            try:
+                resp = docker_client.api.build(
+                    timeout=3600,
+                    path='.',
+                    nocache=False,
+                    dockerfile=temp_dockerfile,
+                    buildargs=spec['docker_args'],
+                    tag=release_tag,
+                )
+                last_event, image_id = None, None
+            except:
+                pass
 
 
 if __name__ == "__main__":

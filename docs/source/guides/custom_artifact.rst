@@ -104,6 +104,7 @@ In another terminal to make a `curl` request
       http://localhost:5000/predict
 
 .. code-block:: shell
+
     # Output
     HTTP/1.0 400 BAD REQUEST
     X-Request-Id: cb63a61e-dc2a-4e12-a91c-8b15316a99df

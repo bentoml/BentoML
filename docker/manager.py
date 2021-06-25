@@ -17,6 +17,7 @@ from cerberus import Validator
 from glom import glom, Path, PathAccessError, Assign, PathAssignError
 from jinja2 import Environment
 from ruamel import yaml
+from prettytable import PrettyTable
 
 logging.basicConfig(level=logging.NOTSET)
 
@@ -565,7 +566,7 @@ class TemplatesMixin(object):
         return releases
 
     def prepare_template_context(
-            self, distro, distro_version, distro_release_spec, python_version
+        self, distro, distro_version, distro_release_spec, python_version
     ):
         """
         Generate template context for each distro releases.
@@ -641,11 +642,11 @@ class TemplatesMixin(object):
         return _build_ctx
 
     def render_dockerfile_from_templates(
-            self,
-            input_tmpl_path: pathlib.Path,
-            output_path: pathlib.Path,
-            ctx: Dict,
-            tags: Optional[Dict[str, str]] = None,
+        self,
+        input_tmpl_path: pathlib.Path,
+        output_path: pathlib.Path,
+        ctx: Dict,
+        tags: Optional[Dict[str, str]] = None,
     ):
         with open(input_tmpl_path, 'r') as inf:
             logging.debug(f"Processing template: {input_tmpl_path}")
@@ -702,7 +703,7 @@ class TemplatesMixin(object):
             for _py_ver in python_version:
                 logging.info(f">> Using python{_py_ver}")
                 for distro, _release_type in self._generate_distro_release_mapping(
-                        package
+                    package
                 ).items():
                     for distro_version, distro_spec in self._releases[distro].items():
                         # setup our build context
@@ -716,49 +717,67 @@ class TemplatesMixin(object):
                         for _, _, files in os.walk(_build_ctx['templates_dir']):
                             validate_template_name(files)
 
-                            for f in files:
-                                print(f)
-                                for _re_type in _add_base_release_type(
-                                        _build_ctx, _release_type
-                                ):
-                                    # setup filepath
-                                    input_tmpl_path = pathlib.Path(
+                        for _re_type in _add_base_release_type(
+                            _build_ctx, _release_type
+                        ):
+                            # setup filepath
+                            input_tmpl_path = pathlib.Path(
+                                _build_ctx['templates_dir'],
+                                f"{_re_type}{DOCKERFILE_PREFIX}",
+                            )
+
+                            base_output_path = pathlib.Path(
+                                target_dir,
+                                package,
+                                _py_ver,
+                                f'{distro}{distro_version}',
+                            )
+
+                            # handle cuda.repo and nvidia-ml.repo
+                            if (
+                                'rhel' in _build_ctx['templates_dir']
+                                and _re_type == "cudnn"
+                            ):
+                                for _n in ['nvidia-ml', 'cuda']:
+                                    repo_tmpl_path = pathlib.Path(
                                         _build_ctx['templates_dir'],
-                                        f'{_re_type}{DOCKERFILE_PREFIX}',
+                                        f"{_n}{REPO_PREFIX}",
                                     )
-
-                                    # generate our image tag.
-                                    tag, basetag = _build_release_tags(_build_ctx, _re_type)
-                                    tag_ctx = {"basename": basetag}
-
-                                    base_output_path = pathlib.Path(
-                                        target_dir,
-                                        package,
-                                        _py_ver,
-                                        f'{distro}{distro_version}',
+                                    print(repo_tmpl_path)
+                                    repo_output_path = pathlib.Path(
+                                        base_output_path, _re_type
                                     )
-                                    if _re_type != "base":
-                                        output_path = pathlib.Path(base_output_path, _re_type)
-                                    else:
-                                        output_path = base_output_path
-
-                                    # setup directory correspondingly, and add these paths
-                                    # with correct tags name under self._build_path
-                                    if tag:
-                                        tag_keys = f"{_build_ctx['package']}:{tag}"
-                                    else:
-                                        tag_keys = f"{_build_ctx['package']}:{basetag}"
-                                    print(output_path)
-
-                                    _tag_metadata[tag_keys].append(_build_ctx)
-                                    self._build_path[tag_keys] = str(pathlib.Path(output_path, 'Dockerfile'))
-                                    # generate our Dockerfile from templates.
                                     self.render_dockerfile_from_templates(
-                                        input_tmpl_path=input_tmpl_path,
-                                        output_path=output_path,
-                                        ctx=_build_ctx,
-                                        tags=tag_ctx,
+                                        repo_tmpl_path, repo_output_path, _build_ctx
                                     )
+
+                            # generate our image tag.
+                            tag, basetag = _build_release_tags(_build_ctx, _re_type)
+                            tag_ctx = {"basename": basetag}
+
+                            if _re_type != "base":
+                                output_path = pathlib.Path(base_output_path, _re_type)
+                            else:
+                                output_path = base_output_path
+
+                            # setup directory correspondingly, and add these paths
+                            # with correct tags name under self._build_path
+                            if tag:
+                                tag_keys = f"{_build_ctx['package']}:{tag}"
+                            else:
+                                tag_keys = f"{_build_ctx['package']}:{basetag}"
+
+                            _tag_metadata[tag_keys].append(_build_ctx)
+                            self._build_path[tag_keys] = str(
+                                pathlib.Path(output_path, 'Dockerfile')
+                            )
+                            # generate our Dockerfile from templates.
+                            self.render_dockerfile_from_templates(
+                                input_tmpl_path=input_tmpl_path,
+                                output_path=output_path,
+                                ctx=_build_ctx,
+                                tags=tag_ctx,
+                            )
 
                 logging.info(
                     f">> target directory for python{_py_ver}: {target_dir}/{package}/{_py_ver}\n"
@@ -771,6 +790,7 @@ class TemplatesMixin(object):
             with open(file, "w") as ouf:
                 ouf.write(json.dumps(_tag_metadata, indent=2))
             ouf.close()
+            del _tag_metadata
 
 
 def main(argv):
@@ -788,8 +808,10 @@ def main(argv):
         logging.info("--stop_at_generate is parsed. Stopping now...")
         return
 
+    t = PrettyTable(["image_tag", "dockerfile_path"])
     for k, v in tmpl_mixin.build_path.items():
-        print(k + "\t" + v)
+        t.add_row([k, v])
+    print(t)
 
     # Setup Docker credentials
     # this includes push directory, envars

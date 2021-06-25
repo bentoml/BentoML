@@ -15,11 +15,11 @@ packages:
     devel: &default_specs
       - ubuntu
       - centos
-    cudnn: &cudnn_specs
+    cudnn:
+      - *default_specs
+    runtime:
       - *default_specs
       - amazonlinux
-    runtime:
-      - *cudnn_specs
       - debian
       - alpine
   yatai-service:
@@ -41,7 +41,10 @@ release_spec: &tmpl_spec
   templates_dir: ""
   base_image: ""
   add_to_tags: ""
+  needs_deps_image: True
   header: |
+    # syntax = docker/dockerfile:experimental
+    #
     # ===========================================
     #
     # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
@@ -51,8 +54,8 @@ release_spec: &tmpl_spec
     - LANG=C.UTF-8
     - LC_ALL=C.UTF-8
     - PYTHONDONTWRITEBYTECODE=1
-  requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
   cuda_prefix_url: ""
+  cuda_requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
   cuda:
     <<: *cuda11_3_1_deps
 
@@ -70,10 +73,12 @@ releases:
       add_to_tags: "ubuntu18.04"
       cuda_prefix_url: "ubuntu1804"
   debian:
-    10:
+    10: &no_cuda
       <<: *ubuntu
       base_image: debian:buster-slim
       add_to_tags: "slim"
+      cuda_prefix_url:
+      cuda_requires:
       cuda:
   centos:
     8: &centos
@@ -89,14 +94,15 @@ releases:
       cuda_prefix_url: "rhel7"
   amazonlinux:
     2:
-      <<: *centos
+      <<: *no_cuda
+      templates_dir: templates/rhel
       base_image: amazonlinux:2
+      needs_deps_image: False
       add_to_tags: "ami2"
-      cuda:
   alpine:
     3.14:
-      <<: *tmpl_spec
+      <<: *no_cuda
       templates_dir: templates/alpine
       base_image: alpine:3.14
+      needs_deps_image: False
       add_to_tags: "alpine"
-      cuda:

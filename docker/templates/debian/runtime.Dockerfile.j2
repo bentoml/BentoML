@@ -1,6 +1,6 @@
 {{ metadata.header }}
 
-{% set base_img = metadata.envars["BENTOML_VERSION"] + "-" + "python"+ metadata.envars["PYTHON_VERSION"] +"-"+ "base" %}
+{% set base_img = metadata.envars["BENTOML_VERSION"] + "-" + "python" + metadata.envars["PYTHON_VERSION"] + "-" + metadata.add_to_tags + "-" + metadata.base_tags %}
 
 FROM {{ metadata.package }}:{{ base_img }}
 
@@ -11,7 +11,8 @@ COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
 ENTRYPOINT [ "entrypoint.sh" ]
 
 {% if metadata.package == "model-server" %}
-    CMD ["bentoml", "serve-gunicorn", "/bento"]
+CMD ["bentoml", "serve-gunicorn", "/bento"]
 {% else %}
-    CMD ["bentoml", "yatai-service-start"]
+CMD ["bentoml", "yatai-service-start"]
+{% endif %}
 {% endif %}

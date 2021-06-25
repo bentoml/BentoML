@@ -1,16 +1,14 @@
 {{ metadata.header }}
 
-{% set base_img = metadata.envars["BENTOML_VERSION"] + "-" + "python"+ metadata.envars["PYTHON_VERSION"] +"-"+ "base" %}
+{% set base_img = metadata.envars["BENTOML_VERSION"] + "-" + "python"+ metadata.envars["PYTHON_VERSION"] + "-" + metadata.add_to_tags + "-" + metadata.base_tags %}
 
 FROM {{ metadata.package }}:{{ base_img }}
-
-COPY tools/bashrc /etc/bash.bashrc
-RUN chmod a+r /etc/bash.bashrc
 
 WORKDIR /
 RUN git clone https://github.com/bentoml/BentoML.git && \
     cd BentoML && \
-    pip install --editable .
+    pip install --editable . && \
+    apt-get purge --autoremove -y curl build-essential
 
 COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
 

@@ -7,7 +7,6 @@
 # ===========================================
 
 
-
 FROM model-server:python3.8-ubuntu20.04-base
 
 WORKDIR /

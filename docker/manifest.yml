@@ -104,5 +104,4 @@ releases:
       <<: *no_cuda
       templates_dir: templates/alpine
       base_image: alpine:3.14
-      needs_deps_image: False
       add_to_tags: "alpine"

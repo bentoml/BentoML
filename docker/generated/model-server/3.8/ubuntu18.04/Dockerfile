@@ -10,7 +10,7 @@
 FROM ubuntu:18.04
 
 # setup ENV and ARG
-ARG PYTHON_VERSION
+ENV PYTHON_VERSION=3.8
 ENV BENTOML_VERSION=0.13.0
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
@@ -21,9 +21,9 @@ ENV PATH /opt/conda/bin:$PATH
 # needed for string substitution
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update -q && \
+RUN apt-get update && \
     apt-get install -q -y --no-install-recommends \
-      ca-certificates curl wget git && \
+    ca-certificates curl wget git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -37,7 +37,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     apt-get clean && apt-get autoremove -y && \
     apt-get purge -y wget
 
-RUN /opt/conda/bin/conda install -y python=${PYTHON_VERSION} pip && \
+RUN /opt/conda/bin/conda install -y python=$PYTHON_VERSION pip && \
     /opt/conda/bin/conda clean -afy
 
 COPY tools/bashrc /etc/bash.bashrc

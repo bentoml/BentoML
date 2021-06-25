@@ -2,7 +2,6 @@
 
 {# we still set base_img here as a fallback in case tags doesn't get parsed when we render our templates #}
 {% set base_img = "python" + metadata.envars["PYTHON_VERSION"] + "-" + metadata.add_to_tags + "-" + metadata.base_tags %}
-
 {% if tags %}
 FROM {{ metadata.package }}:{{ tags.basename }}
 {% else %}

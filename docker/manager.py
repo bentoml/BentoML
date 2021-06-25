@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import errno
 import inspect
 import json
 import logging
 import os
 import pathlib
 import re
+import shutil
 from collections import defaultdict
 from collections.abc import Iterable
 from copy import deepcopy
@@ -34,41 +36,57 @@ NVIDIA_ML_REPO_URL = (
 )
 
 flags.DEFINE_boolean(
-    "push_to_hub", False, "Whether to upload images to given registries.",
+    "push_to_hub",
+    False,
+    "Whether to upload images to given registries.",
+    short_name='pth',
 )
 
 # CLI-related
 flags.DEFINE_boolean(
-    "dump_metadata", False, "Whether to dump all tags metadata to file."
+    "dump_metadata",
+    False,
+    "Whether to dump all tags metadata to file.",
+    short_name='dm',
 )
 flags.DEFINE_boolean(
-    "dry_run", False, "Whether to dry run. This won't create Dockerfile."
+    "dry_run",
+    False,
+    "Whether to dry run. This won't create Dockerfile.",
+    short_name='dr',
 )
 flags.DEFINE_boolean(
-    "generate_dockerfile", False, "Whether to just generate dockerfile."
+    "stop_at_generate", False, "Whether to just generate dockerfile.", short_name='sag'
 )
-flags.DEFINE_boolean("build_images", False, "Whether to build images.")
+flags.DEFINE_boolean("build_images", False, "Whether to build images.", short_name='bi')
 flags.DEFINE_boolean(
     "stop_on_failure",
     False,
     "Stop processing tags if any one build fails. If False or not specified, failures are reported but do not affect "
     "the other images.",
-    short_name="s",
+    short_name="sof",
 )
 # directory and files
 flags.DEFINE_string(
     "dockerfile_dir",
     "./generated",
     "path to generated Dockerfile. Existing files will be deleted with new Dockerfiles",
-    short_name="g",
+    short_name="dd",
 )
-flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file", short_name="m")
+flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file", short_name="mf")
 
-flags.DEFINE_string("bentoml_version", None, "BentoML release version", required=True)
+flags.DEFINE_string(
+    "bentoml_version", None, "BentoML release version", required=True, short_name='bv'
+)
 
-flags.DEFINE_string("cuda_version", "11.3.1", "Define CUDA version", short_name='c')
+flags.DEFINE_string("cuda_version", "11.3.1", "Define CUDA version", short_name='cv')
 
-flags.DEFINE_string("python_version", "3.8", "Python version to build Docker images.")
+flags.DEFINE_string(
+    "python_version",
+    None,
+    "OPTIONAL: Python version to build Docker images (useful when developing).",
+    short_name='pv',
+)
 
 SPEC_SCHEMA = """
 --- 
@@ -495,14 +513,28 @@ class TemplatesMixin(object):
             )
         self._cuda_components = get_data(self._cuda_dependencies, self._cuda_version)
 
-    def __call__(self, *args, **kwargs):
-        if FLAGS.python_version is not None:
-            supported_python = [FLAGS.python_version]
-        else:
-            supported_python = SUPPORTED_PYTHON_VERSION
-        self.generate_dockerfiles(
-            target_dir=FLAGS.dockerfile_dir, python_version=supported_python
-        )
+    def __call__(self, dry_run=False, *args, **kwargs):
+        if not dry_run:
+            if FLAGS.python_version is not None:
+                logging.info(
+                    "--python_version defined, ignoring SUPPORTED_PYTHON_VERSION"
+                )
+                supported_python = [FLAGS.python_version]
+            else:
+                supported_python = SUPPORTED_PYTHON_VERSION
+
+            # we will remove generated dockerfile dir everytime generating new BentoML release.
+            logging.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}")
+            shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
+            try:
+                os.makedirs(FLAGS.dockerfile_dir)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
+
+            self.generate_dockerfiles(
+                target_dir=FLAGS.dockerfile_dir, python_version=supported_python
+            )
 
     @cached_property
     def build_path(self):
@@ -517,7 +549,7 @@ class TemplatesMixin(object):
         # get defined cuda version for cuda
         return True if cuda_version in self._cuda_dependencies.keys() else False
 
-    def _get_distro_for_supported_package(self, package):
+    def _generate_distro_release_mapping(self, package):
         """Return a dict containing keys as distro and values as release type (devel, cudnn, runtime)"""
         releases = defaultdict(list)
         for k, v in self._packages[package].items():
@@ -527,7 +559,7 @@ class TemplatesMixin(object):
         return releases
 
     def prepare_template_context(
-            self, distro, distro_version, distro_release_spec, python_version
+        self, distro, distro_version, distro_release_spec, python_version
     ):
         """
         Generate template context for each distro releases.
@@ -603,11 +635,11 @@ class TemplatesMixin(object):
         return _build_ctx
 
     def render_dockerfile_from_templates(
-            self,
-            input_tmpl_path: pathlib.Path,
-            output_path: pathlib.Path,
-            ctx: Dict,
-            tags: Optional[Dict[str, str]] = None,
+        self,
+        input_tmpl_path: pathlib.Path,
+        output_path: pathlib.Path,
+        ctx: Dict,
+        tags: Optional[Dict[str, str]] = None,
     ):
         with open(input_tmpl_path, 'r') as inf:
             logging.debug(f"Processing template: {input_tmpl_path}")
@@ -655,27 +687,27 @@ class TemplatesMixin(object):
         """
         _metadata = defaultdict(list)
 
+        logging.info(f"Generating dockerfile to {target_dir}...\n")
         for package in self._packages.keys():
             # update our packages ctx.
+            logging.info(f"> Working on {package}")
             update_data(self._build_ctx, package, "package")
             for _py_ver in python_version:
-                _distro_release_mapping = self._get_distro_for_supported_package(
+                logging.info(f">> Using python{_py_ver}")
+                for distro, _release_type in self._generate_distro_release_mapping(
                     package
-                )
-                for distro, _release_type in _distro_release_mapping.items():
+                ).items():
                     for distro_version, distro_spec in self._releases[distro].items():
-                        logging.info(
-                            f"Processing: {distro}{distro_version} for {package}"
-                        )
-
                         # setup our build context
                         _build_ctx = self.prepare_template_context(
                             distro, distro_version, distro_spec, _py_ver
                         )
-                        _metadata[package].append(_build_ctx)
+
+                        logging.info(f">>> Generating: {distro}{distro_version}")
+                        _metadata[package].append({_py_ver: _build_ctx})
 
                         for _re_type in _add_base_release_type(
-                                _build_ctx, _release_type
+                            _build_ctx, _release_type
                         ):
                             for root, _, files in os.walk(_build_ctx['templates_dir']):
                                 for f in files:
@@ -687,12 +719,9 @@ class TemplatesMixin(object):
                                 f'{_re_type}{DOCKERFILE_PREFIX}',
                             )
 
-                            # update our build_path
+                            # generate our image tag.
                             tag, basetag = _build_release_tags(_build_ctx, _re_type)
                             tag_ctx = {"basename": basetag}
-                            self._build_path[
-                                f"{_build_ctx['package']}:{tag}"
-                            ] = input_tmpl_path
 
                             base_output_path = pathlib.Path(
                                 target_dir,
@@ -707,7 +736,12 @@ class TemplatesMixin(object):
 
                             # setup directory correspondingly, and add these paths
                             # with correct tags name under self._build_path
-                            # setup our tags with Dockerfile path
+                            if tag:
+                                tag_keys = f"{_build_ctx['package']}:{tag}"
+                            else:
+                                tag_keys = f"{_build_ctx['package']}:{basetag}"
+
+                            self._build_path[tag_keys] = str(pathlib.Path(output_path, 'Dockerfile'))
                             # generate our Dockerfile from templates.
                             self.render_dockerfile_from_templates(
                                 input_tmpl_path=input_tmpl_path,
@@ -715,6 +749,11 @@ class TemplatesMixin(object):
                                 ctx=_build_ctx,
                                 tags=tag_ctx,
                             )
+
+                logging.info(
+                    f">> target directory for python{_py_ver}: {target_dir}/{package}/{_py_ver}\n"
+                )
+            logging.info(">" * 50 + "\n")
 
         if FLAGS.dump_metadata:
             with open("./metadata.json", "w") as ouf:
@@ -729,11 +768,16 @@ def main(argv):
     # Parse specs from manifest.yml and validate it.
     release_spec = load_manifest_yaml(FLAGS.manifest_file)
 
+    # generate templates to correct directory.
     tmpl_mixin = TemplatesMixin(release_spec, cuda_version=FLAGS.cuda_version)
-    tmpl_mixin()
+    tmpl_mixin(dry_run=FLAGS.dry_run)
 
-    if FLAGS.generate_dockerfile:
+    if FLAGS.stop_at_generate:
+        logging.info("--stop_at_generate is parsed. Stopping now...")
         return
+
+    for k, v in tmpl_mixin.build_path.items():
+        print(k + "\t" + v)
 
     # Setup Docker credentials
     # this includes push directory, envars

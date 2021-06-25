@@ -7,10 +7,9 @@
 # ===========================================
 
 
-
 FROM yatai-service:python3.8-ubuntu18.04-base
 
-RUN pip install bentoml[yatai_service]==${BENTOML_VERSION} --no-cache-dir
+RUN pip install bentoml[yatai_service]==$BENTOML_VERSION --no-cache-dir
 
 COPY tools/yatai-service/entrypoint.sh /usr/local/bin/
 

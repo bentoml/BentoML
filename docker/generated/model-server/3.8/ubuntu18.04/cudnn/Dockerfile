@@ -7,18 +7,13 @@
 # ===========================================
 
 
-
-
-FROM model-server:python3.8-ubuntu18.04-base
+FROM model-server:python3.8-ubuntu18.04-base as build_image
 
 RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \
     echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /" >/etc/apt/sources.list.d/cuda.list && \
     echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /" >/etc/apt/sources.list.d/nvidia-ml.list && \
     apt-get purge --autoremove -y curl && \
-    rm -rf /var/lib/apt/lists/*
-
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
+    rm -rf /var/lib/apt/lists/*RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         cuda-cudart-11-3=11.3.109-1 \
         libcublas-11-3=11.5.1.109-1 \
@@ -30,12 +25,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ln -s cuda-11.3 /usr/local/cuda && \
     apt-mark hold libcudnn8 libcublas-11-3=11.5.1.109-1 && \
     apt-get clean && \
+    apt-get purge --autoremove -y build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:$PATH
 ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/include/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu
 
 # nvidia-container-runtime, which is needed for nvidia-docker
 # https://github.com/NVIDIA/nvidia-container-runtime
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+FROM build_image as release_image
+
+RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
+
+COPY tools/model-server/entrypoint.sh /usr/local/bin/
+
+ENTRYPOINT [ "entrypoint.sh" ]
+
+CMD ["bentoml", "serve-gunicorn", "/bento"]

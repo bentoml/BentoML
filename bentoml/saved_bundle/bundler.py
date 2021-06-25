@@ -17,6 +17,7 @@ import glob
 import gzip
 import importlib
 import io
+import json
 import logging
 import os
 import shutil
@@ -44,7 +45,7 @@ from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track_save
 from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.saved_bundle.pip_pkg import get_zipmodules, ZIPIMPORT_DIR
-
+from bentoml.utils.open_api import get_open_api_spec_json
 
 DEFAULT_SAVED_BUNDLE_README = """\
 # Generated BentoService bundle - {}:{}
@@ -181,6 +182,10 @@ def _write_bento_content_to_dir(bento_service, path):
         os.path.join(bundled_pip_dependencies_path, '*.tar.gz')
     ):
         normalize_gztarball(tarball_file_path)
+
+    # write open-api-spec json file
+    with open(os.path.join(path, "docs.json"), "w") as f:
+        json.dump(get_open_api_spec_json(bento_service), f, indent=2)
 
 
 def save_to_dir(bento_service, path, version=None, silent=False):

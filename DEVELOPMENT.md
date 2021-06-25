@@ -241,14 +241,6 @@ Uninstall the charts:
 $ helm uninstall yatai-service
 ```
 
-## Monitoring with Prometheus on Kubernetes
-
-To quickly spin up a local Kubernetes cluster with Prometheus and Grafana to monitor BentoService (refers to [Monitoring with Prometheus](https://docs.bentoml.org/en/latest/guides/monitoring.html)):
-```bash
-# ./k8s.sh -h for more information.
-$ cd docs/source/guides/configs && ./k8s.sh -d
-```
-
 ## How to run and develop BentoML Web UI
 
 Make sure you have `yarn` installed: https://classic.yarnpkg.com/en/docs/install 

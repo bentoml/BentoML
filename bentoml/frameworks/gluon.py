@@ -7,8 +7,10 @@ from bentoml.service.env import BentoServiceEnv
 class GluonModelArtifact(BentoServiceArtifact):
     """
     Abstraction for saving/loading gluon models
+
     Args:
         name (str): Name for the artifact
+
     Raises:
         MissingDependencyError: mxnet package is required for GluonModelArtifact
 
@@ -33,7 +35,7 @@ class GluonModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name: str):
-        super(GluonModelArtifact, self).__init__(name)
+        super().__init__(name)
         self._model = None
 
     def pack(self, model, metadata: dict = None):  # pylint: disable=unused-argument

@@ -6,8 +6,8 @@ from bentoml.service.env import BentoServiceEnv
 
 class DetectronModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading objects with
-    detectron2.checkpoint.DetectionCheckpointer save and load
+    Artifact class for saving/loading Detectron2 models,
+    in the form of detectron2.checkpoint.DetectionCheckpointer
 
     Args:
         name (string): name of the artifact
@@ -70,8 +70,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        super(DetectronModelArtifact, self).__init__(name)
-        self._file_name = name
+        super().__init__(name)
         self._model = None
         self._aug = None
         self._input_model_yaml = None
@@ -93,6 +92,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
                 "Detectron package is required to use DetectronModelArtifact"
             )
         self._model = model
+        self._metadata = metadata
         self._input_model_yaml = input_model_yaml
         return self
 
@@ -109,7 +109,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
                 "Detectron package is required to use DetectronArtifact"
             )
         cfg = get_cfg()
-        cfg.merge_from_file(f"{path}/{self._file_name}.yaml")
+        cfg.merge_from_file(f"{path}/{self.name}.yaml")
         meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
         self._model = meta_arch(cfg)
         self._model.eval()
@@ -117,7 +117,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
         device = self._metadata['device']
         self._model.to(device)
         checkpointer = DetectionCheckpointer(self._model)
-        checkpointer.load(f"{path}/{self._file_name}.pth")
+        checkpointer.load(f"{path}/{self.name}.pth")
         self._aug = T.ResizeShortestEdge(
             [cfg.INPUT.MIN_SIZE_TEST, cfg.INPUT.MIN_SIZE_TEST], cfg.INPUT.MAX_SIZE_TEST
         )
@@ -138,10 +138,10 @@ class DetectronModelArtifact(BentoServiceArtifact):
             )
         os.makedirs(dst, exist_ok=True)
         checkpointer = DetectionCheckpointer(self._model, save_dir=dst)
-        checkpointer.save(self._file_name)
+        checkpointer.save(self.name)
         cfg = get_cfg()
         cfg.merge_from_file(self._input_model_yaml)
         with open(
-            os.path.join(dst, f"{self._file_name}.yaml"), 'w', encoding='utf-8'
+            os.path.join(dst, f"{self.name}.yaml"), 'w', encoding='utf-8'
         ) as output_file:
             output_file.write(cfg.dump())

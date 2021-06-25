@@ -3,8 +3,7 @@ Monitoring with Prometheus
 ==========================
 
 Monitoring stacks usually consist of a metrics collector, a time-series database to store metrics
-and a visualization layer. A popular stack of Prometheus_ with Grafana_ is used as the visualization layer
-to create rich dashboards.
+and a visualization layer. A popular open-source stack is Prometheus used with Grafana as visualization tool to create rich dashboards.
 
 BentoML API server comes with Prometheus support out of the box. When launching an API model server with BentoML,
 whether it is running dev server locally or deployed with docker in the cloud, a ``/metrics`` endpoint will always
@@ -28,6 +27,30 @@ Preface
 .. note::
     Please refers to Prometheus' best practices for `consoles and dashboards <https://prometheus.io/docs/practices/consoles/>`_
     as well as `histogram and summaries <https://prometheus.io/docs/practices/histograms/>`_.
+
+.. note::
+    Users can also create custom metrics for *BentoService* making use of |prom_client|_, which can be later scraped by Prometheus.
+
+    .. code-block:: python
+
+        from prometheus_client import Summary
+
+        REQUEST_TIME=Summary('request_processing_time', 'Time spend processing request')
+
+        @artifacts([KerasModelArtifact('model'), PickleArtifact('tokenizer')])
+        class TensorflowService(BentoService):
+
+            @REQUEST_TIME.time()
+            @api(input=JsonInput())
+            def predict(self, parsed_json):
+                raw = self.preprocessing(parsed_json['text'])
+                input_data = [raw[: n + 1] for n in range(len(raw))]
+                input_data = pad_sequences(input_data, maxlen=100, padding="post")
+                return self.artifacts.model.predict(input_data)
+
+
+.. _prom_client: https://github.com/prometheus/client_python
+.. |prom_client| replace:: *prometheus_client*
 
 Local Deployment
 ----------------
@@ -117,7 +140,7 @@ To log in to Grafana for the first time:
 .. seealso::::
     `Best practice while creating dashboards on Grafana <https://grafana.com/docs/grafana/latest/best-practices/best-practices-for-creating-dashboards/>`_
 
-Users can also import `BentoService Dashboard <https://github.com/bentoml/BentoML/tree/master/docs/source/configs/grafana/provisioning/dashboards/bentoml-dashboard-docker-swarm-1623677587070.json>`_ and
+Users can also import `BentoService Dashboard <https://github.com/bentoml/BentoML/blob/master/docs/source/guides/configs/grafana/provisioning/dashboards/bentoml-dashboard-docker-swarm-1623677587070.json>`_ and
 explore given BentoService metrics by `importing dashboard <https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard>`_.
 
 .. image:: ../_static/img/bentoml-grafana-dashboard.png

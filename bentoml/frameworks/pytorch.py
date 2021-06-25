@@ -29,7 +29,7 @@ def _is_pytorch_lightning_model_file_like(path):
 
 class PytorchModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading objects with torch.save and torch.load
+    Artifact class for saving/loading objects with torch.save and torch.load
 
     Args:
         name (string): name of the artifact
@@ -84,7 +84,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name, file_extension=".pt"):
-        super(PytorchModelArtifact, self).__init__(name)
+        super().__init__(name)
         self._file_extension = file_extension
         self._model = None
 
@@ -163,7 +163,8 @@ class PytorchModelArtifact(BentoServiceArtifact):
 
 
 class PytorchLightningModelArtifact(BentoServiceArtifact):
-    """Abstraction for saving and loading pytorch lightning model
+    """
+    Artifact class for saving and loading pytorch lightning model
 
     Args:
         name (string): Name of the pytorch model
@@ -210,7 +211,7 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
     """
 
     def __init__(self, name):
-        super(PytorchLightningModelArtifact, self).__init__(name)
+        super().__init__(name)
         self._model = None
         self._model_path = None
 

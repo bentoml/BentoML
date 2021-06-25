@@ -8,10 +8,46 @@ import threading
 import time
 import urllib
 
+import docker
+
 import bentoml
 from bentoml.utils import cached_contextmanager
 
 logger = logging.getLogger("bentoml.tests")
+
+
+def wait_until_container_ready(container_name, check_message, timeout_seconds=120):
+    docker_client = docker.from_env()
+
+    start_time = time.time()
+    while True:
+        time.sleep(1)
+
+        # Raise timeout, if exceeds timeout limit
+        if time.time() - start_time > timeout_seconds:
+            raise TimeoutError(f'Waiting for container "{container_name}" timed out')
+
+        try:
+            container_list = docker_client.containers.list(
+                filters={'name': container_name}
+            )
+            if not container_list:
+                continue
+        except docker.errors.NotFound:
+            continue
+
+        logger.info("Container list: " + str(container_list))
+        assert (
+            len(container_list) == 1
+        ), f'should be exact one container with name {container_name}'
+
+        container_log = container_list[0].logs().decode()
+        if check_message in container_log:
+            logger.info(
+                f"Found message indicating container readiness in container log: "
+                f"{container_log}"
+            )
+            break
 
 
 def _wait_until_api_server_ready(host_url, timeout, container=None, check_interval=1):

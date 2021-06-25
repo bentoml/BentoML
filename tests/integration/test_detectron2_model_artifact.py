@@ -2,6 +2,8 @@ import pytest
 import numpy as np
 import imageio
 from tests.bento_service_examples.detectron2_classifier import DetectronClassifier
+
+from bentoml import load_from_dir
 from detectron2.config import get_cfg
 from detectron2 import model_zoo
 from detectron2.checkpoint import DetectionCheckpointer
@@ -45,10 +47,22 @@ def test_detectron2_artifact_pack(detectron2_classifier_class):
     image = image[:, :, ::-1]
 
     svc = detectron2_classifier_class()
-    svc.pack('model', model)
+    svc.pack(
+        'model',
+        model,
+        metadata={"device": "cpu"},
+        input_model_yaml=model_zoo.get_config_file(
+            "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
+        ),
+    )
     response = svc.predict(image)
     assert response['scores'][0] > 0.9
     comparison = np.array(response['classes']) == np.array(
         [17, 0, 0, 0, 0, 0, 0, 0, 25, 0, 25, 25, 0, 0, 24]
     )
     assert comparison.all()
+
+    saved_bundle = svc.save()
+
+    svc = load_from_dir(saved_bundle)
+    response = svc.predict(image)

@@ -5,10 +5,11 @@ import pytest
 from bentoml.yatai.client import get_yatai_client
 from bentoml.yatai.proto.repository_pb2 import BentoUri
 from tests.bento_service_examples.example_bento_service import ExampleBentoService
-from tests.yatai.local_yatai_service import (
+from tests.integration.yatai_server.utils import (
     yatai_service_container,
     local_yatai_service_from_cli,
 )
+
 
 logger = logging.getLogger('bentoml.test')
 

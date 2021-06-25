@@ -161,6 +161,9 @@ Make sure that your custom docker images have Python and CUDA library in order t
 BentoML also provides three `CUDA-enabled images <https://hub.docker.com/r/bentoml/model-server/tags?page=1&ordering=last_updated&name=gpu>`_
 with CUDA 11.3 and CUDNN 8.2.0 (refers to this `support matrix <https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html>`_ for CUDA and CUDNN version matching).
 
+.. note::
+    See :ref:`gpu-impl-warning`'s notes on GPU serving.
+
 Tensorflow
 ^^^^^^^^^^
 
@@ -187,7 +190,8 @@ TLDR, Tensorflow code with ``tf.keras`` model will run transparently on a single
 
         .. code-block:: python
 
-            # my_model_gpu is a trained on GPU:0, with weight and tokenizer to file
+            # my_model_gpu is a trained on GPU:1, with weight and tokenizer to file
+            # now I want to run model on GPU:0
             with tf.device("/GPU:0"):
                 my_inference_model = build_model() # build_model
                 my_inference_model.set_weights(my_model_gpu.get_weights())
@@ -246,12 +250,14 @@ Tensorflow Implementation
     saved_path = bento_svc.save()
 
 
+.. _gpu-impl-warning:
+
 PyTorch
 ^^^^^^^
 
-.. note::
-    Since PyTorch bundles CUDNN and NCCL runtime with the python library, the *RECOMMENDED* way to run your PyTorch service is to install PyTorch with conda
-    via BentoML `@env <http://localhost:8000/api/bentoml.html#env>`_:
+.. warning::
+    Since PyTorch bundles CUDNN and NCCL runtime with its python library, we **recommend** users install PyTorch with ``conda``
+    via BentoML `@env <http://localhost:8000/api/bentoml.html#env>`_ instead of using GPU images provided by BentoML:
 
     .. code-block:: python
 

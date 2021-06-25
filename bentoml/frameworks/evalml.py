@@ -5,14 +5,15 @@ from bentoml.exceptions import MissingDependencyException
 from bentoml.service.env import BentoServiceEnv
 from bentoml.service.artifacts import BentoServiceArtifact
 
+EVALML_MODEL_PICKLE_EXTENTION = ".pkl"
+
 
 class EvalMLModelArtifact(BentoServiceArtifact):
     """
-    Abstraction for saving/loading EvalML models
+    Artifact class  for saving/loading EvalML models
 
     Args:
         name (str): Name for the artifact
-        pickle_extension (str): The extension format for pickled file
 
     Raises:
         MissingDependencyException: evalml package is required for EvalMLModelArtifact
@@ -46,10 +47,9 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     >>> svc.save()
     """
 
-    def __init__(self, name, pickle_extension=".pkl"):
-        super(EvalMLModelArtifact, self).__init__(name)
+    def __init__(self, name):
+        super().__init__(name)
 
-        self._pickle_extension = pickle_extension
         self._model = None
 
     def _validate_package(self):
@@ -61,7 +61,7 @@ class EvalMLModelArtifact(BentoServiceArtifact):
             )
 
     def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + self._pickle_extension)
+        return os.path.join(base_path, self.name + EVALML_MODEL_PICKLE_EXTENTION)
 
     def pack(self, evalml_model, metadata=None):  # pylint:disable=arguments-differ
         self._validate_package()

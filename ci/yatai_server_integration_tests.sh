@@ -14,7 +14,6 @@ python -m pip install -e .
 pip install psycopg2 psycopg2-binary
 
 # Run Yatai server tests
-python -m pytest -s "$GIT_ROOT"/tests/integration/yatai_server/test_local_fs.py
-python -m pytest -s "$GIT_ROOT"/tests/integration/yatai_server/test_containerize.py
+python -m pytest -s "$GIT_ROOT"/tests/integration/yatai_server/
 
 test $error = 0 # Return non-zero if pytest failed

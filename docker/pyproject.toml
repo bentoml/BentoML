@@ -17,8 +17,11 @@ glom = "^20.11.0"
 pylint = "^2.8.3"
 black = "^21.6b0"
 isort = "^5.9.1"
-prettytable = "^2.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py36', 'py37', 'py38']

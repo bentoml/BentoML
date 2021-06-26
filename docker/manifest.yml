@@ -7,8 +7,8 @@ repository:
     user: HUB_USERNAME
     pwd: HUB_PASSWORD
     registry:
-      model-server: "bentoml/model-server"
-      yatai-service: "bentoml/yatai-service"
+      model-server: docker.io/aarnphm/model-server
+      yatai-service: docker.io/aarnphm/yatai-service
 
 packages:
   model-server:

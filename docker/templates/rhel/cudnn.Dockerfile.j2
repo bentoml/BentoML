@@ -36,7 +36,7 @@ RUN yum upgrade -y && yum install -y \
     ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda && \
     yum clean all && \
     yum autoremove curl && \
-    rm -rf /var/cache/yum/*
+    rm -rf /var/cache/yum
 
 ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:$PATH
 ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/include/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu

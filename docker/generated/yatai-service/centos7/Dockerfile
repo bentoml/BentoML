@@ -11,8 +11,6 @@ FROM centos:7
 
 # setup ENV and ARG
 ENV BENTOML_VERSION=0.13.0
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1
 ARG PYTHON_VERSION
 
@@ -24,7 +22,7 @@ SHELL ["/bin/bash", "-c"]
 RUN yum upgrade -y \
     && yum install -y wget git ca-certificates curl \
     && yum clean all \
-    && rm -rf /var/cache/yum/*
+    && rm -rf /var/cache/yum
 
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     chmod +x ~/miniconda.sh && \
@@ -35,7 +33,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     /opt/conda/bin/conda clean -afy && \
     yum clean all && \
     yum autoremove -y wget && \
-    rm -rf /var/cache/yum/*
+    rm -rf /var/cache/yum
 
 RUN /opt/conda/bin/conda install -y python=$PYTHON_VERSION pip && \
     /opt/conda/bin/conda clean -afy
@@ -49,6 +47,12 @@ EXPOSE 3000
 # Install Node, required by the Web UI Server
 # https://github.com/nodejs/docker-node/tree/4ef13799abb9bb37193be39621fedd52e0da6805/15/buster
 ENV NODE_VERSION 15.12.0
+
+RUN yum upgrade -y && \
+    yum install -y gnupg && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
 RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
     && case "${dpkgArch##*-}" in \
             amd64) ARCH='x64';; \
@@ -87,7 +91,10 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
     && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
     # smoke tests
     && node --version \
-    && npm --version
+    && npm --version \
+    && yum autoremove -y gnupg \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 COPY tools/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc

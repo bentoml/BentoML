@@ -14,7 +14,7 @@ FROM model-server:base-python$PYTHON_VERSION-centos7 as build_image
 RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir && \
     yum autoremove -y curl && \
     yum clean all && \
-    rm -rf /var/cache/yum/*
+    rm -rf /var/cache/yum
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/
 

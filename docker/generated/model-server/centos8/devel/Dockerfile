@@ -17,7 +17,7 @@ RUN git clone https://github.com/bentoml/BentoML.git && \
     pip install --editable . && \
     yum autoremove -y curl && \
     yum clean all && \
-    rm -rf /var/cache/yum/*
+    rm -rf /var/cache/yum
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/
 

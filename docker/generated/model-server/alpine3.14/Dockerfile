@@ -13,6 +13,7 @@ FROM alpine:3.14
 ENV BENTOML_VERSION=0.13.0
 ENV LC_ALL=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1
+ARG PYTHON_VERSION
 
 ENV PATH /opt/conda/bin:/usr/local/bin:$PATH
 
@@ -54,6 +55,19 @@ RUN apk add -q --no-cache --virtual=.build-dependencies wget ca-certificates \
         "$ALPINE_GLIBC_BASE_PACKAGE_FILENAME" \
         "$ALPINE_GLIBC_BIN_PACKAGE_FILENAME" \
         "$ALPINE_GLIBC_I18N_PACKAGE_FILENAME"
+
+# we will install python from conda.
+RUN apk add --no-cache --virtual .build-dependencies ca-certificates wget \
+    && wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh \
+    && chmod +x ~/miniconda.sh \
+    && ~/miniconda.sh -f -b -p /opt/conda \
+    && conda update --all --yes \
+    && conda config --set auto_update_conda False \
+    \
+    && apk del --purge .build-dependencies \
+    && rm -f ~/miniconda.sh \
+    && conda clean -afy \
+    && find /opt/conda/ -follow -type f \( -iname '*.a' -o -iname '*.pyc' -o -iname '*.js.map' \) -delete
 
 COPY tools/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc

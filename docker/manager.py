@@ -126,13 +126,7 @@ flags.DEFINE_boolean(
     "stop_at_generate", False, "Whether to just generate dockerfile.", short_name="sag"
 )
 flags.DEFINE_boolean("build_images", False, "Whether to build images.", short_name="bi")
-flags.DEFINE_boolean(
-    "stop_on_failure",
-    False,
-    "Stop processing tags if any one build fails. If False or not specified, failures are reported but do not affect "
-    "the other images.",
-    short_name="sof",
-)
+
 # directory and files
 flags.DEFINE_string(
     "dockerfile_dir",
@@ -575,7 +569,9 @@ class Templates(object):
 
     @CachedProperty
     def build_path(self):
-        ordered = {k: self._build_path[k] for k in self._build_path.keys() if 'base' in k}
+        ordered = {
+            k: self._build_path[k] for k in self._build_path.keys() if 'base' in k
+        }
         ordered.update(self._build_path)
         self._build_path = deepcopy(ordered)
         return self._build_path
@@ -620,24 +616,7 @@ class Templates(object):
     def generate_template_context(
         self, distro, distro_version, distro_release_spec, python_version
     ):
-        """
-        Generate template context for each distro releases.
-
-        build context structure:
-            {
-              "templates_dir": "",
-              "base_image": "",
-              "add_to_tags": "",
-              "envars": {},
-              "cuda_prefix_url": "",
-              "cuda": {
-                "ml_repo": "",
-                "base_repo": "",
-                "version": {},
-                "components": {}
-              }
-            }
-        """
+        """Generate template context for each distro releases."""
         _build_ctx = deepcopy(self._build_ctx)
         _cuda_components = self._cuda_components.copy()
 
@@ -801,19 +780,25 @@ def main(argv):
         return
 
     # We will build and push if args is parsed. Establish some variables.
-    push_tags, tag_failed = {}, False
-    logs, failed_tags, succeeded_tags = [], [], []
+    push_tags = {}
+    logs, succeeded_tags = [], []
 
     logger.info('-' * 100 + "\n")
     if FLAGS.build_images and not FLAGS.dry_run:
         for image_tag, dockerfile_path in build_path.items():
+            if docker_client.api.history(image_tag):
+                continue
             try:
                 logger.info(f"> building {image_tag} from {dockerfile_path}")
                 resp = docker_client.api.build(
                     timeout=FLAGS.timeout,
                     path=".",
                     nocache=False,
-                    buildargs={"PYTHON_VERSION": get_data(tag_metadata, image_tag, 'envars', 'PYTHON_VERSION')},
+                    buildargs={
+                        "PYTHON_VERSION": get_data(
+                            tag_metadata, image_tag, 'envars', 'PYTHON_VERSION'
+                        )
+                    },
                     dockerfile=dockerfile_path,
                     tag=image_tag,
                 )
@@ -845,24 +830,18 @@ def main(argv):
                 logger.error(f">> Failed to build {image_tag} :\n{e.msg}")
                 for line in e.build_log:
                     if 'stream' in line:
-                        logger.error(line['stream'].strip())
-                tag_failed = True
-                failed_tags.append(image_tag)
-                if FLAGS.stop_on_failure:
-                    logger.fatal('>> ABORTING due to --stop_on_failure!')
-            if not tag_failed:
-                succeeded_tags.append(image_tag)
+                        print(line['stream'].strip())
+                logger.fatal('>> ABORTING due to failure!')
+            succeeded_tags.append(image_tag)
         logger.info(f"> Push tags:\n{push_tags}")
     else:
         logger.info("> --build_images is not specified. Skip building images...")
 
+    print(push_tags)
     # Push process
     if FLAGS.push_to_hub:
         for repo, registry in repos.items():
             for image_tag, image in push_tags.items():
-                # push newly created image to registry.
-                if tag_failed:
-                    continue
 
                 logger.info(f"> Uploading {image} to {repo}")
                 if not FLAGS.dry_run:
@@ -874,11 +853,6 @@ def main(argv):
     else:
         logger.info("> --push_to_hub is not specified. Skip pushing images...")
 
-    if failed_tags:
-        logger.fatal(
-            f"> Some tags failed to build or failed testing, check scroll back for errors: {','.join(failed_tags)}. "
-            f"Recommend to use -sof to stop when fails. "
-        )
     if succeeded_tags:
         logger.info("Success tags:\n")
         for tag in succeeded_tags:

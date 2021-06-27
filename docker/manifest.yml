@@ -43,7 +43,7 @@ release_spec: &tmpl_spec
   add_to_tags: ""
   multistage_image: True
   header: |
-    # syntax = docker/dockerfile:experimental
+    # syntax = docker/dockerfile:1.2
     #
     # ===========================================
     #

@@ -1,11 +1,18 @@
-{{ metadata.header }}
+# syntax = docker/dockerfile:experimental
+#
+# ===========================================
+#
+# THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
+#
+# ===========================================
 
-FROM {{ metadata.base_image }}
+
+FROM alpine:3.14
 
 # setup ENV and ARG
-{% for key, value in metadata.envars.items() if key not in ["LANG", "PYTHON_VERSION"] %}
-ENV {{ key }}={{ value }}
-{% endfor %}
+ENV BENTOML_VERSION=0.13.0
+ENV LC_ALL=C.UTF-8
+ENV PYTHONDONTWRITEBYTECODE=1
 
 ENV PATH /opt/conda/bin:/usr/local/bin:$PATH
 

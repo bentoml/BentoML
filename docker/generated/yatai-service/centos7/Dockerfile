@@ -1,26 +1,30 @@
-{{ metadata.header }}
+# syntax = docker/dockerfile:experimental
+#
+# ===========================================
+#
+# THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
+#
+# ===========================================
 
-FROM {{ metadata.base_image }}
+
+FROM centos:7
 
 # setup ENV and ARG
-{% for key, value in metadata.envars.items() %}
-{% if key in ["PYTHON_VERSION"] %}
-ARG {{ key }}
-{% else %}
-ENV {{ key }}={{ value }}
-{% endif %}
-{% endfor %}
+ENV BENTOML_VERSION=0.13.0
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONDONTWRITEBYTECODE=1
+ARG PYTHON_VERSION
 
 ENV PATH /opt/conda/bin:$PATH
 
 # needed for string substitution
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update && \
-    apt-get install -q -y --no-install-recommends \
-    ca-certificates curl wget git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN yum upgrade -y \
+    && yum install -y wget git ca-certificates curl \
+    && yum clean all \
+    && rm -rf /var/cache/yum/*
 
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     chmod +x ~/miniconda.sh && \
@@ -29,13 +33,13 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     find /opt/conda/ -follow -type f -name '*.a' -delete && \
     find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
     /opt/conda/bin/conda clean -afy && \
-    apt-get clean && apt-get autoremove -y && \
-    apt-get purge -y wget
+    yum clean all && \
+    yum autoremove -y wget && \
+    rm -rf /var/cache/yum/*
 
 RUN /opt/conda/bin/conda install -y python=$PYTHON_VERSION pip && \
     /opt/conda/bin/conda clean -afy
 
-{% if metadata.package == "yatai-service" %}
 # YataiService GRPC port
 EXPOSE 50051
 
@@ -54,7 +58,7 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
             armhf) ARCH='armv7l';; \
             i386) ARCH='x86';; \
             *) echo "unsupported architecture"; exit 1 ;; \
-       esac \
+        esac \
     # gpg keys listed at https://github.com/nodejs/node#release-keys
     && set -ex \
     && for key in \
@@ -85,6 +89,5 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
     && node --version \
     && npm --version
 
-{% endif %}
 COPY tools/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc

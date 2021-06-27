@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import errno
-import inspect
 import json
 import logging
 import multiprocessing
@@ -8,22 +7,54 @@ import os
 import pathlib
 import re
 import shutil
-import sys
 from collections import defaultdict
 from collections.abc import Iterable
 from copy import deepcopy
 from typing import Dict, Optional
-from dotenv import load_dotenv
 
 import absl.logging
 import docker
 from absl import flags, app
 from cerberus import Validator
+from dotenv import load_dotenv
 from glom import glom, Path, PathAccessError, Assign, PathAssignError
 from jinja2 import Environment
 from ruamel import yaml
 
-load_dotenv()
+if os.path.exists("./.env"):
+    load_dotenv()
+
+
+class CachedProperty(property):
+    """Direct ports from bentoml/utils/__init__.py"""
+
+    class _Missing(object):
+        def __repr__(self):
+            return "no value"
+
+        def __reduce__(self):
+            return "_missing"
+
+    _missing = _Missing()
+
+    def __init__(self, func, name=None, doc=None):
+        super().__init__(doc)
+        self.__name__ = name or func.__name__
+        self.__doc__ = doc or func.__doc__
+        self.__module__ = func.__module__
+        self.func = func
+
+    def __set__(self, obj, value):
+        obj.__dict__[self.__name__] = value
+
+    def __get__(self, obj, types=None):
+        if obj is None:
+            return self
+        value = obj.__dict__.get(self.__name__, self._missing)
+        if value is self._missing:
+            value = self.func(obj)
+            obj.__dict__[self.__name__] = value
+        return value
 
 
 class ColoredFormatter(logging.Formatter):
@@ -55,8 +86,8 @@ class ColoredFormatter(logging.Formatter):
 absl.logging.get_absl_handler().setFormatter(ColoredFormatter())
 logger = absl.logging.get_absl_logger()
 
-DOCKERFILE_PREFIX = ".Dockerfile.j2"
-REPO_PREFIX = ".repo.j2"
+DOCKERFILE_SUFFIX = ".Dockerfile.j2"
+REPO_SUFFIX = ".repo.j2"
 DOCKERFILE_ALLOWED_NAMES = ["base", "cudnn", "devel", "runtime"]
 
 SUPPORTED_PYTHON_VERSION = ["3.6", "3.7", "3.8"]
@@ -186,6 +217,7 @@ cuda_dependencies:
     type: dict
     keysrules:
       type: string
+      check_with: allowed_cudnn
     valuesrules:
       type: string
 
@@ -208,7 +240,7 @@ release_spec:
     cuda_requires:
       type: string
       dependencies: cuda
-    needs_deps_image:
+    multistage_image:
       type: boolean
     envars:
       type: list
@@ -247,6 +279,8 @@ class MetadataSpecValidator(Validator):
         packages: bentoml release packages, model-server, yatai-service, etc
     """
 
+    CUDNN_THRESHOLD = 1
+
     # TODO: custom check for releases.valuesrules
 
     def __init__(self, *args, **kwargs):
@@ -254,6 +288,7 @@ class MetadataSpecValidator(Validator):
             self.packages = kwargs["packages"]
         if "releases" in kwargs:
             self.releases = kwargs["releases"]
+        self.cudnn_counter = 0
         super(Validator, self).__init__(*args, **kwargs)
 
     def _check_with_packages(self, field, value):
@@ -287,6 +322,13 @@ class MetadataSpecValidator(Validator):
         else:
             if value not in self.releases:
                 self._error(field, f"{field} is not defined under releases")
+
+    def _check_with_allowed_cudnn(self, field, value):
+        if 'cudnn' in value:
+            self.cudnn_counter += 1
+            pass
+        if self.cudnn_counter > self.CUDNN_THRESHOLD:
+            self._error(field, "Only allowed one CUDNN version per CUDA mapping")
 
     def _validate_env_vars(self, env_vars, field, value):
         """
@@ -325,18 +367,14 @@ def auth_registries(repository, docker_client):
     for registry, metadata in repository.items():
         if not os.getenv(metadata['only_if']) or not os.getenv(metadata['user']):
             logger.critical(
-                f"{registry}: {metadata['only_if']} or {metadata['user']} is not set or not found."
+                f"{registry}: Make sure to set {metadata['only_if']} or {metadata['user']}."
             )
-        repos[registry] = {
-            'user': os.getenv(metadata['user']),
-            'pwd': os.getenv(metadata['pwd']),
-            'package_registry': list(metadata['registry'].values()),
-        }
+        _user = os.getenv(metadata['user'])
+        _pwd = os.getenv(metadata['pwd'])
 
-    for repo, data in repos.items():
-        logger.info(f"> Logging into Docker registry {repo} with credentials...")
-        docker_client.login(username=data['user'], password=data['pwd'], registry=repo)
-        repos[repo] = {'package_registry': data['package_registry']}
+        logger.info(f"> Logging into Docker registry {registry} with credentials...")
+        docker_client.login(username=_user, password=_pwd, registry=registry)
+        repos[registry] = {'registry': list(metadata['registry'].values())}
     return repos
 
 
@@ -369,36 +407,10 @@ def load_manifest_yaml(file):
         logger.error(yaml.dump(v.errors, indent=2))
         exit(1)
 
-    release_spec = v.normalized(manifest)
-    return release_spec
+    return v.normalized(manifest)
 
 
-def validate_template_name(names):
-    """Validate our input file name for Dockerfile templates."""
-    if isinstance(names, str):
-        if REPO_PREFIX in names:
-            # ignore .repo.j2 for centos
-            pass
-        elif DOCKERFILE_PREFIX in names:
-            names, _, _ = names.partition(DOCKERFILE_PREFIX)
-            if names not in DOCKERFILE_ALLOWED_NAMES:
-                logger.critical(
-                    f"Unable to parse {names}. Dockerfile allowed name: {', '.join(DOCKERFILE_ALLOWED_NAMES)} "
-                )
-        else:
-            logger.warning(
-                f"{inspect.currentframe().f_code.co_name} is being used to validate {names}, which has unknown "
-                f"extensions, thus will have no effects. "
-            )
-            pass
-    elif isinstance(names, list):
-        for _name in names:
-            validate_template_name(_name)
-    else:
-        raise TypeError(f"{names} has unknown type {type(names)}")
-
-
-def get_data(obj, *path, skip=False):
+def get_data(obj, *path):
     """
     Get data from the object by dotted path.
     e.g: dependencies.cuda."11.3.1"
@@ -406,8 +418,6 @@ def get_data(obj, *path, skip=False):
     try:
         data = glom(obj, Path(*path))
     except PathAccessError:
-        if skip:
-            return
         logger.exception(
             f"Exception occurred in get_data, unable to retrieve from {' '.join(*path)}"
         )
@@ -415,7 +425,7 @@ def get_data(obj, *path, skip=False):
         return data
 
 
-def update_data(obj, value, *path):
+def set_data(obj, value, *path):
     """
     Update data from the object with given value.
     e.g: dependencies.cuda."11.3.1"
@@ -428,7 +438,7 @@ def update_data(obj, value, *path):
         )
 
 
-def _build_release_args(bentoml_version):
+def _generate_build_envars(bentoml_version):
     """
     Create a dictionary of args that will be parsed during runtime
 
@@ -439,7 +449,7 @@ def _build_release_args(bentoml_version):
         Dict of args
     """
     # we will update PYTHON_VERSION when build process is invoked
-    args = {"PYTHON_VERSION": "", "BENTOML_VERSION": bentoml_version}
+    args = {"BENTOML_VERSION": bentoml_version}
 
     def update_args_dict(updater):
         # updater will be distro_release_spec['envars'] (e.g)
@@ -461,7 +471,7 @@ def _build_release_args(bentoml_version):
     return update_args_dict
 
 
-def _build_release_tags(build_ctx, release_type, base_tags):
+def _generate_build_tags(build_ctx, python_version, release_type):
     """
     Our tags will have format: {bentoml_release_version}-{python_version}-{distros}-{image_type}
     eg:
@@ -470,28 +480,21 @@ def _build_release_tags(build_ctx, release_type, base_tags):
     - 0.13.0-python3.7-centos8-{runtime,cudnn}
     """
 
-    _python_version = get_data(build_ctx, "envars", "PYTHON_VERSION")
-
     # check if PYTHON_VERSION is set.
-    if not _python_version:
-        logger.critical("PYTHON_VERSION should be set before generating Dockerfile.")
-    if _python_version not in SUPPORTED_PYTHON_VERSION:
+    if python_version not in SUPPORTED_PYTHON_VERSION:
         logger.critical(
-            f"{_python_version} is not supported. Supported versions: {SUPPORTED_PYTHON_VERSION}"
+            f"{python_version} is not supported. Supported versions: {SUPPORTED_PYTHON_VERSION}"
         )
+    set_data(build_ctx, python_version, "envars", "PYTHON_VERSION")
 
     _tag = ""
-    core_string = "-".join([f"python{_python_version}", build_ctx["add_to_tags"]])
-
-    try:
-        base_tag = "-".join([core_string, base_tags])
-    except KeyError:
-        base_tag = core_string
+    core_string = "-".join(["python${PYTHON_VERSION}", build_ctx["add_to_tags"]])
+    _build_tag = "-".join([core_string, "base"])
 
     if release_type == "devel":
         _tag = "-".join([release_type, core_string])
     elif release_type == "base":
-        pass
+        _tag = _build_tag
     else:
         _tag = "-".join(
             [
@@ -500,10 +503,25 @@ def _build_release_tags(build_ctx, release_type, base_tags):
                 release_type,
             ]
         )
-    return _tag, base_tag
+
+    return _tag, _build_tag
 
 
-def _update_build_ctx(ctx_dict, spec_dict: Dict, *ignore_keys):
+def _generate_cudnn_context(cuda_components):
+    cudnn_release_version = None
+    cudnn_regex = re.compile(r"(cudnn)(\w+)")
+    for k, v in cuda_components.items():
+        if cudnn_regex.match(k):
+            cudnn_release_version = cuda_components.pop(k)
+            break
+    cudnn_major_version = cudnn_release_version.split(".")[0]
+    return {
+        "version": cudnn_release_version,
+        "major_version": cudnn_major_version,
+    }
+
+
+def _set_build_ctx(ctx_dict, spec_dict: Dict, *ignore_keys):
     # flatten release_spec to template context.
     for k, v in spec_dict.items():
         if k in list(flatten([*ignore_keys])):
@@ -511,67 +529,24 @@ def _update_build_ctx(ctx_dict, spec_dict: Dict, *ignore_keys):
         ctx_dict[k] = v
 
 
-def _add_base_release_type(build_ctx, release_type: list):
-    try:
-        return release_type + [build_ctx["base_tags"]]
-    except KeyError:
-        # when base_tags is either not set or available
-        return release_type
-
-
-# noinspection PyPep8Naming
-class cached_property(property):
-    """Direct ports from bentoml/utils/__init__.py"""
-
-    class _Missing(object):
-        def __repr__(self):
-            return "no value"
-
-        def __reduce__(self):
-            return "_missing"
-
-    _missing = _Missing()
-
-    def __init__(self, func, name=None, doc=None):
-        super().__init__(doc)
-        self.__name__ = name or func.__name__
-        self.__module__ = func.__module__
-        self.__doc__ = doc or func.__doc__
-        self.func = func
-
-    def __set__(self, obj, value):
-        obj.__dict__[self.__name__] = value
-
-    def __get__(self, obj, types=None):
-        if obj is None:
-            return self
-        value = obj.__dict__.get(self.__name__, self._missing)
-        if value is self._missing:
-            value = self.func(obj)
-            obj.__dict__[self.__name__] = value
-        return value
-
-
-class TemplatesMixin(object):
+# noinspection PyUnresolvedReferences
+class Templates(object):
     """Mixin for generating Dockerfile from templates."""
 
     _build_ctx = {}
-    # _build_path will consist of
-    #   key: package_tag
-    #   value: path to dockerfile
     _build_path = {}
 
     _template_env = Environment(
         extensions=["jinja2.ext.do"], trim_blocks=True, lstrip_blocks=True
     )
 
-    def __init__(self, release_spec, cuda_version):
+    def __init__(self, release_spec: Dict, cuda_version: str):
         # set private class attributes to be manifest.yml keys
         for keys, values in release_spec.items():
             super().__setattr__(f"_{keys}", values)
 
         # setup default keys for build context
-        _update_build_ctx(self._build_ctx, self._release_spec, "cuda")
+        _set_build_ctx(self._build_ctx, self._release_spec, "cuda")
 
         # setup cuda_version and cuda_components
         if self._check_cuda_version(cuda_version):
@@ -603,14 +578,9 @@ class TemplatesMixin(object):
                 target_dir=FLAGS.dockerfile_dir, python_version=supported_python
             )
 
-    @cached_property
+    @CachedProperty
     def build_path(self):
         return self._build_path
-
-    def _cudnn_versions(self):
-        for k, v in self._cuda_components.items():
-            if k.startswith("cudnn") and v:
-                return k, v
 
     def _check_cuda_version(self, cuda_version):
         # get defined cuda version for cuda
@@ -618,18 +588,18 @@ class TemplatesMixin(object):
 
     def render_dockerfile_from_templates(
         self,
-        input_tmpl_path: pathlib.Path,
+        input_path: pathlib.Path,
         output_path: pathlib.Path,
         ctx: Dict,
         tags: Optional[Dict[str, str]] = None,
     ):
-        with open(input_tmpl_path, "r") as inf:
-            logger.debug(f">>>> Processing template: {input_tmpl_path}\n")
-            name = input_tmpl_path.name
-            if DOCKERFILE_PREFIX not in name:
+        with open(input_path, "r") as inf:
+            logger.debug(f">>>> Processing template: {input_path}\n")
+            name = input_path.name
+            if DOCKERFILE_SUFFIX not in name:
                 output_name = name[: -len(".j2")]
             else:
-                output_name = DOCKERFILE_PREFIX.split(".")[1]
+                output_name = DOCKERFILE_SUFFIX.split(".")[1]
 
             template = self._template_env.from_string(inf.read())
             if not output_path.exists():
@@ -642,7 +612,7 @@ class TemplatesMixin(object):
         inf.close()
 
     def generate_distro_release_mapping(self, package):
-        """Return a dict containing keys as distro and values as release type (devel, cudnn, runtime)"""
+        """Return a dict {ubuntu: [devel, cudnn, runtime]}"""
         releases = defaultdict(list)
         for k, v in self._packages[package].items():
             _v = list(flatten(v))
@@ -672,36 +642,26 @@ class TemplatesMixin(object):
             }
         """
         _build_ctx = deepcopy(self._build_ctx)
+        _cuda_components = self._cuda_components.copy()
 
         cuda_regex = re.compile(r"cuda*")
-        cudnn_regex = re.compile(r"(cudnn)(\w+)")
 
-        _update_build_ctx(
+        _set_build_ctx(
             _build_ctx, get_data(self._releases, distro, distro_version), "cuda"
         )
 
-        _build_ctx["envars"] = _build_release_args(FLAGS.bentoml_version)(
+        _build_ctx["envars"] = _generate_build_envars(FLAGS.bentoml_version)(
             distro_release_spec["envars"]
         )
 
-        # setup base_tags if needed
-        if _build_ctx["needs_deps_image"] is True:
-            _build_ctx["base_tags"] = "base"
-        _build_ctx.pop("needs_deps_image")
-
         # setup python version
-        update_data(
+        set_data(
             _build_ctx, python_version, "envars", "PYTHON_VERSION",
         )
 
         # setup cuda deps
         if _build_ctx["cuda_prefix_url"]:
             major, minor, _ = self._cuda_version.rsplit(".")
-            cudnn_version_name, cudnn_release_version = self._cudnn_versions()
-            cudnn_groups = cudnn_regex.match(cudnn_version_name).groups()
-            cudnn_namespace, cudnn_major_version = [
-                cudnn_groups[i] for i in range(len(cudnn_groups))
-            ]
             _build_ctx["cuda"] = {
                 "ml_repo": NVIDIA_ML_REPO_URL.format(_build_ctx["cuda_prefix_url"]),
                 "base_repo": NVIDIA_REPO_URL.format(_build_ctx["cuda_prefix_url"]),
@@ -709,15 +669,11 @@ class TemplatesMixin(object):
                     "release": self._cuda_version,
                     "major": major,
                     "minor": minor,
-                    "shortened": ".".join([major, minor]),
+                    "shortened": f"{major}.{minor}",
                 },
-                cudnn_namespace: {
-                    "version": cudnn_release_version,
-                    "major_version": cudnn_major_version,
-                },
-                "components": self._cuda_components,
+                "cudnn": _generate_cudnn_context(_cuda_components),
+                "components": _cuda_components,
             }
-            _build_ctx.pop("cuda_prefix_url")
         else:
             logger.warning(f">>>> CUDA is disabled for {distro}. Skipping...")
             for key in list(_build_ctx.keys()):
@@ -756,7 +712,7 @@ class TemplatesMixin(object):
         for package in self._packages.keys():
             # update our packages ctx.
             logger.info(f"> Working on {package}")
-            update_data(self._build_ctx, package, "package")
+            set_data(self._build_ctx, package, "package")
             for _py_ver in python_version:
                 logger.info(f">> For python{_py_ver}")
                 _distro_release_mapping = self.generate_distro_release_mapping(package)
@@ -769,24 +725,17 @@ class TemplatesMixin(object):
 
                         logger.debug(f">>> Generating: {distro}{distro_version}")
 
-                        # validate our template directory.
-                        for _, _, files in os.walk(_build_ctx["templates_dir"]):
-                            validate_template_name(files)
-
-                        for _re_type in _add_base_release_type(
-                            _build_ctx, _release_type
-                        ):
+                        if _build_ctx['multistage_image']:
+                            _release_type.append('base')
+                        for _re_type in _release_type:
                             # setup filepath
-                            input_tmpl_path = pathlib.Path(
+                            input_path = pathlib.Path(
                                 _build_ctx["templates_dir"],
-                                f"{_re_type}{DOCKERFILE_PREFIX}",
+                                f"{_re_type}{DOCKERFILE_SUFFIX}",
                             )
 
                             base_output_path = pathlib.Path(
-                                target_dir,
-                                package,
-                                _py_ver,
-                                f"{distro}{distro_version}",
+                                target_dir, package, f"{distro}{distro_version}",
                             )
 
                             # handle cuda.repo and nvidia-ml.repo
@@ -797,7 +746,7 @@ class TemplatesMixin(object):
                                 for _n in ["nvidia-ml", "cuda"]:
                                     repo_tmpl_path = pathlib.Path(
                                         _build_ctx["templates_dir"],
-                                        f"{_n}{REPO_PREFIX}",
+                                        f"{_n}{REPO_SUFFIX}",
                                     )
                                     repo_output_path = pathlib.Path(
                                         base_output_path, _re_type
@@ -807,30 +756,28 @@ class TemplatesMixin(object):
                                     )
 
                             # generate our image tag.
-                            tag, basetag = _build_release_tags(
-                                _build_ctx, _re_type, _build_ctx['base_tags']
+                            _tag, _build_tag = _generate_build_tags(
+                                _build_ctx,
+                                _py_ver,
+                                _re_type,
                             )
-                            tag_ctx = {"basename": basetag}
+                            tag_ctx = {"basename": _build_tag}
 
                             if _re_type != "base":
                                 output_path = pathlib.Path(base_output_path, _re_type)
                             else:
                                 output_path = base_output_path
+                            tag_keys = f"{_build_ctx['package']}:{_tag}"
 
                             # setup directory correspondingly, and add these paths
                             # with correct tags name under self._build_path
-                            if tag:
-                                tag_keys = f"{_build_ctx['package']}:{tag}"
-                            else:
-                                tag_keys = f"{_build_ctx['package']}:{basetag}"
-
                             _tag_metadata[tag_keys].append(_build_ctx)
                             self._build_path[tag_keys] = str(
                                 pathlib.Path(output_path, "Dockerfile")
                             )
                             # generate our Dockerfile from templates.
                             self.render_dockerfile_from_templates(
-                                input_tmpl_path=input_tmpl_path,
+                                input_path=input_path,
                                 output_path=output_path,
                                 ctx=_build_ctx,
                                 tags=tag_ctx,
@@ -844,7 +791,6 @@ class TemplatesMixin(object):
             with open(file, "w") as ouf:
                 ouf.write(json.dumps(_tag_metadata, indent=2))
             ouf.close()
-            del _tag_metadata
 
 
 def main(argv):
@@ -859,7 +805,7 @@ def main(argv):
     repos = auth_registries(release_spec["repository"], docker_client)
 
     # generate templates to correct directory.
-    tmpl_mixin = TemplatesMixin(release_spec, cuda_version=FLAGS.cuda_version)
+    tmpl_mixin = Templates(release_spec, cuda_version=FLAGS.cuda_version)
     tmpl_mixin(dry_run=FLAGS.dry_run)
 
     if FLAGS.stop_at_generate:
@@ -871,7 +817,7 @@ def main(argv):
     logs, failed_tags, succeeded_tags = [], [], []
 
     # need --build_images to run this segment.
-    logger.info('-'*100+"\n")
+    logger.info('-' * 100 + "\n")
     if FLAGS.build_images:
         for image_tag, dockerfile_path in tmpl_mixin.build_path.items():
             try:
@@ -880,6 +826,7 @@ def main(argv):
                     timeout=FLAGS.timeout,
                     path=".",
                     nocache=False,
+                    buildargs=None,
                     dockerfile=dockerfile_path,
                     tag=image_tag,
                 )

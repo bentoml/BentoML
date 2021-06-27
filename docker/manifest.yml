@@ -41,7 +41,7 @@ release_spec: &tmpl_spec
   templates_dir: ""
   base_image: ""
   add_to_tags: ""
-  needs_deps_image: True
+  multistage_image: True
   header: |
     # syntax = docker/dockerfile:experimental
     #

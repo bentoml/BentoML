@@ -1,12 +1,10 @@
 {{ metadata.header }}
 
-{# we still set base_img here as a fallback in case tags doesn't get parsed when we render our templates #}
-{% set base_img = "python" + metadata.envars["PYTHON_VERSION"] + "-" + metadata.add_to_tags + "-" + metadata.base_tags %}
-{% if tags %}
-FROM {{ metadata.package }}:{{ tags.basename }}
-{% else %}
-FROM {{ metadata.package }}:{{ base_img }}
-{% endif %}
+ARG PYTHON_VERSION
+
+FROM {{ metadata.package }}:{{ tags.basename }} as build_image
+
+ARG BENTOML_VERSION
 
 RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir && \
     apt-get purge --autoremove -y curl build-essential && \

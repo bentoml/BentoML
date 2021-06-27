@@ -1,0 +1,24 @@
+# syntax = docker/dockerfile:experimental
+#
+# ===========================================
+#
+# THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
+#
+# ===========================================
+
+
+ARG PYTHON_VERSION
+
+FROM model-server:python${PYTHON_VERSION}-centos7-base as build_image
+
+WORKDIR /
+RUN git clone https://github.com/bentoml/BentoML.git && \
+    cd BentoML && \
+    pip install --editable . && \
+    yum autoremove -y curl && \
+    yum clean all && \
+    rm -rf /var/cache/yum/*
+
+COPY tools/model-server/entrypoint.sh /usr/local/bin/
+
+ENTRYPOINT [ "entrypoint.sh" ]

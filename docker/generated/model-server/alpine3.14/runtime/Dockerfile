@@ -1,8 +1,15 @@
-{{ metadata.header }}
+# syntax = docker/dockerfile:experimental
+#
+# ===========================================
+#
+# THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
+#
+# ===========================================
+
 
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ tags.basename }} as build_image
+FROM model-server:python${PYTHON_VERSION}-alpine-base as build_image
 
 ENV ENV /root/.shinit
 CMD [ "/bin/sh" ]
@@ -31,14 +38,10 @@ RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \
     && apk add --no-cache bash git
 
-RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir
+RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
 
-COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
+COPY tools/model-server/entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT [ "entrypoint.sh" ]
 
-{% if metadata.package == "model-server" %}
 CMD ["bentoml", "serve-gunicorn", "/bento"]
-{% else %}
-CMD ["bentoml", "yatai-service-start"]
-{% endif %}

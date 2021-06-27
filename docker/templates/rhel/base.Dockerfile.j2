@@ -4,7 +4,11 @@ FROM {{ metadata.base_image }}
 
 # setup ENV and ARG
 {% for key, value in metadata.envars.items() %}
+{% if key in ["PYTHON_VERSION"] %}
+ARG {{ key }}
+{% else %}
 ENV {{ key }}={{ value }}
+{% endif %}
 {% endfor %}
 
 ENV PATH /opt/conda/bin:$PATH

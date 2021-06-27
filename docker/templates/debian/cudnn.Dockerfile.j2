@@ -4,13 +4,9 @@
 {% set cudnn = cuda.cudnn %}
 {% set cudnn_version = cudnn.version %}
 {% set cudnn_major_version = cudnn.major_version %}
-{# we still set base_img here as a fallback in case tags doesn't get parsed when we render our templates #}
-{% set base_img = "python" + metadata.envars["PYTHON_VERSION"] + "-" + metadata.add_to_tags + "-" + metadata.base_tags %}
-{% if tags %}
+ARG PYTHON_VERSION
+
 FROM {{ metadata.package }}:{{ tags.basename }} as build_image
-{% else %}
-FROM {{ metadata.package }}:{{ base_img }} as build_image
-{% endif %}
 
 RUN curl -fsSL {{ cuda.base_repo }}/7fa2af80.pub | apt-key add - && \
     echo "deb {{ cuda.base_repo }} /" >/etc/apt/sources.list.d/cuda.list && \
@@ -52,6 +48,8 @@ ENV NVIDIA_REQUIRE_CUDA "{{ metadata.cuda_requires }}"
 {% endif %}
 
 FROM build_image as release_image
+
+ARG BENTOML_VERSION
 
 RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir && \
     apt-get purge --autoremove -y curl build-essential && \

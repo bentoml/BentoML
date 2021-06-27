@@ -2,9 +2,7 @@
 
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ tags.basename }} as build_image
-
-ARG BENTOML_VERSION
+FROM {{ metadata.package }}:{{ tags.build_image }} as build_image
 
 RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir && \
     apt-get purge --autoremove -y curl build-essential && \

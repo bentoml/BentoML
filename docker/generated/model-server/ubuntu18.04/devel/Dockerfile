@@ -9,7 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM model-server:python${PYTHON_VERSION}-ubuntu18.04-base as build_image
+FROM model-server:base-python$PYTHON_VERSION-ubuntu18.04 as build_image
 
 WORKDIR /
 RUN git clone https://github.com/bentoml/BentoML.git && \

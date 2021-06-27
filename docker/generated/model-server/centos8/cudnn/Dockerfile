@@ -9,7 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM model-server:python${PYTHON_VERSION}-centos8-base as build_image
+FROM model-server:base-python$PYTHON_VERSION-centos8 as build_image
 
 RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
@@ -42,8 +42,6 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
 FROM build_image as release_image
-
-ARG BENTOML_VERSION
 
 RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
 

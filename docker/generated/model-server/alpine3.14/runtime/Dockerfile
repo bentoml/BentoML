@@ -9,7 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM model-server:python${PYTHON_VERSION}-alpine-base as build_image
+FROM model-server:base-python$PYTHON_VERSION-alpine as build_image
 
 ENV ENV /root/.shinit
 CMD [ "/bin/sh" ]
@@ -30,8 +30,6 @@ RUN apk add --no-cache --virtual .build-dependencies ca-certificates wget \
     && find /opt/conda/ -follow -type f \( -iname '*.a' -o -iname '*.pyc' -o -iname '*.js.map' \) -delete
 
 FROM build_image as release_image
-
-ARG BENTOML_VERSION
 
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \

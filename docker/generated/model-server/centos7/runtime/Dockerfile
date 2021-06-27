@@ -9,9 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM model-server:python${PYTHON_VERSION}-centos7-base as build_image
-
-ARG BENTOML_VERSION
+FROM model-server:base-python$PYTHON_VERSION-centos7 as build_image
 
 RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir && \
     yum autoremove -y curl && \

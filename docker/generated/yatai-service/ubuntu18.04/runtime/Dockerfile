@@ -9,9 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM yatai-service:python${PYTHON_VERSION}-ubuntu18.04-base as build_image
-
-ARG BENTOML_VERSION
+FROM yatai-service:base-python$PYTHON_VERSION-ubuntu18.04 as build_image
 
 RUN pip install bentoml[yatai_service]==$BENTOML_VERSION --no-cache-dir && \
     apt-get purge --autoremove -y curl build-essential && \

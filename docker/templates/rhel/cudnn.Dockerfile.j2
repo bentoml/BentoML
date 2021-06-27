@@ -6,7 +6,7 @@
 {% set cudnn_major_version = cudnn.major_version %}
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ tags.basename }} as build_image
+FROM {{ metadata.package }}:{{ tags.build_image }} as build_image
 
 RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
     curl -fsSL {{ cuda.base_repo }}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
@@ -50,8 +50,6 @@ ENV NVIDIA_REQUIRE_CUDA "{{ metadata.cuda_requires }}"
 {% endif %}
 
 FROM build_image as release_image
-
-ARG BENTOML_VERSION
 
 RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir
 

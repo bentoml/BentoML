@@ -9,9 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM yatai-service:python${PYTHON_VERSION}-centos7-base as build_image
-
-ARG BENTOML_VERSION
+FROM yatai-service:base-python$PYTHON_VERSION-centos7 as build_image
 
 RUN pip install bentoml[yatai_service]==$BENTOML_VERSION --no-cache-dir && \
     yum autoremove -y curl && \

@@ -419,7 +419,7 @@ def get_data(obj, *path):
         data = glom(obj, Path(*path))
     except PathAccessError:
         logger.exception(
-            f"Exception occurred in get_data, unable to retrieve from {' '.join(*path)}"
+            f"Exception occurred in get_data, unable to retrieve from {'/'.join([*path])}"
         )
     else:
         return data
@@ -480,29 +480,24 @@ def _generate_build_tags(build_ctx, python_version, release_type):
     - 0.13.0-python3.7-centos8-{runtime,cudnn}
     """
 
-    # check if PYTHON_VERSION is set.
-    if python_version not in SUPPORTED_PYTHON_VERSION:
-        logger.critical(
-            f"{python_version} is not supported. Supported versions: {SUPPORTED_PYTHON_VERSION}"
+    formatter = {
+        "release_type": release_type,
+        "tag_suffix": build_ctx["add_to_tags"],
+        "python_version": python_version,
+    }
+    _core_fmt = "{release_type}-python{python_version}-{tag_suffix}"
+
+    if release_type in ['runtime', 'cudnn']:
+        formatter.update(
+            {'release_type': get_data(build_ctx, 'envars', 'BENTOML_VERSION')}
         )
-    set_data(build_ctx, python_version, "envars", "PYTHON_VERSION")
-
-    _tag = ""
-    core_string = "-".join(["python${PYTHON_VERSION}", build_ctx["add_to_tags"]])
-    _build_tag = "-".join([core_string, "base"])
-
-    if release_type == "devel":
-        _tag = "-".join([release_type, core_string])
-    elif release_type == "base":
-        _tag = _build_tag
+        _tag = "-".join([_core_fmt.format(**formatter), release_type])
     else:
-        _tag = "-".join(
-            [
-                get_data(build_ctx, "envars", "BENTOML_VERSION"),
-                core_string,
-                release_type,
-            ]
-        )
+        _tag = _core_fmt.format(**formatter)
+
+    # construct build_tag which is our base_image with $PYTHON_VERSION formats
+    formatter.update({"python_version": "$PYTHON_VERSION", "release_type": "base"})
+    _build_tag = _core_fmt.format(**formatter)
 
     return _tag, _build_tag
 
@@ -565,7 +560,7 @@ class Templates(object):
             supported_python = SUPPORTED_PYTHON_VERSION
 
         if not dry_run:
-            # Considered generated directory is ephemeral
+            # Consider generated directory ephemeral
             logger.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
             shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
             try:
@@ -574,12 +569,15 @@ class Templates(object):
                 if e.errno != errno.EEXIST:
                     raise
 
-            self.generate_dockerfiles(
+            return self.generate_dockerfiles(
                 target_dir=FLAGS.dockerfile_dir, python_version=supported_python
             )
 
     @CachedProperty
     def build_path(self):
+        ordered = {k: self._build_path[k] for k in self._build_path.keys() if 'base' in k}
+        ordered.update(self._build_path)
+        self._build_path = deepcopy(ordered)
         return self._build_path
 
     def _check_cuda_version(self, cuda_version):
@@ -594,7 +592,7 @@ class Templates(object):
         tags: Optional[Dict[str, str]] = None,
     ):
         with open(input_path, "r") as inf:
-            logger.debug(f">>>> Processing template: {input_path}\n")
+            logger.debug(f">>>> Processing template: {input_path}")
             name = input_path.name
             if DOCKERFILE_SUFFIX not in name:
                 output_name = name[: -len(".j2")]
@@ -603,7 +601,6 @@ class Templates(object):
 
             template = self._template_env.from_string(inf.read())
             if not output_path.exists():
-                logger.debug(f">>>> Rendering to {output_path}/{output_name}")
                 output_path.mkdir(parents=True, exist_ok=True)
 
             with open(f"{output_path}/{output_name}", "w") as ouf:
@@ -654,7 +651,11 @@ class Templates(object):
             distro_release_spec["envars"]
         )
 
-        # setup python version
+        # check if python_version is supported.
+        if python_version not in SUPPORTED_PYTHON_VERSION:
+            logger.critical(
+                f"{python_version} is not supported. Supported versions: {SUPPORTED_PYTHON_VERSION}"
+            )
         set_data(
             _build_ctx, python_version, "envars", "PYTHON_VERSION",
         )
@@ -674,6 +675,7 @@ class Templates(object):
                 "cudnn": _generate_cudnn_context(_cuda_components),
                 "components": _cuda_components,
             }
+            _build_ctx.pop('cuda_prefix_url')
         else:
             logger.warning(f">>>> CUDA is disabled for {distro}. Skipping...")
             for key in list(_build_ctx.keys()):
@@ -684,37 +686,20 @@ class Templates(object):
 
     def generate_dockerfiles(self, target_dir, python_version):
         """
-        Workflow:
-        walk all templates dir from given context
-
-        our targeted generate directory should look like:
-        generated
-            -- packages (model-server, yatai-service)
-                -- python_version (3.8,3.7,etc)
-                    -- {distro}{distro_version} (ubuntu20.04, ubuntu18.04, centos8, centos7, amazonlinux2, etc)
-                        -- runtime
-                            -- Dockerfile
-                        -- devel
-                            -- Dockerfile
-                        -- cudnn
-                            -- Dockerfile
-                        -- Dockerfile (for base deps images)
-
         Args:
             target_dir: parent directory of generated Dockerfile. Default: ./generated.
             python_version: target list of supported python version. Overwrite default supports list if
                             FLAGS.python_version is given.
 
         """
-        _tag_metadata = defaultdict(list)
+        _tag_metadata = defaultdict()
 
-        logger.info(f"Generating dockerfile to {target_dir}...\n")
         for package in self._packages.keys():
             # update our packages ctx.
-            logger.info(f"> Working on {package}")
+            logger.info(f" {'-'*50} Working on {package} {'-'*50} ")
             set_data(self._build_ctx, package, "package")
             for _py_ver in python_version:
-                logger.info(f">> For python{_py_ver}")
+                logger.info(f">> python{_py_ver}")
                 _distro_release_mapping = self.generate_distro_release_mapping(package)
                 for distro, _release_type in _distro_release_mapping.items():
                     for distro_version, distro_spec in self._releases[distro].items():
@@ -723,9 +708,14 @@ class Templates(object):
                             distro, distro_version, distro_spec, _py_ver
                         )
 
-                        logger.debug(f">>> Generating: {distro}{distro_version}")
+                        logger.debug(
+                            f">>> Generating build context for {distro}{distro_version}"
+                        )
 
-                        if _build_ctx['multistage_image']:
+                        if (
+                            _build_ctx['multistage_image']
+                            and 'base' not in _release_type
+                        ):
                             _release_type.append('base')
                         for _re_type in _release_type:
                             # setup filepath
@@ -757,11 +747,9 @@ class Templates(object):
 
                             # generate our image tag.
                             _tag, _build_tag = _generate_build_tags(
-                                _build_ctx,
-                                _py_ver,
-                                _re_type,
+                                _build_ctx, _py_ver, _re_type,
                             )
-                            tag_ctx = {"basename": _build_tag}
+                            tag_ctx = {"build_image": _build_tag}
 
                             if _re_type != "base":
                                 output_path = pathlib.Path(base_output_path, _re_type)
@@ -771,10 +759,11 @@ class Templates(object):
 
                             # setup directory correspondingly, and add these paths
                             # with correct tags name under self._build_path
-                            _tag_metadata[tag_keys].append(_build_ctx)
-                            self._build_path[tag_keys] = str(
+                            _output_with_dockerfile = str(
                                 pathlib.Path(output_path, "Dockerfile")
                             )
+                            _tag_metadata[tag_keys] = _build_ctx
+                            self._build_path[tag_keys] = _output_with_dockerfile
                             # generate our Dockerfile from templates.
                             self.render_dockerfile_from_templates(
                                 input_path=input_path,
@@ -782,15 +771,7 @@ class Templates(object):
                                 ctx=_build_ctx,
                                 tags=tag_ctx,
                             )
-
-        if FLAGS.dump_metadata:
-            file = "./metadata.json"
-            logger.info(
-                f"> --dump_metadata is specified. Dumping metadata to {file}..."
-            )
-            with open(file, "w") as ouf:
-                ouf.write(json.dumps(_tag_metadata, indent=2))
-            ouf.close()
+        return _tag_metadata
 
 
 def main(argv):
@@ -805,8 +786,15 @@ def main(argv):
     repos = auth_registries(release_spec["repository"], docker_client)
 
     # generate templates to correct directory.
-    tmpl_mixin = Templates(release_spec, cuda_version=FLAGS.cuda_version)
-    tmpl_mixin(dry_run=FLAGS.dry_run)
+    tmpl = Templates(release_spec, cuda_version=FLAGS.cuda_version)
+    tag_metadata = tmpl(dry_run=FLAGS.dry_run)
+    build_path = tmpl.build_path
+
+    if FLAGS.dump_metadata:
+        logger.info(f"> --dump_metadata is specified. Dumping metadata...")
+        with open("./metadata.json", "w") as ouf:
+            ouf.write(json.dumps(tag_metadata, indent=2))
+        ouf.close()
 
     if FLAGS.stop_at_generate:
         logger.debug("--stop_at_generate is specified. Stopping now...")
@@ -816,17 +804,16 @@ def main(argv):
     push_tags, tag_failed = {}, False
     logs, failed_tags, succeeded_tags = [], [], []
 
-    # need --build_images to run this segment.
     logger.info('-' * 100 + "\n")
-    if FLAGS.build_images:
-        for image_tag, dockerfile_path in tmpl_mixin.build_path.items():
+    if FLAGS.build_images and not FLAGS.dry_run:
+        for image_tag, dockerfile_path in build_path.items():
             try:
                 logger.info(f"> building {image_tag} from {dockerfile_path}")
                 resp = docker_client.api.build(
                     timeout=FLAGS.timeout,
                     path=".",
                     nocache=False,
-                    buildargs=None,
+                    buildargs={"PYTHON_VERSION": get_data(tag_metadata, image_tag, 'envars', 'PYTHON_VERSION')},
                     dockerfile=dockerfile_path,
                     tag=image_tag,
                 )
@@ -865,10 +852,10 @@ def main(argv):
                     logger.fatal('>> ABORTING due to --stop_on_failure!')
             if not tag_failed:
                 succeeded_tags.append(image_tag)
+        logger.info(f"> Push tags:\n{push_tags}")
     else:
-        logger.info(">>> --build_images is not specified. Skip building images...")
+        logger.info("> --build_images is not specified. Skip building images...")
 
-    logger.info(push_tags)
     # Push process
     if FLAGS.push_to_hub:
         for repo, registry in repos.items():
@@ -885,11 +872,12 @@ def main(argv):
                     )
                     p.start()
     else:
-        logger.info(">>> --push_to_hub is not specified. Skip pushing images...")
+        logger.info("> --push_to_hub is not specified. Skip pushing images...")
 
     if failed_tags:
         logger.fatal(
-            f"> Some tags failed to build or failed testing, check scroll back for errors: {','.join(failed_tags)}"
+            f"> Some tags failed to build or failed testing, check scroll back for errors: {','.join(failed_tags)}. "
+            f"Recommend to use -sof to stop when fails. "
         )
     if succeeded_tags:
         logger.info("Success tags:\n")

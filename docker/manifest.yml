@@ -15,13 +15,13 @@ packages:
     devel: &default_specs
       - ubuntu
       - centos
-    cudnn:
-      - *default_specs
     runtime:
       - *default_specs
       - amazonlinux
       - debian
       - alpine
+    cudnn:
+      - *default_specs
   yatai-service:
     runtime:
       - *default_specs

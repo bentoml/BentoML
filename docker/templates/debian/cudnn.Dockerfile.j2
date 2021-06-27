@@ -6,7 +6,7 @@
 {% set cudnn_major_version = cudnn.major_version %}
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ tags.basename }} as build_image
+FROM {{ metadata.package }}:{{ tags.build_image }} as build_image
 
 RUN curl -fsSL {{ cuda.base_repo }}/7fa2af80.pub | apt-key add - && \
     echo "deb {{ cuda.base_repo }} /" >/etc/apt/sources.list.d/cuda.list && \
@@ -48,8 +48,6 @@ ENV NVIDIA_REQUIRE_CUDA "{{ metadata.cuda_requires }}"
 {% endif %}
 
 FROM build_image as release_image
-
-ARG BENTOML_VERSION
 
 RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir && \
     apt-get purge --autoremove -y curl build-essential && \

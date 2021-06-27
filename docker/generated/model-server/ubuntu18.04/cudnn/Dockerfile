@@ -9,7 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM model-server:python${PYTHON_VERSION}-ubuntu18.04-base as build_image
+FROM model-server:base-python$PYTHON_VERSION-ubuntu18.04 as build_image
 
 RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \
     echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /" >/etc/apt/sources.list.d/cuda.list && \
@@ -39,8 +39,6 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
 FROM build_image as release_image
-
-ARG BENTOML_VERSION
 
 RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir && \
     apt-get purge --autoremove -y curl build-essential && \

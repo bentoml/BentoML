@@ -786,9 +786,10 @@ def main(argv):
     logger.info('-' * 100 + "\n")
     if FLAGS.build_images and not FLAGS.dry_run:
         for image_tag, dockerfile_path in build_path.items():
-            if docker_client.api.history(image_tag):
-                continue
             try:
+                if docker_client.api.history(image_tag):
+                    continue
+            except docker.errors.ImageNotFound:
                 logger.info(f"> building {image_tag} from {dockerfile_path}")
                 resp = docker_client.api.build(
                     timeout=FLAGS.timeout,
@@ -808,7 +809,8 @@ def main(argv):
                         output = next(resp).decode('utf-8')
                         json_output = json.loads(output.strip('\r\n'))
                         if 'stream' in json_output:
-                            logger.info(json_output['stream'])
+                            # output docker build process
+                            print(json_output['stream'])
                             match = re.search(
                                 r'(^Successfully built |sha256:)([0-9a-f]+)$',
                                 json_output['stream'],

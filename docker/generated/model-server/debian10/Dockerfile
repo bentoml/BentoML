@@ -23,7 +23,7 @@ SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && \
     apt-get install -q -y --no-install-recommends \
-    ca-certificates curl wget git && \
+    ca-certificates curl wget git gnupg build-essential && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -31,6 +31,9 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     chmod +x ~/miniconda.sh && \
     ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc && \
     find /opt/conda/ -follow -type f -name '*.a' -delete && \
     find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
     /opt/conda/bin/conda clean -afy && \

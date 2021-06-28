@@ -10,7 +10,6 @@ FROM {{ metadata.package }}:{{ tags.build_image }} as build_image
 
 RUN curl -fsSL {{ cuda.base_repo }}/7fa2af80.pub | apt-key add - && \
     echo "deb {{ cuda.base_repo }} /" >/etc/apt/sources.list.d/cuda.list && \
-    echo "deb {{ cuda.ml_repo }} /" >/etc/apt/sources.list.d/nvidia-ml.list && \
     apt-get purge --auto-remove -y curl && \
     rm -rf /var/lib/apt/lists/*
 
@@ -19,10 +18,9 @@ RUN curl -fsSL {{ cuda.base_repo }}/7fa2af80.pub | apt-key add - && \
 {%- set curand_version = cuda.version.major+"-"+cuda.version.minor+"="+ cuda.components['libcurand'] -%}
 {%- set cusparse_version = cuda.version.major+"-"+cuda.version.minor+"="+ cuda.components['libcusparse'] -%}
 {%- set cufft_version = cuda.version.major+"-"+cuda.version.minor+"="+ cuda.components['libcufft'] -%}
-{%- set cusolver_version = cuda.version.major+"-"+cuda.version.minor+"="+ cuda.components['libcusolver'] -%}
+{% set cusolver_version = cuda.version.major+"-"+cuda.version.minor+"="+ cuda.components['libcusolver'] %}
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
         cuda-cudart-{{ cudart_version }} \
         libcublas-{{ cublas_version }} \
         libcurand-{{ curand_version }} \
@@ -33,7 +31,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda && \
     apt-mark hold libcudnn{{ cudnn_major_version }} libcublas-{{ cublas_version }} && \
     apt-get clean && \
-    apt-get purge --auto-remove -y build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:$PATH
@@ -50,7 +47,6 @@ ENV NVIDIA_REQUIRE_CUDA "{{ metadata.cuda_requires }}"
 FROM build_image as release_image
 
 RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir && \
-    apt-get purge --auto-remove -y curl build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/

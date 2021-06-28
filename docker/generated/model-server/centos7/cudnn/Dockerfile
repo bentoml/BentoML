@@ -19,7 +19,6 @@ COPY cuda.repo /etc/yum.repos.d/cuda.repo
 COPY nvidia-ml.repo /etc/yum.repos.d/nvidia-ml.repo
 
 RUN yum upgrade -y && yum install -y \
-        gcc gcc-c++ make \
         cuda-cudart- \
         cuda-compat-11-3 \
         libcublas-11-3-11.5.1.109-1 \

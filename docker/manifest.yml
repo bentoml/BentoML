@@ -13,12 +13,11 @@ repository:
 packages:
   model-server:
     devel: &default_specs
-      - ubuntu
+      - debian
       - centos
     runtime:
       - *default_specs
       - amazonlinux
-      - debian
       - alpine
     cudnn:
       - *default_specs
@@ -60,26 +59,13 @@ release_spec: &tmpl_spec
     <<: *cuda11_3_1_deps
 
 releases:
-  ubuntu:
-    20.04: &ubuntu
+  debian:
+    10:
       <<: *tmpl_spec
       templates_dir: templates/debian
-      base_image: ubuntu:20.04
-      add_to_tags: "ubuntu20.04"
-      cuda_prefix_url: "ubuntu2004"
-    18.04:
-      <<: *ubuntu
-      base_image: ubuntu:18.04
-      add_to_tags: "ubuntu18.04"
-      cuda_prefix_url: "ubuntu1804"
-  debian:
-    10: &no_cuda
-      <<: *ubuntu
       base_image: debian:buster-slim
       add_to_tags: "slim"
-      cuda_prefix_url:
-      cuda_requires:
-      cuda:
+      cuda_prefix_url: "ubuntu2004"
   centos:
     8: &centos
       <<: *tmpl_spec
@@ -93,11 +79,14 @@ releases:
       add_to_tags: "centos7"
       cuda_prefix_url: "rhel7"
   amazonlinux:
-    2:
-      <<: *no_cuda
+    2: &no_cuda
+      <<: *tmpl_spec
       templates_dir: templates/rhel
       base_image: amazonlinux:2
       add_to_tags: "ami2"
+      cuda_prefix_url:
+      cuda_requires:
+      cuda:
   alpine:
     3.14:
       <<: *no_cuda

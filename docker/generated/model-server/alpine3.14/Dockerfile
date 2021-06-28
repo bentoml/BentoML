@@ -7,7 +7,7 @@
 # ===========================================
 
 
-FROM alpine:3.14
+FROM alpine:3.14 as alpine-glibc
 
 # setup ENV and ARG
 ENV BENTOML_VERSION=0.13.0
@@ -56,8 +56,15 @@ RUN apk add -q --no-cache --virtual=.build-dependencies wget ca-certificates \
         "$ALPINE_GLIBC_BIN_PACKAGE_FILENAME" \
         "$ALPINE_GLIBC_I18N_PACKAGE_FILENAME"
 
+FROM alpine-glibc
+
+ENV ENV /root/.shinit
+
+CMD [ "/bin/sh" ]
+
 # we will install python from conda.
-RUN apk add --no-cache --virtual .build-dependencies ca-certificates wget \
+RUN set -ex \
+    && apk add --no-cache --virtual .build-dependencies ca-certificates wget \
     && wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh \
     && chmod +x ~/miniconda.sh \
     && ~/miniconda.sh -f -b -p /opt/conda \
@@ -66,8 +73,11 @@ RUN apk add --no-cache --virtual .build-dependencies ca-certificates wget \
     \
     && apk del --purge .build-dependencies \
     && rm -f ~/miniconda.sh \
-    && conda clean -afy \
-    && find /opt/conda/ -follow -type f \( -iname '*.a' -o -iname '*.pyc' -o -iname '*.js.map' \) -delete
+    && find /opt/conda/ -follow -type f \( -iname '*.a' -o -iname '*.pyc' -o -iname '*.js.map' \) -delete \
+    && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
+    && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.shinit \
+    && echo "conda activate base" >> ~/.shinit \
+    && conda clean -afy
 
 COPY tools/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc

@@ -9,14 +9,15 @@
 
 ARG PYTHON_VERSION
 
-FROM model-server:base-python$PYTHON_VERSION-ubuntu18.04 as build_image
+FROM model-server:base-python$PYTHON_VERSION-slim as build_image
 
-RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir && \
-    apt-get purge --auto-remove -y curl build-essential && \
+WORKDIR /
+RUN git clone https://github.com/bentoml/BentoML.git && \
+    cd BentoML && \
+    pip install --editable . && \
+    apt-get purge --auto-remove -y curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT [ "entrypoint.sh" ]
-
-CMD ["bentoml", "serve-gunicorn", "/bento"]

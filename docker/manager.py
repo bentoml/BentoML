@@ -88,7 +88,7 @@ DOCKERFILE_SUFFIX = ".Dockerfile.j2"
 REPO_SUFFIX = ".repo.j2"
 DOCKERFILE_ALLOWED_NAMES = ["base", "cudnn", "devel", "runtime"]
 
-SUPPORTED_PYTHON_VERSION = ["3.6", "3.7", "3.8"]
+SUPPORTED_PYTHON_VERSION = ["3.7", "3.8"]
 SUPPORTED_OS = ["ubuntu", "debian", "centos", "alpine", "amazonlinux"]
 
 NVIDIA_REPO_URL = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
@@ -122,6 +122,7 @@ flags.DEFINE_boolean(
 )
 flags.DEFINE_boolean("build_images", False, "Build images.", short_name="bi")
 flags.DEFINE_boolean("overwrite", False, "Overwrite built images.", short_name="o")
+flags.DEFINE_boolean("stop_at_generate", False, "Stop at generating Dockerfile.", short_name="sag")
 
 # directory and files
 flags.DEFINE_string(
@@ -667,12 +668,14 @@ class Generate(object):
                             and 'base' not in _release_type
                         ):
                             _release_type.append('base')
+
+                        # setup paths
                         templates_dir = pathlib.Path(
                             get_data(_build_ctx, 'templates_dir')
                         )
                         for _re_type in _release_type:
                             # setup filepath
-                            input_path = pathlib.Path(
+                            base_input_path = pathlib.Path(
                                 templates_dir, f"{_re_type}{DOCKERFILE_SUFFIX}",
                             )
 
@@ -719,7 +722,7 @@ class Generate(object):
                             )
                             # generate our Dockerfile from templates.
                             self.render_from_templates(
-                                input_path=input_path,
+                                input_path=base_input_path,
                                 output_path=output_path,
                                 ctx=_build_ctx,
                                 tags=_tag_ctx,
@@ -751,6 +754,9 @@ def main(argv):
         with open("./metadata.json", "w") as ouf:
             ouf.write(json.dumps(tag_metadata, indent=2))
         ouf.close()
+
+    if FLAGS.stop_at_generate:
+        logger.info(f"--stop_at_generate is specified. Stopping now...")
         return
 
     # We will build and push if args is parsed. Establish some variables.
@@ -785,6 +791,7 @@ def main(argv):
                 while True:
                     try:
                         # output logs to stdout
+                        # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
                         output = next(resp).decode('utf-8')
                         json_output = json.loads(output.strip('\r\n'))
                         if 'stream' in json_output:
@@ -818,6 +825,7 @@ def main(argv):
         logger.info("--build_images is not specified. Skip building images...")
 
     # Push process
+    # whether to push base image or not
     print(f"\n{'-' * 59}\n| Pushing images\n{'-' * 59}\n")
     if FLAGS.push_to_hub:
         for repo, registry in repos.items():

@@ -149,9 +149,10 @@ def get_aws_sagemaker_sub_command():
         data_capture_sample_percent,
     ):
         _echo(
-            message='DeprecationWarning: Deploy AWS Sagemaker deployment command is '
-            'deprecating. Please use deployment scripts from '
-            'https://github.com/bentoml/aws-sagemaker-deploy instead.',
+            message='AWS Sagemaker deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-sagemaker-deploy '
+            'going forward.',
             color='yellow',
         )
         # use the DeploymentOperator name in proto to be consistent with amplitude
@@ -266,12 +267,10 @@ def get_aws_sagemaker_sub_command():
         data_capture_sample_percent,
     ):
         _echo(
-            message=f'DeprecationWarning: Update AWS Sagemaker deployment command is '
-            f'deprecating. To update {name} deployment, please delete the existing '
-            f'deployment with `bentoml azure-functions delete` command and then used '
-            f'deployment scripts from '
-            f'https://github.com/bentoml/aws-sagemaker-deploy to create a '
-            f'new deployment.',
+            message='AWS Sagemaker deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-sagemaker-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -322,11 +321,10 @@ def get_aws_sagemaker_sub_command():
     )
     def delete(name, namespace, force):
         _echo(
-            message='DeprecationWarning: Delete AWS Sagemaker deployment command is '
-            'deprecating. For deployment made with `bentoml sagemaker deploy`, '
-            'continue use `bentoml sagemaker delete`. For future deployments '
-            'use delete scripts from '
-            'https://github.com/bentoml/aws-sagemaker-deploy instead.',
+            message='AWS Sagemaker deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-sagemaker-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -361,11 +359,10 @@ def get_aws_sagemaker_sub_command():
     )
     def get(name, namespace, output):
         _echo(
-            message='DeprecationWarning: Get AWS Sagemaker deployment command is '
-            'deprecating. For deployment made with `bentoml sagemaker deploy`, '
-            'continue use `bentoml sagemaker get`. For future deployments use '
-            'get scripts from https://github.com/bentoml/aws-sagemaker-deploy '
-            'instead.',
+            message='AWS Sagemaker deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-sagemaker-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -424,9 +421,10 @@ def get_aws_sagemaker_sub_command():
     )
     def list_deployment(namespace, limit, labels, order_by, asc, output):
         _echo(
-            message='DeprecationWarning: List AWS Sagemaker deployments command '
-            'is deprecating. Please use AWS Console to see deployed Sagemaker '
-            'deployments.',
+            message='AWS Sagemaker deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-sagemaker-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()

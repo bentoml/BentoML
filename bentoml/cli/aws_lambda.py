@@ -114,9 +114,10 @@ def get_aws_lambda_sub_command():
         wait,
     ):
         _echo(
-            message='DeprecationWarning: Deploy AWS Lambda deployment command is '
-            'deprecating. Please use deployment scripts from '
-            'https://github.com/bentoml/aws-lambda-deploy instead.',
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -183,12 +184,10 @@ def get_aws_lambda_sub_command():
     )
     def update(name, namespace, bento, memory_size, timeout, output, wait):
         _echo(
-            message=f'DeprecationWarning: Update AWS Lambda deployment command is '
-            f'deprecating. To update {name} deployment, please delete the existing '
-            f'deployment with `bentoml azure-functions delete` command and then used '
-            f'deployment scripts from '
-            f'https://github.com/bentoml/aws-lambda-deploy to create a '
-            f'new deployment.',
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -234,11 +233,10 @@ def get_aws_lambda_sub_command():
     )
     def delete(name, namespace, force):
         _echo(
-            message='DeprecationWarning: Delete AWS Lambda deployment command is '
-            'deprecating. For deployment made with `bentoml lambda deploy`, '
-            'continue use `bentoml lambda delete`. For future deployments '
-            'use delete scripts from '
-            'https://github.com/bentoml/aws-lambda-deploy instead.',
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -276,11 +274,10 @@ def get_aws_lambda_sub_command():
     )
     def get(name, namespace, output):
         _echo(
-            message='DeprecationWarning: Get AWS Lambda deployment command is '
-            'deprecating. For deployment made with `bentoml lambda deploy`, '
-            'continue use `bentoml lambda get`. For future deployments use '
-            'get scripts from https://github.com/bentoml/aws-lambda-deploy '
-            'instead.',
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -337,9 +334,10 @@ def get_aws_lambda_sub_command():
     )
     def list_deployments(namespace, limit, labels, order_by, asc, output):
         _echo(
-            message='DeprecationWarning: List AWS Lambda deployments command '
-            'is deprecating. Please use AWS console to see deployed AWS Lambda '
-            'deployments.',
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()

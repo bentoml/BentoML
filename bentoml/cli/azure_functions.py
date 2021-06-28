@@ -135,9 +135,10 @@ def get_azure_functions_sub_command():
         wait,
     ):
         _echo(
-            message='DeprecationWarning: Deploy Azure Functions deployment command is '
-            'deprecating. Please use deployment scripts from '
-            'https://github.com/bentoml/azure-functions-deploy instead.',
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
             color='yellow',
         )
         bento_name, bento_version = bento.split(':')
@@ -212,12 +213,10 @@ def get_azure_functions_sub_command():
         name, namespace, bento, min_instances, max_burst, premium_plan_sku, output, wait
     ):
         _echo(
-            message=f'DeprecationWarning: Update Azure Functions deployment command is '
-            f'deprecating. To update {name} deployment, please delete the existing '
-            f'deployment with `bentoml azure-functions delete` command and then used '
-            f'deployment scripts from '
-            f'https://github.com/bentoml/azure-functions-deploy to create a '
-            f'new deployment.',
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -265,11 +264,10 @@ def get_azure_functions_sub_command():
     )
     def delete(name, namespace, force):
         _echo(
-            message='DeprecationWarning: Delete Azure Functions deployment command is '
-            'deprecating. For deployment made with `bentoml azure functions deploy`, '
-            'continue use `bentoml azure functions delete`. For future deployments '
-            'use delete scripts from '
-            'https://github.com/bentoml/azure-functions-deploy instead.',
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -304,11 +302,10 @@ def get_azure_functions_sub_command():
     )
     def get(name, namespace, output):
         _echo(
-            message='DeprecationWarning: Get Azure Functions deployment command is '
-            'deprecating. For deployment made with `bentoml azure functions deploy`, '
-            'continue use `bentoml azure functions get`. For future deployments use '
-            'get scripts from https://github.com/bentoml/azure-functions-deploy '
-            'instead.',
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()
@@ -362,8 +359,10 @@ def get_azure_functions_sub_command():
     )
     def list_deployment(namespace, limit, labels, order_by, asc, output):
         _echo(
-            message='DeprecationWarning: List Azure Functions deployments command '
-            'is deprecating. Please use Azure Portal to see deployed Azure functions.',
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
             color='yellow',
         )
         yatai_client = get_default_yatai_client()

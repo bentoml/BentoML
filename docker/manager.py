@@ -748,8 +748,8 @@ def main(argv):
 
     # generate templates to correct directory.
     print(f"\n{'-' * 59}\n| Generate from templates\n{'-' * 59}\n")
-    tmpl = Generate(release_spec, cuda_version=FLAGS.cuda_version)
-    tag_metadata = tmpl(dry_run=FLAGS.dry_run)
+    generator = Generate(release_spec, cuda_version=FLAGS.cuda_version)
+    tag_metadata = generator(dry_run=FLAGS.dry_run)
 
     if FLAGS.dump_metadata:
         logger.info(f"--dump_metadata is specified. Dumping metadata...")
@@ -766,7 +766,7 @@ def main(argv):
 
     print(f"\n{'-' * 59}\n| Building images\n{'-' * 59}\n")
     if FLAGS.build_images and not FLAGS.dry_run:
-        for image_tag, dockerfile_path in tmpl.build_path.items():
+        for image_tag, dockerfile_path in generator.build_path.items():
             try:
                 if FLAGS.overwrite:
                     docker_client.api.remove_image(image_tag, force=True)

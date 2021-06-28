@@ -67,8 +67,8 @@ class ColoredFormatter(logging.Formatter):
 
     FORMATS = {
         logging.DEBUG: yellow + _format + reset,
-        logging.INFO: magenta + _format + reset,
-        logging.WARNING: blue + _format + reset,
+        logging.INFO: blue + _format + reset,
+        logging.WARNING: magenta + _format + reset,
         logging.ERROR: red + _format + reset,
         logging.CRITICAL: bold_red + _format + reset,
     }
@@ -121,6 +121,7 @@ flags.DEFINE_boolean(
     short_name="dr",
 )
 flags.DEFINE_boolean("build_images", False, "Build images.", short_name="bi")
+flags.DEFINE_boolean("overwrite", False, "Overwrite built images.", short_name="o")
 
 # directory and files
 flags.DEFINE_string(
@@ -759,7 +760,12 @@ def main(argv):
     if FLAGS.build_images and not FLAGS.dry_run:
         for image_tag, dockerfile_path in tmpl.build_path.items():
             try:
-                if docker_client.api.history(image_tag):
+                if FLAGS.overwrite:
+                    docker_client.api.remove_image(image_tag, force=True, noprune=True)
+                elif docker_client.api.history(image_tag):
+                    logger.info(
+                        f"Image {image_tag} is already built and --overwrite is not specified. Skipping..."
+                    )
                     continue
             except docker.errors.ImageNotFound:
                 logger.info(f"Building {image_tag} from {dockerfile_path}")

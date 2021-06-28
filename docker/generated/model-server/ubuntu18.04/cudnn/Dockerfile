@@ -14,7 +14,7 @@ FROM model-server:base-python$PYTHON_VERSION-ubuntu18.04 as build_image
 RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub | apt-key add - && \
     echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /" >/etc/apt/sources.list.d/cuda.list && \
     echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64 /" >/etc/apt/sources.list.d/nvidia-ml.list && \
-    apt-get purge --autoremove -y curl && \
+    apt-get purge --auto-remove -y curl && \
     rm -rf /var/lib/apt/lists/*RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         cuda-cudart-11-3=11.3.109-1 \
@@ -27,7 +27,7 @@ RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu18
     ln -s cuda-11.3 /usr/local/cuda && \
     apt-mark hold libcudnn8 libcublas-11-3=11.5.1.109-1 && \
     apt-get clean && \
-    apt-get purge --autoremove -y build-essential && \
+    apt-get purge --auto-remove -y build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:$PATH
@@ -41,7 +41,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 FROM build_image as release_image
 
 RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir && \
-    apt-get purge --autoremove -y curl build-essential && \
+    apt-get purge --auto-remove -y curl build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/

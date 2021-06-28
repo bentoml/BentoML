@@ -238,151 +238,6 @@ Removing a EC2 deployment is also very easy.  Calling `bentoml ec2 delete` comma
 
 
 =================================================================
-Deploy and manage AWS EC2 deployments with remote YataiService
-=================================================================
-
-BentoML recommends to use remote YataiService for managing and deploying BentoService
-when you are working in a team. To deploy AWS EC2 deployments with remote
-YataiService, you need to provide the AWS credentials.
-
-After signed in and configured your AWS CLI in your local machine, you can find the
-credentials in your aws directory, `~/.aws/credentials` as key value pairs, with key
-name as `aws_access_key_id` and `aws_secret_access_key`
-
-Starts a BentoML YataiService docker image and set the credentials found in
-`~/.aws/credentials` as environment variables to the running container.
-
-.. code-block:: bash
-
-    $ docker run -e AWS_ACCESS_KEY_ID=MY-ACCESS-KEY-ID \
-        -e AWS_SECRET_ACCESS_KEY=MY_SECRET-ACCESS-KEY \
-        -e AWS_DEFAULT_REGION=MY-DEFAULT-REGION \
-        -p 50051:50051 -p 3000:3000 bentoml/yatai-service:latest
-
-
-After the YataiService docker container is running, in another terminal window, set
-yatai service address with `bentoml config set`
-
-.. code-block:: bash
-
-    $ bentoml config set yatai_service.url=127.0.0.1:50051
-
-
-========================================================
-Deploy and manage AWS EC2 deployments with Kubernetes
-========================================================
-
-Create a Kubernetes secret with the the AWS credentials.
-
-Generate base64 strings from the AWS credentials from your AWS config file.
-
-.. code-block:: bash
-
-    $ echo $AWS_ACCESS_KEY_ID | base64
-    $ echo $AWS_SECRET_KEY | base64
-    $ echo $AWS_DEFAULT_REGION | base64
-
-
-Save the following Kubernetes secret definition into a file name `aws-secret.yaml` and
-replace `{access_key_id}`, `{secret_access_key}` and `{default_region}` with the values
-generated above,
-
-.. code-block:: yaml
-
-    apiVersion: v1
-    kind: Secret
-    metadata:
-        name: my-aws-secret
-    type: Opaque
-    data:
-        access_key_id: {access_key_id}
-        secret_access_key: {secret_access_key}
-        default_region: {default_region}
-
-
-.. code-block:: bash
-
-    $ kubectl apply -f aws-secret.yaml
-
-
-Confirm the secrete is created successfully by using `kubectl describe` command
-
-.. code-block:: bash
-
-    $kubectl describe secret aws-secret
-
-
-
-Copy and paste the code below into a file named `yatai-service.yaml`
-
-.. code-block:: yaml
-
-    apiVersion: v1
-    kind: Service
-    metadata:
-      labels:
-        app: yatai-service
-      name: yatai-service
-    spec:
-      ports:
-      - name: grpc
-        port: 50051
-        targetPort: 50051
-      - name: web
-        port: 3000
-        targetPort: 3000
-      selector:
-        app: yatai-service
-      type: LoadBalancer
-    ---
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      labels:
-        app: yatai-service
-      name: yatai-service
-    spec:
-      selector:
-        matchLabels:
-          app: yatai-service
-      template:
-        metadata:
-          labels:
-            app: yatai-service
-        spec:
-          containers:
-          - image: bentoml/yatai-service
-            imagePullPolicy: IfNotPresent
-            name: yatai-service
-            ports:
-            - containerPort: 50051
-            - containerPort: 3000
-            env:
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: aws-secret
-                  key: access_key_id
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: aws-secret
-                  key: secret_access_key
-            - name: AWS_DEFAULT_REGION
-              valueFrom:
-                secretKeyRef:
-                  name: aws-secret
-                  key: default_region
-
-
-Run `kubectl apply` command to deploy Yatai service to the Kubernetes cluster
-
-.. code-block:: bash
-
-    $ kubectl apply -f yatai-service.yaml
-
-
-=================================================================
 Permissions required on AWS for deployment
 =================================================================
 
@@ -396,6 +251,32 @@ Permissions required on AWS for deployment
     * CloudWatchFullAccess
     * ElasticLoadBalancingFullAccess 
     * AutoScalingFullAccess  
+
+
+Migrating to BentoML EC2 deployment tool
+----------------------------------------
+
+1. Delete the previous deployment use BentoML CLI tool
+
+.. code-block:: bash
+
+    > bentoml ec2 delete DEPLOYMENT_NAME
+
+
+2. Download and Install BentoML Lambda deployment tool
+
+.. code-block:: bash
+
+    > git clone https://github.com/bentoml/aws-ec2-deploy
+    > cd aws-ec2-deploy
+    > pip install -r requirements.txt
+
+3. Deploy to EC2 with deployment tool
+
+.. code-block:: bash
+
+    > BENTO_BUNDLE=$(bentoml get Bento_Name:Bento_version --print-location -q)
+    > python deploy.py $BENTO_BUNDLE my_deployment ec2_config.json
 
 
 .. spelling::

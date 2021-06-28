@@ -117,6 +117,12 @@ def get_aws_ec2_sub_command():
         output,
         wait,
     ):
+        _echo(
+            message='DeprecationWarning: Deploy AWS EC2 deployment command is '
+            'deprecating. Please use deployment script from '
+            'https://github.com/bentoml/aws-ec2-deploy instead.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         bento_name, bento_version = bento.split(":")
         with Spinner(f"Deploying {bento} to AWS EC2"):
@@ -157,6 +163,13 @@ def get_aws_ec2_sub_command():
         "ignore errors when deleting cloud resources",
     )
     def delete(name, namespace, force):
+        _echo(
+            message='DeprecationWarning: Delete AWS EC2 deployment command is '
+            'deprecating. For deployment made with `bentoml ec2 deploy`, '
+            'continue use `bentoml ec2 delete`. For future deployments use delete '
+            'scripts from https://github.com/bentoml/aws-ec2-deploy instead.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         get_deployment_result = yatai_client.deployment.get(
             namespace=namespace, name=name
@@ -194,6 +207,13 @@ def get_aws_ec2_sub_command():
         "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="json"
     )
     def get(name, namespace, output):
+        _echo(
+            message='DeprecationWarning: Get AWS EC2 deployment command is '
+            'deprecating. For deployment made with `bentoml ec2 deploy`, '
+            'continue use `bentoml ec2 get`. For future deployments use get '
+            'scripts from https://github.com/bentoml/aws-ec2-deploy instead.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         describe_result = yatai_client.deployment.describe(namespace, name)
 
@@ -285,6 +305,15 @@ def get_aws_ec2_sub_command():
         output,
         wait,
     ):
+        _echo(
+            message=f'DeprecationWarning: Update AWS EC2 deployment command is '
+            f'deprecating. To update {name} deployment, please delete the existing '
+            f'deployment with `bentoml ec2 delete` command and then used '
+            f'deployment scripts from '
+            f'https://github.com/bentoml/aws-ec2-deploy to create a '
+            f'new deployment.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         if bento:
             bento_name, bento_version = bento.split(":")
@@ -356,6 +385,11 @@ def get_aws_ec2_sub_command():
         default="table",
     )
     def list_deployments(namespace, limit, offset, labels, order_by, asc, output):
+        _echo(
+            message='DeprecationWarning: List AWS EC2 deployments command '
+            'is deprecating. Please use AWS console to see deployed EC2 deployments.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list_ec2_deployments(
             limit=limit,

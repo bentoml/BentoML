@@ -122,7 +122,9 @@ flags.DEFINE_boolean(
 )
 flags.DEFINE_boolean("build_images", False, "Build images.", short_name="bi")
 flags.DEFINE_boolean("overwrite", False, "Overwrite built images.", short_name="o")
-flags.DEFINE_boolean("stop_at_generate", False, "Stop at generating Dockerfile.", short_name="sag")
+flags.DEFINE_boolean(
+    "stop_at_generate", False, "Stop at generating Dockerfile.", short_name="sag"
+)
 
 # directory and files
 flags.DEFINE_string(
@@ -767,7 +769,7 @@ def main(argv):
         for image_tag, dockerfile_path in tmpl.build_path.items():
             try:
                 if FLAGS.overwrite:
-                    docker_client.api.remove_image(image_tag, force=True, noprune=True)
+                    docker_client.api.remove_image(image_tag, force=True)
                 elif docker_client.api.history(image_tag):
                     logger.info(
                         f"Image {image_tag} is already built and --overwrite is not specified. Skipping..."

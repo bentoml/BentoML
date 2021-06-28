@@ -11,9 +11,6 @@ ARG PYTHON_VERSION
 
 FROM model-server:base-python$PYTHON_VERSION-alpine as build_image
 
-ENV ENV /root/.shinit
-CMD [ "/bin/sh" ]
-
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \

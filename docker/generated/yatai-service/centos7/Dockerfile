@@ -17,7 +17,7 @@ ARG PYTHON_VERSION
 ENV PATH /opt/conda/bin:$PATH
 
 # needed for string substitution
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
 RUN yum upgrade -y \
     && yum install -y wget git ca-certificates curl gcc gcc-c++ make \

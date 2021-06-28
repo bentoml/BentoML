@@ -13,7 +13,7 @@ ENV {{ key }}={{ value }}
 
 ENV PATH /opt/conda/bin:/usr/local/bin:$PATH
 
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+SHELL ["/bin/ash", "-exo", "pipefail", "-c"]
 
 # Direct port from https://github.com/Docker-Hub-frolvlad/docker-alpine-glibc/blob/master/Dockerfile
 ARG ALPINE_GLIBC_BASE_URL="https://github.com/sgerrand/alpine-pkg-glibc/releases/download"
@@ -59,8 +59,7 @@ ENV ENV /root/.shinit
 CMD [ "/bin/sh" ]
 
 # we will install python from conda.
-RUN set -ex \
-    && apk add --no-cache --virtual .build-dependencies ca-certificates wget \
+RUN apk add --no-cache --virtual .build-dependencies ca-certificates wget \
     && wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh \
     && chmod +x ~/miniconda.sh \
     && ~/miniconda.sh -f -b -p /opt/conda \

@@ -19,7 +19,7 @@ ARG PYTHON_VERSION
 ENV PATH /opt/conda/bin:$PATH
 
 # needed for string substitution
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
 RUN apt-get update && \
     apt-get install -q -y --no-install-recommends \

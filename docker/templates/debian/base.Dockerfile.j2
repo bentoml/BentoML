@@ -14,7 +14,7 @@ ENV {{ key }}={{ value }}
 ENV PATH /opt/conda/bin:$PATH
 
 # needed for string substitution
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
 RUN apt-get update && \
     apt-get install -q -y --no-install-recommends \
@@ -49,9 +49,9 @@ EXPOSE 3000
 # https://github.com/nodejs/docker-node/blob/main/16/buster-slim/Dockerfile
 ENV NODE_VERSION 16.3.0
 
-# https://github.com/docker-library/faq#openpgp--gnupg-keys-and-verification ?
-RUN ARCH='' && dpkgArch="$(dpkg --print-architecture)" \
-    && set -ex \
+# https://github.com/docker-library/faq#openpgp--gnupg-keys-and-verification
+RUN ARCH='' \
+    && dpkgArch="$(dpkg --print-architecture)" \
     && case "${dpkgArch##*-}" in \
       amd64) ARCH='x64';; \
       ppc64el) ARCH='ppc64le';; \

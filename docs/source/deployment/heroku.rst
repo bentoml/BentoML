@@ -9,6 +9,7 @@ This guide demonstrates how to deploy a scikit-learn based iris classifier model
 BentoML to Heroku. The same deployment steps are also applicable for models
 trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
+
 Prerequisites
 -------------
 
@@ -105,76 +106,43 @@ BentoService and available for sending test request:
 Build and deploy to Heroku
 ==========================
 
-.. note::
-  Apps deployed on Heroku must listen to a specific port number which is
-  specified by the $PORT environment variable in the dyno. Bentoml will
-  automatically overide the $BENTOML_PORT to listen on that specifed port.  
-
-Follow the CLI instruction and login to a Heroku account:
+1. Download and Install BentoML Heroku deployment tool
 
 .. code-block:: bash
 
-    heroku login
-
-Login to the Heroku Container Registry:
-
-.. code-block:: bash
-
-    heroku container:login
+    git clone https://github.com/bentoml/heroku-deploy.git
+    cd heroku-deploy
+    pip install -r requirements.txt
 
 
-Create a Heroku app:
+2. Create a Heroku deloyment
 
 .. code-block:: bash
 
-    APP_NAME=bentoml-her0ku-$(date +%s | base64 | tr '[:upper:]' '[:lower:]' | tr -dc _a-z-0-9)
-    heroku create $APP_NAME
+    BENTO_BUNDLE=$(bentoml get IrisClassifier:latest --print-location -q)
+    python deploy.py $BENTO_BUNDLE my_deployment heroku_config.json
 
-
-Find the IrisClassifier SavedBundle directory:
-
-.. code-block:: bash
-
-    cd $(bentoml get IrisClassifier:latest --print-location --quiet)
-
-
-
-
-Build and push API server container with the SavedBundle, and push to the Heroku app
-`bentoml-iris-classifier` created above:
+3. Get deployment information
 
 .. code-block:: bash
 
-    heroku container:push web --app $APP_NAME
+    python describe.py my_deployment
 
-
-Release the app:
-
-.. code-block:: bash
-
-    heroku container:release web --app $APP_NAME
-
-
-To view the deployment logs on heroku and verify the web server has been created:
+4. Make request to Heroku deployment
 
 .. code-block:: bash
 
-    heroku logs --tail -a $APP_NAME
+    curl  curl -i \
+    --header "Content-Type: application/json" \
+    --request POST \
+    --data '[[5.1, 3.5, 1.4, 0.2]]' \
+    https://btml-my_deployment.herokuapp.com/predict
 
-Now, make prediction request with sample data:
-
-.. code-block:: bash
-
-    curl -i \
-      --header "Content-Type: application/json" \
-      --request POST \
-      --data '[[5.1, 3.5, 1.4, 0.2]]' \
-      $(heroku apps:info --app $APP_NAME -j | jq -r ".app.web_url")/predict
-
-
-Remove deployment on Heroku
+5. Delete Heroku deployment
 
 .. code-block:: bash
 
-    heroku apps:destroy $APP_NAME
+    python delete.py my_deployment
+
+
 

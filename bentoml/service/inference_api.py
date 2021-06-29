@@ -51,6 +51,7 @@ class InferenceAPI(object):
         mb_max_batch_size=1000,
         batch=False,
         route=None,
+        validation=True,
     ):
         """
         :param service: ref to service containing this API
@@ -207,10 +208,6 @@ class InferenceAPI(object):
         else:
             schema = self.input_adapter.custom_request_schema
 
-        if schema.get('application/json'):
-            schema.get('application/json')[
-                'example'
-            ] = self.input_adapter._http_input_example
         return schema
 
     def _filter_tasks(
@@ -225,11 +222,15 @@ class InferenceAPI(object):
             except AssertionError as e:
                 task.discard(http_status=400, err_msg=str(e))
 
-    def infer(self, inf_tasks: Iterable[InferenceTask]) -> Sequence[InferenceResult]:
+    def infer(
+        self, inf_tasks: Iterable[InferenceTask], validation: bool = True
+    ) -> Sequence[InferenceResult]:
         inf_tasks = tuple(inf_tasks)
 
         # extract args
-        user_args = self.input_adapter.extract_user_func_args(inf_tasks)
+        user_args = self.input_adapter.extract_user_func_args(
+            inf_tasks, validation=validation
+        )
         filtered_tasks = tuple(t for t in inf_tasks if not t.is_discarded)
 
         # call user function
@@ -290,7 +291,9 @@ class InferenceAPI(object):
 
         return tuple(full_results)
 
-    def handle_request(self, request: HTTPRequest) -> HTTPResponse:
+    def handle_request(
+        self, request: HTTPRequest, validation: bool = True
+    ) -> HTTPResponse:
         inf_task = self.input_adapter.from_http_request(request)
         results = self.infer((inf_task,))
         result = next(iter(results))
@@ -298,7 +301,9 @@ class InferenceAPI(object):
         response.headers['X-Request-Id'] = inf_task.task_id
         return response
 
-    def handle_batch_request(self, requests: Sequence[HTTPRequest]):
+    def handle_batch_request(
+        self, requests: Sequence[HTTPRequest], validation: bool = True
+    ):
         with get_tracer().span(
             service_name=f"BentoService.{self.service.name}",
             span_name=f"InferenceAPI {self.name} handle batch requests",

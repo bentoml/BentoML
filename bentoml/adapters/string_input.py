@@ -138,6 +138,6 @@ class StringInput(BaseInputAdapter):
                 yield InferenceTask(inference_job_args=extra_args, data=d)
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[str]]
+        self, tasks: Iterable[InferenceTask[str]], validation: bool = True,
     ) -> ApiFuncArgs:
         return ([task.data for task in tasks],)

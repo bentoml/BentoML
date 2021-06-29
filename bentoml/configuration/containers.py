@@ -59,6 +59,7 @@ SCHEMA = Schema(
             "metrics": {"enabled": bool, "namespace": str},
             "feedback": {"enabled": bool},
             "logging": {"level": str},
+            "validation": {"enabled": bool},
             "cors": {
                 "enabled": bool,
                 "access_control_allow_origin": Or(str, None),

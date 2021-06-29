@@ -198,7 +198,7 @@ class ImageInput(FileInput):
         return ["imageio"]
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[BinaryIO]]
+        self, tasks: Iterable[InferenceTask[BinaryIO]], validation: bool = True,
     ) -> ApiFuncArgs:
         img_list = []
         for task in tasks:

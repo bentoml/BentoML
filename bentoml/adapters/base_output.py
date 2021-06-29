@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import itertools
+import pydantic
 from typing import Iterable, Iterator, Sequence, Tuple
 
-from bentoml.exceptions import APIDeprecated
+from bentoml.exceptions import APIDeprecated, InvalidArgument
 from bentoml.types import (
     ApiFuncReturnValue,
     AwsLambdaEvent,
@@ -56,7 +57,17 @@ class BaseOutputAdapter:
             Default is None.
     """
 
-    def __init__(self, cors=None):
+    def __init__(self, cors=None, **base_config):
+        self._config = base_config
+        schema = base_config.get('schema')
+        if schema:
+            if not issubclass(schema, pydantic.BaseModel):
+                raise InvalidArgument(
+                    "{}(schema=schema) will only take a subclass of"
+                    "pydantic.BaseModel as schema".format(self.__class__.__name__)
+                )
+        self._custom_request_schema = schema
+
         if cors is not None:
             raise APIDeprecated(
                 "setting cors from OutputAdapter is no more supported."
@@ -65,7 +76,7 @@ class BaseOutputAdapter:
 
     @property
     def config(self):
-        return dict()
+        return self._config
 
     @property
     def pip_dependencies(self):

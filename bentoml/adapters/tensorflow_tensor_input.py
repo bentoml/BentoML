@@ -119,7 +119,7 @@ class TfTensorInput(StringInput):
             raise NotImplementedError(f"method {self.method} is not implemented")
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[str]]
+        self, tasks: Iterable[InferenceTask[str]], validation: bool = True,
     ) -> ApiFuncArgs:
         import tensorflow as tf
 

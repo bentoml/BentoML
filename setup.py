@@ -41,6 +41,7 @@ install_requires = [
     "prometheus_client",
     "protobuf>=3.8.0",
     "psutil",
+    "pydantic",
     # python-dateutil required by pandas and boto3, this makes sure the version
     # works for both
     "python-dateutil>=2.7.3,<3.0.0",

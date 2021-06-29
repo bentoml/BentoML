@@ -161,6 +161,9 @@ class BentoAPIServer:
         enable_feedback: bool = Provide[
             BentoMLContainer.config.bento_server.feedback.enabled
         ],
+        enable_validation: bool = Provide[
+            BentoMLContainer.config.bento_server.validation.enabled
+        ],
     ):
         app_name = bento_service.name if app_name is None else app_name
 
@@ -385,12 +388,12 @@ class BentoAPIServer:
             try:
                 if request.headers.get(MARSHAL_REQUEST_HEADER):
                     reqs = DataLoader.split_requests(request.get_data())
-                    responses = api.handle_batch_request(reqs)
+                    responses = api.handle_batch_request(reqs, validation=validation)
                     response_body = DataLoader.merge_responses(responses)
                     response = make_response(response_body)
                 else:
                     req = HTTPRequest.from_flask_request(request)
-                    resp = api.handle_request(req)
+                    resp = api.handle_request(req, validation=validation)
                     response = resp.to_flask_response()
             except BentoMLException as e:
                 log_exception(sys.exc_info())

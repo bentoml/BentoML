@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import pydantic
 import traceback
 from typing import Iterable, Sequence, Tuple
 
@@ -64,16 +65,23 @@ class JsonInput(StringInput):
     """
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask[str]]
+        self, tasks: Iterable[InferenceTask[str]], validation: bool = True,
     ) -> ApiFuncArgs:
         json_inputs = []
         for task in tasks:
             try:
                 parsed_json = json.loads(task.data)
+                if validation and self._custom_request_schema:
+                    self._custom_request_schema.validate(parsed_json)
                 json_inputs.append(parsed_json)
+
             except json.JSONDecodeError:
                 task.discard(http_status=400, err_msg="Not a valid JSON format")
+            except pydantic.ValidationError as e:
+                task.discard(http_status=422, err_msg="Validation Error:\n{}".format(e))
+
             except Exception:  # pylint: disable=broad-except
                 err = traceback.format_exc()
                 task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")
+
         return (json_inputs,)

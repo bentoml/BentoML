@@ -217,7 +217,9 @@ class AnnotatedImageInput(MultiFileInput):
             },
         }
 
-    def extract_user_func_args(self, tasks: Iterable[AnnoImgTask]) -> ApiFuncArgs:
+    def extract_user_func_args(
+        self, tasks: Iterable[AnnoImgTask], validation: bool = True
+    ) -> ApiFuncArgs:
         image_arrays = []
         json_objs = []
         for task in tasks:

@@ -229,7 +229,9 @@ class MultiImageInput(MultiFileInput):
                     f"Internal Server Error: {err}",
                 )
 
-    def extract_user_func_args(self, tasks: Iterable[MultiImgTask]) -> ApiFuncArgs:
+    def extract_user_func_args(
+        self, tasks: Iterable[MultiImgTask], validation: bool = True
+    ) -> ApiFuncArgs:
         args = tuple(map(tuple, zip(*self._extract(tasks))))
         if not args:
             args = (tuple(),) * len(self.input_names)

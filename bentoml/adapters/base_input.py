@@ -16,9 +16,11 @@ import argparse
 import functools
 import itertools
 import pathlib
+import pydantic
 import sys
 from typing import Iterable, Iterator, NamedTuple, Sequence, Tuple
 
+from bentoml.exceptions import InvalidArgument
 from bentoml.types import (
     ApiFuncArgs,
     AwsLambdaEvent,
@@ -40,10 +42,16 @@ class BaseInputAdapter:
     BATCH_MODE_SUPPORTED = True
     SINGLE_MODE_SUPPORTED = True
 
-    def __init__(self, http_input_example=None, **base_config):
+    def __init__(self, **base_config):
         self._config = base_config
-        self._http_input_example = http_input_example
-        self.custom_request_schema = base_config.get('request_schema')
+        schema = base_config.get('schema')
+        if schema:
+            if not issubclass(schema, pydantic.BaseModel):
+                raise InvalidArgument(
+                    "{}(schema=schema) will only take a subclass of"
+                    "pydantic.BaseModel as schema".format(self.__class__.__name__)
+                )
+        self._custom_request_schema = schema
 
     @property
     def config(self):
@@ -56,6 +64,15 @@ class BaseInputAdapter:
                  adapter
         """
         return {"application/json": {"schema": {"type": "object"}}}
+
+    @property
+    def custom_request_schema(self):
+        """
+        :return: User provided OpenAPI json schema for the HTTP API endpoint created with this
+                 this input adapter
+        """
+        if self._custom_request_schema:
+            return self._custom_request_schema.schema_json()
 
     @property
     def pip_dependencies(self):
@@ -89,7 +106,7 @@ class BaseInputAdapter:
         raise NotImplementedError()
 
     def extract_user_func_args(
-        self, tasks: Iterable[InferenceTask]
+        self, tasks: Iterable[InferenceTask], validation: bool = True,
     ) -> BatchApiFuncArgs:
         """
         Extract args that user API function is expecting from InferenceTask

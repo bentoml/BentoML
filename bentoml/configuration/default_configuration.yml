@@ -15,6 +15,8 @@ bento_server:
     max_latency: Null
   swagger:
     enabled: True
+  validation:
+    enabled: True
   metrics:
     enabled: True
     namespace: BENTOML

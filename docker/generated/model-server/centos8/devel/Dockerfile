@@ -15,7 +15,6 @@ WORKDIR /
 RUN git clone https://github.com/bentoml/BentoML.git && \
     cd BentoML && \
     pip install --editable . && \
-    yum remove -y curl && \
     yum clean all && \
     rm -rf /var/cache/yum
 

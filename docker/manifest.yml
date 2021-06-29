@@ -10,21 +10,6 @@ repository:
       model-server: docker.io/aarnphm/model-server
       yatai-service: docker.io/aarnphm/yatai-service
 
-packages:
-  model-server:
-    devel: &default_specs
-      - debian
-      - centos
-    runtime:
-      - *default_specs
-      - amazonlinux
-      - alpine
-    cudnn:
-      - *default_specs
-  yatai-service:
-    runtime:
-      - *default_specs
-
 cuda_dependencies:
   11.3.1: &cuda11_3_1_deps
     cudart: 11.3.109-1
@@ -35,7 +20,6 @@ cuda_dependencies:
     libcufft: 10.4.2.109-1
     libcusolver: 11.1.2.109-1
 
-# http://yaml.org/type/merge.html
 release_spec: &tmpl_spec
   templates_dir: ""
   base_image: ""
@@ -57,6 +41,21 @@ release_spec: &tmpl_spec
   cuda_requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
   cuda:
     <<: *cuda11_3_1_deps
+
+packages:
+  model-server:
+    devel: &default_specs
+      - debian
+      - centos
+    runtime:
+      - *default_specs
+      - amazonlinux
+      - alpine
+    cudnn:
+      - *default_specs
+  yatai-service:
+    runtime:
+      - *default_specs
 
 releases:
   debian:

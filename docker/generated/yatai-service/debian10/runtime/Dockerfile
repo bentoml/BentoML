@@ -11,9 +11,7 @@ ARG PYTHON_VERSION
 
 FROM yatai-service:base-python$PYTHON_VERSION-slim as build_image
 
-RUN pip install bentoml[yatai_service]==$BENTOML_VERSION --no-cache-dir && \
-    apt-get purge --auto-remove -y curl && \
-    rm -rf /var/lib/apt/lists/*
+RUN pip install bentoml[yatai_service]==$BENTOML_VERSION --no-cache-dir --use-deprecated=legacy-resolver
 
 COPY tools/yatai-service/entrypoint.sh /usr/local/bin/
 

@@ -1,152 +1,46 @@
 #!/usr/bin/env python3
-import errno
+import itertools
 import json
-import logging
 import multiprocessing
 import os
 import pathlib
 import re
 import shutil
 from collections import defaultdict
-from collections.abc import Iterable
-from copy import deepcopy
-from typing import Dict, Optional
+from typing import Optional, Union, Dict, MutableMapping, List
 
-import absl.logging
+import absl.logging as logging
 import docker
-from absl import flags, app
+from absl import app
 from cerberus import Validator
 from dotenv import load_dotenv
 from glom import glom, Path, PathAccessError, Assign, PathAssignError
 from jinja2 import Environment
 from ruamel import yaml
 
-
-class CachedProperty(property):
-    """Direct ports from bentoml/utils/__init__.py"""
-
-    class _Missing(object):
-        def __repr__(self):
-            return "no value"
-
-        def __reduce__(self):
-            return "_missing"
-
-    _missing = _Missing()
-
-    def __init__(self, func, name=None, doc=None):
-        super().__init__(doc)
-        self.__name__ = name or func.__name__
-        self.__doc__ = doc or func.__doc__
-        self.__module__ = func.__module__
-        self.func = func
-
-    def __set__(self, obj, value):
-        obj.__dict__[self.__name__] = value
-
-    def __get__(self, obj, types=None):
-        if obj is None:
-            return self
-        value = obj.__dict__.get(self.__name__, self._missing)
-        if value is self._missing:
-            value = self.func(obj)
-            obj.__dict__[self.__name__] = value
-        return value
-
-
-class ColoredFormatter(logging.Formatter):
-    """Logging Formatter to add colors and count warning / errors"""
-
-    blue = "\x1b[34m"
-    magenta = "\x1b[35m"
-    yellow = "\x1b[33m"
-    red = "\x1b[31m"
-    bold_red = "\x1b[31"
-    reset = "\x1b[0m"
-    _format = "[%(levelname)s::L%(lineno)d] :: %(message)s"
-
-    FORMATS = {
-        logging.DEBUG: yellow + _format + reset,
-        logging.INFO: blue + _format + reset,
-        logging.WARNING: magenta + _format + reset,
-        logging.ERROR: red + _format + reset,
-        logging.CRITICAL: bold_red + _format + reset,
-    }
-
-    def format(self, record):
-        log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt)
-        return formatter.format(record)
-
+from utils import *
 
 if os.path.exists("./.env"):
     load_dotenv()
-absl.logging.get_absl_handler().setFormatter(ColoredFormatter())
-logger = absl.logging.get_absl_logger()
+
+logging.get_absl_handler().setFormatter(ColoredFormatter())
+logger = logging.get_absl_logger()
+
+RELEASE_TAG_FORMAT = "{release_type}-python{python_version}-{tag_suffix}"
 
 DOCKERFILE_SUFFIX = ".Dockerfile.j2"
-REPO_SUFFIX = ".repo.j2"
-DOCKERFILE_ALLOWED_NAMES = ["base", "cudnn", "devel", "runtime"]
+DOCKERFILE_NAME = DOCKERFILE_SUFFIX.split('.')[1]
+DOCKERFILE_HIERARCHY = ["base", "cudnn", "devel", "runtime"]
 
 SUPPORTED_PYTHON_VERSION = ["3.7", "3.8"]
-SUPPORTED_OS = ["ubuntu", "debian", "centos", "alpine", "amazonlinux"]
+SUPPORTED_OS = ["debian", "centos", "alpine", "amazonlinux"]
 
 NVIDIA_REPO_URL = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
 NVIDIA_ML_REPO_URL = (
     "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
 )
+NVIDIA_DOCKERFILE_REGEX = re.compile(r'(?:nvidia|cuda|cudnn)+')
 
-# defined global vars.
-FLAGS = flags.FLAGS
-
-flags.DEFINE_boolean(
-    "push_to_hub",
-    False,
-    "Whether to upload images to given registries.",
-    short_name="pth",
-)
-flags.DEFINE_integer("timeout", 3600, "Timeout for docker build", short_name="t")
-
-# CLI-related
-flags.DEFINE_boolean(
-    "dump_metadata",
-    False,
-    "Dump all tags metadata to file and stops if specified.",
-    short_name="dm",
-)
-flags.DEFINE_boolean(
-    "dry_run",
-    False,
-    "Whether to dry run. This won't create Dockerfile.",
-    short_name="dr",
-)
-flags.DEFINE_boolean("build_images", False, "Build images.", short_name="bi")
-flags.DEFINE_boolean("overwrite", False, "Overwrite built images.", short_name="o")
-flags.DEFINE_boolean(
-    "stop_at_generate", False, "Stop at generating Dockerfile.", short_name="sag"
-)
-
-# directory and files
-flags.DEFINE_string(
-    "dockerfile_dir",
-    "./generated",
-    "path to generated Dockerfile. Existing files will be deleted with new Dockerfiles",
-    short_name="dd",
-)
-flags.DEFINE_string("manifest_file", "./manifest.yml", "Manifest file", short_name="mf")
-
-flags.DEFINE_string(
-    "bentoml_version", None, "BentoML release version", required=True, short_name="bv"
-)
-
-flags.DEFINE_string("cuda_version", "11.3.1", "Define CUDA version", short_name="cv")
-
-flags.DEFINE_string(
-    "python_version",
-    None,
-    "OPTIONAL: Python version to build Docker images (useful when developing).",
-    short_name="pv",
-)
 
 SPEC_SCHEMA = """
 --- 
@@ -367,26 +261,19 @@ def auth_registries(repository, docker_client):
 
         logger.info(f"Logging into Docker registry {registry} with credentials...")
         docker_client.login(username=_user, password=_pwd, registry=registry)
-        repos[registry] = {'registry': list(metadata['registry'].values())}
+        repos[registry] = list(metadata['registry'].values())
     return repos
 
 
 def upload_in_background(docker_client, image, registry, tag):
     """Upload a docker image (to be used by multiprocessing)."""
     image.tag(registry, tag=tag)
-    logger.debug(docker_client.images.push(registry, tag=tag))
+    logger.debug(f"Pushing {image} to {registry}...")
+    for _line in docker_client.images.push(registry, tag=tag, stream=True, decode=True):
+        print(json.dumps(_line, indent=2))
 
 
-def flatten(arr):
-    for it in arr:
-        if isinstance(it, Iterable) and not isinstance(it, str):
-            for x in flatten(it):
-                yield x
-        else:
-            yield it
-
-
-def load_manifest_yaml(file):
+def load_manifest_yaml(file: str):
     with open(file, "r") as input_file:
         manifest = yaml.safe_load(input_file)
 
@@ -403,7 +290,13 @@ def load_manifest_yaml(file):
     return v.normalized(manifest)
 
 
-def get_data(obj, *path):
+def get_files(directory: pathlib.Path, pattern: str):
+    for f in walk(directory):
+        if pattern in f.name:
+            return f
+
+
+def get_data(obj: Union[Dict, MutableMapping], *path: str):
     """
     Get data from the object by dotted path.
     e.g: dependencies.cuda."11.3.1"
@@ -412,104 +305,32 @@ def get_data(obj, *path):
         data = glom(obj, Path(*path))
     except PathAccessError:
         logger.exception(
-            f"Exception occurred in get_data, unable to retrieve from {'/'.join([*path])}"
+            f"Exception occurred in get_data, unable to retrieve {'.'.join([*path])} from {repr(obj)}"
         )
     else:
         return data
 
 
-def set_data(obj, value, *path):
+def set_data(obj: Dict, value: Union[Dict, str], *path: str):
     """
     Update data from the object with given value.
     e.g: dependencies.cuda."11.3.1"
     """
     try:
         _ = glom(obj, Assign(Path(*path), value))
+    except ValueError:
+        # we can just use dict.update to handle this error.
+        obj.update(value)
     except PathAssignError:
         logger.exception(
             f"Exception occurred in update_data, unable to update {Path(*path)} with {value}"
         )
 
 
-def _generate_build_envars(bentoml_version):
-    """
-    Create a dictionary of args that will be parsed during runtime
-
-    Args:
-        bentoml_version: version of BentoML releases
-
-    Returns:
-        Dict of args
-    """
-    args = {"BENTOML_VERSION": bentoml_version}
-
-    def update_args_dict(updater):
-        # Args will have format ARG=foobar
-        if isinstance(updater, str):
-            _args, _, _value = updater.partition("=")
-            args[_args] = _value
-            return
-        elif isinstance(updater, list):
-            for v in updater:
-                update_args_dict(v)
-        elif isinstance(updater, dict):
-            for _args, _value in updater.items():
-                args[_args] = _value
-        else:
-            logger.error(f"cannot add to args dict with unknown type {type(updater)}")
-        return args
-
-    return update_args_dict
-
-
-def _generate_build_tags(build_ctx, python_version, release_type):
-    formatter = {
-        "release_type": release_type,
-        "tag_suffix": build_ctx["add_to_tags"],
-        "python_version": python_version,
-    }
-    _core_fmt = "{release_type}-python{python_version}-{tag_suffix}"
-
-    if release_type in ['runtime', 'cudnn']:
-        set_data(
-            formatter, get_data(build_ctx, 'envars', 'BENTOML_VERSION'), 'release_type'
-        )
-        _tag = "-".join([_core_fmt.format(**formatter), release_type])
-    else:
-        _tag = _core_fmt.format(**formatter)
-
-    # construct build_tag which is our base_image with $PYTHON_VERSION formats
-    formatter.update({"python_version": "$PYTHON_VERSION", "release_type": "base"})
-    _build_tag = _core_fmt.format(**formatter)
-
-    return _tag, _build_tag
-
-
-def _generate_cudnn_context(cuda_components):
-    cudnn_regex = re.compile(r"(cudnn)(\w+)")
-    for k, v in cuda_components.items():
-        if cudnn_regex.match(k):
-            cudnn_release_version = cuda_components.pop(k)
-            cudnn_major_version = cudnn_release_version.split(".")[0]
-            return {
-                "version": cudnn_release_version,
-                "major_version": cudnn_major_version,
-            }
-
-
-def _set_build_ctx(ctx_dict, spec_dict: Dict, *ignore_keys):
-    # flatten release_spec to template context.
-    for k, v in spec_dict.items():
-        if k in list(flatten([*ignore_keys])):
-            continue
-        ctx_dict[k] = v
-
-
 # noinspection PyUnresolvedReferences
 class Generate(object):
     """Mixin for generating Dockerfile from templates."""
 
-    _build_ctx = {}
     _build_path = {}
 
     _template_env = Environment(
@@ -519,22 +340,28 @@ class Generate(object):
     def __init__(self, release_spec: Dict, cuda_version: str):
         # set private class attributes to be manifest.yml keys
         for keys, values in release_spec.items():
+            if keys == 'packages':
+                mapfunc(lambda x: list(flatten(x)), values)
             super().__setattr__(f"_{keys}", values)
 
-        # setup default keys for build context
-        _set_build_ctx(self._build_ctx, self._release_spec, "cuda")
+        # dirty hack to force add base
+        for _v in self._packages.values():
+            _v.update({'base': maxkeys(_v)})
 
-        # setup cuda_version and cuda_components
+        # setup cuda_version
         if cuda_version in self._cuda_dependencies.keys():
             self._cuda_version = cuda_version
         else:
             raise RuntimeError(f"{cuda_version} is not defined in manifest.yml")
-        self._cuda_components = get_data(self._cuda_dependencies, self._cuda_version)
 
     def __call__(self, dry_run=False, *args, **kwargs):
-        if FLAGS.python_version is not None:
+        if len(FLAGS.python_version) > 0:
             logger.debug("--python_version defined, ignoring SUPPORTED_PYTHON_VERSION")
-            supported_python = [FLAGS.python_version]
+            supported_python = FLAGS.python_version
+            if supported_python not in SUPPORTED_PYTHON_VERSION:
+                logger.critical(
+                    f"{supported_python} is not supported. Allowed: {SUPPORTED_PYTHON_VERSION}"
+                )
         else:
             supported_python = SUPPORTED_PYTHON_VERSION
 
@@ -542,17 +369,13 @@ class Generate(object):
             # Consider generated directory ephemeral
             logger.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
             shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
-            try:
-                os.makedirs(FLAGS.dockerfile_dir)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
+            mkdir_p(FLAGS.dockerfile_dir)
 
-            return self.generate_dockerfiles(
-                target_dir=FLAGS.dockerfile_dir, python_version=supported_python
+            return self.generate_registries(
+                target_dir=FLAGS.dockerfile_dir, python_versions=supported_python
             )
 
-    @CachedProperty
+    @cached_property
     def build_path(self):
         ordered = {
             k: self._build_path[k] for k in self._build_path.keys() if 'base' in k
@@ -560,63 +383,114 @@ class Generate(object):
         ordered.update(self._build_path)
         return ordered
 
-    def render_from_templates(
-        self,
-        input_path: pathlib.Path,
-        output_path: pathlib.Path,
-        ctx: Dict,
-        tags: Optional[Dict[str, str]] = None,
-    ):
-        with open(input_path, "r") as inf:
-            logger.debug(f"Processing template: {input_path}")
-            name = input_path.name
-            if DOCKERFILE_SUFFIX not in name:
-                output_name = name[: -len(".j2")]
+    @staticmethod
+    def _generate_envars_context(bentoml_version: str):
+        """
+        Create a dictionary of args that will be parsed during runtime
+
+        Args:
+            bentoml_version: version of BentoML releases
+
+        Returns:
+            Dict of args
+        """
+        args = {"BENTOML_VERSION": bentoml_version}
+
+        def update_args_dict(updater):
+            # Args will have format ARG=foobar
+            if isinstance(updater, str):
+                _args, _, _value = updater.partition("=")
+                args[_args] = _value
+                return
+            elif isinstance(updater, list):
+                for v in updater:
+                    update_args_dict(v)
+            elif isinstance(updater, dict):
+                for _args, _value in updater.items():
+                    args[_args] = _value
             else:
-                output_name = DOCKERFILE_SUFFIX.split(".")[1]
+                logger.error(
+                    f"cannot add to args dict with unknown type {type(updater)}"
+                )
+            return args
 
-            template = self._template_env.from_string(inf.read())
-            if not output_path.exists():
-                output_path.mkdir(parents=True, exist_ok=True)
+        return update_args_dict
 
-            with open(f"{output_path}/{output_name}", "w") as ouf:
-                ouf.write(template.render(metadata=ctx, tags=tags))
-            ouf.close()
-        inf.close()
+    @staticmethod
+    def _generate_tags_context(
+        build_ctx: MutableMapping,
+        python_version: str,
+        release_type: str,
+        fmt: Optional[str] = "",
+    ):
+        _core_fmt = fmt if fmt else RELEASE_TAG_FORMAT
+        formatter = {
+            "release_type": release_type,
+            "tag_suffix": build_ctx["add_to_tags"],
+            "python_version": python_version,
+        }
 
-    def generate_distro_release_mapping(self, package):
-        """Return a dict {ubuntu: [devel, cudnn, runtime]}"""
-        releases = defaultdict(list)
-        for k, v in self._packages[package].items():
-            _v = list(flatten(v))
-            for distro in _v:
-                releases[distro].append(k)
-        return releases
+        if release_type in ['runtime', 'cudnn']:
+            set_data(
+                formatter,
+                get_data(build_ctx, 'envars', 'BENTOML_VERSION'),
+                'release_type',
+            )
+            _tag = "-".join([_core_fmt.format(**formatter), release_type])
+        else:
+            _tag = _core_fmt.format(**formatter)
+
+        # construct build_tag which is our base_image with $PYTHON_VERSION formats
+        formatter.update({"python_version": "$PYTHON_VERSION", "release_type": "base"})
+        _build_tag = _core_fmt.format(**formatter)
+
+        return _tag, _build_tag
+
+    @staticmethod
+    def _generate_cudnn_context(cuda_components: Dict):
+        cudnn_regex = re.compile(r"(cudnn)(\w+)")
+        for k, v in cuda_components.items():
+            if cudnn_regex.match(k):
+                cudnn_release_version = cuda_components.pop(k)
+                cudnn_major_version = cudnn_release_version.split(".")[0]
+                return {
+                    "version": cudnn_release_version,
+                    "major_version": cudnn_major_version,
+                }
+
+    @staticmethod
+    def _generate_distros_context(pack_def: MutableMapping):
+        for rtype, dists in pack_def.items():
+            for d in dists:
+                yield d, rtype
 
     def generate_template_context(
-        self, distro, distro_version, distro_release_spec, python_version
-    ):
+        self,
+        dist: str,
+        dist_ver: str,
+        dist_spec: Dict[str, str],
+        py_ver: str,
+        bento_ver: str,
+        package: Optional[str] = None,
+    ) -> Dict:
         """Generate template context for each distro releases."""
-        _build_ctx = deepcopy(self._build_ctx)
-        _cuda_components = self._cuda_components.copy()
+        _build_ctx = {}
+        _cuda_components = get_data(self._cuda_dependencies, self._cuda_version).copy()
 
-        cuda_regex = re.compile(r"cuda*")
+        if package:
+            set_data(_build_ctx, package, 'package')
+        set_data(_build_ctx, get_data(self._releases, dist, dist_ver))
 
-        _set_build_ctx(
-            _build_ctx, get_data(self._releases, distro, distro_version), "cuda"
-        )
-
-        _build_ctx["envars"] = _generate_build_envars(FLAGS.bentoml_version)(
-            distro_release_spec["envars"]
+        # setup envars
+        set_data(
+            _build_ctx,
+            self._generate_envars_context(bento_ver)(dist_spec['envars']),
+            'envars',
         )
 
         # check if python_version is supported.
-        if python_version not in SUPPORTED_PYTHON_VERSION:
-            logger.critical(
-                f"{python_version} is not supported. Supported versions: {SUPPORTED_PYTHON_VERSION}"
-            )
         set_data(
-            _build_ctx, python_version, "envars", "PYTHON_VERSION",
+            _build_ctx, py_ver, "envars", "PYTHON_VERSION",
         )
 
         # setup cuda deps
@@ -630,105 +504,101 @@ class Generate(object):
                     "minor": minor,
                     "shortened": f"{major}.{minor}",
                 },
-                "cudnn": _generate_cudnn_context(_cuda_components),
+                "cudnn": self._generate_cudnn_context(_cuda_components),
                 "components": _cuda_components,
             }
             _build_ctx.pop('cuda_prefix_url')
         else:
-            logger.warning(f"CUDA is disabled for {distro}. Skipping...")
+            logger.warning(f"CUDA is disabled for {dist}. Skipping...")
             for key in list(_build_ctx.keys()):
-                if cuda_regex.match(key):
+                if NVIDIA_DOCKERFILE_REGEX.match(key):
                     _build_ctx.pop(key)
 
         return _build_ctx
 
-    def generate_dockerfiles(self, target_dir, python_version):
+    def render_from_templates(
+        self,
+        input_paths: List[pathlib.Path],
+        output_path: pathlib.Path,
+        metadata: Dict,
+        build_tag: Optional[str] = None,
+    ):
+        for inp in input_paths:
+            with inp.open('r') as inf:
+                logger.debug(f"Processing template: {inp}")
+                if DOCKERFILE_SUFFIX not in inp.name:
+                    output_name = inp.stem
+                else:
+                    output_name = DOCKERFILE_NAME
+
+                template = self._template_env.from_string(inf.read())
+                if not output_path.exists():
+                    output_path.mkdir(parents=True, exist_ok=True)
+
+                with open(f"{output_path}/{output_name}", "w") as ouf:
+                    ouf.write(template.render(metadata=metadata, build_tag=build_tag))
+                ouf.close()
+            inf.close()
+
+    def generate_registries(self, target_dir: str, python_versions: List[str]):
 
         _tag_metadata = defaultdict()
+        for combinations in itertools.product(self._packages.items(), python_versions):
+            (package, pack_def), py_ver = combinations
+            logger.info(f"Working on {package} for python{py_ver}")
+            for (distro, rtype) in self._generate_distros_context(pack_def):
+                for distro_version, distro_spec in self._releases[distro].items():
+                    # setup our build context
+                    _build_ctx = self.generate_template_context(
+                        distro,
+                        distro_version,
+                        distro_spec,
+                        py_ver,
+                        FLAGS.bentoml_version,
+                        package=package,
+                    )
+                    # generate our image tag.
+                    _release_tag, _build_tag = self._generate_tags_context(
+                        _build_ctx, py_ver, rtype,
+                    )
 
-        for package in self._packages.keys():
-            # update our packages ctx.
-            logger.info(f"Working on {package}")
-            set_data(self._build_ctx, package, "package")
-            for _py_ver in python_version:
-                logger.info(f"In progress: python{_py_ver}")
-                _distro_release_mapping = self.generate_distro_release_mapping(package)
-                for distro, _release_type in _distro_release_mapping.items():
-                    for distro_version, distro_spec in self._releases[distro].items():
+                    template_dir = pathlib.Path(get_data(_build_ctx, 'templates_dir'))
+                    base_output_path = pathlib.Path(
+                        target_dir, package, f"{distro}{distro_version}",
+                    )
+                    if 'rhel' in template_dir.name and rtype == 'cudnn':
+                        input_path = [
+                            f
+                            for f in template_dir.iterdir()
+                            if NVIDIA_DOCKERFILE_REGEX.match(f.name)
+                        ]
+                    else:
+                        input_path = [get_files(template_dir, str(rtype))]
 
-                        # setup our build context
-                        logger.debug(
-                            f" Generating build context for {distro}{distro_version}"
-                        )
-                        _build_ctx = self.generate_template_context(
-                            distro, distro_version, distro_spec, _py_ver
-                        )
+                    if rtype != 'base':
+                        output_path = pathlib.Path(base_output_path, rtype)
+                    else:
+                        output_path = base_output_path
 
-                        # NOTES: quick patch for multistage_image, could implements this as default behaviour.
-                        if (
-                            _build_ctx['multistage_image']
-                            and 'base' not in _release_type
-                        ):
-                            _release_type.append('base')
+                    if rtype == 'cudnn':
+                        _metadata = {"docker_build_path": str(output_path)}
+                        _metadata.update(_build_ctx)
+                    else:
+                        _metadata = _build_ctx
 
-                        # setup paths
-                        templates_dir = pathlib.Path(
-                            get_data(_build_ctx, 'templates_dir')
-                        )
-                        for _re_type in _release_type:
-                            # setup filepath
-                            base_input_path = pathlib.Path(
-                                templates_dir, f"{_re_type}{DOCKERFILE_SUFFIX}",
-                            )
+                    tag_keys = f"{_build_ctx['package']}:{_release_tag}"
 
-                            base_output_path = pathlib.Path(
-                                target_dir, package, f"{distro}{distro_version}",
-                            )
-
-                            # handle cuda.repo and nvidia-ml.repo
-                            if (
-                                "rhel" in _build_ctx["templates_dir"]
-                                and _re_type == "cudnn"
-                            ):
-                                for _n in ["nvidia-ml", "cuda"]:
-                                    repo_tmpl_path = pathlib.Path(
-                                        _build_ctx["templates_dir"],
-                                        f"{_n}{REPO_SUFFIX}",
-                                    )
-                                    repo_output_path = pathlib.Path(
-                                        base_output_path, _re_type
-                                    )
-                                    self.render_from_templates(
-                                        repo_tmpl_path, repo_output_path, _build_ctx
-                                    )
-
-                            # generate our image tag.
-                            _tag, _build_tag = _generate_build_tags(
-                                _build_ctx, _py_ver, _re_type,
-                            )
-                            _tag_ctx = {"build_image": _build_tag}
-
-                            if _re_type != "base":
-                                output_path = pathlib.Path(base_output_path, _re_type)
-                            else:
-                                output_path = base_output_path
-                            tag_keys = f"{_build_ctx['package']}:{_tag}"
-
-                            # setup directory correspondingly, and add these paths
-                            _output_with_dockerfile = str(
-                                pathlib.Path(output_path, "Dockerfile")
-                            )
-                            set_data(_tag_metadata, _build_ctx, tag_keys)
-                            set_data(
-                                self._build_path, _output_with_dockerfile, tag_keys
-                            )
-                            # generate our Dockerfile from templates.
-                            self.render_from_templates(
-                                input_path=base_input_path,
-                                output_path=output_path,
-                                ctx=_build_ctx,
-                                tags=_tag_ctx,
-                            )
+                    # # setup directory correspondingly, and add these paths
+                    output_dockerfile = str(pathlib.Path(output_path, DOCKERFILE_NAME))
+                    set_data(_tag_metadata, _metadata, tag_keys)
+                    set_data(self._build_path, output_dockerfile, tag_keys)
+                    # generate our Dockerfile from templates.
+                    self.render_from_templates(
+                        input_paths=input_path,
+                        output_path=output_path,
+                        metadata=_metadata,
+                        build_tag=_build_tag,
+                    )
         return _tag_metadata
 
 
@@ -764,82 +634,87 @@ def main(argv):
     # We will build and push if args is parsed. Establish some variables.
     push_tags, logs = {}, []
 
-    print(f"\n{'-' * 59}\n| Building images\n{'-' * 59}\n")
-    if FLAGS.build_images and not FLAGS.dry_run:
+    if not FLAGS.dry_run:
+        print(f"\n{'-' * 59}\n| Building images\n{'-' * 59}\n")
         for image_tag, dockerfile_path in generator.build_path.items():
             try:
+                # this is used when there are changed in base image.
                 if FLAGS.overwrite:
                     docker_client.api.remove_image(image_tag, force=True)
+                    # when python doesn't have goto supports =(
+                    raise docker.errors.ImageNotFound(f"Building {image_tag}")
                 elif docker_client.api.history(image_tag):
                     logger.info(
                         f"Image {image_tag} is already built and --overwrite is not specified. Skipping..."
                     )
+                    push_tags[image_tag] = docker_client.images.get(image_tag)
                     continue
             except docker.errors.ImageNotFound:
-                logger.info(f"Building {image_tag} from {dockerfile_path}")
-                resp = docker_client.api.build(
-                    timeout=FLAGS.timeout,
-                    path=".",
-                    nocache=False,
-                    buildargs={
-                        "PYTHON_VERSION": get_data(
-                            tag_metadata, image_tag, 'envars', 'PYTHON_VERSION'
-                        )
-                    },
-                    dockerfile=dockerfile_path,
-                    tag=image_tag,
-                )
-                last_event, image_id = None, None
-                while True:
-                    try:
-                        # output logs to stdout
-                        # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
-                        output = next(resp).decode('utf-8')
-                        json_output = json.loads(output.strip('\r\n'))
-                        if 'stream' in json_output:
-                            # output docker build process
-                            print(json_output['stream'])
-                            built = re.compile(
-                                r'(^Successfully built |sha256:)([0-9a-f]+)$'
+                try:
+                    logger.info(f"Building {image_tag} from {dockerfile_path}")
+                    resp = docker_client.api.build(
+                        timeout=FLAGS.timeout,
+                        path=".",
+                        nocache=False,
+                        buildargs={
+                            "PYTHON_VERSION": get_data(
+                                tag_metadata, image_tag, 'envars', 'PYTHON_VERSION'
                             )
-                            matched = built.search(json_output['stream'])
-                            if matched:
-                                image_id = matched.group(2)
-                            last_event = json_output['stream']
-                            logs.append(json_output)
-                    except StopIteration:
-                        logger.debug(f"Successfully built {image_tag}.")
-                        break
-                    except ValueError:
-                        logger.error(f"Errors while building image:\n{output}")
-                if image_id:
-                    push_tags[image_tag] = docker_client.images.get(image_id)
-                else:
-                    raise docker.errors.BuildError(last_event or 'Unknown', logs)
-            except docker.errors.BuildError as e:
-                logger.error(f"Failed to build {image_tag} :\n{e.msg}")
-                for line in e.build_log:
-                    if 'stream' in line:
-                        print(line['stream'].strip())
-                logger.fatal('ABORTING due to failure!')
-        logger.info(f"Push tags:\n{push_tags}")
-    else:
-        logger.info("--build_images is not specified. Skip building images...")
+                        },
+                        dockerfile=dockerfile_path,
+                        tag=image_tag,
+                    )
+                    last_event, image_id = None, None
+                    while True:
+                        try:
+                            # output logs to stdout
+                            # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
+                            output = next(resp).decode('utf-8')
+                            json_output = json.loads(output.strip('\r\n'))
+                            if 'stream' in json_output:
+                                # output docker build process
+                                print(json_output['stream'])
+                                built = re.compile(
+                                    r'(^Successfully built |sha256:)([0-9a-f]+)$'
+                                )
+                                matched = built.search(json_output['stream'])
+                                if matched:
+                                    image_id = matched.group(2)
+                                last_event = json_output['stream']
+                                logs.append(json_output)
+                        except StopIteration:
+                            logger.debug(f"Successfully built {image_tag}.")
+                            break
+                        except ValueError:
+                            logger.error(f"Errors while building image:\n{output}")
+                    if image_id:
+                        push_tags[image_tag] = docker_client.images.get(image_id)
+                    else:
+                        raise docker.errors.BuildError(last_event or 'Unknown', logs)
+                except docker.errors.BuildError as e:
+                    logger.error(f"Failed to build {image_tag} :\n{e.msg}")
+                    for line in e.build_log:
+                        if 'stream' in line:
+                            print(line['stream'].strip())
+                    logger.fatal('ABORTING due to failure!')
 
     # Push process
     # whether to push base image or not
-    print(f"\n{'-' * 59}\n| Pushing images\n{'-' * 59}\n")
     if FLAGS.push_to_hub:
-        for repo, registry in repos.items():
+        print(f"\n{'-' * 59}\n| Pushing images\n{'-' * 59}\n")
+        assert push_tags, logger.error("Push tags is empty!!")
+        for repo, registries in repos.items():
             for image_tag, image in push_tags.items():
-
-                logger.info(f"Uploading {image} to {repo}")
+                _registry, tag = image_tag.split(":")
+                registry = ''.join((k for k in registries if _registry in k))
+                logger.info(f"Uploading {image_tag} to {repo}")
                 if not FLAGS.dry_run:
                     p = multiprocessing.Process(
                         target=upload_in_background,
-                        args=(docker_client, image, registry, image_tag),
+                        args=(docker_client, image, registry, tag),
                     )
                     p.start()
+                    # upload_in_background(docker_client, image, registry, tag)
     else:
         logger.info("--push_to_hub is not specified. Skip pushing images...")
 

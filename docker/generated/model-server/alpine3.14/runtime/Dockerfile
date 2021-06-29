@@ -14,7 +14,7 @@ FROM model-server:base-python$PYTHON_VERSION-alpine as build_image
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \
-    && apk add --no-cache bash git
+    && apk add --no-cache bash git build-base
 
 RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
 

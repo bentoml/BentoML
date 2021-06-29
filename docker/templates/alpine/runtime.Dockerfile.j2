@@ -2,12 +2,12 @@
 
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ tags.build_image }} as build_image
+FROM {{ metadata.package }}:{{ build_tag }} as build_image
 
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \
-    && apk add --no-cache bash git
+    && apk add --no-cache bash git build-base
 
 RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir
 

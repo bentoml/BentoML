@@ -18,6 +18,8 @@ ARG PYTHON_VERSION
 
 ENV PATH /opt/conda/bin:$PATH
 
+ENV DEBIAN_FRONTEND noninteractive
+
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 

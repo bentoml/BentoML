@@ -11,10 +11,7 @@ ARG PYTHON_VERSION
 
 FROM yatai-service:base-python$PYTHON_VERSION-centos7 as build_image
 
-RUN pip install bentoml[yatai_service]==$BENTOML_VERSION --no-cache-dir && \
-    yum autoremove -y curl && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+RUN pip install bentoml[yatai_service]==$BENTOML_VERSION --no-cache-dir --use-deprecated=legacy-resolver
 
 COPY tools/yatai-service/entrypoint.sh /usr/local/bin/
 

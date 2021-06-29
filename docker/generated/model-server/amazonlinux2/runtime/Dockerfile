@@ -11,10 +11,7 @@ ARG PYTHON_VERSION
 
 FROM model-server:base-python$PYTHON_VERSION-ami2 as build_image
 
-RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir && \
-    yum autoremove -y curl && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/
 

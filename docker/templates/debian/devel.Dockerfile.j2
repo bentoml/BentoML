@@ -2,7 +2,7 @@
 
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ tags.build_image }} as build_image
+FROM {{ metadata.package }}:{{ build_tag }} as build_image
 
 WORKDIR /
 RUN git clone https://github.com/bentoml/BentoML.git && \

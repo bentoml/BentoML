@@ -6,6 +6,7 @@ set -e
 UNAME="aarnphm"
 UPASS=""
 
+# https://github.com/docker/hub-feedback/issues/2006
 # get token to be able to talk to Docker Hub
 TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${UNAME}'", "password": "'${UPASS}'"}' https://hub.docker.com/v2/users/logins/ | jq -r .token)
 

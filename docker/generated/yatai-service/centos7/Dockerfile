@@ -62,5 +62,9 @@ RUN ARCH='x64' \
     && node --version \
     && npm --version
 
+RUN yum upgrade -y && yum install -y postgresql-devel && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
 COPY tools/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc

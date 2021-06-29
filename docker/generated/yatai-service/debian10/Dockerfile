@@ -18,6 +18,8 @@ ARG PYTHON_VERSION
 
 ENV PATH /opt/conda/bin:$PATH
 
+ENV DEBIAN_FRONTEND noninteractive
+
 # needed for string substitution
 SHELL ["/bin/bash","-exo", "pipefail", "-c"]
 
@@ -69,12 +71,16 @@ RUN ARCH='' \
     && tar -xJf "node-v$NODE_VERSION-linux-$ARCH.tar.xz" -C /usr/local --strip-components=1 --no-same-owner \
     && rm "node-v$NODE_VERSION-linux-$ARCH.tar.xz" \
     && apt-mark auto '.*' > /dev/null \
-    && apt-mark manual git \
+    && apt-mark manual git build-essential \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
     # smoke tests
     && node --version \
     && npm --version
+
+RUN apt-get update && apt-get install -q -y --no-install-recommends libpq-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY tools/bashrc /etc/bash.bashrc
 RUN chmod a+r /etc/bash.bashrc

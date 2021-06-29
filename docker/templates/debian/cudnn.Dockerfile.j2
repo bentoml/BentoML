@@ -6,7 +6,7 @@
 {% set cudnn_major_version = cudnn.major_version %}
 ARG PYTHON_VERSION
 
-FROM {{ metadata.package }}:{{ tags.build_image }} as build_image
+FROM {{ metadata.package }}:{{ build_tag }} as build_image
 
 RUN curl -fsSL {{ cuda.base_repo }}/7fa2af80.pub | apt-key add - && \
     echo "deb {{ cuda.base_repo }} /" >/etc/apt/sources.list.d/cuda.list && \
@@ -40,7 +40,7 @@ ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/include/x
 # https://github.com/NVIDIA/nvidia-container-runtime
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
-{% if "cuda_requires" in cuda %}
+{% if "cuda_requires" in metadata %}
 ENV NVIDIA_REQUIRE_CUDA "{{ metadata.cuda_requires }}"
 {% endif %}
 

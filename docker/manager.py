@@ -261,7 +261,9 @@ class MetadataSpecValidator(Validator):
 def auth_registries(repository, docker_client):
     repos = {}
     for registry, metadata in repository.items():
-        if not os.getenv(metadata['only_if']) or not os.getenv(metadata['user']):
+        if not os.getenv(metadata['only_if']):
+            continue
+        if not os.getenv(metadata['user']) or os.getenv(metadata['pwd']):
             logger.critical(
                 f"{registry}: Make sure to"
                 f" set {metadata['only_if']} or {metadata['user']}."

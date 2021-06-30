@@ -11,7 +11,7 @@ repository:
       yatai-service: docker.io/aarnphm/yatai-service
 
 cuda_dependencies:
-  11.3.1: &cuda11_3_1_deps
+  11.3.1: &cuda11_3_1
     cudart: 11.3.109-1
     cudnn8: 8.2.0.53-1
     libcublas: 11.5.1.109-1
@@ -40,7 +40,7 @@ release_spec: &tmpl_spec
   cuda_prefix_url: ""
   cuda_requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
   cuda:
-    <<: *cuda11_3_1_deps
+    <<: *cuda11_3_1
 
 packages:
   model-server:

@@ -43,12 +43,12 @@ Error response from daemon: manifest for bentoml/model-server:latest
 not found: manifest unknown: manifest unknown
 ```
 
-    Overview of Images
+Overview of Images
 
-    Three types of images provided in the registry:
-    - `runtime`
-    - `cudnn`
-    - `devel`
+Three types of images provided in the registry:
+- `runtime`: Includes BentoML latest PyPI releases
+- `cudnn`: Builds on top of `runtime` with the addition of [CUDA math libraries](https://developer.nvidia.com/gpu-accelerated-libraries) and [cuDNN](https://developer.nvidia.com/cudnn) libraries
+- `devel`: Build on top of `base` with BentoML installed from `master` branch.
 
 Notes
 =====
@@ -58,7 +58,10 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 The registry also provided a `base` tags image. This is used as a dependency image layer for each distros required by BentoML (not user-facing), and thus shouldn't be used in production or any other use-case
 other than building BentoML images.
 
-Latest {{ metadata.bentoml_package }} {{ metadata.release_label }}
+Latest {{ metadata.bentoml_package }} {{ metadata.release_version }}
+=======
+
+{% set OS = [] %}
 
 {{ metadata.bentoml_package }}
 {% endif %}

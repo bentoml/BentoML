@@ -62,11 +62,11 @@ _example of available [tags](https://hub.docker.com/repository/docker/bentoml/mo
 
 ## Developing
 
-[DEVELOPMENT.md](https://github.com/bentoml/BentoML/blob/master/docker/docs/DEVELOPMENT.md) contains details on generation workflow and management logics.
+[DEVELOPMENT.md](https://github.com/bentoml/BentoML/blob/master/docker/docs/DEVELOPMENT.md) contains more details on generation workflow and management logics.
 
 To add new distros support or new CUDA version, you first have to update `manifest.yml`, add templates with correct format under `./templates`, then run `manager.py` to re-generate new Dockerfiles.
 
-You can use the provided [Dockerfile](https://github.com/bentoml/BentoML/blob/master/docker/Dockerfile) to have a fully installed environment.
+You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/master/docker/Dockerfile) to have a fully installed environment.
 ```shell
 
 # Build the helper docker images. Refers to Makefile for more information.

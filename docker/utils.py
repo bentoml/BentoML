@@ -41,6 +41,9 @@ flags.DEFINE_boolean(
     "Whether to upload images to given registries.",
     short_name="pth",
 )
+flags.DEFINE_boolean(
+    "build_images", False, "whether to build images", short_name="bi",
+)
 flags.DEFINE_integer("timeout", 3600, "Timeout for docker build", short_name="t")
 # CLI-related
 flags.DEFINE_boolean(
@@ -72,12 +75,17 @@ flags.DEFINE_string(
     "bentoml_version", None, "BentoML release version", required=True, short_name="bv"
 )
 flags.DEFINE_string("cuda_version", "11.3.1", "Define CUDA version", short_name="cv")
-
 flags.DEFINE_multi_string(
     "python_version",
     [],
     "OPTIONAL: Python version to build Docker images (useful when developing).",
     short_name="pv",
+)
+flags.DEFINE_multi_string(
+    "releases",
+    [],
+    "Set of releases to build and tags, defaults to every release type.",
+    short_name='r',
 )
 
 

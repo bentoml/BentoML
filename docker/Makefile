@@ -24,13 +24,12 @@ install: ## Install manager Docker image for development
 ifneq (, $(wildcard ./.env))
 	@touch ./.env
 endif
-	$(warning Make sure to add Docker credentials according to manifest.yml under ${ROOT_DIR}/.env)
-	@echo
+	@printf "Make sure to add Docker credentials according to manifest.yml under ${ROOT_DIR}/.env\n"
 	if [[ `docker images --filter=reference='bentoml-docker' -q` == "" ]] | [[ `git diff Dockerfile` != "" ]]; then \
-		docker build -t bentoml-docker -f Dockerfile .; \
+		DOCKER_BUILDKIT=1 docker build -t bentoml-docker -f Dockerfile .; \
 	fi;
-	source ./tools/dev.sh
+	@printf "refers to README.md Developing section for more information.\n"
 
 .PHONY: run
 run: ## Run manager Docker image
-	@docker run --user $(shell id -u):$(shell id -g) -i -t -v $(shell pwd):/bentoml bentoml-docker bash
+	@docker run --user $(shell id -u):$(shell id -g) -it -v $(shell pwd):/bentoml bentoml-docker bash

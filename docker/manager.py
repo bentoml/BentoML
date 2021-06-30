@@ -6,7 +6,6 @@ import os
 import pathlib
 import re
 import shutil
-import time
 from collections import defaultdict
 from typing import Optional, Union, Dict, MutableMapping, List
 
@@ -27,7 +26,7 @@ from utils import (
     mapfunc,
     cached_property,
     flatten,
-    walk
+    walk,
 )
 
 if os.path.exists("./.env"):
@@ -51,9 +50,9 @@ NVIDIA_ML_REPO_URL = (
     "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
 )
 
-
+# noqa: W605
 SPEC_SCHEMA = """
---- 
+---
 repository:
   type: dict
   keysrules:
@@ -250,8 +249,9 @@ class MetadataSpecValidator(Validator):
             if supported_dists and value not in SUPPORTED_OS:
                 self._error(
                     field,
-                    f"{value} is not defined in SUPPORTED_OS. If you are adding a new distros make "
-                    f"sure to add it to SUPPORTED_OS",
+                    f"{value} is not defined in SUPPORTED_OS."
+                    "If you are adding a new distros make sure "
+                    "to add it to SUPPORTED_OS",
                 )
         if isinstance(value, list):
             for v in value:
@@ -263,7 +263,8 @@ def auth_registries(repository, docker_client):
     for registry, metadata in repository.items():
         if not os.getenv(metadata['only_if']) or not os.getenv(metadata['user']):
             logger.critical(
-                f"{registry}: Make sure to set {metadata['only_if']} or {metadata['user']}."
+                f"{registry}: Make sure to"
+                f" set {metadata['only_if']} or {metadata['user']}."
             )
         _user = os.getenv(metadata['user'])
         _pwd = os.getenv(metadata['pwd'])
@@ -632,19 +633,19 @@ def main(argv):
     build_path = generator.build_path
 
     if FLAGS.dump_metadata:
-        logger.info(f"--dump_metadata is specified. Dumping metadata...")
+        logger.info("--dump_metadata is specified. Dumping metadata...")
         with open("./metadata.json", "w") as ouf:
             ouf.write(json.dumps(tag_metadata, indent=2))
         ouf.close()
 
     if FLAGS.stop_at_generate:
-        logger.info(f"--stop_at_generate is specified. Stopping now...")
+        logger.info("--stop_at_generate is specified. Stopping now...")
         return
 
     # We will build and push if args is parsed. Establish some variables.
     push_tags, logs = {}, []
 
-    if not FLAGS.dry_run:
+    if not FLAGS.dry_run and FLAGS.build_images:
         print(f"\n{'-' * 59}\n| Building images\n{'-' * 59}\n")
         for image_tag, dockerfile_path in build_path.items():
             try:
@@ -663,7 +664,9 @@ def main(argv):
                 try:
                     logger.info(f"Building {image_tag} from {dockerfile_path}")
                     build_args = {
-                        "PYTHON_VERSION": get_data(tag_metadata, image_tag, 'envars', 'PYTHON_VERSION')
+                        "PYTHON_VERSION": get_data(
+                            tag_metadata, image_tag, 'envars', 'PYTHON_VERSION'
+                        )
                     }
                     # occasionally build process failed at install BentoML from PyPI. This could be due to
                     # us getting rate limited.
@@ -709,6 +712,8 @@ def main(argv):
                         if 'stream' in line:
                             print(line['stream'].strip())
                     logger.fatal('ABORTING due to failure!')
+        else:
+            logger.info("--build_images is not specified. Skip pushing images...")
 
     # Push process
     # whether to push base image or not
@@ -730,6 +735,14 @@ def main(argv):
     else:
         logger.info("--push_to_hub is not specified. Skip pushing images...")
 
+
+# update README hack
+# https://github.com/docker/hub-feedback/issues/2006
+# TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d \
+#         '{"username": "'${UNAME}'", "password": "'${UPASS}'"}' https://hub.docker.com/v2/users/logins/ | jq -r .token)
+#
+# curl -s -vvv -X PATCH -H "Content-Type: application/json" -H "Authorization: JWT ${TOKEN}" \
+#       -d '{"full_description": "ed"}' https://hub.docker.com/v2/repositories/bentoml/model-server/
 
 if __name__ == "__main__":
     app.run(main)

@@ -278,7 +278,11 @@ $ git remote add upstream git@github.com:YOUR_USER_NAME/BentoML.git
 
 3. Push changes to your fork and follow [this
    article](https://help.github.com/en/articles/creating-a-pull-request)
-   on how to create a pull request on github
+   on how to create a pull request on github. Name your pull request
+   by the [Conventional Commits
+   specification](https://www.conventionalcommits.org/en/v1.0.0/#summary). (You
+   can find more common commit types
+   [here](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716))
 
 4. Once your pull request created, an automated test run will be triggered on
    your branch and the BentoML authors will be notified to review your code

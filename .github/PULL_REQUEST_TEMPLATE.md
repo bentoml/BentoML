@@ -37,6 +37,7 @@
 <!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 <!--- If you plan to update documentation or tests in follow-up, please note -->
+- [ ] My PR title follows the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/#summary)
 - [ ] My code follows the bentoml code style, both `./dev/format.sh` and
   `./dev/lint.sh` script have passed
   ([instructions](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md#style-check-and-auto-formatting-your-code)).

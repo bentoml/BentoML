@@ -61,12 +61,30 @@ Edit `sagemaker_config.json`  file with options for the deployment.
     > BENTO_BUNDLE=$(bentoml get Bento_Name:Bento_version --print-location -q)
     > python deploy.py $BENTO_BUNDLE my-first-sagemaker-deployment sagemaker_config.json
 
+    # Sample output
+    Create ECR repo my-sagemaker-deployment-repo
+    Build and push image 192023623294.dkr.ecr.us-west-2.amazonaws.com/my-sagemaker-deployment-repo:irisclassifier-20210630132202_b1fe9d
+    Create Sagemaker model my-sagemaker-deployment-model
+    Create Sagemaker endpoint confg my-sagemaker-deployment-config
+    Create Sagemaker endpoint my-sagemaker-deployment-endpoint
 
 Get the deployment information and status
 
 .. code-block:: bash
 
-    > python describe.py my-first-sagemaker-depoyment
+    > python describe.py my-first-sagemaker-deployment
+
+    # Sample output
+    [
+      {
+        "EndpointName": "my-sagemaker-deployment-endpoint",
+        "EndpointArn": "arn:aws:sagemaker:us-west-2:192023623294:endpoint/my-sagemaker-deployment-endpoint",
+        "EndpointConfigName": "my-sagemaker-deployment-config",
+        "EndpointStatus": "Creating",
+        "CreationTime": "2021-06-30T15:30:28.554000-07:00",
+        "LastModifiedTime": "2021-06-30T15:30:28.554000-07:00"
+      },
+    ]
 
 
 Use the sample data to verify the predict result from the Sagemaker deployment
@@ -79,6 +97,7 @@ Use the sample data to verify the predict result from the Sagemaker deployment
       --content-type "application/json" \
       >(cat) 1>/dev/null | jq .
 
+    # Sample output
     [0]{
       "ContentType": "application/json",
       "InvokedProductionVariant": "dev-my-first-sag-IrisClassifier-20200121141808-FE78B5"

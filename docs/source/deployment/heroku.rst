@@ -125,7 +125,23 @@ Create a Heroku deployment
 .. code-block:: bash
 
     > BENTO_BUNDLE=$(bentoml get IrisClassifier:latest --print-location -q)
-    > python deploy.py $BENTO_BUNDLE my_deployment heroku_config.json
+    > python deploy.py $BENTO_BUNDLE my-deployment heroku_config.json
+
+    # Sample output
+    Login Heroku registry
+    Create Heroku app btml-my-deployment
+    Build Heroku app btml-my-deployment
+    Deploy Heroku app btml-my-deployment
+    === btml-test-script
+    Auto Cert Mgmt: false
+    Dynos:          web: 1
+    Git URL:        https://git.heroku.com/btml-my-deployment.git
+    Owner:          owner@email.com
+    Region:         us
+    Repo Size:      0 B
+    Slug Size:      0 B
+    Stack:          container
+    Web URL:        https://btml-my-deployment.herokuapp.com/
 
 
 =====================
@@ -136,7 +152,19 @@ Get deployment information
 
 .. code-block:: bash
 
-    python describe.py my_deployment
+    > python describe.py my_deployment
+
+    # Sample output
+    === btml-test-script
+    Auto Cert Mgmt: false
+    Dynos:          web: 1
+    Git URL:        https://git.heroku.com/btml-my-deployment.git
+    Owner:          owner@email.com
+    Region:         us
+    Repo Size:      0 B
+    Slug Size:      0 B
+    Stack:          container
+    Web URL:        https://btml-my-deployment.herokuapp.com/
 
 ===================================
 Test deployment with sample request
@@ -146,11 +174,23 @@ Make request to the Heroku deployment
 
 .. code-block:: bash
 
-    curl  curl -i \
+    > curl  curl -i \
     --header "Content-Type: application/json" \
     --request POST \
     --data '[[5.1, 3.5, 1.4, 0.2]]' \
-    https://btml-my_deployment.herokuapp.com/predict
+    https://btml-my-deployment.herokuapp.com/predict
+
+    # Sample output
+    HTTP/1.1 200 OK
+    Connection: keep-alive
+    Content-Type: application/json
+    X-Request-Id: f499b6d0-ad9b-4d79-850a-3dc058bd67b2
+    Content-Length: 3
+    Date: Mon, 28 Jun 2021 02:50:35 GMT
+    Server: Python/3.7 aiohttp/3.7.4.post0
+    Via: 1.1 vegur
+
+    [0]%
 
 ========================
 Delete Heroku deployment
@@ -158,7 +198,10 @@ Delete Heroku deployment
 
 .. code-block:: bash
 
-    python delete.py my_deployment
+    > python delete.py my-deployment
+
+    # Sample output
+    Removing app btml-my-deployment
 
 
 

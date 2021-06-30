@@ -67,68 +67,40 @@ Edit the deployment options `ec2_config.json` file
 .. code-block:: bash
 
     > BENTO_BUNDLE_PATH=$(bentoml get IrisClassifier:latest --print-location -q)
-    > python deploy.py my-first-ec2-deployment $BENTO_BUNDLE_PATH ec2_config.json
+    > python deploy.py $BENTO_BUNDLE_PATH my-first-ec2-deployment ec2_config.json
+
+    # Sample output
+    Creating S3 bucket for cloudformation
+    Build and push image to ECR
+    Generate CF template
+    Build CF template
+    Deploy EC2
 
 
-Verify the deployed resources with AWS CLI tool:
+Get EC2 deployment information and status:
 
 .. code-block:: bash
 
-    > aws cloudformation describe-stacks
+    > python describe.py my-first-ec2-deployment ec2_config.json
 
+    # Sample output
     {
-        "Stacks": [
-            {
-              "StackId": "arn:aws:cloudformation:ap-south-1:752014255238:stack/btml-stack-dev-my-first-ec2-deployment/a9d08770-1d10-11eb-bc31-028b9ab9a492",
-              "StackName": "btml-stack-dev-my-first-ec2-deployment",
-              "ChangeSetId": "arn:aws:cloudformation:ap-south-1:752014255238:changeSet/samcli-deploy1604324294/ac735ad1-6080-43d2-9e9f-2484563d31c8",
-              "Description": "BentoML load balanced template",
-              "Parameters": [
-                  {
-                      "ParameterKey": "AmazonLinux2LatestAmiId",
-                      "ParameterValue": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
-                      "ResolvedValue": "ami-0e306788ff2473ccb"
-                  }
-              ],
-              "CreationTime": "2020-11-02T13:38:17.257000+00:00",
-              "LastUpdatedTime": "2020-11-02T13:38:22.926000+00:00",
-              "RollbackConfiguration": {},
-              "StackStatus": "CREATE_COMPLETE",
-              "DisableRollback": false,
-              "NotificationARNs": [],
-              "Capabilities": [
-                  "CAPABILITY_IAM"
-              ],
-              "Outputs": [
-                  {
-                      "OutputKey": "AutoScalingGroup",
-                      "OutputValue": "btml-stack-dev-my-first-ec2-deployment-AutoScalingGroup-GTO3DXSAZSWK",
-                      "Description": "Autoscaling group name"
-                  },
-                  {
-                      "OutputKey": "S3Bucket",
-                      "OutputValue": "btml-752014255238-dev",
-                      "Description": "Bucket to store sam artifacts"
-                  },
-                  {
-                      "OutputKey": "TargetGroup",
-                      "OutputValue": "arn:aws:elasticloadbalancing:ap-south-1:752014255238:targetgroup/btml-Targe-1PBR6D87075CO/b3f6c6296ee51758",
-                      "Description": "Target group for load balancer"
-                  },
-                  {
-                      "OutputKey": "Url",
-                      "OutputValue": "http://btml-LoadB-1QA80SD51INOM-516888199.ap-south-1.elb.amazonaws.com",
-                      "Description": "URL of the bento service"
-                  }
-              ],
-              "Tags": [],
-              "DriftInformation": {
-                  "StackDriftStatus": "NOT_CHECKED"
-              }
-          },
-
-        ]
+      "InstanceDetails": [
+        {
+          "instance_id": "i-03ff2d1b9b717a109",
+          "endpoint": "3.101.38.18",
+          "state": "InService",
+          "health_status": "Healthy"
+        }
+      ],
+      "Endpoints": [
+        "3.101.38.18:5000/"
+      ],
+      "S3Bucket": "my-ec2-deployment-storage",
+      "TargetGroup": "arn:aws:elasticloadbalancing:us-west-1:192023623294:targetgroup/my-ec-Targe-3G36XKKIJZV9/d773b029690c84d3",
+      "Url": "http://my-ec2-deployment-elb-2078733703.us-west-1.elb.amazonaws.com"
     }
+
 
 Tests the deployed service with sample dataset:
 
@@ -140,6 +112,7 @@ Tests the deployed service with sample dataset:
       --data '[[5.1, 3.5, 1.4, 0.2]]' \
       https://ps6f0sizt8.execute-api.us-west-2.amazonaws.com/predict
 
+    # Sample output
     HTTP/1.1 200 OK
     Content-Type: application/json
     Content-Length: 3
@@ -156,58 +129,16 @@ Tests the deployed service with sample dataset:
     [0]%
 
 
-Get the deployment information and status
-
-.. code-block:: bash
-
-    > python describe.py my-first-ec2-deployment
-
-    {
-        "namespace": "dev",
-        "name": "deploy-103",
-        "spec": {
-            "bentoName": "IrisClassifier",
-            "bentoVersion": "20201015064204_282D00",
-            "operator": "AWS_EC2",
-            "awsEc2OperatorConfig": {
-            "region": "ap-south-1",
-            "instanceType": "t2.micro",
-            "amiId": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
-            "autoscaleMinCapacity": 1,
-            "autoscaleDesiredCapacity": 1,
-            "autoscaleMaxCapacity": 1
-            }
-        },
-        "state": {
-            "state": "RUNNING",
-            "infoJson": {
-            "InstanceDetails": [
-                {
-                "instance_id": "i-0a8ebeb105e941257",
-                "endpoint": "65.0.11.248",
-                "state": "InService",
-                "health_status": "Healthy"
-                }
-            ],
-            "Endpoints": [
-                "65.0.11.248:5000/predict"
-            ],
-            "S3Bucket": "btml-752014255238-dev",
-            "TargetGroup": "arn:aws:elasticloadbalancing:ap-south-1:752014255238:targetgroup/btml-Targe-II1UG5WJJVPV/b2d6137a7485a45e",
-            "Url": "http://btml-LoadB-9K2SGQEFUKFK-432766095.ap-south-1.elb.amazonaws.com"
-            }
-        },
-        "createdAt": "2020-10-24T06:56:08.974179Z",
-        "lastUpdatedAt": "2020-10-24T06:56:08.974212Z"
-        }
-
-
-
 Delete EC2 deployment
 
 .. code-block:: bash
 
     > python delete.py my-first-ec2-deployment
+
+    # Sample output
+    Delete CloudFormation Stack my-ec2-deployment-stack
+    Delete ECR repo my-ec2-deployment-repo
+    Delete S3 bucket my-ec2-deployment-storage
 
 
 =================================================================

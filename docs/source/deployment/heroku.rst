@@ -25,7 +25,7 @@ Prerequisites
 
     * .. code-block:: bash
 
-            pip install bentoml scikit-learn
+            > pip install bentoml scikit-learn
 
 
 
@@ -38,9 +38,9 @@ BentoML saved bundle for deployment:
 
 .. code-block:: bash
 
-    git clone git@github.com:bentoml/BentoML.git
-    pip install -r ./bentoml/guides/quick-start/requirements.txt
-    python ./bentoml/guides/quick-start/main.py
+    > git clone git@github.com:bentoml/BentoML.git
+    > pip install -r ./bentoml/guides/quick-start/requirements.txt
+    > python ./bentoml/guides/quick-start/main.py
 
 Verify the saved bundle created:
 
@@ -106,29 +106,43 @@ BentoService and available for sending test request:
 Build and deploy to Heroku
 ==========================
 
-1. Download and Install BentoML Heroku deployment tool
+Download and Install BentoML Heroku deployment tool
 
 .. code-block:: bash
 
-    git clone https://github.com/bentoml/heroku-deploy.git
-    cd heroku-deploy
-    pip install -r requirements.txt
+    > git clone https://github.com/bentoml/heroku-deploy.git
+    > cd heroku-deploy
+    > pip install -r requirements.txt
 
 
-2. Create a Heroku deloyment
+Create a Heroku deployment
+
+** Available configuration options for Heroku deployment
+
+* `dyno_count`: Number of Dyno for the deployment
+* `dyno_type`: Dyno instance type. Default is `free`
 
 .. code-block:: bash
 
-    BENTO_BUNDLE=$(bentoml get IrisClassifier:latest --print-location -q)
-    python deploy.py $BENTO_BUNDLE my_deployment heroku_config.json
+    > BENTO_BUNDLE=$(bentoml get IrisClassifier:latest --print-location -q)
+    > python deploy.py $BENTO_BUNDLE my_deployment heroku_config.json
 
-3. Get deployment information
+
+=====================
+Get deployment status
+=====================
+
+Get deployment information
 
 .. code-block:: bash
 
     python describe.py my_deployment
 
-4. Make request to Heroku deployment
+===================================
+Test deployment with sample request
+===================================
+
+Make request to the Heroku deployment
 
 .. code-block:: bash
 
@@ -138,7 +152,9 @@ Build and deploy to Heroku
     --data '[[5.1, 3.5, 1.4, 0.2]]' \
     https://btml-my_deployment.herokuapp.com/predict
 
-5. Delete Heroku deployment
+========================
+Delete Heroku deployment
+========================
 
 .. code-block:: bash
 
@@ -146,3 +162,6 @@ Build and deploy to Heroku
 
 
 
+.. spelling::
+
+    Dyno

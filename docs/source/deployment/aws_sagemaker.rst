@@ -53,14 +53,20 @@ Edit `sagemaker_config.json`  file with options for the deployment.
 * `instance_type`: The ML computing instance type for the deployed Sagemaker endpoint. See the link for more information, https://docs.aws.amazon.com/cli/latest/reference/sagemaker/create-endpoint-config.html
 * `initial_instance_count`: Number of the instances to launch initially
 * `enable_data_capture`: Boolean toggle for enable Sagemaker to captures data from requests/responses and store the captured data to S3 bucket
-* `data_capture_s3_prefix`: S3 bucket patth for store captured data
+* `data_capture_s3_prefix`: S3 bucket path for store captured data
 * `data_capture_sample_percent`: The percentage of the data will be captured to the S3 bucket.
 
 .. code-block:: bash
 
     > BENTO_BUNDLE=$(bentoml get Bento_Name:Bento_version --print-location -q)
-    > python deploy $BENTO_BUNDLE my-frist-sagemaker-deployment sagemaker_config.json
+    > python deploy.py $BENTO_BUNDLE my-first-sagemaker-deployment sagemaker_config.json
 
+
+Get the deployment information and status
+
+.. code-block:: bash
+
+    > python describe.py my-first-sagemaker-depoyment
 
 
 Use the sample data to verify the predict result from the Sagemaker deployment

@@ -7,9 +7,7 @@ container allow users deploy a BentoML API server with full functionality that s
 base on usage.
 
 In this guide, it will deploy an IrisClassifier BentoService to Azure Functions, make a
-prediction request to the deployment endpoint, and then delete the deployment. It will
-also show how to start an remote YataiService with Azure credential for deploying to
-the Azure Functions.
+prediction request to the deployment endpoint, and then delete the deployment.
 
 Prerequisites:
 --------------
@@ -27,7 +25,7 @@ Prerequisites:
 
     * .. code-block:: bash
 
-        pip install bentoml scikit-learn
+        > pip install bentoml scikit-learn
 
 
 Azure Functions deployment with BentoML
@@ -97,13 +95,6 @@ above
 ======================================
 Deploy BentoService to Azure Functions
 ======================================
-
-Deploy to Azure Functions requires a deployment name, BentoService in name:version
-format, and a valid Azure location.  You can find list of Azure locations by calling
-command `az account list-locations`.
-
-BentoML will create necessary Azure resources, and then build and deploy your
-BentoService as docker image to Azure Functions.
 
 Download and Install BentoML Azure Functions deployment tool
 

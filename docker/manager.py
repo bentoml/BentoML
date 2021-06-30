@@ -6,6 +6,7 @@ import os
 import pathlib
 import re
 import shutil
+import time
 from collections import defaultdict
 from typing import Optional, Union, Dict, MutableMapping, List
 
@@ -18,7 +19,16 @@ from glom import glom, Path, PathAccessError, Assign, PathAssignError
 from jinja2 import Environment
 from ruamel import yaml
 
-from utils import *
+from utils import (
+    FLAGS,
+    mkdir_p,
+    ColoredFormatter,
+    maxkeys,
+    mapfunc,
+    cached_property,
+    flatten,
+    walk
+)
 
 if os.path.exists("./.env"):
     load_dotenv()
@@ -29,8 +39,9 @@ logger = logging.get_absl_logger()
 RELEASE_TAG_FORMAT = "{release_type}-python{python_version}-{tag_suffix}"
 
 DOCKERFILE_SUFFIX = ".Dockerfile.j2"
-DOCKERFILE_NAME = DOCKERFILE_SUFFIX.split('.')[1]
 DOCKERFILE_HIERARCHY = ["base", "cudnn", "devel", "runtime"]
+DOCKERFILE_NVIDIA_REGEX = re.compile(r'(?:nvidia|cuda|cudnn)+')
+DOCKERFILE_NAME = DOCKERFILE_SUFFIX.split('.')[1]
 
 SUPPORTED_PYTHON_VERSION = ["3.7", "3.8"]
 SUPPORTED_OS = ["debian", "centos", "alpine", "amazonlinux"]
@@ -39,7 +50,6 @@ NVIDIA_REPO_URL = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x
 NVIDIA_ML_REPO_URL = (
     "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
 )
-NVIDIA_DOCKERFILE_REGEX = re.compile(r'(?:nvidia|cuda|cudnn)+')
 
 
 SPEC_SCHEMA = """
@@ -149,7 +159,6 @@ releases:
       regex: '([\d\.]+)'
     valuesrules:
       type: dict
-    
 """
 
 
@@ -511,7 +520,7 @@ class Generate(object):
         else:
             logger.warning(f"CUDA is disabled for {dist}. Skipping...")
             for key in list(_build_ctx.keys()):
-                if NVIDIA_DOCKERFILE_REGEX.match(key):
+                if DOCKERFILE_NVIDIA_REGEX.match(key):
                     _build_ctx.pop(key)
 
         return _build_ctx
@@ -570,7 +579,7 @@ class Generate(object):
                         input_path = [
                             f
                             for f in template_dir.iterdir()
-                            if NVIDIA_DOCKERFILE_REGEX.match(f.name)
+                            if DOCKERFILE_NVIDIA_REGEX.match(f.name)
                         ]
                     else:
                         input_path = [get_files(template_dir, str(rtype))]
@@ -620,6 +629,7 @@ def main(argv):
     print(f"\n{'-' * 59}\n| Generate from templates\n{'-' * 59}\n")
     generator = Generate(release_spec, cuda_version=FLAGS.cuda_version)
     tag_metadata = generator(dry_run=FLAGS.dry_run)
+    build_path = generator.build_path
 
     if FLAGS.dump_metadata:
         logger.info(f"--dump_metadata is specified. Dumping metadata...")
@@ -636,12 +646,12 @@ def main(argv):
 
     if not FLAGS.dry_run:
         print(f"\n{'-' * 59}\n| Building images\n{'-' * 59}\n")
-        for image_tag, dockerfile_path in generator.build_path.items():
+        for image_tag, dockerfile_path in build_path.items():
             try:
-                # this is used when there are changed in base image.
+                # this is should be when there are changed in base image.
                 if FLAGS.overwrite:
                     docker_client.api.remove_image(image_tag, force=True)
-                    # when python doesn't have goto supports =(
+                    # dirty workaround for not having goto supports in Python.
                     raise docker.errors.ImageNotFound(f"Building {image_tag}")
                 elif docker_client.api.history(image_tag):
                     logger.info(
@@ -652,15 +662,17 @@ def main(argv):
             except docker.errors.ImageNotFound:
                 try:
                     logger.info(f"Building {image_tag} from {dockerfile_path}")
+                    build_args = {
+                        "PYTHON_VERSION": get_data(tag_metadata, image_tag, 'envars', 'PYTHON_VERSION')
+                    }
+                    # occasionally build process failed at install BentoML from PyPI. This could be due to
+                    # us getting rate limited.
+                    # https://warehouse.pypa.io/api-reference/index.html
                     resp = docker_client.api.build(
                         timeout=FLAGS.timeout,
                         path=".",
                         nocache=False,
-                        buildargs={
-                            "PYTHON_VERSION": get_data(
-                                tag_metadata, image_tag, 'envars', 'PYTHON_VERSION'
-                            )
-                        },
+                        buildargs=build_args,
                         dockerfile=dockerfile_path,
                         tag=image_tag,
                     )

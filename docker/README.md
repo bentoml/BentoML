@@ -1,6 +1,4 @@
-![bentoml-docker](./bentoml-docker.png)
----
-<h1 align="center">BentoML Docker Releases</h1>
+![bentoml-docker](tools/img/bentoml-docker.png)
 
 ## Table of Content
 - [Annoucement](#announcement)
@@ -18,7 +16,8 @@ With the removal of `latest` tags, the following usecase is **NOT A BUG**:
 
 ```shell
 » docker pull bentoml/model-server
-Error response from daemon: manifest for bentoml/model-server:not-existed not found: manifest unknown: manifest unknown
+Error response from daemon: manifest for bentoml/model-server:latest 
+not found: manifest unknown: manifest unknown
 ```
 
 ## Notes
@@ -56,10 +55,10 @@ and each image tags will have the following format:
    └─>  Release type: devel or official BentoML release (e.g: 0.13.0)                                           
 ```
 
-_example of available [tags](https://hub.docker.com/repository/docker/bentoml/model-server/tags?page=1&ordering=last_updated):
-- model-server:devel-python3.7-slim
-- model-server:0.13.0-python3.8-centos8-cudnn
-- model-server:0.13.0-python3.7-ami2-runtime
+_example of available [tags](https://hub.docker.com/repository/docker/bentoml/model-server/tags?page=1&ordering=last_updated)_:
+- `model-server:devel-python3.7-slim`
+- `model-server:0.13.0-python3.8-centos8-cudnn`
+- `model-server:0.13.0-python3.7-ami2-runtime`
 
 ## Developing
 
@@ -78,15 +77,18 @@ You can use the provided [Dockerfile](https://github.com/bentoml/BentoML/blob/ma
 
 # Use the provided alias below depending on each tasks.
 #
-# If you are re-generate Dockerfile you might want to use manager_dockerfiles so that the generated file can have correct permission
+# If you are re-generate Dockerfile you might want to use manager_dockerfiles 
+# so that the generated file can have correct permission.
 #
-# If you are building and pushing Docker images you might want to use manager_images AS ROOT in order to connect to your docker socket mounted to the container
+# If you are building and pushing Docker images you might want to use manager_images 
+# AS ROOT in order to connect to your docker socket mounted to the container
 #
-# This is for rebuilding or adding new Dockerfile
 » alias manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 manager.py "
 
-# When building or deploying images you need to run as root
 » alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
+
+# Check manager flags
+» manager_dockerfiles --helpfull
 
 # Generate all dockerfiles from templates, and dump all build metadata to metadata.json
 » manager_dockerfiles -bv 0.13.0 -dm
@@ -94,6 +96,6 @@ You can use the provided [Dockerfile](https://github.com/bentoml/BentoML/blob/ma
 # Build all images
 » manager_images -bv 0.13.0 -bi 
 
-# Push all images to defined registries under manifest.yml. We also have to parse --build_images to generate push_tags
+# Push all images to defined registries under manifest.yml.
 » manager_images -bv 0.13.0 -bi -pth
 ```

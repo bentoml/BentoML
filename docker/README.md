@@ -1,15 +1,27 @@
 ![bentoml-docker](./bentoml-docker.png)
 ---
-<h2 align="center">BentoML Docker Releases</h2>
+<h1 align="center">BentoML Docker Releases</h1>
 
-[comment]: <comparision between base linux images> (http://crunchtools.com/comparison-linux-container-images/)
-
-### Table of content
+## Table of Content
+- [Annoucement](#announcement)
 - [Notes](#notes)
-- [Description](#description)
+- [TLDR](#tldr)
 - [Developing](#developing)
 
-### Notes
+## Announcement
+
+The `latest` tag for `model-server` and `yatai-service` has been deprecated on Docker Hub.
+
+Tags also have new formats, therefore current format will also be deprecated.
+
+With the removal of `latest` tags, the following usecase is **NOT A BUG**:
+
+```shell
+» docker pull bentoml/model-server
+Error response from daemon: manifest for bentoml/model-server:not-existed not found: manifest unknown: manifest unknown
+```
+
+## Notes
 - Dockerfiles in `./generated` directory must have their build context set to **the directory of this README.md** directory to  add `entrypoint.sh` as well as other helpers files. 
 - Every Dockerfile is managed via `manifest.yml` and maintained via `manager.py`, which will render the Dockerfile from `Jinja` templates under `./templates`.
 
@@ -18,22 +30,40 @@ An example to generate BentoML's AMI base image with `python3.8` that can be use
 ```shell
 » export PYTHON_VERSION=3.8
   
-  # DOCKER_BUILDKIT=1 is optional
+# DOCKER_BUILDKIT=1 is optional
 » DOCKER_BUILDKIT=1 docker build -f ./generated/model-server/amazonlinux2/runtime/Dockerfile \
-  --build-args PYTHON_VERSION=${PYTHON_VERSION} -t bentoml-docker . 
+                            --build-args PYTHON_VERSION=${PYTHON_VERSION} -t bentoml-docker . 
 ```
 
-### Description
+## TLDR
 
 For each linux distributions, there will be three type of releases:
 
-| Release Type | Functionality |
-|--------------|---------------|
-| `runtime`    | contains BentoML latest releases from PyPI |
-| `cudnn`      | runtime + CUDA and CUDNN  for GPU support |
-| `devel`      | nightly build directly from `master` branch |
+| Release Type | Functionality | Supported OS |
+|--------------|---------------| -------------|
+| `cudnn`      | runtime + CUDA and CUDNN  for GPU support | debian10(buster), centos{7,8} |
+| `runtime`    | contains BentoML latest releases from PyPI | CUDNN supported OS + amazonlinux2, alpine3.14 |
+| `devel`      | nightly build directly from `master` branch | CUDNN supported OS |
 
-### Developing
+and each image tags will have the following format:
+
+```markdown
+<release_type>-<python_version>-<distros>-<suffix>
+   │             │                │        │
+   │             │                │        └─> additional suffix, differentiate runtime and cudnn releases
+   │             │                └─> formatted <dist><dist_version>, e.g: ami2, slim, centos7
+   │             └─> Supported Python version: python3.6 | python3.7 | python3.8
+   └─>  Release type: devel or official BentoML release (e.g: 0.13.0)                                           
+```
+
+_example of available [tags](https://hub.docker.com/repository/docker/bentoml/model-server/tags?page=1&ordering=last_updated):
+- model-server:devel-python3.7-slim
+- model-server:0.13.0-python3.8-centos8-cudnn
+- model-server:0.13.0-python3.7-ami2-runtime
+
+## Developing
+
+[DEVELOPMENT.md](https://github.com/bentoml/BentoML/blob/master/docker/docs/DEVELOPMENT.md) contains details on generation workflow and management logics.
 
 To add new distros support or new CUDA version, you first have to update `manifest.yml`, add templates with correct format under `./templates`, then run `manager.py` to re-generate new Dockerfiles.
 
@@ -64,10 +94,6 @@ You can use the provided [Dockerfile](https://github.com/bentoml/BentoML/blob/ma
 # Build all images
 » manager_images -bv 0.13.0 -bi 
 
-# Push all images to defined registries under manifest.yml
-» manager_images -bv 0.13.0 -pth
+# Push all images to defined registries under manifest.yml. We also have to parse --build_images to generate push_tags
+» manager_images -bv 0.13.0 -bi -pth
 ```
-
-#### Environment
-
-#### Manifest

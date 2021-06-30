@@ -19,8 +19,8 @@ list: ## Display list of built images
 	@echo "==============================================================="
 	@docker images --no-trunc -a --filter=reference='${DOCKER_ORG}/yatai*:*' --format ${FORMAT} | sort | column -t -s $$'\t'
 
-.PHONY: install
-install: ## Install manager Docker image for development
+.PHONY: docker-install
+docker-install: ## Install manager Docker image for development
 ifneq (, $(wildcard ./.env))
 	@touch ./.env
 endif
@@ -28,8 +28,8 @@ endif
 	if [[ `docker images --filter=reference='bentoml-docker' -q` == "" ]] | [[ `git diff Dockerfile` != "" ]]; then \
 		DOCKER_BUILDKIT=1 docker build -t bentoml-docker -f Dockerfile .; \
 	fi;
-	@printf "refers to README.md Developing section for more information.\n"
+	@printf "refers to README.md Developing section.\n"
 
-.PHONY: run
-run: ## Run manager Docker image
+.PHONY: docker-run
+docker-run: ## Run manager Docker image
 	@docker run --user $(shell id -u):$(shell id -g) -it -v $(shell pwd):/bentoml bentoml-docker bash

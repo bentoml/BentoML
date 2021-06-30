@@ -441,8 +441,8 @@ class BentoAPIServer:
         }
         URL_ENTITIES = self.ngsild_cb_url + '/ngsi-ld/v1/entities/'
         URL_SUBSCRIPTION = self.ngsild_cb_url + '/ngsi-ld/v1/subscriptions/'
-        SUBSCRIPTION_INPUT_DATA = 'urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3'
-        # SUBSCRIPTION_INPUT_DATA = "urn:ngsi-ld:Subscription:input:data:{}".format(str(uuid.uuid4()))
+        # SUBSCRIPTION_INPUT_DATA = 'urn:ngsi-ld:Subscription:input:data:2c30fa86-a25c-4191-8311-8954294e92b3'
+        SUBSCRIPTION_INPUT_DATA = 'urn:ngsi-ld:Subscription:input:data:'+str(uuid.uuid4())
         AT_CONTEXT = [ self.ngsild_at_context ]
 
         # Get the POST data
@@ -454,6 +454,7 @@ class BentoAPIServer:
         logger.info('requests status_code for GET subscriptionQuery: %s', r.status_code)
         logger.info('Data: %s', r.json())
         ENTITY_INPUT_DATA = r.json()['entityID']['value']
+        ATTRIBUTE_INPUT_DATA = r.json()['query']['value'].split('=')[1]
 
         # We use the content of the SubscriptionQuery only to get the entity ID for now. 
         # Need to find a generic way to get the attributes as well.
@@ -468,7 +469,7 @@ class BentoAPIServer:
                     'type': 'River'
                 }
             ],
-            'watchedAttributes': ['precipitation'],
+            'watchedAttributes': [ATTRIBUTE_INPUT_DATA],
             'notification': {
                 'endpoint': {
                     'uri': request.url_root + '/ngsi-ld/ml/predict',

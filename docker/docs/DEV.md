@@ -13,20 +13,6 @@ We will go into how BentoML manages its docker releases.
 
 Assume that you have already set up the development environment correctly. Refers to main README's [Developing section](https://github.com/bentoml/BentoML/tree/master/docker#developing).
 
-If you prefer to run the environment locally without using `docker`, then
-
-1. Install [`poetry`](https://python-poetry.org/docs/#installation)
-
-1. ```poetry install``` to install required dependencies
-
-1. enters virtualenv with ```poetry shell```
-
-1. Once in the virtualenv, run:
-
-```shell
-» ./manager.py --helpfull
-```
-
 #### Ephemeral directory
 
 _meaning you shouldn't edit anything within the directory_

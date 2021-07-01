@@ -1,12 +1,4 @@
-{% if metadata.ephemeral %}
-{# This will be part of ./generated #}
-## GENERATED DIRECTORY - DO NOT EDIT
-
-The files are maintained by `manager.py`, which generates Dockerfile from `templates`.
-Refers to [main README](../README.md) for more information.
-
-{% else %}
-![bentoml-docker]({{ metadata.bentoml_img }})
+![bentoml-docker](https://github.com/bentoml/BentoML/blob/master/docs/source/_static/img/bentoml.png)
 ---
 ## Model Serving Made Easy
 
@@ -46,18 +38,12 @@ not found: manifest unknown: manifest unknown
 Three types of images provided in the registry:
 - `runtime`: Includes BentoML latest PyPI releases
 - `devel`: Nightly releases from `master` branch.
-    {% if metadata.bentoml_package == "model-server" %}
-- `cudnn`: Builds on top of `runtime` with the addition of [CUDA](https://developer.nvidia.com/gpu-accelerated-libraries) and [CUDNN](https://developer.nvidia.com/cudnn) libraries
-    {% endif %}
 
 ## Notes
 
 In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [BentoML's GPU Serving guides](https://docs.bentoml.org/en/latest/guides/gpu_serving.html) on how to use BentoML's CUDA images.
 
-### `{{ metadata.bentoml_package }}` {{ metadata.bentoml_release_version }} tags
+### `yatai-service` 0.13.0 tags
 
-    {# We also want to reference old dockerfile releases here as well, so how do we do this? #}
 
-{% set OS = [] %}
 
-{% endif %}

@@ -10,7 +10,8 @@
 
 The `latest` tag for `model-server` and `yatai-service` has been deprecated on Docker Hub.
 
-Tags also have new formats, therefore current format will also be deprecated.
+Current tag format will also be deprecated. Make sure to update `@env(docker_base_image)` if you are
+using BentoML's `model-server` images.
 
 With the removal of `latest` tags, the following usecase is **NOT A BUG**:
 
@@ -40,11 +41,11 @@ For each linux distributions, there will be three type of releases:
 
 | Release Type | Functionality | Supported OS |
 |--------------|---------------| -------------|
-| `cudnn`      | runtime + CUDA and CUDNN  for GPU support | debian10(buster), centos{7,8} |
-| `runtime`    | contains BentoML latest releases from PyPI | CUDNN supported OS + amazonlinux2, alpine3.14 |
-| `devel`      | nightly build directly from `master` branch | CUDNN supported OS |
+| `devel`      | nightly build directly from `master` branch | `debian buster`, `centos{7,8}` |
+| `cudnn`      | runtime + CUDA and CUDNN  for GPU support | devel supported OS |
+| `runtime`    | contains BentoML latest releases from PyPI | devel supported OS + `amazonlinux2`, `alpine3.14` |
 
-and each image tags will have the following format:
+Image tags will have the following format:
 
 ```markdown
 <release_type>-<python_version>-<distros>-<suffix>
@@ -62,7 +63,7 @@ _example of available [tags](https://hub.docker.com/repository/docker/bentoml/mo
 
 ## Developing
 
-[DEVELOPMENT.md](https://github.com/bentoml/BentoML/blob/master/docker/docs/DEVELOPMENT.md) contains more details on generation workflow and management logics.
+[DEV.md](https://github.com/bentoml/BentoML/blob/master/docker/docs/DEV.md) contains more details on generation workflow and management logics.
 
 To add new distros support or new CUDA version, you first have to update `manifest.yml`, add templates with correct format under `./templates`, then run `manager.py` to re-generate new Dockerfiles.
 
@@ -91,11 +92,14 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 » manager_dockerfiles --helpfull
 
 # Generate all dockerfiles from templates, and dump all build metadata to metadata.json
-» manager_dockerfiles -bv 0.13.0 -dm
+» manager_dockerfiles --bentoml_version 0.13.0 --generate dockerfiles
 
 # Build all images
-» manager_images -bv 0.13.0 -bi 
+» manager_images --bentoml_version 0.13.0 --generate images
+
+# Build images for specific releases
+» manager_images --bentoml_version 0.13.0 --generate images --releases runtime
 
 # Push all images to defined registries under manifest.yml.
-» manager_images -bv 0.13.0 -bi -pth
+» manager_images --bentoml_version 0.13.0 --push_to_hub --releases cudnn
 ```

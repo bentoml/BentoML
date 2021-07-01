@@ -24,8 +24,6 @@ COPY pyproject.toml .
 
 COPY tools/bashrc /etc/bash.bashrc
 
-COPY .env .
-
 RUN chmod a+rwx /etc/bash.bashrc
 
 RUN if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi

@@ -3,7 +3,6 @@
 # this can also include GCR, NVCR, Heroku, etc.
 repository:
   docker.io:
-    only_if: HUB_PASSWORD
     user: HUB_USERNAME
     pwd: HUB_PASSWORD
     registry:

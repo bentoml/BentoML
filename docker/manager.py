@@ -2,6 +2,7 @@
 import itertools
 import json
 import multiprocessing
+import inspect
 import operator
 import os
 from pathlib import Path
@@ -266,9 +267,7 @@ class GenerateAPIMixin(object):
 
         return _context
 
-    def release_info_context(
-        self, package: str,
-    ):
+    def readme_context(self, package: str):
         release_info: MutableMapping = defaultdict(list)
 
         assert (
@@ -301,6 +300,9 @@ class GenerateAPIMixin(object):
         return release_info
 
     def metadata(self, target_dir: str, python_versions: List[str]):
+        _paths: Dict = {}
+        _tags: Dict = defaultdict()
+
         for combinations in itertools.product(self._packages.items(), python_versions):
             (package, package_spec), python_version = combinations
             logger.info(f"Working on {package} for python{python_version}")
@@ -347,17 +349,21 @@ class GenerateAPIMixin(object):
                 tag_keys = f"{tag_context['package']}:{_release_tag}"
 
                 # # setup directory correspondingly, and add these paths
-                set_data(self._tags, tag_context, tag_keys)
-                set_data(self._paths, full_output_path, tag_keys)
+                set_data(_tags, tag_context, tag_keys)
+                set_data(_paths, full_output_path, tag_keys)
 
-                # generate our Dockerfile from templates.
+                if os.geteuid() == 0:
+                    logger.debug("manager_images is being used, thus we will skip Dockerfile generation.")
+                    continue
                 if 'dockerfiles' in FLAGS.generate:
+                    # Forbid generation by ROOT
                     self.render(
                         input_paths=input_paths,
                         output_path=output_path,
                         metadata=tag_context,
                         build_tag=build_tag,
                     )
+        return _tags, _paths
 
     def readmes(self, target_dir: str):
         input_readmes: List[Path] = [Path('./templates/docs/README.md.j2')]
@@ -368,7 +374,7 @@ class GenerateAPIMixin(object):
             'bentoml_release_version': FLAGS.bentoml_version,
         }
         for package in self._packages.keys():
-            _release_info = self.release_info_context(package)
+            _release_info = self.readme_context(package)
 
             readme_context['release_info'] = _release_info
 
@@ -395,6 +401,10 @@ class BuildAPIMixin(object):
 
 # noinspection PyUnresolvedReferences
 class Manager(requests.Session, GenerateAPIMixin, BuildAPIMixin):
+    """
+    Docker Images Releases Manager.
+    """
+
     _paths: Dict = {}
     _tags: MutableMapping = defaultdict()
 
@@ -410,11 +420,11 @@ class Manager(requests.Session, GenerateAPIMixin, BuildAPIMixin):
                 mapfunc(lambda x: list(flatten(x)), values)
             super().__setattr__(f"_{keys}", values)
 
-        # dirty hack to force add base
+        # workaround to add base building blocks.
         for _v in self._packages.values():
             _v.update({'base': maxkeys(_v)})
 
-        # setup cuda_version
+        # setup cuda version
         if cuda_version in self._cuda_dependencies.keys():
             self._cuda_version = cuda_version
         else:
@@ -422,52 +432,54 @@ class Manager(requests.Session, GenerateAPIMixin, BuildAPIMixin):
                 f"{cuda_version} is not defined in {FLAGS.manifest_file}"
             )
 
-    def __call__(self, dry_run=False):
+        # validate releases args.
+        if FLAGS.releases and FLAGS.releases not in SUPPORTED_GENERATE_TYPE:
+            logger.critical(
+                f"Invalid --releases arguments. Allowed: {SUPPORTED_GENERATE_TYPE}"
+            )
+
+        # setup python version.
         if len(FLAGS.python_version) > 0:
             logger.debug("--python_version defined, ignoring SUPPORTED_PYTHON_VERSION")
-            supported_python = FLAGS.python_version
-            if supported_python not in SUPPORTED_PYTHON_VERSION:
+            self.supported_python = FLAGS.python_version
+            if self.supported_python not in SUPPORTED_PYTHON_VERSION:
                 logger.critical(
                     f"{supported_python} is not supported. Allowed: {SUPPORTED_PYTHON_VERSION}"
                 )
         else:
-            supported_python = SUPPORTED_PYTHON_VERSION
+            self.supported_python = SUPPORTED_PYTHON_VERSION
 
-        if not dry_run:
-            # generate Dockerfiles and README.
-            if 'dockerfiles' in FLAGS.generate:
-                # Consider generated directory ephemeral
-                logger.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
-                shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
-                mkdir_p(FLAGS.dockerfile_dir)
-            self.metadata(
-                target_dir=FLAGS.dockerfile_dir, python_versions=supported_python
-            )
-            self.readmes(target_dir=FLAGS.dockerfile_dir)
+        # setup tags and paths
+        # Consider generated directory ephemeral
 
-            if FLAGS.dump_metadata:
-                logger.info(
-                    "--dump_metadata is specified. Stop after dumping metadata..."
-                )
-                with open("./metadata.json", "w") as ouf:
-                    ouf.write(json.dumps(self._tags, indent=2))
-                ouf.close()
+    @cached_property
+    def tags(self):
+        return self._tags
 
-        return self
-
-    def __repr__(self):
-        return json.dumps(self.paths, indent=2)
-
-    @property
+    @cached_property
     def paths(self):
         return {
             h: {k: self._paths[k] for k in self._paths.keys() if h in k}
             for h in DOCKERFILE_BUILD_HIERARCHY
         }
 
-    @cached_property
-    def tags(self):
-        return self._tags
+    def generate(self, dry_run: bool):
+        # generate Dockerfiles and README.
+        if not dry_run and os.geteuid() != 0:
+            logger.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
+            shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
+            mkdir_p(FLAGS.dockerfile_dir)
+            self._tags, self._paths = self.metadata(
+                target_dir=FLAGS.dockerfile_dir, python_versions=self.supported_python
+            )
+            self.readmes(target_dir=FLAGS.dockerfile_dir)
+            if FLAGS.dump_metadata:
+                with open("./metadata.json", "w") as ouf:
+                    ouf.write(json.dumps(self._tags, indent=2))
+                ouf.close()
+
+    def build(self):
+        pass
 
 
 def main(argv):
@@ -476,42 +488,26 @@ def main(argv):
     if len(argv) > 1:
         raise RuntimeError("Too much arguments")
 
-    if FLAGS.releases and FLAGS.releases not in SUPPORTED_GENERATE_TYPE:
-        logger.critical(
-            f"Invalid --releases arguments. Allowed: {SUPPORTED_GENERATE_TYPE}"
-        )
-
     # Parse specs from manifest.yml and validate it.
     logger.info(
         f"{'-' * 59}\n\t{' ' * 5}| Validating {FLAGS.manifest_file}\n\t{' ' * 5}{'-' * 59}"
     )
     release_spec = load_manifest_yaml(FLAGS.manifest_file)
+    manager = Manager(release_spec, FLAGS.cuda_version)
 
     # generate templates to correct directory.
     logger.info(
         f"{'-' * 59}\n\t{' ' * 5}| Generate from templates\n\t{' ' * 5}{'-' * 59}"
     )
-    manager = Manager(release_spec, FLAGS.cuda_version)(dry_run=FLAGS.dry_run)
-    tag_metadata, path_metadata = manager.tags, manager.paths
-
+    manager.generate(dry_run=FLAGS.dry_run)
     if 'dockerfiles' in FLAGS.generate:
-        # This to stop the process at generating Dockerfile.
         return
+
+    tag_metadata, path_metadata = manager.tags, manager.paths
 
     # Login Docker credentials and setup docker client
     logger.info(f"{'-' * 59}\n\t{' ' * 5}| Configure Docker\n\t{' ' * 5}{'-' * 59}")
     docker_client = docker.from_env()
-
-    if len(os.listdir(FLAGS.dockerfile_dir)) == 0:
-        logger.critical(
-            "Please use manager_dockerfiles --generate dockerfiles"
-            " in order to generate Dockerfiles with correct permission."
-        )
-    if os.geteuid() != 0:
-        logger.warning(
-            "Make sure to use manager_images to "
-            "connect to docker.sock as ROOT. Currently running without sudo privilege."
-        )
 
     # We will build and push if args is parsed. Establish some variables.
     logger.info(f"{'-' * 59}\n\t{' ' * 5}| Building images\n\t{' ' * 5}{'-' * 59}")

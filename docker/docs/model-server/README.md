@@ -44,7 +44,38 @@ Three types of images provided in the registry:
 
 In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [BentoML's GPU Serving guides](https://docs.bentoml.org/en/latest/guides/gpu_serving.html) on how to use BentoML's CUDA images.
 
-### `model-server` 0.13.0 tags
+## Latest tags for `model-server 0.13.0`
 
+### slim
+_NOTES_: `slim` images are debian-based that is built on top of [`debian:buster-slim`](https://github.com/debuerreotype/docker-debian-artifacts/blob/a4f413e5917d5917fb2343c0c37ea0728114c084/buster/slim/Dockerfile)
+- [`0.13.0-python3.7-slim-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/debian10/cudnn/Dockerfile)
+- [`0.13.0-python3.7-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/debian10/runtime/Dockerfile)
+- [`0.13.0-python3.8-slim-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/debian10/cudnn/Dockerfile)
+- [`0.13.0-python3.8-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/debian10/runtime/Dockerfile)
+- [`devel-python3.7-slim`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/debian10/devel/Dockerfile)
+- [`devel-python3.8-slim`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/debian10/devel/Dockerfile)
 
+### centos8
+- [`0.13.0-python3.7-centos8-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos8/cudnn/Dockerfile)
+- [`0.13.0-python3.7-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos8/runtime/Dockerfile)
+- [`0.13.0-python3.8-centos8-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos8/cudnn/Dockerfile)
+- [`0.13.0-python3.8-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos8/runtime/Dockerfile)
+- [`devel-python3.7-centos8`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos8/devel/Dockerfile)
+- [`devel-python3.8-centos8`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos8/devel/Dockerfile)
+
+### centos7
+- [`0.13.0-python3.7-centos7-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos7/cudnn/Dockerfile)
+- [`0.13.0-python3.7-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos7/runtime/Dockerfile)
+- [`0.13.0-python3.8-centos7-cudnn`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos7/cudnn/Dockerfile)
+- [`0.13.0-python3.8-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos7/runtime/Dockerfile)
+- [`devel-python3.7-centos7`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos7/devel/Dockerfile)
+- [`devel-python3.8-centos7`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/centos7/devel/Dockerfile)
+
+### amazonlinux2
+- [`0.13.0-python3.7-ami2-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/amazonlinux2/runtime/Dockerfile)
+- [`0.13.0-python3.8-ami2-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/amazonlinux2/runtime/Dockerfile)
+
+### alpine3.14
+- [`0.13.0-python3.7-alpine-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/alpine3.14/runtime/Dockerfile)
+- [`0.13.0-python3.8-alpine-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/model-server/alpine3.14/runtime/Dockerfile)
 

@@ -54,10 +54,20 @@ Three types of images provided in the registry:
 
 In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [BentoML's GPU Serving guides](https://docs.bentoml.org/en/latest/guides/gpu_serving.html) on how to use BentoML's CUDA images.
 
-### `{{ metadata.bentoml_package }}` {{ metadata.bentoml_release_version }} tags
-
-    {# We also want to reference old dockerfile releases here as well, so how do we do this? #}
-
+## Latest tags for `{{ metadata.bentoml_package }} {{ metadata.bentoml_release_version }}`
+{# We might also want to include previous images here as well #}
 {% set OS = [] %}
+{% for distros, tags_path in metadata.release_info.items() %}
+    {% if distros not in OS %}
+        {% print"\n### " %}{% print distros %}{% print"\n" %}
+        {% do OS.append(distros) %}
+        {% if 'slim' in distros.lower() %}
+_NOTES_: `slim` images are debian-based that is built on top of [`debian:buster-slim`](https://github.com/debuerreotype/docker-debian-artifacts/blob/a4f413e5917d5917fb2343c0c37ea0728114c084/buster/slim/Dockerfile)
+        {% endif %}
+    {% endif %}
+    {% for (tag, path) in tags_path %}
+        {% print "- [`" %}{% print tag %}{% print "`](https://github.com/bentoml/BentoML/tree/master/docker/" %}{% print path %}{% print ")\n" %}
+    {% endfor %}
+{% endfor %}
 
 {% endif %}

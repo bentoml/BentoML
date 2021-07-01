@@ -19,7 +19,7 @@ from jinja2 import Environment
 
 from utils import (
     FLAGS,
-    SUPPORTED_OS,
+    SUPPORTED_GENERATE_TYPE,
     mkdir_p,
     ColoredFormatter,
     maxkeys,
@@ -277,14 +277,14 @@ class GenerateAPIMixin(object):
             self._paths and self._tags
         ), "Make sure to generate build metadata before parsing README context."
 
+        combos = f"{distro}{distro_version}"
+
         if distro == 'debian':
-            _os_tag = 'slim'
+            _os_tag = combos = 'slim'
         elif distro == 'amazonlinux':
             _os_tag = 'ami'
         else:
             _os_tag = distro
-
-        combos = f"{distro}{distro_version}"
 
         release_info[combos] = sorted(
             [
@@ -473,6 +473,9 @@ def main(argv):
 
     if len(argv) > 1:
         raise RuntimeError("Too much arguments")
+
+    if FLAGS.releases and FLAGS.releases not in SUPPORTED_GENERATE_TYPE:
+        logger.critical(f"Invalid --releases arguments. Allowed: {SUPPORTED_GENERATE_TYPE}")
 
     # Parse specs from manifest.yml and validate it.
     logger.info(

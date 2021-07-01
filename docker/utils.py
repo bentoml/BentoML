@@ -12,7 +12,7 @@ from ruamel import yaml
 
 __all__ = (
     'FLAGS',
-    'SUPPORTED_OS',
+    'SUPPORTED_GENERATE_TYPE',
     'cached_property',
     'ColoredFormatter',
     'mkdir_p',

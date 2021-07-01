@@ -1,0 +1,7 @@
+#!/bin/sh
+if ! head -1 "$1" | grep -qE "^(feat|fix|ci|chore|docs|test|style|refactor|perf|build|revert)(\(.+?\))?: .{1,}$"; then
+    echo "Aborting commit. Please use <type>([optional scope]): <description> format for your commit title, where <type> should be one of (feat|fix|ci|chore|docs|test|style|refactor|perf|build|revert)" >&2
+    echo 'Some valid examples: "feat: add support for PyTorch" and "fix(cli): add missing arguments of bentoml serve"'
+    echo "You can read more details about commit message formatting in DEVELOPMENT.md "
+    exit 1
+fi

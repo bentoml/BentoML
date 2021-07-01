@@ -298,3 +298,9 @@ $ git remote add upstream git@github.com:YOUR_USER_NAME/BentoML.git
    your branch and the BentoML authors will be notified to review your code
    changes. Once tests are passed and reviewer has signed off, we will merge
    your pull request.
+
+
+## Optional: Install git hooks to enforce commit format
+
+Run `./dev/install_git_hooks.sh` to install git hooks to automate
+commit format enforcement described above.

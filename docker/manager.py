@@ -267,36 +267,38 @@ class GenerateAPIMixin(object):
         return _context
 
     def release_info_context(
-        self,
-        distro: str,
-        distro_version: str,
-        package: str,
-        release_info: MutableMapping,
+        self, package: str,
     ):
+        release_info: MutableMapping = defaultdict(list)
+
         assert (
-            self._paths and self._tags
+            self._paths
         ), "Make sure to generate build metadata before parsing README context."
 
-        combos = f"{distro}{distro_version}"
+        # check if given distro is supported per package.
+        dists = maxkeys(self._packages[package])
+        for distro in dists:
+            for distro_version in self._releases[distro].keys():
+                combos = f"{distro}{distro_version}"
+                if distro == 'debian':
+                    _os_tag = combos = 'slim'
+                elif distro == 'amazonlinux':
+                    _os_tag = 'ami'
+                else:
+                    _os_tag = distro
 
-        if distro == 'debian':
-            _os_tag = combos = 'slim'
-        elif distro == 'amazonlinux':
-            _os_tag = 'ami'
-        else:
-            _os_tag = distro
-
-        release_info[combos] = sorted(
-            [
-                (release_tags.split(":")[1], gen_path)
-                for release_tags, gen_path in self._paths.items()
-                if _os_tag in release_tags
-                and package in release_tags
-                and 'base' not in release_tags
-                and str(distro_version) in gen_path
-            ],
-            key=operator.itemgetter(0),
-        )
+                release_info[combos] = sorted(
+                    [
+                        (release_tags.split(":")[1], gen_path)
+                        for release_tags, gen_path in self._paths.items()
+                        if _os_tag in release_tags
+                        and package in release_tags
+                        and 'base' not in release_tags
+                        and str(distro_version) in gen_path
+                    ],
+                    key=operator.itemgetter(0),
+                )
+        return release_info
 
     def metadata(self, target_dir: str, python_versions: List[str]):
         for combinations in itertools.product(self._packages.items(), python_versions):
@@ -358,7 +360,6 @@ class GenerateAPIMixin(object):
                     )
 
     def readmes(self, target_dir: str):
-        _release_info: MutableMapping = defaultdict(list)
         input_readmes: List[Path] = [Path('./templates/docs/README.md.j2')]
         readme_context: Dict = {
             'ephemeral': False,
@@ -366,25 +367,26 @@ class GenerateAPIMixin(object):
             'bentoml_package': "",
             'bentoml_release_version': FLAGS.bentoml_version,
         }
-
-        for package, package_spec in self._packages.items():
-            set_data(readme_context, package, 'bentoml_package')
-            # static readme context
-            for (distro, distro_version, _, _) in self.aggregate_dists_releases(
-                package_spec
-            ):
-                self.release_info_context(
-                    distro, distro_version, package, _release_info
-                )
+        for package in self._packages.keys():
+            _release_info = self.release_info_context(package)
 
             readme_context['release_info'] = _release_info
 
+            set_data(readme_context, package, 'bentoml_package')
             output_readme = Path('docs', package)
-            self.render(input_paths=input_readmes, output_path=output_readme, metadata=readme_context)
+            self.render(
+                input_paths=input_readmes,
+                output_path=output_readme,
+                metadata=readme_context,
+            )
 
         # renders README for generated directory
         readme_context['ephemeral'] = True
-        self.render(input_paths=input_readmes, output_path=Path(target_dir), metadata=readme_context)
+        self.render(
+            input_paths=input_readmes,
+            output_path=Path(target_dir),
+            metadata=readme_context,
+        )
 
 
 class BuildAPIMixin(object):
@@ -475,7 +477,9 @@ def main(argv):
         raise RuntimeError("Too much arguments")
 
     if FLAGS.releases and FLAGS.releases not in SUPPORTED_GENERATE_TYPE:
-        logger.critical(f"Invalid --releases arguments. Allowed: {SUPPORTED_GENERATE_TYPE}")
+        logger.critical(
+            f"Invalid --releases arguments. Allowed: {SUPPORTED_GENERATE_TYPE}"
+        )
 
     # Parse specs from manifest.yml and validate it.
     logger.info(
@@ -536,13 +540,13 @@ def main(argv):
             except docker.errors.ImageNotFound:
                 try:
                     build_args = {
-                                      "PYTHON_VERSION": get_data(
-                                      tag_metadata, image_tag, 'envars', 'PYTHON_VERSION'
-                                      )
-                                         }
+                        "PYTHON_VERSION": get_data(
+                            tag_metadata, image_tag, 'envars', 'PYTHON_VERSION'
+                        )
+                    }
                     # occasionally build process failed at install BentoML from PyPI. This could be due to
-                        # us getting rate limited.
-                        # https://warehouse.pypa.io/api-reference/index.html
+                    # us getting rate limited.
+                    # https://warehouse.pypa.io/api-reference/index.html
                     resp = docker_client.api.build(
                         timeout=FLAGS.timeout,
                         path=".",
@@ -556,7 +560,7 @@ def main(argv):
                     while True:
                         try:
                             # output logs to stdout
-                                # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
+                            # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
                             output = next(resp).decode('utf-8')
                             json_output = json.loads(output.strip('\r\n'))
                             if 'stream' in json_output:

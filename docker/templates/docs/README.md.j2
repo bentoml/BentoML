@@ -56,14 +56,10 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 
 ## Latest tags for `{{ metadata.bentoml_package }} {{ metadata.bentoml_release_version }}`
 {# We might also want to include previous images here as well #}
-{% set OS = [] %}
 {% for distros, tags_path in metadata.release_info.items() %}
-    {% if distros not in OS %}
-        {% print"\n### " %}{% print distros %}{% print"\n" %}
-        {% do OS.append(distros) %}
-        {% if 'slim' in distros.lower() %}
-_NOTES_: `slim` images are debian-based that is built on top of [`debian:buster-slim`](https://github.com/debuerreotype/docker-debian-artifacts/blob/a4f413e5917d5917fb2343c0c37ea0728114c084/buster/slim/Dockerfile)
-        {% endif %}
+    {% print"\n### " %}{% print distros %}{% print"\n" %}
+    {% if 'slim' in distros.lower() %}
+_NOTES_: `slim` images are built on top of [`debian:buster-slim`](https://github.com/debuerreotype/docker-debian-artifacts/blob/a4f413e5917d5917fb2343c0c37ea0728114c084/buster/slim/Dockerfile)
     {% endif %}
     {% for (tag, path) in tags_path %}
         {% print "- [`" %}{% print tag %}{% print "`](https://github.com/bentoml/BentoML/tree/master/docker/" %}{% print path %}{% print ")\n" %}

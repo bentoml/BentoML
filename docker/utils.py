@@ -175,7 +175,18 @@ release_spec:
         type: string
     cuda:
       type: dict
-
+      
+tag_spec:
+  fmt: "{release_type}-python{python_version}-{suffixes}"
+    type: string
+    check_with: format_keys
+  release_type:
+    type: string
+  python_version:
+    type: string
+  suffixes:
+    type: string
+  
 releases:
   type: dict
   keysrules:
@@ -257,6 +268,9 @@ class MetadataSpecValidator(Validator):
             pass
         if self.cudnn_counter > self.CUDNN_THRESHOLD:
             self._error(field, "Only allowed one CUDNN version per CUDA mapping")
+
+    def _check_with_format_keys(self, field, value):
+        pass
 
     def _validate_env_vars(self, env_vars, field, value):
         """

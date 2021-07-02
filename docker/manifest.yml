@@ -41,6 +41,12 @@ release_spec: &tmpl_spec
   cuda:
     <<: *cuda11_3_1
 
+tag_spec:
+  fmt: "{release_type}-python{python_version}-{suffixes}"
+  release_type: ""
+  python_version: ""
+  suffixes: ""
+
 packages:
   model-server:
     devel: &default_specs

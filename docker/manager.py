@@ -36,9 +36,9 @@ from utils import (
 
 load_dotenv()
 logging.get_absl_handler().setFormatter(ColoredFormatter())
-logger = logging.get_absl_logger()
+log = logging.get_absl_logger()
 
-RELEASE_TAG_FORMAT = "{release_type}-python{python_version}-{tag_suffix}"
+RELEASE_TAG_FORMAT = ""
 
 DOCKERFILE_SUFFIX = ".Dockerfile.j2"
 DOCKERFILE_BUILD_HIERARCHY = ["base", "runtime", "cudnn", "devel"]
@@ -58,21 +58,24 @@ def jprint(*args, **kwargs):
 
 
 def auth_registries(repository: Dict, docker_client: DockerClient):
-    repos: Dict[str, List[str]] = {}
+    repos: Dict[str, Dict[str, Union[List[str], Dict[str, str]]]] = {}
     # secrets will get parsed into our requests headers.
     secrets: Dict[str, str] = {'username': '', 'password': ''}
     for registry, metadata in repository.items():
         if not os.getenv(metadata['pwd']) and not os.getenv(metadata['user']):
-            logger.critical(
+            log.critical(
                 f"{registry}: Make sure to"
                 f" set {metadata['pwd']} or {metadata['user']}."
             )
         _user = os.getenv(metadata['user'])
         _pwd = os.getenv(metadata['pwd'])
 
-        logger.info(f"Logging into Docker registry {registry} with credentials...")
+        log.info(f"Logging into Docker registry {registry} with credentials...")
         docker_client.login(username=_user, password=_pwd, registry=registry)
-        repos[registry] = list(metadata['registry'].values())
+        repos[registry] = {
+            'registry': list(metadata['registry'].values()),
+            'secrets': secrets.update(username=_user, password=_pwd),
+        }
     return repos
 
 
@@ -99,20 +102,20 @@ class LogsMixin(object):
                         last_event = json_output['stream']
                         logs.append(json_output)
                 except StopIteration:
-                    logger.info(f"Successfully built {image_tag}.")
+                    log.info(f"Successfully built {image_tag}.")
                     break
                 except ValueError:
-                    logger.error(f"Errors while building image:\n{output}")
+                    log.error(f"Errors while building image:\n{output}")
             if image_id:
                 self.push_context[image_tag] = docker_client.images.get(image_id)
             else:
                 raise docker.errors.BuildError(last_event or 'Unknown', logs)
         except docker.errors.BuildError as e:
-            logger.error(f"Failed to build {image_tag} :\n{e.msg}")
+            log.error(f"Failed to build {image_tag} :\n{e.msg}")
             for line in e.build_log:
                 if 'stream' in line:
                     dprint(line['stream'].strip())
-            logger.fatal('ABORTING due to failure!')
+            log.fatal('ABORTING due to failure!')
 
     def push_logs(self, docker_client: DockerClient):
         pass
@@ -123,7 +126,7 @@ class GenerateMixin(object):
 
     def render(
         self,
-        input_paths: List[Path],
+        input_path: Path,
         output_path: Path,
         metadata: Dict,
         build_tag: Optional[str] = None,
@@ -131,27 +134,25 @@ class GenerateMixin(object):
         """
         Render .j2 templates to output path
         Args:
-            input_paths: List of input path
+            input_path: List of input path
             output_path: Output path
             metadata: templates context
             build_tag: strictly use for FROM args for base image.
         """
-        for inp in input_paths:
-            logger.debug(f"Input file: {inp}")
-            with inp.open('r') as inf:
-                if DOCKERFILE_SUFFIX not in inp.name:
-                    output_name = inp.stem
-                else:
-                    output_name = DOCKERFILE_NAME
+        if DOCKERFILE_SUFFIX not in input_path.name:
+            output_name = input_path.stem
+        else:
+            output_name = DOCKERFILE_NAME
+        if not output_path.exists():
+            output_path.mkdir(parents=True, exist_ok=True)
 
-                template = self._template_env.from_string(inf.read())
-                if not output_path.exists():
-                    output_path.mkdir(parents=True, exist_ok=True)
+        with input_path.open('r') as inf:
+            template = self._template_env.from_string(inf.read())
+        inf.close()
 
-                with output_path.joinpath(output_name).open('w') as ouf:
-                    ouf.write(template.render(metadata=metadata, build_tag=build_tag))
-                ouf.close()
-            inf.close()
+        with output_path.joinpath(output_name).open('w') as ouf:
+            ouf.write(template.render(metadata=metadata, build_tag=build_tag))
+        ouf.close()
 
     @staticmethod
     def envars(bentoml_version: str):
@@ -177,9 +178,7 @@ class GenerateMixin(object):
                 for _args, _value in updater.items():
                     args[_args] = _value
             else:
-                logger.error(
-                    f"cannot add to args dict with unknown type {type(updater)}"
-                )
+                log.error(f"cannot add to args dict with unknown type {type(updater)}")
             return args
 
         return update_args_dict
@@ -223,7 +222,7 @@ class GenerateMixin(object):
         return _tag, _build_tag
 
     @staticmethod
-    def cudnn(cuda_components: Dict):
+    def cudnn_context(cuda_components: Dict):
         """
         Return cuDNN context
         Args:
@@ -296,19 +295,19 @@ class GenerateMixin(object):
                     "minor": minor,
                     "shortened": f"{major}.{minor}",
                 },
-                "cudnn": self.cudnn(_cuda_components),
+                "cudnn": self.cudnn_context(_cuda_components),
                 "components": _cuda_components,
             }
             _context.pop('cuda_prefix_url')
         else:
-            logger.debug(f"CUDA is disabled for {distro}. Skipping...")
+            log.debug(f"CUDA is disabled for {distro}. Skipping...")
             for key in list(_context.keys()):
                 if DOCKERFILE_NVIDIA_REGEX.match(key):
                     _context.pop(key)
 
         return _context
 
-    def readme_context(self, package: str, paths: Dict):
+    def release_context(self, package: str, paths: Dict):
         release_info: MutableMapping = defaultdict(list)
 
         # check if given distro is supported per package.
@@ -337,7 +336,7 @@ class GenerateMixin(object):
         return release_info
 
     def readmes(self, target_dir: str, paths: Dict):
-        input_readmes: List[Path] = [Path('./templates/docs/README.md.j2')]
+        input_readmes: Path = Path('./templates/docs/README.md.j2')
         readme_context: Dict = {
             'ephemeral': False,
             'bentoml_img': 'https://github.com/bentoml/BentoML/blob/master/docs/source/_static/img/bentoml.png',
@@ -345,7 +344,7 @@ class GenerateMixin(object):
             'bentoml_release_version': FLAGS.bentoml_version,
         }
         for package in self.manifest.packages.keys():
-            _release_info = self.readme_context(package, paths)
+            _release_info = self.release_context(package, paths)
 
             readme_context['release_info'] = _release_info
 
@@ -355,16 +354,16 @@ class GenerateMixin(object):
 
             if not output_readme.exists():
                 self.render(
-                    input_paths=input_readmes,
+                    input_path=input_readmes,
                     output_path=output_readme,
                     metadata=readme_context,
                 )
 
         # renders README for generated directory
         readme_context['ephemeral'] = True
-        if not Path(target_dir).exists():
+        if not Path(target_dir, "README.md").exists():
             self.render(
-                input_paths=input_readmes,
+                input_path=input_readmes,
                 output_path=Path(target_dir),
                 metadata=readme_context,
             )
@@ -374,7 +373,7 @@ class GenerateMixin(object):
         _tags: Dict = defaultdict()
 
         if os.geteuid() == 0:
-            logger.warning(
+            log.warning(
                 "Detected running as ROOT. Make sure "
                 "to use manager_dockerfiles to generate Dockerfile"
             )
@@ -382,14 +381,14 @@ class GenerateMixin(object):
             self.manifest.packages.items(), python_versions
         ):
             (package, package_spec), python_version = combinations
-            logger.info(f"Working on {package} for python{python_version}")
+            log.info(f"Working on {package} for python{python_version}")
             for (
                 distro,
                 distro_version,
                 distro_spec,
                 release,
             ) in self.aggregate_dists_releases(package_spec):
-                logger.debug(
+                log.debug(
                     f"Processing tag context for {distro}{distro_version} for {release} release"
                 )
                 # setup our build context
@@ -433,12 +432,13 @@ class GenerateMixin(object):
                 set_data(_paths, full_output_path, tag_keys)
                 if 'dockerfiles' in FLAGS.generate and os.geteuid() != 0:
                     # Forbid generation by ROOT
-                    self.render(
-                        input_paths=input_paths,
-                        output_path=output_path,
-                        metadata=tag_context,
-                        build_tag=_build_tag,
-                    )
+                    for input_path in input_paths:
+                        self.render(
+                            input_path=input_path,
+                            output_path=output_path,
+                            metadata=tag_context,
+                            build_tag=_build_tag,
+                        )
                     self.readmes(FLAGS.dockerfile_dir, _paths)
         return _tags, _paths
 
@@ -448,7 +448,7 @@ class BuildMixin(object):
 
     def build_images(self, docker_client: DockerClient):
         for image_tag, dockerfile_path in self.build_tags():
-            logger.debug(f"Building {image_tag} from {dockerfile_path}")
+            log.debug(f"Building {image_tag} from {dockerfile_path}")
             try:
                 # this is should be when there are changed in base image.
                 if FLAGS.overwrite:
@@ -456,7 +456,7 @@ class BuildMixin(object):
                     # workaround for not having goto supports in Python.
                     raise docker.errors.ImageNotFound(f"Building {image_tag}")
                 if docker_client.api.history(image_tag):
-                    logger.info(
+                    log.info(
                         f"Image {image_tag} is already built and --overwrite is not specified. Skipping..."
                     )
                     set_data(
@@ -520,7 +520,7 @@ class PushMixin(object):
                 image = self.push_context[image_tag]
                 reg, tag = image_tag.split(":")
                 registry = ''.join((k for k in registries if reg in k))
-                logger.info(f"Uploading {image_tag} to {repo}")
+                log.info(f"Uploading {image_tag} to {repo}")
                 if not FLAGS.dry_run:
                     p = multiprocessing.Process(
                         target=self.upload_in_background,
@@ -532,7 +532,7 @@ class PushMixin(object):
     def upload_in_background(docker_client, image, registry, tag):
         """Upload a docker image (to be used by multiprocessing)."""
         image.tag(registry, tag=tag)
-        logger.debug(f"Pushing {image} to {registry}...")
+        log.debug(f"Pushing {image} to {registry}...")
         for _line in docker_client.images.push(
             registry, tag=tag, stream=True, decode=True
         ):
@@ -573,16 +573,16 @@ class Manager(requests.Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin)
 
         # validate releases args.
         if FLAGS.releases and FLAGS.releases not in DOCKERFILE_BUILD_HIERARCHY:
-            logger.critical(
+            log.critical(
                 f"Invalid --releases arguments. Allowed: {DOCKERFILE_BUILD_HIERARCHY}"
             )
 
         # setup python version.
         if len(FLAGS.python_version) > 0:
-            logger.debug("--python_version defined, ignoring SUPPORTED_PYTHON_VERSION")
+            log.debug("--python_version defined, ignoring SUPPORTED_PYTHON_VERSION")
             self.supported_python = FLAGS.python_version
             if self.supported_python not in SUPPORTED_PYTHON_VERSION:
-                logger.critical(
+                log.critical(
                     f"{self.supported_python} is not supported. Allowed: {SUPPORTED_PYTHON_VERSION}"
                 )
         else:
@@ -591,7 +591,7 @@ class Manager(requests.Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin)
         # generate Dockerfiles and README.
         if FLAGS.overwrite:
             # Consider generated directory ephemeral
-            logger.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
+            log.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
             shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
             mkdir_p(FLAGS.dockerfile_dir)
         self._tags, self._paths = self.metadata(
@@ -634,7 +634,7 @@ def main(argv):
         raise RuntimeError("Too much arguments")
 
     # Parse specs from manifest.yml and validate it.
-    logger.info(
+    log.info(
         f"{'-' * 59}\n\t{' ' * 5}| Validating {FLAGS.manifest_file}\n\t{' ' * 5}{'-' * 59}"
     )
     release_spec = load_manifest_yaml(FLAGS.manifest_file)
@@ -645,7 +645,7 @@ def main(argv):
         return
 
     # Login Docker credentials and setup docker client
-    logger.info(f"{'-' * 59}\n\t{' ' * 5}| Configure Docker\n\t{' ' * 5}{'-' * 59}")
+    log.info(f"{'-' * 59}\n\t{' ' * 5}| Configure Docker\n\t{' ' * 5}{'-' * 59}")
     # We shouldn't have a DockerClient in our manager since It will mix up permission
     # when generating Dockerfile.
     docker_client: DockerClient = docker.from_env()

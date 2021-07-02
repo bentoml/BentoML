@@ -71,10 +71,10 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 ```shell
 
 # Build the helper docker images. Refers to Makefile for more information.
-» make install
+» DOCKER_BUILDKIT=1 docker build -t bentoml-docker -f Dockerfile .
 
 # Run the built container with correct users permission for the generated file.
-» make run 
+» docker run --user $(shell id -u):$(shell id -g) -it -v $(shell pwd):/bentoml bentoml-docker bash 
 
 # Use the provided alias below depending on each tasks.
 #

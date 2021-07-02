@@ -438,15 +438,6 @@ class ModelApp:
 
         return api_func_with_tracing
 
-    def metrics_view_func(self):
-        from prometheus_client import (
-            CONTENT_TYPE_LATEST,
-            CollectorRegistry,
-            generate_latest,
-            multiprocess,
-        )
-
-        registry = CollectorRegistry()
-        # NOTE: enable mb metrics to be parsed.
-        multiprocess.MultiProcessCollector(registry)
-        return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST,)
+    @inject
+    def metrics_view_func(self, client=Provide[BentoMLContainer.metrics_client]):
+        return Response(client.generate_latest(), mimetype=client.CONTENT_TYPE_LATEST,)

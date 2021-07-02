@@ -286,8 +286,6 @@ class BentoMLContainerClass:
     forward_host: Provider[str] = providers.Static("localhost")
     forward_port: Provider[int] = providers.SingletonFactory(get_free_port)
 
-    prometheus_lock = providers.SingletonFactory(multiprocessing.Lock)
-
     @providers.Factory
     @staticmethod
     def model_server():
@@ -316,9 +314,26 @@ class BentoMLContainerClass:
 
         return ModelApp()
 
+    prometheus_lock = providers.SingletonFactory(multiprocessing.Lock)
+
     prometheus_multiproc_dir = providers.Factory(
         os.path.join, bentoml_home, "prometheus_multiproc_dir",
     )
+
+    @providers.SingletonFactory
+    @staticmethod
+    def metrics_client(
+        multiproc_lock=prometheus_lock,
+        multiproc_dir=prometheus_multiproc_dir,
+        namespace=config.bento_server.metrics.namespace,
+    ):
+        from bentoml.metrics.prometheus import PrometheusClient
+
+        return PrometheusClient(
+            multiproc_lock=multiproc_lock,
+            multiproc_dir=multiproc_dir,
+            namespace=namespace,
+        )
 
     bento_bundle_deployment_version = providers.Factory(
         get_bentoml_deploy_version,

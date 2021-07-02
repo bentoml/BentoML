@@ -13,20 +13,17 @@
 # limitations under the License.
 
 import logging
-import multiprocessing
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from gunicorn.app.base import Application
 from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
-from bentoml.server.instruments import setup_prometheus_multiproc_dir
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 
 
 if TYPE_CHECKING:  # make type checkers happy
-    Lock = multiprocessing.synchronize.Lock
     from bentoml.marshal.marshal import MarshalApp
 
 
@@ -43,7 +40,6 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         ],
         host: str = Provide[BentoMLContainer.service_host],
         port: int = Provide[BentoMLContainer.service_port],
-        prometheus_lock: Optional["Lock"] = Provide[BentoMLContainer.prometheus_lock],
         loglevel: str = Provide[BentoMLContainer.config.bento_server.logging.level],
     ):
         self.app = app
@@ -57,7 +53,6 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         }
         if workers:
             self.options['workers'] = workers
-        self.prometheus_lock = prometheus_lock
         super().__init__()
 
     def load_config(self):
@@ -73,6 +68,5 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         return self.app.make_aiohttp_app()
 
     def run(self):
-        setup_prometheus_multiproc_dir(self.prometheus_lock)
         marshal_logger.info("Running micro batch service on :%d", self.port)
         super().run()

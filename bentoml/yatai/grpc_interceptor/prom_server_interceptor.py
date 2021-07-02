@@ -3,6 +3,8 @@
 from timeit import default_timer
 
 import grpc
+
+from bentoml.utils.usage_stats import track
 from bentoml.yatai.metrics import (
     GRPC_SERVER_HANDLED_HISTOGRAM,
     GRPC_SERVER_HANDLED_TOTAL,
@@ -15,7 +17,6 @@ from bentoml.yatai.utils import (
     parse_method_name,
     wrap_interator_inc_counter,
 )
-from bentoml.utils.usage_stats import track
 
 
 YATAI_GRPC_USAGE_EVENT_NAME = "yatai-grpc-call"
@@ -61,14 +62,14 @@ class PromServerInterceptor(grpc.ServerInterceptor):  # pylint: disable=W0232
     ```python
 
         import grpc
-        from prometheus_client import start_http_server
+        from bentoml.continuation.containers import BentoMLContainer
         from bentoml.yatai.client.interceptor import PromServerInterceptor
         ...
         server = grpc.server(
             futures.ThreadPoolExecutor(max_workers=1),
             interceptors=(PromServerInterceptor(), )
             )
-        start_http_server(self.prom_port)
+        BentoMLContainer.metrics_client.get().start_http_server()
     ```
     """
 

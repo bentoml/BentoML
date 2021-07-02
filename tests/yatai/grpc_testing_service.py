@@ -3,7 +3,6 @@ import contextlib
 from typing import Callable, Dict, Iterable, List, Optional, Union
 
 import grpc
-from prometheus_client import start_http_server
 
 from bentoml.utils import reserve_free_port
 from tests.yatai.proto.mock_service_pb2 import MockRequest, MockResponse
@@ -99,8 +98,11 @@ class MockServerClient:
         self.mock_server.add_insecure_port(f'[::]:{self.service_port}')
         self.mock_server.start()
 
+        # TODO(bojiang): Unconnect from the secific metrics implementation Prometheus
         if self.prometheus_enabled:
-            start_http_server(self.prom_port)
+            from bentoml.metrics.prometheus import PrometheusClient
+
+            PrometheusClient(multiproc=False).start_http_server(self.prom_port)
         channel = grpc.insecure_channel(f'localhost:{self.service_port}')
 
         client_stub = MockServiceStub(channel)

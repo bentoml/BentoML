@@ -46,9 +46,7 @@ def metrics_patch(cls):
         def __init__(
             self,
             *args,
-            namespace: str = Provide[
-                BentoMLContainer.config.bento_server.metrics.namespace
-            ],
+            metrics_client=Provide[BentoMLContainer.metrics_client],
             **kwargs,
         ):
             for attr_name in functools.WRAPPER_ASSIGNMENTS:
@@ -57,40 +55,33 @@ def metrics_patch(cls):
                 except AttributeError:
                     pass
 
-            from prometheus_client import Counter, Gauge, Histogram
-
             super(_MarshalApp, self).__init__(*args, **kwargs)
             # its own namespace?
             service_name = self.bento_service_metadata_pb.name
 
-            self.metrics_request_batch_size = Histogram(
+            self.metrics_request_batch_size = metrics_client.Histogram(
                 name=service_name + '_mb_batch_size',
                 documentation=service_name + "microbatch request batch size",
-                namespace=namespace,
                 labelnames=['endpoint'],
             )
-            self.metrics_request_duration = Histogram(
+            self.metrics_request_duration = metrics_client.Histogram(
                 name=service_name + '_mb_request_duration_seconds',
                 documentation=service_name + "API HTTP request duration in seconds",
-                namespace=namespace,
                 labelnames=['endpoint', 'http_response_code'],
             )
-            self.metrics_request_in_progress = Gauge(
+            self.metrics_request_in_progress = metrics_client.Gauge(
                 name=service_name + "_mb_request_in_progress",
                 documentation='Total number of HTTP requests in progress now',
-                namespace=namespace,
                 labelnames=['endpoint', 'http_method'],
             )
-            self.metrics_request_exception = Counter(
+            self.metrics_request_exception = metrics_client.Counter(
                 name=service_name + "_mb_request_exception",
                 documentation='Total number of service exceptions',
-                namespace=namespace,
                 labelnames=['endpoint', 'exception_class'],
             )
-            self.metrics_request_total = Counter(
+            self.metrics_request_total = metrics_client.Counter(
                 name=service_name + "_mb_request_total",
                 documentation='Total number of service exceptions',
-                namespace=namespace,
                 labelnames=['endpoint', 'http_response_code'],
             )
 

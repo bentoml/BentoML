@@ -261,3 +261,8 @@ EvalML
     EvalML
     EasyOCR
     easyocr
+    mlir
+    operationalized
+    pyruntime
+    llvm
+    pybind

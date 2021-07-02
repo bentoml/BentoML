@@ -278,9 +278,29 @@ $ git remote add upstream git@github.com:YOUR_USER_NAME/BentoML.git
 
 3. Push changes to your fork and follow [this
    article](https://help.github.com/en/articles/creating-a-pull-request)
-   on how to create a pull request on github
+   on how to create a pull request on github. Name your pull request
+   with one of the following prefixes, e.g. "feat: add support for
+   PyTorch". This is based on the [Conventional Commits
+   specification](https://www.conventionalcommits.org/en/v1.0.0/#summary)
+   - feat: (new feature for the user, not a new feature for build script)
+   - fix: (bug fix for the user, not a fix to a build script)
+   - docs: (changes to the documentation)
+   - style: (formatting, missing semicolons, etc; no production code change)
+   - refactor: (refactoring production code, eg. renaming a variable)
+   - perf: (code changes that improve performance)
+   - test: (adding missing tests, refactoring tests; no production code change)
+   - chore: (updating grunt tasks etc; no production code change)
+   - build: (changes that affect the build system or external dependencies)
+   - ci: (changes to configuration files and scripts)
+   - revert: (reverts a previous commit)
 
 4. Once your pull request created, an automated test run will be triggered on
    your branch and the BentoML authors will be notified to review your code
    changes. Once tests are passed and reviewer has signed off, we will merge
    your pull request.
+
+
+## Optional: Install git hooks to enforce commit format
+
+Run `./dev/install_git_hooks.sh` to install git hooks to automate
+commit format enforcement described above.

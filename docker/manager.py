@@ -58,7 +58,9 @@ def jprint(*args, **kwargs):
 
 
 def auth_registries(repository: Dict, docker_client: DockerClient):
-    repos = {}
+    repos: Dict[str, List[str]] = {}
+    # secrets will get parsed into our requests headers.
+    secrets: Dict[str, str] = {'username': '', 'password': ''}
     for registry, metadata in repository.items():
         if not os.getenv(metadata['pwd']) and not os.getenv(metadata['user']):
             logger.critical(
@@ -72,6 +74,48 @@ def auth_registries(repository: Dict, docker_client: DockerClient):
         docker_client.login(username=_user, password=_pwd, registry=registry)
         repos[registry] = list(metadata['registry'].values())
     return repos
+
+
+class LogsMixin(object):
+    def build_logs(self, docker_client: DockerClient, resp: Iterator, image_tag: str):
+        last_event: str = ""
+        image_id: str = ""
+        output: str = ""
+        logs: List = []
+        built_regex = re.compile(r'(^Successfully built |sha256:)([0-9a-f]+)$')
+        try:
+            while True:
+                try:
+                    # output logs to stdout
+                    # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
+                    output: str = next(resp).decode('utf-8')
+                    json_output: Dict = json.loads(output.strip('\r\n'))
+                    if 'stream' in json_output:
+                        # output to stderr when running in docker
+                        dprint(json_output['stream'])
+                        matched = built_regex.search(json_output['stream'])
+                        if matched:
+                            image_id = matched.group(2)
+                        last_event = json_output['stream']
+                        logs.append(json_output)
+                except StopIteration:
+                    logger.info(f"Successfully built {image_tag}.")
+                    break
+                except ValueError:
+                    logger.error(f"Errors while building image:\n{output}")
+            if image_id:
+                self.push_context[image_tag] = docker_client.images.get(image_id)
+            else:
+                raise docker.errors.BuildError(last_event or 'Unknown', logs)
+        except docker.errors.BuildError as e:
+            logger.error(f"Failed to build {image_tag} :\n{e.msg}")
+            for line in e.build_log:
+                if 'stream' in line:
+                    dprint(line['stream'].strip())
+            logger.fatal('ABORTING due to failure!')
+
+    def push_logs(self, docker_client: DockerClient):
+        pass
 
 
 class GenerateMixin(object):
@@ -307,6 +351,8 @@ class GenerateMixin(object):
 
             set_data(readme_context, package, 'bentoml_package')
             output_readme = Path('docs', package)
+            shutil.rmtree(output_readme, ignore_errors=True)
+
             if not output_readme.exists():
                 self.render(
                     input_paths=input_readmes,
@@ -362,7 +408,7 @@ class GenerateMixin(object):
                     tag_context, python_version, release
                 )
 
-                # input paths
+                # input generated_paths
                 input_paths = [f for f in walk(template_dir) if release in f.name]
                 if 'rhel' in template_dir.name and release == 'cudnn':
                     input_paths = [
@@ -371,7 +417,7 @@ class GenerateMixin(object):
                         if DOCKERFILE_NVIDIA_REGEX.match(f.name)
                     ]
 
-                # output paths
+                # output generated_paths
                 output_path = Path(target_dir, package, f"{distro}{distro_version}")
                 if release != 'base':
                     output_path = Path(output_path, release)
@@ -382,7 +428,7 @@ class GenerateMixin(object):
 
                 tag_keys = f"{tag_context['package']}:{_release_tag}"
 
-                # # setup directory correspondingly, and add these paths
+                # # setup directory correspondingly, and add these generated_paths
                 set_data(_tags, tag_context, tag_keys)
                 set_data(_paths, full_output_path, tag_keys)
                 if 'dockerfiles' in FLAGS.generate and os.geteuid() != 0:
@@ -395,48 +441,6 @@ class GenerateMixin(object):
                     )
                     self.readmes(FLAGS.dockerfile_dir, _paths)
         return _tags, _paths
-
-
-class LogsMixin(object):
-    def build_logs(self, docker_client: DockerClient, resp: Iterator, image_tag: str):
-        last_event: str = ""
-        image_id: str = ""
-        output: str = ""
-        logs: List = []
-        built_regex = re.compile(r'(^Successfully built |sha256:)([0-9a-f]+)$')
-        try:
-            while True:
-                try:
-                    # output logs to stdout
-                    # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
-                    output: str = next(resp).decode('utf-8')
-                    json_output: Dict = json.loads(output.strip('\r\n'))
-                    if 'stream' in json_output:
-                        # output to stderr when running in docker
-                        dprint(json_output['stream'])
-                        matched = built_regex.search(json_output['stream'])
-                        if matched:
-                            image_id = matched.group(2)
-                        last_event = json_output['stream']
-                        logs.append(json_output)
-                except StopIteration:
-                    logger.info(f"Successfully built {image_tag}.")
-                    break
-                except ValueError:
-                    logger.error(f"Errors while building image:\n{output}")
-            if image_id:
-                self.push_context[image_tag] = docker_client.images.get(image_id)
-            else:
-                raise docker.errors.BuildError(last_event or 'Unknown', logs)
-        except docker.errors.BuildError as e:
-            logger.error(f"Failed to build {image_tag} :\n{e.msg}")
-            for line in e.build_log:
-                if 'stream' in line:
-                    dprint(line['stream'].strip())
-            logger.fatal('ABORTING due to failure!')
-
-    def push_logs(self, docker_client: DockerClient):
-        pass
 
 
 class BuildMixin(object):
@@ -489,8 +493,10 @@ class BuildMixin(object):
 
 
 class PushMixin(object):
+    """Mixin for Push-related."""
+
     def push_tags(self):
-        _paths = deepcopy(self.paths)
+        _paths = deepcopy(self.generated_paths)
         if FLAGS.releases and FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY:
             _release_tag = _paths[FLAGS.releases]
         else:
@@ -597,7 +603,7 @@ class Manager(requests.Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin)
             ouf.close()
 
     @cached_property
-    def paths(self):
+    def generated_paths(self):
         return {
             h: {k: self._paths[k] for k in self._paths.keys() if h in k}
             for h in DOCKERFILE_BUILD_HIERARCHY
@@ -607,9 +613,20 @@ class Manager(requests.Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin)
         if not dry_run:
             self.build_images(docker_client)
 
-    def push(self, docker_client: DockerClient, repos: Dict, dry_run: bool = False):
+    def push_registries(
+        self, docker_client: DockerClient, repos: Dict, dry_run: bool = False
+    ):
         if not dry_run:
             self.push_images(docker_client, repos)
+
+        # update README hack
+        # https://github.com/docker/hub-feedback/issues/2006
+        # TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d \
+        #         '{"username": "'${USERNAME}'", "password": "'${PASS}'"}' \
+        #           https://hub.docker.com/v2/users/logins/ | jq -r .token)
+        #
+        # curl -s -vvv -X PATCH -H "Content-Type: application/json" -H "Authorization: JWT ${TOKEN}" \
+        #       -d '{"full_description": "ed"}' https://hub.docker.com/v2/repositories/bentoml/model-server/
 
 
 def main(argv):
@@ -641,17 +658,8 @@ def main(argv):
 
     # Push images when finish building.
     if FLAGS.push_to_hub:
-        manager.push(docker_client, repos, dry_run=FLAGS.dry_run)
+        manager.push_registries(docker_client, repos, dry_run=FLAGS.dry_run)
 
-
-# update README hack
-# https://github.com/docker/hub-feedback/issues/2006
-# TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d \
-#         '{"username": "'${USERNAME}'", "password": "'${PASS}'"}' \
-#           https://hub.docker.com/v2/users/logins/ | jq -r .token)
-#
-# curl -s -vvv -X PATCH -H "Content-Type: application/json" -H "Authorization: JWT ${TOKEN}" \
-#       -d '{"full_description": "ed"}' https://hub.docker.com/v2/repositories/bentoml/model-server/
 
 if __name__ == "__main__":
     app.run(main)

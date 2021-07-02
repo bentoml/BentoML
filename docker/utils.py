@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import Callable, MutableMapping, Iterable, Dict, List, Union
+from typing import Callable, MutableMapping, Iterable, Dict, List, Union, Any
 
 from absl import flags
 from cerberus import Validator
@@ -12,7 +12,6 @@ from ruamel import yaml
 
 __all__ = (
     'FLAGS',
-    'SUPPORTED_GENERATE_TYPE',
     'cached_property',
     'ColoredFormatter',
     'mkdir_p',
@@ -191,6 +190,10 @@ releases:
 """
 
 
+# TODO: Type annotation.
+# class Field(Any):
+
+
 class MetadataSpecValidator(Validator):
     """
     Custom cerberus validator for BentoML metadata spec.
@@ -324,7 +327,7 @@ class ColoredFormatter(logging.Formatter):
     """Logging Formatter to add colors and count warning / errors"""
 
     blue = "\x1b[34m"
-    magenta = "\x1b[35m"
+    lightblue = "\x1b[36m"
     yellow = "\x1b[33m"
     red = "\x1b[31m"
     reset = "\x1b[0m"
@@ -332,7 +335,7 @@ class ColoredFormatter(logging.Formatter):
 
     FORMATS = {
         logging.INFO: blue + _format + reset,
-        logging.DEBUG: magenta + _format + reset,
+        logging.DEBUG: lightblue + _format + reset,
         logging.WARNING: yellow + _format + reset,
         logging.ERROR: red + _format + reset,
         logging.CRITICAL: red + _format + reset,
@@ -363,7 +366,10 @@ def flatten(arr: Iterable):
 def mapfunc(func: Callable, obj: Union[MutableMapping, List]):
     if isinstance(obj, list):
         return func(obj)
-    else:
+    if any(isinstance(v, dict) for v in obj):
+        for v in obj:
+            mapfunc(func, v)
+    if isinstance(obj, Dict):
         for k, v in obj.items():
             if isinstance(v, MutableMapping):
                 mapfunc(func, v)

@@ -9,9 +9,7 @@ The files are maintained by `manager.py`, which generates Dockerfile from `templ
 Refers to [main README](../README.md) for more information.
 
 {% else %}
-![bentoml-docker]({{ metadata.bentoml_img }})
----
-## Model Serving Made Easy
+## BentoML
 
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg?style=flat-square)](https://pypi.org/project/BentoML) [![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml) [![Actions Status](https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg)](https://github.com/bentoml/bentoml/actions) [![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest&style=flat-square)](https://docs.bentoml.org/) [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack&style=flat-square)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
@@ -63,7 +61,9 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
         {% print"\n### " %}{% print sentence_case(distros) %}{% print "\n" %}
         {% if 'centos' in distros.lower() %}
 *WARNING*: POSSIBLE MISSING IMAGE TAGS
-Centos upstream images often fail security scans required by NVIDIA before publishing images. Please check https://gitlab-master.nvidia.com/cuda-installer/cuda/-/issues for any security notices!
+
+Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
+If you need the one missing please refers to [`bentoml/docker`](https://github.com/bentoml/BentoML/tree/master/docker) for more information.
             
         {% endif %}
     {% endif %}

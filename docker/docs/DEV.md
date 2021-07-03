@@ -140,18 +140,17 @@ yatai-service:
 
 All the specifics for each releases based on [release_spec](#release_spec):
 ```yaml
-debian:
-  10:
-    <<: *release_spec
-    templates_dir: templates/debian
-    base_image: debian:buster-slim
-    add_to_tags: "slim"
-    cuda_prefix_url: "ubuntu2004"
+debian10:
+  <<: *tmpl_spec
+  templates_dir: templates/debian
+  base_image: debian:buster-slim
+  add_to_tags: "slim"
+  cuda_prefix_url: "ubuntu2004"
 ```
 
 ### Workflow
 
-*UNDER CONSTRUCTION*
+TLDR: read from yaml file &rarr; generate build context &rarr; render `j2` templates &rarr; build 
 
 ##### Validation
 

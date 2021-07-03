@@ -1,16 +1,31 @@
 import errno
 import json
 import logging
+import operator
 import os
 import pathlib
 import string
 import sys
-from typing import Callable, MutableMapping, Iterable, Dict, List, Union, Generator
+from functools import reduce
+from typing import Any, Callable, Dict, Generator, Iterable, List, MutableMapping, Union
 
 from absl import flags
 from cerberus import Validator
-from glom import glom, Path, PathAccessError, Assign, PathAssignError
+from glom import Assign, Path, PathAccessError, PathAssignError, glom
 from ruamel import yaml
+
+
+class LoginRetry(Exception):
+    """An exception to handle retries for registry login"""
+
+    pass
+
+
+class PushRetry(Exception):
+    """An exception to handle retries for pushing images"""
+
+    pass
+
 
 __all__ = (
     'FLAGS',
@@ -27,6 +42,9 @@ __all__ = (
     'pprint',
     'get_data',
     'set_data',
+    'get_nested',
+    'LoginRetry',
+    'PushRetry',
 )
 
 log = logging.getLogger(__name__)
@@ -94,6 +112,95 @@ flags.DEFINE_string(
 
 SPEC_SCHEMA = """
 ---
+specs:
+  required: true
+  type: dict
+  schema:
+    releases:
+      required: true
+      type: dict
+      schema:
+        templates_dir:
+          type: string
+          nullable: False
+        base_image:
+          type: string
+          nullable: False
+        add_to_tags:
+          type: string
+          nullable: False
+          required: true
+        multistage_image:
+          type: boolean
+        header:
+          type: string
+        envars:
+          type: list
+          forbidden: ['HOME']
+          default: []
+          schema:
+            check_with: args_format
+            type: string
+        cuda_prefix_url:
+          type: string
+          dependencies: cuda
+        cuda_requires:
+          type: string
+          dependencies: cuda
+        cuda:
+          type: dict
+          matched: 'specs.dependencies.cuda'
+    tag:
+      required: True
+      type: dict
+      schema:
+        fmt:
+          type: string
+          check_with: keys_format
+          regex: '({(.*?)})'
+        release_type:
+          type: string
+          nullable: True
+        python_version:
+          type: string
+          nullable: True
+        suffixes:
+          type: string
+          nullable: True
+    dependencies:
+      type: dict
+      keysrules:
+        type: string
+      valuesrules:
+        type: dict
+        keysrules:
+          type: string
+        valuesrules:
+          type: string
+          nullable: true
+    repository:
+      type: dict
+      schema:
+        pwd:
+          env_vars: true
+          type: string
+        user:
+          dependencies: pwd
+          env_vars: true
+          type: string
+        urls:
+          keysrules:
+            type: string
+          valuesrules:
+            type: string
+            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)'
+        registry:
+          keysrules:
+            type: string
+          type: dict
+          valuesrules:
+            type: string
+
 repository:
   type: dict
   keysrules:
@@ -101,23 +208,9 @@ repository:
     regex: '(\w+)\.{1}(\w+)'
   valuesrules:
     type: dict
-    schema:
-      pwd:
-        env_vars: true
-        type: string
-      user:
-        dependencies: pwd
-        env_vars: true
-        type: string
-      registry:
-        keysrules:
-          check_with: packages
-          type: string
-        type: dict
-        valuesrules:
-          type: string
+    matched: 'specs.repository'
 
-cuda_dependencies:
+cuda:
   type: dict
   nullable: false
   keysrules:
@@ -128,68 +221,14 @@ cuda_dependencies:
     type: dict
     keysrules:
       type: string
-      check_with: allowed_cudnn
+      check_with: cudnn_threshold
     valuesrules:
       type: string
-
-release_spec:
-  required: true
-  type: dict
-  schema:
-    templates_dir:
-      type: string
-      nullable: False
-    base_image:
-      type: string
-      nullable: False
-    add_to_tags:
-      type: string
-      nullable: False
-      required: true
-    multistage_image:
-      type: boolean
-    header:
-      type: string
-    envars:
-      type: list
-      forbidden: ['HOME']
-      default: []
-      schema:
-        check_with: args_format
-        type: string
-    cuda_prefix_url:
-      type: string
-      dependencies: cuda
-    cuda_requires:
-      type: string
-      dependencies: cuda
-    cuda:
-      type: dict
-      match_ref: 'cuda_dependencies'
-
-tag_spec:
-  required: True
-  type: dict
-  schema:
-    fmt:
-      type: string
-      check_with: keys_format
-      regex: '({(.*?)})'
-    release_type:
-      type: string
-      nullable: True
-    python_version:
-      type: string
-      nullable: True
-    suffixes:
-      type: string
-      nullable: True
 
 packages:
   type: dict
   keysrules:
     type: string
-    check_with: packages
   valuesrules:
     type: dict
     allowed: [devel, cudnn, runtime]
@@ -197,16 +236,16 @@ packages:
       devel:
         type: list
         dependencies: runtime
-        check_with: dists_defined
+        check_with: available_dists
         schema:
           type: string
       runtime:
         required: true
         type: [string, list]
-        check_with: dists_defined
+        check_with: available_dists
       cudnn:
         type: [string, list]
-        check_with: dists_defined
+        check_with: available_dists
         dependencies: runtime
 
 releases:
@@ -217,7 +256,7 @@ releases:
   valuesrules:
     type: dict
     required: True
-    match_ref: 'release_spec'
+    matched: 'specs.releases'
 """
 
 
@@ -239,10 +278,7 @@ class MetadataSpecValidator(Validator):
     """
 
     CUDNN_THRESHOLD: int = 1
-    cudnn_counter: int = 0
-
-    # There are three publics cls objects we can access
-    # v.schema, v.root_document, v.document -> normalized root_document
+    CUDNN_COUNTER: int = 0
 
     def __init__(self, *args, **kwargs):
         if "packages" in kwargs:
@@ -250,16 +286,6 @@ class MetadataSpecValidator(Validator):
         if "releases" in kwargs:
             self.releases = kwargs["releases"]
         super(Validator, self).__init__(*args, **kwargs)
-
-    def _check_with_keys_format(self, field, value):
-        fmt_field = [t[1] for t in string.Formatter().parse(value) if t[1] is not None]
-        for _keys in self.document.keys():
-            if _keys == field:
-                continue
-            if _keys not in fmt_field:
-                self._error(
-                    field, f"{value} doesn't contain {_keys} in defined document scope"
-                )
 
     def _check_with_packages(self, field, value):
         """
@@ -285,36 +311,30 @@ class MetadataSpecValidator(Validator):
             for v in value:
                 self._check_with_args_format(field, v)
 
-    def _check_with_dists_defined(self, field, value):
+    def _check_with_keys_format(self, field, value):
+        fmt_field = [t[1] for t in string.Formatter().parse(value) if t[1] is not None]
+        for _keys in self.document.keys():
+            if _keys == field:
+                continue
+            if _keys not in fmt_field:
+                self._error(
+                    field, f"{value} doesn't contain {_keys} in defined document scope"
+                )
+
+    def _check_with_cudnn_threshold(self, field, value):
+        if 'cudnn' in value:
+            self.CUDNN_COUNTER += 1
+            pass
+        if self.CUDNN_COUNTER > self.CUDNN_THRESHOLD:
+            self._error(field, "Only allowed one CUDNN version per CUDA mapping")
+
+    def _check_with_available_dists(self, field, value):
         if isinstance(value, list):
             for v in value:
-                self._check_with_dists_defined(field, v)
+                self._check_with_available_dists(field, v)
         else:
             if value not in self.releases:
                 self._error(field, f"{field} is not defined under releases")
-
-    def _check_with_allowed_cudnn(self, field, value):
-        if 'cudnn' in value:
-            self.cudnn_counter += 1
-            pass
-        if self.cudnn_counter > self.CUDNN_THRESHOLD:
-            self._error(field, "Only allowed one CUDNN version per CUDA mapping")
-
-    def _check_with_format_keys(self, field, value):
-        pass
-
-    def _validate_env_vars(self, env_vars, field, value):
-        """
-        Validate if given is a environment variable.
-
-        The rule's arguments are validated against this schema:
-            {'type': 'boolean'}
-        """
-        if isinstance(value, str):
-            if env_vars and not value.isupper():
-                self._error(field, f"{value} cannot be parsed to envars.")
-        else:
-            self._error(field, f"{value} cannot be parsed as string.")
 
     def _validate_supported_dists(self, supported_dists, field, value):
         """
@@ -335,26 +355,41 @@ class MetadataSpecValidator(Validator):
             for v in value:
                 self._validate_supported_dists(supported_dists, field, v)
 
-    def _validate_match_ref(self, others, field, value):
+    def _validate_env_vars(self, env_vars, field, value):
+        """
+        Validate if given is a environment variable.
+
+        The rule's arguments are validated against this schema:
+            {'type': 'boolean'}
+        """
+        if isinstance(value, str):
+            if env_vars and not value.isupper():
+                self._error(field, f"{value} cannot be parsed to envars.")
+        else:
+            self._error(field, f"{value} cannot be parsed as string.")
+
+    def _validate_matched(self, others, field, value):
         """
         Validate if a field is defined as a reference to match all given fields if
         we updated the default reference.
         The rule's arguments are validated against this schema:
             {'type': 'string'}
         """
-        try:
-            if others not in self.root_document:
-                return False
-            ref = self.root_document[others]
-            if any(isinstance(v, dict) for v in ref.values()):
-                for v in ref.values():
-                    return self._validate_match_ref(v, field, value)
+        if isinstance(others, dict):
+            if len(others) != len(value):
+                self._error(
+                    field,
+                    f"type {type(others)} with ref {field} from {others} does not match",
+                )
+        elif isinstance(others, str):
+            ref = get_nested(self.root_document, others.split('.'))
             if len(value) != len(ref):
                 self._error(field, f"Reference {field} from {others} does not match")
-        except TypeError:
-            # when others is a dictionary.
-            if len(others) != len(value):
-                self._error(field, f"Reference {field} from {others} does not match")
+        elif isinstance(others, list):
+            for v in others:
+                self._validate_matched(v, field, value)
+        else:
+            self._error(field, f"Unable to parse field type {type(others)}")
 
 
 class cached_property(property):
@@ -470,7 +505,7 @@ def jprint(*args, **kwargs):
 
 def pprint(*args):
     # custom pretty logs
-    log.warning(f"{'-' * 59}\n\t{' ' * 8}| {''.join(*args)}\n\t{' ' * 8}{'-' * 59}")
+    log.warning(f"{'-' * 59}\n\t{' ' * 8}| {''.join([*args])}\n\t{' ' * 8}{'-' * 59}")
 
 
 def get_data(obj: Union[Dict, MutableMapping], *path: str) -> Union[str, Dict, List]:
@@ -504,6 +539,15 @@ def set_data(obj: Dict, value: Union[Dict, str], *path: str):
             f"Exception occurred in update_data, unable to update {Path(*path)} with {value}"
         )
         exit(1)
+
+
+def get_nested(obj: Dict, keys: List[str]):
+    """Iterate through a nested dict from a list of keys"""
+    return reduce(operator.getitem, keys, obj)
+
+
+def set_nested(obj: Dict, keys: List[str], value: Any):
+    get_nested(obj, keys[:-1])[keys[-1]] = value
 
 
 def load_manifest_yaml(file: str) -> Dict:

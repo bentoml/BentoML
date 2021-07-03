@@ -2,8 +2,6 @@
 import functools
 import itertools
 import json
-
-# import multiprocessing
 import multiprocessing
 import operator
 import os
@@ -12,32 +10,37 @@ import shutil
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional, Dict, MutableMapping, List, Iterator, Union
+from typing import Dict, Iterator, List, MutableMapping, Optional, Union
 
 import absl.logging as logging
-import docker
 import urllib3
 from absl import app
-from docker import DockerClient
 from dotenv import load_dotenv
 from jinja2 import Environment
+from requests import Session
+from retry import retry
 
+from docker import DockerClient
+from docker.errors import APIError, BuildError, ImageNotFound
 from utils import *
 
 # vars
-README_TEMPLATE = Path('./templates/docs/README.md.j2')
+README_TEMPLATE: Path = Path('./templates/docs/README.md.j2')
 
-DOCKERFILE_NAME = "Dockerfile"
-DOCKERFILE_TEMPLATE_SUFFIX = ".Dockerfile.j2"
-DOCKERFILE_BUILD_HIERARCHY = ["base", "runtime", "cudnn", "devel"]
-DOCKERFILE_NVIDIA_REGEX = re.compile(r'(?:nvidia|cuda|cudnn)+')
+DOCKERFILE_NAME: str = "Dockerfile"
+DOCKERFILE_TEMPLATE_SUFFIX: str = ".Dockerfile.j2"
+DOCKERFILE_BUILD_HIERARCHY: List[str] = ["base", "runtime", "cudnn", "devel"]
+DOCKERFILE_NVIDIA_REGEX: re.Pattern = re.compile(r'(?:nvidia|cuda|cudnn)+')
 
-SUPPORTED_PYTHON_VERSION = ["3.7", "3.8"]
+SUPPORTED_PYTHON_VERSION: List[str] = ["3.7", "3.8"]
 
-NVIDIA_REPO_URL = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
-NVIDIA_ML_REPO_URL = (
+NVIDIA_REPO_URL: str = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
+NVIDIA_ML_REPO_URL: str = (
     "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
 )
+
+HTTP_RETRY_ATTEMPTS: int = 2
+HTTP_RETRY_WAIT_SECS: int = 20
 
 # setup some default
 logging.get_absl_handler().setFormatter(ColoredFormatter())
@@ -85,8 +88,8 @@ class LogsMixin(object):
             if image_id:
                 self._push_context[image_tag] = docker_client.images.get(image_id)
             else:
-                raise docker.errors.BuildError(last_event or 'Unknown', logs)
-        except docker.errors.BuildError as e:
+                raise BuildError(last_event or 'Unknown', logs)
+        except BuildError as e:
             log.error(f"Failed to build {image_tag} :\n{e.msg}")
             for line in e.build_log:
                 if 'stream' in line:
@@ -117,7 +120,7 @@ class LogsMixin(object):
                         f"Successfully pushed {docker_client.images.get(image_id)}"
                     )
                     break
-        except docker.errors.APIError as e:
+        except APIError as e:
             log.error(f"Errors during `docker push`: {e.response}")
         except urllib3.exceptions.ReadTimeoutError:
             log.warning(f'{image_id} failed to build due to `urllib3.ReadTimeoutError.')
@@ -209,9 +212,10 @@ class GenerateMixin(object):
         Generate given BentoML release tag.
         """
         release_type = kwargs['release_type']
+        tag_spec = self.specs['tag']
 
-        _core_fmt = kwargs['fmt'] if kwargs.get('fmt') else self.tag_spec['fmt']
-        formatter = {k: kwargs[k] for k in self.tag_spec.keys() if k != 'fmt'}
+        _core_fmt = kwargs['fmt'] if kwargs.get('fmt') else tag_spec['fmt']
+        formatter = {k: kwargs[k] for k in tag_spec.keys() if k != 'fmt'}
 
         _tag = _core_fmt.format(**formatter)
         if release_type in ['runtime', 'cudnn']:
@@ -249,7 +253,7 @@ class GenerateMixin(object):
         """
         # TODO: also better type hint
         _context: Dict[str, Union[str, Dict[str, Union[str, Dict[str, str]]]]] = {}
-        _cuda_components = get_data(self.cuda_dependencies, self._cuda_version).copy()
+        _cuda_components = get_data(self.cuda, self._cuda_version).copy()
         _distro_context = self.releases[distro_version].copy()
 
         _context.update(_distro_context)
@@ -312,7 +316,6 @@ class GenerateMixin(object):
 
         _readme_context: Dict = {
             'ephemeral': False,
-            'bentoml_img': 'https://github.com/bentoml/BentoML/blob/master/docs/source/_static/img/bentoml.png',
             'bentoml_package': "",
             'bentoml_release_version': FLAGS.bentoml_version,
             'release_info': _release_context,
@@ -416,7 +419,7 @@ class BuildMixin(object):
                 if FLAGS.overwrite:
                     docker_client.api.remove_image(image_tag, force=True)
                     # workaround for not having goto supports in Python.
-                    raise docker.errors.ImageNotFound(f"Building {image_tag}")
+                    raise ImageNotFound(f"Building {image_tag}")
                 if docker_client.api.history(image_tag):
                     log.info(
                         f"Image {image_tag} is already built and --overwrite is not specified. Skipping..."
@@ -427,7 +430,7 @@ class BuildMixin(object):
                         image_tag,
                     )
                     continue
-            except docker.errors.ImageNotFound:
+            except ImageNotFound:
                 pyenv = get_data(self._tags, image_tag, 'envars', 'PYTHON_VERSION')
                 build_args = {"PYTHON_VERSION": pyenv}
                 # NOTES: https://warehouse.pypa.io/api-reference/index.html
@@ -467,62 +470,111 @@ class PushMixin(object):
             )
         return _release_tag
 
-    def push_images(self):
-        try:
-            assert self._push_context, "push_context is empty"
-        except AssertionError:
+    def push_to_registries(self):
+
+        self.auth_registries()
+
+        if not self._push_context:
+            log.debug("--generate images is not specified. Generate push context...")
             for image_tag, dockerfile_path in self.build_tags():
                 set_data(
                     self._push_context, docker_client.images.get(image_tag), image_tag,
                 )
 
-        repos = self.auth_registries(self.repository)
-        for repo, registries in repos.items():
+        for registry, registry_spec in self.repository.items():
+            # We will want to push README first.
+            login_payload: Dict = {
+                "username": os.getenv(registry_spec['user']),
+                "password": os.getenv(registry_spec['pwd']),
+            }
+            api_url: str = get_nested(registry_spec, ['urls', 'api'])
+
+            for package, registry_url in registry_spec['registry'].items():
+                _, _url = registry_url.split('/', maxsplit=1)
+                readme_path = Path('docs', package, 'README.md')
+                repo_url: str = f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
+                self.push_readmes(api_url, repo_url, readme_path, login_payload)
+
+            # Then push image to registry.
             for image_tag in self.push_tags():
                 image = self._push_context[image_tag]
                 reg, tag = image_tag.split(":")
-                registry = ''.join((k for k in registries['registry'] if reg in k))
+                registry = ''.join((k for k in registry_spec['registry'] if reg in k))
                 log.info(f"Uploading {image_tag} to {registry}")
                 p = multiprocessing.Process(
                     target=self.upload_in_background, args=(image, tag, registry),
                 )
                 p.start()
 
+    def push_readmes(
+        self,
+        api_url: str,
+        repo_url: str,
+        readme_path: Path,
+        login_payload: Dict[str, str],
+    ):
+        self.headers.update(
+            {"Content-Type": "application/json", "Connection": "keep-alive"}
+        )
+        logins = self.post(
+            api_url, data=json.dumps(login_payload), headers=self.headers
+        )
+        self.headers.update(
+            {
+                "Authorization": f"JWT {logins.json()['token']}",
+                "Access-Control-Allow-Origin": "*",
+                "X-CSRFToken": logins.cookies['csrftoken'],
+            }
+        )
+        with readme_path.open('r') as f:
+            data = {"full_description": f.read()}
+            self.patch(
+                repo_url,
+                data=json.dumps(data),
+                headers=self.headers,
+                cookies=logins.cookies,
+            )
+
+    @retry(PushRetry, tries=HTTP_RETRY_ATTEMPTS, delay=HTTP_RETRY_WAIT_SECS, logger=log)
     def upload_in_background(self, image, tag, registry):
         """Upload a docker image (to be used by multiprocessing)."""
         image.tag(registry, tag=tag)
         log.debug(f"Pushing {image.tag} to {registry}...")
-        resp = docker_client.images.push(registry, tag=tag, stream=True, decode=True)
-        self.push_logs(resp)
+        try:
+            resp = docker_client.images.push(
+                registry, tag=tag, stream=True, decode=True
+            )
+            self.push_logs(resp)
+        except APIError:
+            raise PushRetry
 
-    @staticmethod
-    def auth_registries(repository: Dict) -> Dict:
+    @retry(
+        LoginRetry, tries=HTTP_RETRY_ATTEMPTS, delay=HTTP_RETRY_WAIT_SECS, logger=log
+    )
+    def auth_registries(self):
 
         # Login Docker credentials and setup docker client
         pprint('Configure Docker')
-        # TODO: better type hint ugh
-        repos: Dict[str, Dict[str, Union[List[str], Dict[str, str]]]] = {}
-        # secrets will get parsed into our requests headers.
-        secrets: Dict[str, str] = {'username': '', 'password': ''}
-        for registry, metadata in repository.items():
-            if not os.getenv(metadata['pwd']) and not os.getenv(metadata['user']):
-                log.critical(
-                    f"{registry}: Make sure to"
-                    f" set {metadata['pwd']} or {metadata['user']}."
+        try:
+            docker_client.from_env(timeout=FLAGS.timeout)
+        except APIError:
+            for registry, metadata in self.repository.items():
+                if not os.getenv(metadata['pwd']):
+                    log.critical(
+                        f"{registry}: Make sure to"
+                        f" set both {metadata['pwd']} and {metadata['user']}."
+                    )
+                _user = os.getenv(metadata['user'])
+                _pwd = os.getenv(metadata['pwd'])
+
+                log.info(f"Logging into Docker registry {registry} with credentials...")
+                docker_client.api.login(
+                    username=_user, password=_pwd, registry=registry
                 )
-            _user = os.getenv(metadata['user'])
-            _pwd = os.getenv(metadata['pwd'])
-
-            log.info(f"Logging into Docker registry {registry} with credentials...")
-            docker_client.api.login(username=_user, password=_pwd, registry=registry)
-            repos[registry] = {
-                'registry': list(metadata['registry'].values()),
-                'secrets': secrets.update(username=_user, password=_pwd),
-            }
-        return repos
+            raise LoginRetry
 
 
-class Manager(LogsMixin, GenerateMixin, BuildMixin, PushMixin):
+class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
     """
     Docker Images Releases Manager.
     """
@@ -536,7 +588,7 @@ class Manager(LogsMixin, GenerateMixin, BuildMixin, PushMixin):
     )
 
     def __init__(self, release_spec: Dict, cuda_version: str, *args, **kwargs):
-        super(Manager, self).__init__(*args, **kwargs)
+        super(ManagerClient, self).__init__(*args, **kwargs)
 
         # We will also default bentoml_version to FLAGs.bentoml_version
         self._default_args: Dict = {"BENTOML_VERSION": FLAGS.bentoml_version}
@@ -547,7 +599,7 @@ class Manager(LogsMixin, GenerateMixin, BuildMixin, PushMixin):
             super().__setattr__(f"{key}", values)
 
         # Workaround adding base to multistage enabled distros.
-        # Ugh this is jank
+        # NOTE: Ugh this is jank
         mapfunc(lambda x: list(flatten(x)), self.packages.values())
         for p in self.packages.values():
             p.update({"base": maxkeys(p)})
@@ -573,7 +625,7 @@ class Manager(LogsMixin, GenerateMixin, BuildMixin, PushMixin):
             shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
             mkdir_p(FLAGS.dockerfile_dir)
         self._tags, self._paths = self.metadata(
-            target_dir=FLAGS.dockerfile_dir, python_versions=self.supported_python
+            FLAGS.dockerfile_dir, self.supported_python
         )
         if FLAGS.dump_metadata:
             with open("./metadata.json", "w") as ouf:
@@ -593,16 +645,7 @@ class Manager(LogsMixin, GenerateMixin, BuildMixin, PushMixin):
 
     def push(self, dry_run: bool = False):
         if not dry_run:
-            self.push_images()
-
-        # update README hack
-        # https://github.com/docker/hub-feedback/issues/2006
-        # TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d \
-        #         '{"username": "'${USERNAME}'", "password": "'${PASS}'"}' \
-        #           https://hub.docker.com/v2/users/logins/ | jq -r .token)
-        #
-        # curl -s -vvv -X PATCH -H "Content-Type: application/json" -H "Authorization: JWT ${TOKEN}" \
-        #       -d '{"full_description": "ed"}' https://hub.docker.com/v2/repositories/bentoml/model-server/
+            self.push_to_registries()
 
 
 def main(argv):
@@ -623,14 +666,13 @@ def main(argv):
         return
 
     # generate templates to correct directory.
-    manager = Manager(release_spec, FLAGS.cuda_version)
+    manager = ManagerClient(release_spec, FLAGS.cuda_version)
     if 'dockerfiles' in FLAGS.generate:
         return
 
     # Build images.
     if 'images' in FLAGS.generate:
         manager.build(FLAGS.dry_run)
-        return
 
     # Push images when finish building.
     if FLAGS.push_to_hub:

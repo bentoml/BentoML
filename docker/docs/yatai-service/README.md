@@ -1,6 +1,4 @@
-![bentoml-docker](https://github.com/bentoml/BentoML/blob/master/docs/source/_static/img/bentoml.png)
----
-## Model Serving Made Easy
+## BentoML
 
 [![pypi status](https://img.shields.io/pypi/v/bentoml.svg?style=flat-square)](https://pypi.org/project/BentoML) [![Downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml) [![Actions Status](https://github.com/bentoml/bentoml/workflows/BentoML-CI/badge.svg)](https://github.com/bentoml/bentoml/actions) [![Documentation Status](https://readthedocs.org/projects/bentoml/badge/?version=latest&style=flat-square)](https://docs.bentoml.org/) [![join BentoML Slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack&style=flat-square)](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg)
 
@@ -53,7 +51,9 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 ### Centos8
 
 *WARNING*: POSSIBLE MISSING IMAGE TAGS
-Centos upstream images often fail security scans required by NVIDIA before publishing images. Please check https://gitlab-master.nvidia.com/cuda-installer/cuda/-/issues for any security notices!
+
+Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
+If you need the one missing please refers to [`bentoml/docker`](https://github.com/bentoml/BentoML/tree/master/docker) for more information.
             
 - [`0.13.0-python3.7-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
 - [`0.13.0-python3.8-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
@@ -61,7 +61,9 @@ Centos upstream images often fail security scans required by NVIDIA before publi
 ### Centos7
 
 *WARNING*: POSSIBLE MISSING IMAGE TAGS
-Centos upstream images often fail security scans required by NVIDIA before publishing images. Please check https://gitlab-master.nvidia.com/cuda-installer/cuda/-/issues for any security notices!
+
+Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
+If you need the one missing please refers to [`bentoml/docker`](https://github.com/bentoml/BentoML/tree/master/docker) for more information.
             
 - [`0.13.0-python3.7-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)
 - [`0.13.0-python3.8-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)

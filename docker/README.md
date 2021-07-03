@@ -63,7 +63,7 @@ _example of available [tags](https://hub.docker.com/repository/docker/bentoml/mo
 
 ## Developing
 
-[DEV.md](https://github.com/bentoml/BentoML/blob/master/docker/docs/DEV.md) contains more details on generation workflow and management logics.
+[DEV.md](docs/DEV.md) contains more details on generation workflow and management logics.
 
 To add new distros support or new CUDA version, you first have to update `manifest.yml`, add templates with correct format under `./templates`, then run `manager.py` to re-generate new Dockerfiles.
 
@@ -74,7 +74,7 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 » DOCKER_BUILDKIT=1 docker build -t bentoml-docker -f Dockerfile .
 
 # Run the built container with correct users permission for the generated file.
-» docker run --user $(shell id -u):$(shell id -g) -it -v $(shell pwd):/bentoml bentoml-docker bash 
+» docker run --user $(id -u):$(id -g) -it -v $(pwd):/bentoml bentoml-docker bash 
 
 # Use the provided alias below depending on each tasks.
 #

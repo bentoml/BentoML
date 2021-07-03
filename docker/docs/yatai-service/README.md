@@ -41,12 +41,12 @@ Three types of images provided in the registry:
 
 In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [BentoML's GPU Serving guides](https://docs.bentoml.org/en/latest/guides/gpu_serving.html) on how to use BentoML's CUDA images.
 
-## Latest tags for `yatai-service 0.13.0`
+## Latest tags for `yatai-service 0.12.1`
 
 ### Debian10
 
-- [`0.13.0-python3.7-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/debian10/runtime/Dockerfile)
-- [`0.13.0-python3.8-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/debian10/runtime/Dockerfile)
+- [`0.12.1-python3.7-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/debian10/runtime/Dockerfile)
+- [`0.12.1-python3.8-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/debian10/runtime/Dockerfile)
 
 ### Centos8
 
@@ -55,8 +55,8 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
 If you need the one missing please refers to [`bentoml/docker`](https://github.com/bentoml/BentoML/tree/master/docker) for more information.
             
-- [`0.13.0-python3.7-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
-- [`0.13.0-python3.8-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
+- [`0.12.1-python3.7-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
+- [`0.12.1-python3.8-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
 
 ### Centos7
 
@@ -65,5 +65,5 @@ If you need the one missing please refers to [`bentoml/docker`](https://github.c
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
 If you need the one missing please refers to [`bentoml/docker`](https://github.com/bentoml/BentoML/tree/master/docker) for more information.
             
-- [`0.13.0-python3.7-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)
-- [`0.13.0-python3.8-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)
+- [`0.12.1-python3.7-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)
+- [`0.12.1-python3.8-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)

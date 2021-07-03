@@ -11,6 +11,8 @@ ARG PYTHON_VERSION
 
 FROM model-server:base-python$PYTHON_VERSION-alpine3.14 as build_image
 
+ARG BENTOML_VERSION
+
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \

@@ -46,6 +46,8 @@ ENV NVIDIA_REQUIRE_CUDA "{{ metadata.cuda_requires }}"
 
 FROM build_image as release_image
 
+ARG BENTOML_VERSION
+
 RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir && \
     rm -rf /var/lib/apt/lists/*
 

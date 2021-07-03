@@ -123,7 +123,7 @@ class LogsMixin(object):
         except APIError as e:
             log.error(f"Errors during `docker push`: {e.response}")
         except urllib3.exceptions.ReadTimeoutError:
-            log.warning(f'{image_id} failed to build due to `urllib3.ReadTimeoutError.')
+            log.exception(f'{image_id} failed to build due to `urllib3.ReadTimeoutError`.')
 
 
 class GenerateMixin(object):
@@ -483,17 +483,17 @@ class PushMixin(object):
 
         for registry, registry_spec in self.repository.items():
             # We will want to push README first.
-            login_payload: Dict = {
-                "username": os.getenv(registry_spec['user']),
-                "password": os.getenv(registry_spec['pwd']),
-            }
-            api_url: str = get_nested(registry_spec, ['urls', 'api'])
+            # login_payload: Dict = {
+            #     "username": os.getenv(registry_spec['user']),
+            #     "password": os.getenv(registry_spec['pwd']),
+            # }
+            # api_url: str = get_nested(registry_spec, ['urls', 'api'])
 
-            for package, registry_url in registry_spec['registry'].items():
-                _, _url = registry_url.split('/', maxsplit=1)
-                readme_path = Path('docs', package, 'README.md')
-                repo_url: str = f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
-                self.push_readmes(api_url, repo_url, readme_path, login_payload)
+            # for package, registry_url in registry_spec['registry'].items():
+            #     _, _url = registry_url.split('/', maxsplit=1)
+            #     readme_path = Path('docs', package, 'README.md')
+            #     repo_url: str = f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
+            #     self.push_readmes(api_url, repo_url, readme_path, login_payload)
 
             # Then push image to registry.
             for image_tag in self.push_tags():
@@ -501,10 +501,11 @@ class PushMixin(object):
                 reg, tag = image_tag.split(":")
                 registry = ''.join((k for k in registry_spec['registry'] if reg in k))
                 log.info(f"Uploading {image_tag} to {registry}")
-                p = multiprocessing.Process(
-                    target=self.upload_in_background, args=(image, tag, registry),
-                )
-                p.start()
+                self.upload_in_background(image, tag, registry)
+                # p = multiprocessing.Process(
+                #     target=self.upload_in_background, args=(image, tag, registry),
+                # )
+                # p.start()
 
     def push_readmes(
         self,
@@ -535,18 +536,14 @@ class PushMixin(object):
                 cookies=logins.cookies,
             )
 
-    @retry(PushRetry, tries=HTTP_RETRY_ATTEMPTS, delay=HTTP_RETRY_WAIT_SECS, logger=log)
     def upload_in_background(self, image, tag, registry):
         """Upload a docker image (to be used by multiprocessing)."""
         image.tag(registry, tag=tag)
-        log.debug(f"Pushing {image.tag} to {registry}...")
-        try:
-            resp = docker_client.images.push(
-                registry, tag=tag, stream=True, decode=True
-            )
-            self.push_logs(resp)
-        except APIError:
-            raise PushRetry
+        log.debug(f"Pushing {repr(image)} to {registry}...")
+        resp = docker_client.images.push(
+            registry, tag=tag, stream=True, decode=True
+        )
+        self.push_logs(resp)
 
     @retry(
         LoginRetry, tries=HTTP_RETRY_ATTEMPTS, delay=HTTP_RETRY_WAIT_SECS, logger=log

@@ -11,6 +11,8 @@ ARG PYTHON_VERSION
 
 FROM yatai-service:base-python$PYTHON_VERSION-slim as build_image
 
+ARG BENTOML_VERSION
+
 RUN pip install bentoml[yatai_service]==$BENTOML_VERSION --no-cache-dir --use-deprecated=legacy-resolver
 
 COPY tools/yatai-service/entrypoint.sh /usr/local/bin/

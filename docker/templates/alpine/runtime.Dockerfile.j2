@@ -4,6 +4,8 @@ ARG PYTHON_VERSION
 
 FROM {{ metadata.package }}:{{ build_tag }} as build_image
 
+ARG BENTOML_VERSION
+
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \

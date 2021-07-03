@@ -8,6 +8,8 @@ ARG PYTHON_VERSION
 
 FROM {{ metadata.package }}:{{ build_tag }} as build_image
 
+ARG BENTOML_VERSION
+
 RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION {{ pip_options|join(' ') }}
 
 COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/

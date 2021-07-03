@@ -3,7 +3,7 @@
 FROM {{ metadata.base_image }} as alpine-glibc
 
 # setup ENV and ARG
-{% for key, value in metadata.envars.items() %}
+{% for key, value in metadata.envars.items() if key != "BENTOML_VERSION"%}
 {% if key in ["PYTHON_VERSION"] %}
 ARG {{ key }}
 {% else %}

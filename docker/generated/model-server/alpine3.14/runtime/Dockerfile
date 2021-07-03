@@ -9,7 +9,7 @@
 
 ARG PYTHON_VERSION
 
-FROM model-server:base-python$PYTHON_VERSION-alpine as build_image
+FROM model-server:base-python$PYTHON_VERSION-alpine3.14 as build_image
 
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \

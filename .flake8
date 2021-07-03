@@ -3,4 +3,5 @@ ignore = E203, E266, W503, E402
 max-line-length = 88
 exclude = tests/yatai/proto, proto, _version.py
 per-file-ignores =
-    docker/manager.py:W605, E501
+    docker/manager.py:F405, F403, E501
+    docker/utils.py:W605, E501

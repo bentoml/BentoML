@@ -43,19 +43,20 @@ release_spec: &tmpl_spec
 
 tag_spec:
   fmt: "{release_type}-python{python_version}-{suffixes}"
-  release_type: ""
-  python_version: ""
-  suffixes: ""
+  release_type:
+  python_version:
+  suffixes:
 
 packages:
   model-server:
     devel: &default_specs
-      - debian
-      - centos
+      - debian10
+      - centos8
+      - centos7
     runtime:
       - *default_specs
-      - amazonlinux
-      - alpine
+      - amazonlinux2
+      - alpine3.14
     cudnn:
       - *default_specs
   yatai-service:
@@ -63,37 +64,37 @@ packages:
       - *default_specs
 
 releases:
-  debian:
-    10:
-      <<: *tmpl_spec
-      templates_dir: templates/debian
-      base_image: debian:buster-slim
-      add_to_tags: "slim"
-      cuda_prefix_url: "ubuntu2004"
-  centos:
-    8: &centos
-      <<: *tmpl_spec
-      templates_dir: templates/rhel
-      base_image: centos:8
-      add_to_tags: "centos8"
-      cuda_prefix_url: "rhel8"
-    7:
-      <<: *centos
-      base_image: centos:7
-      add_to_tags: "centos7"
-      cuda_prefix_url: "rhel7"
-  amazonlinux:
-    2: &no_cuda
-      <<: *tmpl_spec
-      templates_dir: templates/rhel
-      base_image: amazonlinux:2
-      add_to_tags: "ami2"
-      cuda_prefix_url:
-      cuda_requires:
-      cuda:
-  alpine:
-    3.14:
-      <<: *no_cuda
-      templates_dir: templates/alpine
-      base_image: alpine:3.14
-      add_to_tags: "alpine"
+  debian10:
+    <<: *tmpl_spec
+    templates_dir: templates/debian
+    base_image: debian:buster-slim
+    add_to_tags: "slim"
+    cuda_prefix_url: "ubuntu2004"
+
+  centos8: &centos
+    <<: *tmpl_spec
+    templates_dir: templates/rhel
+    base_image: centos:8
+    add_to_tags: "centos8"
+    cuda_prefix_url: "rhel8"
+
+  centos7:
+    <<: *centos
+    base_image: centos:7
+    add_to_tags: "centos7"
+    cuda_prefix_url: "rhel7"
+
+  amazonlinux2: &no_cuda
+    <<: *tmpl_spec
+    templates_dir: templates/rhel
+    base_image: amazonlinux:2
+    add_to_tags: "ami2"
+    cuda_prefix_url:
+    cuda_requires:
+    cuda:
+
+  alpine3.14:
+    <<: *no_cuda
+    templates_dir: templates/alpine
+    base_image: alpine:3.14
+    add_to_tags: "alpine3.14"

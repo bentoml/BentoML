@@ -91,6 +91,9 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 # Check manager flags
 » manager_dockerfiles --helpfull
 
+# To develop manifest files and update schema validation
+» manager_dockerfiles --bentoml_version 0.13.0 --validate
+
 # Generate all dockerfiles from templates, and dump all build metadata to metadata.json
 » manager_dockerfiles --bentoml_version 0.13.0 --generate dockerfiles
 

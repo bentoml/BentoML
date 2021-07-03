@@ -1,49 +1,36 @@
 #!/usr/bin/env python3
+import functools
 import itertools
 import json
+
+# import multiprocessing
 import multiprocessing
 import operator
 import os
 import re
 import shutil
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
 from typing import Optional, Dict, MutableMapping, List, Iterator, Union
 
 import absl.logging as logging
 import docker
-import requests
+import urllib3
 from absl import app
 from docker import DockerClient
 from dotenv import load_dotenv
 from jinja2 import Environment
 
-from utils import (
-    FLAGS,
-    mkdir_p,
-    ColoredFormatter,
-    maxkeys,
-    mapfunc,
-    cached_property,
-    flatten,
-    walk,
-    load_manifest_yaml,
-    dprint,
-    get_data,
-    set_data,
-)
+from utils import *
 
-load_dotenv()
-logging.get_absl_handler().setFormatter(ColoredFormatter())
-log = logging.get_absl_logger()
+# vars
+README_TEMPLATE = Path('./templates/docs/README.md.j2')
 
-RELEASE_TAG_FORMAT = ""
-
-DOCKERFILE_SUFFIX = ".Dockerfile.j2"
+DOCKERFILE_NAME = "Dockerfile"
+DOCKERFILE_TEMPLATE_SUFFIX = ".Dockerfile.j2"
 DOCKERFILE_BUILD_HIERARCHY = ["base", "runtime", "cudnn", "devel"]
 DOCKERFILE_NVIDIA_REGEX = re.compile(r'(?:nvidia|cuda|cudnn)+')
-DOCKERFILE_NAME = DOCKERFILE_SUFFIX.split('.')[1]
 
 SUPPORTED_PYTHON_VERSION = ["3.7", "3.8"]
 
@@ -52,35 +39,24 @@ NVIDIA_ML_REPO_URL = (
     "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
 )
 
+# setup some default
+logging.get_absl_handler().setFormatter(ColoredFormatter())
+log = logging.get_absl_logger()
 
-def jprint(*args, **kwargs):
-    dprint(json.dumps(*args, indent=2), **kwargs)
+if not os.path.exists('./.env'):
+    log.warning(f"Make sure to create .env file at {os.getcwd()}")
+else:
+    load_dotenv()
 
-
-def auth_registries(repository: Dict, docker_client: DockerClient):
-    repos: Dict[str, Dict[str, Union[List[str], Dict[str, str]]]] = {}
-    # secrets will get parsed into our requests headers.
-    secrets: Dict[str, str] = {'username': '', 'password': ''}
-    for registry, metadata in repository.items():
-        if not os.getenv(metadata['pwd']) and not os.getenv(metadata['user']):
-            log.critical(
-                f"{registry}: Make sure to"
-                f" set {metadata['pwd']} or {metadata['user']}."
-            )
-        _user = os.getenv(metadata['user'])
-        _pwd = os.getenv(metadata['pwd'])
-
-        log.info(f"Logging into Docker registry {registry} with credentials...")
-        docker_client.login(username=_user, password=_pwd, registry=registry)
-        repos[registry] = {
-            'registry': list(metadata['registry'].values()),
-            'secrets': secrets.update(username=_user, password=_pwd),
-        }
-    return repos
+if os.geteuid() == 0:
+    # We only use docker_client when running as root.
+    docker_client = DockerClient("unix://var/run/docker.sock")
 
 
 class LogsMixin(object):
-    def build_logs(self, docker_client: DockerClient, resp: Iterator, image_tag: str):
+    """Logs Mixin for docker build process"""
+
+    def build_logs(self, resp: Iterator, image_tag: str):
         last_event: str = ""
         image_id: str = ""
         output: str = ""
@@ -93,9 +69,9 @@ class LogsMixin(object):
                     # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
                     output: str = next(resp).decode('utf-8')
                     json_output: Dict = json.loads(output.strip('\r\n'))
+                    # output to stderr when running in docker
                     if 'stream' in json_output:
-                        # output to stderr when running in docker
-                        dprint(json_output['stream'])
+                        sprint(json_output['stream'])
                         matched = built_regex.search(json_output['stream'])
                         if matched:
                             image_id = matched.group(2)
@@ -107,22 +83,67 @@ class LogsMixin(object):
                 except ValueError:
                     log.error(f"Errors while building image:\n{output}")
             if image_id:
-                self.push_context[image_tag] = docker_client.images.get(image_id)
+                self._push_context[image_tag] = docker_client.images.get(image_id)
             else:
                 raise docker.errors.BuildError(last_event or 'Unknown', logs)
         except docker.errors.BuildError as e:
             log.error(f"Failed to build {image_tag} :\n{e.msg}")
             for line in e.build_log:
                 if 'stream' in line:
-                    dprint(line['stream'].strip())
+                    sprint(line['stream'].strip())
             log.fatal('ABORTING due to failure!')
 
-    def push_logs(self, docker_client: DockerClient):
-        pass
+    @staticmethod
+    def push_logs(resp: Iterator):
+        # resp will be docker_client.push(repo, stream=True, decode=True)
+        logs: Dict[str, Dict] = defaultdict()
+        image_id: str = ""
+        try:
+            while True:
+                try:
+                    output: Dict = next(resp)
+                    if 'id' in output:
+                        image_id = output['id']
+                        if 'progress' in output:
+                            logs[image_id] = {
+                                'progress': output['progress'],
+                                'status': output['status'],
+                            }
+                            sprint(f"{image_id}: {logs[image_id]['progress']}")
+                    if 'status' in output and output['status'] == "Pushed":
+                        raise StopIteration
+                except StopIteration:
+                    log.info(
+                        f"Successfully pushed {docker_client.images.get(image_id)}"
+                    )
+                    break
+        except docker.errors.APIError as e:
+            log.error(f"Errors during `docker push`: {e.response}")
+        except urllib3.exceptions.ReadTimeoutError:
+            log.warning(f'{image_id} failed to build due to `urllib3.ReadTimeoutError.')
 
 
 class GenerateMixin(object):
     """Mixin for all generation-related."""
+
+    @staticmethod
+    def cudnn_context(cuda_components: Dict):
+        """
+        Return cuDNN context
+        Args:
+            cuda_components: dict of CUDA dependencies definitions.
+        """
+        _cudnn = ''
+        for k in cuda_components.keys():
+            if re.match(r"(cudnn)(\w+)", k):
+                _cudnn = k
+                break
+        cudnn_release_version: str = cuda_components[_cudnn]
+        cudnn_major_version: str = cudnn_release_version.split('.')[0]
+        return {
+            "version": cudnn_release_version,
+            "major_version": cudnn_major_version,
+        }
 
     def render(
         self,
@@ -139,7 +160,7 @@ class GenerateMixin(object):
             metadata: templates context
             build_tag: strictly use for FROM args for base image.
         """
-        if DOCKERFILE_SUFFIX not in input_path.name:
+        if DOCKERFILE_TEMPLATE_SUFFIX not in input_path.name:
             output_name = input_path.stem
         else:
             output_name = DOCKERFILE_NAME
@@ -154,66 +175,51 @@ class GenerateMixin(object):
             ouf.write(template.render(metadata=metadata, build_tag=build_tag))
         ouf.close()
 
-    @staticmethod
-    def envars(bentoml_version: str):
+    def envars(self, additional_args: Optional[Dict[str, str]] = None):
         """
         Create a dictionary of args that will be parsed during runtime
         Args:
-            bentoml_version: version of BentoML releases
+            additional_args: optional variables to pass into build context.
         Returns:
             Dict of args
         """
-        args = {"BENTOML_VERSION": bentoml_version}
+        _args: Dict = {} if not additional_args else additional_args
+        _args.update(self._default_args)
 
         def update_args_dict(updater):
             # Args will have format ARG=foobar
             if isinstance(updater, str):
-                _args, _, _value = updater.partition("=")
-                args[_args] = _value
+                _arg, _, _value = updater.partition("=")
+                _args[_arg] = _value
                 return
             elif isinstance(updater, list):
                 for v in updater:
                     update_args_dict(v)
             elif isinstance(updater, dict):
-                for _args, _value in updater.items():
-                    args[_args] = _value
+                for _arg, _value in updater.items():
+                    _args[_arg] = _value
             else:
                 log.error(f"cannot add to args dict with unknown type {type(updater)}")
-            return args
+            return _args
 
         return update_args_dict
 
-    @staticmethod
-    def image_tags(
-        build_ctx: MutableMapping,
-        python_version: str,
-        release_type: str,
-        fmt: Optional[str] = "",
-    ):
+    def image_tags(self, **kwargs: str):
         """
         Generate given BentoML release tag.
-        Args:
-            build_ctx: generated templates context
-            python_version: supported python version. check SUPPORTED_PYTHON_VERSION
-            release_type: type of releases. devel, runtime, cudnn
-            fmt: Custom tag format if needed.
         """
-        _core_fmt = fmt if fmt else RELEASE_TAG_FORMAT
-        formatter = {
-            "release_type": release_type,
-            "python_version": python_version,
-            "tag_suffix": build_ctx["add_to_tags"],
-        }
+        release_type = kwargs['release_type']
 
+        _core_fmt = kwargs['fmt'] if kwargs.get('fmt') else self.tag_spec['fmt']
+        formatter = {k: kwargs[k] for k in self.tag_spec.keys() if k != 'fmt'}
+
+        _tag = _core_fmt.format(**formatter)
         if release_type in ['runtime', 'cudnn']:
-            set_data(
-                formatter,
-                get_data(build_ctx, 'envars', 'BENTOML_VERSION'),
-                'release_type',
-            )
+            set_data(formatter, self._default_args['BENTOML_VERSION'], 'release_type')
             _tag = "-".join([_core_fmt.format(**formatter), release_type])
-        else:
-            _tag = _core_fmt.format(**formatter)
+
+        if release_type == 'base':
+            return _tag, ''
 
         # construct build_tag which is our base_image with $PYTHON_VERSION formats
         formatter.update({"python_version": "$PYTHON_VERSION", "release_type": "base"})
@@ -221,67 +227,42 @@ class GenerateMixin(object):
 
         return _tag, _build_tag
 
-    @staticmethod
-    def cudnn_context(cuda_components: Dict):
-        """
-        Return cuDNN context
-        Args:
-            cuda_components: dict of CUDA dependencies definitions.
-        """
-        cudnn_regex = re.compile(r"(cudnn)(\w+)")
-        for k, v in cuda_components.items():
-            if cudnn_regex.match(k):
-                cudnn_release_version = cuda_components.pop(k)
-                cudnn_major_version = cudnn_release_version.split(".")[0]
-                return {
-                    "version": cudnn_release_version,
-                    "major_version": cudnn_major_version,
-                }
-
-    def aggregate_dists_releases(self, package_spec: MutableMapping):
+    @functools.lru_cache(maxsize=10)
+    def aggregate_dists_releases(self, package: str) -> Iterator:
         """Aggregate all combos from manifest.yml"""
-        for releases, distros in package_spec.items():
-            for dist in distros:
-                for distro_version, distro_spec in self.manifest.releases[dist].items():
-                    yield dist, distro_version, distro_spec, releases
+        return [
+            (rel, d) for rel, dists in self.packages[package].items() for d in dists
+        ]
 
+    @functools.lru_cache(maxsize=100)
     def dockerfile_context(
-        self,
-        package: str,
-        distro: str,
-        distro_version: str,
-        distro_spec: Dict[str, str],
-        python_version: str,
-        bentoml_version: str,
+        self, package: str, distro_version: str, python_version: str,
     ) -> Dict:
         """
         Generate template context for each distro releases.
         Args:
-            distro: linux distro. eg: centos
-            distro_version: linux distro version. eg: 7
-            distro_spec: linux distro spec from manifest.yml
-            python_version: python version
-            bentoml_version: bentoml version
             package: release bentoml packages, either model-server or yatai-service
+            distro_version: linux distro. eg: centos
+            python_version: python version
         Returns:
             build context that can be used with self.render
         """
+        # TODO: also better type hint
         _context: Dict[str, Union[str, Dict[str, Union[str, Dict[str, str]]]]] = {}
-        _cuda_components = get_data(
-            self.manifest.cuda_dependencies, self._cuda_version
-        ).copy()
+        _cuda_components = get_data(self.cuda_dependencies, self._cuda_version).copy()
+        _distro_context = self.releases[distro_version].copy()
 
-        set_data(_context, package, 'package')
-        set_data(_context, get_data(self.manifest.releases, distro, distro_version))
+        _context.update(_distro_context)
+        _context['package'] = package
 
         # setup envars
         set_data(
-            _context, self.envars(bentoml_version)(distro_spec['envars']), 'envars',
+            _context, self.envars()(_distro_context['envars']), 'envars',
         )
 
-        # check if python_version is supported.
+        # set PYTHON_VERSION envars.
         set_data(
-            _context, python_version, "envars", "PYTHON_VERSION",
+            _context, python_version, 'envars', 'PYTHON_VERSION',
         )
 
         # setup cuda deps
@@ -295,77 +276,68 @@ class GenerateMixin(object):
                     "minor": minor,
                     "shortened": f"{major}.{minor}",
                 },
-                "cudnn": self.cudnn_context(_cuda_components),
                 "components": _cuda_components,
+                "cudnn": self.cudnn_context(_cuda_components),
             }
             _context.pop('cuda_prefix_url')
         else:
-            log.debug(f"CUDA is disabled for {distro}. Skipping...")
+            log.debug(f"CUDA is disabled for {distro_version}. Skipping...")
             for key in list(_context.keys()):
                 if DOCKERFILE_NVIDIA_REGEX.match(key):
                     _context.pop(key)
 
         return _context
 
-    def release_context(self, package: str, paths: Dict):
-        release_info: MutableMapping = defaultdict(list)
+    def readmes(self, target_dir: str, paths: Dict):
+        # this will include both yatai-service and models-server path.
+        _release_context: MutableMapping = defaultdict(list)
 
         # check if given distro is supported per package.
-        dists: List[str] = maxkeys(self.manifest.packages[package])
-        for distro in dists:
-            for distro_version in self.manifest.releases[distro].keys():
-                combos = f"{distro}{distro_version}"
-                if distro == 'debian':
-                    _os_tag = combos = 'slim'
-                elif distro == 'amazonlinux':
-                    _os_tag = 'ami'
-                else:
-                    _os_tag = distro
+        for distro_version in self.releases.keys():
+            if 'debian' in distro_version:
+                _os_tag = 'slim'
+            elif 'amazonlinux' in distro_version:
+                _os_tag = 'ami'
+            else:
+                _os_tag = distro_version
 
-                release_info[combos] = sorted(
-                    [
-                        (release_tags.split(":")[1], gen_path)
-                        for release_tags, gen_path in paths.items()
-                        if _os_tag in release_tags
-                        and package in release_tags
-                        and 'base' not in release_tags
-                        and str(distro_version) in gen_path
-                    ],
-                    key=operator.itemgetter(0),
-                )
-        return release_info
+            _release_context[distro_version] = sorted(
+                [
+                    (release_tags, gen_path)
+                    for release_tags, gen_path in paths.items()
+                    if _os_tag in release_tags and 'base' not in release_tags
+                ],
+                key=operator.itemgetter(0),
+            )
 
-    def readmes(self, target_dir: str, paths: Dict):
-        input_readmes: Path = Path('./templates/docs/README.md.j2')
-        readme_context: Dict = {
+        _readme_context: Dict = {
             'ephemeral': False,
             'bentoml_img': 'https://github.com/bentoml/BentoML/blob/master/docs/source/_static/img/bentoml.png',
             'bentoml_package': "",
             'bentoml_release_version': FLAGS.bentoml_version,
+            'release_info': _release_context,
         }
-        for package in self.manifest.packages.keys():
-            _release_info = self.release_context(package, paths)
 
-            readme_context['release_info'] = _release_info
-
-            set_data(readme_context, package, 'bentoml_package')
+        for package in self.packages.keys():
             output_readme = Path('docs', package)
-            shutil.rmtree(output_readme, ignore_errors=True)
+            shutil.rmtree(package, ignore_errors=True)
 
-            if not output_readme.exists():
-                self.render(
-                    input_path=input_readmes,
-                    output_path=output_readme,
-                    metadata=readme_context,
-                )
+            set_data(_readme_context, package, 'bentoml_package')
+            _readme_context['oss'] = maxkeys(self.packages[package])
+
+            self.render(
+                input_path=README_TEMPLATE,
+                output_path=output_readme,
+                metadata=_readme_context,
+            )
 
         # renders README for generated directory
-        readme_context['ephemeral'] = True
+        _readme_context['ephemeral'] = True
         if not Path(target_dir, "README.md").exists():
             self.render(
-                input_path=input_readmes,
+                input_path=README_TEMPLATE,
                 output_path=Path(target_dir),
-                metadata=readme_context,
+                metadata=_readme_context,
             )
 
     def metadata(self, target_dir: str, python_versions: List[str]):
@@ -377,37 +349,27 @@ class GenerateMixin(object):
                 "Detected running as ROOT. Make sure "
                 "to use manager_dockerfiles to generate Dockerfile"
             )
-        for combinations in itertools.product(
-            self.manifest.packages.items(), python_versions
+        pprint('Setting up metadata')
+        for package, python_version in itertools.product(
+            self.packages.keys(), python_versions
         ):
-            (package, package_spec), python_version = combinations
             log.info(f"Working on {package} for python{python_version}")
-            for (
-                distro,
-                distro_version,
-                distro_spec,
-                release,
-            ) in self.aggregate_dists_releases(package_spec):
-                log.debug(
-                    f"Processing tag context for {distro}{distro_version} for {release} release"
-                )
+            for (release, distro_version) in self.aggregate_dists_releases(package):
+                log.debug(f"Tag context: {distro_version}:{release}")
                 # setup our build context
                 tag_context = self.dockerfile_context(
-                    package,
-                    distro,
-                    distro_version,
-                    distro_spec,
-                    python_version,
-                    FLAGS.bentoml_version,
+                    package, distro_version, python_version,
                 )
                 template_dir = Path(tag_context['templates_dir'])
 
                 # generate our image tag.
                 _release_tag, _build_tag = self.image_tags(
-                    tag_context, python_version, release
+                    python_version=python_version,
+                    release_type=release,
+                    suffixes=tag_context['add_to_tags'],
                 )
 
-                # input generated_paths
+                # input paths
                 input_paths = [f for f in walk(template_dir) if release in f.name]
                 if 'rhel' in template_dir.name and release == 'cudnn':
                     input_paths = [
@@ -416,8 +378,8 @@ class GenerateMixin(object):
                         if DOCKERFILE_NVIDIA_REGEX.match(f.name)
                     ]
 
-                # output generated_paths
-                output_path = Path(target_dir, package, f"{distro}{distro_version}")
+                # output paths
+                output_path = Path(target_dir, package, f"{distro_version}")
                 if release != 'base':
                     output_path = Path(output_path, release)
                 if release == 'cudnn':
@@ -427,7 +389,7 @@ class GenerateMixin(object):
 
                 tag_keys = f"{tag_context['package']}:{_release_tag}"
 
-                # # setup directory correspondingly, and add these generated_paths
+                # # setup directory correspondingly, and add these paths
                 set_data(_tags, tag_context, tag_keys)
                 set_data(_paths, full_output_path, tag_keys)
                 if 'dockerfiles' in FLAGS.generate and os.geteuid() != 0:
@@ -446,7 +408,7 @@ class GenerateMixin(object):
 class BuildMixin(object):
     """Mixin for Build-related."""
 
-    def build_images(self, docker_client: DockerClient):
+    def build_images(self):
         for image_tag, dockerfile_path in self.build_tags():
             log.debug(f"Building {image_tag} from {dockerfile_path}")
             try:
@@ -460,7 +422,7 @@ class BuildMixin(object):
                         f"Image {image_tag} is already built and --overwrite is not specified. Skipping..."
                     )
                     set_data(
-                        self.push_context,
+                        self._push_context,
                         docker_client.images.get(image_tag),
                         image_tag,
                     )
@@ -477,18 +439,16 @@ class BuildMixin(object):
                     dockerfile=dockerfile_path,
                     tag=image_tag,
                 )
-                self._build_logs(docker_client, resp, image_tag)
+                self.build_logs(resp, image_tag)
 
     def build_tags(self):
-        _paths = deepcopy(self._paths)
         # We will build and push if args is parsed. Establish some variables.
         if FLAGS.releases and FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY:
             build_tags = itertools.chain(
-                _paths['base'].items(), _paths[FLAGS.releases].items()
+                self.paths['base'].items(), self.paths[FLAGS.releases].items()
             )
         else:
-            # build_tags = ((k, v) for i in path_metadata.values() for k, v in i.items())
-            build_tags = _paths.items()
+            build_tags = ((k, v) for i in self.paths.values() for k, v in i.items())
         return build_tags
 
 
@@ -496,7 +456,7 @@ class PushMixin(object):
     """Mixin for Push-related."""
 
     def push_tags(self):
-        _paths = deepcopy(self.generated_paths)
+        _paths = deepcopy(self.paths)
         if FLAGS.releases and FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY:
             _release_tag = _paths[FLAGS.releases]
         else:
@@ -507,75 +467,93 @@ class PushMixin(object):
             )
         return _release_tag
 
-    def push_images(self, docker_client: DockerClient, repos: Dict):
+    def push_images(self):
         try:
-            assert self.push_context, "push_context is empty"
+            assert self._push_context, "push_context is empty"
         except AssertionError:
             for image_tag, dockerfile_path in self.build_tags():
                 set_data(
-                    self.push_context, docker_client.images.get(image_tag), image_tag,
+                    self._push_context, docker_client.images.get(image_tag), image_tag,
                 )
+
+        repos = self.auth_registries(self.repository)
         for repo, registries in repos.items():
             for image_tag in self.push_tags():
-                image = self.push_context[image_tag]
+                image = self._push_context[image_tag]
                 reg, tag = image_tag.split(":")
-                registry = ''.join((k for k in registries if reg in k))
-                log.info(f"Uploading {image_tag} to {repo}")
-                if not FLAGS.dry_run:
-                    p = multiprocessing.Process(
-                        target=self.upload_in_background,
-                        args=(docker_client, image, registry, tag),
-                    )
-                    p.start()
+                registry = ''.join((k for k in registries['registry'] if reg in k))
+                log.info(f"Uploading {image_tag} to {registry}")
+                p = multiprocessing.Process(
+                    target=self.upload_in_background, args=(image, tag, registry),
+                )
+                p.start()
 
-    @staticmethod
-    def upload_in_background(docker_client, image, registry, tag):
+    def upload_in_background(self, image, tag, registry):
         """Upload a docker image (to be used by multiprocessing)."""
         image.tag(registry, tag=tag)
-        log.debug(f"Pushing {image} to {registry}...")
-        for _line in docker_client.images.push(
-            registry, tag=tag, stream=True, decode=True
-        ):
-            jprint(_line)
+        log.debug(f"Pushing {image.tag} to {registry}...")
+        resp = docker_client.images.push(registry, tag=tag, stream=True, decode=True)
+        self.push_logs(resp)
+
+    @staticmethod
+    def auth_registries(repository: Dict) -> Dict:
+
+        # Login Docker credentials and setup docker client
+        pprint('Configure Docker')
+        # TODO: better type hint ugh
+        repos: Dict[str, Dict[str, Union[List[str], Dict[str, str]]]] = {}
+        # secrets will get parsed into our requests headers.
+        secrets: Dict[str, str] = {'username': '', 'password': ''}
+        for registry, metadata in repository.items():
+            if not os.getenv(metadata['pwd']) and not os.getenv(metadata['user']):
+                log.critical(
+                    f"{registry}: Make sure to"
+                    f" set {metadata['pwd']} or {metadata['user']}."
+                )
+            _user = os.getenv(metadata['user'])
+            _pwd = os.getenv(metadata['pwd'])
+
+            log.info(f"Logging into Docker registry {registry} with credentials...")
+            docker_client.api.login(username=_user, password=_pwd, registry=registry)
+            repos[registry] = {
+                'registry': list(metadata['registry'].values()),
+                'secrets': secrets.update(username=_user, password=_pwd),
+            }
+        return repos
 
 
-class Manager(requests.Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
+class Manager(LogsMixin, GenerateMixin, BuildMixin, PushMixin):
     """
     Docker Images Releases Manager.
     """
 
     _paths: MutableMapping = defaultdict()
     _tags: MutableMapping = defaultdict()
+    _push_context: Dict = {}
 
     _template_env: Environment = Environment(
         extensions=["jinja2.ext.do"], trim_blocks=True, lstrip_blocks=True
     )
-    push_context = {}
 
-    def __init__(self, release_spec: Dict, cuda_version: str):
-        # set private class attributes to be manifest.yml keys
-        super(Manager, self).__init__()
-        super().__setattr__(
-            "manifest",
-            namedtuple("manifest", release_spec.keys())(*release_spec.values()),
-        )
-        mapfunc(lambda x: list(flatten(x)), self.manifest.packages.values())
-        for p in self.manifest.packages.values():
+    def __init__(self, release_spec: Dict, cuda_version: str, *args, **kwargs):
+        super(Manager, self).__init__(*args, **kwargs)
+
+        # We will also default bentoml_version to FLAGs.bentoml_version
+        self._default_args: Dict = {"BENTOML_VERSION": FLAGS.bentoml_version}
+
+        # nametuple are slower than just having class objects since we are dealing
+        # with a lot of nested properties.
+        for key, values in release_spec.items():
+            super().__setattr__(f"{key}", values)
+
+        # Workaround adding base to multistage enabled distros.
+        # Ugh this is jank
+        mapfunc(lambda x: list(flatten(x)), self.packages.values())
+        for p in self.packages.values():
             p.update({"base": maxkeys(p)})
 
         # setup cuda version
-        if cuda_version in self.manifest.cuda_dependencies.keys():
-            self._cuda_version = cuda_version
-        else:
-            raise RuntimeError(
-                f"{cuda_version} is not defined in {FLAGS.manifest_file}"
-            )
-
-        # validate releases args.
-        if FLAGS.releases and FLAGS.releases not in DOCKERFILE_BUILD_HIERARCHY:
-            log.critical(
-                f"Invalid --releases arguments. Allowed: {DOCKERFILE_BUILD_HIERARCHY}"
-            )
+        self._cuda_version = cuda_version
 
         # setup python version.
         if len(FLAGS.python_version) > 0:
@@ -603,21 +581,19 @@ class Manager(requests.Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin)
             ouf.close()
 
     @cached_property
-    def generated_paths(self):
+    def paths(self):
         return {
             h: {k: self._paths[k] for k in self._paths.keys() if h in k}
             for h in DOCKERFILE_BUILD_HIERARCHY
         }
 
-    def build(self, docker_client: DockerClient, dry_run: bool = False):
+    def build(self, dry_run: bool = False):
         if not dry_run:
-            self.build_images(docker_client)
+            self.build_images()
 
-    def push_registries(
-        self, docker_client: DockerClient, repos: Dict, dry_run: bool = False
-    ):
+    def push(self, dry_run: bool = False):
         if not dry_run:
-            self.push_images(docker_client, repos)
+            self.push_images()
 
         # update README hack
         # https://github.com/docker/hub-feedback/issues/2006
@@ -633,32 +609,32 @@ def main(argv):
     if len(argv) > 1:
         raise RuntimeError("Too much arguments")
 
+    # validate releases args.
+    if FLAGS.releases and FLAGS.releases not in DOCKERFILE_BUILD_HIERARCHY:
+        log.critical(
+            f"Invalid --releases arguments. Allowed: {DOCKERFILE_BUILD_HIERARCHY}"
+        )
+
     # Parse specs from manifest.yml and validate it.
-    log.info(
-        f"{'-' * 59}\n\t{' ' * 5}| Validating {FLAGS.manifest_file}\n\t{' ' * 5}{'-' * 59}"
-    )
+    pprint(f'Validating {FLAGS.manifest_file}')
     release_spec = load_manifest_yaml(FLAGS.manifest_file)
+
+    if FLAGS.validate:
+        return
 
     # generate templates to correct directory.
     manager = Manager(release_spec, FLAGS.cuda_version)
     if 'dockerfiles' in FLAGS.generate:
         return
 
-    # Login Docker credentials and setup docker client
-    log.info(f"{'-' * 59}\n\t{' ' * 5}| Configure Docker\n\t{' ' * 5}{'-' * 59}")
-    # We shouldn't have a DockerClient in our manager since It will mix up permission
-    # when generating Dockerfile.
-    docker_client: DockerClient = docker.from_env()
-    repos = auth_registries(release_spec['repository'], docker_client)
-
     # Build images.
     if 'images' in FLAGS.generate:
-        manager.build(docker_client, dry_run=FLAGS.dry_run)
+        manager.build(FLAGS.dry_run)
         return
 
     # Push images when finish building.
     if FLAGS.push_to_hub:
-        manager.push_registries(docker_client, repos, dry_run=FLAGS.dry_run)
+        manager.push(dry_run=FLAGS.dry_run)
 
 
 if __name__ == "__main__":

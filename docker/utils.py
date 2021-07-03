@@ -1,9 +1,11 @@
 import errno
+import json
 import logging
 import os
 import pathlib
+import string
 import sys
-from typing import Callable, MutableMapping, Iterable, Dict, List, Union, Any
+from typing import Callable, MutableMapping, Iterable, Dict, List, Union, Generator
 
 from absl import flags
 from cerberus import Validator
@@ -20,12 +22,16 @@ __all__ = (
     'maxkeys',
     'walk',
     'load_manifest_yaml',
-    'dprint',
+    'sprint',
+    'jprint',
+    'pprint',
     'get_data',
     'set_data',
 )
 
-SUPPORTED_OS = ["debian", "centos", "alpine", "amazonlinux"]
+log = logging.getLogger(__name__)
+
+SUPPORTED_OS = ["debian10", "centos8", "centos7", "alpine3.14", "amazonlinux2"]
 SUPPORTED_GENERATE_TYPE = ['dockerfiles', 'images']
 
 # defined global vars.
@@ -52,6 +58,7 @@ flags.DEFINE_boolean(
     short_name="dr",
 )
 flags.DEFINE_boolean("overwrite", False, "Overwrite built images.", short_name="o")
+flags.DEFINE_boolean("validate", False, "Stop at manifest validation", short_name="vl")
 # directory and files
 flags.DEFINE_string(
     "dockerfile_dir",
@@ -91,6 +98,7 @@ repository:
   type: dict
   keysrules:
     type: string
+    regex: '(\w+)\.{1}(\w+)'
   valuesrules:
     type: dict
     schema:
@@ -109,34 +117,12 @@ repository:
         valuesrules:
           type: string
 
-packages:
-  type: dict
-  keysrules:
-    type: string
-  valuesrules:
-    type: dict
-    allowed: [devel, cudnn, runtime]
-    schema:
-      runtime:
-        required: true
-        type: [string, list]
-        check_with: dists_defined
-      devel:
-        type: list
-        dependencies: runtime
-        check_with: dists_defined
-        schema:
-          type: string
-      cudnn:
-        type: [string, list]
-        check_with: dists_defined
-        dependencies: runtime
-
 cuda_dependencies:
   type: dict
   nullable: false
   keysrules:
     type: string
+    required: true
     regex: '(\d{1,2}\.\d{1}\.\d)?$'
   valuesrules:
     type: dict
@@ -150,43 +136,79 @@ release_spec:
   required: true
   type: dict
   schema:
-    add_to_tags:
-      type: string
-      required: true
     templates_dir:
       type: string
+      nullable: False
     base_image:
       type: string
+      nullable: False
+    add_to_tags:
+      type: string
+      nullable: False
+      required: true
+    multistage_image:
+      type: boolean
     header:
       type: string
+    envars:
+      type: list
+      forbidden: ['HOME']
+      default: []
+      schema:
+        check_with: args_format
+        type: string
     cuda_prefix_url:
       type: string
       dependencies: cuda
     cuda_requires:
       type: string
       dependencies: cuda
-    multistage_image:
-      type: boolean
-    envars:
-      type: list
-      default: []
-      schema:
-        check_with: args_format
-        type: string
     cuda:
       type: dict
-      
+      match_ref: 'cuda_dependencies'
+
 tag_spec:
-  fmt: "{release_type}-python{python_version}-{suffixes}"
+  required: True
+  type: dict
+  schema:
+    fmt:
+      type: string
+      check_with: keys_format
+      regex: '({(.*?)})'
+    release_type:
+      type: string
+      nullable: True
+    python_version:
+      type: string
+      nullable: True
+    suffixes:
+      type: string
+      nullable: True
+
+packages:
+  type: dict
+  keysrules:
     type: string
-    check_with: format_keys
-  release_type:
-    type: string
-  python_version:
-    type: string
-  suffixes:
-    type: string
-  
+    check_with: packages
+  valuesrules:
+    type: dict
+    allowed: [devel, cudnn, runtime]
+    schema:
+      devel:
+        type: list
+        dependencies: runtime
+        check_with: dists_defined
+        schema:
+          type: string
+      runtime:
+        required: true
+        type: [string, list]
+        check_with: dists_defined
+      cudnn:
+        type: [string, list]
+        check_with: dists_defined
+        dependencies: runtime
+
 releases:
   type: dict
   keysrules:
@@ -194,10 +216,8 @@ releases:
     type: string
   valuesrules:
     type: dict
-    keysrules:
-      regex: '([\d\.]+)'
-    valuesrules:
-      type: dict
+    required: True
+    match_ref: 'release_spec'
 """
 
 
@@ -218,17 +238,28 @@ class MetadataSpecValidator(Validator):
         packages: bentoml release packages, model-server, yatai-service, etc
     """
 
-    CUDNN_THRESHOLD = 1
+    CUDNN_THRESHOLD: int = 1
+    cudnn_counter: int = 0
 
-    # TODO: custom check for releases.valuesrules
+    # There are three publics cls objects we can access
+    # v.schema, v.root_document, v.document -> normalized root_document
 
     def __init__(self, *args, **kwargs):
         if "packages" in kwargs:
             self.packages = kwargs["packages"]
         if "releases" in kwargs:
             self.releases = kwargs["releases"]
-        self.cudnn_counter = 0
         super(Validator, self).__init__(*args, **kwargs)
+
+    def _check_with_keys_format(self, field, value):
+        fmt_field = [t[1] for t in string.Formatter().parse(value) if t[1] is not None]
+        for _keys in self.document.keys():
+            if _keys == field:
+                continue
+            if _keys not in fmt_field:
+                self._error(
+                    field, f"{value} doesn't contain {_keys} in defined document scope"
+                )
 
     def _check_with_packages(self, field, value):
         """
@@ -304,6 +335,27 @@ class MetadataSpecValidator(Validator):
             for v in value:
                 self._validate_supported_dists(supported_dists, field, v)
 
+    def _validate_match_ref(self, others, field, value):
+        """
+        Validate if a field is defined as a reference to match all given fields if
+        we updated the default reference.
+        The rule's arguments are validated against this schema:
+            {'type': 'string'}
+        """
+        try:
+            if others not in self.root_document:
+                return False
+            ref = self.root_document[others]
+            if any(isinstance(v, dict) for v in ref.values()):
+                for v in ref.values():
+                    return self._validate_match_ref(v, field, value)
+            if len(value) != len(ref):
+                self._error(field, f"Reference {field} from {others} does not match")
+        except TypeError:
+            # when others is a dictionary.
+            if len(others) != len(value):
+                self._error(field, f"Reference {field} from {others} does not match")
+
 
 class cached_property(property):
     """Direct ports from bentoml/utils/__init__.py"""
@@ -340,12 +392,12 @@ class cached_property(property):
 class ColoredFormatter(logging.Formatter):
     """Logging Formatter to add colors and count warning / errors"""
 
-    blue = "\x1b[34m"
-    lightblue = "\x1b[36m"
-    yellow = "\x1b[33m"
-    red = "\x1b[31m"
-    reset = "\x1b[0m"
-    _format = "[%(levelname)s::L%(lineno)d] %(message)s"
+    blue: str = "\x1b[34m"
+    lightblue: str = "\x1b[36m"
+    yellow: str = "\x1b[33m"
+    red: str = "\x1b[31m"
+    reset: str = "\x1b[0m"
+    _format: str = "[%(levelname)s::L%(lineno)d] %(message)s"
 
     FORMATS = {
         logging.INFO: blue + _format + reset,
@@ -355,13 +407,13 @@ class ColoredFormatter(logging.Formatter):
         logging.CRITICAL: red + _format + reset,
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
 
 
-def mkdir_p(path):
+def mkdir_p(path: str):
     try:
         os.makedirs(path)
     except OSError as e:
@@ -369,7 +421,7 @@ def mkdir_p(path):
             raise
 
 
-def flatten(arr: Iterable):
+def flatten(arr: Iterable) -> Iterable[List]:
     for it in arr:
         if isinstance(it, Iterable) and not isinstance(it, str):
             yield from flatten(it)
@@ -399,7 +451,7 @@ def maxkeys(di: Dict) -> List:
     return max(di.items(), key=lambda x: len(set(x[0])))[1]
 
 
-def walk(path: pathlib.Path):
+def walk(path: pathlib.Path) -> Generator:
     for p in path.iterdir():
         if p.is_dir():
             yield from walk(p)
@@ -407,12 +459,21 @@ def walk(path: pathlib.Path):
         yield p.resolve()
 
 
-def dprint(*args, **kwargs):
+def sprint(*args, **kwargs):
     # stream logs inside docker container to sys.stderr
     print(*args, file=sys.stderr, flush=True, **kwargs)
 
 
-def get_data(obj: Union[Dict, MutableMapping], *path: str):
+def jprint(*args, **kwargs):
+    sprint(json.dumps(*args, indent=2), **kwargs)
+
+
+def pprint(*args):
+    # custom pretty logs
+    log.warning(f"{'-' * 59}\n\t{' ' * 8}| {''.join(*args)}\n\t{' ' * 8}{'-' * 59}")
+
+
+def get_data(obj: Union[Dict, MutableMapping], *path: str) -> Union[str, Dict, List]:
     """
     Get data from the object by dotted path.
     e.g: dependencies.cuda."11.3.1"
@@ -420,7 +481,7 @@ def get_data(obj: Union[Dict, MutableMapping], *path: str):
     try:
         data = glom(obj, Path(*path))
     except PathAccessError:
-        dprint(
+        log.exception(
             f"Exception occurred in get_data, unable to retrieve {'.'.join([*path])} from {repr(obj)}"
         )
         exit(1)
@@ -439,24 +500,28 @@ def set_data(obj: Dict, value: Union[Dict, str], *path: str):
         # we can just use dict.update to handle this error.
         obj.update(value)
     except PathAssignError:
-        dprint(
+        log.exception(
             f"Exception occurred in update_data, unable to update {Path(*path)} with {value}"
         )
         exit(1)
 
 
-def load_manifest_yaml(file: str):
+def load_manifest_yaml(file: str) -> Dict:
     with open(file, "r") as input_file:
-        manifest = yaml.safe_load(input_file)
+        manifest: Dict = yaml.safe_load(input_file)
 
-    v_schema = yaml.safe_load(SPEC_SCHEMA)
-    v = MetadataSpecValidator(
-        v_schema, packages=manifest["packages"], releases=manifest["releases"]
+    v: MetadataSpecValidator = MetadataSpecValidator(
+        yaml.safe_load(SPEC_SCHEMA),
+        packages=manifest["packages"],
+        releases=manifest["releases"],
     )
 
     if not v.validate(manifest):
-        dprint(f"{file} is invalid. Errors as follow:\n")
-        dprint(yaml.dump(v.errors, indent=2))
+        v.clear_caches()
+        log.error(f"{file} is invalid. Errors as follow:")
+        sprint(yaml.dump(v.errors, indent=2))
         exit(1)
+    else:
+        log.info(f"Valid {file}.")
 
     return v.normalized(manifest)

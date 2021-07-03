@@ -59,15 +59,20 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 
 ## Latest tags for `{{ metadata.bentoml_package }} {{ metadata.bentoml_release_version }}`
 {% for distros, tags_path in metadata.release_info.items() %}
-    {% print"\n### " %}{% print sentence_case(distros) %}{% print "\n" %}
-    {% if 'slim' in distros.lower() %}
-**NOTES**: built on top of [`debian:buster-slim`](https://github.com/debuerreotype/docker-debian-artifacts/blob/a4f413e5917d5917fb2343c0c37ea0728114c084/buster/slim/Dockerfile)
-
+    {% if distros in metadata.oss %}
+        {% print"\n### " %}{% print sentence_case(distros) %}{% print "\n" %}
+        {% if 'centos' in distros.lower() %}
+*WARNING*: POSSIBLE MISSING IMAGE TAGS
+Centos upstream images often fail security scans required by NVIDIA before publishing images. Please check https://gitlab-master.nvidia.com/cuda-installer/cuda/-/issues for any security notices!
+            
+        {% endif %}
     {% endif %}
     {% for (tag, path) in tags_path %}
-        {% print "- [`" %}{% print tag %}{% print "`](https://github.com/bentoml/BentoML/tree/master/docker/" %}{% print path %}{% print ")\n" %}
+        {% if metadata.bentoml_package in tag %}
+        {% set tagname = tag.split(':')[1] %}
+        {% print "- [`" %}{% print tagname %}{% print "`](https://github.com/bentoml/BentoML/tree/master/docker/" %}{% print path %}{% print ")\n" %}
+        {% endif %}
     {% endfor %}
 {% endfor %}
-
 {% endif %}
 {# We might also want to include previous images here as well #}

@@ -185,7 +185,7 @@ debian10:
 
 ## Workflow
 
-    validate yaml file &rarr; generate build context &rarr; render `j2` templates &rarr; build from generated directory &rarr; Push to given registries.
+  validate yaml file &rarr; generate build context &rarr; render `j2` templates &rarr; build from generated directory &rarr; Push to given registries.
 
 
 Each processed will be managed by [``ManagerClient``](../manager.py#L617) with provided functions via `Mixin` class.

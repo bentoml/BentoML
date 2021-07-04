@@ -14,19 +14,9 @@
 
 from abc import abstractmethod, ABCMeta
 
-from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
-from bentoml.exceptions import YataiDeploymentException
-
 
 def get_deployment_operator(yatai_service, deployment_pb):  # pylint:disable=W0613
-    operator = deployment_pb.spec.operator
-
-    if operator == DeploymentSpec.CUSTOM:
-        raise NotImplementedError(
-            "Custom deployment operator is not supported in current version of BentoML"
-        )
-    else:
-        raise YataiDeploymentException("DeployOperator must be set")
+    return DeploymentOperatorBase(yatai_service)
 
 
 class DeploymentOperatorBase(object):

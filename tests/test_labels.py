@@ -1,15 +1,8 @@
 import uuid
 
-import mock
 from click.testing import CliRunner
 
 from bentoml.cli import create_bentoml_cli
-from bentoml.yatai.proto.deployment_pb2 import (
-    ApplyDeploymentResponse,
-    Deployment,
-    DeploymentSpec,
-)
-from bentoml.yatai.status import Status
 
 
 def test_label_selectors_on_cli_list(bento_service):
@@ -50,80 +43,3 @@ def test_label_selectors_on_cli_get(bento_service):
     )
     assert success_result.exit_code == 0
     assert f'{bento_service.name}:{bento_service.version}' in success_result.output
-
-
-@mock.patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.ensure_docker_available_or_raise',
-    mock.MagicMock(),
-)
-@mock.patch(
-    'bentoml.yatai.deployment.aws_lambda.operator.ensure_sam_available_or_raise',
-    mock.MagicMock(),
-)
-def test_deployment_labels():
-    runner = CliRunner()
-    cli = create_bentoml_cli()
-
-    failed_result = runner.invoke(
-        cli.commands['lambda'],
-        [
-            'deploy',
-            'failed-name',
-            '-b',
-            'ExampleBentoService:version',
-            '--labels',
-            'test=abc',
-        ],
-    )
-    assert failed_result.exit_code == 2
-
-    with mock.patch(
-        'bentoml.yatai.deployment.aws_lambda.operator.AwsLambdaDeploymentOperator.add'
-    ) as mock_operator_add:
-        bento_name = 'MockService'
-        bento_version = 'MockVersion'
-        deployment_name = f'test-label-{uuid.uuid4().hex[:8]}'
-        deployment_namespace = 'test-namespace'
-        mocked_deployment_pb = Deployment(
-            name=deployment_name, namespace=deployment_namespace
-        )
-        mocked_deployment_pb.spec.bento_name = bento_name
-        mocked_deployment_pb.spec.bento_version = bento_version
-        mocked_deployment_pb.spec.operator = DeploymentSpec.AWS_LAMBDA
-        mocked_deployment_pb.spec.aws_lambda_operator_config.memory_size = 1000
-        mocked_deployment_pb.spec.aws_lambda_operator_config.timeout = 60
-        mocked_deployment_pb.spec.aws_lambda_operator_config.region = 'us-west-2'
-        mock_operator_add.return_value = ApplyDeploymentResponse(
-            status=Status.OK(), deployment=mocked_deployment_pb
-        )
-
-        success_result = runner.invoke(
-            cli.commands['lambda'],
-            [
-                'deploy',
-                deployment_name,
-                '-b',
-                f'{bento_name}:{bento_version}',
-                '--namespace',
-                deployment_namespace,
-                '--labels',
-                'created_by:admin,cicd:passed',
-                '--region',
-                'us-west-2',
-            ],
-        )
-        assert success_result.exit_code == 0
-
-        list_result = runner.invoke(
-            cli.commands['deployment'],
-            [
-                'list',
-                '--labels',
-                'created_by=admin,cicd NotIn (failed, unsuccessful)',
-                '--output',
-                'wide',
-            ],
-        )
-        assert list_result.exit_code == 0
-        assert deployment_name in list_result.output.strip()
-        assert 'created_by:admin' in list_result.output.strip()

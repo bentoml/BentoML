@@ -95,21 +95,6 @@ def test_track_cli_usage(bento_service, bento_bundle_path):
         assert properties['duration']
 
 
-def test_track_cli_with_click_exception():
-    with patch('bentoml.cli.click_utils.track') as mock:
-        mock.side_effect = mock_track_func
-        runner = CliRunner()
-        cli = create_bentoml_cli()
-        runner.invoke(
-            cli.commands['azure-functions'], ['update', 'mock-deployment-name']
-        )
-        _, properties = mock.call_args_list[0][0]
-        assert properties['command'] == 'update'
-        assert properties['command_group'] == 'azure-functions'
-        assert properties['error_type'] == 'AttributeError'
-        assert properties['return_code'] == 1
-
-
 def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
     with patch('bentoml.cli.click_utils.track') as track:
         track.side_effect = mock_track_func
@@ -122,52 +107,6 @@ def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
             assert properties['return_code'] == 2
             assert properties['error_type'] == 'KeyboardInterrupt'
             assert properties['command'] == 'serve'
-
-
-@patch('bentoml.yatai.yatai_service_impl.validate_deployment_pb', MagicMock())
-@patch('bentoml.yatai.db.DeploymentStore')
-def test_track_server_successful_delete(mock_deployment_store):
-    mock_deployment_store.return_value.get.return_value = mock_deployment_pb()
-    with patch('bentoml.yatai.yatai_service_impl.track') as mock:
-        mock.side_effect = mock_track_func
-        with patch(
-            'bentoml.yatai.yatai_service_impl.get_deployment_operator'
-        ) as mock_get_deployment_operator:
-            mock_get_deployment_operator.side_effect = mock_get_operator_func()
-            yatai_service = get_yatai_service()
-            delete_request = MagicMock()
-            delete_request.deployment_name = MOCK_DEPLOYMENT_NAME
-            delete_request.namespace = MOCK_DEPLOYMENT_NAMESPACE
-            delete_request.force_delete = False
-            yatai_service.DeleteDeployment(delete_request)
-            event_name, properties = mock.call_args_list[0][0]
-            assert event_name == 'deployment-AZURE_FUNCTIONS-stop'
-
-
-@patch(
-    'bentoml.yatai.yatai_service_impl.validate_deployment_pb',
-    MagicMock(return_value=None),
-)
-@patch('bentoml.yatai.db.DeploymentStore')
-def test_track_server_force_delete(mock_deployment_store):
-    mock_deployment_store.return_value.get.return_value = mock_deployment_pb(
-        MOCK_FAILED_DEPLOYMENT_NAME
-    )
-    with patch('bentoml.yatai.yatai_service_impl.track') as mock:
-        mock.side_effect = mock_track_func
-        with patch(
-            'bentoml.yatai.yatai_service_impl.get_deployment_operator'
-        ) as mock_get_deployment_operator:
-            mock_get_deployment_operator.side_effect = mock_get_operator_func()
-            yatai_service = get_yatai_service()
-            delete_request = MagicMock()
-            delete_request.deployment_name = MOCK_FAILED_DEPLOYMENT_NAME
-            delete_request.namespace = MOCK_DEPLOYMENT_NAMESPACE
-            delete_request.force_delete = True
-            yatai_service.DeleteDeployment(delete_request)
-            event_name, properties = mock.call_args_list[0][0]
-            assert event_name == 'deployment-AZURE_FUNCTIONS-stop'
-            assert properties['force_delete']
 
 
 def test_do_not_track():

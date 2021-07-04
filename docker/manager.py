@@ -17,7 +17,6 @@ from absl import app
 from dotenv import load_dotenv
 from jinja2 import Environment
 from requests import Session
-from retry import retry
 
 from docker import DockerClient
 from docker.errors import APIError, BuildError, ImageNotFound
@@ -588,9 +587,6 @@ class PushMixin(object):
         resp = docker_client.images.push(registry, tag=tag, stream=True, decode=True)
         self.push_logs(resp, image.id)
 
-    @retry(
-        LoginRetry, tries=HTTP_RETRY_ATTEMPTS, delay=HTTP_RETRY_WAIT_SECS, logger=log
-    )
     def auth_registries(self):
         """Setup auth registries for different registries"""
 
@@ -599,19 +595,27 @@ class PushMixin(object):
         try:
             for registry, metadata in self.repository.items():
                 if not os.getenv(metadata['pwd']):
-                    log.critical(
-                        f"{registry}: Make sure to"
-                        f" set both {metadata['pwd']} and {metadata['user']}."
+                    log.warn(
+                        f"If you are intending to use {registry}, make sure to set both "
+                        f"{metadata['pwd']} and {metadata['user']} under {os.getcwd()}/.env. Skipping..."
                     )
-                _user = os.getenv(metadata['user'])
-                _pwd = os.getenv(metadata['pwd'])
+                    continue
+                else:
+                    _user = os.getenv(metadata['user'])
+                    _pwd = os.getenv(metadata['pwd'])
 
-                log.info(f"Logging into Docker registry {registry} with credentials...")
-                docker_client.api.login(
-                    username=_user, password=_pwd, registry=registry
-                )
+                    log.info(
+                        f"Logging into Docker registry {registry} with credentials..."
+                    )
+                    docker_client.api.login(
+                        username=_user, password=_pwd, registry=registry
+                    )
         except APIError:
-            raise LoginRetry
+            log.info(
+                "TLS handshake timeout. You can try resetting docker daemon."
+                "If you are using systemd you can do `systemctl restart docker`"
+            )
+            docker_client.from_env(timeout=FLAGS.timeout)
 
 
 class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
@@ -699,26 +703,31 @@ def main(argv):
             f"Invalid --releases arguments. Allowed: {DOCKERFILE_BUILD_HIERARCHY}"
         )
 
-    # Parse specs from manifest.yml and validate it.
-    pprint(f'Validating {FLAGS.manifest_file}')
-    release_spec = load_manifest_yaml(FLAGS.manifest_file)
-    if FLAGS.validate:
-        return
+    try:
+        # Parse specs from manifest.yml and validate it.
+        pprint(f'Validating {FLAGS.manifest_file}')
+        release_spec = load_manifest_yaml(FLAGS.manifest_file)
+        if FLAGS.validate:
+            return
 
-    # Setup manager client.
-    manager = ManagerClient(release_spec, FLAGS.cuda_version)
+        # Setup manager client.
+        manager = ManagerClient(release_spec, FLAGS.cuda_version)
 
-    # generate templates to correct directory.
-    if 'dockerfiles' in FLAGS.generate:
-        manager.generate(FLAGS.dry_run)
+        # generate templates to correct directory.
+        if 'dockerfiles' in FLAGS.generate:
+            manager.generate(FLAGS.dry_run)
 
-    # Build images.
-    if 'images' in FLAGS.generate:
-        manager.build(FLAGS.dry_run)
+        # Build images.
+        if 'images' in FLAGS.generate:
+            manager.build(FLAGS.dry_run)
 
-    # Push images when finish building.
-    if FLAGS.push_to_hub:
-        manager.push(dry_run=FLAGS.dry_run)
+        # Push images when finish building.
+        if FLAGS.push_to_hub:
+            manager.push(dry_run=FLAGS.dry_run)
+    except KeyboardInterrupt:
+        log.info("Stopping now...")
+        if os.path.exists("./metadata.json"):
+            shutil.rmtree('./metadata.json')
 
 
 if __name__ == "__main__":

@@ -7,25 +7,12 @@ import pathlib
 import string
 import sys
 from functools import reduce
-from typing import Any, Callable, Dict, Generator, Iterable, List, MutableMapping, Union
+from typing import Callable, Dict, Generator, Iterable, List, MutableMapping, Union
 
 from absl import flags
 from cerberus import Validator
 from glom import Assign, Path, PathAccessError, PathAssignError, glom
 from ruamel import yaml
-
-
-class LoginRetry(Exception):
-    """An exception to handle retries for registry login"""
-
-    pass
-
-
-class PushRetry(Exception):
-    """An exception to handle retries for pushing images"""
-
-    pass
-
 
 __all__ = (
     'FLAGS',
@@ -43,8 +30,6 @@ __all__ = (
     'get_data',
     'set_data',
     'get_nested',
-    'LoginRetry',
-    'PushRetry',
 )
 
 log = logging.getLogger(__name__)
@@ -258,10 +243,6 @@ releases:
     required: True
     matched: 'specs.releases'
 """
-
-
-# TODO: Type annotation.
-# class Field(Any):
 
 
 class MetadataSpecValidator(Validator):

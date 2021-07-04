@@ -132,7 +132,7 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.sess = tf.compat.v1.Session(graph=self.graph)
         tf.compat.v1.keras.backend.set_session(self.sess)
 
-    def pack(self, data, metadata=None):  # pylint:disable=arguments-differ
+    def pack(self, data, metadata=None):  # pylint:disable=arguments-renamed
         try:
             import tensorflow as tf
         except ImportError:

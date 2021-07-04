@@ -97,7 +97,7 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
         return os.path.join(base_path, self.name + '.so')
 
     def pack(self, onnxmlir_model_so, metadata=None):
-        # pylint:disable=arguments-differ
+        # pylint:disable=arguments-renamed
         self._model_so_path = onnxmlir_model_so
         return self
 

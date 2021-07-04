@@ -82,7 +82,7 @@ test_requires = [
     "mock>=2.0.0",
     "moto==1.3.14",
     "pandas",
-    "pylint>=2.5.2",
+    "pylint>=2.9.3",
     "pytest-cov>=2.7.1",
     "pytest>=5.4.0",
     "pytest-asyncio",

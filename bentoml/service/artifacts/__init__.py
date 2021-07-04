@@ -24,6 +24,10 @@ class BentoServiceArtifact:
 
         # store the args and kwargs used for creating this artifact instance - this is
         # used internally for the _copy method below
+
+        # TODO: this warning may due to pylint's bug (issue 4668). We may
+        # remove the following comment later
+        # pylint: disable=unused-private-member
         obj.__args = args
         obj.__kwargs = kwargs
 

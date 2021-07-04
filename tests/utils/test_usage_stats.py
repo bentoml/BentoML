@@ -7,7 +7,6 @@ from bentoml.cli import create_bentoml_cli
 from bentoml.utils.usage_stats import _get_bento_service_event_properties, _do_not_track
 from bentoml.yatai.proto.deployment_pb2 import DeleteDeploymentResponse, Deployment
 from bentoml.yatai.status import Status
-from bentoml.yatai.yatai_service import get_yatai_service
 
 MOCK_DEPLOYMENT_NAME = 'mock_name'
 MOCK_FAILED_DEPLOYMENT_NAME = 'mock-failed'

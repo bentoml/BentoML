@@ -7,9 +7,6 @@ def _get_test_custom_deployment_pb():
     test_pb.spec.bento_name = 'bento_name'
     test_pb.spec.bento_version = 'bento_version'
     test_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value('CUSTOM')
-    test_pb.spec.sagemaker_operator_config.api_name = 'api_name'
-    test_pb.spec.sagemaker_operator_config.instance_type = 'mock_instance_type'
-    test_pb.spec.sagemaker_operator_config.instance_count = 1
     return test_pb
 
 

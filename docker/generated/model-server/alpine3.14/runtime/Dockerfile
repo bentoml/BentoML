@@ -11,14 +11,14 @@ ARG PYTHON_VERSION
 
 FROM model-server:base-python$PYTHON_VERSION-alpine3.14 as build_image
 
-ARG BENTOML_VERSION
+ENV BENTOML_VERSION=0.13.0
 
 # bash is needed to run bentoml.
 RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \
     && apk add --no-cache bash git build-base
 
-RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
+RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/
 

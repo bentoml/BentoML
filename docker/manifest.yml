@@ -7,8 +7,8 @@ specs:
       api: https://hub.docker.com/v2/users/login/
       repos: https://hub.docker.com/v2/repositories
     registry:
-      model-server: docker.io/aarnphm/model-server
-      yatai-service: docker.io/aarnphm/yatai-service
+      model-server: docker.io/bentoml/model-server
+      yatai-service: docker.io/bentoml/yatai-service
 
   dependencies:
     cuda: &cuda_spec

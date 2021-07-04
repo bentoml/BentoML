@@ -11,9 +11,9 @@ ARG PYTHON_VERSION
 
 FROM model-server:base-python$PYTHON_VERSION-ami2 as build_image
 
-ARG BENTOML_VERSION
+ENV BENTOML_VERSION=0.13.0
 
-RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir
+RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/
 

@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-import functools
 import itertools
 import json
-import multiprocessing
 import operator
 import os
 import re
 import shutil
 from collections import defaultdict
 from copy import deepcopy
+from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Iterator, List, MutableMapping, Optional, Union
 
@@ -53,7 +52,10 @@ else:
 
 if os.geteuid() == 0:
     # We only use docker_client when running as root.
-    docker_client = DockerClient("unix://var/run/docker.sock")
+    log.debug("Creating an instance of DockerClient")
+    docker_client = DockerClient(
+        base_url="unix://var/run/docker.sock", timeout=3600, tls=True
+    )
 
 
 class LogsMixin(object):
@@ -97,40 +99,45 @@ class LogsMixin(object):
             log.fatal('ABORTING due to failure!')
 
     @staticmethod
-    def push_logs(resp: Iterator):
-        # resp will be docker_client.push(repo, stream=True, decode=True)
-        logs: Dict[str, Dict] = defaultdict()
-        image_id: str = ""
+    def push_logs(resp: Iterator, image_id: str):
+        """Process push logs"""
+
+        # resp will be using client.api.push(stream=True, decode=True)
         try:
             while True:
                 try:
-                    output: Dict = next(resp)
-                    if 'id' in output:
-                        image_id = output['id']
-                        if 'progress' in output:
-                            logs[image_id] = {
-                                'progress': output['progress'],
-                                'status': output['status'],
-                            }
-                            sprint(f"{image_id}: {logs[image_id]['progress']}")
-                    if 'status' in output and output['status'] == "Pushed":
-                        raise StopIteration
+                    data = next(resp)
+                    status = data.get('status')
+                    if 'id' not in data:
+                        sprint(status)
+                    else:
+                        _id = data.get('id')
+                        if 'exists' in status:
+                            log.warning(f'{_id}: {status}')
+                            continue
+                        elif 'Pushed' in status:
+                            log.debug(f"{status} {_id}")
+                        else:
+                            progress = data.get('progress')
+                            sprint(f"{status} {_id}: {progress}")
                 except StopIteration:
                     log.info(
-                        f"Successfully pushed {docker_client.images.get(image_id)}"
+                        f"Successfully pushed {docker_client.images.get(image_id)} to registry."
                     )
                     break
         except APIError as e:
             log.error(f"Errors during `docker push`: {e.response}")
         except urllib3.exceptions.ReadTimeoutError:
-            log.exception(f'{image_id} failed to build due to `urllib3.ReadTimeoutError`.')
+            log.exception(
+                f'{image_id} failed to build due to `urllib3.ReadTimeoutError`.'
+            )
 
 
 class GenerateMixin(object):
     """Mixin for all generation-related."""
 
     @staticmethod
-    def cudnn_context(cuda_components: Dict):
+    def cudnn(cuda_components: Dict):
         """
         Return cuDNN context
         Args:
@@ -141,7 +148,7 @@ class GenerateMixin(object):
             if re.match(r"(cudnn)(\w+)", k):
                 _cudnn = k
                 break
-        cudnn_release_version: str = cuda_components[_cudnn]
+        cudnn_release_version: str = cuda_components.pop(_cudnn)
         cudnn_major_version: str = cudnn_release_version.split('.')[0]
         return {
             "version": cudnn_release_version,
@@ -218,12 +225,10 @@ class GenerateMixin(object):
         formatter = {k: kwargs[k] for k in tag_spec.keys() if k != 'fmt'}
 
         _tag = _core_fmt.format(**formatter)
+
         if release_type in ['runtime', 'cudnn']:
             set_data(formatter, self._default_args['BENTOML_VERSION'], 'release_type')
             _tag = "-".join([_core_fmt.format(**formatter), release_type])
-
-        if release_type == 'base':
-            return _tag, ''
 
         # construct build_tag which is our base_image with $PYTHON_VERSION formats
         formatter.update({"python_version": "$PYTHON_VERSION", "release_type": "base"})
@@ -231,68 +236,137 @@ class GenerateMixin(object):
 
         return _tag, _build_tag
 
-    @functools.lru_cache(maxsize=10)
     def aggregate_dists_releases(self, package: str) -> Iterator:
         """Aggregate all combos from manifest.yml"""
         return [
             (rel, d) for rel, dists in self.packages[package].items() for d in dists
         ]
 
-    @functools.lru_cache(maxsize=100)
-    def dockerfile_context(
-        self, package: str, distro_version: str, python_version: str,
-    ) -> Dict:
+    @lru_cache(maxsize=32)
+    def dockerfiles(self, pkg: str, distro: str, pyv: str) -> Dict:
         """
         Generate template context for each distro releases.
         Args:
-            package: release bentoml packages, either model-server or yatai-service
-            distro_version: linux distro. eg: centos
-            python_version: python version
+            pkg: release bentoml packages, either model-server or yatai-service
+            distro: linux distro. eg: centos
+            pyv: python version
         Returns:
             build context that can be used with self.render
         """
-        # TODO: also better type hint
-        _context: Dict[str, Union[str, Dict[str, Union[str, Dict[str, str]]]]] = {}
-        _cuda_components = get_data(self.cuda, self._cuda_version).copy()
-        _distro_context = self.releases[distro_version].copy()
 
-        _context.update(_distro_context)
-        _context['package'] = package
+        # fmt: off
+        _cuda_comp: Dict[str, str] = get_data(self.cuda, self._cuda_version).copy()
+        _ctx: Dict[str, Union[str, Dict[str, ...], ...]] = self.releases[distro].copy()
+
+        # fmt: on
+        _ctx['package'] = pkg
 
         # setup envars
-        set_data(
-            _context, self.envars()(_distro_context['envars']), 'envars',
-        )
+        _ctx['envars'] = self.envars()(_ctx['envars'])
 
         # set PYTHON_VERSION envars.
         set_data(
-            _context, python_version, 'envars', 'PYTHON_VERSION',
+            _ctx, pyv, 'envars', 'PYTHON_VERSION',
         )
 
         # setup cuda deps
-        if _context["cuda_prefix_url"]:
+        if _ctx["cuda_prefix_url"]:
             major, minor, _ = self._cuda_version.rsplit(".")
-            _context["cuda"] = {
-                "ml_repo": NVIDIA_ML_REPO_URL.format(_context["cuda_prefix_url"]),
-                "base_repo": NVIDIA_REPO_URL.format(_context["cuda_prefix_url"]),
+            _ctx["cuda"] = {
+                "requires": _ctx['cuda_requires'],
+                "ml_repo": NVIDIA_ML_REPO_URL.format(_ctx["cuda_prefix_url"]),
+                "base_repo": NVIDIA_REPO_URL.format(_ctx["cuda_prefix_url"]),
                 "version": {
                     "major": major,
                     "minor": minor,
                     "shortened": f"{major}.{minor}",
                 },
-                "components": _cuda_components,
-                "cudnn": self.cudnn_context(_cuda_components),
+                "components": _cuda_comp,
+                "cudnn": self.cudnn(_cuda_comp),
             }
-            _context.pop('cuda_prefix_url')
+            _ctx.pop('cuda_prefix_url')
+            _ctx.pop('cuda_requires')
         else:
-            log.debug(f"CUDA is disabled for {distro_version}. Skipping...")
-            for key in list(_context.keys()):
+            log.debug(f"CUDA is disabled for {distro}. Skipping...")
+            for key in list(_ctx.keys()):
                 if DOCKERFILE_NVIDIA_REGEX.match(key):
-                    _context.pop(key)
+                    _ctx.pop(key)
 
-        return _context
+        return _ctx
 
-    def readmes(self, target_dir: str, paths: Dict):
+    def metadata(self, output_dir: str, pyv: List[str]):
+        """Setup templates context"""
+        _paths: Dict[str, str] = {}
+        _tags: Dict = defaultdict()
+
+        if os.geteuid() == 0:
+            log.warning(
+                "Detected running as ROOT. Make sure not to "
+                "use --generate dockerfiles while using "
+                "manager_images. If you need to regenerate "
+                "Dockerfiles use manager_dockerfiles instead."
+            )
+
+        pprint('Setting up metadata')
+
+        for pkg, pyv in itertools.product(self.packages.keys(), pyv):
+            log.info(f"Generate context for {pkg} python{pyv}")
+            for (release, distro_version) in self.aggregate_dists_releases(pkg):
+                log.debug(f"Tag context for {release}:{distro_version}")
+
+                # setup our build context
+                _tag_ctx = self.dockerfiles(pkg, distro_version, pyv)
+                template_dir = Path(_tag_ctx['templates_dir'])
+
+                # generate our image tag.
+                _release_tag, _build_tag = self.image_tags(
+                    python_version=pyv,
+                    release_type=release,
+                    suffixes=_tag_ctx['add_to_tags'],
+                )
+
+                # setup image tags.
+                tag_keys = f"{_tag_ctx['package']}:{_release_tag}"
+
+                # output path.
+                base_output_path = Path(output_dir, pkg, f"{distro_version}")
+                if release != 'base':
+                    output_path = Path(base_output_path, release)
+                else:
+                    output_path = base_output_path
+
+                # input path.
+                input_paths = [str(f) for f in walk(template_dir) if release in f.name]
+                if 'rhel' in template_dir.name:
+                    if 'cudnn' in release:
+                        input_paths = [
+                            str(f)
+                            for f in template_dir.iterdir()
+                            if DOCKERFILE_NVIDIA_REGEX.match(f.name)
+                        ]
+                        _tag_ctx.update({"docker_build_path": str(output_path)})
+
+                full_output_path = str(Path(output_path, DOCKERFILE_NAME))
+
+                # # setup directory correspondingly, and add these paths
+                set_data(_tags, _tag_ctx.copy(), tag_keys)
+                set_data(_tags, input_paths, tag_keys, 'input_paths')
+                set_data(_tags, str(output_path), tag_keys, 'output_path')
+                if release != 'base':
+                    set_data(_tags, _build_tag, tag_keys, 'build_tags')
+
+                # setup generated path with tag releases
+                set_data(_paths, full_output_path, tag_keys)
+
+        return _tags, _paths
+
+    def generate_readmes(self, output_dir: str, paths: Dict):
+        """
+        Generate README output. We will also handle README context in memory
+        Args:
+            output_dir: target directory
+            paths: Dictionary of release tags and target dockerfile.
+        """
         # this will include both yatai-service and models-server path.
         _release_context: MutableMapping = defaultdict(list)
 
@@ -336,82 +410,45 @@ class GenerateMixin(object):
 
         # renders README for generated directory
         _readme_context['ephemeral'] = True
-        if not Path(target_dir, "README.md").exists():
+        if not Path(output_dir, "README.md").exists():
             self.render(
                 input_path=README_TEMPLATE,
-                output_path=Path(target_dir),
+                output_path=Path(output_dir),
                 metadata=_readme_context,
             )
 
-    def metadata(self, target_dir: str, python_versions: List[str]):
-        _paths: Dict[str, str] = {}
-        _tags: Dict = defaultdict()
+    def generate_dockerfiles(self):
+        """
+        Generate results targets from given context. This should only
+        be used with --generate dockerfiles
+        """
+        if FLAGS.overwrite:
+            # Consider generated directory ephemeral
+            log.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
+            shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
+            mkdir_p(FLAGS.dockerfile_dir)
 
-        if os.geteuid() == 0:
-            log.warning(
-                "Detected running as ROOT. Make sure "
-                "to use manager_dockerfiles to generate Dockerfile"
-            )
-        pprint('Setting up metadata')
-        for package, python_version in itertools.product(
-            self.packages.keys(), python_versions
-        ):
-            log.info(f"Working on {package} for python{python_version}")
-            for (release, distro_version) in self.aggregate_dists_releases(package):
-                log.debug(f"Tag context: {distro_version}:{release}")
-                # setup our build context
-                tag_context = self.dockerfile_context(
-                    package, distro_version, python_version,
-                )
-                template_dir = Path(tag_context['templates_dir'])
+        for tags, tags_ctx in self._tags.items():
+            for inp in tags_ctx['input_paths']:
+                build_tag = ''
+                if 'build_tags' in tags_ctx.keys():
+                    build_tag = tags_ctx['build_tags']
 
-                # generate our image tag.
-                _release_tag, _build_tag = self.image_tags(
-                    python_version=python_version,
-                    release_type=release,
-                    suffixes=tag_context['add_to_tags'],
+                self.render(
+                    input_path=Path(inp),
+                    output_path=Path(tags_ctx['output_path']),
+                    metadata=tags_ctx,
+                    build_tag=build_tag,
                 )
 
-                # input paths
-                input_paths = [f for f in walk(template_dir) if release in f.name]
-                if 'rhel' in template_dir.name and release == 'cudnn':
-                    input_paths = [
-                        f
-                        for f in template_dir.iterdir()
-                        if DOCKERFILE_NVIDIA_REGEX.match(f.name)
-                    ]
-
-                # output paths
-                output_path = Path(target_dir, package, f"{distro_version}")
-                if release != 'base':
-                    output_path = Path(output_path, release)
-                if release == 'cudnn':
-                    tag_context.update({"docker_build_path": str(output_path)})
-
-                full_output_path = str(Path(output_path, DOCKERFILE_NAME))
-
-                tag_keys = f"{tag_context['package']}:{_release_tag}"
-
-                # # setup directory correspondingly, and add these paths
-                set_data(_tags, tag_context, tag_keys)
-                set_data(_paths, full_output_path, tag_keys)
-                if 'dockerfiles' in FLAGS.generate and os.geteuid() != 0:
-                    # Forbid generation by ROOT
-                    for input_path in input_paths:
-                        self.render(
-                            input_path=input_path,
-                            output_path=output_path,
-                            metadata=tag_context,
-                            build_tag=_build_tag,
-                        )
-                    self.readmes(FLAGS.dockerfile_dir, _paths)
-        return _tags, _paths
+        self.generate_readmes(FLAGS.dockerfile_dir, self._paths)
 
 
 class BuildMixin(object):
     """Mixin for Build-related."""
 
     def build_images(self):
+        """Build images."""
         for image_tag, dockerfile_path in self.build_tags():
             log.debug(f"Building {image_tag} from {dockerfile_path}")
             try:
@@ -445,6 +482,7 @@ class BuildMixin(object):
                 self.build_logs(resp, image_tag)
 
     def build_tags(self):
+        """Generate build tags."""
         # We will build and push if args is parsed. Establish some variables.
         if FLAGS.releases and FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY:
             build_tags = itertools.chain(
@@ -459,6 +497,7 @@ class PushMixin(object):
     """Mixin for Push-related."""
 
     def push_tags(self):
+        """Generate push tags"""
         _paths = deepcopy(self.paths)
         if FLAGS.releases and FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY:
             _release_tag = _paths[FLAGS.releases]
@@ -471,9 +510,9 @@ class PushMixin(object):
         return _release_tag
 
     def push_to_registries(self):
+        """Push images to registries"""
 
         self.auth_registries()
-
         if not self._push_context:
             log.debug("--generate images is not specified. Generate push context...")
             for image_tag, dockerfile_path in self.build_tags():
@@ -483,29 +522,34 @@ class PushMixin(object):
 
         for registry, registry_spec in self.repository.items():
             # We will want to push README first.
-            # login_payload: Dict = {
-            #     "username": os.getenv(registry_spec['user']),
-            #     "password": os.getenv(registry_spec['pwd']),
-            # }
-            # api_url: str = get_nested(registry_spec, ['urls', 'api'])
+            login_payload: Dict = {
+                "username": os.getenv(registry_spec['user']),
+                "password": os.getenv(registry_spec['pwd']),
+            }
+            api_url: str = get_nested(registry_spec, ['urls', 'api'])
 
-            # for package, registry_url in registry_spec['registry'].items():
-            #     _, _url = registry_url.split('/', maxsplit=1)
-            #     readme_path = Path('docs', package, 'README.md')
-            #     repo_url: str = f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
-            #     self.push_readmes(api_url, repo_url, readme_path, login_payload)
+            for package, registry_url in registry_spec['registry'].items():
+                _, _url = registry_url.split('/', maxsplit=1)
+                readme_path = Path('docs', package, 'README.md')
+                repo_url: str = f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
+                self.push_readmes(api_url, repo_url, readme_path, login_payload)
 
             # Then push image to registry.
             for image_tag in self.push_tags():
                 image = self._push_context[image_tag]
                 reg, tag = image_tag.split(":")
-                registry = ''.join((k for k in registry_spec['registry'] if reg in k))
+                registry = ''.join(
+                    [v for k, v in registry_spec['registry'].items() if reg in k]
+                )
                 log.info(f"Uploading {image_tag} to {registry}")
+
+                # TODO: implement concurrent pushing
+                #   This would change most of our build logics
+                #   since DockerClient is essentially a requests.Session,
+                #   which doesn't have support for asynchronous requests.
+                #   If we want to implement aiohttp then we might want to
+                #   run docker from shell commands
                 self.upload_in_background(image, tag, registry)
-                # p = multiprocessing.Process(
-                #     target=self.upload_in_background, args=(image, tag, registry),
-                # )
-                # p.start()
 
     def push_readmes(
         self,
@@ -514,6 +558,7 @@ class PushMixin(object):
         readme_path: Path,
         login_payload: Dict[str, str],
     ):
+        """Push readmes to registries."""
         self.headers.update(
             {"Content-Type": "application/json", "Connection": "keep-alive"}
         )
@@ -540,21 +585,18 @@ class PushMixin(object):
         """Upload a docker image (to be used by multiprocessing)."""
         image.tag(registry, tag=tag)
         log.debug(f"Pushing {repr(image)} to {registry}...")
-        resp = docker_client.images.push(
-            registry, tag=tag, stream=True, decode=True
-        )
-        self.push_logs(resp)
+        resp = docker_client.images.push(registry, tag=tag, stream=True, decode=True)
+        self.push_logs(resp, image.id)
 
     @retry(
         LoginRetry, tries=HTTP_RETRY_ATTEMPTS, delay=HTTP_RETRY_WAIT_SECS, logger=log
     )
     def auth_registries(self):
+        """Setup auth registries for different registries"""
 
-        # Login Docker credentials and setup docker client
+        # https://docs.docker.com/registry/spec/auth/token/
         pprint('Configure Docker')
         try:
-            docker_client.from_env(timeout=FLAGS.timeout)
-        except APIError:
             for registry, metadata in self.repository.items():
                 if not os.getenv(metadata['pwd']):
                     log.critical(
@@ -568,6 +610,7 @@ class PushMixin(object):
                 docker_client.api.login(
                     username=_user, password=_pwd, registry=registry
                 )
+        except APIError:
             raise LoginRetry
 
 
@@ -590,14 +633,14 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
         # We will also default bentoml_version to FLAGs.bentoml_version
         self._default_args: Dict = {"BENTOML_VERSION": FLAGS.bentoml_version}
 
-        # nametuple are slower than just having class objects since we are dealing
+        # namedtuple are slower than just having class objects since we are dealing
         # with a lot of nested properties.
         for key, values in release_spec.items():
             super().__setattr__(f"{key}", values)
 
-        # Workaround adding base to multistage enabled distros.
-        # NOTE: Ugh this is jank
         mapfunc(lambda x: list(flatten(x)), self.packages.values())
+
+        # Workaround adding base to multistage enabled distros. This is very janky.
         for p in self.packages.values():
             p.update({"base": maxkeys(p)})
 
@@ -616,14 +659,10 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
             self.supported_python = SUPPORTED_PYTHON_VERSION
 
         # generate Dockerfiles and README.
-        if FLAGS.overwrite:
-            # Consider generated directory ephemeral
-            log.info(f"Removing dockerfile dir: {FLAGS.dockerfile_dir}\n")
-            shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
-            mkdir_p(FLAGS.dockerfile_dir)
         self._tags, self._paths = self.metadata(
             FLAGS.dockerfile_dir, self.supported_python
         )
+
         if FLAGS.dump_metadata:
             with open("./metadata.json", "w") as ouf:
                 ouf.write(json.dumps(self._tags, indent=2))
@@ -636,11 +675,16 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
             for h in DOCKERFILE_BUILD_HIERARCHY
         }
 
+    def generate(self, dry_run: bool = False):
+        if os.geteuid() != 0 and not dry_run:
+            self.generate_dockerfiles()
+
     def build(self, dry_run: bool = False):
         if not dry_run:
             self.build_images()
 
     def push(self, dry_run: bool = False):
+        # https://docs.docker.com/docker-hub/download-rate-limit/
         if not dry_run:
             self.push_to_registries()
 
@@ -658,14 +702,15 @@ def main(argv):
     # Parse specs from manifest.yml and validate it.
     pprint(f'Validating {FLAGS.manifest_file}')
     release_spec = load_manifest_yaml(FLAGS.manifest_file)
-
     if FLAGS.validate:
         return
 
-    # generate templates to correct directory.
+    # Setup manager client.
     manager = ManagerClient(release_spec, FLAGS.cuda_version)
+
+    # generate templates to correct directory.
     if 'dockerfiles' in FLAGS.generate:
-        return
+        manager.generate(FLAGS.dry_run)
 
     # Build images.
     if 'images' in FLAGS.generate:

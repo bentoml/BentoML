@@ -524,7 +524,7 @@ def get_data(obj: Union[Dict, MutableMapping], *path: str) -> Union[str, Dict, L
         return data
 
 
-def set_data(obj: Dict, value: Union[Dict, str], *path: str):
+def set_data(obj: Dict, value: Union[Dict, List, str], *path: str):
     """
     Update data from the object with given value.
     e.g: dependencies.cuda."11.3.1"
@@ -544,10 +544,6 @@ def set_data(obj: Dict, value: Union[Dict, str], *path: str):
 def get_nested(obj: Dict, keys: List[str]):
     """Iterate through a nested dict from a list of keys"""
     return reduce(operator.getitem, keys, obj)
-
-
-def set_nested(obj: Dict, keys: List[str], value: Any):
-    get_nested(obj, keys[:-1])[keys[-1]] = value
 
 
 def load_manifest_yaml(file: str) -> Dict:

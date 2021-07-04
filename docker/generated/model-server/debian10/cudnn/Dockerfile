@@ -39,9 +39,9 @@ ENV NVIDIA_REQUIRE_CUDA "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tes
 
 FROM build_image as release_image
 
-ARG BENTOML_VERSION
+ENV BENTOML_VERSION=0.13.0
 
-RUN pip install bentoml[model_server]==$BENTOML_VERSION --no-cache-dir && \
+RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir && \
     rm -rf /var/lib/apt/lists/*
 
 COPY tools/model-server/entrypoint.sh /usr/local/bin/

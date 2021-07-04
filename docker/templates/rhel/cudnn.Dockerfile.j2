@@ -43,15 +43,13 @@ ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/include/x
 # https://github.com/NVIDIA/nvidia-container-runtime
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
-{% if "cuda_requires" in metadata %}
-ENV NVIDIA_REQUIRE_CUDA "{{ metadata.cuda_requires }}"
-{% endif %}
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.requires }}"
 
 FROM build_image as release_image
 
-ARG BENTOML_VERSION
+ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
-RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==$BENTOML_VERSION --no-cache-dir
+RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==${BENTOML_VERSION} --no-cache-dir
 
 COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
 

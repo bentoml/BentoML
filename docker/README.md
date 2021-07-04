@@ -25,16 +25,6 @@ not found: manifest unknown: manifest unknown
 - Dockerfiles in `./generated` directory must have their build context set to **the directory of this README.md** directory to  add `entrypoint.sh` as well as other helpers files. 
 - Every Dockerfile is managed via `manifest.yml` and maintained via `manager.py`, which will render the Dockerfile from `Jinja` templates under `./templates`.
 
-An example to generate BentoML's AMI base image with `python3.8` that can be used to install `BentoService` and run on AWS Sagemaker:
-
-```shell
-» export PYTHON_VERSION=3.8
-  
-# DOCKER_BUILDKIT=1 is optional
-» DOCKER_BUILDKIT=1 docker build -f ./generated/model-server/amazonlinux2/runtime/Dockerfile \
-                            --build-args PYTHON_VERSION=${PYTHON_VERSION} -t bentoml-docker . 
-```
-
 ## TLDR
 
 For each linux distributions, there will be three type of releases:
@@ -61,6 +51,45 @@ _example of available [tags](https://hub.docker.com/repository/docker/bentoml/mo
 - `model-server:0.13.0-python3.8-centos8-cudnn`
 - `model-server:0.13.0-python3.7-ami2-runtime`
 
+## Run Locally Built Images
+
+To build each distros releases locally you also need to build a `base` images. This contains all dependencies required by
+BentoML before building specific distros images:
+
+```shell
+» export PYTHON_VERSION=3.8
+
+# with tags for base images, replace the python version to your corresponding python version.
+» docker build -f ./generated/model-server/amazonlinux2/Dockerfile \
+          --build-args PYTHON_VERSION=${PYTHON_VERSION} -t model-server:base-python3.8-ami2 .
+```
+
+An example to generate BentoML's AMI base image with `python3.8` that can be used to install `BentoService` and run on AWS Sagemaker:
+
+```shell
+# DOCKER_BUILDKIT=1 is optional
+» DOCKER_BUILDKIT=1 docker build -f ./generated/model-server/amazonlinux2/runtime/Dockerfile \
+                            --build-args PYTHON_VERSION=${PYTHON_VERSION} -t bentoml-ami2 . 
+```
+
+After building the image with tag `bentoml-ami2` (for example), use `docker run` to run the images.
+
+FYI: `-v` (Volume mount) and `-u` (User permission) shares directories and files permission between your local machine and Docker container.
+Without `-v` your work will be wiped once container exists, where `-u` will have wrong file permission on your host machine.
+
+```shell
+# -v and -u are recommended to use.
+
+# CPU-based images
+» docker run -i -t -u $(id -u):$(id -g) -v $(pwd)/my-custom-devel bentoml-ami2
+
+# GPU-based images
+# See https://docs.bentoml.org/en/latest/guides/gpu_serving.html#general-workaround-recommended
+» docker run --gpus all --device /dev/nvidia0 --device /dev/nvidiactl \
+             --device /dev/nvidia-modeset --device /dev/nvidia-uvm \
+             --device /dev/nvidia-uvm-tools -i -t -u $(id -u):$(id -g) -v $(pwd)/my-custom-devel bentoml-ami2
+```
+
 ## Developing
 
 [DEV.md](docs/DEV.md) contains more details on generation workflow and management logics.
@@ -84,14 +113,19 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 # If you are building and pushing Docker images you might want to use manager_images 
 # AS ROOT in order to connect to your docker socket mounted to the container
 #
+# NOTE: Sometimes you might also want to run the following to remove stopped container:
+# `docker rm $(docker ps -a -f status=exited -f status=created -q)`
+#
+# To run verbosely you can choose logs level via -v <loglevel> (eg: -v 5)
+
 » alias manager_dockerfiles="docker run --rm -u $(id -u):$(id -g) -v $(pwd):/bentoml bentoml-docker python3 manager.py "
 
 » alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
 
 # Check manager flags
-» manager_dockerfiles --helpfull
+» manager_dockerfiles --help
 
-# To develop manifest files and update schema validation
+# To validate generation schema.
 » manager_dockerfiles --bentoml_version 0.13.0 --validate
 
 # Generate all dockerfiles from templates, and dump all build metadata to metadata.json
@@ -105,4 +139,7 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 
 # Push all images to defined registries under manifest.yml.
 » manager_images --bentoml_version 0.13.0 --push_to_hub --releases cudnn
+
+# Or bring generation and pushing together
+» manager_images --bentoml_version 0.13.0 --generate images --push_to_hub --releases cudnn
 ```

@@ -91,7 +91,7 @@ class PytorchModelArtifact(BentoServiceArtifact):
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name + self._file_extension)
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
+    def pack(self, model, metadata=None):  # pylint:disable=arguments-renamed
         try:
             import torch
         except ImportError:
@@ -218,7 +218,7 @@ class PytorchLightningModelArtifact(BentoServiceArtifact):
     def _saved_model_file_path(self, base_path):
         return os.path.join(base_path, self.name + '.pt')
 
-    def pack(self, path_or_model, metadata=None):  # pylint:disable=arguments-differ
+    def pack(self, path_or_model, metadata=None):  # pylint:disable=arguments-renamed
         if _is_pytorch_lightning_model_file_like(path_or_model):
             logger.info(
                 'PytorchLightningArtifact is packing a saved torchscript module '

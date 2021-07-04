@@ -74,7 +74,7 @@ class SklearnModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + DEFAULT_PICKLE_EXTENSION)
 
-    def pack(self, sklearn_model, metadata=None):  # pylint:disable=arguments-differ
+    def pack(self, sklearn_model, metadata=None):  # pylint:disable=arguments-renamed
         self._model = sklearn_model
         return self
 

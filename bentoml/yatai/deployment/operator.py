@@ -21,29 +21,7 @@ from bentoml.exceptions import YataiDeploymentException
 def get_deployment_operator(yatai_service, deployment_pb):
     operator = deployment_pb.spec.operator
 
-    if operator == DeploymentSpec.AWS_SAGEMAKER:
-        from bentoml.yatai.deployment.sagemaker.operator import (
-            SageMakerDeploymentOperator,
-        )
-
-        return SageMakerDeploymentOperator(yatai_service)
-    elif operator == DeploymentSpec.AWS_LAMBDA:
-        from bentoml.yatai.deployment.aws_lambda.operator import (
-            AwsLambdaDeploymentOperator,
-        )
-
-        return AwsLambdaDeploymentOperator(yatai_service)
-    elif operator == DeploymentSpec.AZURE_FUNCTIONS:
-        from bentoml.yatai.deployment.azure_functions.operator import (
-            AzureFunctionsDeploymentOperator,
-        )
-
-        return AzureFunctionsDeploymentOperator(yatai_service)
-    elif operator == DeploymentSpec.AWS_EC2:
-        from bentoml.yatai.deployment.aws_ec2.operator import AwsEc2DeploymentOperator
-
-        return AwsEc2DeploymentOperator(yatai_service)
-    elif operator == DeploymentSpec.CUSTOM:
+    if operator == DeploymentSpec.CUSTOM:
         raise NotImplementedError(
             "Custom deployment operator is not supported in current version of BentoML"
         )

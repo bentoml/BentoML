@@ -59,8 +59,6 @@ install_requires = [
 yatai_service_requires = [
     "grpcio~=1.34.0",  # match the grpcio-tools version used in yatai docker image
     "google-cloud-storage",
-    "azure-cli",
-    "aws-sam-cli==0.33.1",
     "psycopg2",
     "psycopg2-binary",
 ]

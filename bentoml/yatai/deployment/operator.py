@@ -18,7 +18,7 @@ from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec
 from bentoml.exceptions import YataiDeploymentException
 
 
-def get_deployment_operator(yatai_service, deployment_pb):
+def get_deployment_operator(yatai_service, deployment_pb):  # pylint:disable=W0613
     operator = deployment_pb.spec.operator
 
     if operator == DeploymentSpec.CUSTOM:

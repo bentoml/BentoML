@@ -214,7 +214,10 @@ Navigate to the URL from above
 
 ## How to use `YataiService` helm chart
 
-BentoML also provides a Helm charts under [`bentoml/yatai-chart`](https://github.com/bentoml/yatai-chart) for installing YataiService on Kubernetes.
+BentoML also provides a Helm chart under [`bentoml/yatai-chart`](https://github.com/bentoml/yatai-chart) for installing YataiService on Kubernetes.
+
+## Running BentoML Benchmark
+BentoML has moved its benchmark client to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).
 
 ## How to run and develop BentoML Web UI
 

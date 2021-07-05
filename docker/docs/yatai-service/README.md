@@ -19,14 +19,15 @@ BentoML bridges the gap between Data Science and DevOps. By providing a standard
 
 ## Announcement
 
-The `latest` tag for `model-server` and `yatai-service` has been deprecated on Docker Hub.
+The `latest` tag for `yatai-service` has been deprecated on Docker Hub.
 
 Tags also have new formats, therefore current format will also be deprecated.
 
 With the removal of `latest` tags, the following usecase is **NOT A BUG**:
 
 ```shell
-» docker pull bentoml/model-server
+» docker pull bentoml/yatai-service
+Using default tag: latest
 Error response from daemon: manifest for bentoml/model-server:latest
 not found: manifest unknown: manifest unknown
 ```
@@ -52,8 +53,7 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 *WARNING*: POSSIBLE MISSING IMAGE TAGS
 
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
-If you need the one missing please refers to [`bentoml/docker`](https://github.com/bentoml/BentoML/tree/master/docker) for more information.
-            
+
 - [`0.13.0-python3.7-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
 - [`0.13.0-python3.8-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
 
@@ -62,7 +62,6 @@ If you need the one missing please refers to [`bentoml/docker`](https://github.c
 *WARNING*: POSSIBLE MISSING IMAGE TAGS
 
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
-If you need the one missing please refers to [`bentoml/docker`](https://github.com/bentoml/BentoML/tree/master/docker) for more information.
-            
+
 - [`0.13.0-python3.7-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)
 - [`0.13.0-python3.8-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)

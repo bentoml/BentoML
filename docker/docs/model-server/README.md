@@ -33,7 +33,7 @@ not found: manifest unknown: manifest unknown
 
 ## Overview of Images
 
-Three types of images provided in the registry:
+Types of images provided in the registry:
 - `runtime`: Includes BentoML latest PyPI releases
 - `devel`: Nightly releases from `master` branch.
 - `cudnn`: Builds on top of `runtime` with the addition of [CUDA](https://developer.nvidia.com/gpu-accelerated-libraries) and [CUDNN](https://developer.nvidia.com/cudnn) libraries

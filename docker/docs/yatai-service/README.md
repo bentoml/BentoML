@@ -33,9 +33,8 @@ not found: manifest unknown: manifest unknown
 
 ## Overview of Images
 
-Three types of images provided in the registry:
+Types of images provided in the registry:
 - `runtime`: Includes BentoML latest PyPI releases
-- `devel`: Nightly releases from `master` branch.
 
 ## Notes
 

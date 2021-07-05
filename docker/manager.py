@@ -293,7 +293,8 @@ class GenerateMixin(object):
 
         return _ctx
 
-    def metadata(self, output_dir: str, pyv: List[str]):
+    @lru_cache(maxsize=4)
+    def metadata(self, output_dir: str, pyv: str):
         """Setup templates context"""
         _paths: Dict[str, str] = {}
         _tags: Dict = defaultdict()
@@ -306,9 +307,7 @@ class GenerateMixin(object):
                 "Dockerfiles use manager_dockerfiles instead."
             )
 
-        pprint('Setting up metadata')
-
-        for pkg, pyv in itertools.product(self.packages.keys(), pyv):
+        for pkg in self.packages.keys():
             log.info(f"Generate context for {pkg} python{pyv}")
             for (release, distro_version) in self.aggregate_dists_releases(pkg):
                 log.debug(f"Tag context for {release}:{distro_version}")
@@ -663,9 +662,11 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
             self.supported_python = SUPPORTED_PYTHON_VERSION
 
         # generate Dockerfiles and README.
-        self._tags, self._paths = self.metadata(
-            FLAGS.dockerfile_dir, self.supported_python
-        )
+        pprint('Setting up metadata')
+        for python_version in self.supported_python:
+            _tags, _paths = self.metadata(FLAGS.dockerfile_dir, python_version)
+            self._tags.update(_tags)
+            self._paths.update(_paths)
 
         if FLAGS.dump_metadata:
             with open("./metadata.json", "w") as ouf:

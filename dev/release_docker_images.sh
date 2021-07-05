@@ -32,18 +32,19 @@ if [[ $(docker images --filter=reference='bentoml-docker' -q) == "" ]] | [[ $(gi
 		DOCKER_BUILDKIT=1 docker build -t bentoml-docker -f Dockerfile .
 fi
 
+# We will always run this scripts after release_pypi.sh, so the branch of new releases will exist.
 if git rev-parse "$VERSION_STR" >/dev/null 2>&1; then
   # Tags already exists
   git checkout "$VERSION_STR"
-else
-  # Then we want to generate new Dockerfiles
-  $manager_dockerfiles --bentoml_version "$BENTOML_VERSION" --generate dockerfiles
 fi
+
+log "Generating new Dockerfiles for BentoML $VERSION_STR..."
+$manager_dockerfiles --bentoml_version "$BENTOML_VERSION" --generate dockerfiles
 
 if [[ ! -f "$DOCKER_DIR"/.env ]];
   warn "Make sure to create a $DOCKER_DIR/.env to setup docker registry correctly. Refers to manifest.yml to see which envars you need to setup."
   exit 1
 fi
 
-log "Building docker image for BentoML v$BENTOML_VERSION and push to registries"
+log "Building docker image for BentoML $VERSION_STR and perform push to registries..."
 $manager_images --bentoml_version "$BENTOML_VERSION" --generate images --push_to_hub

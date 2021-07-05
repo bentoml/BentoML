@@ -214,32 +214,7 @@ Navigate to the URL from above
 
 ## How to use `YataiService` helm chart
 
-BentoML also provides a Helm charts for installing YataiService on Kubernetes. 
-
-Install Helm dependencies:
-```bash
-$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx && helm dependencies build helm/YataiService
-```
-
-Lint helm after making changes to the chart:
-```bash
-$ helm lint ./helm/YataiService
-```
-
-Dry-run helm installation to test out development:
-```bash
-$ cd helm && helm install -f YataiService/values/postgres.yaml --dry-run --debug yatai-service YataiService
-```
-
-Install the helm charts:
-```bash
-$ cd helm && helm install -f YataiService/values/postgres.yaml yatai-service YataiService
-```
-
-Uninstall the charts:
-```bash
-$ helm uninstall yatai-service
-```
+BentoML also provides a Helm charts under [`bentoml/yatai-chart`](https://github.com/bentoml/yatai-chart) for installing YataiService on Kubernetes.
 
 ## How to run and develop BentoML Web UI
 

@@ -40,12 +40,6 @@ SUPPORTED_GENERATE_TYPE = ['dockerfiles', 'images']
 # defined global vars.
 FLAGS = flags.FLAGS
 
-flags.DEFINE_boolean(
-    "push_to_hub",
-    False,
-    "Whether to upload images to given registries.",
-    short_name="pth",
-)
 flags.DEFINE_integer("timeout", 3600, "Timeout for docker build", short_name="t")
 # CLI-related
 flags.DEFINE_boolean(
@@ -87,7 +81,12 @@ flags.DEFINE_multi_string(
     f"Generation type. Options: {SUPPORTED_GENERATE_TYPE}",
     short_name='g',
 )
-
+flags.DEFINE_multi_string(
+    "push",
+    [],
+    "Push types. Options: readmes, images (will also include pushing readme)",
+    short_name='p',
+)
 flags.DEFINE_string(
     "releases",
     "",

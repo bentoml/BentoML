@@ -19,18 +19,7 @@ BentoML bridges the gap between Data Science and DevOps. By providing a standard
 
 ## Announcement
 
-The `latest` tag for `yatai-service` has been deprecated on Docker Hub.
-
-Tags also have new formats, therefore current format will also be deprecated.
-
-With the removal of `latest` tags, the following usecase is **NOT A BUG**:
-
-```shell
-» docker pull bentoml/yatai-service
-Using default tag: latest
-Error response from daemon: manifest for bentoml/model-server:latest
-not found: manifest unknown: manifest unknown
-```
+The `latest` tag for yatai-service is still available with regarding the current changes to our Docker management. Please report any [issues](https://github.com/bentoml/BentoML/issues) if occurs.
 
 ## Overview of Images
 

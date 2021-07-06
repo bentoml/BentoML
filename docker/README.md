@@ -138,8 +138,8 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 » manager_images --bentoml_version 0.13.0 --generate images --releases runtime
 
 # Push all images to defined registries under manifest.yml.
-» manager_images --bentoml_version 0.13.0 --push_to_hub --releases cudnn
+» manager_images --bentoml_version 0.13.0 --push images --releases cudnn
 
 # Or bring generation and pushing together
-» manager_images --bentoml_version 0.13.0 --generate images --push_to_hub --releases cudnn
+» manager_images --bentoml_version 0.13.0 --generate images --push images --releases cudnn
 ```

@@ -507,13 +507,12 @@ class PushMixin(object):
             )
         return _release_tag
 
-    def push_to_registries(self):
+    def push_images(self):
         """Push images to registries"""
 
-        self.auth_registries()
         if not self._push_context:
             log.debug("--generate images is not specified. Generate push context...")
-            for image_tag, dockerfile_path in self.build_tags():
+            for image_tag, _ in self.build_tags():
                 set_data(
                     self._push_context, docker_client.images.get(image_tag), image_tag,
                 )
@@ -532,6 +531,10 @@ class PushMixin(object):
                 repo_url: str = f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
                 self.push_readmes(api_url, repo_url, readme_path, login_payload)
 
+            if 'readmes' in FLAGS.push:
+                log.info("--push readmes is specified. Exit after pushing readmes.")
+                return
+
             # Then push image to registry.
             for image_tag in self.push_tags():
                 image = self._push_context[image_tag]
@@ -539,15 +542,20 @@ class PushMixin(object):
                 registry = ''.join(
                     [v for k, v in registry_spec['registry'].items() if reg in k]
                 )
-                log.info(f"Uploading {image_tag} to {registry}")
+                # separate release latest tags for yatai-service
+                if all(map(image_tag.__contains__, ['yatai-service', '3.8', 'slim'])):
+                    log.info(f"Uploading {image_tag} as latest to {registry}")
+                    tag = 'latest'
+                    self.background_upload(image, tag, registry)
 
-                # TODO: implement concurrent pushing
+                log.info(f"Uploading {image_tag} to {registry}")
+                # NOTES: about concurrent pushing
                 #   This would change most of our build logics
                 #   since DockerClient is essentially a requests.Session,
                 #   which doesn't have support for asynchronous requests.
                 #   If we want to implement aiohttp then we might want to
-                #   run docker from shell commands
-                self.upload_in_background(image, tag, registry)
+                #   run docker from shell commands.
+                self.background_upload(image, tag, registry)
 
     def push_readmes(
         self,
@@ -579,8 +587,8 @@ class PushMixin(object):
                 cookies=logins.cookies,
             )
 
-    def upload_in_background(self, image, tag, registry):
-        """Upload a docker image (to be used by multiprocessing)."""
+    def background_upload(self, image, tag, registry):
+        """Upload a docker image."""
         image.tag(registry, tag=tag)
         log.debug(f"Pushing {repr(image)} to {registry}...")
         resp = docker_client.images.push(registry, tag=tag, stream=True, decode=True)
@@ -691,7 +699,8 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
     def push(self, dry_run: bool = False):
         # https://docs.docker.com/docker-hub/download-rate-limit/
         if not dry_run:
-            self.push_to_registries()
+            self.auth_registries()
+            self.push_images()
 
 
 def main(argv):
@@ -723,12 +732,11 @@ def main(argv):
             manager.build(FLAGS.dry_run)
 
         # Push images when finish building.
-        if FLAGS.push_to_hub:
+        if FLAGS.push:
             manager.push(dry_run=FLAGS.dry_run)
     except KeyboardInterrupt:
         log.info("Stopping now...")
-        if os.path.exists("./metadata.json"):
-            shutil.rmtree('./metadata.json')
+        exit(1)
 
 
 if __name__ == "__main__":

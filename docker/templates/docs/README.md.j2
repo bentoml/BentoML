@@ -30,6 +30,7 @@ BentoML bridges the gap between Data Science and DevOps. By providing a standard
 
 ## Announcement
 
+{% if metadata.bentoml_package == "model-server" %}
 The `latest` tag for `{{ metadata.bentoml_package }}` has been deprecated on Docker Hub.
 
 Tags also have new formats, therefore current format will also be deprecated.
@@ -42,15 +43,17 @@ Using default tag: latest
 Error response from daemon: manifest for bentoml/model-server:latest
 not found: manifest unknown: manifest unknown
 ```
+{% else %}
+The `latest` tag for {{ metadata.bentoml_package }} is still available with regarding the current changes to our Docker management. Please report any [issues](https://github.com/bentoml/BentoML/issues) if occurs.
+{% endif %}
 
-## Overview of Images
+## Overview of Images Types
 
-Types of images provided in the registry:
-- `runtime`: Includes BentoML latest PyPI releases
-    {% if metadata.bentoml_package == "model-server" %}
+- `runtime`: Includes BentoML latest PyPI releases for `{{ metadata.bentoml_package }}`.
+{% if metadata.bentoml_package == "model-server" %}
 - `devel`: Nightly releases from `master` branch.
-- `cudnn`: Builds on top of `runtime` with the addition of [CUDA](https://developer.nvidia.com/gpu-accelerated-libraries) and [CUDNN](https://developer.nvidia.com/cudnn) libraries
-    {% endif %}
+- `cudnn`: Builds on top of `runtime` with the addition of [CUDA](https://developer.nvidia.com/gpu-accelerated-libraries) and [CUDNN](https://developer.nvidia.com/cudnn) libraries.
+{% endif %}
 
 ## Notes
 
@@ -75,4 +78,4 @@ Centos upstream images often fail security scans, thus there might be some image
     {% endfor %}
 {% endfor %}
 {% endif %}
-{# We might also want to include previous images here as well #}
+{# We might want to include previous images here as well #}

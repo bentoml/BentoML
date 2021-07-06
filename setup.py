@@ -30,7 +30,7 @@ install_requires = [
     "click>=7.0",
     "configparser",
     "deepmerge",
-    "dependency-injector>=4.0,<5.0",
+    "simple-di",
     "docker",
     "flask",
     "grpcio",

@@ -21,10 +21,9 @@ BentoML bridges the gap between Data Science and DevOps. By providing a standard
 
 The `latest` tag for yatai-service is still available with regarding the current changes to our Docker management. Please report any [issues](https://github.com/bentoml/BentoML/issues) if occurs.
 
-## Overview of Images
+## Overview of Images Types
 
-Types of images provided in the registry:
-- `runtime`: Includes BentoML latest PyPI releases
+- `runtime`: Includes BentoML latest PyPI releases for `yatai-service`.
 
 ## Notes
 

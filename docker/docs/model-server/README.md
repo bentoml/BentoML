@@ -32,12 +32,11 @@ Error response from daemon: manifest for bentoml/model-server:latest
 not found: manifest unknown: manifest unknown
 ```
 
-## Overview of Images
+## Overview of Images Types
 
-Types of images provided in the registry:
-- `runtime`: Includes BentoML latest PyPI releases
+- `runtime`: Includes BentoML latest PyPI releases for `model-server`.
 - `devel`: Nightly releases from `master` branch.
-- `cudnn`: Builds on top of `runtime` with the addition of [CUDA](https://developer.nvidia.com/gpu-accelerated-libraries) and [CUDNN](https://developer.nvidia.com/cudnn) libraries
+- `cudnn`: Builds on top of `runtime` with the addition of [CUDA](https://developer.nvidia.com/gpu-accelerated-libraries) and [CUDNN](https://developer.nvidia.com/cudnn) libraries.
 
 ## Notes
 

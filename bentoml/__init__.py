@@ -43,6 +43,8 @@ commandline_interface = create_bentoml_cli()
 
 load = load_from_dir
 
+from bentoml.docker.images import ProvidedImages
+
 __all__ = [
     "__version__",
     "api",
@@ -51,6 +53,7 @@ __all__ = [
     "web_static_content",
     "ver",
     "BentoService",
+    "ProvidedImages",
     # backward compatible
     "load",
     "load_from_dir",

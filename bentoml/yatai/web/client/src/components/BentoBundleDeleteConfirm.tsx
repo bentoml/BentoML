@@ -1,23 +1,23 @@
 import * as React from "react";
 import { Button, Dialog, Intent, } from "@blueprintjs/core";
+import { template } from "lodash";
 
-export interface IDeploymentDeleteConfirmProps {
+export interface IBentoBundleDeleteConfirmProps {
   name: string;
   value: string;
   isOpen: boolean;
 }
 
-const DeploymentDeleteConfirm: React.FC<IDeploymentDeleteConfirmProps> = (props) => {
-  public state: IDeploymentDeleteConfirmState = {
-    isOpen: false,
-  };
+const BentoBundleDeleteConfirm: React.FC<IBentoBundleDeleteConfirmProps> = (props) => {
+  let isOpen = false;
 
   const tagValue = `${props.name}:${props.value}`;
   return (
+    <div>
+      <Button onClick={handleOpen}>Delete</Button>
     <Dialog
-      onClose={this.handleClose}
+      onClose={handleClose}
       title="Are you sure?"
-      {...this.state}
     >
       <div>
         <p>
@@ -35,10 +35,10 @@ const DeploymentDeleteConfirm: React.FC<IDeploymentDeleteConfirmProps> = (props)
         </div>
       </div>
     </Dialog>
+    </div>
   );
 
-  private handleOpen = () => this.setState({ isOpen: true });
-  private handleClose = () => this.setState({ isOpen: false });
+  const handleClose = () => !isOpen;
 };
 
-export default DeploymentDeleteConfirm;
+export default BentoBundleDeleteConfirm;

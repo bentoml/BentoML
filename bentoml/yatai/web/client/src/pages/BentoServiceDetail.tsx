@@ -7,6 +7,22 @@ import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
 import { Section } from "../ui/Layout";
 import LabelDetailSection from "../components/LabelDetailSection";
+import DeleteConfirmation from "../components/BentoBundleDeleteConfirm";
+import { findLastIndex } from "lodash";
+
+const horizontalFlex = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between"
+};
+
+const TableHeader = styled(Row)({
+  borderBottom: "2px solid #D8E1E8",
+  fontWeight: 600,
+  ":hover": {
+    backgroundColor: "#F5F8FA",
+  },
+});
 
 const BentoServiceDetail = (props) => {
   const params = props.match.params;
@@ -24,19 +40,24 @@ const BentoServiceDetail = (props) => {
 
           displayBentoServiceDetail = (
             <div>
-              <p>
-                <b>Created at: </b>
-                {moment
-                  .unix(Number(bento.bento_service_metadata.created_at.seconds))
-                  .toDate()
-                  .toLocaleString()}
-              </p>
-              <p>
-                <b>Storage: </b> {bento.uri.uri}
-              </p>
-              <LabelDetailSection
-                labels={bento.bento_service_metadata.labels}
-              />
+              <div style={horizontalFlex}>
+                <div>
+                  <p>
+                    <b>Created at: </b>
+                    {moment
+                      .unix(Number(bento.bento_service_metadata.created_at.seconds))
+                      .toDate()
+                      .toLocaleString()}
+                  </p>
+                  <p>
+                    <b>Storage: </b> {bento.uri.uri}
+                  </p>
+                  <LabelDetailSection
+                    labels={bento.bento_service_metadata.labels}
+                  />
+                </div>
+                <DeleteConfirmation></DeleteConfirmation>
+              </div>
               <ApisTable apis={bento.bento_service_metadata.apis} />
               <ArtifactsTable
                 artifacts={bento.bento_service_metadata.artifacts}
@@ -59,6 +80,8 @@ const BentoServiceDetail = (props) => {
       }}
     </HttpRequestContainer>
   );
+
+
 };
 
 export default BentoServiceDetail;

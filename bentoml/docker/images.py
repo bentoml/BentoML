@@ -19,6 +19,13 @@ SEMVER_REGEX: re.Pattern = re.compile(r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*
 
 logger = logging.getLogger(__name__)
 
+BACKWARD_COMPATIBILITY_WARNING: str = """\
+Since 0.14.0, we changed the format of docker tags, thus {classname}
+will only supports image tag from 0.14.0 forward, while detected bentoml_version
+is {bentoml_version}. Refers to https://hub.docker.com/r/bentoml/model-server/
+if you need older version of bentoml. Using devel image instead...
+"""  # noqa: E501
+
 
 def get_suffix(gpu: bool) -> str:
     return 'runtime' if not gpu else 'cudnn'
@@ -97,14 +104,10 @@ class ImageProvider(object):
                 )
             # we only support the new format with 0.14.0 forward
             if int(major) == 0 and int(minor) < 14:
-                logger.warning(
-                    f"Since 0.14.0, we changed the format of docker tags, "
-                    f"thus {self.__class__.__name__} will only supports image tag from 0.14.0 forward. "
-                    f" Detected bentoml_version as {bentoml_version}. Refers to "
-                    "https://hub.docker.com/r/bentoml/model-server/tags?page=1&ordering=last_updated "
-                    "to for older tags format if you need older version of bentoml. "
-                    "Using devel images instead... "
+                msg: str = BACKWARD_COMPATIBILITY_WARNING.format(
+                    classname=self.__class__.__name__, bentoml_version=bentoml_version,
                 )
+                logger.warning(msg)
                 self._release_type: str = 'devel'
             else:
                 self._release_type = bentoml_version
@@ -113,7 +116,7 @@ class ImageProvider(object):
             self._release_type = _ver if int(_ver.split('.')[1]) > 13 else 'devel'
 
         # fmt: off
-        self._suffix: str = '-' + get_suffix(gpu) if self._release_type != 'devel' else ''
+        self._suffix: str = '-' + get_suffix(gpu) if self._release_type != 'devel' else ''  # noqa: E501
 
         # fmt: on
         if python_version not in SUPPORTED_PYTHON_VERSION:
@@ -140,8 +143,8 @@ class ImageProvider(object):
             )
 
         if (
-                _distros not in SUPPORTED_RELEASES_COMBINATION['devel']
-                and self._release_type == 'devel'
+            _distros not in SUPPORTED_RELEASES_COMBINATION['devel']
+            and self._release_type == 'devel'
         ):
             raise RuntimeError(f"{distros} doesn't support devel tags.")
 

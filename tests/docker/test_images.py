@@ -33,7 +33,11 @@ tags: str = "bentoml/model-server:{}"
             {'gpu': True, 'bentoml_version': '0.14.0'},
             tags.format('0.14.0-python3.8-centos7-cudnn'),
         ),
-        (['centos8', '3.7'], {'gpu': False, 'bentoml_version': '0.13.0'}, tags.format('devel-python3.7-centos8')),
+        (
+            ['centos8', '3.7'],
+            {'gpu': False, 'bentoml_version': '0.13.0'},
+            tags.format('devel-python3.7-centos8'),
+        ),
         (
             ['alpine3.14', '3.7'],
             {'gpu': False, 'bentoml_version': '0.15.1'},
@@ -51,7 +55,11 @@ def test_valid_combos(args, kwargs, expected):
         (['debian', '3.6'], {'gpu': False, 'bentoml_version': '0.14.0'}, RuntimeError),
         (['alpine', '3.8'], {'gpu': True, 'bentoml_version': '0.13.0'}, RuntimeError),
         (['centos7', '3.8'], {'gpu': True, 'bentoml_version': '1.0.'}, ValueError),
-        (['amazonlinux', '3.8'], {'gpu': False, 'bentoml_version': '0.13.0'}, RuntimeError),
+        (
+            ['amazonlinux', '3.8'],
+            {'gpu': False, 'bentoml_version': '0.13.0'},
+            RuntimeError,
+        ),
     ],
 )
 def test_invalid_combos(args, kwargs, expected):

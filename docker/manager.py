@@ -14,12 +14,11 @@ from typing import Dict, Iterator, List, MutableMapping, Optional, Union
 import absl.logging as logging
 import urllib3
 from absl import app
+from docker import DockerClient
+from docker.errors import APIError, BuildError, ImageNotFound
 from dotenv import load_dotenv
 from jinja2 import Environment
 from requests import Session
-
-from docker import DockerClient
-from docker.errors import APIError, BuildError, ImageNotFound
 from utils import *
 
 # vars
@@ -30,7 +29,7 @@ DOCKERFILE_TEMPLATE_SUFFIX: str = ".Dockerfile.j2"
 DOCKERFILE_BUILD_HIERARCHY: List[str] = ["base", "runtime", "cudnn", "devel"]
 DOCKERFILE_NVIDIA_REGEX: re.Pattern = re.compile(r'(?:nvidia|cuda|cudnn)+')
 
-SUPPORTED_PYTHON_VERSION: List[str] = ["3.7", "3.8"]
+SUPPORTED_PYTHON_VERSION: List[str] = ["3.6", "3.7", "3.8"]
 
 NVIDIA_REPO_URL: str = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
 NVIDIA_ML_REPO_URL: str = (
@@ -121,7 +120,7 @@ class LogsMixin(object):
                             sprint(f"{status} {_id}: {progress}")
                 except StopIteration:
                     log.info(
-                        f"Successfully pushed {docker_client.images.get(image_id)} to registry."
+                        f"Successfully pushed {docker_client.images.get(image_id)}."
                     )
                     break
         except APIError as e:
@@ -448,7 +447,7 @@ class BuildMixin(object):
     def build_images(self):
         """Build images."""
         for image_tag, dockerfile_path in self.build_tags():
-            log.debug(f"Building {image_tag} from {dockerfile_path}")
+            log.info(f"Building {image_tag} from {dockerfile_path}")
             try:
                 # this is should be when there are changed in base image.
                 if FLAGS.overwrite:
@@ -531,8 +530,8 @@ class PushMixin(object):
                 repo_url: str = f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
                 self.push_readmes(api_url, repo_url, readme_path, login_payload)
 
-            if 'readmes' in FLAGS.push:
-                log.info("--push readmes is specified. Exit after pushing readmes.")
+            if FLAGS.readmes:
+                log.info("--readmes is specified. Exit after pushing readmes.")
                 return
 
             # Then push image to registry.

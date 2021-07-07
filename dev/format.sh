@@ -8,6 +8,6 @@ cd "$WEB_UI_DIR" && yarn format
 
 # format docker directory format.
 DOCKER_DIR="$GIT_ROOT"/docker
-cd "$DOCKER_DIR" && isort .
+isort "$DOCKER_DIR"
 
 black -S "$GIT_ROOT"

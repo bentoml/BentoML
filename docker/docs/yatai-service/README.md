@@ -33,6 +33,7 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 
 ### Debian10
 
+- [`0.13.0-python3.6-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/debian10/runtime/Dockerfile)
 - [`0.13.0-python3.7-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/debian10/runtime/Dockerfile)
 - [`0.13.0-python3.8-slim-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/debian10/runtime/Dockerfile)
 
@@ -42,6 +43,7 @@ In order to run CUDA-enabled images `nvidia-docker2` is required. Refers to [Ben
 
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
 
+- [`0.13.0-python3.6-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
 - [`0.13.0-python3.7-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
 - [`0.13.0-python3.8-centos8-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos8/runtime/Dockerfile)
 
@@ -51,5 +53,6 @@ Centos upstream images often fail security scans, thus there might be some image
 
 Centos upstream images often fail security scans, thus there might be some images missing. Please refers to [Issues section](https://github.com/bentoml/BentoML/issues) for security notices.
 
+- [`0.13.0-python3.6-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)
 - [`0.13.0-python3.7-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)
 - [`0.13.0-python3.8-centos7-runtime`](https://github.com/bentoml/BentoML/tree/master/docker/generated/yatai-service/centos7/runtime/Dockerfile)

@@ -81,11 +81,11 @@ flags.DEFINE_multi_string(
     f"Generation type. Options: {SUPPORTED_GENERATE_TYPE}",
     short_name='g',
 )
-flags.DEFINE_multi_string(
-    "push",
-    [],
-    "Push types. Options: readmes, images (will also include pushing readme)",
-    short_name='p',
+flags.DEFINE_boolean(
+    "push", False, "Whether to push built image.", short_name='p',
+)
+flags.DEFINE_boolean(
+    "readmes", False, "Whether to stop at pushing readmes.", short_name='md',
 )
 flags.DEFINE_string(
     "releases",

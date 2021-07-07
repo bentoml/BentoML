@@ -20,3 +20,5 @@ exclude = '''
 )
 '''
 
+[tool.isort]
+profile = "black"

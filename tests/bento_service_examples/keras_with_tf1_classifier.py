@@ -18,7 +18,7 @@ class KerasClassifier(bentoml.BentoService):
     def predict(self, jsons):
         raw_artifact = self._artifacts['model']
         with raw_artifact.graph.as_default(), raw_artifact.sess.as_default():
-            return self.artifacts.model2.predict(np.array(jsons))
+            return self.artifacts.model.predict(np.array(jsons))
 
     @bentoml.api(input=JsonInput(), batch=True)
     def predict2(self, jsons):

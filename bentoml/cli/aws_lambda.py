@@ -113,6 +113,13 @@ def get_aws_lambda_sub_command():
         output,
         wait,
     ):
+        _echo(
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         bento_name, bento_version = bento.split(':')
         with Spinner(f'Deploying "{bento}" to AWS Lambda '):
@@ -176,6 +183,13 @@ def get_aws_lambda_sub_command():
         'If set to no-wait, CLI will return immediately. The default value is wait',
     )
     def update(name, namespace, bento, memory_size, timeout, output, wait):
+        _echo(
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         if bento:
             bento_name, bento_version = bento.split(':')
@@ -218,6 +232,13 @@ def get_aws_lambda_sub_command():
         'ignore errors when deleting cloud resources',
     )
     def delete(name, namespace, force):
+        _echo(
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         get_deployment_result = yatai_client.deployment.get(
             namespace=namespace, name=name
@@ -252,6 +273,13 @@ def get_aws_lambda_sub_command():
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='json'
     )
     def get(name, namespace, output):
+        _echo(
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         describe_result = yatai_client.deployment.describe(namespace, name)
         if describe_result.status.status_code != yatai_proto.status_pb2.Status.OK:
@@ -305,6 +333,13 @@ def get_aws_lambda_sub_command():
         default='table',
     )
     def list_deployments(namespace, limit, labels, order_by, asc, output):
+        _echo(
+            message='AWS Lambda deployment functionalities are being migrated to a '
+            'separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/aws-lambda-deploy '
+            'going forward.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list_lambda_deployments(
             limit=limit,

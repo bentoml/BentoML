@@ -40,7 +40,7 @@ Preface
         @artifacts([KerasModelArtifact('model'), PickleArtifact('tokenizer')])
         class TensorflowService(BentoService):
 
-            @TEST_METRICS.time()
+            @REQUEST_TIME.time()
             @api(input=JsonInput())
             def predict(self, parsed_json):
                 raw = self.preprocessing(parsed_json['text'])
@@ -338,7 +338,7 @@ by changing our service type from ``ClusterIP`` to ``NodePort``. This enables Pr
         ##
         type: NodePort # changed this line from ClusterIP to NodePort
 
-By default, Prometheus discovers |PodMonitors|_ and |ServiceMonitors|_ within its namespace, with same release tags labelled as ``prometheus-operator`` release.
+By default, Prometheus discovers |PodMonitors|_ and |ServiceMonitors|_ within its namespace, with same release tags labeled as ``prometheus-operator`` release.
 Since we want to Prometheus to discover our BentoService (refers to :ref:`custom-service-monitor`), we need to create a custom PodMonitors/ServiceMonitors to scrape metrics from our services. Thus, one
 way to do this is to allow Prometheus to discover all PodMonitors/ServiceMonitors within its name, without applying label filtering. Set the following options:
 
@@ -488,7 +488,7 @@ Open your browser at ``http:<machine-ip-addr>:32447``, credentials:
 Port Forwarding
 """""""""""""""
 
-Another method is to access Grafana with port-fowarding.
+Another method is to access Grafana with port-forwarding.
 
 Notice that Grafana is accessible at port ``:80``. We will choose an arbitrary port ``:36745`` on our local machine to port ``:80`` on the service (-> ``:3000`` where
 Grafana is listening at)
@@ -609,3 +609,7 @@ Apply the changes to enable monitoring:
     Yatai
     tsdb
     Alertmanager
+    virtualbox
+    Gb
+    repo
+    datasources

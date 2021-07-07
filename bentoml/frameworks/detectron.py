@@ -92,6 +92,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
                 "Detectron package is required to use DetectronModelArtifact"
             )
         self._model = model
+        self._metadata = metadata
         self._input_model_yaml = input_model_yaml
         return self
 

@@ -131,3 +131,11 @@ Refers to `Deploying Prometheus on Kubernetes <https://github.com/bentoml/BentoM
         * On MacOS ``brew install virtualbox``
 
         * On Arch ``sudo pacman -S virtualbox``
+
+
+
+.. spelling::
+
+    datasources
+    ip
+    eg

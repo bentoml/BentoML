@@ -63,7 +63,7 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + EVALML_MODEL_PICKLE_EXTENTION)
 
-    def pack(self, evalml_model, metadata=None):  # pylint:disable=arguments-differ
+    def pack(self, evalml_model, metadata=None):  # pylint:disable=arguments-renamed
         self._validate_package()
         self._model = evalml_model
         return self

@@ -89,3 +89,8 @@ load_from_dir
     yml
     ver
     dir
+    str
+    repr
+    sys
+    getdefaultencoding
+

@@ -134,6 +134,13 @@ def get_azure_functions_sub_command():
         output,
         wait,
     ):
+        _echo(
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
+            color='yellow',
+        )
         bento_name, bento_version = bento.split(':')
         yatai_client = get_default_yatai_client()
         with Spinner(f'Deploying {bento} to Azure Functions'):
@@ -205,6 +212,13 @@ def get_azure_functions_sub_command():
     def update(
         name, namespace, bento, min_instances, max_burst, premium_plan_sku, output, wait
     ):
+        _echo(
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         if bento:
             bento_name, bento_version = bento.split(':')
@@ -249,6 +263,13 @@ def get_azure_functions_sub_command():
         'ignore errors when deleting cloud resources',
     )
     def delete(name, namespace, force):
+        _echo(
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         get_deployment_result = yatai_client.deployment.get(namespace, name)
         if get_deployment_result.status.status_code != yatai_proto.status_pb2.Status.OK:
@@ -280,6 +301,13 @@ def get_azure_functions_sub_command():
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='json'
     )
     def get(name, namespace, output):
+        _echo(
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         get_result = yatai_client.deployment.get(namespace, name)
         if get_result.status.status_code != yatai_proto.status_pb2.Status.OK:
@@ -330,6 +358,13 @@ def get_azure_functions_sub_command():
         '-o', '--output', type=click.Choice(['json', 'yaml', 'table']), default='table'
     )
     def list_deployment(namespace, limit, labels, order_by, asc, output):
+        _echo(
+            message='Azure Functions deployment functionalities are being migrated to '
+            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'itself, please use https://github.com/bentoml/azure-functions-deploy '
+            'going forward.',
+            color='yellow',
+        )
         yatai_client = get_default_yatai_client()
         list_result = yatai_client.deployment.list_azure_functions_deployments(
             limit=limit,

@@ -31,7 +31,7 @@ class PickleArtifact(BentoServiceArtifact):
     def _pkl_file_path(self, base_path):
         return os.path.join(base_path, self.name + PICKLE_FILE_EXTENSION)
 
-    def pack(self, obj, metadata=None):  # pylint:disable=arguments-differ
+    def pack(self, obj, metadata=None):  # pylint:disable=arguments-renamed
         self._obj = obj
         return self
 

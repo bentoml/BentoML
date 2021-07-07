@@ -24,8 +24,8 @@ Prerequisites
   * Install instruction: https://docs.docker.com/install
 
 
-AWS EC2 deployment and management with BentoML
--------------------------------------------------
+Deploy BentoService to AWS EC2
+------------------------------
 
 This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide <../quickstart>`:
 
@@ -35,57 +35,41 @@ This guide uses the IrisClassifier BentoService from the :doc:`Quick start guide
     pip install -r ./bentoml/guides/quick-start/requirements.txt
     python ./bentoml/guides/quick-start/main.py
 
-Use `bentoml list` to get the BentoService name:version tag.
+
+Download and Install BentoML EC2 deployment tool
+
+.. code-block:: bash
+
+    > git clone https://github.com/bentoml/aws-ec2-deploy
+    > cd aws-ec2-deploy
+    > pip install -r requirements.txt
+
+
+Edit the deployment options `ec2_config.json` file
+
+**Available configuration options for AWS EC2 deployment**
+
+* `region`: AWS region for EC2 deployment
+* `ec2_auto_scale`:
+    * `min_size`:  The minimum number of instances for the auto scale group. Default is 1
+    * `desired_capacity`: The desired capacity for the auto scale group. Auto Scaling group will start by launching as many instances as are specified for desired capacity. Default is 1
+    * `max_size`: The maximum number of instances for the auto scale group. Default is 1
+* `instance_type`: Instance type for the EC2 deployment. See https://aws.amazon.com/ec2/instance-types/ for more info.
+* `ami_id`: The Amazon machine image (AMI) used for launching EC2 instance. Default is `/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2`. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html for more information.
+* `elb`:
+    * `health_check_interval_seconds`: The approximate interval, in seconds, between health checks of an individual instance. Valid Range: Minimum value of 5. Maximum value of 300.
+    * `health_check_path.`: The URL path for health check. Default is `/healthz`
+    * `health_check_port`: Health check port. Default is `5000`
+    * `health_check_timeout_seconds`: The amount of time, in seconds, during which no response means a failed health check.
+    * `healthy_threshold_count`: The number of consecutive health checks successes required before moving the instance to the Healthy state. Valid Range: Minimum value of 2. Maximum value of 10.
 
 
 .. code-block:: bash
 
-    > bentoml list
-
-    BentoService                          CREATED_AT                  APIS                        ARTIFACTS
-    IrisClassifier:20200121141808_FE78B5  2020-01-21 22:18:25.079723  predict(DataframeInput)  model(SklearnModelArtifact)
+    > BENTO_BUNDLE_PATH=$(bentoml get IrisClassifier:latest --print-location -q)
+    > python deploy.py my-first-ec2-deployment $BENTO_BUNDLE_PATH ec2_config.json
 
 
-BentoML has great support for AWS EC2. You can deploy, update and delete
-deployment with single command, and customize deployment to fit your needs with parameters
-such as `instance type`,`scaling capacities`
-
-To deploy BentoService to AWS EC2, use `bentoml lambda deploy` command.
-Deployment name and bento service name:version tag is required.
-
-.. code-block:: bash
-
-    > bentoml ec2 deploy my-first-ec2-deployment -b IrisClassifier:20200121141808_FE78B5
-
-    Deploying EC2 deployment -[2020-01-21 14:37:16,838] INFO - Building project
-    [2020-01-21 14:38:52,826] INFO - Containerzing service
-    [2020-01-21 14:39:18,834] INFO - Deploying
-    [2020-01-21 14:40:09,265] INFO - ApplyDeployment (my-first-ec2-deployment, namespace dev) succeeded
-    Successfully created AWS EC2 deployment my-first-ec2-deployment
-    {
-    "namespace": "dev",
-    "name": "my-first-ec2-deployment",
-    "spec": {
-        "bentoName": "IrisClassifier",
-        "bentoVersion": "20200121141808_FE78B5",
-        "operator": "AWS_EC2",
-        "awsEc2OperatorConfig": {
-        "region": "ap-south-1",
-        "instanceType": "t2.micro",
-        "amiId": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
-        "autoscaleMinCapacity": 1,
-        "autoscaleDesiredCapacity": 1,
-        "autoscaleMaxCapacity": 1
-        }
-    },
-    "state": {},
-    "createdAt": "2020-10-24T06:52:18.003580Z",
-    "lastUpdatedAt": "2020-10-24T06:52:18.003626Z"
-    }
-
-
-
-BentoML helps you manage the entire process of deploying your BentoService bundle to EC2.
 Verify the deployed resources with AWS CLI tool:
 
 .. code-block:: bash
@@ -171,12 +155,12 @@ Tests the deployed service with sample dataset:
 
     [0]%
 
-Get the latest state and deployment information such as endpoint and s3 bucket name by
-using `bentoml lambda get` command
+
+Get the deployment information and status
 
 .. code-block:: bash
 
-    > bentoml ec2 get my-first-ec2-deployment
+    > python describe.py my-first-ec2-deployment
 
     {
         "namespace": "dev",
@@ -218,168 +202,12 @@ using `bentoml lambda get` command
         }
 
 
-Use `bentoml ec2 list` to have a quick glance of all of the AWS EC2 deployments
+
+Delete EC2 deployment
 
 .. code-block:: bash
 
-    > bentoml ec2 list
-
-    NAME                        NAMESPACE    LABELS    PLATFORM                               STATUS    AGE
-    my-first-ec2-deployment     dev          aws-ec2   IrisClassifier:20201015064204_282D00   running   10 minutes and 3.72 seconds
-
-
-Removing a EC2 deployment is also very easy.  Calling `bentoml ec2 delete` command will delete the all resources from aws.
-
-.. code-block:: bash
-
-    > bentoml ec2 delete my-first-ec2-deployment
-
-    Successfully deleted AWS EC2 deployment "my-first-ec2-deployment"
-
-
-=================================================================
-Deploy and manage AWS EC2 deployments with remote YataiService
-=================================================================
-
-BentoML recommends to use remote YataiService for managing and deploying BentoService
-when you are working in a team. To deploy AWS EC2 deployments with remote
-YataiService, you need to provide the AWS credentials.
-
-After signed in and configured your AWS CLI in your local machine, you can find the
-credentials in your aws directory, `~/.aws/credentials` as key value pairs, with key
-name as `aws_access_key_id` and `aws_secret_access_key`
-
-Starts a BentoML YataiService docker image and set the credentials found in
-`~/.aws/credentials` as environment variables to the running container.
-
-.. code-block:: bash
-
-    $ docker run -e AWS_ACCESS_KEY_ID=MY-ACCESS-KEY-ID \
-        -e AWS_SECRET_ACCESS_KEY=MY_SECRET-ACCESS-KEY \
-        -e AWS_DEFAULT_REGION=MY-DEFAULT-REGION \
-        -p 50051:50051 -p 3000:3000 bentoml/yatai-service:latest
-
-
-After the YataiService docker container is running, in another terminal window, set
-yatai service address with `bentoml config set`
-
-.. code-block:: bash
-
-    $ bentoml config set yatai_service.url=127.0.0.1:50051
-
-
-========================================================
-Deploy and manage AWS EC2 deployments with Kubernetes
-========================================================
-
-Create a Kubernetes secret with the the AWS credentials.
-
-Generate base64 strings from the AWS credentials from your AWS config file.
-
-.. code-block:: bash
-
-    $ echo $AWS_ACCESS_KEY_ID | base64
-    $ echo $AWS_SECRET_KEY | base64
-    $ echo $AWS_DEFAULT_REGION | base64
-
-
-Save the following Kubernetes secret definition into a file name `aws-secret.yaml` and
-replace `{access_key_id}`, `{secret_access_key}` and `{default_region}` with the values
-generated above,
-
-.. code-block:: yaml
-
-    apiVersion: v1
-    kind: Secret
-    metadata:
-        name: my-aws-secret
-    type: Opaque
-    data:
-        access_key_id: {access_key_id}
-        secret_access_key: {secret_access_key}
-        default_region: {default_region}
-
-
-.. code-block:: bash
-
-    $ kubectl apply -f aws-secret.yaml
-
-
-Confirm the secrete is created successfully by using `kubectl describe` command
-
-.. code-block:: bash
-
-    $kubectl describe secret aws-secret
-
-
-
-Copy and paste the code below into a file named `yatai-service.yaml`
-
-.. code-block:: yaml
-
-    apiVersion: v1
-    kind: Service
-    metadata:
-      labels:
-        app: yatai-service
-      name: yatai-service
-    spec:
-      ports:
-      - name: grpc
-        port: 50051
-        targetPort: 50051
-      - name: web
-        port: 3000
-        targetPort: 3000
-      selector:
-        app: yatai-service
-      type: LoadBalancer
-    ---
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      labels:
-        app: yatai-service
-      name: yatai-service
-    spec:
-      selector:
-        matchLabels:
-          app: yatai-service
-      template:
-        metadata:
-          labels:
-            app: yatai-service
-        spec:
-          containers:
-          - image: bentoml/yatai-service
-            imagePullPolicy: IfNotPresent
-            name: yatai-service
-            ports:
-            - containerPort: 50051
-            - containerPort: 3000
-            env:
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: aws-secret
-                  key: access_key_id
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: aws-secret
-                  key: secret_access_key
-            - name: AWS_DEFAULT_REGION
-              valueFrom:
-                secretKeyRef:
-                  name: aws-secret
-                  key: default_region
-
-
-Run `kubectl apply` command to deploy Yatai service to the Kubernetes cluster
-
-.. code-block:: bash
-
-    $ kubectl apply -f yatai-service.yaml
+    > python delete.py my-first-ec2-deployment
 
 
 =================================================================
@@ -396,6 +224,32 @@ Permissions required on AWS for deployment
     * CloudWatchFullAccess
     * ElasticLoadBalancingFullAccess 
     * AutoScalingFullAccess  
+
+
+Migrating to BentoML EC2 deployment tool
+----------------------------------------
+
+1. Delete the previous deployment use BentoML CLI tool
+
+.. code-block:: bash
+
+    > bentoml ec2 delete DEPLOYMENT_NAME
+
+
+2. Download and Install BentoML Lambda deployment tool
+
+.. code-block:: bash
+
+    > git clone https://github.com/bentoml/aws-ec2-deploy
+    > cd aws-ec2-deploy
+    > pip install -r requirements.txt
+
+3. Deploy to EC2 with deployment tool
+
+.. code-block:: bash
+
+    > BENTO_BUNDLE=$(bentoml get Bento_Name:Bento_version --print-location -q)
+    > python deploy.py $BENTO_BUNDLE my_deployment ec2_config.json
 
 
 .. spelling::

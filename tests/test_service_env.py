@@ -8,6 +8,7 @@ import bentoml
 from bentoml.adapters import DataframeInput
 from bentoml.exceptions import BentoMLException
 from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.docker import ImageProvider
 
 
 def test_pip_packages_env_with_legacy_api():
@@ -158,8 +159,23 @@ def test_docker_base_image_env():
         def predict(self, df):
             return df
 
+    @bentoml.env(
+        docker_base_image=ImageProvider(
+            'debian', '3.8', gpu=True, bentoml_version='0.13.0'
+        )
+    )
+    class ServiceWithImageProvider(bentoml.BentoService):
+        @bentoml.api(input=DataframeInput(), batch=True)
+        def predict(self, df):
+            return df
+
     service_with_setup = ServiceWithSetup()
+    service_with_provider = ServiceWithImageProvider()
     assert 'continuumio/miniconda3:4.8.0' in service_with_setup.env._docker_base_image
+    assert (
+        'bentoml/model-server:devel-python3.8-slim'
+        in service_with_provider.env._docker_base_image
+    )
 
 
 def test_conda_channels_n_dependencies(tmpdir):

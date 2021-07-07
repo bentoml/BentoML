@@ -25,7 +25,7 @@ import threading
 import uuid
 from datetime import datetime
 from dependency_injector.wiring import Provide, inject
-from typing import List
+from typing import List, Union
 
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 from bentoml.configuration.containers import BentoMLContainer
@@ -36,6 +36,7 @@ from bentoml.saved_bundle.config import (
     DEFAULT_MAX_LATENCY,
     SavedBundleConfig,
 )
+from bentoml.docker import ImageProvider
 from bentoml.saved_bundle.pip_pkg import seek_pip_packages
 from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
@@ -242,7 +243,7 @@ def env_decorator(
     conda_dependencies: List[str] = None,
     conda_env_yml_file: str = None,
     setup_sh: str = None,
-    docker_base_image: str = None,
+    docker_base_image: Union[str, ImageProvider] = None,
     zipimport_archives: List[str] = None,
 ):
     """Define environment and dependencies required for the BentoService being created

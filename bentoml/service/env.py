@@ -18,7 +18,7 @@ import stat
 from dependency_injector.wiring import Provide, inject
 from pathlib import Path
 from sys import version_info
-from typing import List
+from typing import List, Union
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
@@ -29,9 +29,9 @@ from bentoml.saved_bundle.pip_pkg import (
     get_pkg_version,
     verify_pkg,
 )
+from bentoml.docker import ImageProvider
 from bentoml.utils.ruamel_yaml import YAML
 from bentoml.utils import cached_property
-
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ class BentoServiceEnv(object):
         conda_dependencies: List[str] = None,
         conda_env_yml_file: str = None,
         setup_sh: str = None,
-        docker_base_image: str = None,
+        docker_base_image: Union[str, ImageProvider] = None,
         default_docker_base_image: str = Provide[
             BentoMLContainer.config.bento_bundle.default_docker_base_image
         ],

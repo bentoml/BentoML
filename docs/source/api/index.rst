@@ -10,3 +10,4 @@ API Reference
   artifacts
   types
   yatai_client
+  docker

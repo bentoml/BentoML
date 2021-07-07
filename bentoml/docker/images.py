@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 from bentoml import __version__ as BENTOML_VERSION
 
-SUPPORTED_PYTHON_VERSION: List = ['3.7', '3.8']
+SUPPORTED_PYTHON_VERSION: List = ['3.6', '3.7', '3.8']
 SUPPORTED_BASE_DISTROS: List = ['slim', 'centos7', 'centos8']
 SUPPORTED_GPU_DISTROS: List = SUPPORTED_BASE_DISTROS
 

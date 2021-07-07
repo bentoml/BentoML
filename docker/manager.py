@@ -9,19 +9,19 @@ from collections import defaultdict
 from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterator, List, MutableMapping, Optional, Union
+from typing import Dict, Iterator, List, MutableMapping, Optional, Tuple
 
-import absl.logging as logging
-import urllib3
-from absl import app
-from docker import DockerClient
-from docker.errors import APIError, BuildError, ImageNotFound
+from absl import app, logging
 from dotenv import load_dotenv
 from jinja2 import Environment
 from requests import Session
-from utils import *
+from utils import (FLAGS, ColoredFormatter, cached_property, flatten, get_data,
+                   get_nested, load_manifest_yaml, mapfunc, maxkeys, mkdir_p,
+                   pprint, set_data, sprint, walk)
 
-# vars
+from docker import DockerClient
+from docker.errors import APIError, BuildError, ImageNotFound
+
 README_TEMPLATE: Path = Path('./templates/docs/README.md.j2')
 
 DOCKERFILE_NAME: str = "Dockerfile"
@@ -70,7 +70,7 @@ class LogsMixin(object):
                 try:
                     # output logs to stdout
                     # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
-                    output: str = next(resp).decode('utf-8')
+                    output = next(resp).decode('utf-8')
                     json_output: Dict = json.loads(output.strip('\r\n'))
                     # output to stderr when running in docker
                     if 'stream' in json_output:
@@ -125,10 +125,6 @@ class LogsMixin(object):
                     break
         except APIError as e:
             log.error(f"Errors during `docker push`: {e.response}")
-        except urllib3.exceptions.ReadTimeoutError:
-            log.exception(
-                f'{image_id} failed to build due to `urllib3.ReadTimeoutError`.'
-            )
 
 
 class GenerateMixin(object):
@@ -225,7 +221,7 @@ class GenerateMixin(object):
         _tag = _core_fmt.format(**formatter)
 
         if release_type in ['runtime', 'cudnn']:
-            set_data(formatter, self._default_args['BENTOML_VERSION'], 'release_type')
+            formatter['release_type'] = self._default_args['BENTOML_VERSION']
             _tag = "-".join([_core_fmt.format(**formatter), release_type])
 
         # construct build_tag which is our base_image with $PYTHON_VERSION formats
@@ -234,7 +230,7 @@ class GenerateMixin(object):
 
         return _tag, _build_tag
 
-    def aggregate_dists_releases(self, package: str) -> Iterator:
+    def aggregate_dists_releases(self, package: str) -> List[Tuple[str, str]]:
         """Aggregate all combos from manifest.yml"""
         return [
             (rel, d) for rel, dists in self.packages[package].items() for d in dists
@@ -252,20 +248,17 @@ class GenerateMixin(object):
             build context that can be used with self.render
         """
 
-        # fmt: off
-        _cuda_comp: Dict[str, str] = get_data(self.cuda, self._cuda_version).copy()
-        _ctx: Dict[str, Union[str, Dict[str, ...], ...]] = self.releases[distro].copy()
+        _cuda_comp: Dict = get_data(self.cuda, self._cuda_version).copy()  # fmt: skip
+        # TODO: Better type annotation for nested dict.
+        _ctx: Dict = self.releases[distro].copy()
 
-        # fmt: on
         _ctx['package'] = pkg
 
         # setup envars
         _ctx['envars'] = self.envars()(_ctx['envars'])
 
         # set PYTHON_VERSION envars.
-        set_data(
-            _ctx, pyv, 'envars', 'PYTHON_VERSION',
-        )
+        set_data(_ctx, pyv, 'envars', 'PYTHON_VERSION')  # fmt: skip
 
         # setup cuda deps
         if _ctx["cuda_prefix_url"]:
@@ -286,7 +279,7 @@ class GenerateMixin(object):
             _ctx.pop('cuda_requires')
         else:
             log.debug(f"CUDA is disabled for {distro}. Skipping...")
-            for key in list(_ctx.keys()):
+            for key in _ctx.keys():
                 if DOCKERFILE_NVIDIA_REGEX.match(key):
                     _ctx.pop(key)
 
@@ -458,11 +451,7 @@ class BuildMixin(object):
                     log.info(
                         f"Image {image_tag} is already built and --overwrite is not specified. Skipping..."
                     )
-                    set_data(
-                        self._push_context,
-                        docker_client.images.get(image_tag),
-                        image_tag,
-                    )
+                    self._push_context[image_tag] = docker_client.images.get(image_tag)
                     continue
             except ImageNotFound:
                 pyenv = get_data(self._tags, image_tag, 'envars', 'PYTHON_VERSION')
@@ -512,9 +501,7 @@ class PushMixin(object):
         if not self._push_context:
             log.debug("--generate images is not specified. Generate push context...")
             for image_tag, _ in self.build_tags():
-                set_data(
-                    self._push_context, docker_client.images.get(image_tag), image_tag,
-                )
+                self._push_context[image_tag] = docker_client.images.get(image_tag)
 
         for registry, registry_spec in self.repository.items():
             # We will want to push README first.
@@ -541,12 +528,6 @@ class PushMixin(object):
                 registry = ''.join(
                     [v for k, v in registry_spec['registry'].items() if reg in k]
                 )
-                # separate release latest tags for yatai-service
-                if all(map(image_tag.__contains__, ['yatai-service', '3.8', 'slim'])):
-                    log.info(f"Uploading {image_tag} as latest to {registry}")
-                    tag = 'latest'
-                    self.background_upload(image, tag, registry)
-
                 log.info(f"Uploading {image_tag} to {registry}")
                 # NOTES: about concurrent pushing
                 #   This would change most of our build logics
@@ -555,6 +536,12 @@ class PushMixin(object):
                 #   If we want to implement aiohttp then we might want to
                 #   run docker from shell commands.
                 self.background_upload(image, tag, registry)
+
+                # separate release latest tags for yatai-service
+                if all(map(image_tag.__contains__, ['yatai-service', '3.8', 'slim'])):
+                    log.info(f"Uploading {image_tag} as latest to {registry}")
+                    tag = 'latest'
+                    self.background_upload(image, tag, registry)
 
     def push_readmes(
         self,
@@ -637,8 +624,8 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
         extensions=["jinja2.ext.do"], trim_blocks=True, lstrip_blocks=True
     )
 
-    def __init__(self, release_spec: Dict, cuda_version: str, *args, **kwargs):
-        super(ManagerClient, self).__init__(*args, **kwargs)
+    def __init__(self, release_spec: Dict, cuda_version: str):
+        super(ManagerClient, self).__init__()
 
         # We will also default bentoml_version to FLAGs.bentoml_version
         self._default_args: Dict = {"BENTOML_VERSION": FLAGS.bentoml_version}

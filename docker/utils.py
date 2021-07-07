@@ -7,7 +7,8 @@ import pathlib
 import string
 import sys
 from functools import reduce
-from typing import Callable, Dict, Generator, Iterable, List, MutableMapping, Union
+from typing import (Any, Callable, Dict, Generator, Iterable, List,
+                    MutableMapping, Union)
 
 from absl import flags
 from cerberus import Validator
@@ -436,7 +437,7 @@ def mkdir_p(path: str):
             raise
 
 
-def flatten(arr: Iterable) -> Iterable[List]:
+def flatten(arr: Iterable) -> Iterable[Union[Any, str]]:
     for it in arr:
         if isinstance(it, Iterable) and not isinstance(it, str):
             yield from flatten(it)
@@ -488,7 +489,7 @@ def pprint(*args):
     log.warning(f"{'-' * 59}\n\t{' ' * 8}| {''.join([*args])}\n\t{' ' * 8}{'-' * 59}")
 
 
-def get_data(obj: Union[Dict, MutableMapping], *path: str) -> Union[str, Dict, List]:
+def get_data(obj: Union[Dict, MutableMapping], *path: str) -> Any:
     """
     Get data from the object by dotted path.
     e.g: dependencies.cuda."11.3.1"
@@ -504,16 +505,13 @@ def get_data(obj: Union[Dict, MutableMapping], *path: str) -> Union[str, Dict, L
         return data
 
 
-def set_data(obj: Dict, value: Union[Dict, List, str], *path: str):
+def set_data(obj: Dict, value: Union[Dict, List, str], *path: str) -> None:
     """
     Update data from the object with given value.
     e.g: dependencies.cuda."11.3.1"
     """
     try:
         _ = glom(obj, Assign(Path(*path), value))
-    except ValueError:
-        # we can just use dict.update to handle this error.
-        obj.update(value)
     except PathAssignError:
         log.exception(
             f"Exception occurred in update_data, unable to update {Path(*path)} with {value}"
@@ -521,7 +519,7 @@ def set_data(obj: Dict, value: Union[Dict, List, str], *path: str):
         exit(1)
 
 
-def get_nested(obj: Dict, keys: List[str]):
+def get_nested(obj: Dict, keys: List[str]) -> Any:
     """Iterate through a nested dict from a list of keys"""
     return reduce(operator.getitem, keys, obj)
 

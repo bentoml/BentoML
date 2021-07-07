@@ -123,13 +123,13 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 » alias manager_images="docker run --rm -v $(pwd):/bentoml -v /var/run/docker.sock:/var/run/docker.sock bentoml-docker python3 manager.py "
 
 # Check manager flags
-» manager_dockerfiles --help
+» manager_dockerfiles --helpfull
 
 # To validate generation schema.
 » manager_dockerfiles --bentoml_version 0.13.0 --validate
 
 # Generate all dockerfiles from templates, and dump all build metadata to metadata.json
-» manager_dockerfiles --bentoml_version 0.13.0 --generate dockerfiles
+» manager_dockerfiles --bentoml_version 0.13.0 --generate dockerfiles --dump_metadata
 
 # Build all images
 » manager_images --bentoml_version 0.13.0 --generate images

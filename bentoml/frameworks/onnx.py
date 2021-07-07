@@ -109,7 +109,7 @@ class OnnxModelArtifact(BentoServiceArtifact):
 
     def pack(
         self, path_or_model_proto, metadata=None
-    ):  # pylint:disable=arguments-differ
+    ):  # pylint:disable=arguments-renamed
         if _is_onnx_model_file(path_or_model_proto):
             self._onnx_model_path = path_or_model_proto
         else:

@@ -15,7 +15,8 @@ SUPPORTED_RELEASES_COMBINATION: Dict[str, List[str]] = {
     'runtime': SUPPORTED_BASE_DISTROS + ['ami2', 'alpine3.14'],
 }
 
-SEMVER_REGEX: re.Pattern = re.compile(r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)?$')
+# re.Pattern is not introduced til
+SEMVER_REGEX = re.compile(r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)?$')
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +95,7 @@ class ImageProvider(object):
         if bentoml_version:
             if not SEMVER_REGEX.match(bentoml_version):
                 raise ValueError(
-                    f"{bentoml_version} is invalid and doesn't "
-                    "match semantic versioning."
+                    f"{bentoml_version} doesn't follow semantic versioning."
                 )
             major, minor, patch = bentoml_version.split('.')
             if not patch:
@@ -103,8 +103,8 @@ class ImageProvider(object):
                     f"{bentoml_version} pass semver check but have incorrect format."
                 )
             # we only support the new format with 0.14.0 forward
-            if int(major) == 0 and int(minor) < 14:
-                msg: str = BACKWARD_COMPATIBILITY_WARNING.format(
+            if int(major) == 0 and int(minor) <= 13:
+                msg = BACKWARD_COMPATIBILITY_WARNING.format(
                     classname=self.__class__.__name__, bentoml_version=bentoml_version,
                 )
                 logger.warning(msg)
@@ -138,7 +138,6 @@ class ImageProvider(object):
         if gpu and _distros not in SUPPORTED_GPU_DISTROS:
             raise RuntimeError(
                 f"{_distros} with GPU={gpu} is forbidden. "
-                "This is due to NVIDIA's limited distros supports. "
                 f"GPU-supported distros: {SUPPORTED_GPU_DISTROS} "
             )
 

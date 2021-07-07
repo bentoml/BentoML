@@ -130,9 +130,9 @@ class KerasModelArtifact(BentoServiceArtifact):
 
         self.graph = tf.compat.v1.get_default_graph()
         self.sess = tf.compat.v1.Session(graph=self.graph)
-        tf.compat.v1.keras.backend.set_session(self.sess)
+        # tf.compat.v1.keras.backend.set_session(self.sess)
 
-    def pack(self, data, metadata=None):  # pylint:disable=arguments-renamed
+    def _pack_without_bind_session(self, data, metadata=None):
         try:
             import tensorflow as tf
         except ImportError:
@@ -168,9 +168,13 @@ class KerasModelArtifact(BentoServiceArtifact):
             except ImportError:
                 raise InvalidArgument(error_msg)
 
-        self.bind_keras_backend_session()
         self._model = model
         self._custom_objects = custom_objects
+
+    def pack(self, data, metadata=None):  # pylint:disable=arguments-renamed
+
+        self.bind_keras_backend_session()
+        self._pack_without_bind_session(data, metadata)
         return self
 
     def load(self, path):
@@ -197,24 +201,23 @@ class KerasModelArtifact(BentoServiceArtifact):
                 open(self._custom_objects_path(path), 'rb')
             )
 
-        if self._store_as_json_and_weights:
-            # load keras model via json and weights if store_as_json_and_weights=True
-            self.create_session()
-            with self.graph.as_default():
-                with self.sess.as_default():
-                    with open(self._model_json_path(path), 'r') as json_file:
-                        model_json = json_file.read()
-                    model = keras_module.models.model_from_json(
-                        model_json, custom_objects=self._default_custom_objects
-                    )
-                    model.load_weights(self._model_weights_path(path))
-        else:
-            # otherwise, load keras model via standard load_model
-            model = keras_module.models.load_model(
-                self._model_file_path(path),
-                custom_objects=self._default_custom_objects,
-            )
-        return self.pack(model)
+        self.create_session()
+        with self.graph.as_default(), self.sess.as_default():
+            if self._store_as_json_and_weights:
+                # load keras model via json and weights if store_as_json_and_weights=True
+                with open(self._model_json_path(path), 'r') as json_file:
+                    model_json = json_file.read()
+                model = keras_module.models.model_from_json(
+                    model_json, custom_objects=self._default_custom_objects
+                )
+                model.load_weights(self._model_weights_path(path))
+            else:
+                # otherwise, load keras model via standard load_model
+                model = keras_module.models.load_model(
+                    self._model_file_path(path),
+                    custom_objects=self._default_custom_objects,
+                )
+        return self._pack_without_bind_session(model)
 
     def save(self, dst):
         # save the keras module name to be used when loading

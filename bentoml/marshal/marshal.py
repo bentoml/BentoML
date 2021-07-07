@@ -209,8 +209,10 @@ class MarshalApp:
         # clean up futures for gracefully shutting down
         for task in self.cleanup_tasks:
             await task()
-        if getattr(self, '_client', None) is not None and not self._client.closed:
-            await self._client.close()
+
+        if hasattr(self, '_client'):
+            if self._client is not None and not self._client.closed:
+                await self._client.close()
 
     def fetch_sema(self):
         if self._outbound_sema is None:
@@ -410,7 +412,7 @@ class MarshalApp:
                 for i in merged
             )
 
-    def make_aiohttp_app(self) -> "Application":
+    def get_app(self) -> "Application":
         from aiohttp.web import Application
         from aiohttp import hdrs
 
@@ -459,5 +461,5 @@ class MarshalApp:
         # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        app = self.make_aiohttp_app()
+        app = self.get_app()
         run_app(app, port=port)

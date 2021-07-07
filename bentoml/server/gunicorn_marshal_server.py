@@ -32,7 +32,6 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
     def __init__(
         self,
         *,
-        app: "MarshalApp" = Provide[BentoMLContainer.proxy_app],
         workers: int = Provide[BentoMLContainer.config.bento_server.microbatch.workers],
         timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
         max_request_size: int = Provide[
@@ -42,7 +41,6 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
         port: int = Provide[BentoMLContainer.service_port],
         loglevel: str = Provide[BentoMLContainer.config.bento_server.logging.level],
     ):
-        self.app = app
         self.port = port
         self.options = {
             "bind": "%s:%s" % (host, port),
@@ -64,8 +62,13 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
             if k.lower() in self.cfg.settings and v is not None:
                 self.cfg.set(k.lower(), v)
 
+    @property
+    @inject
+    def app(self, app: "MarshalApp" = Provide[BentoMLContainer.proxy_app]):
+        return app
+
     def load(self):
-        return self.app.make_aiohttp_app()
+        return self.app.get_app()
 
     def run(self):
         marshal_logger.info("Running micro batch service on :%d", self.port)

@@ -53,7 +53,7 @@ install_requires = [
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "chardet",
-    "simple-di",
+    "simple-di==0.1.0",
 ]
 
 yatai_service_requires = [

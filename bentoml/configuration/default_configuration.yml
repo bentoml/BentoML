@@ -7,7 +7,7 @@ bento_server:
   ngrok:
     enabled: False
   workers: 1
-  timeout: 60
+  timeout: 120
   max_request_size: 20971520
   microbatch:
     workers: 1

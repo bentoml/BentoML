@@ -5,13 +5,6 @@ from timeit import default_timer
 import grpc
 
 from bentoml.utils.usage_stats import track
-from bentoml.yatai.metrics import (
-    GRPC_SERVER_HANDLED_HISTOGRAM,
-    GRPC_SERVER_HANDLED_TOTAL,
-    GRPC_SERVER_STARTED_COUNTER,
-    GRPC_SERVER_STREAM_MSG_RECEIVED,
-    GRPC_SERVER_STREAM_MSG_SENT,
-)
 from bentoml.yatai.utils import (
     get_method_type,
     parse_method_name,
@@ -93,6 +86,13 @@ class PromServerInterceptor(grpc.ServerInterceptor):  # pylint: disable=W0232
 
         def metrics_wrapper(behaviour, request_streaming, response_streaming):
             def new_behaviour(request_or_iterator, servicer_context):
+                from bentoml.yatai.metrics import (
+                    GRPC_SERVER_HANDLED_TOTAL,
+                    GRPC_SERVER_STARTED_COUNTER,
+                    GRPC_SERVER_STREAM_MSG_RECEIVED,
+                    GRPC_SERVER_STREAM_MSG_SENT,
+                )
+
                 grpc_type = get_method_type(request_streaming, response_streaming)
 
                 try:
@@ -208,6 +208,8 @@ class ServiceLatencyInterceptor(grpc.ServerInterceptor):  # pylint: disable=W023
                 try:
                     return behaviour(request_or_iterator, servicer_context)
                 finally:
+                    from bentoml.yatai.metrics import GRPC_SERVER_HANDLED_HISTOGRAM
+
                     duration = max(default_timer() - start, 0)
                     GRPC_SERVER_HANDLED_HISTOGRAM.labels(
                         grpc_type='UNARY',

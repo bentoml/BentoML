@@ -13,18 +13,14 @@
 # limitations under the License.
 
 import logging
-import multiprocessing
-from typing import NoReturn, Optional, TYPE_CHECKING
+from typing import NoReturn, Optional
 
-from simple_di import Provide, inject, skip
+from simple_di import skip, sync_container
 
 from bentoml.configuration.containers import BentoMLContainer
 
 
 logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    Lock = multiprocessing.synchronize.Lock
 
 
 def start_dev_server(
@@ -58,11 +54,15 @@ def start_dev_server(
         thread.setDaemon(True)
         thread.start()
 
-    model_server_proc = multiprocessing.Process(target=_start_dev_server, daemon=True,)
+    import multiprocessing
+
+    model_server_proc = multiprocessing.Process(
+        target=_start_dev_server, args=(BentoMLContainer,), daemon=True,
+    )
     model_server_proc.start()
 
     try:
-        _start_dev_proxy()
+        _start_dev_proxy(BentoMLContainer)
     finally:
         model_server_proc.terminate()
 
@@ -77,7 +77,6 @@ def start_prod_server(
     mb_max_latency: Optional[int] = None,
     microbatch_workers: Optional[int] = None,
 ):
-
     import psutil
 
     assert (
@@ -99,34 +98,38 @@ def start_prod_server(
     BentoMLContainer.prometheus_lock.get()  # generate lock before fork
     BentoMLContainer.forward_port.get()  # generate port before fork
 
-    model_server_job = multiprocessing.Process(target=_start_prod_server, daemon=True)
+    import multiprocessing
+
+    model_server_job = multiprocessing.Process(
+        target=_start_prod_server, args=(BentoMLContainer,), daemon=True
+    )
     model_server_job.start()
 
     try:
-        _start_prod_proxy()
+        _start_prod_proxy(BentoMLContainer)
     finally:
         model_server_job.terminate()
 
 
-@inject
-def _start_dev_server(app=Provide[BentoMLContainer.model_app]) -> NoReturn:
-    app.run()
+def _start_dev_server(container) -> NoReturn:
+    sync_container(container, BentoMLContainer)
+    BentoMLContainer.model_app.get().run()
     assert False, "not reachable"
 
 
-@inject
-def _start_dev_proxy(app=Provide[BentoMLContainer.proxy_app]) -> NoReturn:
-    app.run()
+def _start_dev_proxy(container) -> NoReturn:
+    sync_container(container, BentoMLContainer)
+    BentoMLContainer.proxy_app.get().run()
     assert False, "not reachable"
 
 
-@inject
-def _start_prod_server(server=Provide[BentoMLContainer.model_server]) -> NoReturn:
-    server.run()
+def _start_prod_server(container) -> NoReturn:
+    sync_container(container, BentoMLContainer)
+    BentoMLContainer.model_server.get().run()
     assert False, "not reachable"
 
 
-@inject
-def _start_prod_proxy(server=Provide[BentoMLContainer.proxy_server]) -> NoReturn:
-    server.run()
+def _start_prod_proxy(container) -> NoReturn:
+    sync_container(container, BentoMLContainer)
+    BentoMLContainer.proxy_server.get().run()
     assert False, "not reachable"

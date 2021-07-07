@@ -6,7 +6,10 @@ from multiprocessing.util import _exit_function
 def worker_exit(server, worker):  # pylint: disable=unused-argument
     from bentoml.metrics.prometheus import PrometheusClient
 
-    PrometheusClient.mark_process_dead(worker.pid)
+    try:
+        PrometheusClient.mark_process_dead(worker.pid)
+    except TypeError:
+        pass
 
 
 def post_fork(server, worker):

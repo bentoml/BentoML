@@ -20,6 +20,7 @@ del get_versions
 from bentoml.configuration import inject_dependencies
 from bentoml.utils.log import configure_logging
 
+
 # Inject dependencies and configurations
 inject_dependencies()
 

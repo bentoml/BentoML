@@ -16,7 +16,7 @@ from functools import partial
 import logging
 import os
 import sys
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from google.protobuf.json_format import MessageToJson
@@ -28,9 +28,12 @@ from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
 from bentoml.server.instruments import InstrumentMiddleware
-from bentoml.service import BentoService, InferenceAPI
 from bentoml.types import HTTPRequest
 from bentoml.utils.open_api import get_open_api_spec_json
+
+
+if TYPE_CHECKING:
+    from bentoml.service import InferenceAPI
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
@@ -148,7 +151,7 @@ class ModelApp:
     @inject
     def __init__(
         self,
-        bundle_path: Optional[str] = Provide[BentoMLContainer.bundle_path],
+        bundle_path: str = Provide[BentoMLContainer.bundle_path],
         app_name: str = None,
         enable_swagger: bool = Provide[
             BentoMLContainer.config.bento_server.swagger.enabled
@@ -159,17 +162,12 @@ class ModelApp:
         enable_feedback: bool = Provide[
             BentoMLContainer.config.bento_server.feedback.enabled
         ],
-        bento_service: Optional[BentoService] = None,
     ):
         from bentoml.saved_bundle.loader import load_from_dir
 
-        if bento_service is not None:
-            self.bento_service = bento_service
-        elif bundle_path is not None:
-            self.bento_service = load_from_dir(bundle_path)
-        else:
-            raise TypeError("neither bento_service nor bundle path provided")
+        assert bundle_path, repr(bundle_path)
 
+        self.bento_service = load_from_dir(bundle_path)
         app_name = self.bento_service.name if app_name is None else app_name
 
         self.app = Flask(app_name, static_folder=None)
@@ -381,10 +379,10 @@ class ModelApp:
                 methods=api.input_adapter.HTTP_METHODS,
             )
 
-    def make_flask_app(self):
+    def get_app(self):
         return self.app
 
-    def bento_service_api_func_wrapper(self, api: InferenceAPI):
+    def bento_service_api_func_wrapper(self, api: "InferenceAPI"):
         """
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics

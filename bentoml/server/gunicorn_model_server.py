@@ -48,7 +48,6 @@ class GunicornModelServer(Application):  # pylint: disable=abstract-method
     def __init__(
         self,
         *,
-        app: "ModelApp" = Provide[BentoMLContainer.model_app],
         host: str = Provide[BentoMLContainer.forward_host],
         port: int = Provide[BentoMLContainer.forward_port],
         timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
@@ -58,17 +57,15 @@ class GunicornModelServer(Application):  # pylint: disable=abstract-method
         ],
         loglevel: str = Provide[BentoMLContainer.config.bento_server.logging.level],
     ):
-        bind = f"{host}:{port}"
 
         self.options = {
-            "bind": bind,
+            "bind": f"{host}:{port}",
             "timeout": timeout,  # TODO
             "limit_request_line": max_request_size,
             "loglevel": loglevel.upper(),
         }
         if workers:
             self.options['workers'] = workers
-        self.app = app
 
         super().__init__()
 
@@ -81,8 +78,13 @@ class GunicornModelServer(Application):  # pylint: disable=abstract-method
             if k.lower() in self.cfg.settings and v is not None:
                 self.cfg.set(k.lower(), v)
 
+    @property
+    @inject
+    def app(self, app: "ModelApp" = Provide[BentoMLContainer.model_app]):
+        return app
+
     def load(self):
-        return self.app.make_flask_app()
+        return self.app.get_app()
 
     def run(self):
         logger.info("Starting BentoML API server in production mode..")

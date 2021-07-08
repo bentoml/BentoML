@@ -8,7 +8,7 @@ from bentoml.adapters import DataframeInput
 from bentoml.frameworks.paddle import PaddlePaddleModelArtifact
 
 
-@bentoml.env(infer_pip_packages=True)
+@bentoml.env(pip_packages=['paddlepaddle'])
 @bentoml.artifacts([PaddlePaddleModelArtifact('model')])
 class PaddleService(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)

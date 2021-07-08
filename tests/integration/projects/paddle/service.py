@@ -33,10 +33,8 @@ class PaddleService(bentoml.BentoService):
 if __name__ == "__main__":
     artifacts_path = sys.argv[1]
     bento_dist_path = sys.argv[2]
+
     service = PaddleService()
-
-    from model.model import Model  # noqa # pylint: disable=unused-import
-
     service.artifacts.load_all(artifacts_path)
 
     pathlib.Path(bento_dist_path).mkdir(parents=True, exist_ok=True)

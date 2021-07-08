@@ -204,7 +204,8 @@ class KerasModelArtifact(BentoServiceArtifact):
         self.create_session()
         with self.graph.as_default(), self.sess.as_default():
             if self._store_as_json_and_weights:
-                # load keras model via json and weights if store_as_json_and_weights=True
+                # load keras model via json and weights if
+                # store_as_json_and_weights=True
                 with open(self._model_json_path(path), 'r') as json_file:
                     model_json = json_file.read()
                 model = keras_module.models.model_from_json(

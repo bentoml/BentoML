@@ -6,7 +6,7 @@ from bentoml.frameworks.keras import KerasModelArtifact
 
 import tensorflow as tf
 
-tf.compat.v1.disable_eager_execution()
+# tf.compat.v1.disable_eager_execution()
 
 
 @bentoml.env(infer_pip_packages=True)
@@ -20,12 +20,12 @@ tf.compat.v1.disable_eager_execution()
 class KerasClassifier(bentoml.BentoService):
     @bentoml.api(input=JsonInput(), batch=True)
     def predict(self, jsons):
-        raw_artifact = self._artifacts['model']
+        raw_artifact = self.artifacts.get('model')
         with raw_artifact.graph.as_default(), raw_artifact.sess.as_default():
             return self.artifacts.model.predict(np.array(jsons))
 
     @bentoml.api(input=JsonInput(), batch=True)
     def predict2(self, jsons):
-        raw_artifact = self._artifacts['model2']
+        raw_artifact = self.artifacts.get('model2')
         with raw_artifact.graph.as_default(), raw_artifact.sess.as_default():
             return self.artifacts.model2.predict(np.array(jsons))

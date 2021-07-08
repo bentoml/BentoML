@@ -1,5 +1,6 @@
 import logging
 import re
+import sys
 from typing import Dict, List, Optional
 
 from bentoml import __version__ as BENTOML_VERSION
@@ -87,8 +88,8 @@ class ImageProvider(object):
     def __init__(
         self,
         distros: str,
-        python_version: str,
         gpu: bool = False,
+        python_version: Optional[str] = None,
         bentoml_version: Optional[str] = None,
     ):
         if bentoml_version:
@@ -118,12 +119,23 @@ class ImageProvider(object):
         self._suffix: str = '-' + get_suffix(gpu) if self._release_type != 'devel' else ''  # noqa: E501
 
         # fmt: on
-        if python_version not in SUPPORTED_PYTHON_VERSION:
+        if python_version:
+            _py_ver: str = python_version
+        else:
+            logger.warning(
+                "No python_version is specified, using default "
+                "python version. If your python version is not "
+                "supported please make sure to define one. Example: "
+                "bentoml.docker.ImageProvider('centos7', python_version='3.6')"
+            )
+            _py_ver = '.'.join(map(str, sys.version_info[:2]))
+        if _py_ver not in SUPPORTED_PYTHON_VERSION:
             raise RuntimeError(
                 f"{python_version} is not supported. "
                 f"Supported Python version: {SUPPORTED_PYTHON_VERSION}"
             )
-        self._python_version: str = python_version
+
+        self._python_version: str = _py_ver
 
         if 'ubuntu' in distros or 'debian' in distros:
             logger.debug("Using slim tags for debian based distros")

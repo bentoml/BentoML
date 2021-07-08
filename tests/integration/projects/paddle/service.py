@@ -1,4 +1,4 @@
-import pathlib
+import os
 import sys
 
 import numpy as np
@@ -8,7 +8,7 @@ from bentoml.adapters import DataframeInput
 from bentoml.frameworks.paddle import PaddlePaddleModelArtifact
 
 
-@bentoml.env(pip_packages=['paddlepaddle'])
+@bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts([PaddlePaddleModelArtifact('model')])
 class PaddleService(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
@@ -33,11 +33,12 @@ class PaddleService(bentoml.BentoService):
 if __name__ == "__main__":
     artifacts_path = sys.argv[1]
     bento_dist_path = sys.argv[2]
+    if not os.path.exists(bento_dist_path):
+        os.makedirs(bento_dist_path, exist_ok=True)
     service = PaddleService()
 
     from model.model import Model  # noqa # pylint: disable=unused-import
 
     service.artifacts.load_all(artifacts_path)
 
-    pathlib.Path(bento_dist_path).mkdir(parents=True, exist_ok=True)
     service.save_to_dir(bento_dist_path)

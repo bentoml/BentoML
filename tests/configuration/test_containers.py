@@ -37,14 +37,6 @@ def test_override_none_value():
     assert config_dict["bento_server"]["port"] == 5000
 
 
-# TODO: ?
-# def test_override_none_key():
-# config = BentoMLConfiguration()
-# with pytest.raises(BentoMLConfigException) as e:
-# config.override(None, 6000)
-# assert e is not None
-
-
 def test_override_empty_key():
     config = BentoMLConfiguration()
     with pytest.raises(BentoMLConfigException) as e:

@@ -335,6 +335,13 @@ class BentoMLContainerClass:
             namespace=namespace,
         )
 
+    @providers.SingletonFactory
+    @staticmethod
+    def yatai_metrics_client():
+        from bentoml.metrics.prometheus import PrometheusClient
+
+        return PrometheusClient(multiproc=False, namespace="YATAI")
+
     bento_bundle_deployment_version = providers.Factory(
         get_bentoml_deploy_version,
         providers.Factory(

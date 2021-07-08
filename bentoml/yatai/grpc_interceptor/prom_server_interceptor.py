@@ -62,7 +62,7 @@ class PromServerInterceptor(grpc.ServerInterceptor):  # pylint: disable=W0232
             futures.ThreadPoolExecutor(max_workers=1),
             interceptors=(PromServerInterceptor(), )
             )
-        BentoMLContainer.metrics_client.get().start_http_server()
+        BentoMLContainer.yatai_metrics_client.get().start_http_server()
     ```
     """
 

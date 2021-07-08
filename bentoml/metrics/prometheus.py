@@ -15,9 +15,9 @@ class PrometheusClient:
         self,
         *,
         namespace: str = "",
-        multiproc=True,
+        multiproc: bool = True,
         multiproc_lock: Optional["Lock"] = None,
-        multiproc_dir: str = None,
+        multiproc_dir: Optional[str] = None,
     ):
         """
         Set up multiproc_dir for prometheus to work in multiprocess mode,

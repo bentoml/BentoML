@@ -100,9 +100,11 @@ class MockServerClient:
 
         # TODO(bojiang): Unconnect from the secific metrics implementation Prometheus
         if self.prometheus_enabled:
-            from bentoml.metrics.prometheus import PrometheusClient
+            from bentoml.configuration.containers import BentoMLContainer
 
-            PrometheusClient(multiproc=False).start_http_server(self.prom_port)
+            BentoMLContainer.yatai_metrics_client.get().start_http_server(
+                self.prom_port
+            )
         channel = grpc.insecure_channel(f'localhost:{self.service_port}')
 
         client_stub = MockServiceStub(channel)

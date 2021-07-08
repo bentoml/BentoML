@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import logging
 from functools import lru_cache
+import logging
+import os
 
 from bentoml import __version__, _version as version_mod
 
@@ -133,26 +133,8 @@ def inject_dependencies():
     else:
         configuration = BentoMLConfiguration()
 
-    container = BentoMLContainer()
-    container.config.from_dict(configuration.as_dict())
-
-    from bentoml import (
-        marshal,
-        server,
-        tracing,
-        cli,
-        adapters,
-        saved_bundle,
-        service,
-    )
-    from bentoml.yatai import yatai_service
-    from bentoml.yatai import yatai_service_impl
-    from bentoml.yatai.repository import s3_repository, gcs_repository
-
-    container.wire(
-        modules=[yatai_service, s3_repository, gcs_repository, yatai_service_impl],
-        packages=[marshal, server, tracing, cli, adapters, saved_bundle, service],
-    )
+    container = BentoMLContainer
+    container.config.set(configuration.as_dict())
 
     end = timer()
 

@@ -19,8 +19,8 @@ import time
 import traceback
 from typing import Optional, TYPE_CHECKING
 
-from dependency_injector.wiring import Provide, inject
 import psutil
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
@@ -171,9 +171,7 @@ class MarshalService:
             BentoMLContainer.access_control_options
         ],
         timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
-        **kwargs,
     ):
-        super().__init__(**kwargs)
 
         self._conn: Optional["BaseConnector"] = None
         self._client: Optional["ClientSession"] = None

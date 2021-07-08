@@ -14,9 +14,10 @@
 
 import logging.config
 import os
-import sys
-from dependency_injector.wiring import Provide, inject
 from pathlib import Path
+import sys
+
+from simple_di import Provide, inject
 
 from bentoml.configuration import get_debug_mode
 from bentoml.configuration.containers import BentoMLContainer

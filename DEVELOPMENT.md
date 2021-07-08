@@ -241,6 +241,9 @@ cd {PROJECT_ROOT}/bentoml/yatai/web/
 npm run build
 ```
 
+## How to test GitHub Actions locally
+
+If you are developing new artifacts or modify GitHub Actions CI (adding integration test, unit tests, etc), use [`nektos/act`](https://github.com/nektos/act) to run Actions locally.
 
 ## Creating Pull Request on Github
 

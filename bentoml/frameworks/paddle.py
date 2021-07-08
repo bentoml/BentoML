@@ -5,6 +5,12 @@ from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 import tempfile
 
+try:
+    import paddle
+    import paddle.inference as paddle_infer
+except ImportError:
+    paddle = None
+
 
 class PaddlePaddleModelArtifact(BentoServiceArtifact):
     """
@@ -20,6 +26,7 @@ class PaddlePaddleModelArtifact(BentoServiceArtifact):
     Example usage:
 
     >>> import pandas as pd
+    >>> import numpy as np
     >>>
     >>> from bentoml import env, artifacts, api, BentoService
     >>> from bentoml.adapters import DataframeInput
@@ -56,23 +63,16 @@ class PaddlePaddleModelArtifact(BentoServiceArtifact):
         self._predictor = None
         self._model_path = None
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
-        try:
-            import paddle
-        except ImportError:
+        if paddle is None:
             raise MissingDependencyException(
                 "paddlepaddle package is required to use PaddlePaddleModelArtifact"
             )
+
+    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
         self._model = model
         return self
 
     def load(self, path):
-        try:
-            import paddle
-        except ImportError:
-            raise MissingDependencyException(
-                "paddlepaddle package is required to use PaddlePaddleModelArtifact"
-            )
         model = paddle.jit.load(self._file_path(path))
         model = paddle.jit.to_static(model, input_spec=model._input_spec())
         return self.pack(model)
@@ -85,25 +85,11 @@ class PaddlePaddleModelArtifact(BentoServiceArtifact):
 
     def _save(self, dst):
         # Override the model path if temp dir was set
-        try:
-            import paddle
-        except ImportError:
-            raise MissingDependencyException(
-                "paddlepaddle package is required to use PaddlePaddleModelArtifact"
-            )
         self._model_path = self._file_path(dst)
         paddle.jit.save(self._model, self._model_path)
 
     def get(self):
         # Create predictor, if one doesn't exist, when inference is run
-        try:
-            import paddle
-            from paddle import inference
-        except ImportError:
-            raise MissingDependencyException(
-                "paddlepaddle package is required to use PaddlePaddleModelArtifact"
-            )
-
         if not self._predictor:
             # If model isn't saved, save model to a temp dir
             # because predictor init requires the path to a saved model
@@ -111,11 +97,11 @@ class PaddlePaddleModelArtifact(BentoServiceArtifact):
                 self._model_path = tempfile.TemporaryDirectory().name
                 self._save(self._model_path)
 
-            config = inference.Config(
+            config = paddle_infer.Config(
                 self._model_path + ".pdmodel", self._model_path + ".pdiparams"
             )
             config.enable_memory_optim()
-            predictor = inference.create_predictor(config)
+            predictor = paddle_infer.create_predictor(config)
             self._predictor = predictor
         return self._predictor
 

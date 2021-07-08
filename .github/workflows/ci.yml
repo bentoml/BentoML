@@ -157,7 +157,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Install paddle
-        run: python -m pip install paddlepaddle
+        run: python -m pip install paddlepaddle gast==0.3.3
       - name: Run tests
         run: ./ci/test_project.sh.cmd tests/integration/projects/paddle
       - name: Upload test coverage to Codecov

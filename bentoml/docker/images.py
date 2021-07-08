@@ -84,6 +84,7 @@ class ImageProvider(object):
     """
 
     _release_fmt: str = "bentoml/model-server:{release_type}-python{python_version}-{distros}{suffix}"  # noqa: E501
+    _singleton = None
 
     def __init__(
         self,
@@ -112,8 +113,8 @@ class ImageProvider(object):
             else:
                 self._release_type = bentoml_version
         else:
-            _ver: str = BENTOML_VERSION.split("+")[0]
-            self._release_type = _ver if int(_ver.split('.')[1]) > 13 else 'devel'
+            ver: str = BENTOML_VERSION.split("+")[0]
+            self._release_type = ver if int(ver.split('.')[1]) > 13 else 'devel'
 
         # fmt: off
         self._suffix: str = '-' + get_suffix(gpu) if self._release_type != 'devel' else ''  # noqa: E501
@@ -122,13 +123,13 @@ class ImageProvider(object):
         if python_version:
             _py_ver: str = python_version
         else:
+            _py_ver = '.'.join(map(str, sys.version_info[:2]))
             logger.warning(
-                "No python_version is specified, using default "
-                "python version. If your python version is not "
-                "supported please make sure to define one. Example: "
+                f"No python_version is specified, using {_py_ver}. "
+                f"List of supported python version: {SUPPORTED_PYTHON_VERSION}. "
+                "If your python_version isn't supported make sure to specify, e.g: "
                 "bentoml.docker.ImageProvider('centos7', python_version='3.6')"
             )
-            _py_ver = '.'.join(map(str, sys.version_info[:2]))
         if _py_ver not in SUPPORTED_PYTHON_VERSION:
             raise RuntimeError(
                 f"{python_version} is not supported. "
@@ -165,7 +166,6 @@ class ImageProvider(object):
             )
 
         self._distros: str = _distros
-        self._gpu: bool = gpu
 
     def __repr__(self):
         return self._release_fmt.format(
@@ -176,6 +176,7 @@ class ImageProvider(object):
         )
 
     def __new__(cls, *args, **kwargs):
-        instance = super(ImageProvider, cls).__new__(cls)
-        instance.__init__(*args, **kwargs)
-        return repr(instance)
+        if not cls._singleton:
+            cls._singleton = super(ImageProvider, cls).__new__(cls)
+        cls._singleton.__init__(*args, **kwargs)
+        return repr(cls._singleton)

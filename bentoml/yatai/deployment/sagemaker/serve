@@ -10,7 +10,7 @@ import subprocess
 import os
 import signal
 import sys
-from dependency_injector.wiring import Provide, inject
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 
@@ -66,14 +66,12 @@ def _serve(
 
 
 if __name__ == '__main__':
-    container = BentoMLContainer()
+    container = BentoMLContainer
     config = BentoMLConfiguration()
     if "BENTOML_GUNICORN_TIMEOUT" in os.environ:
         config.override(["bento_server", "timeout"], int(os.environ.get("BENTOML_GUNICORN_TIMEOUT")))
     if "BENTOML_GUNICORN_NUM_OF_WORKERS" in os.environ:
         config.override(["bento_server", "workers"], int(os.environ.get("BENTOML_GUNICORN_NUM_OF_WORKERS")))
-    container.config.from_dict(config.as_dict())
-
-    container.wire(modules=[sys.modules[__name__]])
+    container.config.set(config.as_dict())
 
     _serve()

@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 import logging
 import os
-from datetime import datetime
-from dependency_injector.wiring import Provide, inject
 from pathlib import Path
 from sys import version_info
 
 from google.protobuf.struct_pb2 import Struct
+from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml.configuration.containers import BentoMLContainer

@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from collections import OrderedDict
-from dependency_injector.wiring import Provide, inject
+
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 

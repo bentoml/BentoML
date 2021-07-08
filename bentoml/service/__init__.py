@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 import inspect
 import logging
 import multiprocessing
@@ -22,10 +23,10 @@ import subprocess
 import sys
 import tempfile
 import threading
-import uuid
-from datetime import datetime
-from dependency_injector.wiring import Provide, inject
 from typing import List, Union
+import uuid
+
+from simple_di import Provide, inject
 
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 from bentoml.configuration.containers import BentoMLContainer

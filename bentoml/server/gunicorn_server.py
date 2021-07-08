@@ -16,8 +16,8 @@ import logging
 import multiprocessing
 from typing import Optional
 
-from dependency_injector.wiring import Provide, inject
 from flask import Response
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.saved_bundle import load_from_dir

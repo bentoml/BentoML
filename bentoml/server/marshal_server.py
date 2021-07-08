@@ -16,7 +16,7 @@ import logging
 import multiprocessing
 from typing import Optional
 
-from dependency_injector.wiring import Provide, inject
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.marshal.marshal import MarshalService

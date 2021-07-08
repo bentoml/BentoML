@@ -216,32 +216,22 @@ class BentoMLContainerClass:
         jaeger_server_address: str = Provide[config.tracing.jaeger.address],
         jaeger_server_port: int = Provide[config.tracing.jaeger.port],
     ):
-        logger = logging.getLogger("tracer")
         if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
             from bentoml.tracing.zipkin import get_zipkin_tracer
 
-            logger.debug(
-                "Initializing global zipkin tracer for collector endpoint: "
-                f"{zipkin_server_url}"
-            )
             return get_zipkin_tracer(zipkin_server_url)
         elif (
             tracer_type
-            and tracer_type == 'jaeger'
+            and tracer_type.lower() == 'jaeger'
             and jaeger_server_address
             and jaeger_server_port
         ):
             from bentoml.tracing.jaeger import get_jaeger_tracer
 
-            logger.debug(
-                "Initializing global jaeger tracer for opentracing server at "
-                f"{jaeger_server_address}:{jaeger_server_port}"
-            )
             return get_jaeger_tracer(jaeger_server_address, jaeger_server_port)
         else:
             from bentoml.tracing.noop import NoopTracer
 
-            logger.debug("Tracing is disabled. Initializing no-op tracer")
             return NoopTracer()
 
     @providers.SingletonFactory

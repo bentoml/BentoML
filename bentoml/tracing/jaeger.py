@@ -11,11 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from contextlib import contextmanager
+import logging
+
 from contextvars import ContextVar
 
 span_context_var = ContextVar('span context', default=None)
+logger = logging.getLogger(__name__)
 
 
 def initialize_tracer(
@@ -115,4 +117,8 @@ class JaegerTracer:
 
 
 def get_jaeger_tracer(address, port):
+    logger.debug(
+        "Initializing global jaeger tracer for opentracing server at "
+        f"{address}:{port}"
+    )
     return JaegerTracer(address, port)

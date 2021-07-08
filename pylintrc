@@ -3,7 +3,7 @@
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code
-extension-pkg-whitelist=dependency_injector.containers,dependency_injector.providers
+#extension-pkg-whitelist=dependency_injector.containers,dependency_injector.providers
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.

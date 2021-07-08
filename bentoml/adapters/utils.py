@@ -1,7 +1,8 @@
 import gzip
 import json
 import os
-from dependency_injector.wiring import Provide, inject
+
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.types import HTTPRequest, InferenceTask

@@ -161,7 +161,7 @@ def test_docker_base_image_env():
 
     @bentoml.env(
         docker_base_image=ImageProvider(
-            'debian', '3.8', gpu=True, bentoml_version='0.13.0'
+            'debian', gpu=True, python_version='3.8', bentoml_version='0.13.0'
         )
     )
     class ServiceWithImageProvider(bentoml.BentoService):

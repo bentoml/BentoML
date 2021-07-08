@@ -2,8 +2,9 @@ import logging
 import re
 import sys
 from typing import Dict, List, Optional
+from simple_di import Provide, inject
 
-from bentoml import __version__ as BENTOML_VERSION
+from bentoml.configuration.containers import BentoMLContainer
 
 SUPPORTED_PYTHON_VERSION: List = ['3.6', '3.7', '3.8']
 SUPPORTED_BASE_DISTROS: List = ['slim', 'centos7', 'centos8']
@@ -86,35 +87,32 @@ class ImageProvider(object):
     _release_fmt: str = "bentoml/model-server:{release_type}-python{python_version}-{distros}{suffix}"  # noqa: E501
     _singleton = None
 
+    @inject
     def __init__(
         self,
         distros: str,
         gpu: bool = False,
         python_version: Optional[str] = None,
-        bentoml_version: Optional[str] = None,
+        bentoml_version: Optional[str] = Provide[
+            BentoMLContainer.bento_bundle_deployment_version
+        ],
     ):
-        if bentoml_version:
-            if not SEMVER_REGEX.match(bentoml_version):
-                raise ValueError(
-                    f"{bentoml_version} doesn't follow semantic versioning."
-                )
-            major, minor, patch = bentoml_version.split('.')
-            if not patch:
-                raise ValueError(
-                    f"{bentoml_version} pass semver check but have incorrect format."
-                )
-            # we only support the new format with 0.14.0 forward
-            if int(major) == 0 and int(minor) <= 13:
-                msg = BACKWARD_COMPATIBILITY_WARNING.format(
-                    classname=self.__class__.__name__, bentoml_version=bentoml_version,
-                )
-                logger.warning(msg)
-                self._release_type: str = 'devel'
-            else:
-                self._release_type = bentoml_version
+        major, minor, patch = bentoml_version.split('.')
+        if not SEMVER_REGEX.match(bentoml_version):
+            raise ValueError(f"{bentoml_version} doesn't follow semantic versioning.")
+        if not patch:
+            raise ValueError(
+                f"{bentoml_version} pass semver check but have incorrect format."
+            )
+        # we only support the new format with 0.14.0 forward
+        if int(major) == 0 and int(minor) <= 13:
+            msg = BACKWARD_COMPATIBILITY_WARNING.format(
+                classname=self.__class__.__name__, bentoml_version=bentoml_version,
+            )
+            logger.warning(msg)
+            self._release_type: str = 'devel'
         else:
-            ver: str = BENTOML_VERSION.split("+")[0]
-            self._release_type = ver if int(ver.split('.')[1]) > 13 else 'devel'
+            self._release_type = bentoml_version
 
         # fmt: off
         self._suffix: str = '-' + get_suffix(gpu) if self._release_type != 'devel' else ''  # noqa: E501

@@ -130,7 +130,7 @@ class BentoMLConfiguration:
         override_config_file: str = None,
         validate_schema: bool = True,
     ):
-        # Default configuraiton
+        # Default configuration
         if default_config_file is None:
             default_config_file = os.path.join(
                 os.path.dirname(__file__), "default_configuration.yml"

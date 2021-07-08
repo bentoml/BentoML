@@ -83,7 +83,6 @@ class ImageProvider(object):
     """
 
     _release_fmt: str = "bentoml/model-server:{release_type}-python{python_version}-{distros}{suffix}"  # noqa: E501
-    _singleton = None
 
     def __init__(
         self,
@@ -165,7 +164,6 @@ class ImageProvider(object):
         )
 
     def __new__(cls, *args, **kwargs):
-        if not cls._singleton:
-            cls._singleton = super(ImageProvider, cls).__new__(cls)
-        cls._singleton.__init__(*args, **kwargs)
-        return repr(cls._singleton)
+        instance = super(ImageProvider, cls).__new__(cls)
+        instance.__init__(*args, **kwargs)
+        return repr(instance)

@@ -237,8 +237,7 @@ class MarshalApp:
         if self._client is None or self._client.closed:
             jar = aiohttp.DummyCookieJar()
             if self.timeout:
-                timeout = aiohttp.ClientTimeout()
-                timeout.total = self.timeout
+                timeout = aiohttp.ClientTimeout(total=self.timeout)
             else:
                 timeout = None
             self._client = aiohttp.ClientSession(
@@ -377,8 +376,9 @@ class MarshalApp:
             reqs_s = DataLoader.merge_requests(requests)
             try:
                 client = self.get_client()
-                timeout = ClientTimeout()
-                timeout.total = (self.mb_max_latency or max_latency) // 1000
+                timeout = ClientTimeout(
+                    total=(self.mb_max_latency or max_latency) // 1000
+                )
                 async with client.post(
                     api_url, data=reqs_s, headers=headers, timeout=timeout
                 ) as resp:

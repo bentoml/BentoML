@@ -177,7 +177,7 @@ specs:
             type: string
           valuesrules:
             type: string
-            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)'
+            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)' # noqa: W605, E501
         registry:
           keysrules:
             type: string
@@ -189,7 +189,7 @@ repository:
   type: dict
   keysrules:
     type: string
-    regex: '(\w+)\.{1}(\w+)'
+    regex: '(\w+)\.{1}(\w+)' # noqa: W605
   valuesrules:
     type: dict
     matched: 'specs.repository'
@@ -241,7 +241,7 @@ releases:
     type: dict
     required: True
     matched: 'specs.releases'
-"""
+"""  # noqa: E501
 
 
 class MetadataSpecValidator(Validator):
@@ -359,7 +359,8 @@ class MetadataSpecValidator(Validator):
             if len(others) != len(value):
                 self._error(
                     field,
-                    f"type {type(others)} with ref {field} from {others} does not match",
+                    f"type {type(others)} with ref "
+                    f"{field} from {others} does not match",
                 )
         elif isinstance(others, str):
             ref = get_nested(self.root_document, others.split('.'))
@@ -497,7 +498,9 @@ def get_data(obj: Union[Dict, MutableMapping], *path: str) -> Any:
         data = glom(obj, Path(*path))
     except PathAccessError:
         log.exception(
-            f"Exception occurred in get_data, unable to retrieve {'.'.join([*path])} from {repr(obj)}"
+            "Exception occurred in "
+            "get_data, unable to retrieve "
+            f"{'.'.join([*path])} from {repr(obj)}"
         )
         exit(1)
     else:
@@ -513,7 +516,9 @@ def set_data(obj: Dict, value: Union[Dict, List, str], *path: str) -> None:
         _ = glom(obj, Assign(Path(*path), value))
     except PathAssignError:
         log.exception(
-            f"Exception occurred in update_data, unable to update {Path(*path)} with {value}"
+            "Exception occurred in "
+            "update_data, unable to update "
+            f"{Path(*path)} with {value}"
         )
         exit(1)
 

@@ -111,6 +111,7 @@ docs_requires = [
     "sphinx_rtd_theme",
     "sphinxcontrib-fulltoc",
     "sphinxcontrib-spelling",
+    "sphinx_copybutton",
     "pyenchant",
 ]
 

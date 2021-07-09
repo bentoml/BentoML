@@ -107,7 +107,7 @@ Download and Install BentoML Azure Functions deployment tool
 Azure Functions deployment tool creates necessary Azure resources and then build and deploy
 BentoBundle as a docker image to Azure Functions
 
-Update the `azure_config.json`file with Azure Functions options that work with the deployment
+Update the `azure_config.json` file with Azure Functions options that work with the deployment
 
 **Available configuration options for Azure Functions deployment**
 

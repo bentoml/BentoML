@@ -3,6 +3,7 @@ import json
 import logging
 import re
 import sys
+from typing import TYPE_CHECKING
 
 import click
 import psutil
@@ -28,6 +29,11 @@ from bentoml.utils.docker_utils import validate_tag
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.open_api import get_open_api_spec_json
 from bentoml.yatai.client import get_yatai_client
+
+if TYPE_CHECKING:
+    from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
+    from bentoml.yatai.client import YataiClient
+
 
 try:
     import click_completion
@@ -415,7 +421,7 @@ def create_bento_service_cli(
         to push to.
         e.g. `bentoml containerize IrisClassifier:latest --push --tag
         repo-address.com:username/iris` would build a Docker image called
-        `username/iris:latest` and push that to docker repository at repo-addres.com.
+        `username/iris:latest` and push that to docker repository at repo-address.com.
 
         By default, the `containerize` command will use the current credentials
         provided by Docker daemon.
@@ -426,9 +432,12 @@ def create_bento_service_cli(
 
         _echo(f"Found Bento: {saved_bundle_path}")
 
-        bento_metadata = load_bento_service_metadata(saved_bundle_path)
+        # fmt: off
+        bento_metadata: "BentoServiceMetadata" = load_bento_service_metadata(saved_bundle_path)
+        # fmt: on
+
         bento_tag = f'{bento_metadata.name}:{bento_metadata.version}'
-        yatai_client = get_yatai_client(yatai_url)
+        yatai_client: "YataiClient" = get_yatai_client(yatai_url)
         docker_build_args = {}
         if build_arg:
             for arg in build_arg:

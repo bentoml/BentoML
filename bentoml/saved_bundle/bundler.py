@@ -25,6 +25,7 @@ import stat
 import tarfile
 from urllib.parse import urlparse
 
+from typing import TYPE_CHECKING
 import requests
 
 from bentoml.configuration import _is_pip_installed_bentoml
@@ -47,6 +48,9 @@ from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.saved_bundle.pip_pkg import get_zipmodules, ZIPIMPORT_DIR
 from bentoml.utils.open_api import get_open_api_spec_json
 
+if TYPE_CHECKING:
+    from bentoml.service import BentoService
+
 DEFAULT_SAVED_BUNDLE_README = """\
 # Generated BentoService bundle - {}:{}
 
@@ -58,7 +62,7 @@ to create this bundle, and save a new BentoService bundle.
 logger = logging.getLogger(__name__)
 
 
-def _write_bento_content_to_dir(bento_service, path):
+def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
     if not os.path.exists(path):
         raise BentoMLException("Directory '{}' not found".format(path))
 
@@ -188,17 +192,21 @@ def _write_bento_content_to_dir(bento_service, path):
         json.dump(get_open_api_spec_json(bento_service), f, indent=2)
 
 
-def save_to_dir(bento_service, path, version=None, silent=False):
+def save_to_dir(
+    bento_service: "BentoService", path: str, version: str = None, silent: bool = False
+) -> None:
     """Save given BentoService along with all its artifacts, source code and
     dependencies to target file path, assuming path exist and empty. If target path
     is not empty, this call may override existing files in the given path.
 
-    :param bento_service (bentoml.service.BentoService): a Bento Service instance
-    :param path (str): Destination of where the bento service will be saved. The
-        destination can be local path or remote path. The remote path supports both
-        AWS S3('s3://bucket/path') and Google Cloud Storage('gs://bucket/path').
-    :param version (str): Override the service version with given version string
-    :param silent (boolean): whether to hide the log message showing target save path
+    Args:
+        bento_service (bentoml.service.BentoService): a Bento Service instance
+        path (str): Destination of where the bento service will be saved. The
+                    destination can be local path or remote path. The remote
+                    path supports both AWS S3('s3://bucket/path') and
+                    Google Cloud Storage('gs://bucket/path').
+        version (str): Override the service version with given version string
+        silent (boolean): whether to hide the log message showing target save path
     """
     track_save(bento_service)
 
@@ -247,7 +255,7 @@ def save_to_dir(bento_service, path, version=None, silent=False):
         )
 
 
-def normalize_gztarball(file_path):
+def normalize_gztarball(file_path: str):
     MTIME = datetime.datetime(2000, 1, 1).timestamp()
     tar_io = io.BytesIO()
 
@@ -311,7 +319,7 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
         shutil.rmtree(source_dir)
 
 
-def _upload_file_to_remote_path(remote_path, file_path, file_name):
+def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
     """Upload file to remote path
     """
     parsed_url = urlparse(remote_path)

@@ -15,16 +15,19 @@ install-local: ## Install BentoML from current directory in editable mode
 	bentoml --version
 install-test-deps: ## Install all test dependencies
 	@echo Ensuring test dependencies...
-	@pip install -e ".[test]" --quiet
+	@pip install -e ".[test]"
 
 # Protos
 gen-protos: ## Build protobufs for Python and Node
 	@./protos/generate-docker.sh
 
 # Docs
-watch-doc: ## Build and watch documentation
+watch-docs: ## Build and watch documentation
 	@./docs/watch.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
 OS := $(shell uname)
+install-docs-deps:  ## Install documentation dependencies
+	@echo Installing docs dependencies...
+	@pip install -e ".[doc_builder]"
 ifeq ($(OS),Darwin)
 install-watch-deps: ## Install MacOS dependencies for watching docs
 	brew install fswatch

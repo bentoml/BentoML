@@ -9,7 +9,7 @@ And to do so, Data Scientists need tools that help them build and ship predictio
 services, instead of uploading pickled model files or Protobuf files to a server and
 hoping things work out.
 
-:ref:`bentoml.BentoService <bentoml-bentoservice-label>` is the base class for building
+:class:`~bentoml.BentoService` is the base class for building
 such prediction services using BentoML. And here's the minimal BentoService example from
 the :doc:`Getting Started Guide <quickstart>`:
 
@@ -40,7 +40,7 @@ type, e.g. :code:`@api(input=DataframeInput(), output=JsonOutput())`.
 
 
 Once an ML model is trained, a BentoService instance can bundle with the trained model
-with the :ref:`BentoService#pack <bentoml-bentoservice-pack-label>` method. This trained
+with the :meth:`~bentoml.BentoService.pack` method. This trained
 model is then accessible within the API function code via 
 :code:`self.artifacts.ARTIFACT_NAME`. In the example above, the artifact is initialized
 with the name ``"model"``, so the user code can get access to the model via 
@@ -52,7 +52,7 @@ BentoService to disk, distribute the saved file, and reproduce the exact same pr
 service in testing and production environment.
 
 To save the BentoService instance, simply call the
-:ref:`BentoService#save <bentoml-bentoservice-save-label>` method. In this process, 
+:meth:`~bentoml.BentoService.save` method. In this process,
 BentoML will:
 
 #. Saves the model based on the ML training framework and artifact type used
@@ -127,7 +127,7 @@ Creating BentoService
 ---------------------
 
 Users create a prediction service by subclassing
-:ref:`bentoml.BentoService <bentoml-bentoservice-label>`. It is recommended to always
+:class:`~bentoml.BentoService`. It is recommended to always
 put the source code of your BentoService class into an individual Python file and check
 it into source control(e.g. git) along with your model training code. BentoML is
 designed to be easily inserted to the end of your model training workflow, where you can
@@ -152,7 +152,7 @@ Support for R and Spark MLlib models are on our roadmap.
 Defining Service Environment
 ----------------------------
 
-The :ref:`bentoml.env <bentoml-env-label>` decorator is the API for defining the
+The :meth:`~bentoml.env` decorator is the API for defining the
 environment settings and dependencies of your prediction service. And here are the types
 of dependencies supported by BentoML:
 
@@ -263,10 +263,10 @@ all your conda dependencies to be installed from the channels specified in the
 Custom Docker base image
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-BentoML's default Docker base image is released on
-`dockerhub r/bentoml <https://hub.docker.com/r/bentoml/model-server/tags>`_, its build
+BentoML's default Docker base image is released on DockerHub
+`r/bentoml <https://hub.docker.com/r/bentoml/model-server/tags>`_, with its build
 process can be found under the
-`./docker directory in BentoML source code <https://github.com/bentoml/BentoML/tree/master/docker/model-server>`_.
+`./docker directory in BentoML source code <https://github.com/bentoml/BentoML/tree/master/docker/>`_.
 
 The `bentoml containerize` is equivalent to running `docker build .` in the BentoML
 bundle directory with a few additional options. The docker image build process copies
@@ -734,8 +734,8 @@ the steps required to create a BentoService instance and save it for serving:
 
 #. Model Training
 #. Create BentoService instance
-#. Pack trained model artifacts with :ref:`BentoService#pack <bentoml-bentoservice-pack-label>`
-#. Save to a Bento with :ref:`BentoService#save <bentoml-bentoservice-save-label>`
+#. Pack trained model artifacts with :meth:`~bentoml.BentoService.pack`
+#. Save to a Bento with :meth:`~bentoml.BentoService.save`
 
 As illustrated in the previous example:
 
@@ -763,18 +763,18 @@ As illustrated in the previous example:
 How Save Works
 ^^^^^^^^^^^^^^
 
-:ref:`BentoService#save_to_dir(path) <bentoml-bentoservice-save-label>` is the primitive
+:meth:`~bentoml.BentoService.save_to_dir` is the primitive
 operation for saving the BentoService to a target directory. :code:`save_to_dir`
 serializes the model artifacts and saves all the related code, dependencies and configs
 into a the given path.
 
-Users can then use :ref:`bentoml.load(path) <bentoml-load-label>` to load the exact same
+Users can then use :meth:`~bentoml.load` to load the exact same
 BentoService instance back from the saved file path. This made it possible to easily
 distribute your prediction service to test and production environment in a consistent
 manner.
 
-:ref:`BentoService#save <bentoml-bentoservice-save-label>` essentially calls
-:ref:`BentoService#save_to_dir(path) <bentoml-bentoservice-save-label>` under the hood,
+:meth:`~bentoml.BentoService.save` essentially calls
+:meth:`~bentoml.BentoService.save_to_dir` under the hood,
 while keeping track of all the prediction services you've created and maintaining the
 file structures and metadata information of those saved bundle.
 
@@ -813,7 +813,7 @@ server right away with:
     bentoml serve IrisClassifier:latest
 
 
-If you are using :ref:`save_to_dir <bentoml-bentoservice-save-label>` , or you have 
+If you are using :meth:`bentoml.BentoService.save_to_dir` , or you have
 directly copied the saved Bento file directory from other machine, the BentoService
 ``IrisClassifier`` is not registered with your local BentoML repository. In that case,
 you can still start the server by providing the path to the saved BentoService:
@@ -1013,7 +1013,7 @@ improve it.
 Model Management
 ----------------
 
-By default, :ref:`BentoService#save <bentoml-bentoservice-save-label>` will save all the
+By default, :meth:`~bentoml.BentoService.save` will save all the
 BentoService saved bundle files under :code:`~/bentoml/repository/` directory, following
 by the service name and service version as sub-directory name. And all the metadata of
 saved BentoService are stored in a local SQLite database file at

@@ -162,6 +162,7 @@ class ModelApp:
         enable_feedback: bool = Provide[
             BentoMLContainer.config.bento_server.feedback.enabled
         ],
+        tracer=Provide[BentoMLContainer.tracer],
     ):
         from bentoml.saved_bundle.loader import load_from_dir
 
@@ -175,6 +176,7 @@ class ModelApp:
         self.enable_swagger = enable_swagger
         self.enable_metrics = enable_metrics
         self.enable_feedback = enable_feedback
+        self.tracer = tracer
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static_content'
@@ -427,7 +429,7 @@ class ModelApp:
             return response
 
         def api_func_with_tracing():
-            with BentoMLContainer.tracer.get().span(
+            with self.tracer.span(
                 service_name=f"BentoService.{self.bento_service.name}",
                 span_name=f"InferenceAPI {api.name} HTTP route",
                 request_headers=request.headers,

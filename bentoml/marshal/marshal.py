@@ -161,6 +161,7 @@ class MarshalApp:
             BentoMLContainer.access_control_options
         ],
         timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
+        tracer=Provide[BentoMLContainer.tracer],
     ):
 
         self._conn: Optional["BaseConnector"] = None
@@ -175,6 +176,7 @@ class MarshalApp:
         self._outbound_sema = None  # the semaphore to limit outbound connections
         self._cleanup_tasks = None
         self.max_request_size = max_request_size
+        self.tracer = tracer
 
         self.enable_access_control = enable_access_control
         self.access_control_allow_origin = access_control_allow_origin
@@ -235,7 +237,8 @@ class MarshalApp:
         if self._client is None or self._client.closed:
             jar = aiohttp.DummyCookieJar()
             if self.timeout:
-                timeout = aiohttp.ClientTimeout(total=self.timeout)
+                timeout = aiohttp.ClientTimeout()
+                timeout.total = self.timeout
             else:
                 timeout = None
             self._client = aiohttp.ClientSession(
@@ -297,7 +300,7 @@ class MarshalApp:
     async def request_dispatcher(self, request: "Request"):
         from aiohttp.web import HTTPInternalServerError, Response
 
-        with BentoMLContainer.tracer.get().async_span(
+        with self.tracer.async_span(
             service_name=self.__class__.__name__,
             span_name="[1]http request",
             is_root=True,
@@ -334,7 +337,7 @@ class MarshalApp:
         data = await request.read()
         url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)
 
-        with BentoMLContainer.tracer.get().async_span(
+        with self.tracer.async_span(
             service_name=self.__class__.__name__,
             span_name=f"[2]{url.path} relay",
             request_headers=request.headers,
@@ -366,7 +369,7 @@ class MarshalApp:
         headers = {MARSHAL_REQUEST_HEADER: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"
 
-        with BentoMLContainer.tracer.get().async_span(
+        with self.tracer.async_span(
             service_name=self.__class__.__name__,
             span_name=f"[2]merged {api_route}",
             request_headers=headers,
@@ -374,9 +377,8 @@ class MarshalApp:
             reqs_s = DataLoader.merge_requests(requests)
             try:
                 client = self.get_client()
-                timeout = ClientTimeout(
-                    total=(self.mb_max_latency or max_latency) // 1000
-                )
+                timeout = ClientTimeout()
+                timeout.total = (self.mb_max_latency or max_latency) // 1000
                 async with client.post(
                     api_url, data=reqs_s, headers=headers, timeout=timeout
                 ) as resp:

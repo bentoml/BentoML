@@ -195,18 +195,24 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
 def save_to_dir(
     bento_service: "BentoService", path: str, version: str = None, silent: bool = False
 ) -> None:
-    """Save given BentoService along with all its artifacts, source code and
-    dependencies to target file path, assuming path exist and empty. If target path
-    is not empty, this call may override existing files in the given path.
+    """
+    Save given :class:`~bentoml.BentoService` along with all its artifacts,
+    source code and dependencies to target file path, assuming path
+    exist and empty. If target path is not empty, this call may override
+    existing files in the given path.
 
     Args:
-        bento_service (bentoml.service.BentoService): a Bento Service instance
-        path (str): Destination of where the bento service will be saved. The
-                    destination can be local path or remote path. The remote
-                    path supports both AWS S3('s3://bucket/path') and
-                    Google Cloud Storage('gs://bucket/path').
-        version (str): Override the service version with given version string
-        silent (boolean): whether to hide the log message showing target save path
+        bento_service (:class:`~bentoml.service.BentoService`):
+            a BentoService instance
+        path (`str`):
+            Destination of where the bento service will be saved. The
+            destination can be local path or remote path. The remote
+            path supports both AWS S3('s3://bucket/path') and
+            Google Cloud Storage('gs://bucket/path').
+        version (`str`, `optional`):
+            Override the service version with given version string
+        silent (`bool`, `optional`):
+            whether to hide the log message showing target save path
     """
     track_save(bento_service)
 

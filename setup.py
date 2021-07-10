@@ -117,7 +117,7 @@ docs_requires = [
 
 types_requires = ["mypy-protobuf", "types-click", "types-protobuf>=0.1.14"]
 
-dev_all = install_requires + dev_requires + docs_requires
+dev_all = install_requires + dev_requires + docs_requires + types_requires
 
 extras_require = {
     "dev": dev_all,

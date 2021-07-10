@@ -60,6 +60,31 @@ a {
     color: var(--orange);
 }
 
+/* The one with custom code snippets */
+.highlight .nn, .highlight .bp, .highlight .nb, .highlight .vm {
+    color: inherit;
+}
+
+.highlight .k {
+    color: var(--yellow);
+}
+
+.highlight .kn, .highlight .nv, .highlight .ow {
+    color: rgb(82,156,202);
+}
+
+.highlight .gp, .highlight .nd {
+    color: var(--orange);
+}
+
+.highlight .nc {
+    font-weight: bold;
+}
+
+.highlight .nc, .highlight .nf {
+    color: var(--red);
+}
+
 /* -------------------------------------------------------------------------------------------------------------------*/
 /* Nav related patch */
 
@@ -224,31 +249,3 @@ html.writer-html5 .rst-content dl.field-list>dt, html.writer-html5 .rst-content 
 .sig-param {
     line-height: 23px;
 }
-
-/*!* The one where you do with code block *!*/
-/*.highlight .c1, .highlight .sd {*/
-/*    color: var(--gray);*/
-/*    opacity: 50%;*/
-/*}*/
-
-/*!* from, import, def statement *!*/
-/*.highlight .kn, .highlight .nv, .highlight .ow {*/
-/*    color: var(--code-hightlight);*/
-/*}*/
-
-/*.highlight .nn, .highlight .k, .highlight .s1, .highlight .nb, .highlight .bp, .highlight .kc, .highlight .s2 {*/
-/*    color: var(--green);*/
-/*}*/
-
-/*.highlight .nd {*/
-/*    color: var(--gray);*/
-/*    opacity: 30%;*/
-/*}*/
-
-/*.highlight .nc {*/
-/*    color: var(--red);*/
-/*}*/
-
-/*.highlight .gp {*/
-/*    color: #FB8D68;*/
-/*}*/

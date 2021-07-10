@@ -8,7 +8,7 @@ test: ## Run all unit tests with current Python version and env
 	@./ci/unit_tests.sh || (echo "Error running tests... You may need to run 'make install-test-deps'"; exit 1)
 format: ## Format code to adhere to BentoML style
 	./dev/format.sh
-lint: ## Lint code
+lint: format ## Lint code
 	./dev/lint.sh
 install-local: ## Install BentoML from current directory in editable mode
 	pip install --editable .
@@ -18,8 +18,8 @@ install-test-deps: ## Install all test dependencies
 	@pip install -e ".[test]"
 
 # Protos
-gen-protos: ## Build protobufs for Python and Node
-	@./protos/generate-docker.sh
+gen-protos: ## Build protobuf for Python and Node
+	@./dev/generate-protos-docker.sh
 
 # Docs
 watch-docs: ## Build and watch documentation

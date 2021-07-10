@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
     from bentoml.yatai.client import YataiClient
 
-
 try:
     import click_completion
 
@@ -45,9 +44,7 @@ except ImportError:
     click_completion = None
     shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
 
-
 logger = logging.getLogger(__name__)
-
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
@@ -433,7 +430,7 @@ def create_bento_service_cli(
         _echo(f"Found Bento: {saved_bundle_path}")
 
         # fmt: off
-        bento_metadata: "BentoServiceMetadata" = load_bento_service_metadata(saved_bundle_path)
+        bento_metadata: "BentoServiceMetadata" = load_bento_service_metadata(saved_bundle_path)  # noqa: E501
         # fmt: on
 
         bento_tag = f'{bento_metadata.name}:{bento_metadata.version}'
@@ -451,7 +448,7 @@ def create_bento_service_cli(
                 f'daemon from local environment'
             )
         with Spinner(spinner_message):
-            tag = yatai_client.repository.containerize(
+            tag: str = yatai_client.repository.containerize(
                 bento=bento_tag, tag=tag, build_args=docker_build_args, push=push,
             )
             _echo(f'Build container image: {tag}', CLI_COLOR_SUCCESS)

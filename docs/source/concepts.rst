@@ -813,7 +813,7 @@ server right away with:
     bentoml serve IrisClassifier:latest
 
 
-If you are using :meth:`bentoml.BentoService.save_to_dir` , or you have
+If you are using :meth:`~bentoml.BentoService.save_to_dir` , or you have
 directly copied the saved Bento file directory from other machine, the BentoService
 ``IrisClassifier`` is not registered with your local BentoML repository. In that case,
 you can still start the server by providing the path to the saved BentoService:

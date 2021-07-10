@@ -48,14 +48,12 @@ class YataiClient:
 
 def get_yatai_client(yatai_url: str = None) -> "YataiClient":
     """
-    returns either remote or local YataiService.
-
     Args:
         yatai_url (`str`):
             Yatai Service URL address.
 
     Returns:
-        :class:`~YataiClient`: Python Client to interact with :obj:`YataiService` gRPC server
+        :obj:`~YataiClient`, a python client to interact with :obj:`Yatai` gRPC server.
 
     Example::
 
@@ -63,9 +61,7 @@ def get_yatai_client(yatai_url: str = None) -> "YataiClient":
 
         custom_url = 'https://remote.yatai:50050'
         yatai_client = get_yatai_client(custom_url)
-
-        local_yatai_client = get_yatai_client()
-    """
+    """  # noqa: E501
 
     yatai_service = get_yatai_service(channel_address=yatai_url)
     return YataiClient(yatai_service=yatai_service)

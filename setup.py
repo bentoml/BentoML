@@ -115,6 +115,8 @@ docs_requires = [
     "pyenchant",
 ]
 
+types_requires = ["mypy-protobuf", "types-click", "types-protobuf>=0.1.14"]
+
 dev_all = install_requires + dev_requires + docs_requires
 
 extras_require = {
@@ -123,6 +125,7 @@ extras_require = {
     "yatai_service": yatai_service_requires,
     "model_server": model_server_requires,
     "doc_builder": docs_requires,  # 'doc_builder' is required by readthedocs.io
+    "types_stub": types_requires,
 }
 
 setuptools.setup(

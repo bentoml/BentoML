@@ -11,8 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
+import logging
+from typing import NamedTuple, Tuple, Iterator, Dict
 
-from typing import NamedTuple, Tuple
+import docker
 
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
@@ -21,6 +24,9 @@ SERVER_STREAMING = 'SERVER_STREAMING'
 CLIENT_STREAMING = 'CLIENT_STREAMING'
 BIDI_STREAMING = 'BIDI_STREAMING'
 UNKNOWN = 'UNKNOWN'
+
+
+logger = logging.getLogger()
 
 
 def ensure_node_available_or_raise():
@@ -111,3 +117,38 @@ def parse_method_name(method_name: str) -> Tuple[MethodName, bool]:
     *packages, service = package_service.rsplit(".", maxsplit=1)
     package = packages[0] if packages else ""
     return MethodName(package, service, method), True
+
+
+def docker_build_logs(resp: Iterator):
+    """
+    Stream build logs to stderr.
+
+    Args:
+        resp (:obj:`Iterator`):
+            blocking generator from docker.api.build
+
+    Raises:
+        docker.errors.BuildErrors:
+            When errors occurs during build process. Usually
+            this comes when generated Dockerfile are incorrect.
+    """
+    output: str = ""
+    try:
+        while True:
+            try:
+                # output logs to stdout
+                # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
+                output = next(resp).decode('utf-8')
+                json_output: Dict = json.loads(output.strip('\r\n'))
+                # output to stderr when running in docker
+                if 'stream' in json_output:
+                    logger.info(json_output['stream'])
+            except StopIteration:
+                break
+            except ValueError:
+                logger.error(f"Errors while building image:\n{output}")
+    except docker.errors.BuildError as e:
+        logger.error(f"Failed to build container :\n{e.msg}")
+        for line in e.build_log:
+            if 'stream' in line:
+                logger.info(line['stream'].strip())

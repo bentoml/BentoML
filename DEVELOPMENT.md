@@ -98,12 +98,12 @@ set_debug_mode(True)
 
 And/or set the `BENTOML_DEBUG` environment variable to `TRUE`:
 ```bash
-export BENTOML_DEBUG=TRUE
+$ export BENTOML_DEBUG=TRUE
 ```
 
 And/or use the `--verbose` option when running `bentoml` CLI command, e.g.:
 ```bash
-bentoml get IrisClassifier --verbose
+$ bentoml get IrisClassifier --verbose
 ```
 
 ## Style check and auto-formatting your code
@@ -115,9 +115,18 @@ $ pip install -e ".[dev]"
 
 Run linter/format script:
 ```bash
-./dev/format.sh
+$ ./dev/format.sh
 
-./dev/lint.sh
+$ ./dev/lint.sh
+```
+
+### Optional: Running `mypy` for better type annotation
+
+Make sure to install [mypy](https://mypy.readthedocs.io/en/stable/getting_started.html)
+
+After updating/modifying codebase (e.g: `bentoml/yatai/client`), run `mypy`:
+```bash
+$ mypy bentoml/yatai/client
 ```
 
 ## How to edit, run, build documentation site
@@ -217,7 +226,7 @@ Navigate to the URL from above
 BentoML also provides a Helm chart under [`bentoml/yatai-chart`](https://github.com/bentoml/yatai-chart) for installing YataiService on Kubernetes.
 
 ## Running BentoML Benchmark
-BentoML has moved its benchmark client to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).
+BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).
 
 ## How to run and develop BentoML Web UI
 

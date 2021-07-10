@@ -1,13 +1,28 @@
 #!/usr/bin/env bash
 set -e
 
+echo -e "\e[0;31m"
+if [[ $EUID -ne 0 ]]; then
+  cat <<ERROR
+This scripts requires to run as ROOT. You can run this via docker sidecar from BentoML root directory:
+  make gen-protos
+Exiting...
+ERROR
+exit 1
+fi
+echo -e "\e[m"
+
+
 if [[ -z "$BENTOML_REPO" ]]; then
   # Assuming running this script from anywhere within the BentoML git repository
   BENTOML_REPO=$(git rev-parse --show-toplevel)
 fi
 
 PROTO_PATH=$BENTOML_REPO/protos
-PY_OUT_PATH=$BENTOML_REPO/bentoml/yatai/proto
+YATAI_PATH=$BENTOML_REPO/bentoml/yatai
+
+PY_OUT_PATH=$YATAI_PATH/proto
+
 # test YataiService Interceptor calls
 PROTO_TEST_PATH=$PROTO_PATH/tests
 PY_TEST_OUT_PATH=$BENTOML_REPO/tests/yatai/proto
@@ -15,13 +30,14 @@ PY_TEST_OUT_PATH=$BENTOML_REPO/tests/yatai/proto
 echo "Cleaning up existing proto generated py code.."
 rm -rf "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
 mkdir -p "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
-touch "$PY_OUT_PATH"/__init__.py "$PY_TEST_OUT_PATH"/__init__.py
+touch "$PY_OUT_PATH"/__init__.py "$PY_TEST_OUT_PATH"/__init__.py "$PY_OUT_PATH"/__init__.pyi
 
 echo "Generate proto message code.."
 find "$PROTO_PATH"/ -name '*.proto' -not -path "${PROTO_TEST_PATH}/*" | while read -r protofile; do
 python -m grpc_tools.protoc \
   -I"$PROTO_PATH" \
   --python_out="$PY_OUT_PATH" \
+  --mypy_out="$PY_OUT_PATH" \
   "$protofile"
 done
 
@@ -37,13 +53,14 @@ python -m grpc_tools.protoc \
   -I"$PROTO_PATH" \
   --python_out="$PY_OUT_PATH" \
   --grpc_python_out="$PY_OUT_PATH" \
+  --mypy_out="$PY_OUT_PATH" \
   "$PROTO_PATH"/yatai_service.proto
 
 fix_grpc_service_code(){
   PKGNAME=$1
   OUT_DIR=$2
 
-  echo "Fix imports in generated GRPC service code.."
+  echo "Fix imports for $PKGNAME in generated GRPC service code from $OUT_DIR ..."
   find "$OUT_DIR" -name '*_pb2*.py' | while read -r pyfile; do
   sed -i'.old' "s/^import \([^ ]*\)_pb2 \(.*\)$/import $PKGNAME.yatai.proto.\1_pb2 \2/" "$pyfile"
   sed -i'.old' "s/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from $PKGNAME.yatai.proto.\1 import \2_pb2\3/" "$pyfile"
@@ -94,8 +111,16 @@ edit_init "$PY_OUT_PATH"
 edit_init "$PY_TEST_OUT_PATH"
 
 echo "Generate grpc code for javascript/typescript"
-echo "Please make sure protobufjs is installed on your system"
-echo "You can install with npm i -g protobufjs"
+echo -e "\e[0;33m"
+if ! command -v pbjs >/dev/null 2>&1; then
+  cat <<WARN
+WARNING: Make sure protobufjs is installed on your system. Use either npm or yarn to install dependencies:
+    $ npm i -g protobufjs or
+    $ yarn global add protobufjs
+WARN
+exit 1
+fi
+echo -e "\e[m"
 
 JS_OUT_PATH=$BENTOML_REPO/bentoml/yatai/web/src/generated
 echo "Cleaning up existing proto generated js code.."

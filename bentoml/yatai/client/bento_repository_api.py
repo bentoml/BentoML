@@ -20,8 +20,7 @@ import os
 import shutil
 import tarfile
 import uuid
-from enum import Enum
-from typing import TYPE_CHECKING, Optional, Dict
+from typing import TYPE_CHECKING, Optional, Dict, List
 
 import click
 import grpc
@@ -61,7 +60,7 @@ from bentoml.yatai.status import Status
 
 if TYPE_CHECKING:
     from bentoml.service import BentoService
-    from google.protobuf import reflection
+    from bentoml.yatai.client import YataiClient
     from bentoml.yatai.proto.repository_pb2 import Bento
 
 logger = logging.getLogger(__name__)
@@ -77,7 +76,8 @@ def is_remote_yatai(yatai_service) -> bool:
 
 class BentoRepositoryAPIClient:
     """
-    BentoRepositoryAPI Client to interact with Local Yatai.
+    Provided API to manage :class:`~bentoml.BentoService`
+    for local Yatai repository
     """
 
     def __init__(self, yatai_service):
@@ -95,9 +95,7 @@ class BentoRepositoryAPIClient:
             with_labels (`bool`, `optional`):
                 Whether to push BentoService with given label.
 
-        Returns:
-            :class:`~BentoURI` (of type :class:`~reflection.GeneratedProtocolMessageType`):
-                URI as gRPC stub for save location of BentoService.
+        Returns: URI as gRPC stub for BentoService saved location.
 
         Example::
 
@@ -111,9 +109,9 @@ class BentoRepositoryAPIClient:
         """
         from bentoml.yatai.client import get_yatai_client
 
-        local_yc = get_yatai_client()
+        local_yc: "YataiClient" = get_yatai_client()
 
-        local_bento_pb = local_yc.repository.get(bento)
+        local_bento_pb: "Bento" = local_yc.repository.get(bento)
         if local_bento_pb.uri.s3_presigned_url:
             bento_bundle_path = local_bento_pb.uri.s3_presigned_url
         elif local_bento_pb.uri.gcs_presigned_url:
@@ -130,9 +128,8 @@ class BentoRepositoryAPIClient:
 
     def pull(self, bento: str) -> "BentoUri":
         """
-        Pull a :class:`~bentoml.BentoService` from a
-        remote yatai service. The BentoService will then be saved
-        and registered with local yatai service.
+        Pull a :class:`~bentoml.BentoService` from remote Yatai.
+        The BentoService will then be saved and registered to local Yatai.
 
         Args:
             bento (`str`):
@@ -148,7 +145,7 @@ class BentoRepositoryAPIClient:
             client = get_yatai_client('127.0.0.1:50051')
             saved_path = client.repository.pull('MyService:20210808_E38F3')
         """
-        bento_pb = self.get(bento)
+        bento_pb: "Bento" = self.get(bento)
         with TempDirectory() as tmpdir:
             # Create a non-exist directory for safe_retrieve
             target_bundle_path = os.path.join(tmpdir, 'bundle')
@@ -168,10 +165,7 @@ class BentoRepositoryAPIClient:
             )
 
     def upload(
-        self,
-        bento_service: "BentoService",
-        version: Optional[str] = None,
-        labels: Optional[Dict] = None,
+        self, bento_service: "BentoService", version: str = None, labels: Dict = None,
     ) -> "BentoUri":
         """
         Save and upload given :class:`~bentoml.BentoService`
@@ -183,10 +177,10 @@ class BentoRepositoryAPIClient:
             version (`str`, `optional`):
                 version of ``bento_service``
             labels (`dict`, `optional`):
-                labels for given ``bento_service``
+                :class:`~bentoml.BentoService` metadata
 
         Returns:
-            BentoURI as gRPC stub for save location of BentoService.
+            BentoUri as gRPC stub for save location of BentoService.
 
         Example::
 
@@ -381,7 +375,7 @@ class BentoRepositoryAPIClient:
                 A BentoService identifier in the format of ``NAME:VERSION``
 
         Returns:
-            :class:`~bentoml.BentoService` metadata from YataiService gRPC server stub.
+            :class:`~bentoml.BentoService` metadata from Yatai RPC server.
 
         Raises:
             BentoMLException: ``bento`` is missing or have invalid format.
@@ -389,7 +383,6 @@ class BentoRepositoryAPIClient:
         Example::
 
             from bentoml.yatai.client import get_yatai_client
-
             yatai_client = get_yatai_client()
             bento_info = yatai_client.repository.get('my_service:version')
         """
@@ -414,40 +407,54 @@ class BentoRepositoryAPIClient:
 
     def list(
         self,
-        bento_name: Optional[str] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        labels: Optional[str] = None,
-        order_by: Optional[Enum] = None,
-        ascending_order: Optional[bool] = None,
-    ) -> "Bento":
+        bento_name: str = None,
+        offset: int = None,
+        limit: int = None,
+        order_by: str = None,
+        ascending_order: bool = None,
+        labels: str = None,
+    ) -> List["Bento"]:
         """
         List BentoServices that satisfy the specified criteria.
 
         Args:
-            bento_name (`str`, `optional`): BentoService name
-            offset (`int`, `optional`): offset of results
-            limit (`int`, `optional`): maximum number of returned results
-            labels (`str`, `optional`): by given labels
-            order_by (`enum`, `optional`): order by results
-            ascending_order (`bool`, `optional`):  optional. direction of results order
+            bento_name (`str`):
+                BentoService name
+            offset (`int`):
+                offset of results
+            limit (`int`):
+                maximum number of returned results
+            labels (`str`):
+                sorted by given labels
+            order_by (`str`):
+                orders retrieved BentoService by :obj:`created_at` or :obj:`name`
+            ascending_order (`bool`):
+                direction of results order
 
         Returns:
-            List of gRPC stub for :class:`~bentoml.Service` metadata.
+            lists of :class:`~bentoml.BentoService` metadata.
 
         Example::
 
             from bentoml.yatai.client import get_yatai_client
             yatai_client = get_yatai_client()
             bentos_info_list = yatai_client.repository.list(labels='key=value,key2=value')
-        """
+        """  # noqa: E501
+
+        # TODO: ignore type checking for this function. This is
+        #  due to all given arguments in `ListBentoRequest` are
+        #  not optional types. One solution is to make all
+        #  `ListBentoRequest` args in `list` positional. This could
+        #  introduce different behaviour at different places in the
+        #  codebase. Low triage
         list_bento_request = ListBentoRequest(
-            bento_name=bento_name,
-            offset=offset,
-            limit=limit,
-            order_by=order_by,
-            ascending_order=ascending_order,
+            bento_name=bento_name,  # type: ignore
+            offset=offset,  # type: ignore
+            limit=limit,  # type: ignore
+            order_by=order_by,  # type: ignore
+            ascending_order=ascending_order,  # type: ignore
         )
+
         if labels is not None:
             generate_gprc_labels_selector(list_bento_request.label_selectors, labels)
 
@@ -483,10 +490,10 @@ class BentoRepositoryAPIClient:
 
     def delete(
         self,
-        bento_tag: Optional[str] = None,
-        labels: Optional[str] = None,
-        bento_name: Optional[str] = None,
-        bento_version: Optional[str] = None,
+        bento_tag: str = None,
+        labels: str = None,
+        bento_name: str = None,
+        bento_version: str = None,
         prune: Optional[bool] = False,  # pylint: disable=redefined-builtin
         require_confirm: Optional[bool] = False,
     ) -> None:
@@ -528,7 +535,7 @@ class BentoRepositoryAPIClient:
             yatai_client.repository.delete(bento_name='MyService')
             # Delete all bento services with labels match `ci=failed` and `cohort=20`
             yatai_client.repository.delete(labels='ci=failed, cohort=20')
-        """
+        """  # noqa: E501
         delete_list_limit = 50
 
         if (
@@ -581,9 +588,9 @@ class BentoRepositoryAPIClient:
     def containerize(
         self,
         bento: str,
-        tag: Optional[str] = None,
-        build_args: Optional[Dict[str, str]] = None,
-        push: Optional[bool] = False,
+        tag: str,
+        build_args: Dict[str, str] = None,
+        push: bool = False,
     ) -> str:
         """
         Create a container image from a :class:`~bentoml.BentoService`
@@ -591,15 +598,15 @@ class BentoRepositoryAPIClient:
         Args:
             bento (`str`):
                 A BentoService identifier with ``NAME:VERSION`` format.
-            tag (`str`, `optional`):
+            tag (`str`):
                 BentoService tag.
             build_args (`Dict[str, str]`, `optional`):
-                Optional build args to parse to ``docker build``
+                Build args to parse to ``docker build``
             push (`bool`, `optional`):
                 Whether to push built container to remote YataiService.
 
         Returns:
-            :obj:`str`: Image tag of containerized :class:`~bentoml.BentoService`
+            :obj:`str` representing the image tag of the containerized :class:`~bentoml.BentoService`
 
         Raises:
             BentoMLException: ``bento`` is missing or incorrect format.
@@ -613,7 +620,7 @@ class BentoRepositoryAPIClient:
 
             yatai_client = get_yatai_client()
             tag = yatai_client.repository.containerize(f'{svc.name}:{svc.version}')
-        """
+        """  # noqa: E501
         if ':' not in bento:
             raise BentoMLException(
                 'BentoService name or version is missing. Please provide in the '
@@ -640,29 +647,29 @@ class BentoRepositoryAPIClient:
 
     def load(self, bento: str) -> "BentoService":
         """
-        Load BentoService from BentoService identifier
+        Load :class:`~bentoml.BentoService` from nametag identifier
         or from a bento bundle path.
 
         Args:
             bento (`str`):
-                BentoService identifier or bundle path,
+                :class:`~bentoml.BentoService` identifier or bundle path. Note
+                that nametag identifier will have the following format: :code:`NAME:VERSION`
 
         Returns:
-            :class:`~bentoml.BentoService`:
-                load a a BentoService from given string. This
-                could be BentoService nametag, path to bundle, S3 registry, etc.
+            :class:`~bentoml.BentoService`
 
         Example::
 
             from bentoml.yatai.client import get_yatai_client
             yatai_client = get_yatai_client()
+
             # Load BentoService bases on bento tag.
             bento_from_name = yatai_client.repository.load('service_name:version')
             # Load BentoService from bento bundle path
             bento_from_path = yatai_client.repository.load('/path/to/bento/bundle')
             # Load BentoService from s3 storage
             bento_from_reg = yatai_client.repository.load('s3://bucket/path/bundle.tar.gz')
-        """
+        """  # noqa: E501
         if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
             saved_bundle_path = bento
         else:

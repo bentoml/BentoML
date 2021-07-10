@@ -15,8 +15,9 @@ exclude = '''
   )/
   | bentoml/utils/cloudpickle.py
   | bentoml/yatai/proto
+  | bentoml/yatai/stubs
   | bentoml/_version.py
   | versioneer.py
+  | tests/yatai/proto
 )
 '''
-

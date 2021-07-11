@@ -2,11 +2,9 @@
 set -e
 
 echo -e "\e[0;31m"
-if [[ $EUID -ne 0 ]]; then
+if [[ $EUID -eq 0 ]]; then
   cat <<ERROR
-This scripts requires to run as ROOT. You can run this via docker sidecar from BentoML root directory:
-  make gen-protos
-Exiting...
+Currently running as ROOT. This could generate wrong permissions for generate gRPC files. Exiting...
 ERROR
 exit 1
 fi
@@ -18,12 +16,12 @@ if [[ -z "$BENTOML_REPO" ]]; then
   BENTOML_REPO=$(git rev-parse --show-toplevel)
 fi
 
-PROTO_PATH=$BENTOML_REPO/protos
-YATAI_PATH=$BENTOML_REPO/bentoml/yatai
+# YataiService protobuf
+PROTO_PATH="$BENTOML_REPO"/protos
+YATAI_PATH="$BENTOML_REPO"/bentoml/yatai
+PY_OUT_PATH="$YATAI_PATH"/proto
 
-PY_OUT_PATH=$YATAI_PATH/proto
-
-# test YataiService Interceptor calls
+# Test gRPC servicer
 PROTO_TEST_PATH=$PROTO_PATH/tests
 PY_TEST_OUT_PATH=$BENTOML_REPO/tests/yatai/proto
 
@@ -118,7 +116,6 @@ WARNING: Make sure protobufjs is installed on your system. Use either npm or yar
     $ npm i -g protobufjs or
     $ yarn global add protobufjs
 WARN
-exit 1
 fi
 echo -e "\e[m"
 

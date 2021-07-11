@@ -375,6 +375,7 @@ def create_bento_service_cli(
                 "install it with `pip install click_completion`"
             )
 
+    # bentoml containerize {service_name}:{service_tag} -t {docker_tags}
     @bentoml_cli.command(
         help='Containerizes given Bento into a ready-to-use Docker image.',
         short_help="Containerizes given Bento into a ready-to-use Docker image",
@@ -451,7 +452,7 @@ def create_bento_service_cli(
             tag: str = yatai_client.repository.containerize(
                 bento=bento_tag, tag=tag, build_args=docker_build_args, push=push,
             )
-            _echo(f'Build container image: {tag}', CLI_COLOR_SUCCESS)
+            _echo(f'\nBuild container image: {tag}', CLI_COLOR_SUCCESS)
 
     # pylint: enable=unused-variable
     return bentoml_cli

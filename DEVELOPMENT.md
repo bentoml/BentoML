@@ -124,6 +124,11 @@ $ ./dev/lint.sh
 
 Make sure to install [mypy](https://mypy.readthedocs.io/en/stable/getting_started.html)
 
+You might have to install stubs before running:
+```bash
+$ mypy --install-types
+```
+
 After updating/modifying codebase (e.g: `bentoml/yatai/client`), run `mypy`:
 ```bash
 $ mypy bentoml/yatai/client

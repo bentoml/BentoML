@@ -115,7 +115,12 @@ docs_requires = [
     "pyenchant",
 ]
 
-types_requires = ["mypy-protobuf", "types-click", "types-protobuf>=0.1.14"]
+types_requires = [
+    "mypy-protobuf",
+    "types-click",
+    "types-protobuf>=0.1.14",
+    "grpc-stubs",
+]
 
 dev_all = install_requires + dev_requires + docs_requires + types_requires
 

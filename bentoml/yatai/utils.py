@@ -26,7 +26,7 @@ BIDI_STREAMING = 'BIDI_STREAMING'
 UNKNOWN = 'UNKNOWN'
 
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def ensure_node_available_or_raise():
@@ -142,13 +142,13 @@ def docker_build_logs(resp: Iterator):
                 json_output: Dict = json.loads(output.strip('\r\n'))
                 # output to stderr when running in docker
                 if 'stream' in json_output:
-                    logger.info(json_output['stream'])
+                    logger.debug(json_output['stream'])
             except StopIteration:
                 break
             except ValueError:
-                logger.error(f"Errors while building image:\n{output}")
+                logger.debug(f"Errors while building image:\n{output}")
     except docker.errors.BuildError as e:
-        logger.error(f"Failed to build container :\n{e.msg}")
+        print(f"Failed to build container :\n{e.msg}")
         for line in e.build_log:
             if 'stream' in line:
-                logger.info(line['stream'].strip())
+                logger.debug(line['stream'].strip())

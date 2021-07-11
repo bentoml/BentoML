@@ -571,8 +571,9 @@ def get_yatai_service_impl(base=object):
                             )
                         safe_retrieve(bento_service_bundle_path, temp_bundle_path)
                         try:
-                            resp = docker_client.images.build(
+                            resp = docker_client.api.build(
                                 path=temp_bundle_path,
+                                nocache=False,
                                 tag=tag,
                                 buildargs=dict(request.build_args),
                             )

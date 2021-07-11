@@ -95,7 +95,7 @@ class BentoMLCommandGroup(click.Group):
         @functools.wraps(func)
         def wrapper(quiet, verbose, *args, **kwargs):
             if quiet:
-                configure_logging(logging_level=logging.ERROR)
+                configure_logging(logging_level=str(logging.ERROR))
                 if verbose:
                     logger.warning(
                         "The bentoml command option `--verbose/--debug` is ignored when"

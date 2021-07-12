@@ -19,6 +19,7 @@ from io import StringIO
 import os
 import socket
 import tarfile
+from typing import Optional
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
@@ -41,6 +42,11 @@ __all__ = [
     "status_pb_to_error_code_and_message",
     "catch_exceptions",
     "cached_contextmanager",
+    "resolve_bento_bundle_uri",
+    "is_gcs_url",
+    "is_s3_url",
+    "archive_directory_to_tar",
+    "resolve_bundle_path",
 ]
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
@@ -60,10 +66,12 @@ _missing = _Missing()
 
 
 class cached_property(property):
-    """A decorator that converts a function into a lazy property.  The
+    """A decorator that converts a function into a lazy property. The
     function wrapped is called the first time to retrieve the result
     and then that calculated result is used the next time you access
-    the value::
+    the value:
+
+    .. code-block:: python
 
         class Foo(object):
 
@@ -109,8 +117,8 @@ class cached_contextmanager:
     arguments. When one instance of the contextmanager exits, the cache value will
     also be poped.
 
-    Example Usage::
-    (To reuse the container based on the same iamge)
+    Example Usage:
+    (To reuse the container based on the same image)
 
     >>> @cached_contextmanager("{docker_image.id}")
     >>> def start_docker_container_from_image(docker_image, timeout=60):
@@ -216,7 +224,11 @@ class catch_exceptions(object):
         return _
 
 
-def resolve_bundle_path(bento, pip_installed_bundle_path, yatai_url=None):
+def resolve_bundle_path(
+    bento: str,
+    pip_installed_bundle_path: Optional[str] = None,
+    yatai_url: Optional[str] = None,
+) -> str:
     from bentoml.exceptions import BentoMLException
     from bentoml.yatai.client import get_yatai_client
 
@@ -259,7 +271,9 @@ def resolve_bento_bundle_uri(bento_pb):
         return bento_pb.uri.uri
 
 
-def archive_directory_to_tar(source_dir, tarfile_dir, tarfile_name):
+def archive_directory_to_tar(
+    source_dir: str, tarfile_dir: str, tarfile_name: str
+) -> (str, str):
     file_name = f'{tarfile_name}.tar'
     tarfile_path = os.path.join(tarfile_dir, file_name)
     with tarfile.open(tarfile_path, mode="w:gz") as tar:

@@ -22,6 +22,7 @@ import shutil
 from functools import wraps
 from contextlib import contextmanager
 from urllib.parse import urlparse
+from typing import TYPE_CHECKING
 from pathlib import PureWindowsPath, PurePosixPath
 
 from bentoml.utils.s3 import is_s3_url
@@ -30,17 +31,20 @@ from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.saved_bundle.pip_pkg import ZIPIMPORT_DIR
 
+if TYPE_CHECKING:
+    from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
+
 logger = logging.getLogger(__name__)
 
 
-def _is_http_url(bundle_path):
+def _is_http_url(bundle_path) -> bool:
     try:
         return urlparse(bundle_path).scheme in ["http", "https"]
     except ValueError:
         return False
 
 
-def _is_remote_path(bundle_path):
+def _is_remote_path(bundle_path) -> bool:
     return isinstance(bundle_path, str) and (
         is_s3_url(bundle_path) or is_gcs_url(bundle_path) or _is_http_url(bundle_path)
     )
@@ -109,7 +113,7 @@ def resolve_remote_bundle(func):
 
 
 @resolve_remote_bundle
-def load_saved_bundle_config(bundle_path):
+def load_saved_bundle_config(bundle_path) -> "SavedBundleConfig":
     try:
         return SavedBundleConfig.load(os.path.join(bundle_path, "bentoml.yml"))
     except FileNotFoundError:
@@ -119,7 +123,7 @@ def load_saved_bundle_config(bundle_path):
         )
 
 
-def load_bento_service_metadata(bundle_path):
+def load_bento_service_metadata(bundle_path: str) -> "BentoServiceMetadata":
     return load_saved_bundle_config(bundle_path).get_bento_service_metadata_pb()
 
 
@@ -237,16 +241,18 @@ def load_bento_service_class(bundle_path):
 
 
 @resolve_remote_bundle
-def safe_retrieve(bundle_path, target_dir):
+def safe_retrieve(bundle_path: str, target_dir: str):
     """Safely retrieve bento service to local path
 
     Args:
-        bundle_path (str): The path that contains saved BentoService bundle,
-            supporting both local file path and s3 path
-        target_dir (str): Where the service contents should end up
+        bundle_path (:obj:`str`):
+            The path that contains saved BentoService bundle, supporting
+            both local file path and s3 path
+        target_dir (:obj:`str`):
+            Where the service contents should end up.
 
     Returns:
-        string: location of safe local path
+        :obj:`str`: location of safe local path
     """
     shutil.copytree(bundle_path, target_dir)
 

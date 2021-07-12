@@ -17,6 +17,6 @@ exclude = '''
   | bentoml/yatai/proto
   | bentoml/_version.py
   | versioneer.py
+  | tests/yatai/proto
 )
 '''
-

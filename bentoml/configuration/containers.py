@@ -17,8 +17,8 @@ import multiprocessing
 import os
 
 from deepmerge import always_merger
-from dependency_injector import containers, providers
 from schema import And, Optional, Or, Schema, SchemaError, Use
+from simple_di import container, providers
 
 from bentoml import __version__
 from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
@@ -217,9 +217,10 @@ def _get_cors_options(**kwargs):
     return aiohttp_cors.ResourceOptions(**filtered_kwargs)
 
 
-class BentoMLContainer(containers.DeclarativeContainer):
+@container
+class BentoMLContainerClass:
 
-    config = providers.Configuration(strict=True)
+    config = providers.Configuration()
 
     access_control_options = providers.Callable(
         _get_cors_options,
@@ -288,3 +289,6 @@ class BentoMLContainer(containers.DeclarativeContainer):
         ),
         config.yatai.logging.path,
     )
+
+
+BentoMLContainer = BentoMLContainerClass()

@@ -1,18 +1,19 @@
 import atexit
+from concurrent import futures
 import logging
 import os
 import subprocess
 import time
-from concurrent import futures
 
 import certifi
 import click
+from simple_di import Provide, inject
+
 from bentoml.configuration import get_debug_mode
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.utils import reserve_free_port
 from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
-from dependency_injector.wiring import Provide, inject
 
 
 @inject

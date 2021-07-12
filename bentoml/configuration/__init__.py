@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import logging
 from functools import lru_cache
+import logging
+import os
 
 from bentoml import __version__, _version as version_mod
 
@@ -133,8 +133,8 @@ def inject_dependencies():
     else:
         configuration = BentoMLConfiguration()
 
-    container = BentoMLContainer()
-    container.config.from_dict(configuration.as_dict())
+    container = BentoMLContainer
+    container.config.set(configuration.as_dict())
 
     from bentoml import (
         marshal,

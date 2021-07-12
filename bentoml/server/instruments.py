@@ -2,9 +2,10 @@ import logging
 import multiprocessing
 import os
 import shutil
-from dependency_injector.wiring import Provide, inject
-from flask import Request
 from timeit import default_timer
+
+from flask import Request
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 

@@ -14,11 +14,12 @@
 
 import logging
 import os
-import stat
-from dependency_injector.wiring import Provide, inject
 from pathlib import Path
+import stat
 from sys import version_info
 from typing import List
+
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException

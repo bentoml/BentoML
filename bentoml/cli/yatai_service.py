@@ -13,17 +13,18 @@
 # limitations under the License.
 
 
-import click
 import logging
-from dependency_injector.wiring import Provide, inject
+
+import click
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import (
     BentoMLContainer,
-    YATAI_REPOSITORY_TYPES,
     YATAI_REPOSITORY_FILE_SYSTEM,
     YATAI_REPOSITORY_S3,
     YATAI_REPOSITORY_GCS,
     YATAI_REPOSITORY_ABS,
+    YATAI_REPOSITORY_TYPES,
 )
 from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
 

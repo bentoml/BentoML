@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import logging
-from dependency_injector.wiring import Provide, inject
+
+from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import YataiRepositoryException

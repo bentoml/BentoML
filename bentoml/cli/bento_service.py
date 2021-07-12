@@ -5,8 +5,8 @@ import re
 import sys
 
 import click
-from dependency_injector.wiring import Provide, inject
 import psutil
+from simple_di import Provide, inject
 
 from bentoml import __version__
 from bentoml.cli.click_utils import (

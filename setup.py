@@ -30,7 +30,6 @@ install_requires = [
     "click>=7.0",
     "configparser",
     "deepmerge",
-    "dependency-injector>=4.0,<5.0",
     "docker",
     "flask",
     "grpcio",
@@ -54,6 +53,7 @@ install_requires = [
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "chardet",
+    "simple-di",
 ]
 
 yatai_service_requires = [

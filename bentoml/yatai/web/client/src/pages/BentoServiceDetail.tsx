@@ -1,27 +1,20 @@
 import * as React from "react";
 import * as moment from "moment";
 
+import styled from "@emotion/styled";
 import HttpRequestContainer from "../utils/HttpRequestContainer";
 import EnvTable from "../components/BentoServiceDetail/EnvTable";
 import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
 import { Section } from "../ui/Layout";
 import LabelDetailSection from "../components/LabelDetailSection";
-import DeleteConfirmation from "../components/BentoBundleDeleteConfirm";
-import { findLastIndex } from "lodash";
+import BentoBundleDeleteConfirmation from "../components/BentoBundleDeleteConfirm";
+import { useParams } from "react-router";
 
-const horizontalFlex = {
+const BentoDetailInformationSection = styled.div({
   display: "flex",
   alignItems: "flex-start",
-  justifyContent: "space-between"
-};
-
-const TableHeader = styled(Row)({
-  borderBottom: "2px solid #D8E1E8",
-  fontWeight: 600,
-  ":hover": {
-    backgroundColor: "#F5F8FA",
-  },
+  justifyContent: "space-between",
 });
 
 const BentoServiceDetail = (props) => {
@@ -40,12 +33,14 @@ const BentoServiceDetail = (props) => {
 
           displayBentoServiceDetail = (
             <div>
-              <div style={horizontalFlex}>
+              <BentoDetailInformationSection>
                 <div>
                   <p>
                     <b>Created at: </b>
                     {moment
-                      .unix(Number(bento.bento_service_metadata.created_at.seconds))
+                      .unix(
+                        Number(bento.bento_service_metadata.created_at.seconds)
+                      )
                       .toDate()
                       .toLocaleString()}
                   </p>
@@ -56,8 +51,12 @@ const BentoServiceDetail = (props) => {
                     labels={bento.bento_service_metadata.labels}
                   />
                 </div>
-                <DeleteConfirmation></DeleteConfirmation>
-              </div>
+                <BentoBundleDeleteConfirmation
+                  name={useParams.name}
+                  value={params.version}
+                  isOpen={false}
+                ></BentoBundleDeleteConfirmation>
+              </BentoDetailInformationSection>
               <ApisTable apis={bento.bento_service_metadata.apis} />
               <ArtifactsTable
                 artifacts={bento.bento_service_metadata.artifacts}
@@ -80,8 +79,6 @@ const BentoServiceDetail = (props) => {
       }}
     </HttpRequestContainer>
   );
-
-
 };
 
 export default BentoServiceDetail;

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { getQueryObject } from "../utils";
 import HttpRequestContainer from "../utils/HttpRequestContainer";
 import BentoServiceTable from "../components/BentoServiceTable";
-import { Section } from "../ui/Layout";
+import { Section } from "../containers/Layout";
 
 const DEFAULT_BENTO_SERVICE_LIMIT_PER_PAGE = 30;
 

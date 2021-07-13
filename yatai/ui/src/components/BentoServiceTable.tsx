@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import * as lodash from "lodash";
 
 import { displayTimeInFromNowFormat } from "../utils";
-import Table from "../ui/Table";
+import Table from "../containers/Table";
 import Label from "./Label";
 
 const apisToDisplayFormat = (apis: any) => {

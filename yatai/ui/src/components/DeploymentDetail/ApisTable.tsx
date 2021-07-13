@@ -1,7 +1,7 @@
 import * as React from "react";
 import HttpRequestContainer from "../../utils/HttpRequestContainer";
 import ApisTable from "../BentoServiceDetail/ApisTable";
-import { Section } from "../../ui/Layout";
+import { Section } from "../../containers/Layout";
 
 const DeploymentApisTable = ({ deployment }) => {
   let apiName;

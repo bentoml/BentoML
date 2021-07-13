@@ -1,8 +1,8 @@
 import * as React from "react";
-import Table from "../../ui/Table";
+import Table from "../../containers/Table";
 import { displayTimeInFromNowFormat, displayTimeISOString } from "../../utils";
 import { Link } from "react-router-dom";
-import { Section } from "../../ui/Layout";
+import { Section } from "../../containers/Layout";
 
 const displayTimestampForDeployment = (seconds: number) => {
   return `${displayTimeInFromNowFormat(seconds, true)} (${displayTimeISOString(

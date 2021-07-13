@@ -3,7 +3,7 @@ import * as React from "react";
 import HttpRequestContainer from "../utils/HttpRequestContainer";
 import DeploymentsTable from "../components/DeploymentsTable";
 import BentoServiceTable from "../components/BentoServiceTable";
-import { Section } from "../ui/Layout";
+import { Section } from "../containers/Layout";
 
 const HomePage = () => (
   <div>

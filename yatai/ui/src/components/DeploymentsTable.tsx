@@ -2,7 +2,7 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 
 import { displayTimeInFromNowFormat } from "../utils";
-import Table from "../ui/Table";
+import Table from "../containers/Table";
 import DeploymentStatusTag from "./DeploymentDetail/DeploymentStatusTag";
 
 const DEPLOYMENTS_TABLE_HEADERS = [

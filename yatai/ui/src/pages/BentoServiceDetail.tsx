@@ -5,7 +5,7 @@ import HttpRequestContainer from "../utils/HttpRequestContainer";
 import EnvTable from "../components/BentoServiceDetail/EnvTable";
 import ApisTable from "../components/BentoServiceDetail/ApisTable";
 import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
-import { Section } from "../ui/Layout";
+import { Section } from "../containers/Layout";
 import LabelDetailSection from "../components/LabelDetailSection";
 
 const BentoServiceDetail = (props) => {

@@ -6,7 +6,7 @@ import {
   Breadcrumbs as BlueprintBreadcrumbs,
   IBreadcrumbProps,
 } from "@blueprintjs/core";
-import { Section } from "../ui/Layout";
+import { Section } from "../containers/Layout";
 
 export interface IBreadcrumbsProps {
   baseURL: string;

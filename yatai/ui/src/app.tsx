@@ -7,7 +7,7 @@ import DeploymentDetails from "./pages/DeploymentDetails";
 import Repository from "./pages/Repository";
 import BentoServicesList from "./pages/BentoServiceList";
 import BentoServiceDetail from "./pages/BentoServiceDetail";
-import Layout from "./ui/Layout";
+import Layout from "./containers/Layout";
 import Breadcrumbs from "./components/Breadcrumbs";
 import NavigationBar from "./components/NavigationBar";
 import { setBaseUrl } from "./utils/HttpRequestContainer";

@@ -1,6 +1,6 @@
 import * as React from "react";
-import Table from "../../ui/Table";
-import { Section } from "../../ui/Layout";
+import Table from "../../containers/Table";
+import { Section } from "../../containers/Layout";
 
 const ENV_TABLE_RATIO = [1, 4];
 

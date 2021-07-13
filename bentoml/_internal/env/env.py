@@ -7,7 +7,7 @@ from typing import List
 
 from simple_di import Provide, inject
 
-from ..bundle.pip_pkg import (
+from .pip_pkg import (
     EPP_NO_ERROR,
     EPP_PKG_NOT_EXIST,
     EPP_PKG_VERSION_MISMATCH,

@@ -190,7 +190,7 @@ def validate_version_str(version_str):
 
 
 
-class BentoService:
+class Service:
     """
     BentoService is the base component for building prediction services using BentoML.
 
@@ -198,25 +198,6 @@ class BentoService:
     dependencies required for a prediction service. And allows users to create inference
     APIs that defines the inferencing logic and how the underlying model can be served.
     Each BentoService can contain multiple models and serve multiple inference APIs.
-
-    Usage example:
-
-    >>>  from bentoml import BentoService, env, api, artifacts
-    >>>  from bentoml.adapters import DataframeInput
-    >>>  from bentoml.frameworks.sklearn import SklearnModelArtifact
-    >>>
-    >>>  @artifacts([SklearnModelArtifact('clf')])
-    >>>  @env(pip_packages=["scikit-learn"])
-    >>>  class MyMLService(BentoService):
-    >>>
-    >>>     @api(input=DataframeInput(), batch=True)
-    >>>     def predict(self, df):
-    >>>         return self.artifacts.clf.predict(df)
-    >>>
-    >>>  if __name__ == "__main__":
-    >>>     bento_service = MyMLService()
-    >>>     bento_service.pack('clf', trained_classifier_model)
-    >>>     bento_service.save_to_dir('/bentoml_bundles')
     """
 
     # List of inference APIs that this BentoService provides
@@ -233,7 +214,7 @@ class BentoService:
     # List of artifacts required by this BentoService class, declared via the `@env`
     # decorator. This list is used for initializing an empty ArtifactCollection when
     # the BentoService class is instantiated
-    _declared_artifacts: List[BentoServiceArtifact] = []
+    _declared_artifacts: List[BentServiceArtifact] = []
 
     # An instance of ArtifactCollection, containing all required trained model artifacts
     _artifacts: ArtifactCollection = None

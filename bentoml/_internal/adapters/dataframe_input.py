@@ -1,27 +1,14 @@
-# Copyright 2019 Atalaya Tech, Inc.
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-# http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import argparse
 from typing import Iterable, Iterator, Mapping, Optional, Sequence, Tuple
 
-from bentoml.adapters.string_input import StringInput
-from bentoml.exceptions import MissingDependencyException
-from bentoml.types import HTTPHeaders, InferenceTask
-from bentoml.utils.dataframe_util import (
+from ..adapters.string_input import StringInput
+from ..exceptions import MissingDependencyException
+from ..types import HTTPHeaders, InferenceTask
+from ..utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
     read_dataframes_from_json_n_csv,
 )
-from bentoml.utils.lazy_loader import LazyLoader
+from ..utils.lazy_loader import LazyLoader
 
 pandas = LazyLoader('pandas', globals(), 'pandas')
 
@@ -94,8 +81,8 @@ class DataframeInput(StringInput):
     .. code-block:: python
 
         from bentoml import env, artifacts, api, BentoService
-        from bentoml.adapters import DataframeInput
-        from bentoml.frameworks.sklearn import SklearnModelArtifact
+        from ..adapters import DataframeInput
+        from ..frameworks.sklearn import SklearnModelArtifact
 
         @env(infer_pip_packages=True)
         @artifacts([SklearnModelArtifact('model')])

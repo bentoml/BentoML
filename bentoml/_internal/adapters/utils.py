@@ -4,8 +4,8 @@ import os
 
 from simple_di import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer
-from bentoml.types import HTTPRequest, InferenceTask
+from ..configuration.containers import BentoMLContainer
+from ..types import HTTPRequest, InferenceTask
 
 TF_B64_KEY = "b64"
 

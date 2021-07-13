@@ -1,17 +1,3 @@
-# Copyright 2020 Atalaya Tech, Inc.
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-# http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import logging
 import multiprocessing
 import os
@@ -24,11 +10,11 @@ from simple_di import Provide, Provider, container, providers
 from bentoml import __version__
 from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
-from bentoml.utils import get_free_port
-from bentoml.utils.ruamel_yaml import YAML
+from ..utils import get_free_port
+from ..utils.ruamel_yaml import YAML
 
 if TYPE_CHECKING:
-    from bentoml.marshal.marshal import MarshalApp
+    from ..marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
 
@@ -216,7 +202,7 @@ class BentoMLContainerClass:
         jaeger_server_port: int = Provide[config.tracing.jaeger.port],
     ):
         if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
-            from bentoml.tracing.zipkin import get_zipkin_tracer
+            from ..tracing.zipkin import get_zipkin_tracer
 
             return get_zipkin_tracer(zipkin_server_url)
         elif (
@@ -225,11 +211,11 @@ class BentoMLContainerClass:
             and jaeger_server_address
             and jaeger_server_port
         ):
-            from bentoml.tracing.jaeger import get_jaeger_tracer
+            from ..tracing.jaeger import get_jaeger_tracer
 
             return get_jaeger_tracer(jaeger_server_address, jaeger_server_port)
         else:
-            from bentoml.tracing.noop import NoopTracer
+            from ..tracing.noop import NoopTracer
 
             return NoopTracer()
 
@@ -278,28 +264,28 @@ class BentoMLContainerClass:
     @providers.Factory
     @staticmethod
     def model_server():
-        from bentoml.server.gunicorn_model_server import GunicornModelServer
+        from ..server.gunicorn_model_server import GunicornModelServer
 
         return GunicornModelServer()
 
     @providers.Factory
     @staticmethod
     def proxy_server():
-        from bentoml.server.gunicorn_marshal_server import GunicornMarshalServer
+        from ..server.gunicorn_marshal_server import GunicornMarshalServer
 
         return GunicornMarshalServer()
 
     @providers.Factory
     @staticmethod
     def proxy_app() -> "MarshalApp":
-        from bentoml.marshal.marshal import MarshalApp
+        from ..marshal.marshal import MarshalApp
 
         return MarshalApp()
 
     @providers.Factory
     @staticmethod
     def model_app():
-        from bentoml.server.model_app import ModelApp
+        from ..server.model_app import ModelApp
 
         return ModelApp()
 
@@ -316,7 +302,7 @@ class BentoMLContainerClass:
         multiproc_dir=prometheus_multiproc_dir,
         namespace=config.bento_server.metrics.namespace,
     ):
-        from bentoml.metrics.prometheus import PrometheusClient
+        from ..metrics.prometheus import PrometheusClient
 
         return PrometheusClient(
             multiproc_lock=multiproc_lock,
@@ -327,7 +313,7 @@ class BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def yatai_metrics_client():
-        from bentoml.metrics.prometheus import PrometheusClient
+        from ..metrics.prometheus import PrometheusClient
 
         return PrometheusClient(multiproc=False, namespace="YATAI")
 

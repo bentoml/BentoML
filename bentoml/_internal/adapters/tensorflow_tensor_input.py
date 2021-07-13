@@ -1,25 +1,11 @@
-# Copyright 2019 Atalaya Tech, Inc.
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-# http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import base64
 import json
 import traceback
 from typing import Iterable, Sequence, Tuple
 
-from bentoml.adapters.string_input import StringInput
-from bentoml.adapters.utils import TF_B64_KEY
-from bentoml.types import InferenceTask, JsonSerializable
+from ..adapters.string_input import StringInput
+from ..adapters.utils import TF_B64_KEY
+from ..types import InferenceTask, JsonSerializable
 
 
 def b64_hook(o):
@@ -56,8 +42,8 @@ class TfTensorInput(StringInput):
 
         import tensorflow as tf
         import bentoml
-        from bentoml.adapters import TfTensorInput
-        from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
+        from ..adapters import TfTensorInput
+        from ..frameworks.tensorflow import TensorflowSavedModelArtifact
 
         @bentoml.env(infer_pip_packages=True)
         @bentoml.artifacts([TensorflowSavedModelArtifact('model')])

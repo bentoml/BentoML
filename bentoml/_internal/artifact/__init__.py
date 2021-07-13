@@ -4,9 +4,9 @@ import re
 from pathlib import Path
 from typing import List
 
-from bentoml.exceptions import FailedPrecondition, InvalidArgument
-from bentoml.service.env import BentoServiceEnv
-from bentoml.utils.ruamel_yaml import YAML
+from ..exceptions import FailedPrecondition, InvalidArgument
+from ..env import BentoServiceEnv
+from ..utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 

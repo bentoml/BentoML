@@ -43,14 +43,7 @@ install_requires = [
     "cloudpickle",
 ]
 
-yatai_service_requires = [
-    "grpcio~=1.34.0",  # match the grpcio-tools version used in yatai docker image
-    "google-cloud-storage",
-    "azure-cli",
-    "aws-sam-cli==0.33.1",
-    "psycopg2",
-    "psycopg2-binary",
-]
+
 
 model_server_requires = [
     "opentracing",
@@ -115,7 +108,6 @@ dev_all = install_requires + dev_requires + docs_requires + types_requires
 extras_require = {
     "dev": dev_all,
     "test": test_requires,
-    "yatai_service": yatai_service_requires,
     "model_server": model_server_requires,
     "doc_builder": docs_requires,  # 'doc_builder' is required by readthedocs.io
     "types_stub": types_requires,

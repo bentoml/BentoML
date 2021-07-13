@@ -33,9 +33,11 @@ Preface
 
     .. code-block:: python
 
-        from prometheus_client import Summary
+        from bentoml.configuratoin.containers import BentoMLContainer
 
-        REQUEST_TIME=Summary('request_processing_time', 'Time spend processing request')
+	metrics_client = BentoMLContainer.metircs_client.get()
+
+        REQUEST_TIME = metrics_clint.Summary('request_processing_time', 'Time spend processing request')
 
         @artifacts([KerasModelArtifact('model'), PickleArtifact('tokenizer')])
         class TensorflowService(BentoService):
@@ -48,9 +50,6 @@ Preface
                 input_data = pad_sequences(input_data, maxlen=100, padding="post")
                 return self.artifacts.model.predict(input_data)
 
-
-.. _prom_client: https://github.com/prometheus/client_python
-.. |prom_client| replace:: *prometheus_client*
 
 Local Deployment
 ----------------

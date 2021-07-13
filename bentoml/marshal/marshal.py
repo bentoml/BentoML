@@ -28,7 +28,6 @@ from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
 from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
-from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest, HTTPResponse
 
 
@@ -42,14 +41,12 @@ if TYPE_CHECKING:
 
 
 def metrics_patch(cls):
-    class _MarshalService(cls):
+    class _MarshalApp(cls):
         @inject
         def __init__(
             self,
             *args,
-            namespace: str = Provide[
-                BentoMLContainer.config.bento_server.metrics.namespace
-            ],
+            metrics_client=Provide[BentoMLContainer.metrics_client],
             **kwargs,
         ):
             for attr_name in functools.WRAPPER_ASSIGNMENTS:
@@ -58,47 +55,40 @@ def metrics_patch(cls):
                 except AttributeError:
                     pass
 
-            from prometheus_client import Counter, Gauge, Histogram
-
-            super(_MarshalService, self).__init__(*args, **kwargs)
+            super(_MarshalApp, self).__init__(*args, **kwargs)
             # its own namespace?
             service_name = self.bento_service_metadata_pb.name
 
-            self.metrics_request_batch_size = Histogram(
+            self.metrics_request_batch_size = metrics_client.Histogram(
                 name=service_name + '_mb_batch_size',
                 documentation=service_name + "microbatch request batch size",
-                namespace=namespace,
                 labelnames=['endpoint'],
             )
-            self.metrics_request_duration = Histogram(
+            self.metrics_request_duration = metrics_client.Histogram(
                 name=service_name + '_mb_request_duration_seconds',
                 documentation=service_name + "API HTTP request duration in seconds",
-                namespace=namespace,
                 labelnames=['endpoint', 'http_response_code'],
             )
-            self.metrics_request_in_progress = Gauge(
+            self.metrics_request_in_progress = metrics_client.Gauge(
                 name=service_name + "_mb_request_in_progress",
                 documentation='Total number of HTTP requests in progress now',
-                namespace=namespace,
                 labelnames=['endpoint', 'http_method'],
             )
-            self.metrics_request_exception = Counter(
+            self.metrics_request_exception = metrics_client.Counter(
                 name=service_name + "_mb_request_exception",
                 documentation='Total number of service exceptions',
-                namespace=namespace,
                 labelnames=['endpoint', 'exception_class'],
             )
-            self.metrics_request_total = Counter(
+            self.metrics_request_total = metrics_client.Counter(
                 name=service_name + "_mb_request_total",
                 documentation='Total number of service exceptions',
-                namespace=namespace,
                 labelnames=['endpoint', 'http_response_code'],
             )
 
         async def request_dispatcher(self, request):
             from aiohttp.web import Response
 
-            func = super(_MarshalService, self).request_dispatcher
+            func = super(_MarshalApp, self).request_dispatcher
             api_route = request.match_info.get("path", "/")
             _metrics_request_in_progress = self.metrics_request_in_progress.labels(
                 endpoint=api_route, http_method=request.method,
@@ -125,19 +115,19 @@ def metrics_patch(cls):
             return resp
 
         async def _batch_handler_template(self, requests, api_route, max_latency):
-            func = super(_MarshalService, self)._batch_handler_template
+            func = super(_MarshalApp, self)._batch_handler_template
             self.metrics_request_batch_size.labels(endpoint=api_route).observe(
                 len(requests)
             )
             return await func(requests, api_route, max_latency)
 
-    return _MarshalService
+    return _MarshalApp
 
 
 @metrics_patch
-class MarshalService:
+class MarshalApp:
     """
-    MarshalService creates a reverse proxy server in front of actual API server,
+    MarshalApp creates a reverse proxy server in front of actual API server,
     implementing the micro batching feature.
     It wait a short period and packed multiple requests in a single batch
     before sending to the API server.
@@ -147,9 +137,9 @@ class MarshalService:
     @inject
     def __init__(
         self,
-        bento_bundle_path,
-        outbound_host="localhost",
-        outbound_port=None,
+        bento_bundle_path: str = Provide[BentoMLContainer.bundle_path],
+        outbound_host: str = Provide[BentoMLContainer.forward_host],
+        outbound_port: int = Provide[BentoMLContainer.forward_port],
         outbound_workers: int = Provide[BentoMLContainer.api_server_workers],
         mb_max_batch_size: int = Provide[
             BentoMLContainer.config.bento_server.microbatch.max_batch_size
@@ -171,6 +161,7 @@ class MarshalService:
             BentoMLContainer.access_control_options
         ],
         timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
+        tracer=Provide[BentoMLContainer.tracer],
     ):
 
         self._conn: Optional["BaseConnector"] = None
@@ -185,6 +176,7 @@ class MarshalService:
         self._outbound_sema = None  # the semaphore to limit outbound connections
         self._cleanup_tasks = None
         self.max_request_size = max_request_size
+        self.tracer = tracer
 
         self.enable_access_control = enable_access_control
         self.access_control_allow_origin = access_control_allow_origin
@@ -219,11 +211,10 @@ class MarshalService:
         # clean up futures for gracefully shutting down
         for task in self.cleanup_tasks:
             await task()
-        if getattr(self, '_client', None) is not None and not self._client.closed:
-            await self._client.close()
 
-    def set_outbound_port(self, outbound_port):
-        self.outbound_port = outbound_port
+        if hasattr(self, '_client'):
+            if self._client is not None and not self._client.closed:
+                await self._client.close()
 
     def fetch_sema(self):
         if self._outbound_sema is None:
@@ -308,7 +299,7 @@ class MarshalService:
     async def request_dispatcher(self, request: "Request"):
         from aiohttp.web import HTTPInternalServerError, Response
 
-        with get_tracer().async_span(
+        with self.tracer.async_span(
             service_name=self.__class__.__name__,
             span_name="[1]http request",
             is_root=True,
@@ -338,14 +329,14 @@ class MarshalService:
                 resp = await self.relay_handler(request)
         return resp
 
-    async def relay_handler(self, request):
+    async def relay_handler(self, request: "Request"):
         from aiohttp.client_exceptions import ClientConnectionError
         from aiohttp.web import Response
 
         data = await request.read()
         url = request.url.with_host(self.outbound_host).with_port(self.outbound_port)
 
-        with get_tracer().async_span(
+        with self.tracer.async_span(
             service_name=self.__class__.__name__,
             span_name=f"[2]{url.path} relay",
             request_headers=request.headers,
@@ -377,7 +368,7 @@ class MarshalService:
         headers = {MARSHAL_REQUEST_HEADER: "true"}
         api_url = f"http://{self.outbound_host}:{self.outbound_port}/{api_route}"
 
-        with get_tracer().async_span(
+        with self.tracer.async_span(
             service_name=self.__class__.__name__,
             span_name=f"[2]merged {api_route}",
             request_headers=headers,
@@ -423,7 +414,7 @@ class MarshalService:
                 for i in merged
             )
 
-    def make_app(self) -> "Application":
+    def get_app(self) -> "Application":
         from aiohttp.web import Application
         from aiohttp import hdrs
 
@@ -462,14 +453,15 @@ class MarshalService:
         return app
 
     @inject
-    def fork_start_app(
+    def run(
         self, port=Provide[BentoMLContainer.config.bento_server.port],
     ):
+        logger.info("Starting BentoML API proxy in development mode..")
         from aiohttp.web import run_app
 
         # Use new eventloop in the fork process to avoid problems on MacOS
         # ref: https://groups.google.com/forum/#!topic/python-tornado/DkXjSNPCzsI
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        app = self.make_app()
+        app = self.get_app()
         run_app(app, port=port)

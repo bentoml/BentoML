@@ -1,4 +1,4 @@
-from bentoml.yatai.grpc_interceptor.prom_server_interceptor import (
+from yatai.yatai.grpc_interceptor.prom_server_interceptor import (
     PromServerInterceptor,
     ServiceLatencyInterceptor,
 )

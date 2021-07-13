@@ -54,88 +54,6 @@ deployment_schema = {
                     'config': {'type': 'dict', 'allow_unknown': True},
                 },
             },
-            'sagemaker_operator_config': {
-                'type': 'dict',
-                'schema': {
-                    'api_name': {'type': 'string', 'required': True, 'minlength': 3},
-                    'instance_type': {'type': 'string', 'required': True},
-                    'instance_count': {'type': 'integer', 'min': 1, 'required': True},
-                    'region': {'type': 'string'},
-                    'num_of_gunicorn_workers_per_instance': {
-                        'type': 'integer',
-                        'min': 1,
-                    },
-                    'timeout': {'type': 'integer', 'min': 1},
-                    'data_capture_s3_prefix': {'type': 'string'},
-                    'data_capture_sample_percent': {
-                        'type': 'integer',
-                        'min': 1,
-                        'max': 100,
-                    },
-                },
-            },
-            'aws_lambda_operator_config': {
-                'type': 'dict',
-                'schema': {
-                    'region': {'type': 'string'},
-                    'api_name': {'type': 'string', 'minlength': 3},
-                    'memory_size': {'type': 'integer', 'aws_lambda_memory': True},
-                    'timeout': {'type': 'integer', 'min': 1, 'max': 900},
-                },
-            },
-            # https://docs.microsoft.com/en-us/azure/azure-functions/functions-premium-plan
-            # https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook-trigger?tabs=python#configuration
-            'azure_functions_operator_config': {
-                'type': 'dict',
-                'azure_functions_configuration': True,
-                'schema': {
-                    'location': {'type': 'string'},
-                    'premium_plan_sku': {
-                        'type': 'string',
-                        'allowed': AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
-                    },
-                    'min_instances': {
-                        'required': True,
-                        'type': 'integer',
-                        'min': 1,
-                        'max': 20,
-                    },
-                    'max_burst': {
-                        'type': 'integer',
-                        'min': 1,
-                        'max': 20,
-                        'required': True,
-                    },
-                    'function_auth_level': {
-                        'type': 'string',
-                        'allowed': AZURE_FUNCTIONS_AUTH_LEVELS,
-                    },
-                },
-            },
-            "aws_ec2_operator_config": {
-                "type": "dict",
-                "aws_ec2_operator_configurations": True,
-                "schema": {
-                    "region": {"type": "string"},
-                    "instance_type": {"type": "string"},
-                    "ami_id": {"type": "string"},
-                    "autoscale_min_size": {
-                        "type": "integer",
-                        "min": 0,
-                        "required": True,
-                    },
-                    "autoscale_desired_capacity": {
-                        "type": "integer",
-                        "min": 0,
-                        "required": True,
-                    },
-                    "autoscale_max_size": {
-                        "type": "integer",
-                        "min": 0,
-                        "required": True,
-                    },
-                },
-            },
         },
     },
     'state': {
@@ -151,26 +69,6 @@ deployment_schema = {
 
 
 class YataiDeploymentValidator(Validator):
-    def _validate_aws_lambda_memory(self, aws_lambda_memory, field, value):
-        """ Test the memory size restriction for AWS Lambda.
-
-        The rule's arguments are validated against this schema:
-        {'type': 'boolean'}
-        """
-        if aws_lambda_memory:
-            if value > 3008 or value < 128:
-                self._error(
-                    field,
-                    'AWS Lambda memory must be between 128 MB to 3,008 MB, '
-                    'in 64 MB increments.',
-                )
-            if value % 64 > 0:
-                self._error(
-                    field,
-                    'AWS Lambda memory must be between 128 MB to 3,008 MB, '
-                    'in 64 MB increments.',
-                )
-
     def _validate_bento_service_version(self, bento_service_version, field, value):
         """ Test the given BentoService version is not "latest"
 
@@ -183,21 +81,6 @@ class YataiDeploymentValidator(Validator):
                 'Must use specific "bento_version" in deployment, using "latest" is '
                 'an anti-pattern.',
             )
-
-    def _validate_azure_functions_configuration(
-        self, azure_functions_configuration, field, value
-    ):
-        """ Test the min instances is less than max burst for Azure Functions deployment
-
-        The rule's arguments are validated against this schema:
-        {'type': 'boolean'}
-        """
-        if azure_functions_configuration:
-            if value.get('max_burst', 0) < value.get('min_instances', 0):
-                self._error(
-                    field,
-                    'Azure Functions min instances must be smaller than max burst',
-                )
 
     def _validate_deployment_labels(self, deployment_labels, field, value):
         """ Test label key value schema
@@ -214,29 +97,6 @@ class YataiDeploymentValidator(Validator):
                     'Valid label key and value must be 63 characters or less and '
                     'must be being and end with an alphanumeric character '
                     '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
-                )
-
-    def _validate_aws_ec2_operator_configurations(
-        self, aws_ec2_operator_configurations, field, value
-    ):
-        """ Test label key value schema
-
-        The rule's arguments are validated against this schema:
-        {'type': 'boolean'}
-        """
-        if aws_ec2_operator_configurations:
-            if (
-                value.get("autoscale_min_size") < 0
-                or value.get("autoscale_max_size") < value.get("autoscale_min_size")
-                or value.get("autoscale_desired_capacity")
-                < value.get("autoscale_min_size")
-                or value.get("autoscale_desired_capacity")
-                > value.get("autoscale_max_size")
-            ):
-                self._error(
-                    field,
-                    "Wrong autoscaling size specified. "
-                    "It should be min_size <= desired_capacity <= max_size",
                 )
 
 

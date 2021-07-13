@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.yatai.repository.base_repository import BaseRepository
-from bentoml.yatai.repository.file_system_repository import FileSystemRepository
-from bentoml.yatai.repository.s3_repository import S3Repository
-from bentoml.yatai.repository.gcs_repository import GCSRepository
+from yatai.yatai.repository.base_repository import BaseRepository
+from yatai.yatai.repository.file_system_repository import FileSystemRepository
+from yatai.yatai.repository.s3_repository import S3Repository
+from yatai.yatai.repository.gcs_repository import GCSRepository
 
 
 def create_repository(

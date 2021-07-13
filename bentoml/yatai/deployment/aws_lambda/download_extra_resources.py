@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import io
+import logging
 import os
 import sys
 import tarfile
-import logging
 
 import boto3
 from botocore.exceptions import ClientError

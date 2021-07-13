@@ -1,14 +1,9 @@
 import os
 from importlib import import_module
 
-from bentoml.service.env import BentoServiceEnv
-
-from bentoml.exceptions import (
-    InvalidArgument,
-    MissingDependencyException,
-    NotFound,
-)
+from bentoml.exceptions import InvalidArgument, MissingDependencyException, NotFound
 from bentoml.service import BentoServiceArtifact
+from bentoml.service.env import BentoServiceEnv
 
 try:
     import transformers

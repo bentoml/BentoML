@@ -27,7 +27,6 @@ from bentoml.exceptions import BentoMLConfigException
 from bentoml.utils import get_free_port
 from bentoml.utils.ruamel_yaml import YAML
 
-
 if TYPE_CHECKING:
     from bentoml.marshal.marshal import MarshalApp
 

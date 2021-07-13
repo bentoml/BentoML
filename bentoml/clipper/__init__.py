@@ -13,19 +13,19 @@
 # limitations under the License.
 
 
-import os
-import shutil
-import re
 import logging
+import os
+import re
+import shutil
 
-from bentoml.utils.tempdir import TempDirectory
-from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.yatai.deployment.docker_utils import (
-    ensure_docker_available_or_raise,
-    build_docker_image,
-)
 from bentoml.adapters.clipper_input import ADAPTER_TYPE_TO_INPUT_TYPE
 from bentoml.exceptions import BentoMLException
+from bentoml.saved_bundle import load_bento_service_metadata
+from bentoml.utils.tempdir import TempDirectory
+from bentoml.yatai.deployment.docker_utils import (
+    build_docker_image,
+    ensure_docker_available_or_raise,
+)
 
 logger = logging.getLogger(__name__)
 

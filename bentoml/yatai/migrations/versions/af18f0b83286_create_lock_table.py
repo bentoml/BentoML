@@ -7,7 +7,6 @@ Create Date: 2021-05-18 18:33:10.622364
 """
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 from bentoml.yatai.db.stores.lock import Lock
 

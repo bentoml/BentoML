@@ -1,10 +1,8 @@
 import os
 
-from bentoml.service.env import BentoServiceEnv
-
 from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
-
+from bentoml.service.env import BentoServiceEnv
 
 DEFAULT_PICKLE_EXTENSION = ".pkl"
 

@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
-import logging
-import pkgutil
 import ast
-import zipimport
+import logging
+import os
+import pkgutil
+import sys
 import zipfile
+import zipimport
 from typing import Dict
 
 EPP_NO_ERROR = 0

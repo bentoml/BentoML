@@ -1,5 +1,6 @@
 import atexit
 import json
+import logging
 import os
 import platform
 import shutil
@@ -8,8 +9,9 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
-import logging
+
 import requests
+
 from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)

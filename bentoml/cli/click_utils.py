@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-import time
-import os
-
-import click
 import functools
 import logging
+import os
+import re
+import time
 
+import click
 from click import ClickException
 
 from bentoml import configure_logging

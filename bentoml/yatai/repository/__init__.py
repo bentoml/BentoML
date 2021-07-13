@@ -14,8 +14,8 @@
 
 from bentoml.yatai.repository.base_repository import BaseRepository
 from bentoml.yatai.repository.file_system_repository import FileSystemRepository
-from bentoml.yatai.repository.s3_repository import S3Repository
 from bentoml.yatai.repository.gcs_repository import GCSRepository
+from bentoml.yatai.repository.s3_repository import S3Repository
 
 
 def create_repository(

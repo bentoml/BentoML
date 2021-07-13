@@ -12,20 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+
 import click
 from tabulate import tabulate
 
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.cli.click_utils import (
-    _echo,
-    _is_valid_bento_tag,
-    _is_valid_bento_name,
-)
-from bentoml.cli.utils import (
-    human_friendly_age_from_datetime,
-    _format_labels_for_print,
-)
+from bentoml.cli.click_utils import _echo, _is_valid_bento_name, _is_valid_bento_tag
+from bentoml.cli.utils import _format_labels_for_print, human_friendly_age_from_datetime
 from bentoml.utils import pb_to_yaml
+from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.yatai.client import get_yatai_client
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')

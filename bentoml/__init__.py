@@ -20,25 +20,21 @@ del get_versions
 from bentoml.configuration import inject_dependencies
 from bentoml.utils.log import configure_logging
 
-
 # Inject dependencies and configurations
 inject_dependencies()
 
 # Configuring logging properly before loading other modules
 configure_logging()
 
-from bentoml.saved_bundle import load_from_dir, save_to_dir  # noqa: E402
-from bentoml.service import (  # noqa: E402
-    BentoService,
-    api_decorator as api,
-    env_decorator as env,
-    web_static_content_decorator as web_static_content,
-    artifacts_decorator as artifacts,
-    ver_decorator as ver,
-    save,
-)
-
 from bentoml.cli import create_bentoml_cli
+from bentoml.saved_bundle import load_from_dir, save_to_dir  # noqa: E402
+from bentoml.service import BentoService
+from bentoml.service import api_decorator as api  # noqa: E402
+from bentoml.service import artifacts_decorator as artifacts
+from bentoml.service import env_decorator as env
+from bentoml.service import save
+from bentoml.service import ver_decorator as ver
+from bentoml.service import web_static_content_decorator as web_static_content
 
 commandline_interface = create_bentoml_cli()
 

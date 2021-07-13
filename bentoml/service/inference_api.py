@@ -29,7 +29,6 @@ from bentoml.exceptions import BentoMLConfigException
 from bentoml.types import HTTPRequest, HTTPResponse, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 
-
 logger = logging.getLogger(__name__)
 prediction_logger = logging.getLogger("bentoml.prediction")
 

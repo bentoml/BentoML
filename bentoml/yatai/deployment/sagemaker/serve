@@ -6,10 +6,11 @@
 # timeout                 GUNICORN_WORKER_COUNT        number of cpu cores / 2 + 1
 # api name                API_NAME                     None
 
-import subprocess
 import os
 import signal
+import subprocess
 import sys
+
 from simple_di import Provide, inject
 
 from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer

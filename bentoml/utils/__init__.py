@@ -15,10 +15,10 @@
 import contextlib
 import functools
 import inspect
-from io import StringIO
 import os
 import socket
 import tarfile
+from io import StringIO
 from typing import Optional
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 

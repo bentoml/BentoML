@@ -23,30 +23,30 @@ import os
 import shutil
 import stat
 import tarfile
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from typing import TYPE_CHECKING
 import requests
 
 from bentoml.configuration import _is_pip_installed_bentoml
 from bentoml.exceptions import BentoMLException
+from bentoml.saved_bundle.config import SavedBundleConfig
+from bentoml.saved_bundle.loader import _is_remote_path
 from bentoml.saved_bundle.local_py_modules import (
     copy_local_py_modules,
     copy_zip_import_archives,
 )
-from bentoml.saved_bundle.loader import _is_remote_path
+from bentoml.saved_bundle.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
 from bentoml.saved_bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     INIT_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
 )
-from bentoml.utils import is_gcs_url, is_s3_url, archive_directory_to_tar
+from bentoml.utils import archive_directory_to_tar, is_gcs_url, is_s3_url
+from bentoml.utils.open_api import get_open_api_spec_json
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track_save
-from bentoml.saved_bundle.config import SavedBundleConfig
-from bentoml.saved_bundle.pip_pkg import get_zipmodules, ZIPIMPORT_DIR
-from bentoml.utils.open_api import get_open_api_spec_json
 
 if TYPE_CHECKING:
     from bentoml.service import BentoService

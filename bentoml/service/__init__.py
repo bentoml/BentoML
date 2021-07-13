@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 import inspect
 import logging
 import multiprocessing
@@ -23,8 +22,9 @@ import subprocess
 import sys
 import tempfile
 import threading
-from typing import List
 import uuid
+from datetime import datetime
+from typing import List
 
 from simple_di import Provide, inject
 

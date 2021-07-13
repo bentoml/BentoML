@@ -1,9 +1,9 @@
 import os
+import tempfile
 
 from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
-import tempfile
 
 try:
     import paddle

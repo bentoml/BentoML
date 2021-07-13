@@ -14,11 +14,11 @@
 
 
 import asyncio
-from contextlib import contextmanager
 import logging
 import random
-
+from contextlib import contextmanager
 from contextvars import ContextVar
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -57,8 +57,8 @@ def _set_http_headers(attrs, headers):
 
 
 def _make_child_attrs(attrs):
-    from py_zipkin.zipkin import ZipkinAttrs  # pylint: disable=E0401
     from py_zipkin.util import generate_random_64bit_string  # pylint: disable=E0401
+    from py_zipkin.zipkin import ZipkinAttrs  # pylint: disable=E0401
 
     return ZipkinAttrs(
         attrs.trace_id,
@@ -70,8 +70,8 @@ def _make_child_attrs(attrs):
 
 
 def _make_new_attrs(sample_rate=1.0):
-    from py_zipkin.zipkin import ZipkinAttrs  # pylint: disable=E0401
     from py_zipkin.util import generate_random_64bit_string  # pylint: disable=E0401
+    from py_zipkin.zipkin import ZipkinAttrs  # pylint: disable=E0401
 
     return ZipkinAttrs(
         generate_random_64bit_string(),

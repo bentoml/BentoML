@@ -3,7 +3,6 @@ import os
 from bentoml.service import BentoServiceArtifact
 from bentoml.utils import cloudpickle
 
-
 PICKLE_FILE_EXTENSION = ".pkl"
 
 

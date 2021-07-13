@@ -1,5 +1,4 @@
 import atexit
-
 from multiprocessing.util import _exit_function
 
 
@@ -32,8 +31,8 @@ def worker_int(worker):
     worker.log.debug("worker received INT or QUIT signal")
 
     # get traceback info
-    import threading
     import sys
+    import threading
     import traceback
 
     id2name = {th.ident: th.name for th in threading.enumerate()}

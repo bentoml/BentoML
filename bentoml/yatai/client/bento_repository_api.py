@@ -20,7 +20,7 @@ import os
 import shutil
 import tarfile
 import uuid
-from typing import TYPE_CHECKING, Optional, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import click
 import grpc
@@ -28,16 +28,16 @@ import requests
 
 from bentoml.exceptions import BentoMLException, BentoMLRpcError
 from bentoml.saved_bundle import (
-    save_to_dir,
     load_bento_service_metadata,
-    safe_retrieve,
     load_from_dir,
+    safe_retrieve,
+    save_to_dir,
 )
 from bentoml.utils import (
-    status_pb_to_error_code_and_message,
-    resolve_bento_bundle_uri,
-    is_s3_url,
     is_gcs_url,
+    is_s3_url,
+    resolve_bento_bundle_uri,
+    status_pb_to_error_code_and_message,
 )
 from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.tempdir import TempDirectory
@@ -46,14 +46,14 @@ from bentoml.yatai.grpc_stream_utils import UploadBentoStreamRequests
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoRequest,
-    GetBentoRequest,
     BentoUri,
+    ContainerizeBentoRequest,
+    DangerouslyDeleteBentoRequest,
+    DownloadBentoRequest,
+    GetBentoRequest,
+    ListBentoRequest,
     UpdateBentoRequest,
     UploadStatus,
-    ListBentoRequest,
-    DangerouslyDeleteBentoRequest,
-    ContainerizeBentoRequest,
-    DownloadBentoRequest,
 )
 from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
 from bentoml.yatai.status import Status

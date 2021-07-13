@@ -12,21 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
 import logging
 
-from bentoml.utils.lazy_loader import LazyLoader
+import click
+
 from bentoml.cli.click_utils import (
+    CLI_COLOR_SUCCESS,
     BentoMLCommandGroup,
     _echo,
-    CLI_COLOR_SUCCESS,
     parse_yaml_file_callback,
 )
-from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
-from bentoml.utils import status_pb_to_error_code_and_message
-from bentoml.exceptions import CLIException
 from bentoml.cli.utils import Spinner, _print_deployment_info, _print_deployments_info
-from bentoml.utils import get_default_yatai_client
+from bentoml.exceptions import CLIException
+from bentoml.utils import get_default_yatai_client, status_pb_to_error_code_and_message
+from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 

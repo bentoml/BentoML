@@ -1,5 +1,5 @@
-import os
 import json
+import os
 
 from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact

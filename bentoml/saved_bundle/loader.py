@@ -13,23 +13,23 @@
 # limitations under the License.
 
 import io
+import logging
 import os
+import shutil
 import sys
 import tarfile
-import logging
 import tempfile
-import shutil
-from functools import wraps
 from contextlib import contextmanager
-from urllib.parse import urlparse
+from functools import wraps
+from pathlib import PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING
-from pathlib import PureWindowsPath, PurePosixPath
+from urllib.parse import urlparse
 
-from bentoml.utils.s3 import is_s3_url
-from bentoml.utils.gcs import is_gcs_url
 from bentoml.exceptions import BentoMLException
 from bentoml.saved_bundle.config import SavedBundleConfig
 from bentoml.saved_bundle.pip_pkg import ZIPIMPORT_DIR
+from bentoml.utils.gcs import is_gcs_url
+from bentoml.utils.s3 import is_s3_url
 
 if TYPE_CHECKING:
     from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata

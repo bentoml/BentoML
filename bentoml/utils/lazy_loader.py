@@ -1,6 +1,6 @@
 import importlib
-import types
 import logging
+import types
 
 logger = logging.getLogger(__name__)
 

@@ -19,14 +19,13 @@ import click
 from simple_di import Provide, inject
 
 from bentoml.configuration.containers import (
-    BentoMLContainer,
     YATAI_REPOSITORY_FILE_SYSTEM,
     YATAI_REPOSITORY_GCS,
     YATAI_REPOSITORY_S3,
     YATAI_REPOSITORY_TYPES,
+    BentoMLContainer,
 )
 from bentoml.yatai.yatai_service import start_yatai_service_grpc_server
-
 
 logger = logging.getLogger(__name__)
 
@@ -145,8 +144,8 @@ def add_yatai_service_sub_command(
         s3_endpoint_url,
         gcs_url,
     ):
-        from bentoml.utils.s3 import is_s3_url
         from bentoml.utils.gcs import is_gcs_url
+        from bentoml.utils.s3 import is_s3_url
 
         if repo_base_url:
             logger.warning(

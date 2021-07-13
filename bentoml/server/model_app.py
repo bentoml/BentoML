@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
 import logging
 import os
 import sys
+from functools import partial
 from typing import TYPE_CHECKING
 
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
@@ -26,11 +26,10 @@ from werkzeug.exceptions import BadRequest, NotFound
 from bentoml.configuration import get_debug_mode
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
-from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
+from bentoml.marshal.utils import MARSHAL_REQUEST_HEADER, DataLoader
 from bentoml.server.instruments import InstrumentMiddleware
 from bentoml.types import HTTPRequest
 from bentoml.utils.open_api import get_open_api_spec_json
-
 
 if TYPE_CHECKING:
     from bentoml.service import InferenceAPI

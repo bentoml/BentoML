@@ -14,8 +14,8 @@
 
 import logging.config
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from simple_di import Provide, inject
 

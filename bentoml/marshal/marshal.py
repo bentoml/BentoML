@@ -17,7 +17,7 @@ import functools
 import logging
 import time
 import traceback
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import psutil
 from simple_di import Provide, inject
@@ -25,19 +25,18 @@ from simple_di import Provide, inject
 from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import RemoteException
 from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
-from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
+from bentoml.marshal.utils import MARSHAL_REQUEST_HEADER, DataLoader
 from bentoml.saved_bundle import load_bento_service_metadata
 from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
 from bentoml.types import HTTPRequest, HTTPResponse
-
 
 logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from aiohttp_cors import ResourceOptions
-    from aiohttp.web import Application, Request
     from aiohttp import BaseConnector, ClientSession
+    from aiohttp.web import Application, Request
+    from aiohttp_cors import ResourceOptions
 
 
 def metrics_patch(cls):
@@ -361,8 +360,8 @@ class MarshalApp:
             * RemoteException: known exceptions from model server
             * Exception: other exceptions
         '''
-        from aiohttp.client_exceptions import ClientConnectionError
         from aiohttp import ClientTimeout
+        from aiohttp.client_exceptions import ClientConnectionError
         from aiohttp.web import Response
 
         headers = {MARSHAL_REQUEST_HEADER: "true"}
@@ -415,8 +414,8 @@ class MarshalApp:
             )
 
     def get_app(self) -> "Application":
-        from aiohttp.web import Application
         from aiohttp import hdrs
+        from aiohttp.web import Application
 
         methods = hdrs.METH_ALL.copy()
 

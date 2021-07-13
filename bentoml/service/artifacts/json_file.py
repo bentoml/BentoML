@@ -3,7 +3,6 @@ import re
 
 from bentoml.service import BentoServiceArtifact
 
-
 JSON_ARTIFACT_EXTENSION = ".json"
 
 

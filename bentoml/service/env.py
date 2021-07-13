@@ -14,8 +14,8 @@
 
 import logging
 import os
-from pathlib import Path
 import stat
+from pathlib import Path
 from sys import version_info
 from typing import List
 
@@ -30,9 +30,8 @@ from bentoml.saved_bundle.pip_pkg import (
     get_pkg_version,
     verify_pkg,
 )
-from bentoml.utils.ruamel_yaml import YAML
 from bentoml.utils import cached_property
-
+from bentoml.utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 

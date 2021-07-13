@@ -15,8 +15,9 @@ class PlasmaDataLoader:
     @classmethod
     @lru_cache(maxsize=1)
     def get_plasma(cls):
-        import pyarrow.plasma as plasma
         import subprocess
+
+        import pyarrow.plasma as plasma
 
         object_store_size = 2 * 10 * 1000 * 1000
         plasma_path = "/tmp/store"

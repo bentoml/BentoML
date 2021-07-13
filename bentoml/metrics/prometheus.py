@@ -1,8 +1,8 @@
-from functools import partial
 import logging
 import os
 import shutil
-from typing import Optional, TYPE_CHECKING
+from functools import partial
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Lock
@@ -51,10 +51,7 @@ class PrometheusClient:
     @property
     def registry(self):
         if self._registry is None:
-            from prometheus_client import (
-                CollectorRegistry,
-                multiprocess,
-            )
+            from prometheus_client import CollectorRegistry, multiprocess
 
             registry = CollectorRegistry()
             if self.multiproc:

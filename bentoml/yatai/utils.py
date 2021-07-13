@@ -13,10 +13,9 @@
 # limitations under the License.
 import json
 import logging
-from typing import NamedTuple, Tuple, Iterator, Dict
+from typing import Dict, Iterator, NamedTuple, Tuple
 
 import docker
-
 from bentoml.exceptions import BentoMLException, MissingDependencyException
 
 UNARY = 'UNARY'

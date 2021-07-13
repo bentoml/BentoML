@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import grpc
+
 from bentoml.utils.lazy_loader import LazyLoader
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')

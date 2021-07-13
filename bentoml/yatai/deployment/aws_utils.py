@@ -1,16 +1,16 @@
 import base64
 import logging
+import os
 import re
 import subprocess
-import os
 
 import boto3
 from botocore.exceptions import ClientError
 
 from bentoml.exceptions import (
+    AWSServiceError,
     BentoMLException,
     MissingDependencyException,
-    AWSServiceError,
 )
 
 logger = logging.getLogger(__name__)

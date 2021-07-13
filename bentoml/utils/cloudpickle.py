@@ -53,21 +53,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import dis
-from functools import partial
 import io
 import itertools
 import logging
-import opcode
 import operator
 import pickle
 import struct
 import sys
+import threading
 import traceback
 import types
-import weakref
 import uuid
-import threading
+import weakref
+from functools import partial
 
+import opcode
 
 try:
     from enum import Enum
@@ -101,8 +101,8 @@ if sys.version_info[0] < 3:  # pragma: no branch
                                 PY2_WRAPPER_DESCRIPTOR_TYPE)
 else:
     types.ClassType = type
-    from pickle import _Pickler as Pickler
     from io import BytesIO as StringIO
+    from pickle import _Pickler as Pickler
     string_types = (str,)
     PY3 = True
     PY2 = False

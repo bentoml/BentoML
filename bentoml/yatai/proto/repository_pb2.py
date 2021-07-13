@@ -6,6 +6,7 @@ from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
 from google.protobuf import symbol_database as _symbol_database
+
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
@@ -13,9 +14,9 @@ _sym_db = _symbol_database.Default()
 
 from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
-import bentoml.yatai.proto.status_pb2 as status__pb2
-import bentoml.yatai.proto.label_selectors_pb2 as label__selectors__pb2
 
+import bentoml.yatai.proto.label_selectors_pb2 as label__selectors__pb2
+import bentoml.yatai.proto.status_pb2 as status__pb2
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='repository.proto',

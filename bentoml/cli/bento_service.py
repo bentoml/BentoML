@@ -11,8 +11,8 @@ from simple_di import Provide, inject
 
 from bentoml import __version__
 from bentoml.cli.click_utils import (
-    BentoMLCommandGroup,
     CLI_COLOR_SUCCESS,
+    BentoMLCommandGroup,
     _echo,
     conditional_argument,
 )
@@ -31,8 +31,8 @@ from bentoml.utils.open_api import get_open_api_spec_json
 from bentoml.yatai.client import get_yatai_client
 
 if TYPE_CHECKING:
-    from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
     from bentoml.yatai.client import YataiClient
+    from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
 
 try:
     import click_completion

@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import lru_cache
 import logging
 import os
+from functools import lru_cache
 
-from bentoml import __version__, _version as version_mod
-
+from bentoml import __version__
+from bentoml import _version as version_mod
 
 # Note this file is loaded prior to logging being configured, thus logger is only
 # used within functions in this file
@@ -125,7 +125,7 @@ def inject_dependencies():
 
     logger.debug("Start dependency injection")
 
-    from bentoml.configuration.containers import BentoMLContainer, BentoMLConfiguration
+    from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 
     config_file = get_local_config_file()
     if config_file and config_file.endswith(".yml"):

@@ -1,4 +1,5 @@
 import os
+
 from bentoml.exceptions import MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
@@ -98,12 +99,12 @@ class DetectronModelArtifact(BentoServiceArtifact):
 
     def load(self, path):
         try:
-            from detectron2.checkpoint import (
+            from detectron2.checkpoint import (  # noqa # pylint: disable=unused-import
                 DetectionCheckpointer,
-            )  # noqa # pylint: disable=unused-import
-            from detectron2.modeling import META_ARCH_REGISTRY
+            )
             from detectron2.config import get_cfg
             from detectron2.data import transforms as T
+            from detectron2.modeling import META_ARCH_REGISTRY
         except ImportError:
             raise MissingDependencyException(
                 "Detectron package is required to use DetectronArtifact"
@@ -128,9 +129,9 @@ class DetectronModelArtifact(BentoServiceArtifact):
 
     def save(self, dst):
         try:
-            from detectron2.checkpoint import (
+            from detectron2.checkpoint import (  # noqa # pylint: disable=unused-import
                 DetectionCheckpointer,
-            )  # noqa # pylint: disable=unused-import
+            )
             from detectron2.config import get_cfg
         except ImportError:
             raise MissingDependencyException(

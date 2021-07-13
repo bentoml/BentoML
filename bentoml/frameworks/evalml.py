@@ -2,8 +2,8 @@ import importlib
 import os
 
 from bentoml.exceptions import MissingDependencyException
-from bentoml.service.env import BentoServiceEnv
 from bentoml.service.artifacts import BentoServiceArtifact
+from bentoml.service.env import BentoServiceEnv
 
 EVALML_MODEL_PICKLE_EXTENTION = ".pkl"
 

@@ -1,69 +1,68 @@
-import os
 import base64
 import json
 import logging
+import os
 
-from bentoml.utils.tempdir import TempDirectory
-
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.saved_bundle import loader
-from bentoml.yatai.deployment.aws_ec2.templates import (
-    EC2_CLOUDFORMATION_TEMPLATE,
-    EC2_USER_INIT_SCRIPT,
-)
-from bentoml.yatai.deployment.operator import DeploymentOperatorBase
-from bentoml.yatai.proto.deployment_pb2 import (
-    ApplyDeploymentResponse,
-    DeleteDeploymentResponse,
-    DescribeDeploymentResponse,
-    DeploymentState,
-)
-from bentoml.yatai.status import Status
-from bentoml.utils import status_pb_to_error_code_and_message
-from bentoml.utils.s3 import create_s3_bucket_if_not_exists
-from bentoml.yatai.deployment.docker_utils import (
-    ensure_docker_available_or_raise,
-    generate_docker_image_tag,
-    build_docker_image,
-    push_docker_image_to_repository,
-)
-from bentoml.yatai.deployment.aws_utils import (
-    generate_aws_compatible_string,
-    get_default_aws_region,
-    ensure_sam_available_or_raise,
-    validate_sam_template,
-    FAILED_CLOUDFORMATION_STACK_STATUS,
-    cleanup_s3_bucket_if_exist,
-    delete_cloudformation_stack,
-    delete_ecr_repository,
-    get_instance_ip_from_scaling_group,
-    get_aws_user_id,
-    create_ecr_repository_if_not_exists,
-    get_ecr_login_info,
-    describe_cloudformation_stack,
-)
 from bentoml.exceptions import (
     BentoMLException,
     InvalidArgument,
     YataiDeploymentException,
 )
-from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
-from bentoml.yatai.proto import status_pb2
-from bentoml.yatai.deployment.aws_ec2.utils import (
-    build_template,
-    package_template,
-    deploy_template,
-    get_endpoints_from_instance_address,
-    get_healthy_target,
-)
+from bentoml.saved_bundle import loader
+from bentoml.utils import status_pb_to_error_code_and_message
+from bentoml.utils.lazy_loader import LazyLoader
+from bentoml.utils.s3 import create_s3_bucket_if_not_exists
+from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.deployment.aws_ec2.constants import (
     BENTOSERVICE_PORT,
     TARGET_HEALTH_CHECK_INTERVAL,
     TARGET_HEALTH_CHECK_PATH,
     TARGET_HEALTH_CHECK_PORT,
-    TARGET_HEALTH_CHECK_TIMEOUT_SECONDS,
     TARGET_HEALTH_CHECK_THRESHOLD_COUNT,
+    TARGET_HEALTH_CHECK_TIMEOUT_SECONDS,
 )
+from bentoml.yatai.deployment.aws_ec2.templates import (
+    EC2_CLOUDFORMATION_TEMPLATE,
+    EC2_USER_INIT_SCRIPT,
+)
+from bentoml.yatai.deployment.aws_ec2.utils import (
+    build_template,
+    deploy_template,
+    get_endpoints_from_instance_address,
+    get_healthy_target,
+    package_template,
+)
+from bentoml.yatai.deployment.aws_utils import (
+    FAILED_CLOUDFORMATION_STACK_STATUS,
+    cleanup_s3_bucket_if_exist,
+    create_ecr_repository_if_not_exists,
+    delete_cloudformation_stack,
+    delete_ecr_repository,
+    describe_cloudformation_stack,
+    ensure_sam_available_or_raise,
+    generate_aws_compatible_string,
+    get_aws_user_id,
+    get_default_aws_region,
+    get_ecr_login_info,
+    get_instance_ip_from_scaling_group,
+    validate_sam_template,
+)
+from bentoml.yatai.deployment.docker_utils import (
+    build_docker_image,
+    ensure_docker_available_or_raise,
+    generate_docker_image_tag,
+    push_docker_image_to_repository,
+)
+from bentoml.yatai.deployment.operator import DeploymentOperatorBase
+from bentoml.yatai.proto import status_pb2
+from bentoml.yatai.proto.deployment_pb2 import (
+    ApplyDeploymentResponse,
+    DeleteDeploymentResponse,
+    DeploymentState,
+    DescribeDeploymentResponse,
+)
+from bentoml.yatai.proto.repository_pb2 import BentoUri, GetBentoRequest
+from bentoml.yatai.status import Status
 
 logger = logging.getLogger(__name__)
 

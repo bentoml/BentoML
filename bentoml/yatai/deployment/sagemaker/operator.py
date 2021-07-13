@@ -7,37 +7,37 @@ import boto3
 from botocore.exceptions import ClientError
 
 from bentoml.exceptions import (
-    YataiDeploymentException,
     AWSServiceError,
-    InvalidArgument,
     BentoMLException,
+    InvalidArgument,
+    YataiDeploymentException,
 )
 from bentoml.saved_bundle import loader
 from bentoml.utils.tempdir import TempDirectory
+from bentoml.yatai.deployment.aws_utils import (
+    create_ecr_repository_if_not_exists,
+    generate_aws_compatible_string,
+    generate_bentoml_exception_from_aws_client_error,
+    get_default_aws_region,
+    get_ecr_login_info,
+)
+from bentoml.yatai.deployment.docker_utils import (
+    build_docker_image,
+    ensure_docker_available_or_raise,
+    generate_docker_image_tag,
+    push_docker_image_to_repository,
+)
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import (
     raise_if_api_names_not_found_in_bento_service_metadata,
 )
-from bentoml.yatai.deployment.docker_utils import (
-    ensure_docker_available_or_raise,
-    generate_docker_image_tag,
-    push_docker_image_to_repository,
-    build_docker_image,
-)
-from bentoml.yatai.deployment.aws_utils import (
-    generate_aws_compatible_string,
-    get_default_aws_region,
-    get_ecr_login_info,
-    create_ecr_repository_if_not_exists,
-    generate_bentoml_exception_from_aws_client_error,
-)
 from bentoml.yatai.proto.deployment_pb2 import (
-    DeploymentState,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    DeploymentState,
     DescribeDeploymentResponse,
 )
-from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
+from bentoml.yatai.proto.repository_pb2 import BentoUri, GetBentoRequest
 from bentoml.yatai.status import Status
 
 logger = logging.getLogger(__name__)

@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os.path
 import logging
-import tempfile
+import os.path
 import shutil
-from bentoml.configuration import get_debug_mode
+import tempfile
 
+from bentoml.configuration import get_debug_mode
 
 logger = logging.getLogger(__name__)
 

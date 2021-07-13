@@ -12,21 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
+import inspect
+import logging
+import modulefinder
 import os
 import re
 import sys
-import inspect
-import importlib
-import logging
-from typing import List
 from pathlib import Path
 from shutil import copyfile
-import modulefinder
+from typing import List
 from unittest.mock import patch
 
-from bentoml.saved_bundle.pip_pkg import get_all_pip_installed_modules
 from bentoml.exceptions import BentoMLException
-
+from bentoml.saved_bundle.pip_pkg import get_all_pip_installed_modules
 
 logger = logging.getLogger(__name__)
 

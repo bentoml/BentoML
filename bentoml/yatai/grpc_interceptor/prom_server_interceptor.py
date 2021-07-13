@@ -11,7 +11,6 @@ from bentoml.yatai.utils import (
     wrap_interator_inc_counter,
 )
 
-
 YATAI_GRPC_USAGE_EVENT_NAME = "yatai-grpc-call"
 
 

@@ -12,45 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
+import logging
 import os
 import re
 import shutil
 import subprocess
-import logging
 import sys
 
 import docker
-
-from bentoml.utils.tempdir import TempDirectory
-from bentoml.saved_bundle import loader
-from bentoml.yatai.deployment.azure_functions.constants import (
-    MAX_RESOURCE_GROUP_NAME_LENGTH,
-    MAX_STORAGE_ACCOUNT_NAME_LENGTH,
-    MAX_FUNCTION_NAME_LENGTH,
-    MAX_CONTAINER_REGISTRY_NAME_LENGTH,
-    DEFAULT_MIN_INSTANCE_COUNT,
-    DEFAULT_MAX_BURST,
-    DEFAULT_PREMIUM_PLAN_SKU,
-    DEFAULT_FUNCTION_AUTH_LEVEL,
-)
-from bentoml.yatai.deployment.azure_functions.templates import AZURE_API_FUNCTION_JSON
-from bentoml.yatai.deployment.operator import DeploymentOperatorBase
-from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
+from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.exceptions import (
+    AzureServiceError,
     BentoMLException,
     MissingDependencyException,
-    AzureServiceError,
     YataiDeploymentException,
 )
+from bentoml.saved_bundle import loader
+from bentoml.utils.tempdir import TempDirectory
+from bentoml.yatai.deployment.azure_functions.constants import (
+    DEFAULT_FUNCTION_AUTH_LEVEL,
+    DEFAULT_MAX_BURST,
+    DEFAULT_MIN_INSTANCE_COUNT,
+    DEFAULT_PREMIUM_PLAN_SKU,
+    MAX_CONTAINER_REGISTRY_NAME_LENGTH,
+    MAX_FUNCTION_NAME_LENGTH,
+    MAX_RESOURCE_GROUP_NAME_LENGTH,
+    MAX_STORAGE_ACCOUNT_NAME_LENGTH,
+)
+from bentoml.yatai.deployment.azure_functions.templates import AZURE_API_FUNCTION_JSON
+from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
+    DeleteDeploymentResponse,
     DeploymentState,
     DescribeDeploymentResponse,
-    DeleteDeploymentResponse,
 )
 from bentoml.yatai.proto.repository_pb2 import GetBentoRequest
 from bentoml.yatai.status import Status
-from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 
 logger = logging.getLogger(__name__)
 

@@ -13,15 +13,14 @@
 # limitations under the License.
 
 import json
+import logging
 import os
 import shutil
 import uuid
-import logging
 from pathlib import Path
 
 import boto3
 
-from bentoml.utils.ruamel_yaml import YAML
 from bentoml.exceptions import (
     BentoMLException,
     InvalidArgument,
@@ -29,43 +28,40 @@ from bentoml.exceptions import (
 )
 from bentoml.saved_bundle import loader
 from bentoml.utils import status_pb_to_error_code_and_message
+from bentoml.utils.ruamel_yaml import YAML
 from bentoml.utils.s3 import create_s3_bucket_if_not_exists
 from bentoml.utils.tempdir import TempDirectory
-from bentoml.yatai.deployment.aws_utils import (
-    validate_sam_template,
-    FAILED_CLOUDFORMATION_STACK_STATUS,
-    cleanup_s3_bucket_if_exist,
-)
 from bentoml.yatai.deployment.aws_lambda.utils import (
+    LAMBDA_FUNCTION_LIMIT,
+    LAMBDA_FUNCTION_MAX_LIMIT,
     init_sam_project,
     lambda_deploy,
     lambda_package,
     reduce_bundle_size_and_upload_extra_resources_to_s3,
     total_file_or_directory_size,
-    LAMBDA_FUNCTION_LIMIT,
-    LAMBDA_FUNCTION_MAX_LIMIT,
 )
-
+from bentoml.yatai.deployment.aws_utils import (
+    FAILED_CLOUDFORMATION_STACK_STATUS,
+    cleanup_s3_bucket_if_exist,
+    ensure_sam_available_or_raise,
+    generate_aws_compatible_string,
+    get_default_aws_region,
+    validate_sam_template,
+)
+from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.yatai.deployment.operator import DeploymentOperatorBase
 from bentoml.yatai.deployment.utils import (
     raise_if_api_names_not_found_in_bento_service_metadata,
 )
-from bentoml.yatai.deployment.aws_utils import (
-    generate_aws_compatible_string,
-    get_default_aws_region,
-    ensure_sam_available_or_raise,
-)
-from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import (
-    DeploymentState,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
+    DeploymentState,
     DescribeDeploymentResponse,
 )
-from bentoml.yatai.proto.repository_pb2 import GetBentoRequest, BentoUri
+from bentoml.yatai.proto.repository_pb2 import BentoUri, GetBentoRequest
 from bentoml.yatai.status import Status
-
 
 logger = logging.getLogger(__name__)
 

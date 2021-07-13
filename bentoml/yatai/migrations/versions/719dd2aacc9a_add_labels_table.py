@@ -5,8 +5,8 @@ Revises: a6b00ae45279
 Create Date: 2020-08-05 22:41:30.611193
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 from bentoml.yatai.db.stores.label import Label
 

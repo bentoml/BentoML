@@ -4,7 +4,6 @@ from bentoml.exceptions import InvalidArgument, MissingDependencyException
 from bentoml.service.artifacts import BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 
-
 XGBOOST_MODEL_EXTENSION = ".model"
 
 

@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass, field
 import io
 import os
+import urllib
+import uuid
+from dataclasses import dataclass, field
 from typing import (
     Any,
     BinaryIO,
@@ -30,8 +32,6 @@ from typing import (
     TypeVar,
     Union,
 )
-import urllib
-import uuid
 
 from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data

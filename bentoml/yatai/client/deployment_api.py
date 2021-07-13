@@ -18,24 +18,24 @@
 import logging
 import time
 
+from bentoml.exceptions import BentoMLException, YataiDeploymentException
 from bentoml.utils import status_pb_to_error_code_and_message
 from bentoml.yatai.client.label_utils import generate_gprc_labels_selector
 from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
+from bentoml.yatai.deployment_utils import (
+    deployment_dict_to_pb,
+    deployment_yaml_string_to_pb,
+)
+from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentRequest,
+    DeleteDeploymentRequest,
+    Deployment,
+    DeploymentSpec,
+    DeploymentState,
     DescribeDeploymentRequest,
     GetDeploymentRequest,
-    DeploymentSpec,
-    DeleteDeploymentRequest,
     ListDeploymentsRequest,
-    Deployment,
-    DeploymentState,
-)
-from bentoml.exceptions import BentoMLException, YataiDeploymentException
-from bentoml.yatai.proto import status_pb2
-from bentoml.yatai.deployment_utils import (
-    deployment_yaml_string_to_pb,
-    deployment_dict_to_pb,
 )
 
 logger = logging.getLogger(__name__)

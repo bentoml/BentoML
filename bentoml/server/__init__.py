@@ -19,7 +19,6 @@ from simple_di import skip, sync_container
 
 from bentoml.configuration.containers import BentoMLContainer
 
-
 logger = logging.getLogger(__name__)
 
 

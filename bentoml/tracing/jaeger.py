@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from contextlib import contextmanager
 import logging
-
+from contextlib import contextmanager
 from contextvars import ContextVar
 
 span_context_var = ContextVar('span context', default=None)
@@ -24,10 +23,10 @@ logger = logging.getLogger(__name__)
 def initialize_tracer(
     service_name, async_transport=False, host=None, port=0, sample_rate=1.0
 ):
+    from jaeger_client.config import Config  # pylint: disable=E0401
     from opentracing.scope_managers.asyncio import (  # pylint: disable=E0401
         AsyncioScopeManager,
     )
-    from jaeger_client.config import Config  # pylint: disable=E0401
 
     if sample_rate == 1.0:
         # sample all traces
@@ -75,8 +74,8 @@ class JaegerTracer:
         """
         Opentracing jaeger_tracer function
         """
-        from opentracing import Format  # pylint: disable=E0401
         from jaeger_client.constants import TRACE_ID_HEADER  # pylint: disable=E0401
+        from opentracing import Format  # pylint: disable=E0401
 
         jaeger_tracer = initialize_tracer(
             service_name, async_transport, self.address, self.port, sample_rate

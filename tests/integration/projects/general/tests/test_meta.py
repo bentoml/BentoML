@@ -1,9 +1,8 @@
 # pylint: disable=redefined-outer-name
 import json
 
-import pytest
-import requests
 import psutil
+import pytest
 
 
 @pytest.mark.asyncio
@@ -72,6 +71,7 @@ async def test_cors(host):
     )
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "metrics",
     [
@@ -90,9 +90,14 @@ async def test_cors(host):
         '_request_duration_seconds_bucket',
     ],
 )
-def test_api_server_metrics(host, metrics):
-    metrics_endpoint = f"http://{host}/metrics"
-    r = requests.get(metrics_endpoint)
-    assert (
-        metrics in r.text
-    ), f"expected metrics {metrics} not found in server response:\n{r.text}"
+async def test_api_server_metrics(host, metrics):
+    await pytest.assert_request(
+        "POST", f"http://{host}/echo_json", data='"hi"',
+    )
+
+    await pytest.assert_request(
+        "GET",
+        f"http://{host}/metrics",
+        assert_status=200,
+        assert_data=lambda d: metrics in d.decode(),
+    )

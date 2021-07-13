@@ -166,6 +166,17 @@ def reserve_free_port(host="localhost"):
     sock.close()
 
 
+def get_free_port(host="localhost"):
+    """
+    detect free port and reserve until exit the context
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((host, 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
+
+
 def is_url(url: str) -> bool:
     try:
         return urlparse(url).scheme in _VALID_URLS

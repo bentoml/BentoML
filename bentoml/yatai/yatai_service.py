@@ -103,6 +103,7 @@ def start_yatai_service_grpc_server(
     s3_endpoint_url: str,
     gcs_url: str,
     web_ui_log_path: str = Provide[BentoMLContainer.yatai_logging_path],
+    yatai_metrics_client=Provide[BentoMLContainer.yatai_metrics_client],
 ):
     # Lazily import grpcio for YataiService gRPC related actions
     import grpc
@@ -115,7 +116,6 @@ def start_yatai_service_grpc_server(
         PromServerInterceptor,
         ServiceLatencyInterceptor,
     )
-    from prometheus_client import start_http_server
 
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(
@@ -159,7 +159,7 @@ def start_yatai_service_grpc_server(
     with reserve_free_port() as port:
         prometheus_port = port
     # prevents wsgi to see prometheus_port as used
-    start_http_server(prometheus_port)
+    yatai_metrics_client.start_http_server(prometheus_port)
     server.start()
     if with_ui:
         ensure_node_available_or_raise()

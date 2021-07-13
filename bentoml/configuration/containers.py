@@ -15,16 +15,21 @@
 import logging
 import multiprocessing
 import os
+from typing import TYPE_CHECKING
 
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
-from simple_di import container, providers
+from simple_di import Provide, Provider, container, providers
 
 from bentoml import __version__
 from bentoml.configuration import expand_env_var, get_bentoml_deploy_version
 from bentoml.exceptions import BentoMLConfigException
+from bentoml.utils import get_free_port
 from bentoml.utils.ruamel_yaml import YAML
 
+
+if TYPE_CHECKING:
+    from bentoml.marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
 
@@ -198,84 +203,174 @@ class BentoMLConfiguration:
         return self.config
 
 
-def _get_cors_options(**kwargs):
-    import aiohttp_cors
-
-    filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
-
-    return aiohttp_cors.ResourceOptions(**filtered_kwargs)
-
-
 @container
 class BentoMLContainerClass:
 
     config = providers.Configuration()
 
-    access_control_options = providers.Callable(
-        _get_cors_options,
+    @providers.SingletonFactory
+    @staticmethod
+    def tracer(
+        tracer_type: str = Provide[config.tracing.type],
+        zipkin_server_url: str = Provide[config.tracing.zipkin.url],
+        jaeger_server_address: str = Provide[config.tracing.jaeger.address],
+        jaeger_server_port: int = Provide[config.tracing.jaeger.port],
+    ):
+        if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
+            from bentoml.tracing.zipkin import get_zipkin_tracer
+
+            return get_zipkin_tracer(zipkin_server_url)
+        elif (
+            tracer_type
+            and tracer_type.lower() == 'jaeger'
+            and jaeger_server_address
+            and jaeger_server_port
+        ):
+            from bentoml.tracing.jaeger import get_jaeger_tracer
+
+            return get_jaeger_tracer(jaeger_server_address, jaeger_server_port)
+        else:
+            from bentoml.tracing.noop import NoopTracer
+
+            return NoopTracer()
+
+    @providers.SingletonFactory
+    @staticmethod
+    def access_control_options(
         allow_credentials=config.bento_server.cors.access_control_allow_credentials,
         expose_headers=config.bento_server.cors.access_control_expose_headers,
         allow_methods=config.bento_server.cors.access_control_allow_methods,
         allow_headers=config.bento_server.cors.access_control_allow_headers,
         max_age=config.bento_server.cors.access_control_max_age,
-    )
+    ):
+        import aiohttp_cors
 
-    api_server_workers = providers.Callable(
+        kwargs = dict(
+            allow_credentials=allow_credentials,
+            expose_headers=expose_headers,
+            allow_methods=allow_methods,
+            allow_headers=allow_headers,
+            max_age=max_age,
+        )
+
+        filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
+        return aiohttp_cors.ResourceOptions(**filtered_kwargs)
+
+    api_server_workers = providers.Factory(
         lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
         config.bento_server.workers,
     )
 
-    bentoml_home = providers.Callable(
+    bentoml_home = providers.Factory(
         lambda: expand_env_var(
             os.environ.get("BENTOML_HOME", os.path.join("~", "bentoml"))
         )
     )
 
-    prometheus_multiproc_dir = providers.Callable(
+    bundle_path: Provider[str] = providers.Static("")
+
+    service_host: Provider[str] = providers.Static("0.0.0.0")
+    service_port: Provider[int] = config.bento_server.port
+
+    forward_host: Provider[str] = providers.Static("localhost")
+    forward_port: Provider[int] = providers.SingletonFactory(get_free_port)
+
+    @providers.Factory
+    @staticmethod
+    def model_server():
+        from bentoml.server.gunicorn_model_server import GunicornModelServer
+
+        return GunicornModelServer()
+
+    @providers.Factory
+    @staticmethod
+    def proxy_server():
+        from bentoml.server.gunicorn_marshal_server import GunicornMarshalServer
+
+        return GunicornMarshalServer()
+
+    @providers.Factory
+    @staticmethod
+    def proxy_app() -> "MarshalApp":
+        from bentoml.marshal.marshal import MarshalApp
+
+        return MarshalApp()
+
+    @providers.Factory
+    @staticmethod
+    def model_app():
+        from bentoml.server.model_app import ModelApp
+
+        return ModelApp()
+
+    prometheus_lock = providers.SingletonFactory(multiprocessing.Lock)
+
+    prometheus_multiproc_dir = providers.Factory(
         os.path.join, bentoml_home, "prometheus_multiproc_dir",
     )
 
-    bento_bundle_deployment_version = providers.Callable(
+    @providers.SingletonFactory
+    @staticmethod
+    def metrics_client(
+        multiproc_lock=prometheus_lock,
+        multiproc_dir=prometheus_multiproc_dir,
+        namespace=config.bento_server.metrics.namespace,
+    ):
+        from bentoml.metrics.prometheus import PrometheusClient
+
+        return PrometheusClient(
+            multiproc_lock=multiproc_lock,
+            multiproc_dir=multiproc_dir,
+            namespace=namespace,
+        )
+
+    @providers.SingletonFactory
+    @staticmethod
+    def yatai_metrics_client():
+        from bentoml.metrics.prometheus import PrometheusClient
+
+        return PrometheusClient(multiproc=False, namespace="YATAI")
+
+    bento_bundle_deployment_version = providers.Factory(
         get_bentoml_deploy_version,
-        providers.Callable(
+        providers.Factory(
             lambda default, customized: customized or default,
             __version__.split('+')[0],
             config.bento_bundle.deployment_version,
         ),
     )
 
-    yatai_database_url = providers.Callable(
+    yatai_database_url = providers.Factory(
         lambda default, customized: customized or default,
-        providers.Callable(
+        providers.Factory(
             "sqlite:///{}".format,
-            providers.Callable(os.path.join, bentoml_home, "storage.db"),
+            providers.Factory(os.path.join, bentoml_home, "storage.db"),
         ),
         config.yatai.database.url,
     )
 
-    yatai_file_system_directory = providers.Callable(
+    yatai_file_system_directory = providers.Factory(
         lambda default, customized: customized or default,
-        providers.Callable(os.path.join, bentoml_home, "repository"),
+        providers.Factory(os.path.join, bentoml_home, "repository"),
         config.yatai.repository.file_system.directory,
     )
 
-    yatai_tls_root_ca_cert = providers.Callable(
+    yatai_tls_root_ca_cert = providers.Factory(
         lambda current, deprecated: current or deprecated,
         config.yatai.remote.tls.root_ca_cert,
         config.yatai.remote.tls.client_certificate_file,
     )
 
-    logging_file_directory = providers.Callable(
+    logging_file_directory = providers.Factory(
         lambda default, customized: customized or default,
-        providers.Callable(os.path.join, bentoml_home, "logs",),
+        providers.Factory(os.path.join, bentoml_home, "logs",),
         config.logging.file.directory,
     )
 
-    yatai_logging_path = providers.Callable(
+    yatai_logging_path = providers.Factory(
         lambda default, customized: customized or default,
-        providers.Callable(
-            os.path.join, logging_file_directory, "yatai_web_server.log"
-        ),
+        providers.Factory(os.path.join, logging_file_directory, "yatai_web_server.log"),
         config.yatai.logging.path,
     )
 

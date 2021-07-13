@@ -13,9 +13,16 @@
 # limitations under the License.
 
 from contextlib import contextmanager
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class NoopTracer:
+    def __init__(self):
+        logger.debug("Tracing is disabled. Initializing no-op tracer")
+
     @contextmanager
     def span(self, *args, **kwargs):  # pylint: disable=unused-argument
         yield

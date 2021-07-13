@@ -21,9 +21,11 @@ import logging
 import sys
 from typing import Callable, Iterable, Iterator, Sequence
 
+from simple_di import Provide, inject
+
 from bentoml.adapters import BaseInputAdapter, BaseOutputAdapter
+from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLConfigException
-from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest, HTTPResponse, InferenceResult, InferenceTask
 from bentoml.utils import cached_property
 
@@ -39,6 +41,7 @@ class InferenceAPI(object):
     working with the BentoML adaptive micro-batching mechanism
     """
 
+    @inject
     def __init__(
         self,
         service,
@@ -51,6 +54,7 @@ class InferenceAPI(object):
         mb_max_batch_size=1000,
         batch=False,
         route=None,
+        tracer=Provide[BentoMLContainer.tracer],
     ):
         """
         :param service: ref to service containing this API
@@ -86,6 +90,7 @@ class InferenceAPI(object):
         self.mb_max_batch_size = mb_max_batch_size
         self.batch = batch
         self.route = name if route is None else route
+        self.tracer = tracer
 
         if not self.input_adapter.BATCH_MODE_SUPPORTED and batch:
             raise BentoMLConfigException(
@@ -162,7 +167,7 @@ class InferenceAPI(object):
 
         @functools.wraps(self._user_func)
         def wrapped_func(*args, **kwargs):
-            with get_tracer().span(
+            with self.tracer.span(
                 service_name=f"BentoService.{self.service.name}",
                 span_name=f"InferenceAPI {self.name} user defined callback function",
             ):
@@ -299,7 +304,7 @@ class InferenceAPI(object):
         return response
 
     def handle_batch_request(self, requests: Sequence[HTTPRequest]):
-        with get_tracer().span(
+        with self.tracer.span(
             service_name=f"BentoService.{self.service.name}",
             span_name=f"InferenceAPI {self.name} handle batch requests",
         ):

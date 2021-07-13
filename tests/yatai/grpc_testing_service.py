@@ -1,13 +1,12 @@
-import contextlib
 from concurrent import futures
-from typing import Callable, Dict, Iterable, Optional, Union, List
+import contextlib
+from typing import Callable, Dict, Iterable, List, Optional, Union
 
 import grpc
-from prometheus_client import start_http_server
 
+from bentoml.utils import reserve_free_port
 from tests.yatai.proto.mock_service_pb2 import MockRequest, MockResponse
 from tests.yatai.proto.mock_service_pb2_grpc import MockServiceServicer
-from bentoml.utils import reserve_free_port
 
 SpecialCaseFunction = Callable[[str, grpc.ServicerContext], str]
 
@@ -70,8 +69,8 @@ class MockServerClient:
         self.server_interceptors = server_interceptors
         self.prometheus_enabled = prometheus_enabled
         self.mock_server: grpc.Server
-        with reserve_free_port() as server_port:
-            self.server_port: int = server_port
+        with reserve_free_port() as service_port:
+            self.service_port: int = service_port
         with reserve_free_port() as prom_port:
             self.prom_port: int = prom_port
 
@@ -96,12 +95,17 @@ class MockServerClient:
 
         # reserve a free port for windows, else we use unix domain socket
 
-        self.mock_server.add_insecure_port(f'[::]:{self.server_port}')
+        self.mock_server.add_insecure_port(f'[::]:{self.service_port}')
         self.mock_server.start()
 
+        # TODO(bojiang): Unconnect from the secific metrics implementation Prometheus
         if self.prometheus_enabled:
-            start_http_server(self.prom_port)
-        channel = grpc.insecure_channel(f'localhost:{self.server_port}')
+            from bentoml.configuration.containers import BentoMLContainer
+
+            BentoMLContainer.yatai_metrics_client.get().start_http_server(
+                self.prom_port
+            )
+        channel = grpc.insecure_channel(f'localhost:{self.service_port}')
 
         client_stub = MockServiceStub(channel)
 

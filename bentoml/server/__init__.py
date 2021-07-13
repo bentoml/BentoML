@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import logging
-import multiprocessing
-from typing import Optional
+from typing import NoReturn, Optional
 
-from bentoml.utils import reserve_free_port
+from simple_di import skip, sync_container
+
+from bentoml.configuration.containers import BentoMLContainer
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,21 @@ def start_dev_server(
     mb_max_latency: Optional[int] = None,
     run_with_ngrok: Optional[bool] = None,
     enable_swagger: Optional[bool] = None,
+    timeout: Optional[int] = None,
 ):
+    BentoMLContainer.bundle_path.set(bundle_path)
+
+    bento_server = BentoMLContainer.config.bento_server
+    bento_server.port.set(port or skip)
+    bento_server.timeout.set(timeout or skip)
+    bento_server.microbatch.timeout.set(timeout or skip)
+    bento_server.swagger.enabled.set(enable_swagger or skip)
+    bento_server.microbatch.max_batch_size.set(mb_max_batch_size or skip)
+    bento_server.microbatch.max_latency.set(mb_max_latency or skip)
+
+    BentoMLContainer.prometheus_lock.get()  # generate lock before fork
+    BentoMLContainer.forward_port.get()  # generate port before fork
+
     if run_with_ngrok:
         from threading import Timer
 
@@ -38,70 +54,21 @@ def start_dev_server(
         thread.setDaemon(True)
         thread.start()
 
-    with reserve_free_port() as api_server_port:
-        # start server right after port released
-        #  to reduce potential race
+    import multiprocessing
 
-        model_server_proc = multiprocessing.Process(
-            target=_start_dev_server,
-            kwargs=dict(
-                api_server_port=api_server_port,
-                saved_bundle_path=bundle_path,
-                enable_swagger=enable_swagger,
-            ),
-            daemon=True,
-        )
+    model_server_proc = multiprocessing.Process(
+        target=_start_dev_server, args=(BentoMLContainer,), daemon=True,
+    )
     model_server_proc.start()
 
     try:
-        _start_dev_proxy(
-            port=port,
-            api_server_port=api_server_port,
-            saved_bundle_path=bundle_path,
-            mb_max_batch_size=mb_max_batch_size,
-            mb_max_latency=mb_max_latency,
-        )
+        _start_dev_proxy(BentoMLContainer)
     finally:
         model_server_proc.terminate()
 
 
-def _start_dev_server(
-    saved_bundle_path: str, api_server_port: int, enable_swagger: bool,
-):
-    logger.info("Starting BentoML API server in development mode..")
-
-    from bentoml.server.api_server import BentoAPIServer
-    from bentoml.saved_bundle import load_from_dir
-
-    bento_service = load_from_dir(saved_bundle_path)
-    api_server = BentoAPIServer(bento_service, enable_swagger=enable_swagger)
-    api_server.start(port=api_server_port)
-
-
-def _start_dev_proxy(
-    port: int,
-    saved_bundle_path: str,
-    api_server_port: int,
-    mb_max_batch_size: int,
-    mb_max_latency: int,
-):
-    logger.info("Starting BentoML API proxy in development mode..")
-
-    from bentoml.marshal.marshal import MarshalService
-
-    marshal_server = MarshalService(
-        saved_bundle_path,
-        outbound_host="localhost",
-        outbound_port=api_server_port,
-        mb_max_batch_size=mb_max_batch_size,
-        mb_max_latency=mb_max_latency,
-    )
-
-    marshal_server.fork_start_app(port=port)
-
-
 def start_prod_server(
-    saved_bundle_path: str,
+    bundle_path: str,
     port: Optional[int] = None,
     workers: Optional[int] = None,
     timeout: Optional[int] = None,
@@ -110,98 +77,59 @@ def start_prod_server(
     mb_max_latency: Optional[int] = None,
     microbatch_workers: Optional[int] = None,
 ):
-
     import psutil
 
     assert (
         psutil.POSIX
     ), "BentoML API Server production mode only supports POSIX platforms"
 
-    prometheus_lock = multiprocessing.Lock()
-    with reserve_free_port() as api_server_port:
-        pass
+    BentoMLContainer.bundle_path.set(bundle_path)
+
+    bento_server = BentoMLContainer.config.bento_server
+    bento_server.port.set(port or skip)
+    bento_server.timeout.set(timeout or skip)
+    bento_server.microbatch.timeout.set(timeout or skip)
+    bento_server.workers.set(workers or skip)
+    bento_server.swagger.enabled.set(enable_swagger or skip)
+    bento_server.microbatch.workers.set(microbatch_workers or skip)
+    bento_server.microbatch.max_batch_size.set(mb_max_batch_size or skip)
+    bento_server.microbatch.max_latency.set(mb_max_latency or skip)
+
+    BentoMLContainer.prometheus_lock.get()  # generate lock before fork
+    BentoMLContainer.forward_port.get()  # generate port before fork
+
+    import multiprocessing
 
     model_server_job = multiprocessing.Process(
-        target=_start_prod_server,
-        kwargs=dict(
-            saved_bundle_path=saved_bundle_path,
-            port=api_server_port,
-            timeout=timeout,
-            workers=workers,
-            prometheus_lock=prometheus_lock,
-            enable_swagger=enable_swagger,
-        ),
-        daemon=True,
+        target=_start_prod_server, args=(BentoMLContainer,), daemon=True
     )
     model_server_job.start()
 
     try:
-        _start_prod_proxy(
-            saved_bundle_path=saved_bundle_path,
-            port=port,
-            api_server_port=api_server_port,
-            workers=microbatch_workers,
-            timeout=timeout,
-            outbound_workers=workers,
-            mb_max_batch_size=mb_max_batch_size,
-            mb_max_latency=mb_max_latency,
-            prometheus_lock=prometheus_lock,
-        )
+        _start_prod_proxy(BentoMLContainer)
     finally:
         model_server_job.terminate()
 
 
-def _start_prod_server(
-    saved_bundle_path: str,
-    port: int,
-    timeout: int,
-    workers: int,
-    enable_swagger: bool,
-    prometheus_lock: Optional[multiprocessing.Lock] = None,
-):
-
-    logger.info("Starting BentoML API server in production mode..")
-
-    from bentoml.server.gunicorn_server import gunicorn_bento_server
-
-    gunicorn_app = gunicorn_bento_server()(
-        saved_bundle_path,
-        port=port,
-        timeout=timeout,
-        workers=workers,
-        prometheus_lock=prometheus_lock,
-        enable_swagger=enable_swagger,
-    )
-    gunicorn_app.run()
+def _start_dev_server(container) -> NoReturn:
+    sync_container(container, BentoMLContainer)
+    BentoMLContainer.model_app.get().run()
+    assert False, "not reachable"
 
 
-def _start_prod_proxy(
-    saved_bundle_path: str,
-    port: int,
-    api_server_port: int,
-    workers: int,
-    timeout: int,
-    outbound_workers: int,
-    mb_max_batch_size: int,
-    mb_max_latency: int,
-    prometheus_lock: Optional[multiprocessing.Lock] = None,
-):
+def _start_dev_proxy(container) -> NoReturn:
+    sync_container(container, BentoMLContainer)
+    BentoMLContainer.proxy_app.get().run()
+    assert False, "not reachable"
 
-    logger.info("Starting BentoML proxy in production mode..")
 
-    from bentoml.server.marshal_server import gunicorn_marshal_server
+def _start_prod_server(container) -> NoReturn:
+    sync_container(container, BentoMLContainer)
+    BentoMLContainer.model_server.get().run()
+    assert False, "not reachable"
 
-    # avoid load model before gunicorn fork
-    marshal_server = gunicorn_marshal_server()(
-        bundle_path=saved_bundle_path,
-        prometheus_lock=prometheus_lock,
-        port=port,
-        workers=workers,
-        timeout=timeout,
-        outbound_host="localhost",
-        outbound_port=api_server_port,
-        outbound_workers=outbound_workers,
-        mb_max_batch_size=mb_max_batch_size,
-        mb_max_latency=mb_max_latency,
-    )
-    marshal_server.run()
+
+def _start_prod_proxy(container) -> NoReturn:
+    sync_container(container, BentoMLContainer)
+    BentoMLContainer.proxy_server.get().run()
+    assert False, "not reachable"

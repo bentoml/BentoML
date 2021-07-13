@@ -1,0 +1,116 @@
+---
+specs:
+  repository: &repository_spec
+    user: HUB_USERNAME
+    pwd: HUB_PASSWORD
+    urls:
+      api: https://hub.docker.com/v2/users/login/
+      repos: https://hub.docker.com/v2/repositories
+    registry:
+      model-server: docker.io/bentoml/model-server
+      yatai-service: docker.io/bentoml/yatai-service
+
+  dependencies:
+    cuda: &cuda_spec
+      cudart:
+      cudnn8:
+      libcublas:
+      libcurand:
+      libcusparse:
+      libcufft:
+      libcusolver:
+
+  releases: &tmpl_spec
+    templates_dir: templates/debian
+    base_image: debian:buster-slim
+    add_to_tags: "slim"
+    multistage_image: True
+    header: |
+      # syntax = docker/dockerfile:1.2
+      #
+      # ===========================================
+      #
+      # THIS IS A GENERATED DOCKERFILE DO NOT EDIT.
+      #
+      # ===========================================
+    envars:
+      - LANG=C.UTF-8
+      - LC_ALL=C.UTF-8
+      - PYTHONDONTWRITEBYTECODE=1
+    cuda:
+      <<: *cuda_spec
+    cuda_prefix_url: "ubuntu2004"
+    cuda_requires: "cuda>=11.3 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 driver>=450"
+
+  tag:
+    fmt: "{release_type}-python{python_version}-{suffixes}"
+    release_type:
+    python_version:
+    suffixes:
+
+# allows users to define custom registries
+# this can also include GCR, ECR, Heroku, Quay.io etc.
+repository:
+  docker.io:
+    <<: *repository_spec
+
+cuda:
+  11.3.1: &cuda11_3_1
+    <<: *cuda_spec
+    cudart: 11.3.109-1
+    cudnn8: 8.2.0.53-1
+    libcublas: 11.5.1.109-1
+    libcurand: 10.2.4.109-1
+    libcusparse: 11.6.0.109-1
+    libcufft: 10.4.2.109-1
+    libcusolver: 11.1.2.109-1
+
+packages:
+  model-server:
+    devel: &default_specs
+      - debian10
+      - centos8
+      - centos7
+    runtime:
+      - *default_specs
+      - amazonlinux2
+      - alpine3.14
+    cudnn:
+      - *default_specs
+  yatai-service:
+    runtime:
+      - *default_specs
+
+releases:
+  debian10: &cuda_base
+    <<: *tmpl_spec
+    cuda:
+      <<: *cuda11_3_1
+
+  centos8: &centos
+    <<: *cuda_base
+    templates_dir: templates/rhel
+    base_image: centos:8
+    add_to_tags: "centos8"
+    cuda_prefix_url: "rhel8"
+
+  centos7:
+    <<: *centos
+    base_image: centos:7
+    add_to_tags: "centos7"
+    cuda_prefix_url: "rhel7"
+
+  amazonlinux2: &no_cuda
+    <<: *tmpl_spec
+    templates_dir: templates/rhel
+    base_image: amazonlinux:2
+    add_to_tags: "ami2"
+    cuda_prefix_url:
+    cuda_requires:
+    cuda:
+
+  alpine3.14:
+    <<: *no_cuda
+    templates_dir: templates/alpine
+    base_image: alpine:3.14
+    add_to_tags: "alpine3.14"

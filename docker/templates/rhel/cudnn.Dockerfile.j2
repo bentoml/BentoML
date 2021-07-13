@@ -1,0 +1,62 @@
+{{ metadata.header }}
+
+{% set cuda = metadata.cuda %}
+{% set cudnn = cuda.cudnn %}
+{% set cudnn_version = cudnn.version %}
+{% set cudnn_major_version = cudnn.major_version %}
+ARG PYTHON_VERSION
+
+FROM {{ metadata.package }}:{{ build_tag }} as build_image
+
+RUN NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \
+    curl -fsSL {{ cuda.base_repo }}/7fa2af80.pub | sed '/^Version/d' > /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA && \
+    echo "$NVIDIA_GPGKEY_SUM  /etc/pki/rpm-gpg/RPM-GPG-KEY-NVIDIA" | sha256sum -c --strict -
+
+COPY {{ metadata.docker_build_path }}/cuda.repo /etc/yum.repos.d/cuda.repo
+COPY {{ metadata.docker_build_path }}/nvidia-ml.repo /etc/yum.repos.d/nvidia-ml.repo
+
+{%- set cudart_version = cuda.version.major+"-"+cuda.version.minor -%}
+{%- set cublas_version = cuda.version.major+"-"+cuda.version.minor+"-"+ cuda.components['libcublas'] -%}
+{%- set curand_version = cuda.version.major+"-"+cuda.version.minor+"-"+ cuda.components['libcurand'] -%}
+{%- set cusparse_version = cuda.version.major+"-"+cuda.version.minor+"-"+ cuda.components['libcusparse'] -%}
+{%- set cufft_version = cuda.version.major+"-"+cuda.version.minor+"-"+ cuda.components['libcufft'] -%}
+{% set cusolver_version = cuda.version.major+"-"+cuda.version.minor+"-"+ cuda.components['libcusolver'] %}
+
+
+RUN yum upgrade -y && yum install -y \
+        cuda-cudart-{{ cudart_version }} \
+        cuda-compat-{{ cuda.version.major }}-{{ cuda.version.minor }} \
+        libcublas-{{ cublas_version }} \
+        libcurand-{{ curand_version }} \
+        libcusparse-{{ cusparse_version }} \
+        libcufft-{{ cufft_version }} \
+        libcusolver-{{ cusolver_version }} \
+        libcudnn{{ cudnn_major_version }}-{{ cudnn_version }}.cuda{{ cuda.version.major }}.{{ cuda.version.minor }} && \
+    ln -s cuda-{{ cuda.version.major }}.{{ cuda.version.minor }} /usr/local/cuda && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:$PATH
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/include/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu
+
+# nvidia-container-runtime, which is needed for nvidia-docker
+# https://github.com/NVIDIA/nvidia-container-runtime
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+ENV NVIDIA_REQUIRE_CUDA "{{ cuda.requires }}"
+
+FROM build_image as release_image
+
+ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
+
+RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==${BENTOML_VERSION} --no-cache-dir
+
+COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
+
+ENTRYPOINT [ "entrypoint.sh" ]
+
+{% if metadata.package == "model-server" %}
+CMD ["bentoml", "serve-gunicorn", "/bento"]
+{% else %}
+CMD ["bentoml", "yatai-service-start"]
+{% endif %}

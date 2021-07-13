@@ -1,0 +1,24 @@
+{{ metadata.header }}
+
+ARG PYTHON_VERSION
+
+FROM {{ metadata.package }}:{{ build_tag }} as build_image
+
+ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
+
+# bash is needed to run bentoml.
+RUN conda install -y python=$PYTHON_VERSION pip \
+    && conda clean -afy \
+    && apk add --no-cache bash git build-base
+
+RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==${BENTOML_VERSION} --no-cache-dir
+
+COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
+
+ENTRYPOINT [ "entrypoint.sh" ]
+
+{% if metadata.package == "model-server" %}
+CMD ["bentoml", "serve-gunicorn", "/bento"]
+{% else %}
+CMD ["bentoml", "yatai-service-start"]
+{% endif %}

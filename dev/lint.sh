@@ -4,7 +4,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 echo "Running flake8 on bentoml module.."
-flake8 --config=.flake8 bentoml
+flake8 --config=.flake8 bentoml docker
 
 echo "Running flake8 on test module.."
 flake8 --config=.flake8 tests e2e_tests

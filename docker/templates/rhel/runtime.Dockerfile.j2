@@ -1,0 +1,23 @@
+{{ metadata.header }}
+
+{% set pip_options = ['--no-cache-dir'] %}
+{% if metadata.package == 'yatai-service' %}
+{% do pip_options.append('--use-deprecated=legacy-resolver') %}
+{% endif %}
+ARG PYTHON_VERSION
+
+FROM {{ metadata.package }}:{{ build_tag }} as build_image
+
+ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
+
+RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==${BENTOML_VERSION} {{ pip_options|join(' ') }}
+
+COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
+
+ENTRYPOINT [ "entrypoint.sh" ]
+
+{% if metadata.package == "model-server" %}
+CMD ["bentoml", "serve-gunicorn", "/bento"]
+{% else %}
+CMD ["bentoml", "yatai-service-start"]
+{% endif %}

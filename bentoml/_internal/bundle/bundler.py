@@ -9,33 +9,71 @@ import os
 import shutil
 import stat
 import tarfile
+import uuid
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import requests
 
-from bentoml.configuration import _is_pip_installed_bentoml
-from bentoml.exceptions import BentoMLException
-from bentoml.saved_bundle.config import SavedBundleConfig
-from bentoml.saved_bundle.loader import _is_remote_path
-from bentoml.saved_bundle.local_py_modules import (
+from ..configuration import _is_pip_installed_bentoml
+from ..exceptions import BentoMLException
+from ..bundle.config import SavedBundleConfig
+from ..bundle.loader import _is_remote_path
+from ..env.local_py_modules import (
     copy_local_py_modules,
     copy_zip_import_archives,
 )
-from bentoml.saved_bundle.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
-from bentoml.saved_bundle.templates import (
+from ..env.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
+from ..bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     INIT_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
 )
-from bentoml.utils import archive_directory_to_tar, is_gcs_url, is_s3_url
-from bentoml.utils.open_api import get_open_api_spec_json
-from bentoml.utils.tempdir import TempDirectory
-from bentoml.utils.usage_stats import track_save
+from ..utils import archive_directory_to_tar, is_gcs_url, is_s3_url
+from ..utils.open_api import get_open_api_spec_json
+from ..utils.tempdir import TempDirectory
+from ..utils.usage_stats import track_save
 
 if TYPE_CHECKING:
-    from bentoml.service import BentoService
+    from ..service import BentoService
+
+
+
+def versioneer():
+    """
+    Function used to generate a new version string when saving a new Service
+    bundle. User can also override this function to get a customized version format
+    """
+    date_string = datetime.now().strftime("%Y%m%d")
+    random_hash = uuid.uuid4().hex[:6].upper()
+
+    # Example output: '20191009_D246ED'
+    return date_string + "_" + random_hash
+
+
+def validate_version_str(version_str):
+    """
+    Validate that version str format is either a simple version string that:
+        * Consist of only ALPHA / DIGIT / "-" / "." / "_"
+        * Length between 1-128
+    Or a valid semantic version https://github.com/semver/semver/blob/master/semver.md
+    """
+    regex = r"[A-Za-z0-9_.-]{1,128}\Z"
+    semver_regex = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa: E501
+    if (
+        re.match(regex, version_str) is None
+        and re.match(semver_regex, version_str) is None
+    ):
+        raise InvalidArgument(
+            'Invalid Service version: "{}", it can only consist'
+            ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
+            "128 characters".format(version_str)
+        )
+
+    if version_str.lower() == "latest":
+        raise InvalidArgument('Service version can not be set to "latest"')
+
 
 DEFAULT_SAVED_BUNDLE_README = """\
 # Generated BentoService bundle - {}:{}
@@ -202,7 +240,7 @@ def save_to_dir(
     """
     track_save(bento_service)
 
-    from bentoml.service import BentoService
+    from ..service import BentoService
 
     if not isinstance(bento_service, BentoService):
         raise BentoMLException(

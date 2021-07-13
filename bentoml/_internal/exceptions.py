@@ -1,19 +1,4 @@
-# Copyright 2019 Atalaya Tech, Inc.
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-# http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-import grpc
-
-from bentoml.utils.lazy_loader import LazyLoader
+from .utils.lazy_loader import LazyLoader
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
@@ -66,6 +51,8 @@ class RemoteException(BentoMLException):
 class BentoMLRpcError(BentoMLException):
     def __init__(self, grpc_error, message):
         super(BentoMLRpcError, self).__init__()
+        import grpc
+
         self.grpc_error = grpc_error
         self.message = message
         if self.grpc_error.code == grpc.StatusCode.DEADLINE_EXCEEDED:

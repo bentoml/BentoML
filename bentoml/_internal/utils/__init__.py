@@ -24,9 +24,9 @@ from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
 
-from bentoml.utils.gcs import is_gcs_url
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.utils.s3 import is_s3_url
+from ..utils.gcs import is_gcs_url
+from ..utils.lazy_loader import LazyLoader
+from ..utils.s3 import is_s3_url
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")

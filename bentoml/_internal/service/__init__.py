@@ -41,9 +41,8 @@ from bentoml.saved_bundle.pip_pkg import seek_pip_packages
 from bentoml.service.artifacts import ArtifactCollection, BentoServiceArtifact
 from bentoml.service.env import BentoServiceEnv
 from bentoml.service.inference_api import InferenceAPI
-from bentoml.utils.hybridmethod import hybridmethod
 
-ARTIFACTS_DIR_NAME = "artifacts"
+
 BENTOML_RESERVED_API_NAMES = [
     "index",
     "swagger",
@@ -90,8 +89,8 @@ def api_decorator(
     api_name: str = None,
     route: str = None,
     api_doc: str = None,
-    mb_max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
-    mb_max_latency: int = DEFAULT_MAX_LATENCY,
+    max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
+    max_latency: int = DEFAULT_MAX_LATENCY,
     batch=False,
     **kwargs,
 ):  # pylint: disable=redefined-builtin
@@ -109,28 +108,17 @@ def api_decorator(
         Default: None (the same as api_name)
     :param api_doc: user-facing documentation of the inference API. default to the
         user-defined callback function's docstring
-    :param mb_max_batch_size: The maximum size of requests batch accepted by this
+    :param max_batch_size: The maximum size of requests batch accepted by this
         inference API. This parameter governs the throughput/latency trade off, and
         avoids having large batches that exceed some resource constraint (e.g. GPU
         memory to hold the entire batch's data). Default: 1000.
-    :param mb_max_latency: The latency goal of this inference API in milliseconds.
+    :param max_latency: The latency goal of this inference API in milliseconds.
         Default: 10000.
 
 
     Example usage:
 
-    >>> from bentoml import BentoService, api
-    >>> from bentoml.adapters import JsonInput, DataframeInput
-    >>>
-    >>> class FraudDetectionAndIdentityService(BentoService):
-    >>>
-    >>>     @api(input=JsonInput(), batch=True)
-    >>>     def fraud_detect(self, json_list):
-    >>>         # user-defined callback function that process inference requests
-    >>>
-    >>>     @api(input=DataframeInput(input_json_orient='records'), batch=True)
-    >>>     def identity(self, df):
-    >>>         # user-defined callback function that process inference requests
+    >>> # add example usage
     """
 
     def decorator(func):
@@ -178,188 +166,6 @@ def api_decorator(
     return decorator
 
 
-def web_static_content_decorator(web_static_content):
-    """Define web UI static files required to be bundled with a BentoService
-
-    Args:
-        web_static_content: path to directory containg index.html and static dir
-
-    >>>  @web_static_content('./ui/')
-    >>>  class MyMLService(BentoService):
-    >>>     pass
-    """
-
-    def decorator(bento_service_cls):
-        bento_service_cls._web_static_content = web_static_content
-        return bento_service_cls
-
-    return decorator
-
-
-def artifacts_decorator(artifacts: List[BentoServiceArtifact]):
-    """Define artifacts required to be bundled with a BentoService
-
-    Args:
-        artifacts (list(bentoml.artifact.BentoServiceArtifact)): A list of desired
-            artifacts required by this BentoService
-    """
-
-    def decorator(bento_service_cls):
-        artifact_names = set()
-        for artifact in artifacts:
-            if not isinstance(artifact, BentoServiceArtifact):
-                raise InvalidArgument(
-                    "BentoService @artifacts decorator only accept list of "
-                    "BentoServiceArtifact instances, instead got type: '%s'"
-                    % type(artifact)
-                )
-
-            if artifact.name in artifact_names:
-                raise InvalidArgument(
-                    "Duplicated artifact name `%s` detected. Each artifact within one"
-                    "BentoService must have an unique name" % artifact.name
-                )
-
-            artifact_names.add(artifact.name)
-
-        bento_service_cls._declared_artifacts = artifacts
-        return bento_service_cls
-
-    return decorator
-
-
-def env_decorator(
-    pip_dependencies: List[str] = None,
-    pip_packages: List[str] = None,
-    pip_index_url: str = None,
-    pip_trusted_host: str = None,
-    pip_extra_index_url: str = None,
-    auto_pip_dependencies: bool = None,
-    infer_pip_packages: bool = False,
-    requirements_txt_file: str = None,
-    conda_channels: List[str] = None,
-    conda_overwrite_channels: bool = False,
-    conda_override_channels: bool = False,
-    conda_dependencies: List[str] = None,
-    conda_env_yml_file: str = None,
-    setup_sh: str = None,
-    docker_base_image: str = None,
-    zipimport_archives: List[str] = None,
-):
-    """Define environment and dependencies required for the BentoService being created
-
-    Args:
-        pip_packages:: list of pip_packages required, specified by package name
-            or with specified version `{package_name}=={package_version}`
-        pip_dependencies: same as pip_packages but deprecated
-        pip_index_url: passing down to pip install --index-url option
-        pip_trusted_host: passing down to pip install --trusted-host option
-        pip_extra_index_url: passing down to pip install --extra-index-url option
-        infer_pip_packages: whether to automatically find all the required
-            pip dependencies and pin their version
-        auto_pip_dependencies: same as infer_pip_packages but deprecated
-        requirements_txt_file: path to the requirements.txt where pip dependencies
-            are explicitly specified, with ideally pinned versions
-        conda_channels: list of extra conda channels other than default channels to be
-            used. This is equivalent to passing the --channels to conda commands
-        conda_override_channels: ensures that conda searches only your specified
-            channel and no other channels, such as default channels.
-            This is equivalent to passing the --override-channels option to conda
-            commands, or adding `nodefaults` to the `channels` in the environment.yml
-        conda_overwrite_channels: aliases to `override_channels`
-        conda_dependencies: list of conda dependencies required
-        conda_env_yml_file: use a pre-defined conda environment yml file
-        setup_sh: user defined setup bash script, it is executed in docker build time
-        docker_base_image: used for customizing the docker container image built with
-            BentoML saved bundle. Base image must either have both `bash` and `conda`
-            installed; or have `bash`, `pip`, `python` installed, in which case the user
-            is required to ensure the python version matches the BentoService bundle
-        zipimport_archives: list of zipimport archives paths relative to the module path
-    """
-
-    if requirements_txt_file:
-        if pip_packages:
-            logger.warning("Ignoring pip_packages as requirements_txt_file is set.")
-        if pip_index_url or pip_trusted_host or pip_extra_index_url:
-            logger.warning(
-                "Ignoring pip related options as requirements_txt_file is set."
-            )
-    if pip_dependencies is not None:
-        logger.warning(
-            "`pip_dependencies` parameter in `@env` is being deprecated soon, use "
-            "`pip_packages` instead, e.g. `@env(pip_packages=[\"numpy\"])`"
-        )
-    if auto_pip_dependencies is not None:
-        logger.warning(
-            "`auto_pip_dependencies` parameter in `@env` is being deprecated soon,"
-            "use `infer_pip_packages` instead, e.g. `@env(infer_pip_packages=True)`"
-        )
-
-    def decorator(bento_service_cls):
-        bento_service_cls._env = BentoServiceEnv(
-            pip_packages=pip_packages or pip_dependencies,
-            pip_index_url=pip_index_url,
-            pip_trusted_host=pip_trusted_host,
-            pip_extra_index_url=pip_extra_index_url,
-            infer_pip_packages=infer_pip_packages or auto_pip_dependencies,
-            requirements_txt_file=requirements_txt_file,
-            conda_channels=conda_channels,
-            conda_override_channels=conda_override_channels,
-            conda_overwrite_channels=conda_overwrite_channels,
-            conda_dependencies=conda_dependencies,
-            conda_env_yml_file=conda_env_yml_file,
-            setup_sh=setup_sh,
-            docker_base_image=docker_base_image,
-            zipimport_archives=zipimport_archives,
-        )
-        return bento_service_cls
-
-    return decorator
-
-
-def ver_decorator(major, minor):
-    """Decorator for specifying the version of a custom BentoService.
-
-    Args:
-        major (int): Major version number for Bento Service
-        minor (int): Minor version number for Bento Service
-
-    BentoML uses semantic versioning for BentoService distribution:
-
-    * MAJOR is incremented when you make breaking API changes
-
-    * MINOR is incremented when you add new functionality without breaking the
-      existing API or functionality
-
-    * PATCH is incremented when you make backwards-compatible bug fixes
-
-    'Patch' is provided(or auto generated) when calling BentoService#save,
-    while 'Major' and 'Minor' can be defined with '@ver' decorator
-
-    >>>  from bentoml import ver, artifacts
-    >>>  from bentoml.service.artifacts.common import PickleArtifact
-    >>>
-    >>>  @ver(major=1, minor=4)
-    >>>  @artifacts([PickleArtifact('model')])
-    >>>  class MyMLService(BentoService):
-    >>>     pass
-    >>>
-    >>>  svc = MyMLService()
-    >>>  svc.pack("model", trained_classifier)
-    >>>  svc.set_version("2019-08.iteration20")
-    >>>  svc.save()
-    >>>  # The final produced BentoService bundle will have version:
-    >>>  # "1.4.2019-08.iteration20"
-    """
-
-    def decorator(bento_service_cls):
-        bento_service_cls._version_major = major
-        bento_service_cls._version_minor = minor
-        return bento_service_cls
-
-    return decorator
-
-
 def validate_version_str(version_str):
     """
     Validate that version str format is either a simple version string that:
@@ -382,38 +188,6 @@ def validate_version_str(version_str):
     if version_str.lower() == "latest":
         raise InvalidArgument('BentoService version can not be set to "latest"')
 
-
-def save(bento_service, base_path=None, version=None, labels=None):
-    """
-    Save and register the given BentoService via BentoML's built-in model management
-    system. BentoML by default keeps track of all the SavedBundle's files and metadata
-    in local file system under the $BENTOML_HOME(~/bentoml) directory. Users can also
-    configure BentoML to save their BentoService to a shared Database and cloud object
-    storage such as AWS S3.
-
-    :param bento_service: target BentoService instance to be saved
-    :param base_path: optional - override repository base path
-    :param version: optional - save with version override
-    :param labels: optional - user defined labels
-
-    :return: saved_path: file path to where the BentoService is saved
-    """
-
-    logger.warning(
-        "`from bentoml import save` is being deprecated soon, use BentoService#save "
-        "and BentoService#save_to_dir instead."
-    )
-
-    from bentoml.yatai.client import YataiClient
-    from bentoml.yatai.yatai_service import get_yatai_service
-
-    if base_path:
-        yatai_service = get_yatai_service(file_system_directory=base_path)
-        yatai_client = YataiClient(yatai_service)
-    else:
-        yatai_client = YataiClient()
-
-    return yatai_client.repository.upload(bento_service, version, labels)
 
 
 class BentoService:

@@ -5,7 +5,7 @@ import numpy as np
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.fastai import FastaiModelArtifact
+from bentoml.fastai import FastaiModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)

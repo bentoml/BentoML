@@ -7,7 +7,7 @@ import pytest
 import bentoml
 from bentoml.adapters import DataframeInput
 from bentoml.exceptions import BentoMLException
-from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModelArtifact
 
 
 def test_pip_packages_env_with_legacy_api():

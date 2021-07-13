@@ -132,18 +132,18 @@ to understand which deployment option is best suited for your use case.
 BentoML provides APIs for defining a prediction service, a servable model so to speak, 
 which includes the trained ML model itself, plus its pre-processing, post-processing
 code, input/output specifications and dependencies. Here's what a simple
-prediction service look like in BentoML: 
-
+prediction service look like in BentoML:
 
 ```python
 import pandas as pd
 
 from bentoml import env, artifacts, api, BentoService
 from bentoml.adapters import DataframeInput, JsonOutput
-from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModelArtifact
 
 # BentoML packages local python modules automatically for deployment
 from my_ml_utils import my_encoder
+
 
 @env(infer_pip_packages=True)
 @artifacts([SklearnModelArtifact('my_model')])

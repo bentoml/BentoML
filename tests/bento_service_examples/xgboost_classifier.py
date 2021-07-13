@@ -3,7 +3,7 @@ import numpy as np
 import bentoml
 import xgboost as xgb  # pylint: disable=import-error
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.xgboost import XgboostModelArtifact
+from bentoml.xgboost import XgboostModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)

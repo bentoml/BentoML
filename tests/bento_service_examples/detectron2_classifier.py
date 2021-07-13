@@ -7,7 +7,7 @@ import bentoml
 import sys
 import traceback
 from typing import Dict
-from bentoml.frameworks.detectron import DetectronModelArtifact
+from bentoml.detectron import DetectronModelArtifact
 from bentoml.adapters import ImageInput
 from detectron2.data import transforms as T  # pylint: disable=import-error
 

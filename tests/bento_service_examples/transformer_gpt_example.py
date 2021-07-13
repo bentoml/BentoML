@@ -1,6 +1,6 @@
 import bentoml
 from bentoml.adapters import JsonInput
-from bentoml.frameworks.transformers import TransformersModelArtifact
+from bentoml.transformers import TransformersModelArtifact
 
 
 @bentoml.env(pip_packages=["torch==1.6.0", "transformers==3.1.0"])

@@ -1,7 +1,7 @@
 import torch  # pylint: disable=import-error
 
 import bentoml
-from bentoml.frameworks.pytorch import PytorchLightningModelArtifact
+from bentoml.pytorch import PytorchLightningModelArtifact
 from bentoml.adapters import DataframeInput
 
 

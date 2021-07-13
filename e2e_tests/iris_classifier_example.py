@@ -1,6 +1,6 @@
 from bentoml import BentoService, api, artifacts, env
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModelArtifact
 
 
 @env(infer_pip_packages=True)

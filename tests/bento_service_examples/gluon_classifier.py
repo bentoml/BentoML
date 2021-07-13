@@ -1,6 +1,6 @@
 from bentoml import env, artifacts, api, BentoService
 from bentoml.adapters import JsonInput
-from bentoml.frameworks.gluon import GluonModelArtifact
+from bentoml.gluon import GluonModelArtifact
 import mxnet as mx  # pylint: disable=import-error
 
 

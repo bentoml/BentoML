@@ -37,7 +37,7 @@ class Loss(Module):
 
 
 def pack_models(path):
-    from bentoml.frameworks.fastai import FastaiModelArtifact
+    from bentoml.fastai import FastaiModelArtifact
 
     model = Model()
     loss = Loss()

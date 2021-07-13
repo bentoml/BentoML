@@ -1,6 +1,6 @@
 import bentoml
 from bentoml.adapters import ImageInput
-from bentoml.frameworks.easyocr import EasyOCRArtifact
+from bentoml.easyocr import EasyOCRArtifact
 
 import numpy as np
 

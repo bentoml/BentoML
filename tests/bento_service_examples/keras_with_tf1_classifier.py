@@ -2,7 +2,7 @@ import numpy as np
 
 import bentoml
 from bentoml.adapters import JsonInput
-from bentoml.frameworks.keras import KerasModelArtifact
+from bentoml.keras import KerasModelArtifact
 
 
 @bentoml.env(pip_packages=["keras==2.3.1", "tensorflow==1.14", "h5py==2.10.0"])

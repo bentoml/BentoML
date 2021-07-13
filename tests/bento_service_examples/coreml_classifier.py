@@ -3,7 +3,7 @@ import pandas as pd
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.coreml import CoreMLModelArtifact
+from bentoml.coreml import CoreMLModelArtifact
 from coremltools.models import MLModel  # pylint: disable=import-error
 
 

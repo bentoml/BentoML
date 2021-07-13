@@ -1,17 +1,3 @@
-# Copyright 2019 Atalaya Tech, Inc.
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-# http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import setuptools
 
 import versioneer
@@ -54,6 +40,7 @@ install_requires = [
     'dataclasses;python_version < "3.7"',
     "chardet",
     "simple-di==0.1.0",
+    "cloudpickle",
 ]
 
 yatai_service_requires = [
@@ -88,13 +75,14 @@ test_requires = [
     "pytest-asyncio",
     "parameterized",
     "scikit-learn",
+    "isort>=5.0.0",
 ]
 
 dev_requires = [
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
     # grpcio-tools version must be kept in sync with the version used in
-    # `protos/generate-docker.sh` script
+    # `dev/generate-protos-docker.sh` script
     "grpcio-tools~=1.34.0",
     "grpcio-reflection~=1.34.0",
     "pylint>=2.5.2",
@@ -157,7 +145,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.6.1",
-    entry_points={"console_scripts": ["bentoml=bentoml:commandline_interface"]},
+    entry_points={"console_scripts": ["bentoml=bentoml:bentoml._internal.cli.cli"]},
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",
         "BentoML User Slack Group": "https://bit.ly/2N5IpbB",

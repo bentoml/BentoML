@@ -1,6 +1,6 @@
 import bentoml
 from bentoml.adapters import JsonInput, TfTensorInput
-from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
+from bentoml.tensorflow import TensorflowSavedModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)

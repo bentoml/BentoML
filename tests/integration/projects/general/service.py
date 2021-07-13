@@ -16,7 +16,7 @@ from bentoml.adapters import (
     JsonOutput,
     MultiImageInput,
 )
-from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModelArtifact
 from bentoml.handlers import DataframeHandler
 from bentoml.service.artifacts.pickle import PickleArtifact
 from bentoml.types import InferenceResult, InferenceTask

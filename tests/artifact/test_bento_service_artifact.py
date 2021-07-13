@@ -2,7 +2,7 @@ import pytest
 from bentoml import artifacts
 from bentoml.service import BentoService
 from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModelArtifact
 from bentoml.exceptions import FailedPrecondition
 
 

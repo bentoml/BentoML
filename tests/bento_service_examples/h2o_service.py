@@ -1,7 +1,7 @@
 import bentoml
 import h2o  # pylint: disable=import-error
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.h2o import H2oModelArtifact
+from bentoml.h2o import H2oModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)

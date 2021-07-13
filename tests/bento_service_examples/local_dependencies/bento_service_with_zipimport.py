@@ -10,7 +10,7 @@ from return_false import return_false
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModelArtifact
 
 
 @bentoml.env(zipimport_archives=['nested_zipmodule.zip'])

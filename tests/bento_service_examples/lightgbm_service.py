@@ -1,5 +1,5 @@
 import bentoml
-from bentoml.frameworks.lightgbm import LightGBMModelArtifact
+from bentoml.lightgbm import LightGBMModelArtifact
 from bentoml.adapters import DataframeInput
 
 

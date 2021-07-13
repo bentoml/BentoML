@@ -1,6 +1,6 @@
 import bentoml
 from bentoml.adapters import JsonInput
-from bentoml.frameworks.spacy import SpacyModelArtifact
+from bentoml.spacy import SpacyModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)

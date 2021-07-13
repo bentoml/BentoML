@@ -3,7 +3,7 @@ from os import path
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModelArtifact
 
 # noqa # pylint: disable=import-error
 sys.path.append(path.dirname(path.abspath(__file__)))  # isort:skip

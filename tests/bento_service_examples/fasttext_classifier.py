@@ -1,7 +1,7 @@
 import bentoml
 
 from bentoml.adapters import JsonInput
-from bentoml.frameworks.fasttext import FasttextModelArtifact
+from bentoml.fasttext import FasttextModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)

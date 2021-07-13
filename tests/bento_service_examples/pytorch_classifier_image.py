@@ -6,7 +6,7 @@ from torch.autograd import Variable  # pylint: disable=import-error
 from torchvision import transforms  # pylint: disable=import-error
 
 import bentoml
-from bentoml.frameworks.pytorch import PytorchModelArtifact
+from bentoml.pytorch import PytorchModelArtifact
 from bentoml.adapters import FileInput
 
 

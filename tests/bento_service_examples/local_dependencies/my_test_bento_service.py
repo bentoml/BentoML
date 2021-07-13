@@ -1,6 +1,6 @@
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModelArtifact
 from tests.bento_service_examples.local_dependencies.local_module import (
     dependency_in_local_module_directory,
 )

@@ -1,7 +1,7 @@
 import pathlib
 import sys
 
-from bentoml.frameworks.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModelArtifact
 from bentoml.service.artifacts.pickle import PickleArtifact
 
 

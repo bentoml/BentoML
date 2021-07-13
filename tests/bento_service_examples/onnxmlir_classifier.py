@@ -3,7 +3,7 @@ import sys
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.onnxmlir import OnnxMlirModelArtifact
+from bentoml.onnxmlir import OnnxMlirModelArtifact
 
 
 sys.path.append('/workdir/onnx-mlir/build/Debug/lib/')

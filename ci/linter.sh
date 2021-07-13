@@ -6,14 +6,14 @@ cd "$GIT_ROOT"
 
 has_errors=0
 
-# Code auto formatting check with black
-black -S .
+# Code auto formatting check with black & isort
+./dev/format.sh
 GIT_STATUS="$(git status --porcelain)"
 if [ "$GIT_STATUS" ];
 then
-  echo "Source code changes are not formatted with black (./dev/format.sh script)"
+  echo "Source code changes are not formatted (./dev/format.sh script)"
   echo "Files changed:"
-  echo "------------------------------------------------------------------"
+  echo "--------------------------------------------------------------"
   echo "$GIT_STATUS"
   has_errors=1
 else

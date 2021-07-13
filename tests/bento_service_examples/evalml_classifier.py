@@ -1,6 +1,6 @@
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.evalml import EvalMLModelArtifact
+from bentoml.evalml import EvalMLModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)

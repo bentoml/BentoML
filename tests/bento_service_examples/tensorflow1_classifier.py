@@ -2,7 +2,7 @@ import sys
 
 import bentoml
 from bentoml.adapters import TfTensorInput
-from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
+from bentoml.tensorflow import TensorflowSavedModelArtifact
 
 if "tensorflow" not in sys.modules:
     import tensorflow

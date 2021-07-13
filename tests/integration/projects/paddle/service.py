@@ -5,7 +5,7 @@ import numpy as np
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.frameworks.paddle import PaddlePaddleModelArtifact
+from bentoml.paddle import PaddlePaddleModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)

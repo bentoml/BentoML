@@ -14,7 +14,7 @@ exclude = '''
     | guides
   )/
   | bentoml/utils/cloudpickle.py
-  | bentoml/yatai/proto
+  | yatai/yatai/proto
   | bentoml/_version.py
   | versioneer.py
   | tests/yatai/proto

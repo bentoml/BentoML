@@ -106,7 +106,7 @@ class JaegerTracer:
                 token = span_context_var.set(scope.span.context)
                 if request_headers and TRACE_ID_HEADER not in request_headers:
                     headers_dict = dict(request_headers)
-                    tracer.inject(
+                    jaeger_tracer.inject(
                         scope.span.context, Format.HTTP_HEADERS, headers_dict,
                     )
                     request_headers.update(headers_dict)

@@ -67,6 +67,11 @@ class ABSRepository(BaseRepository):
         self.container, self.blob = parsed_url.path.split("/", 1)
 
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        if not connection_string:
+            raise YataiRepositoryException(
+                "Not able to get AZURE_STORAGE_CONNECTION_STRING"
+            )
+
         self.azure_blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )

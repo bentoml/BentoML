@@ -70,6 +70,7 @@ Example Projects:
 * Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__
 
 .. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
+    :noindex:
 
 
 =========

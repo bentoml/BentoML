@@ -92,19 +92,19 @@ def get_yatai_service(
 
 @inject
 def start_yatai_service_grpc_server(
-    db_url,
-    grpc_port,
-    ui_port,
-    with_ui,
-    base_url,
-    repository_type,
-    file_system_directory,
-    s3_url,
-    s3_endpoint_url,
-    gcs_url,
+    db_url: str,
+    grpc_port: int,
+    ui_port: int,
+    with_ui: bool,
+    base_url: str,
+    repository_type: str,
+    file_system_directory: str,
+    s3_url: str,
+    s3_endpoint_url: str,
+    gcs_url: str,
     web_ui_log_path: str = Provide[BentoMLContainer.yatai_logging_path],
 ):
-    # Lazily import grpcio for YataiSerivce gRPC related actions
+    # Lazily import grpcio for YataiService gRPC related actions
     import grpc
     from bentoml.yatai.db import DB
     from bentoml.yatai.repository import create_repository
@@ -151,7 +151,7 @@ def start_yatai_service_grpc_server(
     server.add_insecure_port(f"[::]:{grpc_port}")
 
     # NOTE: the current implementation sets prometheus_port to
-    # 50052 to accomodate with Makefile setups. Currently there
+    # 50052 to accommodate with Makefile setups. Currently there
     # isn't a way to find the reserve_free_port dynamically inside
     # Makefile to find the free ports for prometheus_port without
     # the help of a shell scripts.

@@ -16,6 +16,7 @@ from functools import partial
 import logging
 import os
 import sys
+from typing import TYPE_CHECKING
 
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from google.protobuf.json_format import MessageToJson
@@ -27,12 +28,12 @@ from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
 from bentoml.marshal.utils import DataLoader, MARSHAL_REQUEST_HEADER
 from bentoml.server.instruments import InstrumentMiddleware
-from bentoml.service import BentoService, InferenceAPI
-from bentoml.tracing import get_tracer
 from bentoml.types import HTTPRequest
 from bentoml.utils.open_api import get_open_api_spec_json
 
-CONTENT_TYPE_LATEST = str("text/plain; version=0.0.4; charset=utf-8")
+
+if TYPE_CHECKING:
+    from bentoml.service import InferenceAPI
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
@@ -138,9 +139,9 @@ def log_exception(exc_info):
     )
 
 
-class BentoAPIServer:
+class ModelApp:
     """
-    BentoAPIServer creates a REST API server based on APIs defined with a BentoService
+    ModelApp creates a REST API server based on APIs defined with a BentoService
     via BentoService#get_service_apis call. Each InferenceAPI will become one
     endpoint exposed on the REST server, and the RequestHandler defined on each
     InferenceAPI object will be used to handle Request object before feeding the
@@ -150,7 +151,7 @@ class BentoAPIServer:
     @inject
     def __init__(
         self,
-        bento_service: BentoService,
+        bundle_path: str = Provide[BentoMLContainer.bundle_path],
         app_name: str = None,
         enable_swagger: bool = Provide[
             BentoMLContainer.config.bento_server.swagger.enabled
@@ -161,15 +162,21 @@ class BentoAPIServer:
         enable_feedback: bool = Provide[
             BentoMLContainer.config.bento_server.feedback.enabled
         ],
+        tracer=Provide[BentoMLContainer.tracer],
     ):
-        app_name = bento_service.name if app_name is None else app_name
+        from bentoml.saved_bundle.loader import load_from_dir
 
-        self.bento_service = bento_service
+        assert bundle_path, repr(bundle_path)
+
+        self.bento_service = load_from_dir(bundle_path)
+        app_name = self.bento_service.name if app_name is None else app_name
+
         self.app = Flask(app_name, static_folder=None)
         self.static_path = self.bento_service.get_web_static_content_path()
         self.enable_swagger = enable_swagger
         self.enable_metrics = enable_metrics
         self.enable_feedback = enable_feedback
+        self.tracer = tracer
 
         self.swagger_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static_content'
@@ -180,12 +187,18 @@ class BentoAPIServer:
 
         self.setup_routes()
 
-    def start(self, port: int, host: str = "127.0.0.1"):
+    @inject
+    def run(
+        self,
+        port: int = Provide[BentoMLContainer.forward_port],
+        host: str = Provide[BentoMLContainer.forward_host],
+    ):
         """
         Start an REST server at the specific port on the instance or parameter.
         """
         # Bentoml api service is not thread safe.
         # Flask dev server enabled threaded by default, disable it.
+        logger.info("Starting BentoML API server in development mode..")
         self.app.run(
             host=host,
             port=port,
@@ -268,12 +281,6 @@ class BentoAPIServer:
     def metadata_json_func(bento_service):
         bento_service_metadata = bento_service.get_bento_service_metadata_pb()
         return jsonify(MessageToJson(bento_service_metadata))
-
-    def metrics_view_func(self):
-        # noinspection PyProtectedMember
-        from prometheus_client import generate_latest
-
-        return generate_latest()
 
     @staticmethod
     def feedback_view_func(bento_service):
@@ -374,7 +381,10 @@ class BentoAPIServer:
                 methods=api.input_adapter.HTTP_METHODS,
             )
 
-    def bento_service_api_func_wrapper(self, api: InferenceAPI):
+    def get_app(self):
+        return self.app
+
+    def bento_service_api_func_wrapper(self, api: "InferenceAPI"):
         """
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
@@ -419,7 +429,7 @@ class BentoAPIServer:
             return response
 
         def api_func_with_tracing():
-            with get_tracer().span(
+            with self.tracer.span(
                 service_name=f"BentoService.{self.bento_service.name}",
                 span_name=f"InferenceAPI {api.name} HTTP route",
                 request_headers=request.headers,
@@ -427,3 +437,7 @@ class BentoAPIServer:
                 return api_func()
 
         return api_func_with_tracing
+
+    @inject
+    def metrics_view_func(self, client=Provide[BentoMLContainer.metrics_client]):
+        return Response(client.generate_latest(), mimetype=client.CONTENT_TYPE_LATEST,)

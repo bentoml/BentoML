@@ -13,9 +13,12 @@
 # limitations under the License.
 
 from contextlib import contextmanager
+import logging
+
 from contextvars import ContextVar
 
 span_context_var = ContextVar('span context', default=None)
+logger = logging.getLogger(__name__)
 
 
 def initialize_tracer(
@@ -70,15 +73,15 @@ class JaegerTracer:
         is_root=False,
     ):
         """
-        Opentracing tracer function
+        Opentracing jaeger_tracer function
         """
         from opentracing import Format  # pylint: disable=E0401
         from jaeger_client.constants import TRACE_ID_HEADER  # pylint: disable=E0401
 
-        tracer = initialize_tracer(
+        jaeger_tracer = initialize_tracer(
             service_name, async_transport, self.address, self.port, sample_rate
         )
-        if tracer is None:
+        if jaeger_tracer is None:
             yield
             return
 
@@ -86,12 +89,14 @@ class JaegerTracer:
         span_context_saved = span_context_var.get()
         if not is_root and not standalone:
             if request_headers is not None:
-                span_context = tracer.extract(Format.HTTP_HEADERS, request_headers)
+                span_context = jaeger_tracer.extract(
+                    Format.HTTP_HEADERS, request_headers
+                )
 
             if span_context is None:
                 span_context = span_context_saved or None
 
-        with tracer.start_active_span(
+        with jaeger_tracer.start_active_span(
             operation_name=span_name, child_of=span_context
         ) as scope:
             if standalone:
@@ -100,7 +105,7 @@ class JaegerTracer:
             else:
                 token = span_context_var.set(scope.span.context)
                 if request_headers and TRACE_ID_HEADER not in request_headers:
-                    tracer.inject(
+                    jaeger_tracer.inject(
                         scope.span.context, Format.HTTP_HEADERS, request_headers,
                     )
                 yield scope
@@ -115,4 +120,8 @@ class JaegerTracer:
 
 
 def get_jaeger_tracer(address, port):
+    logger.debug(
+        "Initializing global jaeger_tracer for opentracing server at "
+        f"{address}:{port}"
+    )
     return JaegerTracer(address, port)

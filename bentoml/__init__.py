@@ -1,5 +1,5 @@
+# From versioneer
 from ._version import get_versions
-
 __version__ = get_versions()['version']
 del get_versions
 
@@ -42,6 +42,4 @@ sdk = [
     "batch_api",
 ]
 
-__all__ = [
-    "__version__",
-] + sdk + cmd
+__all__ = ["__version__", "YataiClient"] + sdk + cmd

@@ -1,0 +1,2 @@
+include versioneer.py
+include yatai/_version.py

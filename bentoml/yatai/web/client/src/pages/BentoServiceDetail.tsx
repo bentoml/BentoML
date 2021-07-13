@@ -9,7 +9,6 @@ import ArtifactsTable from "../components/BentoServiceDetail/ArtifactsTable";
 import { Section } from "../ui/Layout";
 import LabelDetailSection from "../components/LabelDetailSection";
 import BentoBundleDeleteConfirmation from "../components/BentoBundleDeleteConfirm";
-import { useParams } from "react-router";
 
 const BentoDetailInformationSection = styled.div({
   display: "flex",
@@ -52,7 +51,7 @@ const BentoServiceDetail = (props) => {
                   />
                 </div>
                 <BentoBundleDeleteConfirmation
-                  name={useParams.name}
+                  name={params.name}
                   value={params.version}
                   isOpen={false}
                 ></BentoBundleDeleteConfirmation>

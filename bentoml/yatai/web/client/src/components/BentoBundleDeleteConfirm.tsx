@@ -1,5 +1,12 @@
 import * as React from "react";
-import { Button, AnchorButton, Dialog, Intent, Tooltip } from "@blueprintjs/core";
+import axios from "axios";
+import {
+  AnchorButton,
+  Button,
+  Dialog,
+  Classes,
+  Intent,
+} from "@blueprintjs/core";
 import { YataiToaster } from "../utils/Toaster";
 
 export interface IBentoBundleDeleteConfirmationProps {
@@ -8,23 +15,30 @@ export interface IBentoBundleDeleteConfirmationProps {
   isOpen: boolean;
 }
 
-const handleDelete = async (bundle) => {
-  // const response = await delete;
-  // const message = response.success ? "has been deleted." : `has not been deleted.\nError encountered: ${response.error}`;
-  // const toastState = {
-  //   message: `${bundle} ${message}`,
-  //   intent: props.success ? Intent.SUCCESS: Intent.DANGER,
-  // };
-  // YataiToaster.show({toastState})
+const handleDelete = (name: string, version: string) => {
+  axios
+    .post("/api/DeleteBento", { bento_name: name, bento_version: version })
+    .then(() => {
+      const toastState = {
+        message: `${name}:${version} has been deleted.`,
+        intent: Intent.SUCCESS,
+      };
+      YataiToaster.show({ ...toastState });
+    })
+    .catch((error) => {
+      const toastState = {
+        message: `${name}:${version} has not been deleted.\nError encountered: ${error}`,
+        intent: Intent.DANGER,
+      };
+      YataiToaster.show({ ...toastState });
+    });
 };
 
 const BentoBundleDeleteConfirmation: React.FC<IBentoBundleDeleteConfirmationProps> = (
   props
 ) => {
   const [open, setOpen] = React.useState(false);
-
-  // let isOpen = false;
-  const bundle = `${props.name}:${props.value}`;
+  const bundle: string = `${props.name}:${props.value}`;
 
   return (
     <div>
@@ -40,18 +54,34 @@ const BentoBundleDeleteConfirmation: React.FC<IBentoBundleDeleteConfirmationProp
 
       <Dialog
         icon="info-sign"
-        onClose={() => {setOpen(true);}}
-        className={this.props.data.themeName}
+        onClose={() => {
+          setOpen(false);
+        }}
         title="Are you sure?"
         isOpen={open}
       >
-        <div>
+        <div className={Classes.DIALOG_BODY}>
           <p>
             This action cannot be undone. This will permanently delete this
             bento bundle and may have unintended consequences.
           </p>
-          <div>
-            <Button onClick={() => {setOpen(true);}}>Close</Button>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginTop: "1.5rem",
+            }}
+          >
+            <AnchorButton
+              className={Classes.MINIMAL}
+              outlined={true}
+              large={true}
+              text={`Delete ${bundle}`}
+              onClick={() => {
+                handleDelete(props.name, props.value);
+              }}
+              href={"/"}
+            />
           </div>
         </div>
       </Dialog>

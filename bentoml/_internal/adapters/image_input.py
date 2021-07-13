@@ -1,10 +1,7 @@
 from typing import BinaryIO, Iterable, Sequence, Tuple
 
 from ..adapters.file_input import FileInput
-from ..adapters.utils import (
-    check_file_extension,
-    get_default_accept_image_formats,
-)
+from ..adapters.utils import check_file_extension, get_default_accept_image_formats
 from ..types import InferenceTask
 from ..utils.lazy_loader import LazyLoader
 

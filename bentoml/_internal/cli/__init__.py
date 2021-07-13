@@ -31,6 +31,7 @@ def create_bentoml_cli():
 
     return _cli
 
+
 cli = create_bentoml_cli()
 
 if __name__ == "__main__":

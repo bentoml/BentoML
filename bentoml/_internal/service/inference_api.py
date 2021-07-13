@@ -18,6 +18,7 @@
 # prediction_logger = logging.getLogger("bentoml.prediction")
 #
 
+
 def api(input, output):
     """
     decorator for declaring a instance method in a bentoml.Service class as an
@@ -36,15 +37,9 @@ def batch_api(input, output, max_latency, max_batch_size):
 class InferenceAPI(object):
     pass
 
+
 class BatchInferenceAPI(object):
     pass
-
-
-
-
-
-
-
 
 
 # class InferenceAPI(object):

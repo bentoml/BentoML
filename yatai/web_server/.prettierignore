@@ -1,4 +1,3 @@
 src/generated
-.cache
 dist
-client/build
+node_modules

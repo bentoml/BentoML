@@ -7,6 +7,10 @@ from typing import List
 
 from simple_di import Provide, inject
 
+from ..configuration.containers import BentoMLContainer
+from ..exceptions import BentoMLException
+from ..utils import cached_property
+from ..utils.ruamel_yaml import YAML
 from .pip_pkg import (
     EPP_NO_ERROR,
     EPP_PKG_NOT_EXIST,
@@ -14,10 +18,6 @@ from .pip_pkg import (
     get_pkg_version,
     verify_pkg,
 )
-from ..configuration.containers import BentoMLContainer
-from ..exceptions import BentoMLException
-from ..utils import cached_property
-from ..utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 

@@ -10,5 +10,8 @@ DOCKER_DIR="$GIT_ROOT"/docker
 isort "$DOCKER_DIR"
 
 # format yatai webui
-WEB_UI_DIR="$GIT_ROOT"/bentoml/yatai/web
+WEB_SERVER_DIR="$GIT_ROOT"/yatai/web_server
+WEB_UI_DIR="$GIT_ROOT"/yatai/ui
+
+cd "$WEB_SERVER_DIR" && yarn format
 cd "$WEB_UI_DIR" && yarn format

@@ -7,7 +7,6 @@ from ..types import (
     InferenceResult,
     InferenceTask,
 )
-
 from .base_output import BaseOutputAdapter
 
 

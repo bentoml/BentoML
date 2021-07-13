@@ -4,6 +4,7 @@ from typing import List
 
 # from ..adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 from ..exceptions import InvalidArgument, NotFound
+
 # from bentoml.saved_bundle.config import (
 #     DEFAULT_MAX_BATCH_SIZE,
 #     DEFAULT_MAX_LATENCY,
@@ -13,7 +14,6 @@ from ..exceptions import InvalidArgument, NotFound
 # from bentoml.service.artifacts import ArtifactCollection, ServiceArtifact
 # from bentoml.service.env import ServiceEnv
 from ..service.inference_api import InferenceAPI
-
 
 BENTOML_RESERVED_API_NAMES = [
     "index",
@@ -78,7 +78,6 @@ class Service:
         """
         return self.__class__.name
 
-
     @property
     def version(self):
         pass
@@ -90,8 +89,6 @@ class Service:
         `tag` is mostly used in Yatai model management related APIs and operations
         """
         return f"{self.name}:{self.version}"
-
-
 
     @property
     def apis(self) -> List[InferenceAPI]:
@@ -108,9 +105,7 @@ class Service:
             InferenceAPI
         """
         try:
-            return next(
-                (api for api in self.__inference_apis if api.name == api_name)
-            )
+            return next((api for api in self.__inference_apis if api.name == api_name))
         except StopIteration:
             raise NotFound(
                 "Can not find API '{}' in service '{}'".format(api_name, self.name)

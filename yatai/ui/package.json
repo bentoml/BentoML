@@ -34,7 +34,8 @@
     "start": "PORT=8080 BROWSER=none react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "format": "prettier --write ."
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -43,7 +44,11 @@
     "@types/moment": "^2.13.0",
     "@types/qs": "^6.9.5",
     "@types/react-router": "^5.1.8",
-    "@types/react-router-dom": "^5.1.6"
+    "@types/react-router-dom": "^5.1.6",
+    "eslint-config-prettier": "^8.3.0",
+    "prettier": "^2.3.2",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-plugin-prettier": "^2.3.0"
   },
   "browserslist": {
     "production": [

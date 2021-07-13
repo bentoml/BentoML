@@ -41,15 +41,15 @@ echo "Installing dev dependencies..."
 pip install .[dev]
 
 echo "Installing YataiServer node server dependencies.."
-cd "$GIT_ROOT"/bentoml/yatai/web
+cd "$GIT_ROOT"/web_server
 yarn
 
 echo "Installing YataiServer Web UI dependencies.."
-cd "$GIT_ROOT"/bentoml/yatai/web/client
+cd "$GIT_ROOT"/yatai/ui
 yarn
 
 echo "Build YataiServer node server and web UI..."
-cd "$GIT_ROOT"/bentoml/yatai/web
+cd "$GIT_ROOT"/web_server
 yarn build
 
 if git rev-parse "$tag_name" >/dev/null 2>&1; then

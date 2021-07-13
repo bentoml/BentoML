@@ -2,10 +2,7 @@ import traceback
 from typing import BinaryIO, Iterable, Sequence, Tuple
 
 from ..adapters.multi_file_input import MultiFileInput
-from ..adapters.utils import (
-    check_file_extension,
-    get_default_accept_image_formats,
-)
+from ..adapters.utils import check_file_extension, get_default_accept_image_formats
 from ..types import InferenceTask
 from ..utils.lazy_loader import LazyLoader
 

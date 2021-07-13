@@ -44,7 +44,6 @@ install_requires = [
 ]
 
 
-
 model_server_requires = [
     "opentracing",
     "py_zipkin",

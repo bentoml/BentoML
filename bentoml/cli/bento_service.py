@@ -3,10 +3,11 @@ import json
 import logging
 import re
 import sys
+from typing import TYPE_CHECKING
 
 import click
-from dependency_injector.wiring import Provide, inject
 import psutil
+from simple_di import Provide, inject
 
 from bentoml import __version__
 from bentoml.cli.click_utils import (
@@ -29,6 +30,10 @@ from bentoml.utils.lazy_loader import LazyLoader
 from bentoml.utils.open_api import get_open_api_spec_json
 from bentoml.yatai.client import get_yatai_client
 
+if TYPE_CHECKING:
+    from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
+    from bentoml.yatai.client import YataiClient
+
 try:
     import click_completion
 
@@ -39,9 +44,7 @@ except ImportError:
     click_completion = None
     shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
 
-
 logger = logging.getLogger(__name__)
-
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
 
@@ -372,6 +375,7 @@ def create_bento_service_cli(
                 "install it with `pip install click_completion`"
             )
 
+    # bentoml containerize {service_name}:{service_tag} -t {docker_tags}
     @bentoml_cli.command(
         help='Containerizes given Bento into a ready-to-use Docker image.',
         short_help="Containerizes given Bento into a ready-to-use Docker image",
@@ -415,7 +419,7 @@ def create_bento_service_cli(
         to push to.
         e.g. `bentoml containerize IrisClassifier:latest --push --tag
         repo-address.com:username/iris` would build a Docker image called
-        `username/iris:latest` and push that to docker repository at repo-addres.com.
+        `username/iris:latest` and push that to docker repository at repo-address.com.
 
         By default, the `containerize` command will use the current credentials
         provided by Docker daemon.
@@ -426,9 +430,12 @@ def create_bento_service_cli(
 
         _echo(f"Found Bento: {saved_bundle_path}")
 
-        bento_metadata = load_bento_service_metadata(saved_bundle_path)
+        # fmt: off
+        bento_metadata: "BentoServiceMetadata" = load_bento_service_metadata(saved_bundle_path)  # noqa: E501
+        # fmt: on
+
         bento_tag = f'{bento_metadata.name}:{bento_metadata.version}'
-        yatai_client = get_yatai_client(yatai_url)
+        yatai_client: "YataiClient" = get_yatai_client(yatai_url)
         docker_build_args = {}
         if build_arg:
             for arg in build_arg:
@@ -442,10 +449,10 @@ def create_bento_service_cli(
                 f'daemon from local environment'
             )
         with Spinner(spinner_message):
-            tag = yatai_client.repository.containerize(
+            tag: str = yatai_client.repository.containerize(
                 bento=bento_tag, tag=tag, build_args=docker_build_args, push=push,
             )
-            _echo(f'Build container image: {tag}', CLI_COLOR_SUCCESS)
+            _echo(f'\nBuild container image: {tag}', CLI_COLOR_SUCCESS)
 
     # pylint: enable=unused-variable
     return bentoml_cli

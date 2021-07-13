@@ -1,0 +1,2 @@
+# Ignore Docker metadata.json
+**/*.json

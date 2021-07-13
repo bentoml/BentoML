@@ -1,6 +1,7 @@
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
 
 from bentoml.configuration.containers import BentoMLConfiguration, BentoMLContainer
 from bentoml.exceptions import BentoMLConfigException
@@ -36,13 +37,6 @@ def test_override_none_value():
     assert config_dict["bento_server"]["port"] == 5000
 
 
-def test_override_none_key():
-    config = BentoMLConfiguration()
-    with pytest.raises(BentoMLConfigException) as e:
-        config.override(None, 6000)
-    assert e is not None
-
-
 def test_override_empty_key():
     config = BentoMLConfiguration()
     with pytest.raises(BentoMLConfigException) as e:
@@ -70,7 +64,7 @@ invalid_key1:
 
 
 def test_api_server_workers():
-    container = BentoMLContainer()
+    container = BentoMLContainer
 
     config_auto_workers = tempfile.NamedTemporaryFile(delete=False)
     config_auto_workers.write(
@@ -81,13 +75,13 @@ bento_server:
     )
     config_auto_workers.close()
 
-    container.config.from_dict(
+    container.config.set(
         BentoMLConfiguration(
             default_config_file=config_auto_workers.name, validate_schema=False,
         ).as_dict(),
     )
     os.remove(config_auto_workers.name)
-    workers = container.api_server_workers()
+    workers = container.api_server_workers.get()
     assert workers is not None
     assert workers > 0
 
@@ -100,13 +94,13 @@ bento_server:
     )
     config_manual_workers.close()
 
-    container.config.from_dict(
+    container.config.set(
         BentoMLConfiguration(
             default_config_file=config_manual_workers.name, validate_schema=False,
         ).as_dict(),
     )
     os.remove(config_manual_workers.name)
-    workers = container.api_server_workers()
+    workers = container.api_server_workers.get()
     assert workers is not None
     assert workers == 42
 
@@ -158,31 +152,31 @@ def mock_bentoml_home():
 
 
 def test_bentoml_home():
-    container = BentoMLContainer()
-    assert container.bentoml_home() == mock_bentoml_home()
+    container = BentoMLContainer
+    assert container.bentoml_home.get() == mock_bentoml_home()
 
     os.environ["BENTOML_HOME"] = "/tmp/bentoml"
-    assert container.bentoml_home() == "/tmp/bentoml"
+    assert container.bentoml_home.get() == "/tmp/bentoml"
 
     del os.environ["BENTOML_HOME"]
 
 
 def test_prometheus_multiproc_dir():
-    container = BentoMLContainer()
+    container = BentoMLContainer
     config = BentoMLConfiguration().as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.prometheus_multiproc_dir() == os.path.join(
+    assert container.prometheus_multiproc_dir.get() == os.path.join(
         mock_bentoml_home(), "prometheus_multiproc_dir"
     )
 
 
 def test_default_bento_bundle_deployment_version():
-    container = BentoMLContainer()
+    container = BentoMLContainer
     config = BentoMLConfiguration().as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.bento_bundle_deployment_version() is not None
+    assert container.bento_bundle_deployment_version.get() is not None
 
 
 def test_customized_bento_bundle_deployment_version():
@@ -195,20 +189,20 @@ bento_bundle:
     )
     override_config.close()
 
-    container = BentoMLContainer()
+    container = BentoMLContainer
     config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.bento_bundle_deployment_version() == "0.0.1"
+    assert container.bento_bundle_deployment_version.get() == "0.0.1"
     os.remove(override_config.name)
 
 
 def test_yatai_database_url():
-    container = BentoMLContainer()
+    container = BentoMLContainer
     config = BentoMLConfiguration().as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.yatai_database_url() == "{}:///{}".format(
+    assert container.yatai_database_url.get() == "{}:///{}".format(
         "sqlite", os.path.join(mock_bentoml_home(), "storage.db")
     )
 
@@ -223,19 +217,19 @@ yatai:
     override_config.close()
 
     config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.yatai_database_url() == "customized_url"
+    assert container.yatai_database_url.get() == "customized_url"
 
     os.remove(override_config.name)
 
 
 def test_yatai_tls_root_ca_cert():
-    container = BentoMLContainer()
+    container = BentoMLContainer
     config = BentoMLConfiguration().as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.yatai_tls_root_ca_cert() is None
+    assert container.yatai_tls_root_ca_cert.get() is None
 
     override_config = tempfile.NamedTemporaryFile(delete=False)
     override_config.write(
@@ -249,9 +243,9 @@ yatai:
     override_config.close()
 
     config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.yatai_tls_root_ca_cert() == "value1"
+    assert container.yatai_tls_root_ca_cert.get() == "value1"
 
     os.remove(override_config.name)
 
@@ -268,19 +262,19 @@ yatai:
     override_config.close()
 
     config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.yatai_tls_root_ca_cert() == "value1"
+    assert container.yatai_tls_root_ca_cert.get() == "value1"
 
     os.remove(override_config.name)
 
 
 def test_yatai_logging_path():
-    container = BentoMLContainer()
+    container = BentoMLContainer
     config = BentoMLConfiguration().as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.yatai_logging_path() == os.path.join(
+    assert container.yatai_logging_path.get() == os.path.join(
         mock_bentoml_home(), "logs", "yatai_web_server.log"
     )
 
@@ -295,19 +289,19 @@ yatai:
     override_config.close()
 
     config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.yatai_logging_path() == "/tmp/customized.log"
+    assert container.yatai_logging_path.get() == "/tmp/customized.log"
 
     os.remove(override_config.name)
 
 
 def test_logging_file_directory():
-    container = BentoMLContainer()
+    container = BentoMLContainer
     config = BentoMLConfiguration().as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.logging_file_directory() == os.path.join(
+    assert container.logging_file_directory.get() == os.path.join(
         mock_bentoml_home(), "logs"
     )
 
@@ -322,8 +316,8 @@ logging:
     override_config.close()
 
     config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
-    container.config.from_dict(config)
+    container.config.set(config)
 
-    assert container.logging_file_directory() == "/tmp/logs"
+    assert container.logging_file_directory.get() == "/tmp/logs"
 
     os.remove(override_config.name)

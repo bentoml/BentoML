@@ -11,65 +11,68 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import logging
 import os
 import tarfile
 import uuid
-import logging
 from datetime import datetime
-from dependency_injector.wiring import Provide, inject
 
+from simple_di import Provide, inject
+
+from bentoml import __version__ as BENTOML_VERSION
 from bentoml.configuration.containers import BentoMLContainer
+from bentoml.exceptions import (
+    BadInput,
+    BentoMLException,
+    InvalidArgument,
+    YataiRepositoryException,
+)
 from bentoml.saved_bundle import safe_retrieve
+from bentoml.utils import ProtoMessageToDict
 from bentoml.utils.docker_utils import (
     to_valid_docker_image_name,
     to_valid_docker_image_version,
 )
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.utils.usage_stats import track
+from bentoml.yatai.db import DB
+from bentoml.yatai.db.stores.lock import LockStore
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
+from bentoml.yatai.deployment.operator import get_deployment_operator
+from bentoml.yatai.grpc_stream_utils import DownloadBentoStreamResponses
+from bentoml.yatai.locking.lock import DEFAULT_TTL_MIN
 from bentoml.yatai.locking.lock import LockType, lock
+from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import (
-    GetDeploymentResponse,
-    DescribeDeploymentResponse,
-    ListDeploymentsResponse,
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentSpec,
+    DescribeDeploymentResponse,
+    GetDeploymentResponse,
+    ListDeploymentsResponse,
 )
 from bentoml.yatai.proto.repository_pb2 import (
     AddBentoResponse,
-    DangerouslyDeleteBentoResponse,
-    GetBentoResponse,
-    UpdateBentoResponse,
-    ListBentoResponse,
     BentoUri,
     ContainerizeBentoResponse,
-    UploadBentoResponse,
+    DangerouslyDeleteBentoResponse,
     DownloadBentoResponse,
+    GetBentoResponse,
+    ListBentoResponse,
+    UpdateBentoResponse,
+    UploadBentoResponse,
     UploadStatus,
 )
 from bentoml.yatai.proto.yatai_service_pb2 import (
-    HealthCheckResponse,
     GetYataiServiceVersionResponse,
-)
-from bentoml.yatai.deployment.operator import get_deployment_operator
-from bentoml.exceptions import (
-    BentoMLException,
-    InvalidArgument,
-    YataiRepositoryException,
-    BadInput,
+    HealthCheckResponse,
 )
 from bentoml.yatai.repository.base_repository import BaseRepository
-from bentoml.yatai.db import DB
-from bentoml.yatai.status import Status
-from bentoml.yatai.proto import status_pb2
-from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.grpc_stream_utils import DownloadBentoStreamResponses
-from bentoml.yatai.validator import validate_deployment_pb
 from bentoml.yatai.repository.file_system_repository import FileSystemRepository
-from bentoml.yatai.db.stores.lock import LockStore
-from bentoml.yatai.locking.lock import DEFAULT_TTL_MIN
-from bentoml import __version__ as BENTOML_VERSION
+from bentoml.yatai.status import Status
+from bentoml.yatai.utils import docker_build_logs
+from bentoml.yatai.validator import validate_deployment_pb
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +86,11 @@ def track_deployment_delete(deployment_operator, created_at, force_delete=False)
     )
 
 
-def is_file_system_repo(repo_instance):
+def is_file_system_repo(repo_instance) -> bool:
     return isinstance(repo_instance, FileSystemRepository)
 
 
+# NOTES: How do we type hints this function?
 def get_yatai_service_impl(base=object):
     # This helps avoid loading YataiServicer grpc file when using local YataiService
     # implementation. This speeds up regular save/load operations when Yatai is not used
@@ -567,11 +571,13 @@ def get_yatai_service_impl(base=object):
                             )
                         safe_retrieve(bento_service_bundle_path, temp_bundle_path)
                         try:
-                            docker_client.images.build(
+                            resp = docker_client.api.build(
                                 path=temp_bundle_path,
+                                nocache=False,
                                 tag=tag,
                                 buildargs=dict(request.build_args),
                             )
+                            docker_build_logs(resp)
                         except (
                             docker.errors.APIError,
                             docker.errors.BuildError,

@@ -1,0 +1,16 @@
+{{ metadata.header }}
+
+ARG PYTHON_VERSION
+
+FROM {{ metadata.package }}:{{ build_tag }} as build_image
+
+WORKDIR /
+RUN git clone https://github.com/bentoml/BentoML.git && \
+    cd BentoML && \
+    pip install --editable . && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
+
+ENTRYPOINT [ "entrypoint.sh" ]

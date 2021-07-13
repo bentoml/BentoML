@@ -64,7 +64,7 @@ Production-ready online serving:
 * **Prediction logging** and feedback logging endpoint
 * Health check endpoint and **Prometheus** `/metrics` endpoint for monitoring
 
-Standarlize model serving and deployment workflow for teams:
+Standardize model serving and deployment workflow for teams:
 * **Central repository** for managing all your team's prediction services  via
   Web UI and API
 * Launch offline batch inference job from CLI or Python

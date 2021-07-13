@@ -1,20 +1,25 @@
+from io import BytesIO
 import json
 import os
-from io import BytesIO
 
-from bentoml.server.api_server import BentoAPIServer
+import simple_di
+
+from bentoml.configuration.containers import BentoMLContainer
+from bentoml.server.model_app import ModelApp
+
 
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 CUSTOM_ROUTE = "$~!@%^&*()_-+=[]\\|;:,./predict"
 
 
-def test_api_function_route(bento_service, img_file):
+def test_api_function_route(bento_bundle_path, img_file):
     import imageio  # noqa # pylint: disable=unused-import
     import numpy as np  # noqa # pylint: disable=unused-import
 
-    rest_server = BentoAPIServer(
-        bento_service=bento_service,
+    BentoMLContainer.metrics_client._cache = simple_di.sentinel  # reset metrics_client
+    rest_server = ModelApp(
+        bundle_path=bento_bundle_path,
         enable_swagger=True,
         enable_metrics=True,
         enable_feedback=True,
@@ -92,9 +97,10 @@ def test_api_function_route(bento_service, img_file):
     # assert 200 == response.status_code
 
 
-def test_api_function_route_with_disabled_swagger(bento_service):
-    rest_server = BentoAPIServer(
-        bento_service=bento_service,
+def test_api_function_route_with_disabled_swagger(bento_bundle_path):
+    BentoMLContainer.metrics_client._cache = simple_di.sentinel  # reset metrics_client
+    rest_server = ModelApp(
+        bundle_path=bento_bundle_path,
         enable_swagger=False,
         enable_metrics=True,
         enable_feedback=True,

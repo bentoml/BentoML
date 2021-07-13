@@ -8,23 +8,26 @@ test: ## Run all unit tests with current Python version and env
 	@./ci/unit_tests.sh || (echo "Error running tests... You may need to run 'make install-test-deps'"; exit 1)
 format: ## Format code to adhere to BentoML style
 	./dev/format.sh
-lint: ## Lint code
+lint: format ## Lint code
 	./dev/lint.sh
 install-local: ## Install BentoML from current directory in editable mode
 	pip install --editable .
 	bentoml --version
 install-test-deps: ## Install all test dependencies
 	@echo Ensuring test dependencies...
-	@pip install -e ".[test]" --quiet
+	@pip install -e ".[test]"
 
 # Protos
-gen-protos: ## Build protobufs for Python and Node
-	@./protos/generate-docker.sh
+gen-protos: ## Build protobuf for Python and Node
+	@./dev/generate-protos-docker.sh
 
 # Docs
-watch-doc: ## Build and watch documentation
+watch-docs: ## Build and watch documentation
 	@./docs/watch.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
 OS := $(shell uname)
+install-docs-deps:  ## Install documentation dependencies
+	@echo Installing docs dependencies...
+	@pip install -e ".[doc_builder]"
 ifeq ($(OS),Darwin)
 install-watch-deps: ## Install MacOS dependencies for watching docs
 	brew install fswatch

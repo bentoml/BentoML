@@ -30,7 +30,6 @@ install_requires = [
     "click>=7.0",
     "configparser",
     "deepmerge",
-    "dependency-injector>=4.0,<5.0",
     "docker",
     "flask",
     "grpcio",
@@ -54,6 +53,7 @@ install_requires = [
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "chardet",
+    "simple-di==0.1.0",
 ]
 
 yatai_service_requires = [
@@ -82,7 +82,7 @@ test_requires = [
     "mock>=2.0.0",
     "moto==1.3.14",
     "pandas",
-    "pylint>=2.5.2",
+    "pylint>=2.9.3",
     "pytest-cov>=2.7.1",
     "pytest>=5.4.0",
     "pytest-asyncio",
@@ -111,10 +111,18 @@ docs_requires = [
     "sphinx_rtd_theme",
     "sphinxcontrib-fulltoc",
     "sphinxcontrib-spelling",
+    "sphinx_copybutton",
     "pyenchant",
 ]
 
-dev_all = install_requires + dev_requires + docs_requires
+types_requires = [
+    "mypy-protobuf",
+    "types-click",
+    "types-protobuf>=0.1.14",
+    "grpc-stubs",
+]
+
+dev_all = install_requires + dev_requires + docs_requires + types_requires
 
 extras_require = {
     "dev": dev_all,
@@ -122,6 +130,7 @@ extras_require = {
     "yatai_service": yatai_service_requires,
     "model_server": model_server_requires,
     "doc_builder": docs_requires,  # 'doc_builder' is required by readthedocs.io
+    "types_stub": types_requires,
 }
 
 setuptools.setup(

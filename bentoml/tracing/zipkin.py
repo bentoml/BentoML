@@ -13,12 +13,15 @@
 # limitations under the License.
 
 
-import random
 import asyncio
-import requests
 from contextlib import contextmanager
-from contextvars import ContextVar
+import logging
+import random
 
+from contextvars import ContextVar
+import requests
+
+logger = logging.getLogger(__name__)
 
 trace_stack_var = ContextVar('trace_stack', default=None)
 
@@ -80,6 +83,9 @@ def _make_new_attrs(sample_rate=1.0):
 
 
 def get_zipkin_tracer(server_url):
+    logger.debug(
+        f"Initializing global zipkin tracer for collector endpoint: {server_url}"
+    )
     from py_zipkin.transport import BaseTransportHandler  # pylint: disable=E0401
 
     class HttpTransport(BaseTransportHandler):

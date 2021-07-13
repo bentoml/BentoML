@@ -15,21 +15,18 @@ from urllib.parse import urlparse
 
 import requests
 
-from ..configuration import _is_pip_installed_bentoml
-from ..exceptions import BentoMLException
 from ..bundle.config import SavedBundleConfig
 from ..bundle.loader import _is_remote_path
-from ..env.local_py_modules import (
-    copy_local_py_modules,
-    copy_zip_import_archives,
-)
-from ..env.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
 from ..bundle.templates import (
     BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE,
     INIT_PY_TEMPLATE,
     MANIFEST_IN_TEMPLATE,
     MODEL_SERVER_DOCKERFILE_CPU,
 )
+from ..configuration import _is_pip_installed_bentoml
+from ..env.local_py_modules import copy_local_py_modules, copy_zip_import_archives
+from ..env.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
+from ..exceptions import BentoMLException
 from ..utils import archive_directory_to_tar, is_gcs_url, is_s3_url
 from ..utils.open_api import get_open_api_spec_json
 from ..utils.tempdir import TempDirectory
@@ -37,7 +34,6 @@ from ..utils.usage_stats import track_save
 
 if TYPE_CHECKING:
     from ..service import BentoService
-
 
 
 def versioneer():

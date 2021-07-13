@@ -36,7 +36,7 @@ graft bentoml/yatai/migrations
 include bentoml/yatai/alembic.ini
 
 # include yatai server UI distribution files
-graft bentoml/yatai/web/dist
+graft web_server/dist
 
 # include Sagemaker deployment file
 include bentoml/yatai/deployment/sagemaker/nginx.conf

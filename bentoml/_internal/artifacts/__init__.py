@@ -4,8 +4,8 @@ import re
 from pathlib import Path
 from typing import List
 
-from ..exceptions import FailedPrecondition, InvalidArgument
 from ..env import BentoServiceEnv
+from ..exceptions import FailedPrecondition, InvalidArgument
 from ..utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
@@ -13,14 +13,14 @@ logger = logging.getLogger(__name__)
 ARTIFACTS_DIR_NAME = "artifacts"
 
 
-class ModelArtifact:
+class BaseModelArtifact:
     """
-    ModelArtifact is the base abstraction for describing the trained model
+    BaseModelArtifact is the base abstraction for describing the trained model
     serialization and deserialization process.
     """
 
     def __new__(cls, *args, **kwargs):
-        obj = super(ModelArtifact, cls).__new__(cls)
+        obj = super(BaseModelArtifact, cls).__new__(cls)
 
         # store the args and kwargs used for creating this artifact instance - this is
         # used internally for the _copy method below
@@ -82,7 +82,7 @@ class ModelArtifact:
 
     def pack(self, model, metadata: dict = None):  # pylint: disable=unused-argument
         """
-        Pack the in-memory trained model object to this ModelArtifact
+        Pack the in-memory trained model object to this BaseModelArtifact
 
         Note: add "# pylint:disable=arguments-differ" to child class's pack method
         """
@@ -105,7 +105,7 @@ class ModelArtifact:
         `{service.name}/artifact/` directory. Thus, `save` must use the artifact name
         as a way to differentiate its files from other artifacts.
 
-        For example, a ModelArtifact class' save implementation should not create
+        For example, a BaseModelArtifact class' save implementation should not create
         a file named `config.json` in the `dst` directory. Because when a BentoService
         has multiple artifacts of this same artifact type, they will all try to create
         this `config.json` file and overwrite each other. The right way to do it here,
@@ -221,7 +221,7 @@ class ArtifactCollection(dict):
     A dict of artifact instances (artifact.name -> artifact_instance)
     """
 
-    def __setitem__(self, key: str, artifact: ModelArtifact):
+    def __setitem__(self, key: str, artifact: BaseModelArtifact):
         if key != artifact.name:
             raise InvalidArgument(
                 "Must use Artifact name as key, {} not equal to {}".format(
@@ -231,29 +231,29 @@ class ArtifactCollection(dict):
         self.add(artifact)
 
     def __getattr__(self, item: str):
-        """Proxy to `ModelArtifact#get()` to allow easy access to the model
+        """Proxy to `BaseModelArtifact#get()` to allow easy access to the model
         artifact in its native form. E.g. for a BentoService class with an artifact
-        `SklearnModelArtifact('model')`, when user code accesses `self.artifacts.model`
+        `SklearnBaseModelArtifact('model')`, when user code accesses `self.artifacts.model`
         in the BentoService API callback function, instead of returning an instance of
-        ModelArtifact, it returns a Sklearn model object
+        BaseModelArtifact, it returns a Sklearn model object
         """
         return self[item].get()
 
-    def get(self, item: str) -> ModelArtifact:
-        """Access the ModelArtifact instance by artifact name
+    def get(self, item: str) -> BaseModelArtifact:
+        """Access the BaseModelArtifact instance by artifact name
         """
         return self[item]
 
-    def get_artifact_list(self) -> List[ModelArtifact]:
-        """Access the list of ModelArtifact instances
+    def get_artifact_list(self) -> List[BaseModelArtifact]:
+        """Access the list of BaseModelArtifact instances
         """
         return super(ArtifactCollection, self).values()
 
-    def add(self, artifact: ModelArtifact):
+    def add(self, artifact: BaseModelArtifact):
         super(ArtifactCollection, self).__setitem__(artifact.name, artifact)
 
     def save(self, dst):
-        """Save all ModelArtifact instances in self.values() to `dst` path
+        """Save all BaseModelArtifact instances in self.values() to `dst` path
         if they are `packed` or `loaded`
         """
         save_path = os.path.join(dst, ARTIFACTS_DIR_NAME)
@@ -269,7 +269,7 @@ class ArtifactCollection(dict):
                 )
 
     @classmethod
-    def from_declared_artifact_list(cls, artifacts_list: List[ModelArtifact]):
+    def from_declared_artifact_list(cls, artifacts_list: List[BaseModelArtifact]):
         artifact_collection = cls()
         for artifact in artifacts_list:
             artifact_collection.add(artifact._copy())

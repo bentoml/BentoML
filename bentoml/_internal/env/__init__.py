@@ -1,4 +1,4 @@
-from .env import CondaEnv, BentoServiceEnv
+from .env import BentoServiceEnv, CondaEnv
 
 __all__ = [
     "CondaEnv",

@@ -276,7 +276,7 @@ def async_start_yatai_service_web_ui(
         if not os.path.exists(os.path.join(web_ui_dir, "dist", "bundle.js")):
             raise BentoMLException(
                 "Yatai web client built is missing. "
-                "Please run `npm run build` in the bentoml/yatai/web directory "
+                "Please run `npm run build` in the web_server directory "
                 "and then try again"
             )
         web_ui_command = [

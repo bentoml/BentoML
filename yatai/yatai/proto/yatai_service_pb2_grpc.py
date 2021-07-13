@@ -2,10 +2,10 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import bentoml.yatai.proto.deployment_pb2 as deployment__pb2
+import yatai.yatai.proto.deployment_pb2 as deployment__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
-import bentoml.yatai.proto.repository_pb2 as repository__pb2
-import bentoml.yatai.proto.yatai_service_pb2 as yatai__service__pb2
+import yatai.yatai.proto.repository_pb2 as repository__pb2
+import yatai.yatai.proto.yatai_service_pb2 as yatai__service__pb2
 
 
 class YataiStub(object):

@@ -241,17 +241,17 @@ Install all npm packages required by BentoML Web UI:
 
 ```bash
 # install npm packages required by BentoML's Node.js Web Server
-cd {PROJECT_ROOT}/bentoml/yatai/web/
+cd {PROJECT_ROOT}/web_server/
 yarn
 
 # install npm packages required by BentoML web frontend
-cd {PROJECT_ROOT}/bentoml/yatai/web/client/
+cd {PROJECT_ROOT}/ui/
 yarn
 ```
 
 Build the Web Server and frontend UI code:
 ```bash
-cd {PROJECT_ROOT}/bentoml/yatai/web/
+cd {PROJECT_ROOT}/web_server/
 npm run build
 ```
 

@@ -21,30 +21,30 @@ from datetime import datetime
 from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
-from bentoml.configuration.containers import BentoMLContainer
-from bentoml.exceptions import (
+from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.exceptions import (
     BadInput,
     BentoMLException,
     InvalidArgument,
     YataiRepositoryException,
 )
-from bentoml.saved_bundle import safe_retrieve
-from bentoml.utils import ProtoMessageToDict
-from bentoml.utils.docker_utils import (
+from bentoml._internal.bundle.loader import safe_retrieve
+from bentoml._internal.utils import ProtoMessageToDict
+from bentoml._internal.utils.docker_utils import (
     to_valid_docker_image_name,
     to_valid_docker_image_version,
 )
-from bentoml.utils.tempdir import TempDirectory
-from bentoml.utils.usage_stats import track
-from bentoml.yatai.db import DB
-from bentoml.yatai.db.stores.lock import LockStore
-from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
-from bentoml.yatai.deployment.operator import get_deployment_operator
-from bentoml.yatai.grpc_stream_utils import DownloadBentoStreamResponses
-from bentoml.yatai.locking.lock import DEFAULT_TTL_MIN
-from bentoml.yatai.locking.lock import LockType, lock
-from bentoml.yatai.proto import status_pb2
-from bentoml.yatai.proto.deployment_pb2 import (
+from bentoml._internal.utils.tempdir import TempDirectory
+from bentoml._internal.utils.usage_stats import track
+from yatai.yatai.db import DB
+from yatai.yatai.db.stores.lock import LockStore
+from yatai.yatai.deployment.docker_utils import ensure_docker_available_or_raise
+from yatai.yatai.deployment.operator import get_deployment_operator
+from yatai.yatai.grpc_stream_utils import DownloadBentoStreamResponses
+from yatai.yatai.locking.lock import DEFAULT_TTL_MIN
+from yatai.yatai.locking.lock import LockType, lock
+from yatai.yatai.proto import status_pb2
+from yatai.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentSpec,
@@ -52,7 +52,7 @@ from bentoml.yatai.proto.deployment_pb2 import (
     GetDeploymentResponse,
     ListDeploymentsResponse,
 )
-from bentoml.yatai.proto.repository_pb2 import (
+from yatai.yatai.proto.repository_pb2 import (
     AddBentoResponse,
     BentoUri,
     ContainerizeBentoResponse,
@@ -64,15 +64,15 @@ from bentoml.yatai.proto.repository_pb2 import (
     UploadBentoResponse,
     UploadStatus,
 )
-from bentoml.yatai.proto.yatai_service_pb2 import (
+from yatai.yatai.proto.yatai_service_pb2 import (
     GetYataiServiceVersionResponse,
     HealthCheckResponse,
 )
-from bentoml.yatai.repository.base_repository import BaseRepository
-from bentoml.yatai.repository.file_system_repository import FileSystemRepository
-from bentoml.yatai.status import Status
-from bentoml.yatai.utils import docker_build_logs
-from bentoml.yatai.validator import validate_deployment_pb
+from yatai.yatai.repository.base_repository import BaseRepository
+from yatai.yatai.repository.file_system_repository import FileSystemRepository
+from yatai.yatai.status import Status
+from yatai.yatai.utils import docker_build_logs
+from yatai.yatai.validator import validate_deployment_pb
 
 logger = logging.getLogger(__name__)
 

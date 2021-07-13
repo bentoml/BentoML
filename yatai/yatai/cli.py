@@ -129,8 +129,8 @@ def add_yatai_service_sub_command(
         s3_endpoint_url,
         gcs_url,
     ):
-        from bentoml.utils.gcs import is_gcs_url
-        from bentoml.utils.s3 import is_s3_url
+        from bentoml._internal.utils.gcs import is_gcs_url
+        from bentoml._internal.utils.s3 import is_s3_url
 
         if repo_base_url:
             logger.warning(

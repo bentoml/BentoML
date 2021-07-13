@@ -41,8 +41,8 @@ def get_yatai_service(
     if channel_address:
         # Lazily import grpcio for YataiSerivce gRPC related actions
         import grpc
-        from bentoml.yatai.client.interceptor import header_client_interceptor
-        from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiStub
+        from bentoml._internal.yatai_client.interceptor import header_client_interceptor
+        from yatai.yatai.proto.yatai_service_pb2_grpc import YataiStub
 
         channel_address = channel_address.strip()
         logger.debug("Connecting YataiService gRPC server at: %s", channel_address)
@@ -74,9 +74,9 @@ def get_yatai_service(
             )
         return YataiStub(channel)
     else:
-        from bentoml.yatai.db import DB
-        from bentoml.yatai.repository import create_repository
-        from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
+        from yatai.yatai.db import DB
+        from yatai.yatai.repository import create_repository
+        from yatai.yatai.yatai_service_impl import get_yatai_service_impl
 
         LocalYataiService = get_yatai_service_impl()
 
@@ -107,12 +107,12 @@ def start_yatai_service_grpc_server(
 ):
     # Lazily import grpcio for YataiService gRPC related actions
     import grpc
-    from bentoml.yatai.db import DB
-    from bentoml.yatai.repository import create_repository
-    from bentoml.yatai.yatai_service_impl import get_yatai_service_impl
-    from bentoml.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
-    from bentoml.yatai.proto.yatai_service_pb2_grpc import YataiServicer
-    from bentoml.yatai.grpc_interceptor import (
+    from yatai.yatai.db import DB
+    from yatai.yatai.repository import create_repository
+    from yatai.yatai.yatai_service_impl import get_yatai_service_impl
+    from yatai.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
+    from yatai.yatai.proto.yatai_service_pb2_grpc import YataiServicer
+    from yatai.yatai.grpc_interceptor import (
         PromServerInterceptor,
         ServiceLatencyInterceptor,
     )

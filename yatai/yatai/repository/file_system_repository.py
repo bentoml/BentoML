@@ -17,9 +17,9 @@ import shutil
 import logging
 from pathlib import Path
 
-from bentoml.exceptions import YataiRepositoryException
-from bentoml.yatai.proto.repository_pb2 import BentoUri
-from bentoml.yatai.repository.base_repository import BaseRepository
+from bentoml._internal.exceptions import YataiRepositoryException
+from yatai.yatai.proto.repository_pb2 import BentoUri
+from yatai.yatai.repository.base_repository import BaseRepository
 
 
 logger = logging.getLogger(__name__)

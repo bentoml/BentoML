@@ -4,8 +4,8 @@ from timeit import default_timer
 
 import grpc
 
-from bentoml.utils.usage_stats import track
-from bentoml.yatai.utils import (
+from bentoml._internal.utils.usage_stats import track
+from yatai.yatai.utils import (
     get_method_type,
     parse_method_name,
     wrap_interator_inc_counter,

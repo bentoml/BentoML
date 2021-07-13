@@ -58,44 +58,6 @@ def deployment_dict_to_pb(deployment_dict):
     if spec_dict.get('bento_version'):
         deployment_pb.spec.bento_version = spec_dict.get('bento_version')
 
-    if deployment_pb.spec.operator == DeploymentSpec.AWS_SAGEMAKER:
-        sagemaker_config = spec_dict.get('sagemaker_operator_config', {})
-        sagemaker_config_pb = deployment_pb.spec.sagemaker_operator_config
-        for field in [
-            'region',
-            'api_name',
-            'instance_type',
-            'num_of_gunicorn_workers_per_instance',
-            'instance_count',
-        ]:
-            if sagemaker_config.get(field):
-                sagemaker_config_pb.__setattr__(field, sagemaker_config.get(field))
-    elif deployment_pb.spec.operator == DeploymentSpec.AWS_LAMBDA:
-        lambda_conf = spec_dict.get('aws_lambda_operator_config', {})
-        for field in ['region', 'api_name', 'memory_size', 'timeout']:
-            if lambda_conf.get(field):
-                deployment_pb.spec.aws_lambda_operator_config.__setattr__(
-                    field, lambda_conf.get(field)
-                )
-    elif deployment_pb.spec.operator == DeploymentSpec.AZURE_FUNCTIONS:
-        azure_functions_config = spec_dict.get('azure_function_operators_config', {})
-        for field in [
-            'location',
-            'min_instances',
-            'max_burst',
-            'premium_plan_sku',
-            'function_auth_level',
-        ]:
-            if azure_functions_config.get(field):
-                deployment_pb.spec.azure_functions_operator_config.__setattr__(
-                    field, azure_functions_config.get(field)
-                )
-    else:
-        raise InvalidArgument(
-            'Platform "{}" is not supported in the current version of '
-            'BentoML'.format(platform)
-        )
-
     return deployment_pb
 
 

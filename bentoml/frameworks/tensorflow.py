@@ -23,10 +23,10 @@ def _is_path_like(p):
 
 
 class _TensorflowFunctionWrapper:
-    '''
+    """
     TensorflowFunctionWrapper
     transform input tensor following function input signature
-    '''
+    """
 
     def __init__(self, origin_func, arg_names=None, arg_specs=None, kwarg_specs=None):
         self.origin_func = origin_func

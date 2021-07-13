@@ -11,11 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime
+
 import logging
 import os
 import tarfile
 import uuid
+from datetime import datetime
 
 from simple_di import Provide, inject
 
@@ -40,8 +41,8 @@ from bentoml.yatai.db.stores.lock import LockStore
 from bentoml.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from bentoml.yatai.deployment.operator import get_deployment_operator
 from bentoml.yatai.grpc_stream_utils import DownloadBentoStreamResponses
-from bentoml.yatai.locking.lock import LockType, lock
 from bentoml.yatai.locking.lock import DEFAULT_TTL_MIN
+from bentoml.yatai.locking.lock import LockType, lock
 from bentoml.yatai.proto import status_pb2
 from bentoml.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
@@ -70,6 +71,7 @@ from bentoml.yatai.proto.yatai_service_pb2 import (
 from bentoml.yatai.repository.base_repository import BaseRepository
 from bentoml.yatai.repository.file_system_repository import FileSystemRepository
 from bentoml.yatai.status import Status
+from bentoml.yatai.utils import docker_build_logs
 from bentoml.yatai.validator import validate_deployment_pb
 
 logger = logging.getLogger(__name__)
@@ -84,10 +86,11 @@ def track_deployment_delete(deployment_operator, created_at, force_delete=False)
     )
 
 
-def is_file_system_repo(repo_instance):
+def is_file_system_repo(repo_instance) -> bool:
     return isinstance(repo_instance, FileSystemRepository)
 
 
+# NOTES: How do we type hints this function?
 def get_yatai_service_impl(base=object):
     # This helps avoid loading YataiServicer grpc file when using local YataiService
     # implementation. This speeds up regular save/load operations when Yatai is not used
@@ -568,11 +571,13 @@ def get_yatai_service_impl(base=object):
                             )
                         safe_retrieve(bento_service_bundle_path, temp_bundle_path)
                         try:
-                            docker_client.images.build(
+                            resp = docker_client.api.build(
                                 path=temp_bundle_path,
+                                nocache=False,
                                 tag=tag,
                                 buildargs=dict(request.build_args),
                             )
+                            docker_build_logs(resp)
                         except (
                             docker.errors.APIError,
                             docker.errors.BuildError,

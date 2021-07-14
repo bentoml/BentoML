@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import typing as t
 from pathlib import Path
 from typing import List
 
@@ -13,10 +14,17 @@ logger = logging.getLogger(__name__)
 ARTIFACTS_DIR_NAME = "artifacts"
 
 
-class BaseModelArtifact:
+class BaseModelArtifact(object):
     """
-    BaseModelArtifact is the base abstraction for describing the trained model
-    serialization and deserialization process.
+    :class:`~_internal.artifacts.BaseModelArtifact` is the base abstraction
+    for describing the trained model serialization and deserialization process.
+
+    Class attributes:
+
+    - name (`str`):
+        returns name identifier of given Model definition
+
+
     """
 
     def __new__(cls, *args, **kwargs):
@@ -25,11 +33,8 @@ class BaseModelArtifact:
         # store the args and kwargs used for creating this artifact instance - this is
         # used internally for the _copy method below
 
-        # TODO: this warning may due to pylint's bug (issue 4668). We may
-        # remove the following comment later
-        # pylint: disable=unused-private-member
-        obj.__args = args
-        obj.__kwargs = kwargs
+        obj.__args__ = args
+        obj.__kwargs__ = kwargs
 
         return obj
 
@@ -41,7 +46,7 @@ class BaseModelArtifact:
         arguments provided for initializing this artifact class for the purpose of
         recreating a new instance with the same config
         """
-        return self.__class__(*self.__args, **self.__kwargs)
+        return self.__class__(*self.__args__, **self.__kwargs__)
 
     def __init__(self, name: str):
         if not name.isidentifier():
@@ -126,30 +131,7 @@ class BaseModelArtifact:
         """
 
     def __getattribute__(self, item):
-        if item == 'pack':
-            original = object.__getattribute__(self, item)
-
-            def wrapped_pack(*args, **kwargs):
-                if self.packed:
-                    logger.warning(
-                        "`pack` an artifact multiple times may lead to unexpected "
-                        "behaviors"
-                    )
-                if 'metadata' in kwargs:
-                    if isinstance(kwargs['metadata'], dict):
-                        self._metadata = kwargs['metadata']
-                    else:
-                        raise TypeError(
-                            "Setting a non-dictionary metadata " "is not supported."
-                        )
-                ret = original(*args, **kwargs)
-                # do not set `self._pack` if `pack` has failed with an exception raised
-                self._packed = True
-                return ret
-
-            return wrapped_pack
-
-        elif item == 'load':
+        if item == 'load':
             original = object.__getattribute__(self, item)
 
             def wrapped_load(*args, **kwargs):
@@ -278,3 +260,10 @@ class ArtifactCollection(dict):
     def load_all(self, path):
         for artifact in self.values():
             artifact.load(path)
+
+
+def load(identifier: str) -> BaseModelArtifact:
+    pass
+
+def list(path: t.Union[str, os.PathLike]) -> str:
+    pass

@@ -18,11 +18,11 @@ from contextlib import contextmanager
 
 from urllib.parse import urlparse
 
-from bentoml.exceptions import BentoMLException, LockUnavailable
-from bentoml.yatai.db.base import Base
-from bentoml.yatai.db.stores.deployment import DeploymentStore
-from bentoml.yatai.db.stores.label import LabelStore
-from bentoml.yatai.db.stores.metadata import MetadataStore
+from bentoml._internal.exceptions import BentoMLException, LockUnavailable
+from yatai.yatai.db.base import Base
+from yatai.yatai.db.stores.deployment import DeploymentStore
+from yatai.yatai.db.stores.label import LabelStore
+from yatai.yatai.db.stores.metadata import MetadataStore
 
 logger = logging.getLogger(__name__)
 

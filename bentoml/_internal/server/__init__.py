@@ -3,9 +3,20 @@ from typing import NoReturn, Optional
 
 from simple_di import skip, sync_container
 
-from bentoml.configuration.containers import BentoMLContainer
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
+
+
+# TODO:
+def serve(
+        bundle_path_or_tag: str,
+        port: Optional[int] = None,
+        max_batch_size: Optional[int] = None,
+        max_latency: Optional[int] = None,
+        run_with_ngrok: Optional[bool] = None,
+):
+    pass
 
 
 def start_dev_server(

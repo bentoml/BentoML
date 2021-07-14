@@ -13,7 +13,7 @@ from ..exceptions import InvalidArgument, NotFound
 # from bentoml.saved_bundle.pip_pkg import seek_pip_packages
 # from bentoml.service.artifacts import ArtifactCollection, ServiceArtifact
 # from bentoml.service.env import ServiceEnv
-from ..service.inference_api import InferenceAPI
+from ..inference_api.inference_api import InferenceAPI
 
 BENTOML_RESERVED_API_NAMES = [
     "index",

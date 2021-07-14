@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml.yatai.validator.deployment_pb_validator import validate_deployment_pb
+from yatai.yatai.validator.deployment_pb_validator import validate_deployment_pb
 
 __all__ = ["validate_deployment_pb"]

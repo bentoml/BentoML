@@ -1,4 +1,4 @@
-from bentoml.configuration.containers import BentoMLContainer
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 
 yatai_metrics_client = BentoMLContainer.yatai_metrics_client.get()

@@ -17,62 +17,11 @@ message DeploymentSpec {
 
     // Reserved for user-defined deployment operator
     CUSTOM = 1;
-
-    // Built-in deployment operator types
-    AWS_SAGEMAKER = 2;
-    AWS_LAMBDA = 3;
-    AZURE_FUNCTIONS = 4;
-    AWS_EC2 = 5;
   }
 
   message CustomOperatorConfig {
     string name = 1;
     google.protobuf.Struct config = 2;
-  }
-
-  message SageMakerOperatorConfig {
-    string region = 1;
-    string instance_type = 2;
-    int32 instance_count = 3;
-    // API Name is required.  Each sagemaker deployment provide only /invocation path,
-    // If bento service has more than one API function, user needs to define which API
-    // function would like to be used for sagemaker deployment
-    string api_name = 4;
-    // Optional. When user didn't define gunicorn worker count, service will find the
-    // current system's cpu core count and set worker equal to half of that plus 1.
-    int32 num_of_gunicorn_workers_per_instance = 5;
-    int32 timeout = 6;
-    string data_capture_s3_prefix = 7;
-    int32 data_capture_sample_percent = 8;
-  }
-
-  message AwsLambdaOperatorConfig {
-    string region = 1;
-    string api_name = 2;
-    int32 memory_size = 3;
-    int32 timeout = 4;
-  }
-
-
-  message AzureFunctionsOperatorConfig {
-      // Similar to region value in AWS
-      string location = 1;
-      // Azure function premium plan id
-      string premium_plan_sku = 2;
-      // Number of workers for the app service plan
-      int32 min_instances = 3;
-      // Maximum number of elastic workers
-      int32 max_burst = 4;
-      string function_auth_level = 5;
-  }
-
-  message AwsEc2OperatorConfig {
-    string region=1;
-    string instance_type=2;
-    string ami_id=6;
-    int32 autoscale_min_size=7;
-    int32 autoscale_desired_capacity=8;
-    int32 autoscale_max_size=9;
   }
 
   // Bento name and version are used as an reference to the saved Bento
@@ -84,10 +33,6 @@ message DeploymentSpec {
 
   oneof deployment_operator_config {
     CustomOperatorConfig custom_operator_config = 4;
-    SageMakerOperatorConfig sagemaker_operator_config = 5;
-    AwsLambdaOperatorConfig aws_lambda_operator_config = 6;
-    AzureFunctionsOperatorConfig azure_functions_operator_config = 7;
-    AwsEc2OperatorConfig aws_ec2_operator_config = 8;
   }
 }
 

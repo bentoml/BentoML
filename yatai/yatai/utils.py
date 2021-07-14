@@ -17,7 +17,7 @@ from typing import NamedTuple, Tuple, Iterator, Dict
 
 import docker
 
-from bentoml.exceptions import BentoMLException, MissingDependencyException
+from bentoml._internal.exceptions import BentoMLException, MissingDependencyException
 
 UNARY = 'UNARY'
 SERVER_STREAMING = 'SERVER_STREAMING'

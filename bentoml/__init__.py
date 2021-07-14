@@ -23,16 +23,27 @@ del get_versions
 # from bentoml._internal.service import web_static_content_decorator as web_static_content
 
 # load = load_from_dir
+from bentoml._internal.repository import list, get, delete, push, pull
+from bentoml._internal.yatai_client import YataiClient
+from bentoml._internal.service import Service
+from bentoml._internal.env import env
+from bentoml._internal.bundle import load, containerize
+from bentoml._internal.inference_api import api, batch_api
+from bentoml._internal.server import serve
 
-cmd = ["list", "get", "delete", "push", "pull", "containerize", "serve"]
-
-sdk = [
+__all__ = [
+    "__version__",
+    "YataiClient",
+    "list",
+    "get",
+    "delete",
+    "push",
+    "pull",
+    "containerize",
+    "serve",
     "Service",
     "env",
-    "bundle",
     "load",
     "api",
-    "batch_api",
+    "batch_api"
 ]
-
-__all__ = ["__version__", "YataiClient"] + sdk + cmd

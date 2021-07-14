@@ -1,6 +1,8 @@
-from .env import BentoServiceEnv, CondaEnv
 
-__all__ = [
-    "CondaEnv",
-    "BentoServiceEnv"
-]
+
+# TODO
+def env():
+    """
+    @env decorator for bentoml.Service
+    """
+    pass

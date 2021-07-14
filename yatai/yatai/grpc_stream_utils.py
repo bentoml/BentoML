@@ -1,7 +1,7 @@
 import os
 import io
 import tarfile
-from bentoml.yatai.proto.repository_pb2 import UploadBentoRequest, DownloadBentoResponse
+from yatai.yatai.proto.repository_pb2 import UploadBentoRequest, DownloadBentoResponse
 
 
 DEFAULT_FILE_CHUNK_SIZE = 1024 * 8

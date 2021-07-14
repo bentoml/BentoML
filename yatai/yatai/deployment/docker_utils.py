@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 import docker
 
-from bentoml.exceptions import MissingDependencyException, BentoMLException
+from bentoml._internal.exceptions import MissingDependencyException, BentoMLException
 
 logger = logging.getLogger(__name__)
 

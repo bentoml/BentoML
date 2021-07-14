@@ -22,6 +22,8 @@ del get_versions
 # from bentoml._internal.service import ver_decorator as ver
 # from bentoml._internal.service import web_static_content_decorator as web_static_content
 
+from ._internal import artifacts
+
 # load = load_from_dir
 from bentoml._internal.repository import list, get, delete, push, pull
 from bentoml._internal.yatai_client import YataiClient

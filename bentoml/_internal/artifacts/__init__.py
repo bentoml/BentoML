@@ -3,15 +3,20 @@ import os
 import re
 import typing as t
 from pathlib import Path
-from typing import List
 
-from ..env import BentoServiceEnv
 from ..exceptions import FailedPrecondition, InvalidArgument
 from ..utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 
 ARTIFACTS_DIR_NAME = "artifacts"
+
+
+class ArtifactMeta(type):
+    def __new__(mcs, name, mixin, namespace):
+        if '__doc__' not in namespace:
+            namespace['__doc__'] = mixin[0].__doc__
+        super().__new__(mcs, name, mixin, namespace)
 
 
 class BaseModelArtifact(object):
@@ -26,16 +31,16 @@ class BaseModelArtifact(object):
 
 
     """
+    __args: t.List[str]
+    __kwargs: t.Dict[str, str]
 
-    def __new__(cls, *args, **kwargs):
-        obj = super(BaseModelArtifact, cls).__new__(cls)
+    def __new__(cls, *args: str, **kwargs: str):
+        obj: "BaseModelArtifact" = super(BaseModelArtifact, cls).__new__(cls)
 
         # store the args and kwargs used for creating this artifact instance - this is
         # used internally for the _copy method below
-
-        obj.__args__ = args
-        obj.__kwargs__ = kwargs
-
+        obj.__args = args
+        obj.__kwargs = kwargs
         return obj
 
     def _copy(self):
@@ -46,7 +51,7 @@ class BaseModelArtifact(object):
         arguments provided for initializing this artifact class for the purpose of
         recreating a new instance with the same config
         """
-        return self.__class__(*self.__args__, **self.__kwargs__)
+        return self.__class__(*self.__args, **self.__kwargs)
 
     def __init__(self, name: str):
         if not name.isidentifier():
@@ -57,13 +62,8 @@ class BaseModelArtifact(object):
                 A valid identifier cannot start with a number, or contain any spaces."
             )
         self._name = name
-        self._packed = False
         self._loaded = False
         self._metadata = dict()
-
-    @property
-    def packed(self):
-        return self._packed
 
     @property
     def loaded(self):
@@ -75,7 +75,7 @@ class BaseModelArtifact(object):
 
     @property
     def is_ready(self):
-        return self.packed or self.loaded
+        return self.loaded
 
     @property
     def name(self):
@@ -84,13 +84,6 @@ class BaseModelArtifact(object):
         BentoService inference API callback function, via `self.artifacts[NAME]`
         """
         return self._name
-
-    def pack(self, model, metadata: dict = None):  # pylint: disable=unused-argument
-        """
-        Pack the in-memory trained model object to this BaseModelArtifact
-
-        Note: add "# pylint:disable=arguments-differ" to child class's pack method
-        """
 
     def load(self, path):
         """
@@ -121,13 +114,6 @@ class BaseModelArtifact(object):
     def get(self):
         """
         Get returns a reference to the artifact being packed or loaded from path
-        """
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        """modify target BentoServiceEnv instance to ensure the required dependencies
-        are listed in the BentoService environment spec
-
-        :param env: target BentoServiceEnv instance to modify
         """
 
     def __getattribute__(self, item):
@@ -180,20 +166,6 @@ class BaseModelArtifact(object):
                 return original(*args, **kwargs)
 
             return wrapped_save
-
-        elif item == 'get':
-
-            def wrapped_get(*args, **kwargs):
-                if not self.is_ready:
-                    raise FailedPrecondition(
-                        "Trying to access empty artifact. An artifact needs to be "
-                        "`pack` with model instance or `load` from saved path before "
-                        "it can be used for inference"
-                    )
-                original = object.__getattribute__(self, item)
-                return original(*args, **kwargs)
-
-            return wrapped_get
 
         return object.__getattribute__(self, item)
 
@@ -264,6 +236,7 @@ class ArtifactCollection(dict):
 
 def load(identifier: str) -> BaseModelArtifact:
     pass
+
 
 def list(path: t.Union[str, os.PathLike]) -> str:
     pass

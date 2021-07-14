@@ -1,12 +1,7 @@
 import * as React from "react";
 import axios from "axios";
-import {
-  AnchorButton,
-  Button,
-  Dialog,
-  Classes,
-  Intent,
-} from "@blueprintjs/core";
+import { Redirect } from "react-router-dom";
+import { Button, Dialog, Classes, Intent } from "@blueprintjs/core";
 import { YataiToaster } from "../utils/Toaster";
 
 export interface IBentoBundleDeleteConfirmationProps {
@@ -15,33 +10,36 @@ export interface IBentoBundleDeleteConfirmationProps {
   isOpen: boolean;
 }
 
-const handleDelete = (name: string, version: string) => {
-  axios
-    .post("/api/DeleteBento", { bento_name: name, bento_version: version })
-    .then(() => {
-      const toastState = {
-        message: `${name}:${version} has been deleted.`,
-        intent: Intent.SUCCESS,
-      };
-      YataiToaster.show({ ...toastState });
-    })
-    .catch((error) => {
-      const toastState = {
-        message: `${name}:${version} has not been deleted.\nError encountered: ${error}`,
-        intent: Intent.DANGER,
-      };
-      YataiToaster.show({ ...toastState });
-    });
-};
-
 const BentoBundleDeleteConfirmation: React.FC<IBentoBundleDeleteConfirmationProps> = (
   props
 ) => {
   const [open, setOpen] = React.useState(false);
+  const [isDelete, setDelete] = React.useState(false);
   const bundle: string = `${props.name}:${props.value}`;
+
+  const handleDelete = async (name: string, version: string) => {
+    axios
+      .post("/api/DeleteBento", { bento_name: name, bento_version: version })
+      .then(() => {
+        const toastState = {
+          message: `${name}:${version} has been deleted.`,
+          intent: Intent.SUCCESS,
+        };
+        setDelete(true);
+        YataiToaster.show({ ...toastState });
+      })
+      .catch((error) => {
+        const toastState = {
+          message: `${name}:${version} has not been deleted.\nError encountered: ${error}`,
+          intent: Intent.DANGER,
+        };
+        YataiToaster.show({ ...toastState });
+      });
+  };
 
   return (
     <div>
+      {isDelete ? <Redirect to="/" /> : ""}
       <Button
         outlined={true}
         large={true}
@@ -72,15 +70,13 @@ const BentoBundleDeleteConfirmation: React.FC<IBentoBundleDeleteConfirmationProp
               marginTop: "1.5rem",
             }}
           >
-            <AnchorButton
-              className={Classes.MINIMAL}
+            <Button
               outlined={true}
               large={true}
               text={`Delete ${bundle}`}
               onClick={() => {
                 handleDelete(props.name, props.value);
               }}
-              href={"/"}
             />
           </div>
         </div>

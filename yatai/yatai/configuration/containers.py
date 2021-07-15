@@ -65,7 +65,7 @@ SCHEMA = Schema(
                     str,
                     lambda type: type in YATAI_REPOSITORY_TYPES,
                     error="yatai.repository.type must be one of %s"
-                          % YATAI_REPOSITORY_TYPES,
+                    % YATAI_REPOSITORY_TYPES,
                 ),
                 "file_system": {"directory": Or(str, None)},
                 "s3": {
@@ -86,10 +86,10 @@ SCHEMA = Schema(
 
 class BentoMLConfiguration:
     def __init__(
-            self,
-            default_config_file: str = None,
-            override_config_file: str = None,
-            validate_schema: bool = True,
+        self,
+        default_config_file: str = None,
+        override_config_file: str = None,
+        validate_schema: bool = True,
     ):
         # Default configuraiton
         if default_config_file is None:
@@ -173,20 +173,20 @@ class YataiContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def tracer(
-            tracer_type: str = Provide[config.tracing.type],
-            zipkin_server_url: str = Provide[config.tracing.zipkin.url],
-            jaeger_server_address: str = Provide[config.tracing.jaeger.address],
-            jaeger_server_port: int = Provide[config.tracing.jaeger.port],
+        tracer_type: str = Provide[config.tracing.type],
+        zipkin_server_url: str = Provide[config.tracing.zipkin.url],
+        jaeger_server_address: str = Provide[config.tracing.jaeger.address],
+        jaeger_server_port: int = Provide[config.tracing.jaeger.port],
     ):
         if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
             from ..tracing.zipkin import get_zipkin_tracer
 
             return get_zipkin_tracer(zipkin_server_url)
         elif (
-                tracer_type
-                and tracer_type.lower() == 'jaeger'
-                and jaeger_server_address
-                and jaeger_server_port
+            tracer_type
+            and tracer_type.lower() == 'jaeger'
+            and jaeger_server_address
+            and jaeger_server_port
         ):
             from ..tracing.jaeger import get_jaeger_tracer
 
@@ -199,11 +199,11 @@ class YataiContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-            allow_credentials=config.bento_server.cors.access_control_allow_credentials,
-            expose_headers=config.bento_server.cors.access_control_expose_headers,
-            allow_methods=config.bento_server.cors.access_control_allow_methods,
-            allow_headers=config.bento_server.cors.access_control_allow_headers,
-            max_age=config.bento_server.cors.access_control_max_age,
+        allow_credentials=config.bento_server.cors.access_control_allow_credentials,
+        expose_headers=config.bento_server.cors.access_control_expose_headers,
+        allow_methods=config.bento_server.cors.access_control_allow_methods,
+        allow_headers=config.bento_server.cors.access_control_allow_headers,
+        max_age=config.bento_server.cors.access_control_max_age,
     ):
         import aiohttp_cors
 

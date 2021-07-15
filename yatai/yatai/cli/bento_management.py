@@ -1,13 +1,12 @@
 def add_bento_management_sub_commands(cli):
-
     @cli.command()
     def list():
-      pass
+        pass
 
     @cli.command()
     def get():
-      pass
+        pass
 
     @cli.command()
     def delete():
-      pass
+        pass

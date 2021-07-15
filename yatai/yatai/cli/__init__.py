@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 def create_yatai_cli_group():
-
     @click.group()
     def yatai_cli():
         """
         YATAI CLI Tool
         """
+
     return _cli
 
 

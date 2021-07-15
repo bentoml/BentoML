@@ -15,6 +15,7 @@ class YataiClient:
     """
     Python Client for interacting with YataiService
     """
+
     pass
 
     # def __init__(self, yatai_service: Optional["YataiStub"] = None):

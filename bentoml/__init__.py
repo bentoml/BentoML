@@ -22,14 +22,15 @@ del get_versions
 # from bentoml._internal.service import ver_decorator as ver
 # from bentoml._internal.service import web_static_content_decorator as web_static_content
 
-# load = load_from_dir
-from bentoml._internal.repository import list, get, delete, push, pull
-from bentoml._internal.yatai_client import YataiClient
-from bentoml._internal.service import Service
+from bentoml._internal.bundle import containerize, load
 from bentoml._internal.env import env
-from bentoml._internal.bundle import load, containerize
 from bentoml._internal.inference_api import api, batch_api
+
+# load = load_from_dir
+from bentoml._internal.repository import delete, get, list, pull, push
 from bentoml._internal.server import serve
+from bentoml._internal.service import Service
+from bentoml._internal.yatai_client import YataiClient
 
 __all__ = [
     "__version__",
@@ -45,5 +46,5 @@ __all__ = [
     "env",
     "load",
     "api",
-    "batch_api"
+    "batch_api",
 ]

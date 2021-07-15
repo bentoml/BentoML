@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 
 # TODO:
 def serve(
-        bundle_path_or_tag: str,
-        port: Optional[int] = None,
-        max_batch_size: Optional[int] = None,
-        max_latency: Optional[int] = None,
-        run_with_ngrok: Optional[bool] = None,
+    bundle_path_or_tag: str,
+    port: Optional[int] = None,
+    max_batch_size: Optional[int] = None,
+    max_latency: Optional[int] = None,
+    run_with_ngrok: Optional[bool] = None,
 ):
     pass
 

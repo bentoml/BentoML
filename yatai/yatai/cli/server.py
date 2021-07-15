@@ -1,5 +1,3 @@
-import logging
-
 import click
 from simple_di import Provide, inject
 
@@ -10,13 +8,12 @@ from bentoml._internal.configuration.containers import (
     YATAI_REPOSITORY_TYPES,
     BentoMLContainer,
 )
-from .yatai_service import start_yatai_service_grpc_server
+from yatai.yatai_service import start_yatai_service_grpc_server
 
-logger = logging.getLogger(__name__)
 
 # TODO: make this its own CLI command
 @inject
-def add_yatai_service_sub_command(
+def add_yatai_service_sub_commands(
     cli,
     default_db_url: str = Provide[BentoMLContainer.yatai_database_url],
     default_repository_type: str = Provide[

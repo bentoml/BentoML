@@ -9,11 +9,11 @@ import certifi
 import click
 from simple_di import Provide, inject
 
-from bentoml.configuration import get_debug_mode
-from bentoml.configuration.containers import BentoMLContainer
-from bentoml.exceptions import BentoMLException
-from bentoml.utils import reserve_free_port
-from bentoml.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
+from bentoml._internal.configuration import get_debug_mode
+from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.exceptions import BentoMLException
+from bentoml._internal.utils import reserve_free_port
+from yatai.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 
 @inject

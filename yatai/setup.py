@@ -6,6 +6,7 @@ with open("README.md", "r", encoding="utf8") as f:
 
 install_requires = [
     # TODO: add required dependencies here
+    "simple-di",
     "grpcio~=1.34.0",  # match the grpcio-tools version used in yatai docker image
     "google-cloud-storage",
     "psycopg2",

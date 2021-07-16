@@ -19,7 +19,6 @@
 #
 
 
-
 class InferenceAPI(object):
     pass
 

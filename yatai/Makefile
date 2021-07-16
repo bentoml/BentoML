@@ -13,13 +13,13 @@ install-yatai-deps: ## Install dependencies to debug YataiService
 	go get github.com/fullstorydev/grpcui
 	go install github.com/fullstorydev/grpcui/cmd/grpcui@latest
 
-# BentoML Web UI
-watch-yatai-web-ui: ## Start BentoML Web UI server in dev mode
+# Yatai Web
+watch-yatai-web: ## Start BentoML Web UI server in dev mode
 	bentoml yatai-service-start --no-ui & \
 	cd web_server && yarn dev 127.0.0.1:50051 3000 . 127.0.0.1:50052
-build-yatai-web-ui: ## Build BentoML Web UI server and frontend
+build-yatai-web: ## Build BentoML Web UI server and frontend
 	cd web_server && yarn build
-run-yatai-web-ui: ## Run production BentoML Web UI server and frontend
+run-yatai-web: ## Run production BentoML Web UI server and frontend
 	bentoml yatai-service-start --no-ui & \
 	cd web_server && yarn start 127.0.0.1:50051 3000 . 127.0.0.1:50052
 install-web-deps: ## Install dependencies to run web server and frontend

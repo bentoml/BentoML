@@ -13,8 +13,8 @@ class LOCK_STATUS(enum.Enum):
 
 
 class Lock(Base):
-    __tablename__ = 'locks'
-    __table_args__ = tuple(UniqueConstraint('resource_id', name='_resource_id_uc',))
+    __tablename__ = "locks"
+    __table_args__ = tuple(UniqueConstraint("resource_id", name="_resource_id_uc",))
     id = Column(Integer, primary_key=True)
     resource_id = Column(String, nullable=False, unique=True)
     lock_status = Column(Enum(LOCK_STATUS))

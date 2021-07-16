@@ -19,11 +19,11 @@ import docker
 
 from bentoml._internal.exceptions import BentoMLException, MissingDependencyException
 
-UNARY = 'UNARY'
-SERVER_STREAMING = 'SERVER_STREAMING'
-CLIENT_STREAMING = 'CLIENT_STREAMING'
-BIDI_STREAMING = 'BIDI_STREAMING'
-UNKNOWN = 'UNKNOWN'
+UNARY = "UNARY"
+SERVER_STREAMING = "SERVER_STREAMING"
+CLIENT_STREAMING = "CLIENT_STREAMING"
+BIDI_STREAMING = "BIDI_STREAMING"
+UNKNOWN = "UNKNOWN"
 
 
 logger = logging.getLogger(__name__)
@@ -33,25 +33,25 @@ def ensure_node_available_or_raise():
     from subprocess import CalledProcessError, check_output
 
     try:
-        check_output(['node', '--version'])
+        check_output(["node", "--version"])
     except CalledProcessError as error:
         raise BentoMLException(
-            'Error executing node command: {}'.format(error.output.decode())
+            "Error executing node command: {}".format(error.output.decode())
         )
     except FileNotFoundError:
         raise MissingDependencyException(
-            'Node is required for Yatai web UI. Please visit '
-            'www.nodejs.org for instructions'
+            "Node is required for Yatai web UI. Please visit "
+            "www.nodejs.org for instructions"
         )
 
 
 def parse_grpc_url(url):
-    '''
+    """
     >>> parse_grpc_url("grpcs://yatai.com:43/query")
     ('grpcs', 'yatai.com:43/query')
     >>> parse_grpc_url("yatai.com:43/query")
     (None, 'yatai.com:43/query')
-    '''
+    """
     from urllib3.util import parse_url
 
     parts = parse_url(url)
@@ -81,7 +81,7 @@ def get_method_type(request_streaming, response_streaming) -> str:
     elif request_streaming and response_streaming:
         return BIDI_STREAMING
     else:
-        raise RuntimeError('Unknown request_streaming or response_streaming')
+        raise RuntimeError("Unknown request_streaming or response_streaming")
 
 
 class MethodName(NamedTuple):
@@ -106,10 +106,10 @@ class MethodName(NamedTuple):
 
 
 def parse_method_name(method_name: str) -> Tuple[MethodName, bool]:
-    '''
+    """
     Infers the grpc service and method name from the handler_call_details.
     e.g. /package.ServiceName/MethodName
-    '''
+    """
     parts = method_name.split("/")
     if len(parts) < 3:
         return MethodName("", "", ""), False
@@ -138,11 +138,11 @@ def docker_build_logs(resp: Iterator):
             try:
                 # output logs to stdout
                 # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
-                output = next(resp).decode('utf-8')
-                json_output: Dict = json.loads(output.strip('\r\n'))
+                output = next(resp).decode("utf-8")
+                json_output: Dict = json.loads(output.strip("\r\n"))
                 # output to stderr when running in docker
-                if 'stream' in json_output:
-                    logger.debug(json_output['stream'])
+                if "stream" in json_output:
+                    logger.debug(json_output["stream"])
             except StopIteration:
                 break
             except ValueError:
@@ -150,5 +150,5 @@ def docker_build_logs(resp: Iterator):
     except docker.errors.BuildError as e:
         print(f"Failed to build container :\n{e.msg}")
         for line in e.build_log:
-            if 'stream' in line:
-                logger.debug(line['stream'].strip())
+            if "stream" in line:
+                logger.debug(line["stream"].strip())

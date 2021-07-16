@@ -285,10 +285,10 @@ def resolve_bento_bundle_uri(bento_pb):
 def archive_directory_to_tar(
     source_dir: str, tarfile_dir: str, tarfile_name: str
 ) -> (str, str):
-    file_name = f'{tarfile_name}.tar'
+    file_name = f"{tarfile_name}.tar"
     tarfile_path = os.path.join(tarfile_dir, file_name)
     with tarfile.open(tarfile_path, mode="w:gz") as tar:
         # Use arcname to prevent storing the full path to the bundle,
         # from source_dir/path/to/file to path/to/file
-        tar.add(source_dir, arcname='')
+        tar.add(source_dir, arcname="")
     return tarfile_path, file_name

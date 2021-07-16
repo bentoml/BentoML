@@ -52,9 +52,9 @@ def _get_artifacts_list(bento_service):
     for artifact_name, artifact in bento_service.artifacts.items():
         result.append(
             {
-                'name': artifact_name,
-                'artifact_type': artifact.__class__.__name__,
-                'metadata': artifact.metadata,
+                "name": artifact_name,
+                "artifact_type": artifact.__class__.__name__,
+                "metadata": artifact.metadata,
             }
         )
     return result
@@ -89,8 +89,8 @@ class SavedBundleConfig(object):
                 }
             )
             self.config["env"] = bento_service.env.to_dict()
-            self.config['apis'] = _get_apis_list(bento_service)
-            self.config['artifacts'] = _get_artifacts_list(bento_service)
+            self.config["apis"] = _get_apis_list(bento_service)
+            self.config["artifacts"] = _get_artifacts_list(bento_service)
 
     def write_to_path(self, path, filename="bentoml.yml"):
         return self._yaml.dump(self.config, Path(os.path.join(path, filename)))
@@ -114,7 +114,7 @@ class SavedBundleConfig(object):
             # If major version is different, then there could be incompatible API
             # changes. Raise error in this case.
             if ver.split(".")[0] != BENTOML_VERSION.split(".")[0]:
-                if not BENTOML_VERSION.startswith('0+untagged'):
+                if not BENTOML_VERSION.startswith("0+untagged"):
                     raise BentoMLConfigException(msg)
                 else:
                     logger.warning(msg)
@@ -162,17 +162,17 @@ class SavedBundleConfig(object):
 
         if "apis" in self.config:
             for api_config in self.config["apis"]:
-                if 'handler_type' in api_config:
+                if "handler_type" in api_config:
                     # Convert handler type to input type for saved bundle created
                     # before version 0.8.0
-                    input_type = api_config.get('handler_type')
-                elif 'input_type' in api_config:
-                    input_type = api_config.get('input_type')
+                    input_type = api_config.get("handler_type")
+                elif "input_type" in api_config:
+                    input_type = api_config.get("input_type")
                 else:
                     input_type = "unknown"
 
-                if 'output_type' in api_config:
-                    output_type = api_config.get('output_type')
+                if "output_type" in api_config:
+                    output_type = api_config.get("output_type")
                 else:
                     output_type = "DefaultOutput"
 
@@ -186,22 +186,22 @@ class SavedBundleConfig(object):
                     # Supports viewing API input config info for saved bundle created
                     # before version 0.8.0
                     for k, v in api_config["handler_config"].items():
-                        if k in {'mb_max_latency', 'mb_max_batch_size'}:
+                        if k in {"mb_max_latency", "mb_max_batch_size"}:
                             setattr(api_metadata, k, v)
                         else:
                             api_metadata.input_config[k] = v
                 else:
-                    if 'mb_max_latency' in api_config:
+                    if "mb_max_latency" in api_config:
                         api_metadata.mb_max_latency = api_config["mb_max_latency"]
                     else:
                         api_metadata.mb_max_latency = DEFAULT_MAX_LATENCY
 
-                    if 'mb_max_batch_size' in api_config:
+                    if "mb_max_batch_size" in api_config:
                         api_metadata.mb_max_batch_size = api_config["mb_max_batch_size"]
                     else:
                         api_metadata.mb_max_batch_size = DEFAULT_MAX_BATCH_SIZE
 
-                    if 'route' in api_config:
+                    if "route" in api_config:
                         api_metadata.route = api_config["route"]
                     else:
                         # Use API name as the URL route when route config is missing,

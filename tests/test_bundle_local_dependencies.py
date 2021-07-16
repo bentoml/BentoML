@@ -13,17 +13,17 @@ from tests.bento_services import bento_service_with_modified_sys_path
 
 
 service_classes = [
-    pytest.param(bento_service_with_zipimport.IrisClassifier, id='zipimports'),
-    pytest.param(my_test_bento_service.IrisClassifier, id='local modules'),
+    pytest.param(bento_service_with_zipimport.IrisClassifier, id="zipimports"),
+    pytest.param(my_test_bento_service.IrisClassifier, id="local modules"),
     pytest.param(
-        bento_service_with_modified_sys_path.IrisClassifier, id='modified sys path'
+        bento_service_with_modified_sys_path.IrisClassifier, id="modified sys path"
     ),
 ]
 
 
 @pytest.mark.parametrize("bento_service_class", service_classes)
 def test_bento_service_class(bento_service_class):
-    clf = svm.SVC(gamma='scale')
+    clf = svm.SVC(gamma="scale")
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
     clf.fit(X, y)
@@ -32,7 +32,7 @@ def test_bento_service_class(bento_service_class):
     bento_service = bento_service_class()
 
     # Pack it with the newly trained model artifact
-    bento_service.pack('model', clf)
+    bento_service.pack("model", clf)
 
     # Save the prediction service to a BentoService bundle
     bento_service.save()
@@ -54,10 +54,10 @@ def test_bento_service_class(bento_service_class):
         with subprocess.Popen(
             run_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         ) as proc:
-            output = proc.stdout.read().decode('utf-8')
-            err_msg = proc.stderr.read().decode('utf-8')
+            output = proc.stdout.read().decode("utf-8")
+            err_msg = proc.stderr.read().decode("utf-8")
             logging.warning(err_msg)
             assert not err_msg
-            assert output.strip() == '[0]'
+            assert output.strip() == "[0]"
     finally:
         delete_saved_bento_service(bento_service.name, bento_service.version)

@@ -95,7 +95,7 @@ class MockServerClient:
 
         # reserve a free port for windows, else we use unix domain socket
 
-        self.mock_server.add_insecure_port(f'[::]:{self.service_port}')
+        self.mock_server.add_insecure_port(f"[::]:{self.service_port}")
         self.mock_server.start()
 
         # TODO(bojiang): Unconnect from the secific metrics implementation Prometheus
@@ -105,7 +105,7 @@ class MockServerClient:
             BentoMLContainer.yatai_metrics_client.get().start_http_server(
                 self.prom_port
             )
-        channel = grpc.insecure_channel(f'localhost:{self.service_port}')
+        channel = grpc.insecure_channel(f"localhost:{self.service_port}")
 
         client_stub = MockServiceStub(channel)
 

@@ -19,7 +19,7 @@ DESCRIPTOR: google.protobuf.descriptor.FileDescriptor = ...
 class DeploymentSpec(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class DeploymentOperator(metaclass=_DeploymentOperator):
-        V = typing.NewType('V', builtins.int)
+        V = typing.NewType("V", builtins.int)
     UNSET = DeploymentSpec.DeploymentOperator.V(0)
     CUSTOM = DeploymentSpec.DeploymentOperator.V(1)
     AWS_SAGEMAKER = DeploymentSpec.DeploymentOperator.V(2)
@@ -48,13 +48,11 @@ class DeploymentSpec(google.protobuf.message.Message):
             config: typing.Optional[google.protobuf.struct_pb2.Struct] = ...,
         ) -> None: ...
         def HasField(
-            self, field_name: typing_extensions.Literal[u"config", b"config"]
+            self, field_name: typing_extensions.Literal["config", b"config"]
         ) -> builtins.bool: ...
         def ClearField(
             self,
-            field_name: typing_extensions.Literal[
-                u"config", b"config", u"name", b"name"
-            ],
+            field_name: typing_extensions.Literal["config", b"config", "name", b"name"],
         ) -> None: ...
     class SageMakerOperatorConfig(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -89,21 +87,21 @@ class DeploymentSpec(google.protobuf.message.Message):
         def ClearField(
             self,
             field_name: typing_extensions.Literal[
-                u"api_name",
+                "api_name",
                 b"api_name",
-                u"data_capture_s3_prefix",
+                "data_capture_s3_prefix",
                 b"data_capture_s3_prefix",
-                u"data_capture_sample_percent",
+                "data_capture_sample_percent",
                 b"data_capture_sample_percent",
-                u"instance_count",
+                "instance_count",
                 b"instance_count",
-                u"instance_type",
+                "instance_type",
                 b"instance_type",
-                u"num_of_gunicorn_workers_per_instance",
+                "num_of_gunicorn_workers_per_instance",
                 b"num_of_gunicorn_workers_per_instance",
-                u"region",
+                "region",
                 b"region",
-                u"timeout",
+                "timeout",
                 b"timeout",
             ],
         ) -> None: ...
@@ -128,13 +126,13 @@ class DeploymentSpec(google.protobuf.message.Message):
         def ClearField(
             self,
             field_name: typing_extensions.Literal[
-                u"api_name",
+                "api_name",
                 b"api_name",
-                u"memory_size",
+                "memory_size",
                 b"memory_size",
-                u"region",
+                "region",
                 b"region",
-                u"timeout",
+                "timeout",
                 b"timeout",
             ],
         ) -> None: ...
@@ -162,15 +160,15 @@ class DeploymentSpec(google.protobuf.message.Message):
         def ClearField(
             self,
             field_name: typing_extensions.Literal[
-                u"function_auth_level",
+                "function_auth_level",
                 b"function_auth_level",
-                u"location",
+                "location",
                 b"location",
-                u"max_burst",
+                "max_burst",
                 b"max_burst",
-                u"min_instances",
+                "min_instances",
                 b"min_instances",
-                u"premium_plan_sku",
+                "premium_plan_sku",
                 b"premium_plan_sku",
             ],
         ) -> None: ...
@@ -201,17 +199,17 @@ class DeploymentSpec(google.protobuf.message.Message):
         def ClearField(
             self,
             field_name: typing_extensions.Literal[
-                u"ami_id",
+                "ami_id",
                 b"ami_id",
-                u"autoscale_desired_capacity",
+                "autoscale_desired_capacity",
                 b"autoscale_desired_capacity",
-                u"autoscale_max_size",
+                "autoscale_max_size",
                 b"autoscale_max_size",
-                u"autoscale_min_size",
+                "autoscale_min_size",
                 b"autoscale_min_size",
-                u"instance_type",
+                "instance_type",
                 b"instance_type",
-                u"region",
+                "region",
                 b"region",
             ],
         ) -> None: ...
@@ -271,47 +269,47 @@ class DeploymentSpec(google.protobuf.message.Message):
     def HasField(
         self,
         field_name: typing_extensions.Literal[
-            u"aws_ec2_operator_config",
+            "aws_ec2_operator_config",
             b"aws_ec2_operator_config",
-            u"aws_lambda_operator_config",
+            "aws_lambda_operator_config",
             b"aws_lambda_operator_config",
-            u"azure_functions_operator_config",
+            "azure_functions_operator_config",
             b"azure_functions_operator_config",
-            u"custom_operator_config",
+            "custom_operator_config",
             b"custom_operator_config",
-            u"deployment_operator_config",
+            "deployment_operator_config",
             b"deployment_operator_config",
-            u"sagemaker_operator_config",
+            "sagemaker_operator_config",
             b"sagemaker_operator_config",
         ],
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"aws_ec2_operator_config",
+            "aws_ec2_operator_config",
             b"aws_ec2_operator_config",
-            u"aws_lambda_operator_config",
+            "aws_lambda_operator_config",
             b"aws_lambda_operator_config",
-            u"azure_functions_operator_config",
+            "azure_functions_operator_config",
             b"azure_functions_operator_config",
-            u"bento_name",
+            "bento_name",
             b"bento_name",
-            u"bento_version",
+            "bento_version",
             b"bento_version",
-            u"custom_operator_config",
+            "custom_operator_config",
             b"custom_operator_config",
-            u"deployment_operator_config",
+            "deployment_operator_config",
             b"deployment_operator_config",
-            u"operator",
+            "operator",
             b"operator",
-            u"sagemaker_operator_config",
+            "sagemaker_operator_config",
             b"sagemaker_operator_config",
         ],
     ) -> None: ...
     def WhichOneof(
         self,
         oneof_group: typing_extensions.Literal[
-            u"deployment_operator_config", b"deployment_operator_config"
+            "deployment_operator_config", b"deployment_operator_config"
         ],
     ) -> typing.Optional[
         typing_extensions.Literal[
@@ -328,7 +326,7 @@ global___DeploymentSpec = DeploymentSpec
 class DeploymentState(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class State(metaclass=_State):
-        V = typing.NewType('V', builtins.int)
+        V = typing.NewType("V", builtins.int)
     PENDING = DeploymentState.State.V(0)
     RUNNING = DeploymentState.State.V(1)
     SUCCEEDED = DeploymentState.State.V(2)
@@ -367,18 +365,18 @@ class DeploymentState(google.protobuf.message.Message):
         timestamp: typing.Optional[google.protobuf.timestamp_pb2.Timestamp] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"timestamp", b"timestamp"]
+        self, field_name: typing_extensions.Literal["timestamp", b"timestamp"]
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"error_message",
+            "error_message",
             b"error_message",
-            u"info_json",
+            "info_json",
             b"info_json",
-            u"state",
+            "state",
             b"state",
-            u"timestamp",
+            "timestamp",
             b"timestamp",
         ],
     ) -> None: ...
@@ -398,7 +396,7 @@ class Deployment(google.protobuf.message.Message):
         ) -> None: ...
         def ClearField(
             self,
-            field_name: typing_extensions.Literal[u"key", b"key", u"value", b"value"],
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
         ) -> None: ...
     class LabelsEntry(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
@@ -411,7 +409,7 @@ class Deployment(google.protobuf.message.Message):
         ) -> None: ...
         def ClearField(
             self,
-            field_name: typing_extensions.Literal[u"key", b"key", u"value", b"value"],
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
         ) -> None: ...
     NAMESPACE_FIELD_NUMBER: builtins.int
     NAME_FIELD_NUMBER: builtins.int
@@ -454,34 +452,34 @@ class Deployment(google.protobuf.message.Message):
     def HasField(
         self,
         field_name: typing_extensions.Literal[
-            u"created_at",
+            "created_at",
             b"created_at",
-            u"last_updated_at",
+            "last_updated_at",
             b"last_updated_at",
-            u"spec",
+            "spec",
             b"spec",
-            u"state",
+            "state",
             b"state",
         ],
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"annotations",
+            "annotations",
             b"annotations",
-            u"created_at",
+            "created_at",
             b"created_at",
-            u"labels",
+            "labels",
             b"labels",
-            u"last_updated_at",
+            "last_updated_at",
             b"last_updated_at",
-            u"name",
+            "name",
             b"name",
-            u"namespace",
+            "namespace",
             b"namespace",
-            u"spec",
+            "spec",
             b"spec",
-            u"state",
+            "state",
             b"state",
         ],
     ) -> None: ...
@@ -497,10 +495,10 @@ class DeploymentStatus(google.protobuf.message.Message):
         self, *, state: typing.Optional[global___DeploymentState] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"state", b"state"]
+        self, field_name: typing_extensions.Literal["state", b"state"]
     ) -> builtins.bool: ...
     def ClearField(
-        self, field_name: typing_extensions.Literal[u"state", b"state"]
+        self, field_name: typing_extensions.Literal["state", b"state"]
     ) -> None: ...
 
 global___DeploymentStatus = DeploymentStatus
@@ -514,10 +512,10 @@ class ApplyDeploymentRequest(google.protobuf.message.Message):
         self, *, deployment: typing.Optional[global___Deployment] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"deployment", b"deployment"]
+        self, field_name: typing_extensions.Literal["deployment", b"deployment"]
     ) -> builtins.bool: ...
     def ClearField(
-        self, field_name: typing_extensions.Literal[u"deployment", b"deployment"]
+        self, field_name: typing_extensions.Literal["deployment", b"deployment"]
     ) -> None: ...
 
 global___ApplyDeploymentRequest = ApplyDeploymentRequest
@@ -539,13 +537,13 @@ class ApplyDeploymentResponse(google.protobuf.message.Message):
     def HasField(
         self,
         field_name: typing_extensions.Literal[
-            u"deployment", b"deployment", u"status", b"status"
+            "deployment", b"deployment", "status", b"status"
         ],
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"deployment", b"deployment", u"status", b"status"
+            "deployment", b"deployment", "status", b"status"
         ],
     ) -> None: ...
 
@@ -569,11 +567,11 @@ class DeleteDeploymentRequest(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"deployment_name",
+            "deployment_name",
             b"deployment_name",
-            u"force_delete",
+            "force_delete",
             b"force_delete",
-            u"namespace",
+            "namespace",
             b"namespace",
         ],
     ) -> None: ...
@@ -589,10 +587,10 @@ class DeleteDeploymentResponse(google.protobuf.message.Message):
         self, *, status: typing.Optional[status_pb2.Status] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> None: ...
 
 global___DeleteDeploymentResponse = DeleteDeploymentResponse
@@ -609,7 +607,7 @@ class GetDeploymentRequest(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"deployment_name", b"deployment_name", u"namespace", b"namespace"
+            "deployment_name", b"deployment_name", "namespace", b"namespace"
         ],
     ) -> None: ...
 
@@ -632,13 +630,13 @@ class GetDeploymentResponse(google.protobuf.message.Message):
     def HasField(
         self,
         field_name: typing_extensions.Literal[
-            u"deployment", b"deployment", u"status", b"status"
+            "deployment", b"deployment", "status", b"status"
         ],
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"deployment", b"deployment", u"status", b"status"
+            "deployment", b"deployment", "status", b"status"
         ],
     ) -> None: ...
 
@@ -656,7 +654,7 @@ class DescribeDeploymentRequest(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"deployment_name", b"deployment_name", u"namespace", b"namespace"
+            "deployment_name", b"deployment_name", "namespace", b"namespace"
         ],
     ) -> None: ...
 
@@ -678,11 +676,11 @@ class DescribeDeploymentResponse(google.protobuf.message.Message):
     ) -> None: ...
     def HasField(
         self,
-        field_name: typing_extensions.Literal[u"state", b"state", u"status", b"status"],
+        field_name: typing_extensions.Literal["state", b"state", "status", b"status"],
     ) -> builtins.bool: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[u"state", b"state", u"status", b"status"],
+        field_name: typing_extensions.Literal["state", b"state", "status", b"status"],
     ) -> None: ...
 
 global___DescribeDeploymentResponse = DescribeDeploymentResponse
@@ -690,7 +688,7 @@ global___DescribeDeploymentResponse = DescribeDeploymentResponse
 class ListDeploymentsRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class SORTABLE_COLUMN(metaclass=_SORTABLE_COLUMN):
-        V = typing.NewType('V', builtins.int)
+        V = typing.NewType("V", builtins.int)
     created_at = ListDeploymentsRequest.SORTABLE_COLUMN.V(0)
     name = ListDeploymentsRequest.SORTABLE_COLUMN.V(1)
     class _SORTABLE_COLUMN(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[SORTABLE_COLUMN.V], builtins.type):  # type: ignore
@@ -728,26 +726,26 @@ class ListDeploymentsRequest(google.protobuf.message.Message):
     ) -> None: ...
     def HasField(
         self,
-        field_name: typing_extensions.Literal[u"label_selectors", b"label_selectors"],
+        field_name: typing_extensions.Literal["label_selectors", b"label_selectors"],
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"ascending_order",
+            "ascending_order",
             b"ascending_order",
-            u"label_selectors",
+            "label_selectors",
             b"label_selectors",
-            u"labels_query",
+            "labels_query",
             b"labels_query",
-            u"limit",
+            "limit",
             b"limit",
-            u"namespace",
+            "namespace",
             b"namespace",
-            u"offset",
+            "offset",
             b"offset",
-            u"operator",
+            "operator",
             b"operator",
-            u"order_by",
+            "order_by",
             b"order_by",
         ],
     ) -> None: ...
@@ -773,12 +771,12 @@ class ListDeploymentsResponse(google.protobuf.message.Message):
         deployments: typing.Optional[typing.Iterable[global___Deployment]] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"deployments", b"deployments", u"status", b"status"
+            "deployments", b"deployments", "status", b"status"
         ],
     ) -> None: ...
 

@@ -5,7 +5,7 @@ import mxnet as mx  # pylint: disable=import-error
 
 
 @env(infer_pip_packages=True)
-@artifacts([GluonModelArtifact('model')])
+@artifacts([GluonModelArtifact("model")])
 class GluonClassifier(BentoService):
     @api(input=JsonInput(), batch=False)
     def predict(self, request):

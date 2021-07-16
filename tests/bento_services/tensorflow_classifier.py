@@ -6,9 +6,9 @@ from bentoml.tensorflow import TensorflowSavedModelArtifact
 @bentoml.env(infer_pip_packages=True)
 @bentoml.artifacts(
     [
-        TensorflowSavedModelArtifact('model1'),
-        TensorflowSavedModelArtifact('model2'),
-        TensorflowSavedModelArtifact('model3'),
+        TensorflowSavedModelArtifact("model1"),
+        TensorflowSavedModelArtifact("model2"),
+        TensorflowSavedModelArtifact("model3"),
     ]
 )
 class Tensorflow2Classifier(bentoml.BentoService):

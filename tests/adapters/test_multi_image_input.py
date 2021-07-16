@@ -14,7 +14,7 @@ def input_adapter():
 
 @pytest.fixture()
 def img_bytes(img_file):
-    with open(img_file, 'rb') as f:
+    with open(img_file, "rb") as f:
         return f.read()
 
 

@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ALL_NAMESPACE_TAG = '__BENTOML_ALL_NAMESPACE'
+ALL_NAMESPACE_TAG = "__BENTOML_ALL_NAMESPACE"

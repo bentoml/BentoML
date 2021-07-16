@@ -72,7 +72,7 @@ SCHEMA = Schema(
         },
         "tracing": {
             "type": Or(
-                And(str, Use(str.lower), lambda s: s in ('zipkin', 'jaeger')), None
+                And(str, Use(str.lower), lambda s: s in ("zipkin", "jaeger")), None
             ),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
@@ -202,13 +202,13 @@ class BentoMLContainerClass:
         jaeger_server_address: str = Provide[config.tracing.jaeger.address],
         jaeger_server_port: int = Provide[config.tracing.jaeger.port],
     ):
-        if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
+        if tracer_type and tracer_type.lower() == "zipkin" and zipkin_server_url:
             from ..tracing.zipkin import get_zipkin_tracer
 
             return get_zipkin_tracer(zipkin_server_url)
         elif (
             tracer_type
-            and tracer_type.lower() == 'jaeger'
+            and tracer_type.lower() == "jaeger"
             and jaeger_server_address
             and jaeger_server_port
         ):
@@ -251,7 +251,7 @@ class BentoMLContainerClass:
     bentoml_home = providers.Factory(
         lambda: expand_env_var(
             os.environ.get(
-                "BENTOML_HOME", os.path.join(os.environ['XDG_DATA_HOME'], "bentoml")
+                "BENTOML_HOME", os.path.join(os.environ["XDG_DATA_HOME"], "bentoml")
             )
         )
     )
@@ -324,7 +324,7 @@ class BentoMLContainerClass:
         get_bentoml_deploy_version,
         providers.Factory(
             lambda default, customized: customized or default,
-            __version__.split('+')[0],
+            __version__.split("+")[0],
             config.bento_bundle.deployment_version,
         ),
     )

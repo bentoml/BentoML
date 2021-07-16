@@ -32,21 +32,21 @@ def test_delete_bento_by_tag(bento_service, yatai_client):
 
 def test_delete_bentos_by_labels(example_bento_service_class, yatai_client):
     svc1 = example_bento_service_class()
-    svc1.save(labels={'cohort': '100'})
+    svc1.save(labels={"cohort": "100"})
     svc2 = example_bento_service_class()
-    svc2.save(labels={'cohort': '110'})
+    svc2.save(labels={"cohort": "110"})
     svc3 = example_bento_service_class()
-    svc3.save(labels={'cohort': '120'})
+    svc3.save(labels={"cohort": "120"})
 
-    bentos = yatai_client.repository.list(labels='cohort')
+    bentos = yatai_client.repository.list(labels="cohort")
     assert len(bentos) == 3
 
-    yatai_client.repository.delete(labels='cohort in (100, 110)')
-    bentos = yatai_client.repository.list(labels='cohort')
+    yatai_client.repository.delete(labels="cohort in (100, 110)")
+    bentos = yatai_client.repository.list(labels="cohort")
     assert len(bentos) == 1
 
-    yatai_client.repository.delete(labels='cohort')
-    bentos = yatai_client.repository.list(labels='cohort')
+    yatai_client.repository.delete(labels="cohort")
+    bentos = yatai_client.repository.list(labels="cohort")
     assert len(bentos) == 0
 
 
@@ -69,11 +69,11 @@ def test_delete_bento_by_name(yatai_client):
 
 def test_delete_bentos_by_name_and_labels(example_bento_service_class, yatai_client):
     svc1 = example_bento_service_class()
-    svc1.save(labels={'dataset': '20201212'})
+    svc1.save(labels={"dataset": "20201212"})
     svc2 = example_bento_service_class()
-    svc2.save(labels={'dataset': '20201212'})
+    svc2.save(labels={"dataset": "20201212"})
     svc3 = example_bento_service_class()
-    svc3.save(labels={'dataset': '20210101'})
+    svc3.save(labels={"dataset": "20210101"})
 
     class ThisShouldNotBeDeleted(BentoService):
         pass
@@ -82,7 +82,7 @@ def test_delete_bentos_by_name_and_labels(example_bento_service_class, yatai_cli
     svc2.save()
 
     yatai_client.repository.delete(
-        bento_name=example_bento_service_class.name, labels='dataset=20201212'
+        bento_name=example_bento_service_class.name, labels="dataset=20201212"
     )
     assert (
         len(yatai_client.repository.list(bento_name=example_bento_service_class.name))
@@ -121,7 +121,7 @@ def test_delete_all_bentos_from_cli(example_bento_service_class, yatai_client):
 
     runner = CliRunner()
     cli = create_bentoml_cli()
-    result = runner.invoke(cli.commands['delete'], ['--all', '-y'],)
+    result = runner.invoke(cli.commands["delete"], ["--all", "-y"],)
     assert result.exit_code == 0
     assert len(yatai_client.repository.list()) == 0
 
@@ -138,14 +138,14 @@ def test_delete_multiple_bentos_by_tag_from_cli(
 
     runner = CliRunner()
     cli = create_bentoml_cli()
-    result = runner.invoke(cli.commands['delete'], [svc1.tag, '-y'],)
+    result = runner.invoke(cli.commands["delete"], [svc1.tag, "-y"],)
     assert result.exit_code == 0
     assert (
         len(yatai_client.repository.list(bento_name=example_bento_service_class.name))
         == 2
     )
 
-    result = runner.invoke(cli.commands['delete'], [f'{svc2.tag},{svc3.tag}', '-y'])
+    result = runner.invoke(cli.commands["delete"], [f"{svc2.tag},{svc3.tag}", "-y"])
     assert result.exit_code == 0
     assert (
         len(yatai_client.repository.list(bento_name=example_bento_service_class.name))

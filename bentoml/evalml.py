@@ -54,7 +54,7 @@ class EvalMLModelArtifact(BentoServiceArtifact):
 
     def _validate_package(self):
         try:
-            importlib.import_module('evalml')
+            importlib.import_module("evalml")
         except ImportError:
             raise MissingDependencyException(
                 "Package 'evalml' is required to use EvalMLModelArtifact"
@@ -71,7 +71,7 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     def load(self, path):
         self._validate_package()
         model_file_path = self._model_file_path(path)
-        evalml_pipelines_module = importlib.import_module('evalml.pipelines')
+        evalml_pipelines_module = importlib.import_module("evalml.pipelines")
         model = evalml_pipelines_module.PipelineBase.load(model_file_path)
         self.pack(model)
         return model
@@ -86,4 +86,4 @@ class EvalMLModelArtifact(BentoServiceArtifact):
 
     def set_dependencies(self, env: BentoServiceEnv):
         if env._infer_pip_packages:
-            env.add_pip_packages(['evalml'])
+            env.add_pip_packages(["evalml"])

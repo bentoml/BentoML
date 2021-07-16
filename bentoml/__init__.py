@@ -1,7 +1,7 @@
 # From versioneer
 from ._version import get_versions
 
-__version__ = get_versions()['version']
+__version__ = get_versions()["version"]
 del get_versions
 
 # from bentoml._internal.configuration import inject_dependencies
@@ -13,11 +13,10 @@ del get_versions
 # # Configuring logging properly before loading other modules
 # configure_logging()
 
-from _internal.artifacts import BaseModelArtifact
+from _internal.artifacts import BaseArtifact
 from _internal.bundle import containerize, load
 from _internal.env import env
 from _internal.inference_api import api, batch_api
-
 from _internal.repository import delete, get, list, pull, push
 from _internal.server import serve
 from _internal.service import Service
@@ -38,5 +37,5 @@ __all__ = [
     "load",
     "api",
     "batch_api",
-    "BaseModelArtifact"
+    "BaseArtifact",
 ]

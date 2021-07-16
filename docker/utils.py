@@ -15,27 +15,27 @@ from glom import Assign, Path, PathAccessError, PathAssignError, glom
 from ruamel import yaml
 
 __all__ = (
-    'FLAGS',
-    'cached_property',
-    'ColoredFormatter',
-    'mkdir_p',
-    'flatten',
-    'mapfunc',
-    'maxkeys',
-    'walk',
-    'load_manifest_yaml',
-    'sprint',
-    'jprint',
-    'pprint',
-    'get_data',
-    'set_data',
-    'get_nested',
+    "FLAGS",
+    "cached_property",
+    "ColoredFormatter",
+    "mkdir_p",
+    "flatten",
+    "mapfunc",
+    "maxkeys",
+    "walk",
+    "load_manifest_yaml",
+    "sprint",
+    "jprint",
+    "pprint",
+    "get_data",
+    "set_data",
+    "get_nested",
 )
 
 log = logging.getLogger(__name__)
 
 SUPPORTED_OS = ["debian10", "centos8", "centos7", "alpine3.14", "amazonlinux2"]
-SUPPORTED_GENERATE_TYPE = ['dockerfiles', 'images']
+SUPPORTED_GENERATE_TYPE = ["dockerfiles", "images"]
 
 # defined global vars.
 FLAGS = flags.FLAGS
@@ -79,19 +79,19 @@ flags.DEFINE_multi_string(
     "generate",
     [],
     f"Generation type. Options: {SUPPORTED_GENERATE_TYPE}",
-    short_name='g',
+    short_name="g",
 )
 flags.DEFINE_boolean(
-    "push", False, "Whether to push built image.", short_name='p',
+    "push", False, "Whether to push built image.", short_name="p",
 )
 flags.DEFINE_boolean(
-    "readmes", False, "Whether to stop at pushing readmes.", short_name='md',
+    "readmes", False, "Whether to stop at pushing readmes.", short_name="md",
 )
 flags.DEFINE_string(
     "releases",
     "",
     "Set of releases to build and tags, defaults to every release type.",
-    short_name='r',
+    short_name="r",
 )
 
 SPEC_SCHEMA = """
@@ -302,7 +302,7 @@ class MetadataSpecValidator(Validator):
                 )
 
     def _check_with_cudnn_threshold(self, field, value):
-        if 'cudnn' in value:
+        if "cudnn" in value:
             self.CUDNN_COUNTER += 1
             pass
         if self.CUDNN_COUNTER > self.CUDNN_THRESHOLD:
@@ -363,7 +363,7 @@ class MetadataSpecValidator(Validator):
                     f"{field} from {others} does not match",
                 )
         elif isinstance(others, str):
-            ref = get_nested(self.root_document, others.split('.'))
+            ref = get_nested(self.root_document, others.split("."))
             if len(value) != len(ref):
                 self._error(field, f"Reference {field} from {others} does not match")
         elif isinstance(others, list):

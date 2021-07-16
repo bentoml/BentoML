@@ -24,45 +24,45 @@ from bentoml.yatai.deployment.azure_functions.constants import (
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
 deployment_schema = {
-    'name': {'type': 'string', 'required': True, 'minlength': 4},
+    "name": {"type": "string", "required": True, "minlength": 4},
     # namespace is optional - YataiService will fill-in the default namespace configured
     # when it is missing in the apply deployment request
-    'namespace': {'type': 'string', 'required': False, 'minlength': 3},
-    'labels': {'type': 'dict', 'deployment_labels': True},
-    'annotations': {'type': 'dict', 'allow_unknown': True},
-    'created_at': {'type': 'string'},
-    'last_updated_at': {'type': 'string'},
-    'spec': {
-        'type': 'dict',
-        'required': True,
-        'schema': {
-            'operator': {
-                'type': 'string',
-                'required': True,
-                'allowed': DeploymentSpec.DeploymentOperator.keys(),
+    "namespace": {"type": "string", "required": False, "minlength": 3},
+    "labels": {"type": "dict", "deployment_labels": True},
+    "annotations": {"type": "dict", "allow_unknown": True},
+    "created_at": {"type": "string"},
+    "last_updated_at": {"type": "string"},
+    "spec": {
+        "type": "dict",
+        "required": True,
+        "schema": {
+            "operator": {
+                "type": "string",
+                "required": True,
+                "allowed": DeploymentSpec.DeploymentOperator.keys(),
             },
-            'bento_name': {'type': 'string', 'required': True},
-            'bento_version': {
-                'type': 'string',
-                'required': True,
-                'bento_service_version': True,
+            "bento_name": {"type": "string", "required": True},
+            "bento_version": {
+                "type": "string",
+                "required": True,
+                "bento_service_version": True,
             },
-            'custom_operator_config': {
-                'type': 'dict',
-                'schema': {
-                    'name': {'type': 'string'},
-                    'config': {'type': 'dict', 'allow_unknown': True},
+            "custom_operator_config": {
+                "type": "dict",
+                "schema": {
+                    "name": {"type": "string"},
+                    "config": {"type": "dict", "allow_unknown": True},
                 },
             },
         },
     },
-    'state': {
-        'type': 'dict',
-        'schema': {
-            'state': {'type': 'string', 'allowed': DeploymentState.State.keys()},
-            'error_message': {'type': 'string'},
-            'info_json': {'type': 'string'},
-            'timestamp': {'type': 'string'},
+    "state": {
+        "type": "dict",
+        "schema": {
+            "state": {"type": "string", "allowed": DeploymentState.State.keys()},
+            "error_message": {"type": "string"},
+            "info_json": {"type": "string"},
+            "timestamp": {"type": "string"},
         },
     },
 }
@@ -79,7 +79,7 @@ class YataiDeploymentValidator(Validator):
             self._error(
                 field,
                 'Must use specific "bento_version" in deployment, using "latest" is '
-                'an anti-pattern.',
+                "an anti-pattern.",
             )
 
     def _validate_deployment_labels(self, deployment_labels, field, value):
@@ -94,9 +94,9 @@ class YataiDeploymentValidator(Validator):
             except InvalidArgument:
                 self._error(
                     field,
-                    'Valid label key and value must be 63 characters or less and '
-                    'must be being and end with an alphanumeric character '
-                    '[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)',
+                    "Valid label key and value must be 63 characters or less and "
+                    "must be being and end with an alphanumeric character "
+                    "[a-z0-9A-Z] with dashes (-), underscores (_), and dots (.)",
                 )
 
 

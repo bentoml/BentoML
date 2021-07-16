@@ -35,12 +35,12 @@ from utils import (
 from docker import DockerClient
 from docker.errors import APIError, BuildError, ImageNotFound
 
-README_TEMPLATE: Path = Path('./templates/docs/README.md.j2')
+README_TEMPLATE: Path = Path("./templates/docs/README.md.j2")
 
 DOCKERFILE_NAME: str = "Dockerfile"
 DOCKERFILE_TEMPLATE_SUFFIX: str = ".Dockerfile.j2"
 DOCKERFILE_BUILD_HIERARCHY: List[str] = ["base", "runtime", "cudnn", "devel"]
-DOCKERFILE_NVIDIA_REGEX: re.Pattern = re.compile(r'(?:nvidia|cuda|cudnn)+')
+DOCKERFILE_NVIDIA_REGEX: re.Pattern = re.compile(r"(?:nvidia|cuda|cudnn)+")
 
 SUPPORTED_PYTHON_VERSION: List[str] = ["3.6", "3.7", "3.8"]
 
@@ -56,7 +56,7 @@ HTTP_RETRY_WAIT_SECS: int = 20
 logging.get_absl_handler().setFormatter(ColoredFormatter())
 log = logging.get_absl_logger()
 
-if not os.path.exists('./.env'):
+if not os.path.exists("./.env"):
     log.warning(f"Make sure to create .env file at {os.getcwd()}")
 else:
     load_dotenv()
@@ -92,21 +92,21 @@ class LogsMixin(object):
         image_id: str = ""
         output: str = ""
         logs: List = []
-        built_regex = re.compile(r'(^Successfully built |sha256:)([0-9a-f]+)$')
+        built_regex = re.compile(r"(^Successfully built |sha256:)([0-9a-f]+)$")
         try:
             while True:
                 try:
                     # output logs to stdout
                     # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
-                    output = next(resp).decode('utf-8')
-                    json_output: Dict = json.loads(output.strip('\r\n'))
+                    output = next(resp).decode("utf-8")
+                    json_output: Dict = json.loads(output.strip("\r\n"))
                     # output to stderr when running in docker
-                    if 'stream' in json_output:
-                        sprint(json_output['stream'])
-                        matched = built_regex.search(json_output['stream'])
+                    if "stream" in json_output:
+                        sprint(json_output["stream"])
+                        matched = built_regex.search(json_output["stream"])
                         if matched:
                             image_id = matched.group(2)
-                        last_event = json_output['stream']
+                        last_event = json_output["stream"]
                         logs.append(json_output)
                 except StopIteration:
                     log.info(f"Successfully built {image_tag}.")
@@ -116,13 +116,13 @@ class LogsMixin(object):
             if image_id:
                 self._push_context[image_tag] = docker_client.images.get(image_id)
             else:
-                raise BuildError(last_event or 'Unknown', logs)
+                raise BuildError(last_event or "Unknown", logs)
         except BuildError as e:
             log.error(f"Failed to build {image_tag} :\n{e.msg}")
             for line in e.build_log:
-                if 'stream' in line:
-                    sprint(line['stream'].strip())
-            log.fatal('ABORTING due to failure!')
+                if "stream" in line:
+                    sprint(line["stream"].strip())
+            log.fatal("ABORTING due to failure!")
 
     @staticmethod
     def push_logs(resp: Iterator, image_id: str):
@@ -146,18 +146,18 @@ class LogsMixin(object):
             while True:
                 try:
                     data = next(resp)
-                    status = data.get('status')
-                    if 'id' not in data:
+                    status = data.get("status")
+                    if "id" not in data:
                         sprint(status)
                     else:
-                        _id = data.get('id')
-                        if 'exists' in status:
-                            log.warning(f'{_id}: {status}')
+                        _id = data.get("id")
+                        if "exists" in status:
+                            log.warning(f"{_id}: {status}")
                             continue
-                        elif 'Pushed' in status:
+                        elif "Pushed" in status:
                             log.debug(f"{status} {_id}")
                         else:
-                            progress = data.get('progress')
+                            progress = data.get("progress")
                             sprint(f"{status} {_id}: {progress}")
                 except StopIteration:
                     log.info(
@@ -180,13 +180,13 @@ class GenerateMixin(object):
             cuda_components (:obj:`Dict[str, Union[Dict[str, ...], str, List[str]]`):
                 CUDA dependencies definitions.
         """
-        _cudnn = ''
+        _cudnn = ""
         for k in cuda_components.keys():
             if re.match(r"(cudnn)(\w+)", k):
                 _cudnn = k
                 break
         cudnn_release_version: str = cuda_components.pop(_cudnn)
-        cudnn_major_version: str = cudnn_release_version.split('.')[0]
+        cudnn_major_version: str = cudnn_release_version.split(".")[0]
         return {
             "version": cudnn_release_version,
             "major_version": cudnn_major_version,
@@ -220,11 +220,11 @@ class GenerateMixin(object):
         if not output_path.exists():
             output_path.mkdir(parents=True, exist_ok=True)
 
-        with input_path.open('r') as inf:
+        with input_path.open("r") as inf:
             template = self._template_env.from_string(inf.read())
         inf.close()
 
-        with output_path.joinpath(output_name).open('w') as ouf:
+        with output_path.joinpath(output_name).open("w") as ouf:
             ouf.write(template.render(metadata=metadata, build_tag=build_tag))
         ouf.close()
 
@@ -262,16 +262,16 @@ class GenerateMixin(object):
 
     def image_tags(self, **kwargs: str):
         """Generate given BentoML release tag."""
-        release_type = kwargs['release_type']
-        tag_spec = self.specs['tag']
+        release_type = kwargs["release_type"]
+        tag_spec = self.specs["tag"]
 
-        _core_fmt = kwargs['fmt'] if kwargs.get('fmt') else tag_spec['fmt']
-        formatter = {k: kwargs[k] for k in tag_spec.keys() if k != 'fmt'}
+        _core_fmt = kwargs["fmt"] if kwargs.get("fmt") else tag_spec["fmt"]
+        formatter = {k: kwargs[k] for k in tag_spec.keys() if k != "fmt"}
 
         _tag = _core_fmt.format(**formatter)
 
-        if release_type in ['runtime', 'cudnn']:
-            formatter['release_type'] = self._default_args['BENTOML_VERSION']
+        if release_type in ["runtime", "cudnn"]:
+            formatter["release_type"] = self._default_args["BENTOML_VERSION"]
             _tag = "-".join([_core_fmt.format(**formatter), release_type])
 
         # construct build_tag which is our base_image with $PYTHON_VERSION formats
@@ -302,19 +302,19 @@ class GenerateMixin(object):
         # TODO: Better type annotation for nested dict.
         _ctx: Dict = self.releases[distro].copy()
 
-        _ctx['package'] = pkg
+        _ctx["package"] = pkg
 
         # setup envars
-        _ctx['envars'] = self.envars()(_ctx['envars'])
+        _ctx["envars"] = self.envars()(_ctx["envars"])
 
         # set PYTHON_VERSION envars.
-        set_data(_ctx, pyv, 'envars', 'PYTHON_VERSION')  # fmt: skip
+        set_data(_ctx, pyv, "envars", "PYTHON_VERSION")  # fmt: skip
 
         # setup cuda deps
         if _ctx["cuda_prefix_url"]:
             major, minor, _ = self._cuda_version.rsplit(".")
             _ctx["cuda"] = {
-                "requires": _ctx['cuda_requires'],
+                "requires": _ctx["cuda_requires"],
                 "ml_repo": NVIDIA_ML_REPO_URL.format(_ctx["cuda_prefix_url"]),
                 "base_repo": NVIDIA_REPO_URL.format(_ctx["cuda_prefix_url"]),
                 "version": {
@@ -325,8 +325,8 @@ class GenerateMixin(object):
                 "components": _cuda_comp,
                 "cudnn": self.cudnn(_cuda_comp),
             }
-            _ctx.pop('cuda_prefix_url')
-            _ctx.pop('cuda_requires')
+            _ctx.pop("cuda_prefix_url")
+            _ctx.pop("cuda_requires")
         else:
             log.debug(f"CUDA is disabled for {distro}. Skipping...")
             for key in _ctx.keys():
@@ -356,13 +356,13 @@ class GenerateMixin(object):
 
                 # setup our build context
                 _tag_ctx = self.dockerfiles(pkg, distro_version, pyv)
-                template_dir = Path(_tag_ctx['templates_dir'])
+                template_dir = Path(_tag_ctx["templates_dir"])
 
                 # generate our image tag.
                 _release_tag, _build_tag = self.image_tags(
                     python_version=pyv,
                     release_type=release,
-                    suffixes=_tag_ctx['add_to_tags'],
+                    suffixes=_tag_ctx["add_to_tags"],
                 )
 
                 # setup image tags.
@@ -370,15 +370,15 @@ class GenerateMixin(object):
 
                 # output path.
                 base_output_path = Path(output_dir, pkg, f"{distro_version}")
-                if release != 'base':
+                if release != "base":
                     output_path = Path(base_output_path, release)
                 else:
                     output_path = base_output_path
 
                 # input path.
                 input_paths = [str(f) for f in walk(template_dir) if release in f.name]
-                if 'rhel' in template_dir.name:
-                    if 'cudnn' in release:
+                if "rhel" in template_dir.name:
+                    if "cudnn" in release:
                         input_paths = [
                             str(f)
                             for f in template_dir.iterdir()
@@ -390,10 +390,10 @@ class GenerateMixin(object):
 
                 # # setup directory correspondingly, and add these paths
                 set_data(_tags, _tag_ctx.copy(), tag_keys)
-                set_data(_tags, input_paths, tag_keys, 'input_paths')
-                set_data(_tags, str(output_path), tag_keys, 'output_path')
-                if release != 'base':
-                    set_data(_tags, _build_tag, tag_keys, 'build_tags')
+                set_data(_tags, input_paths, tag_keys, "input_paths")
+                set_data(_tags, str(output_path), tag_keys, "output_path")
+                if release != "base":
+                    set_data(_tags, _build_tag, tag_keys, "build_tags")
 
                 # setup generated path with tag releases
                 set_data(_paths, full_output_path, tag_keys)
@@ -415,10 +415,10 @@ class GenerateMixin(object):
 
         # check if given distro is supported per package.
         for distro_version in self.releases.keys():
-            if 'debian' in distro_version:
-                _os_tag = 'slim'
-            elif 'amazonlinux' in distro_version:
-                _os_tag = 'ami'
+            if "debian" in distro_version:
+                _os_tag = "slim"
+            elif "amazonlinux" in distro_version:
+                _os_tag = "ami"
             else:
                 _os_tag = distro_version
 
@@ -426,24 +426,24 @@ class GenerateMixin(object):
                 [
                     (release_tags, gen_path)
                     for release_tags, gen_path in paths.items()
-                    if _os_tag in release_tags and 'base' not in release_tags
+                    if _os_tag in release_tags and "base" not in release_tags
                 ],
                 key=operator.itemgetter(0),
             )
 
         _readme_context: Dict = {
-            'ephemeral': False,
-            'bentoml_package': "",
-            'bentoml_release_version': FLAGS.bentoml_version,
-            'release_info': _release_context,
+            "ephemeral": False,
+            "bentoml_package": "",
+            "bentoml_release_version": FLAGS.bentoml_version,
+            "release_info": _release_context,
         }
 
         for package in self.packages.keys():
-            output_readme = Path('docs', package)
+            output_readme = Path("docs", package)
             shutil.rmtree(package, ignore_errors=True)
 
-            set_data(_readme_context, package, 'bentoml_package')
-            _readme_context['oss'] = maxkeys(self.packages[package])
+            set_data(_readme_context, package, "bentoml_package")
+            _readme_context["oss"] = maxkeys(self.packages[package])
 
             self.render(
                 input_path=README_TEMPLATE,
@@ -452,7 +452,7 @@ class GenerateMixin(object):
             )
 
         # renders README for generated directory
-        _readme_context['ephemeral'] = True
+        _readme_context["ephemeral"] = True
         if not Path(output_dir, "README.md").exists():
             self.render(
                 input_path=README_TEMPLATE,
@@ -473,14 +473,14 @@ class GenerateMixin(object):
             mkdir_p(FLAGS.dockerfile_dir)
 
         for tags, tags_ctx in self._tags.items():
-            for inp in tags_ctx['input_paths']:
-                build_tag = ''
-                if 'build_tags' in tags_ctx.keys():
-                    build_tag = tags_ctx['build_tags']
+            for inp in tags_ctx["input_paths"]:
+                build_tag = ""
+                if "build_tags" in tags_ctx.keys():
+                    build_tag = tags_ctx["build_tags"]
 
                 self.render(
                     input_path=Path(inp),
-                    output_path=Path(tags_ctx['output_path']),
+                    output_path=Path(tags_ctx["output_path"]),
                     metadata=tags_ctx,
                     build_tag=build_tag,
                 )
@@ -508,7 +508,7 @@ class BuildMixin(object):
                     self._push_context[image_tag] = docker_client.images.get(image_tag)
                     continue
             except ImageNotFound:
-                pyenv = get_data(self._tags, image_tag, 'envars', 'PYTHON_VERSION')
+                pyenv = get_data(self._tags, image_tag, "envars", "PYTHON_VERSION")
                 build_args = {"PYTHON_VERSION": pyenv}
                 # NOTES: https://warehouse.pypa.io/api-reference/index.html
                 resp = docker_client.api.build(
@@ -526,7 +526,7 @@ class BuildMixin(object):
         # We will build and push if args is parsed. Establish some variables.
         if FLAGS.releases and FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY:
             build_tags = itertools.chain(
-                self.paths['base'].items(), self.paths[FLAGS.releases].items()
+                self.paths["base"].items(), self.paths[FLAGS.releases].items()
             )
         else:
             build_tags = ((k, v) for i in self.paths.values() for k, v in i.items())
@@ -543,7 +543,7 @@ class PushMixin(object):
             _release_tag = _paths[FLAGS.releases]
         else:
             # we don't need to publish base tags.
-            _paths.pop('base')
+            _paths.pop("base")
             _release_tag = flatten(
                 map(lambda x: [_x for _x in x.keys()], _paths.values())
             )
@@ -560,14 +560,14 @@ class PushMixin(object):
         for registry, registry_spec in self.repository.items():
             # We will want to push README first.
             login_payload: Dict = {
-                "username": os.getenv(registry_spec['user']),
-                "password": os.getenv(registry_spec['pwd']),
+                "username": os.getenv(registry_spec["user"]),
+                "password": os.getenv(registry_spec["pwd"]),
             }
-            api_url: str = get_nested(registry_spec, ['urls', 'api'])
+            api_url: str = get_nested(registry_spec, ["urls", "api"])
 
-            for package, registry_url in registry_spec['registry'].items():
-                _, _url = registry_url.split('/', maxsplit=1)
-                readme_path = Path('docs', package, 'README.md')
+            for package, registry_url in registry_spec["registry"].items():
+                _, _url = registry_url.split("/", maxsplit=1)
+                readme_path = Path("docs", package, "README.md")
                 repo_url: str = f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
                 self.push_readmes(api_url, repo_url, readme_path, login_payload)
 
@@ -579,8 +579,8 @@ class PushMixin(object):
             for image_tag in self.push_tags():
                 image = self._push_context[image_tag]
                 reg, tag = image_tag.split(":")
-                registry = ''.join(
-                    [v for k, v in registry_spec['registry'].items() if reg in k]
+                registry = "".join(
+                    [v for k, v in registry_spec["registry"].items() if reg in k]
                 )
                 log.info(f"Uploading {image_tag} to {registry}")
 
@@ -593,9 +593,9 @@ class PushMixin(object):
                 self.background_upload(image, tag, registry)
 
                 # separate release latest tags for yatai-service
-                if all(map(image_tag.__contains__, ['yatai-service', '3.8', 'slim'])):
+                if all(map(image_tag.__contains__, ["yatai-service", "3.8", "slim"])):
                     log.info(f"Uploading {image_tag} as latest to {registry}")
-                    tag = 'latest'
+                    tag = "latest"
                     self.background_upload(image, tag, registry)
 
     def push_readmes(
@@ -629,10 +629,10 @@ class PushMixin(object):
             {
                 "Authorization": f"JWT {logins.json()['token']}",
                 "Access-Control-Allow-Origin": "*",
-                "X-CSRFToken": logins.cookies['csrftoken'],
+                "X-CSRFToken": logins.cookies["csrftoken"],
             }
         )
-        with readme_path.open('r') as f:
+        with readme_path.open("r") as f:
             # hub.docker.com specifics
             data = {"full_description": f.read()}
             self.patch(
@@ -653,18 +653,18 @@ class PushMixin(object):
         """Setup auth registries for different registries"""
 
         # https://docs.docker.com/registry/spec/auth/token/
-        pprint('Configure Docker')
+        pprint("Configure Docker")
         try:
             for registry, metadata in self.repository.items():
-                if not os.getenv(metadata['pwd']):
+                if not os.getenv(metadata["pwd"]):
                     log.warn(
                         f"If you are intending to use {registry}, make sure to set both "
                         f"{metadata['pwd']} and {metadata['user']} under {os.getcwd()}/.env. Skipping..."
                     )
                     continue
                 else:
-                    _user = os.getenv(metadata['user'])
-                    _pwd = os.getenv(metadata['pwd'])
+                    _user = os.getenv(metadata["user"])
+                    _pwd = os.getenv(metadata["pwd"])
 
                     log.info(
                         f"Logging into Docker registry {registry} with credentials..."
@@ -746,7 +746,7 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
             self.supported_python = SUPPORTED_PYTHON_VERSION
 
         # generate Dockerfiles and README.
-        pprint('Setting up metadata')
+        pprint("Setting up metadata")
         for python_version in self.supported_python:
             _tags, _paths = self.metadata(FLAGS.dockerfile_dir, python_version)
             self._tags.update(_tags)
@@ -791,7 +791,7 @@ def main(argv):
 
     try:
         # Parse specs from manifest.yml and validate it.
-        pprint(f'Validating {FLAGS.manifest_file}')
+        pprint(f"Validating {FLAGS.manifest_file}")
         release_spec = load_manifest_yaml(FLAGS.manifest_file)
         if FLAGS.validate:
             return
@@ -800,11 +800,11 @@ def main(argv):
         manager = ManagerClient(release_spec, FLAGS.cuda_version)
 
         # generate templates to correct directory.
-        if 'dockerfiles' in FLAGS.generate:
+        if "dockerfiles" in FLAGS.generate:
             manager.generate(FLAGS.dry_run)
 
         # Build images.
-        if 'images' in FLAGS.generate:
+        if "images" in FLAGS.generate:
             manager.build(FLAGS.dry_run)
 
         # Push images when finish building.

@@ -17,7 +17,7 @@ class LabelSelectors(google.protobuf.message.Message):
     class LabelSelectorExpression(google.protobuf.message.Message):
         DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
         class OPERATOR_TYPE(metaclass=_OPERATOR_TYPE):
-            V = typing.NewType('V', builtins.int)
+            V = typing.NewType("V", builtins.int)
         In = LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE.V(0)
         NotIn = LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE.V(1)
         Exists = LabelSelectors.LabelSelectorExpression.OPERATOR_TYPE.V(2)
@@ -49,7 +49,7 @@ class LabelSelectors(google.protobuf.message.Message):
         def ClearField(
             self,
             field_name: typing_extensions.Literal[
-                u"key", b"key", u"operator", b"operator", u"values", b"values"
+                "key", b"key", "operator", b"operator", "values", b"values"
             ],
         ) -> None: ...
     class MatchLabelsEntry(google.protobuf.message.Message):
@@ -63,7 +63,7 @@ class LabelSelectors(google.protobuf.message.Message):
         ) -> None: ...
         def ClearField(
             self,
-            field_name: typing_extensions.Literal[u"key", b"key", u"value", b"value"],
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
         ) -> None: ...
     MATCH_LABELS_FIELD_NUMBER: builtins.int
     MATCH_EXPRESSIONS_FIELD_NUMBER: builtins.int
@@ -88,7 +88,7 @@ class LabelSelectors(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"match_expressions", b"match_expressions", u"match_labels", b"match_labels"
+            "match_expressions", b"match_expressions", "match_labels", b"match_labels"
         ],
     ) -> None: ...
 

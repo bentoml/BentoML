@@ -20,10 +20,10 @@ class HealthCheckResponse(google.protobuf.message.Message):
         self, *, status: typing.Optional[status_pb2.Status] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> None: ...
 
 global___HealthCheckResponse = HealthCheckResponse
@@ -42,12 +42,12 @@ class GetYataiServiceVersionResponse(google.protobuf.message.Message):
         version: typing.Text = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"status", b"status", u"version", b"version"
+            "status", b"status", "version", b"version"
         ],
     ) -> None: ...
 
@@ -59,7 +59,7 @@ class Chunk(google.protobuf.message.Message):
     content: builtins.bytes = ...
     def __init__(self, *, content: builtins.bytes = ...,) -> None: ...
     def ClearField(
-        self, field_name: typing_extensions.Literal[u"content", b"content"]
+        self, field_name: typing_extensions.Literal["content", b"content"]
     ) -> None: ...
 
 global___Chunk = Chunk

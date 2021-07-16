@@ -70,7 +70,7 @@ class Session:
             self._users.append(asyncio.get_event_loop().create_task(self.user_life()))
             await asyncio.sleep(self.config.spawn_interval)
         r = await self._result_fut
-        assert r['req_err'] == 0
+        assert r["req_err"] == 0
         print(r)
 
 
@@ -81,9 +81,9 @@ def async_stop(loop):
 
 
 class Config1:
-    '''
+    """
     low presure
-    '''
+    """
 
     time_total = 20
     user_total = 10
@@ -98,9 +98,9 @@ class Config1:
 
 
 class Config2:
-    '''
+    """
     medium presure
-    '''
+    """
 
     time_total = 20
     user_total = 400
@@ -115,9 +115,9 @@ class Config2:
 
 
 class Config3:
-    '''
+    """
     high presure
-    '''
+    """
 
     time_total = 20
     user_total = 2000
@@ -132,9 +132,9 @@ class Config3:
 
 
 class Config4:
-    '''
+    """
     slow outbound request
-    '''
+    """
 
     time_total = 20
     user_total = 1000
@@ -149,9 +149,9 @@ class Config4:
 
 
 class Config5:
-    '''
+    """
     dropping performance
-    '''
+    """
 
     time_total = 20
     user_total = 10000

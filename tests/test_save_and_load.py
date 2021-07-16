@@ -27,7 +27,7 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
 
     test_model = TestModel()
     svc = example_bento_service_class()
-    svc.pack('model', test_model)
+    svc.pack("model", test_model)
 
     assert svc.predict(1000) == 2000
     version = "test_" + uuid.uuid4().hex
@@ -38,7 +38,7 @@ def test_save_and_load_model(tmpdir, example_bento_service_class):
     expected_version = "2.10.{}".format(version)
     assert model_service.version == expected_version
 
-    api = model_service.get_inference_api('predict')
+    api = model_service.get_inference_api("predict")
     assert api.name == "predict"
     assert api.batch
     assert api.mb_max_latency == 1000
@@ -55,12 +55,12 @@ def test_warning_when_save_without_declared_artifact(
 ):
     svc = example_bento_service_class()
 
-    with mock.patch('bentoml.saved_bundle.bundler.logger') as log_mock:
+    with mock.patch("bentoml.saved_bundle.bundler.logger") as log_mock:
         svc.save_to_dir(str(tmpdir))
         log_mock.warning.assert_called_once_with(
             "Missing declared artifact '%s' for BentoService '%s'",
-            'model',
-            'ExampleBentoService',
+            "model",
+            "ExampleBentoService",
         )
 
 
@@ -83,7 +83,7 @@ def test_pack_on_bento_service_instance(tmpdir, example_bento_service_class):
     expected_version = "2.10.{}".format(version)
     assert model_service.version == expected_version
 
-    api = model_service.get_inference_api('predict')
+    api = model_service.get_inference_api("predict")
     assert api.name == "predict"
     assert isinstance(api.input_adapter, DataframeInput)
     assert api.user_func(1) == 2
@@ -99,7 +99,7 @@ def test_pack_metadata_invalid(example_bento_service_class):
     svc = example_bento_service_class()
 
     # assert empty metadata before packing
-    assert svc.artifacts.get('model').metadata == {}
+    assert svc.artifacts.get("model").metadata == {}
 
     # try packing invalid
     model_metadata = "non-dictionary metadata"
@@ -116,21 +116,21 @@ def test_pack_metadata(tmpdir, example_bento_service_class):
     svc = example_bento_service_class()
 
     model_metadata = {
-        'k1': 'v1',
-        'job_id': 'ABC',
-        'score': 0.84,
-        'datasets': ['A', 'B'],
+        "k1": "v1",
+        "job_id": "ABC",
+        "score": 0.84,
+        "datasets": ["A", "B"],
     }
     svc.pack("model", test_model, metadata=model_metadata)
 
     # check saved metadata is correct
-    assert svc.artifacts.get('model').metadata == model_metadata
+    assert svc.artifacts.get("model").metadata == model_metadata
 
     svc.save_to_dir(str(tmpdir))
     model_service = bentoml.load(str(tmpdir))
 
     # check loaded metadata is correct
-    assert model_service.artifacts.get('model').metadata == model_metadata
+    assert model_service.artifacts.get("model").metadata == model_metadata
 
 
 def test_open_api_spec_json(tmpdir, example_bento_service_class):
@@ -144,7 +144,7 @@ def test_open_api_spec_json(tmpdir, example_bento_service_class):
     before_json_d = get_open_api_spec_json(svc)
 
     svc.save_to_dir(str(tmpdir))
-    with open(os.path.join(str(tmpdir), 'docs.json')) as f:
+    with open(os.path.join(str(tmpdir), "docs.json")) as f:
         after_json_d = json.load(f)
 
     # check loaded json dictionary is the same as before saving
@@ -176,7 +176,7 @@ def test_save_duplicated_bento_exception_raised(example_bento_service_class):
     assert svc.version == svc_metadata.version
 
     with pytest.raises(BentoMLException):
-        with patch.object(bentoml.BentoService, 'save_to_dir') as save_to_dir_method:
+        with patch.object(bentoml.BentoService, "save_to_dir") as save_to_dir_method:
             # attempt to save again
             svc.save()
             save_to_dir_method.assert_not_called()
@@ -201,7 +201,7 @@ def test_pyversion_warning_on_load(
 
     test_model = TestModel()
     svc = example_bento_service_class()
-    svc.pack('model', test_model)
+    svc.pack("model", test_model)
 
     # Should not warn for default `_python_version` value
     match_dir = tmp_path_factory.mktemp("match")

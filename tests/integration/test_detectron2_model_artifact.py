@@ -43,12 +43,12 @@ def test_detectron2_artifact_pack(detectron2_classifier_class):
     checkpointer = DetectionCheckpointer(model)
     checkpointer.load(cfg.MODEL.WEIGHTS)
 
-    image = imageio.imread('http://images.cocodataset.org/val2017/000000439715.jpg')
+    image = imageio.imread("http://images.cocodataset.org/val2017/000000439715.jpg")
     image = image[:, :, ::-1]
 
     svc = detectron2_classifier_class()
     svc.pack(
-        'model',
+        "model",
         model,
         metadata={"device": "cpu"},
         input_model_yaml=model_zoo.get_config_file(
@@ -56,8 +56,8 @@ def test_detectron2_artifact_pack(detectron2_classifier_class):
         ),
     )
     response = svc.predict(image)
-    assert response['scores'][0] > 0.9
-    comparison = np.array(response['classes']) == np.array(
+    assert response["scores"][0] > 0.9
+    comparison = np.array(response["classes"]) == np.array(
         [17, 0, 0, 0, 0, 0, 0, 0, 25, 0, 25, 25, 0, 0, 24]
     )
     assert comparison.all()

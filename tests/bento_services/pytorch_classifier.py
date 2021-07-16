@@ -7,7 +7,7 @@ from bentoml.pytorch import PytorchModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PytorchModelArtifact('model')])
+@bentoml.artifacts([PytorchModelArtifact("model")])
 class PytorchClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

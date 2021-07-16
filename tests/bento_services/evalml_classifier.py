@@ -4,7 +4,7 @@ from bentoml.evalml import EvalMLModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([EvalMLModelArtifact('model')])
+@bentoml.artifacts([EvalMLModelArtifact("model")])
 class EvalMLClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

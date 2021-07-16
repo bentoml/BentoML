@@ -8,9 +8,9 @@ from bentoml.keras import KerasModelArtifact
 @bentoml.env(pip_packages=["keras==2.3.1", "tensorflow==1.14", "h5py==2.10.0"])
 @bentoml.artifacts(
     [
-        KerasModelArtifact('model'),
+        KerasModelArtifact("model"),
         # TODO: #1698 set store_as_json_and_weights to True after the issue is fixed
-        KerasModelArtifact('model2', store_as_json_and_weights=False),
+        KerasModelArtifact("model2", store_as_json_and_weights=False),
     ]
 )
 class KerasClassifier(bentoml.BentoService):

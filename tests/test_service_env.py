@@ -11,33 +11,33 @@ from bentoml.sklearn import SklearnModelArtifact
 
 
 def test_pip_packages_env_with_legacy_api():
-    @bentoml.env(pip_packages=['numpy', 'pandas', 'torch'])
+    @bentoml.env(pip_packages=["numpy", "pandas", "torch"])
     class ServiceWithList(bentoml.BentoService):
         @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
     service_with_list = ServiceWithList()
-    assert 'numpy' in service_with_list.env._pip_packages
-    assert 'pandas' in service_with_list.env._pip_packages
-    assert 'torch' in service_with_list.env._pip_packages
+    assert "numpy" in service_with_list.env._pip_packages
+    assert "pandas" in service_with_list.env._pip_packages
+    assert "torch" in service_with_list.env._pip_packages
 
 
 def test_pip_packages_env():
-    @bentoml.env(pip_packages=['numpy', 'pandas', 'torch'])
+    @bentoml.env(pip_packages=["numpy", "pandas", "torch"])
     class ServiceWithList(bentoml.BentoService):
         @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
     service_with_list = ServiceWithList()
-    assert 'numpy' in service_with_list.env._pip_packages
-    assert 'pandas' in service_with_list.env._pip_packages
-    assert 'torch' in service_with_list.env._pip_packages
+    assert "numpy" in service_with_list.env._pip_packages
+    assert "pandas" in service_with_list.env._pip_packages
+    assert "torch" in service_with_list.env._pip_packages
 
 
 def test_service_env_pip_packages(tmpdir):
-    @bentoml.env(pip_packages=['numpy', 'pandas', 'torch'])
+    @bentoml.env(pip_packages=["numpy", "pandas", "torch"])
     class ServiceWithList(bentoml.BentoService):
         @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
@@ -46,13 +46,13 @@ def test_service_env_pip_packages(tmpdir):
     service_with_list = ServiceWithList()
     service_with_list.save_to_dir(str(tmpdir))
 
-    requirements_txt_path = os.path.join(str(tmpdir), 'requirements.txt')
-    with open(requirements_txt_path, 'rb') as f:
+    requirements_txt_path = os.path.join(str(tmpdir), "requirements.txt")
+    with open(requirements_txt_path, "rb") as f:
         saved_requirements = f.read()
-        content = saved_requirements.decode('utf-8')
-        assert 'numpy' in content
-        assert 'pandas' in content
-        assert 'torch' in content
+        content = saved_requirements.decode("utf-8")
+        assert "numpy" in content
+        assert "pandas" in content
+        assert "torch" in content
 
 
 def test_service_env_pip_install_options(tmpdir):
@@ -61,7 +61,7 @@ def test_service_env_pip_install_options(tmpdir):
     sample_extra_index_url = "https://pip.my_pypi_index_ii.com"
 
     @bentoml.env(
-        pip_packages=['numpy', 'pandas', 'torch'],
+        pip_packages=["numpy", "pandas", "torch"],
         pip_index_url=sample_index_url,
         pip_trusted_host=sample_trusted_host,
         pip_extra_index_url=sample_extra_index_url,
@@ -74,22 +74,22 @@ def test_service_env_pip_install_options(tmpdir):
     service_with_list = ServiceWithList()
     service_with_list.save_to_dir(str(tmpdir))
 
-    requirements_txt_path = os.path.join(str(tmpdir), 'requirements.txt')
-    with open(requirements_txt_path, 'rb') as f:
+    requirements_txt_path = os.path.join(str(tmpdir), "requirements.txt")
+    with open(requirements_txt_path, "rb") as f:
         saved_requirements = f.read()
-        req_file = saved_requirements.decode('utf-8')
-        assert 'numpy' in req_file
-        assert 'pandas' in req_file
-        assert 'torch' in req_file
-        req_file_lines = req_file.split('\n')
-        assert f'--index-url={sample_index_url}' in req_file_lines
-        assert f'--trusted-host={sample_trusted_host}' in req_file_lines
-        assert f'--extra-index-url={sample_extra_index_url}' in req_file_lines
+        req_file = saved_requirements.decode("utf-8")
+        assert "numpy" in req_file
+        assert "pandas" in req_file
+        assert "torch" in req_file
+        req_file_lines = req_file.split("\n")
+        assert f"--index-url={sample_index_url}" in req_file_lines
+        assert f"--trusted-host={sample_trusted_host}" in req_file_lines
+        assert f"--extra-index-url={sample_extra_index_url}" in req_file_lines
 
 
 def test_artifact_pip_packages(tmpdir):
-    @bentoml.artifacts([SklearnModelArtifact('model')])
-    @bentoml.env(pip_packages=['scikit-learn==0.23.0'])
+    @bentoml.artifacts([SklearnModelArtifact("model")])
+    @bentoml.env(pip_packages=["scikit-learn==0.23.0"])
     class ServiceWithList(bentoml.BentoService):
         @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
@@ -98,18 +98,18 @@ def test_artifact_pip_packages(tmpdir):
     service_with_list = ServiceWithList()
     service_with_list.save_to_dir(str(tmpdir))
 
-    requirements_txt_path = os.path.join(str(tmpdir), 'requirements.txt')
-    with open(requirements_txt_path, 'rb') as f:
+    requirements_txt_path = os.path.join(str(tmpdir), "requirements.txt")
+    with open(requirements_txt_path, "rb") as f:
         saved_requirements = f.read()
-        module_list = saved_requirements.decode('utf-8').split('\n')
-        assert 'scikit-learn==0.23.0' in module_list
+        module_list = saved_requirements.decode("utf-8").split("\n")
+        assert "scikit-learn==0.23.0" in module_list
 
 
-@pytest.mark.skipif('not psutil.POSIX')
+@pytest.mark.skipif("not psutil.POSIX")
 def test_can_instantiate_setup_sh_from_file(tmpdir):
-    script_path = os.path.join(tmpdir, 'script.sh')
-    with open(script_path, 'w') as f:
-        f.write('ls')
+    script_path = os.path.join(tmpdir, "script.sh")
+    with open(script_path, "w") as f:
+        f.write("ls")
 
     @bentoml.env(setup_sh=script_path)
     class ServiceWithSetup(bentoml.BentoService):
@@ -120,19 +120,19 @@ def test_can_instantiate_setup_sh_from_file(tmpdir):
     service_with_setup = ServiceWithSetup()
     service_with_setup.save_to_dir(str(tmpdir))
 
-    setup_sh_path = os.path.join(str(tmpdir), 'setup.sh')
+    setup_sh_path = os.path.join(str(tmpdir), "setup.sh")
     assert os.path.isfile(setup_sh_path)
 
     st = os.stat(setup_sh_path)
     assert st.st_mode & stat.S_IEXEC
 
-    with open(setup_sh_path, 'r') as f:
-        assert f.read() == 'ls'
+    with open(setup_sh_path, "r") as f:
+        assert f.read() == "ls"
 
 
-@pytest.mark.skipif('not psutil.POSIX')
+@pytest.mark.skipif("not psutil.POSIX")
 def test_can_instantiate_setup_sh_from_txt(tmpdir):
-    @bentoml.env(setup_sh='ls')
+    @bentoml.env(setup_sh="ls")
     class ServiceWithSetup(bentoml.BentoService):
         @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
@@ -141,25 +141,25 @@ def test_can_instantiate_setup_sh_from_txt(tmpdir):
     service_with_setup = ServiceWithSetup()
     service_with_setup.save_to_dir(str(tmpdir))
 
-    setup_sh_path = os.path.join(str(tmpdir), 'setup.sh')
+    setup_sh_path = os.path.join(str(tmpdir), "setup.sh")
     assert os.path.isfile(setup_sh_path)
 
     st = os.stat(setup_sh_path)
     assert st.st_mode & stat.S_IEXEC
 
-    with open(setup_sh_path, 'r') as f:
-        assert f.read() == 'ls'
+    with open(setup_sh_path, "r") as f:
+        assert f.read() == "ls"
 
 
 def test_docker_base_image_env():
-    @bentoml.env(docker_base_image='continuumio/miniconda3:4.8.0')
+    @bentoml.env(docker_base_image="continuumio/miniconda3:4.8.0")
     class ServiceWithSetup(bentoml.BentoService):
         @bentoml.api(input=DataframeInput(), batch=True)
         def predict(self, df):
             return df
 
     service_with_setup = ServiceWithSetup()
-    assert 'continuumio/miniconda3:4.8.0' in service_with_setup.env._docker_base_image
+    assert "continuumio/miniconda3:4.8.0" in service_with_setup.env._docker_base_image
 
 
 def test_conda_channels_n_dependencies(tmpdir):
@@ -179,10 +179,10 @@ def test_conda_channels_n_dependencies(tmpdir):
     from bentoml.utils.ruamel_yaml import YAML
 
     yaml = YAML()
-    env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
-    assert 'bentoml-test-channel' in env_yml['channels']
+    env_yml = yaml.load(Path(os.path.join(tmpdir, "environment.yml")))
+    assert "bentoml-test-channel" in env_yml["channels"]
 
-    assert 'bentoml-test-lib' in env_yml['dependencies']
+    assert "bentoml-test-lib" in env_yml["dependencies"]
 
 
 def test_conda_overwrite_channels(tmpdir):
@@ -204,15 +204,15 @@ def test_conda_overwrite_channels(tmpdir):
     from bentoml.utils.ruamel_yaml import YAML
 
     yaml = YAML()
-    env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
-    assert 'bentoml-test-channel' in env_yml['channels']
-    assert 'nodefaults' in env_yml['channels']
-    assert len(env_yml['channels']) == 2
+    env_yml = yaml.load(Path(os.path.join(tmpdir, "environment.yml")))
+    assert "bentoml-test-channel" in env_yml["channels"]
+    assert "nodefaults" in env_yml["channels"]
+    assert len(env_yml["channels"]) == 2
 
 
 def test_conda_env_yml_file_option(tmpdir):
-    conda_env_yml_file = os.path.join(tmpdir, 'environment.yml')
-    with open(conda_env_yml_file, 'wb') as f:
+    conda_env_yml_file = os.path.join(tmpdir, "environment.yml")
+    with open(conda_env_yml_file, "wb") as f:
         f.write(
             """
 name: bentoml-test-conda-env
@@ -238,16 +238,16 @@ dependencies:
     from bentoml.utils.ruamel_yaml import YAML
 
     yaml = YAML()
-    env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
-    assert 'test-ch-1' in env_yml['channels']
-    assert 'test-ch-2' in env_yml['channels']
+    env_yml = yaml.load(Path(os.path.join(tmpdir, "environment.yml")))
+    assert "test-ch-1" in env_yml["channels"]
+    assert "test-ch-2" in env_yml["channels"]
 
-    assert 'test-dep-1' in env_yml['dependencies']
+    assert "test-dep-1" in env_yml["dependencies"]
 
 
 def test_both_conda_env_yml_file_and_other_options(tmpdir):
-    conda_env_yml_file = os.path.join(tmpdir, 'environment.yml')
-    with open(conda_env_yml_file, 'wb') as f:
+    conda_env_yml_file = os.path.join(tmpdir, "environment.yml")
+    with open(conda_env_yml_file, "wb") as f:
         f.write(
             """
 name: bentoml-test-conda-env
@@ -277,13 +277,13 @@ dependencies:
     from bentoml.utils.ruamel_yaml import YAML
 
     yaml = YAML()
-    env_yml = yaml.load(Path(os.path.join(tmpdir, 'environment.yml')))
-    assert 'test-ch-1' not in env_yml['channels']
-    assert 'test-ch-2' not in env_yml['channels']
-    assert 'bentoml-test-channel' in env_yml['channels']
+    env_yml = yaml.load(Path(os.path.join(tmpdir, "environment.yml")))
+    assert "test-ch-1" not in env_yml["channels"]
+    assert "test-ch-2" not in env_yml["channels"]
+    assert "bentoml-test-channel" in env_yml["channels"]
 
-    assert 'test-dep-1' in env_yml['dependencies']
-    assert 'bentoml-test-lib' in env_yml['dependencies']
+    assert "test-dep-1" in env_yml["dependencies"]
+    assert "bentoml-test-lib" in env_yml["dependencies"]
 
 
 def test_conda_default_file_lazy_read():

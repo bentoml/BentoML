@@ -77,7 +77,7 @@ class Fastai1ModelArtifact(BentoServiceArtifact):
 
     def __init__(self, name):
         super().__init__(name)
-        self._file_name = name + '.pkl'
+        self._file_name = name + ".pkl"
         self._model = None
 
     def _model_file_path(self, base_path):
@@ -109,7 +109,7 @@ class Fastai1ModelArtifact(BentoServiceArtifact):
                 "packages in BentoService definition file or manually add them via "
                 "`@env(pip_packages=['torchvision'])` when defining a BentoService"
             )
-            env.add_pip_packages(['torch', "fastai<2.0.0"])
+            env.add_pip_packages(["torch", "fastai<2.0.0"])
 
     def save(self, dst):
         self._model.export(file=self._file_name)
@@ -163,7 +163,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
 
     def __init__(self, name):
         super().__init__(name)
-        self._file_name = name + '.pkl'
+        self._file_name = name + ".pkl"
         self._model = None
 
     def _model_file_path(self, base_path):
@@ -195,7 +195,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
                 "packages in BentoService definition file or manually add them via "
                 "`@env(pip_packages=['torchvision'])` when defining a BentoService"
             )
-            env.add_pip_packages(['torch', "fastcore", "fastai>=2.0.0"])
+            env.add_pip_packages(["torch", "fastcore", "fastai>=2.0.0"])
 
     def save(self, dst):
         self._model.export(fname=self._file_name)

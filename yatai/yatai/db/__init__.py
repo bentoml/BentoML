@@ -29,14 +29,14 @@ logger = logging.getLogger(__name__)
 
 def is_postgresql_db(db_url):
     try:
-        return urlparse(db_url).scheme == 'postgresql'
+        return urlparse(db_url).scheme == "postgresql"
     except ValueError:
         return False
 
 
 def is_sqlite_db(db_url):
     try:
-        return urlparse(db_url).scheme == 'sqlite'
+        return urlparse(db_url).scheme == "sqlite"
     except ValueError:
         return False
 
@@ -47,22 +47,22 @@ class DB(object):
         from sqlalchemy_utils import database_exists
         from sqlalchemy.orm import sessionmaker
 
-        extra_db_args = {'echo': True}
+        extra_db_args = {"echo": True}
 
         self.db_url = db_url
         if is_sqlite_db(db_url):
-            extra_db_args['connect_args'] = {'check_same_thread': False}
-            extra_db_args['echo'] = False
+            extra_db_args["connect_args"] = {"check_same_thread": False}
+            extra_db_args["echo"] = False
         elif is_postgresql_db(db_url):
-            extra_db_args['connect_args'] = {'application_name': 'yatai'}
-            extra_db_args['pool_pre_ping'] = True
+            extra_db_args["connect_args"] = {"application_name": "yatai"}
+            extra_db_args["pool_pre_ping"] = True
 
         self.engine = create_engine(db_url, **extra_db_args)
 
         if not database_exists(self.engine.url) and not is_sqlite_db(db_url):
             raise BentoMLException(
-                f'Database does not exist or Database name is missing in config '
-                f'db.url: {db_url}'
+                f"Database does not exist or Database name is missing in config "
+                f"db.url: {db_url}"
             )
 
         self.create_all_or_upgrade_db()
@@ -96,17 +96,17 @@ class DB(object):
         from alembic.config import Config
         from sqlalchemy import inspect
 
-        alembic_config_file = os.path.join(os.path.dirname(__file__), '../alembic.ini')
+        alembic_config_file = os.path.join(os.path.dirname(__file__), "../alembic.ini")
         alembic_config = Config(alembic_config_file)
-        alembic_config.set_main_option('sqlalchemy.url', self.db_url)
+        alembic_config.set_main_option("sqlalchemy.url", self.db_url)
 
         inspector = inspect(self.engine)
         tables = inspector.get_table_names()
 
-        if 'deployments' not in tables or 'bentos' not in tables:
-            logger.debug('Creating tables')
+        if "deployments" not in tables or "bentos" not in tables:
+            logger.debug("Creating tables")
             Base.metadata.create_all(self.engine)
-            command.stamp(alembic_config, 'head')
+            command.stamp(alembic_config, "head")
         else:
-            logger.debug('Upgrading tables to the latest revision')
-            command.upgrade(alembic_config, 'heads')
+            logger.debug("Upgrading tables to the latest revision")
+            command.upgrade(alembic_config, "heads")

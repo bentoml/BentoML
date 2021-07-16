@@ -20,9 +20,9 @@ from bentoml.yatai.deployment.aws_ec2.operator import (
 )
 from bentoml.yatai.deployment.aws_utils import FAILED_CLOUDFORMATION_STACK_STATUS
 
-mock_s3_bucket_name = 'test_deployment_bucket'
-mock_s3_prefix = 'prefix'
-mock_s3_path = 's3://{}/{}'.format(mock_s3_bucket_name, mock_s3_prefix)
+mock_s3_bucket_name = "test_deployment_bucket"
+mock_s3_prefix = "prefix"
+mock_s3_path = "s3://{}/{}".format(mock_s3_bucket_name, mock_s3_prefix)
 mock_registry_name = "test_registry"
 mock_registry_id = "7520142243238"
 mock_elb_name = "elb-test"
@@ -38,13 +38,13 @@ mock_user_id = 1234567891
 
 
 def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
-    bento_pb = Bento(name='bento_test_name', version='version1.1.1')
+    bento_pb = Bento(name="bento_test_name", version="version1.1.1")
     if repo_storage_type == BentoUri.LOCAL:
-        bento_pb.uri.uri = '/tmp/path/to/bundle'
+        bento_pb.uri.uri = "/tmp/path/to/bundle"
     bento_pb.uri.type = repo_storage_type
-    api = BentoServiceMetadata.BentoServiceApi(name='predict')
+    api = BentoServiceMetadata.BentoServiceApi(name="predict")
     bento_pb.bento_service_metadata.apis.extend([api])
-    bento_pb.bento_service_metadata.env.python_version = '3.7.0'
+    bento_pb.bento_service_metadata.env.python_version = "3.7.0"
     get_bento_response = GetBentoResponse(bento=bento_pb)
 
     yatai_service_mock = MagicMock()
@@ -53,12 +53,12 @@ def create_yatai_service_mock(repo_storage_type=BentoUri.LOCAL):
 
 
 def generate_ec2_deployment_pb():
-    test_deployment_pb = Deployment(name='test_aws_ec2', namespace='test-namespace')
-    test_deployment_pb.spec.bento_name = 'bento_name'
-    test_deployment_pb.spec.bento_version = 'v1.0.0'
+    test_deployment_pb = Deployment(name="test_aws_ec2", namespace="test-namespace")
+    test_deployment_pb.spec.bento_name = "bento_name"
+    test_deployment_pb.spec.bento_version = "v1.0.0"
     # DeploymentSpec.DeploymentOperator.AWS_LAMBDA
     test_deployment_pb.spec.operator = 3
-    test_deployment_pb.spec.aws_ec2_operator_config.region = 'us-west-2'
+    test_deployment_pb.spec.aws_ec2_operator_config.region = "us-west-2"
     test_deployment_pb.spec.aws_ec2_operator_config.instance_type = "t2.micro"
     test_deployment_pb.spec.aws_ec2_operator_config.ami_id = "test-ami-id"
     test_deployment_pb.spec.aws_ec2_operator_config.autoscale_min_size = 1
@@ -155,17 +155,17 @@ def test_ec2_describe_no_scaling_success():
             }
         if op_name == "DescribeTargetHealth":
             return {
-                'TargetHealthDescriptions': [
+                "TargetHealthDescriptions": [
                     {
-                        'Target': {
-                            'Id': 'id-instance-1',
-                            'Port': mock_port_number,
-                            'AvailabilityZone': 'us-east-1a',
+                        "Target": {
+                            "Id": "id-instance-1",
+                            "Port": mock_port_number,
+                            "AvailabilityZone": "us-east-1a",
                         },
-                        'HealthCheckPort': 'string',
-                        'TargetHealth': {
-                            'State': 'healthy',
-                            'Description': 'mock-string',
+                        "HealthCheckPort": "string",
+                        "TargetHealth": {
+                            "State": "healthy",
+                            "Description": "mock-string",
                         },
                     },
                 ]
@@ -204,17 +204,17 @@ def test_ec2_describe_pending():
             }
         if op_name == "DescribeTargetHealth":
             return {
-                'TargetHealthDescriptions': [
+                "TargetHealthDescriptions": [
                     {
-                        'Target': {
-                            'Id': 'id-instance-1',
-                            'Port': mock_port_number,
-                            'AvailabilityZone': 'us-east-1a',
+                        "Target": {
+                            "Id": "id-instance-1",
+                            "Port": mock_port_number,
+                            "AvailabilityZone": "us-east-1a",
                         },
-                        'HealthCheckPort': 'string',
-                        'TargetHealth': {
-                            'State': 'unhealthy',
-                            'Description': 'mock-string',
+                        "HealthCheckPort": "string",
+                        "TargetHealth": {
+                            "State": "unhealthy",
+                            "Description": "mock-string",
                         },
                     },
                 ]
@@ -253,17 +253,17 @@ def test_ec2_describe_stack_failure():
             }
         if op_name == "DescribeTargetHealth":
             return {
-                'TargetHealthDescriptions': [
+                "TargetHealthDescriptions": [
                     {
-                        'Target': {
-                            'Id': 'id-instance-1',
-                            'Port': mock_port_number,
-                            'AvailabilityZone': 'us-east-1a',
+                        "Target": {
+                            "Id": "id-instance-1",
+                            "Port": mock_port_number,
+                            "AvailabilityZone": "us-east-1a",
                         },
-                        'HealthCheckPort': 'string',
-                        'TargetHealth': {
-                            'State': 'healthy',
-                            'Description': 'mock-string',
+                        "HealthCheckPort": "string",
+                        "TargetHealth": {
+                            "State": "healthy",
+                            "Description": "mock-string",
                         },
                     },
                 ]
@@ -328,17 +328,17 @@ def test_ec2_update_success():
             }
         if op_name == "DescribeTargetHealth":
             return {
-                'TargetHealthDescriptions': [
+                "TargetHealthDescriptions": [
                     {
-                        'Target': {
-                            'Id': 'id-instance-1',
-                            'Port': mock_port_number,
-                            'AvailabilityZone': 'us-east-1a',
+                        "Target": {
+                            "Id": "id-instance-1",
+                            "Port": mock_port_number,
+                            "AvailabilityZone": "us-east-1a",
                         },
-                        'HealthCheckPort': 'string',
-                        'TargetHealth': {
-                            'State': 'healthy',
-                            'Description': 'mock-string',
+                        "HealthCheckPort": "string",
+                        "TargetHealth": {
+                            "State": "healthy",
+                            "Description": "mock-string",
                         },
                     },
                 ]

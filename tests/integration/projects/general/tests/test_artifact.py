@@ -11,5 +11,5 @@ async def test_api_server_with_sklearn(host):
         headers=(("Content-Type", "application/json"),),
         data="[2.0]",
         assert_status=200,
-        assert_data=b'2.0',
+        assert_data=b"2.0",
     )

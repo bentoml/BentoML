@@ -13,9 +13,9 @@ from tests.bento_services.example_bento_service import ExampleBentoService
 
 
 def pytest_configure():
-    '''
+    """
     global constants for tests
-    '''
+    """
     # async request client
     async def assert_request(
         method,
@@ -60,16 +60,16 @@ def pytest_configure():
 
     # dataframe json orients
     pytest.DF_ORIENTS = {
-        'split',
-        'records',
-        'index',
-        'columns',
-        'values',
+        "split",
+        "records",
+        "index",
+        "columns",
+        "values",
         # 'table',  # TODO(bojiang)
     }
     pytest.DF_AUTO_ORIENTS = {
-        'records',
-        'columns',
+        "records",
+        "columns",
     }
 
     def _since_version(ver: str, skip_by_default=False):
@@ -120,7 +120,7 @@ def is_batch_request(pytestconfig):
 def bin_file(tmpdir):
     bin_file_ = tmpdir.join("bin_file.bin")
     with open(bin_file_, "wb") as of:
-        of.write("â".encode('gb18030'))
+        of.write("â".encode("gb18030"))
     return str(bin_file_)
 
 
@@ -129,7 +129,7 @@ def bin_files(tmpdir):
     for i in range(10):
         bin_file_ = tmpdir.join(f"{i}.bin")
         with open(bin_file_, "wb") as of:
-            of.write(f"â{i}".encode('gb18030'))
+            of.write(f"â{i}".encode("gb18030"))
     return sorted(glob.glob(str(tmpdir.join("*.bin"))))
 
 
@@ -137,7 +137,7 @@ def bin_files(tmpdir):
 def unicode_file(tmpdir):
     bin_file_ = tmpdir.join("bin_file.unicode")
     with open(bin_file_, "wb") as of:
-        of.write("â".encode('utf-8'))
+        of.write("â".encode("utf-8"))
     return str(bin_file_)
 
 
@@ -146,7 +146,7 @@ def unicode_files(tmpdir):
     for i in range(10):
         bin_file_ = tmpdir.join(f"{i}.list.unicode")
         with open(bin_file_, "wb") as of:
-            of.write(f"â{i}".encode('utf-8'))
+            of.write(f"â{i}".encode("utf-8"))
     return sorted(glob.glob(str(tmpdir.join("*.list.unicode"))))
 
 
@@ -215,7 +215,7 @@ def bento_service(example_bento_service_class):
     """
     test_model = TestModel()
     test_svc = example_bento_service_class()
-    test_svc.pack('model', test_model)
+    test_svc.pack("model", test_model)
     return test_svc
 
 
@@ -230,4 +230,4 @@ def bento_bundle_path(bento_service):
 
 def delete_saved_bento_service(name, version):
     yc = YataiClient()
-    yc.repository.delete(f'{name}:{version}')
+    yc.repository.delete(f"{name}:{version}")

@@ -7,7 +7,7 @@ from bentoml.xgboost import XgboostModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([XgboostModelArtifact('model')])
+@bentoml.artifacts([XgboostModelArtifact("model")])
 class XgboostModelClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

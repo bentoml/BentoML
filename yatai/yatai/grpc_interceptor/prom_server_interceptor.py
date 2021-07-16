@@ -212,7 +212,7 @@ class ServiceLatencyInterceptor(grpc.ServerInterceptor):  # pylint: disable=W023
 
                     duration = max(default_timer() - start, 0)
                     GRPC_SERVER_HANDLED_HISTOGRAM.labels(
-                        grpc_type='UNARY',
+                        grpc_type="UNARY",
                         grpc_service=grpc_service_name,
                         grpc_method=grpc_method_name,
                     ).observe(duration)

@@ -1,57 +1,57 @@
 import pytest
-from bentoml import BaseModelArtifact
+from bentoml import BaseArtifact
 from bentoml.sklearn import SklearnModelArtifact
 
 
 def test_valid_artifact_name():
     name = "_test"
-    artifact = BaseModelArtifact(name)
+    artifact = BaseArtifact(name)
     assert artifact.name == "_test"
 
     name = "test"
-    artifact = BaseModelArtifact(name)
+    artifact = BaseArtifact(name)
     assert artifact.name == "test"
 
     name = "TEST00"
-    artifact = BaseModelArtifact(name)
+    artifact = BaseArtifact(name)
     assert artifact.name == "TEST00"
 
     name = "_"
-    artifact = BaseModelArtifact(name)
+    artifact = BaseArtifact(name)
     assert artifact.name == "_"
 
     name = "__"
-    artifact = BaseModelArtifact(name)
+    artifact = BaseArtifact(name)
     assert artifact.name == "__"
 
     name = "thïsisàtèst"
-    artifact = BaseModelArtifact(name)
+    artifact = BaseArtifact(name)
     assert artifact.name == "thïsisàtèst"
 
     name = "thisIs012Along__erTest"
-    artifact = BaseModelArtifact(name)
+    artifact = BaseArtifact(name)
     assert artifact.name == "thisIs012Along__erTest"
 
 
 def test_unvalid_artifact_name():
     name = ""
     with pytest.raises(ValueError) as e:
-        BaseModelArtifact(name)
+        BaseArtifact(name)
     assert "Artifact name must be a valid python identifier" in str(e.value)
 
     name = "156test"
     with pytest.raises(ValueError) as e:
-        BaseModelArtifact(name)
+        BaseArtifact(name)
     assert "Artifact name must be a valid python identifier" in str(e.value)
 
     name = "thisIs012Alo(*ng__erTest"
     with pytest.raises(ValueError) as e:
-        BaseModelArtifact(name)
+        BaseArtifact(name)
     assert "Artifact name must be a valid python identifier" in str(e.value)
 
     name = "this is a test"
     with pytest.raises(ValueError) as e:
-        BaseModelArtifact(name)
+        BaseArtifact(name)
     assert "Artifact name must be a valid python identifier" in str(e.value)
 
 
@@ -63,10 +63,10 @@ def test_artifact_states(tmp_path):
     iris = datasets.load_iris()
     X, y = iris.data, iris.target
     # Model Training
-    clf = svm.SVC(gamma='scale')
+    clf = svm.SVC(gamma="scale")
     clf.fit(X, y)
 
-    artifact_name = 'test_model'
+    artifact_name = "test_model"
     a1 = SklearnModelArtifact(artifact_name)
 
     # verify initial states
@@ -79,7 +79,7 @@ def test_artifact_states(tmp_path):
         a1.get()
     # verify that save will fail
     with pytest.raises(FailedPrecondition):
-        a1.save('anywhere')
+        a1.save("anywhere")
 
     # verify states after pack
     a1.pack(clf)

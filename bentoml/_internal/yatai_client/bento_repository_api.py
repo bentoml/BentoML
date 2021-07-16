@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from bentoml.yatai.proto.repository_pb2 import Bento
 
 logger = logging.getLogger(__name__)
-yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
+yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 # Default timeout in seconds per grpc request.
 DEFAULT_GRPC_REQUEST_TIMEOUT = 6
@@ -132,7 +132,7 @@ class BentoRepositoryAPIClient:
         bento_pb: "Bento" = self.get(bento)
         with TempDirectory() as tmpdir:
             # Create a non-exist directory for safe_retrieve
-            target_bundle_path = os.path.join(tmpdir, 'bundle')
+            target_bundle_path = os.path.join(tmpdir, "bundle")
             self.download_to_directory(bento_pb, target_bundle_path)
 
             from bentoml.yatai.client import get_yatai_client
@@ -204,8 +204,8 @@ class BentoRepositoryAPIClient:
             )
         elif get_bento_response.status.status_code != status_pb2.Status.NOT_FOUND:
             raise BentoMLException(
-                'Failed accessing YataiService. {error_code}:'
-                '{error_message}'.format(
+                "Failed accessing YataiService. {error_code}:"
+                "{error_message}".format(
                     error_code=Status.Name(get_bento_response.status.status_code),
                     error_message=get_bento_response.status.error_message,
                 )
@@ -243,7 +243,7 @@ class BentoRepositoryAPIClient:
             else:
                 if os.path.exists(response.uri.uri):
                     raise BentoMLException(
-                        f'Bento bundle directory {response.uri.uri} already exist'
+                        f"Bento bundle directory {response.uri.uri} already exist"
                     )
                 shutil.copytree(saved_bento_path, response.uri.uri)
                 upload_status = UploadStatus.DONE
@@ -261,7 +261,7 @@ class BentoRepositoryAPIClient:
             # Return URI to saved bento in repository storage
             return response.uri.uri
         elif response.uri.type == BentoUri.S3 or response.uri.type == BentoUri.GCS:
-            uri_type = 'S3' if response.uri.type == BentoUri.S3 else 'GCS'
+            uri_type = "S3" if response.uri.type == BentoUri.S3 else "GCS"
             self._update_bento_upload_progress(
                 bento_service_metadata, UploadStatus.UPLOADING, 0
             )
@@ -347,7 +347,7 @@ class BentoRepositoryAPIClient:
                 bento_service_bundle_path = bento_pb.uri.uri
         else:
             raise BentoMLException(
-                f'Unrecognized Bento bundle storage type {bento_pb.uri.type}'
+                f"Unrecognized Bento bundle storage type {bento_pb.uri.type}"
             )
 
         safe_retrieve(bento_service_bundle_path, target_dir)
@@ -370,12 +370,12 @@ class BentoRepositoryAPIClient:
             yatai_client = get_yatai_client()
             bento_info = yatai_client.repository.get('my_service:version')
         """
-        if ':' not in bento:
+        if ":" not in bento:
             raise BentoMLException(
-                'BentoService name or version is missing. Please provide in the '
-                'format of name:version'
+                "BentoService name or version is missing. Please provide in the "
+                "format of name:version"
             )
-        name, version = bento.split(':')
+        name, version = bento.split(":")
         result = self.yatai_service.GetBento(
             GetBentoRequest(bento_name=name, bento_version=version)
         )
@@ -384,8 +384,8 @@ class BentoRepositoryAPIClient:
                 result.status
             )
             raise BentoMLException(
-                f'BentoService {name}:{version} not found - '
-                f'{error_code}:{error_message}'
+                f"BentoService {name}:{version} not found - "
+                f"{error_code}:{error_message}"
             )
         return result.bento
 
@@ -447,12 +447,12 @@ class BentoRepositoryAPIClient:
             error_code, error_message = status_pb_to_error_code_and_message(
                 result.status
             )
-            raise BentoMLException(f'{error_code}:{error_message}')
+            raise BentoMLException(f"{error_code}:{error_message}")
         return result.bentos
 
     def _delete_bento_bundle(self, bento_tag, require_confirm):
         bento_pb = self.get(bento_tag)
-        if require_confirm and not click.confirm(f'Permanently delete {bento_tag}?'):
+        if require_confirm and not click.confirm(f"Permanently delete {bento_tag}?"):
             return
         result = self.yatai_service.DangerouslyDeleteBento(
             DangerouslyDeleteBentoRequest(
@@ -466,11 +466,11 @@ class BentoRepositoryAPIClient:
             )
             # Rather than raise Exception, continue to delete the next bentos
             logger.error(
-                f'Failed to delete {bento_pb.name}:{bento_pb.version} - '
-                f'{error_code}:{error_message}'
+                f"Failed to delete {bento_pb.name}:{bento_pb.version} - "
+                f"{error_code}:{error_message}"
             )
         else:
-            logger.info(f'Deleted {bento_pb.name}:{bento_pb.version}')
+            logger.info(f"Deleted {bento_pb.name}:{bento_pb.version}")
 
     def delete(
         self,
@@ -527,29 +527,29 @@ class BentoRepositoryAPIClient:
             and bento_name is not None
             and bento_version is not None
         ):
-            raise BentoMLException('Too much arguments')
+            raise BentoMLException("Too much arguments")
 
         if bento_tag is not None:
-            logger.info(f'Deleting saved Bento bundle {bento_tag}')
+            logger.info(f"Deleting saved Bento bundle {bento_tag}")
             return self._delete_bento_bundle(bento_tag, require_confirm)
         elif bento_name is not None and bento_tag is not None:
-            logger.info(f'Deleting saved Bento bundle {bento_name}:{bento_version}')
+            logger.info(f"Deleting saved Bento bundle {bento_name}:{bento_version}")
             return self._delete_bento_bundle(
-                f'{bento_name}:{bento_version}', require_confirm
+                f"{bento_name}:{bento_version}", require_confirm
             )
         else:
             # list of bentos
             if prune is True:
-                logger.info('Deleting all BentoML saved bundles.')
+                logger.info("Deleting all BentoML saved bundles.")
                 # ignore other fields
                 bento_name = None
                 labels = None
             else:
-                log_message = 'Deleting saved Bento bundles'
+                log_message = "Deleting saved Bento bundles"
                 if bento_name is not None:
-                    log_message += f' with name: {bento_name},'
+                    log_message += f" with name: {bento_name},"
                 if labels is not None:
-                    log_message += f' with labels match to {labels}'
+                    log_message += f" with labels match to {labels}"
                 logger.info(log_message)
             offset = 0
             while offset >= 0:
@@ -566,7 +566,7 @@ class BentoRepositoryAPIClient:
                 else:
                     for bento in bento_list:
                         self._delete_bento_bundle(
-                            f'{bento.name}:{bento.version}', require_confirm
+                            f"{bento.name}:{bento.version}", require_confirm
                         )
 
     def containerize(
@@ -605,12 +605,12 @@ class BentoRepositoryAPIClient:
             yatai_client = get_yatai_client()
             tag = yatai_client.repository.containerize(f'{svc.name}:{svc.version}')
         """  # noqa: E501
-        if ':' not in bento:
+        if ":" not in bento:
             raise BentoMLException(
-                'BentoService name or version is missing. Please provide in the '
-                'format of name:version'
+                "BentoService name or version is missing. Please provide in the "
+                "format of name:version"
             )
-        name, version = bento.split(':')
+        name, version = bento.split(":")
         containerize_request = ContainerizeBentoRequest(
             bento_name=name,
             bento_version=version,
@@ -625,7 +625,7 @@ class BentoRepositoryAPIClient:
                 result.status
             )
             raise BentoMLException(
-                f'Failed to containerize {bento} - {error_code}:{error_message}'
+                f"Failed to containerize {bento} - {error_code}:{error_message}"
             )
         return result.tag
 
@@ -685,8 +685,8 @@ class BentoRepositoryAPIClient:
         except grpc.RpcError as e:
             raise BentoMLRpcError(
                 e,
-                f'Failed to upload {bento_name}:{bento_version} to '
-                f'the remote yatai server',
+                f"Failed to upload {bento_name}:{bento_version} to "
+                f"the remote yatai server",
             )
         finally:
             streaming_request_generator.close()
@@ -694,28 +694,28 @@ class BentoRepositoryAPIClient:
     def _download_bento(self, bento_name, bento_version):
         with TempDirectory(cleanup=False) as temp_dir:
             try:
-                temp_tar_path = os.path.join(temp_dir, f'{uuid.uuid4().hex[:12]}.tar')
+                temp_tar_path = os.path.join(temp_dir, f"{uuid.uuid4().hex[:12]}.tar")
                 response_iterator = self.yatai_service.DownloadBento(
                     DownloadBentoRequest(
                         bento_name=bento_name, bento_version=bento_version
                     ),
                     timeout=DEFAULT_GRPC_REQUEST_TIMEOUT,
                 )
-                with open(temp_tar_path, 'wb+') as file:
+                with open(temp_tar_path, "wb+") as file:
                     for response in response_iterator:
                         if response.status.status_code != status_pb2.Status.OK:
                             raise BentoMLException(response.status.error_message)
                         file.write(response.bento_bundle)
                     file.seek(0)
                     temp_bundle_path = os.path.join(
-                        temp_dir, f'{bento_name}_{bento_version}'
+                        temp_dir, f"{bento_name}_{bento_version}"
                     )
-                    with tarfile.open(fileobj=file, mode='r') as tar:
+                    with tarfile.open(fileobj=file, mode="r") as tar:
                         tar.extractall(path=temp_bundle_path)
                 return temp_bundle_path
             except grpc.RpcError as e:
                 raise BentoMLRpcError(
                     e,
-                    f'Failed to download {bento_name}:{bento_version} from '
-                    f'the remote yatai server',
+                    f"Failed to download {bento_name}:{bento_version} from "
+                    f"the remote yatai server",
                 )

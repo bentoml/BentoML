@@ -1,6 +1,6 @@
 from .utils.lazy_loader import LazyLoader
 
-yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
+yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 
 def _proto_status_code_to_http_status_code(proto_status_code, fallback):
@@ -56,12 +56,12 @@ class BentoMLRpcError(BentoMLException):
         self.grpc_error = grpc_error
         self.message = message
         if self.grpc_error.code == grpc.StatusCode.DEADLINE_EXCEEDED:
-            self.grpc_error_message = 'Request time out'
+            self.grpc_error_message = "Request time out"
         else:
             self.grpc_error_message = self.grpc_error.details()
 
     def __str__(self):
-        return f'{self.message}: {self.grpc_error_message}'
+        return f"{self.message}: {self.grpc_error_message}"
 
 
 class Unauthenticated(BentoMLException):

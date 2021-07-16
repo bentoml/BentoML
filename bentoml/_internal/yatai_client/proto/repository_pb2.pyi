@@ -19,7 +19,7 @@ DESCRIPTOR: google.protobuf.descriptor.FileDescriptor = ...
 class BentoUri(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class StorageType(metaclass=_StorageType):
-        V = typing.NewType('V', builtins.int)
+        V = typing.NewType("V", builtins.int)
     UNSET = BentoUri.StorageType.V(0)
     LOCAL = BentoUri.StorageType.V(1)
     S3 = BentoUri.StorageType.V(2)
@@ -53,13 +53,13 @@ class BentoUri(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"gcs_presigned_url",
+            "gcs_presigned_url",
             b"gcs_presigned_url",
-            u"s3_presigned_url",
+            "s3_presigned_url",
             b"s3_presigned_url",
-            u"type",
+            "type",
             b"type",
-            u"uri",
+            "uri",
             b"uri",
         ],
     ) -> None: ...
@@ -103,19 +103,19 @@ class BentoServiceMetadata(google.protobuf.message.Message):
         def ClearField(
             self,
             field_name: typing_extensions.Literal[
-                u"conda_env",
+                "conda_env",
                 b"conda_env",
-                u"docker_base_image",
+                "docker_base_image",
                 b"docker_base_image",
-                u"pip_dependencies",
+                "pip_dependencies",
                 b"pip_dependencies",
-                u"pip_packages",
+                "pip_packages",
                 b"pip_packages",
-                u"python_version",
+                "python_version",
                 b"python_version",
-                u"requirements_txt",
+                "requirements_txt",
                 b"requirements_txt",
-                u"setup_sh",
+                "setup_sh",
                 b"setup_sh",
             ],
         ) -> None: ...
@@ -136,16 +136,16 @@ class BentoServiceMetadata(google.protobuf.message.Message):
             metadata: typing.Optional[google.protobuf.struct_pb2.Struct] = ...,
         ) -> None: ...
         def HasField(
-            self, field_name: typing_extensions.Literal[u"metadata", b"metadata"]
+            self, field_name: typing_extensions.Literal["metadata", b"metadata"]
         ) -> builtins.bool: ...
         def ClearField(
             self,
             field_name: typing_extensions.Literal[
-                u"artifact_type",
+                "artifact_type",
                 b"artifact_type",
-                u"metadata",
+                "metadata",
                 b"metadata",
-                u"name",
+                "name",
                 b"name",
             ],
         ) -> None: ...
@@ -190,31 +190,31 @@ class BentoServiceMetadata(google.protobuf.message.Message):
         def HasField(
             self,
             field_name: typing_extensions.Literal[
-                u"input_config", b"input_config", u"output_config", b"output_config"
+                "input_config", b"input_config", "output_config", b"output_config"
             ],
         ) -> builtins.bool: ...
         def ClearField(
             self,
             field_name: typing_extensions.Literal[
-                u"batch",
+                "batch",
                 b"batch",
-                u"docs",
+                "docs",
                 b"docs",
-                u"input_config",
+                "input_config",
                 b"input_config",
-                u"input_type",
+                "input_type",
                 b"input_type",
-                u"mb_max_batch_size",
+                "mb_max_batch_size",
                 b"mb_max_batch_size",
-                u"mb_max_latency",
+                "mb_max_latency",
                 b"mb_max_latency",
-                u"name",
+                "name",
                 b"name",
-                u"output_config",
+                "output_config",
                 b"output_config",
-                u"output_type",
+                "output_type",
                 b"output_type",
-                u"route",
+                "route",
                 b"route",
             ],
         ) -> None: ...
@@ -229,7 +229,7 @@ class BentoServiceMetadata(google.protobuf.message.Message):
         ) -> None: ...
         def ClearField(
             self,
-            field_name: typing_extensions.Literal[u"key", b"key", u"value", b"value"],
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
         ) -> None: ...
     NAME_FIELD_NUMBER: builtins.int
     VERSION_FIELD_NUMBER: builtins.int
@@ -278,25 +278,25 @@ class BentoServiceMetadata(google.protobuf.message.Message):
     def HasField(
         self,
         field_name: typing_extensions.Literal[
-            u"created_at", b"created_at", u"env", b"env"
+            "created_at", b"created_at", "env", b"env"
         ],
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"apis",
+            "apis",
             b"apis",
-            u"artifacts",
+            "artifacts",
             b"artifacts",
-            u"created_at",
+            "created_at",
             b"created_at",
-            u"env",
+            "env",
             b"env",
-            u"labels",
+            "labels",
             b"labels",
-            u"name",
+            "name",
             b"name",
-            u"version",
+            "version",
             b"version",
         ],
     ) -> None: ...
@@ -330,26 +330,26 @@ class Bento(google.protobuf.message.Message):
     def HasField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_service_metadata",
+            "bento_service_metadata",
             b"bento_service_metadata",
-            u"status",
+            "status",
             b"status",
-            u"uri",
+            "uri",
             b"uri",
         ],
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_service_metadata",
+            "bento_service_metadata",
             b"bento_service_metadata",
-            u"name",
+            "name",
             b"name",
-            u"status",
+            "status",
             b"status",
-            u"uri",
+            "uri",
             b"uri",
-            u"version",
+            "version",
             b"version",
         ],
     ) -> None: ...
@@ -368,7 +368,7 @@ class AddBentoRequest(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_name", b"bento_name", u"bento_version", b"bento_version"
+            "bento_name", b"bento_name", "bento_version", b"bento_version"
         ],
     ) -> None: ...
 
@@ -389,12 +389,10 @@ class AddBentoResponse(google.protobuf.message.Message):
         uri: typing.Optional[global___BentoUri] = ...,
     ) -> None: ...
     def HasField(
-        self,
-        field_name: typing_extensions.Literal[u"status", b"status", u"uri", b"uri"],
+        self, field_name: typing_extensions.Literal["status", b"status", "uri", b"uri"],
     ) -> builtins.bool: ...
     def ClearField(
-        self,
-        field_name: typing_extensions.Literal[u"status", b"status", u"uri", b"uri"],
+        self, field_name: typing_extensions.Literal["status", b"status", "uri", b"uri"],
     ) -> None: ...
 
 global___AddBentoResponse = AddBentoResponse
@@ -402,7 +400,7 @@ global___AddBentoResponse = AddBentoResponse
 class UploadStatus(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class Status(metaclass=_Status):
-        V = typing.NewType('V', builtins.int)
+        V = typing.NewType("V", builtins.int)
     UNINITIALIZED = UploadStatus.Status.V(0)
     UPLOADING = UploadStatus.Status.V(1)
     DONE = UploadStatus.Status.V(2)
@@ -433,18 +431,18 @@ class UploadStatus(google.protobuf.message.Message):
         error_message: typing.Text = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"updated_at", b"updated_at"]
+        self, field_name: typing_extensions.Literal["updated_at", b"updated_at"]
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"error_message",
+            "error_message",
             b"error_message",
-            u"percentage",
+            "percentage",
             b"percentage",
-            u"status",
+            "status",
             b"status",
-            u"updated_at",
+            "updated_at",
             b"updated_at",
         ],
     ) -> None: ...
@@ -474,19 +472,19 @@ class UpdateBentoRequest(google.protobuf.message.Message):
     def HasField(
         self,
         field_name: typing_extensions.Literal[
-            u"service_metadata", b"service_metadata", u"upload_status", b"upload_status"
+            "service_metadata", b"service_metadata", "upload_status", b"upload_status"
         ],
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_name",
+            "bento_name",
             b"bento_name",
-            u"bento_version",
+            "bento_version",
             b"bento_version",
-            u"service_metadata",
+            "service_metadata",
             b"service_metadata",
-            u"upload_status",
+            "upload_status",
             b"upload_status",
         ],
     ) -> None: ...
@@ -502,10 +500,10 @@ class UpdateBentoResponse(google.protobuf.message.Message):
         self, *, status: typing.Optional[status_pb2.Status] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> None: ...
 
 global___UpdateBentoResponse = UpdateBentoResponse
@@ -522,7 +520,7 @@ class DangerouslyDeleteBentoRequest(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_name", b"bento_name", u"bento_version", b"bento_version"
+            "bento_name", b"bento_name", "bento_version", b"bento_version"
         ],
     ) -> None: ...
 
@@ -537,10 +535,10 @@ class DangerouslyDeleteBentoResponse(google.protobuf.message.Message):
         self, *, status: typing.Optional[status_pb2.Status] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> None: ...
 
 global___DangerouslyDeleteBentoResponse = DangerouslyDeleteBentoResponse
@@ -557,7 +555,7 @@ class GetBentoRequest(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_name", b"bento_name", u"bento_version", b"bento_version"
+            "bento_name", b"bento_name", "bento_version", b"bento_version"
         ],
     ) -> None: ...
 
@@ -579,11 +577,11 @@ class GetBentoResponse(google.protobuf.message.Message):
     ) -> None: ...
     def HasField(
         self,
-        field_name: typing_extensions.Literal[u"bento", b"bento", u"status", b"status"],
+        field_name: typing_extensions.Literal["bento", b"bento", "status", b"status"],
     ) -> builtins.bool: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[u"bento", b"bento", u"status", b"status"],
+        field_name: typing_extensions.Literal["bento", b"bento", "status", b"status"],
     ) -> None: ...
 
 global___GetBentoResponse = GetBentoResponse
@@ -591,7 +589,7 @@ global___GetBentoResponse = GetBentoResponse
 class ListBentoRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class SORTABLE_COLUMN(metaclass=_SORTABLE_COLUMN):
-        V = typing.NewType('V', builtins.int)
+        V = typing.NewType("V", builtins.int)
     created_at = ListBentoRequest.SORTABLE_COLUMN.V(0)
     name = ListBentoRequest.SORTABLE_COLUMN.V(1)
     class _SORTABLE_COLUMN(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[SORTABLE_COLUMN.V], builtins.type):  # type: ignore
@@ -623,22 +621,22 @@ class ListBentoRequest(google.protobuf.message.Message):
     ) -> None: ...
     def HasField(
         self,
-        field_name: typing_extensions.Literal[u"label_selectors", b"label_selectors"],
+        field_name: typing_extensions.Literal["label_selectors", b"label_selectors"],
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"ascending_order",
+            "ascending_order",
             b"ascending_order",
-            u"bento_name",
+            "bento_name",
             b"bento_name",
-            u"label_selectors",
+            "label_selectors",
             b"label_selectors",
-            u"limit",
+            "limit",
             b"limit",
-            u"offset",
+            "offset",
             b"offset",
-            u"order_by",
+            "order_by",
             b"order_by",
         ],
     ) -> None: ...
@@ -664,13 +662,11 @@ class ListBentoResponse(google.protobuf.message.Message):
         bentos: typing.Optional[typing.Iterable[global___Bento]] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
-            u"bentos", b"bentos", u"status", b"status"
-        ],
+        field_name: typing_extensions.Literal["bentos", b"bentos", "status", b"status"],
     ) -> None: ...
 
 global___ListBentoResponse = ListBentoResponse
@@ -688,7 +684,7 @@ class ContainerizeBentoRequest(google.protobuf.message.Message):
         ) -> None: ...
         def ClearField(
             self,
-            field_name: typing_extensions.Literal[u"key", b"key", u"value", b"value"],
+            field_name: typing_extensions.Literal["key", b"key", "value", b"value"],
         ) -> None: ...
     BENTO_NAME_FIELD_NUMBER: builtins.int
     BENTO_VERSION_FIELD_NUMBER: builtins.int
@@ -715,15 +711,15 @@ class ContainerizeBentoRequest(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_name",
+            "bento_name",
             b"bento_name",
-            u"bento_version",
+            "bento_version",
             b"bento_version",
-            u"build_args",
+            "build_args",
             b"build_args",
-            u"push",
+            "push",
             b"push",
-            u"tag",
+            "tag",
             b"tag",
         ],
     ) -> None: ...
@@ -744,11 +740,10 @@ class ContainerizeBentoResponse(google.protobuf.message.Message):
         tag: typing.Text = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
-        self,
-        field_name: typing_extensions.Literal[u"status", b"status", u"tag", b"tag"],
+        self, field_name: typing_extensions.Literal["status", b"status", "tag", b"tag"],
     ) -> None: ...
 
 global___ContainerizeBentoResponse = ContainerizeBentoResponse
@@ -771,11 +766,11 @@ class UploadBentoRequest(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_bundle",
+            "bento_bundle",
             b"bento_bundle",
-            u"bento_name",
+            "bento_name",
             b"bento_name",
-            u"bento_version",
+            "bento_version",
             b"bento_version",
         ],
     ) -> None: ...
@@ -791,10 +786,10 @@ class UploadBentoResponse(google.protobuf.message.Message):
         self, *, status: typing.Optional[status_pb2.Status] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> None: ...
 
 global___UploadBentoResponse = UploadBentoResponse
@@ -811,7 +806,7 @@ class DownloadBentoRequest(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_name", b"bento_name", u"bento_version", b"bento_version"
+            "bento_name", b"bento_name", "bento_version", b"bento_version"
         ],
     ) -> None: ...
 
@@ -831,12 +826,12 @@ class DownloadBentoResponse(google.protobuf.message.Message):
         status: typing.Optional[status_pb2.Status] = ...,
     ) -> None: ...
     def HasField(
-        self, field_name: typing_extensions.Literal[u"status", b"status"]
+        self, field_name: typing_extensions.Literal["status", b"status"]
     ) -> builtins.bool: ...
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"bento_bundle", b"bento_bundle", u"status", b"status"
+            "bento_bundle", b"bento_bundle", "status", b"status"
         ],
     ) -> None: ...
 

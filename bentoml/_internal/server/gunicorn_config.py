@@ -51,5 +51,5 @@ def worker_abort(worker):
 
 
 def post_worker_init(worker):
-    worker.log.debug('Unregistering usage tracking in worker process')
+    worker.log.debug("Unregistering usage tracking in worker process")
     atexit.unregister(_exit_function)  # Shutting down Gunicorn gracefully

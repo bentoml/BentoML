@@ -145,7 +145,7 @@ class MultiFileInput(BaseInputAdapter):
 
     @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> MultiFileTask:
-        if req.headers.content_type != 'multipart/form-data':
+        if req.headers.content_type != "multipart/form-data":
             task = InferenceTask(data=None)
             task.discard(
                 http_status=400,
@@ -175,8 +175,8 @@ class MultiFileInput(BaseInputAdapter):
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> MultiFileTask:
         request = HTTPRequest(
-            headers=tuple((k, v) for k, v in event.get('headers', {}).items()),
-            body=event['body'],
+            headers=tuple((k, v) for k, v in event.get("headers", {}).items()),
+            body=event["body"],
         )
         return self.from_http_request(request)
 

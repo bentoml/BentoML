@@ -42,7 +42,7 @@ SCHEMA = Schema(
         },
         "tracing": {
             "type": Or(
-                And(str, Use(str.lower), lambda s: s in ('zipkin', 'jaeger')), None
+                And(str, Use(str.lower), lambda s: s in ("zipkin", "jaeger")), None
             ),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
@@ -178,13 +178,13 @@ class YataiContainerClass:
         jaeger_server_address: str = Provide[config.tracing.jaeger.address],
         jaeger_server_port: int = Provide[config.tracing.jaeger.port],
     ):
-        if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
+        if tracer_type and tracer_type.lower() == "zipkin" and zipkin_server_url:
             from ..tracing.zipkin import get_zipkin_tracer
 
             return get_zipkin_tracer(zipkin_server_url)
         elif (
             tracer_type
-            and tracer_type.lower() == 'jaeger'
+            and tracer_type.lower() == "jaeger"
             and jaeger_server_address
             and jaeger_server_port
         ):

@@ -67,7 +67,7 @@ def test_api_function_route(bento_bundle_path, img_file):
         img = f.read()
 
     response = test_client.post(
-        "/predict_image", data={'image': (BytesIO(img), 'test_img.png')}
+        "/predict_image", data={"image": (BytesIO(img), "test_img.png")}
     )
     assert 200 == response.status_code
     assert "[10, 10, 3]" in str(response.data)
@@ -75,8 +75,8 @@ def test_api_function_route(bento_bundle_path, img_file):
     response = test_client.post(
         "/predict_multi_images",
         data={
-            'original': (BytesIO(img), 'original.jpg'),
-            'compared': (BytesIO(img), 'compared.jpg'),
+            "original": (BytesIO(img), "original.jpg"),
+            "compared": (BytesIO(img), "compared.jpg"),
         },
     )
     assert 200 == response.status_code

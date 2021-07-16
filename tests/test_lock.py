@@ -10,7 +10,7 @@ from tests.threading_util import ThreadWithResult, run_delayed_thread
 
 @pytest.fixture(name="db")
 def fixture_db():
-    db_url = 'sqlite:///bentoml/storage.db'
+    db_url = "sqlite:///bentoml/storage.db"
     return DB(db_url)
 
 
@@ -30,8 +30,8 @@ def try_lock(db, resource_id, ttl, timeout):
 
 def test_lock_acquisition_on_locked_resource(db):
     # lock held for 10 seconds and expires in 3 min
-    lock_1 = ThreadWithResult(target=try_lock, args=(db, 'some_resource', 3, 10))
-    lock_2 = ThreadWithResult(target=try_lock, args=(db, 'some_resource', 3, 10))
+    lock_1 = ThreadWithResult(target=try_lock, args=(db, "some_resource", 3, 10))
+    lock_2 = ThreadWithResult(target=try_lock, args=(db, "some_resource", 3, 10))
 
     # try to acquire lock_2 1 second after lock_1
     run_delayed_thread(lock_1, lock_2)
@@ -43,10 +43,10 @@ def test_lock_acquisition_on_locked_resource(db):
 
 def test_lock_expiry(db):
     # lock held for 1 second and expires in 3 seconds
-    lock_1 = ThreadWithResult(target=try_lock, args=(db, 'some_resource', 1 / 20, 1))
+    lock_1 = ThreadWithResult(target=try_lock, args=(db, "some_resource", 1 / 20, 1))
 
     # lock held for 10 seconds and expires in 3 min
-    lock_2 = ThreadWithResult(target=try_lock, args=(db, 'some_resource', 3, 10))
+    lock_2 = ThreadWithResult(target=try_lock, args=(db, "some_resource", 3, 10))
 
     # try to acquire lock_2 5 seconds after lock_1
     run_delayed_thread(lock_1, lock_2, 5)

@@ -118,15 +118,15 @@ def test_run_command_with_input_file(bento_bundle_path):
 
 def test_echo_docker_api_result_build():
     build_stream = [
-        {'stream': 'Step 1/2 : FROM bentoml/model-server:0.8.1'},
-        {'stream': '\n'},
-        {'stream': ' ---> f034fa23264c\n'},
-        {'stream': 'Step 2/2 : COPY . /bento'},
-        {'stream': '\n'},
-        {'stream': ' ---> Using cache\n'},
-        {'aux': {'ID': 'sha256:garbagehash'}},
-        {'stream': 'Successfully built 9d9918e008dd\n'},
-        {'stream': 'Successfully tagged personal/test:latest\n'},
+        {"stream": "Step 1/2 : FROM bentoml/model-server:0.8.1"},
+        {"stream": "\n"},
+        {"stream": " ---> f034fa23264c\n"},
+        {"stream": "Step 2/2 : COPY . /bento"},
+        {"stream": "\n"},
+        {"stream": " ---> Using cache\n"},
+        {"aux": {"ID": "sha256:garbagehash"}},
+        {"stream": "Successfully built 9d9918e008dd\n"},
+        {"stream": "Successfully tagged personal/test:latest\n"},
     ]
 
     expected = [
@@ -144,55 +144,55 @@ def test_echo_docker_api_result_build():
 
 def test_echo_docker_api_result_push_no_access():
     push_stream = [
-        {'status': 'The push refers to repository [docker.io/library/asdf]'},
-        {'status': 'Preparing', 'progressDetail': {}, 'id': '2e280b8a5f3e'},
-        {'status': 'Preparing', 'progressDetail': {}, 'id': 'd0b7e1b96cc1'},
-        {'status': 'Preparing', 'progressDetail': {}, 'id': 'fcd8d39597dd'},
-        {'status': 'Waiting', 'progressDetail': {}, 'id': '2e280b8a5f3e'},
-        {'status': 'Waiting', 'progressDetail': {}, 'id': 'd0b7e1b96cc1'},
-        {'status': 'Waiting', 'progressDetail': {}, 'id': 'fcd8d39597dd'},
+        {"status": "The push refers to repository [docker.io/library/asdf]"},
+        {"status": "Preparing", "progressDetail": {}, "id": "2e280b8a5f3e"},
+        {"status": "Preparing", "progressDetail": {}, "id": "d0b7e1b96cc1"},
+        {"status": "Preparing", "progressDetail": {}, "id": "fcd8d39597dd"},
+        {"status": "Waiting", "progressDetail": {}, "id": "2e280b8a5f3e"},
+        {"status": "Waiting", "progressDetail": {}, "id": "d0b7e1b96cc1"},
+        {"status": "Waiting", "progressDetail": {}, "id": "fcd8d39597dd"},
         {
-            'errorDetail': {
-                'message': 'denied: requested access to the resource is denied'
+            "errorDetail": {
+                "message": "denied: requested access to the resource is denied"
             },
-            'error': 'denied: requested access to the resource is denied',
+            "error": "denied: requested access to the resource is denied",
         },
     ]
 
     with pytest.raises(BentoMLException) as e:
         _ = [line for line in echo_docker_api_result(push_stream)]
-    assert str(e.value) == 'denied: requested access to the resource is denied'
+    assert str(e.value) == "denied: requested access to the resource is denied"
 
 
 def test_echo_docker_api_result_push():
     push_stream = [
-        {'status': 'The push refers to repository [docker.io/personal/test]'},
-        {'status': 'Preparing', 'progressDetail': {}, 'id': '2e280b8a5f3e'},
-        {'status': 'Preparing', 'progressDetail': {}, 'id': '03613b6b1004'},
-        {'status': 'Waiting', 'progressDetail': {}, 'id': 'cb2960c4c4d1'},
+        {"status": "The push refers to repository [docker.io/personal/test]"},
+        {"status": "Preparing", "progressDetail": {}, "id": "2e280b8a5f3e"},
+        {"status": "Preparing", "progressDetail": {}, "id": "03613b6b1004"},
+        {"status": "Waiting", "progressDetail": {}, "id": "cb2960c4c4d1"},
         {
-            'status': 'Pushing',
-            'progressDetail': {'current': 5632, 'total': 532223},
-            'progress': '[=>    ]',
-            'id': '03613b6b1004',
+            "status": "Pushing",
+            "progressDetail": {"current": 5632, "total": 532223},
+            "progress": "[=>    ]",
+            "id": "03613b6b1004",
         },
         {
-            'status': 'Pushing',
-            'progressDetail': {'current': 512, 'total': 699},
-            'progress': '[=====> ]',
-            'id': '2e280b8a5f3e',
+            "status": "Pushing",
+            "progressDetail": {"current": 512, "total": 699},
+            "progress": "[=====> ]",
+            "id": "2e280b8a5f3e",
         },
         {
-            'status': 'Pushing',
-            'progressDetail': {'current': 128512, 'total': 532223},
-            'progress': '[==>   ]',
-            'id': '03613b6b1004',
+            "status": "Pushing",
+            "progressDetail": {"current": 128512, "total": 532223},
+            "progress": "[==>   ]",
+            "id": "03613b6b1004",
         },
-        {'status': 'Pushed', 'progressDetail': {}, 'id': '2e280b8a5f3e'},
-        {'status': 'latest: digest: sha256:garbagehash size: 2214'},
+        {"status": "Pushed", "progressDetail": {}, "id": "2e280b8a5f3e"},
+        {"status": "latest: digest: sha256:garbagehash size: 2214"},
         {
-            'progressDetail': {},
-            'aux': {'Tag': 'latest', 'Digest': 'sha256:garbagehash', 'Size': 2214},
+            "progressDetail": {},
+            "aux": {"Tag": "latest", "Digest": "sha256:garbagehash", "Size": 2214},
         },
     ]
 
@@ -206,7 +206,7 @@ def test_echo_docker_api_result_push():
     assert_equal_lists(res, expected)
 
 
-@pytest.mark.skipif('not psutil.POSIX')
+@pytest.mark.skipif("not psutil.POSIX")
 def test_gunicorn_serve_command():
     runner = CliRunner()
 
@@ -271,7 +271,7 @@ def test_serve_command():
         )
         mocked_start_dev_server.assert_called()
         mocked_start_dev_server.assert_called_with(
-            '/',
+            "/",
             port=5000,
             mb_max_batch_size=None,
             mb_max_latency=None,
@@ -292,7 +292,7 @@ def test_serve_command():
         )
         mocked_start_dev_server.assert_called()
         mocked_start_dev_server.assert_called_with(
-            '/',
+            "/",
             port=5050,
             mb_max_batch_size=10000,
             mb_max_latency=20000,

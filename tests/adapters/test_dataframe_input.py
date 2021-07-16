@@ -40,7 +40,7 @@ def test_dataframe_handle_cli(capsys, make_api, tmpdir):
 
     json_file = tmpdir.join("test.csv")
     with open(str(json_file), "w") as f:
-        f.write('name,game,city\njohn,mario,sf')
+        f.write("name,game,city\njohn,mario,sf")
 
     test_args = ["--input-file", str(json_file), "--format", "csv"]
     api.handle_cli(test_args)
@@ -86,16 +86,16 @@ def test_dataframe_handle_request_csv(make_api):
 
     input_adapter = DataframeInput()
     api = make_api(input_adapter, test_func)
-    csv_data = b'name,game,city\njohn,mario,sf'
-    request = HTTPRequest(headers={'Content-Type': 'text/csv'}, body=csv_data)
+    csv_data = b"name,game,city\njohn,mario,sf"
+    request = HTTPRequest(headers={"Content-Type": "text/csv"}, body=csv_data)
     result = api.handle_request(request)
     assert result.body == '[{"name":"john"}]'
 
 
 def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):
-    '''
+    """
     Compare two instances of pandas.DataFrame ignoring index and columns
-    '''
+    """
     try:
         left_array = left.values
         right_array = right.values
@@ -112,7 +112,7 @@ def assert_df_equal(left: pd.DataFrame, right: pd.DataFrame):
 DF_CASES = (
     pd.DataFrame(np.random.rand(1, 3)),
     pd.DataFrame(np.random.rand(2, 3)),
-    pd.DataFrame(np.random.rand(2, 3), columns=['A', 'B', 'C']),
+    pd.DataFrame(np.random.rand(2, 3), columns=["A", "B", "C"]),
     pd.DataFrame(["str1", "str2", "str3"]),  # single dim sting array
     pd.DataFrame([np.nan]),  # special values
     pd.DataFrame([math.nan]),  # special values
@@ -146,10 +146,10 @@ def test_batch_read_dataframes_from_mixed_json_n_csv(df):
             continue
 
         test_datas.extend([df.to_json(orient=orient)] * 3)
-        test_types.extend(['json'] * 3)
+        test_types.extend(["json"] * 3)
 
     test_datas.extend([df.to_csv(index=False)] * 3)
-    test_types.extend(['csv'] * 3)
+    test_types.extend(["csv"] * 3)
 
     df_merged, counts = read_dataframes_from_json_n_csv(test_datas, test_types)
     i = 0
@@ -161,17 +161,17 @@ def test_batch_read_dataframes_from_mixed_json_n_csv(df):
 def test_batch_read_dataframes_from_csv_other_CRLF(df):
     csv_str = df.to_csv(index=False)
 
-    if '\r\n' in csv_str:
-        csv_str = '\n'.join(csv_splitlines(csv_str))
+    if "\r\n" in csv_str:
+        csv_str = "\n".join(csv_splitlines(csv_str))
     else:
-        csv_str = '\r\n'.join(csv_splitlines(csv_str))
-    df_merged, _ = read_dataframes_from_json_n_csv([csv_str], ['csv'])
+        csv_str = "\r\n".join(csv_splitlines(csv_str))
+    df_merged, _ = read_dataframes_from_json_n_csv([csv_str], ["csv"])
     assert_df_equal(df_merged, df)
 
 
 def test_batch_read_dataframes_from_json_of_orients(df, orient):
     test_datas = [df.to_json(orient=orient)] * 3
-    test_types = ['json'] * 3
+    test_types = ["json"] * 3
     df_merged, counts = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
     i = 0
     for count in counts:
@@ -180,8 +180,8 @@ def test_batch_read_dataframes_from_json_of_orients(df, orient):
 
 
 def test_batch_read_dataframes_from_json_with_wrong_orients(df, orient):
-    test_datas = [df.to_json(orient='table')] * 3
-    test_types = ['json'] * 3
+    test_datas = [df.to_json(orient="table")] * 3
+    test_types = ["json"] * 3
 
     df_merged, counts = read_dataframes_from_json_n_csv(test_datas, test_types, orient)
     assert not df_merged
@@ -192,7 +192,7 @@ def test_batch_read_dataframes_from_json_with_wrong_orients(df, orient):
 def test_batch_read_dataframes_from_json_in_mixed_order():
     # different column order when orient=records
     df_json = '[{"A": 1, "B": 2, "C": 3}, {"C": 6, "A": 2, "B": 4}]'
-    df_merged, counts = read_dataframes_from_json_n_csv([df_json], ['json'])
+    df_merged, counts = read_dataframes_from_json_n_csv([df_json], ["json"])
     i = 0
     for count in counts:
         assert_df_equal(df_merged[i : i + count], pd.read_json(df_json))
@@ -203,7 +203,7 @@ def test_batch_read_dataframes_from_json_in_mixed_order():
     df_json2 = '{"B": {"1": 2, "2": 4}, "A": {"1": 1, "2": 2}, "C": {"1": 3, "2": 6}}'
     df_json3 = '{"A": {"1": 1, "2": 2}, "B": {"2": 4, "1": 2}, "C": {"1": 3, "2": 6}}'
     df_merged, counts = read_dataframes_from_json_n_csv(
-        [df_json1, df_json2, df_json3], ['json'] * 3
+        [df_json1, df_json2, df_json3], ["json"] * 3
     )
     i = 0
     for count in counts:
@@ -222,9 +222,9 @@ def test_guess_orient(df, orient):
 
 @pytest.mark.skipif(not psutil.POSIX, reason="production server only works on POSIX")
 def test_benchmark_load_dataframes():
-    '''
+    """
     read_dataframes_from_json_n_csv should be 30x faster than pd.read_json + pd.concat
-    '''
+    """
     test_count = 50
 
     dfs = [pd.DataFrame(np.random.rand(10, 100)) for _ in range(test_count)]
@@ -237,7 +237,7 @@ def test_benchmark_load_dataframes():
 
     time_st = time.time()
     result2, _ = read_dataframes_from_json_n_csv(
-        inputs, itertools.repeat('json'), 'columns'
+        inputs, itertools.repeat("json"), "columns"
     )
 
     time2 = time.time() - time_st

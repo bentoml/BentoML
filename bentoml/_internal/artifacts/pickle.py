@@ -1,49 +1,46 @@
-# import os
+import os
+import typing as t
+from types import ModuleType
 
-# from cloudpickle import cloudpickle
-#
-# from bentoml._internal.artifacts import BaseModelArtifact
-#
-# PICKLE_FILE_EXTENSION = ".pkl"
-#
-#
-# class PickleArtifact(BaseModelArtifact):
-#     """Abstraction for saving/loading python objects with pickle serialization
-#
-#     Args:
-#         name (str): Name for the artifact
-#         pickle_module (module|str): The python module will be used for pickle
-#             and unpickle artifact, default pickle module in BentoML's fork of
-#             `cloudpickle`, which is identical to the Apache Spark fork
-#         pickle_extension (str): The extension format for pickled file.
-#     """
-#
-#     def __init__(self, name, pickle_module=cloudpickle):
-#         super(PickleArtifact, self).__init__(name)
-#
-#         self._obj = None
-#
-#         if isinstance(pickle_module, str):
-#             self._pickle = __import__(pickle_module)
-#         else:
-#             self._pickle = pickle_module
-#
-#     def _pkl_file_path(self, base_path):
-#         return os.path.join(base_path, self.name + PICKLE_FILE_EXTENSION)
-#
-#     def pack(self, obj, metadata=None):  # pylint:disable=arguments-renamed
-#         self._obj = obj
-#         return self
-#
-#     def load(self, path):
-#         with open(self._pkl_file_path(path), "rb") as pkl_file:
-#             obj = self._pickle.load(pkl_file)
-#         self.pack(obj)
-#         return self
-#
-#     def get(self):
-#         return self._obj
-#
-#     def save(self, dst):
-#         with open(self._pkl_file_path(dst), "wb") as pkl_file:
-#             self._pickle.dump(self._obj, pkl_file)
+import cloudpickle
+
+from ..types import MT, PathType
+from .base import BaseArtifact
+
+PICKLE_FILE_EXTENSION = ".pkl"
+
+
+class PickleArtifact(BaseArtifact):
+    """
+    Abstraction for saving/loading python objects with pickle serialization
+    """
+
+    def __init__(
+        self,
+        model: MT,
+        metadata=t.Optional[t.Dict[str, t.Any]],
+        pickle_module=cloudpickle,
+    ):
+        super(PickleArtifact, self).__init__(model, metadata=metadata)
+
+        if isinstance(pickle_module, str):
+            self._pickle: ModuleType = __import__(pickle_module)
+        else:
+            self._pickle: ModuleType = pickle_module
+
+        self._obj: MT = model
+
+    def __pkl_path(self, base_path: PathType) -> PathType:
+        return PathType(
+            os.path.join(base_path, self._model.__str__ + PICKLE_FILE_EXTENSION)
+        )
+
+    @classmethod
+    def load(cls, path: PathType) -> MT:
+        with open(cls.__pkl_path(base_path=path), "rb") as inf:
+            cls._obj = cls._pickle.load(inf)
+        return cls._obj
+
+    def save(self, dst: PathType) -> None:
+        with open(self.__pkl_path(dst), "wb") as inf:
+            self._pickle.dump(self._obj, inf)

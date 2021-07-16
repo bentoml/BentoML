@@ -51,8 +51,8 @@ DEFAULT_LIST_LIMIT = 40
 
 
 class Bento(Base):
-    __tablename__ = 'bentos'
-    __table_args__ = tuple(UniqueConstraint('name', 'version', name='_name_version_uc'))
+    __tablename__ = "bentos"
+    __table_args__ = tuple(UniqueConstraint("name", "version", name="_name_version_uc"))
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
@@ -65,7 +65,7 @@ class Bento(Base):
     # requires an explicitly named type, or an explicitly named constraint in order to
     # generate the type and/or a table that uses it.
     uri_type = Column(
-        Enum(*BentoUri.StorageType.keys(), name='uri_type'), default=BentoUri.UNSET
+        Enum(*BentoUri.StorageType.keys(), name="uri_type"), default=BentoUri.UNSET
     )
 
     # JSON filed mapping directly to BentoServiceMetadata proto message
@@ -86,18 +86,18 @@ class Bento(Base):
 def _bento_orm_obj_to_pb(bento_obj, labels=None):
     # Backwards compatible support loading saved bundle created before 0.8.0
     if (
-        'apis' in bento_obj.bento_service_metadata
-        and bento_obj.bento_service_metadata['apis']
+        "apis" in bento_obj.bento_service_metadata
+        and bento_obj.bento_service_metadata["apis"]
     ):
-        for api in bento_obj.bento_service_metadata['apis']:
-            if 'handler_type' in api:
-                api['input_type'] = api['handler_type']
-                del api['handler_type']
-            if 'handler_config' in api:
-                api['input_config'] = api['handler_config']
-                del api['handler_config']
-            if 'output_type' not in api:
-                api['output_type'] = 'DefaultOutput'
+        for api in bento_obj.bento_service_metadata["apis"]:
+            if "handler_type" in api:
+                api["input_type"] = api["handler_type"]
+                del api["handler_type"]
+            if "handler_config" in api:
+                api["input_config"] = api["handler_config"]
+                del api["handler_config"]
+            if "output_type" not in api:
+                api["output_type"] = "DefaultOutput"
 
     bento_service_metadata_pb = ParseDict(
         bento_obj.bento_service_metadata, BentoServiceMetadata()
@@ -109,7 +109,7 @@ def _bento_orm_obj_to_pb(bento_obj, labels=None):
         upload_status = DEFAULT_UPLOAD_STATUS
     else:
         upload_status = UploadStatus(
-            status=UploadStatus.Status.Value(bento_obj.upload_status['status'])
+            status=UploadStatus.Status.Value(bento_obj.upload_status["status"])
         )
     if labels is not None:
         bento_service_metadata_pb.labels.update(labels)
@@ -177,14 +177,14 @@ class MetadataStore(object):
             )
             service_metadata = ProtoMessageToDict(bento_service_metadata_pb)
             bento_obj.bento_service_metadata = service_metadata
-            if service_metadata.get('labels', None) is not None:
+            if service_metadata.get("labels", None) is not None:
                 bento = (
                     sess.query(Bento)
                     .filter_by(name=bento_name, version=bento_version)
                     .one()
                 )
                 LabelStore.add_or_update(
-                    sess, RESOURCE_TYPE.bento, bento.id, service_metadata['labels']
+                    sess, RESOURCE_TYPE.bento, bento.id, service_metadata["labels"]
                 )
         except NoResultFound:
             raise YataiRepositoryException(

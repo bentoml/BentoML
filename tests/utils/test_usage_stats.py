@@ -9,9 +9,9 @@ from bentoml.yatai.proto.deployment_pb2 import DeleteDeploymentResponse, Deploym
 from bentoml.yatai.status import Status
 from bentoml.yatai.yatai_service import get_yatai_service
 
-MOCK_DEPLOYMENT_NAME = 'mock_name'
-MOCK_FAILED_DEPLOYMENT_NAME = 'mock-failed'
-MOCK_DEPLOYMENT_NAMESPACE = 'mock_namespace'
+MOCK_DEPLOYMENT_NAME = "mock_name"
+MOCK_FAILED_DEPLOYMENT_NAME = "mock-failed"
+MOCK_DEPLOYMENT_NAMESPACE = "mock_namespace"
 
 DO_NOT_TRACK_ENV = "BENTOML_DO_NOT_TRACK"
 
@@ -21,8 +21,8 @@ def mock_track_func(event, properties):
 
 
 def mock_deployment_pb(name=MOCK_DEPLOYMENT_NAME):
-    mock_deployment = Deployment(name=name, namespace='mock-namespace')
-    mock_deployment.spec.azure_functions_operator_config.location = 'mock-location'
+    mock_deployment = Deployment(name=name, namespace="mock-namespace")
+    mock_deployment.spec.azure_functions_operator_config.location = "mock-location"
     mock_deployment.spec.operator = 4
     mock_deployment.created_at.GetCurrentTime()
     return mock_deployment
@@ -59,10 +59,10 @@ def mock_start_dev_server(
 def test_get_bento_service_event_properties(bento_service):
     properties = _get_bento_service_event_properties(bento_service)
 
-    assert 'PickleArtifact' in properties["artifact_types"]
-    assert 'DataframeInput' in properties["input_types"]
-    assert 'ImageInput' in properties["input_types"]
-    assert 'JsonInput' in properties["input_types"]
+    assert "PickleArtifact" in properties["artifact_types"]
+    assert "DataframeInput" in properties["input_types"]
+    assert "ImageInput" in properties["input_types"]
+    assert "JsonInput" in properties["input_types"]
     assert len(properties["input_types"]) == 4
 
     assert properties["env"] is not None
@@ -76,62 +76,62 @@ def test_get_bento_service_event_properties_with_no_artifact():
 
     assert "input_types" not in properties
     assert properties["artifact_types"]
-    assert 'NO_ARTIFACT' in properties["artifact_types"]
+    assert "NO_ARTIFACT" in properties["artifact_types"]
     assert properties["env"] is not None
 
 
 def test_track_cli_usage(bento_service, bento_bundle_path):
-    with patch('bentoml.cli.click_utils.track') as mock:
+    with patch("bentoml.cli.click_utils.track") as mock:
         mock.side_effect = mock_track_func
         runner = CliRunner()
         cli = create_bentoml_cli()
         runner.invoke(
-            cli.commands['info'], [f'{bento_service.name}:{bento_service.version}']
+            cli.commands["info"], [f"{bento_service.name}:{bento_service.version}"]
         )
         event_name, properties = mock.call_args_list[0][0]
-        assert event_name == 'bentoml-cli'
-        assert properties['command'] == 'info'
-        assert properties['return_code'] == 0
-        assert properties['duration']
+        assert event_name == "bentoml-cli"
+        assert properties["command"] == "info"
+        assert properties["return_code"] == 0
+        assert properties["duration"]
 
 
 def test_track_cli_with_click_exception():
-    with patch('bentoml.cli.click_utils.track') as mock:
+    with patch("bentoml.cli.click_utils.track") as mock:
         mock.side_effect = mock_track_func
         runner = CliRunner()
         cli = create_bentoml_cli()
         runner.invoke(
-            cli.commands['azure-functions'], ['update', 'mock-deployment-name']
+            cli.commands["azure-functions"], ["update", "mock-deployment-name"]
         )
         _, properties = mock.call_args_list[0][0]
-        assert properties['command'] == 'update'
-        assert properties['command_group'] == 'azure-functions'
-        assert properties['error_type'] == 'AttributeError'
-        assert properties['return_code'] == 1
+        assert properties["command"] == "update"
+        assert properties["command_group"] == "azure-functions"
+        assert properties["error_type"] == "AttributeError"
+        assert properties["return_code"] == 1
 
 
 def test_track_cli_with_keyboard_interrupt(bento_bundle_path):
-    with patch('bentoml.cli.click_utils.track') as track:
+    with patch("bentoml.cli.click_utils.track") as track:
         track.side_effect = mock_track_func
-        with patch('bentoml.cli.bento_service.start_dev_server') as start_dev_server:
+        with patch("bentoml.cli.bento_service.start_dev_server") as start_dev_server:
             start_dev_server.side_effect = mock_start_dev_server
             runner = CliRunner()
             cli = create_bentoml_cli()
-            runner.invoke(cli.commands['serve'], [bento_bundle_path])
+            runner.invoke(cli.commands["serve"], [bento_bundle_path])
             _, properties = track.call_args_list[0][0]
-            assert properties['return_code'] == 2
-            assert properties['error_type'] == 'KeyboardInterrupt'
-            assert properties['command'] == 'serve'
+            assert properties["return_code"] == 2
+            assert properties["error_type"] == "KeyboardInterrupt"
+            assert properties["command"] == "serve"
 
 
-@patch('bentoml.yatai.yatai_service_impl.validate_deployment_pb', MagicMock())
-@patch('bentoml.yatai.db.DeploymentStore')
+@patch("bentoml.yatai.yatai_service_impl.validate_deployment_pb", MagicMock())
+@patch("bentoml.yatai.db.DeploymentStore")
 def test_track_server_successful_delete(mock_deployment_store):
     mock_deployment_store.return_value.get.return_value = mock_deployment_pb()
-    with patch('bentoml.yatai.yatai_service_impl.track') as mock:
+    with patch("bentoml.yatai.yatai_service_impl.track") as mock:
         mock.side_effect = mock_track_func
         with patch(
-            'bentoml.yatai.yatai_service_impl.get_deployment_operator'
+            "bentoml.yatai.yatai_service_impl.get_deployment_operator"
         ) as mock_get_deployment_operator:
             mock_get_deployment_operator.side_effect = mock_get_operator_func()
             yatai_service = get_yatai_service()
@@ -141,22 +141,22 @@ def test_track_server_successful_delete(mock_deployment_store):
             delete_request.force_delete = False
             yatai_service.DeleteDeployment(delete_request)
             event_name, properties = mock.call_args_list[0][0]
-            assert event_name == 'deployment-AZURE_FUNCTIONS-stop'
+            assert event_name == "deployment-AZURE_FUNCTIONS-stop"
 
 
 @patch(
-    'bentoml.yatai.yatai_service_impl.validate_deployment_pb',
+    "bentoml.yatai.yatai_service_impl.validate_deployment_pb",
     MagicMock(return_value=None),
 )
-@patch('bentoml.yatai.db.DeploymentStore')
+@patch("bentoml.yatai.db.DeploymentStore")
 def test_track_server_force_delete(mock_deployment_store):
     mock_deployment_store.return_value.get.return_value = mock_deployment_pb(
         MOCK_FAILED_DEPLOYMENT_NAME
     )
-    with patch('bentoml.yatai.yatai_service_impl.track') as mock:
+    with patch("bentoml.yatai.yatai_service_impl.track") as mock:
         mock.side_effect = mock_track_func
         with patch(
-            'bentoml.yatai.yatai_service_impl.get_deployment_operator'
+            "bentoml.yatai.yatai_service_impl.get_deployment_operator"
         ) as mock_get_deployment_operator:
             mock_get_deployment_operator.side_effect = mock_get_operator_func()
             yatai_service = get_yatai_service()
@@ -166,8 +166,8 @@ def test_track_server_force_delete(mock_deployment_store):
             delete_request.force_delete = True
             yatai_service.DeleteDeployment(delete_request)
             event_name, properties = mock.call_args_list[0][0]
-            assert event_name == 'deployment-AZURE_FUNCTIONS-stop'
-            assert properties['force_delete']
+            assert event_name == "deployment-AZURE_FUNCTIONS-stop"
+            assert properties["force_delete"]
 
 
 def test_do_not_track():

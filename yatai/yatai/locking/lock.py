@@ -74,7 +74,7 @@ def lock(
                 sess.commit()
                 logger.debug("Session acquired")
                 for lck in locks:
-                    op = 'READ' if lck[1] == LOCK_STATUS.read_lock else 'WRITE'
+                    op = "READ" if lck[1] == LOCK_STATUS.read_lock else "WRITE"
                     logger.debug(f"\t{op} on {lck[0]}")
                 start = time.time()
 

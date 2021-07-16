@@ -18,7 +18,7 @@ def get_traceback_list():
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([DetectronModelArtifact('model')])
+@bentoml.artifacts([DetectronModelArtifact("model")])
 class DetectronClassifier(bentoml.BentoService):
     @bentoml.api(input=ImageInput(), batch=False)
     def predict(self, original_image: np.ndarray) -> Dict:

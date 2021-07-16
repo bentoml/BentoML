@@ -14,19 +14,19 @@ from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 
-SUPPORTED_PYTHON_VERSION: List = ['3.6', '3.7', '3.8']
-SUPPORTED_BASE_DISTROS: List = ['slim', 'centos7', 'centos8']
+SUPPORTED_PYTHON_VERSION: List = ["3.6", "3.7", "3.8"]
+SUPPORTED_BASE_DISTROS: List = ["slim", "centos7", "centos8"]
 SUPPORTED_GPU_DISTROS: List = SUPPORTED_BASE_DISTROS
 
 # NOTES: model-server only.
 SUPPORTED_RELEASES_COMBINATION: Dict[str, List[str]] = {
-    'cudnn': SUPPORTED_BASE_DISTROS,
-    'devel': SUPPORTED_BASE_DISTROS,
-    'runtime': SUPPORTED_BASE_DISTROS + ['ami2', 'alpine3.14'],
+    "cudnn": SUPPORTED_BASE_DISTROS,
+    "devel": SUPPORTED_BASE_DISTROS,
+    "runtime": SUPPORTED_BASE_DISTROS + ["ami2", "alpine3.14"],
 }
 
 # re.Pattern is not introduced til
-SEMVER_REGEX = re.compile(r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)?$')
+SEMVER_REGEX = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)?$")
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ if you need older version of bentoml. Using devel image instead...
 
 
 def get_suffix(gpu: bool) -> str:
-    return 'runtime' if not gpu else 'cudnn'
+    return "runtime" if not gpu else "cudnn"
 
 
 class ImageProvider(object):
@@ -105,7 +105,7 @@ class ImageProvider(object):
             BentoMLContainer.bento_bundle_deployment_version
         ],
     ):
-        major, minor, patch = bentoml_version.split('.')
+        major, minor, patch = bentoml_version.split(".")
         if not SEMVER_REGEX.match(bentoml_version):
             raise ValueError(f"{bentoml_version} doesn't follow semantic versioning.")
         if not patch:
@@ -118,7 +118,7 @@ class ImageProvider(object):
                 classname=self.__class__.__name__, bentoml_version=bentoml_version,
             )
             logger.warning(msg)
-            self._release_type: str = 'devel'
+            self._release_type: str = "devel"
         else:
             self._release_type = bentoml_version
 
@@ -129,7 +129,7 @@ class ImageProvider(object):
         if python_version:
             _py_ver: str = python_version
         else:
-            _py_ver = '.'.join(map(str, sys.version_info[:2]))
+            _py_ver = ".".join(map(str, sys.version_info[:2]))
             logger.warning(
                 f"No python_version is specified, using {_py_ver}. "
                 f"List of supported python version: {SUPPORTED_PYTHON_VERSION}. "
@@ -144,12 +144,12 @@ class ImageProvider(object):
 
         self._python_version: str = _py_ver
 
-        if 'ubuntu' in distros or 'debian' in distros:
+        if "ubuntu" in distros or "debian" in distros:
             logger.debug("Using slim tags for debian based distros")
-            _distros = 'slim'
-        elif 'amazon' in distros:
+            _distros = "slim"
+        elif "amazon" in distros:
             logger.debug("Convert amazonlinux tags to ami2")
-            _distros = 'ami2'
+            _distros = "ami2"
         else:
             _distros = distros
 
@@ -160,8 +160,8 @@ class ImageProvider(object):
             )
 
         if (
-            _distros not in SUPPORTED_RELEASES_COMBINATION['devel']
-            and self._release_type == 'devel'
+            _distros not in SUPPORTED_RELEASES_COMBINATION["devel"]
+            and self._release_type == "devel"
         ):
             raise RuntimeError(f"{distros} doesn't support devel tags.")
 

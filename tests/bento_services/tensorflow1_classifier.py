@@ -11,7 +11,7 @@ if "tensorflow" not in sys.modules:
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([TensorflowSavedModelArtifact('model')])
+@bentoml.artifacts([TensorflowSavedModelArtifact("model")])
 class Tensorflow1Classifier(bentoml.BentoService):
     @bentoml.api(input=TfTensorInput(), batch=True)
     def predict(self, tensor):
@@ -19,5 +19,5 @@ class Tensorflow1Classifier(bentoml.BentoService):
 
         tf.enable_eager_execution()
 
-        pred_func = self.artifacts.model.signatures['serving_default']
-        return pred_func(tensor)['prediction']
+        pred_func = self.artifacts.model.signatures["serving_default"]
+        return pred_func(tensor)["prediction"]

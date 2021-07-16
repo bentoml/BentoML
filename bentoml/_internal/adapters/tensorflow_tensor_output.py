@@ -7,14 +7,14 @@ from ..adapters.utils import TfTensorJsonEncoder
 from ..types import InferenceError, InferenceResult, InferenceTask
 from ..utils.lazy_loader import LazyLoader
 
-np = LazyLoader('np', globals(), 'numpy')
+np = LazyLoader("np", globals(), "numpy")
 
 
 def tf_to_numpy(tensor):
-    '''
+    """
     Tensor -> ndarray
     List[Tensor] -> tuple[ndarray]
-    '''
+    """
     import tensorflow as tf
 
     if isinstance(tensor, (list, tuple)):
@@ -47,7 +47,7 @@ class TfTensorOutput(JsonOutput):
         """
         :return: List of PyPI package names required by this OutputAdapter
         """
-        return ['tensorflow']
+        return ["tensorflow"]
 
     def pack_user_func_return_value(
         self, return_result, tasks: Sequence[InferenceTask],

@@ -45,29 +45,29 @@ def metrics_patch(cls):
             service_name = self.bento_service_metadata_pb.name
 
             self.metrics_request_batch_size = metrics_client.Histogram(
-                name=service_name + '_mb_batch_size',
+                name=service_name + "_mb_batch_size",
                 documentation=service_name + "microbatch request batch size",
-                labelnames=['endpoint'],
+                labelnames=["endpoint"],
             )
             self.metrics_request_duration = metrics_client.Histogram(
-                name=service_name + '_mb_request_duration_seconds',
+                name=service_name + "_mb_request_duration_seconds",
                 documentation=service_name + "API HTTP request duration in seconds",
-                labelnames=['endpoint', 'http_response_code'],
+                labelnames=["endpoint", "http_response_code"],
             )
             self.metrics_request_in_progress = metrics_client.Gauge(
                 name=service_name + "_mb_request_in_progress",
-                documentation='Total number of HTTP requests in progress now',
-                labelnames=['endpoint', 'http_method'],
+                documentation="Total number of HTTP requests in progress now",
+                labelnames=["endpoint", "http_method"],
             )
             self.metrics_request_exception = metrics_client.Counter(
                 name=service_name + "_mb_request_exception",
-                documentation='Total number of service exceptions',
-                labelnames=['endpoint', 'exception_class'],
+                documentation="Total number of service exceptions",
+                labelnames=["endpoint", "exception_class"],
             )
             self.metrics_request_total = metrics_client.Counter(
                 name=service_name + "_mb_request_total",
-                documentation='Total number of service exceptions',
-                labelnames=['endpoint', 'http_response_code'],
+                documentation="Total number of service exceptions",
+                labelnames=["endpoint", "http_response_code"],
             )
 
         async def request_dispatcher(self, request):
@@ -197,7 +197,7 @@ class MarshalApp:
         for task in self.cleanup_tasks:
             await task()
 
-        if hasattr(self, '_client'):
+        if hasattr(self, "_client"):
             if self._client is not None and not self._client.closed:
                 await self._client.close()
 
@@ -235,13 +235,13 @@ class MarshalApp:
         return self._client
 
     def add_batch_handler(self, api_route, max_latency, max_batch_size):
-        '''
+        """
         Params:
         * max_latency: limit the max latency of overall request handling
         * max_batch_size: limit the max batch size for handler
 
         ** marshal server will give priority to meet these limits than efficiency
-        '''
+        """
         from aiohttp.web import HTTPTooManyRequests
 
         if api_route not in self.batch_handlers:
@@ -337,7 +337,7 @@ class MarshalApp:
         return Response(status=resp.status, body=body, headers=resp.headers,)
 
     async def _batch_handler_template(self, requests, api_route, max_latency):
-        '''
+        """
         batch request handler
         params:
             * requests: list of aiohttp request
@@ -345,7 +345,7 @@ class MarshalApp:
         raise:
             * RemoteException: known exceptions from model server
             * Exception: other exceptions
-        '''
+        """
         from aiohttp import ClientTimeout
         from aiohttp.client_exceptions import ClientConnectionError
         from aiohttp.web import Response

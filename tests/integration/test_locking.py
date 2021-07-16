@@ -5,36 +5,36 @@ import subprocess
 from tests.bento_services.example_bento_service import ExampleBentoService
 from tests.threading_util import ThreadWithResult, run_delayed_thread
 
-logger = logging.getLogger('bentoml.test')
+logger = logging.getLogger("bentoml.test")
 
 
 def cli(svc, cmd, *args):
-    bento_tag = f'{svc.name}:{svc.version}'
+    bento_tag = f"{svc.name}:{svc.version}"
     proc = subprocess.Popen(
-        ['bentoml', cmd, bento_tag, *args],
+        ["bentoml", cmd, bento_tag, *args],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    return proc.stdout.read().decode('utf-8')
+    return proc.stdout.read().decode("utf-8")
 
 
 @pytest.fixture()
 def packed_svc():
     svc = ExampleBentoService()
-    svc.pack('model', [1, 2, 3])
+    svc.pack("model", [1, 2, 3])
     svc.save()
     return svc
 
 
 def test_write_lock_on_read_lock(packed_svc):
     containerize_thread = ThreadWithResult(
-        target=cli, args=(packed_svc, 'containerize', '-t', 'imagetag')
+        target=cli, args=(packed_svc, "containerize", "-t", "imagetag")
     )
-    delete_thread = ThreadWithResult(target=cli, args=(packed_svc, 'delete', '-y'))
+    delete_thread = ThreadWithResult(target=cli, args=(packed_svc, "delete", "-y"))
     run_delayed_thread(containerize_thread, delete_thread)
 
     assert (
-        f'Build container image: imagetag:{packed_svc.version}'
+        f"Build container image: imagetag:{packed_svc.version}"
         in containerize_thread.result
     )
     assert (
@@ -46,13 +46,13 @@ def test_write_lock_on_read_lock(packed_svc):
 
 def test_read_lock_on_read_lock(packed_svc):
     containerize_thread = ThreadWithResult(
-        target=cli, args=(packed_svc, 'containerize', '-t', 'imagetag')
+        target=cli, args=(packed_svc, "containerize", "-t", "imagetag")
     )
-    get_thread = ThreadWithResult(target=cli, args=(packed_svc, 'get'))
+    get_thread = ThreadWithResult(target=cli, args=(packed_svc, "get"))
     run_delayed_thread(containerize_thread, get_thread)
 
     assert (
-        f'Build container image: imagetag:{packed_svc.version}'
+        f"Build container image: imagetag:{packed_svc.version}"
         in containerize_thread.result
     )
     assert f'"name": "{packed_svc.name}"' in get_thread.result

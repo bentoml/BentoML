@@ -22,7 +22,7 @@ from bentoml.yatai.client.interceptor import generic_client_interceptor
 
 class _ClientCallDetails(
     collections.namedtuple(
-        '_ClientCallDetails', ('method', 'timeout', 'metadata', 'credentials')
+        "_ClientCallDetails", ("method", "timeout", "metadata", "credentials")
     ),
     grpc.ClientCallDetails,
 ):

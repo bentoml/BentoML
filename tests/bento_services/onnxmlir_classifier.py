@@ -6,11 +6,11 @@ from bentoml.adapters import DataframeInput
 from bentoml.onnxmlir import OnnxMlirModelArtifact
 
 
-sys.path.append('/workdir/onnx-mlir/build/Debug/lib/')
+sys.path.append("/workdir/onnx-mlir/build/Debug/lib/")
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([OnnxMlirModelArtifact('model')])
+@bentoml.artifacts([OnnxMlirModelArtifact("model")])
 class OnnxMlirClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

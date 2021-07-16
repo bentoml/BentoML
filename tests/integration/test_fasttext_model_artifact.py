@@ -32,18 +32,18 @@ def test_fasttext_artifact_pack(fasttext_classifier_class):
         model = fasttext.train_supervised(input=filename)
 
     svc = fasttext_classifier_class()
-    svc.pack('model', model)
+    svc.pack("model", model)
 
     assert svc.predict(test_json)[0] == (
-        '__label__bar',
-    ), 'Run inference before saving the artifact'
+        "__label__bar",
+    ), "Run inference before saving the artifact"
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
     assert loaded_svc.predict(test_json)[0] == (
-        '__label__bar',
-    ), 'Run inference after saving the artifact'
+        "__label__bar",
+    ), "Run inference after saving the artifact"
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{svc.name}:{svc.version}')
+    yc.repository.delete(f"{svc.name}:{svc.version}")

@@ -9,11 +9,11 @@ import pytest
 
 def format_path(path_str):
     if psutil.WINDOWS:
-        return path_str.lower().replace('/', '\\')
+        return path_str.lower().replace("/", "\\")
     return path_str
 
 
-@pytest.mark.skipif('not psutil.POSIX')
+@pytest.mark.skipif("not psutil.POSIX")
 def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
     import subprocess
     from pip._internal.cli.main import main as pipmain
@@ -26,7 +26,7 @@ def test_pip_install_saved_bentoservice_bundle(bento_bundle_path, tmpdir):
             ["install", "-U", "--target={}".format(install_path), bento_bundle_path]
         )
         == 0
-    ), 'saved bundle successfully installed'
+    ), "saved bundle successfully installed"
 
     # ensure BentoML is installed as dependency
     if psutil.WINDOWS:

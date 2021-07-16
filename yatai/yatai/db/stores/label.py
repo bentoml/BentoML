@@ -27,7 +27,7 @@ def _validate_labels(labels):
         InvalidArgument
     """
     if not isinstance(labels, dict):
-        raise InvalidArgument('BentoService labels must be a dictionary')
+        raise InvalidArgument("BentoService labels must be a dictionary")
 
     pattern = re.compile("^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$")
     for key in labels:
@@ -38,21 +38,21 @@ def _validate_labels(labels):
             or not pattern.match(labels[key])
         ):
             raise InvalidArgument(
-                f'Invalide label {key}:{labels[key]}. Valid label key and value must '
-                f'be between 3 to 63 characters and must be begin and end with '
-                f'an alphanumeric character ([a-z0-9A-Z]) with dashes (-), '
-                f'underscores (_), and dots (.).'
+                f"Invalide label {key}:{labels[key]}. Valid label key and value must "
+                f"be between 3 to 63 characters and must be begin and end with "
+                f"an alphanumeric character ([a-z0-9A-Z]) with dashes (-), "
+                f"underscores (_), and dots (.)."
             )
 
 
 class Label(Base):
-    __tablename__ = 'labels'
+    __tablename__ = "labels"
     __table_args__ = tuple(
         UniqueConstraint(
-            'resource_type',
-            'resource_id',
-            'key',
-            name='_resource_type_resource_id_key_uc',
+            "resource_type",
+            "resource_id",
+            "key",
+            name="_resource_type_resource_id_key_uc",
         )
     )
     id = Column(Integer, primary_key=True)

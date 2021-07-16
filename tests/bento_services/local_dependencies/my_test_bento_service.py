@@ -11,7 +11,7 @@ from tests.bento_services.local_dependencies.nested_dependency import (
 
 
 @bentoml.env(pip_packages=["scikit-learn"])
-@bentoml.artifacts([SklearnModelArtifact('model')])
+@bentoml.artifacts([SklearnModelArtifact("model")])
 class IrisClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

@@ -54,7 +54,7 @@ CLI_COLOR_ERROR = "red"
 CLI_COLOR_WARNING = "yellow"
 
 logger = logging.getLogger(__name__)
-TRACK_CLI_EVENT_NAME = 'bentoml-cli'
+TRACK_CLI_EVENT_NAME = "bentoml-cli"
 
 
 def _echo(message, color="reset"):
@@ -71,21 +71,21 @@ class BentoMLCommandGroup(click.Group):
     @staticmethod
     def bentoml_common_params(func):
         @click.option(
-            '-q',
-            '--quiet',
+            "-q",
+            "--quiet",
             is_flag=True,
             default=False,
             help="Hide all warnings and info logs",
         )
         @click.option(
-            '--verbose',
-            '--debug',
+            "--verbose",
+            "--debug",
             is_flag=True,
             default=False,
             help="Show debug logs when running the command",
         )
         @click.option(
-            '--do-not-track',
+            "--do-not-track",
             is_flag=True,
             default=False,
             envvar="BENTOML_DO_NOT_TRACK",
@@ -109,7 +109,7 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def bentoml_track_usage(func, cmd_group, **kwargs):
-        command_name = kwargs.get('name', func.__name__)
+        command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)
         def wrapper(do_not_track: bool, *args, **kwargs):
@@ -120,23 +120,23 @@ class BentoMLCommandGroup(click.Group):
                 )
 
             track_properties = {
-                'command_group': cmd_group.name,
-                'command': command_name,
+                "command_group": cmd_group.name,
+                "command": command_name,
             }
             start_time = time.time()
             try:
                 return_value = func(*args, **kwargs)
-                track_properties['duration'] = time.time() - start_time
-                track_properties['return_code'] = 0
+                track_properties["duration"] = time.time() - start_time
+                track_properties["return_code"] = 0
                 track(TRACK_CLI_EVENT_NAME, track_properties)
                 return return_value
             except BaseException as e:
-                track_properties['duration'] = time.time() - start_time
-                track_properties['error_type'] = type(e).__name__
-                track_properties['error_message'] = str(e)
-                track_properties['return_code'] = 1
+                track_properties["duration"] = time.time() - start_time
+                track_properties["error_type"] = type(e).__name__
+                track_properties["error_message"] = str(e)
+                track_properties["return_code"] = 1
                 if type(e) == KeyboardInterrupt:
-                    track_properties['return_code'] = 2
+                    track_properties["return_code"] = 2
                 track(TRACK_CLI_EVENT_NAME, track_properties)
                 raise
 
@@ -144,15 +144,15 @@ class BentoMLCommandGroup(click.Group):
 
     @staticmethod
     def raise_click_exception(func, cmd_group, **kwargs):
-        command_name = kwargs.get('name', func.__name__)
+        command_name = kwargs.get("name", func.__name__)
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except BentoMLException as e:
-                msg = f'{cmd_group.name} {command_name} failed: {str(e)}'
-                raise ClickException(click.style(msg, fg='red'))
+                msg = f"{cmd_group.name} {command_name} failed: {str(e)}"
+                raise ClickException(click.style(msg, fg="red"))
 
         return wrapper
 
@@ -210,14 +210,14 @@ def parse_labels_callback(ctx, param, value):  # pylint: disable=unused-argument
         return value
 
     parsed_labels = {}
-    label_list = value.split(',')
+    label_list = value.split(",")
     for label in label_list:
-        if ':' not in label:
+        if ":" not in label:
             raise click.BadParameter(
-                f'Bad formatting for label {label}. '
-                f'Please present label in key:value format'
+                f"Bad formatting for label {label}. "
+                f"Please present label in key:value format"
             )
-        label_key, label_value = label.split(':')
+        label_key, label_value = label.split(":")
         parsed_labels[label_key] = label_value
 
     return parsed_labels
@@ -229,12 +229,12 @@ def validate_labels_query_callback(
     if not value:
         return value
 
-    labels = value.split(',')
+    labels = value.split(",")
     for label in labels:
-        if '=' not in label:
+        if "=" not in label:
             raise click.BadParameter(
-                f'Bad formatting for label {label}. '
-                f'Please present labels query in key=value format'
+                f"Bad formatting for label {label}. "
+                f"Please present labels query in key=value format"
             )
     return value
 
@@ -246,5 +246,5 @@ def parse_yaml_file_callback(ctx, param, value):  # pylint: disable=unused-argum
         return yaml.load(yml_content)
     except Exception:
         raise click.BadParameter(
-            'Input value is not recognizable yaml file or yaml content'
+            "Input value is not recognizable yaml file or yaml content"
         )

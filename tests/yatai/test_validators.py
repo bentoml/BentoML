@@ -3,10 +3,10 @@ from yatai.yatai.proto.deployment_pb2 import Deployment, DeploymentSpec
 
 
 def _get_test_custom_deployment_pb():
-    test_pb = Deployment(name='test_deployment_name', namespace='namespace')
-    test_pb.spec.bento_name = 'bento_name'
-    test_pb.spec.bento_version = 'bento_version'
-    test_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value('CUSTOM')
+    test_pb = Deployment(name="test_deployment_name", namespace="namespace")
+    test_pb.spec.bento_name = "bento_name"
+    test_pb.spec.bento_version = "bento_version"
+    test_pb.spec.operator = DeploymentSpec.DeploymentOperator.Value("CUSTOM")
     return test_pb
 
 
@@ -15,14 +15,14 @@ def test_validate_deployment_pb_schema():
     assert validate_deployment_pb(deployment_pb) is None
 
     deployment_pb_with_empty_name = _get_test_custom_deployment_pb()
-    deployment_pb_with_empty_name.name = ''
+    deployment_pb_with_empty_name.name = ""
     errors = validate_deployment_pb(deployment_pb_with_empty_name)
-    assert errors == {'name': ['required field']}
+    assert errors == {"name": ["required field"]}
 
     deployment_pb_with_invalid_service_version = _get_test_custom_deployment_pb()
-    deployment_pb_with_invalid_service_version.spec.bento_version = 'latest'
+    deployment_pb_with_invalid_service_version.spec.bento_version = "latest"
     errors = validate_deployment_pb(deployment_pb_with_invalid_service_version)
-    assert errors['spec'][0]['bento_version'] == [
+    assert errors["spec"][0]["bento_version"] == [
         'Must use specific "bento_version" in deployment, using "latest" is an '
-        'anti-pattern.'
+        "anti-pattern."
     ]

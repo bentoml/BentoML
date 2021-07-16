@@ -11,21 +11,21 @@ from bentoml.adapters import FileInput
 
 
 classes = (
-    'plane',
-    'car',
-    'bird',
-    'cat',
-    'deer',
-    'dog',
-    'frog',
-    'horse',
-    'ship',
-    'truck',
+    "plane",
+    "car",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck",
 )
 
 
-@bentoml.env(pip_packages=['torch', 'numpy', 'torchvision', 'scikit-learn'])
-@bentoml.artifacts([PytorchModelArtifact('net')])
+@bentoml.env(pip_packages=["torch", "numpy", "torchvision", "scikit-learn"])
+@bentoml.artifacts([PytorchModelArtifact("net")])
 class PytorchImageClassifier(bentoml.BentoService):
     @bentoml.utils.cached_property
     def transform(self):

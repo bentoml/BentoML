@@ -12,7 +12,7 @@ def csv_splitlines(string) -> Iterator[str]:
                 if c == '"':
                     quoted = not quoted
                 if not quoted and string[i : i + 1] == "\n":
-                    if i == 0 or string[i - 1] != '\r':
+                    if i == 0 or string[i - 1] != "\r":
                         yield line[last_cur:i]
                         last_cur = i + 1
                     else:
@@ -58,7 +58,7 @@ def csv_unquote(string):
 
 
 def csv_quote(td):
-    '''
+    """
     >>> csv_quote(1)
     '1'
     >>> csv_quote('string')
@@ -67,11 +67,11 @@ def csv_quote(td):
     '"a,b""c"'
     >>> csv_quote(' ')
     '" "'
-    '''
+    """
     if td is None:
-        td = ''
+        td = ""
     elif not isinstance(td, str):
         td = str(td)
-    if '\n' in td or '"' in td or ',' in td or not td.strip():
+    if "\n" in td or '"' in td or "," in td or not td.strip():
         return td.replace('"', '""').join('""')
     return td

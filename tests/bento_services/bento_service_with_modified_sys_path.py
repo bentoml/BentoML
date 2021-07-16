@@ -15,7 +15,7 @@ from local_dependencies.nested_dependency import nested_dependency_func  # isort
 
 
 @bentoml.env(pip_packages=["scikit-learn"])
-@bentoml.artifacts([SklearnModelArtifact('model')])
+@bentoml.artifacts([SklearnModelArtifact("model")])
 class IrisClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

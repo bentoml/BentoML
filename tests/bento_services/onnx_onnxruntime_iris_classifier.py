@@ -6,7 +6,7 @@ from bentoml.onnx import OnnxModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([OnnxModelArtifact('model', backend='onnxruntime')])
+@bentoml.artifacts([OnnxModelArtifact("model", backend="onnxruntime")])
 class OnnxIrisClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

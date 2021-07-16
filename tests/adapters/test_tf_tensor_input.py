@@ -32,7 +32,7 @@ def mock_tensorflow_module():
     class MockConstant(MockTensor):
         pass
 
-    sys.modules['tensorflow'] = MagicMock()
+    sys.modules["tensorflow"] = MagicMock()
 
     import tensorflow as tf
 
@@ -52,9 +52,9 @@ BIN_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
 BIN_B64 = base64.b64encode(BIN_BYTES).decode()
 
 TEST_INPUTS = [
-    {'instances': [[[1, 2]], [[3, 4]]]},
-    {"instances": [[1.0, -float('inf'), float('inf')]]},
-    {"instances": float('nan')},
+    {"instances": [[[1, 2]], [[3, 4]]]},
+    {"instances": [[1.0, -float("inf"), float("inf")]]},
+    {"instances": float("nan")},
     {"instances": {"b64": STR_B64}},
     {"instances": [{"b64": STR_B64}]},
     {"instances": {"b64": BIN_B64}},
@@ -63,20 +63,20 @@ TEST_INPUTS = [
 
 
 TEST_HEADERS = [
-    ((BATCH_HEADER, 'true'),),
-    ((BATCH_HEADER, 'true'),),
-    ((BATCH_HEADER, 'false'),),
-    ((BATCH_HEADER, 'false'),),
-    ((BATCH_HEADER, 'true'),),
-    ((BATCH_HEADER, 'false'),),
-    ((BATCH_HEADER, 'true'),),
+    ((BATCH_HEADER, "true"),),
+    ((BATCH_HEADER, "true"),),
+    ((BATCH_HEADER, "false"),),
+    ((BATCH_HEADER, "false"),),
+    ((BATCH_HEADER, "true"),),
+    ((BATCH_HEADER, "false"),),
+    ((BATCH_HEADER, "true"),),
 ]
 
 
 EXPECTED_RESULTS = [
     [[[1, 2]], [[3, 4]]],
-    [[1.0, -float('inf'), float('inf')]],
-    float('nan'),
+    [[1.0, -float("inf"), float("inf")]],
+    float("nan"),
     STR,
     [STR],
     {"b64": BIN_B64},
@@ -97,15 +97,15 @@ def assert_eq_or_both_nan(x, y):
 
 
 def test_tf_tensor_handle_request(make_api, test_cases):
-    '''
+    """
     ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
-    '''
+    """
     from bentoml.adapters import TfTensorInput
 
     api = make_api(input_adapter=TfTensorInput(), user_func=lambda i: i)
 
     input_data, headers, except_result = test_cases
-    body = json.dumps(input_data).encode('utf-8')
+    body = json.dumps(input_data).encode("utf-8")
     request = HTTPRequest(headers=headers, body=body)
 
     response = tuple(api.handle_batch_request([request]))[0]
@@ -115,15 +115,15 @@ def test_tf_tensor_handle_request(make_api, test_cases):
 
 
 def test_tf_tensor_handle_batch_request(make_api, test_cases):
-    '''
+    """
     ref: https://www.tensorflow.org/tfx/serving/api_rest#request_format_2
-    '''
+    """
     from bentoml.adapters import TfTensorInput
 
     api = make_api(input_adapter=TfTensorInput(), user_func=lambda i: i)
 
     input_data, headers, except_result = test_cases
-    body = json.dumps(input_data).encode('utf-8')
+    body = json.dumps(input_data).encode("utf-8")
     request = HTTPRequest(headers=headers, body=body)
     responses = api.handle_batch_request([request] * 3)
 

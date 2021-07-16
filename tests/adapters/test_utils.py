@@ -3,7 +3,7 @@ from bentoml.adapters.utils import concat_list, get_default_accept_image_formats
 
 def test_get_default_accept_image_formats():
     formats = get_default_accept_image_formats()
-    assert formats == ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
+    assert formats == [".jpg", ".png", ".jpeg", ".tiff", ".webp", ".bmp"]
 
 
 def test_concat():

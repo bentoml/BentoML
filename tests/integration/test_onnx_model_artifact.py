@@ -26,7 +26,7 @@ def sklearn_onnx_model():
     from skl2onnx import convert_sklearn
     from skl2onnx.common.data_types import FloatTensorType
 
-    initial_types = [('float_input', FloatTensorType([None, 4]))]
+    initial_types = [("float_input", FloatTensorType([None, 4]))]
 
     iris = load_iris()
     X, y = iris.data, iris.target
@@ -44,33 +44,33 @@ def test_onnx_model_artifact_pack_modelproto_with_onnxruntime_backend(
     onnx_iris_classifier_class, sklearn_onnx_model
 ):
     svc = onnx_iris_classifier_class()
-    svc.pack('model', sklearn_onnx_model)
+    svc.pack("model", sklearn_onnx_model)
     assert svc.predict(test_df)[0] == [1], "Run inference before saving onnx artifact"
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
-    assert loaded_svc.predict(test_df)[0] == [1], 'Run inference after save onnx model'
+    assert loaded_svc.predict(test_df)[0] == [1], "Run inference after save onnx model"
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{svc.name}:{svc.version}')
+    yc.repository.delete(f"{svc.name}:{svc.version}")
 
 
 def test_onnx_model_artifact_pack_model_file_path_with_onnxruntime_backend(
     tmpdir, onnx_iris_classifier_class, sklearn_onnx_model
 ):
-    model_path = os.path.join(str(tmpdir), 'test.onnx')
-    with open(model_path, 'wb') as f:
+    model_path = os.path.join(str(tmpdir), "test.onnx")
+    with open(model_path, "wb") as f:
         f.write(sklearn_onnx_model.SerializeToString())
 
     svc = onnx_iris_classifier_class()
-    svc.pack('model', model_path)
+    svc.pack("model", model_path)
     assert svc.predict(test_df)[0] == [1], "Run inference before saving onnx artifact"
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
-    assert loaded_svc.predict(test_df)[0] == [1], 'Run inference after save onnx model'
+    assert loaded_svc.predict(test_df)[0] == [1], "Run inference after save onnx model"
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{svc.name}:{svc.version}')
+    yc.repository.delete(f"{svc.name}:{svc.version}")

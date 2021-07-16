@@ -9,7 +9,7 @@ def test_cached_property():
         @cached_property
         def a(self):
             self.counter += 1
-            return 'a'
+            return "a"
 
     a = A()
     assert a.a == a.a

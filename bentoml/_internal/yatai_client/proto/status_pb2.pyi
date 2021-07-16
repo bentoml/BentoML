@@ -14,7 +14,7 @@ DESCRIPTOR: google.protobuf.descriptor.FileDescriptor = ...
 class Status(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor = ...
     class Code(metaclass=_Code):
-        V = typing.NewType('V', builtins.int)
+        V = typing.NewType("V", builtins.int)
     OK = Status.Code.V(0)
     CANCELLED = Status.Code.V(1)
     UNKNOWN = Status.Code.V(2)
@@ -70,7 +70,7 @@ class Status(google.protobuf.message.Message):
     def ClearField(
         self,
         field_name: typing_extensions.Literal[
-            u"error_message", b"error_message", u"status_code", b"status_code"
+            "error_message", b"error_message", "status_code", b"status_code"
         ],
     ) -> None: ...
 

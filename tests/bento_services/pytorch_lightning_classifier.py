@@ -6,7 +6,7 @@ from bentoml.adapters import DataframeInput
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PytorchLightningModelArtifact('model')])
+@bentoml.artifacts([PytorchLightningModelArtifact("model")])
 class PytorchLightningService(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

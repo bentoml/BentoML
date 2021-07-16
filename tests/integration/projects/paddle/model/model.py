@@ -20,7 +20,7 @@ class Model(nn.Layer):
         super(Model, self).__init__()
         self.fc = nn.Linear(IN_FEATURES, OUT_FEATURES)
 
-    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype='float32')])
+    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype="float32")])
     def forward(self, x):
         return self.fc(x)
 

@@ -163,10 +163,10 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
         )
         if not os.path.isdir(src_web_static_content_dir):
             raise BentoMLException(
-                f'web_static_content directory {src_web_static_content_dir} not found'
+                f"web_static_content directory {src_web_static_content_dir} not found"
             )
         dest_web_static_content_dir = os.path.join(
-            module_base_path, 'web_static_content'
+            module_base_path, "web_static_content"
         )
         shutil.copytree(src_web_static_content_dir, dest_web_static_content_dir)
 
@@ -199,11 +199,11 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
     # as package data after pip installed as a python package
     config.write_to_path(module_base_path)
 
-    bundled_pip_dependencies_path = os.path.join(path, 'bundled_pip_dependencies')
+    bundled_pip_dependencies_path = os.path.join(path, "bundled_pip_dependencies")
     _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
     # delete mtime and sort file in tarballs to normalize the checksums
     for tarball_file_path in glob.glob(
-        os.path.join(bundled_pip_dependencies_path, '*.tar.gz')
+        os.path.join(bundled_pip_dependencies_path, "*.tar.gz")
     ):
         normalize_gztarball(tarball_file_path)
 
@@ -252,8 +252,8 @@ def save_to_dir(
         # If user provided path is an remote location, the bundle will first save to
         # a temporary directory and then upload to the remote location
         logger.info(
-            'Saving bento to an remote path. BentoML will first save the bento '
-            'to a local temporary directory and then upload to the remote path.'
+            "Saving bento to an remote path. BentoML will first save the bento "
+            "to a local temporary directory and then upload to the remote path."
         )
         with TempDirectory() as temp_dir:
             _write_bento_content_to_dir(bento_service, temp_dir)
@@ -286,7 +286,7 @@ def normalize_gztarball(file_path: str):
     tar_io = io.BytesIO()
 
     with tarfile.open(file_path, "r:gz") as f:
-        with tarfile.TarFile("bundle.tar", mode='w', fileobj=tar_io) as nf:
+        with tarfile.TarFile("bundle.tar", mode="w", fileobj=tar_io) as nf:
             names = sorted(f.getnames())
             for name in names:
                 info = f.getmember(name)
@@ -306,9 +306,9 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
     """
 
     # Find bentoml module path
-    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
+    (module_location,) = importlib.util.find_spec("bentoml").submodule_search_locations
 
-    bentoml_setup_py = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
+    bentoml_setup_py = os.path.abspath(os.path.join(module_location, "..", "setup.py"))
 
     # this is for BentoML developer to create BentoService containing custom develop
     # branches of BentoML library, it is True only when BentoML module is installed in
@@ -321,9 +321,9 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
 
         # Create tmp directory inside bentoml module for storing the bundled
         # targz file. Since dist-dir can only be inside of the module directory
-        bundle_dir_name = '__bentoml_tmp_sdist_build'
+        bundle_dir_name = "__bentoml_tmp_sdist_build"
         source_dir = os.path.abspath(
-            os.path.join(module_location, '..', bundle_dir_name)
+            os.path.join(module_location, "..", bundle_dir_name)
         )
 
         if os.path.isdir(source_dir):
@@ -334,7 +334,7 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
 
         sandbox.run_setup(
             bentoml_setup_py,
-            ['-q', 'sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name],
+            ["-q", "sdist", "--format", "gztar", "--dist-dir", bundle_dir_name],
         )
 
         # copy the generated targz to saved bundle directory and remove it from
@@ -350,8 +350,8 @@ def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
     """
     parsed_url = urlparse(remote_path)
     bucket_name = parsed_url.netloc
-    object_prefix_path = parsed_url.path.lstrip('/')
-    object_path = f'{object_prefix_path}/{file_name}'
+    object_prefix_path = parsed_url.path.lstrip("/")
+    object_path = f"{object_prefix_path}/{file_name}"
     if is_s3_url(remote_path):
         try:
             import boto3
@@ -359,8 +359,8 @@ def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
             raise BentoMLException(
                 '"boto3" package is required for saving bento to AWS S3 bucket'
             )
-        s3_client = boto3.client('s3')
-        with open(file_path, 'rb') as f:
+        s3_client = boto3.client("s3")
+        with open(file_path, "rb") as f:
             s3_client.upload_fileobj(f, bucket_name, object_path)
     elif is_gcs_url(remote_path):
         try:
@@ -368,7 +368,7 @@ def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
         except ImportError:
             raise BentoMLException(
                 '"google.cloud" package is required for saving bento to Google '
-                'Cloud Storage'
+                "Cloud Storage"
             )
         gcs_client = storage.Client()
         bucket = gcs_client.bucket(bucket_name)
@@ -378,6 +378,6 @@ def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
         http_response = requests.put(remote_path)
         if http_response.status_code != 200:
             raise BentoMLException(
-                f'Error uploading BentoService to {remote_path} '
-                f'{http_response.status_code}'
+                f"Error uploading BentoService to {remote_path} "
+                f"{http_response.status_code}"
             )

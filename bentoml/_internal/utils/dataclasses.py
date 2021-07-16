@@ -9,7 +9,7 @@ class DataclassJsonEncoder(json.JSONEncoder):
 
     def default(self, o):  # pylint: disable=method-hidden
         if is_dataclass(o):
-            if hasattr(o, 'to_json'):
+            if hasattr(o, "to_json"):
                 return o.to_json()
             else:
                 return asdict(o)
@@ -30,15 +30,15 @@ class json_serializer:
     def __call__(self, klass):
         if not is_dataclass(klass):
             raise TypeError(
-                f'{self.__class__.__name__} only accepts dataclasses, '
-                f'got {klass.__name__}'
+                f"{self.__class__.__name__} only accepts dataclasses, "
+                f"got {klass.__name__}"
             )
         default_map = {
             f.name: f.default_factory() if callable(f.default_factory) else f.default
             for f in get_fields(klass)
         }
         if self.fields is None:
-            self.fields = tuple(k for k in default_map.keys() if not k.startswith('_'))
+            self.fields = tuple(k for k in default_map.keys() if not k.startswith("_"))
 
         if self.compat:
 

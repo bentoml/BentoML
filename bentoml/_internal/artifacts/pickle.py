@@ -1,12 +1,13 @@
 import os
 
-from bentoml.service import BentoServiceArtifact
-from bentoml.utils import cloudpickle
+from cloudpickle import cloudpickle
+
+from bentoml._internal.artifacts import BaseModelArtifact
 
 PICKLE_FILE_EXTENSION = ".pkl"
 
 
-class PickleArtifact(BentoServiceArtifact):
+class PickleArtifact(BaseModelArtifact):
     """Abstraction for saving/loading python objects with pickle serialization
 
     Args:

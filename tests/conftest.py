@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from bentoml.yatai.client import YataiClient
-from tests.bento_service_examples.example_bento_service import ExampleBentoService
+from tests.bento_services.example_bento_service import ExampleBentoService
 
 
 def pytest_configure():

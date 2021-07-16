@@ -1,4 +1,4 @@
-from tests.bento_service_examples.lightgbm_service import LgbModelService
+from tests.bento_services.lightgbm_service import LgbModelService
 import numpy as np
 import lightgbm as lgb
 from pandas import DataFrame

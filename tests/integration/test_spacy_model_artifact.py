@@ -2,7 +2,7 @@ import pytest
 import random
 import spacy
 import bentoml
-from tests.bento_service_examples.spacy_classifier import SpacyModelService
+from tests.bento_services.spacy_classifier import SpacyModelService
 from bentoml.yatai.client import YataiClient
 
 

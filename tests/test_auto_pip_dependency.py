@@ -5,7 +5,7 @@ from sklearn import datasets
 from pkg_resources import parse_requirements
 
 from bentoml.saved_bundle import load_bento_service_metadata
-from tests.bento_service_examples.iris_classifier import (
+from tests.bento_services.iris_classifier import (
     IrisClassifier,
     IrisClassifierPipEnv,
 )

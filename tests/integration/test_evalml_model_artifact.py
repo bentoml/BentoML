@@ -5,7 +5,7 @@ import evalml
 
 import bentoml
 from bentoml.yatai.client import YataiClient
-from tests.bento_service_examples.evalml_classifier import EvalMLClassifier
+from tests.bento_services.evalml_classifier import EvalMLClassifier
 
 
 @pytest.fixture(scope="session")

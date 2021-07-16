@@ -1,6 +1,6 @@
 import pytest
 import bentoml
-from tests.bento_service_examples.gluon_classifier import GluonClassifier
+from tests.bento_services.gluon_classifier import GluonClassifier
 from bentoml.yatai.client import YataiClient
 
 import mxnet

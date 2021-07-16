@@ -1,60 +1,57 @@
 import pytest
-from bentoml import artifacts
-from bentoml.service import BentoService
-from bentoml.service.artifacts import BentoServiceArtifact
+from bentoml import BaseModelArtifact
 from bentoml.sklearn import SklearnModelArtifact
-from bentoml.exceptions import FailedPrecondition
 
 
 def test_valid_artifact_name():
     name = "_test"
-    artifact = BentoServiceArtifact(name)
+    artifact = BaseModelArtifact(name)
     assert artifact.name == "_test"
 
     name = "test"
-    artifact = BentoServiceArtifact(name)
+    artifact = BaseModelArtifact(name)
     assert artifact.name == "test"
 
     name = "TEST00"
-    artifact = BentoServiceArtifact(name)
+    artifact = BaseModelArtifact(name)
     assert artifact.name == "TEST00"
 
     name = "_"
-    artifact = BentoServiceArtifact(name)
+    artifact = BaseModelArtifact(name)
     assert artifact.name == "_"
 
     name = "__"
-    artifact = BentoServiceArtifact(name)
+    artifact = BaseModelArtifact(name)
     assert artifact.name == "__"
 
     name = "thïsisàtèst"
-    artifact = BentoServiceArtifact(name)
+    artifact = BaseModelArtifact(name)
     assert artifact.name == "thïsisàtèst"
 
     name = "thisIs012Along__erTest"
-    artifact = BentoServiceArtifact(name)
+    artifact = BaseModelArtifact(name)
     assert artifact.name == "thisIs012Along__erTest"
 
 
 def test_unvalid_artifact_name():
     name = ""
     with pytest.raises(ValueError) as e:
-        BentoServiceArtifact(name)
+        BaseModelArtifact(name)
     assert "Artifact name must be a valid python identifier" in str(e.value)
 
     name = "156test"
     with pytest.raises(ValueError) as e:
-        BentoServiceArtifact(name)
+        BaseModelArtifact(name)
     assert "Artifact name must be a valid python identifier" in str(e.value)
 
     name = "thisIs012Alo(*ng__erTest"
     with pytest.raises(ValueError) as e:
-        BentoServiceArtifact(name)
+        BaseModelArtifact(name)
     assert "Artifact name must be a valid python identifier" in str(e.value)
 
     name = "this is a test"
     with pytest.raises(ValueError) as e:
-        BentoServiceArtifact(name)
+        BaseModelArtifact(name)
     assert "Artifact name must be a valid python identifier" in str(e.value)
 
 
@@ -106,28 +103,3 @@ def test_artifact_states(tmp_path):
     # Sklearn artifact, the `load` method invokes `pack` internally
     assert isinstance(a2.get(), svm.SVC)
     assert all(a1.get().predict(X) == a2.get().predict(X))
-
-
-def test_artifact_initialize():
-    class FooArtifact(BentoServiceArtifact):
-        def __init__(self, name, arg1="default_1", arg2="default_2"):
-            super(FooArtifact, self).__init__(name)
-
-            self.arg1 = arg1
-            self.arg2 = arg2
-
-    @artifacts([FooArtifact('model')])
-    class Svc0(BentoService):
-        pass
-
-    svc = Svc0()
-    assert svc.artifacts.get('model').arg1 == "default_1"
-    assert svc.artifacts.get('model').arg2 == "default_2"
-
-    @artifacts([FooArtifact('model', 'override_1', 'override_2')])
-    class Svc1(BentoService):
-        pass
-
-    svc = Svc1()
-    assert svc.artifacts.get('model').arg1 == 'override_1'
-    assert svc.artifacts.get('model').arg2 == 'override_2'

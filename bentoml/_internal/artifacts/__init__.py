@@ -4,86 +4,65 @@ import re
 import typing as t
 from pathlib import Path
 
-from bentoml._internal.exceptions import FailedPrecondition, InvalidArgument
-from bentoml._internal.utils.ruamel_yaml import YAML
+from ..utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 
-ARTIFACT_DIR = ".artifacts"
+MT = t.TypeVar('MT')
 
 
-class BaseModelArtifact(object):
+class ArtifactMeta(type):
+    """Metaclass for treating artifacts subclass as singleton"""
+
+    _singleton: t.Dict["ArtifactMeta", str] = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._singleton:
+            cls._singleton[cls] = super(ArtifactMeta, cls).__call__(*args, **kwargs)
+        return cls._singleton[cls]
+
+
+class BaseModelArtifact(metaclass=ArtifactMeta):
     """
-    :class:`~_internal.artifacts.BaseModelArtifact` is the base abstraction
+    :class:`~bentoml._internal.artifacts.BaseModelArtifact` is the base abstraction
     for describing the trained model serialization and deserialization process.
+    :class:`~bentoml._internal.artifacts.BaseModelArtifact` is a singleton
 
     Class attributes:
 
-    - name (`str`):
+    - model (`torch.nn.Module`, `tf.keras.Model`, `sklearn.svm.SVC` and many more):
         returns name identifier of given Model definition
+    - metadata (`Dict[str, Union[Any,...]]`):
+        dictionary of model metadata
+
     """
 
-    def __init__(self, name: str):
-        if not name.isidentifier():
-            raise ValueError(
-                "Artifact name must be a valid python identifier, "
-                "a string is considered a valid identifier if it "
-                "only contains alphanumeric letters (a-z) and (0-9), "
-                "or underscores (_). A valid identifier cannot start "
-                "with a number, or contain any spaces."
-            )
-        self._name = name
-        self._metadata = dict()
-
-    @property
-    def name(self):
-        """
-        Identifier of Model class of type :class:`~bentoml._internal.artifacts.BaseModelArtifacts`.
-
-        Returns:
-            name of defined Model class.
-        """
-        return self._name
+    def __init__(
+        self, model: MT, metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    ):
+        self._model = model
+        if metadata:
+            self._metadata = metadata
 
     @property
     def metadata(self):
         return self._metadata
 
-    def __metadata_path(self, path: str) -> str:
-        return os.path.join(path, re.sub("[^-a-zA-Z0-9_.() ]+", "", self.name) + ".yml")
+    @staticmethod
+    def __metadata_path(path: str) -> t.Union[str, os.PathLike]:
+        return os.path.join(
+            path, re.sub("[^-a-zA-Z0-9_.() ]+", "", "metadata") + ".yml"
+        )
+
+    def save(self, path: t.Union[str, os.PathLike]) -> t.Callable:
+        if self.metadata:
+            yaml = YAML()
+            yaml.dump(self.metadata, Path(self.__metadata_path(path)))
+
+        inherited = object.__getattribute__(self, 'save')
+        return inherited(path)
 
     @classmethod
-    def save(
-        cls,
-        identifier: str,
-        model,
-        directory: t.Union[str, os.PathLike],
-        *,
-        metadata: t.Dict[str, t.Union[t.Any, ...]] = None,
-        **kw
-    ) -> t.Callable:
-        inherited = object.__getattribute__(cls, 'save')
-
-        return cls
-
-    @classmethod
-    def load(
-        cls,
-        identifier: str,
-        version: t.Optional[int] = None,
-        directory: t.Optional[str] = None,
-    ) -> t.Type["BaseModelArtifact"]:
-        raise NotImplementedError()
-
-
-def load(identifier: str, directory: str, version: str) -> "BaseModelArtifact":
-    ...
-
-
-def list(path: t.Union[str, os.PathLike]) -> str:
-    ...
-
-
-if __name__ == '__main__':
-    t = BaseModelArtifact("my_model")
-    print(t)
+    def load(cls, path: t.Union[str, os.PathLike]) -> MT:
+        inherited = object.__getattribute__(cls, 'load')
+        return inherited(path)

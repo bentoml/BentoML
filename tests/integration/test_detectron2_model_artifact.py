@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import imageio
-from tests.bento_service_examples.detectron2_classifier import DetectronClassifier
+from tests.bento_services.detectron2_classifier import DetectronClassifier
 
 from bentoml import load_from_dir
 from detectron2.config import get_cfg

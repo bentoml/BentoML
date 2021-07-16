@@ -8,9 +8,7 @@ import pandas as pd
 
 import bentoml
 from bentoml.utils.tempdir import TempDirectory
-from tests.bento_service_examples.pytorch_lightning_classifier import (
-    PytorchLightningService,
-)
+from tests.bento_services.pytorch_lightning_classifier import PytorchLightningService
 from pytorch_lightning.core.lightning import LightningModule
 from tests.integration.utils import (
     run_api_server_docker_container,

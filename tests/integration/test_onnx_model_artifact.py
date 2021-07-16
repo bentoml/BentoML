@@ -5,9 +5,7 @@ import pandas
 
 import bentoml
 from bentoml.yatai.client import YataiClient
-from tests.bento_service_examples.onnx_onnxruntime_iris_classifier import (
-    OnnxIrisClassifier,
-)
+from tests.bento_services.onnx_onnxruntime_iris_classifier import OnnxIrisClassifier
 
 
 @pytest.fixture()

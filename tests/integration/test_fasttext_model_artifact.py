@@ -2,7 +2,7 @@ import pytest
 import tempfile
 import contextlib
 import bentoml
-from tests.bento_service_examples.fasttext_classifier import FasttextClassifier
+from tests.bento_services.fasttext_classifier import FasttextClassifier
 from bentoml.yatai.client import YataiClient
 
 import fasttext

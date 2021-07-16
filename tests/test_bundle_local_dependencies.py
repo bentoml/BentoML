@@ -5,11 +5,11 @@ import logging
 from sklearn import datasets, svm
 
 from tests.conftest import delete_saved_bento_service
-from tests.bento_service_examples.local_dependencies import (
+from tests.bento_services.local_dependencies import (
     bento_service_with_zipimport,
     my_test_bento_service,
 )
-from tests.bento_service_examples import bento_service_with_modified_sys_path
+from tests.bento_services import bento_service_with_modified_sys_path
 
 
 service_classes = [

@@ -6,7 +6,7 @@ from coremltools.models import MLModel
 
 import bentoml
 from bentoml.yatai.client import YataiClient
-from tests.bento_service_examples.coreml_classifier import CoreMLClassifier
+from tests.bento_services.coreml_classifier import CoreMLClassifier
 from tests.integration.test_pytorch_model_artifact import PytorchModel
 from tests.integration.test_pytorch_model_artifact import test_df
 

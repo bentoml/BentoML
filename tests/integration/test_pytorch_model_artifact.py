@@ -6,7 +6,7 @@ from torch import nn
 
 import bentoml
 from bentoml.yatai.client import YataiClient
-from tests.bento_service_examples.pytorch_classifier import PytorchClassifier
+from tests.bento_services.pytorch_classifier import PytorchClassifier
 
 
 class PytorchModel(nn.Module):

@@ -1,4 +1,4 @@
-from tests.bento_service_examples.local_dependencies.secondary_dependency import (
+from tests.bento_services.local_dependencies.secondary_dependency import (
     secondary_dependency_func,
 )
 

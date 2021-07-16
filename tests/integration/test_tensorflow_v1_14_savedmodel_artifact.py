@@ -58,9 +58,7 @@ def svc(tf1_model_path):
     # When the ExampleBentoService got saved and loaded again in the test, the
     # two class attribute below got set to the loaded BentoService class.
     # Resetting it here so it does not effect other tests
-    from tests.bento_service_examples.tensorflow1_classifier import (
-        Tensorflow1Classifier,
-    )
+    from tests.bento_services.tensorflow1_classifier import Tensorflow1Classifier
 
     Tensorflow1Classifier._bento_service_bundle_path = None
     Tensorflow1Classifier._bento_service_bundle_version = None

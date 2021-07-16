@@ -9,7 +9,7 @@ import numpy as np
 from sklearn import datasets, svm
 
 from tests.conftest import delete_saved_bento_service
-from tests.bento_service_examples import (
+from tests.bento_services import (
     pytorch_classifier_image,
     iris_classifier,
 )

@@ -11,59 +11,6 @@ def df_orient(request):
 
 
 @pytest.mark.asyncio
-async def test_api_echo_json(host):
-    for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
-        await pytest.assert_request(
-            "POST",
-            f"http://{host}/echo_json",
-            headers=(("Content-Type", "application/json"),),
-            data=data,
-            assert_status=200,
-            assert_data=data.encode(),
-        )
-
-
-@pytest.since_bentoml_version("0.12.1+0", skip_by_default=True)
-@pytest.mark.asyncio
-async def test_api_echo_json_ensure_ascii(host):
-    for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
-        await pytest.assert_request(
-            "POST",
-            f"http://{host}/echo_json_ensure_ascii",
-            headers=(("Content-Type", "application/json"),),
-            data=data,
-            assert_status=200,
-            assert_data=json.dumps(json.loads(data)).encode(),
-        )
-
-
-@pytest.mark.asyncio
-async def test_api_server_dataframe(host, df_orient):
-    import pandas as pd  # noqa # pylint: disable=unused-import
-
-    df = pd.DataFrame([[10], [20]], columns=['col1'])
-    data = df.to_json(orient=df_orient)
-
-    await pytest.assert_request(
-        "POST",
-        f"http://{host}/predict_dataframe",
-        headers=(("Content-Type", "application/json"),),
-        data=data,
-        assert_status=200,
-        assert_data=lambda d: d.decode().strip() == '[{"col1":20},{"col1":40}]',
-    )
-
-    await pytest.assert_request(
-        "POST",
-        f"http://{host}/predict_dataframe_v1",
-        headers=(("Content-Type", "application/json"),),
-        data=data,
-        assert_status=200,
-        assert_data=lambda d: d.decode().strip() == '[{"col1":20},{"col1":40}]',
-    )
-
-
-@pytest.mark.asyncio
 async def test_api_server_image(host, img_file):
     import imageio  # noqa # pylint: disable=unused-import
     import numpy as np  # noqa # pylint: disable=unused-import

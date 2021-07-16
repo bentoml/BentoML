@@ -1,7 +1,7 @@
 import os
 
 from bentoml.yatai.client import get_yatai_client
-from tests.bento_service_examples.example_bento_service import ExampleBentoService
+from tests.bento_services.example_bento_service import ExampleBentoService
 from tests.integration.yatai_server.utils import yatai_service_container
 
 

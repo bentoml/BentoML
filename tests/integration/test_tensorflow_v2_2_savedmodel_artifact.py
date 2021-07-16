@@ -7,7 +7,7 @@ import pytest
 import tensorflow as tf
 
 import bentoml
-from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
+from tests.bento_services.tensorflow_classifier import Tensorflow2Classifier
 from tests.integration.utils import (
     build_api_server_docker_image,
     export_service_bundle,

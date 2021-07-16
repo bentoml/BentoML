@@ -6,7 +6,7 @@ from minio import Minio
 
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.client import get_yatai_client
-from tests.bento_service_examples.example_bento_service import ExampleBentoService
+from tests.bento_services.example_bento_service import ExampleBentoService
 
 bucket_name = 'test-repo'
 

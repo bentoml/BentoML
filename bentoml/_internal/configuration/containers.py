@@ -250,7 +250,9 @@ class BentoMLContainerClass:
 
     bentoml_home = providers.Factory(
         lambda: expand_env_var(
-            os.environ.get("BENTOML_HOME", os.path.join("~", "bentoml"))
+            os.environ.get(
+                "BENTOML_HOME", os.path.join(os.environ['XDG_DATA_HOME'], "bentoml")
+            )
         )
     )
 
@@ -279,7 +281,7 @@ class BentoMLContainerClass:
     @providers.Factory
     @staticmethod
     def proxy_app() -> "MarshalApp":
-        from ..marshal.marshal import MarshalApp
+        from ..server.marshal.marshal import MarshalApp
 
         return MarshalApp()
 

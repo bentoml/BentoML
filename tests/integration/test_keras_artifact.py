@@ -17,9 +17,9 @@ from tests.integration.utils import (
 TF2 = tf.__version__.startswith('2')
 
 if TF2:
-    from tests.bento_service_examples.keras_classifier import KerasClassifier
+    from tests.bento_services.keras_classifier import KerasClassifier
 else:
-    from tests.bento_service_examples.keras_with_tf1_classifier import KerasClassifier
+    from tests.bento_services.keras_with_tf1_classifier import KerasClassifier
 
 test_data = [1, 2, 3, 4, 5]
 

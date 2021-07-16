@@ -3,7 +3,7 @@ import json
 import pytest
 
 import bentoml
-from tests.bento_service_examples.h2o_service import H2oExampleBentoService
+from tests.bento_services.h2o_service import H2oExampleBentoService
 from tests.integration.utils import (
     build_api_server_docker_image,
     run_api_server_docker_container,

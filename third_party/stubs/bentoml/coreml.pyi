@@ -1,0 +1,13 @@
+from ._internal.artifacts import BaseArtifact as BaseArtifact
+from ._internal.exceptions import InvalidArgument as InvalidArgument, MissingDependencyException as MissingDependencyException
+from typing import Any
+
+logger: Any
+COREMLMODEL_FILE_EXTENSION: str
+
+class CoreMLModel(BaseArtifact):
+    def __init__(self, name: str) -> None: ...
+    def pack(self, model, metadata: Any | None = ...): ...
+    @classmethod
+    def load(cls, path): ...
+    def save(self, dst) -> None: ...

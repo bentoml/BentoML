@@ -74,11 +74,12 @@ dev_requires = [
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
     # grpcio-tools version must be kept in sync with the version used in
-    # `dev/generate-protos-docker.sh` script
+    # `dev/gen-protos-docker.sh` script
     "grpcio-tools~=1.34.0",
     "grpcio-reflection~=1.34.0",
     "pylint>=2.5.2",
     "setuptools",
+    "mypy",
     "tox-conda>=0.2.0",
     "tox>=3.12.1",
     "twine",
@@ -98,6 +99,8 @@ docs_requires = [
 types_requires = [
     "mypy-protobuf",
     "types-click",
+    "types-chardet",
+    "types-setuptools",
     "types-protobuf>=0.1.14",
     "grpc-stubs",
 ]

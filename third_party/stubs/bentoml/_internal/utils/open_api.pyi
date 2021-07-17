@@ -1,0 +1,3 @@
+from bentoml.configuration.containers import BentoMLContainer as BentoMLContainer
+
+def get_open_api_spec_json(bento_service, enable_metrics: bool = ..., enable_feedback: bool = ...): ...

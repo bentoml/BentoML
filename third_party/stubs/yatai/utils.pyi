@@ -1,0 +1,23 @@
+from typing import Any, Iterator, NamedTuple, Tuple
+
+UNARY: str
+SERVER_STREAMING: str
+CLIENT_STREAMING: str
+BIDI_STREAMING: str
+UNKNOWN: str
+logger: Any
+
+def ensure_node_available_or_raise() -> None: ...
+def parse_grpc_url(url): ...
+def wrap_interator_inc_counter(iterator, counter, grpc_type, grpc_service_name, grpc_method_name) -> None: ...
+def get_method_type(request_streaming, response_streaming) -> str: ...
+
+class MethodName(NamedTuple):
+    package: str
+    service: str
+    method: str
+    @property
+    def fully_qualified_service(self): ...
+
+def parse_method_name(method_name: str) -> Tuple[MethodName, bool]: ...
+def docker_build_logs(resp: Iterator): ...

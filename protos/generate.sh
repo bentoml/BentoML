@@ -9,16 +9,21 @@ fi
 
 # YataiService protobuf
 PROTO_PATH="$BENTOML_REPO"/protos
-YATAI_SERVER_PATH="$BENTOML_REPO"/yatai
-YATAI_CLIENT_PATH="$BENTOML_REPO"/bentoml/_internal
+PROTO_TEST_PATH="$PROTO_PATH"/tests
+STUB_PATH="$BENTOML_REPO"/third_party/stubs
 
-# Protos output path
-SERVER_OUT_PATH="$YATAI_SERVER_PATH"/yatai/proto
-CLIENT_OUT_PATH="$YATAI_CLIENT_PATH"/yatai_client/proto
+# Protos output for YataiServer
+SERVER_OUT_PATH="$BENTOML_REPO"/yatai/yatai/proto
+SERVER_STUB_PATH="$STUB_PATH"/yatai/yatai/proto
+
+# Protos output for YataiClient
+CLIENT_PATH=bentoml/_internal/yatai_client/proto
+CLIENT_OUT_PATH="$BENTOML_REPO"/"$CLIENT_PATH"
+CLIENT_STUB_PATH="$STUB_PATH"/"$CLIENT_PATH"
+
 JS_OUT_PATH="$YATAI_SERVER_PATH"/web_server/src/generated
 
 # Test gRPC servicer
-PROTO_TEST_PATH="$PROTO_PATH"/tests
 PY_TEST_OUT_PATH="$BENTOML_REPO"/tests/unit/yatai/proto
 
 run_check(){
@@ -39,13 +44,16 @@ WARN
 cleanup(){
   log_info "Removing existing generated proto client code.."
   rm -rf "$SERVER_OUT_PATH" "$CLIENT_OUT_PATH" "$PY_TEST_OUT_PATH"
-  mkdir -p "$SERVER_OUT_PATH" "$CLIENT_OUT_PATH" "$PY_TEST_OUT_PATH"
-  touch "$SERVER_OUT_PATH"/__init__.py "$SERVER_OUT_PATH"/__init__.pyi "$PY_TEST_OUT_PATH"/__init__.py
-  touch "$CLIENT_OUT_PATH"/__init__.py "$CLIENT_OUT_PATH"/__init__.pyi
-
-  # js part of yatai gRPC
+  rm -rf "$SERVER_STUB_PATH" "$CLIENT_STUB_PATH"
   rm -rf "$JS_OUT_PATH"
+
+  mkdir -p "$SERVER_OUT_PATH" "$CLIENT_OUT_PATH" "$PY_TEST_OUT_PATH"
+  mkdir -p "$SERVER_STUB_PATH" "$CLIENT_STUB_PATH"
   mkdir -p "$JS_OUT_PATH"
+
+  touch "$PY_TEST_OUT_PATH"/__init__.py
+  touch "$SERVER_OUT_PATH"/__init__.py "$SERVER_STUB_PATH"/__init__.pyi
+  touch "$CLIENT_OUT_PATH"/__init__.py "$CLIENT_STUB_PATH"/__init__.pyi
 }
 
 generate_protos(){
@@ -55,7 +63,8 @@ generate_protos(){
     -I"$PROTO_PATH" \
     --python_out="$SERVER_OUT_PATH" \
     --python_out="$CLIENT_OUT_PATH" \
-    --mypy_out="$SERVER_OUT_PATH" \
+    --mypy_out="$SERVER_STUB_PATH" \
+    --mypy_out="$CLIENT_STUB_PATH" \
     "$protofile"
   done
 
@@ -73,7 +82,8 @@ generate_protos(){
     --python_out="$CLIENT_OUT_PATH" \
     --grpc_python_out="$SERVER_OUT_PATH" \
     --grpc_python_out="$CLIENT_OUT_PATH" \
-    --mypy_out="$SERVER_OUT_PATH" \
+    --mypy_out="$SERVER_STUB_PATH" \
+    --mypy_out="$CLIENT_STUB_PATH" \
     "$PROTO_PATH"/yatai_service.proto
 
   log_info "Generating gRPC JavaScript code..."

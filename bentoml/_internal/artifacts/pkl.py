@@ -23,7 +23,7 @@ class PickleArtifact(BaseArtifact):
         )
 
     @classmethod
-    def load(cls, path: PathType) -> MT:
+    def load(cls, path: PathType):
         try:
             for f in Path(path).iterdir():
                 if f.suffix == PICKLE_FILE_EXTENSION:

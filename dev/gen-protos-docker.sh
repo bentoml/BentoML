@@ -16,4 +16,4 @@ fi
 
 echo "Starting BentoML proto generator docker container.."
 docker run --rm -u "$(id -u)":"$(id -g)" -v "$GIT_ROOT":/home/bentoml/workspace bentoml-proto-generator \
-      bash -c "BENTOML_REPO=/home/bentoml/workspace . \$NVM_DIR/nvm.sh && /home/bentoml/workspace/protos/generate.sh"
+      bash -c "BENTOML_REPO=/home/bentoml/workspace . \$NVM_DIR/nvm.sh && . protos/generate.sh"

@@ -1,8 +1,8 @@
 import logging
 import os
 
-from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.artifacts import BaseArtifact
+from ._internal.exceptions import InvalidArgument, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class CoreMLModel(BaseArtifact):
         name (string): name of the artifact
 
     Raises:
-        MissingDependencyException: coremltools package required for CoreMLModelArtifact
+        MissingDependencyException: coremltools package required for CoreMLModel
         InvalidArgument: invalid argument type, model being packed must be instance of
             coremltools.models.MLModel
 
@@ -46,7 +46,7 @@ class CoreMLModel(BaseArtifact):
         import bentoml
         import PIL.Image
         from bentoml.adapters import ImageInput
-        from bentoml.frameworks.coreml import CoreMLModelArtifact
+        from bentoml.frameworks.coreml import CoreMLModel
 
         @bentoml.env(infer_pip_packages=True)
         @bentoml.artifacts([CoreMLModel('model')])
@@ -77,12 +77,12 @@ class CoreMLModel(BaseArtifact):
             import coremltools
         except ImportError:
             raise MissingDependencyException(
-                "coremltools>=4.0b2 package is required to use CoreMLModelArtifact"
+                "coremltools>=4.0b2 package is required to use CoreMLModel"
             )
 
         if not isinstance(model, coremltools.models.MLModel):
             raise InvalidArgument(
-                "CoreMLModelArtifact can only pack type 'coremltools.models.MLModel'"
+                "CoreMLModel can only pack type 'coremltools.models.MLModel'"
             )
 
         self._model = model
@@ -94,14 +94,14 @@ class CoreMLModel(BaseArtifact):
             import coremltools
         except ImportError:
             raise MissingDependencyException(
-                "coremltools package is required to use CoreMLModelArtifact"
+                "coremltools package is required to use CoreMLModel"
             )
 
         model = coremltools.models.MLModel(self._file_path(path))
 
         if not isinstance(model, coremltools.models.MLModel):
             raise InvalidArgument(
-                "Expecting CoreMLModelArtifact loaded object type to be "
+                "Expecting CoreMLModel loaded object type to be "
                 "'coremltools.models.MLModel' but actually it is {}".format(type(model))
             )
 

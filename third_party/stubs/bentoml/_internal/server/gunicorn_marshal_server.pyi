@@ -1,0 +1,16 @@
+from bentoml.configuration.containers import BentoMLContainer as BentoMLContainer
+from bentoml.marshal.marshal import MarshalApp as MarshalApp
+from gunicorn.app.base import Application
+from typing import Any
+
+marshal_logger: Any
+
+class GunicornMarshalServer(Application):
+    port: Any
+    options: Any
+    def __init__(self, *, workers: int = ..., timeout: int = ..., max_request_size: int = ..., host: str = ..., port: int = ..., loglevel: str = ...) -> None: ...
+    def load_config(self) -> None: ...
+    @property
+    def app(self, app: MarshalApp = ...): ...
+    def load(self): ...
+    def run(self) -> None: ...

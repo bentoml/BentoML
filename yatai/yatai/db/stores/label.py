@@ -3,9 +3,9 @@ import re
 
 from sqlalchemy import UniqueConstraint, Column, Integer, String, and_, Enum
 
-from bentoml.exceptions import YataiLabelException, InvalidArgument
-from bentoml.yatai.db import Base
-from bentoml.yatai.proto.label_selectors_pb2 import LabelSelectors
+from yatai.exceptions import YataiLabelException, InvalidArgument
+from yatai.db import Base
+from yatai.proto.label_selectors_pb2 import LabelSelectors
 
 
 class RESOURCE_TYPE(enum.Enum):

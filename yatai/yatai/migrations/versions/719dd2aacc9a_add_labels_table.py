@@ -8,7 +8,7 @@ Create Date: 2020-08-05 22:41:30.611193
 from alembic import op
 import sqlalchemy as sa
 
-from yatai.yatai.db.stores.label import Label
+from yatai.db.stores.label import Label
 
 # revision identifiers, used by Alembic.
 revision = '719dd2aacc9a'

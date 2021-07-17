@@ -28,16 +28,16 @@ from sqlalchemy import (
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
-from bentoml.exceptions import YataiDeploymentException
-from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
-from bentoml.yatai.db.base import Base
-from bentoml.yatai.db.stores.label import (
+from yatai.exceptions import YataiDeploymentException
+from yatai.deployment import ALL_NAMESPACE_TAG
+from yatai.db.base import Base
+from yatai.db.stores.label import (
     LabelStore,
     RESOURCE_TYPE,
 )
-from bentoml.yatai.proto import deployment_pb2
-from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
-from bentoml.utils import ProtoMessageToDict
+from yatai.proto import deployment_pb2
+from yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
+from bentoml._internal.utils import ProtoMessageToDict
 
 logger = logging.getLogger(__name__)
 

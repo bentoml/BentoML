@@ -14,14 +14,14 @@
 
 from cerberus import Validator
 
-from bentoml.exceptions import InvalidArgument
+from exceptions import InvalidArgument
 from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.db.stores.label import _validate_labels
-from bentoml.yatai.deployment.azure_functions.constants import (
+from yatai.db.stores.label import _validate_labels
+from yatai.deployment.azure_functions.constants import (
     AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
     AZURE_FUNCTIONS_AUTH_LEVELS,
 )
-from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, DeploymentState
+from yatai.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
 deployment_schema = {
     'name': {'type': 'string', 'required': True, 'minlength': 4},

@@ -36,15 +36,15 @@ from bentoml._internal.utils.docker_utils import (
 )
 from bentoml._internal.utils.tempdir import TempDirectory
 from bentoml._internal.utils.usage_stats import track
-from yatai.yatai.db import DB
-from yatai.yatai.db.stores.lock import LockStore
-from yatai.yatai.deployment.docker_utils import ensure_docker_available_or_raise
-from yatai.yatai.deployment.operator import get_deployment_operator
-from yatai.yatai.grpc_stream_utils import DownloadBentoStreamResponses
-from yatai.yatai.locking.lock import DEFAULT_TTL_MIN
-from yatai.yatai.locking.lock import LockType, lock
-from yatai.yatai.proto import status_pb2
-from yatai.yatai.proto.deployment_pb2 import (
+from yatai.db import DB
+from yatai.db.stores.lock import LockStore
+from yatai.deployment.docker_utils import ensure_docker_available_or_raise
+from yatai.deployment.operator import get_deployment_operator
+from yatai.grpc_stream_utils import DownloadBentoStreamResponses
+from yatai.locking.lock import DEFAULT_TTL_MIN
+from yatai.locking.lock import LockType, lock
+from yatai.proto import status_pb2
+from yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentSpec,
@@ -52,7 +52,7 @@ from yatai.yatai.proto.deployment_pb2 import (
     GetDeploymentResponse,
     ListDeploymentsResponse,
 )
-from yatai.yatai.proto.repository_pb2 import (
+from yatai.proto.repository_pb2 import (
     AddBentoResponse,
     BentoUri,
     ContainerizeBentoResponse,
@@ -64,15 +64,15 @@ from yatai.yatai.proto.repository_pb2 import (
     UploadBentoResponse,
     UploadStatus,
 )
-from yatai.yatai.proto.yatai_service_pb2 import (
+from yatai.proto.yatai_service_pb2 import (
     GetYataiServiceVersionResponse,
     HealthCheckResponse,
 )
-from yatai.yatai.repository.base_repository import BaseRepository
-from yatai.yatai.repository.file_system_repository import FileSystemRepository
-from yatai.yatai.status import Status
-from yatai.yatai.utils import docker_build_logs
-from yatai.yatai.validator import validate_deployment_pb
+from yatai.repository.base_repository import BaseRepository
+from yatai.repository.file_system_repository import FileSystemRepository
+from yatai.status import Status
+from yatai.utils import docker_build_logs
+from yatai.validator import validate_deployment_pb
 
 logger = logging.getLogger(__name__)
 

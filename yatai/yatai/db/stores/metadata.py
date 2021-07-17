@@ -29,14 +29,14 @@ from sqlalchemy import (
 from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
 
-from bentoml.utils import ProtoMessageToDict
-from bentoml.exceptions import YataiRepositoryException
-from bentoml.yatai.db import Base
-from bentoml.yatai.db.stores.label import (
+from bentoml._internal.utils import ProtoMessageToDict
+from Yatai.exceptions import YataiRepositoryException
+from yatai.db import Base
+from yatai.db.stores.label import (
     LabelStore,
     RESOURCE_TYPE,
 )
-from bentoml.yatai.proto.repository_pb2 import (
+from yatai.proto.repository_pb2 import (
     UploadStatus,
     BentoUri,
     BentoServiceMetadata,

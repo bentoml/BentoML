@@ -1,4 +1,4 @@
 from .base import BaseArtifact
-from .pickle import PickleArtifact
+from .pkl import PickleArtifact
 
 __all__ = ["BaseArtifact", "PickleArtifact"]

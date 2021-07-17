@@ -91,7 +91,7 @@ def _load_tf_saved_model(path):
         import tensorflow as tf
         from tensorflow.python.training.tracking.tracking import AutoTrackable
 
-        TF2 = tf.__version__.startswith('2')
+        TF2 = tf.__version__.startswith("2")
     except ImportError:
         raise MissingDependencyException(
             "Tensorflow package is required to use TfSavedModelArtifact"
@@ -103,7 +103,7 @@ def _load_tf_saved_model(path):
         loaded = tf.compat.v2.saved_model.load(path)
         if isinstance(loaded, AutoTrackable) and not hasattr(loaded, "__call__"):
             logger.warning(
-                '''Importing SavedModels from TensorFlow 1.x.
+                """Importing SavedModels from TensorFlow 1.x.
                 `outputs = imported(inputs)` is not supported in bento service due to
                 tensorflow API.
 
@@ -120,7 +120,7 @@ def _load_tf_saved_model(path):
 
                 See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
                 details.
-                '''
+                """
             )
         return loaded
 
@@ -190,10 +190,10 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
 
     def set_dependencies(self, env: BentoServiceEnv):
         if env._infer_pip_packages:
-            env.add_pip_packages(['tensorflow'])
+            env.add_pip_packages(["tensorflow"])
 
     def _saved_model_path(self, base_path):
-        return os.path.join(base_path, self.name + '_saved_model')
+        return os.path.join(base_path, self.name + "_saved_model")
 
     def pack(
         self, obj, metadata=None, signatures=None, options=None
@@ -225,7 +225,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
             try:
                 import tensorflow as tf
 
-                TF2 = tf.__version__.startswith('2')
+                TF2 = tf.__version__.startswith("2")
             except ImportError:
                 raise MissingDependencyException(
                     "Tensorflow package is required to use TfSavedModelArtifact."

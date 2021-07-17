@@ -9,7 +9,7 @@ from bentoml.paddle import PaddlePaddleModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PaddlePaddleModelArtifact('model')])
+@bentoml.artifacts([PaddlePaddleModelArtifact("model")])
 class PaddleService(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

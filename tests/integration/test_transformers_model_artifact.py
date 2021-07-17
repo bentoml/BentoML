@@ -4,10 +4,8 @@ import pytest
 from transformers import AutoModelWithLMHead, AutoTokenizer
 
 import bentoml
-from tests.bento_service_examples.transformer_gpt_example import (
+from tests import (
     TransformersGPT2TextGenerator,
-)
-from tests.integration.utils import (
     build_api_server_docker_image,
     run_api_server_docker_container,
 )

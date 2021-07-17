@@ -2,7 +2,7 @@ import logging
 from contextlib import contextmanager
 from contextvars import ContextVar
 
-span_context_var = ContextVar('span context', default=None)
+span_context_var = ContextVar("span context", default=None)
 logger = logging.getLogger(__name__)
 
 
@@ -16,20 +16,20 @@ def initialize_tracer(
 
     if sample_rate == 1.0:
         # sample all traces
-        sampler_config = {'type': 'const', 'param': 1}
+        sampler_config = {"type": "const", "param": 1}
     elif sample_rate == 0.0:
         # sample none traces
-        sampler_config = {'type': 'const', 'param': 0}
+        sampler_config = {"type": "const", "param": 0}
     else:
         # random sampling decision with the probability
-        sampler_config = {'type': 'probabilistic', 'param': sample_rate}
+        sampler_config = {"type": "probabilistic", "param": sample_rate}
 
     tracer_config = {
-        'sampler': sampler_config,
+        "sampler": sampler_config,
     }
 
     if host:
-        tracer_config['local_agent'] = {'reporting_host': host, 'reporting_port': port}
+        tracer_config["local_agent"] = {"reporting_host": host, "reporting_port": port}
 
     config = Config(
         config=tracer_config,

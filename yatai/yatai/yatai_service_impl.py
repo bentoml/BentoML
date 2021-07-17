@@ -21,6 +21,7 @@ from datetime import datetime
 from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
+from bentoml._internal.bundle.loader import safe_retrieve
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.exceptions import (
     BadInput,
@@ -28,7 +29,6 @@ from bentoml._internal.exceptions import (
     InvalidArgument,
     YataiRepositoryException,
 )
-from bentoml._internal.bundle.loader import safe_retrieve
 from bentoml._internal.utils import ProtoMessageToDict
 from bentoml._internal.utils.docker_utils import (
     to_valid_docker_image_name,
@@ -45,6 +45,7 @@ from yatai.locking.lock import DEFAULT_TTL_MIN
 from yatai.locking.lock import LockType, lock
 from yatai.proto import status_pb2
 from yatai.proto.deployment_pb2 import (
+
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentSpec,
@@ -81,8 +82,8 @@ def track_deployment_delete(deployment_operator, created_at, force_delete=False)
     operator_name = DeploymentSpec.DeploymentOperator.Name(deployment_operator)
     up_time = int((datetime.utcnow() - created_at.ToDatetime()).total_seconds())
     track(
-        f'deployment-{operator_name}-stop',
-        {'up_time': up_time, 'force_delete': force_delete},
+        f"deployment-{operator_name}-stop",
+        {"up_time": up_time, "force_delete": force_delete},
     )
 
 
@@ -138,7 +139,7 @@ def get_yatai_service_impl(base=object):
                     validation_errors = validate_deployment_pb(request.deployment)
                     if validation_errors:
                         raise InvalidArgument(
-                            'Failed to validate deployment. {errors}'.format(
+                            "Failed to validate deployment. {errors}".format(
                                 errors=validation_errors
                             )
                         )
@@ -250,10 +251,10 @@ def get_yatai_service_impl(base=object):
 
                         if response.status.status_code == status_pb2.Status.NOT_FOUND:
                             modified_message = (
-                                'Cloud resources not found, error: {} - it '
-                                'may have been deleted manually. Try delete '
+                                "Cloud resources not found, error: {} - it "
+                                "may have been deleted manually. Try delete "
                                 'deployment with "--force" option to ignore this '
-                                'error and force deleting the deployment record'.format(
+                                "error and force deleting the deployment record".format(
                                     response.status.error_message
                                 )
                             )
@@ -451,7 +452,7 @@ def get_yatai_service_impl(base=object):
                         )
 
                     logger.debug(
-                        'Deleting BentoService %s:%s',
+                        "Deleting BentoService %s:%s",
                         request.bento_name,
                         request.bento_version,
                     )
@@ -478,9 +479,9 @@ def get_yatai_service_impl(base=object):
                         sess, request.bento_name, request.bento_version
                     )
                     if bento_pb:
-                        if request.bento_version.lower() == 'latest':
+                        if request.bento_version.lower() == "latest":
                             logger.info(
-                                'Getting latest version %s:%s',
+                                "Getting latest version %s:%s",
                                 request.bento_name,
                                 bento_pb.version,
                             )
@@ -553,13 +554,13 @@ def get_yatai_service_impl(base=object):
                     )
                     if not bento_pb:
                         raise YataiRepositoryException(
-                            f'BentoService '
-                            f'{request.bento_name}:{request.bento_version} '
-                            f'does not exist'
+                            f"BentoService "
+                            f"{request.bento_name}:{request.bento_version} "
+                            f"does not exist"
                         )
 
                     with TempDirectory() as temp_dir:
-                        temp_bundle_path = f'{temp_dir}/{bento_pb.name}'
+                        temp_bundle_path = f"{temp_dir}/{bento_pb.name}"
                         bento_service_bundle_path = bento_pb.uri.uri
                         if bento_pb.uri.type == BentoUri.S3:
                             bento_service_bundle_path = self.repo.get(
@@ -582,7 +583,7 @@ def get_yatai_service_impl(base=object):
                             docker.errors.APIError,
                             docker.errors.BuildError,
                         ) as error:
-                            logger.error(f'Encounter container building issue: {error}')
+                            logger.error(f"Encounter container building issue: {error}")
                             raise YataiRepositoryException(error)
                         if request.push is True:
                             try:
@@ -606,16 +607,16 @@ def get_yatai_service_impl(base=object):
                     "for other types of repositories(s3, gcs, minio), "
                     "use pre-signed URL for upload"
                 )
-                return UploadBentoResponse(status=Status.INTERNAL(''))
+                return UploadBentoResponse(status=Status.INTERNAL(""))
             try:
                 with self.db.create_session() as sess:
                     lock_obj = None
                     bento_pb = None
                     with TempDirectory() as temp_dir:
                         temp_tar_path = os.path.join(
-                            temp_dir, f'{uuid.uuid4().hex[:12]}.tar'
+                            temp_dir, f"{uuid.uuid4().hex[:12]}.tar"
                         )
-                        file = open(temp_tar_path, 'wb+')
+                        file = open(temp_tar_path, "wb+")
                         for request in request_iterator:
                             # Initial request is without bundle
                             if not request.bento_bundle:
@@ -651,7 +652,7 @@ def get_yatai_service_impl(base=object):
                                     lock_obj = LockStore.acquire(
                                         sess=sess,
                                         lock_type=LockType.WRITE,
-                                        resource_id=f'{bento_name}_{bento_version}',
+                                        resource_id=f"{bento_name}_{bento_version}",
                                         ttl_min=DEFAULT_TTL_MIN,
                                     )
                             else:
@@ -670,7 +671,7 @@ def get_yatai_service_impl(base=object):
                                         f"{request.bento_version}"
                                     )
                         file.seek(0)
-                        with tarfile.open(fileobj=file, mode='r') as tar:
+                        with tarfile.open(fileobj=file, mode="r") as tar:
                             tar.extractall(path=bento_pb.uri.uri)
                         upload_status = UploadStatus(status=UploadStatus.DONE)
                         upload_status.updated_at.GetCurrentTime()
@@ -696,7 +697,7 @@ def get_yatai_service_impl(base=object):
                     "for other types of repositories(s3, gcs, minio), "
                     "use pre-signed URL for download"
                 )
-                return DownloadBentoResponse(status=Status.INTERNAL(''))
+                return DownloadBentoResponse(status=Status.INTERNAL(""))
             bento_id = f"{request.bento_name}_{request.bento_version}"
             with lock(self.db, [(bento_id, LockType.READ)]) as (sess, _):
                 try:

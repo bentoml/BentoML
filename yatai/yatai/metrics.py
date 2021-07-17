@@ -3,6 +3,7 @@ from yatai.configuration.containers import YataiContainer
 
 yatai_metrics_client = YataiContainer.yatai_metrics_client.get()
 
+
 GRPC_SERVER_STARTED_COUNTER = yatai_metrics_client.Counter(
     "grpc_server_started_total",
     "Total number of RPCs started on the server.",

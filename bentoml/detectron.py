@@ -78,7 +78,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
 
     def set_dependencies(self, env: BentoServiceEnv):
         if env._infer_pip_packages:
-            env.add_pip_packages(['torch', "detectron2"])
+            env.add_pip_packages(["torch", "detectron2"])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)
@@ -115,7 +115,7 @@ class DetectronModelArtifact(BentoServiceArtifact):
         self._model = meta_arch(cfg)
         self._model.eval()
 
-        device = self._metadata['device']
+        device = self._metadata["device"]
         self._model.to(device)
         checkpointer = DetectionCheckpointer(self._model)
         checkpointer.load(f"{path}/{self.name}.pth")
@@ -143,6 +143,6 @@ class DetectronModelArtifact(BentoServiceArtifact):
         cfg = get_cfg()
         cfg.merge_from_file(self._input_model_yaml)
         with open(
-            os.path.join(dst, f"{self.name}.yaml"), 'w', encoding='utf-8'
+            os.path.join(dst, f"{self.name}.yaml"), "w", encoding="utf-8"
         ) as output_file:
             output_file.write(cfg.dump())

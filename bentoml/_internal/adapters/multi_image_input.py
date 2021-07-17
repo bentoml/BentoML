@@ -7,12 +7,12 @@ from ..types import InferenceTask
 from ..utils.lazy_loader import LazyLoader
 
 # BentoML optional dependencies, using lazy load to avoid ImportError
-imageio = LazyLoader('imageio', globals(), 'imageio')
-numpy = LazyLoader('numpy', globals(), 'numpy')
+imageio = LazyLoader("imageio", globals(), "imageio")
+numpy = LazyLoader("numpy", globals(), "numpy")
 
 
 MultiImgTask = InferenceTask[Tuple[BinaryIO, ...]]  # image file bytes, json bytes
-ApiFuncArgs = Tuple[Sequence['numpy.ndarray'], ...]
+ApiFuncArgs = Tuple[Sequence["numpy.ndarray"], ...]
 
 
 class MultiImageInput(MultiFileInput):

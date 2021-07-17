@@ -1,5 +1,4 @@
 # pylint: disable=redefined-outer-name
-from contextlib import contextmanager
 import logging
 import os
 import subprocess
@@ -7,10 +6,10 @@ import sys
 import threading
 import time
 import urllib
-
-import docker
+from contextlib import contextmanager
 
 import bentoml
+import docker
 from bentoml.utils import cached_contextmanager
 
 logger = logging.getLogger("bentoml.tests")
@@ -29,7 +28,7 @@ def wait_until_container_ready(container_name, check_message, timeout_seconds=12
 
         try:
             container_list = docker_client.containers.list(
-                filters={'name': container_name}
+                filters={"name": container_name}
             )
             if not container_list:
                 continue
@@ -39,7 +38,7 @@ def wait_until_container_ready(container_name, check_message, timeout_seconds=12
         logger.info("Container list: " + str(container_list))
         assert (
             len(container_list) == 1
-        ), f'should be exact one container with name {container_name}'
+        ), f"should be exact one container with name {container_name}"
 
         container_log = container_list[0].logs().decode()
         if check_message in container_log:
@@ -57,7 +56,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
     ex = None
     while time.time() - start_time < timeout:
         try:
-            if opener.open(f'http://{host_url}/healthz', timeout=1).status == 200:
+            if opener.open(f"http://{host_url}/healthz", timeout=1).status == 200:
                 return
             elif container and container.status != "running":
                 break
@@ -73,7 +72,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
                 container_logs = container.logs()
                 if container_logs:
                     logger.info(f"Container {container.id} logs:")
-                    for log_record in container_logs.decode().split('\r\n'):
+                    for log_record in container_logs.decode().split("\r\n"):
                         logger.info(f">>> {log_record}")
     else:
         logger.info("Timeout!")
@@ -114,8 +113,8 @@ def build_api_server_docker_image(saved_bundle_path, image_tag="test_bentoml_ser
         client.images.remove(image.id)
     except docker.errors.BuildError as e:
         for line in e.build_log:
-            if 'stream' in line:
-                print(line['stream'].strip())
+            if "stream" in line:
+                print(line["stream"].strip())
         raise
 
 
@@ -149,7 +148,7 @@ def run_api_server_docker_container(image, config_file=None, timeout=60):
         image=image.id,
         command=command_args,
         tty=True,
-        ports={'5000/tcp': port},
+        ports={"5000/tcp": port},
         detach=True,
         volumes=volumes,
         environment=environment,
@@ -182,13 +181,13 @@ def run_api_server(bundle_path, config_file=None, dev_server=False, timeout=20):
     with bentoml.utils.reserve_free_port() as port:
         cmd = [sys.executable, "-m", "bentoml", serve_cmd]
         if port:
-            cmd += ['--port', f'{port}']
+            cmd += ["--port", f"{port}"]
         cmd += [bundle_path]
 
     def print_log(p):
         try:
             for line in p.stdout:
-                print(line.decode(), end='')
+                print(line.decode(), end="")
         except ValueError:
             pass
 

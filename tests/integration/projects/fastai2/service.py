@@ -9,7 +9,7 @@ from bentoml.fastai import FastaiModelArtifact
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([FastaiModelArtifact('model')])
+@bentoml.artifacts([FastaiModelArtifact("model")])
 class FastaiClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

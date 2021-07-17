@@ -1,10 +1,11 @@
-from tests.bento_service_examples.lightgbm_service import LgbModelService
-import numpy as np
 import lightgbm as lgb
-from pandas import DataFrame
+import numpy as np
 import pytest
+from pandas import DataFrame
+
 import bentoml
 from bentoml.yatai.client import YataiClient
+from tests import LgbModelService
 
 
 @pytest.fixture()
@@ -23,7 +24,7 @@ def get_trained_lgbm_model():
 def test_lgbm_artifact_pack():
     model = get_trained_lgbm_model()
     svc = LgbModelService()
-    svc.pack('model', model)
+    svc.pack("model", model)
 
     assert svc.predict(DataFrame([[0]])) == [0]
 

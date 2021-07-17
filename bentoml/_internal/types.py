@@ -12,6 +12,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NewType,
     Optional,
     Sequence,
     Tuple,
@@ -23,18 +24,22 @@ from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
 
-from bentoml.utils.dataclasses import json_serializer
+from .utils.dataclasses import json_serializer
 
 BATCH_HEADER = "Bentoml-Is-Batch-Request"
 
 # For non latin1 characters: https://tools.ietf.org/html/rfc8187
 # Also https://github.com/benoitc/gunicorn/issues/1778
-HEADER_CHARSET = 'latin1'
+HEADER_CHARSET = "latin1"
 
-JSON_CHARSET = 'utf-8'
+JSON_CHARSET = "utf-8"
+
+PathType = NewType("PathLike", Union[str, os.PathLike])
+
+MT = TypeVar("MT")
 
 
-@json_serializer(fields=['uri', 'name'], compat=True)
+@json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
 class FileLike:
     """
@@ -76,7 +81,7 @@ class FileLike:
 
     @property
     def path(self):
-        r'''
+        r"""
         supports:
 
         /home/user/file
@@ -85,7 +90,7 @@ class FileLike:
         \\networkstorage\homes\user
 
         https://stackoverflow.com/a/61922504/3089381
-        '''
+        """
         parsed = urllib.parse.urlparse(self.uri)
         raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))
         host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
@@ -152,18 +157,18 @@ class HTTPHeaders(CIMultiDict):
 
     @property
     def content_type(self) -> str:
-        return parse_options_header(self.get('content-type'))[0].lower()
+        return parse_options_header(self.get("content-type"))[0].lower()
 
     @property
     def charset(self) -> Optional[str]:
-        _, options = parse_options_header(self.get('content-type'))
-        charset = options.get('charset', None)
+        _, options = parse_options_header(self.get("content-type"))
+        charset = options.get("charset", None)
         assert charset is None or isinstance(charset, str)
         return charset
 
     @property
     def content_encoding(self) -> str:
-        return parse_options_header(self.get('content-encoding'))[0].lower()
+        return parse_options_header(self.get("content-encoding"))[0].lower()
 
     @property
     def is_batch_input(self) -> Optional[bool]:
@@ -212,10 +217,10 @@ class HTTPRequest:
         if not self.body:
             return None, None, {}
         environ = {
-            'wsgi.input': io.BytesIO(self.body),
-            'CONTENT_LENGTH': len(self.body),
-            'CONTENT_TYPE': self.headers.get('content-type', ''),
-            'REQUEST_METHOD': 'POST',
+            "wsgi.input": io.BytesIO(self.body),
+            "CONTENT_LENGTH": len(self.body),
+            "CONTENT_TYPE": self.headers.get("content-type", ""),
+            "REQUEST_METHOD": "POST",
         }
         stream, form, files = parse_form_data(environ, silent=False)
         wrapped_files = {
@@ -303,7 +308,7 @@ class InferenceResult(Generic[Output]):
 
     # payload
     data: Optional[Output] = None
-    err_msg: str = ''
+    err_msg: str = ""
 
     # meta
     task_id: Optional[str] = None
@@ -324,8 +329,8 @@ class InferenceResult(Generic[Output]):
 
     @classmethod
     def complete_discarded(
-        cls, tasks: Iterable['InferenceTask'], results: Iterable['InferenceResult'],
-    ) -> Iterator['InferenceResult']:
+        cls, tasks: Iterable["InferenceTask"], results: Iterable["InferenceResult"],
+    ) -> Iterator["InferenceResult"]:
         """
         Generate InferenceResults based on successful inference results and
         fallback results of discarded tasks.
@@ -341,7 +346,7 @@ class InferenceResult(Generic[Output]):
                     yield next(iterable_results)
         except StopIteration:
             raise StopIteration(
-                'The results does not match the number of tasks'
+                "The results does not match the number of tasks"
             ) from None
 
 

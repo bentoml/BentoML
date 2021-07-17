@@ -107,4 +107,4 @@ class PaddlePaddleModelArtifact(BentoServiceArtifact):
 
     def set_dependencies(self, env: BentoServiceEnv):
         if env._infer_pip_packages:
-            env.add_pip_packages(['paddlepaddle'])
+            env.add_pip_packages(["paddlepaddle"])

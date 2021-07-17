@@ -1,4 +1,5 @@
 import setuptools
+
 import versioneer
 
 with open("README.md", "r", encoding="utf8") as f:

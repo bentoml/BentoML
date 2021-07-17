@@ -51,7 +51,7 @@ class GunicornModelServer(Application):  # pylint: disable=abstract-method
             "loglevel": loglevel.upper(),
         }
         if workers:
-            self.options['workers'] = workers
+            self.options["workers"] = workers
 
         super().__init__()
 

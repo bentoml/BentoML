@@ -43,7 +43,7 @@ class PrometheusClient:
                 shutil.rmtree(multiproc_dir, ignore_errors=True)
                 os.makedirs(multiproc_dir, exist_ok=True)
 
-                os.environ['prometheus_multiproc_dir'] = multiproc_dir
+                os.environ["prometheus_multiproc_dir"] = multiproc_dir
             finally:
                 if multiproc_lock is not None:
                     multiproc_lock.release()

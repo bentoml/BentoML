@@ -89,7 +89,7 @@ class EasyOCRArtifact(BentoServiceArtifact):
             )
 
         if not lang_list:
-            lang_list = ['en']
+            lang_list = ["en"]
         self._model = easyocr_model
         self._detect_model = detect_model
         self._recog_network = recog_network

@@ -1,9 +1,11 @@
-import pytest
 import random
+
+import pytest
 import spacy
+
 import bentoml
-from tests.bento_services.spacy_classifier import SpacyModelService
 from bentoml.yatai.client import YataiClient
+from tests import SpacyModelService
 
 
 @pytest.fixture()

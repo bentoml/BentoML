@@ -5,11 +5,10 @@ import subprocess
 import uuid
 
 import docker
-
 from bentoml.configuration import LAST_PYPI_RELEASE_VERSION
 from bentoml.utils import reserve_free_port
 from bentoml.utils.tempdir import TempDirectory
-from tests.integration.utils import wait_until_container_ready
+from tests import wait_until_container_ready
 
 logger = logging.getLogger("bentoml.test")
 

@@ -12,32 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import datetime
+import logging
 from contextlib import contextmanager
 
-from sqlalchemy import (
-    Column,
-    String,
-    Integer,
-    DateTime,
-    JSON,
-    UniqueConstraint,
-    desc,
-)
-from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
+from sqlalchemy import JSON, Column, DateTime, Integer, String, UniqueConstraint, desc
+from sqlalchemy.orm.exc import NoResultFound
 
 from bentoml.exceptions import YataiDeploymentException
-from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
+from bentoml.utils import ProtoMessageToDict
 from bentoml.yatai.db.base import Base
-from bentoml.yatai.db.stores.label import (
-    LabelStore,
-    RESOURCE_TYPE,
-)
+from bentoml.yatai.db.stores.label import RESOURCE_TYPE, LabelStore
+from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
 from bentoml.yatai.proto import deployment_pb2
 from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
-from bentoml.utils import ProtoMessageToDict
 
 logger = logging.getLogger(__name__)
 

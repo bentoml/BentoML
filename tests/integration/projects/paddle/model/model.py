@@ -4,8 +4,8 @@ import sys
 import paddle
 from paddle import nn
 from paddle.static import InputSpec
-from bentoml.paddle import PaddlePaddleModelArtifact
 
+from bentoml.paddle import PaddlePaddleModelArtifact
 
 BATCH_SIZE = 8
 BATCH_NUM = 4

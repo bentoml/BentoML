@@ -1,6 +1,5 @@
 from bentoml._internal.configuration.containers import BentoMLContainer
 
-
 yatai_metrics_client = BentoMLContainer.yatai_metrics_client.get()
 
 GRPC_SERVER_STARTED_COUNTER = yatai_metrics_client.Counter(

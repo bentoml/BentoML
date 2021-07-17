@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import shutil
-import logging
 from pathlib import Path
 
 from bentoml._internal.exceptions import YataiRepositoryException
 from yatai.yatai.proto.repository_pb2 import BentoUri
 from yatai.yatai.repository.base_repository import BaseRepository
-
 
 logger = logging.getLogger(__name__)
 

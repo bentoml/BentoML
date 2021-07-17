@@ -1,9 +1,9 @@
 import logging
-import pytest
 import subprocess
 
-from tests.bento_services.example_bento_service import ExampleBentoService
-from tests.threading_util import ThreadWithResult, run_delayed_thread
+import pytest
+
+from tests import ExampleBentoService, ThreadWithResult, run_delayed_thread
 
 logger = logging.getLogger("bentoml.test")
 

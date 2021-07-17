@@ -1,10 +1,11 @@
-from tests.bento_services.lightgbm_service import LgbModelService
-import numpy as np
 import lightgbm as lgb
-from pandas import DataFrame
+import numpy as np
 import pytest
+from pandas import DataFrame
+
 import bentoml
 from bentoml.yatai.client import YataiClient
+from tests import LgbModelService
 
 
 @pytest.fixture()

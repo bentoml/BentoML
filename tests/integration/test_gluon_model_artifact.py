@@ -1,9 +1,9 @@
-import pytest
-import bentoml
-from tests.bento_services.gluon_classifier import GluonClassifier
-from bentoml.yatai.client import YataiClient
-
 import mxnet
+import pytest
+
+import bentoml
+from bentoml.yatai.client import YataiClient
+from tests import GluonClassifier
 
 
 @pytest.fixture()

@@ -8,7 +8,7 @@ import pytest
 import tensorflow as tf
 
 import bentoml
-from tests.integration.utils import (
+from tests import (
     build_api_server_docker_image,
     export_service_bundle,
     run_api_server_docker_container,
@@ -17,9 +17,9 @@ from tests.integration.utils import (
 TF2 = tf.__version__.startswith("2")
 
 if TF2:
-    from tests.bento_services.keras_classifier import KerasClassifier
+    from tests import KerasClassifier
 else:
-    from tests.bento_services.keras_with_tf1_classifier import KerasClassifier
+    from tests import KerasClassifier
 
 test_data = [1, 2, 3, 4, 5]
 

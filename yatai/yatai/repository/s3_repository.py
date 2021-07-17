@@ -39,8 +39,9 @@ class S3Repository(BaseRepository):
             BentoMLContainer.config.yatai.repository.s3.expiration
         ],
     ):
-        import boto3
         from urllib.parse import urlparse
+
+        import boto3
 
         self.uri_type = BentoUri.S3
 

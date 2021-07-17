@@ -6,8 +6,8 @@ import pytest
 import xgboost as xgb
 
 import bentoml
-from tests.bento_services.xgboost_classifier import XgboostModelClassifier
-from tests.integration.utils import (
+from tests import (
+    XgboostModelClassifier,
     build_api_server_docker_image,
     run_api_server_docker_container,
 )

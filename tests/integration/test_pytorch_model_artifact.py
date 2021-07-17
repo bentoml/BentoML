@@ -1,12 +1,11 @@
-import pytest
 import pandas
-
+import pytest
 import torch
 from torch import nn
 
 import bentoml
 from bentoml.yatai.client import YataiClient
-from tests.bento_services.pytorch_classifier import PytorchClassifier
+from tests import PytorchClassifier
 
 
 class PytorchModel(nn.Module):

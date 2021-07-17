@@ -1,11 +1,10 @@
-from contextlib import contextmanager
-from bentoml._internal.exceptions import LockUnavailable
-
 import logging
 import random
 import time
+from contextlib import contextmanager
 
-from yatai.yatai.db.stores.lock import LockStore, LOCK_STATUS
+from bentoml._internal.exceptions import LockUnavailable
+from yatai.yatai.db.stores.lock import LOCK_STATUS, LockStore
 
 logger = logging.getLogger(__name__)
 

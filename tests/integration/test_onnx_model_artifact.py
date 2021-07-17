@@ -1,11 +1,11 @@
 import os
 
-import pytest
 import pandas
+import pytest
 
 import bentoml
 from bentoml.yatai.client import YataiClient
-from tests.bento_services.onnx_onnxruntime_iris_classifier import OnnxIrisClassifier
+from tests import OnnxIrisClassifier
 
 
 @pytest.fixture()
@@ -20,11 +20,11 @@ def onnx_iris_classifier_class():
 
 @pytest.fixture()
 def sklearn_onnx_model():
-    from sklearn.datasets import load_iris
-    from sklearn.model_selection import train_test_split
-    from sklearn.ensemble import RandomForestClassifier
     from skl2onnx import convert_sklearn
     from skl2onnx.common.data_types import FloatTensorType
+    from sklearn.datasets import load_iris
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import train_test_split
 
     initial_types = [("float_input", FloatTensorType([None, 4]))]
 

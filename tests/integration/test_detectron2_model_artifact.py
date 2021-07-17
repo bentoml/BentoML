@@ -1,13 +1,13 @@
-import pytest
-import numpy as np
 import imageio
-from tests.bento_services.detectron2_classifier import DetectronClassifier
-
-from bentoml import load_from_dir
-from detectron2.config import get_cfg
+import numpy as np
+import pytest
 from detectron2 import model_zoo
 from detectron2.checkpoint import DetectionCheckpointer
+from detectron2.config import get_cfg
 from detectron2.modeling import build_model
+
+from bentoml import load_from_dir
+from tests import DetectronClassifier
 
 
 @pytest.fixture()

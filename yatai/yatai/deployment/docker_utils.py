@@ -1,10 +1,9 @@
 import logging
-from typing import Optional, Dict
+from typing import Dict, Optional
 from urllib.parse import urlparse
 
 import docker
-
-from bentoml._internal.exceptions import MissingDependencyException, BentoMLException
+from bentoml._internal.exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 

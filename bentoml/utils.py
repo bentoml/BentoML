@@ -31,8 +31,8 @@ SEMVER_REGEX = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)?$")
 logger = logging.getLogger(__name__)
 
 BACKWARD_COMPATIBILITY_WARNING: str = """\
-Since 0.14.0, we changed the format of docker tags, thus {classname}
-will only supports image tag from 0.14.0 forward, while detected bentoml_version
+Since 1.0.0, we changed the format of docker tags, thus {classname}
+will only supports image tag from 1.0.0 forward, while detected bentoml_version
 is {bentoml_version}. Refers to https://hub.docker.com/r/bentoml/model-server/
 if you need older version of bentoml. Using devel image instead...
 """  # noqa: E501

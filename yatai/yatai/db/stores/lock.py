@@ -1,7 +1,8 @@
 import datetime
 import enum
 
-from sqlalchemy import UniqueConstraint, Column, Integer, Enum, DateTime, String
+from sqlalchemy import Column, DateTime, Enum, Integer, String, UniqueConstraint
+
 from bentoml.exceptions import LockUnavailable
 from bentoml.yatai.db import Base
 

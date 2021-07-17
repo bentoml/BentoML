@@ -9,7 +9,7 @@ import bentoml
 from bentoml.saved_bundle.loader import load_from_dir
 from bentoml.utils.tempdir import TempDirectory
 from bentoml.yatai.client import get_yatai_client
-from tests.integration.yatai_server.utils import yatai_service_container
+from tests import yatai_service_container
 
 logger = logging.getLogger("bentoml.test")
 

@@ -21,6 +21,7 @@ from datetime import datetime
 from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
+from bentoml._internal.bundle.loader import safe_retrieve
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.exceptions import (
     BadInput,
@@ -28,7 +29,6 @@ from bentoml._internal.exceptions import (
     InvalidArgument,
     YataiRepositoryException,
 )
-from bentoml._internal.bundle.loader import safe_retrieve
 from bentoml._internal.utils import ProtoMessageToDict
 from bentoml._internal.utils.docker_utils import (
     to_valid_docker_image_name,
@@ -41,8 +41,7 @@ from yatai.yatai.db.stores.lock import LockStore
 from yatai.yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from yatai.yatai.deployment.operator import get_deployment_operator
 from yatai.yatai.grpc_stream_utils import DownloadBentoStreamResponses
-from yatai.yatai.locking.lock import DEFAULT_TTL_MIN
-from yatai.yatai.locking.lock import LockType, lock
+from yatai.yatai.locking.lock import DEFAULT_TTL_MIN, LockType, lock
 from yatai.yatai.proto import status_pb2
 from yatai.yatai.proto.deployment_pb2 import (
     ApplyDeploymentResponse,

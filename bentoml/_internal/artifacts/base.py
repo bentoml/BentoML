@@ -23,9 +23,6 @@ class BaseArtifact:
         dictionary of model metadata
     """
 
-    def __new__(cls, *args, **kwargs):
-        return super(BaseArtifact, cls).__new__(cls, *args, **kwargs)
-
     def __init__(
         self, model: MT, metadata: t.Optional[t.Dict[str, t.Any]] = None,
     ):
@@ -37,18 +34,13 @@ class BaseArtifact:
     def metadata(self):
         return self._metadata
 
-    @property
-    def model(self):
-        return self._model
-
-    def __metadata_path(self, path: PathType) -> PathType:
-        # NOTE: will self._model always an object type?
+    def __meta_path(self, path: PathType) -> PathType:
         return PathType(os.path.join(path, f"{self._model.__name__}.yml"))
 
-    def save(self, path: PathType) -> t.Callable:
+    def save(self, path: PathType) -> None:
         if self.metadata:
             yaml = YAML()
-            yaml.dump(self.metadata, Path(self.__metadata_path(path)))
+            yaml.dump(self.metadata, Path(self.__meta_path(path)))
 
         inherited = object.__getattribute__(self, "save")
         return inherited(path)

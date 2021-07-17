@@ -1,5 +1,4 @@
 # pylint: disable=redefined-outer-name
-from contextlib import contextmanager
 import logging
 import os
 import subprocess
@@ -7,10 +6,10 @@ import sys
 import threading
 import time
 import urllib
-
-import docker
+from contextlib import contextmanager
 
 import bentoml
+import docker
 from bentoml.utils import cached_contextmanager
 
 logger = logging.getLogger("bentoml.tests")

@@ -1,11 +1,12 @@
-import pytest
-import tempfile
 import contextlib
-import bentoml
-from tests.bento_services.fasttext_classifier import FasttextClassifier
-from bentoml.yatai.client import YataiClient
+import tempfile
 
 import fasttext
+import pytest
+
+import bentoml
+from bentoml.yatai.client import YataiClient
+from tests import FasttextClassifier
 
 
 @pytest.fixture()

@@ -1,11 +1,10 @@
+import evalml
 import pandas
 import pytest
 
-import evalml
-
 import bentoml
 from bentoml.yatai.client import YataiClient
-from tests.bento_services.evalml_classifier import EvalMLClassifier
+from tests import EvalMLClassifier
 
 
 @pytest.fixture(scope="session")

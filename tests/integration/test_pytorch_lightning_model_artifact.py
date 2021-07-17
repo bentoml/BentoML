@@ -1,18 +1,17 @@
 import json
 import uuid
-import pytest
 
-import torch
 import pandas as pd
-
+import pytest
+import torch
+from pytorch_lightning.core.lightning import LightningModule
 
 import bentoml
 from bentoml.utils.tempdir import TempDirectory
-from tests.bento_services.pytorch_lightning_classifier import PytorchLightningService
-from pytorch_lightning.core.lightning import LightningModule
-from tests.integration.utils import (
-    run_api_server_docker_container,
+from tests import (
+    PytorchLightningService,
     build_api_server_docker_image,
+    run_api_server_docker_container,
 )
 
 

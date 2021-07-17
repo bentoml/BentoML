@@ -12,36 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import datetime
+import logging
 
+from google.protobuf.json_format import ParseDict
 from sqlalchemy import (
-    Column,
-    Enum,
-    String,
-    Integer,
     JSON,
     Boolean,
+    Column,
     DateTime,
+    Enum,
+    Integer,
+    String,
     UniqueConstraint,
     desc,
 )
 from sqlalchemy.orm.exc import NoResultFound
-from google.protobuf.json_format import ParseDict
 
-from bentoml.utils import ProtoMessageToDict
 from bentoml.exceptions import YataiRepositoryException
+from bentoml.utils import ProtoMessageToDict
 from bentoml.yatai.db import Base
-from bentoml.yatai.db.stores.label import (
-    LabelStore,
-    RESOURCE_TYPE,
-)
+from bentoml.yatai.db.stores.label import RESOURCE_TYPE, LabelStore
+from bentoml.yatai.proto.repository_pb2 import Bento as BentoPB
 from bentoml.yatai.proto.repository_pb2 import (
-    UploadStatus,
-    BentoUri,
     BentoServiceMetadata,
-    Bento as BentoPB,
+    BentoUri,
     ListBentoRequest,
+    UploadStatus,
 )
 
 logger = logging.getLogger(__name__)

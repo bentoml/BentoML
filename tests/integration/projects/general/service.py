@@ -5,8 +5,8 @@ import time
 
 import bentoml
 from bentoml.adapters import FileInput, ImageInput, JsonInput, MultiImageInput
-from bentoml.sklearn import SklearnModelArtifact
 from bentoml.service.artifacts.pickle import PickleArtifact
+from bentoml.sklearn import SklearnModelArtifact
 from bentoml.types import InferenceError, InferenceResult, InferenceTask
 
 

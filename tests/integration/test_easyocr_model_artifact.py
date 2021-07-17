@@ -1,9 +1,9 @@
-import bentoml
-from tests.bento_services.easyocr_service import EasyOCRService
-from bentoml.yatai.client import YataiClient
-
-import imageio
 import easyocr
+import imageio
+
+import bentoml
+from bentoml.yatai.client import YataiClient
+from tests import EasyOCRService
 
 TEST_RESULT = ["西", "愚园路", "东", "315", "309", "W", "Yuyuan Rd。", "E"]
 IMAGE_PATH = "./tests/integration/chinese.jpg"

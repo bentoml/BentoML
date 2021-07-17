@@ -1,18 +1,15 @@
+import csv
 import logging
 import os
 import subprocess
-import pytest
-import imageio
-import csv
-import numpy as np
 
+import imageio
+import numpy as np
+import pytest
 from sklearn import datasets, svm
 
-from tests.conftest import delete_saved_bento_service
-from tests.bento_services import (
-    pytorch_classifier_image,
-    iris_classifier,
-)
+from tests import iris_classifier, pytorch_classifier_image
+from tests.unit.conftest import delete_saved_bento_service
 
 logger = logging.getLogger("bentoml.test")
 

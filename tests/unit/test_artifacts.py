@@ -1,11 +1,9 @@
 import os
-import pickle
 
 import pytest
 
 from bentoml._internal.artifacts import BaseArtifact, PickleArtifact
 from bentoml._internal.exceptions import InvalidArgument
-from bentoml._internal.utils import cloudpickle
 
 _metadata = {"test": "Hello", "num": 0.234}
 
@@ -38,6 +36,8 @@ class FooArtifact(BaseArtifact):
         ([create_mock_class("foo")], {"metadata": _metadata}, _metadata),
         ([create_mock_class("bar")], {}, None),
         ([b'\x00'], {}, None),
+        (['test'], {}, None),
+        ([1], {}, None),
     ],
 )
 def test_base_artifact(args, kwargs, metadata):
@@ -51,14 +51,6 @@ def test_base_artifact(args, kwargs, metadata):
 
 
 @pytest.mark.parametrize(
-    "invalid, exc", [(1, InvalidArgument), ("test", InvalidArgument)]
-)
-def test_invalid_artifact(invalid, exc):
-    with pytest.raises(exc):
-        BaseArtifact(invalid)
-
-
-@pytest.mark.parametrize(
     "model, expected",
     [
         (create_mock_class("MockModel"), "MockModel.yml"),
@@ -69,8 +61,8 @@ def test_invalid_artifact(invalid, exc):
 def test_save_artifact(model, expected, tmpdir):
     foo = FooArtifact(model, metadata=_metadata)
     foo.save(tmpdir)
-    assert foo._meta_path(tmpdir) == os.path.join(tmpdir, expected)
-    assert os.path.exists(foo._meta_path(tmpdir))
+    assert foo.model_path(tmpdir, ".yml") == os.path.join(tmpdir, expected)
+    assert os.path.exists(foo.model_path(tmpdir, ".yml"))
 
 
 @pytest.mark.parametrize(
@@ -83,9 +75,9 @@ def test_save_artifact(model, expected, tmpdir):
 def test_pkl_artifact(model, expected, tmpdir):
     pkl = PickleArtifact(model, metadata=_metadata)
     pkl.save(tmpdir)
-    assert pkl._pkl_path(tmpdir) == os.path.join(tmpdir, expected)
-    assert os.path.exists(pkl._pkl_path(tmpdir))
-    assert os.path.exists(pkl._meta_path(tmpdir))
+    assert pkl.model_path(tmpdir, ".pkl") == os.path.join(tmpdir, expected)
+    assert os.path.exists(pkl.model_path(tmpdir, ".pkl"))
+    assert os.path.exists(pkl.model_path(tmpdir, ".yml"))
     assert model == PickleArtifact.load(tmpdir)
 
 

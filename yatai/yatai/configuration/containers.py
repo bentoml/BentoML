@@ -9,10 +9,8 @@ from simple_di import Provide, Provider, container, providers
 
 from bentoml import __version__
 from bentoml._internal.utils.ruamel_yaml import YAML
-
-from ..configuration import expand_env_var, get_bentoml_deploy_version
-from ..exceptions import BentoMLConfigException
-from ..utils import get_free_port
+from yatai.configuration import expand_env_var
+from yatai.exceptions import YataiException
 
 if TYPE_CHECKING:
     from ..server.marshal.marshal import MarshalApp
@@ -30,61 +28,42 @@ YATAI_REPOSITORY_TYPES = [
 
 SCHEMA = Schema(
     {
-        "logging": {
-            "level": And(
+        # TODO make this into a list
+        "remote": {
+            "url": Or(str, None),
+            "access_token": Or(str, None),
+            "access_token_header": Or(str, None),
+            "tls": {
+                "root_ca_cert": Or(str, None),
+                "client_key": Or(str, None),
+                "client_cert": Or(str, None),
+                "client_certificate_file": Or(str, None),
+            },
+        },
+        "repository": {
+            "type": And(
                 str,
-                lambda level: level.isupper(),
-                error="logging.level must be all upper case letters",
+                lambda type: type in YATAI_REPOSITORY_TYPES,
+                error="yatai.repository.type must be one of %s"
+                % YATAI_REPOSITORY_TYPES,
             ),
-            "console": {"enabled": bool},
-            "file": {"enabled": bool, "directory": Or(str, None)},
-            "advanced": {"enabled": bool, "config": Or(dict, None)},
-        },
-        "tracing": {
-            "type": Or(
-                And(str, Use(str.lower), lambda s: s in ("zipkin", "jaeger")), None
-            ),
-            Optional("zipkin"): {"url": Or(str, None)},
-            Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
-        },
-        "yatai": {
-            # TODO make this into a list
-            "remote": {
+            "file_system": {"directory": Or(str, None)},
+            "s3": {
                 "url": Or(str, None),
-                "access_token": Or(str, None),
-                "access_token_header": Or(str, None),
-                "tls": {
-                    "root_ca_cert": Or(str, None),
-                    "client_key": Or(str, None),
-                    "client_cert": Or(str, None),
-                    "client_certificate_file": Or(str, None),
-                },
+                "endpoint_url": Or(str, None),
+                "signature_version": Or(str, None),
+                "expiration": Or(int, None),
             },
-            "repository": {
-                "type": And(
-                    str,
-                    lambda type: type in YATAI_REPOSITORY_TYPES,
-                    error="yatai.repository.type must be one of %s"
-                    % YATAI_REPOSITORY_TYPES,
-                ),
-                "file_system": {"directory": Or(str, None)},
-                "s3": {
-                    "url": Or(str, None),
-                    "endpoint_url": Or(str, None),
-                    "signature_version": Or(str, None),
-                    "expiration": Or(int, None),
-                },
-                "gcs": {"url": Or(str, None), "expiration": Or(int, None)},
-            },
-            "database": {"url": Or(str, None)},
-            "namespace": str,
-            "logging": {"path": Or(str, None)},
+            "gcs": {"url": Or(str, None), "expiration": Or(int, None)},
         },
-    }
+        "database": {"url": Or(str, None)},
+        "namespace": str,
+        "logging": {"path": Or(str, None)},
+    },
 )
 
 
-class BentoMLConfiguration:
+class YataiConfiguration:
     def __init__(
         self,
         default_config_file: str = None,
@@ -104,7 +83,7 @@ class BentoMLConfiguration:
             try:
                 SCHEMA.validate(self.config)
             except SchemaError as e:
-                raise BentoMLConfigException(
+                raise YataiException(
                     "Default configuration 'default_configuration.yml' does not"
                     " conform to the required schema."
                 ) from e

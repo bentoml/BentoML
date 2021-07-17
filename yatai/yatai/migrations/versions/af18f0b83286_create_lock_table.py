@@ -8,7 +8,7 @@ Create Date: 2021-05-18 18:33:10.622364
 from alembic import op
 
 # revision identifiers, used by Alembic.
-from yatai.yatai.db.stores.lock import Lock
+from yatai.db.stores.lock import Lock
 
 revision = "af18f0b83286"
 down_revision = "719dd2aacc9a"

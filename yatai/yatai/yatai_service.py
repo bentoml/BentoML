@@ -13,7 +13,7 @@ from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.exceptions import BentoMLException
 from bentoml._internal.utils import reserve_free_port
-from yatai.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
+from yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 
 @inject
@@ -42,8 +42,8 @@ def get_yatai_service(
         # Lazily import grpcio for YataiService gRPC related actions
         import grpc
 
-        from yatai.yatai.interceptor import header_adder_interceptor
-        from yatai.yatai.proto.yatai_service_pb2_grpc import YataiStub
+        from bentoml._internal.yatai_client.interceptor import header_client_interceptor
+        from yatai.proto.yatai_service_pb2_grpc import YataiStub
 
         channel_address = channel_address.strip()
         logger.debug("Connecting YataiService gRPC server at: %s", channel_address)
@@ -75,9 +75,9 @@ def get_yatai_service(
             )
         return YataiStub(channel)
     else:
-        from yatai.yatai.db import DB
-        from yatai.yatai.repository import create_repository
-        from yatai.yatai.yatai_service_impl import get_yatai_service_impl
+        from yatai.db import DB
+        from yatai.repository import create_repository
+        from yatai.yatai_service_impl import get_yatai_service_impl
 
         LocalYataiService = get_yatai_service_impl()
 
@@ -109,14 +109,14 @@ def start_yatai_service_grpc_server(
     # Lazily import grpcio for YataiService gRPC related actions
     import grpc
 
-    from yatai.yatai.db import DB
-    from yatai.yatai.interceptor import PromServerInterceptor, ServiceLatencyInterceptor
-    from yatai.yatai.proto.yatai_service_pb2_grpc import (
+    from yatai.db import DB
+    from yatai.grpc_interceptor import PromServerInterceptor, ServiceLatencyInterceptor
+    from yatai.proto.yatai_service_pb2_grpc import (
         YataiServicer,
         add_YataiServicer_to_server,
     )
-    from yatai.yatai.repository import create_repository
-    from yatai.yatai.yatai_service_impl import get_yatai_service_impl
+    from yatai.repository import create_repository
+    from yatai.yatai_service_impl import get_yatai_service_impl
 
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(

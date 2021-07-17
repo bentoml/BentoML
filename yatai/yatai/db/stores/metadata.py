@@ -28,13 +28,12 @@ from sqlalchemy import (
     desc,
 )
 from sqlalchemy.orm.exc import NoResultFound
+from Yatai.exceptions import YataiRepositoryException
 
-from bentoml.exceptions import YataiRepositoryException
-from bentoml.utils import ProtoMessageToDict
-from bentoml.yatai.db import Base
-from bentoml.yatai.db.stores.label import RESOURCE_TYPE, LabelStore
-from bentoml.yatai.proto.repository_pb2 import Bento as BentoPB
-from bentoml.yatai.proto.repository_pb2 import (
+from bentoml._internal.utils import ProtoMessageToDict
+from yatai.db import Base
+from yatai.db.stores.label import RESOURCE_TYPE, LabelStore
+from yatai.proto.repository_pb2 import (
     BentoServiceMetadata,
     BentoUri,
     ListBentoRequest,

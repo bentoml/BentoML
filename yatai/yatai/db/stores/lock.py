@@ -3,8 +3,8 @@ import enum
 
 from sqlalchemy import Column, DateTime, Enum, Integer, String, UniqueConstraint
 
-from bentoml.exceptions import LockUnavailable
-from bentoml.yatai.db import Base
+from yatai.db import Base
+from yatai.exceptions import LockUnavailable
 
 
 # LOCK_STATUS is an enum of the type of lock currently held

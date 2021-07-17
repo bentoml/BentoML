@@ -4,11 +4,11 @@ from coremltools.models import MLModel  # pylint: disable=import-error
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.coreml import CoreMLModelArtifact
+from bentoml.coreml import CoreMLModel
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([CoreMLModelArtifact("model")])
+@bentoml.artifacts([CoreMLModel("model")])
 class CoreMLClassifier(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df: pd.DataFrame) -> float:

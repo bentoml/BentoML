@@ -15,9 +15,9 @@
 
 import logging
 
-from bentoml.exceptions import InvalidArgument, YataiDeploymentException
-from bentoml.utils.ruamel_yaml import YAML
-from bentoml.yatai.proto.deployment_pb2 import Deployment, DeploymentSpec
+from bentoml._internal.utils.ruamel_yaml import YAML
+from yatai.exceptions import InvalidArgument, YataiDeploymentException
+from yatai.proto.deployment_pb2 import Deployment, DeploymentSpec
 
 logger = logging.getLogger(__name__)
 

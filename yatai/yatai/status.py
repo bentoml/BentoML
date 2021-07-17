@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from yatai.yatai.proto.status_pb2 import Status as StatusProto
+from yatai.proto.status_pb2 import Status as StatusProto
 
 
 class Status(object):

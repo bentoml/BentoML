@@ -2,6 +2,7 @@ from bentoml._internal.utils.lazy_loader import LazyLoader
 
 yatai_proto = LazyLoader('yatai_proto', globals(), 'yatai.proto')
 
+
 def _proto_status_code_to_http_status_code(proto_status_code, fallback):
     _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE = {
         yatai_proto.status_pb2.Status.INTERNAL: 500,  # Internal Server Error
@@ -13,7 +14,6 @@ def _proto_status_code_to_http_status_code(proto_status_code, fallback):
         yatai_proto.status_pb2.Status.FAILED_PRECONDITION: 500,  # Internal Server Error
     }
     return _PROTO_STATUS_CODE_TO_HTTP_STATUS_CODE.get(proto_status_code, fallback)
-
 
 
 class YataiException(Exception):

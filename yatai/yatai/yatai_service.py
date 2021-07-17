@@ -108,19 +108,15 @@ def start_yatai_service_grpc_server(
 ):
     # Lazily import grpcio for YataiService gRPC related actions
     import grpc
+
     from yatai.db import DB
+    from yatai.grpc_interceptor import PromServerInterceptor, ServiceLatencyInterceptor
+    from yatai.proto.yatai_service_pb2_grpc import (
+        YataiServicer,
+        add_YataiServicer_to_server,
+    )
     from yatai.repository import create_repository
     from yatai.yatai_service_impl import get_yatai_service_impl
-    from yatai.proto.yatai_service_pb2_grpc import (
-      YataiServicer,  
-      add_YataiServicer_to_server,
-    )
-    from yatai.proto.yatai_service_pb2_grpc import YataiServicer
-    from yatai.grpc_interceptor import (
-        PromServerInterceptor,
-        ServiceLatencyInterceptor,
-    )
-
 
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(

@@ -20,17 +20,13 @@ from google.protobuf.json_format import ParseDict
 from sqlalchemy import JSON, Column, DateTime, Integer, String, UniqueConstraint, desc
 from sqlalchemy.orm.exc import NoResultFound
 
-from yatai.exceptions import YataiDeploymentException
-from yatai.deployment import ALL_NAMESPACE_TAG
+from bentoml._internal.utils import ProtoMessageToDict
 from yatai.db.base import Base
-from yatai.db.stores.label import (
-    LabelStore,
-    RESOURCE_TYPE,
-)
+from yatai.db.stores.label import RESOURCE_TYPE, LabelStore
+from yatai.deployment import ALL_NAMESPACE_TAG
+from yatai.exceptions import YataiDeploymentException
 from yatai.proto import deployment_pb2
 from yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
-from bentoml._internal.utils import ProtoMessageToDict
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,3 +1,5 @@
+import os
+
 from bentoml._internal.configuration import expand_env_var
 
 

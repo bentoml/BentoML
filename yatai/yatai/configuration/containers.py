@@ -9,11 +9,8 @@ from simple_di import Provide, Provider, container, providers
 
 from bentoml import __version__
 from bentoml._internal.utils.ruamel_yaml import YAML
-
 from yatai.configuration import expand_env_var
 from yatai.exceptions import YataiException
-from bentoml._internal.utils.ruamel_yaml import YAML
-
 
 if TYPE_CHECKING:
     from ..server.marshal.marshal import MarshalApp

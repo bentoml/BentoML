@@ -1,6 +1,5 @@
 from yatai.configuration.containers import YataiContainer
 
-
 yatai_metrics_client = YataiContainer.yatai_metrics_client.get()
 
 

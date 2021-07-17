@@ -13,13 +13,11 @@
 # limitations under the License.
 
 from cerberus import Validator
-
 from exceptions import InvalidArgument
+
 from bentoml.utils import ProtoMessageToDict
 from yatai.db.stores.label import _validate_labels
 from yatai.deployment.azure_functions.constants import (
-    AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
-
     AZURE_FUNCTIONS_AUTH_LEVELS,
     AZURE_FUNCTIONS_PREMIUM_PLAN_SKUS,
 )

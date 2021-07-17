@@ -41,11 +41,9 @@ from yatai.db.stores.lock import LockStore
 from yatai.deployment.docker_utils import ensure_docker_available_or_raise
 from yatai.deployment.operator import get_deployment_operator
 from yatai.grpc_stream_utils import DownloadBentoStreamResponses
-from yatai.locking.lock import DEFAULT_TTL_MIN
-from yatai.locking.lock import LockType, lock
+from yatai.locking.lock import DEFAULT_TTL_MIN, LockType, lock
 from yatai.proto import status_pb2
 from yatai.proto.deployment_pb2 import (
-
     ApplyDeploymentResponse,
     DeleteDeploymentResponse,
     DeploymentSpec,

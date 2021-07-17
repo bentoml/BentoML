@@ -35,7 +35,7 @@ class StringInput(BaseInputAdapter):
 
     @decompress_gzip_request
     def from_http_request(self, req: HTTPRequest) -> InferenceTask[str]:
-        if req.headers.content_type == 'multipart/form-data':
+        if req.headers.content_type == "multipart/form-data":
             _, _, files = HTTPRequest.parse_form_data(req)
             if len(files) != 1:
                 return InferenceTask().discard(
@@ -45,7 +45,7 @@ class StringInput(BaseInputAdapter):
                 )
             input_file = next(iter(files.values()))
             bytes_ = input_file.read()
-            charset = chardet.detect(bytes_)['encoding'] or "utf-8"
+            charset = chardet.detect(bytes_)["encoding"] or "utf-8"
         else:
             bytes_ = req.body
             charset = req.headers.charset or "utf-8"
@@ -63,15 +63,15 @@ class StringInput(BaseInputAdapter):
             )
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[str]:
-        return InferenceTask(aws_lambda_event=event, data=event.get('body', ""),)
+        return InferenceTask(aws_lambda_event=event, data=event.get("body", ""),)
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[str]]:
         import argparse
 
         parser = argparse.ArgumentParser()
         input_g = parser.add_mutually_exclusive_group(required=True)
-        input_g.add_argument('--input', nargs="+", type=str)
-        input_g.add_argument('--input-file', nargs="+")
+        input_g.add_argument("--input", nargs="+", type=str)
+        input_g.add_argument("--input-file", nargs="+")
 
         parsed_args, _ = parser.parse_known_args(list(cli_args))
 
@@ -84,7 +84,7 @@ class StringInput(BaseInputAdapter):
     def from_inference_job(  # pylint: disable=arguments-differ
         self, input_=None, input_file=None, **extra_args,
     ) -> Iterator[InferenceTask[str]]:
-        '''
+        """
         Generate InferenceTask from calling bentom_svc.run(input_=None, input_file=None)
 
         Parameters
@@ -97,13 +97,13 @@ class StringInput(BaseInputAdapter):
 
         extra_args : dict
             Additional parameters
-        '''
+        """
         if input_file is not None:
             for d in input_file:
                 uri = pathlib.Path(d).absolute().as_uri()
                 bytes_ = FileLike(uri=uri).read()
                 try:
-                    charset = chardet.detect(bytes_)['encoding'] or "utf-8"
+                    charset = chardet.detect(bytes_)["encoding"] or "utf-8"
                     yield InferenceTask(
                         inference_job_args=extra_args, data=bytes_.decode(charset),
                     )

@@ -182,9 +182,9 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/test_project.sh.cmd tests/integration/projects/general
+        run: ./ci/test_project.sh.cmd tests/integration/projects/batch
       - name: Run tests
-        run: ./ci/test_project.sh.cmd tests/integration/projects/general_non_batch
+        run: ./ci/test_project.sh.cmd tests/integration/projects/general
       - name: Run tests
         run: ./ci/test_project.sh.cmd tests/integration/projects/slo
       - name: Upload test coverage to Codecov

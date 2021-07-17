@@ -36,7 +36,7 @@ class GunicornMarshalServer(Application):  # pylint: disable=abstract-method
             "worker_class": "aiohttp.worker.GunicornWebWorker",
         }
         if workers:
-            self.options['workers'] = workers
+            self.options["workers"] = workers
         super().__init__()
 
     def load_config(self):

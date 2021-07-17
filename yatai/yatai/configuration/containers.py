@@ -8,11 +8,11 @@ from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
 from bentoml import __version__
+from bentoml._internal.utils.ruamel_yaml import YAML
 
 from ..configuration import expand_env_var, get_bentoml_deploy_version
 from ..exceptions import BentoMLConfigException
 from ..utils import get_free_port
-from bentoml._internal.utils.ruamel_yaml import YAML
 
 if TYPE_CHECKING:
     from ..server.marshal.marshal import MarshalApp
@@ -42,7 +42,7 @@ SCHEMA = Schema(
         },
         "tracing": {
             "type": Or(
-                And(str, Use(str.lower), lambda s: s in ('zipkin', 'jaeger')), None
+                And(str, Use(str.lower), lambda s: s in ("zipkin", "jaeger")), None
             ),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
@@ -178,13 +178,13 @@ class YataiContainerClass:
         jaeger_server_address: str = Provide[config.tracing.jaeger.address],
         jaeger_server_port: int = Provide[config.tracing.jaeger.port],
     ):
-        if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
+        if tracer_type and tracer_type.lower() == "zipkin" and zipkin_server_url:
             from ..tracing.zipkin import get_zipkin_tracer
 
             return get_zipkin_tracer(zipkin_server_url)
         elif (
             tracer_type
-            and tracer_type.lower() == 'jaeger'
+            and tracer_type.lower() == "jaeger"
             and jaeger_server_address
             and jaeger_server_port
         ):

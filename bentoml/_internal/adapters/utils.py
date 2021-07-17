@@ -18,7 +18,7 @@ class B64JsonEncoder(json.JSONEncoder):
 
         if isinstance(o, bytes):
             try:
-                return o.decode('utf-8')
+                return o.decode("utf-8")
             except UnicodeDecodeError:
                 return {TF_B64_KEY: base64.b64encode(o).decode("utf-8")}
 

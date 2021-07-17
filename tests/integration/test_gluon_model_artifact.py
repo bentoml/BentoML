@@ -1,9 +1,9 @@
-import pytest
-import bentoml
-from tests.bento_service_examples.gluon_classifier import GluonClassifier
-from bentoml.yatai.client import YataiClient
-
 import mxnet
+import pytest
+
+import bentoml
+from bentoml.yatai.client import YataiClient
+from tests import GluonClassifier
 
 
 @pytest.fixture()
@@ -22,7 +22,7 @@ def trained_gluon_model():
 
 
 def test_gluon_artifact_pack(gluon_classifier, trained_gluon_model):
-    gluon_classifier.pack('model', trained_gluon_model)
+    gluon_classifier.pack("model", trained_gluon_model)
 
     assert gluon_classifier.predict([0]) == [0]
 
@@ -33,4 +33,4 @@ def test_gluon_artifact_pack(gluon_classifier, trained_gluon_model):
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{gluon_classifier.name}:{gluon_classifier.version}')
+    yc.repository.delete(f"{gluon_classifier.name}:{gluon_classifier.version}")

@@ -13,10 +13,11 @@ exclude = '''
     | examples
     | guides
   )/
-  | bentoml/utils/cloudpickle.py
-  | yatai/yatai/proto
   | bentoml/_version.py
   | versioneer.py
-  | tests/yatai/proto
+  | bentoml/utils/cloudpickle.py
+  | yatai/yatai/proto
+  | tests/unit/yatai/proto
+  | bentoml/_internal/yatai_client/proto
 )
 '''

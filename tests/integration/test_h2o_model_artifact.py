@@ -3,8 +3,8 @@ import json
 import pytest
 
 import bentoml
-from tests.bento_service_examples.h2o_service import H2oExampleBentoService
-from tests.integration.utils import (
+from tests import (
+    H2oExampleBentoService,
     build_api_server_docker_image,
     run_api_server_docker_container,
 )
@@ -36,7 +36,7 @@ def h2o_svc():
     aml.train(y="HourlyEnergyOutputMW", training_frame=train, leaderboard_frame=test)
 
     svc = H2oExampleBentoService()
-    svc.pack('model', aml.leader)
+    svc.pack("model", aml.leader)
 
     return svc
 
@@ -59,10 +59,10 @@ def test_h2o_artifact(h2o_svc_loaded):
     test_df = pd.read_json(json.dumps(test_data))
     result = h2o_svc_loaded.predict(test_df)
     result_json = json.loads(result)
-    inference_result = result_json[0]['predict']
+    inference_result = result_json[0]["predict"]
     assert (
         inference_result > 448 and inference_result < 453
-    ), 'Prediction on the saved h2o artifact does not match expect result'
+    ), "Prediction on the saved h2o artifact does not match expect result"
 
 
 @pytest.fixture()
@@ -84,13 +84,13 @@ def test_h2o_artifact_with_docker(h2o_docker_host):
     import requests
 
     result = requests.post(
-        f'http://{h2o_docker_host}/predict',
+        f"http://{h2o_docker_host}/predict",
         json=test_data,
-        headers={'Content-Type': 'application/json'},
+        headers={"Content-Type": "application/json"},
     )
-    assert result.status_code == 200, 'Failed to make successful request'
+    assert result.status_code == 200, "Failed to make successful request"
     result_json = json.loads(result.json())
-    inference_result = result_json[0]['predict']
+    inference_result = result_json[0]["predict"]
     assert (
         inference_result > 448 and inference_result < 453
-    ), 'Prediction on the saved h2o artifact does not match expect result'
+    ), "Prediction on the saved h2o artifact does not match expect result"

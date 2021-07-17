@@ -7,8 +7,8 @@ import pytest
 import tensorflow as tf
 
 import bentoml
-from tests.bento_service_examples.tensorflow_classifier import Tensorflow2Classifier
-from tests.integration.utils import (
+from tests import (
+    Tensorflow2Classifier,
     build_api_server_docker_image,
     export_service_bundle,
     run_api_server_docker_container,
@@ -43,7 +43,7 @@ class TfNativeModel(tf.Module):
         self.dense = lambda inputs: tf.matmul(inputs, self.weights)
 
     @tf.function(
-        input_signature=[tf.TensorSpec(shape=None, dtype=tf.float64, name='inputs')]
+        input_signature=[tf.TensorSpec(shape=None, dtype=tf.float64, name="inputs")]
     )
     def __call__(self, inputs):
         return self.dense(inputs)
@@ -78,15 +78,15 @@ def svc():
 
     model1 = TfKerasModel()
     model1(test_tensor)
-    svc.pack('model1', model1)
+    svc.pack("model1", model1)
 
     model2 = TfNativeModel()
     model2(test_tensor)
-    svc.pack('model2', model2)
+    svc.pack("model2", model2)
 
     model3 = TfNativeModelWithRagged()
     model3(ragged_tensor)
-    svc.pack('model3', model3)
+    svc.pack("model3", model3)
 
     return svc
 
@@ -106,15 +106,15 @@ def host(image):
 def test_tensorflow_2_artifact(svc):
     assert (
         svc.predict1(test_tensor) == 15.0
-    ), 'Inference on unsaved TF2 artifact does not match expected'
+    ), "Inference on unsaved TF2 artifact does not match expected"
 
     assert (
         svc.predict2(test_tensor) == 15.0
-    ), 'Inference on unsaved TF2 artifact does not match expected'
+    ), "Inference on unsaved TF2 artifact does not match expected"
 
     assert (
         (svc.predict3(ragged_data) == 15.0).numpy().all()
-    ), 'Inference on unsaved TF2 artifact does not match expected'
+    ), "Inference on unsaved TF2 artifact does not match expected"
 
 
 def test_tensorflow_2_artifact_loaded(svc):
@@ -122,13 +122,13 @@ def test_tensorflow_2_artifact_loaded(svc):
         svc_loaded = bentoml.load(saved_path)
         assert (
             svc_loaded.predict1(test_tensor) == 15.0
-        ), 'Inference on saved and loaded TF2 artifact does not match expected'
+        ), "Inference on saved and loaded TF2 artifact does not match expected"
         assert (
             svc_loaded.predict2(test_tensor) == 15.0
-        ), 'Inference on saved and loaded TF2 artifact does not match expected'
+        ), "Inference on saved and loaded TF2 artifact does not match expected"
         assert (
             (svc_loaded.predict3(ragged_data) == 15.0).numpy().all()
-        ), 'Inference on saved and loaded TF2 artifact does not match expected'
+        ), "Inference on saved and loaded TF2 artifact does not match expected"
 
 
 @pytest.mark.asyncio
@@ -139,7 +139,7 @@ async def test_tensorflow_2_artifact_with_docker(host):
         headers=(("Content-Type", "application/json"),),
         data=json.dumps({"instances": test_data}),
         assert_status=200,
-        assert_data=b'[[15.0]]',
+        assert_data=b"[[15.0]]",
     )
     await pytest.assert_request(
         "POST",
@@ -147,7 +147,7 @@ async def test_tensorflow_2_artifact_with_docker(host):
         headers=(("Content-Type", "application/json"),),
         data=json.dumps({"instances": test_data}),
         assert_status=200,
-        assert_data=b'[[15.0]]',
+        assert_data=b"[[15.0]]",
     )
     tasks = tuple(
         pytest.assert_request(
@@ -156,7 +156,7 @@ async def test_tensorflow_2_artifact_with_docker(host):
             headers=(("Content-Type", "application/json"),),
             data=json.dumps(i),
             assert_status=200,
-            assert_data=b'[15.0]',
+            assert_data=b"[15.0]",
         )
         for i in ragged_data
     )

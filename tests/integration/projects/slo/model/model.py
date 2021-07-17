@@ -1,13 +1,13 @@
 import pathlib
 import sys
 
-from bentoml.sklearn import SklearnModelArtifact
 from bentoml.service.artifacts.pickle import PickleArtifact
+from bentoml.sklearn import SklearnModelArtifact
 
 
 class PickleModel:
     def predict_dataframe(self, df):
-        return df['col1'] * 2
+        return df["col1"] * 2
 
     def predict_image(self, input_datas):
         return [input_data.shape for input_data in input_datas]

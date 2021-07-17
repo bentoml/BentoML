@@ -23,14 +23,14 @@ from bentoml.adapters.tensorflow_tensor_output import TfTensorOutput
 
 __all__ = [
     "BaseInputAdapter",
-    'BaseOutputAdapter',
+    "BaseOutputAdapter",
     "DataframeInput",
-    'DataframeOutput',
+    "DataframeOutput",
     "TfTensorInput",
-    'TfTensorOutput',
+    "TfTensorOutput",
     "JsonInput",
     "StringInput",
-    'JsonOutput',
+    "JsonOutput",
     "ImageInput",
     "MultiImageInput",
     "FileInput",
@@ -41,5 +41,5 @@ __all__ = [
     "ClipperFloatsInput",
     "ClipperIntsInput",
     "ClipperStringsInput",
-    'DefaultOutput',
+    "DefaultOutput",
 ]

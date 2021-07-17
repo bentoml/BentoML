@@ -43,9 +43,9 @@ def _resolve_remote_bundle_path(bundle_path):
 
         parsed_url = urlparse(bundle_path)
         bucket_name = parsed_url.netloc
-        object_name = parsed_url.path.lstrip('/')
+        object_name = parsed_url.path.lstrip("/")
 
-        s3 = boto3.client('s3')
+        s3 = boto3.client("s3")
         fileobj = io.BytesIO()
         s3.download_fileobj(bucket_name, object_name, fileobj)
         fileobj.seek(0, 0)
@@ -178,7 +178,7 @@ def load_bento_service_class(bundle_path):
     zipimport_dir = os.path.join(bundle_path, metadata["service_name"], ZIPIMPORT_DIR)
     if os.path.exists(zipimport_dir):
         for p in os.listdir(zipimport_dir):
-            logger.debug('adding %s to sys.path', p)
+            logger.debug("adding %s to sys.path", p)
             sys.path.insert(0, os.path.join(zipimport_dir, p))
 
     module_name = metadata["module_name"]

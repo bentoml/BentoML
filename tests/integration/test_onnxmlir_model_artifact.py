@@ -1,15 +1,17 @@
-import pytest
-import numpy as np
-import pandas
-import tensorflow as tf
 import subprocess
 import sys
+
+import numpy as np
+import pandas
+import pytest
+import tensorflow as tf
+
 import bentoml
-from tests.bento_service_examples.onnxmlir_classifier import OnnxMlirClassifier
 from bentoml.yatai.client import YataiClient
+from tests import OnnxMlirClassifier
 
 test_data = np.array([[1, 2, 3, 4, 5]], dtype=np.float64)
-test_df = pandas.DataFrame(test_data, columns=['A', 'B', 'C', 'D', 'E'])
+test_df = pandas.DataFrame(test_data, columns=["A", "B", "C", "D", "E"])
 test_tensor = np.asfarray(test_data)
 
 
@@ -20,7 +22,7 @@ class TfNativeModel(tf.Module):
         self.dense = lambda inputs: tf.matmul(inputs, self.weights)
 
     @tf.function(
-        input_signature=[tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name='inputs')]
+        input_signature=[tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name="inputs")]
     )
     def __call__(self, inputs):
         return self.dense(inputs)
@@ -48,30 +50,30 @@ def tensorflow_model(tmp_path_factory):
 def convert_to_onnx(tensorflow_model, tmp_path_factory):
     tf_model = tensorflow_model
     tmpdir = str(tmp_path_factory.mktemp("onnx_model"))
-    modelpath = tmpdir + '/model.onnx'
+    modelpath = tmpdir + "/model.onnx"
     command = [
-        'python',
-        '-m',
-        'tf2onnx.convert',
-        '--saved-model',
-        '.',
-        '--output',
+        "python",
+        "-m",
+        "tf2onnx.convert",
+        "--saved-model",
+        ".",
+        "--output",
         modelpath,
     ]
     docker_proc = subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=tf_model, text=True
     )
     stdout, stderr = docker_proc.communicate()
-    assert 'ONNX model is saved' in stderr, 'Failed to convert TF model'
+    assert "ONNX model is saved" in stderr, "Failed to convert TF model"
     return tmpdir
 
 
 @pytest.fixture()
 def compile_model(convert_to_onnx, tmp_path_factory):
-    sys.path.append('/workdir/onnx-mlir/build/Debug/lib/')
-    onnxmodelloc = convert_to_onnx + '/model.onnx'
-    command = ['./onnx-mlir', '--EmitLib', onnxmodelloc]
-    onnx_mlir_loc = '/workdir/onnx-mlir/build/Debug/bin'
+    sys.path.append("/workdir/onnx-mlir/build/Debug/lib/")
+    onnxmodelloc = convert_to_onnx + "/model.onnx"
+    command = ["./onnx-mlir", "--EmitLib", onnxmodelloc]
+    onnx_mlir_loc = "/workdir/onnx-mlir/build/Debug/bin"
 
     docker_proc = subprocess.Popen(
         command,
@@ -82,7 +84,7 @@ def compile_model(convert_to_onnx, tmp_path_factory):
     )
     stdout, stderr = docker_proc.communicate()
     # returns something like: 'Shared library model.so has been compiled.'
-    assert 'has been compiled' in stdout, 'Failed to compile model'
+    assert "has been compiled" in stdout, "Failed to compile model"
     # modelname = 'model.so'
     return convert_to_onnx
 
@@ -91,8 +93,8 @@ def compile_model(convert_to_onnx, tmp_path_factory):
 def get_onnx_mlir_svc(compile_model, onnxmlir_classifier_class):
     svc = onnxmlir_classifier_class
     # need to check compile output location from compile_model
-    model = compile_model + '/model.so'
-    svc.pack('model', model)
+    model = compile_model + "/model.so"
+    svc.pack("model", model)
     return svc
 
 
@@ -100,15 +102,15 @@ def test_onnxmlir_artifact(get_onnx_mlir_svc):
     svc = get_onnx_mlir_svc
     assert (
         svc.predict(test_df)[0] == 15.0
-    ), 'Inference on onnx-mlir artifact does not match expected'
+    ), "Inference on onnx-mlir artifact does not match expected"
 
     saved_path = svc.save()
     loaded_svc = bentoml.load(saved_path)
 
     assert (
         loaded_svc.predict(test_df)[0] == 15.0
-    ), 'Run inference after save onnx-mlir model'
+    ), "Run inference after save onnx-mlir model"
 
     # clean up saved bundle
     yc = YataiClient()
-    yc.repository.delete(f'{svc.name}:{svc.version}')
+    yc.repository.delete(f"{svc.name}:{svc.version}")

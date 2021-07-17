@@ -4,8 +4,8 @@ import sys
 import paddle
 from paddle import nn
 from paddle.static import InputSpec
-from bentoml.paddle import PaddlePaddleModelArtifact
 
+from bentoml.paddle import PaddlePaddleModelArtifact
 
 BATCH_SIZE = 8
 BATCH_NUM = 4
@@ -20,7 +20,7 @@ class Model(nn.Layer):
         super(Model, self).__init__()
         self.fc = nn.Linear(IN_FEATURES, OUT_FEATURES)
 
-    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype='float32')])
+    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype="float32")])
     def forward(self, x):
         return self.fc(x)
 

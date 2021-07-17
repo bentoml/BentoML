@@ -14,8 +14,8 @@
 
 from yatai.yatai.repository.base_repository import BaseRepository
 from yatai.yatai.repository.file_system_repository import FileSystemRepository
-from yatai.yatai.repository.s3_repository import S3Repository
 from yatai.yatai.repository.gcs_repository import GCSRepository
+from yatai.yatai.repository.s3_repository import S3Repository
 
 
 def create_repository(

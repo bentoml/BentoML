@@ -24,7 +24,7 @@ feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_INDEX_HTML = '''\
+DEFAULT_INDEX_HTML = """\
 <!DOCTYPE html>
 <head>
   <link rel="stylesheet" type="text/css" href="static_content/main.css">
@@ -82,9 +82,9 @@ DEFAULT_INDEX_HTML = '''\
       }})
   </script>
 </body>
-'''
+"""
 
-SWAGGER_HTML = '''\
+SWAGGER_HTML = """\
 <!DOCTYPE html>
 <head>
   <link rel="stylesheet" type="text/css" href="static_content/swagger-ui.css">
@@ -99,7 +99,7 @@ SWAGGER_HTML = '''\
       }})
   </script>
 </body>
-'''
+"""
 
 
 def _request_to_json(req):
@@ -164,7 +164,7 @@ class ModelApp:
         self.tracer = tracer
 
         self.swagger_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'static_content'
+            os.path.dirname(os.path.abspath(__file__)), "static_content"
         )
 
         for middleware in (InstrumentMiddleware,):
@@ -209,7 +209,7 @@ class ModelApp:
         """
         The index route for BentoML API server
         """
-        return send_from_directory(static_path, 'index.html')
+        return send_from_directory(static_path, "index.html")
 
     def default_index_view_func(self):
         """
@@ -222,7 +222,7 @@ class ModelApp:
             )
         return Response(
             response=DEFAULT_INDEX_HTML.format(
-                url='/docs.json', readme=self.bento_service.__doc__
+                url="/docs.json", readme=self.bento_service.__doc__
             ),
             status=200,
             mimetype="text/html",
@@ -237,7 +237,7 @@ class ModelApp:
                 response="Swagger is disabled", status=404, mimetype="text/html"
             )
         return Response(
-            response=SWAGGER_HTML.format(url='/docs.json'),
+            response=SWAGGER_HTML.format(url="/docs.json"),
             status=200,
             mimetype="text/html",
         )
@@ -399,15 +399,15 @@ class ModelApp:
                         e.status_code,
                     )
                 else:
-                    response = make_response('', e.status_code)
+                    response = make_response("", e.status_code)
             except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
                 log_exception(sys.exc_info())
 
                 response = make_response(
-                    'An error has occurred in BentoML user code when handling this '
-                    'request, find the error details in server logs',
+                    "An error has occurred in BentoML user code when handling this "
+                    "request, find the error details in server logs",
                     500,
                 )
 

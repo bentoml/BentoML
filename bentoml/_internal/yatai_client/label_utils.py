@@ -14,18 +14,18 @@ def _extract_expressions(query):
     # e.g.
     # "key, key1 in (value1, value2),key3"
     # -> ['key', ' key1 in (value1, value2)', 'key3']
-    return re.split(r',(?![^()]*\))', query)
+    return re.split(r",(?![^()]*\))", query)
 
 
 def value_string_to_list(value_string):
-    if not value_string.startswith('(') or not value_string.endswith(')'):
+    if not value_string.startswith("(") or not value_string.endswith(")"):
         raise BentoMLException(
             f"Query values {value_string} need to be inside (). "
             f"e.g. (value1, value2, ..)"
         )
     if len(value_string) == 2:
         raise BentoMLException("Query values can't be empty")
-    return [value.strip() for value in value_string[1:-1].split(',')]
+    return [value.strip() for value in value_string[1:-1].split(",")]
 
 
 def _extract_expression_elements(expression):
@@ -34,7 +34,7 @@ def _extract_expression_elements(expression):
     # e.g.
     # "key1 in (value1, value2,value4)"
     # -> ['key1', ' in', '(value1, value2,,value3)']
-    return re.split(r' (?![^()]*\))', expression)
+    return re.split(r" (?![^()]*\))", expression)
 
 
 def generate_gprc_labels_selector(label_selectors, label_query):
@@ -52,30 +52,30 @@ def generate_gprc_labels_selector(label_selectors, label_query):
                 raise BentoMLException(
                     f"Label query operator {query} can't be the only element"
                 )
-            if '!=' in query:
-                if query.count('!=') > 1:
+            if "!=" in query:
+                if query.count("!=") > 1:
                     raise BentoMLException(f"Too many '!=' operator in query {query}")
-                key, value = query.split('!=')
+                key, value = query.split("!=")
                 if not value:
                     raise BentoMLException(f"Label {query} can't have empty value")
                 label_selectors.match_expressions.append(
                     LabelSelectors.LabelSelectorExpression(
                         key=key,
-                        operator=label_expression_operators['NotIn'],
+                        operator=label_expression_operators["NotIn"],
                         values=[value],
                     )
                 )
-            elif '=' in query:
-                if query.count('=') > 1:
+            elif "=" in query:
+                if query.count("=") > 1:
                     raise BentoMLException(f"Too many '=' operator in query {query}")
-                key, value = query.split('=')
+                key, value = query.split("=")
                 if not value:
                     raise BentoMLException(f"Label {query} can't have empty value")
                 label_selectors.match_labels[key] = value
             else:
                 label_selectors.match_expressions.append(
                     LabelSelectors.LabelSelectorExpression(
-                        key=query, operator=label_expression_operators['Exists']
+                        key=query, operator=label_expression_operators["Exists"]
                     )
                 )
         elif len(elements) == 2:
@@ -83,9 +83,9 @@ def generate_gprc_labels_selector(label_selectors, label_query):
             key = elements[0].strip()
             operator = elements[1].strip()
             assert operator.lower() in [
-                i.lower() for i in ['Exists', 'DoesNotExist']
+                i.lower() for i in ["Exists", "DoesNotExist"]
             ], f'Operator "{operator}" is invalid'
-            operator = 'Exists' if operator.capitalize() == 'Exists' else 'DoesNotExist'
+            operator = "Exists" if operator.capitalize() == "Exists" else "DoesNotExist"
             label_selectors.match_expressions.append(
                 LabelSelectors.LabelSelectorExpression(
                     key=key, operator=label_expression_operators[operator],
@@ -96,9 +96,9 @@ def generate_gprc_labels_selector(label_selectors, label_query):
             key = elements[0].strip()
             operator = elements[1].strip()
             assert operator.lower() in [
-                i.lower() for i in ['In', 'NotIn']
+                i.lower() for i in ["In", "NotIn"]
             ], f'Operator "{operator}" is invalid'
-            operator = 'In' if operator.capitalize() == 'In' else 'NotIn'
+            operator = "In" if operator.capitalize() == "In" else "NotIn"
             values = value_string_to_list(elements[2].strip())
             label_selectors.match_expressions.append(
                 LabelSelectors.LabelSelectorExpression(
@@ -108,5 +108,5 @@ def generate_gprc_labels_selector(label_selectors, label_query):
                 )
             )
         else:
-            raise BentoMLException(f'Too many elements in the label query {expression}')
+            raise BentoMLException(f"Too many elements in the label query {expression}")
     return

@@ -31,7 +31,7 @@ def start_dev_server(
     run_with_ngrok: Optional[bool] = None,
     enable_swagger: Optional[bool] = None,
     timeout: Optional[int] = None,
-    daemon: bool = True
+    daemon: Optional[bool] = None
 ):
     BentoMLContainer.bundle_path.set(bundle_path)
 

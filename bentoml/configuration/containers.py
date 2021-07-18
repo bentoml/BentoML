@@ -52,6 +52,7 @@ SCHEMA = Schema(
             "port": And(int, lambda port: port > 0),
             "workers": Or(And(int, lambda workers: workers > 0), None),
             "timeout": And(int, lambda timeout: timeout > 0),
+            "daemon": {"enabled": bool},
             "max_request_size": And(int, lambda size: size > 0),
             "microbatch": {
                 Optional("enabled", default=True): bool,

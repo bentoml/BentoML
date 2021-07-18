@@ -338,6 +338,8 @@ class BentoServiceEnv(object):
                 ):
                     # package exist and already have version specs associated
                     continue
+                elif 'git'in pkg_version:
+                    self.add_pip_package(f"{pkg_version}")
                 else:
                     # pin current version if the package has not been added
                     self.add_pip_package(f"{pkg_name}=={pkg_version}")

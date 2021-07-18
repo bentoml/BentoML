@@ -19,6 +19,6 @@ echo "Running mypy on bentoml module..."
 mypy --config=mypy.ini --show-error-codes --no-incremental bentoml
 
 echo "Running mypy on yatai module..."
-mypy --config=mypy.ini --show-error-codes --no-incremental yatai/yatai
+mypy --config=mypy.ini --show-error-codes --no-incremental yatai
 
 echo "Done"

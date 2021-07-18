@@ -19,22 +19,24 @@ def pytorch_to_coreml(pytorch_model: LinearModel) -> "MLModel":
     """
     pytorch_model.eval()
     traced_model = torch.jit.trace(pytorch_model, torch.Tensor(mock_df.values))
-    return ct.convert(
+    model: MLModel = ct.convert(
         traced_model, inputs=[ct.TensorType(name='input', shape=mock_df.shape)]
     )
+    return model
 
 
 def test_coreml_save_load(tmpdir):
     pytorch_model = LinearModel()
     model = pytorch_to_coreml(pytorch_model)
-    coreml_artifact = CoreMLModel(model)
-    coreml_artifact.save(tmpdir)
+    CoreMLModel(model).save(tmpdir)
     assert os.path.exists(
         CoreMLModel.get_path(tmpdir, CoreMLModel.COREMLMODEL_FILE_EXTENSION)
     )
 
     coreml_loaded = CoreMLModel.load(tmpdir)
     assert isinstance(coreml_loaded, MLModel)
+
+    assert repr(coreml_loaded) == repr(model)
 
 
 def test_invalid_coreml_load(tmpdir):

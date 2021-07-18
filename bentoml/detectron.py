@@ -1,12 +1,21 @@
 import os
 import typing as t
-from pathlib import Path
 
 from torch import nn
 
 from bentoml._internal.artifacts import BaseArtifact
 from bentoml._internal.exceptions import MissingDependencyException
 from bentoml._internal.types import PathType
+
+try:
+    from detectron2.checkpoint import DetectionCheckpointer
+    from detectron2.config import get_cfg
+    from detectron2.modeling import META_ARCH_REGISTRY
+
+    if t.TYPE_CHECKING:
+        from detectron2.config import CfgNode
+except ImportError:
+    raise MissingDependencyException("detectron2 is required by DetectronModel")
 
 
 class DetectronModel(BaseArtifact):
@@ -20,8 +29,8 @@ class DetectronModel(BaseArtifact):
         TODO:
 
     Args:
-        model (`nn.Module`):
-            detectron2 model of type :obj:`torch.nn.Module`
+        model (`torch.nn.Module`):
+            detectron2 model is of type :obj:`torch.nn.Module`
         input_model_yaml (`str`, `optional`):
             TODO:
         metadata (`Dict[str, Any]`, `optional``):
@@ -49,6 +58,8 @@ class DetectronModel(BaseArtifact):
     """
 
     _model: nn.Module
+    PYTORCH_FILE_EXTENSION: str = ".pth"
+    YAML_FILE_EXTENSION: str = ".yaml"
 
     def __init__(
         self,
@@ -58,56 +69,55 @@ class DetectronModel(BaseArtifact):
         name: t.Optional[str] = "detectronmodel",
     ):
         super(DetectronModel, self).__init__(model, metadata=metadata, name=name)
-        self._aug = None
         self._input_model_yaml = input_model_yaml
 
-    @property
-    def aug(self):
-        return self._aug
-
     @classmethod
-    def load(cls, path: PathType) -> nn.Module:
-        try:
-            from detectron2.checkpoint import DetectionCheckpointer
-            from detectron2.config import get_cfg
-            from detectron2.data import transforms as T
-            from detectron2.modeling import META_ARCH_REGISTRY
+    def load(cls, path: PathType, device: t.Optional[str] = "cpu") -> nn.Module:
+        """
+        Load a detectron model from given yaml path.
 
-            if t.TYPE_CHECKING:
-                from detectron2.config import CfgNode
-        except ImportError:
-            raise MissingDependencyException("detectron2 is required by DetectronModel")
+        Args:
+            path (`Union[str, os.PathLike]`, or :obj:`~bentoml._internal.types.PathType`):
+                Given path containing saved yaml config for loading detectron model.
+            device (`str`, `optional`, default to ``cpu``):
+                Device type to cast model. Default behaviour similar to :obj:`torch.device("cuda")`
+                Options: "cuda" or "cpu". If None is specified then return default config.MODEL.DEVICE
+
+        Returns:
+            :class:`torch.nn.Module`
+
+        Raises:
+            MissingDependencyException:
+                ``detectron2`` is required by :class:`~bentoml.detectron.DetectronModel`.
+        """  # noqa: E501
+
         cfg: "CfgNode" = get_cfg()
-        cfg.merge_from_file(str(cls.get_path(path, ".yaml")))
-        meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
-        model = meta_arch(cfg)
-        model.eval()
+        weight_path = str(cls.get_path(path, cls.PYTORCH_FILE_EXTENSION))
+        yaml_path = str(cls.get_path(path, cls.YAML_FILE_EXTENSION))
 
-        metadata = getattr(cls, "metadata")
-        if metadata:
-            device = metadata["device"]
+        cfg.merge_from_file(yaml_path)
+        # ugh why is this creating a different model from the same meta_architecture
+        model: nn.Module = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)(cfg)
+        model.eval()
+        if device:
             model.to(device)
+        else:
+            model.to(cfg.MODEL.DEVICE)
+
         checkpointer = DetectionCheckpointer(model)
-        checkpointer.load(str(cls.get_path(path, ".pth")))
-        cls.aug = T.ResizeShortestEdge(
-            [cfg.INPUT.MIN_SIZE_TEST, cfg.INPUT.MIN_SIZE_TEST], cfg.INPUT.MAX_SIZE_TEST
-        )
+        checkpointer.load(weight_path)
         return model
 
     def save(self, path: PathType) -> None:
-        try:
-            from detectron2.checkpoint import DetectionCheckpointer
-            from detectron2.config import get_cfg
-
-            if t.TYPE_CHECKING:
-                from detectron2.config import CfgNode
-        except ImportError:
-            raise MissingDependencyException("detectron2 is required by DetectronModel")
         os.makedirs(path, exist_ok=True)
         checkpointer = DetectionCheckpointer(self._model, save_dir=path)
-        checkpointer.save(self.__name__)
+        checkpointer.save(self.name)
+
         cfg: "CfgNode" = get_cfg()
-        cfg.merge_from_file(self._input_model_yaml)
-        _path: Path = self.get_path(path, ".yaml")
-        with _path.open('w', encoding='utf-8') as ouf:
+        if self._input_model_yaml:
+            cfg.merge_from_file(self._input_model_yaml)
+
+        with open(
+            self.model_path(path, self.YAML_FILE_EXTENSION), 'w', encoding='utf-8'
+        ) as ouf:
             ouf.write(cfg.dump())

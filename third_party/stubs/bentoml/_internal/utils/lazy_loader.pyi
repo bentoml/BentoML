@@ -1,9 +1,0 @@
-import types
-from typing import Any
-
-logger: Any
-
-class LazyLoader(types.ModuleType):
-    def __init__(self, local_name, parent_module_globals, name, warning: Any | None = ...) -> None: ...
-    def __getattr__(self, item): ...
-    def __dir__(self): ...

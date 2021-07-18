@@ -46,7 +46,7 @@ class CatBoostModel(BaseArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """
+    """  # noqa: E501
 
     CATBOOST_FILE_EXTENSION = ".cbm"
     _model: CatBoost

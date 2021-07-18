@@ -61,7 +61,7 @@ fi
 
 # Install PyPI packages specified in requirements.txt
 if [ $# -eq 0 ] || [ $1 == "install_pip_packages" ] ; then
-  pip install -r ./requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS -v -v -v
+  pip install -r ./requirements.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
 fi
 
 # Install additional python packages inside bundled pip dependencies directory

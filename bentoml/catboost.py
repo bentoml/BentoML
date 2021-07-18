@@ -15,18 +15,19 @@ class CatBoostModel(BaseArtifact):
     """
     Model class for saving/loading CatBoost model that can be used in a BentoML bundle.
 
-    Class attributes:
-
-    - model (`catboost.core.CatBoost`, `optional`):
-        CatBoost model
-    - model_type (`str`, `optional`, default to `classifier`):
-        CatBoost model type. Options: ["classifier", "regressor", ""]
-    - model_export_parameters (`Dict[str, Any]`, `optional`, default to `None`):
-        Additional format-dependent parameters.
-    - model_pool (`catboost.core.Pool`, `optional`, default to `None`):
-        Dataset previously used for training, refers to catboost.core.Pools for more info.
-    - metadata (`Dict[str, Any]`, `optional`, default to `None`):
-        Class metadata
+    Args:
+        model (`catboost.core.CatBoost`, `optional`):
+            CatBoost model
+        model_type (`str`, `optional`, default to `classifier`):
+            CatBoost model type. Options: ["classifier", "regressor", ""]
+        model_export_parameters (`Dict[str, Any]`, `optional`, default to `None`):
+            Additional format-dependent parameters.
+        model_pool (`catboost.core.Pool`, `optional`, default to `None`):
+            Dataset previously used for training, refers to catboost.core.Pools for more info.
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+            Class metadata
+        name (`str`, `optional`, default to `catboostmodel`):
+            Optional name for CatBoostModel
 
     Raises:
         MissingDependencyException:

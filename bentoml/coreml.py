@@ -16,12 +16,13 @@ class CoreMLModel(BaseArtifact):
     Model class for saving/loading :obj:`coremltools.models.MLModel`
     model that can be used in a BentoML bundle.
 
-    Class attributes:
-
-    - model (`coremltools.models.MLModel`):
-         :class:`~coreml.models.MLModel` instance
-    - metadata (`Dict[str, Any]`, `optional`):
-        Class metadata
+    Args:
+        model (`coremltools.models.MLModel`):
+            :class:`~coreml.models.MLModel` instance
+        metadata (`Dict[str, Any]`, `optional`):
+            Class metadata
+        name (`str`, `optional`, default to `coremlmodel`):
+            Optional name for CoreMLModel
 
     Raises:
         MissingDependencyException:

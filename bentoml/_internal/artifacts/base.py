@@ -32,7 +32,7 @@ class ArtifactMeta(type):
             return PathType(os.path.join(path, getattr(cls, "_model").__name__ + ext))
         except AttributeError:
             # some model class don't have __name__ attributes, then we use default
-            # BentoML model namespace
+            # BentoML model namespace.
             return PathType(os.path.join(path, cls.__name__ + ext))
 
     @staticmethod
@@ -56,18 +56,14 @@ class BaseArtifact(metaclass=ArtifactMeta):
     """
     :class:`~bentoml._internal.artifacts.BaseModelArtifact` is the base abstraction
     for describing the trained model serialization and deserialization process.
-    :class:`~bentoml._internal.artifacts.BaseModelArtifact` is a singleton
 
-    Class attributes:
-
-    - model (`torch.nn.Module`, `tf.keras.Model`, `sklearn.svm.SVC` and many more):
-        Given model definition. Can omit various type depending on given frameworks.
-    - metadata (`Dict[str, Union[Any,...]]`, `optional`):
-        Dictionary of model metadata
-
-    Example of custom Artifacts::
-
-        TODO:
+    Args:
+        model (`torch.nn.Module`, `tf.keras.Model`, `sklearn.svm.SVC` and many more):
+            Given model definition. Can omit various type depending on given frameworks.
+        metadata (`Dict[str, Union[Any,...]]`, `optional`):
+            Dictionary of model metadata
+        name (`str`, `optional`, default to `None`):
+            optional name for BaseArtifact
     """
 
     YML_EXTENSION = ".yml"
@@ -85,6 +81,10 @@ class BaseArtifact(metaclass=ArtifactMeta):
     @property
     def metadata(self: BA) -> t.Dict[str, t.Any]:
         return self._metadata
+
+    @property
+    def name(self):
+        return self.__name__
 
     @classmethod
     def load(cls: BA, path: PathType) -> MT:

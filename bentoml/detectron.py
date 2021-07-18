@@ -1,10 +1,12 @@
 import os
 import typing as t
+from pathlib import Path
 
 from torch import nn
 
 from bentoml._internal.artifacts import BaseArtifact
 from bentoml._internal.exceptions import MissingDependencyException
+from bentoml._internal.types import PathType
 
 
 class DetectronModel(BaseArtifact):
@@ -12,7 +14,20 @@ class DetectronModel(BaseArtifact):
     Model class for saving/loading :obj:`detectron2` models,
     in the form of :class:`~detectron2.checkpoint.DetectionCheckpointer`
 
+    DetectronModel also contains the following attributes:
+
+    - aug (`~detectron2.data.transforms.ResizeShortestEdge`):
+        TODO:
+
     Args:
+        model (`nn.Module`):
+            detectron2 model of type :obj:`torch.nn.Module`
+        input_model_yaml (`str`, `optional`):
+            TODO:
+        metadata (`Dict[str, Any]`, `optional``):
+            Class metadata
+        name (`str`, `optional`, default to `detectronmodel`):
+            optional name for DetectronModel
 
     Raises:
         MissingDependencyException:
@@ -22,7 +37,7 @@ class DetectronModel(BaseArtifact):
 
     Example usage under :code:`train.py`::
 
-        TODO
+        TODO:
 
     One then can define :code:`bento_service.py`::
 
@@ -33,61 +48,66 @@ class DetectronModel(BaseArtifact):
         TODO:
     """
 
+    _model: nn.Module
+
     def __init__(
         self,
         model: nn.Module,
+        input_model_yaml: str = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
         name: t.Optional[str] = "detectronmodel",
     ):
         super(DetectronModel, self).__init__(model, metadata=metadata, name=name)
         self._aug = None
-        self._input_model_yaml = None
+        self._input_model_yaml = input_model_yaml
 
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name)
+    @property
+    def aug(self):
+        return self._aug
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path: PathType) -> nn.Module:
         try:
-            from detectron2.checkpoint import (  # noqa # pylint: disable=unused-import
-                DetectionCheckpointer,
-            )
+            from detectron2.checkpoint import DetectionCheckpointer
             from detectron2.config import get_cfg
             from detectron2.data import transforms as T
             from detectron2.modeling import META_ARCH_REGISTRY
+
+            if t.TYPE_CHECKING:
+                from detectron2.config import CfgNode
         except ImportError:
             raise MissingDependencyException("detectron2 is required by DetectronModel")
-        cfg = get_cfg()
-        cfg.merge_from_file(f"{path}/{self.name}.yaml")
+        cfg: "CfgNode" = get_cfg()
+        cfg.merge_from_file(str(cls.get_path(path, ".yaml")))
         meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
-        self._model = meta_arch(cfg)
-        self._model.eval()
+        model = meta_arch(cfg)
+        model.eval()
 
-        device = self._metadata["device"]
-        self._model.to(device)
-        checkpointer = DetectionCheckpointer(self._model)
-        checkpointer.load(f"{path}/{self.name}.pth")
-        self._aug = T.ResizeShortestEdge(
+        metadata = getattr(cls, "metadata")
+        if metadata:
+            device = metadata["device"]
+            model.to(device)
+        checkpointer = DetectionCheckpointer(model)
+        checkpointer.load(str(cls.get_path(path, ".pth")))
+        cls.aug = T.ResizeShortestEdge(
             [cfg.INPUT.MIN_SIZE_TEST, cfg.INPUT.MIN_SIZE_TEST], cfg.INPUT.MAX_SIZE_TEST
         )
-        return self.pack(self._model)
+        return model
 
-    def save(self, dst):
+    def save(self, path: PathType) -> None:
         try:
-            from detectron2.checkpoint import (  # noqa # pylint: disable=unused-import
-                DetectionCheckpointer,
-            )
+            from detectron2.checkpoint import DetectionCheckpointer
             from detectron2.config import get_cfg
+
+            if t.TYPE_CHECKING:
+                from detectron2.config import CfgNode
         except ImportError:
-            raise MissingDependencyException(
-                "detectron2 package is required to use DetectronArtifact"
-            )
-        os.makedirs(dst, exist_ok=True)
-        checkpointer = DetectionCheckpointer(self._model, save_dir=dst)
-        checkpointer.save(self.name)
-        cfg = get_cfg()
+            raise MissingDependencyException("detectron2 is required by DetectronModel")
+        os.makedirs(path, exist_ok=True)
+        checkpointer = DetectionCheckpointer(self._model, save_dir=path)
+        checkpointer.save(self.__name__)
+        cfg: "CfgNode" = get_cfg()
         cfg.merge_from_file(self._input_model_yaml)
-        with open(
-            os.path.join(dst, f"{self.name}.yaml"), "w", encoding="utf-8"
-        ) as output_file:
-            output_file.write(cfg.dump())
+        _path: Path = self.get_path(path, ".yaml")
+        with _path.open('w', encoding='utf-8') as ouf:
+            ouf.write(cfg.dump())

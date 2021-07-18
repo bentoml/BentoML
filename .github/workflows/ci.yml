@@ -433,7 +433,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/frameworks/catboost_integration_tests.sh
       - name: Upload test coverage to Codecov

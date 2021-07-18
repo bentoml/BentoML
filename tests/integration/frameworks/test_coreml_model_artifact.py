@@ -11,6 +11,12 @@ from tests._internal.bento_services.pytorch import LinearModel, mock_df
 
 
 def pytorch_to_coreml(pytorch_model: LinearModel) -> "MLModel":
+    """
+    CoreML is not for training ML models but rather for converting pretrained models
+    and running them on Apple devices. Therefore, in this train we convert the
+    pretrained LinearModel from the tests._internal.bento_services.pytorch
+    module into a CoreML module.
+    """
     pytorch_model.eval()
     traced_model = torch.jit.trace(pytorch_model, torch.Tensor(mock_df.values))
     return ct.convert(
@@ -19,12 +25,11 @@ def pytorch_to_coreml(pytorch_model: LinearModel) -> "MLModel":
 
 
 def test_coreml_save_load(tmpdir):
-    pytorch_model = LinearModel()
-    model = pytorch_to_coreml(pytorch_model)
+    model = pytorch_to_coreml(LinearModel())
     coreml_artifact = CoreMLModel(model)
     coreml_artifact.save(tmpdir)
     assert os.path.exists(
-        CoreMLModel.ext_path(tmpdir, CoreMLModel.COREMLMODEL_FILE_EXTENSION)
+        CoreMLModel.get_path(tmpdir, CoreMLModel.COREMLMODEL_FILE_EXTENSION)
     )
 
     coreml_loaded = CoreMLModel.load(tmpdir)

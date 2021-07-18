@@ -31,7 +31,7 @@ class PickleArtifact(BaseArtifact):
 
     @classmethod
     def load(cls, path: PathType):
-        f: Path = cls.ext_path(path, cls.PICKLE_FILE_EXTENSION)
+        f: Path = cls.get_path(path, cls.PICKLE_FILE_EXTENSION)
         with f.open("rb") as inf:
             model = cloudpickle.load(inf)
         return model

@@ -3,7 +3,6 @@ import os
 import pytest
 
 from bentoml._internal.artifacts import BaseArtifact, PickleArtifact
-from bentoml._internal.exceptions import InvalidArgument
 
 _metadata = {"test": "Hello", "num": 0.234}
 

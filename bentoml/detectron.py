@@ -1,11 +1,10 @@
 import os
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from bentoml._internal.artifacts import BaseArtifact
+from bentoml._internal.exceptions import MissingDependencyException
 
 
-class DetectronModelArtifact(BentoServiceArtifact):
+class DetectronModel(BaseArtifact):
     """
     Artifact class for saving/loading Detectron2 models,
     in the form of detectron2.checkpoint.DetectionCheckpointer
@@ -76,28 +75,11 @@ class DetectronModelArtifact(BentoServiceArtifact):
         self._aug = None
         self._input_model_yaml = None
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["torch", "detectron2"])
-
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)
 
-    def pack(
-        self, model, metadata=None, input_model_yaml=None
-    ):  # pylint:disable=arguments-differ
-        try:
-            import detectron2  # noqa # pylint: disable=unused-import
-        except ImportError:
-            raise MissingDependencyException(
-                "Detectron package is required to use DetectronModelArtifact"
-            )
-        self._model = model
-        self._metadata = metadata
-        self._input_model_yaml = input_model_yaml
-        return self
-
-    def load(self, path):
+    @classmethod
+    def load(cls, path):
         try:
             from detectron2.checkpoint import (  # noqa # pylint: disable=unused-import
                 DetectionCheckpointer,
@@ -123,9 +105,6 @@ class DetectronModelArtifact(BentoServiceArtifact):
             [cfg.INPUT.MIN_SIZE_TEST, cfg.INPUT.MIN_SIZE_TEST], cfg.INPUT.MAX_SIZE_TEST
         )
         return self.pack(self._model)
-
-    def get(self):
-        return self._model
 
     def save(self, dst):
         try:

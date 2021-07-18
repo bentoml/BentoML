@@ -6,7 +6,7 @@ from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import PathType
 
 try:
-    from catboost import CatBoost, Pool
+    from catboost.core import CatBoost, Pool
 except ImportError:
     raise MissingDependencyException("catboost is required by CatBoostModel")
 
@@ -30,9 +30,20 @@ class CatBoostModel(BaseArtifact):
 
     Raises:
         MissingDependencyException:
+            :obj:`catboost` required by CatBoostModel
         InvalidArgument:
+            model is not of instance :class:`~catboost.core.CatBoost`
 
-    Example usage::
+    Example usage under :code:`train.py`::
+
+        TODO
+
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
         TODO:
     """
 
@@ -50,38 +61,44 @@ class CatBoostModel(BaseArtifact):
         if model:
             _model = model
         else:
-            try:
-                from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
-            except ImportError:
-                raise MissingDependencyException(
-                    "catboost is required by CatBoostModel"
-                )
-            if model_type == "classifier":
-                _model = CatBoostClassifier()
-            elif model_type == "regressor":
-                _model = CatBoostRegressor()
-            else:
-                _model = CatBoost()
+            _model = self._model_type(model_type=model_type)
         super(CatBoostModel, self).__init__(_model, metadata=metadata)
         self._model_export_parameters = model_export_parameters
         self._model_pool: "Pool" = model_pool
         self.__name__ = "catboostmodel"
 
+    @classmethod
+    def _model_type(cls, model_type: t.Optional[str] = "classifier"):
+        try:
+            from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
+        except ImportError:
+            raise MissingDependencyException("catboost is required by CatBoostModel")
+        if model_type == "classifier":
+            _model = CatBoostClassifier()
+        elif model_type == "regressor":
+            _model = CatBoostRegressor()
+        else:
+            _model = CatBoost()
+
+        return _model
+
     def save(self, path: PathType) -> None:
         self._model.save_model(
             self.model_path(path, self.CATBOOST_FILE_EXTENSION),
-            format=self.CATBOOST_FILE_EXTENSION,
+            format=self.CATBOOST_FILE_EXTENSION.split('.')[1],
             export_parameters=self._model_export_parameters,
             pool=self._model_pool,
         )
 
     @classmethod
-    def load(cls, path: PathType) -> CatBoost:
-        model = getattr(cls, "_model")
-        model_path: Path = cls.ext_path(path, cls.CATBOOST_FILE_EXTENSION)
+    def load(
+        cls, path: PathType, model_type: t.Optional[str] = "classifer"
+    ) -> CatBoost:
+        model = cls._model_type(model_type=model_type)
+        model_path: Path = cls.get_path(path, cls.CATBOOST_FILE_EXTENSION)
         if not model_path:
             raise InvalidArgument(
                 f"given {path} doesn't contain {cls.CATBOOST_FILE_EXTENSION} object."
             )
-        model.load_model(cls.ext_path(path, cls.CATBOOST_FILE_EXTENSION))
+        model.load_model(str(model_path))
         return model

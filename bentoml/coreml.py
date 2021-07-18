@@ -29,28 +29,16 @@ class CoreMLModel(BaseArtifact):
         InvalidArgument:
             model is not of instance :class:`~coremltools.models.MLModel`
 
-    Example usage::
+    Example usage under :code:`train.py`::
 
-        # train.py
-        import coremltools as ct
-        import torch.nn as nn
+        TODO
 
-        class Net(nn.Module):
-            def __init__(self):
-                super(Net, self).__init__()
-                ...
+    One then can define :code:`bento_service.py`::
 
-            def forward(self, x):
-                ...
-
-        net = Net()
-        # Train model with data, then convert to CoreML.
-        model = ct.convert(net, ...)
-
-        # bento_service.py
         TODO:
 
-        # bento_packer.py
+    Pack bundle under :code:`bento_packer.py`::
+
         TODO:
     """
 
@@ -70,7 +58,7 @@ class CoreMLModel(BaseArtifact):
 
     @classmethod
     def load(cls, path) -> "ct.models.MLModel":
-        model_path: Path = cls.ext_path(path, cls.COREMLMODEL_FILE_EXTENSION)
+        model_path: Path = cls.get_path(path, cls.COREMLMODEL_FILE_EXTENSION)
         if not model_path:
             raise InvalidArgument(
                 f"given {path} doesn't contain {cls.COREMLMODEL_FILE_EXTENSION} object."

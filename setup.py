@@ -97,11 +97,11 @@ docs_requires = [
 ]
 
 types_requires = [
-    "mypy-protobuf",
     "types-click",
     "types-chardet",
     "types-setuptools",
     "types-protobuf>=0.1.14",
+    "mypy-protobuf",
     "grpc-stubs",
 ]
 
@@ -112,7 +112,6 @@ extras_require = {
     "test": test_requires,
     "model_server": model_server_requires,
     "doc_builder": docs_requires,  # 'doc_builder' is required by readthedocs.io
-    "types_stub": types_requires,
 }
 
 setuptools.setup(

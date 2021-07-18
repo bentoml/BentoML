@@ -1,5 +1,5 @@
 import pandas as pd
-import torch.nn as nn
+from torch import nn
 
 mock_df = pd.DataFrame([[1, 1, 1, 1, 1]])
 

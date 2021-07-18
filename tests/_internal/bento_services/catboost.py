@@ -1,3 +1,4 @@
+import pytest
 from catboost import CatBoostClassifier
 
 # This can be used in a CatBoostService
@@ -35,7 +36,7 @@ test_data = {
 }
 
 
-def CancerClassifier():
+def CancerClassifier(tmpdir):
     from sklearn.datasets import load_breast_cancer
 
     cancer = load_breast_cancer()
@@ -44,7 +45,12 @@ def CancerClassifier():
     y = cancer.target
 
     clf = CatBoostClassifier(
-        iterations=2, depth=2, learning_rate=1, loss_function="Logloss", verbose=False
+        iterations=2,
+        depth=2,
+        learning_rate=1,
+        loss_function="Logloss",
+        verbose=False,
+        train_dir=f"{tmpdir}/catboost_info",
     )
 
     # train the model

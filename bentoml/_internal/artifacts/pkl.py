@@ -1,7 +1,7 @@
 import typing as t
 from pathlib import Path
 
-from ..types import MT, PathType
+from ..types import PathType
 from ..utils import cloudpickle
 from .base import BaseArtifact
 
@@ -26,11 +26,11 @@ class PickleArtifact(BaseArtifact):
 
     PICKLE_FILE_EXTENSION = ".pkl"
 
-    def __init__(self, model: MT, metadata: t.Optional[t.Dict[str, t.Any]] = None):
+    def __init__(self, model: t.Any, metadata: t.Optional[t.Dict[str, t.Any]] = None):
         super(PickleArtifact, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(cls, path: PathType):
+    def load(cls, path: PathType) -> t.Any:
         f: Path = cls.get_path(path, cls.PICKLE_FILE_EXTENSION)
         with f.open("rb") as inf:
             model = cloudpickle.load(inf)

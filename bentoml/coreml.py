@@ -25,9 +25,9 @@ class CoreMLModel(BaseArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`coremltools` required by CoreMLModel
+            :obj:`coremltools` is required by CoreMLModel
         InvalidArgument:
-            model is not of instance :class:`~coremltools.models.MLModel`
+            model is not an instance of :class:`~coremltools.models.MLModel`
 
     Example usage under :code:`train.py`::
 
@@ -47,21 +47,22 @@ class CoreMLModel(BaseArtifact):
     else:
         # for coremltools>=5.0
         COREMLMODEL_FILE_EXTENSION = ".mlpackage"
+    _model: "ct.models.MLModel"
 
     def __init__(
         self,
         model: "ct.models.MLModel",
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
+        name: t.Optional[str] = "coremlmodel",
     ):
-        super(CoreMLModel, self).__init__(model, metadata=metadata)
-        self.__name__ = 'coremlmodel'
+        super(CoreMLModel, self).__init__(model, metadata=metadata, name=name)
 
     @classmethod
     def load(cls, path) -> "ct.models.MLModel":
         model_path: Path = cls.get_path(path, cls.COREMLMODEL_FILE_EXTENSION)
         if not model_path:
             raise InvalidArgument(
-                f"given {path} doesn't contain {cls.COREMLMODEL_FILE_EXTENSION} object."
+                f"given {path} doesn't contain {cls.COREMLMODEL_FILE_EXTENSION}."
             )
         model = ct.models.MLModel(str(model_path))
 

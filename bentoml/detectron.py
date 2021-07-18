@@ -1,4 +1,7 @@
 import os
+import typing as t
+
+from torch import nn
 
 from bentoml._internal.artifacts import BaseArtifact
 from bentoml._internal.exceptions import MissingDependencyException
@@ -6,72 +9,37 @@ from bentoml._internal.exceptions import MissingDependencyException
 
 class DetectronModel(BaseArtifact):
     """
-    Artifact class for saving/loading Detectron2 models,
-    in the form of detectron2.checkpoint.DetectionCheckpointer
+    Model class for saving/loading :obj:`detectron2` models,
+    in the form of :class:`~detectron2.checkpoint.DetectionCheckpointer`
 
     Args:
-        name (string): name of the artifact
 
     Raises:
-        MissingDependencyException: detectron2 package is required for
-        DetectronModelArtifact
-        InvalidArgument: invalid argument type, model being packed must be instance of
-            torch.nn.Module
+        MissingDependencyException:
+            :class:`~detectron2` is required by DetectronModel
+        InvalidArgument:
+            model is not an instance of :class:`torch.nn.Module`
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> # Train model with data
-    >>>
-    >>>
-    >>> import bentoml
-    >>> from bentoml.adapters import ImageInput
-    >>> from bentoml.frameworks.detectron import DetectronModelArtifact
-    >>> from detectron2.data import transforms as T
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([DetectronModelArtifact('model')])
-    >>> class CocoDetectronService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=ImageInput(), batch=False)
-    >>>     def predict(self, img: np.ndarray) -> Dict:
-    >>>         _aug = T.ResizeShortestEdge(
-    >>>            [800, 800], 1333
-    >>>        )
-    >>>        boxes = None
-    >>>        scores = None
-    >>>        pred_classes = None
-    >>>        pred_masks= None
-    >>>        try:
-    >>>            original_image = img[:, :, ::-1]
-    >>>            height, width = original_image.shape[:2]
-    >>>            image = _aug.get_transform(original_image).
-    >>>                             apply_image(original_image)
-    >>>            image = torch.as_tensor(image.astype("float32").
-    >>>                             transpose(2, 0, 1))
-    >>>            inputs = {"image": image, "height": height, "width": width}
-    >>>            predictions = self.artifacts.model([inputs])[0]
-    >>>
-    >>>
-    >>> cfg = get_cfg()
-    >>> cfg.merge_from_file("input_model.yaml")
-    >>> meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
-    >>> model = meta_arch(cfg)
-    >>> model.eval()
-    >>> device = "cuda:{}".format(0)
-    >>> model.to(device)
-    >>> checkpointer = DetectionCheckpointer(model)
-    >>> checkpointer.load("output/model.pth")
-    >>> metadata = {
-    >>>     'device' : device
-    >>> }
-    >>> bento_svc = CocoDetectronService()
-    >>> bento_svc.pack('model', model, metadata, "input_model.yaml")
-    >>> saved_path = bento_svc.save()
+        TODO
+
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
+        TODO:
     """
 
-    def __init__(self, name):
-        super().__init__(name)
-        self._model = None
+    def __init__(
+        self,
+        model: nn.Module,
+        metadata: t.Optional[t.Dict[str, t.Any]] = None,
+        name: t.Optional[str] = "detectronmodel",
+    ):
+        super(DetectronModel, self).__init__(model, metadata=metadata, name=name)
         self._aug = None
         self._input_model_yaml = None
 
@@ -88,9 +56,7 @@ class DetectronModel(BaseArtifact):
             from detectron2.data import transforms as T
             from detectron2.modeling import META_ARCH_REGISTRY
         except ImportError:
-            raise MissingDependencyException(
-                "Detectron package is required to use DetectronArtifact"
-            )
+            raise MissingDependencyException("detectron2 is required by DetectronModel")
         cfg = get_cfg()
         cfg.merge_from_file(f"{path}/{self.name}.yaml")
         meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
@@ -114,7 +80,7 @@ class DetectronModel(BaseArtifact):
             from detectron2.config import get_cfg
         except ImportError:
             raise MissingDependencyException(
-                "Detectron package is required to use DetectronArtifact"
+                "detectron2 package is required to use DetectronArtifact"
             )
         os.makedirs(dst, exist_ok=True)
         checkpointer = DetectionCheckpointer(self._model, save_dir=dst)

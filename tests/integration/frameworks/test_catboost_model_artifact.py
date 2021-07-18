@@ -9,7 +9,7 @@ from tests._internal.bento_services.catboost import CancerClassifier
 
 
 def test_cat_boost_save(tmpdir):
-    model = CancerClassifier()
+    model = CancerClassifier(tmpdir)
     CatBoostModel(model).save(tmpdir)
     assert os.path.exists(
         CatBoostModel.get_path(tmpdir, CatBoostModel.CATBOOST_FILE_EXTENSION)
@@ -26,7 +26,11 @@ def test_invalid_catboost_load(tmpdir):
 
 @pytest.mark.parametrize(
     "model_type, expected_model",
-    [("regressor", CatBoostRegressor), ("classifier", CatBoostClassifier)],
+    [
+        ("regressor", CatBoostRegressor),
+        ("classifier", CatBoostClassifier),
+        ("", CatBoost),
+    ],
 )
 def test_catboost_model_type(model_type, expected_model):
     catboost_inst = CatBoostModel(model_type=model_type)

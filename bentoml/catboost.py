@@ -30,9 +30,9 @@ class CatBoostModel(BaseArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`catboost` required by CatBoostModel
+            :obj:`catboost` is required by CatBoostModel
         InvalidArgument:
-            model is not of instance :class:`~catboost.core.CatBoost`
+            model is not an instance of :class:`~catboost.core.CatBoost`
 
     Example usage under :code:`train.py`::
 
@@ -57,15 +57,15 @@ class CatBoostModel(BaseArtifact):
         model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
         model_pool: t.Optional["Pool"] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
+        name: t.Optional[str] = "catboostmodel",
     ):
         if model:
             _model = model
         else:
             _model = self._model_type(model_type=model_type)
-        super(CatBoostModel, self).__init__(_model, metadata=metadata)
+        super(CatBoostModel, self).__init__(_model, metadata=metadata, name=name)
         self._model_export_parameters = model_export_parameters
         self._model_pool: "Pool" = model_pool
-        self.__name__ = "catboostmodel"
 
     @classmethod
     def _model_type(cls, model_type: t.Optional[str] = "classifier"):
@@ -92,7 +92,7 @@ class CatBoostModel(BaseArtifact):
 
     @classmethod
     def load(
-        cls, path: PathType, model_type: t.Optional[str] = "classifer"
+        cls, path: PathType, model_type: t.Optional[str] = "classifier"
     ) -> CatBoost:
         model = cls._model_type(model_type=model_type)
         model_path: Path = cls.get_path(path, cls.CATBOOST_FILE_EXTENSION)

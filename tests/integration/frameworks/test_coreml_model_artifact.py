@@ -25,7 +25,8 @@ def pytorch_to_coreml(pytorch_model: LinearModel) -> "MLModel":
 
 
 def test_coreml_save_load(tmpdir):
-    model = pytorch_to_coreml(LinearModel())
+    pytorch_model = LinearModel()
+    model = pytorch_to_coreml(pytorch_model)
     coreml_artifact = CoreMLModel(model)
     coreml_artifact.save(tmpdir)
     assert os.path.exists(

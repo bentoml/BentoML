@@ -2,8 +2,12 @@ import os
 import typing as t
 from pathlib import Path
 
-from ..types import MT, PathType
+from ..types import PathType
 from ..utils.ruamel_yaml import YAML
+
+BA = t.TypeVar("BA", bound="BaseArtifact")
+
+MT = t.TypeVar("MT")
 
 
 class ArtifactMeta(type):
@@ -23,7 +27,7 @@ class ArtifactMeta(type):
         Implement :code:`__init__` when refactoring if needed.
     """
 
-    def _path__model_(cls, path: PathType, ext: str) -> PathType:
+    def __model_path(cls: BA, path: PathType, ext: str) -> PathType:
         try:
             return PathType(os.path.join(path, getattr(cls, "_model").__name__ + ext))
         except AttributeError:
@@ -32,7 +36,7 @@ class ArtifactMeta(type):
             return PathType(os.path.join(path, cls.__name__ + ext))
 
     @staticmethod
-    def _path__get_(path: PathType, ext: str) -> Path:
+    def __get_path(path: PathType, ext: str) -> Path:
         try:
             for f in Path(path).iterdir():
                 if f.suffix == ext:
@@ -42,9 +46,9 @@ class ArtifactMeta(type):
 
     def __new__(cls, name, mixins, namespace):
         if 'model_path' not in namespace:
-            namespace['model_path'] = cls._path__model_
+            namespace['model_path'] = cls.__model_path
         if 'get_path' not in namespace:
-            namespace['get_path'] = cls._path__get_
+            namespace['get_path'] = cls.__get_path
         return super(ArtifactMeta, cls).__new__(cls, name, mixins, namespace)
 
 
@@ -68,16 +72,22 @@ class BaseArtifact(metaclass=ArtifactMeta):
 
     YML_EXTENSION = ".yml"
 
-    def __init__(self, model: MT, metadata: t.Optional[t.Dict[str, t.Any]] = None):
+    def __init__(
+        self: BA,
+        model: MT,
+        metadata: t.Optional[t.Dict[str, t.Any]] = None,
+        name: t.Optional[str] = None,
+    ):
         self._model = model
         self._metadata = metadata
+        self.__name__ = name
 
     @property
-    def metadata(self):
+    def metadata(self: BA) -> t.Dict[str, t.Any]:
         return self._metadata
 
     @classmethod
-    def load(cls, path: PathType) -> MT:
+    def load(cls: BA, path: PathType) -> MT:
         """
         Load saved model into memory.
 
@@ -93,7 +103,7 @@ class BaseArtifact(metaclass=ArtifactMeta):
         inherited = object.__getattribute__(cls, "load")
         return inherited(path)
 
-    def save(self, path: PathType):
+    def save(self: BA, path: PathType) -> None:
         """
         Perform save instance to given path.
 
@@ -119,7 +129,7 @@ class BaseArtifact(metaclass=ArtifactMeta):
             by child inheritance.
         """  # noqa: E501
 
-    def __getattribute__(self, item):
+    def __getattribute__(self: BA, item: str):
         if item == 'save':
 
             def wrapped_save(*args, **kw):

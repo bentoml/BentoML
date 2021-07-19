@@ -58,7 +58,7 @@ Example Projects:
 * Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`__
 * Toxic Comment Classifier - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.keras.KerasModelArtifact
+.. autoclass:: bentoml.frameworks.keras.KerasModel
 
 
 ==============

@@ -16,8 +16,7 @@
 
 import importlib
 import os
-
-from bentoml.utils import cloudpickle
+import typing as t
 
 from ._internal.artifacts import BaseArtifact
 from ._internal.exceptions import (
@@ -25,128 +24,102 @@ from ._internal.exceptions import (
     InvalidArgument,
     MissingDependencyException,
 )
+from ._internal.types import MetadataType, PathType
+from ._internal.utils import cloudpickle
+
+try:
+    import keras
+    import tensorflow as tf
+except ImportError:
+    raise MissingDependencyException(
+        "tensorflow is required by KerasModel. Currently BentoML "
+        "only supports using Keras with Tensorflow backend."
+    )
+
 
 MODULE_NAME_FILE_ENCODING = "utf-8"
-KERAS_MODEL_EXTENSION = ".h5"
+
+KT = t.TypeVar("KT", bound=t.Union[tf.keras.models.Model, keras.engine.network.Network])
 
 
-class KerasModelArtifact(BaseArtifact):
+class KerasModel(BaseArtifact):
     """
-    Artifact class for saving and loading Keras Model
+    Model class for saving/loading :obj:`keras` models using Tensorflow backend.
 
     Args:
-        name (string): name of the artifact
-        default_custom_objects (dict): dictionary of Keras custom objects for model
-        store_as_json_and_weights (bool): flag allowing storage of the Keras
-            model as JSON and weights
+        model (`tf.keras.models.Model`, or `keras.engine.network.Network`):
+            All of keras model instance and its subclasses.
+        default_custom_objects (`Dict[str, Any]`, `optional`, default to `None`):
+            dictionary of Keras custom objects for model
+        store_as_json_and_weights (`bool`, `optional`, default to `False`):
+            flag allowing storage of the Keras model as JSON and weights
+        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+            Class metadata
+        name (`str`, `optional`, default to `kerasmodel`):
+            KerasModel instance name
 
     Raises:
-        MissingDependencyException: keras or tensorflow.keras package is required for
-            KerasModelArtifact
-        InvalidArgument:  invalid argument type, model being packed must be instance of
-            keras.engine.network.Network, tf.keras.models.Model, or their aliases
+        MissingDependencyException:
+            either :obj:`keras` or :obj:`tensorflow` package is required for KerasModel
+        InvalidArgument:
+            model being packed must be instance of :class:`keras.engine.network.Network`,
+            :class:`tf.keras.models.Model`, or its subclasses
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> from tensorflow import keras
-    >>> from tensorflow.keras.models import Sequential
-    >>> from tensorflow.keras.preprocessing import sequence, text
-    >>>
-    >>> model_to_save = Sequential()
-    >>> # training model
-    >>> model_to_save.compile(...)
-    >>> model_to_save.fit(...)
-    >>>
-    >>> import bentoml
-    >>> from bentoml.frameworks.keras import KerasModelArtifact
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([KerasModelArtifact('model')])
-    >>> class KerasModelService(bentoml.BentoService):
-    >>>     @bentoml.api(input=JsonInput(), batch=False)
-    >>>     def predict(self, parsed_json):
-    >>>         input_data = text.text_to_word_sequence(parsed_json['text'])
-    >>>         return self.artifacts.model.predict_classes(input_data)
-    >>>
-    >>> svc = KerasModelService()
-    >>> svc.pack('model', model_to_save)
-    """
+        TODO:
+
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
+        TODO:
+    """  # noqa: E501
 
     def __init__(
-        self, name, default_custom_objects=None, store_as_json_and_weights=False,
+        self,
+        model: KT,
+        default_custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
+        store_as_json_and_weights: t.Optional[bool] = False,
+        metadata: t.Optional[MetadataType] = None,
+        name: t.Optional[str] = "kerasmodel",
     ):
-        super(KerasModelArtifact, self).__init__(name)
+        super(KerasModel, self).__init__(model, metadata=metadata, name=name)
 
-        try:
-            import tensorflow as tf
-        except ImportError:
-            raise MissingDependencyException(
-                "Tensorflow package is required to use KerasModelArtifact. BentoML "
-                "currently only support using Keras with Tensorflow backend."
-            )
-
+        self._default_custom_objects = default_custom_objects
         self._store_as_json_and_weights = store_as_json_and_weights
 
         # By default assume using tf.keras module
         self._keras_module_name = tf.keras.__name__
-
-        self._default_custom_objects = default_custom_objects
-        self.graph = None
-        self.sess = None
-
-        self._model = None
-        self._custom_objects = None
-
-    def _keras_module_name_path(self, base_path):
-        # The name of the keras module used, can be 'keras' or 'tensorflow.keras'
-        return os.path.join(base_path, self.name + "_keras_module_name.txt")
-
-    def _custom_objects_path(self, base_path):
-        return os.path.join(base_path, self.name + "_custom_objects.pkl")
-
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + KERAS_MODEL_EXTENSION)
-
-    def _model_weights_path(self, base_path):
-        return os.path.join(base_path, self.name + "_weights.hdf5")
-
-    def _model_json_path(self, base_path):
-        return os.path.join(base_path, self.name + "_json.json")
-
-    def bind_keras_backend_session(self):
-        try:
-            import tensorflow as tf
-        except ImportError:
-            raise MissingDependencyException(
-                "Tensorflow package is required to use KerasModelArtifact. BentoML "
-                "currently only support using Keras with Tensorflow backend."
-            )
-
         self.sess = tf.compat.v1.keras.backend.get_session()
         self.graph = self.sess.graph
 
-    def create_session(self):
-        try:
-            import tensorflow as tf
-        except ImportError:
-            raise MissingDependencyException(
-                "Tensorflow package is required to use KerasModelArtifact. BentoML "
-                "currently only support using Keras with Tensorflow backend."
-            )
+        self._custom_objects = None
 
+    def _keras_module_name_path(self, path: PathType) -> PathType:
+        # The name of the keras module used, can be 'keras' or 'tensorflow.keras'
+        return self.model_path(path, "_keras_module_name.txt")
+
+    def _custom_objects_path(self, path: PathType) -> PathType:
+        return self.model_path(path, f"_custom_objects{self.PICKLE_FILE_EXTENSION}")
+
+    def _model_file_path(self, path: PathType) -> PathType:
+        return self.model_path(path, self.H5_FILE_EXTENSION)
+
+    def _model_weights_path(self, path: PathType) -> PathType:
+        return self.model_path(path, f"_weights{self.HDF5_FILE_EXTENSION}")
+
+    def _model_json_path(self, path: PathType) -> PathType:
+        return self.model_path(path, f"_json{self.JSON_FILE_EXTENSION}")
+
+    def create_session(self):
         self.graph = tf.compat.v1.get_default_graph()
         self.sess = tf.compat.v1.Session(graph=self.graph)
         tf.compat.v1.keras.backend.set_session(self.sess)
 
-    def pack(self, data, metadata=None):  # pylint:disable=arguments-renamed
-        try:
-            import tensorflow as tf
-        except ImportError:
-            raise MissingDependencyException(
-                "Tensorflow package is required to use KerasModelArtifact. BentoML "
-                "currently only support using Keras with Tensorflow backend."
-            )
-
+    def pack(self, data):
         if isinstance(data, dict):
             model = data["model"]
             custom_objects = (
@@ -159,14 +132,14 @@ class KerasModelArtifact(BaseArtifact):
             custom_objects = self._default_custom_objects
 
         if not isinstance(model, tf.keras.models.Model):
-            error_msg = (
-                "KerasModelArtifact#pack expects model argument to be type: "
-                "keras.engine.network.Network, tf.keras.models.Model, or their "
-                "aliases, instead got type: {}".format(type(model))
-            )
+            error_msg = rf"""\
+                KerasModel#pack expects model argument to be type:
+                keras.engine.network.Network, tf.keras.models.Model,
+                or its subclasses, instead got type: {type(model)}
+            """
+
             try:
                 import keras
-
                 if not isinstance(model, keras.engine.network.Network):
                     raise InvalidArgument(error_msg)
                 else:
@@ -174,7 +147,6 @@ class KerasModelArtifact(BaseArtifact):
             except ImportError:
                 raise InvalidArgument(error_msg)
 
-        self.bind_keras_backend_session()
         self._model = model
         self._custom_objects = custom_objects
         return self
@@ -187,13 +159,13 @@ class KerasModelArtifact(BaseArtifact):
                     keras_module = importlib.import_module(keras_module_name)
                 except ImportError:
                     raise ArtifactLoadingException(
-                        "Failed to import '{}' module when loading saved "
-                        "KerasModelArtifact".format(keras_module_name)
+                        f"Failed to import '{keras_module_name}' module when"
+                        "loading saved KerasModel"
                     )
         else:
             raise ArtifactLoadingException(
                 "Failed to read keras model name from '{}' when loading saved "
-                "KerasModelArtifact".format(self._keras_module_name_path(path))
+                "KerasModel".format(self._keras_module_name_path(path))
             )
 
         if self._default_custom_objects is None and os.path.isfile(
@@ -220,27 +192,23 @@ class KerasModelArtifact(BaseArtifact):
                 self._model_file_path(path),
                 custom_objects=self._default_custom_objects,
             )
-        return self.pack(model)
+        return model
 
-    def save(self, dst):
+    def save(self, path: PathType) -> None:
         # save the keras module name to be used when loading
-        with open(self._keras_module_name_path(dst), "wb") as text_file:
+        with open(self._keras_module_name_path(path), "wb") as text_file:
             text_file.write(self._keras_module_name.encode(MODULE_NAME_FILE_ENCODING))
 
         # save custom_objects for model
         cloudpickle.dump(
-            self._custom_objects, open(self._custom_objects_path(dst), "wb")
+            self._custom_objects, open(self._custom_objects_path(path), "wb")
         )
 
-        # save keras model using json and weights if requested
         if self._store_as_json_and_weights:
-            with open(self._model_json_path(dst), "w") as json_file:
+            # save keras model using json and weights if requested
+            with open(self._model_json_path(path), "w") as json_file:
                 json_file.write(self._model.to_json())
-            self._model.save_weights(self._model_weights_path(dst))
-
-        # otherwise, save standard keras model
+            self._model.save_weights(self._model_weights_path(path))
         else:
-            self._model.save(self._model_file_path(dst))
-
-    def get(self):
-        return self._model
+            # otherwise, save standard keras model
+            self._model.save(self._model_file_path(path))

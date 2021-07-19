@@ -17,6 +17,7 @@ FILE_EXTENSION: t.Dict[str, str] = {
     "PT_FILE_EXTENSION": ".pt",
     "PTH_FILE_EXTENSION": ".pth",
     "H5_FILE_EXTENSION": ".h5",
+    "HDF5_FILE_EXTENSION": ".hdf5",
 }
 
 

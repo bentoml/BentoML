@@ -274,7 +274,7 @@ class TensorflowSavedModelArtifact(BaseArtifact):
                 f"BentoML detected that {self.__class__.__name__} is being used "
                 "to pack a Keras API based model. "
                 "In order to get optimal serving performance, we recommend "
-                f"either replacing {self.__class__.__name__} with KerasModelArtifact, "
+                f"either replacing {self.__class__.__name__} with KerasModel, "
                 "or wrapping the keras_model.predict method with tf.function decorator."
             )
         return self

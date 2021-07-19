@@ -325,22 +325,22 @@ jobs:
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
-  jax_integration_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0  # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8.8
-      - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
-      - name: Run trax and flax test
-        run: ./ci/integration/frameworks/jax_integration_tests.sh
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
+#  jax_integration_tests:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0  # fetch all tags and branches
+#      - name: Setup python
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.8.8
+#      - name: Install test dependencies
+#        run: ./ci/install_test_deps.sh.cmd
+#      - name: Run trax and flax test
+#        run: ./ci/integration/frameworks/jax_integration_tests.sh
+#      - name: Upload test coverage to Codecov
+#        uses: codecov/codecov-action@v1.0.12
 
   keras_with_tf1_integration_tests:
     runs-on: ubuntu-latest

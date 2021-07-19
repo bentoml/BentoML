@@ -77,7 +77,7 @@ class BaseArtifact(metaclass=ArtifactMeta):
         model (`MT`):
             Given model definition. Omit various type depending on given frameworks.
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
-            Dictionary of model metadata
+            Class metadata
         name (`str`, `optional`, default to `None`):
             optional name for BaseArtifact
     """  # noqa: E501

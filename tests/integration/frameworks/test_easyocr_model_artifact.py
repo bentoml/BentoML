@@ -10,7 +10,7 @@ from bentoml.easyocr import EasyOCRModel
 from ..._internal.bento_services.easyocr import predict_image
 
 TEST_RESULT: List[str] = ['西', '愚园路', '东', '315', '309', 'W', 'Yuyuan Rd。', 'E']
-IMAGE_PATH: str = './tests/integration/frameworks/_static/chinese.jpg'
+IMAGE_PATH: str = './tests/_internal/_static/chinese.jpg'
 
 
 def test_easyocr_save_load(tmpdir):

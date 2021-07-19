@@ -14,8 +14,7 @@
 #     limitations under the License.
 # ==============================================================================
 
-import importlib
-import os
+import pathlib
 import typing as t
 
 from ._internal.artifacts import BaseArtifact
@@ -23,71 +22,53 @@ from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
 try:
-    importlib.import_module("evalml")
+    import evalml
+    from evalml.pipelines import PipelineBase
 except ImportError:
     raise MissingDependencyException("evalml is required by EvalMLModel")
 
 
 class EvalMLModel(BaseArtifact):
     """
-    Artifact class  for saving/loading EvalML models
+    Model class for saving/loading :obj:`evalml` models
 
     Args:
-        name (str): Name for the artifact
+        model (`evalml.pipelines.PipelineBase`):
+            Base pipeline for all EvalML model
+        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+            Class metadata
+        name (`str`, `optional`, default to `evalmlmodel`):
+            EvalMLModel instance name
 
     Raises:
         MissingDependencyException:
-            `evalml` is required by EvalMLModel
+            :obj:`evalml` is required by EvalMLModel
 
-    Example usage::
+    Example usage under :code:`train.py`::
 
-    >>> # import the EvalML base pipeline class corresponding to your ML task
-    >>> from evalml.pipelines import BinaryClassificationPipeline
-    >>> # create an EvalML pipeline instance with desired components
-    >>> model_to_save = BinaryClassificationPipeline(
-    >>>     ['Imputer', 'One Hot Encoder', 'Random Forest Classifier'])
-    >>> # Train model with data using model_to_save.fit(X, y)
-    >>>
-    >>> import bentoml
-    >>> from bentoml.frameworks.sklearn import EvalMLModelArtifact
-    >>> from bentoml.adapters import DataframeInput
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([EvalMLModelArtifact('EvalML pipeline')])
-    >>> class EvalMLModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=DataframeInput(), batch=True)
-    >>>     def predict(self, df):
-    >>>         result = self.artifacts.model.predict(df)
-    >>>         return result
-    >>>
-    >>> svc = EvalMLModelService()
-    >>>
-    >>> # Pack directly with EvalML model object
-    >>> svc.pack('model', model_to_save)
-    >>> svc.save()
+        TODO:
+
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
+        TODO:
     """
 
     def __init__(
         self,
-        model,
+        model: "evalml.pipelines.PipelineBase",
         metadata: t.Optional[MetadataType] = None,
         name: t.Optional[str] = "evalmlmodel",
     ):
         super(EvalMLModel, self).__init__(model, metadata=metadata, name=name)
 
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + self.PICKLE_FILE_EXTENSION)
+    @classmethod
+    def load(cls, path: PathType) -> "evalml.pipelines.PipelineBase":
+        model_file_path: pathlib.Path = cls.get_path(path, cls.PICKLE_FILE_EXTENSION)
+        return PipelineBase.load(str(model_file_path))
 
-    def load(self, path: PathType):
-        self._validate_package()
-        model_file_path = self._model_file_path(path)
-        evalml_pipelines_module = importlib.import_module("evalml.pipelines")
-        model = evalml_pipelines_module.PipelineBase.load(model_file_path)
-        self.pack(model)
-        return model
-
-    def save(self, path):
-        self._validate_package()
-        model_file_path = self._model_file_path(path)
-        self._model.save(model_file_path)
+    def save(self, path: PathType) -> None:
+        self._model.save(self.model_path(path, self.PICKLE_FILE_EXTENSION))

@@ -32,7 +32,7 @@ except ImportError:
 
 class EasyOCRModel(BaseArtifact):
     """
-    Model class for saving/loading :obj:`easyocr` models,
+    Model class for saving/loading :obj:`easyocr` models
 
     Args:
         model (`easyocr.Reader`):
@@ -45,7 +45,7 @@ class EasyOCRModel(BaseArtifact):
             TODO:
         gpu (`bool`, `optional`, default to `False`):
             Whether to enable GPU for easyocr
-        metadata (`Dict[str, Any]`, `optional``):
+        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
         name (`str`, `optional`, default to `easyocrmodel`):
             optional name for EasyOCRModel
@@ -67,7 +67,7 @@ class EasyOCRModel(BaseArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """
+    """  # noqa: E501
 
     def __init__(
         self,

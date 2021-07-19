@@ -42,7 +42,7 @@ class H2oModel(BaseArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`mxnet` is required by GluonModel
+            :obj:`h2o` is required by H2oModel 
 
     Example usage under :code:`train.py`::
 

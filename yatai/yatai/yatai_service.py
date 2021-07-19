@@ -13,7 +13,8 @@ from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.exceptions import BentoMLException
 from bentoml._internal.utils import reserve_free_port
-from yatai.utils import ensure_node_available_or_raise, parse_grpc_url
+
+from .utils import ensure_node_available_or_raise, parse_grpc_url
 
 
 @inject
@@ -42,8 +43,8 @@ def get_yatai_service(
         # Lazily import grpcio for YataiService gRPC related actions
         import grpc
 
-        from bentoml._internal.yatai_client.interceptor import header_client_interceptor
-        from yatai.proto.yatai_service_pb2_grpc import YataiStub
+        from .interceptor import header_adder_interceptor
+        from .proto.yatai_service_pb2_grpc import YataiStub
 
         channel_address = channel_address.strip()
         logger.debug("Connecting YataiService gRPC server at: %s", channel_address)
@@ -75,9 +76,9 @@ def get_yatai_service(
             )
         return YataiStub(channel)
     else:
-        from yatai.db import DB
-        from yatai.repository import create_repository
-        from yatai.yatai_service_impl import get_yatai_service_impl
+        from .db import DB
+        from .repository import create_repository
+        from .yatai_service_impl import get_yatai_service_impl
 
         LocalYataiService = get_yatai_service_impl()
 
@@ -109,14 +110,11 @@ def start_yatai_service_grpc_server(
     # Lazily import grpcio for YataiService gRPC related actions
     import grpc
 
-    from yatai.db import DB
-    from yatai.grpc_interceptor import PromServerInterceptor, ServiceLatencyInterceptor
-    from yatai.proto.yatai_service_pb2_grpc import (
-        YataiServicer,
-        add_YataiServicer_to_server,
-    )
-    from yatai.repository import create_repository
-    from yatai.yatai_service_impl import get_yatai_service_impl
+    from .db import DB
+    from .interceptor import PromServerInterceptor, ServiceLatencyInterceptor
+    from .proto.yatai_service_pb2_grpc import YataiServicer, add_YataiServicer_to_server
+    from .repository import create_repository
+    from .yatai_service_impl import get_yatai_service_impl
 
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(
@@ -138,7 +136,7 @@ def start_yatai_service_grpc_server(
             logger.debug("Enabling gRPC server reflection for debugging")
             from grpc_reflection.v1alpha import reflection
 
-            from bentoml.yatai.proto import yatai_service_pb2
+            from .proto import yatai_service_pb2
 
             SERVICE_NAMES = (
                 yatai_service_pb2.DESCRIPTOR.services_by_name["Yatai"].full_name,

@@ -12,6 +12,8 @@ CLIENT_STUB_PATH="$STUB_DIR"/bentoml/_internal/yatai_client/proto
 
 cd "$GIT_ROOT" || exit 1
 
+mkdir -p "$STUB_DIR"
+
 log_info(){
 	echo -e "\033[2mINFO::\033[0m \e[1;34m$*\e[m" 1>&2
 }

@@ -40,7 +40,7 @@ class FasttextModel(BaseArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`fasttext` is required by FasttextModel 
+            :obj:`fasttext` is required by FasttextModel
 
     Example usage under :code:`train.py`::
 

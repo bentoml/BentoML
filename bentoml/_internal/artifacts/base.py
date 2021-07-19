@@ -49,7 +49,7 @@ class ArtifactMeta(type):
             return PathType(os.path.join(path, cls.__name__ + ext))
 
     @staticmethod
-    def __get_path(path: PathType, ext: str) -> Path:
+    def __get_path(path: t.Union[PathType, Path], ext: str) -> Path:
         try:
             for f in Path(path).iterdir():
                 if f.suffix == ext:

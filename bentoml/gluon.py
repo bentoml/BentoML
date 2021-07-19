@@ -41,7 +41,7 @@ class GluonModel(BaseArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`mxnet` is required by GluonModel 
+            :obj:`mxnet` is required by GluonModel
 
     Example usage under :code:`train.py`::
 
@@ -68,9 +68,7 @@ class GluonModel(BaseArtifact):
     def load(cls, path: PathType) -> "mxnet.gluon.Block":
         json_path: str = str(cls.get_path(path, ".json"))
         params_path: str = str(cls.get_path(path, ".params"))
-        model = gluon.nn.SymbolBlock.imports(
-            json_path, ["data"], params_path
-        )
+        model = gluon.nn.SymbolBlock.imports(json_path, ["data"], params_path)
         return model
 
     def save(self, path: PathType) -> None:

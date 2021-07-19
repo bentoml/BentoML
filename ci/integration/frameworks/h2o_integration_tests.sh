@@ -13,6 +13,6 @@ cd "$GIT_ROOT" || exit
 # Install required packages for h2o model artifacts test
 pip install h2o
 
-pytest -s "$GIT_ROOT"/tests/integration/test_h2o_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest -s "$GIT_ROOT"/tests/integration/frameworks/test_h2o_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

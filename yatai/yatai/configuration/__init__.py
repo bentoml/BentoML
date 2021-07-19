@@ -1,6 +1,7 @@
 import os
 
 
+
 def get_local_config_file():
     if "YATAI_CONFIG" in os.environ:
         # User local config file for customizing Yatai

@@ -244,7 +244,7 @@ class DepSeekWork(object):
                     continue
                 self.seek_in_file(os.path.join(path, file_name))
             for dir_name in dir_list:
-                if dir_name == '__pycache__':
+                if dir_name in ['__pycache__', '.ipynb_checkpoints']:
                     continue
                 self.seek_in_dir(os.path.join(path, dir_name))
 

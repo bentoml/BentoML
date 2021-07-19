@@ -13,6 +13,7 @@ from yatai.configuration import expand_env_var
 from yatai.exceptions import YataiConfigurationException, YataiException
 from yatai.utils.ruamel_yaml import YAML
 
+
 LOGGER = logging.getLogger(__name__)
 
 YATAI_REPOSITORY_S3 = "s3"
@@ -80,6 +81,7 @@ yatai_configuration_schema = {
 }
 
 
+
 class YataiConfiguration:
     def __init__(
         self,
@@ -101,6 +103,7 @@ class YataiConfiguration:
             validation_result = yatai_config_validator.validate(self.config)
             if not validation_result:
                 raise YataiConfigurationException(yatai_config_validator.errors)
+
 
         # User override configuration
         if override_config_file is not None:

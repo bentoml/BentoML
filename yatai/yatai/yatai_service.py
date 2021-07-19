@@ -13,6 +13,7 @@ from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.exceptions import BentoMLException
 from bentoml._internal.utils import reserve_free_port
 from yatai.configuration.containers import YataiContainer
+
 from yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 
@@ -37,6 +38,7 @@ def get_yatai_service(
     if channel_address:
         # Lazily import grpcio for YataiService gRPC related actions
         import grpc
+
 
         from yatai.proto.yatai_service_pb2_grpc import YataiStub
 

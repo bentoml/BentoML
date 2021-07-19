@@ -10,39 +10,34 @@ import click
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration import get_debug_mode
-from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.exceptions import BentoMLException
 from bentoml._internal.utils import reserve_free_port
+from yatai.configuration.containers import YataiContainer
 from yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 
 @inject
 def get_yatai_service(
-    channel_address: str = Provide[BentoMLContainer.config.yatai.remote.url],
-    access_token: str = Provide[BentoMLContainer.config.yatai.remote.access_token],
+    channel_address: str = Provide[YataiContainerdefault_server.url],
+    access_token: str = Provide[YataiContainer.default_server.access_token],
     access_token_header: str = Provide[
-        BentoMLContainer.config.yatai.remote.access_token_header
+        YataiContainer.default_server.access_token_header
     ],
-    tls_root_ca_cert: str = Provide[BentoMLContainer.yatai_tls_root_ca_cert],
-    tls_client_key: str = Provide[BentoMLContainer.config.yatai.remote.tls.client_key],
-    tls_client_cert: str = Provide[
-        BentoMLContainer.config.yatai.remote.tls.client_cert
-    ],
-    db_url: str = Provide[BentoMLContainer.yatai_database_url],
-    default_namespace: str = Provide[BentoMLContainer.config.yatai.namespace],
-    repository_type: str = Provide[BentoMLContainer.config.yatai.repository.type],
-    file_system_directory: str = Provide[BentoMLContainer.yatai_file_system_directory],
-    s3_url: str = Provide[BentoMLContainer.config.yatai.repository.s3.url],
-    s3_endpoint_url: str = Provide[
-        BentoMLContainer.config.yatai.repository.s3.endpoint_url
-    ],
-    gcs_url: str = Provide[BentoMLContainer.config.yatai.repository.gcs.url],
+    tls_root_ca_cert: str = Provide[YataiContainer.default_server.tls.root_ca_cert],
+    tls_client_key: str = Provide[YataiContainer.default_server.tls.client_key],
+    tls_client_cert: str = Provide[YataiContainer.default_server.tls.client_cert],
+    db_url: str = Provide[YataiContainer.yatai_database_url],
+    default_namespace: str = Provide[YataiContainer.config.namespace],
+    repository_type: str = Provide[YataiContainer.config.repository.type],
+    file_system_directory: str = Provide[YataiContainer.yatai_file_system_directory],
+    s3_url: str = Provide[YataiContainer.config.repository.s3.url],
+    s3_endpoint_url: str = Provide[YataiContainer.config.repository.s3.endpoint_url],
+    gcs_url: str = Provide[YataiContainer.config.repository.gcs.url],
 ):
     if channel_address:
         # Lazily import grpcio for YataiService gRPC related actions
         import grpc
 
-        from bentoml._internal.yatai_client.interceptor import header_client_interceptor
         from yatai.proto.yatai_service_pb2_grpc import YataiStub
 
         channel_address = channel_address.strip()
@@ -103,8 +98,8 @@ def start_yatai_service_grpc_server(
     s3_url: str,
     s3_endpoint_url: str,
     gcs_url: str,
-    web_ui_log_path: str = Provide[BentoMLContainer.yatai_logging_path],
-    yatai_metrics_client=Provide[BentoMLContainer.yatai_metrics_client],
+    web_ui_log_path: str = Provide[YataiContainer.logging_path],
+    yatai_metrics_client=Provide[YataiContainer.metrics_client],
 ):
     # Lazily import grpcio for YataiService gRPC related actions
     import grpc

@@ -3,17 +3,15 @@ import multiprocessing
 import os
 from typing import TYPE_CHECKING
 
+from cerberus import Validator
 from deepmerge import always_merger
-from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
+# TODO separate out yatai version. Should we go with the BentoML version or start new?
 from bentoml import __version__
-from bentoml._internal.utils.ruamel_yaml import YAML
 from yatai.configuration import expand_env_var
-from yatai.exceptions import YataiException
-
-if TYPE_CHECKING:
-    from ..server.marshal.marshal import MarshalApp
+from yatai.exceptions import YataiConfigurationException, YataiException
+from yatai.utils.ruamel_yaml import YAML
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,41 +24,60 @@ YATAI_REPOSITORY_TYPES = [
     YATAI_REPOSITORY_GCS,
 ]
 
-SCHEMA = Schema(
-    {
-        # TODO make this into a list
-        "remote": {
-            "url": Or(str, None),
-            "access_token": Or(str, None),
-            "access_token_header": Or(str, None),
-            "tls": {
-                "root_ca_cert": Or(str, None),
-                "client_key": Or(str, None),
-                "client_cert": Or(str, None),
-                "client_certificate_file": Or(str, None),
+
+yatai_configuration_schema = {
+    "servers": {
+        "type": "list",
+        "schema": {
+            "type": "dict",
+            "schema": {
+                "name": {"type": "string", "default": "default"},
+                "is_default": {"type": "boolean", "default": True},
+                "url": {"type": "string"},
+                "access_token": {"type": "string"},
+                "access_token_header": {"type": "string", "default": "access_token"},
+                "tls": {
+                    "type": "dict",
+                    "schema": {
+                        "root_ca_cert": {"type": "string"},
+                        "client_certificate_file": {"type": "string"},
+                        "client_key": {"type": "string"},
+                        "client_cert": {"type": "string"},
+                    },
+                },
             },
         },
-        "repository": {
-            "type": And(
-                str,
-                lambda type: type in YATAI_REPOSITORY_TYPES,
-                error="yatai.repository.type must be one of %s"
-                % YATAI_REPOSITORY_TYPES,
-            ),
-            "file_system": {"directory": Or(str, None)},
-            "s3": {
-                "url": Or(str, None),
-                "endpoint_url": Or(str, None),
-                "signature_version": Or(str, None),
-                "expiration": Or(int, None),
-            },
-            "gcs": {"url": Or(str, None), "expiration": Or(int, None)},
-        },
-        "database": {"url": Or(str, None)},
-        "namespace": str,
-        "logging": {"path": Or(str, None)},
     },
-)
+    "repository": {
+        "type": "dict",
+        "schema": {
+            "type": {
+                "allowed": YATAI_REPOSITORY_TYPES,
+                "default": YATAI_REPOSITORY_FILE_SYSTEM,
+            },
+            "file_system": {"type": "dict", "allow_unknown": True},
+            "s3": {
+                "type": "dict",
+                "schema": {
+                    "url": {"type": "string"},
+                    "endpoint_url": {"type": "string"},
+                    "signature_version": {"type": "string"},
+                    "expiration": {"type": "integer"},
+                },
+            },
+            "gcs": {
+                "type": "dict",
+                "schema": {
+                    "url": {"type": "string"},
+                    "expiration": {"type": "integer"},
+                },
+            },
+        },
+    },
+    "database": {"type": "dict", "schema": {"url": {"type": "string"}},},
+    "namespace": {"type": "string"},
+    "logging": {"type": "dict", "schema": {"path": {"type": "string"}},},
+}
 
 
 class YataiConfiguration:
@@ -70,7 +87,7 @@ class YataiConfiguration:
         override_config_file: str = None,
         validate_schema: bool = True,
     ):
-        # Default configuraiton
+        # Default configuration
         if default_config_file is None:
             default_config_file = os.path.join(
                 os.path.dirname(__file__), "default_configuration.yml"
@@ -80,19 +97,16 @@ class YataiConfiguration:
             self.config = YAML().load(f.read())
 
         if validate_schema:
-            try:
-                SCHEMA.validate(self.config)
-            except SchemaError as e:
-                raise YataiException(
-                    "Default configuration 'default_configuration.yml' does not"
-                    " conform to the required schema."
-                ) from e
+            yatai_config_validator = Validator(yatai_configuration_schema)
+            validation_result = yatai_config_validator.validate(self.config)
+            if not validation_result:
+                raise YataiConfigurationException(yatai_config_validator.errors)
 
         # User override configuration
         if override_config_file is not None:
             LOGGER.info("Applying user config override from %s" % override_config_file)
             if not os.path.exists(override_config_file):
-                raise BentoMLConfigException(
+                raise YataiConfigurationException(
                     f"Config file {override_config_file} not found"
                 )
 
@@ -101,26 +115,23 @@ class YataiConfiguration:
             always_merger.merge(self.config, override_config)
 
             if validate_schema:
-                try:
-                    SCHEMA.validate(self.config)
-                except SchemaError as e:
-                    raise BentoMLConfigException(
-                        "Configuration after user override does not conform to"
-                        " the required schema."
-                    ) from e
+                yatai_config_validator = Validator(yatai_configuration_schema)
+                validation_result = yatai_config_validator.validate(self.config)
+                if not validation_result:
+                    raise YataiConfigurationException(yatai_config_validator.errors)
 
     def override(self, keys: list, value):
         if keys is None:
-            raise BentoMLConfigException("Configuration override key is None.")
+            raise YataiConfigurationException("Configuration override key is None.")
         if len(keys) == 0:
-            raise BentoMLConfigException("Configuration override key is empty.")
+            raise YataiConfigurationException("Configuration override key is empty.")
         if value is None:
             return
 
         c = self.config
         for key in keys[:-1]:
             if key not in c:
-                raise BentoMLConfigException(
+                raise YataiConfigurationException(
                     "Configuration override key is invalid, %s" % keys
                 )
             c = c[key]
@@ -129,7 +140,7 @@ class YataiConfiguration:
         try:
             SCHEMA.validate(self.config)
         except SchemaError as e:
-            raise BentoMLConfigException(
+            raise YataiConfigurationException(
                 "Configuration after applying override does not conform"
                 " to the required schema, key=%s, value=%s." % (keys, value)
             ) from e
@@ -200,12 +211,12 @@ class YataiContainerClass:
 
     @providers.SingletonFactory
     @staticmethod
-    def yatai_metrics_client():
+    def metrics_client():
         from ..metrics.prometheus import PrometheusClient
 
         return PrometheusClient(multiproc=False, namespace="YATAI")
 
-    yatai_database_url = providers.Factory(
+    database_url = providers.Factory(
         lambda default, customized: customized or default,
         providers.Factory(
             "sqlite:///{}".format,
@@ -214,16 +225,21 @@ class YataiContainerClass:
         config.yatai.database.url,
     )
 
-    yatai_file_system_directory = providers.Factory(
+    file_system_directory = providers.Factory(
         lambda default, customized: customized or default,
         providers.Factory(os.path.join, bentoml_home, "repository"),
         config.yatai.repository.file_system.directory,
     )
 
-    yatai_tls_root_ca_cert = providers.Factory(
+    # TODO add shortcut to default yatai remote address
+    default_server = providers.Factory(
+        lambda default, customized: customized or default, "option 1", "default",
+    )
+
+    tls_root_ca_cert = providers.Factory(
         lambda current, deprecated: current or deprecated,
-        config.yatai.remote.tls.root_ca_cert,
-        config.yatai.remote.tls.client_certificate_file,
+        default_server.tls.root_ca_cert,
+        default_server.tls.client_certificate_file,
     )
 
     logging_file_directory = providers.Factory(
@@ -232,7 +248,7 @@ class YataiContainerClass:
         config.logging.file.directory,
     )
 
-    yatai_logging_path = providers.Factory(
+    logging_path = providers.Factory(
         lambda default, customized: customized or default,
         providers.Factory(os.path.join, logging_file_directory, "yatai_web_server.log"),
         config.yatai.logging.path,

@@ -41,3 +41,9 @@ class YataiConfigurationException(YataiException):
     """
     Raises when yatai configuration failed.
     """
+
+
+class YataiRepositoryException(YataiException):
+    """
+    Raises when repository failed.
+    """

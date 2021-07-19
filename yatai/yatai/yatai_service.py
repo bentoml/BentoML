@@ -19,7 +19,7 @@ from yatai.utils import ensure_node_available_or_raise, parse_grpc_url
 
 @inject
 def get_yatai_service(
-    channel_address: str = Provide[YataiContainerdefault_server.url],
+    channel_address: str = Provide[YataiContainer.default_server.url],
     access_token: str = Provide[YataiContainer.default_server.access_token],
     access_token_header: str = Provide[
         YataiContainer.default_server.access_token_header

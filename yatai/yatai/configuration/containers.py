@@ -10,7 +10,7 @@ from simple_di import Provide, Provider, container, providers
 # TODO separate out yatai version. Should we go with the BentoML version or start new?
 from bentoml import __version__
 from yatai.configuration import expand_env_var
-from yatai.exceptions import YataiConfigurationException, YataiException
+from yatai.exceptions import YataiConfigurationException
 from yatai.utils.ruamel_yaml import YAML
 
 
@@ -76,7 +76,7 @@ yatai_configuration_schema = {
         },
     },
     "database": {"type": "dict", "schema": {"url": {"type": "string"}},},
-    "namespace": {"type": "string"},
+    "namespace": {"type": "string",},
     "logging": {"type": "dict", "schema": {"path": {"type": "string"}},},
 }
 

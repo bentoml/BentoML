@@ -184,7 +184,7 @@ Example Projects:
 Gluon
 =====
 
-.. autoclass:: bentoml.frameworks.gluon.GluonModelArtifact
+.. autoclass:: bentoml.frameworks.gluon.GluonModel
 
 
 =================
@@ -235,7 +235,7 @@ EvalML
     Statsmodels
     mxnet
     env
-    GluonModelArtifact
+    GluonModel
     JsonInput
     nd
     mx

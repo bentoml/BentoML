@@ -31,12 +31,12 @@ class FasttextModel(BaseArtifact):
     Model class for saving/loading :obj:`fasttext` models
 
     Args:
-        model (`evalml.pipelines.PipelineBase`):
+        model (`fasttext.FastText._FastText`):
             Base pipeline for all fasttext model
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
         name (`str`, `optional`, default to `fasttextmodel`):
-            EvalMLModel instance name
+            FasttextModel instance name
 
     Raises:
         MissingDependencyException:

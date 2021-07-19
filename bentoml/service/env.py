@@ -193,7 +193,10 @@ class BentoServiceEnv(object):
 
         # add BentoML to pip packages list
         bentoml_deploy_version = bentoml_deployment_version
-        self.add_pip_package("bentoml=={}".format(bentoml_deploy_version))
+        if  'git' in bentoml_deploy_version:
+            self.add_pip_package("{}".format(bentoml_deploy_version))
+        else: 
+            self.add_pip_package("bentoml=={}".format(bentoml_deploy_version))
 
         if pip_packages:
             self.add_pip_packages(pip_packages)

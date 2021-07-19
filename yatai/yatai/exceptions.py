@@ -35,3 +35,15 @@ class YataiException(Exception):
     def http_status_code(self):
         """HTTP response status code"""
         return _proto_status_code_to_http_status_code(self.proto_status_code, 500)
+
+
+class YataiConfigurationException(YataiException):
+    """
+    Raises when yatai configuration failed.
+    """
+
+
+class YataiRepositoryException(YataiException):
+    """
+    Raises when repository failed.
+    """

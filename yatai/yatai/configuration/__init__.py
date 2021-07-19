@@ -1,6 +1,5 @@
 import os
 
-from bentoml._internal.configuration import expand_env_var
 
 
 def get_local_config_file():

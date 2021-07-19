@@ -10,7 +10,7 @@ from bentoml._internal.types import PathType
 try:
     from detectron2.checkpoint import DetectionCheckpointer
     from detectron2.config import get_cfg
-    from detectron2.modeling import META_ARCH_REGISTRY
+    from detectron2.modeling import build_model
 
     if t.TYPE_CHECKING:
         from detectron2.config import CfgNode
@@ -72,7 +72,9 @@ class DetectronModel(BaseArtifact):
         self._input_model_yaml = input_model_yaml
 
     @classmethod
-    def load(cls, path: PathType, device: t.Optional[str] = "cpu") -> nn.Module:
+    def load(
+        cls, path: PathType, device: t.Optional[str] = "cpu"
+    ) -> nn.Module:  # pylint: disable=W0221
         """
         Load a detectron model from given yaml path.
 
@@ -96,13 +98,10 @@ class DetectronModel(BaseArtifact):
         yaml_path = str(cls.get_path(path, cls.YAML_FILE_EXTENSION))
 
         cfg.merge_from_file(yaml_path)
-        # ugh why is this creating a different model from the same meta_architecture
-        model: nn.Module = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)(cfg)
+        model: nn.Module = build_model(cfg)
         model.eval()
         if device:
             model.to(device)
-        else:
-            model.to(cfg.MODEL.DEVICE)
 
         checkpointer = DetectionCheckpointer(model)
         checkpointer.load(weight_path)

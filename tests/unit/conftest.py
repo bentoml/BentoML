@@ -1,10 +1,10 @@
 import functools
-import glob
 import inspect
 import os
 
-import imageio
-import numpy as np
+# import glob
+# import imageio
+# import numpy as np
 import pytest
 
 # from bentoml._internal.yatai_client import YataiClient

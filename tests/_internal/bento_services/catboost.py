@@ -1,4 +1,3 @@
-import pytest
 from catboost import CatBoostClassifier
 
 # This can be used in a CatBoostService

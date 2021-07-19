@@ -1,4 +1,4 @@
-# TODO: can be used to test service
+# TODO:
 import typing as t
 
 import numpy as np

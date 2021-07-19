@@ -94,7 +94,7 @@ class CatBoostModel(BaseArtifact):
     @classmethod
     def load(
         cls, path: PathType, model_type: t.Optional[str] = "classifier"
-    ) -> CatBoost:
+    ) -> CatBoost:  # pylint: disable=W0221
         model = cls._model_type(model_type=model_type)
         model_path: Path = cls.get_path(path, cls.CATBOOST_FILE_EXTENSION)
         if not model_path:

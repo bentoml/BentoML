@@ -98,7 +98,7 @@ class BaseArtifact(metaclass=ArtifactMeta):
         This will be used as a class method, interchangeable with
         :meth:`~bentoml._internal.artifacts.BaseArtifact.save` to load model during
         development pipeline.
-        """
+        """  # noqa: E501
 
         inherited = object.__getattribute__(cls, "load")
         return inherited(path)
@@ -120,9 +120,9 @@ class BaseArtifact(metaclass=ArtifactMeta):
             from bentoml.pytorch import PyTorchModel
             pytorch_artifact = PyTorchModel(model).save(".")
             pytorch_model = PyTorchModel.load(".")  # type: torch.nn.Module
- 
+
         .. admonition:: current implementation
-            
+
             Current implementation initialize base :meth:`~bentoml._internal.artifacts.BaseArtifact.save`
             in :code:`__getattribute__` to overcome method overloading by providing a wrapper. This
             ensures that model metadata will always be saved to given directory and won't be overwritten

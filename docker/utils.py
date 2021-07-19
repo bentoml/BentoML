@@ -177,7 +177,7 @@ specs:
             type: string
           valuesrules:
             type: string
-            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)' # noqa: W605, E501
+            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)' # noqa: W605, E501, W1401
         registry:
           keysrules:
             type: string
@@ -265,7 +265,7 @@ class MetadataSpecValidator(Validator):
             self.packages = kwargs["packages"]
         if "releases" in kwargs:
             self.releases = kwargs["releases"]
-        super(Validator, self).__init__(*args, **kwargs)
+        super(MetadataSpecValidator, self).__init__(*args, **kwargs)
 
     def _check_with_packages(self, field, value):
         """
@@ -304,7 +304,6 @@ class MetadataSpecValidator(Validator):
     def _check_with_cudnn_threshold(self, field, value):
         if "cudnn" in value:
             self.CUDNN_COUNTER += 1
-            pass
         if self.CUDNN_COUNTER > self.CUDNN_THRESHOLD:
             self._error(field, "Only allowed one CUDNN version per CUDA mapping")
 
@@ -481,7 +480,7 @@ def sprint(*args, **kwargs):
 
 
 def jprint(*args, **kwargs):
-    sprint(json.dumps(*args, indent=2), **kwargs)
+    sprint(json.dumps(args[0], indent=2), *args[1:], **kwargs)
 
 
 def pprint(*args):

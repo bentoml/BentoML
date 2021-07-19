@@ -8,7 +8,7 @@ from detectron2.config import get_cfg
 from detectron2.modeling import build_model
 
 if t.TYPE_CHECKING:
-    from detectron2.config import CfgNode
+    from detectron2.config import CfgNode  # pylint: disable=unused-import
 
 from bentoml.detectron import DetectronModel
 
@@ -30,7 +30,10 @@ def test_detectron2_save_load(tmpdir):
     checkpointer = DetectionCheckpointer(model)
     checkpointer.load(cfg.MODEL.WEIGHTS)
 
-    DetectronModel(model, name="mask_rcnn").save(tmpdir)
+    DetectronModel(
+        model, input_model_yaml=model_zoo.get_config_file(model_url), name="mask_rcnn"
+    ).save(tmpdir)
+
     assert os.path.exists(DetectronModel.get_path(tmpdir, ".yaml"))
 
     detectron_loaded: torch.nn.Module = DetectronModel.load(

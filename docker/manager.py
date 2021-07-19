@@ -472,7 +472,7 @@ class GenerateMixin(object):
             shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
             mkdir_p(FLAGS.dockerfile_dir)
 
-        for tags, tags_ctx in self._tags.items():
+        for tags_ctx in self._tags.keys():
             for inp in tags_ctx["input_paths"]:
                 build_tag = ""
                 if "build_tags" in tags_ctx.keys():
@@ -657,7 +657,7 @@ class PushMixin(object):
         try:
             for registry, metadata in self.repository.items():
                 if not os.getenv(metadata["pwd"]):
-                    log.warn(
+                    log.warning(
                         f"If you are intending to use {registry}, make sure to set both "
                         f"{metadata['pwd']} and {metadata['user']} under {os.getcwd()}/.env. Skipping..."
                     )

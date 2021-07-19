@@ -13,7 +13,7 @@ cd "$GIT_ROOT" || exit
 
 PROJECT_PATH="$GIT_ROOT/$1"
 BUILD_PATH="$PROJECT_PATH/build"
-python "$PROJECT_PATH/model/model.py" "$BUILD_PATH/artifacts"
+python "$PROJECT_PATH/model.py" "$BUILD_PATH/artifacts"
 python "$PROJECT_PATH/service.py" "$BUILD_PATH/artifacts" "$BUILD_PATH/dist"
 export BUNDLE_BENTOML_VERSION=$(python -c "import bentoml;print(bentoml.__version__)")
 if [ "$(uname)" == "Darwin" ]; then

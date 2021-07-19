@@ -14,6 +14,6 @@ python -m pip install -e .
 pip install minio
 
 # Run s3 tests
-python -m pytest -s "$GIT_ROOT"/tests/integration/test_s3.py
+python -m pytest -s "$GIT_ROOT"/tests/integration/test_s3.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

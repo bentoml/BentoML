@@ -14,6 +14,6 @@ python -m pip install -e .
 pip install psycopg2 psycopg2-binary
 
 # Run Yatai server tests
-python -m pytest -s "$GIT_ROOT"/tests/integration/yatai_server/
+python -m pytest -s "$GIT_ROOT"/tests/integration/yatai_server/ --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

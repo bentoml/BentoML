@@ -90,7 +90,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/back_compat_integration_tests.sh
+        run: ./ci/integration/back_compatibility_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -112,11 +112,11 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
-      - name: Run tests
+      - name: Run micro-batching test
         run: ./ci/test_project.sh.cmd tests/integration/projects/batch
-      - name: Run tests
+      - name: Run general tests
         run: ./ci/test_project.sh.cmd tests/integration/projects/general
-      - name: Run tests
+      - name: Run slo tests
         run: ./ci/test_project.sh.cmd tests/integration/projects/slo
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
@@ -155,7 +155,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Run tests
-        run: ./ci/yatai_server_integration_tests.sh
+        run: ./ci/integration/yatai_server_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -180,12 +180,13 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run s3 test
-        run: ./ci/s3_bucket_integration_tests.sh
+        run: ./ci/integration/s3_bucket_integration_tests.sh
         env:
           AWS_ACCESS_KEY: bentoml
           AWS_SECRET_ACCESS_KEY: bentoml
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
+
   catboost_integration_tests:
     runs-on: ubuntu-latest
     steps:
@@ -199,7 +200,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/catboost_integration_tests.sh
+        run: ./ci/integration/frameworks/catboost_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -216,7 +217,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/coreml_integration_tests.sh
+        run: ./ci/integration/frameworks/coreml_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -233,7 +234,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/detectron2_integration_tests.sh
+        run: ./ci/integration/frameworks/detectron2_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -250,7 +251,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/easyocr_integration_tests.sh
+        run: ./ci/integration/frameworks/easyocr_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -267,7 +268,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/evalml_integration_tests.sh
+        run: ./ci/integration/frameworks/evalml_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -286,7 +287,7 @@ jobs:
       - name: Install fastai
         run: python -m pip install fastai
       - name: Run tests
-        run: ./ci/test_project.sh.cmd tests/integration/projects/fastai2
+        run: ./ci/integration/frameworks/fastai_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -303,7 +304,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/gluon_integration_tests.sh
+        run: ./ci/integration/frameworks/gluon_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -320,7 +321,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/h2o_integration_tests.sh
+        run: ./ci/integration/frameworks/h2o_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -337,7 +338,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests with tf1
-        run: ./ci/frameworks/keras_with_tf1_integration_tests.sh
+        run: ./ci/integration/frameworks/keras_with_tf1_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -354,7 +355,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests with tf2
-        run: ./ci/frameworks/keras_integration_tests.sh
+        run: ./ci/integration/frameworks/keras_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -371,7 +372,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/onnx_integration_tests.sh
+        run: ./ci/integration/frameworks/onnx_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -390,7 +391,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/onnxmlir_integration_tests.sh
+        run: ./ci/integration/frameworks/onnxmlir_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -426,7 +427,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/pytorch_integration_tests.sh
+        run: ./ci/integration/frameworks/pytorch_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -447,7 +448,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Run tests
-        run: ./ci/frameworks/pytorch_lightning_integration_tests.sh
+        run: ./ci/integration/frameworks/pytorch_lightning_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -464,7 +465,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/tensorflow_v2.2_integration_tests.sh
+        run: ./ci/integration/frameworks/tensorflow_v2.2_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -481,7 +482,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/transformers_integration_tests.sh
+        run: ./ci/integration/frameworks/transformers_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -498,6 +499,6 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/frameworks/xgboost_integration_tests.sh
+        run: ./ci/integration/frameworks/xgboost_integration_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12

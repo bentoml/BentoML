@@ -55,7 +55,7 @@ class EvalMLModel(BaseArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """
+    """  # noqa: E501
 
     def __init__(
         self,

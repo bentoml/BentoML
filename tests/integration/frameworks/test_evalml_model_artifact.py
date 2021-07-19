@@ -26,7 +26,7 @@ from ..._internal.bento_services.evalml import mock_df
 
 
 @pytest.fixture(scope="session")
-def evalml_pipeline() -> "evalml.pipelines.BinaryClassificationPipeline":
+def binary_pipeline() -> "evalml.pipelines.BinaryClassificationPipeline":
     X = pd.DataFrame([[0, 'a'], [0, 'a'], [0, 'a'], [42, 'b'], [42, 'b'], [42, 'b']])
     y = pd.Series([0, 0, 0, 1, 1, 1], name='target')
     pipeline = evalml.pipelines.BinaryClassificationPipeline(

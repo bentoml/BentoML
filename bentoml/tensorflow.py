@@ -1,12 +1,25 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import logging
 import os
 import pathlib
 import shutil
 import tempfile
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
 from bentoml.utils.tensorflow import (
     cast_tensor_by_spec,
     get_arg_names,
@@ -14,6 +27,9 @@ from bentoml.utils.tensorflow import (
     get_restored_functions,
     pretty_format_restored_model,
 )
+
+from ._internal.artifacts import BaseArtifact
+from ._internal.exceptions import MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +141,7 @@ def _load_tf_saved_model(path):
         return loaded
 
 
-class TensorflowSavedModelArtifact(BentoServiceArtifact):
+class TensorflowSavedModelArtifact(BaseArtifact):
     """
     Artifact class for saving/loading Tensorflow model in tf.saved_model format
 
@@ -187,10 +203,6 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         self._model = None
         self._tmpdir = None
         self._path = None
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["tensorflow"])
 
     def _saved_model_path(self, base_path):
         return os.path.join(base_path, self.name + "_saved_model")

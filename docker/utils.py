@@ -94,7 +94,7 @@ flags.DEFINE_string(
     short_name="r",
 )
 
-SPEC_SCHEMA = """
+SPEC_SCHEMA = r"""
 ---
 specs:
   required: true
@@ -177,7 +177,7 @@ specs:
             type: string
           valuesrules:
             type: string
-            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)' # noqa: W605, E501, W1401
+            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)'
         registry:
           keysrules:
             type: string
@@ -189,7 +189,7 @@ repository:
   type: dict
   keysrules:
     type: string
-    regex: '(\w+)\.{1}(\w+)' # noqa: W605
+    regex: '(\w+)\.{1}(\w+)'
   valuesrules:
     type: dict
     matched: 'specs.repository'
@@ -241,7 +241,7 @@ releases:
     type: dict
     required: True
     matched: 'specs.releases'
-"""  # noqa: E501
+"""  # noqa: W605, E501 # pylint: disable=W1401
 
 
 class MetadataSpecValidator(Validator):

@@ -7,7 +7,8 @@ from coremltools.models import MLModel
 
 from bentoml._internal.exceptions import InvalidArgument
 from bentoml.coreml import CoreMLModel
-from tests._internal.bento_services.pytorch import LinearModel, mock_df
+
+from ..._internal.bento_services.pytorch import LinearModel, mock_df
 
 
 def pytorch_to_coreml(pytorch_model: LinearModel) -> "MLModel":

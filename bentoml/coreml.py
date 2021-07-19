@@ -1,12 +1,28 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import typing as t
 from pathlib import Path
 
 from ._internal.artifacts import BaseArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
-from ._internal.types import PathType
+from ._internal.types import MetadataType, PathType
 
 try:
-    import coremltools as ct
+    import coremltools
 except ImportError:
     raise MissingDependencyException("coremltools>=4.0b2 is required by CoreMLModel")
 
@@ -19,7 +35,7 @@ class CoreMLModel(BaseArtifact):
     Args:
         model (`coremltools.models.MLModel`):
             :class:`~coreml.models.MLModel` instance
-        metadata (`Dict[str, Any]`, `optional`):
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Class metadata
         name (`str`, `optional`, default to `coremlmodel`):
             Optional name for CoreMLModel
@@ -43,29 +59,29 @@ class CoreMLModel(BaseArtifact):
         TODO:
     """
 
-    if int(ct.__version__.split(".")[0]) == 4:
+    if int(coremltools.__version__.split(".")[0]) == 4:
         COREMLMODEL_FILE_EXTENSION = ".mlmodel"
     else:
         # for coremltools>=5.0
         COREMLMODEL_FILE_EXTENSION = ".mlpackage"
-    _model: "ct.models.MLModel"
+    _model: "coremltools.models.MLModel"
 
     def __init__(
         self,
-        model: "ct.models.MLModel",
-        metadata: t.Optional[t.Dict[str, t.Any]] = None,
+        model: "coremltools.models.MLModel",
+        metadata: t.Optional[MetadataType] = None,
         name: t.Optional[str] = "coremlmodel",
     ):
         super(CoreMLModel, self).__init__(model, metadata=metadata, name=name)
 
     @classmethod
-    def load(cls, path) -> "ct.models.MLModel":
+    def load(cls, path: PathType) -> "coremltools.models.MLModel":
         model_path: Path = cls.get_path(path, cls.COREMLMODEL_FILE_EXTENSION)
         if not model_path:
             raise InvalidArgument(
                 f"given {path} doesn't contain {cls.COREMLMODEL_FILE_EXTENSION}."
             )
-        model = ct.models.MLModel(str(model_path))
+        model = coremltools.models.MLModel(str(model_path))
 
         return model
 

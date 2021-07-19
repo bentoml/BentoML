@@ -1,7 +1,7 @@
 # list, get, delete, push, pull
 
 
-def repo_list():
+def list():
     pass
 
 

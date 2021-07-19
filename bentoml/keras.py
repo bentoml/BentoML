@@ -1,20 +1,36 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import importlib
 import os
 
-from bentoml.exceptions import (
+from bentoml.utils import cloudpickle
+
+from ._internal.artifacts import BaseArtifact
+from ._internal.exceptions import (
     ArtifactLoadingException,
     InvalidArgument,
     MissingDependencyException,
 )
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
-from bentoml.utils import cloudpickle
 
 MODULE_NAME_FILE_ENCODING = "utf-8"
 KERAS_MODEL_EXTENSION = ".h5"
 
 
-class KerasModelArtifact(BentoServiceArtifact):
+class KerasModelArtifact(BaseArtifact):
     """
     Artifact class for saving and loading Keras Model
 
@@ -80,16 +96,6 @@ class KerasModelArtifact(BentoServiceArtifact):
 
         self._model = None
         self._custom_objects = None
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        # Note that keras module is not required, user can use tf.keras as an
-        # replacement for the keras module. Although tensorflow module is required to
-        #  be used as the default Keras backend
-        if env._infer_pip_packages:
-            pip_deps = ["tensorflow"]
-            if self._keras_module_name == "keras":
-                pip_deps.append("keras")
-            env.add_pip_packages(pip_deps)
 
     def _keras_module_name_path(self, base_path):
         # The name of the keras module used, can be 'keras' or 'tensorflow.keras'

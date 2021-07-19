@@ -1,19 +1,33 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import os
 import typing as t
 
-from torch import nn
+import torch
 
-from bentoml._internal.artifacts import BaseArtifact
-from bentoml._internal.exceptions import MissingDependencyException
-from bentoml._internal.types import PathType
+from ._internal.artifacts import BaseArtifact
+from ._internal.exceptions import MissingDependencyException
+from ._internal.types import PathType
 
 try:
+    import detectron2
     from detectron2.checkpoint import DetectionCheckpointer
     from detectron2.config import get_cfg
     from detectron2.modeling import build_model
-
-    if t.TYPE_CHECKING:
-        from detectron2.config import CfgNode
 except ImportError:
     raise MissingDependencyException("detectron2 is required by DetectronModel")
 
@@ -23,24 +37,19 @@ class DetectronModel(BaseArtifact):
     Model class for saving/loading :obj:`detectron2` models,
     in the form of :class:`~detectron2.checkpoint.DetectionCheckpointer`
 
-    DetectronModel also contains the following attributes:
-
-    - aug (`~detectron2.data.transforms.ResizeShortestEdge`):
-        TODO:
-
     Args:
         model (`torch.nn.Module`):
             detectron2 model is of type :obj:`torch.nn.Module`
-        input_model_yaml (`str`, `optional`):
-            TODO:
-        metadata (`Dict[str, Any]`, `optional``):
+        input_model_yaml (`str`, `optional`, default to `None`):
+            model config from :meth:`detectron2.model_zoo.get_config_file`
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Class metadata
         name (`str`, `optional`, default to `detectronmodel`):
             optional name for DetectronModel
 
     Raises:
         MissingDependencyException:
-            :class:`~detectron2` is required by DetectronModel
+            :obj:`detectron2` is required by DetectronModel
         InvalidArgument:
             model is not an instance of :class:`torch.nn.Module`
 
@@ -57,13 +66,11 @@ class DetectronModel(BaseArtifact):
         TODO:
     """
 
-    _model: nn.Module
-    PYTORCH_FILE_EXTENSION: str = ".pth"
-    YAML_FILE_EXTENSION: str = ".yaml"
+    _model: torch.nn.Module
 
     def __init__(
         self,
-        model: nn.Module,
+        model: torch.nn.Module,
         input_model_yaml: str = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
         name: t.Optional[str] = "detectronmodel",
@@ -74,7 +81,7 @@ class DetectronModel(BaseArtifact):
     @classmethod
     def load(
         cls, path: PathType, device: t.Optional[str] = "cpu"
-    ) -> nn.Module:  # pylint: disable=W0221
+    ) -> torch.nn.Module:  # pylint: disable=arguments-differ
         """
         Load a detectron model from given yaml path.
 
@@ -93,12 +100,12 @@ class DetectronModel(BaseArtifact):
                 ``detectron2`` is required by :class:`~bentoml.detectron.DetectronModel`.
         """  # noqa: E501
 
-        cfg: "CfgNode" = get_cfg()
-        weight_path = str(cls.get_path(path, cls.PYTORCH_FILE_EXTENSION))
+        cfg: "detectron2.config.CfgNode" = get_cfg()
+        weight_path = str(cls.get_path(path, cls.PTH_FILE_EXTENSION))
         yaml_path = str(cls.get_path(path, cls.YAML_FILE_EXTENSION))
 
         cfg.merge_from_file(yaml_path)
-        model: nn.Module = build_model(cfg)
+        model: torch.nn.Module = build_model(cfg)
         model.eval()
         if device:
             model.to(device)
@@ -112,7 +119,7 @@ class DetectronModel(BaseArtifact):
         checkpointer = DetectionCheckpointer(self._model, save_dir=path)
         checkpointer.save(self.name)
 
-        cfg: "CfgNode" = get_cfg()
+        cfg: "detectron2.config.CfgNode" = get_cfg()
         if self._input_model_yaml:
             cfg.merge_from_file(self._input_model_yaml)
 

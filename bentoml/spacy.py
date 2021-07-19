@@ -1,14 +1,29 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import logging
 import os
 
-from bentoml.exceptions import InvalidArgument, MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.artifacts import BaseArtifact
+from ._internal.exceptions import InvalidArgument, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
 
-class SpacyModelArtifact(BentoServiceArtifact):
+class SpacyModelArtifact(BaseArtifact):
     """
     Artifact class for saving/loading spacy models with Language.to_disk and
     spacy.util.load_model methods
@@ -98,10 +113,6 @@ class SpacyModelArtifact(BentoServiceArtifact):
             )
 
         return self.pack(model)
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["spacy"])
 
     def get(self):
         return self._model

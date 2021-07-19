@@ -11,6 +11,6 @@ cd "$GIT_ROOT" || exit
 
 # Install EvalML
 pip install evalml>=0.25.0
-pytest "$GIT_ROOT"/tests/integration/test_evalml_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_evalml_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

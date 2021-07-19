@@ -9,6 +9,16 @@ BA = t.TypeVar("BA", bound="BaseArtifact")
 
 MT = t.TypeVar("MT")
 
+FILE_EXTENSION: t.Dict[str, str] = {
+    "PICKLE_FILE_EXTENSION": ".pkl",
+    "JSON_FILE_EXTENSION": ".json",
+    "YML_FILE_EXTENSION": ".yml",
+    "YAML_FILE_EXTENSION": ".yaml",
+    "PT_FILE_EXTENSION": ".pt",
+    "PTH_FILE_EXTENSION": ".pth",
+    "H5_FILE_EXTENSION": ".h5",
+}
+
 
 class ArtifactMeta(type):
     """
@@ -22,6 +32,9 @@ class ArtifactMeta(type):
     - get_path(path: PathType, ext: str) -> pathlib.Path:
         similar to :meth:`~model_path`, but can be accessed
         as a staticmethod for using at instance level.
+
+    This will also add default file extension that most frameworks
+    will use as class attributes.
 
     .. note::
         Implement :code:`__init__` when refactoring if needed.
@@ -49,24 +62,25 @@ class ArtifactMeta(type):
             namespace['model_path'] = cls.__model_path
         if 'get_path' not in namespace:
             namespace['get_path'] = cls.__get_path
+        for k, v in FILE_EXTENSION.items():
+            namespace[k] = v
         return super(ArtifactMeta, cls).__new__(cls, name, mixins, namespace)
 
 
 class BaseArtifact(metaclass=ArtifactMeta):
     """
-    :class:`~bentoml._internal.artifacts.BaseModelArtifact` is the base abstraction
-    for describing the trained model serialization and deserialization process.
+    :class:`~bentoml._internal.artifacts.BaseModelArtifact` is
+    the base abstraction for describing the trained model
+    serialization and deserialization process.
 
     Args:
-        model (`torch.nn.Module`, `tf.keras.Model`, `sklearn.svm.SVC` and many more):
-            Given model definition. Can omit various type depending on given frameworks.
-        metadata (`Dict[str, Union[Any,...]]`, `optional`):
+        model (`MT`):
+            Given model definition. Omit various type depending on given frameworks.
+        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Dictionary of model metadata
         name (`str`, `optional`, default to `None`):
             optional name for BaseArtifact
-    """
-
-    YML_EXTENSION = ".yml"
+    """  # noqa: E501
 
     def __init__(
         self: BA,
@@ -118,15 +132,14 @@ class BaseArtifact(metaclass=ArtifactMeta):
             model = MyPyTorchModel().train()  # type: torch.nn.Module
             ...
             from bentoml.pytorch import PyTorchModel
-            pytorch_artifact = PyTorchModel(model).save(".")
+            PyTorchModel(model).save(".")
             pytorch_model = PyTorchModel.load(".")  # type: torch.nn.Module
 
         .. admonition:: current implementation
 
             Current implementation initialize base :meth:`~bentoml._internal.artifacts.BaseArtifact.save`
-            in :code:`__getattribute__` to overcome method overloading by providing a wrapper. This
-            ensures that model metadata will always be saved to given directory and won't be overwritten
-            by child inheritance.
+            in :code:`__getattribute__` via wrapper. Since Python doesn't have support for method overloading,
+            This ensures that model metadata will always be saved to given directory.
         """  # noqa: E501
 
     def __getattribute__(self: BA, item: str):
@@ -138,7 +151,8 @@ class BaseArtifact(metaclass=ArtifactMeta):
                 if self.metadata:
                     yaml = YAML()
                     yaml.dump(
-                        self.metadata, Path(self.model_path(path, self.YML_EXTENSION))
+                        self.metadata,
+                        Path(self.model_path(path, self.YML_FILE_EXTENSION)),
                     )
 
                 inherited = object.__getattribute__(self, item)

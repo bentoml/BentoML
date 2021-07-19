@@ -1,4 +1,3 @@
-# TODO:
 import typing as t
 
 import numpy as np

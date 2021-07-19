@@ -1,11 +1,26 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import os
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.artifacts import BaseArtifact
+from ._internal.exceptions import MissingDependencyException
 
 
-class FasttextModelArtifact(BentoServiceArtifact):
+class FasttextModelArtifact(BaseArtifact):
     """
     Artifact class for saving and loading fasttext models
 
@@ -44,10 +59,6 @@ class FasttextModelArtifact(BentoServiceArtifact):
         super().__init__(name)
 
         self._model = None
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["fasttext"])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name)

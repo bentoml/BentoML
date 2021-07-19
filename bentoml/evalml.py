@@ -1,14 +1,34 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import importlib
 import os
+import typing as t
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.artifacts import BaseArtifact
+from ._internal.exceptions import MissingDependencyException
+from ._internal.types import MetadataType, PathType
 
-EVALML_MODEL_PICKLE_EXTENTION = ".pkl"
+try:
+    importlib.import_module("evalml")
+except ImportError:
+    raise MissingDependencyException("evalml is required by EvalMLModel")
 
 
-class EvalMLModelArtifact(BentoServiceArtifact):
+class EvalMLModel(BaseArtifact):
     """
     Artifact class  for saving/loading EvalML models
 
@@ -16,9 +36,10 @@ class EvalMLModelArtifact(BentoServiceArtifact):
         name (str): Name for the artifact
 
     Raises:
-        MissingDependencyException: evalml package is required for EvalMLModelArtifact
+        MissingDependencyException:
+            `evalml` is required by EvalMLModel
 
-    Example usage:
+    Example usage::
 
     >>> # import the EvalML base pipeline class corresponding to your ML task
     >>> from evalml.pipelines import BinaryClassificationPipeline
@@ -47,28 +68,18 @@ class EvalMLModelArtifact(BentoServiceArtifact):
     >>> svc.save()
     """
 
-    def __init__(self, name):
-        super().__init__(name)
-
-        self._model = None
-
-    def _validate_package(self):
-        try:
-            importlib.import_module("evalml")
-        except ImportError:
-            raise MissingDependencyException(
-                "Package 'evalml' is required to use EvalMLModelArtifact"
-            )
+    def __init__(
+        self,
+        model,
+        metadata: t.Optional[MetadataType] = None,
+        name: t.Optional[str] = "evalmlmodel",
+    ):
+        super(EvalMLModel, self).__init__(model, metadata=metadata, name=name)
 
     def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + EVALML_MODEL_PICKLE_EXTENTION)
+        return os.path.join(base_path, self.name + self.PICKLE_FILE_EXTENSION)
 
-    def pack(self, evalml_model, metadata=None):  # pylint:disable=arguments-renamed
-        self._validate_package()
-        self._model = evalml_model
-        return self
-
-    def load(self, path):
+    def load(self, path: PathType):
         self._validate_package()
         model_file_path = self._model_file_path(path)
         evalml_pipelines_module = importlib.import_module("evalml.pipelines")
@@ -76,14 +87,7 @@ class EvalMLModelArtifact(BentoServiceArtifact):
         self.pack(model)
         return model
 
-    def get(self):
-        return self._model
-
-    def save(self, dst):
+    def save(self, path):
         self._validate_package()
-        model_file_path = self._model_file_path(dst)
+        model_file_path = self._model_file_path(path)
         self._model.save(model_file_path)
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["evalml"])

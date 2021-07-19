@@ -14,78 +14,59 @@
 #     limitations under the License.
 # ==============================================================================
 
-import os
+import typing as t
 
 from ._internal.artifacts import BaseArtifact
 from ._internal.exceptions import MissingDependencyException
+from ._internal.types import MetadataType, PathType
+
+try:
+    import fasttext  # noqa # pylint: disable=unused-import
+except ImportError:
+    raise MissingDependencyException("fasttext is required by FasttextModel")
 
 
-class FasttextModelArtifact(BaseArtifact):
+class FasttextModel(BaseArtifact):
     """
-    Artifact class for saving and loading fasttext models
+    Model class for saving/loading :obj:`fasttext` models
 
     Args:
-        name (str): Name for the artifact
+        model (`evalml.pipelines.PipelineBase`):
+            Base pipeline for all fasttext model
+        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+            Class metadata
+        name (`str`, `optional`, default to `fasttextmodel`):
+            EvalMLModel instance name
 
     Raises:
-        MissingDependencyError: fasttext package is required for FasttextModelArtifact
+        MissingDependencyException:
+            :obj:`fasttext` is required by FasttextModel 
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import fasttext
-    >>> # prepare training data and store to file
-    >>> training_data_file = 'training-data-file.train'
-    >>> model = fasttext.train_supervised(input=training_data_file)
-    >>>
-    >>> import bentoml
-    >>> from bentoml.adapters JsonInput
-    >>> from bentoml.frameworks.fasttext import FasttextModelArtifact
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([FasttextModelArtifact('model')])
-    >>> class FasttextModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=JsonInput(), batch=False)
-    >>>     def predict(self, parsed_json):
-    >>>         # K is the number of labels that successfully were predicted,
-    >>>         # among all the real labels
-    >>>         return self.artifacts.model.predict(parsed_json['text'], k=5)
-    >>>
-    >>> svc = FasttextModelService()
-    >>> svc.pack('model', model)
-    """
+        TODO:
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    One then can define :code:`bento_service.py`::
 
-        self._model = None
+        TODO:
 
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name)
+    Pack bundle under :code:`bento_packer.py`::
 
-    def pack(self, fasttext_model, metadata=None):  # pylint:disable=arguments-renamed
-        try:
-            import fasttext  # noqa # pylint: disable=unused-import
-        except ImportError:
-            raise MissingDependencyException(
-                "fasttext package is required to use FasttextModelArtifact"
-            )
-        self._model = fasttext_model
-        return self
+        TODO:
+    """  # noqa: E501
 
-    def load(self, path):
-        try:
-            import fasttext  # noqa # pylint: disable=unused-import
-        except ImportError:
-            raise MissingDependencyException(
-                "fasttext package is required to use FasttextModelArtifact"
-            )
+    def __init__(
+        self,
+        model: "fasttext.FastText._FastText",
+        metadata: t.Optional[MetadataType] = None,
+        name: t.Optional[str] = 'fasttextmodel',
+    ):
+        super(FasttextModel, self).__init__(model, metadata=metadata, name=name)
 
-        model = fasttext.load_model(self._model_file_path(path))
-        return self.pack(model)
+    @classmethod
+    def load(cls, path: PathType) -> "fasttext.FastText._FastText":
+        model = fasttext.load_model(str(cls.get_path(path, "")))
+        return model
 
-    def get(self):
-        return self._model
-
-    def save(self, dst):
-        self._model.save_model(self._model_file_path(dst))
+    def save(self, path: PathType) -> None:
+        self._model.save_model(self.model_path(path, ""))

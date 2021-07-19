@@ -39,7 +39,8 @@ class FastaiModel(BaseArtifact):
             Learner model from fastai
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (str): Name for the fastai v2 model
+        name (`str`, `optional`, default to `fastaimodel`):
+            Name for the fastai v2 model
 
     Raises:
         MissingDependencyException:

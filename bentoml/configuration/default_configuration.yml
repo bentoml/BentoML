@@ -1,5 +1,5 @@
 bento_bundle:
-  deployment_version: git+https://github.com/fernbach/BentoML.git@support_disable_gunicorn_daemon
+  deployment_version: Null
   default_docker_base_image: Null
 
 bento_server:

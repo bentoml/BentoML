@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from bentoml._internal.artifacts import BaseArtifact, PickleArtifact
+from bentoml._internal.artifacts import ModelArtifact, PickleArtifact
 
 _metadata = {"test": "Hello", "num": 0.234}
 
@@ -16,7 +16,7 @@ def create_mock_class(name):
     return Foo
 
 
-class FooArtifact(BaseArtifact):
+class FooArtifact(ModelArtifact):
     def __init__(self, model, metadata=None):
         super().__init__(model, metadata)
         if metadata is None:
@@ -41,7 +41,7 @@ class FooArtifact(BaseArtifact):
     ],
 )
 def test_base_artifact(args, kwargs, metadata):
-    ba = BaseArtifact(*args, **kwargs)
+    ba = ModelArtifact(*args, **kwargs)
     pkl = PickleArtifact(*args, **kwargs)
     assert all(
         [v == k] for k in [ba.__dict__, pkl.__dict__] for v in ['_model', '_metadata']

@@ -17,7 +17,7 @@
 import os
 import typing as t
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
@@ -27,7 +27,7 @@ except ImportError:
     raise MissingDependencyException("coremltools>=4.0b2 is required by CoreMLModel")
 
 
-class CoreMLModel(BaseArtifact):
+class CoreMLModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`coremltools.models.MLModel`
     model that can be used in a BentoML bundle.

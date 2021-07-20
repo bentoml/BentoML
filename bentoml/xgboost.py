@@ -16,13 +16,13 @@
 
 import os
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 
 XGBOOST_MODEL_EXTENSION = ".model"
 
 
-class XgboostModelArtifact(BaseArtifact):
+class XgboostModelArtifact(ModelArtifact):
     """
     Artifact class for saving and loading Xgboost model
 

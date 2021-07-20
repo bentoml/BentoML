@@ -16,7 +16,7 @@
 
 import typing as t
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
@@ -26,7 +26,7 @@ except ImportError:
     raise MissingDependencyException("jax is required by both FlaxModel and TraxModel")
 
 
-class FlaxModel(BaseArtifact):
+class FlaxModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`flax` models
 
@@ -81,7 +81,7 @@ class FlaxModel(BaseArtifact):
         pass
 
 
-class TraxModel(BaseArtifact):
+class TraxModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`trax` models
 

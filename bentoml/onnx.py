@@ -19,7 +19,7 @@ import os
 import pathlib
 import shutil
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import (
     BentoMLException,
     InvalidArgument,
@@ -44,7 +44,7 @@ def _is_onnx_model_file(path):
     )
 
 
-class OnnxModelArtifact(BaseArtifact):
+class OnnxModelArtifact(ModelArtifact):
     """
     Artifact class for saving and loading ONNX Model
 

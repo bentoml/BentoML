@@ -5,7 +5,7 @@ from pathlib import Path
 from ..types import MetadataType, PathType
 from ..utils.ruamel_yaml import YAML
 
-BA = t.TypeVar("BA", bound="BaseArtifact")
+BA = t.TypeVar("BA", bound="ModelArtifact")
 
 MT = t.TypeVar("MT")
 
@@ -72,9 +72,9 @@ class ArtifactMeta(type):
         return type.__new__(cls, name, mixins, namespace)
 
 
-class BaseArtifact(object, metaclass=ArtifactMeta):
+class ModelArtifact(object, metaclass=ArtifactMeta):
     """
-    :class:`~bentoml._internal.artifacts.BaseModelArtifact` is
+    :class:`~bentoml._internal.artifacts.ModelArtifact` is
     the base abstraction for describing the trained model
     serialization and deserialization process.
 
@@ -84,6 +84,20 @@ class BaseArtifact(object, metaclass=ArtifactMeta):
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
 
+    .. note:: 
+        Make sure to add ``# noqa # pylint: disable=arguments-differ`` to :meth:`load` when implementing 
+        newly integration or custom artifacts if the behaviour of ``load`` subclass takes different parameters
+        
+        .. code-block:: python
+
+            from bentoml._internal.artifacts import ModelArtifact
+            
+            class CustomArtifact(ModelArtifact):
+                def __init__(self, model, metadata=None):...
+
+                @classmethod
+                def load(cls, path: str, args1, args2):...  # noqa # pylint: disable=arguments-differ
+            
     Example usage for creating a custom ``ModelArtifacts``::
 
         TODO:
@@ -107,7 +121,7 @@ class BaseArtifact(object, metaclass=ArtifactMeta):
                 Given path to save artifacts metadata and objects.
 
         This will be used as a class method, interchangeable with
-        :meth:`~bentoml._internal.artifacts.BaseArtifact.save` to load model during
+        :meth:`~bentoml._internal.artifacts.ModelArtifact.save` to load model during
         development pipeline.
         """  # noqa: E501
 
@@ -122,7 +136,7 @@ class BaseArtifact(object, metaclass=ArtifactMeta):
             path (`Union[str, os.PathLike]`, or :obj:`~bentoml._internal.types.PathType`):
                 Given path to save artifacts metadata and objects.
 
-        Usually this can be used with :meth:`~bentoml._internal.artifacts.BaseArtifact.load` to load
+        Usually this can be used with :meth:`~bentoml._internal.artifacts.ModelArtifact.load` to load
         model objects for development::
 
             # train.py
@@ -134,7 +148,7 @@ class BaseArtifact(object, metaclass=ArtifactMeta):
 
         .. admonition:: current implementation
 
-            Current implementation initialize base :meth:`~bentoml._internal.artifacts.BaseArtifact.save`
+            Current implementation initialize base :meth:`~bentoml._internal.artifacts.ModelArtifact.save`
             in :code:`__getattribute__` via wrapper. Since Python doesn't have support for method overloading,
             This ensures that model metadata will always be saved to given directory.
         """  # noqa: E501

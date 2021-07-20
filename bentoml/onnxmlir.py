@@ -17,11 +17,11 @@
 import os
 import shutil
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 
 
-class OnnxMlirModelArtifact(BaseArtifact):
+class OnnxMlirModelArtifact(ModelArtifact):
     """
     Artifact class for saving/loading onnx-mlir compiled model and operationalized
     using pyruntime wrapper

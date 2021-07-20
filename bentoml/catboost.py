@@ -17,7 +17,7 @@
 import os
 import typing as t
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
@@ -28,7 +28,7 @@ except ImportError:
     raise MissingDependencyException("catboost is required by CatBoostModel")
 
 
-class CatBoostModel(BaseArtifact):
+class CatBoostModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`catboost` model.
 

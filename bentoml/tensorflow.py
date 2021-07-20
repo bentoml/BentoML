@@ -22,7 +22,7 @@ import shutil
 import tempfile
 import typing as t
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import (
     ArtifactLoadingException,
     InvalidArgument,
@@ -56,7 +56,7 @@ MODULE_NAME_FILE_ENCODING: str = "utf-8"
 KT = t.TypeVar("KT", bound=tf.keras.models.Model)
 
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +168,7 @@ def _load_tf_saved_model(path):
         return loaded
 
 
-class TensorflowSavedModelArtifact(BaseArtifact):
+class TensorflowSavedModelArtifact(ModelArtifact):
     """
     Artifact class for saving/loading Tensorflow model in tf.saved_model format
 
@@ -326,7 +326,7 @@ class TensorflowSavedModelArtifact(BaseArtifact):
             self._tmpdir.cleanup()
 
 
-class KerasModel(BaseArtifact):
+class KerasModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`keras` models using Tensorflow backend.
 

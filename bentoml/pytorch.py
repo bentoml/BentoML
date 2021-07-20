@@ -22,7 +22,7 @@ import zipfile
 
 from bentoml.utils import cloudpickle
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def _is_pytorch_lightning_model_file_like(path):
     )
 
 
-class PytorchModelArtifact(BaseArtifact):
+class PytorchModelArtifact(ModelArtifact):
     """
     Artifact class for saving/loading objects with torch.save and torch.load
 
@@ -164,7 +164,7 @@ class PytorchModelArtifact(BaseArtifact):
         return cloudpickle.dump(self._model, open(self._file_path(dst), "wb"))
 
 
-class PytorchLightningModelArtifact(BaseArtifact):
+class PytorchLightningModelArtifact(ModelArtifact):
     """
     Artifact class for saving and loading pytorch lightning model
 

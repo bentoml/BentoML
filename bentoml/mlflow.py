@@ -17,7 +17,7 @@
 import importlib
 import typing as t
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import ArtifactLoadingException, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
@@ -29,7 +29,7 @@ except ImportError:
 MT = t.TypeVar("MT")
 
 
-class MLflowModel(BaseArtifact):
+class MLflowModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`mlflow` models
 
@@ -77,18 +77,17 @@ class MLflowModel(BaseArtifact):
         setattr(cls, '_loader_module', __loader_module)
         return cls._loader_module
 
+    # fmt: off
     @classmethod
-    def load(
-        cls, path: PathType, loader_module: str
-    ) -> MT:  # noqa # pylint: disable=arguments-differ
-        assert isinstance(
-            loader_module, str
-        ), f"Only accepted loader_module as type string, got {type(loader_module)} instead"
+    def load(cls, path: PathType, loader_module: str) -> MT:  # noqa # pylint: disable=arguments-differ
+        assert isinstance(loader_module, str), "Only accepted loader_module " \
+                                               f"as type string, got {type(loader_module)} instead"
 
         # walk_path will actually returns the first occurrence of given path. With MLflow we
         # only care about the directory of given model structure, thus getting the parents.
         model_path: str = str(cls.walk_path(path, "").parents[0])
         return cls.__loader__module(loader_module).load_model(model_path)
+    # fmt: on
 
     def save(self, path: PathType) -> None:
         self._loader_module.save_model(self._model, self.model_path(path, ""))

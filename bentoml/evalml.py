@@ -17,7 +17,7 @@
 import pathlib
 import typing as t
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
@@ -28,7 +28,7 @@ except ImportError:
     raise MissingDependencyException("evalml is required by EvalMLModel")
 
 
-class EvalMLModel(BaseArtifact):
+class EvalMLModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`evalml` models
 

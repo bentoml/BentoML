@@ -3,10 +3,10 @@ from pathlib import Path
 
 from ..types import MetadataType, PathType
 from ..utils import cloudpickle
-from .base import BaseArtifact
+from .base import ModelArtifact
 
 
-class PickleArtifact(BaseArtifact):
+class PickleArtifact(ModelArtifact):
     """
     Abstraction for saving/loading python objects with pickle serialization.
 

@@ -17,7 +17,7 @@
 import os
 import tempfile
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 
 try:
@@ -27,7 +27,7 @@ except ImportError:
     paddle = None
 
 
-class PaddlePaddleModelArtifact(BaseArtifact):
+class PaddlePaddleModelArtifact(ModelArtifact):
     """
     Artifact class for saving and loading PaddlePaddle's PaddleInference model
 
@@ -121,5 +121,5 @@ class PaddlePaddleModelArtifact(BaseArtifact):
         return self._predictor
 
 
-class PaddleHubModel(BaseArtifact):
+class PaddleHubModel(ModelArtifact):
     pass

@@ -17,13 +17,13 @@
 import logging
 import os
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
 
-class SpacyModelArtifact(BaseArtifact):
+class SpacyModelArtifact(ModelArtifact):
     """
     Artifact class for saving/loading spacy models with Language.to_disk and
     spacy.util.load_model methods

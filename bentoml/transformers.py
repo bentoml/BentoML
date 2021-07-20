@@ -17,7 +17,7 @@
 import os
 from importlib import import_module
 
-from bentoml.service import BaseArtifact
+from bentoml.service import ModelArtifact
 
 from ._internal.exceptions import InvalidArgument, MissingDependencyException, NotFound
 
@@ -27,7 +27,7 @@ except ImportError:
     transformers = None
 
 
-class TransformersModelArtifact(BaseArtifact):
+class TransformersModelArtifact(ModelArtifact):
     """
     Artifact class for saving/loading Transformers models
 

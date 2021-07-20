@@ -15,7 +15,7 @@
 # ==============================================================================
 import typing as t
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
@@ -28,7 +28,7 @@ except ImportError:
     raise MissingDependencyException("h2o is required by H2oModel")
 
 
-class H2oModel(BaseArtifact):
+class H2oModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`h2o` models using :meth:`~h2o.saved_model` and :meth:`~h2o.load_model`
 

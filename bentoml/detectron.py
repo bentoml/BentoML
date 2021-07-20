@@ -19,7 +19,7 @@ import typing as t
 
 import torch
 
-from ._internal.artifacts import BaseArtifact
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
@@ -32,7 +32,7 @@ except ImportError:
     raise MissingDependencyException("detectron2 is required by DetectronModel")
 
 
-class DetectronModel(BaseArtifact):
+class DetectronModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`detectron2` models,
     in the form of :class:`~detectron2.checkpoint.DetectionCheckpointer`

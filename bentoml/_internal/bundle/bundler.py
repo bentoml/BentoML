@@ -24,8 +24,11 @@ from ..bundle.templates import (
     MODEL_SERVER_DOCKERFILE_CPU,
 )
 from ..configuration import _is_pip_installed_bentoml
-from ..env.local_py_modules import copy_local_py_modules, copy_zip_import_archives
-from ..env.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
+from ..environment.local_py_modules import (
+    copy_local_py_modules,
+    copy_zip_import_archives,
+)
+from ..environment.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
 from ..exceptions import BentoMLException
 from ..utils import archive_directory_to_tar, is_gcs_url, is_s3_url
 from ..utils.open_api import get_open_api_spec_json

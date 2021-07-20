@@ -31,7 +31,7 @@ del get_versions
 
 from ._internal.artifacts import PickleArtifact
 from ._internal.bundle import containerize, load
-from ._internal.env import env
+from ._internal.environment import env
 from ._internal.inference_api import api, batch_api
 from ._internal.repository import delete, get, list, pull, push
 from ._internal.server import serve

@@ -43,11 +43,11 @@ class ArtifactMeta(type):
 
     def __model_path(cls: BA, path: PathType, ext: str) -> PathType:
         try:
-            return PathType(os.path.join(path, getattr(cls, "_model").__name__ + ext))
+            return os.path.join(path, getattr(cls, "_model").__name__ + ext)
         except AttributeError:
             # some model class don't have __name__ attributes, then we use default
             # BentoML model namespace.
-            return PathType(os.path.join(path, cls.__name__ + ext))
+            return os.path.join(path, cls.__name__ + ext)
 
     @staticmethod
     def __get_path(path: t.Union[PathType, Path], ext: str) -> Path:

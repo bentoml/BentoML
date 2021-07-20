@@ -377,8 +377,7 @@ class MarshalApp:
             try:
                 client = self.get_client()
                 timeout = ClientTimeout(
-                    # total=(self.mb_max_latency or max_latency) // 1000
-                    total = 10
+                    total=(self.mb_max_latency or max_latency) // 1000
                 )
                 async with client.post(
                     api_url, data=reqs_s, headers=headers, timeout=timeout

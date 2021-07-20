@@ -14,23 +14,15 @@
 #     limitations under the License.
 # ==============================================================================
 
+import importlib
 import logging
+import os
 import pathlib
 import shutil
 import tempfile
-import importlib
-import os
 import typing as t
 
 from ._internal.artifacts import BaseArtifact
-
-from ._internal.utils.tensorflow import (
-    cast_tensor_by_spec,
-    get_arg_names,
-    get_input_signatures,
-    get_restored_functions,
-    pretty_format_restored_model,
-)
 from ._internal.exceptions import (
     ArtifactLoadingException,
     InvalidArgument,
@@ -38,6 +30,13 @@ from ._internal.exceptions import (
 )
 from ._internal.types import MetadataType, PathType
 from ._internal.utils import cloudpickle
+from ._internal.utils.tensorflow import (
+    cast_tensor_by_spec,
+    get_arg_names,
+    get_input_signatures,
+    get_restored_functions,
+    pretty_format_restored_model,
+)
 
 try:
     import tensorflow as tf
@@ -47,7 +46,9 @@ except ImportError:
 try:
     import tensorflow.keras  # pylint: disable=unused-import
 except ImportError:
-    raise MissingDependencyException("tensorflow is required by KerasModel as backend runtime.")
+    raise MissingDependencyException(
+        "tensorflow is required by KerasModel as backend runtime."
+    )
 
 
 MODULE_NAME_FILE_ENCODING: str = "utf-8"
@@ -324,6 +325,7 @@ class TensorflowSavedModelArtifact(BaseArtifact):
         if getattr(self, "_tmpdir", None) is not None:
             self._tmpdir.cleanup()
 
+
 class KerasModel(BaseArtifact):
     """
     Model class for saving/loading :obj:`keras` models using Tensorflow backend.
@@ -361,12 +363,12 @@ class KerasModel(BaseArtifact):
     """  # noqa: E501
 
     def __init__(
-            self,
-            model: KT,
-            default_custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-            store_as_json_and_weights: t.Optional[bool] = False,
-            metadata: t.Optional[MetadataType] = None,
-            name: t.Optional[str] = "kerasmodel",
+        self,
+        model: KT,
+        default_custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
+        store_as_json_and_weights: t.Optional[bool] = False,
+        metadata: t.Optional[MetadataType] = None,
+        name: t.Optional[str] = "kerasmodel",
     ):
         super(KerasModel, self).__init__(model, metadata=metadata, name=name)
 
@@ -442,7 +444,7 @@ class KerasModel(BaseArtifact):
             )
 
         if self._default_custom_objects is None and os.path.isfile(
-                self._custom_objects_path(path)
+            self._custom_objects_path(path)
         ):
             self._default_custom_objects = cloudpickle.load(
                 open(self._custom_objects_path(path), "rb")

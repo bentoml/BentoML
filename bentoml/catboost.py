@@ -22,6 +22,7 @@ from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
 try:
+    import catboost
     from catboost.core import CatBoost, Pool
 except ImportError:
     raise MissingDependencyException("catboost is required by CatBoostModel")
@@ -71,7 +72,7 @@ class CatBoostModel(BaseArtifact):
 
     def __init__(
         self,
-        model: t.Optional["CatBoost"] = None,
+        model: t.Optional["catboost.core.CatBoost"] = None,
         model_type: t.Optional[str] = "classifier",
         model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
         model_pool: t.Optional["Pool"] = None,

@@ -11,6 +11,7 @@ MT = t.TypeVar("MT")
 
 FILE_EXTENSION: t.Dict[str, str] = {
     "PICKLE_FILE_EXTENSION": ".pkl",
+    "TXT_FILE_EXTENSION": ".txt",
     "JSON_FILE_EXTENSION": ".json",
     "YML_FILE_EXTENSION": ".yml",
     "YAML_FILE_EXTENSION": ".yaml",

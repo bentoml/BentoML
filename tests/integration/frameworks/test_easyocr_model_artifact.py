@@ -4,13 +4,18 @@ from typing import List
 import easyocr
 import imageio
 import numpy as np
+import pytest
+from easyocr import Reader
 
 from bentoml.easyocr import EasyOCRModel
 
-from ..._internal.bento_services.easyocr import predict_image
-
 TEST_RESULT: List[str] = ['西', '愚园路', '东', '315', '309', 'W', 'Yuyuan Rd。', 'E']
 IMAGE_PATH: str = './tests/_internal/_static/chinese.jpg'
+
+
+@pytest.fixture(scope='session')
+def predict_image(model: Reader, image: np.ndarray):
+    return [x[1] for x in model.readtext(image)]
 
 
 def test_easyocr_save_load(tmpdir):
@@ -25,13 +30,10 @@ def test_easyocr_save_load(tmpdir):
     )
     assert [x[1] for x in model.readtext(IMAGE_PATH)] == TEST_RESULT
 
-    EasyOCRModel(
-        model,
-        recog_network=recog_network,
-        language_list=language_list,
-        name='chinese_small',
-    ).save(tmpdir)
-    assert os.path.exists(EasyOCRModel.get_path(tmpdir, ".json"))
+    EasyOCRModel(model, recog_network=recog_network, language_list=language_list,).save(
+        tmpdir
+    )
+    assert os.path.exists(EasyOCRModel._json_file_path(tmpdir))
 
     easyocr_loaded: easyocr.Reader = EasyOCRModel.load(tmpdir)
 

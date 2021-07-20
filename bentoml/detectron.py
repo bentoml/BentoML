@@ -21,7 +21,7 @@ import torch
 
 from ._internal.artifacts import BaseArtifact
 from ._internal.exceptions import MissingDependencyException
-from ._internal.types import PathType
+from ._internal.types import MetadataType, PathType
 
 try:
     import detectron2
@@ -44,8 +44,6 @@ class DetectronModel(BaseArtifact):
             model config from :meth:`detectron2.model_zoo.get_config_file`
         metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `detectronmodel`):
-            optional name for DetectronModel
 
     Raises:
         MissingDependencyException:
@@ -72,10 +70,9 @@ class DetectronModel(BaseArtifact):
         self,
         model: torch.nn.Module,
         input_model_yaml: str = None,
-        metadata: t.Optional[t.Dict[str, t.Any]] = None,
-        name: t.Optional[str] = "detectronmodel",
+        metadata: t.Optional[MetadataType] = None,
     ):
-        super(DetectronModel, self).__init__(model, metadata=metadata, name=name)
+        super(DetectronModel, self).__init__(model, metadata=metadata)
         self._input_model_yaml = input_model_yaml
 
     @classmethod
@@ -101,8 +98,8 @@ class DetectronModel(BaseArtifact):
         """  # noqa: E501
 
         cfg: "detectron2.config.CfgNode" = get_cfg()
-        weight_path = str(cls.get_path(path, cls.PTH_FILE_EXTENSION))
-        yaml_path = str(cls.get_path(path, cls.YAML_FILE_EXTENSION))
+        weight_path = cls.model_path(path, cls.PTH_FILE_EXTENSION)
+        yaml_path = cls.model_path(path, cls.YAML_FILE_EXTENSION)
 
         cfg.merge_from_file(yaml_path)
         model: torch.nn.Module = build_model(cfg)
@@ -117,7 +114,7 @@ class DetectronModel(BaseArtifact):
     def save(self, path: PathType) -> None:
         os.makedirs(path, exist_ok=True)
         checkpointer = DetectionCheckpointer(self._model, save_dir=path)
-        checkpointer.save(self.name)
+        checkpointer.save(self._MODEL_NAMESPACE)
 
         cfg: "detectron2.config.CfgNode" = get_cfg()
         if self._input_model_yaml:

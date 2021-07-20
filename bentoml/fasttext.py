@@ -35,8 +35,6 @@ class FasttextModel(BaseArtifact):
             Base pipeline for all fasttext model
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `fasttextmodel`):
-            FasttextModel instance name
 
     Raises:
         MissingDependencyException:
@@ -59,14 +57,12 @@ class FasttextModel(BaseArtifact):
         self,
         model: "fasttext.FastText._FastText",
         metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = 'fasttextmodel',
     ):
-        super(FasttextModel, self).__init__(model, metadata=metadata, name=name)
+        super(FasttextModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> "fasttext.FastText._FastText":
-        model = fasttext.load_model(str(cls.get_path(path, "")))
-        return model
+        return fasttext.load_model(cls.model_path(path, ""))
 
     def save(self, path: PathType) -> None:
         self._model.save_model(self.model_path(path, ""))

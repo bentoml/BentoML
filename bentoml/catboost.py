@@ -14,8 +14,8 @@
 #     limitations under the License.
 # ==============================================================================
 
+import os
 import typing as t
-from pathlib import Path
 
 from ._internal.artifacts import BaseArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
@@ -30,7 +30,7 @@ except ImportError:
 
 class CatBoostModel(BaseArtifact):
     """
-    Model class for saving/loading CatBoost model.
+    Model class for saving/loading :obj:`catboost` model.
 
     Args:
         model (`catboost.core.CatBoost`, `optional`, default to `None`):
@@ -44,8 +44,6 @@ class CatBoostModel(BaseArtifact):
             ``catboost.core.Pools`` for more info.
         metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `catboostmodel`):
-            Name for CatBoostModel instance.
 
     Raises:
         MissingDependencyException:
@@ -77,13 +75,12 @@ class CatBoostModel(BaseArtifact):
         model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
         model_pool: t.Optional["Pool"] = None,
         metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = "catboostmodel",
     ):
         if model:
             _model = model
         else:
             _model = self._model_type(model_type=model_type)
-        super(CatBoostModel, self).__init__(_model, metadata=metadata, name=name)
+        super(CatBoostModel, self).__init__(_model, metadata=metadata)
         self._model_export_parameters = model_export_parameters
         self._model_pool: "Pool" = model_pool
 
@@ -115,10 +112,10 @@ class CatBoostModel(BaseArtifact):
         cls, path: PathType, model_type: t.Optional[str] = "classifier"
     ) -> CatBoost:  # pylint: disable=arguments-differ
         model = cls._model_type(model_type=model_type)
-        model_path: Path = cls.get_path(path, cls.CATBOOST_FILE_EXTENSION)
-        if not model_path:
+        model_path: str = cls.model_path(path, cls.CATBOOST_FILE_EXTENSION)
+        if not os.path.exists(model_path):
             raise InvalidArgument(
                 f"given {path} doesn't contain {cls.CATBOOST_FILE_EXTENSION} object."
             )
-        model.load_model(str(model_path))
+        model.load_model(model_path)
         return model

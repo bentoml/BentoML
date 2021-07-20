@@ -23,7 +23,7 @@ from ._internal.types import MetadataType, PathType
 
 try:
     import evalml
-    from evalml.pipelines import PipelineBase
+    import evalml.pipelines
 except ImportError:
     raise MissingDependencyException("evalml is required by EvalMLModel")
 
@@ -37,8 +37,6 @@ class EvalMLModel(BaseArtifact):
             Base pipeline for all EvalML model
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `evalmlmodel`):
-            EvalMLModel instance name
 
     Raises:
         MissingDependencyException:
@@ -61,14 +59,13 @@ class EvalMLModel(BaseArtifact):
         self,
         model: "evalml.pipelines.PipelineBase",
         metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = "evalmlmodel",
     ):
-        super(EvalMLModel, self).__init__(model, metadata=metadata, name=name)
+        super(EvalMLModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> "evalml.pipelines.PipelineBase":
-        model_file_path: pathlib.Path = cls.get_path(path, cls.PICKLE_FILE_EXTENSION)
-        return PipelineBase.load(str(model_file_path))
+        model_file_path: str = cls.model_path(path, cls.PICKLE_FILE_EXTENSION)
+        return evalml.pipelines.PipelineBase.load(model_file_path)
 
     def save(self, path: PathType) -> None:
         self._model.save(self.model_path(path, self.PICKLE_FILE_EXTENSION))

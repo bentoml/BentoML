@@ -14,8 +14,8 @@
 #     limitations under the License.
 # ==============================================================================
 
+import os
 import typing as t
-from pathlib import Path
 
 from ._internal.artifacts import BaseArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
@@ -37,8 +37,6 @@ class CoreMLModel(BaseArtifact):
             :class:`~coreml.models.MLModel` instance
         metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `coremlmodel`):
-            Optional name for CoreMLModel
 
     Raises:
         MissingDependencyException:
@@ -70,20 +68,17 @@ class CoreMLModel(BaseArtifact):
         self,
         model: "coremltools.models.MLModel",
         metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = "coremlmodel",
     ):
-        super(CoreMLModel, self).__init__(model, metadata=metadata, name=name)
+        super(CoreMLModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> "coremltools.models.MLModel":
-        model_path: Path = cls.get_path(path, cls.COREMLMODEL_FILE_EXTENSION)
-        if not model_path:
+        model_path: str = cls.model_path(path, cls.COREMLMODEL_FILE_EXTENSION)
+        if not os.path.exists(model_path):
             raise InvalidArgument(
                 f"given {path} doesn't contain {cls.COREMLMODEL_FILE_EXTENSION}."
             )
-        model = coremltools.models.MLModel(str(model_path))
-
-        return model
+        return coremltools.models.MLModel(model_path)
 
     def save(self, path: PathType) -> None:
         self._model.save(self.model_path(path, self.COREMLMODEL_FILE_EXTENSION))

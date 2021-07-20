@@ -36,8 +36,6 @@ class LightGBMModel(BaseArtifact):
             LightGBM model instance is of type :class:`lightgbm.Booster`
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `lightgbmmodel`):
-            LightGBMModel instance name
 
     Raises:
         MissingDependencyException:
@@ -57,18 +55,13 @@ class LightGBMModel(BaseArtifact):
     """  # noqa: E501
 
     def __init__(
-        self,
-        model: "lightgbm.Booster",
-        metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = 'lightgbmmodel',
+        self, model: "lightgbm.Booster", metadata: t.Optional[MetadataType] = None,
     ):
-        super(LightGBMModel, self).__init__(model, metadata=metadata, name=name)
+        super(LightGBMModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> "lightgbm.Booster":
-        return lightgbm.Booster(
-            model_file=str(cls.get_path(path, cls.TXT_FILE_EXTENSION))
-        )
+        return lightgbm.Booster(model_file=cls.model_path(path, cls.TXT_FILE_EXTENSION))
 
     def save(self, path: PathType) -> None:
         self._model.save_model(self.model_path(path, self.TXT_FILE_EXTENSION))

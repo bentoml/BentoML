@@ -39,8 +39,6 @@ class FastaiModel(BaseArtifact):
             Learner model from fastai
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `fastaimodel`):
-            Name for the fastai v2 model
 
     Raises:
         MissingDependencyException:
@@ -63,17 +61,14 @@ class FastaiModel(BaseArtifact):
         self,
         model: "fastai.learner.Learner",
         metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = "fastaimodel",
     ):
-        super(FastaiModel, self).__init__(model, metadata=metadata, name=name)
+        super(FastaiModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(cls, path: PathType) -> "fastai.basics.Learner":
-        model = fastai.basics.load_learner(
-            str(cls.get_path(path, cls.PICKLE_FILE_EXTENSION))
+    def load(cls, path: PathType) -> "fastai.learner.Learner":
+        return fastai.basics.load_learner(
+            cls.model_path(path, cls.PICKLE_FILE_EXTENSION)
         )
-        return model
 
     def save(self, path: PathType) -> None:
-        fname: str = self.model_path(path, self.PICKLE_FILE_EXTENSION)
-        self._model.export(fname=fname)
+        self._model.export(fname=self.model_path(path, self.PICKLE_FILE_EXTENSION))

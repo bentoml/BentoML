@@ -23,8 +23,8 @@ def test_fasttext_save_load(tmpdir):
     with _temp_filename_with_content("__label__bar foo") as inf:
         model = fasttext.train_supervised(input=inf)
 
-    FasttextModel(model, name="foobar").save(tmpdir)
-    assert os.path.exists(FasttextModel.get_path(tmpdir, ""))
+    FasttextModel(model).save(tmpdir)
+    assert os.path.exists(FasttextModel.model_path(tmpdir, ""))
 
     fasttext_loaded: "fasttext.FastText._FastText" = FasttextModel.load(tmpdir)
     assert fasttext_loaded.predict(test_json['text'])[0] == ("__label__bar",)

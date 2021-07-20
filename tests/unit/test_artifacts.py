@@ -11,7 +11,8 @@ def create_mock_class(name):
     class Foo:
         n = 1
 
-    Foo.__name__ = name
+    if name:
+        Foo.__name__ = name
     return Foo
 
 
@@ -22,11 +23,11 @@ class FooArtifact(BaseArtifact):
             self._metadata = _metadata
 
     def save(self, path):
-        return
+        return self.walk_path(path, ".est")
 
     @classmethod
     def load(cls, path):
-        return "foo"
+        return 'foo'
 
 
 @pytest.mark.parametrize(
@@ -52,29 +53,27 @@ def test_base_artifact(args, kwargs, metadata):
 @pytest.mark.parametrize(
     "model, expected",
     [
-        (create_mock_class("MockModel"), "MockModel.yml"),
-        (create_mock_class("test"), "test.yml"),
-        (create_mock_class("1"), "1.yml"),
+        (create_mock_class("MockModel"), "model.yml"),
+        (create_mock_class("test"), "model.yml"),
+        (create_mock_class("1"), "model.yml"),
     ],
 )
 def test_save_artifact(model, expected, tmpdir):
     foo = FooArtifact(model, metadata=_metadata)
     foo.save(tmpdir)
-    assert foo.model_path(tmpdir, ".yml") == os.path.join(tmpdir, expected)
     assert os.path.exists(foo.model_path(tmpdir, ".yml"))
 
 
 @pytest.mark.parametrize(
     "model, expected",
     [
-        (create_mock_class("MockModel"), "MockModel.pkl"),
-        (create_mock_class("test"), "test.pkl"),
+        (create_mock_class("MockModel"), "model.pkl"),
+        (create_mock_class("test"), "model.pkl"),
     ],
 )
 def test_pkl_artifact(model, expected, tmpdir):
     pkl = PickleArtifact(model, metadata=_metadata)
     pkl.save(tmpdir)
-    assert pkl.model_path(tmpdir, ".pkl") == os.path.join(tmpdir, expected)
     assert os.path.exists(pkl.model_path(tmpdir, ".pkl"))
     assert os.path.exists(pkl.model_path(tmpdir, ".yml"))
     assert model == PickleArtifact.load(tmpdir)
@@ -83,6 +82,18 @@ def test_pkl_artifact(model, expected, tmpdir):
 @pytest.mark.parametrize(
     "path, exc", [("test", FileNotFoundError), ("/tmp/test", FileNotFoundError)]
 )
-def test_empty_pkl_path(path, exc):
+def test_empty_walk_path(path, exc):
     with pytest.raises(exc):
-        PickleArtifact.load(path)
+        FooArtifact("1").save(path)
+
+
+def test_valid_walk_path(tmpdir):
+    os.mknod(os.path.join(tmpdir, "t.est"))
+    assert os.path.exists(FooArtifact('1').save(tmpdir))
+
+
+def test_dir_walk_path(tmpdir):
+    p = os.path.join(tmpdir, "test", "foo")
+    os.makedirs(p, exist_ok=True)
+    os.mknod(os.path.join(p, "t.est"))
+    assert os.path.exists(FooArtifact('1').save(p))

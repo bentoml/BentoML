@@ -1,7 +1,7 @@
 import typing as t
 from pathlib import Path
 
-from ..types import PathType
+from ..types import MetadataType, PathType
 from ..utils import cloudpickle
 from .base import BaseArtifact
 
@@ -20,7 +20,7 @@ class PickleArtifact(BaseArtifact):
 
     .. note::
         We should also provide optional support for using ``pickle``.
-        Current caveats when using pickle is that it doesn't work =)
+        Current caveats when using pickle is that it doesn't work :smile:
 
     Example usage under :code:`train.py`::
 
@@ -36,17 +36,14 @@ class PickleArtifact(BaseArtifact):
     """
 
     def __init__(
-        self,
-        model: t.Any,
-        metadata: t.Optional[t.Dict[str, t.Any]] = None,
-        name: t.Optional[str] = "picklemodel",
+        self, model: t.Any, metadata: t.Optional[MetadataType] = None,
     ):
-        super(PickleArtifact, self).__init__(model, metadata=metadata, name=name)
+        super(PickleArtifact, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
-        f: Path = cls.get_path(path, cls.PICKLE_FILE_EXTENSION)
-        with f.open("rb") as inf:
+        file: str = cls.model_path(path, cls.PICKLE_FILE_EXTENSION)
+        with open(file, "rb") as inf:
             model = cloudpickle.load(inf)
         return model
 

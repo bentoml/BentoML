@@ -47,8 +47,6 @@ class EasyOCRModel(BaseArtifact):
             Whether to enable GPU for easyocr
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `easyocrmodel`):
-            optional name for EasyOCRModel
 
     Raises:
         MissingDependencyException:
@@ -77,9 +75,8 @@ class EasyOCRModel(BaseArtifact):
         gpu: t.Optional[bool] = False,
         language_list: t.Optional[t.List[str]] = None,
         metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = "easyocrmodel",
     ):
-        super(EasyOCRModel, self).__init__(model, metadata=metadata, name=name)
+        super(EasyOCRModel, self).__init__(model, metadata=metadata)
 
         self._model: "easyocr.Reader" = model
         self._recog_network = recog_network
@@ -95,14 +92,17 @@ class EasyOCRModel(BaseArtifact):
         }
 
     @classmethod
+    def _json_file_path(cls, path: PathType) -> str:
+        return cls.model_path(path, cls.JSON_FILE_EXTENSION)
+
+    @classmethod
     def load(cls, path: PathType) -> "easyocr.Reader":
-        with cls.get_path(path, cls.JSON_FILE_EXTENSION).open("r") as f:
+        with open(cls._json_file_path(path), "r") as f:
             model_params = json.load(f)
 
-        model = easyocr.Reader(
+        return easyocr.Reader(
             model_storage_directory=path, download_enabled=False, **model_params
         )
-        return model
 
     def save(self, path: PathType) -> None:
         import shutil
@@ -120,5 +120,5 @@ class EasyOCRModel(BaseArtifact):
         fname: str = f"{self._recog_network}{self.PTH_FILE_EXTENSION}"
         shutil.copyfile(os.path.join(src_folder, fname), os.path.join(path, fname))
 
-        with open(self.model_path(path, self.JSON_FILE_EXTENSION), "w") as f:
+        with open(self._json_file_path(path), "w") as f:
             json.dump(self._model_metadata, f)

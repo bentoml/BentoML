@@ -1,14 +1,23 @@
 import json
 import os
+import typing as t
 
 import h2o
 import h2o.automl
 import h2o.model
+import pandas as pd
 import pytest
 
 from bentoml.h2o import H2oModel
 
-from ..._internal.bento_services.h2o import predict_dataframe
+
+def predict_dataframe(
+    model: "h2o.model.model_base.ModelBase", df: "pd.DataFrame"
+) -> t.Optional[str]:
+    hf = h2o.H2OFrame(df)
+    pred = model.predict(hf)
+    return pred.as_data_frame().to_json(orient='records')
+
 
 test_data = {
     "TemperatureCelcius": {"0": 21.6},
@@ -22,6 +31,7 @@ test_data = {
 def train_h2o_aml() -> h2o.automl.H2OAutoML:
 
     h2o.init()
+    h2o.no_progress()
 
     df = h2o.import_file(
         "https://github.com/yubozhao/bentoml-h2o-data-for-testing/raw/master/"
@@ -40,11 +50,9 @@ def train_h2o_aml() -> h2o.automl.H2OAutoML:
 
 
 def test_h2o_save_load(train_h2o_aml, tmpdir):
-    import pandas as pd
-
     test_df: pd.DataFrame = pd.read_json(json.dumps(test_data))
-    H2oModel(train_h2o_aml.leader, name="automl").save(tmpdir)
-    assert os.path.exists(H2oModel.get_path(tmpdir, ""))
+    H2oModel(train_h2o_aml.leader).save(tmpdir)
+    assert os.path.exists(H2oModel.model_path(tmpdir, ""))
 
     h2o_loaded: h2o.model.model_base.ModelBase = H2oModel.load(tmpdir)
     assert predict_dataframe(train_h2o_aml.leader, test_df) == predict_dataframe(

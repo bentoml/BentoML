@@ -17,7 +17,7 @@ def get_model() -> "lightgbm.Booster":
 def test_lightgbm_save_load(get_model, tmpdir):
     test_df: pd.DataFrame = pd.DataFrame([[0]])
     LightGBMModel(get_model).save(tmpdir)
-    assert os.path.exists(LightGBMModel.get_path(tmpdir, '.txt'))
+    assert os.path.exists(LightGBMModel.model_path(tmpdir, '.txt'))
 
     loaded_model: "lightgbm.Booster" = LightGBMModel.load(tmpdir)
     assert loaded_model.predict(test_df) == get_model.predict(test_df)

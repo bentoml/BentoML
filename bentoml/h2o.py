@@ -37,8 +37,6 @@ class H2oModel(BaseArtifact):
             :obj:`ModelBase` for all h2o model instance
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `h2omodel`):
-            H2oModel instance name
 
     Raises:
         MissingDependencyException:
@@ -61,14 +59,14 @@ class H2oModel(BaseArtifact):
         self,
         model: "h2o.model.model_base.ModelBase",
         metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = 'h2omodel',
     ):
-        super(H2oModel, self).__init__(model, metadata=metadata, name=name)
+        super(H2oModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> "h2o.model.model_base.ModelBase":
         h2o.init()
-        model_path: str = str(cls.get_path(cls.get_path(path, ""), ""))
+        h2o.no_progress()
+        model_path: str = str(cls.walk_path(path, ""), "")
         return h2o.load_model(model_path)
 
     def save(self, path: PathType) -> None:

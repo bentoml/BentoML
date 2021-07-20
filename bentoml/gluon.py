@@ -36,8 +36,6 @@ class GluonModel(BaseArtifact):
             Every :obj:`mxnet.gluon` object is based on :obj:`mxnet.gluon.Block`
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `gluonmodel`):
-            GluonModel instance name
 
     Raises:
         MissingDependencyException:
@@ -57,19 +55,15 @@ class GluonModel(BaseArtifact):
     """  # noqa: E501
 
     def __init__(
-        self,
-        model: "mxnet.gluon.Block",
-        metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = 'gluonmodel',
+        self, model: "mxnet.gluon.Block", metadata: t.Optional[MetadataType] = None,
     ):
-        super(GluonModel, self).__init__(model, metadata=metadata, name=name)
+        super(GluonModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> "mxnet.gluon.Block":
-        json_path: str = str(cls.get_path(path, ".json"))
-        params_path: str = str(cls.get_path(path, ".params"))
-        model = gluon.nn.SymbolBlock.imports(json_path, ["data"], params_path)
-        return model
+        json_path: str = cls.model_path(path, "-symbol.json")
+        params_path: str = cls.model_path(path, "-0000.params")
+        return gluon.nn.SymbolBlock.imports(json_path, ["data"], params_path)
 
     def save(self, path: PathType) -> None:
         self._model.export(self.model_path(path, ""))

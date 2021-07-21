@@ -47,3 +47,9 @@ class YataiRepositoryException(YataiException):
     """
     Raises when repository failed.
     """
+
+
+class MissingDependencyException(YataiException):
+    """
+    Raise exception when dependency is missing
+    """

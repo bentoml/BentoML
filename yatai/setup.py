@@ -6,12 +6,13 @@ with open("README.md", "r", encoding="utf8") as f:
     long_description = f.read()
 
 install_requires = [
-    # TODO: add required dependencies here
+    "schema",
     "simple-di",
     "grpcio~=1.34.0",  # match the grpcio-tools version used in yatai docker image
     "google-cloud-storage",
     "psycopg2",
     "psycopg2-binary",
+    "ruamel.yaml>=0.15.0",
 ]
 
 setuptools.setup(

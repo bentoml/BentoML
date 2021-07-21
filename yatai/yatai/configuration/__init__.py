@@ -1,7 +1,5 @@
 import os
 
-from bentoml._internal.configuration import expand_env_var
-
 
 def get_local_config_file():
     if "YATAI_CONFIG" in os.environ:
@@ -11,9 +9,9 @@ def get_local_config_file():
 
 
 def inject_dependencies():
-    """Inject dependencis and configuration for Yatai package"""
+    """Inject dependencies and configuration for Yatai package"""
 
-    from yatai.yatai.configuration.containers import YataiConfiguration, YataiContainer
+    from yatai.configuration.containers import YataiConfiguration, YataiContainer
 
     config_file = get_local_config_file()
     if config_file and config_file.endswith('.yml'):

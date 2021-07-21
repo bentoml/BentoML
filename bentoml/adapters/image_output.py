@@ -19,6 +19,11 @@ from bentoml.adapters.base_output import (BaseOutputAdapter,
 from bentoml.adapters.utils import get_default_accept_image_formats
 from bentoml.types import (AwsLambdaEvent, HTTPResponse, InferenceError,
                            InferenceResult, InferenceTask)
+from bentoml.utils.lazy_loader import LazyLoader
+
+# BentoML optional dependencies, using lazy load to avoid ImportError
+Image = LazyLoader('Image', globals(), 'PIL.Image')
+io = LazyLoader('io', globals(), 'io')
 
 ApiFuncReturnValue = Sequence[bytes]
 
@@ -28,12 +33,10 @@ class ImageOutput(BaseOutputAdapter):
     Converts result of user defined API function into image output.
 
         Args:
-                cors (str): The value of the Access-Control-Allow-Origin header set
-                    in the AWS Lambda response object.Default is "*". If set to None,
-                    the header will not be set.
-                extension_format (str): Refers to the "Content-Type" value of the
-                    returned image. Default is "None". If set to None, an attempt is
-                    made to retrieve the "Content-Type" value from the incoming data.
+                cors (str): The value of the Access-Control-Allow-Origin header set in the AWS Lambda response object.
+                        Default is "*". If set to None, the header will not be set.
+                extension_format (str): Refers to the "Content-Type" value of the returned image. Default is "None".
+                        If set to None, an attempt is made to retrieve the "Content-Type" value from the incoming data.
     """
 
     def __init__(self, extension_format: str = None, **kwargs):
@@ -47,39 +50,32 @@ class ImageOutput(BaseOutputAdapter):
         Pack the return value of user defined API function into InferenceResults
         """
         results = []
-        for bytes_, task in regroup_return_value(return_result, tasks):
+        for arrays_, task in regroup_return_value(return_result, tasks):
             try:
-                if ((self.extension_format is None)
-                        and (task.http_headers.get('Content-Type', None).lower()
-                             in get_default_accept_image_formats())):
+                if self.extension_format is None and task.http_headers.get('Content-Type', None).lower() in get_default_accept_image_formats():
+                    self.extension_format = task.http_headers.get(
+                        'Content-Type', None).lower()
 
-                    return_type = task.http_headers.get('Content-Type', None)
-                    results.append(
-                        InferenceResult(
-                            data=bytes_,
-                            http_status=200,
-                            http_headers={
-                                "Content-Type": f"image/{return_type}"},
-                        )
-                    )
-                elif ((self.extension_format is not None)
-                      and (self.extension_format.lower()
-                           in get_default_accept_image_formats())):
+                elif self.extension_format is not None and self.extension_format.lower() in get_default_accept_image_formats():
+                    self.extension_format = self.extension_format.lower()
 
-                    return_type = self.extension_format
-                    results.append(
-                        InferenceResult(
-                            data=bytes_,
-                            http_status=200,
-                            http_headers={
-                                "Content-Type": f"image/{return_type}"},
-                        )
-                    )
                 else:
                     results.append(InferenceError(
                         err_msg=f"Current service only returns "
-                        f"{get_default_accept_image_formats()} formats",
-                        http_status=400,))
+                        f"{get_default_accept_image_formats()} formats", http_status=400,))
+
+                out_img = Image.fromarray(arrays_)
+                buf = io.BytesIO()
+                out_img.save(buf, format=self.extension_format[1:])
+
+                results.append(
+                    InferenceResult(
+                        data=buf.getvalue(),
+                        http_status=200,
+                        http_headers={
+                            "Content-Type": f"image/{self.extension_format}"},
+                    )
+                )
 
             except AssertionError as e:
                 results.append(InferenceError(

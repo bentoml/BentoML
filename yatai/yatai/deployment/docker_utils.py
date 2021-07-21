@@ -3,7 +3,7 @@ from typing import Dict, Optional
 from urllib.parse import urlparse
 
 import docker
-from yatai.yatai.exceptions import YataiException, MissingDependencyException
+from yatai.yatai.exceptions import MissingDependencyException, YataiException
 
 logger = logging.getLogger(__name__)
 

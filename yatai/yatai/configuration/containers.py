@@ -1,18 +1,15 @@
 import logging
 import os
-from typing import TYPE_CHECKING
 
-from cerberus import Validator
-from schema import And, Optional, Or, Schema, SchemaError, Use
 from deepmerge import always_merger
-from simple_di import Provide, Provider, container, providers
+from schema import And, Or, Schema, SchemaError, Use
+from simple_di import container, providers
 
 # TODO separate out yatai version. Should we go with the BentoML version or start new?
 from yatai import __version__
 from yatai.configuration import expand_env_var
 from yatai.exceptions import YataiConfigurationException
 from yatai.utils.ruamel_yaml import YAML
-
 
 LOGGER = logging.getLogger(__name__)
 

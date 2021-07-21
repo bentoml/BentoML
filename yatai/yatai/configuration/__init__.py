@@ -9,7 +9,7 @@ def get_local_config_file():
 
 
 def inject_dependencies():
-    """Inject dependencis and configuration for Yatai package"""
+    """Inject dependencies and configuration for Yatai package"""
 
     from yatai.configuration.containers import YataiConfiguration, YataiContainer
 

@@ -13,9 +13,7 @@ from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.exceptions import BentoMLException
 from bentoml._internal.utils import reserve_free_port
 from yatai.configuration.containers import YataiContainer
-
 from yatai.utils import ensure_node_available_or_raise, parse_grpc_url
-
 
 # TODO move this to bentoml client
 # @inject

@@ -9,16 +9,16 @@ from google.protobuf.json_format import MessageToJson
 from simple_di import Provide, inject
 from werkzeug.exceptions import BadRequest, NotFound
 
-from bentoml.configuration import get_debug_mode
-from bentoml.configuration.containers import BentoMLContainer
-from bentoml.exceptions import BentoMLException
-from bentoml.marshal.utils import MARSHAL_REQUEST_HEADER, DataLoader
-from bentoml.server.instruments import InstrumentMiddleware
-from bentoml.types import HTTPRequest
-from bentoml.utils.open_api import get_open_api_spec_json
+from ..configuration import get_debug_mode
+from ..configuration.containers import BentoMLContainer
+from ..exceptions import BentoMLException
+from ..marshal.marshal import MARSHAL_REQUEST_HEADER, DataLoader
+from ..server.instruments import InstrumentMiddleware
+from ..types import HTTPRequest
+from ..utils.open_api import get_open_api_spec_json
 
 if TYPE_CHECKING:
-    from bentoml.service import InferenceAPI
+    from ..service import InferenceAPI
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)

@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING, Optional
 import psutil
 from simple_di import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer
-from bentoml.exceptions import RemoteException
-from bentoml.marshal.dispatcher import CorkDispatcher, NonBlockSema
-from bentoml.marshal.utils import MARSHAL_REQUEST_HEADER, DataLoader
-from bentoml.saved_bundle import load_bento_service_metadata
-from bentoml.saved_bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
-from bentoml.types import HTTPRequest, HTTPResponse
+# from ..bundle import load_bento_service_metadata
+from ..bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
+from ..configuration.containers import BentoMLContainer
+from ..exceptions import RemoteException
+from ..types import HTTPRequest, HTTPResponse
+from .dispatcher import CorkDispatcher, NonBlockSema
+from .utils import MARSHAL_REQUEST_HEADER, DataLoader
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +167,7 @@ class MarshalApp:
         self.access_control_allow_origin = access_control_allow_origin
         self.access_control_options = access_control_options
 
-        self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
+        # self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)  # noqa: E501
 
         self.setup_routes_from_pb(self.bento_service_metadata_pb)
         self.timeout = timeout

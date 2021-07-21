@@ -11,14 +11,15 @@ from pathlib import PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from bentoml.exceptions import BentoMLException
-from bentoml.saved_bundle.config import SavedBundleConfig
-from bentoml.saved_bundle.pip_pkg import ZIPIMPORT_DIR
-from bentoml.utils.gcs import is_gcs_url
-from bentoml.utils.s3 import is_s3_url
+from ..bundle.config import SavedBundleConfig
+from ..exceptions import BentoMLException
+
+# from ..bundle.pip_pkg import ZIPIMPORT_DIR
+from ..utils.gcs import is_gcs_url
+from ..utils.s3 import is_s3_url
 
 if TYPE_CHECKING:
-    from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
+    from ..yatai_client.proto.repository_pb2 import BentoServiceMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -175,11 +176,11 @@ def load_bento_service_class(bundle_path):
     sys.path.insert(0, bundle_path)
     sys.path.insert(0, os.path.join(bundle_path, metadata["service_name"]))
     # Include zipimport modules
-    zipimport_dir = os.path.join(bundle_path, metadata["service_name"], ZIPIMPORT_DIR)
-    if os.path.exists(zipimport_dir):
-        for p in os.listdir(zipimport_dir):
-            logger.debug("adding %s to sys.path", p)
-            sys.path.insert(0, os.path.join(zipimport_dir, p))
+    # zipimport_dir = os.path.join(bundle_path, metadata["service_name"], ZIPIMPORT_DIR)
+    # if os.path.exists(zipimport_dir):
+    #     for p in os.listdir(zipimport_dir):
+    #         logger.debug("adding %s to sys.path", p)
+    #         sys.path.insert(0, os.path.join(zipimport_dir, p))
 
     module_name = metadata["module_name"]
     if module_name in sys.modules:

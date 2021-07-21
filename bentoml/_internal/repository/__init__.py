@@ -1,7 +1,7 @@
 # list, get, delete, push, pull
 
 
-def list():
+def ls():
     pass
 
 

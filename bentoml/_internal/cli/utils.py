@@ -23,9 +23,9 @@ from datetime import datetime
 import humanfriendly
 from tabulate import tabulate
 
-from bentoml.cli.click_utils import _echo
-from bentoml.exceptions import BentoMLException
-from bentoml.utils import pb_to_yaml
+from ..exceptions import BentoMLException
+from ..utils import pb_to_yaml
+from .click_utils import _echo
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ def human_friendly_age_from_datetime(dt, detailed=False, max_unit=2):
 
 
 def _print_deployments_table(deployments, wide=False):
-    from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, DeploymentState
+    from ..yatai_client.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
     table = []
     if wide:

@@ -8,8 +8,8 @@ from typing import Callable
 
 import numpy as np
 
-from bentoml.utils import cached_property
-from bentoml.utils.alg import TokenBucket
+from ..utils import cached_property
+from ..utils.alg import TokenBucket
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)

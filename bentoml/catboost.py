@@ -23,7 +23,7 @@ from ._internal.types import MetadataType, PathType
 
 try:
     import catboost
-    from catboost.core import CatBoost, Pool
+    from catboost.core import CatBoost, Pool  # noqa # pylint: disable=ununsed-import
 except ImportError:
     raise MissingDependencyException("catboost is required by CatBoostModel")
 
@@ -87,7 +87,7 @@ class CatBoostModel(ModelArtifact):
     @classmethod
     def __model__type(cls, model_type: t.Optional[str] = "classifier"):
         try:
-            from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
+            from catboost.core import CatBoostClassifier, CatBoostRegressor
         except ImportError:
             raise MissingDependencyException("catboost is required by CatBoostModel")
         if model_type == "classifier":
@@ -107,10 +107,10 @@ class CatBoostModel(ModelArtifact):
             pool=self._model_pool,
         )
 
+    # fmt: off
     @classmethod
-    def load(
-        cls, path: PathType, model_type: t.Optional[str] = "classifier"
-    ) -> CatBoost:  # pylint: disable=arguments-differ
+    def load(cls, path: PathType, model_type: t.Optional[str] = "classifier") -> CatBoost:  # pylint: disable=arguments-differ
+        # fmt: on
         model = cls.__model__type(model_type=model_type)
         get_path: str = cls.get_path(path, cls.CATBOOST_EXTENSION)
         if not os.path.exists(get_path):

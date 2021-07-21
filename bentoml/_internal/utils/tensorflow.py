@@ -1,7 +1,7 @@
 import logging
 from typing import Sequence, Union
 
-from bentoml.exceptions import MissingDependencyException
+from ..exceptions import MissingDependencyException
 
 logger = logging.getLogger(__name__)
 

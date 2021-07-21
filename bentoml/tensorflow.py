@@ -22,11 +22,7 @@ import tempfile
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import (
-    ArtifactLoadingException,
-    InvalidArgument,
-    MissingDependencyException,
-)
+from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
@@ -55,7 +51,13 @@ class _TensorflowFunctionWrapper:
     transform input tensor following function input signature
     """
 
-    def __init__(self, origin_func, arg_names=None, arg_specs=None, kwarg_specs=None):
+    def __init__(
+        self,
+        origin_func,
+        arg_names: t.Optional[str] = None,
+        arg_specs=None,
+        kwarg_specs=None,
+    ):
         self.origin_func = origin_func
         self.arg_names = arg_names
         self.arg_specs = arg_specs
@@ -114,11 +116,10 @@ class _TensorflowFunctionWrapper:
 
 
 def _load_tf_saved_model(path):
+    TF2 = tf.__version__.startswith("2")
     try:
-        import tensorflow as tf
         from tensorflow.python.training.tracking.tracking import AutoTrackable
 
-        TF2 = tf.__version__.startswith("2")
     except ImportError:
         raise MissingDependencyException(
             "Tensorflow package is required to use TfSavedModelArtifact"
@@ -152,12 +153,11 @@ def _load_tf_saved_model(path):
         return loaded
 
 
-class TensorflowSavedModelArtifact(ModelArtifact):
+class TensorflowModel(ModelArtifact):
     """
     Artifact class for saving/loading Tensorflow model in tf.saved_model format
 
     Args:
-        name (string): name of the artifact
 
     Raises:
         MissingDependencyException: tensorflow package is required for
@@ -208,18 +208,18 @@ class TensorflowSavedModelArtifact(ModelArtifact):
     >>> svc.pack('model', '/tmp/adder/1')
     """
 
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, model, metadata: t.Optional[MetadataType] = None):
+        super(TensorflowModel, self).__init__(model, metadata=metadata)
 
         self._model = None
         self._tmpdir = None
         self._path = None
 
-    def _saved_get_path(self, base_path):
-        return os.path.join(base_path, self.name + "_saved_model")
+    def _saved_get_path(self, path: PathType):
+        return os.path.join(path, self.name + "_saved_model")
 
     def pack(
-        self, obj, metadata=None, signatures=None, options=None
+        self, obj, signatures=None, options=None
     ):  # pylint:disable=arguments-differ
         """
         Pack the TensorFlow Trackable object `obj` to [SavedModel format].
@@ -241,18 +241,11 @@ class TensorflowSavedModelArtifact(ModelArtifact):
           ValueError: If `obj` is not trackable.
         """
         if not _is_path_like(obj):
+            TF2 = tf.__version__.startswith("2")
             if self._tmpdir is not None:
                 self._tmpdir.cleanup()
             else:
                 self._tmpdir = tempfile.TemporaryDirectory()
-            try:
-                import tensorflow as tf
-
-                TF2 = tf.__version__.startswith("2")
-            except ImportError:
-                raise MissingDependencyException(
-                    "Tensorflow package is required to use TfSavedModelArtifact."
-                )
             if TF2:
                 tf.saved_model.save(
                     obj, self._tmpdir.name, signatures=signatures, options=options,
@@ -270,7 +263,6 @@ class TensorflowSavedModelArtifact(ModelArtifact):
             self._path = self._tmpdir.name
         else:
             self._path = obj
-        self._packed = True
         loaded = self.get()
         logger.warning(
             "Due to TensorFlow's internal mechanism, only methods wrapped under "
@@ -297,13 +289,13 @@ class TensorflowSavedModelArtifact(ModelArtifact):
             self._model = loaded_model
         return self._model
 
-    def load(self, path):
+    def load(self, path: PathType):
         saved_get_path = self._saved_get_path(path)
         return self.pack(saved_get_path)
 
-    def save(self, dst):
+    def save(self, path: PathType) -> None:
         # Copy exported SavedModel model directory to BentoML saved artifact directory
-        shutil.copytree(self._path, self._saved_get_path(dst))
+        shutil.copytree(self._path, self._saved_get_path(path))
 
     def __del__(self):
         if getattr(self, "_tmpdir", None) is not None:

@@ -10,29 +10,26 @@ import psutil
 from simple_di import Provide, inject
 
 from bentoml import __version__
-from bentoml.cli.click_utils import (
+
+from ..bundle import load_bento_service_api, load_bento_service_metadata, load_from_dir
+from ..configuration.containers import BentoMLContainer
+from ..server import start_dev_server, start_prod_server
+from ..utils import ProtoMessageToDict, resolve_bundle_path
+from ..utils.docker_utils import validate_tag
+from ..utils.lazy_loader import LazyLoader
+from ..utils.open_api import get_open_api_spec_json
+from ..yatai_client import get_yatai_client
+from .click_utils import (
     CLI_COLOR_SUCCESS,
     BentoMLCommandGroup,
     _echo,
     conditional_argument,
 )
-from bentoml.cli.utils import Spinner
-from bentoml.configuration.containers import BentoMLContainer
-from bentoml.saved_bundle import (
-    load_bento_service_api,
-    load_bento_service_metadata,
-    load_from_dir,
-)
-from bentoml.server import start_dev_server, start_prod_server
-from bentoml.utils import ProtoMessageToDict, resolve_bundle_path
-from bentoml.utils.docker_utils import validate_tag
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.utils.open_api import get_open_api_spec_json
-from bentoml.yatai.client import get_yatai_client
+from .utils import Spinner
 
 if TYPE_CHECKING:
-    from bentoml.yatai.client import YataiClient
-    from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
+    from ..yatai_client import YataiClient
+    from ..yatai_client.proto.repository_pb2 import BentoServiceMetadata
 
 try:
     import click_completion
@@ -436,6 +433,7 @@ def create_bento_service_cli(
 
         bento_tag = f"{bento_metadata.name}:{bento_metadata.version}"
         yatai_client: "YataiClient" = get_yatai_client(yatai_url)
+        bento_tag = ""
         docker_build_args = {}
         if build_arg:
             for arg in build_arg:

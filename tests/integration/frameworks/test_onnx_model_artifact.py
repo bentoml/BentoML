@@ -39,7 +39,7 @@ def sklearn_onnx_model():
 
 
 @pytest.mark.parametrize(
-    "kwargs, exc", [({'backend': "not_supported"}, BentoMLException),]
+    "kwargs, exc", [({'backend': "not_supported"}, BentoMLException)]
 )
 def test_raise_exc(kwargs, exc, sklearn_onnx_model, tmpdir):
     with pytest.raises(exc):

@@ -14,7 +14,6 @@
 #     limitations under the License.
 # ==============================================================================
 
-import os
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
@@ -39,7 +38,7 @@ class LightGBMModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`lightgbm` is required by LightGBMModel 
+            :obj:`lightgbm` is required by LightGBMModel
 
     Example usage under :code:`train.py`::
 

@@ -21,8 +21,8 @@ from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
 try:
-    import mxnet  # noqa # pylint disable=unused-import
-    from mxnet import gluon
+    import mxnet
+    from mxnet import gluon  # noqa # pylint disable=unused-import
 except ImportError:
     raise MissingDependencyException("mxnet is required by GluonModel")
 

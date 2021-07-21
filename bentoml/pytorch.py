@@ -20,10 +20,9 @@ import pathlib
 import shutil
 import zipfile
 
-from bentoml.utils import cloudpickle
-
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
+from ._internal.utils import cloudpickle
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +103,7 @@ class PytorchModelArtifact(ModelArtifact):
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name + self._file_extension)
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-renamed
+    def pack(self, model):  # pylint:disable=arguments-renamed
         try:
             import torch
         except ImportError:
@@ -149,7 +148,7 @@ class PytorchModelArtifact(ModelArtifact):
     def get(self):
         return self._model
 
-    def save(self, dst):
+    def save(self, path):
         try:
             import torch
         except ImportError:
@@ -159,9 +158,9 @@ class PytorchModelArtifact(ModelArtifact):
 
         # If model is a TorchScriptModule, we cannot apply standard pickling
         if isinstance(self._model, torch.jit.ScriptModule):
-            return torch.jit.save(self._model, self._file_path(dst))
+            return torch.jit.save(self._model, self._file_path(path))
 
-        return cloudpickle.dump(self._model, open(self._file_path(dst), "wb"))
+        return cloudpickle.dump(self._model, open(self._file_path(path), "wb"))
 
 
 class PytorchLightningModelArtifact(ModelArtifact):
@@ -220,7 +219,7 @@ class PytorchLightningModelArtifact(ModelArtifact):
     def _saved_model_file_path(self, base_path):
         return os.path.join(base_path, self.name + ".pt")
 
-    def pack(self, path_or_model, metadata=None):  # pylint:disable=arguments-renamed
+    def pack(self, path_or_model):  # pylint:disable=arguments-renamed
         if _is_pytorch_lightning_model_file_like(path_or_model):
             logger.info(
                 "PytorchLightningArtifact is packing a saved torchscript module "
@@ -256,7 +255,7 @@ class PytorchLightningModelArtifact(ModelArtifact):
             self._model = self._get_torch_script_model(self._get_path)
         return self._model
 
-    def save(self, dst):
+    def save(self, path):
         if self._model:
             try:
                 import torch
@@ -264,9 +263,9 @@ class PytorchLightningModelArtifact(ModelArtifact):
                 raise MissingDependencyException(
                     '"torch" package is required for saving Pytorch lightning model'
                 )
-            torch.jit.save(self._model, self._saved_model_file_path(dst))
+            torch.jit.save(self._model, self._saved_model_file_path(path))
         if self._get_path:
-            shutil.copyfile(self._get_path, self._saved_model_file_path(dst))
+            shutil.copyfile(self._get_path, self._saved_model_file_path(path))
 
     @staticmethod
     def _get_torch_script_model(get_path):

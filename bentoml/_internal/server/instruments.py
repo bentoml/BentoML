@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     Lock = multiprocessing.synchronize.Lock

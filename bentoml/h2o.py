@@ -42,7 +42,7 @@ class H2oModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`h2o` is required by H2oModel 
+            :obj:`h2o` is required by H2oModel
 
     Example usage under :code:`train.py`::
 

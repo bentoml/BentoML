@@ -75,10 +75,10 @@ class DetectronModel(ModelArtifact):
         super(DetectronModel, self).__init__(model, metadata=metadata)
         self._input_model_yaml = input_model_yaml
 
+    # fmt: off
     @classmethod
-    def load(
-        cls, path: PathType, device: t.Optional[str] = "cpu"
-    ) -> torch.nn.Module:  # pylint: disable=arguments-differ
+    def load(cls, path: PathType, device: t.Optional[str] = "cpu") -> torch.nn.Module:  # pylint: disable=arguments-differ
+        # fmt: on
         """
         Load a detectron model from given yaml path.
 

@@ -80,7 +80,7 @@ class SpacyModelArtifact(ModelArtifact):
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name)
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
+    def pack(self, model):  # pylint:disable=arguments-differ
         try:
             import spacy
         except ImportError:
@@ -117,6 +117,6 @@ class SpacyModelArtifact(ModelArtifact):
     def get(self):
         return self._model
 
-    def save(self, dst):
-        path = self._file_path(dst)
+    def save(self, path):
+        path = self._file_path(path)
         return self._model.to_disk(path)

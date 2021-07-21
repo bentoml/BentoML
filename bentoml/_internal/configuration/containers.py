@@ -15,7 +15,7 @@ from ..utils import get_free_port
 from ..utils.ruamel_yaml import YAML
 
 if TYPE_CHECKING:
-    from ..server.marshal.marshal import MarshalApp
+    from bentoml._internal.marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
 
@@ -281,7 +281,7 @@ class BentoMLContainerClass:
     @providers.Factory
     @staticmethod
     def proxy_app() -> "MarshalApp":
-        from ..server.marshal.marshal import MarshalApp
+        from bentoml._internal.marshal.marshal import MarshalApp
 
         return MarshalApp()
 

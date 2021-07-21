@@ -17,8 +17,7 @@
 import os
 from importlib import import_module
 
-from bentoml.service import ModelArtifact
-
+from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException, NotFound
 
 try:
@@ -167,7 +166,7 @@ class TransformersModelArtifact(ModelArtifact):
                 "transformers has no model type called {}".format(self._model_type)
             )
 
-    def pack(self, model, metadata=None):
+    def pack(self, model):
         loaded_model = None
         if isinstance(model, str):
             if os.path.isdir(model):
@@ -198,8 +197,8 @@ class TransformersModelArtifact(ModelArtifact):
         with open(os.path.join(path, "tokenizer_type.txt"), "w") as f:
             f.write(self._tokenizer_type)
 
-    def save(self, dst):
-        path = self._file_path(dst)
+    def save(self, path):
+        path = self._file_path(path)
         self._model_type = self._model.get("model").__class__.__name__
         self._tokenizer_type = self._model.get("tokenizer").__class__.__name__
         self._model.get("model").save_pretrained(path)

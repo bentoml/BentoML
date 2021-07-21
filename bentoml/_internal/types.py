@@ -12,7 +12,6 @@ from typing import (
     Iterator,
     List,
     Mapping,
-    NewType,
     Optional,
     Sequence,
     Tuple,

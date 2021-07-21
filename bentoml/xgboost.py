@@ -19,8 +19,6 @@ import os
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 
-XGBOOST_MODEL_EXTENSION = ".model"
-
 
 class XgboostModelArtifact(ModelArtifact):
     """
@@ -63,14 +61,16 @@ class XgboostModelArtifact(ModelArtifact):
     >>> svc.pack('model', model_to_save)
     """
 
+    XGBOOST_EXTENSION = ".model"
+
     def __init__(self, name):
         super(XgboostModelArtifact, self).__init__(name)
         self._model = None
 
     def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + XGBOOST_MODEL_EXTENSION)
+        return os.path.join(base_path, self.name + self.XGBOOST_EXTENSION)
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
+    def pack(self, model):  # pylint:disable=arguments-differ
         try:
             import xgboost as xgb
         except ImportError:
@@ -98,8 +98,8 @@ class XgboostModelArtifact(ModelArtifact):
 
         return self.pack(bst)
 
-    def save(self, dst):
-        return self._model.save_model(self._model_file_path(dst))
+    def save(self, path):
+        return self._model.save_model(self._model_file_path(path))
 
     def get(self):
         return self._model

@@ -2,9 +2,9 @@ import logging
 
 import click
 
-from yatai.yatai.cli.bento_management import add_bento_management_sub_commands
-from yatai.yatai.cli.label import add_label_sub_commands
-from yatai.yatai.cli.server import add_yatai_service_sub_commands
+from .bento_management import add_bento_management_sub_commands
+from .label import add_label_sub_commands
+from .server import add_yatai_service_sub_commands
 
 logger = logging.getLogger(__name__)
 

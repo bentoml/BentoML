@@ -21,11 +21,11 @@ import time
 import click
 from click import ClickException
 
-from bentoml import configure_logging
-from bentoml.configuration import set_debug_mode
-from bentoml.exceptions import BentoMLException
-from bentoml.utils.ruamel_yaml import YAML
-from bentoml.utils.usage_stats import track
+# from bentoml import configure_logging
+from ..configuration import set_debug_mode
+from ..exceptions import BentoMLException
+from ..utils.ruamel_yaml import YAML
+from ..utils.usage_stats import track
 
 # Available CLI colors for _echo:
 #
@@ -94,7 +94,7 @@ class BentoMLCommandGroup(click.Group):
         @functools.wraps(func)
         def wrapper(quiet, verbose, *args, **kwargs):
             if quiet:
-                configure_logging(logging_level=logging.ERROR)
+                # configure_logging(logging_level=logging.ERROR)
                 if verbose:
                     logger.warning(
                         "The bentoml command option `--verbose/--debug` is ignored when"

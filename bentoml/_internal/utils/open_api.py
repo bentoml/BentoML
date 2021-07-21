@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from simple_di import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer
+from ..configuration.containers import BentoMLContainer
 
 
 @inject

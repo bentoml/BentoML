@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 import tensorflow.keras as tfk
 
-from bentoml._internal.exceptions import InvalidArgument
 from bentoml.keras import KerasModel
 
 test_data: t.List[int] = [1, 2, 3, 4, 5]

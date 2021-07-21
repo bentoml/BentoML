@@ -62,7 +62,9 @@ class ArtifactMeta(type):
             raise
 
     def __new__(cls, name, mixins, namespace):
-        _path_fn: t.Dict[str, t.Callable[[PathType, str], t.Union[PathType, Path]]] = {
+        _path_fn: t.Dict[
+            str, t.Callable[[str, PathType, str], t.Union[PathType, Path]]
+        ] = {
             "model_path": cls.__model_path,
             "walk_path": cls.__walk_path,
         }
@@ -72,9 +74,7 @@ class ArtifactMeta(type):
                 "_FILE_ENCODING": cls._FILE_ENCODING,
             }
         )
-        namespace.update(_path_fn)
-        for k, v in _FILE_EXTENSION.items():
-            namespace[k] = v
+        namespace.update(**_path_fn, **_FILE_EXTENSION)
         return type.__new__(cls, name, mixins, namespace)
 
 

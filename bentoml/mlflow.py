@@ -100,5 +100,4 @@ class MLflowModel(ModelArtifact):
     def save(self, path: PathType) -> None:
         with open(self.__module_name__path(path), 'wb') as txt_file:
             txt_file.write(self._loader_module.__name__.encode(self._FILE_ENCODING))
-        txt_file.close()
         self._loader_module.save_model(self._model, self.model_path(path, ""))

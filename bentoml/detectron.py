@@ -1,148 +1,126 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import os
+import typing as t
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+import torch
+
+from ._internal.artifacts import ModelArtifact
+from ._internal.exceptions import MissingDependencyException
+from ._internal.types import MetadataType, PathType
+
+try:
+    import detectron2
+    from detectron2.checkpoint import DetectionCheckpointer
+    from detectron2.config import get_cfg
+    from detectron2.modeling import build_model
+except ImportError:
+    raise MissingDependencyException("detectron2 is required by DetectronModel")
 
 
-class DetectronModelArtifact(BentoServiceArtifact):
+class DetectronModel(ModelArtifact):
     """
-    Artifact class for saving/loading Detectron2 models,
-    in the form of detectron2.checkpoint.DetectionCheckpointer
+    Model class for saving/loading :obj:`detectron2` models,
+    in the form of :class:`~detectron2.checkpoint.DetectionCheckpointer`
 
     Args:
-        name (string): name of the artifact
+        model (`torch.nn.Module`):
+            detectron2 model is of type :obj:`torch.nn.Module`
+        input_model_yaml (`str`, `optional`, default to `None`):
+            model config from :meth:`detectron2.model_zoo.get_config_file`
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyException: detectron2 package is required for
-        DetectronModelArtifact
-        InvalidArgument: invalid argument type, model being packed must be instance of
-            torch.nn.Module
+        MissingDependencyException:
+            :obj:`detectron2` is required by DetectronModel
+        InvalidArgument:
+            model is not an instance of :class:`torch.nn.Module`
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> # Train model with data
-    >>>
-    >>>
-    >>> import bentoml
-    >>> from bentoml.adapters import ImageInput
-    >>> from bentoml.frameworks.detectron import DetectronModelArtifact
-    >>> from detectron2.data import transforms as T
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([DetectronModelArtifact('model')])
-    >>> class CocoDetectronService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=ImageInput(), batch=False)
-    >>>     def predict(self, img: np.ndarray) -> Dict:
-    >>>         _aug = T.ResizeShortestEdge(
-    >>>            [800, 800], 1333
-    >>>        )
-    >>>        boxes = None
-    >>>        scores = None
-    >>>        pred_classes = None
-    >>>        pred_masks= None
-    >>>        try:
-    >>>            original_image = img[:, :, ::-1]
-    >>>            height, width = original_image.shape[:2]
-    >>>            image = _aug.get_transform(original_image).
-    >>>                             apply_image(original_image)
-    >>>            image = torch.as_tensor(image.astype("float32").
-    >>>                             transpose(2, 0, 1))
-    >>>            inputs = {"image": image, "height": height, "width": width}
-    >>>            predictions = self.artifacts.model([inputs])[0]
-    >>>
-    >>>
-    >>> cfg = get_cfg()
-    >>> cfg.merge_from_file("input_model.yaml")
-    >>> meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
-    >>> model = meta_arch(cfg)
-    >>> model.eval()
-    >>> device = "cuda:{}".format(0)
-    >>> model.to(device)
-    >>> checkpointer = DetectionCheckpointer(model)
-    >>> checkpointer.load("output/model.pth")
-    >>> metadata = {
-    >>>     'device' : device
-    >>> }
-    >>> bento_svc = CocoDetectronService()
-    >>> bento_svc.pack('model', model, metadata, "input_model.yaml")
-    >>> saved_path = bento_svc.save()
+        TODO:
+
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
+        TODO:
     """
 
-    def __init__(self, name):
-        super().__init__(name)
-        self._model = None
-        self._aug = None
-        self._input_model_yaml = None
+    _model: torch.nn.Module
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["torch", "detectron2"])
-
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name)
-
-    def pack(
-        self, model, metadata=None, input_model_yaml=None
-    ):  # pylint:disable=arguments-differ
-        try:
-            import detectron2  # noqa # pylint: disable=unused-import
-        except ImportError:
-            raise MissingDependencyException(
-                "Detectron package is required to use DetectronModelArtifact"
-            )
-        self._model = model
-        self._metadata = metadata
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        input_model_yaml: str = None,
+        metadata: t.Optional[MetadataType] = None,
+    ):
+        super(DetectronModel, self).__init__(model, metadata=metadata)
         self._input_model_yaml = input_model_yaml
-        return self
 
-    def load(self, path):
-        try:
-            from detectron2.checkpoint import (  # noqa # pylint: disable=unused-import
-                DetectionCheckpointer,
-            )
-            from detectron2.config import get_cfg
-            from detectron2.data import transforms as T
-            from detectron2.modeling import META_ARCH_REGISTRY
-        except ImportError:
-            raise MissingDependencyException(
-                "Detectron package is required to use DetectronArtifact"
-            )
-        cfg = get_cfg()
-        cfg.merge_from_file(f"{path}/{self.name}.yaml")
-        meta_arch = META_ARCH_REGISTRY.get(cfg.MODEL.META_ARCHITECTURE)
-        self._model = meta_arch(cfg)
-        self._model.eval()
+    @classmethod
+    def load(
+        cls, path: PathType, device: t.Optional[str] = "cpu"
+    ) -> torch.nn.Module:  # pylint: disable=arguments-differ
+        """
+        Load a detectron model from given yaml path.
 
-        device = self._metadata["device"]
-        self._model.to(device)
-        checkpointer = DetectionCheckpointer(self._model)
-        checkpointer.load(f"{path}/{self.name}.pth")
-        self._aug = T.ResizeShortestEdge(
-            [cfg.INPUT.MIN_SIZE_TEST, cfg.INPUT.MIN_SIZE_TEST], cfg.INPUT.MAX_SIZE_TEST
-        )
-        return self.pack(self._model)
+        Args:
+            path (`Union[str, os.PathLike]`, or :obj:`~bentoml._internal.types.PathType`):
+                Given path containing saved yaml config for loading detectron model.
+            device (`str`, `optional`, default to ``cpu``):
+                Device type to cast model. Default behaviour similar to :obj:`torch.device("cuda")`
+                Options: "cuda" or "cpu". If None is specified then return default config.MODEL.DEVICE
 
-    def get(self):
-        return self._model
+        Returns:
+            :class:`torch.nn.Module`
 
-    def save(self, dst):
-        try:
-            from detectron2.checkpoint import (  # noqa # pylint: disable=unused-import
-                DetectionCheckpointer,
-            )
-            from detectron2.config import get_cfg
-        except ImportError:
-            raise MissingDependencyException(
-                "Detectron package is required to use DetectronArtifact"
-            )
-        os.makedirs(dst, exist_ok=True)
-        checkpointer = DetectionCheckpointer(self._model, save_dir=dst)
-        checkpointer.save(self.name)
-        cfg = get_cfg()
-        cfg.merge_from_file(self._input_model_yaml)
+        Raises:
+            MissingDependencyException:
+                ``detectron2`` is required by :class:`~bentoml.detectron.DetectronModel`.
+        """  # noqa: E501
+
+        cfg: "detectron2.config.CfgNode" = get_cfg()
+        weight_path = cls.get_path(path, cls.PTH_EXTENSION)
+        yaml_path = cls.get_path(path, cls.YAML_EXTENSION)
+
+        cfg.merge_from_file(yaml_path)
+        model: torch.nn.Module = build_model(cfg)
+        model.eval()
+        if device:
+            model.to(device)
+
+        checkpointer = DetectionCheckpointer(model)
+        checkpointer.load(weight_path)
+        return model
+
+    def save(self, path: PathType) -> None:
+        os.makedirs(path, exist_ok=True)
+        checkpointer = DetectionCheckpointer(self._model, save_dir=path)
+        checkpointer.save(self._MODEL_NAMESPACE)
+
+        cfg: "detectron2.config.CfgNode" = get_cfg()
+        if self._input_model_yaml:
+            cfg.merge_from_file(self._input_model_yaml)
+
         with open(
-            os.path.join(dst, f"{self.name}.yaml"), "w", encoding="utf-8"
-        ) as output_file:
-            output_file.write(cfg.dump())
+            self.get_path(path, self.YAML_EXTENSION), 'w', encoding='utf-8'
+        ) as ouf:
+            ouf.write(cfg.dump())

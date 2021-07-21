@@ -92,6 +92,45 @@ should be the type of the return, followed by a line return. An example for a re
         :obj:`Dict[str,str]` with keys are :class:`~bentoml.BentoService` nametag following with saved bundle path.
 ```
 
+### ```ModelArtifact``` docstring specification
+
+When adding a new integration with a deep learning framework, make sure to document the Model class correctly following the below template:
+
+```python
+    from bentoml._internal.artifacts import ModelArtifact
+
+    class FooBarArtifact(ModelArtifact):
+        """
+        Model class for saving/loading :obj:`mlflow` models
+
+        Args:
+            model (`mlflow.models.Model`):
+                All mlflow models are of type :obj:`mlflow.models.Model`
+            metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+                Class metadata
+            ... # Custom parameters
+
+        Raises:
+            MissingDependencyException:
+                :obj:`mlflow` is required by MLflowModel
+            ArtifactLoadingException:
+                given `loader_module` is not supported by :obj:`mlflow`
+
+        Example usage under :code:`train.py`::
+
+            TODO:
+
+        One then can define :code:`bento_service.py`::
+
+            TODO:
+
+        Pack bundle under :code:`bento_packer.py`::
+
+            TODO:
+        """  # noqa: E501
+
+```
+
 #### Tips and Tricks
 
 Header level hierarchy in rst:

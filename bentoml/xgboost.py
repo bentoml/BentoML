@@ -1,13 +1,28 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import os
 
-from bentoml.exceptions import InvalidArgument, MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.artifacts import ModelArtifact
+from ._internal.exceptions import InvalidArgument, MissingDependencyException
 
 XGBOOST_MODEL_EXTENSION = ".model"
 
 
-class XgboostModelArtifact(BentoServiceArtifact):
+class XgboostModelArtifact(ModelArtifact):
     """
     Artifact class for saving and loading Xgboost model
 
@@ -51,10 +66,6 @@ class XgboostModelArtifact(BentoServiceArtifact):
     def __init__(self, name):
         super(XgboostModelArtifact, self).__init__(name)
         self._model = None
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["xgboost"])
 
     def _model_file_path(self, base_path):
         return os.path.join(base_path, self.name + XGBOOST_MODEL_EXTENSION)

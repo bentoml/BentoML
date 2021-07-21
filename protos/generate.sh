@@ -9,16 +9,18 @@ fi
 
 # YataiService protobuf
 PROTO_PATH="$BENTOML_REPO"/protos
-YATAI_SERVER_PATH="$BENTOML_REPO"/yatai
-YATAI_CLIENT_PATH="$BENTOML_REPO"/bentoml/_internal
+PROTO_TEST_PATH="$PROTO_PATH"/tests
 
-# Protos output path
-SERVER_OUT_PATH="$YATAI_SERVER_PATH"/yatai/proto
-CLIENT_OUT_PATH="$YATAI_CLIENT_PATH"/yatai_client/proto
-JS_OUT_PATH="$YATAI_SERVER_PATH"/web_server/src/generated
+# Protos output for YataiServer
+SERVER_OUT_PATH="$BENTOML_REPO"/yatai/yatai/proto
+
+# Protos output for YataiClient
+CLIENT_OUT_PATH="$BENTOML_REPO"/bentoml/_internal/yatai_client/proto
+
+# Protos output for Yatai webserver
+JS_OUT_PATH="$BENTOML_REPO"/yatai/web_server/src/generated
 
 # Test gRPC servicer
-PROTO_TEST_PATH="$PROTO_PATH"/tests
 PY_TEST_OUT_PATH="$BENTOML_REPO"/tests/unit/yatai/proto
 
 run_check(){
@@ -37,43 +39,41 @@ WARN
 }
 
 cleanup(){
-  log_info "Removing existing generated proto client code.."
+  log_info "Removing existing generated proto client code..."
   rm -rf "$SERVER_OUT_PATH" "$CLIENT_OUT_PATH" "$PY_TEST_OUT_PATH"
-  mkdir -p "$SERVER_OUT_PATH" "$CLIENT_OUT_PATH" "$PY_TEST_OUT_PATH"
-  touch "$SERVER_OUT_PATH"/__init__.py "$SERVER_OUT_PATH"/__init__.pyi "$PY_TEST_OUT_PATH"/__init__.py
-  touch "$CLIENT_OUT_PATH"/__init__.py "$CLIENT_OUT_PATH"/__init__.pyi
-
-  # js part of yatai gRPC
   rm -rf "$JS_OUT_PATH"
+
+  mkdir -p "$SERVER_OUT_PATH" "$CLIENT_OUT_PATH" "$PY_TEST_OUT_PATH"
   mkdir -p "$JS_OUT_PATH"
+
+  touch "$PY_TEST_OUT_PATH"/__init__.py
+  touch "$SERVER_OUT_PATH"/__init__.py "$CLIENT_OUT_PATH"/__init__.py
 }
 
 generate_protos(){
-  log_info "Generate proto message code.."
+  log_info "Generate proto message code..."
   find "$PROTO_PATH"/ -name '*.proto' -not -path "${PROTO_TEST_PATH}/*" | while read -r protofile; do
   python -m grpc_tools.protoc \
     -I"$PROTO_PATH" \
     --python_out="$SERVER_OUT_PATH" \
     --python_out="$CLIENT_OUT_PATH" \
-    --mypy_out="$SERVER_OUT_PATH" \
     "$protofile"
   done
 
-  log_info "Generate gRPC test servicer.."
+  log_info "Generate gRPC test servicer..."
   python -m grpc_tools.protoc \
     -I"$PROTO_TEST_PATH" \
     --python_out="$PY_TEST_OUT_PATH" \
     --grpc_python_out="$PY_TEST_OUT_PATH" \
     "$PROTO_TEST_PATH"/mock_service.proto
 
-  log_info "Generate yatai gRPC servicer.."
+  log_info "Generate yatai gRPC servicer..."
   python -m grpc_tools.protoc \
     -I"$PROTO_PATH" \
     --python_out="$SERVER_OUT_PATH" \
     --python_out="$CLIENT_OUT_PATH" \
     --grpc_python_out="$SERVER_OUT_PATH" \
     --grpc_python_out="$CLIENT_OUT_PATH" \
-    --mypy_out="$SERVER_OUT_PATH" \
     "$PROTO_PATH"/yatai_service.proto
 
   log_info "Generating gRPC JavaScript code..."
@@ -121,15 +121,15 @@ edit_init() {
   echo "]" >> "$PKG_INIT"
 }
 
-log_warn() {
+log_warn(){
 	echo -e "\033[2mWARN::\033[0m \e[1;32m$*\e[m" 1>&2
 }
 
-log_error() {
+log_error(){
 	echo -e "\033[2mERROR::\033[0m \e[1;31m$*\e[m" 1>&2
 }
 
-log_info() {
+log_info(){
 	echo -e "\033[2mINFO::\033[0m \e[1;34m$*\e[m" 1>&2
 }
 

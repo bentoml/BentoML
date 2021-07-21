@@ -20,7 +20,7 @@ install-test-deps: ## Install all test dependencies
 
 # Protos
 gen-protos: ## Build protobuf for Python and Node
-	@./dev/generate-protos-docker.sh
+	@./dev/gen_protos_docker.sh
 
 # Docs
 watch-docs: ## Build and watch documentation

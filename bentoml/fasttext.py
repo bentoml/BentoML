@@ -1,80 +1,68 @@
-import os
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+import typing as t
+
+from ._internal.artifacts import ModelArtifact
+from ._internal.exceptions import MissingDependencyException
+from ._internal.types import MetadataType, PathType
+
+try:
+    import fasttext  # noqa # pylint: disable=unused-import
+except ImportError:
+    raise MissingDependencyException("fasttext is required by FasttextModel")
 
 
-class FasttextModelArtifact(BentoServiceArtifact):
+class FasttextModel(ModelArtifact):
     """
-    Artifact class for saving and loading fasttext models
+    Model class for saving/loading :obj:`fasttext` models
 
     Args:
-        name (str): Name for the artifact
+        model (`fasttext.FastText._FastText`):
+            Base pipeline for all fasttext model
+        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyError: fasttext package is required for FasttextModelArtifact
+        MissingDependencyException:
+            :obj:`fasttext` is required by FasttextModel
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import fasttext
-    >>> # prepare training data and store to file
-    >>> training_data_file = 'training-data-file.train'
-    >>> model = fasttext.train_supervised(input=training_data_file)
-    >>>
-    >>> import bentoml
-    >>> from bentoml.adapters JsonInput
-    >>> from bentoml.frameworks.fasttext import FasttextModelArtifact
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([FasttextModelArtifact('model')])
-    >>> class FasttextModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=JsonInput(), batch=False)
-    >>>     def predict(self, parsed_json):
-    >>>         # K is the number of labels that successfully were predicted,
-    >>>         # among all the real labels
-    >>>         return self.artifacts.model.predict(parsed_json['text'], k=5)
-    >>>
-    >>> svc = FasttextModelService()
-    >>> svc.pack('model', model)
-    """
+        TODO:
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    One then can define :code:`bento_service.py`::
 
-        self._model = None
+        TODO:
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["fasttext"])
+    Pack bundle under :code:`bento_packer.py`::
 
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name)
+        TODO:
+    """  # noqa: E501
 
-    def pack(self, fasttext_model, metadata=None):  # pylint:disable=arguments-renamed
-        try:
-            import fasttext  # noqa # pylint: disable=unused-import
-        except ImportError:
-            raise MissingDependencyException(
-                "fasttext package is required to use FasttextModelArtifact"
-            )
-        self._model = fasttext_model
-        return self
+    def __init__(
+        self,
+        model: "fasttext.FastText._FastText",
+        metadata: t.Optional[MetadataType] = None,
+    ):
+        super(FasttextModel, self).__init__(model, metadata=metadata)
 
-    def load(self, path):
-        try:
-            import fasttext  # noqa # pylint: disable=unused-import
-        except ImportError:
-            raise MissingDependencyException(
-                "fasttext package is required to use FasttextModelArtifact"
-            )
+    @classmethod
+    def load(cls, path: PathType) -> "fasttext.FastText._FastText":
+        return fasttext.load_model(cls.get_path(path))
 
-        model = fasttext.load_model(self._model_file_path(path))
-        return self.pack(model)
-
-    def get(self):
-        return self._model
-
-    def save(self, dst):
-        self._model.save_model(self._model_file_path(dst))
+    def save(self, path: PathType) -> None:
+        self._model.save_model(self.get_path(path))

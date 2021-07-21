@@ -24,8 +24,11 @@ from ..bundle.templates import (
     MODEL_SERVER_DOCKERFILE_CPU,
 )
 from ..configuration import _is_pip_installed_bentoml
-from ..env.local_py_modules import copy_local_py_modules, copy_zip_import_archives
-from ..env.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
+from ..environment.local_py_modules import (
+    copy_local_py_modules,
+    copy_zip_import_archives,
+)
+from ..environment.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
 from ..exceptions import BentoMLException
 from ..utils import archive_directory_to_tar, is_gcs_url, is_s3_url
 from ..utils.open_api import get_open_api_spec_json
@@ -112,7 +115,7 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
     with open(os.path.join(path, "README.md"), "w") as f:
         f.write(saved_bundle_readme)
 
-    # save all model artifacts to 'base_path/name/artifacts/' directory
+    # save all model artifacts to 'path/name/artifacts/' directory
     bento_service.artifacts.save(module_base_path)
 
     # write conda environment, requirement.txt

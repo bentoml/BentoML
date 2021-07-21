@@ -58,7 +58,7 @@ Example Projects:
 * Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`__
 * Toxic Comment Classifier - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.keras.KerasModelArtifact
+.. autoclass:: bentoml.frameworks.keras.KerasModel
 
 
 ==============
@@ -74,17 +74,6 @@ Example Projects:
 
 
 =========
-FastAI v1
-=========
-
-Example Projects:
-
-* Pet Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/pet-image-classification/fast-ai-pet-image-classification.ipynb>`__
-* Salary Range Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/salary-range-prediction/fast-ai-salary-range-prediction.ipynb>`__
-
-.. autoclass:: bentoml.frameworks.fastai.Fastai1ModelArtifact
-
-=========
 FastAI v2
 =========
 
@@ -92,7 +81,7 @@ Example Projects:
 
 * Medical image classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.fastai.FastaiModelArtifact
+.. autoclass:: bentoml.fastai.FastaiModel
 
 =======
 XGBoost
@@ -153,14 +142,14 @@ Example Projects:
 
 * Image Classification with ResNet50 - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.onnx.OnnxModelArtifact
+.. autoclass:: bentoml.frameworks.onnx.OnnxModel
 
 
 =========
 ONNX-MLIR
 =========
 
-.. autoclass:: bentoml.frameworks.onnxmlir.OnnxMlirModelArtifact
+.. autoclass:: bentoml.frameworks.onnxmlir.OnnxMlirModel
 
 
 =====
@@ -195,7 +184,7 @@ Example Projects:
 Gluon
 =====
 
-.. autoclass:: bentoml.frameworks.gluon.GluonModelArtifact
+.. autoclass:: bentoml.frameworks.gluon.GluonModel
 
 
 =================
@@ -246,7 +235,7 @@ EvalML
     Statsmodels
     mxnet
     env
-    GluonModelArtifact
+    GluonModel
     JsonInput
     nd
     mx

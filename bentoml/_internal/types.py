@@ -34,9 +34,9 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
-PathType = NewType("PathLike", Union[str, os.PathLike])
+PathType = Union[str, os.PathLike]
 
-MT = TypeVar("MT")
+MetadataType = Dict[str, Any]
 
 
 @json_serializer(fields=["uri", "name"], compat=True)
@@ -46,18 +46,17 @@ class FileLike:
     An universal lazy-loading wrapper for file-like objects.
     It accepts URI, file path or bytes and provides interface like opened file object.
 
-    Attributes
-    ----------
-    bytes : bytes, optional
+    Class attributes:
 
-    uri : str, optional
+    - bytes (`bytes`, `optional`):
+    - uri (`str`, `optional`):
         The set of possible uris is:
 
-        - ``file:///home/user/input.json``
-        - ``http://site.com/input.csv`` (Not implemented)
-        - ``https://site.com/input.csv`` (Not implemented)
+        - :code:`file:///home/user/input.json`
+        - :code:`http://site.com/input.csv` (Not implemented)
+        - :code:`https://site.com/input.csv` (Not implemented)
 
-    name : str, default None
+    - name (`str`, `optional`, default to :obj:`None`)
 
     """
 
@@ -84,12 +83,13 @@ class FileLike:
         r"""
         supports:
 
-        /home/user/file
-        C:\Python27\Scripts\pip.exe
-        \\localhost\c$\WINDOWS\clock.avi
-        \\networkstorage\homes\user
+            /home/user/file
+            C:\Python27\Scripts\pip.exe
+            \\localhost\c$\WINDOWS\clock.avi
+            \\networkstorage\homes\user
 
-        https://stackoverflow.com/a/61922504/3089381
+        .. note::
+            https://stackoverflow.com/a/61922504/3089381
         """
         parsed = urllib.parse.urlparse(self.uri)
         raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))
@@ -133,26 +133,26 @@ class HTTPHeaders(CIMultiDict):
     A case insensitive mapping of HTTP headers' keys and values.
     It also parses several commonly used fields for easier access.
 
-    Attributes
-    ----------
-    content_type : str
-        The value of ``Content-Type``, for example:
-        - ``application/json``
-        - ``text/plain``
-        - ``text/csv``
+    Class attributes:
 
-    charset : str
+    - content_type (`str`):
+        The value of ``Content-Type``, for example:
+
+        - :code:`application/json`
+        - :code:`text/plain`
+        - :code:`text/csv`
+
+    - charset (`str`):
         The charset option of ``Content-Type``
 
-    content_encoding : str
+    - content_encoding (`str`):
         The charset option of ``Content-Encoding``
 
-    Methods
-    -------
-    from_dict : create a HTTPHeaders object from a dict
+    Class contains the following method:
 
-    from_sequence : create a HTTPHeaders object from a list/tuple
+    - from_dict : create a HTTPHeaders object from a dict
 
+    - from_sequence : create a HTTPHeaders object from a list/tuple
     """
 
     @property
@@ -193,12 +193,11 @@ class HTTPRequest:
     A common HTTP Request object.
     It also parses several commonly used fields for easier access.
 
-    Attributes
-    ----------
-    headers : HTTPHeaders
+    Class attributes:
 
-    body : bytes
+    - headers (`HTTPHeaders`)
 
+     - body (`bytes`)
     """
 
     headers: HTTPHeaders = HTTPHeaders()
@@ -388,18 +387,17 @@ class InferenceTask(Generic[Input]):
     cli_args: Optional[Sequence[str]] = None
     inference_job_args: Optional[Mapping[str, Any]] = None
 
-    def discard(self, err_msg="", **context):
+    def discard(self, err_msg: Optional[str] = "", **context: str):
         """
         Discard this task. All subsequent steps will be skipped.
 
-        Parameters
-        ----------
-        err_msg: str
-            The reason why this task got discarded. It would be the body of
-            HTTP Response, a field in AWS lambda event or CLI stderr message.
+        Args:
+            err_msg (`str`):
+                The reason why this task got discarded. It would be the body of
+                HTTP Response, a field in AWS lambda event or CLI stderr message.
 
-        *other contexts
-            Other contexts of the fallback ``InferenceResult``
+            **context (`str`):
+                Other contexts of the fallback ``InferenceResult``
         """
         self.is_discarded = True
         self.error = InferenceError(err_msg=err_msg, **context)

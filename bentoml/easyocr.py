@@ -1,145 +1,124 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import json
 import os
+import typing as t
 
-from bentoml.exceptions import InvalidArgument, MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.artifacts import ModelArtifact
+from ._internal.exceptions import MissingDependencyException
+from ._internal.types import MetadataType, PathType
+
+try:
+    import easyocr
+
+    assert easyocr.__version__ >= "1.3"
+except ImportError:
+    raise MissingDependencyException("easyocr>=1.3 is required by EasyOCRModel")
 
 
-class EasyOCRArtifact(BentoServiceArtifact):
+class EasyOCRModel(ModelArtifact):
     """
-    Artifact class  for saving/loading EasyOCR models
+    Model class for saving/loading :obj:`easyocr` models
 
     Args:
-        name (str): Name for the artifact
+        model (`easyocr.Reader`):
+            easyocr model is of type :class:`easyocr.easyocr.Reader`
+        language_list (`List[str]`, `optional`, default to `["en"]`):
+            TODO:
+        recog_network (`str`, `optional`, default to `english_g2`):
+            TODO:
+        detect_model (`str`, `optional`, default to `craft_mlt_25k`):
+            TODO:
+        gpu (`bool`, `optional`, default to `False`):
+            Whether to enable GPU for easyocr
+        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyError: easyocr>=1.3 package is required for EasyOCRArtifact
-        InvalidArgument: invalid argument type, model being packed
-            must be easyocr.easyocr.Reader
+        MissingDependencyException:
+            :obj:`easyocr>=1.3` is required by EasyOCRModel
+        InvalidArgument:
+            model is not an instance of :class:`easyocr.easyocr.Reader`
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import bentoml
-    >>> from bentoml.frameworks.easyocr import EasyOCRArtifact
-    >>> from bentoml.adapters import ImageInput
-    >>>
-    >>> @bentoml.env(pip_packages=["easyocr>=1.3.0"])
-    >>> @bentoml.artifacts([EasyOCRArtifact("chinese_small")])
-    >>> class EasyOCRService(bentoml.BentoService):
-    >>>     @bentoml.api(input=ImageInput(), batch=False)
-    >>>     def predict(self, image):
-    >>>         reader = self.artifacts.chinese_small
-    >>>         raw_results = reader.readtext(np.array(image))
-    >>>         text_instances = [x[1] for x in raw_results]
-    >>>         return {"text" : text_instances}
-    >>>
-    >>> import easyocr
-    >>> service = EasyOCRService()
-    >>>
-    >>> lang_list = ['ch_sim', 'en']
-    >>> recog_network = "zh_sim_g2"
-    >>>
-    >>> model = easyocr.Reader(lang_list=lang_list, download_enabled=True, \
-    >>>                        recog_network=recog_network)
-    >>> service.pack('chinese_small', model, lang_list=lang_list, \
-    >>>              recog_network= recog_network)
-    >>>
-    >>> saved_path = service.save()
+        TODO:
 
-    """
+    One then can define :code:`bento_service.py`::
 
-    def __init__(self, name):
-        super().__init__(name)
+        TODO:
 
-        self._model = None
-        self._detect_model = None
-        self._recog_network = None
-        self._model_params = None
-        self._gpu = None
+    Pack bundle under :code:`bento_packer.py`::
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["easyocr>=1.3.0"])
+        TODO:
+    """  # noqa: E501
 
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name)
-
-    def pack(
+    def __init__(
         self,
-        easyocr_model,
-        metadata=None,
-        recog_network="english_g2",
-        lang_list=None,
-        detect_model="craft_mlt_25k",
-        gpu=False,
-    ):  # pylint:disable=arguments-differ
-        try:
-            import easyocr  # noqa # pylint: disable=unused-import
+        model: "easyocr.Reader",
+        recog_network: t.Optional[str] = "english_g2",
+        detect_model: t.Optional[str] = 'craft_mlt_25k',
+        gpu: t.Optional[bool] = False,
+        language_list: t.Optional[t.List[str]] = None,
+        metadata: t.Optional[MetadataType] = None,
+    ):
+        super(EasyOCRModel, self).__init__(model, metadata=metadata)
 
-            assert easyocr.__version__ >= "1.3"
-        except ImportError:
-            raise MissingDependencyException(
-                "easyocr>=1.3 package is required to use EasyOCRArtifact"
-            )
-
-        if not (type(easyocr_model) is easyocr.easyocr.Reader):
-            raise InvalidArgument(
-                "'easyocr_model' must be of type  easyocr.easyocr.Reader"
-            )
-
-        if not lang_list:
-            lang_list = ["en"]
-        self._model = easyocr_model
-        self._detect_model = detect_model
+        self._model: "easyocr.Reader" = model
         self._recog_network = recog_network
+        self._detect_model = detect_model
         self._gpu = gpu
-        self._model_params = {
-            "lang_list": lang_list,
+
+        if language_list is None:
+            language_list = ['en']
+        self._model_metadata = {
+            "lang_list": language_list,
             "recog_network": recog_network,
             "gpu": gpu,
         }
 
-        return self
+    @classmethod
+    def __json_file__path(cls, path: PathType) -> str:
+        return cls.get_path(path, cls.JSON_EXTENSION)
 
-    def load(self, path):
-        try:
-            import easyocr  # noqa # pylint: disable=unused-import
-
-            assert easyocr.__version__ >= "1.3"
-        except ImportError:
-            raise MissingDependencyException(
-                "easyocr>=1.3 package is required to use EasyOCRArtifact"
-            )
-
-        with open(os.path.join(path, f"{self._name}.json"), "r") as f:
+    @classmethod
+    def load(cls, path: PathType) -> "easyocr.Reader":
+        with open(cls.__json_file__path(path), "r") as f:
             model_params = json.load(f)
 
-        model = easyocr.Reader(
+        return easyocr.Reader(
             model_storage_directory=path, download_enabled=False, **model_params
         )
-        self._model = model
 
-        return self.pack(model)
+    def save(self, path: PathType) -> None:
+        import shutil
 
-    def get(self):
-        return self._model
+        src_folder: str = self._model.model_storage_directory
 
-    def save(self, dst):
-        from shutil import copyfile
+        detect_filename: str = f"{self._detect_model}{self.PTH_EXTENSION}"
 
-        src_folder = self._model.model_storage_directory
-
-        detect_filename = f"{self._detect_model}.pth"
-
-        if not os.path.exists(os.path.join(dst, detect_filename)):
-            copyfile(
+        if not os.path.exists(os.path.join(path, detect_filename)):
+            shutil.copyfile(
                 os.path.join(src_folder, detect_filename),
-                os.path.join(dst, detect_filename),
+                os.path.join(path, detect_filename),
             )
 
-        fname = self._recog_network + ".pth"
-        copyfile(os.path.join(src_folder, fname), os.path.join(dst, fname))
+        fname: str = f"{self._recog_network}{self.PTH_EXTENSION}"
+        shutil.copyfile(os.path.join(src_folder, fname), os.path.join(path, fname))
 
-        with open(os.path.join(dst, f"{self._name}.json"), "w") as f:
-            json.dump(self._model_params, f)
+        with open(self.__json_file__path(path), "w") as f:
+            json.dump(self._model_metadata, f)

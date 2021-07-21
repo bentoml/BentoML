@@ -1,9 +1,25 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import os
 from importlib import import_module
 
-from bentoml.exceptions import InvalidArgument, MissingDependencyException, NotFound
-from bentoml.service import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from bentoml.service import ModelArtifact
+
+from ._internal.exceptions import InvalidArgument, MissingDependencyException, NotFound
 
 try:
     import transformers
@@ -11,7 +27,7 @@ except ImportError:
     transformers = None
 
 
-class TransformersModelArtifact(BentoServiceArtifact):
+class TransformersModelArtifact(ModelArtifact):
     """
     Artifact class for saving/loading Transformers models
 
@@ -88,7 +104,7 @@ class TransformersModelArtifact(BentoServiceArtifact):
             raise NotFound(
                 "Type of transformers model not found. "
                 "This should be present in a file called "
-                "'_model_type.txt' in the artifacts of the bundle."
+                "'__model__type.txt' in the artifacts of the bundle."
             )
         if self._tokenizer_type is None:
             raise NotFound(
@@ -151,10 +167,6 @@ class TransformersModelArtifact(BentoServiceArtifact):
                 "transformers has no model type called {}".format(self._model_type)
             )
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["xgboost"])
-
     def pack(self, model, metadata=None):
         loaded_model = None
         if isinstance(model, str):
@@ -174,14 +186,14 @@ class TransformersModelArtifact(BentoServiceArtifact):
 
     def load(self, path):
         path = self._file_path(path)
-        with open(os.path.join(path, "_model_type.txt"), "r") as f:
+        with open(os.path.join(path, "__model__type.txt"), "r") as f:
             self._model_type = f.read().strip()
         with open(os.path.join(path, "tokenizer_type.txt"), "r") as f:
             self._tokenizer_type = f.read().strip()
         return self.pack(path)
 
     def _save_model_type(self, path):
-        with open(os.path.join(path, "_model_type.txt"), "w") as f:
+        with open(os.path.join(path, "__model__type.txt"), "w") as f:
             f.write(self._model_type)
         with open(os.path.join(path, "tokenizer_type.txt"), "w") as f:
             f.write(self._tokenizer_type)

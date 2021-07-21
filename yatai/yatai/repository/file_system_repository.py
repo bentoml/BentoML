@@ -40,7 +40,7 @@ class FileSystemRepository(BaseRepository):
     def add(self, bento_name, bento_version):
         # Full path containing saved BentoService bundle, it the base path with service
         # name and service version as prefix. e.g.:
-        # with base_path = '/tmp/my_bento_repo/', the saved bento will resolve in
+        # with path = '/tmp/my_bento_repo/', the saved bento will resolve in
         # the directory: '/tmp/my_bento_repo/service_name/version/'
         target_dir = os.path.join(self.base_path, bento_name, bento_version)
 

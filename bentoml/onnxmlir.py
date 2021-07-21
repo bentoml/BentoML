@@ -1,16 +1,33 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import os
 import shutil
+import typing as t
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.artifacts import ModelArtifact
+from ._internal.exceptions import MissingDependencyException
+from ._internal.types import MetadataType, PathType
+
+MT = t.TypeVar("MT")
 
 
-class OnnxMlirModelArtifact(BentoServiceArtifact):
+class OnnxMlirModel(ModelArtifact):
     """
-    Artifact class for saving/loading onnx-mlir compiled model and operationalized
-    using pyruntime wrapper
-
+    Model class for saving/loading :obj:`onnx-mlir` compiled models.
     onnx-mlir is a compiler technology that can take an onnx model and lower it
     (using llvm) to an inference library that is optimized and has little external
     dependencies.
@@ -19,97 +36,40 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
     See the onnx-mlir supporting documentation for detail.
 
     Args:
-        name (string): Name of the artifact
+        model (`str`):
+            Given filepath or protobuf of converted model. Make sure to use corresponding library
+            to convert model from different frameworks to ONNX format
+        backend (`str`, `optional`, default to `onnxruntime`):
+            Name of ONNX inference runtime. ["onnxruntime", "onnxruntime-gpu"]
+        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+            Class metadata
+
     Raises:
-        MissingDependencyException: PyRuntime must be accessible in path.
+        MissingDependencyException:
+            :obj:`PyRuntime` must be accessible in path.
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import bentoml
-    >>> from bentoml import env, artifacts, api, BentoService
-    >>> from bentoml.adapters import ImageInput
-    >>> from bentoml.frameworks.onnxmlir import OnnxMlirModelArtifact
-    >>> from bentoml.types import JsonSerializable, InferenceTask, InferenceError
-    >>> from bentoml.service.artifacts.common import PickleArtifact
-    >>> from typing import List
-    >>> import numpy as np
-    >>> import pandas as pd
-    >>> import sys
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([OnnxMlirModelArtifact('model'), PickleArtifact('labels')])
-    >>> class ResNetPredict(BentoService):
-    >>>
-    >>>     def preprocess(self, input_data):
-    >>>         # convert the input data into the float32 input
-    >>>         img_data = np.stack(input_data).transpose(0, 3, 1, 2)
-    >>>
-    >>>         #normalize
-    >>>         mean_vec = np.array([0.485, 0.456, 0.406])
-    >>>         stddev_vec = np.array([0.229, 0.224, 0.225])
-    >>>
-    >>>
-    >>>         norm_img_data = np.zeros(img_data.shape).astype('float32')
-    >>>
-    >>>
-    >>>         for i in range(img_data.shape[0]):
-    >>>             for j in range(img_data.shape[1]):
-    >>>                 norm_img_data[i,j,:,:] =
-    >>>                 (img_data[i,j,:,:]/255 - mean_vec[j]) / stddev_vec[j]
-    >>>
-    >>>         #add batch channel
-    >>>         norm_img_data = norm_img_data.reshape(-1, 3, 224, 224).astype('float32')
-    >>>         return norm_img_data
-    >>>
-    >>>
-    >>>     def softmax(self, x):
-    >>>         x = x.reshape(-1)
-    >>>         e_x = np.exp(x - np.max(x))
-    >>>         return e_x / e_x.sum(axis=0)
-    >>>
-    >>>     def post_process(self, raw_result):
-    >>>         return self.softmax(np.array(raw_result)).tolist()
-    >>>
-    >>>     @bentoml.api(input=ImageInput(), batch=True)
-    >>>     def predict(self, image_ndarrays: List[np.ndarray]) -> List[str]:
-    >>>         input_datas = self.preprocess(image_ndarrays)
-    >>>
-    >>>         outputs = []
-    >>>         for i in range(input_datas.shape[0]):
-    >>>             raw_result = self.artifacts.model.run(input_datas[i:i+1])
-    >>>             result = self.post_process(raw_result)
-    >>>             idx = np.argmax(result)
-    >>>             sort_idx = np.flip(np.squeeze(np.argsort(result)))
-    >>>
-    >>>             # return top 5 labels
-    >>>             outputs.append(self.artifacts.labels[sort_idx[:5]])
-    >>>             return outputs
-    >>>
-    """
+        TODO:
 
-    def __init__(self, name):
-        super().__init__(name)
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
+        TODO:
+    """  # noqa: E501
+
+    ONNXMLIR_MODEL_EXTENSION: str = ".so"
+
+    def __init__(self, model: str, metadata: t.Optional[MetadataType] = None):
+        super(OnnxMlirModel, self).__init__(model, metadata=metadata)
         self._inference_session = None
         self._model_so_path = None
 
-    def _saved_model_file_path(self, base_path):
-        self._model_so_path = os.path.join(base_path, self.name + ".so")
-        return os.path.join(base_path, self.name + ".so")
-
-    def pack(self, onnxmlir_model_so, metadata=None):
-        # pylint:disable=arguments-renamed
-        self._model_so_path = onnxmlir_model_so
-        return self
-
-    def load(self, path):
-        print(path)
-        return self.pack(self._saved_model_file_path(path))
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["numpy"])
-
-    def _get_onnxmlir_inference_session(self):
+    @classmethod
+    def load(cls, path: PathType):  # type: ignore
         try:
             # this has to be able to find the arch and OS specific PyRuntime .so file
             from PyRuntime import ExecutionSession
@@ -117,13 +77,10 @@ class OnnxMlirModelArtifact(BentoServiceArtifact):
             raise MissingDependencyException(
                 "PyRuntime package library must be in python path"
             )
-        return ExecutionSession(self._model_so_path, "run_main_graph")
+        model_path: str = cls.get_path(path, cls.ONNXMLIR_MODEL_EXTENSION)
+        inference_session = ExecutionSession(model_path, "run_main_graph")
+        return inference_session
 
-    def get(self):
-        if not self._inference_session:
-            self._inference_session = self._get_onnxmlir_inference_session()
-        return self._inference_session
-
-    def save(self, dst):
+    def save(self, path: PathType) -> None:
         # copies the model .so and places in the version controlled deployment path
-        shutil.copyfile(self._model_so_path, self._saved_model_file_path(dst))
+        shutil.copyfile(self._model, self.get_path(path, self.ONNXMLIR_MODEL_EXTENSION))

@@ -1,9 +1,24 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import os
 import tempfile
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.artifacts import ModelArtifact
+from ._internal.exceptions import MissingDependencyException
 
 try:
     import paddle
@@ -12,7 +27,7 @@ except ImportError:
     paddle = None
 
 
-class PaddlePaddleModelArtifact(BentoServiceArtifact):
+class PaddlePaddleModelArtifact(ModelArtifact):
     """
     Artifact class for saving and loading PaddlePaddle's PaddleInference model
 
@@ -61,7 +76,7 @@ class PaddlePaddleModelArtifact(BentoServiceArtifact):
         super().__init__(name)
         self._model = None
         self._predictor = None
-        self._model_path = None
+        self._get_path = None
 
         if paddle is None:
             raise MissingDependencyException(
@@ -85,26 +100,26 @@ class PaddlePaddleModelArtifact(BentoServiceArtifact):
 
     def _save(self, dst):
         # Override the model path if temp dir was set
-        self._model_path = self._file_path(dst)
-        paddle.jit.save(self._model, self._model_path)
+        self._get_path = self._file_path(dst)
+        paddle.jit.save(self._model, self._get_path)
 
     def get(self):
         # Create predictor, if one doesn't exist, when inference is run
         if not self._predictor:
             # If model isn't saved, save model to a temp dir
             # because predictor init requires the path to a saved model
-            if self._model_path is None:
-                self._model_path = tempfile.TemporaryDirectory().name
-                self._save(self._model_path)
+            if self._get_path is None:
+                self._get_path = tempfile.TemporaryDirectory().name
+                self._save(self._get_path)
 
             config = paddle_infer.Config(
-                self._model_path + ".pdmodel", self._model_path + ".pdiparams"
+                self._get_path + ".pdmodel", self._get_path + ".pdiparams"
             )
             config.enable_memory_optim()
             predictor = paddle_infer.create_predictor(config)
             self._predictor = predictor
         return self._predictor
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["paddlepaddle"])
+
+class PaddleHubModel(ModelArtifact):
+    pass

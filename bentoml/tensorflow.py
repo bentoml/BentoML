@@ -215,7 +215,7 @@ class TensorflowSavedModelArtifact(ModelArtifact):
         self._tmpdir = None
         self._path = None
 
-    def _saved_model_path(self, base_path):
+    def _saved_get_path(self, base_path):
         return os.path.join(base_path, self.name + "_saved_model")
 
     def pack(
@@ -298,12 +298,12 @@ class TensorflowSavedModelArtifact(ModelArtifact):
         return self._model
 
     def load(self, path):
-        saved_model_path = self._saved_model_path(path)
-        return self.pack(saved_model_path)
+        saved_get_path = self._saved_get_path(path)
+        return self.pack(saved_get_path)
 
     def save(self, dst):
         # Copy exported SavedModel model directory to BentoML saved artifact directory
-        shutil.copytree(self._path, self._saved_model_path(dst))
+        shutil.copytree(self._path, self._saved_get_path(dst))
 
     def __del__(self):
         if getattr(self, "_tmpdir", None) is not None:

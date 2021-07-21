@@ -18,16 +18,13 @@ import os
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import (
-    ArtifactLoadingException,
-    InvalidArgument,
-    MissingDependencyException,
-)
+from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 from ._internal.utils import cloudpickle
 
 try:
     import tensorflow as tf  # pylint: disable=unused-import
+    import tensorflow.keras as tfk
 
     if t.TYPE_CHECKING:
         from tensorflow.python.client.session import BaseSession
@@ -71,8 +68,8 @@ class KerasModel(ModelArtifact):
         TODO:
     """  # noqa: E501
 
-    _graph: "_DefaultStack" = tf.compat.v1.get_default_graph()
-    _sess: "BaseSession" = tf.compat.v1.Session(graph=_graph)
+    graph: "_DefaultStack" = tf.compat.v1.get_default_graph()
+    sess: "BaseSession" = tf.compat.v1.Session(graph=graph)
 
     def __init__(
         self,
@@ -86,57 +83,50 @@ class KerasModel(ModelArtifact):
         self._store_as_json: bool = store_as_json
         self._custom_objects: t.Dict[str, t.Any] = custom_objects
 
-    # TODO (aarnphm): anonymous function
     @classmethod
-    def __custom_object__path(cls, path: PathType) -> PathType:
-        return cls.model_path(path, f"_custom_objects{cls.PICKLE_FILE_EXTENSION}")
+    def __get_custom_object__path(cls, path: PathType) -> PathType:
+        return cls.get_path(path, f"_custom_objects{cls.PICKLE_EXTENSION}")
 
     @classmethod
-    def __model_file__path(cls, path: PathType) -> PathType:
-        return cls.model_path(path, cls.H5_FILE_EXTENSION)
+    def __get_model_saved__path(cls, path: PathType) -> PathType:
+        return cls.get_path(path, cls.H5_EXTENSION)
 
     @classmethod
-    def __model_weight__path(cls, path: PathType) -> PathType:
-        return cls.model_path(path, f"_weights{cls.HDF5_FILE_EXTENSION}")
+    def __get_model_weight__path(cls, path: PathType) -> PathType:
+        return cls.get_path(path, f"_weights{cls.HDF5_EXTENSION}")
 
     @classmethod
-    def __model_json__path(cls, path: PathType) -> PathType:
-        return cls.model_path(path, f"_json{cls.JSON_FILE_EXTENSION}")
+    def __get_model_json__path(cls, path: PathType) -> PathType:
+        return cls.get_path(path, f"_json{cls.JSON_EXTENSION}")
 
     @classmethod
     def load(cls, path: PathType) -> "tf.keras.models.Model":
-        try:
-            import tensorflow.keras as tfk
-        except ImportError:
-            raise ArtifactLoadingException(
-                "Failed to import tensorflow when loading saved KerasModel"
-            )
 
-        if os.path.isfile(cls.__custom_object__path(path)):
-            with open(cls.__custom_object__path(path), 'rb') as dco_file:
-                _default_custom_objects = cloudpickle.load(dco_file)
-            dco_file.close()
-        else:
-            _default_custom_objects = None
-        if os.path.isfile(cls.__model_json__path(path)):
-            with cls._sess.as_default():
-                # load keras model via json and weights since json file are in path
-                with open(cls.__model_json__path(path), 'r') as json_file:
-                    _model_json = json_file.read()
-                _model = tfk.models.model_from_json(
-                    _model_json, custom_objects=_default_custom_objects
+        default_custom_objects = None
+        if os.path.isfile(cls.__get_custom_object__path(path)):
+            with open(cls.__get_custom_object__path(path), 'rb') as dco_file:
+                default_custom_objects = cloudpickle.load(dco_file)
+
+        if os.path.isfile(cls.__get_model_json__path(path)):
+            # load keras model via json and weights since json file are in path
+            with cls.sess.as_default():
+                with open(cls.__get_model_json__path(path), 'r') as json_file:
+                    model_json = json_file.read()
+                obj = tfk.models.model_from_json(
+                    model_json, custom_objects=default_custom_objects
                 )
-                _model.load_weights(cls.__model_weight__path(path))
+                obj.load_weights(cls.__get_model_weight__path(path))
         else:
             # otherwise, load keras model via standard load_model
-            _model = tfk.models.load_model(
-                cls.__model_file__path(path), custom_objects=_default_custom_objects
+            obj = tfk.models.load_model(
+                cls.__get_model_saved__path(path), custom_objects=default_custom_objects
             )
-        if isinstance(_model, dict):
-            model = _model["model"]
+        if isinstance(obj, dict):
+            model = obj["model"]
         else:
-            model = _model
+            model = obj
 
+        # NOTES: This is unlikely to happen
         if not isinstance(model, tf.keras.models.Model):
             error_msg = rf"""\
                 Expects model argument of type `tf.keras.models.Model`,
@@ -146,19 +136,19 @@ class KerasModel(ModelArtifact):
         return model
 
     def save(self, path: PathType) -> None:
-        self._sess = tf.compat.v1.keras.backend.get_session()
-        self._graph = self._sess.graph
+        self.sess = tf.compat.v1.keras.backend.get_session()
+        self.graph = self.sess.graph
 
         # save custom_objects for model
         if self._custom_objects:
-            with open(self.__custom_object__path(path), 'wb') as custom_object_file:
+            with open(self.__get_custom_object__path(path), 'wb') as custom_object_file:
                 cloudpickle.dump(self._custom_objects, custom_object_file)
 
         if self._store_as_json:
             # save keras model using json and weights if requested
-            with open(self.__model_json__path(path), 'w') as json_file:
+            with open(self.__get_model_json__path(path), 'w') as json_file:
                 json_file.write(self._model.to_json())
-            self._model.save_weights(self.__model_weight__path(path))
+            self._model.save_weights(self.__get_model_weight__path(path))
         else:
             # otherwise, save standard keras model
-            self._model.save(self.__model_file__path(path))
+            self._model.save(self.__get_model_saved__path(path))

@@ -23,7 +23,7 @@ from ._internal.types import MetadataType, PathType
 
 try:
     import onnx
-    import onnxruntime  # pylint: disable=unused-import
+    import onnxruntime
 except ImportError:
     raise MissingDependencyException('"onnx" package is required by OnnxModel')
 
@@ -65,7 +65,7 @@ class OnnxModel(ModelArtifact):
     """  # noqa: E501
 
     SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
-    ONNX_FILE_EXTENSION: str = ".onnx"
+    ONNX_EXTENSION: str = ".onnx"
 
     def __init__(
         self,
@@ -82,37 +82,19 @@ class OnnxModel(ModelArtifact):
 
     @classmethod
     def __model_file__path(cls, path: PathType) -> PathType:
-        return cls.model_path(path, cls.ONNX_FILE_EXTENSION)
-
-    @classmethod
-    def __backend__path(cls, path: PathType) -> PathType:
-        return cls.model_path(path, f"_backend{cls.TXT_FILE_EXTENSION}")
+        return cls.get_path(path, cls.ONNX_EXTENSION)
 
     @classmethod
     def load(
         cls, path: t.Union[PathType, onnx.ModelProto]
     ) -> "onnxruntime.InferenceSession":
-        with open(cls.__backend__path(path), 'rb') as txt_file:
-            _backend = txt_file.read().decode(cls._FILE_ENCODING)
-
-        try:
-            import onnxruntime
-        except ImportError:
-            raise MissingDependencyException(
-                f'"{_backend}" is required for inference with '
-                f'"{_backend}" as backend"'
-            )
-
         if isinstance(path, onnx.ModelProto):
             return onnxruntime.InferenceSession(path.SerializeToString())
         else:
-            _model_path: str = cls.__model_file__path(path)
-            return onnxruntime.InferenceSession(_model_path)
+            _get_path: str = cls.__model_file__path(path)
+            return onnxruntime.InferenceSession(_get_path)
 
     def save(self, path: t.Union[PathType, "onnx.ModelProto"]) -> None:
-        with open(self.__backend__path(path), 'wb') as txt_file:
-            txt_file.write(self._backend.encode(self._FILE_ENCODING))
-
         if isinstance(self._model, onnx.ModelProto):
             onnx.save_model(self._model, self.__model_file__path(path))
         else:

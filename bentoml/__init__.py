@@ -29,6 +29,7 @@ del get_versions
 # # Configuring logging properly before loading other modules
 # configure_logging()
 
+from ._internal.artifacts import ModelArtifact as BaseModel
 from ._internal.artifacts import PickleArtifact
 from ._internal.bundle import containerize, load
 from ._internal.environment import env
@@ -42,6 +43,7 @@ __all__ = [
     "__version__",
     "YataiClient",
     "PickleArtifact",
+    "BaseModel",
     "list",
     "get",
     "delete",

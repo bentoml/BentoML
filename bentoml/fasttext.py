@@ -62,7 +62,7 @@ class FasttextModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "fasttext.FastText._FastText":
-        return fasttext.load_model(cls.model_path(path, ""))
+        return fasttext.load_model(cls.get_path(path))
 
     def save(self, path: PathType) -> None:
-        self._model.save_model(self.model_path(path, ""))
+        self._model.save_model(self.get_path(path))

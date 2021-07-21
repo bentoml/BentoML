@@ -23,7 +23,7 @@ class FooArtifact(ModelArtifact):
             self._metadata = _metadata
 
     def save(self, path):
-        return self.walk_path(path, ".est")
+        return self.get_path(path, ".est")
 
     @classmethod
     def load(cls, path):
@@ -61,7 +61,7 @@ def test_base_artifact(args, kwargs, metadata):
 def test_save_artifact(model, expected, tmpdir):
     foo = FooArtifact(model, metadata=_metadata)
     foo.save(tmpdir)
-    assert os.path.exists(foo.model_path(tmpdir, ".yml"))
+    assert os.path.exists(foo.get_path(tmpdir, ".yml"))
 
 
 @pytest.mark.parametrize(
@@ -74,26 +74,6 @@ def test_save_artifact(model, expected, tmpdir):
 def test_pkl_artifact(model, expected, tmpdir):
     pkl = PickleArtifact(model, metadata=_metadata)
     pkl.save(tmpdir)
-    assert os.path.exists(pkl.model_path(tmpdir, ".pkl"))
-    assert os.path.exists(pkl.model_path(tmpdir, ".yml"))
+    assert os.path.exists(pkl.get_path(tmpdir, ".pkl"))
+    assert os.path.exists(pkl.get_path(tmpdir, ".yml"))
     assert model == PickleArtifact.load(tmpdir)
-
-
-@pytest.mark.parametrize(
-    "path, exc", [("test", FileNotFoundError), ("/tmp/test", FileNotFoundError)]
-)
-def test_empty_walk_path(path, exc):
-    with pytest.raises(exc):
-        FooArtifact("1").save(path)
-
-
-def test_valid_walk_path(tmpdir):
-    os.mknod(os.path.join(tmpdir, "t.est"))
-    assert os.path.exists(FooArtifact('1').save(tmpdir))
-
-
-def test_dir_walk_path(tmpdir):
-    p = os.path.join(tmpdir, "test", "foo")
-    os.makedirs(p, exist_ok=True)
-    os.mknod(os.path.join(p, "t.est"))
-    assert os.path.exists(FooArtifact('1').save(p))

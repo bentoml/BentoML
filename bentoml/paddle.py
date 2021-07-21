@@ -76,7 +76,7 @@ class PaddlePaddleModelArtifact(ModelArtifact):
         super().__init__(name)
         self._model = None
         self._predictor = None
-        self._model_path = None
+        self._get_path = None
 
         if paddle is None:
             raise MissingDependencyException(
@@ -100,20 +100,20 @@ class PaddlePaddleModelArtifact(ModelArtifact):
 
     def _save(self, dst):
         # Override the model path if temp dir was set
-        self._model_path = self._file_path(dst)
-        paddle.jit.save(self._model, self._model_path)
+        self._get_path = self._file_path(dst)
+        paddle.jit.save(self._model, self._get_path)
 
     def get(self):
         # Create predictor, if one doesn't exist, when inference is run
         if not self._predictor:
             # If model isn't saved, save model to a temp dir
             # because predictor init requires the path to a saved model
-            if self._model_path is None:
-                self._model_path = tempfile.TemporaryDirectory().name
-                self._save(self._model_path)
+            if self._get_path is None:
+                self._get_path = tempfile.TemporaryDirectory().name
+                self._save(self._get_path)
 
             config = paddle_infer.Config(
-                self._model_path + ".pdmodel", self._model_path + ".pdiparams"
+                self._get_path + ".pdmodel", self._get_path + ".pdiparams"
             )
             config.enable_memory_optim()
             predictor = paddle_infer.create_predictor(config)

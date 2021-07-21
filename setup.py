@@ -103,6 +103,7 @@ types_requires = [
     "types-protobuf>=0.1.14",
     "mypy-protobuf",
     "grpc-stubs",
+    "pyspark-stubs",
 ]
 
 dev_all = install_requires + dev_requires + docs_requires + types_requires

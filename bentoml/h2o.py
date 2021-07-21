@@ -13,6 +13,8 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 # ==============================================================================
+
+import os
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
@@ -66,8 +68,8 @@ class H2oModel(ModelArtifact):
     def load(cls, path: PathType) -> "h2o.model.model_base.ModelBase":
         h2o.init()
         h2o.no_progress()
-        model_path: str = str(cls.walk_path(path, ""), "")
-        return h2o.load_model(model_path)
+        get_path: str = cls.get_path(os.path.join(path, cls._MODEL_NAMESPACE))
+        return h2o.load_model(get_path)
 
     def save(self, path: PathType) -> None:
-        h2o.save_model(model=self._model, path=self.model_path(path, ""), force=True)
+        h2o.save_model(model=self._model, path=self.get_path(path), force=True)

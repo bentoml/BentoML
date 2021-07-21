@@ -24,7 +24,7 @@ def test_fasttext_save_load(tmpdir):
         model = fasttext.train_supervised(input=inf)
 
     FasttextModel(model).save(tmpdir)
-    assert os.path.exists(FasttextModel.model_path(tmpdir, ""))
+    assert os.path.exists(FasttextModel.get_path(tmpdir, ""))
 
     fasttext_loaded: "fasttext.FastText._FastText" = FasttextModel.load(tmpdir)
     assert fasttext_loaded.predict(test_json['text'])[0] == ("__label__bar",)

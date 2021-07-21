@@ -58,10 +58,10 @@ class CoreMLModel(ModelArtifact):
     """
 
     if int(coremltools.__version__.split(".")[0]) == 4:
-        COREMLMODEL_FILE_EXTENSION = ".mlmodel"
+        COREMLMODEL_EXTENSION = ".mlmodel"
     else:
         # for coremltools>=5.0
-        COREMLMODEL_FILE_EXTENSION = ".mlpackage"
+        COREMLMODEL_EXTENSION = ".mlpackage"
     _model: "coremltools.models.MLModel"
 
     def __init__(
@@ -73,12 +73,12 @@ class CoreMLModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "coremltools.models.MLModel":
-        model_path: str = cls.model_path(path, cls.COREMLMODEL_FILE_EXTENSION)
-        if not os.path.exists(model_path):
+        get_path: str = cls.get_path(path, cls.COREMLMODEL_EXTENSION)
+        if not os.path.exists(get_path):
             raise InvalidArgument(
-                f"given {path} doesn't contain {cls.COREMLMODEL_FILE_EXTENSION}."
+                f"given {path} doesn't contain {cls.COREMLMODEL_EXTENSION}."
             )
-        return coremltools.models.MLModel(model_path)
+        return coremltools.models.MLModel(get_path)
 
     def save(self, path: PathType) -> None:
-        self._model.save(self.model_path(path, self.COREMLMODEL_FILE_EXTENSION))
+        self._model.save(self.get_path(path, self.COREMLMODEL_EXTENSION))

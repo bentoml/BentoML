@@ -31,10 +31,10 @@ def test_keras_save_load(kwargs, keras_model, tmpdir):
 
     KerasModel(keras_model, **kwargs).save(tmpdir)
     if kwargs['store_as_json']:
-        assert os.path.exists(KerasModel.model_path(tmpdir, '_json.json'))
-        assert os.path.exists(KerasModel.model_path(tmpdir, '_weights.hdf5'))
+        assert os.path.exists(KerasModel.get_path(tmpdir, '_json.json'))
+        assert os.path.exists(KerasModel.get_path(tmpdir, '_weights.hdf5'))
     else:
-        assert os.path.exists(KerasModel.model_path(tmpdir, '.h5'))
+        assert os.path.exists(KerasModel.get_path(tmpdir, '.h5'))
 
     keras_loaded: "tfk.models.Model" = KerasModel.load(tmpdir)
     assert keras_loaded.predict(np.array([test_data])) == keras_model.predict(

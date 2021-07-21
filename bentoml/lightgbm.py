@@ -61,7 +61,7 @@ class LightGBMModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "lightgbm.Booster":
-        return lightgbm.Booster(model_file=cls.model_path(path, cls.TXT_FILE_EXTENSION))
+        return lightgbm.Booster(model_file=cls.get_path(path, cls.TXT_EXTENSION))
 
     def save(self, path: PathType) -> None:
-        self._model.save_model(self.model_path(path, self.TXT_FILE_EXTENSION))
+        self._model.save_model(self.get_path(path, self.TXT_EXTENSION))

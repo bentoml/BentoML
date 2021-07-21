@@ -10,32 +10,15 @@ BA = t.TypeVar("BA", bound="ModelArtifact")
 MT = t.TypeVar("MT")
 
 
-_FILE_EXTENSION: t.Dict[str, str] = {
-    "PICKLE_FILE_EXTENSION": ".pkl",
-    "TXT_FILE_EXTENSION": ".txt",
-    "JSON_FILE_EXTENSION": ".json",
-    "YML_FILE_EXTENSION": ".yml",
-    "YAML_FILE_EXTENSION": ".yaml",
-    "PT_FILE_EXTENSION": ".pt",
-    "PTH_FILE_EXTENSION": ".pth",
-    "H5_FILE_EXTENSION": ".h5",
-    "HDF5_FILE_EXTENSION": ".hdf5",
-}
-
-
-class ArtifactMeta(type):
+class _ArtifactMeta(type):
     """
     Metaclass for all Artifacts. We want to add the
     following function to each class:
 
-    - model_path(cls, path: PathType, ext: str) -> PathType:
+    - get_path(cls, path: PathType, ext: str) -> PathType:
         returns path of saved model with its saved type extension.
         This can be used at class level.
         (e.g: model.pkl(pickle), model.pt(torch), model.h5(keras), and so on.)
-    - walk_path(cls, path: PathType, ext: str) -> pathlib.Path:
-        Iterate through given path and returns a :obj:`pathlib.Path` object.
-        Some frameworks (mlflow, h2o) incorporates the concept of projects within
-        their saving artifacts, thus we want a way to iterate through those directory.
 
     This will also add default file extension that most frameworks
     will use as class attributes.
@@ -44,41 +27,55 @@ class ArtifactMeta(type):
     _MODEL_NAMESPACE: str = "model"
     _FILE_ENCODING: str = 'utf-8'
 
+    _FILE_EXTENSION: t.Dict[str, str] = {
+        "H5_EXTENSION": ".h5",
+        "HDF5_EXTENSION": ".hdf5",
+        "JSON_EXTENSION": ".json",
+        "PICKLE_EXTENSION": ".pkl",
+        "PTH_EXTENSION": ".pth",
+        "PT_EXTENSION": ".pt",
+        "TXT_EXTENSION": ".txt",
+        "YAML_EXTENSION": ".yaml",
+        "YML_EXTENSION": ".yml",
+    }
+
     @classmethod
-    def __model_path(cls, path: PathType, ext: str) -> PathType:
+    def __get__path(cls, path: PathType, ext: t.Optional[str] = "") -> PathType:
+        """
+        Return a default saved path for implemented artifacts.
+
+        Args:
+            path (`Union[str, os.PathLike]`):
+                Given path containing saved artifact.
+            ext (`str`, `optional`, default to `""`):
+                Given extension. Some frameworks doesn't require
+                a specified file extension, hence the behaviour
+                of empty string.
+
+        Returns:
+            :obj:`str` which is the default saved path of given implemented artifacts.
+
+        ::
+
+            PyTorchModel.get_path(os.getcwd(),".pt") # will return os.getcwd()/model.pt
+        """
         return os.path.join(path, f"{cls._MODEL_NAMESPACE}{ext}")
 
-    @classmethod
-    def __walk_path(cls, path: PathType, ext: str) -> Path:
-        try:
-            for f in Path(path).iterdir():
-                if f.is_dir():
-                    return cls.__walk_path(str(f), ext)
-                elif f.suffix == ext:
-                    return f
-                else:
-                    continue
-        except FileNotFoundError:
-            raise
-
-    def __new__(cls, name, mixins, namespace):
-        _path_fn: t.Dict[
-            str, t.Callable[[str, PathType, str], t.Union[PathType, Path]]
-        ] = {
-            "model_path": cls.__model_path,
-            "walk_path": cls.__walk_path,
-        }
-        _FILE_EXTENSION.update(
+    def __new__(mcls, name, mixins, namespace):
+        kwargs: t.Dict[str, t.Callable] = dict()
+        kwargs.update(
             {
-                "_MODEL_NAMESPACE": cls._MODEL_NAMESPACE,
-                "_FILE_ENCODING": cls._FILE_ENCODING,
-            }
+                "_MODEL_NAMESPACE": mcls._MODEL_NAMESPACE,
+                "_FILE_ENCODING": mcls._FILE_ENCODING,
+                "get_path": mcls.__get__path,
+            },
+            **mcls._FILE_EXTENSION,
         )
-        namespace.update(**_path_fn, **_FILE_EXTENSION)
-        return type.__new__(cls, name, mixins, namespace)
+        namespace.update(**kwargs)
+        return super(_ArtifactMeta, mcls).__new__(mcls, name, mixins, namespace)
 
 
-class ModelArtifact(object, metaclass=ArtifactMeta):
+class ModelArtifact(object, metaclass=_ArtifactMeta):
     """
     :class:`~bentoml._internal.artifacts.ModelArtifact` is
     the base abstraction for describing the trained model
@@ -89,6 +86,25 @@ class ModelArtifact(object, metaclass=ArtifactMeta):
             Given model definition. Omit various type depending on given frameworks.
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
+    
+    We don't want to abstract a lot of framework specific library code when creating new
+    BentoML artifacts. This means we prefer duplication of codes for helper function
+    rather than bad design abstraction. When create helper function in specific frameworks,
+    make sure that those helpers function are reserved, and follow the below format:
+
+    .. note::   
+        The reason for doing this is to make the library code more consistent and easier maintainability.
+        
+    .. code-block:: python
+    
+        class KerasModel(ModelArtifact):
+            
+            # function should start with two underscore, followed
+            #   by its descriptive function, with two underscore following it
+            #   and the desired scope of that function to apply to
+            def __helper_func_for__path(path: str, ...):
+                # this is a helper function that is related to path
+                pass
 
     .. note:: 
         Make sure to add ``# noqa # pylint: disable=arguments-differ`` to :meth:`load` when implementing 
@@ -131,9 +147,6 @@ class ModelArtifact(object, metaclass=ArtifactMeta):
         development pipeline.
         """  # noqa: E501
 
-        inherited = object.__getattribute__(cls, "load")
-        return inherited(path)
-
     def save(self: BA, path: PathType) -> None:
         """
         Perform save instance to given path.
@@ -154,9 +167,10 @@ class ModelArtifact(object, metaclass=ArtifactMeta):
 
         .. admonition:: current implementation
 
-            Current implementation initialize base :meth:`~bentoml._internal.artifacts.ModelArtifact.save`
-            in :code:`__getattribute__` via wrapper. Since Python doesn't have support for method overloading,
-            This ensures that model metadata will always be saved to given directory.
+            Current implementation initialize base :meth:`save()` and :meth:`load()` in
+            :code:`__getattribute__()` via wrapper. Since Python doesn't have support
+            for method overloading, this ensures that model metadata will always be saved
+            to given directory.
         """  # noqa: E501
 
     def __getattribute__(self: BA, item: str):
@@ -168,13 +182,22 @@ class ModelArtifact(object, metaclass=ArtifactMeta):
                 if self.metadata:
                     yaml = YAML()
                     yaml.dump(
-                        self.metadata,
-                        Path(self.model_path(path, self.YML_FILE_EXTENSION)),
+                        self.metadata, Path(self.get_path(path, self.YML_EXTENSION)),
                     )
 
                 inherited = object.__getattribute__(self, item)
                 return inherited(*args, **kw)
 
             return wrapped_save
+        elif item == 'load':
 
-        return object.__getattribute__(self, item)
+            def wrapped_load(*args, **kw):
+                assert (
+                    'path' in args
+                ), 'load() implementation requires positional first args `path`'
+                inherited = object.__getattribute__(self, item)
+                return inherited(*args, **kw)
+
+            return wrapped_load
+        else:
+            return object.__getattribute__(self, item)

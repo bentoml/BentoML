@@ -13,15 +13,13 @@ export PATH="/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
 # Export path to PyRuntime so file
 export PATH="/workdir/onnx-mlir/build/Debug/lib/:${PATH}"
 
-PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
-export PYTHONPATH
-
+export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 python3 -m pip install pip --upgrade
-python3 -m pip install tensorflow==2.2.0
+python3 -m pip install tensorflow==2.2.0 pandas
 python3 -m pip install -U tf2onnx
 
 apt-get update
@@ -30,6 +28,5 @@ apt-get install curl -y
 # Install required packages for onnx-mlir model artifacts test
 # not here: pip install onnx onnxruntime skl2onnx
 pytest "$GIT_ROOT"/tests/integration/frameworks/test_onnxmlir_model_artifact.py --cov=bentoml --cov-config=.coveragerc
-
 
 test $error = 0 # Return non-zero if pytest failed

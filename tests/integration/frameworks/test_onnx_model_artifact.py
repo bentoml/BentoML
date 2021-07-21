@@ -48,7 +48,7 @@ def test_raise_exc(kwargs, exc, sklearn_onnx_model, tmpdir):
 
 def test_onnx_save_load_proto_onnxruntime(sklearn_onnx_model, tmpdir):
     OnnxModel(sklearn_onnx_model).save(tmpdir)
-    assert os.path.exists(OnnxModel.model_path(tmpdir, ".onnx"))
+    assert os.path.exists(OnnxModel.get_path(tmpdir, ".onnx"))
 
     model: "onnxruntime.InferenceSession" = onnxruntime.InferenceSession(
         sklearn_onnx_model.SerializeToString()
@@ -58,14 +58,14 @@ def test_onnx_save_load_proto_onnxruntime(sklearn_onnx_model, tmpdir):
 
 
 def test_onnx_save_load_filepath_onnxruntime(sklearn_onnx_model, tmpdir):
-    model_path: str = os.path.join(tmpdir, 'test.onnx')
-    with open(model_path, 'wb') as inf:
+    get_path: str = os.path.join(tmpdir, 'test.onnx')
+    with open(get_path, 'wb') as inf:
         inf.write(sklearn_onnx_model.SerializeToString())
     model: "onnxruntime.InferenceSession" = onnxruntime.InferenceSession(
         sklearn_onnx_model.SerializeToString()
     )
-    OnnxModel(model_path).save(tmpdir)
-    assert os.path.exists(OnnxModel.model_path(tmpdir, ".onnx"))
+    OnnxModel(get_path).save(tmpdir)
+    assert os.path.exists(OnnxModel.get_path(tmpdir, ".onnx"))
 
     onnx_loaded: "onnxruntime.InferenceSession" = OnnxModel.load(tmpdir)
     assert predict_df(onnx_loaded, test_df)[0] == predict_df(model, test_df)[0]

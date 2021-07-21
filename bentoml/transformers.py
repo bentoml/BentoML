@@ -104,7 +104,7 @@ class TransformersModelArtifact(ModelArtifact):
             raise NotFound(
                 "Type of transformers model not found. "
                 "This should be present in a file called "
-                "'_model_type.txt' in the artifacts of the bundle."
+                "'__model__type.txt' in the artifacts of the bundle."
             )
         if self._tokenizer_type is None:
             raise NotFound(
@@ -186,14 +186,14 @@ class TransformersModelArtifact(ModelArtifact):
 
     def load(self, path):
         path = self._file_path(path)
-        with open(os.path.join(path, "_model_type.txt"), "r") as f:
+        with open(os.path.join(path, "__model__type.txt"), "r") as f:
             self._model_type = f.read().strip()
         with open(os.path.join(path, "tokenizer_type.txt"), "r") as f:
             self._tokenizer_type = f.read().strip()
         return self.pack(path)
 
     def _save_model_type(self, path):
-        with open(os.path.join(path, "_model_type.txt"), "w") as f:
+        with open(os.path.join(path, "__model__type.txt"), "w") as f:
             f.write(self._model_type)
         with open(os.path.join(path, "tokenizer_type.txt"), "w") as f:
             f.write(self._tokenizer_type)

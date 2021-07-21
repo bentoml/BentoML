@@ -65,7 +65,7 @@ def test_detectron2_save_load(tmpdir, predict_image):
         tmpdir
     )
 
-    assert os.path.exists(DetectronModel.model_path(tmpdir, ".yaml"))
+    assert os.path.exists(DetectronModel.get_path(tmpdir, ".yaml"))
 
     detectron_loaded: torch.nn.Module = DetectronModel.load(
         tmpdir, device=cloned.MODEL.DEVICE

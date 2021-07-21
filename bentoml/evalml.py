@@ -14,7 +14,6 @@
 #     limitations under the License.
 # ==============================================================================
 
-import pathlib
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
@@ -64,8 +63,8 @@ class EvalMLModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "evalml.pipelines.PipelineBase":
-        model_file_path: str = cls.model_path(path, cls.PICKLE_FILE_EXTENSION)
+        model_file_path: str = cls.get_path(path, cls.PICKLE_EXTENSION)
         return evalml.pipelines.PipelineBase.load(model_file_path)
 
     def save(self, path: PathType) -> None:
-        self._model.save(self.model_path(path, self.PICKLE_FILE_EXTENSION))
+        self._model.save(self.get_path(path, self.PICKLE_EXTENSION))

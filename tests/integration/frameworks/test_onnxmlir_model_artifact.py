@@ -1,15 +1,95 @@
-# ==============================================================================
-#     Copyright (c) 2021 Atalaya Tech. Inc
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
-# ==============================================================================
+import os
+import subprocess
+import sys
+
+import numpy as np
+import pandas as pd
+import pytest
+import tensorflow as tf
+
+from bentoml.onnxmlir import OnnxMlirModel
+
+try:
+    # this has to be able to find the arch and OS specific PyRuntime .so file
+    from PyRuntime import ExecutionSession
+except ImportError:
+    raise Exception("PyRuntime package library must be in python path")
+
+sys.path.append('/workdir/onnx-mlir/build/Debug/lib/')
+
+test_data = np.array([1, 2, 3, 4, 5], dtype=np.float64)
+test_df = pd.DataFrame(test_data, columns=['A', 'B', 'C', 'D', 'E'])
+test_tensor = np.asfarray(test_data)
+
+
+def predict_df(inference_sess: ExecutionSession, df: pd.DataFrame):
+    input_data = df.to_numpy().astype(np.float64)
+    return inference_sess.run(input_data)
+
+
+class TFModel(tf.Module):
+    def __int__(self):
+        super().__init__()
+        self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
+        self.dense = lambda x: tf.matmul(x, self.weights)
+
+    @tf.function(
+        input_signature=[tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name='inputs')]
+    )
+    def __call__(self, inputs):
+        return self.dense(inputs)
+
+
+@pytest.fixture()
+def tensorflow_model(tmpdir):
+    model = TFModel()
+    tf.saved_model.save(model, tmpdir)
+
+
+@pytest.fixture()
+def convert_to_onnx(tensorflow_model, tmpdir):
+    model_path = os.path.join(tmpdir, 'model.onnx')
+    command = [
+        'python',
+        '-m',
+        'tf2onnx.convert',
+        '--saved-model',
+        '.',
+        '--output',
+        model_path,
+    ]
+    docker_proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=tmpdir, text=True
+    )
+    stdout, stderr = docker_proc.communicate()
+    assert 'ONNX model is saved' in stderr, 'Failed to convert TF model'
+
+
+@pytest.fixture()
+def compile_model(convert_to_onnx, tmpdir):
+    sys.path.append('/workdir/onnx-mlir/build/Debug/lib/')
+    model_location = os.path.join(tmpdir, 'model.onnx')
+    command = ['./onnx-mlir', '--EmitLib', model_location]
+    onnx_mlir_loc = '/workdir/onnx-mlir/build/Debug/bin'
+
+    docker_proc = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=onnx_mlir_loc,
+    )
+    stdout, stderr = docker_proc.communicate()
+    # returns something like: 'Shared library model.so has been compiled.'
+    assert 'has been compiled' in stdout, 'Failed to compile model'
+
+
+def test_onnxmlir_save_load(compile_model, tmpdir):
+    model = os.path.join(tmpdir, 'model.so')
+    OnnxMlirModel(model).save(tmpdir)
+    assert os.path.exists(OnnxMlirModel.get_path(tmpdir, '.so'))
+
+    onnxmlir_loaded = OnnxMlirModel.load(tmpdir)
+    assert predict_df(ExecutionSession(model, 'run_main_graph'), test_df) == predict_df(
+        onnxmlir_loaded, test_df
+    )

@@ -8,19 +8,16 @@ from .base import ModelArtifact
 
 class PickleArtifact(ModelArtifact):
     """
-    Abstraction for saving/loading python objects with pickle serialization.
+    Abstraction for saving/loading python objects with pickle serialization
+    using ``cloudpickle``
 
     Args:
-    model (`Any` that is serializable):
+    model (`Any`, or serializable object):
         Data that can be serialized with :obj:`cloudpickle`
     metadata (`Dict[str, Union[Any,...]]`, `optional`, default to `None`):
         dictionary of model metadata
     name (`str`, `optional`, default to `picklemodel`):
         Name of PickleArtifact instance
-
-    .. note::
-        We should also provide optional support for using ``pickle``.
-        Current caveats when using pickle is that it doesn't work :smile:
 
     Example usage under :code:`train.py`::
 
@@ -42,11 +39,10 @@ class PickleArtifact(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
-        file: str = cls.model_path(path, cls.PICKLE_FILE_EXTENSION)
-        with open(file, "rb") as inf:
+        with open(cls.get_path(path, cls.PICKLE_EXTENSION), 'rb') as inf:
             model = cloudpickle.load(inf)
         return model
 
     def save(self, path: PathType) -> None:
-        with open(self.model_path(path, self.PICKLE_FILE_EXTENSION), "wb") as inf:
+        with open(self.get_path(path, self.PICKLE_EXTENSION), 'wb') as inf:
             cloudpickle.dump(self._model, inf)

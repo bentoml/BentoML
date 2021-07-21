@@ -205,9 +205,9 @@ class PytorchLightningModelArtifact(ModelArtifact):
     >>> # Pack saved Pytorch Lightning model
     >>> # import torch
     >>> # script = model.to_torchscript()
-    >>> # saved_model_path = 'path/to/model.pt'
-    >>> # torch.jit.save(script, saved_model_path)
-    >>> # svc.pack('model', saved_model_path)
+    >>> # saved_get_path = 'path/to/model.pt'
+    >>> # torch.jit.save(script, saved_get_path)
+    >>> # svc.pack('model', saved_get_path)
     >>>
     >>> svc.save()
     """
@@ -215,7 +215,7 @@ class PytorchLightningModelArtifact(ModelArtifact):
     def __init__(self, name):
         super().__init__(name)
         self._model = None
-        self._model_path = None
+        self._get_path = None
 
     def _saved_model_file_path(self, base_path):
         return os.path.join(base_path, self.name + ".pt")
@@ -226,7 +226,7 @@ class PytorchLightningModelArtifact(ModelArtifact):
                 "PytorchLightningArtifact is packing a saved torchscript module "
                 "from path"
             )
-            self._model_path = path_or_model
+            self._get_path = path_or_model
         else:
             try:
                 from pytorch_lightning.core.lightning import LightningModule
@@ -253,7 +253,7 @@ class PytorchLightningModelArtifact(ModelArtifact):
 
     def get(self):
         if self._model is None:
-            self._model = self._get_torch_script_model(self._model_path)
+            self._model = self._get_torch_script_model(self._get_path)
         return self._model
 
     def save(self, dst):
@@ -265,11 +265,11 @@ class PytorchLightningModelArtifact(ModelArtifact):
                     '"torch" package is required for saving Pytorch lightning model'
                 )
             torch.jit.save(self._model, self._saved_model_file_path(dst))
-        if self._model_path:
-            shutil.copyfile(self._model_path, self._saved_model_file_path(dst))
+        if self._get_path:
+            shutil.copyfile(self._get_path, self._saved_model_file_path(dst))
 
     @staticmethod
-    def _get_torch_script_model(model_path):
+    def _get_torch_script_model(get_path):
         try:
             from torch import jit
         except ImportError:
@@ -277,4 +277,4 @@ class PytorchLightningModelArtifact(ModelArtifact):
                 '"torch" package is required for inference with '
                 "PytorchLightningModelArtifact"
             )
-        return jit.load(model_path)
+        return jit.load(get_path)

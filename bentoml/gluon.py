@@ -61,9 +61,9 @@ class GluonModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "mxnet.gluon.Block":
-        json_path: str = cls.model_path(path, "-symbol.json")
-        params_path: str = cls.model_path(path, "-0000.params")
+        json_path: str = cls.get_path(path, "-symbol.json")
+        params_path: str = cls.get_path(path, "-0000.params")
         return gluon.nn.SymbolBlock.imports(json_path, ["data"], params_path)
 
     def save(self, path: PathType) -> None:
-        self._model.export(self.model_path(path, ""))
+        self._model.export(self.get_path(path))

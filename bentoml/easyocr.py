@@ -92,12 +92,12 @@ class EasyOCRModel(ModelArtifact):
         }
 
     @classmethod
-    def _json_file_path(cls, path: PathType) -> str:
-        return cls.model_path(path, cls.JSON_FILE_EXTENSION)
+    def __json_file__path(cls, path: PathType) -> str:
+        return cls.get_path(path, cls.JSON_EXTENSION)
 
     @classmethod
     def load(cls, path: PathType) -> "easyocr.Reader":
-        with open(cls._json_file_path(path), "r") as f:
+        with open(cls.__json_file__path(path), "r") as f:
             model_params = json.load(f)
 
         return easyocr.Reader(
@@ -109,7 +109,7 @@ class EasyOCRModel(ModelArtifact):
 
         src_folder: str = self._model.model_storage_directory
 
-        detect_filename = f"{self._detect_model}{self.PTH_FILE_EXTENSION}"
+        detect_filename: str = f"{self._detect_model}{self.PTH_EXTENSION}"
 
         if not os.path.exists(os.path.join(path, detect_filename)):
             shutil.copyfile(
@@ -117,8 +117,8 @@ class EasyOCRModel(ModelArtifact):
                 os.path.join(path, detect_filename),
             )
 
-        fname: str = f"{self._recog_network}{self.PTH_FILE_EXTENSION}"
+        fname: str = f"{self._recog_network}{self.PTH_EXTENSION}"
         shutil.copyfile(os.path.join(src_folder, fname), os.path.join(path, fname))
 
-        with open(self._json_file_path(path), "w") as f:
+        with open(self.__json_file__path(path), "w") as f:
             json.dump(self._model_metadata, f)

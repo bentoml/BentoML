@@ -33,7 +33,7 @@ def test_easyocr_save_load(tmpdir):
     EasyOCRModel(model, recog_network=recog_network, language_list=language_list,).save(
         tmpdir
     )
-    assert os.path.exists(EasyOCRModel._json_file_path(tmpdir))
+    assert os.path.exists(EasyOCRModel.__json_file__path(tmpdir))
 
     easyocr_loaded: easyocr.Reader = EasyOCRModel.load(tmpdir)
 

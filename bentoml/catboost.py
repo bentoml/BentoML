@@ -65,7 +65,7 @@ class CatBoostModel(ModelArtifact):
         TODO:
     """
 
-    CATBOOST_FILE_EXTENSION = ".cbm"
+    CATBOOST_EXTENSION = ".cbm"
     _model: CatBoost
 
     def __init__(
@@ -79,13 +79,13 @@ class CatBoostModel(ModelArtifact):
         if model:
             _model = model
         else:
-            _model = self._model_type(model_type=model_type)
+            _model = self.__model__type(model_type=model_type)
         super(CatBoostModel, self).__init__(_model, metadata=metadata)
         self._model_export_parameters = model_export_parameters
         self._model_pool: "Pool" = model_pool
 
     @classmethod
-    def _model_type(cls, model_type: t.Optional[str] = "classifier"):
+    def __model__type(cls, model_type: t.Optional[str] = "classifier"):
         try:
             from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor
         except ImportError:
@@ -101,8 +101,8 @@ class CatBoostModel(ModelArtifact):
 
     def save(self, path: PathType) -> None:
         self._model.save_model(
-            self.model_path(path, self.CATBOOST_FILE_EXTENSION),
-            format=self.CATBOOST_FILE_EXTENSION.split('.')[1],
+            self.get_path(path, self.CATBOOST_EXTENSION),
+            format=self.CATBOOST_EXTENSION.split('.')[1],
             export_parameters=self._model_export_parameters,
             pool=self._model_pool,
         )
@@ -111,11 +111,11 @@ class CatBoostModel(ModelArtifact):
     def load(
         cls, path: PathType, model_type: t.Optional[str] = "classifier"
     ) -> CatBoost:  # pylint: disable=arguments-differ
-        model = cls._model_type(model_type=model_type)
-        model_path: str = cls.model_path(path, cls.CATBOOST_FILE_EXTENSION)
-        if not os.path.exists(model_path):
+        model = cls.__model__type(model_type=model_type)
+        get_path: str = cls.get_path(path, cls.CATBOOST_EXTENSION)
+        if not os.path.exists(get_path):
             raise InvalidArgument(
-                f"given {path} doesn't contain {cls.CATBOOST_FILE_EXTENSION} object."
+                f"given {path} doesn't contain {cls.CATBOOST_EXTENSION} object."
             )
-        model.load_model(model_path)
+        model.load_model(get_path)
         return model

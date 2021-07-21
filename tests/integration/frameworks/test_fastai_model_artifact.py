@@ -62,7 +62,7 @@ def predict_df(model: "Learner", df: "pd.DataFrame"):
 
 def test_fastai_save_pack(tmpdir, predict_df):
     pack_models(tmpdir)
-    assert os.path.exists(FastaiModel.model_path(tmpdir, ".pkl"))
+    assert os.path.exists(FastaiModel.get_path(tmpdir, ".pkl"))
 
     loaded_fastai: "Learner" = FastaiModel.load(tmpdir)
     assert predict_df(loaded_fastai, test_df) == 5.0

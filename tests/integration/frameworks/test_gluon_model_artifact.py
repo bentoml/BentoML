@@ -16,7 +16,7 @@ def train_gluon_classifier() -> "mxnet.gluon.nn.HybridSequential":
 
 def test_gluon_save_pack(tmpdir, train_gluon_classifier):
     GluonModel(train_gluon_classifier).save(tmpdir)
-    assert os.path.exists(GluonModel.model_path(tmpdir, "-symbol.json"))
+    assert os.path.exists(GluonModel.get_path(tmpdir, "-symbol.json"))
 
     gluon_loaded: "mxnet.gluon.Block" = GluonModel.load(tmpdir)
     assert gluon_loaded(mxnet.nd.array([0])).asnumpy() == [0]

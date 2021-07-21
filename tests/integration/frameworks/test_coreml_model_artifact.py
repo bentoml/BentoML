@@ -32,7 +32,7 @@ def test_coreml_save_load(tmpdir):
     model = pytorch_to_coreml(pytorch_model)
     CoreMLModel(model).save(tmpdir)
     assert os.path.exists(
-        CoreMLModel.model_path(tmpdir, CoreMLModel.COREMLMODEL_FILE_EXTENSION)
+        CoreMLModel.get_path(tmpdir, CoreMLModel.COREMLMODEL_EXTENSION)
     )
 
     coreml_loaded = CoreMLModel.load(tmpdir)

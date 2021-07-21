@@ -14,11 +14,12 @@
 #     limitations under the License.
 # ==============================================================================
 
-import importlib
+import os
 import typing as t
+from types import ModuleType
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import ArtifactLoadingException, MissingDependencyException
+from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
 try:
@@ -36,7 +37,7 @@ class MLflowModel(ModelArtifact):
     Args:
         model (`mlflow.models.Model`):
             All mlflow models are of type :obj:`mlflow.models.Model`
-        loader_module (`str`):
+        loader_module (`types.ModuleType`):
             flavors supported by :obj:`mlflow`
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
@@ -61,43 +62,23 @@ class MLflowModel(ModelArtifact):
     """  # noqa: E501
 
     def __init__(
-        self, model: MT, loader_module: str, metadata: t.Optional[MetadataType] = None
+        self,
+        model: MT,
+        loader_module: ModuleType,
+        metadata: t.Optional[MetadataType] = None,
     ):
         super(MLflowModel, self).__init__(model, metadata=metadata)
-        __module = (
-            loader_module if 'mlflow.' in loader_module else f'mlflow.{loader_module}'
-        )
-        self.__module__loader(__module)
+        self.__load__module(loader_module)
 
     @classmethod
-    def __module_name__path(cls, path: PathType) -> PathType:
-        return cls.model_path(path, f"_module_name{cls.TXT_FILE_EXTENSION}")
-
-    @classmethod
-    def __module__loader(cls, module: str):
-        try:
-            __loader_module = importlib.import_module(module)
-        except ImportError:
-            raise ArtifactLoadingException(
-                f"Failed to import mlflow.{module}. Make sure that the given flavor is supported by MLflow"
-            )
-        setattr(cls, '_loader_module', __loader_module)
+    def __load__module(cls, module: ModuleType):
+        setattr(cls, '_loader_module', module)
         return cls._loader_module
 
-    # fmt: off
     @classmethod
-    def load(cls, path: PathType) -> MT:  # noqa # pylint: disable=arguments-differ
-        with open(cls.__module_name__path(path), 'rb') as txt_file:
-            module = txt_file.read().decode(cls._FILE_ENCODING)
-            cls.__module__loader(module)
-
-        # walk_path will actually returns the first occurrence of given path. With MLflow we
-        # only care about the directory of given model structure, thus getting the parents.
-        model_path: str = str(cls.walk_path(path, "").parents[0])
-        return cls._loader_module.load_model(model_path)
-    # fmt: on
+    def load(cls, path: PathType) -> MT:
+        project_path: str = os.path.join(path, cls._MODEL_NAMESPACE)
+        return mlflow.pyfunc.load_model(str(project_path))
 
     def save(self, path: PathType) -> None:
-        with open(self.__module_name__path(path), 'wb') as txt_file:
-            txt_file.write(self._loader_module.__name__.encode(self._FILE_ENCODING))
-        self._loader_module.save_model(self._model, self.model_path(path, ""))
+        self._loader_module.save_model(self._model, self.get_path(path, ""))

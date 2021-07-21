@@ -1,6 +1,7 @@
 import os
 from collections import namedtuple
 
+import mlflow
 import numpy as np
 import pytest
 import sklearn.neighbors as skn
@@ -23,8 +24,10 @@ def sklearn_model():
 
 def test_mlflow_save_load(tmpdir, sklearn_model):
     knn_model = sklearn_model.model
-    MLflowModel(knn_model, 'sklearn').save(tmpdir)
-    assert os.path.exists(MLflowModel.walk_path(tmpdir, ".pkl"))
+    MLflowModel(knn_model, mlflow.sklearn).save(tmpdir)
+    assert os.path.exists(
+        MLflowModel.get_path(os.path.join(tmpdir, MLflowModel._MODEL_NAMESPACE), ".pkl")
+    )
 
     mlflow_loaded: "skn.KNeighborsClassifier" = MLflowModel.load(tmpdir)
     np.testing.assert_array_equal(

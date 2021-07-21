@@ -66,9 +66,7 @@ class FastaiModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "fastai.learner.Learner":
-        return fastai.basics.load_learner(
-            cls.model_path(path, cls.PICKLE_FILE_EXTENSION)
-        )
+        return fastai.basics.load_learner(cls.get_path(path, cls.PICKLE_EXTENSION))
 
     def save(self, path: PathType) -> None:
-        self._model.export(fname=self.model_path(path, self.PICKLE_FILE_EXTENSION))
+        self._model.export(fname=self.get_path(path, self.PICKLE_EXTENSION))

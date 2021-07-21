@@ -149,7 +149,7 @@ Example Projects:
 ONNX-MLIR
 =========
 
-.. autoclass:: bentoml.frameworks.onnxmlir.OnnxMlirModelArtifact
+.. autoclass:: bentoml.frameworks.onnxmlir.OnnxMlirModel
 
 
 =====

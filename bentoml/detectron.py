@@ -98,8 +98,8 @@ class DetectronModel(ModelArtifact):
         """  # noqa: E501
 
         cfg: "detectron2.config.CfgNode" = get_cfg()
-        weight_path = cls.model_path(path, cls.PTH_FILE_EXTENSION)
-        yaml_path = cls.model_path(path, cls.YAML_FILE_EXTENSION)
+        weight_path = cls.get_path(path, cls.PTH_EXTENSION)
+        yaml_path = cls.get_path(path, cls.YAML_EXTENSION)
 
         cfg.merge_from_file(yaml_path)
         model: torch.nn.Module = build_model(cfg)
@@ -121,6 +121,6 @@ class DetectronModel(ModelArtifact):
             cfg.merge_from_file(self._input_model_yaml)
 
         with open(
-            self.model_path(path, self.YAML_FILE_EXTENSION), 'w', encoding='utf-8'
+            self.get_path(path, self.YAML_EXTENSION), 'w', encoding='utf-8'
         ) as ouf:
             ouf.write(cfg.dump())

@@ -223,7 +223,7 @@ class BentoAPIServer:
             )
         return Response(
             response=DEFAULT_INDEX_HTML.format(
-                url='docs.json', readme=self.bento_service.__doc__
+                url='/docs.json', readme=self.bento_service.__doc__
             ),
             status=200,
             mimetype="text/html",
@@ -238,7 +238,7 @@ class BentoAPIServer:
                 response="Swagger is disabled", status=404, mimetype="text/html"
             )
         return Response(
-            response=SWAGGER_HTML.format(url='docs.json'),
+            response=SWAGGER_HTML.format(url='/docs.json'),
             status=200,
             mimetype="text/html",
         )

@@ -15,7 +15,7 @@ import logo from "../assets/bentoml-logo.png";
 const NavigationBar = (props) => {
   const [highlight, setHighlight] = React.useState("");
   const location = useLocation();
-  const {baseURL} = props;
+  const { baseURL } = props;
 
   React.useEffect(() => {
     const currentLocation = location.pathname.split("/")[1];
@@ -27,7 +27,7 @@ const NavigationBar = (props) => {
       <NavbarGroup align={Alignment.LEFT}>
         <NavbarHeading>
           <Link to="/">
-            <img src={baseURL + `/${logo}`} width={150}  alt={""}/>{" "}
+            <img src={baseURL + `/${logo}`} width={150} alt={""} />{" "}
           </Link>
         </NavbarHeading>
         <NavbarDivider />

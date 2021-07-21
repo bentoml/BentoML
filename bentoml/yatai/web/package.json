@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "start": "bash -c 'concurrently \"bentoml yatai-service-start --no-ui\" \"node dist/bundle.js\"'",
-    "dev": "bash -c 'concurrently \"bentoml yatai-service-start --no-ui\"  \"nodemon -- ${0} ${1} ${2} ${3}\" \"npm run watch:client\"'",
+    "dev": "bash -c 'concurrently \"bentoml yatai-service-start --no-ui\"  \"nodemon -- ${0} ${1} ${2} ${3} ${4}\" \"npm run watch:client\"'",
     "watch": "npm:watch:*",
     "watch:server": "nodemon",
     "watch:client": "cd client && yarn start",
@@ -23,6 +23,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^0.7.5",
     "@types/lodash": "^4.14.149",
+    "axios": "^0.21.1",
     "express": "^4.17.1",
     "lodash": "^4.17.21",
     "morgan": "^1.10.0",

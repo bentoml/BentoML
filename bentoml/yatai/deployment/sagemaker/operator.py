@@ -134,7 +134,9 @@ def create_and_push_docker_image_to_ecr(
     )
 
     logger.debug("Building docker image: %s", ecr_tag)
-    build_docker_image(snapshot_path, 'Dockerfile-sagemaker', ecr_tag)
+    build_docker_image(
+        context_path=snapshot_path, dockerfile='Dockerfile-sagemaker', image_tag=ecr_tag
+    )
 
     logger.debug("Pushing image to AWS ECR at %s", ecr_tag)
     push_docker_image_to_repository(

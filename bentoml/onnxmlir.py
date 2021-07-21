@@ -130,11 +130,6 @@ class OnnxMlirModelArtifact(ModelArtifact):
             )
         return ExecutionSession(self._model_so_path, "run_main_graph")
 
-    def get(self):
-        if not self._inference_session:
-            self._inference_session = self._get_onnxmlir_inference_session()
-        return self._inference_session
-
     def save(self, dst):
         # copies the model .so and places in the version controlled deployment path
         shutil.copyfile(self._model_so_path, self._saved_model_file_path(dst))

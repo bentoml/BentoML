@@ -29,7 +29,7 @@ apt-get install curl -y
 
 # Install required packages for onnx-mlir model artifacts test
 # not here: pip install onnx onnxruntime skl2onnx
-pytest "$GIT_ROOT"/tests/integration/test_onnxmlir_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_onnxmlir_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 
 test $error = 0 # Return non-zero if pytest failed

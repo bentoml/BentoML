@@ -69,7 +69,6 @@ class Service:
         """
         callback function for defining the initialization process of a Service instance
         """
-        pass
 
     @property
     def name(self):

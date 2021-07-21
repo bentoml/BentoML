@@ -16,11 +16,11 @@ import os
 import click
 from tabulate import tabulate
 
-from bentoml.cli.click_utils import _echo, _is_valid_bento_name, _is_valid_bento_tag
-from bentoml.cli.utils import _format_labels_for_print, human_friendly_age_from_datetime
-from bentoml.utils import pb_to_yaml
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.yatai.client import get_yatai_client
+from ..utils import pb_to_yaml
+from ..utils.lazy_loader import LazyLoader
+from ..yatai_client import get_yatai_client
+from .click_utils import _echo, _is_valid_bento_name, _is_valid_bento_tag
+from .utils import _format_labels_for_print, human_friendly_age_from_datetime
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 

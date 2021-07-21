@@ -5,11 +5,8 @@ from timeit import default_timer
 import grpc
 
 from bentoml._internal.utils.usage_stats import track
-from yatai.yatai.utils import (
-    get_method_type,
-    parse_method_name,
-    wrap_interator_inc_counter,
-)
+
+from ..utils import get_method_type, parse_method_name, wrap_interator_inc_counter
 
 YATAI_GRPC_USAGE_EVENT_NAME = "yatai-grpc-call"
 

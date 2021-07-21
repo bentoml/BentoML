@@ -18,11 +18,7 @@ import os
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import (
-    BentoMLException,
-    InvalidArgument,
-    MissingDependencyException,
-)
+from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
 try:
@@ -43,7 +39,7 @@ class PysparkModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`pyspark` is required by PysparkModel 
+            :obj:`pyspark` is required by PysparkModel
 
     Example usage under :code:`train.py`::
 
@@ -60,9 +56,10 @@ class PysparkModel(ModelArtifact):
 
     def __init__(self, model, metadata: t.Optional[MetadataType] = None):
         super(PysparkModel, self).__init__(model, metadata=metadata)
+        print(pyspark.F)
 
     def save(self, path: PathType) -> None:
-        pass
+        print(os.path.join(path))
 
     @classmethod
     def load(cls, path: PathType):

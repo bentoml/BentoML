@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING
 from gunicorn.app.base import Application
 from simple_di import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer
+from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:  # make type checkers happy
-    from bentoml.server.model_app import ModelApp
+    from .model_app import ModelApp
 
 
 class GunicornModelServer(Application):  # pylint: disable=abstract-method

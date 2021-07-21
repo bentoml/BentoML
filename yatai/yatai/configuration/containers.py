@@ -2,14 +2,15 @@ import logging
 import os
 
 from deepmerge import always_merger
-from schema import And, Or, Schema, SchemaError, Use
+from schema import And, Or, Schema, SchemaError
 from simple_di import container, providers
 
+from bentoml._internal.utils.ruamel_yaml import YAML
+
 # TODO separate out yatai version. Should we go with the BentoML version or start new?
-from yatai import __version__
-from yatai.configuration import expand_env_var
-from yatai.exceptions import YataiConfigurationException
-from yatai.utils.ruamel_yaml import YAML
+# from .. import __version__
+from ..exceptions import YataiConfigurationException
+from . import expand_env_var
 
 LOGGER = logging.getLogger(__name__)
 

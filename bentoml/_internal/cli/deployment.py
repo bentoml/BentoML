@@ -16,17 +16,18 @@ import logging
 
 import click
 
-from bentoml.cli.click_utils import (
+from ..exceptions import CLIException
+from ..utils import get_default_yatai_client, status_pb_to_error_code_and_message
+from ..utils.lazy_loader import LazyLoader
+from .click_utils import (
     CLI_COLOR_SUCCESS,
     BentoMLCommandGroup,
     _echo,
     parse_yaml_file_callback,
 )
-from bentoml.cli.utils import Spinner, _print_deployment_info, _print_deployments_info
-from bentoml.exceptions import CLIException
-from bentoml.utils import get_default_yatai_client, status_pb_to_error_code_and_message
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
+from .utils import Spinner, _print_deployment_info, _print_deployments_info
+
+# from ..yatai.deployment import ALL_NAMESPACE_TAG
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
@@ -172,14 +173,14 @@ def get_deployment_sub_command():
         _print_deployment_info(get_result.deployment, output)
 
     @deployment.command(name="list", help="List deployments")
-    @click.option(
-        "-n",
-        "--namespace",
-        type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which '
-        "can be changed in BentoML configuration file",
-        default=ALL_NAMESPACE_TAG,
-    )
+    # @click.option(
+    #     "-n",
+    #     "--namespace",
+    #     type=click.STRING,
+    #     help='Deployment namespace managed by BentoML, default value is "dev" which '
+    #     "can be changed in BentoML configuration file",
+    #     default=ALL_NAMESPACE_TAG,
+    # )
     @click.option(
         "-p", "--platform", type=click.Choice(["sagemaker", "lambda"]), help="platform",
     )

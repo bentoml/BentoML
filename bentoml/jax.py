@@ -35,8 +35,6 @@ class FlaxModel(ModelArtifact):
             TODO:
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `flaxmodel`):
-            FlaxModel instance name
 
     Raises:
         MissingDependencyException:
@@ -56,12 +54,9 @@ class FlaxModel(ModelArtifact):
     """  # noqa: E501
 
     def __init__(
-        self,
-        model,
-        metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = 'flaxmodel',
+        self, model, metadata: t.Optional[MetadataType] = None,
     ):
-        super(FlaxModel, self).__init__(model, metadata=metadata, name=name)
+        super(FlaxModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType):
@@ -69,16 +64,14 @@ class FlaxModel(ModelArtifact):
             import flax
         except ImportError:
             raise MissingDependencyException("flax is required by FlaxModel")
-
-        pass
+        print(flax.__version__)
 
     def save(self, path: PathType) -> None:
         try:
             import flax
         except ImportError:
             raise MissingDependencyException("flax is required by FlaxModel")
-
-        pass
+        print(flax.__version__)
 
 
 class TraxModel(ModelArtifact):
@@ -90,8 +83,6 @@ class TraxModel(ModelArtifact):
             TODO:
         metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
             Class metadata
-        name (`str`, `optional`, default to `traxmodel`):
-            TraxModel instance name
 
     Raises:
         MissingDependencyException:
@@ -111,12 +102,9 @@ class TraxModel(ModelArtifact):
     """  # noqa: E501
 
     def __init__(
-        self,
-        model,
-        metadata: t.Optional[MetadataType] = None,
-        name: t.Optional[str] = 'jaxmodel',
+        self, model, metadata: t.Optional[MetadataType] = None,
     ):
-        super(TraxModel, self).__init__(model, metadata=metadata, name=name)
+        super(TraxModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType):
@@ -124,11 +112,11 @@ class TraxModel(ModelArtifact):
             import trax
         except ImportError:
             raise MissingDependencyException("trax is required by FlaxModel")
-        pass
+        print(trax.models.GRULM)
 
     def save(self, path: PathType) -> None:
         try:
             import trax
         except ImportError:
             raise MissingDependencyException("trax is required by FlaxModel")
-        pass
+        print(trax.models.GRULM)

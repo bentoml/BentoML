@@ -19,8 +19,6 @@ import os
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 
-DEFAULT_PICKLE_EXTENSION = ".pkl"
-
 
 def _import_joblib_module():
     try:
@@ -85,9 +83,9 @@ class SklearnModelArtifact(ModelArtifact):
         self._model = None
 
     def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + DEFAULT_PICKLE_EXTENSION)
+        return os.path.join(base_path, self.name + self.PICKLE_EXTENSION)
 
-    def pack(self, sklearn_model, metadata=None):  # pylint:disable=arguments-renamed
+    def pack(self, sklearn_model):  # pylint:disable=arguments-renamed
         self._model = sklearn_model
         return self
 
@@ -101,6 +99,6 @@ class SklearnModelArtifact(ModelArtifact):
     def get(self):
         return self._model
 
-    def save(self, dst):
+    def save(self, path):
         joblib = _import_joblib_module()
-        joblib.dump(self._model, self._model_file_path(dst))
+        joblib.dump(self._model, self._model_file_path(path))

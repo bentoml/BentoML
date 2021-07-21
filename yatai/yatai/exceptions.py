@@ -37,6 +37,10 @@ class YataiException(Exception):
         return _proto_status_code_to_http_status_code(self.proto_status_code, 500)
 
 
+class InvalidArgument(Exception):
+    """Raise when invalid argument"""
+
+
 class YataiConfigurationException(YataiException):
     """
     Raises when yatai configuration failed.
@@ -44,6 +48,12 @@ class YataiConfigurationException(YataiException):
 
 
 class YataiRepositoryException(YataiException):
+    """
+    Raises when repository failed.
+    """
+
+
+class YataiDeploymentException(YataiException):
     """
     Raises when repository failed.
     """

@@ -26,7 +26,7 @@ def keras_model() -> "tfk.models.Model":
     return net
 
 
-@pytest.mark.parametrize("kwargs", [{"store_as_json": True}, {"store_as_json": False},])
+@pytest.mark.parametrize("kwargs", [{"store_as_json": True}, {"store_as_json": False}])
 def test_keras_save_load(kwargs, keras_model, tmpdir):
 
     KerasModel(keras_model, **kwargs).save(tmpdir)

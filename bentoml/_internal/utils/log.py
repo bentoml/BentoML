@@ -5,8 +5,8 @@ from pathlib import Path
 
 from simple_di import Provide, inject
 
-from bentoml.configuration import get_debug_mode
-from bentoml.configuration.containers import BentoMLContainer
+from ..configuration import get_debug_mode
+from ..configuration.containers import BentoMLContainer
 
 
 def get_logging_config_dict(

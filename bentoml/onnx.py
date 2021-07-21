@@ -43,7 +43,7 @@ class OnnxModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`onnx` is required by OnnxModel 
+            :obj:`onnx` is required by OnnxModel
         NotImplementedError:
             :obj:`backend` as onnx runtime is not supported by ONNX
         BentoMLException:

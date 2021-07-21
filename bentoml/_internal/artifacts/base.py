@@ -40,7 +40,9 @@ class _ArtifactMeta(type):
     }
 
     @classmethod
-    def __get__path(cls, path: PathType, ext: t.Optional[str] = "") -> PathType:
+    def __get__path(
+        cls, path: PathType, ext: t.Optional[str] = ""
+    ) -> PathType:  # pylint: disable=unused-private-member
         """
         Return a default saved path for implemented artifacts.
 

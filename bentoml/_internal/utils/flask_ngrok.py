@@ -12,7 +12,7 @@ from pathlib import Path
 
 import requests
 
-from bentoml.exceptions import BentoMLException
+from ..exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 

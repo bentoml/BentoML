@@ -83,7 +83,7 @@ class PaddlePaddleModelArtifact(ModelArtifact):
                 "paddlepaddle package is required to use PaddlePaddleModelArtifact"
             )
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
+    def pack(self, model):  # pylint:disable=arguments-differ
         self._model = model
         return self
 
@@ -95,8 +95,8 @@ class PaddlePaddleModelArtifact(ModelArtifact):
     def _file_path(self, base_path):
         return os.path.join(base_path, self.name)
 
-    def save(self, dst):
-        self._save(dst)
+    def save(self, path):
+        self._save(path)
 
     def _save(self, dst):
         # Override the model path if temp dir was set

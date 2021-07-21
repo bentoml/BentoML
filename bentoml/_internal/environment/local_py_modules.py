@@ -1,17 +1,20 @@
 import importlib
 import inspect
 import logging
-import modulefinder
 import os
 import re
-import sys
-from pathlib import Path
 from shutil import copyfile
 from typing import List
-from unittest.mock import patch
 
-from bentoml.exceptions import BentoMLException
-from bentoml.saved_bundle.pip_pkg import get_all_pip_installed_modules
+from ..exceptions import BentoMLException
+
+# from unittest.mock import patch
+# import modulefinder
+# import sys
+# from pathlib import Path
+
+
+# from..bundle.pip_pkg import get_all_pip_installed_modules
 
 logger = logging.getLogger(__name__)
 
@@ -101,89 +104,89 @@ def copy_local_py_modules(target_module, destination):
         )
 
     # Find all non pip installed modules must be packaged for target module to run
-    exclude_modules = ['bentoml'] + get_all_pip_installed_modules()
-    finder = modulefinder.ModuleFinder(excludes=exclude_modules)
+    # exclude_modules = ['bentoml'] + get_all_pip_installed_modules()
+    # finder = modulefinder.ModuleFinder(excludes=exclude_modules)
+    #
+    # try:
+    #     logger.debug(
+    #         "Searching for local dependant modules of %s:%s",
+    #         target_module_name,
+    #         target_module_file,
+    #     )
+    #     if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
+    #         _find_module = modulefinder._find_module
+    #         _PKG_DIRECTORY = modulefinder._PKG_DIRECTORY
+    #
+    #         def _patch_find_module(name, path=None):
+    #             """ref issue: https://bugs.python.org/issue40350"""
+    #
+    #             importlib.machinery.PathFinder.invalidate_caches()
+    #
+    #             spec = importlib.machinery.PathFinder.find_spec(name, path)
+    #
+    #             if spec is not None and spec.loader is None:
+    #                 return None, None, ("", "", _PKG_DIRECTORY)
+    #
+    #             return _find_module(name, path)
+    #
+    #         with patch.object(modulefinder, '_find_module', _patch_find_module):
+    #             finder.run_script(target_module_file)
+    #     else:
+    #         finder.run_script(target_module_file)
+    # except SyntaxError:
+    #     # For package with conditional import that may only work with py2
+    #     # or py3, ModuleFinder#run_script will try to compile the source
+    #     # with current python version. And that may result in SyntaxError.
+    #     pass
+    #
+    # if finder.badmodules:
+    #     logger.debug(
+    #         "Find bad module imports that can not be parsed properly: %s",
+    #         finder.badmodules.keys(),
+    #     )
+    #
+    # # Look for dependencies that are not distributed python package, but users'
+    # # local python code, all other dependencies must be defined with @env
+    # # decorator when creating a new BentoService class
+    # user_packages_and_modules = {}
+    # for name, module in finder.modules.items():
+    #     if hasattr(module, "__file__") and module.__file__ is not None:
+    #         user_packages_and_modules[name] = module
 
-    try:
-        logger.debug(
-            "Searching for local dependant modules of %s:%s",
-            target_module_name,
-            target_module_file,
-        )
-        if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
-            _find_module = modulefinder._find_module
-            _PKG_DIRECTORY = modulefinder._PKG_DIRECTORY
-
-            def _patch_find_module(name, path=None):
-                """ref issue: https://bugs.python.org/issue40350"""
-
-                importlib.machinery.PathFinder.invalidate_caches()
-
-                spec = importlib.machinery.PathFinder.find_spec(name, path)
-
-                if spec is not None and spec.loader is None:
-                    return None, None, ("", "", _PKG_DIRECTORY)
-
-                return _find_module(name, path)
-
-            with patch.object(modulefinder, '_find_module', _patch_find_module):
-                finder.run_script(target_module_file)
-        else:
-            finder.run_script(target_module_file)
-    except SyntaxError:
-        # For package with conditional import that may only work with py2
-        # or py3, ModuleFinder#run_script will try to compile the source
-        # with current python version. And that may result in SyntaxError.
-        pass
-
-    if finder.badmodules:
-        logger.debug(
-            "Find bad module imports that can not be parsed properly: %s",
-            finder.badmodules.keys(),
-        )
-
-    # Look for dependencies that are not distributed python package, but users'
-    # local python code, all other dependencies must be defined with @env
-    # decorator when creating a new BentoService class
-    user_packages_and_modules = {}
-    for name, module in finder.modules.items():
-        if hasattr(module, "__file__") and module.__file__ is not None:
-            user_packages_and_modules[name] = module
-
-    # Remove "__main__" module, if target module is loaded as __main__, it should
-    # be in module_files as (module_name, module_file) in current context
-    if "__main__" in user_packages_and_modules:
-        del user_packages_and_modules["__main__"]
-
-    # Lastly, add target module itself
-    user_packages_and_modules[target_module_name] = target_module
-    logger.debug(
-        "Copying user local python dependencies: %s", user_packages_and_modules
-    )
-
-    for module_name, module in user_packages_and_modules.items():
-        module_file = _get_module_src_file(module)
-        relative_path = _get_module_relative_file_path(module_name, module_file)
-        target_file = os.path.join(destination, relative_path)
-
-        # Create target directory if not exist
-        Path(os.path.dirname(target_file)).mkdir(parents=True, exist_ok=True)
-
-        # Copy module file to BentoArchive for distribution
-        logger.debug("Copying local python module '%s'", module_file)
-        copyfile(module_file, target_file)
-
-    for root, _, files in os.walk(destination):
-        if "__init__.py" not in files:
-            logger.debug("Creating empty __init__.py under folder:'%s'", root)
-            Path(os.path.join(root, "__init__.py")).touch()
-
-    target_module_relative_path = _get_module_relative_file_path(
-        target_module_name, target_module_file
-    )
-    logger.debug("Done copying local python dependant modules")
-
-    return target_module_name, target_module_relative_path
+    # # Remove "__main__" module, if target module is loaded as __main__, it should
+    # # be in module_files as (module_name, module_file) in current context
+    # if "__main__" in user_packages_and_modules:
+    #     del user_packages_and_modules["__main__"]
+    #
+    # # Lastly, add target module itself
+    # user_packages_and_modules[target_module_name] = target_module
+    # logger.debug(
+    #     "Copying user local python dependencies: %s", user_packages_and_modules
+    # )
+    #
+    # for module_name, module in user_packages_and_modules.items():
+    #     module_file = _get_module_src_file(module)
+    #     relative_path = _get_module_relative_file_path(module_name, module_file)
+    #     target_file = os.path.join(destination, relative_path)
+    #
+    #     # Create target directory if not exist
+    #     Path(os.path.dirname(target_file)).mkdir(parents=True, exist_ok=True)
+    #
+    #     # Copy module file to BentoArchive for distribution
+    #     logger.debug("Copying local python module '%s'", module_file)
+    #     copyfile(module_file, target_file)
+    #
+    # for root, _, files in os.walk(destination):
+    #     if "__init__.py" not in files:
+    #         logger.debug("Creating empty __init__.py under folder:'%s'", root)
+    #         Path(os.path.join(root, "__init__.py")).touch()
+    #
+    # target_module_relative_path = _get_module_relative_file_path(
+    #     target_module_name, target_module_file
+    # )
+    # logger.debug("Done copying local python dependant modules")
+    #
+    # return target_module_name, target_module_relative_path
 
 
 def copy_zip_import_archives(

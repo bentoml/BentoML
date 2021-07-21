@@ -27,8 +27,12 @@ try:
     import tensorflow.keras as tfk
 
     if t.TYPE_CHECKING:
-        from tensorflow.python.client.session import BaseSession
-        from tensorflow.python.framework.ops import _DefaultStack
+        from tensorflow.python.client.session import (  # noqa # pylint disable=unused-import
+            BaseSession,
+        )
+        from tensorflow.python.framework.ops import (  # noqa # pylint disable=unused-import
+            _DefaultStack,
+        )
 except ImportError:
     raise MissingDependencyException(
         "tensorflow is required by KerasModel as backend runtime."
@@ -109,7 +113,7 @@ class KerasModel(ModelArtifact):
 
         if os.path.isfile(cls.__get_model_json__path(path)):
             # load keras model via json and weights since json file are in path
-            with cls.sess.as_default():
+            with cls.sess.as_default():  # pylint: disable=not-context-manager
                 with open(cls.__get_model_json__path(path), 'r') as json_file:
                     model_json = json_file.read()
                 obj = tfk.models.model_from_json(

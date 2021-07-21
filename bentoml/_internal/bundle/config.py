@@ -8,10 +8,11 @@ from google.protobuf.struct_pb2 import Struct
 from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
-from bentoml.configuration.containers import BentoMLContainer
-from bentoml.exceptions import BentoMLConfigException
-from bentoml.utils import dump_to_yaml_str
-from bentoml.utils.ruamel_yaml import YAML
+
+from ..configuration.containers import BentoMLContainer
+from ..exceptions import BentoMLConfigException
+from ..utils import dump_to_yaml_str
+from ..utils.ruamel_yaml import YAML
 
 BENTOML_CONFIG_YAML_TEMPLATE = """\
 version: {bentoml_version}
@@ -131,7 +132,7 @@ class SavedBundleConfig(object):
         return conf
 
     def get_bento_service_metadata_pb(self):
-        from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
+        from ..yatai_client.proto.repository_pb2 import BentoServiceMetadata
 
         bento_service_metadata = BentoServiceMetadata()
         bento_service_metadata.name = self.config["metadata"]["service_name"]

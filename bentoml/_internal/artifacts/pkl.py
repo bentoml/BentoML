@@ -1,5 +1,4 @@
 import typing as t
-from pathlib import Path
 
 from ..types import MetadataType, PathType
 from ..utils import cloudpickle

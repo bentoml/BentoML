@@ -42,6 +42,7 @@ class ArtifactMeta(type):
     """
 
     _MODEL_NAMESPACE: str = "model"
+    _FILE_ENCODING: str = 'utf-8'
 
     @classmethod
     def __model_path(cls, path: PathType, ext: str) -> PathType:
@@ -65,7 +66,12 @@ class ArtifactMeta(type):
             "model_path": cls.__model_path,
             "walk_path": cls.__walk_path,
         }
-        _FILE_EXTENSION.update({"_MODEL_NAMESPACE": cls._MODEL_NAMESPACE})
+        _FILE_EXTENSION.update(
+            {
+                "_MODEL_NAMESPACE": cls._MODEL_NAMESPACE,
+                "_FILE_ENCODING": cls._FILE_ENCODING,
+            }
+        )
         namespace.update(_path_fn)
         for k, v in _FILE_EXTENSION.items():
             namespace[k] = v

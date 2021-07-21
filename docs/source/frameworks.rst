@@ -142,7 +142,7 @@ Example Projects:
 
 * Image Classification with ResNet50 - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.onnx.OnnxModelArtifact
+.. autoclass:: bentoml.frameworks.onnx.OnnxModel
 
 
 =========

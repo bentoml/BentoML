@@ -26,7 +26,7 @@ def test_mlflow_save_load(tmpdir, sklearn_model):
     MLflowModel(knn_model, 'sklearn').save(tmpdir)
     assert os.path.exists(MLflowModel.walk_path(tmpdir, ".pkl"))
 
-    mlflow_loaded: "skn.KNeighborsClassifier" = MLflowModel.load(tmpdir, 'sklearn')
+    mlflow_loaded: "skn.KNeighborsClassifier" = MLflowModel.load(tmpdir)
     np.testing.assert_array_equal(
         knn_model.predict(sklearn_model.data), mlflow_loaded.predict(sklearn_model.data)
     )

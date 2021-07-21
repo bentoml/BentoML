@@ -64,12 +64,19 @@ class MLflowModel(ModelArtifact):
         self, model: MT, loader_module: str, metadata: t.Optional[MetadataType] = None
     ):
         super(MLflowModel, self).__init__(model, metadata=metadata)
-        self.__loader__module(loader_module)
+        __module = (
+            loader_module if 'mlflow.' in loader_module else f'mlflow.{loader_module}'
+        )
+        self.__module__loader(__module)
 
     @classmethod
-    def __loader__module(cls, module: str):
+    def __module_name__path(cls, path: PathType) -> PathType:
+        return cls.model_path(path, f"_module_name{cls.TXT_FILE_EXTENSION}")
+
+    @classmethod
+    def __module__loader(cls, module: str):
         try:
-            __loader_module = importlib.import_module(f"mlflow.{module}")
+            __loader_module = importlib.import_module(module)
         except ImportError:
             raise ArtifactLoadingException(
                 f"Failed to import mlflow.{module}. Make sure that the given flavor is supported by MLflow"
@@ -79,15 +86,19 @@ class MLflowModel(ModelArtifact):
 
     # fmt: off
     @classmethod
-    def load(cls, path: PathType, loader_module: str) -> MT:  # noqa # pylint: disable=arguments-differ
-        assert isinstance(loader_module, str), "Only accepted loader_module " \
-                                               f"as type string, got {type(loader_module)} instead"
+    def load(cls, path: PathType) -> MT:  # noqa # pylint: disable=arguments-differ
+        with open(cls.__module_name__path(path), 'rb') as txt_file:
+            module = txt_file.read().decode(cls._FILE_ENCODING)
+            cls.__module__loader(module)
 
         # walk_path will actually returns the first occurrence of given path. With MLflow we
         # only care about the directory of given model structure, thus getting the parents.
         model_path: str = str(cls.walk_path(path, "").parents[0])
-        return cls.__loader__module(loader_module).load_model(model_path)
+        return cls._loader_module.load_model(model_path)
     # fmt: on
 
     def save(self, path: PathType) -> None:
+        with open(self.__module_name__path(path), 'wb') as txt_file:
+            txt_file.write(self._loader_module.__name__.encode(self._FILE_ENCODING))
+        txt_file.close()
         self._loader_module.save_model(self._model, self.model_path(path, ""))

@@ -115,7 +115,7 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
     with open(os.path.join(path, "README.md"), "w") as f:
         f.write(saved_bundle_readme)
 
-    # save all model artifacts to 'base_path/name/artifacts/' directory
+    # save all model artifacts to 'path/name/artifacts/' directory
     bento_service.artifacts.save(module_base_path)
 
     # write conda environment, requirement.txt

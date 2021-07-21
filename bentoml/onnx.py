@@ -18,6 +18,7 @@ import logging
 import os
 import pathlib
 import shutil
+import typing as t
 
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import (
@@ -44,7 +45,7 @@ def _is_onnx_model_file(path):
     )
 
 
-class OnnxModelArtifact(ModelArtifact):
+class OnnxModel(ModelArtifact):
     """
     Artifact class for saving and loading ONNX Model
 
@@ -81,11 +82,11 @@ class OnnxModelArtifact(ModelArtifact):
     >>>
     >>> import numpy
     >>> import bentoml
-    >>> from bentoml.frameworks.onnx import OnnxModelArtifact
+    >>> from bentoml.frameworks.onnx import OnnxModel
     >>> from bentoml.adapters import DataframeInput
     >>>
     >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([OnnxModelArtifact('model', backend='onnxruntime')])
+    >>> @bentoml.artifacts([OnnxModel('model', backend='onnxruntime')])
     >>> class OnnxIrisClassifierService(bentoml.BentoService):
     >>>     @bentoml.api(input=DataframeInput(), batch=True)
     >>>     def predict(self, df):
@@ -112,7 +113,7 @@ class OnnxModelArtifact(ModelArtifact):
         super().__init__(name)
         if backend not in SUPPORTED_ONNX_BACKEND:
             raise BentoMLException(
-                f'"{backend}" runtime is currently not supported for OnnxModelArtifact'
+                f'"{backend}" runtime is currently not supported for OnnxModel'
             )
         self.backend = backend
         self._inference_session = None
@@ -136,12 +137,12 @@ class OnnxModelArtifact(ModelArtifact):
                 else:
                     raise InvalidArgument(
                         "onnx.ModelProto or a .onnx model file path is required to "
-                        "pack an OnnxModelArtifact"
+                        "pack an OnnxModel"
                     )
             except ImportError:
                 raise InvalidArgument(
                     "onnx.ModelProto or a .onnx model file path is required to pack "
-                    "an OnnxModelArtifact"
+                    "an OnnxModel"
                 )
 
         assert self._onnx_model_path or self._model_proto, (
@@ -179,11 +180,10 @@ class OnnxModelArtifact(ModelArtifact):
                 )
                 return onnxruntime.InferenceSession(self._onnx_model_path)
             else:
-                raise BentoMLException("OnnxModelArtifact in bad state")
+                raise BentoMLException("OnnxModel in bad state")
         else:
             raise BentoMLException(
-                f'"{self.backend}" runtime is currently not supported for '
-                f"OnnxModelArtifact"
+                f'"{self.backend}" runtime is currently not supported for ' f"OnnxModel"
             )
 
     def get(self):
@@ -199,11 +199,11 @@ class OnnxModelArtifact(ModelArtifact):
                 import onnx
             except ImportError:
                 raise MissingDependencyException(
-                    '"onnx" package is required for packing with OnnxModelArtifact'
+                    '"onnx" package is required for packing with OnnxModel'
                 )
             onnx.save_model(self._model_proto, self._saved_model_file_path(dst))
         else:
             raise InvalidArgument(
                 "onnx.ModelProto or a model file path is required to pack an "
-                "OnnxModelArtifact"
+                "OnnxModel"
             )

@@ -156,7 +156,7 @@ ONNX-MLIR
 Spacy
 =====
 
-.. autoclass:: bentoml.frameworks.spacy.SpacyModelArtifact
+.. autoclass:: bentoml.frameworks.spacy.SpacyModel
 
 
 ============

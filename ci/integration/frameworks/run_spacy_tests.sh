@@ -12,6 +12,6 @@ cd "$GIT_ROOT" || exit
 # Install Spacy
 pip install spacy
 
-pytest "$GIT_ROOT"/tests/integration/test_spacy_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_spacy_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

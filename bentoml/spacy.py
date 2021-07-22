@@ -16,107 +16,56 @@
 
 import logging
 import os
+import typing as t
 
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
+from ._internal.types import MetadataType, PathType
 
 logger = logging.getLogger(__name__)
 
+try:
+    import spacy
+except ImportError:
+    raise MissingDependencyException("spacy is required by SpacyModel")
 
-class SpacyModelArtifact(ModelArtifact):
+
+class SpacyModel(ModelArtifact):
     """
-    Artifact class for saving/loading spacy models with Language.to_disk and
-    spacy.util.load_model methods
+    Model class for saving/loading :obj:`spacy` models with `spacy.Language.to_disk` and
+    `spacy.util.load_model` methods
 
     Args:
-        name (string): name of the artifact
+        model (`spacy.language.Language`):
+            Every spacy model is of type :obj:`spacy.language.Language`
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyException: spacy package is required for SpacyModelArtifact
-        InvalidArgument: invalid argument type, model being packed must be instance of
-            spacy.language.Language
+        MissingDependencyException:
+            :obj:`spacy` is required by SpacyModel
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import spacy
-    >>> # TRAIN MODEL WITH DATA
-    >>> TRAIN_DATA = [
-    >>>     ("Uber blew through $1 million a week", {"entities": [(0, 4, "ORG")]}),
-    >>>     ("Google rebrands its business apps", {"entities": [(0, 6, "ORG")]})]
-    >>>
-    >>> nlp = spacy.blank("en")
-    >>> optimizer = nlp.begin_training()
-    >>> for i in range(20):
-    >>>     random.shuffle(TRAIN_DATA)
-    >>>     for text, annotations in TRAIN_DATA:
-    >>>         nlp.update([text], [annotations], sgd=optimizer)
-    >>> nlp.to_disk("/model")
-    >>>
-    >>> import bentoml
-    >>> from bentoml.adapters import JsonInput
-    >>> from bentoml.frameworks.spacy import SpacyModelArtifact
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([SpacyModelArtifact('nlp')])
-    >>> class SpacyModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=JsonInput(), batch=False)
-    >>>     def predict(self, parsed_json):
-    >>>         output = self.artifacts.nlp(parsed_json['text'])
-    >>>         return output
-    >>>
-    >>>
-    >>> svc = SpacyModelService()
-    >>>
-    >>> # Spacy model can be packed directly.
-    >>> svc.pack('nlp', nlp)
+        TODO:
+
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
+        TODO:
     """
 
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(
+        self, model: spacy.language.Language, metadata: t.Optional[MetadataType] = None
+    ):
+        super(SpacyModel, self).__init__(model, metadata=metadata)
 
-        self._model = None
+    @classmethod
+    def load(cls, path: PathType) -> "spacy.language.Language":
+        return spacy.util.load_model(cls.get_path(path))
 
-    def _file_path(self, base_path):
-        return os.path.join(base_path, self.name)
-
-    def pack(self, model):  # pylint:disable=arguments-differ
-        try:
-            import spacy
-        except ImportError:
-            raise MissingDependencyException(
-                "spacy package is required to use SpacyModelArtifact"
-            )
-
-        if not isinstance(model, spacy.language.Language):
-            raise InvalidArgument(
-                "SpacyModelArtifact can only pack type 'spacy.language.Language'"
-            )
-
-        self._model = model
-        return self
-
-    def load(self, path):
-        try:
-            import spacy
-        except ImportError:
-            raise MissingDependencyException(
-                "spacy package is required to use SpacyModelArtifact"
-            )
-
-        model = spacy.util.load_model(self._file_path(path))
-
-        if not isinstance(model, spacy.language.Language):
-            raise InvalidArgument(
-                "Expecting SpacyModelArtifact loaded object type to be "
-                "'spacy.language.Language' but actually it is {}".format(type(model))
-            )
-
-        return self.pack(model)
-
-    def get(self):
-        return self._model
-
-    def save(self, path):
-        path = self._file_path(path)
-        return self._model.to_disk(path)
+    def save(self, path: PathType) -> None:
+        return self._model.to_disk(self.get_path(path))

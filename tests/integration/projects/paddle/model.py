@@ -5,7 +5,7 @@ import paddle
 from paddle import nn
 from paddle.static import InputSpec
 
-from bentoml.paddle import PaddlePaddleModelArtifact
+from bentoml.paddle import PaddlePaddleModel
 
 BATCH_SIZE = 8
 BATCH_NUM = 4
@@ -49,7 +49,7 @@ def pack_models(path):
 
     train(model, loader, loss, adam)
 
-    PaddlePaddleModelArtifact("model").pack(model).save(path)
+    PaddlePaddleModel("model").pack(model).save(path)
 
 
 if __name__ == "__main__":

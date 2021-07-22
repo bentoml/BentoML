@@ -33,7 +33,7 @@ class FlaxModel(ModelArtifact):
     Args:
         model (``):
             TODO:
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -51,7 +51,7 @@ class FlaxModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     def __init__(
         self, model, metadata: t.Optional[MetadataType] = None,
@@ -81,7 +81,7 @@ class TraxModel(ModelArtifact):
     Args:
         model (``):
             TODO:
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -99,7 +99,7 @@ class TraxModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     def __init__(
         self, model, metadata: t.Optional[MetadataType] = None,

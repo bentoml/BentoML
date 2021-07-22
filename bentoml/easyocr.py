@@ -45,7 +45,7 @@ class EasyOCRModel(ModelArtifact):
             TODO:
         gpu (`bool`, `optional`, default to `False`):
             Whether to enable GPU for easyocr
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -65,7 +65,7 @@ class EasyOCRModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     def __init__(
         self,

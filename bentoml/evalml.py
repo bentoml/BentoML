@@ -34,7 +34,7 @@ class EvalMLModel(ModelArtifact):
     Args:
         model (`evalml.pipelines.PipelineBase`):
             Base pipeline for all EvalML model
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -52,7 +52,7 @@ class EvalMLModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     def __init__(
         self,

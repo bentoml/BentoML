@@ -442,10 +442,8 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
-      - name: Install paddle
-        run: python -m pip install paddlepaddle gast==0.3.3
       - name: Run tests
-        run: ./ci/test_project.sh.cmd tests/integration/projects/paddle
+        run: ./ci/integration/frameworks/run_paddle_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

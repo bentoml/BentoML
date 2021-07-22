@@ -50,7 +50,7 @@ class KerasModel(ModelArtifact):
             Whether to store Keras model as JSON and weights
         custom_objects (`Dict[str, Any]`, `optional`, default to `None`):
             Dictionary of Keras custom objects for model
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -70,7 +70,7 @@ class KerasModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     graph: "_DefaultStack" = tf.compat.v1.get_default_graph()
     sess: "BaseSession" = tf.compat.v1.Session(graph=graph)

@@ -37,7 +37,7 @@ class FastaiModel(ModelArtifact):
     Args:
         model (`fastai.learner.Learner`):
             Learner model from fastai
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -55,7 +55,7 @@ class FastaiModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     def __init__(
         self,

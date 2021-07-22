@@ -34,12 +34,13 @@ class OnnxModel(ModelArtifact):
 
     Args:
         model (`str`):
-            Given filepath or protobuf of converted model. Make sure to use corresponding library
-            to convert model from different frameworks to ONNX format
+            Given filepath or protobuf of converted model.
+            Make sure to use corresponding library to convert
+            model from different frameworks to ONNX format.
         backend (`str`, `optional`, default to `onnxruntime`):
             Name of ONNX inference runtime. ["onnxruntime", "onnxruntime-gpu"]
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
-            Class metadata
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+            Class metadata.
 
     Raises:
         MissingDependencyException:
@@ -62,7 +63,7 @@ class OnnxModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
     ONNX_EXTENSION: str = ".onnx"

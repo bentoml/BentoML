@@ -5,11 +5,11 @@ import numpy as np
 
 import bentoml
 from bentoml.adapters import DataframeInput
-from bentoml.paddle import PaddlePaddleModelArtifact
+from bentoml.paddle import PaddlePaddleModel
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PaddlePaddleModelArtifact("model")])
+@bentoml.artifacts([PaddlePaddleModel("model")])
 class PaddleService(bentoml.BentoService):
     @bentoml.api(input=DataframeInput(), batch=True)
     def predict(self, df):

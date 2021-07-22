@@ -33,7 +33,7 @@ class FasttextModel(ModelArtifact):
     Args:
         model (`fasttext.FastText._FastText`):
             Base pipeline for all fasttext model
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -51,7 +51,7 @@ class FasttextModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     def __init__(
         self,

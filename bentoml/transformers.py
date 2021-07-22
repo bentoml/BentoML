@@ -26,7 +26,7 @@ except ImportError:
     transformers = None
 
 
-class TransformersModelArtifact(ModelArtifact):
+class TransformersModel(ModelArtifact):
     """
     Artifact class for saving/loading Transformers models
 
@@ -52,7 +52,7 @@ class TransformersModelArtifact(ModelArtifact):
     >>> from bentoml.adapters import JsonInput
     >>>
     >>> @bentoml.env(pip_packages=["transformers==3.1.0", "torch==1.6.0"])
-    >>> @bentoml.artifacts([TransformersModelArtifact("gptModel")])
+    >>> @bentoml.artifacts([TransformersModel("gptModel")])
     >>> class TransformerService(bentoml.BentoService):
     >>>     @bentoml.api(input=JsonInput(), batch=False)
     >>>     def predict(self, parsed_json):
@@ -92,7 +92,7 @@ class TransformersModelArtifact(ModelArtifact):
 
         if transformers is None:
             raise MissingDependencyException(
-                "transformers package is required to use TransformersModelArtifact"
+                "transformers package is required to use TransformersModel"
             )
 
     def _file_path(self, base_path):

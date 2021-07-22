@@ -1,7 +1,8 @@
 import typing as t
 
+import cloudpickle
+
 from ..types import MetadataType, PathType
-from ..utils import cloudpickle
 from .base import ModelArtifact
 
 
@@ -11,12 +12,10 @@ class PickleArtifact(ModelArtifact):
     using ``cloudpickle``
 
     Args:
-    model (`Any`, or serializable object):
-        Data that can be serialized with :obj:`cloudpickle`
-    metadata (`Dict[str, Union[Any,...]]`, `optional`, default to `None`):
-        dictionary of model metadata
-    name (`str`, `optional`, default to `picklemodel`):
-        Name of PickleArtifact instance
+        model (`Any`, or serializable object):
+            Data that can be serialized with :obj:`cloudpickle`
+        metadata (`Dict[str, Union[Any,...]]`, `optional`, default to `None`):
+            dictionary of model metadata
 
     Example usage under :code:`train.py`::
 

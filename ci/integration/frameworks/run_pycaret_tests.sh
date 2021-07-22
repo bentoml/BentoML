@@ -9,9 +9,9 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-# Install Spacy
-pip install spacy==3.0.6
+# Install pycaret
+pip install pycaret
 
-pytest "$GIT_ROOT"/tests/integration/frameworks/test_spacy_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_pycaret_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

@@ -28,7 +28,7 @@ def sklearn_onnx_model():
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.model_selection import train_test_split
 
-    init_types = [('float_input', FloatTensorType([None, 4]))]
+    init_types = [("float_input", FloatTensorType([None, 4]))]
 
     iris = load_iris()
     X, Y = iris.data[:, :2], iris.target
@@ -39,7 +39,7 @@ def sklearn_onnx_model():
 
 
 @pytest.mark.parametrize(
-    "kwargs, exc", [({'backend': "not_supported"}, BentoMLException)]
+    "kwargs, exc", [({"backend": "not_supported"}, BentoMLException)]
 )
 def test_raise_exc(kwargs, exc, sklearn_onnx_model, tmpdir):
     with pytest.raises(exc):
@@ -58,8 +58,8 @@ def test_onnx_save_load_proto_onnxruntime(sklearn_onnx_model, tmpdir):
 
 
 def test_onnx_save_load_filepath_onnxruntime(sklearn_onnx_model, tmpdir):
-    get_path: str = os.path.join(tmpdir, 'test.onnx')
-    with open(get_path, 'wb') as inf:
+    get_path: str = os.path.join(tmpdir, "test.onnx")
+    with open(get_path, "wb") as inf:
         inf.write(sklearn_onnx_model.SerializeToString())
     model: "onnxruntime.InferenceSession" = onnxruntime.InferenceSession(
         sklearn_onnx_model.SerializeToString()

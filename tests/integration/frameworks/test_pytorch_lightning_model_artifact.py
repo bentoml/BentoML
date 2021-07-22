@@ -23,7 +23,7 @@ def predict_df(model: pl.LightningModule, df: pd.DataFrame):
 def test_pl_save_load(tmpdir):
     model: pl.LightningModule = FooModel()
     PyTorchLightningModel(model).save(tmpdir)
-    assert os.path.exists(PyTorchLightningModel.get_path(tmpdir, '.pt'))
+    assert os.path.exists(PyTorchLightningModel.get_path(tmpdir, ".pt"))
 
     pl_loaded: pl.LightningModule = PyTorchLightningModel.load(tmpdir)
 

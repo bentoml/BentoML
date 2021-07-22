@@ -41,7 +41,7 @@ test_data = {
 }
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def CancerClassifier(tmpdir):
     from sklearn.datasets import load_breast_cancer
 

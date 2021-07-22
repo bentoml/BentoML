@@ -53,7 +53,7 @@ def pack_models(path: str) -> None:
     FastaiModel(learner).save(path)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def predict_df(model: "Learner", df: "pd.DataFrame"):
     input_df = df.to_numpy().astype(np.float32)
     _, _, res = model.predict(input_df)

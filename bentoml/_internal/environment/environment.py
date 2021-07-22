@@ -101,7 +101,7 @@ class CondaEnv(object):
         self._conda_env["channels"] = channels
 
     def write_to_yaml_file(self, filepath):
-        with open(filepath, 'wb') as output_yaml:
+        with open(filepath, "wb") as output_yaml:
             self._yaml.dump(self._conda_env, output_yaml)
 
 
@@ -353,7 +353,7 @@ class BentoServiceEnv(object):
                             "utf-8"
                         )
                     )
-                pip_content = '\n'.join(
+                pip_content = "\n".join(
                     [str(pkg_req) for pkg_req in self._pip_packages.values()]
                 ).encode("utf-8")
                 f.write(pip_content)

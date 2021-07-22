@@ -21,7 +21,7 @@ import zipfile
 import torch.nn
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import InvalidArgument, MissingDependencyException
+from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 from ._internal.utils import cloudpickle
 
@@ -85,7 +85,7 @@ class PyTorchModel(ModelArtifact):
             )
         else:
             model: torch.nn.Module = cloudpickle.load(
-                open(cls.__get_weight_file__path(path), 'rb')
+                open(cls.__get_weight_file__path(path), "rb")
             )
         return model
 
@@ -95,7 +95,7 @@ class PyTorchModel(ModelArtifact):
             return torch.jit.save(self._model, self.__get_weight_file__path(path))
 
         return cloudpickle.dump(
-            self._model, open(self.__get_weight_file__path(path), 'wb')
+            self._model, open(self.__get_weight_file__path(path), "wb")
         )
 
 

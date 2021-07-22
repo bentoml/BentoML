@@ -30,15 +30,15 @@ def predict_df(model: nn.Module, df: pd.DataFrame):
 @pytest.mark.parametrize("test_type", ["", "tracedmodel", "scriptedmodel"])
 def test_pytorch_save_load(test_type, tmpdir):
     _model: nn.Module = LinearModel()
-    if 'trace' in test_type:
+    if "trace" in test_type:
         tracing_inp = torch.ones(5)
         model = torch.jit.trace(_model, tracing_inp)
-    elif 'script' in test_type:
+    elif "script" in test_type:
         model = torch.jit.script(_model)
     else:
         model = _model
     PyTorchModel(model).save(tmpdir)
-    assert os.path.exists(PyTorchModel.get_path(tmpdir, '.pt'))
+    assert os.path.exists(PyTorchModel.get_path(tmpdir, ".pt"))
 
     pytorch_loaded: nn.Module = PyTorchModel.load(tmpdir)
     assert predict_df(model, mock_df) == predict_df(pytorch_loaded, mock_df)

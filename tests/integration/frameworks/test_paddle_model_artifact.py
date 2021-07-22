@@ -57,12 +57,12 @@ class Model(nn.Layer):
         super(Model, self).__init__()
         self.fc = nn.Linear(IN_FEATURES, OUT_FEATURES)
 
-    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype='float32')])
+    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype="float32")])
     def forward(self, x):
         return self.fc(x)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def train_paddle_model() -> "Model":
     model = Model()
     loss = nn.MSELoss()
@@ -90,17 +90,17 @@ def create_paddle_predictor(
     train_paddle_model, tmp_path_factory
 ) -> "paddle.inference.Predictor":
     # Predictor init requires the path of saved model
-    tmpdir = str(tmp_path_factory.mktemp('paddle_predictor'))
+    tmpdir = str(tmp_path_factory.mktemp("paddle_predictor"))
     paddle.jit.save(train_paddle_model, tmpdir)
 
-    config = paddle.inference.Config(tmpdir + '.pdmodel', tmpdir + '.pdiparams')
+    config = paddle.inference.Config(tmpdir + ".pdmodel", tmpdir + ".pdiparams")
     config.enable_memory_optim()
     return paddle.inference.create_predictor(config)
 
 
 def test_paddle_save_load(tmpdir, train_paddle_model, create_paddle_predictor):
     PaddlePaddleModel(train_paddle_model).save(tmpdir)
-    assert os.path.exists(PaddlePaddleModel.get_path(tmpdir, '.pdmodel'))
+    assert os.path.exists(PaddlePaddleModel.get_path(tmpdir, ".pdmodel"))
     paddle_loaded: nn.Layer = PaddlePaddleModel.load(tmpdir)
     assert (
         predict_df(create_paddle_predictor, test_df).shape

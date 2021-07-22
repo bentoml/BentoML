@@ -13,10 +13,10 @@ def test_paddlehub_save_load(tmpdir):
 
     print(senta.sentiment_classify(texts=test_text))
     PaddleHubModel(senta).save(tmpdir)
-    assert os.path.exists(os.path.join(tmpdir, 'model.pdmodel'))
+    assert os.path.exists(os.path.join(tmpdir, "model.pdmodel"))
 
     paddlehub_loaded = PaddleHubModel.load(tmpdir)
     assert (
-        senta.sentiment_classify(texts=test_text)[0]['positive_probs']
-        == paddlehub_loaded.sentiment_classify(texts=test_text)[0]['positive_probs']
+        senta.sentiment_classify(texts=test_text)[0]["positive_probs"]
+        == paddlehub_loaded.sentiment_classify(texts=test_text)[0]["positive_probs"]
     )

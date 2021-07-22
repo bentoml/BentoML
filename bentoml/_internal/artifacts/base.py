@@ -25,7 +25,7 @@ class _ArtifactMeta(type):
     """
 
     _MODEL_NAMESPACE: str = "model"
-    _FILE_ENCODING: str = 'utf-8'
+    _FILE_ENCODING: str = "utf-8"
 
     _FILE_EXTENSION: t.Dict[str, str] = {
         "H5_EXTENSION": ".h5",
@@ -176,7 +176,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         """
 
     def __getattribute__(self: BA, item: str):
-        if item == 'save':
+        if item == "save":
 
             def wrapped_save(*args, **kw):
                 # workaround method overloading.
@@ -191,12 +191,12 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
                 return inherited(*args, **kw)
 
             return wrapped_save
-        elif item == 'load':
+        elif item == "load":
 
             def wrapped_load(*args, **kw):
                 assert (
-                    'path' in args
-                ), 'load() implementation requires positional first args `path`'
+                    "path" in args
+                ), "load() implementation requires positional first args `path`"
                 inherited = object.__getattribute__(self, item)
                 return inherited(*args, **kw)
 

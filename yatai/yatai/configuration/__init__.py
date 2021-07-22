@@ -14,7 +14,7 @@ def inject_dependencies():
     from yatai.configuration.containers import YataiConfiguration, YataiContainer
 
     config_file = get_local_config_file()
-    if config_file and config_file.endswith('.yml'):
+    if config_file and config_file.endswith(".yml"):
         configuration = YataiConfiguration(override_config_file=config_file)
     else:
         configuration = YataiConfiguration()

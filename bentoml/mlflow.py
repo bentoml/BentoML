@@ -25,7 +25,7 @@ from ._internal.types import MetadataType, PathType
 try:
     import mlflow
 except ImportError:
-    raise MissingDependencyException('mlflow is required by MLflowModel')
+    raise MissingDependencyException("mlflow is required by MLflowModel")
 
 MT = t.TypeVar("MT")
 
@@ -72,7 +72,7 @@ class MLflowModel(ModelArtifact):
 
     @classmethod
     def __load__module(cls, module: ModuleType):
-        setattr(cls, '_loader_module', module)
+        setattr(cls, "_loader_module", module)
         return cls._loader_module
 
     @classmethod

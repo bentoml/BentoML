@@ -7,7 +7,7 @@ import fasttext
 
 from bentoml.fasttext import FasttextModel
 
-test_json: t.Dict[str, str] = {'text': 'foo'}
+test_json: t.Dict[str, str] = {"text": "foo"}
 
 
 @contextlib.contextmanager
@@ -27,4 +27,4 @@ def test_fasttext_save_load(tmpdir):
     assert os.path.exists(FasttextModel.get_path(tmpdir, ""))
 
     fasttext_loaded: "fasttext.FastText._FastText" = FasttextModel.load(tmpdir)
-    assert fasttext_loaded.predict(test_json['text'])[0] == ("__label__bar",)
+    assert fasttext_loaded.predict(test_json["text"])[0] == ("__label__bar",)

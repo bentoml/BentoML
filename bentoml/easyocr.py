@@ -71,7 +71,7 @@ class EasyOCRModel(ModelArtifact):
         self,
         model: "easyocr.Reader",
         recog_network: t.Optional[str] = "english_g2",
-        detect_model: t.Optional[str] = 'craft_mlt_25k',
+        detect_model: t.Optional[str] = "craft_mlt_25k",
         gpu: t.Optional[bool] = False,
         language_list: t.Optional[t.List[str]] = None,
         metadata: t.Optional[MetadataType] = None,
@@ -84,7 +84,7 @@ class EasyOCRModel(ModelArtifact):
         self._gpu = gpu
 
         if language_list is None:
-            language_list = ['en']
+            language_list = ["en"]
         self._model_metadata = {
             "lang_list": language_list,
             "recog_network": recog_network,

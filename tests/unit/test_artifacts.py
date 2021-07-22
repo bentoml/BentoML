@@ -27,7 +27,7 @@ class FooArtifact(ModelArtifact):
 
     @classmethod
     def load(cls, path):
-        return 'foo'
+        return "foo"
 
 
 @pytest.mark.parametrize(
@@ -35,8 +35,8 @@ class FooArtifact(ModelArtifact):
     [
         ([create_mock_class("foo")], {"metadata": _metadata}, _metadata),
         ([create_mock_class("bar")], {}, None),
-        ([b'\x00'], {}, None),
-        (['test'], {}, None),
+        ([b"\x00"], {}, None),
+        (["test"], {}, None),
         ([1], {}, None),
     ],
 )
@@ -44,7 +44,7 @@ def test_base_artifact(args, kwargs, metadata):
     ba = ModelArtifact(*args, **kwargs)
     pkl = PickleArtifact(*args, **kwargs)
     assert all(
-        [v == k] for k in [ba.__dict__, pkl.__dict__] for v in ['_model', '_metadata']
+        [v == k] for k in [ba.__dict__, pkl.__dict__] for v in ["_model", "_metadata"]
     )
     assert ba.metadata == metadata
     assert pkl.metadata == metadata

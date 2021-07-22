@@ -16,7 +16,7 @@ def predict_dataframe(
 ) -> t.Optional[str]:
     hf = h2o.H2OFrame(df)
     pred = model.predict(hf)
-    return pred.as_data_frame().to_json(orient='records')
+    return pred.as_data_frame().to_json(orient="records")
 
 
 test_data = {

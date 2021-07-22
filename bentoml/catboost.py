@@ -102,7 +102,7 @@ class CatBoostModel(ModelArtifact):
     def save(self, path: PathType) -> None:
         self._model.save_model(
             self.get_path(path, self.CATBOOST_EXTENSION),
-            format=self.CATBOOST_EXTENSION.split('.')[1],
+            format=self.CATBOOST_EXTENSION.split(".")[1],
             export_parameters=self._model_export_parameters,
             pool=self._model_pool,
         )

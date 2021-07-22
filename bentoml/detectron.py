@@ -95,7 +95,7 @@ class DetectronModel(ModelArtifact):
         Raises:
             MissingDependencyException:
                 ``detectron2`` is required by :class:`~bentoml.detectron.DetectronModel`.
-        """  # noqa: E501
+        """
 
         cfg: "detectron2.config.CfgNode" = get_cfg()
         weight_path = cls.get_path(path, cls.PTH_EXTENSION)

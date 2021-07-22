@@ -14,112 +14,123 @@
 #     limitations under the License.
 # ==============================================================================
 
-import os
-import tempfile
+import typing as t
 
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
+from ._internal.types import MetadataType, PathType
 
 try:
     import paddle
-    import paddle.inference as paddle_infer
+    import paddle.inference as pi
 except ImportError:
-    paddle = None
+    raise MissingDependencyException(
+        "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
+    )
 
 
-class PaddlePaddleModelArtifact(ModelArtifact):
+class PaddlePaddleModel(ModelArtifact):
     """
-    Artifact class for saving and loading PaddlePaddle's PaddleInference model
+    Model class for saving/loading :obj:`paddlepaddle` models.
 
     Args:
-        name (string): name of the artifact
+        model (`Union[paddle.nn.Layer, paddle.inference.Predictor]`):
+            Every PaddlePaddle model is of type :obj:`paddle.nn.Layer`
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyException: paddle package is required for
-                                    PaddlePaddleModelArtifact
+        MissingDependencyException:
+            :obj:`paddlepaddle` is required by PaddlePaddleModel
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import pandas as pd
-    >>> import numpy as np
-    >>>
-    >>> from bentoml import env, artifacts, api, BentoService
-    >>> from bentoml.adapters import DataframeInput
-    >>> from bentoml.frameworks.paddle import PaddlePaddleModelArtifact
-    >>>
-    >>> @env(infer_pip_packages=True)
-    >>> @artifacts([PaddlePaddleModelArtifact('model')])
-    >>> class PaddleService(BentoService):
-    >>>    @api(input=DataframeInput(), batch=True)
-    >>>    def predict(self, df: pd.DataFrame):
-    >>>        input_data = df.to_numpy().astype(np.float32)
-    >>>        predictor = self.artifacts.model
-    >>>
-    >>>        input_names = predictor.get_input_names()
-    >>>        input_handle = predictor.get_input_handle(input_names[0])
-    >>>        input_handle.reshape(input_data.shape)
-    >>>        input_handle.copy_from_cpu(input_data)
-    >>>
-    >>>        predictor.run()
-    >>>
-    >>>        output_names = predictor.get_output_names()
-    >>>        output_handle = predictor.get_output_handle(output_names[0])
-    >>>        output_data = output_handle.copy_to_cpu()
-    >>>        return output_data
-    >>>
-    >>> service = PaddleService()
-    >>>
-    >>> service.pack('model', model_to_save)
+        TODO:
+
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
+        TODO:
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
-        self._model = None
-        self._predictor = None
-        self._get_path = None
+    PADDLE_MODEL_EXTENSION: str = ".pdmodel"
+    PADDLE_PARAMS_EXTENSION: str = ".pdiparams"
 
-        if paddle is None:
-            raise MissingDependencyException(
-                "paddlepaddle package is required to use PaddlePaddleModelArtifact"
-            )
+    _model: t.Union[paddle.nn.Layer, paddle.inference.Predictor]
 
-    def pack(self, model):  # pylint:disable=arguments-differ
-        self._model = model
-        return self
+    def __init__(
+        self,
+        model: t.Union[paddle.nn.Layer, paddle.inference.Predictor],
+        metadata: t.Optional[MetadataType] = None,
+    ):
+        super(PaddlePaddleModel, self).__init__(model, metadata=metadata)
 
-    def load(self, path):
-        model = paddle.jit.load(self._file_path(path))
-        model = paddle.jit.to_static(model, input_spec=model._input_spec())
-        return self.pack(model)
+    @classmethod
+    def load(cls, path: PathType) -> paddle.inference.Predictor:
+        # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
+        config = pi.Config(
+            cls.get_path(path, cls.PADDLE_MODEL_EXTENSION),
+            cls.get_path(path, cls.PADDLE_PARAMS_EXTENSION),
+        )
+        config.enable_memory_optim()
+        return pi.create_predictor(config)
 
-    def _file_path(self, base_path):
-        return os.path.join(base_path, self.name)
-
-    def save(self, path):
-        self._save(path)
-
-    def _save(self, dst):
+    def save(self, path: PathType) -> None:
         # Override the model path if temp dir was set
-        self._get_path = self._file_path(dst)
-        paddle.jit.save(self._model, self._get_path)
-
-    def get(self):
-        # Create predictor, if one doesn't exist, when inference is run
-        if not self._predictor:
-            # If model isn't saved, save model to a temp dir
-            # because predictor init requires the path to a saved model
-            if self._get_path is None:
-                self._get_path = tempfile.TemporaryDirectory().name
-                self._save(self._get_path)
-
-            config = paddle_infer.Config(
-                self._get_path + ".pdmodel", self._get_path + ".pdiparams"
-            )
-            config.enable_memory_optim()
-            predictor = paddle_infer.create_predictor(config)
-            self._predictor = predictor
-        return self._predictor
+        # TODO(aarnphm): What happens if model is a paddle.inference.Predictor?
+        paddle.jit.save(self._model, self.get_path(path))
 
 
 class PaddleHubModel(ModelArtifact):
-    pass
+    """
+    TODO:
+    Model class for saving/loading :obj:`paddlehub` models via
+
+    Args:
+        model (`paddlehub.Module`):
+            Every PaddleHub model is of type :obj:`paddlehub.Module`
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+            Class metadata
+
+    Raises:
+        MissingDependencyException:
+            :obj:`paddlehub` and :obj:`paddlepaddle` are required by PaddleHubModel
+
+    Example usage under :code:`train.py`::
+
+        TODO:
+
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
+        TODO:
+    """
+
+    try:
+        import paddlehub
+    except ImportError:
+        raise MissingDependencyException("paddlehub is required by PaddleHubModel")
+
+    _model: paddlehub.module.Module
+
+    def __init__(
+        self, model: paddlehub.module.Module, metadata: t.Optional[MetadataType] = None
+    ):
+        super(PaddleHubModel, self).__init__(model, metadata=metadata)
+
+    def save(self, path: PathType) -> None:
+        self._model.save_inference_model(str(path))
+
+    @classmethod
+    def load(cls, path: PathType) -> t.Any:
+        try:
+            from paddlehub.module import Module
+        except ImportError:
+            raise MissingDependencyException("paddlehub is required by PaddleHubModel")
+        return Module.load(directory=str(path))

@@ -50,7 +50,7 @@ class KerasModel(ModelArtifact):
             Whether to store Keras model as JSON and weights
         custom_objects (`Dict[str, Any]`, `optional`, default to `None`):
             Dictionary of Keras custom objects for model
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -70,7 +70,7 @@ class KerasModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     graph: "_DefaultStack" = tf.compat.v1.get_default_graph()
     sess: "BaseSession" = tf.compat.v1.Session(graph=graph)
@@ -108,13 +108,13 @@ class KerasModel(ModelArtifact):
 
         default_custom_objects = None
         if os.path.isfile(cls.__get_custom_object__path(path)):
-            with open(cls.__get_custom_object__path(path), 'rb') as dco_file:
+            with open(cls.__get_custom_object__path(path), "rb") as dco_file:
                 default_custom_objects = cloudpickle.load(dco_file)
 
         if os.path.isfile(cls.__get_model_json__path(path)):
             # load keras model via json and weights since json file are in path
             with cls.sess.as_default():  # pylint: disable=not-context-manager
-                with open(cls.__get_model_json__path(path), 'r') as json_file:
+                with open(cls.__get_model_json__path(path), "r") as json_file:
                     model_json = json_file.read()
                 obj = tfk.models.model_from_json(
                     model_json, custom_objects=default_custom_objects
@@ -145,12 +145,12 @@ class KerasModel(ModelArtifact):
 
         # save custom_objects for model
         if self._custom_objects:
-            with open(self.__get_custom_object__path(path), 'wb') as custom_object_file:
+            with open(self.__get_custom_object__path(path), "wb") as custom_object_file:
                 cloudpickle.dump(self._custom_objects, custom_object_file)
 
         if self._store_as_json:
             # save keras model using json and weights if requested
-            with open(self.__get_model_json__path(path), 'w') as json_file:
+            with open(self.__get_model_json__path(path), "w") as json_file:
                 json_file.write(self._model.to_json())
             self._model.save_weights(self.__get_model_weight__path(path))
         else:

@@ -202,6 +202,6 @@ def copy_zip_import_archives(
         [os.path.join(target_module_dir, z) for z in zipimports] + inferred_zipimports
     )
     for zippath in all_zipimports:
-        logger.debug('Copying zipmodule %s', zippath)
+        logger.debug("Copying zipmodule %s", zippath)
         basename = os.path.basename(zippath)
         copyfile(zippath, os.path.join(target_path, basename))

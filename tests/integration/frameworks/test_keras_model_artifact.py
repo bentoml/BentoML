@@ -10,7 +10,7 @@ from bentoml.keras import KerasModel
 test_data: t.List[int] = [1, 2, 3, 4, 5]
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def keras_model() -> "tfk.models.Model":
     net = tfk.Sequential(
         (
@@ -22,7 +22,7 @@ def keras_model() -> "tfk.models.Model":
             ),
         )
     )
-    net.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    net.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
     return net
 
 
@@ -30,11 +30,11 @@ def keras_model() -> "tfk.models.Model":
 def test_keras_save_load(kwargs, keras_model, tmpdir):
 
     KerasModel(keras_model, **kwargs).save(tmpdir)
-    if kwargs['store_as_json']:
-        assert os.path.exists(KerasModel.get_path(tmpdir, '_json.json'))
-        assert os.path.exists(KerasModel.get_path(tmpdir, '_weights.hdf5'))
+    if kwargs["store_as_json"]:
+        assert os.path.exists(KerasModel.get_path(tmpdir, "_json.json"))
+        assert os.path.exists(KerasModel.get_path(tmpdir, "_weights.hdf5"))
     else:
-        assert os.path.exists(KerasModel.get_path(tmpdir, '.h5'))
+        assert os.path.exists(KerasModel.get_path(tmpdir, ".h5"))
 
     keras_loaded: "tfk.models.Model" = KerasModel.load(tmpdir)
     assert keras_loaded.predict(np.array([test_data])) == keras_model.predict(

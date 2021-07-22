@@ -25,7 +25,7 @@ from ._internal.types import MetadataType, PathType
 try:
     import mlflow
 except ImportError:
-    raise MissingDependencyException('mlflow is required by MLflowModel')
+    raise MissingDependencyException("mlflow is required by MLflowModel")
 
 MT = t.TypeVar("MT")
 
@@ -39,7 +39,7 @@ class MLflowModel(ModelArtifact):
             All mlflow models are of type :obj:`mlflow.models.Model`
         loader_module (`types.ModuleType`):
             flavors supported by :obj:`mlflow`
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -59,7 +59,7 @@ class MLflowModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
@@ -72,13 +72,13 @@ class MLflowModel(ModelArtifact):
 
     @classmethod
     def __load__module(cls, module: ModuleType):
-        setattr(cls, '_loader_module', module)
+        setattr(cls, "_loader_module", module)
         return cls._loader_module
 
     @classmethod
     def load(cls, path: PathType) -> MT:
-        project_path: str = os.path.join(path, cls._MODEL_NAMESPACE)
-        return mlflow.pyfunc.load_model(str(project_path))
+        project_path: str = str(os.path.join(path, cls._MODEL_NAMESPACE))
+        return mlflow.pyfunc.load_model(project_path)
 
     def save(self, path: PathType) -> None:
-        self._loader_module.save_model(self._model, self.get_path(path, ""))
+        self._loader_module.save_model(self._model, self.get_path(path))

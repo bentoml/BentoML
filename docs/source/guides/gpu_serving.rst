@@ -294,14 +294,14 @@ PyTorch Implementation
 
     from bentoml import BentoService, api, artifacts, env
     from bentoml.adapters import JsonInput, JsonOutput
-    from bentoml.frameworks.pytorch import PytorchModelArtifact
+    from bentoml.frameworks.pytorch import PyTorchModel
     from bentoml.service.artifacts.pickle import PickleArtifact
     import torch
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     @env(conda_dependencies=['pytorch', 'torchtext', 'cudatoolkit=11.1'], conda_channels=['pytorch', 'nvidia'])
-    @artifacts([PytorchModelArtifact("model"), PickleArtifact("tokenizer"), PickleArtifact("vocab")])
+    @artifacts([PyTorchModel("model"), PickleArtifact("tokenizer"), PickleArtifact("vocab")])
     class PytorchService(BentoService):
 
         def classify_categories(self, sentence):

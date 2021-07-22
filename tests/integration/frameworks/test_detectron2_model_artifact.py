@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:
     from detectron2.config import CfgNode  # pylint: disable=unused-import
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def predict_image(
     model: nn.Module, original_image: np.ndarray
 ) -> t.Dict[str, np.ndarray]:

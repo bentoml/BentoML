@@ -9,17 +9,17 @@ from easyocr import Reader
 
 from bentoml.easyocr import EasyOCRModel
 
-TEST_RESULT: List[str] = ['西', '愚园路', '东', '315', '309', 'W', 'Yuyuan Rd。', 'E']
-IMAGE_PATH: str = './tests/_internal/_static/chinese.jpg'
+TEST_RESULT: List[str] = ["西", "愚园路", "东", "315", "309", "W", "Yuyuan Rd。", "E"]
+IMAGE_PATH: str = "./tests/_internal/_static/chinese.jpg"
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def predict_image(model: Reader, image: np.ndarray):
     return [x[1] for x in model.readtext(image)]
 
 
 def test_easyocr_save_load(tmpdir):
-    language_list = ['ch_sim', 'en']
+    language_list = ["ch_sim", "en"]
     recog_network = "zh_sim_g2"
 
     model = easyocr.Reader(

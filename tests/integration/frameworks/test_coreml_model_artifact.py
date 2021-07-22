@@ -22,7 +22,7 @@ def pytorch_to_coreml(pytorch_model: LinearModel) -> "ct.models.MLModel":
     pytorch_model.eval()
     traced_model = torch.jit.trace(pytorch_model, torch.Tensor(mock_df.values))
     model: ct.models.MLModel = ct.convert(
-        traced_model, inputs=[ct.TensorType(name='input', shape=mock_df.shape)]
+        traced_model, inputs=[ct.TensorType(name="input", shape=mock_df.shape)]
     )
     return model
 

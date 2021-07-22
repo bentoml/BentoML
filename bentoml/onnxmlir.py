@@ -40,7 +40,7 @@ class OnnxMlirModel(ModelArtifact):
             to convert model from different frameworks to ONNX format
         backend (`str`, `optional`, default to `onnxruntime`):
             Name of ONNX inference runtime. ["onnxruntime", "onnxruntime-gpu"]
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -58,7 +58,7 @@ class OnnxMlirModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """  # noqa: E501
+    """
 
     ONNXMLIR_MODEL_EXTENSION: str = ".so"
 

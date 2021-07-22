@@ -25,7 +25,7 @@ class _ArtifactMeta(type):
     """
 
     _MODEL_NAMESPACE: str = "model"
-    _FILE_ENCODING: str = 'utf-8'
+    _FILE_ENCODING: str = "utf-8"
 
     _FILE_EXTENSION: t.Dict[str, str] = {
         "H5_EXTENSION": ".h5",
@@ -86,7 +86,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
     Args:
         model (`MT`):
             Given model definition. Omit various type depending on given frameworks.
-        metadata (`Dict[str, Any]`, or :obj:`~bentoml._internal.types.MetadataType`, `optional`, default to `None`):
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
     
     We don't want to abstract a lot of framework specific library code when creating new
@@ -125,7 +125,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
     Example usage for creating a custom ``ModelArtifacts``::
 
         TODO:
-    """  # noqa: E501
+    """
 
     def __init__(self: BA, model: MT, metadata: t.Optional[MetadataType] = None):
         self._model = model
@@ -147,7 +147,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         This will be used as a class method, interchangeable with
         :meth:`~bentoml._internal.artifacts.ModelArtifact.save` to load model during
         development pipeline.
-        """  # noqa: E501
+        """
 
     def save(self: BA, path: PathType) -> None:
         """
@@ -173,10 +173,10 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
             :code:`__getattribute__()` via wrapper. Since Python doesn't have support
             for method overloading, this ensures that model metadata will always be saved
             to given directory.
-        """  # noqa: E501
+        """
 
     def __getattribute__(self: BA, item: str):
-        if item == 'save':
+        if item == "save":
 
             def wrapped_save(*args, **kw):
                 # workaround method overloading.
@@ -191,12 +191,12 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
                 return inherited(*args, **kw)
 
             return wrapped_save
-        elif item == 'load':
+        elif item == "load":
 
             def wrapped_load(*args, **kw):
                 assert (
-                    'path' in args
-                ), 'load() implementation requires positional first args `path`'
+                    "path" in args
+                ), "load() implementation requires positional first args `path`"
                 inherited = object.__getattribute__(self, item)
                 return inherited(*args, **kw)
 

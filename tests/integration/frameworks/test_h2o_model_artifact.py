@@ -16,7 +16,7 @@ def predict_dataframe(
 ) -> t.Optional[str]:
     hf = h2o.H2OFrame(df)
     pred = model.predict(hf)
-    return pred.as_data_frame().to_json(orient='records')
+    return pred.as_data_frame().to_json(orient="records")
 
 
 test_data = {
@@ -52,7 +52,7 @@ def train_h2o_aml() -> h2o.automl.H2OAutoML:
 def test_h2o_save_load(train_h2o_aml, tmpdir):
     test_df: pd.DataFrame = pd.read_json(json.dumps(test_data))
     H2oModel(train_h2o_aml.leader).save(tmpdir)
-    assert os.path.exists(H2oModel.get_path(tmpdir, ""))
+    assert os.path.exists(os.path.join(tmpdir, os.listdir(tmpdir)[0]))
 
     h2o_loaded: h2o.model.model_base.ModelBase = H2oModel.load(tmpdir)
     assert predict_dataframe(train_h2o_aml.leader, test_df) == predict_dataframe(

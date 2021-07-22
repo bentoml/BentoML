@@ -9,10 +9,10 @@ from sklearn import datasets
 
 from bentoml.mlflow import MLflowModel
 
-ModelWithData = namedtuple("ModelWithData", ['model', 'data'])
+ModelWithData = namedtuple("ModelWithData", ["model", "data"])
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def sklearn_model():
     iris = datasets.load_iris()
     X = iris.data[:, :2]

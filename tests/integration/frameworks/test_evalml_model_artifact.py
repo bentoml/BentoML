@@ -6,15 +6,15 @@ import pytest
 
 from bentoml.evalml import EvalMLModel
 
-mock_df = pd.DataFrame([[42, 'b']])
+mock_df = pd.DataFrame([[42, "b"]])
 
 
 @pytest.fixture(scope="session")
 def binary_pipeline() -> "evalml.pipelines.BinaryClassificationPipeline":
-    X = pd.DataFrame([[0, 'a'], [0, 'a'], [0, 'a'], [42, 'b'], [42, 'b'], [42, 'b']])
-    y = pd.Series([0, 0, 0, 1, 1, 1], name='target')
+    X = pd.DataFrame([[0, "a"], [0, "a"], [0, "a"], [42, "b"], [42, "b"], [42, "b"]])
+    y = pd.Series([0, 0, 0, 1, 1, 1], name="target")
     pipeline = evalml.pipelines.BinaryClassificationPipeline(
-        ['Imputer', 'One Hot Encoder', 'Random Forest Classifier']
+        ["Imputer", "One Hot Encoder", "Random Forest Classifier"]
     )
     pipeline.fit(X, y)
     return pipeline

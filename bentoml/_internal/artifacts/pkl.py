@@ -38,10 +38,10 @@ class PickleArtifact(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
-        with open(cls.get_path(path, cls.PICKLE_EXTENSION), 'rb') as inf:
+        with open(cls.get_path(path, cls.PICKLE_EXTENSION), "rb") as inf:
             model = cloudpickle.load(inf)
         return model
 
     def save(self, path: PathType) -> None:
-        with open(self.get_path(path, self.PICKLE_EXTENSION), 'wb') as inf:
+        with open(self.get_path(path, self.PICKLE_EXTENSION), "wb") as inf:
             cloudpickle.dump(self._model, inf)

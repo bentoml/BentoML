@@ -32,7 +32,7 @@ Example Projects:
 * Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`__
 * CIFAR-10 Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.pytorch.PytorchModelArtifact
+.. autoclass:: bentoml.frameworks.pytorch.PyTorchModel
 
 
 ===========================
@@ -191,7 +191,7 @@ Gluon
 Pytorch Lightning
 =================
 
-.. autoclass:: bentoml.frameworks.pytorch.PytorchLightningModelArtifact
+.. autoclass:: bentoml.frameworks.pytorch.PyTorchLightningModel
 
 
 =========

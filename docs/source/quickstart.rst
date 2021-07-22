@@ -132,7 +132,7 @@ Firstly, the :code:`@artifact(...)` here defines the required trained models to 
 packed with this prediction service. BentoML model artifacts are pre-built wrappers for
 persisting, loading and running a trained model. This example uses the
 :code:`SklearnModelArtifact` for the scikit-learn framework. BentoML also provide
-artifact class for other ML frameworks, including :code:`PytorchModelArtifact`,
+artifact class for other ML frameworks, including :code:`PyTorchModel`,
 :code:`KerasModelArtifact`, and :code:`XgboostModelArtifact` etc.
 
 The :code:`@env` decorator specifies the dependencies and environment settings required

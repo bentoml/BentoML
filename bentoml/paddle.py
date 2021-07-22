@@ -28,13 +28,6 @@ except ImportError:
         "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
     )
 
-try:
-    import paddlehub
-except ImportError:
-    raise MissingDependencyException(
-        "paddlehub is required by PaddlePaddleModel and PaddleHubModel"
-    )
-
 
 class PaddlePaddleModel(ModelArtifact):
     """
@@ -119,10 +112,15 @@ class PaddleHubModel(ModelArtifact):
         TODO:
     """
 
-    _model: paddlehub.Module
+    try:
+        import paddlehub
+    except ImportError:
+        raise MissingDependencyException("paddlehub is required by PaddleHubModel")
+
+    _model: paddlehub.module.Module
 
     def __init__(
-        self, model: paddlehub.Module, metadata: t.Optional[MetadataType] = None
+        self, model: paddlehub.module.Module, metadata: t.Optional[MetadataType] = None
     ):
         super(PaddleHubModel, self).__init__(model, metadata=metadata)
 
@@ -130,5 +128,9 @@ class PaddleHubModel(ModelArtifact):
         self._model.save_inference_model(str(path))
 
     @classmethod
-    def load(cls, path: PathType) -> t.Generic:
-        return paddlehub.Module.load(directory=str(path))
+    def load(cls, path: PathType) -> t.Any:
+        try:
+            from paddlehub.module import Module
+        except ImportError:
+            raise MissingDependencyException("paddlehub is required by PaddleHubModel")
+        return Module.load(directory=str(path))

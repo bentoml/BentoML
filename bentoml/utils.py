@@ -97,11 +97,11 @@ class ImageProvider(object):
 
     import bentoml
     from bentoml.docker import ImageProvider
-    from bentoml.frameworks.pytorch import PytorchModelArtifact
+    from bentoml.frameworks.pytorch import PyTorchModel
     from pandas import DataFrame
 
     @bentoml.env(docker_base_image=ImageProvider('debian', '3.8', gpu=True))
-    @bentoml.artifacts([PytorchModelArtifact('net')])
+    @bentoml.artifacts([PyTorchModel('net')])
     class Service(bentoml.BentoService):
         @bentoml.api()
         def predict(self, df: DataFrame):

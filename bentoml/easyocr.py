@@ -22,13 +22,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import easyocr
-
-    assert easyocr.__version__ >= "1.3"
-except ImportError:
-    raise MissingDependencyException("easyocr>=1.3 is required by EasyOCRModel")
-
 
 class EasyOCRModel(ModelArtifact):
     """
@@ -67,6 +60,13 @@ class EasyOCRModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import easyocr
+
+        assert easyocr.__version__ >= "1.3"
+    except ImportError:
+        raise MissingDependencyException("easyocr>=1.3 is required by EasyOCRModel")
+
     def __init__(
         self,
         model: "easyocr.Reader",
@@ -97,6 +97,12 @@ class EasyOCRModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "easyocr.Reader":
+        try:
+            import easyocr
+
+            assert easyocr.__version__ >= "1.3"
+        except ImportError:
+            raise MissingDependencyException("easyocr>=1.3 is required by EasyOCRModel")
         with open(cls.__json_file__path(path), "r") as f:
             model_params = json.load(f)
 

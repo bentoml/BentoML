@@ -7,8 +7,10 @@ import pytest
 
 from bentoml._internal.exceptions import BentoMLException
 from bentoml.onnx import OnnxModel
-
-test_df: "pd.DataFrame" = pd.DataFrame([[5.0, 4.0, 3.0, 1.0]])
+from tests.integration.frameworks.test_sklearn_model_artifact import (
+    sklearn_model,
+    test_df,
+)
 
 
 def predict_df(
@@ -24,18 +26,9 @@ def predict_df(
 def sklearn_onnx_model():
     from skl2onnx import convert_sklearn
     from skl2onnx.common.data_types import FloatTensorType
-    from sklearn.datasets import load_iris
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.model_selection import train_test_split
 
     init_types = [("float_input", FloatTensorType([None, 4]))]
-
-    iris = load_iris()
-    X, Y = iris.data[:, :2], iris.target
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y)
-    clr = RandomForestClassifier()
-    clr.fit(X_train, Y_train)
-    return convert_sklearn(clr, initial_types=init_types)
+    return convert_sklearn(sklearn_model(), initial_types=init_types)
 
 
 @pytest.mark.parametrize(

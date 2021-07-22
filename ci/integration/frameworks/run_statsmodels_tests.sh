@@ -9,8 +9,9 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-python -m pip install pip --upgrade
-python -m pip install tensorflow==2.2.0
-pytest -s "$GIT_ROOT"/tests/integration/test_tensorflow_v2_2_savedmodel_artifact.py --cov=bentoml --cov-config=.coveragerc
+# Install statsmodels
+pip install statsmodels==0.12.2 joblib numpy pandas
+
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_statsmodels_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

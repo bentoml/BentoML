@@ -20,14 +20,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import paddle
-    import paddle.inference as pi
-except ImportError:
-    raise MissingDependencyException(
-        "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
-    )
-
 
 class PaddlePaddleModel(ModelArtifact):
     """
@@ -56,6 +48,14 @@ class PaddlePaddleModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import paddle
+        import paddle.inference as pi
+    except ImportError:
+        raise MissingDependencyException(
+            "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
+        )
+
     PADDLE_MODEL_EXTENSION: str = ".pdmodel"
     PADDLE_PARAMS_EXTENSION: str = ".pdiparams"
 
@@ -70,6 +70,13 @@ class PaddlePaddleModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> paddle.inference.Predictor:
+        try:
+            import paddle.inference as pi
+        except ImportError:
+            raise MissingDependencyException(
+                "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
+            )
+
         # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
         config = pi.Config(
             cls.get_path(path, cls.PADDLE_MODEL_EXTENSION),
@@ -79,6 +86,12 @@ class PaddlePaddleModel(ModelArtifact):
         return pi.create_predictor(config)
 
     def save(self, path: PathType) -> None:
+        try:
+            import paddle
+        except ImportError:
+            raise MissingDependencyException(
+                "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
+            )
         # Override the model path if temp dir was set
         # TODO(aarnphm): What happens if model is a paddle.inference.Predictor?
         paddle.jit.save(self._model, self.get_path(path))

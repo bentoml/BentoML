@@ -18,12 +18,12 @@ from bentoml.adapters import (
 )
 from bentoml.handlers import DataframeHandler
 from bentoml.service.artifacts.pickle import PickleArtifact
-from bentoml.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModel
 from bentoml.types import InferenceResult, InferenceTask
 
 
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact("sk_model")])
+@bentoml.artifacts([PickleArtifact("model"), SklearnModel("sk_model")])
 class ExampleService(bentoml.BentoService):
     """
     Example BentoService class made for testing purpose

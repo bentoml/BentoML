@@ -17,10 +17,10 @@
 from ._internal.artifacts import PickleArtifact
 
 
-class PycaretModel(PickleArtifact):
+class StatsModel(PickleArtifact):
     """
-    Model class saving/loading :obj:`pycaret` object with pickle serialization
-    using ``cloudpickle``. :class:`PycaretModel` is a :class:`PickleArtifact` wrapper.
+    Model class saving/loading :obj:`statsmodel` object with pickle serialization
+    using ``cloudpickle``. :class:`StatsModel` is a :class:`PickleArtifact` wrapper.
 
     Example usage under :code:`train.py`::
 

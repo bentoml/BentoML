@@ -20,15 +20,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import fastai
-    import fastai.basics  # noqa
-
-    # fastai v2
-    import fastai.learner
-except ImportError:
-    raise MissingDependencyException("fastai v2 is required by FastaiModel")
-
 
 class FastaiModel(ModelArtifact):
     """
@@ -57,6 +48,15 @@ class FastaiModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import fastai
+        import fastai.basics  # noqa
+
+        # fastai v2
+        import fastai.learner
+    except ImportError:
+        raise MissingDependencyException("fastai v2 is required by FastaiModel")
+
     def __init__(
         self,
         model: "fastai.learner.Learner",
@@ -66,6 +66,14 @@ class FastaiModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "fastai.learner.Learner":
+        try:
+            import fastai
+            import fastai.basics  # noqa
+
+            # fastai v2
+            import fastai.learner
+        except ImportError:
+            raise MissingDependencyException("fastai v2 is required by FastaiModel")
         return fastai.basics.load_learner(cls.get_path(path, cls.PICKLE_EXTENSION))
 
     def save(self, path: PathType) -> None:

@@ -17,26 +17,11 @@
 import os
 import typing as t
 
+import cloudpickle
+
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import InvalidArgument, MissingDependencyException
+from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import cloudpickle
-
-try:
-    import tensorflow as tf  # pylint: disable=unused-import
-    import tensorflow.keras as tfk
-
-    if t.TYPE_CHECKING:
-        from tensorflow.python.client.session import (  # noqa # pylint disable=unused-import
-            BaseSession,
-        )
-        from tensorflow.python.framework.ops import (  # noqa # pylint disable=unused-import
-            _DefaultStack,
-        )
-except ImportError:
-    raise MissingDependencyException(
-        "tensorflow is required by KerasModel as backend runtime."
-    )
 
 
 class KerasModel(ModelArtifact):
@@ -55,7 +40,7 @@ class KerasModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`tensorflow` package is required for KerasModel
+            :obj:`tensorflow` is required by KerasModel
         InvalidArgument:
             model being packed must be instance of :class:`tf.keras.models.Model`
 
@@ -71,6 +56,22 @@ class KerasModel(ModelArtifact):
 
         TODO:
     """
+
+    # fmt: off
+    try:
+        import tensorflow as tf
+        import tensorflow.keras as tfk
+
+        if t.TYPE_CHECKING:
+            from tensorflow.python.client.session import (  # noqa # pylint disable=unused-import
+                BaseSession,
+            )
+            from tensorflow.python.framework.ops import (  # noqa # pylint disable=unused-import
+                _DefaultStack,
+            )
+    except ImportError:
+        raise MissingDependencyException("tensorflow is required by KerasModel as backend runtime.")
+    # fmt: on
 
     graph: "_DefaultStack" = tf.compat.v1.get_default_graph()
     sess: "BaseSession" = tf.compat.v1.Session(graph=graph)
@@ -105,7 +106,12 @@ class KerasModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "tf.keras.models.Model":
-
+        try:
+            import tensorflow.keras as tfk
+        except ImportError:
+            raise MissingDependencyException(
+                "tensorflow is required by KerasModel as backend runtime."
+            )
         default_custom_objects = None
         if os.path.isfile(cls.__get_custom_object__path(path)):
             with open(cls.__get_custom_object__path(path), "rb") as dco_file:
@@ -130,18 +136,17 @@ class KerasModel(ModelArtifact):
         else:
             model = obj
 
-        # NOTES: This is unlikely to happen
-        if not isinstance(model, tf.keras.models.Model):
-            error_msg = rf"""\
-                Expects model argument of type `tf.keras.models.Model`,
-                got type: {type(model)} instead
-            """
-            raise InvalidArgument(error_msg)
         return model
 
     def save(self, path: PathType) -> None:
-        self.sess = tf.compat.v1.keras.backend.get_session()
-        self.graph = self.sess.graph
+        try:
+            import tensorflow as tf
+        except ImportError:
+            raise MissingDependencyException(
+                "tensorflow is required by KerasModel as backend runtime."
+            )
+
+        tf.compat.v1.keras.backend.get_session()
 
         # save custom_objects for model
         if self._custom_objects:

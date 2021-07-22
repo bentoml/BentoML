@@ -80,6 +80,7 @@ dev_requires = [
     "pylint>=2.5.2",
     "setuptools",
     "mypy",
+    "autoflake",
     "tox-conda>=0.2.0",
     "tox>=3.12.1",
     "twine",

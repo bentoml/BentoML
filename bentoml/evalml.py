@@ -20,12 +20,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import evalml
-    import evalml.pipelines
-except ImportError:
-    raise MissingDependencyException("evalml is required by EvalMLModel")
-
 
 class EvalMLModel(ModelArtifact):
     """
@@ -54,6 +48,12 @@ class EvalMLModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import evalml
+        import evalml.pipelines
+    except ImportError:
+        raise MissingDependencyException("evalml is required by EvalMLModel")
+
     def __init__(
         self,
         model: "evalml.pipelines.PipelineBase",
@@ -63,6 +63,11 @@ class EvalMLModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "evalml.pipelines.PipelineBase":
+        try:
+            import evalml
+            import evalml.pipelines
+        except ImportError:
+            raise MissingDependencyException("evalml is required by EvalMLModel")
         model_file_path: str = cls.get_path(path, cls.PICKLE_EXTENSION)
         return evalml.pipelines.PipelineBase.load(model_file_path)
 

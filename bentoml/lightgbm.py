@@ -20,11 +20,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import lightgbm
-except ImportError:
-    raise MissingDependencyException("lightgbm is required by LightGBMModel")
-
 
 class LightGBMModel(ModelArtifact):
     """
@@ -53,6 +48,11 @@ class LightGBMModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import lightgbm
+    except ImportError:
+        raise MissingDependencyException("lightgbm is required by LightGBMModel")
+
     def __init__(
         self, model: "lightgbm.Booster", metadata: t.Optional[MetadataType] = None,
     ):
@@ -60,6 +60,10 @@ class LightGBMModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "lightgbm.Booster":
+        try:
+            import lightgbm
+        except ImportError:
+            raise MissingDependencyException("lightgbm is required by LightGBMModel")
         return lightgbm.Booster(model_file=cls.get_path(path, cls.TXT_EXTENSION))
 
     def save(self, path: PathType) -> None:

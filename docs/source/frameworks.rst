@@ -1,5 +1,6 @@
 .. _frameworks-page:
 
+==========
 Frameworks
 ==========
 
@@ -21,7 +22,9 @@ Example Projects:
 
 * Sentiment Analysis - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.sklearn.SklearnModelArtifact
+.. autoclass:: bentoml.sklearn.SklearnModel
+    :show-inheritance:
+    :inherited-members:
 
 =======
 PyTorch
@@ -32,7 +35,9 @@ Example Projects:
 * Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/pytorch/fashion-mnist/pytorch-fashion-mnist.ipynb>`__
 * CIFAR-10 Image Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/pytorch/cifar10-image-classification/pytorch-cifar10-image-classification.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.pytorch.PyTorchModel
+.. autoclass:: bentoml.pytorch.PyTorchModel
+    :show-inheritance:
+    :inherited-members:
 
 
 ===========================
@@ -45,7 +50,9 @@ Example Projects:
 * Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_2_fashion_mnist.ipynb>`__
 * Movie Review Sentiment with BERT - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/bert/bert_movie_reviews.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
+.. autoclass:: bentoml.tensorflow.TensorflowModel
+    :show-inheritance:
+    :inherited-members:
 
 
 =====================================
@@ -58,7 +65,9 @@ Example Projects:
 * Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/text-classification/keras-text-classification.ipynb>`__
 * Toxic Comment Classifier - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/legacy-keras/toxic-comment-classification/keras-toxic-comment-classification.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.keras.KerasModel
+.. autoclass:: bentoml.keras.KerasModel
+    :show-inheritance:
+    :inherited-members:
 
 
 ==============
@@ -69,9 +78,10 @@ Example Projects:
 
 * Fashion MNIST - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/tensorflow/fashion-mnist/tensorflow_1_fashion_mnist.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.tensorflow.TensorflowSavedModelArtifact
+.. autoclass:: bentoml.tensorflow.TensorflowModel
     :noindex:
-
+    :show-inheritance:
+    :inherited-members:
 
 =========
 FastAI v2
@@ -82,6 +92,8 @@ Example Projects:
 * Medical image classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__
 
 .. autoclass:: bentoml.fastai.FastaiModel
+    :show-inheritance:
+    :inherited-members:
 
 =======
 XGBoost
@@ -92,7 +104,7 @@ Example Projects:
 * Titanic Survival Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/xgboost/titanic-survival-prediction/xgboost-titanic-survival-prediction.ipynb>`__
 * League of Legend win Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/xgboost/league-of-legend-win-prediction/xgboost-league-of-legend-win-prediction.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.xgboost.XgboostModelArtifact
+.. autoclass:: bentoml.xgboost.XgboostModel
 
 ========
 LightGBM
@@ -102,7 +114,7 @@ Example Projects:
 
 * Titanic Survival Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/lightbgm/titanic-survival-prediction/lightbgm-titanic-survival-prediction.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.lightgbm.LightGBMModelArtifact
+.. autoclass:: bentoml.lightgbm.LightGBMModel
 
 
 ========
@@ -113,7 +125,7 @@ Example Projects:
 
 * Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-text/text-classification/text-classification.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.fasttext.FasttextModelArtifact
+.. autoclass:: bentoml.fasttext.FasttextModel
 
 ===
 H2O
@@ -124,14 +136,15 @@ Example Projects:
 * Loan Default Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb>`__
 * Prostate Cancer Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.h2o.H2oModelArtifact
+.. autoclass:: bentoml.h2o.H2oModel
 
 
 ======
 CoreML
 ======
 
-.. autoclass:: bentoml.frameworks.coreml.CoreMLModelArtifact
+.. autoclass:: bentoml.coreml.CoreMLModel
+    :members:
 
 
 ====
@@ -142,28 +155,28 @@ Example Projects:
 
 * Image Classification with ResNet50 - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.onnx.OnnxModel
+.. autoclass:: bentoml.onnx.OnnxModel
 
 
 =========
 ONNX-MLIR
 =========
 
-.. autoclass:: bentoml.frameworks.onnxmlir.OnnxMlirModel
+.. autoclass:: bentoml.onnxmlir.OnnxMlirModel
 
 
 =====
 Spacy
 =====
 
-.. autoclass:: bentoml.frameworks.spacy.SpacyModelArtifact
+.. autoclass:: bentoml.spacy.SpacyModel
 
 
 ============
 Transformers
 ============
 
-.. autoclass:: bentoml.frameworks.transformers.TransformersModelArtifact
+.. autoclass:: bentoml.transformers.TransformersModel
 
 
 ===========
@@ -184,21 +197,21 @@ Example Projects:
 Gluon
 =====
 
-.. autoclass:: bentoml.frameworks.gluon.GluonModel
+.. autoclass:: bentoml.gluon.GluonModel
 
 
 =================
 Pytorch Lightning
 =================
 
-.. autoclass:: bentoml.frameworks.pytorch.PyTorchLightningModel
+.. autoclass:: bentoml.pytorch.PyTorchLightningModel
 
 
 =========
 Detectron
 =========
 
-.. autoclass:: bentoml.frameworks.detectron.DetectronModelArtifact
+.. autoclass:: bentoml.detectron.DetectronModel
 
 
 ======
@@ -209,19 +222,19 @@ Example Projects:
 
 * Boston Housing Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/paddlepaddle/LinearRegression/LinearRegression.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.paddle.PaddlePaddleModel
+.. autoclass:: bentoml.paddle.PaddlePaddleModel
 
 ========
 EasyOCR
 ========
 
-.. autoclass:: bentoml.frameworks.easyocr.EasyOCRArtifact
+.. autoclass:: bentoml.easyocr.EasyOCRModel
 
 ======
 EvalML
 ======
 
-.. autoclass:: bentoml.frameworks.evalml.EvalMLModelArtifact
+.. autoclass:: bentoml.evalml.EvalMLModel
 
 
 .. spelling::

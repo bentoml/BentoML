@@ -82,10 +82,10 @@ class DataframeInput(StringInput):
 
         from bentoml import env, artifacts, api, BentoService
         from ..adapters import DataframeInput
-        from ..frameworks.sklearn import SklearnModelArtifact
+        from ..frameworks.sklearn import SklearnModel
 
         @env(infer_pip_packages=True)
-        @artifacts([SklearnModelArtifact('model')])
+        @artifacts([SklearnModel('model')])
         class IrisClassifier(BentoService):
 
             @api(

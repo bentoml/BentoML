@@ -20,11 +20,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import jax
-except ImportError:
-    raise MissingDependencyException("jax is required by both FlaxModel and TraxModel")
-
 
 class FlaxModel(ModelArtifact):
     """
@@ -52,6 +47,11 @@ class FlaxModel(ModelArtifact):
 
         TODO:
     """
+
+    try:
+        import jax
+    except ImportError:
+        raise MissingDependencyException("jax is required by FlaxModel")
 
     def __init__(
         self, model, metadata: t.Optional[MetadataType] = None,
@@ -100,6 +100,11 @@ class TraxModel(ModelArtifact):
 
         TODO:
     """
+
+    try:
+        import jax
+    except ImportError:
+        raise MissingDependencyException("jax is required by TraxModel")
 
     def __init__(
         self, model, metadata: t.Optional[MetadataType] = None,

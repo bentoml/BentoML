@@ -18,19 +18,12 @@ import logging
 import typing as t
 import zipfile
 
+import cloudpickle
 import torch.nn
 
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import cloudpickle
-
-try:
-    import torch
-except ImportError:
-    raise MissingDependencyException(
-        "torch is required by PyTorchModel and PyTorchLightningModel"
-    )
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +57,13 @@ class PyTorchModel(ModelArtifact):
 
         TODO:
     """
+
+    try:
+        import torch
+    except ImportError:
+        raise MissingDependencyException(
+            "torch is required by PyTorchModel and PyTorchLightningModel"
+        )
 
     def __init__(
         self,
@@ -132,6 +132,7 @@ class PyTorchLightningModel(ModelArtifact):
     try:
         import pytorch_lightning as pl
         import pytorch_lightning.core
+        import torch
     except ImportError:
         raise MissingDependencyException(
             "pytorch_lightning is required by PyTorchLightningModel"

@@ -20,11 +20,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import fasttext  # noqa # pylint: disable=unused-import
-except ImportError:
-    raise MissingDependencyException("fasttext is required by FasttextModel")
-
 
 class FasttextModel(ModelArtifact):
     """
@@ -53,6 +48,11 @@ class FasttextModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import fasttext
+    except ImportError:
+        raise MissingDependencyException("fasttext is required by FasttextModel")
+
     def __init__(
         self,
         model: "fasttext.FastText._FastText",
@@ -62,6 +62,10 @@ class FasttextModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "fasttext.FastText._FastText":
+        try:
+            import fasttext  # noqa # pylint: disable=unused-import
+        except ImportError:
+            raise MissingDependencyException("fasttext is required by FasttextModel")
         return fasttext.load_model(cls.get_path(path))
 
     def save(self, path: PathType) -> None:

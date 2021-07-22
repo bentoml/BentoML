@@ -14,91 +14,60 @@
 #     limitations under the License.
 # ==============================================================================
 
-import os
+import typing as t
 
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
+from ._internal.types import MetadataType, PathType
 
-
-def _import_joblib_module():
+try:
+    import joblib
+except ImportError:
     try:
-        import joblib
+        from sklearn.externals import joblib
     except ImportError:
-        joblib = None
-
-    if joblib is None:
-        try:
-            from sklearn.externals import joblib
-        except ImportError:
-            pass
-
-    if joblib is None:
         raise MissingDependencyException(
-            "sklearn module is required to use SklearnModelArtifact"
+            "sklearn module is required to use SklearnModel"
         )
 
-    return joblib
 
-
-class SklearnModelArtifact(ModelArtifact):
+class SklearnModel(ModelArtifact):
     """
-    Artifact class for saving/loading scikit learn models using sklearn.externals.joblib
+    Model class for saving/loading :obj:`sklearn` models.
 
     Args:
-        name (str): Name for the artifact
-        pickle_extension (str): The extension format for pickled file
+        model (`Any`, that is omitted by `sklearn`):
+            Any model that is omitted by `sklearn`
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyException: sklearn package is required for SklearnModelArtifact
+        MissingDependencyException:
+            :obj:`sklearn` is required by SklearnModel
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> from sklearn import svm
-    >>>
-    >>> model_to_save = svm.SVC(gamma='scale')
-    >>> # ... training model, etc.
-    >>>
-    >>> import bentoml
-    >>> from bentoml.frameworks.sklearn import SklearnModelArtifact
-    >>> from bentoml.adapters import DataframeInput
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([SklearnModelArtifact('model')])
-    >>> class SklearnModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=DataframeInput(), batch=True)
-    >>>     def predict(self, df):
-    >>>         result = self.artifacts.model.predict(df)
-    >>>         return result
-    >>>
-    >>> svc = SklearnModelService()
-    >>>
-    >>> # Pack directly with sklearn model object
-    >>> svc.pack('model', model_to_save)
-    >>> svc.save()
+        TODO:
+
+    One then can define :code:`bento_service.py`::
+
+        TODO:
+
+    Pack bundle under :code:`bento_packer.py`::
+
+        TODO:
     """
 
-    def __init__(self, name):
-        super().__init__(name)
-        self._model = None
+    def __init__(self, model, metadata: t.Optional[MetadataType] = None):
+        super(SklearnModel, self).__init__(model, metadata=metadata)
 
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + self.PICKLE_EXTENSION)
+    @classmethod
+    def __get_file__path(cls, path: PathType) -> PathType:
+        return cls.get_path(path, cls.PICKLE_EXTENSION)
 
-    def pack(self, sklearn_model):  # pylint:disable=arguments-renamed
-        self._model = sklearn_model
-        return self
+    @classmethod
+    def load(cls, path: PathType) -> t.Any:
+        return joblib.load(cls.__get_file__path(path), mmap_mode="r")
 
-    def load(self, path):
-        joblib = _import_joblib_module()
-
-        model_file_path = self._model_file_path(path)
-        sklearn_model = joblib.load(model_file_path, mmap_mode="r")
-        return self.pack(sklearn_model)
-
-    def get(self):
-        return self._model
-
-    def save(self, path):
-        joblib = _import_joblib_module()
-        joblib.dump(self._model, self._model_file_path(path))
+    def save(self, path: PathType) -> None:
+        joblib.dump(self._model, self.__get_file__path(path))

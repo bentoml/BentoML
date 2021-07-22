@@ -6,13 +6,13 @@ import time
 import bentoml
 from bentoml.adapters import FileInput, ImageInput, JsonInput, MultiImageInput
 from bentoml.service.artifacts.pickle import PickleArtifact
-from bentoml.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModel
 from bentoml.types import InferenceError, InferenceResult, InferenceTask
 
 
 # pylint: disable=arguments-differ
 @bentoml.env(infer_pip_packages=True)
-@bentoml.artifacts([PickleArtifact("model"), SklearnModelArtifact("sk_model")])
+@bentoml.artifacts([PickleArtifact("model"), SklearnModel("sk_model")])
 class NonBatchExampleService(bentoml.BentoService):
     """
     Example BentoService class made for testing purpose

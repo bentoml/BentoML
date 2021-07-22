@@ -70,7 +70,7 @@ Use BentoML CLI tool to get the information of IrisClassifier created above
         "artifacts": [
           {
             "name": "model",
-            "artifactType": "SklearnModelArtifact"
+            "artifactType": "SklearnModel"
           }
         ],
         "apis": [
@@ -239,4 +239,3 @@ Remove deployment
 .. code-block:: bash
 
     kubectl delete -f iris-classifier.yaml
-

@@ -139,32 +139,32 @@ import pandas as pd
 
 from bentoml import env, artifacts, api, BentoService
 from bentoml.adapters import DataframeInput, JsonOutput
-from bentoml.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModel
 
 # BentoML packages local python modules automatically for deployment
 from my_ml_utils import my_encoder
 
 
 @env(infer_pip_packages=True)
-@artifacts([SklearnModelArtifact('my_model')])
+@artifacts([SklearnModel('my_model')])
 class MyPredictionService(BentoService):
+  """
+  A simple prediction service exposing a Scikit-learn model
+  """
+
+  @api(input=DataframeInput(), output=JsonOutput(), batch=True)
+  def predict(self, df: pd.DataFrame):
     """
-    A simple prediction service exposing a Scikit-learn model
+    An inference API named `predict` that takes tabular data in pandas.DataFrame 
+    format as input, and returns Json Serializable value as output.
+
+    A batch API is expect to receive a list of inference input and should returns
+    a list of prediction results.
     """
+    model_input_df = my_encoder.fit_transform(df)
+    predictions = self.artifacts.my_model.predict(model_input_df)
 
-    @api(input=DataframeInput(), output=JsonOutput(), batch=True)
-    def predict(self, df: pd.DataFrame):
-        """
-        An inference API named `predict` that takes tabular data in pandas.DataFrame 
-        format as input, and returns Json Serializable value as output.
-
-        A batch API is expect to receive a list of inference input and should returns
-        a list of prediction results.
-        """
-        model_input_df = my_encoder.fit_transform(df)
-        predictions = self.artifacts.my_model.predict(model_input_df)
-
-        return list(predictions)
+    return list(predictions)
 ```
 
 This can be easily plugged into your model training process: import your bentoml 

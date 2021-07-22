@@ -7,7 +7,7 @@ import pytest
 import bentoml
 from bentoml.adapters import DataframeInput
 from bentoml.exceptions import BentoMLException
-from bentoml.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModel
 
 
 def test_pip_packages_env_with_legacy_api():
@@ -88,7 +88,7 @@ def test_service_env_pip_install_options(tmpdir):
 
 
 def test_artifact_pip_packages(tmpdir):
-    @bentoml.artifacts([SklearnModelArtifact("model")])
+    @bentoml.artifacts([SklearnModel("model")])
     @bentoml.env(pip_packages=["scikit-learn==0.23.0"])
     class ServiceWithList(bentoml.BentoService):
         @bentoml.api(input=DataframeInput(), batch=True)

@@ -69,7 +69,7 @@ above
         "artifacts": [
           {
             "name": "model",
-            "artifactType": "SklearnModelArtifact"
+            "artifactType": "SklearnModel"
           }
         ],
         "apis": [

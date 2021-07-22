@@ -21,7 +21,7 @@ Example Projects:
 
 * Sentiment Analysis - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/scikit-learn/sentiment-analysis/sklearn-sentiment-analysis.ipynb>`__
 
-.. autoclass:: bentoml.frameworks.sklearn.SklearnModelArtifact
+.. autoclass:: bentoml.frameworks.sklearn.SklearnModel
 
 =======
 PyTorch

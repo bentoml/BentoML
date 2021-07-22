@@ -142,7 +142,7 @@ class MissingDependencyException(BentoMLException):
     """
     Raise when BentoML component failed to load required dependency - some BentoML
     components has dependency that is optional to the library itself. For example,
-    when using SklearnModelArtifact, the scikit-learn module is required although
+    when using SklearnModel, the scikit-learn module is required although
     BentoML does not require scikit-learn to be a dependency when installed
     """
 

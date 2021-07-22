@@ -2,7 +2,7 @@ import pathlib
 import sys
 
 from bentoml.service.artifacts.pickle import PickleArtifact
-from bentoml.sklearn import SklearnModelArtifact
+from bentoml.sklearn import SklearnModel
 
 
 class PickleModel:
@@ -36,7 +36,7 @@ def pack_models(path):
         [[i] for _ in range(100) for i in range(10)],
         [i for _ in range(100) for i in range(10)],
     )
-    SklearnModelArtifact("sk_model").pack(sklearn_model).save(path)
+    SklearnModel("sk_model").pack(sklearn_model).save(path)
 
 
 if __name__ == "__main__":

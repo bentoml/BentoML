@@ -131,10 +131,10 @@ We define with the following bash command the BentoML Service:
     cat > main.py <<EOF
     from bentoml import env, artifacts, api, BentoService
     from bentoml.adapters import JsonInput
-    from bentoml.frameworks.sklearn import SklearnModelArtifact
+    from bentoml.frameworks.sklearn import SklearnModel
 
     @env(infer_pip_packages=True)
-    @artifacts([SklearnModelArtifact('model')])
+    @artifacts([SklearnModel('model')])
     class IrisClassifier(BentoService):
         """
         A minimum prediction service exposing a Scikit-learn model
@@ -195,7 +195,7 @@ Verify the saved bundle created:
         "artifacts": [
           {
             "name": "model",
-            "artifactType": "SklearnModelArtifact",
+            "artifactType": "SklearnModel",
             "metadata": {}
           }
         ],

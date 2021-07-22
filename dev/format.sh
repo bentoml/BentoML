@@ -2,8 +2,9 @@
 
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 
-black -S "$GIT_ROOT"
-isort "$GIT_ROOT"
+cd "$GIT_ROOT" || exit 1
+black -S .
+isort .
 
 # format yatai webui
 WEB_SERVER_DIR="$GIT_ROOT"/yatai/web_server

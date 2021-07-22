@@ -35,9 +35,6 @@ except ImportError:
         "paddlehub is required by PaddlePaddleModel and PaddleHubModel"
     )
 
-# TODO(aarnphm): Cache model representation in memory
-cached__model: t.Union[paddle.nn.Layer, pi.Predictor, paddlehub.Module] = None
-
 
 class PaddlePaddleModel(ModelArtifact):
     """
@@ -72,14 +69,14 @@ class PaddlePaddleModel(ModelArtifact):
     _model: t.Union[paddle.nn.Layer, paddle.inference.Predictor]
 
     def __init__(
-            self: "PaddlePaddleModel",
-            model: t.Union[paddle.nn.Layer, paddle.inference.Predictor],
-            metadata: t.Optional[MetadataType] = None,
+        self,
+        model: t.Union[paddle.nn.Layer, paddle.inference.Predictor],
+        metadata: t.Optional[MetadataType] = None,
     ):
         super(PaddlePaddleModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(cls: "PaddlePaddleModel", path: PathType) -> paddle.inference.Predictor:
+    def load(cls, path: PathType) -> paddle.inference.Predictor:
         # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
         config = pi.Config(
             cls.get_path(path, cls.PADDLE_MODEL_EXTENSION),
@@ -88,7 +85,7 @@ class PaddlePaddleModel(ModelArtifact):
         config.enable_memory_optim()
         return pi.create_predictor(config)
 
-    def save(self: "PaddlePaddleModel", path: PathType) -> None:
+    def save(self, path: PathType) -> None:
         # Override the model path if temp dir was set
         # TODO(aarnphm): What happens if model is a paddle.inference.Predictor?
         paddle.jit.save(self._model, self.get_path(path))
@@ -100,14 +97,14 @@ class PaddleHubModel(ModelArtifact):
     Model class for saving/loading :obj:`paddlehub` models via
 
     Args:
-        model (`Union[paddle.nn.Layer, paddle.inference.Predictor]`):
-            Every PaddlePaddle model is of type :obj:`paddle.nn.Layer`
+        model (`paddlehub.Module`):
+            Every PaddleHub model is of type :obj:`paddlehub.Module`
         metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Class metadata
 
     Raises:
         MissingDependencyException:
-            :obj:`paddlepaddle` is required by PaddleHubModel
+            :obj:`paddlehub` and :obj:`paddlepaddle` are required by PaddleHubModel
 
     Example usage under :code:`train.py`::
 
@@ -121,16 +118,17 @@ class PaddleHubModel(ModelArtifact):
 
         TODO:
     """
+
     _model: paddlehub.Module
 
-    def __init__(self, model: paddlehub.Module, metadata: t.Optional[MetadataType] = None):
+    def __init__(
+        self, model: paddlehub.Module, metadata: t.Optional[MetadataType] = None
+    ):
         super(PaddleHubModel, self).__init__(model, metadata=metadata)
-        global cached__model
-        cached__model = model
 
-    def save(self: "PaddleHubModel", path: PathType) -> None:
+    def save(self, path: PathType) -> None:
         self._model.save_inference_model(str(path))
 
     @classmethod
-    def load(cls: "PaddleHubModel", path: PathType) -> t.Generic:
-        return cached__model.load(str(path))
+    def load(cls, path: PathType) -> t.Generic:
+        return paddlehub.Module.load(directory=str(path))

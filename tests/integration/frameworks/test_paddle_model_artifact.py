@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 from paddle.static import InputSpec
 
-from bentoml.paddle import PaddlePaddleModel, PaddleHubModel
+from bentoml.paddle import PaddleHubModel, PaddlePaddleModel
 
 BATCH_SIZE = 8
 BATCH_NUM = 4
@@ -89,7 +89,9 @@ def train_paddle_model() -> "Model":
 
 
 @pytest.fixture()
-def create_paddle_predictor(train_paddle_model, tmp_path_factory) -> "paddle.inference.Predictor":
+def create_paddle_predictor(
+    train_paddle_model, tmp_path_factory
+) -> "paddle.inference.Predictor":
     # Predictor init requires the path of saved model
     tmpdir = str(tmp_path_factory.mktemp('paddle_predictor'))
     paddle.jit.save(train_paddle_model, tmpdir)
@@ -104,15 +106,20 @@ def test_paddle_save_load(tmpdir, train_paddle_model, create_paddle_predictor):
     assert os.path.exists(PaddlePaddleModel.get_path(tmpdir, '.pdmodel'))
     paddle_loaded: nn.Layer = PaddlePaddleModel.load(tmpdir)
     assert (
-            predict_df(create_paddle_predictor, test_df).shape
-            == predict_df(paddle_loaded, test_df).shape
+        predict_df(create_paddle_predictor, test_df).shape
+        == predict_df(paddle_loaded, test_df).shape
     )
 
 
 def test_paddlehub_save_load(tmpdir):
-    paddlehub_model: paddlehub.Module = paddlehub.Module(name='senta_bilstm')
-    PaddleHubModel(paddlehub_model).save(tmpdir)
+    senta = paddlehub.Module(name="senta_bilstm")
 
-    paddlehub_loaded: t.Generic = PaddleHubModel.load(tmpdir)
-    assert paddlehub_model.sentiment_classify(texts=test_text)[0]['positive_probs'] == \
-           paddlehub_loaded.sentiment_classify(texts=test_text)[0]['positive_probs']
+    print(senta.sentiment_classify(texts=test_text))
+    PaddleHubModel(senta).save(tmpdir)
+    assert os.path.exists(os.path.join(tmpdir, 'model.pdmodel'))
+
+    paddlehub_loaded = PaddleHubModel.load(tmpdir)
+    assert (
+        senta.sentiment_classify(texts=test_text)[0]['positive_probs']
+        == paddlehub_loaded.sentiment_classify(texts=test_text)[0]['positive_probs']
+    )

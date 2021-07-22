@@ -68,8 +68,10 @@ class H2oModel(ModelArtifact):
     def load(cls, path: PathType) -> "h2o.model.model_base.ModelBase":
         h2o.init()
         h2o.no_progress()
-        get_path: str = cls.get_path(os.path.join(path, cls._MODEL_NAMESPACE))
-        return h2o.load_model(get_path)
+        # NOTE: model_path should be the first item in
+        #   h2o saved artifact directory
+        model_path: str = str(os.path.join(path, os.listdir(path)[0]))
+        return h2o.load_model(model_path)
 
     def save(self, path: PathType) -> None:
-        h2o.save_model(model=self._model, path=self.get_path(path), force=True)
+        h2o.save_model(model=self._model, path=str(path), force=True)

@@ -77,8 +77,8 @@ class MLflowModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> MT:
-        project_path: str = os.path.join(path, cls._MODEL_NAMESPACE)
-        return mlflow.pyfunc.load_model(str(project_path))
+        project_path: str = str(os.path.join(path, cls._MODEL_NAMESPACE))
+        return mlflow.pyfunc.load_model(project_path)
 
     def save(self, path: PathType) -> None:
-        self._loader_module.save_model(self._model, self.get_path(path, ""))
+        self._loader_module.save_model(self._model, self.get_path(path))

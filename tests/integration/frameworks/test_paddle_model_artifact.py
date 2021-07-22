@@ -1,13 +1,15 @@
 import os
+import typing as t
 
 import numpy as np
 import paddle
 import paddle.nn as nn
+import paddlehub
 import pandas as pd
 import pytest
 from paddle.static import InputSpec
 
-from bentoml.paddle import PaddlePaddleModel
+from bentoml.paddle import PaddlePaddleModel, PaddleHubModel
 
 BATCH_SIZE = 8
 BATCH_NUM = 4
@@ -36,26 +38,7 @@ test_df = pd.DataFrame(
     ]
 )
 
-
-class Model(nn.Layer):
-    def __init__(self):
-        super(Model, self).__init__()
-        self.fc = nn.Linear(IN_FEATURES, OUT_FEATURES)
-
-    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype='float32')])
-    def forward(self, x):
-        return self.fc(x)
-
-
-def train(model, loader, loss_fn, opt):
-    model.train()
-    for epoch_id in range(EPOCH_NUM):
-        for batch_id, (feature, label) in enumerate(loader()):
-            out = model(feature)
-            loss = loss_fn(out, label)
-            loss.backward()
-            opt.step()
-            opt.clear_grad()
+test_text: t.List[str] = ["味道不错，确实不算太辣，适合不能吃辣的人。就在长江边上，抬头就能看到长江的风景。鸭肠、黄鳝都比较新鲜。"]
 
 
 def predict_df(predictor: paddle.inference.Predictor, df: pd.DataFrame):
@@ -72,8 +55,18 @@ def predict_df(predictor: paddle.inference.Predictor, df: pd.DataFrame):
     return output_handle.copy_to_cpu()
 
 
+class Model(nn.Layer):
+    def __init__(self):
+        super(Model, self).__init__()
+        self.fc = nn.Linear(IN_FEATURES, OUT_FEATURES)
+
+    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype='float32')])
+    def forward(self, x):
+        return self.fc(x)
+
+
 @pytest.fixture(scope='session')
-def paddle_models():
+def train_paddle_model() -> "Model":
     model = Model()
     loss = nn.MSELoss()
     adam = paddle.optimizer.Adam(parameters=model.parameters())
@@ -84,26 +77,42 @@ def paddle_models():
         train_data, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=2
     )
 
-    train(model, loader, loss, adam)
+    model.train()
+    for epoch_id in range(EPOCH_NUM):
+        for batch_id, (feature, label) in enumerate(loader()):
+            out = model(feature)
+            loss_fn = loss(out, label)
+            loss_fn.backward()
+            adam.step()
+            adam.clear_grad()
     return model
 
 
 @pytest.fixture()
-def create_paddle_predictor(paddle_models, tmp_path_factory):
+def create_paddle_predictor(train_paddle_model, tmp_path_factory) -> "paddle.inference.Predictor":
     # Predictor init requires the path of saved model
     tmpdir = str(tmp_path_factory.mktemp('paddle_predictor'))
-    paddle.jit.save(paddle_models, tmpdir)
+    paddle.jit.save(train_paddle_model, tmpdir)
 
     config = paddle.inference.Config(tmpdir + '.pdmodel', tmpdir + '.pdiparams')
     config.enable_memory_optim()
     return paddle.inference.create_predictor(config)
 
 
-def test_paddle_save_load(tmpdir, paddle_models, create_paddle_predictor):
-    PaddlePaddleModel(paddle_models).save(tmpdir)
+def test_paddle_save_load(tmpdir, train_paddle_model, create_paddle_predictor):
+    PaddlePaddleModel(train_paddle_model).save(tmpdir)
     assert os.path.exists(PaddlePaddleModel.get_path(tmpdir, '.pdmodel'))
     paddle_loaded: nn.Layer = PaddlePaddleModel.load(tmpdir)
     assert (
-        predict_df(create_paddle_predictor, test_df).shape
-        == predict_df(paddle_loaded, test_df).shape
+            predict_df(create_paddle_predictor, test_df).shape
+            == predict_df(paddle_loaded, test_df).shape
     )
+
+
+def test_paddlehub_save_load(tmpdir):
+    paddlehub_model: paddlehub.Module = paddlehub.Module(name='senta_bilstm')
+    PaddleHubModel(paddlehub_model).save(tmpdir)
+
+    paddlehub_loaded: t.Generic = PaddleHubModel.load(tmpdir)
+    assert paddlehub_model.sentiment_classify(texts=test_text)[0]['positive_probs'] == \
+           paddlehub_loaded.sentiment_classify(texts=test_text)[0]['positive_probs']

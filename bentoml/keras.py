@@ -40,7 +40,7 @@ class KerasModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`tensorflow` package is required for KerasModel
+            :obj:`tensorflow` is required by KerasModel
         InvalidArgument:
             model being packed must be instance of :class:`tf.keras.models.Model`
 

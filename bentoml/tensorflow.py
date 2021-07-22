@@ -144,7 +144,7 @@ _TensorflowFunctionWrapper.__doc__ = """\
 
 class TensorflowModel(ModelArtifact):
     """
-    Artifact class for saving/loading :obj:`tensorflow model
+    Artifact class for saving/loading :obj:`tensorflow` model
     with :obj:`tensorflow.saved_model` format
 
     Args:

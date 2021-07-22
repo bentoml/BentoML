@@ -19,13 +19,8 @@ import typing as t
 from types import ModuleType
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import MissingDependencyException
+from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import MetadataType, PathType
-
-try:
-    import mlflow
-except ImportError:
-    raise MissingDependencyException("mlflow is required by MLflowModel")
 
 MT = t.TypeVar("MT")
 
@@ -61,6 +56,11 @@ class MLflowModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import mlflow
+    except ImportError:
+        raise MissingDependencyException("mlflow is required by MLflowModel")
+
     def __init__(
         self,
         model: MT,
@@ -68,6 +68,8 @@ class MLflowModel(ModelArtifact):
         metadata: t.Optional[MetadataType] = None,
     ):
         super(MLflowModel, self).__init__(model, metadata=metadata)
+        if 'mlflow' not in loader_module.__name__:
+            raise InvalidArgument('given `loader_module` is not omitted by mlflow.')
         self.__load__module(loader_module)
 
     @classmethod
@@ -77,6 +79,10 @@ class MLflowModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> MT:
+        try:
+            import mlflow
+        except ImportError:
+            raise MissingDependencyException("mlflow is required by MLflowModel")
         project_path: str = str(os.path.join(path, cls._MODEL_NAMESPACE))
         return mlflow.pyfunc.load_model(project_path)
 

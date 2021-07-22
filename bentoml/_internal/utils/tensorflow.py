@@ -1,7 +1,15 @@
 import logging
-from typing import Sequence, Union
+from typing import TYPE_CHECKING, Sequence, TypeVar, Union
 
 from ..exceptions import MissingDependencyException
+
+if TYPE_CHECKING:
+    # fmt: off
+    from tensorflow.python.framework.type_spec import (  # noqa # pylint: disable=unused-import
+        TypeSpec,
+    )
+
+    # fmt: on
 
 logger = logging.getLogger(__name__)
 
@@ -20,30 +28,45 @@ TENSOR_CLASS_NAMES = (
     "Tensor",
 )
 
+ST = TypeVar("ST")
 
-def _isinstance(obj, klass: Union[str, type, Sequence]):
-    if not klass:
+
+def _isinstance_wrapper(obj: ST, sobj: Union[str, type, Sequence]) -> bool:
+    """
+    `isinstance` wrapper to check tensor spec
+
+    Args:
+        obj:
+            tensor class to check.
+        sobj:
+            class used to check with :obj:`obj`. Follows `TENSOR_CLASS_NAME`
+
+    Returns:
+        :obj:`bool`
+    """
+    if not sobj:
         return False
-    if isinstance(klass, str):
-        return type(obj).__name__ == klass.split(".")[-1]
-    if isinstance(klass, (tuple, list, set)):
-        return any(_isinstance(obj, k) for k in klass)
-    return isinstance(obj, klass)
+    if isinstance(sobj, str):
+        return type(obj).__name__ == sobj.split(".")[-1]
+    if isinstance(sobj, (tuple, list, set)):
+        return any(_isinstance_wrapper(obj, k) for k in sobj)
+    return isinstance(obj, sobj)
 
 
-def normalize_spec(value):
-    if not _isinstance(value, TENSOR_CLASS_NAMES):
+def normalize_spec(value: ST) -> "TypeSpec":
+    """normalize tensor spec"""
+    if not _isinstance_wrapper(value, TENSOR_CLASS_NAMES):
         return value
 
     import tensorflow as tf
 
-    if _isinstance(value, "RaggedTensor"):
+    if _isinstance_wrapper(value, "RaggedTensor"):
         return tf.RaggedTensorSpec.from_value(value)
-    if _isinstance(value, "SparseTensor"):
+    if _isinstance_wrapper(value, "SparseTensor"):
         return tf.SparseTensorSpec.from_value(value)
-    if _isinstance(value, "TensorArray"):
+    if _isinstance_wrapper(value, "TensorArray"):
         return tf.TensorArraySpec.from_tensor(value)
-    if _isinstance(value, ("Tensor", "EagerTensor")):
+    if _isinstance_wrapper(value, ("Tensor", "EagerTensor")):
         return tf.TensorSpec.from_tensor(value)
     return value
 
@@ -132,10 +155,10 @@ def cast_tensor_by_spec(_input, spec):
             "Tensorflow package is required to use TfSavedModelArtifact"
         )
 
-    if not _isinstance(spec, "TensorSpec"):
+    if not _isinstance_wrapper(spec, "TensorSpec"):
         return _input
 
-    if _isinstance(_input, ["Tensor", "EagerTensor"]):
+    if _isinstance_wrapper(_input, ["Tensor", "EagerTensor"]):
         # TensorFlow issue #43038
         # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
         return tf.cast(_input, dtype=spec.dtype, name=spec.name)
@@ -155,9 +178,7 @@ def _pretty_format_function_call(base, name, arg_names):
 
 
 def _pretty_format_positional(positional):
-    return "Positional arguments ({} total):\n    * {}".format(
-        len(positional), "\n    * ".join(str(a) for a in positional)
-    )
+    return f'Positional arguments ({len(positional)} total):\n    * \n{"    * ".join(str(a) for a in positional)}'
 
 
 def pretty_format_function(function, obj="<object>", name="<function>"):

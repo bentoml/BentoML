@@ -21,12 +21,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import BentoMLException, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import onnx
-    import onnxruntime
-except ImportError:
-    raise MissingDependencyException('"onnx" package is required by OnnxModel')
-
 
 class OnnxModel(ModelArtifact):
     """
@@ -65,6 +59,12 @@ class OnnxModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import onnx
+        import onnxruntime
+    except ImportError:
+        raise MissingDependencyException('"onnx" package is required by OnnxModel')
+
     SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
     ONNX_EXTENSION: str = ".onnx"
 
@@ -89,6 +89,11 @@ class OnnxModel(ModelArtifact):
     def load(
         cls, path: t.Union[PathType, onnx.ModelProto]
     ) -> "onnxruntime.InferenceSession":
+        try:
+            import onnx
+            import onnxruntime
+        except ImportError:
+            raise MissingDependencyException('"onnx" package is required by OnnxModel')
         if isinstance(path, onnx.ModelProto):
             return onnxruntime.InferenceSession(path.SerializeToString())
         else:
@@ -96,6 +101,10 @@ class OnnxModel(ModelArtifact):
             return onnxruntime.InferenceSession(_get_path)
 
     def save(self, path: t.Union[PathType, "onnx.ModelProto"]) -> None:
+        try:
+            import onnx
+        except ImportError:
+            raise MissingDependencyException('"onnx" package is required by OnnxModel')
         if isinstance(self._model, onnx.ModelProto):
             onnx.save_model(self._model, self.__model_file__path(path))
         else:

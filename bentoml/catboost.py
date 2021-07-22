@@ -21,12 +21,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import catboost
-    from catboost.core import CatBoost, Pool  # noqa # pylint: disable=ununsed-import
-except ImportError:
-    raise MissingDependencyException("catboost is required by CatBoostModel")
-
 
 class CatBoostModel(ModelArtifact):
     """
@@ -65,15 +59,20 @@ class CatBoostModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import catboost
+    except ImportError:
+        raise MissingDependencyException("catboost is required by CatBoostModel")
+
     CATBOOST_EXTENSION = ".cbm"
-    _model: CatBoost
+    _model: catboost.core.CatBoost
 
     def __init__(
         self,
         model: t.Optional["catboost.core.CatBoost"] = None,
         model_type: t.Optional[str] = "classifier",
         model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
-        model_pool: t.Optional["Pool"] = None,
+        model_pool: t.Optional["catboost.core.Pool"] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
         if model:
@@ -87,7 +86,7 @@ class CatBoostModel(ModelArtifact):
     @classmethod
     def __model__type(cls, model_type: t.Optional[str] = "classifier"):
         try:
-            from catboost.core import CatBoostClassifier, CatBoostRegressor
+            from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
         except ImportError:
             raise MissingDependencyException("catboost is required by CatBoostModel")
         if model_type == "classifier":
@@ -109,7 +108,7 @@ class CatBoostModel(ModelArtifact):
 
     # fmt: off
     @classmethod
-    def load(cls, path: PathType, model_type: t.Optional[str] = "classifier") -> CatBoost:  # pylint: disable=arguments-differ
+    def load(cls, path: PathType, model_type: t.Optional[str] = "classifier") -> "catboost.core.CatBoost":  # noqa # pylint: disable=arguments-differ
         # fmt: on
         model = cls.__model__type(model_type=model_type)
         get_path: str = cls.get_path(path, cls.CATBOOST_EXTENSION)

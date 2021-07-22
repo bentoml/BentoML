@@ -15,11 +15,10 @@
 # ==============================================================================
 
 import logging
-import os
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import InvalidArgument, MissingDependencyException
+from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
 logger = logging.getLogger(__name__)

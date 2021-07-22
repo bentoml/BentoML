@@ -339,7 +339,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests with tf1
-        run: ./ci/integration/frameworks/tensorflow/run_keras_with_tf1_tests.sh
+        run: ./ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -356,7 +356,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests with tf2
-        run: ./ci/integration/frameworks/tensorflow/run_keras_with_tf2_tests.sh
+        run: ./ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -602,7 +602,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_tf1_14_tests.sh
+        run: ./ci/integration/frameworks/tensorflow/run_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -619,7 +619,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_tf2_2_tests.sh
+        run: ./ci/integration/frameworks/tensorflow/run_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

@@ -24,13 +24,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import BentoMLException, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import pyspark
-    import pyspark.ml
-    from pyspark.sql import SparkSession
-except ImportError:
-    raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
-
 logger = logging.getLogger(__name__)
 
 # NOTE: the usage of SPARK_SESSION_NAMESPACE is to provide a consistent session
@@ -81,12 +74,19 @@ class PySparkMLlibModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import pyspark
+        import pyspark.ml
+        import pyspark.sql
+    except ImportError:
+        raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
+
     _model: pyspark.ml.Model
 
     def __init__(
         self,
         model: pyspark.ml.Model,
-        spark_session: t.Optional["SparkSession"] = None,
+        spark_session: t.Optional["pyspark.sql.SparkSession"] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
         super(PySparkMLlibModel, self).__init__(model, metadata=metadata)
@@ -95,6 +95,13 @@ class PySparkMLlibModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> pyspark.ml.Model:
+        try:
+            import pyspark
+            import pyspark.ml
+            from pyspark.sql import SparkSession
+        except ImportError:
+            raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
+
         model_path: str = str(cls.get_path(path))
 
         # NOTE (future ref): A large model metadata might
@@ -133,6 +140,10 @@ class PySparkMLlibModel(ModelArtifact):
         return model
 
     def save(self, path: PathType) -> None:
+        try:
+            import pyspark.ml
+        except ImportError:
+            raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
         if not isinstance(self._model, pyspark.ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=self._model))
             self._model.save(self._spark_sess, self.get_path(path))

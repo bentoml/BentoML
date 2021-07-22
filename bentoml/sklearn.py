@@ -20,16 +20,6 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-try:
-    import joblib
-except ImportError:
-    try:
-        from sklearn.externals import joblib
-    except ImportError:
-        raise MissingDependencyException(
-            "sklearn module is required to use SklearnModel"
-        )
-
 
 class SklearnModel(ModelArtifact):
     """
@@ -58,6 +48,16 @@ class SklearnModel(ModelArtifact):
         TODO:
     """
 
+    try:
+        import joblib
+    except ImportError:
+        try:
+            from sklearn.externals import joblib
+        except ImportError:
+            raise MissingDependencyException(
+                "sklearn module is required to use SklearnModel"
+            )
+
     def __init__(self, model, metadata: t.Optional[MetadataType] = None):
         super(SklearnModel, self).__init__(model, metadata=metadata)
 
@@ -67,7 +67,25 @@ class SklearnModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
+        try:
+            import joblib
+        except ImportError:
+            try:
+                from sklearn.externals import joblib
+            except ImportError:
+                raise MissingDependencyException(
+                    "sklearn module is required to use SklearnModel"
+                )
         return joblib.load(cls.__get_file__path(path), mmap_mode="r")
 
     def save(self, path: PathType) -> None:
+        try:
+            import joblib
+        except ImportError:
+            try:
+                from sklearn.externals import joblib
+            except ImportError:
+                raise MissingDependencyException(
+                    "sklearn module is required to use SklearnModel"
+                )
         joblib.dump(self._model, self.__get_file__path(path))

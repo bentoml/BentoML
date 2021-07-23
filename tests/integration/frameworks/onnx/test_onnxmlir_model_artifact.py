@@ -1,3 +1,19 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import os
 import subprocess
 import sys
@@ -8,6 +24,7 @@ import pytest
 import tensorflow as tf
 
 from bentoml.onnxmlir import OnnxMlirModel
+from tests._internal.frameworks.tensorflow_utils import NativeModel
 
 try:
     # this has to be able to find the arch and OS specific PyRuntime .so file
@@ -27,22 +44,9 @@ def predict_df(inference_sess: ExecutionSession, df: pd.DataFrame):
     return inference_sess.run(input_data)
 
 
-class TFModel(tf.Module):
-    def __int__(self):
-        super().__init__()
-        self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
-        self.dense = lambda x: tf.matmul(x, self.weights)
-
-    @tf.function(
-        input_signature=[tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name="inputs")]
-    )
-    def __call__(self, inputs):
-        return self.dense(inputs)
-
-
 @pytest.fixture()
 def tensorflow_model(tmpdir):
-    model = TFModel()
+    model = NativeModel()
     tf.saved_model.save(model, tmpdir)
 
 
@@ -90,6 +94,6 @@ def test_onnxmlir_save_load(compile_model, tmpdir):
     assert os.path.exists(OnnxMlirModel.get_path(tmpdir, ".so"))
 
     onnxmlir_loaded = OnnxMlirModel.load(tmpdir)
-    assert predict_df(ExecutionSession(model, "run_main_graph"), test_df) == predict_df(
-        onnxmlir_loaded, test_df
-    )
+    # fmt: off
+    assert predict_df(ExecutionSession(model, "run_main_graph"), test_df) == predict_df(onnxmlir_loaded, test_df)  # noqa
+    # fmt: on

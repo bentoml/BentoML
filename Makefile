@@ -17,6 +17,9 @@ install-local: ## Install BentoML from current directory in editable mode
 install-test-deps: ## Install all test dependencies
 	@echo Ensuring test dependencies...
 	@pip install -e ".[test]"
+install-dev-deps: ## Install all dev dependencies
+	@echo Ensuring dev dependencies...
+	@pip install -e ".[dev]"
 
 # Protos
 gen-protos: ## Build protobuf for Python and Node
@@ -25,25 +28,22 @@ gen-protos: ## Build protobuf for Python and Node
 # Docs
 watch-docs: ## Build and watch documentation
 	@./docs/watch.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
-OS := $(shell uname)
 install-docs-deps:  ## Install documentation dependencies
 	@echo Installing docs dependencies...
 	@pip install -e ".[doc_builder]"
+spellcheck-doc: ## Spell check documentation
+	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
+
+OS := $(shell uname)
 ifeq ($(OS),Darwin)
 install-watch-deps: ## Install MacOS dependencies for watching docs
 	brew install fswatch
-else
-install-watch-deps: ## Install Debian-based OS dependencies for watching docs
-	sudo apt install inotify-tools
-endif
-OS := $(shell uname)
-ifeq ($(OS),Darwin)
 install-spellchecker-deps: ## Install MacOS dependencies for spellchecker
 	brew install enchant
 	pip install sphinxcontrib-spelling
 else
+install-watch-deps: ## Install Debian-based OS dependencies for watching docs
+	sudo apt install inotify-tools
 install-spellchecker-deps: ## Install Debian-based dependencies for spellchecker
 	sudo apt install libenchant-dev
 endif
-spellcheck-doc: ## Spell check documentation
-	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)

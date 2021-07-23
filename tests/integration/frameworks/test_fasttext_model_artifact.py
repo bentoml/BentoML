@@ -5,7 +5,7 @@ import typing as t
 
 import fasttext
 
-from bentoml.fasttext import FasttextModel
+from bentoml.fasttext import FastTextModel
 
 test_json: t.Dict[str, str] = {"text": "foo"}
 
@@ -23,8 +23,8 @@ def test_fasttext_save_load(tmpdir):
     with _temp_filename_with_content("__label__bar foo") as inf:
         model = fasttext.train_supervised(input=inf)
 
-    FasttextModel(model).save(tmpdir)
-    assert os.path.exists(FasttextModel.get_path(tmpdir, ""))
+    FastTextModel(model).save(tmpdir)
+    assert os.path.exists(FastTextModel.get_path(tmpdir, ""))
 
-    fasttext_loaded: "fasttext.FastText._FastText" = FasttextModel.load(tmpdir)
+    fasttext_loaded: "fasttext.FastText._FastText" = FastTextModel.load(tmpdir)
     assert fasttext_loaded.predict(test_json["text"])[0] == ("__label__bar",)

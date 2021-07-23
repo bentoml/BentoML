@@ -1,10 +1,9 @@
 import os
 import typing as t
 
+import imageio
 import numpy as np
-import pytest
 import torch
-import torch.nn
 import torch.nn as nn
 from detectron2 import model_zoo
 from detectron2.checkpoint import DetectionCheckpointer
@@ -18,7 +17,6 @@ if t.TYPE_CHECKING:
     from detectron2.config import CfgNode  # pylint: disable=unused-import
 
 
-@pytest.fixture(scope="session")
 def predict_image(
     model: nn.Module, original_image: np.ndarray
 ) -> t.Dict[str, np.ndarray]:
@@ -44,7 +42,7 @@ def predict_image(
     return result
 
 
-def test_detectron2_save_load(tmpdir, predict_image):
+def test_detectron2_save_load(tmpdir):
     model_url: str = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
 
     cfg: "CfgNode" = get_cfg()
@@ -71,3 +69,9 @@ def test_detectron2_save_load(tmpdir, predict_image):
         tmpdir, device=cloned.MODEL.DEVICE
     )
     assert repr(detectron_loaded) == repr(model)
+
+    image = imageio.imread("http://images.cocodataset.org/val2017/000000439715.jpg")
+    image = image[:, :, ::-1]
+
+    responses = predict_image(detectron_loaded, image)
+    assert responses["scores"][0] > 0.9

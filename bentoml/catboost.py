@@ -21,6 +21,12 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+try:
+    import catboost
+    from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
+except ImportError:
+    raise MissingDependencyException("catboost is required by CatBoostModel")
+
 
 class CatBoostModel(ModelArtifact):
     """
@@ -59,11 +65,6 @@ class CatBoostModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import catboost
-    except ImportError:
-        raise MissingDependencyException("catboost is required by CatBoostModel")
-
     CATBOOST_EXTENSION = ".cbm"
     _model: catboost.core.CatBoost
 
@@ -78,17 +79,13 @@ class CatBoostModel(ModelArtifact):
         if model:
             _model = model
         else:
-            _model = self.__model__type(model_type=model_type)
+            _model = self.__init_model_type(model_type=model_type)
         super(CatBoostModel, self).__init__(_model, metadata=metadata)
         self._model_export_parameters = model_export_parameters
-        self._model_pool: "Pool" = model_pool
+        self._model_pool = model_pool
 
     @classmethod
-    def __model__type(cls, model_type: t.Optional[str] = "classifier"):
-        try:
-            from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
-        except ImportError:
-            raise MissingDependencyException("catboost is required by CatBoostModel")
+    def __init_model_type(cls, model_type: t.Optional[str] = "classifier"):
         if model_type == "classifier":
             _model = CatBoostClassifier()
         elif model_type == "regressor":
@@ -110,7 +107,7 @@ class CatBoostModel(ModelArtifact):
     @classmethod
     def load(cls, path: PathType, model_type: t.Optional[str] = "classifier") -> "catboost.core.CatBoost":  # noqa # pylint: disable=arguments-differ
         # fmt: on
-        model = cls.__model__type(model_type=model_type)
+        model = cls.__init_model_type(model_type=model_type)
         get_path: str = cls.get_path(path, cls.CATBOOST_EXTENSION)
         if not os.path.exists(get_path):
             raise InvalidArgument(

@@ -51,27 +51,23 @@ def test_base_artifact(args, kwargs, metadata):
 
 
 @pytest.mark.parametrize(
-    "model, expected",
+    "model",
     [
-        (create_mock_class("MockModel"), "model.yml"),
-        (create_mock_class("test"), "model.yml"),
-        (create_mock_class("1"), "model.yml"),
+        (create_mock_class("MockModel")),
+        (create_mock_class("test")),
+        (create_mock_class("1")),
     ],
 )
-def test_save_artifact(model, expected, tmpdir):
+def test_save_artifact(model, tmpdir):
     foo = FooArtifact(model, metadata=_metadata)
     foo.save(tmpdir)
     assert os.path.exists(foo.get_path(tmpdir, ".yml"))
 
 
 @pytest.mark.parametrize(
-    "model, expected",
-    [
-        (create_mock_class("MockModel"), "model.pkl"),
-        (create_mock_class("test"), "model.pkl"),
-    ],
+    "model", [(create_mock_class("MockModel")), (create_mock_class("test")),],
 )
-def test_pkl_artifact(model, expected, tmpdir):
+def test_pkl_artifact(model, tmpdir):
     pkl = PickleArtifact(model, metadata=_metadata)
     pkl.save(tmpdir)
     assert os.path.exists(pkl.get_path(tmpdir, ".pkl"))

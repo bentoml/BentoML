@@ -1,6 +1,6 @@
 import os
 
-import mxnet  # pylint: disable=import-error
+import mxnet
 import pytest
 
 from bentoml.gluon import GluonModel

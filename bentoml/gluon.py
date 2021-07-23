@@ -20,6 +20,12 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+try:
+    import mxnet  # pylint: disable=unused-import
+    from mxnet import gluon
+except ImportError:
+    raise MissingDependencyException("mxnet is required by GluonModel")
+
 
 class GluonModel(ModelArtifact):
     """
@@ -48,11 +54,6 @@ class GluonModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import mxnet
-    except ImportError:
-        raise MissingDependencyException("mxnet is required by GluonModel")
-
     def __init__(
         self, model: "mxnet.gluon.Block", metadata: t.Optional[MetadataType] = None,
     ):
@@ -60,10 +61,6 @@ class GluonModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "mxnet.gluon.Block":
-        try:
-            from mxnet import gluon
-        except ImportError:
-            raise MissingDependencyException("mxnet is required by GluonModel")
         json_path: str = cls.get_path(path, "-symbol.json")
         params_path: str = cls.get_path(path, "-0000.params")
         return gluon.nn.SymbolBlock.imports(json_path, ["data"], params_path)

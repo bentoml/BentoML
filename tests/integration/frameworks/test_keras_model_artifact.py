@@ -1,42 +1,59 @@
 import os
-import typing as t
 
 import numpy as np
 import pytest
-import tensorflow.keras as tfk
+import tensorflow as tf
+import tensorflow.keras as keras
 
 from bentoml.keras import KerasModel
+from tests._internal.frameworks.tensorflow_utils import (
+    CustomLayer,
+    KerasSequentialModel,
+    custom_activation,
+)
 
-test_data: t.List[int] = [1, 2, 3, 4, 5]
+TF2 = tf.__version__.startswith("2")
+
+test_data = [1, 2, 3, 4, 5]
 
 
-@pytest.fixture(scope="session")
-def keras_model() -> "tfk.models.Model":
-    net = tfk.Sequential(
+def predict_assert_equal(m1: keras.Model, m2: keras.Model):
+    t_data = np.array([test_data])
+    assert m1.predict(t_data) == m2.predict(t_data)
+
+
+@pytest.mark.parametrize(
+    "model, kwargs",
+    [
+        (KerasSequentialModel(), {"store_as_json": True, "custom_objects": None}),
+        (KerasSequentialModel(), {"store_as_json": False, "custom_objects": None}),
         (
-            tfk.layers.Dense(
-                units=1,
-                input_shape=(5,),
-                use_bias=False,
-                kernel_initializer=tfk.initializers.Ones(),
-            ),
-        )
-    )
-    net.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
-    return net
-
-
-@pytest.mark.parametrize("kwargs", [{"store_as_json": True}, {"store_as_json": False}])
-def test_keras_save_load(kwargs, keras_model, tmpdir):
-
-    KerasModel(keras_model, **kwargs).save(tmpdir)
+            KerasSequentialModel(),
+            {
+                "store_as_json": False,
+                "custom_objects": {
+                    "CustomLayer": CustomLayer,
+                    "custom_activation": custom_activation,
+                },
+            },
+        ),
+    ],
+)
+def test_keras_save_load(model, kwargs, tmpdir):
+    KerasModel(model, **kwargs).save(tmpdir)
+    if kwargs["custom_objects"]:
+        assert os.path.exists(KerasModel.get_path(tmpdir, "_custom_objects.pkl"))
     if kwargs["store_as_json"]:
         assert os.path.exists(KerasModel.get_path(tmpdir, "_json.json"))
         assert os.path.exists(KerasModel.get_path(tmpdir, "_weights.hdf5"))
     else:
         assert os.path.exists(KerasModel.get_path(tmpdir, ".h5"))
-
-    keras_loaded: "tfk.models.Model" = KerasModel.load(tmpdir)
-    assert keras_loaded.predict(np.array([test_data])) == keras_model.predict(
-        np.array([test_data])
-    )
+    if not TF2:
+        # Initialize variables in the graph/model
+        KerasModel.sess.run(tf.global_variables_initializer())
+        with KerasModel.sess.as_default():
+            keras_loaded = KerasModel.load(tmpdir)
+            predict_assert_equal(keras_loaded, model)
+    else:
+        keras_loaded = KerasModel.load(tmpdir)
+        predict_assert_equal(keras_loaded, model)

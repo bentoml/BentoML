@@ -9,7 +9,7 @@ from bentoml.pycaret import PycaretModel
 
 
 def set_dataset():
-    dataset = get_data('credit')
+    dataset = get_data("credit")
     train_data = dataset.sample(frac=0.95, random_state=786)
     pred_data = dataset.drop(train_data.index)
     train_data.reset_index(inplace=True, drop=True)
@@ -19,19 +19,19 @@ def set_dataset():
 
 def predict_data(model, data):
     pred = predict_model(model, data=data)
-    return pred.iloc[0]['Score']
+    return pred.iloc[0]["Score"]
 
 
 def test_pycaret_save_load(tmpdir):
     data, expected = set_dataset()
     _ = pycaret_setup(
-        data=data, target='default', silent=True, html=False, session_id=420, n_jobs=1,
+        data=data, target="default", silent=True, html=False, session_id=420, n_jobs=1,
     )
-    dt = create_model('dt')  # create a decision tree classifier
+    dt = create_model("dt")  # create a decision tree classifier
     tdt = tune_model(dt)
 
     PycaretModel(tdt).save(tmpdir)
-    assert os.path.exists(PycaretModel.get_path(tmpdir, '.pkl'))
+    assert os.path.exists(PycaretModel.get_path(tmpdir, ".pkl"))
 
     pycaret_loaded = PycaretModel.load(tmpdir)
     assert predict_data(pycaret_loaded, expected) == predict_data(tdt, expected)

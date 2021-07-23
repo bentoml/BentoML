@@ -21,12 +21,12 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
-logger = logging.getLogger(__name__)
-
 try:
     import spacy
 except ImportError:
     raise MissingDependencyException("spacy is required by SpacyModel")
+
+logger = logging.getLogger(__name__)
 
 
 class SpacyModel(ModelArtifact):

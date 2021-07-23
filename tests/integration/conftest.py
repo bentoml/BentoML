@@ -19,7 +19,7 @@ def trained_pytorch_classifier():
     import torchvision
     import torchvision.transforms as transforms
 
-    # reproducability
+    # reproducibility
     torch.manual_seed(0)
 
     transform = transforms.Compose(

@@ -22,6 +22,13 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+try:
+    import easyocr
+
+    assert easyocr.__version__ >= "1.3"
+except ImportError:
+    raise MissingDependencyException("easyocr>=1.3 is required by EasyOCRModel")
+
 
 class EasyOCRModel(ModelArtifact):
     """
@@ -60,31 +67,21 @@ class EasyOCRModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import easyocr
-
-        assert easyocr.__version__ >= "1.3"
-    except ImportError:
-        raise MissingDependencyException("easyocr>=1.3 is required by EasyOCRModel")
-
     def __init__(
         self,
         model: "easyocr.Reader",
         recog_network: t.Optional[str] = "english_g2",
         detect_model: t.Optional[str] = "craft_mlt_25k",
         gpu: t.Optional[bool] = False,
-        language_list: t.Optional[t.List[str]] = None,
+        language_list: t.Optional[t.List[str]] = ["en"],
         metadata: t.Optional[MetadataType] = None,
     ):
         super(EasyOCRModel, self).__init__(model, metadata=metadata)
-
         self._model: "easyocr.Reader" = model
         self._recog_network = recog_network
         self._detect_model = detect_model
         self._gpu = gpu
 
-        if language_list is None:
-            language_list = ["en"]
         self._model_metadata = {
             "lang_list": language_list,
             "recog_network": recog_network,
@@ -92,18 +89,12 @@ class EasyOCRModel(ModelArtifact):
         }
 
     @classmethod
-    def __json_file__path(cls, path: PathType) -> str:
+    def __get_json_file(cls, path: PathType) -> str:
         return cls.get_path(path, cls.JSON_EXTENSION)
 
     @classmethod
     def load(cls, path: PathType) -> "easyocr.Reader":
-        try:
-            import easyocr
-
-            assert easyocr.__version__ >= "1.3"
-        except ImportError:
-            raise MissingDependencyException("easyocr>=1.3 is required by EasyOCRModel")
-        with open(cls.__json_file__path(path), "r") as f:
+        with open(cls.__get_json_file(path), "r") as f:
             model_params = json.load(f)
 
         return easyocr.Reader(
@@ -126,5 +117,5 @@ class EasyOCRModel(ModelArtifact):
         fname: str = f"{self._recog_network}{self.PTH_EXTENSION}"
         shutil.copyfile(os.path.join(src_folder, fname), os.path.join(path, fname))
 
-        with open(self.__json_file__path(path), "w") as f:
+        with open(self.__get_json_file(path), "w") as f:
             json.dump(self._model_metadata, f)

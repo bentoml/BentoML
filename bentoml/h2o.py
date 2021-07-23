@@ -21,10 +21,19 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+try:
+    import h2o
+
+    if t.TYPE_CHECKING:
+        import h2o.model
+except ImportError:
+    raise MissingDependencyException("h2o is required by H2oModel")
+
 
 class H2oModel(ModelArtifact):
     """
-    Model class for saving/loading :obj:`h2o` models using :meth:`~h2o.saved_model` and :meth:`~h2o.load_model`
+    Model class for saving/loading :obj:`h2o` models
+     using meth:`~h2o.saved_model` and :meth:`~h2o.load_model`
 
     Args:
         model (`h2o.model.model_base.ModelBase`):
@@ -49,14 +58,6 @@ class H2oModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import h2o
-
-        if t.TYPE_CHECKING:
-            import h2o.model
-    except ImportError:
-        raise MissingDependencyException("h2o is required by H2oModel")
-
     def __init__(
         self,
         model: "h2o.model.model_base.ModelBase",
@@ -66,10 +67,6 @@ class H2oModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "h2o.model.model_base.ModelBase":
-        try:
-            import h2o
-        except ImportError:
-            raise MissingDependencyException("h2o is required by H2oModel")
         h2o.init()
         h2o.no_progress()
         # NOTE: model_path should be the first item in
@@ -78,8 +75,4 @@ class H2oModel(ModelArtifact):
         return h2o.load_model(model_path)
 
     def save(self, path: PathType) -> None:
-        try:
-            import h2o
-        except ImportError:
-            raise MissingDependencyException("h2o is required by H2oModel")
         h2o.save_model(model=self._model, path=str(path), force=True)

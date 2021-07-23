@@ -6,7 +6,7 @@ import pytest
 
 from bentoml.evalml import EvalMLModel
 
-mock_df = pd.DataFrame([[42, "b"]])
+test_df = pd.DataFrame([[42, "b"]])
 
 
 @pytest.fixture(scope="session")
@@ -26,6 +26,6 @@ def test_evalml_save_load(tmpdir, binary_pipeline):
 
     evalml_loaded: "evalml.pipelines.PipelineBase" = EvalMLModel.load(tmpdir)
     assert (
-        evalml_loaded.predict(mock_df).to_numpy()
-        == binary_pipeline.predict(mock_df).to_numpy()
+        evalml_loaded.predict(test_df).to_numpy()
+        == binary_pipeline.predict(test_df).to_numpy()
     )

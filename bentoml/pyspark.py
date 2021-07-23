@@ -26,6 +26,13 @@ from ._internal.types import MetadataType, PathType
 
 logger = logging.getLogger(__name__)
 
+try:
+    import pyspark
+    import pyspark.ml
+    import pyspark.sql
+except ImportError:
+    raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
+
 # NOTE: the usage of SPARK_SESSION_NAMESPACE is to provide a consistent session
 #  among imports if users need to use SparkSession.
 SPARK_SESSION_NAMESPACE: str = "PySparkMLlibModel"
@@ -74,13 +81,6 @@ class PySparkMLlibModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import pyspark
-        import pyspark.ml
-        import pyspark.sql
-    except ImportError:
-        raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
-
     _model: pyspark.ml.Model
 
     def __init__(
@@ -90,48 +90,41 @@ class PySparkMLlibModel(ModelArtifact):
         metadata: t.Optional[MetadataType] = None,
     ):
         super(PySparkMLlibModel, self).__init__(model, metadata=metadata)
-        # NOTES: referred to docstring, spark_session is mainly used for backward compatibility
+        # NOTES: referred to docstring, spark_session is mainly used
+        #  for backward compatibility.
         self._spark_sess = spark_session
 
     @classmethod
     def load(cls, path: PathType) -> pyspark.ml.Model:
-        try:
-            import pyspark
-            import pyspark.ml
-            from pyspark.sql import SparkSession
-        except ImportError:
-            raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
 
         model_path: str = str(cls.get_path(path))
 
         # NOTE (future ref): A large model metadata might
         #  comprise of multiple `part` files, instead of assigning,
         #  loop through the directory.
-        metadata_path: str = str(os.path.join(model_path, 'metadata/part-00000'))
+        metadata_path: str = str(os.path.join(model_path, "metadata/part-00000"))
 
         try:
-            with open(metadata_path, 'r') as meta_file:
+            with open(metadata_path, "r") as meta_file:
                 metadata = json.load(meta_file)
         except IOError:
             raise BentoMLException(
                 "Incorrectly serialized model was loaded. Unable to load metadata"
             )
-        if 'class' not in metadata:
-            raise BentoMLException('malformed metadata file.')
-        model_class = metadata['class']
+        if "class" not in metadata:
+            raise BentoMLException("malformed metadata file.")
+        model_class = metadata["class"]
 
         # process imports from metadata
-        stripped_apache_module: t.List[str] = model_class.split('.')[2:]
-        py_module = 'py' + '.'.join(stripped_apache_module[:-1])  # skip org.apache
+        stripped_apache_module: t.List[str] = model_class.split(".")[2:]
+        py_module = "py" + ".".join(stripped_apache_module[:-1])  # skip org.apache
         class_name = stripped_apache_module[-1]
 
         loaded_model = getattr(importlib.import_module(py_module), class_name)
         if not issubclass(loaded_model, pyspark.ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=loaded_model))
-            # fmt: off # noqa: E501
-            _spark_sess = SparkSession.builder.appName(
-                SPARK_SESSION_NAMESPACE
-            ).getOrCreate()
+            # fmt: off
+            _spark_sess = pyspark.sql.SparkSession.builder.appName(SPARK_SESSION_NAMESPACE).getOrCreate()  # noqa: E501
             # fmt: on
             model = loaded_model.load(_spark_sess.sparkContext, model_path)
         else:
@@ -140,10 +133,6 @@ class PySparkMLlibModel(ModelArtifact):
         return model
 
     def save(self, path: PathType) -> None:
-        try:
-            import pyspark.ml
-        except ImportError:
-            raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
         if not isinstance(self._model, pyspark.ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=self._model))
             self._model.save(self._spark_sess, self.get_path(path))

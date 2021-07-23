@@ -1,5 +1,10 @@
-import numpy as np
+import paddle
+import paddle.nn as nn
 import pandas as pd
+from paddle.static import InputSpec
+
+IN_FEATURES = 13
+OUT_FEATURES = 1
 
 test_df = pd.DataFrame(
     [
@@ -22,7 +27,11 @@ test_df = pd.DataFrame(
 )
 
 
-def test_paddle_artifact_pack(service):
-    pred = service.predict(test_df)
-    assert isinstance(pred, np.ndarray), "Run inference"
-    assert pred.shape == (1, 1)
+class LinearModel(nn.Layer):
+    def __init__(self):
+        super(LinearModel, self).__init__()
+        self.fc = nn.Linear(IN_FEATURES, OUT_FEATURES)
+
+    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype="float32")])
+    def forward(self, x):
+        return self.fc(x)

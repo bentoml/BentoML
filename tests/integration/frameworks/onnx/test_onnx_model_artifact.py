@@ -8,7 +8,7 @@ import pytest
 from bentoml._internal.exceptions import BentoMLException
 from bentoml.onnx import OnnxModel
 from tests.integration.frameworks.test_sklearn_model_artifact import (
-    sklearn_model,
+    random_forest,
     test_df,
 )
 
@@ -28,7 +28,7 @@ def sklearn_onnx_model():
     from skl2onnx.common.data_types import FloatTensorType
 
     init_types = [("float_input", FloatTensorType([None, 4]))]
-    return convert_sklearn(sklearn_model(), initial_types=init_types)
+    return convert_sklearn(random_forest(), initial_types=init_types)
 
 
 @pytest.mark.parametrize(

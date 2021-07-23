@@ -1,41 +1,32 @@
+# ==============================================================================
+#     Copyright (c) 2021 Atalaya Tech. Inc
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+# ==============================================================================
+
 import os
-import typing as t
 
 import numpy as np
 import paddle
 import paddle.nn as nn
 import pandas as pd
 import pytest
-from paddle.static import InputSpec
 
 from bentoml.paddle import PaddlePaddleModel
+from tests._internal.frameworks.paddle_utils import LinearModel, test_df
 
 BATCH_SIZE = 8
-BATCH_NUM = 4
 EPOCH_NUM = 5
-
-IN_FEATURES = 13
-OUT_FEATURES = 1
-
-test_df = pd.DataFrame(
-    [
-        [
-            -0.0405441,
-            0.06636364,
-            -0.32356227,
-            -0.06916996,
-            -0.03435197,
-            0.05563625,
-            -0.03475696,
-            0.02682186,
-            -0.37171335,
-            -0.21419304,
-            -0.33569506,
-            0.10143217,
-            -0.21172912,
-        ]
-    ]
-)
 
 
 def predict_df(predictor: paddle.inference.Predictor, df: pd.DataFrame):
@@ -52,19 +43,9 @@ def predict_df(predictor: paddle.inference.Predictor, df: pd.DataFrame):
     return output_handle.copy_to_cpu()
 
 
-class Model(nn.Layer):
-    def __init__(self):
-        super(Model, self).__init__()
-        self.fc = nn.Linear(IN_FEATURES, OUT_FEATURES)
-
-    @paddle.jit.to_static(input_spec=[InputSpec(shape=[IN_FEATURES], dtype="float32")])
-    def forward(self, x):
-        return self.fc(x)
-
-
 @pytest.fixture(scope="session")
-def train_paddle_model() -> "Model":
-    model = Model()
+def train_paddle_model() -> "LinearModel":
+    model = LinearModel()
     loss = nn.MSELoss()
     adam = paddle.optimizer.Adam(parameters=model.parameters())
 
@@ -85,10 +66,9 @@ def train_paddle_model() -> "Model":
     return model
 
 
+# fmt: off
 @pytest.fixture()
-def create_paddle_predictor(
-    train_paddle_model, tmp_path_factory
-) -> "paddle.inference.Predictor":
+def create_paddle_predictor(train_paddle_model, tmp_path_factory) -> "paddle.inference.Predictor":  # noqa
     # Predictor init requires the path of saved model
     tmpdir = str(tmp_path_factory.mktemp("paddle_predictor"))
     paddle.jit.save(train_paddle_model, tmpdir)
@@ -96,13 +76,14 @@ def create_paddle_predictor(
     config = paddle.inference.Config(tmpdir + ".pdmodel", tmpdir + ".pdiparams")
     config.enable_memory_optim()
     return paddle.inference.create_predictor(config)
+# fmt: on
 
 
 def test_paddle_save_load(tmpdir, train_paddle_model, create_paddle_predictor):
     PaddlePaddleModel(train_paddle_model).save(tmpdir)
     assert os.path.exists(PaddlePaddleModel.get_path(tmpdir, ".pdmodel"))
     paddle_loaded: nn.Layer = PaddlePaddleModel.load(tmpdir)
-    assert (
-        predict_df(create_paddle_predictor, test_df).shape
-        == predict_df(paddle_loaded, test_df).shape
-    )
+
+    # fmt: off
+    assert predict_df(create_paddle_predictor, test_df).shape == predict_df(paddle_loaded, test_df).shape  # noqa
+    # fmt: on

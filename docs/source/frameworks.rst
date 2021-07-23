@@ -125,7 +125,7 @@ Example Projects:
 
 * Text Classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fasttext/text-classification/text-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-text/text-classification/text-classification.ipynb>`__
 
-.. autoclass:: bentoml.fasttext.FasttextModel
+.. autoclass:: bentoml.fasttext.FastTextModel
 
 ===
 H2O

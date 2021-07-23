@@ -14,11 +14,21 @@
 #     limitations under the License.
 # ==============================================================================
 
+import os
 import typing as t
+from distutils.dir_util import copy_tree
 
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
+
+try:
+    import paddle
+    import paddle.inference as pi
+except ImportError:
+    raise MissingDependencyException(
+        "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
+    )
 
 
 class PaddlePaddleModel(ModelArtifact):
@@ -48,14 +58,6 @@ class PaddlePaddleModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import paddle
-        import paddle.inference as pi
-    except ImportError:
-        raise MissingDependencyException(
-            "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
-        )
-
     PADDLE_MODEL_EXTENSION: str = ".pdmodel"
     PADDLE_PARAMS_EXTENSION: str = ".pdiparams"
 
@@ -70,13 +72,6 @@ class PaddlePaddleModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> paddle.inference.Predictor:
-        try:
-            import paddle.inference as pi
-        except ImportError:
-            raise MissingDependencyException(
-                "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
-            )
-
         # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
         config = pi.Config(
             cls.get_path(path, cls.PADDLE_MODEL_EXTENSION),
@@ -86,12 +81,6 @@ class PaddlePaddleModel(ModelArtifact):
         return pi.create_predictor(config)
 
     def save(self, path: PathType) -> None:
-        try:
-            import paddle
-        except ImportError:
-            raise MissingDependencyException(
-                "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
-            )
         # Override the model path if temp dir was set
         # TODO(aarnphm): What happens if model is a paddle.inference.Predictor?
         paddle.jit.save(self._model, self.get_path(path))
@@ -99,12 +88,12 @@ class PaddlePaddleModel(ModelArtifact):
 
 class PaddleHubModel(ModelArtifact):
     """
-    TODO:
-    Model class for saving/loading :obj:`paddlehub` models via
+    Model class for saving/loading :obj:`paddlehub` models.
 
     Args:
-        model (`paddlehub.Module`):
-            Every PaddleHub model is of type :obj:`paddlehub.Module`
+        model (`Union[str, os.PathLike]`):
+            Either a custom :obj:`paddlehub.Module` directory, or
+            pretrained model from PaddleHub registry.
         metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Class metadata
 
@@ -125,25 +114,29 @@ class PaddleHubModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import paddlehub
-    except ImportError:
-        raise MissingDependencyException("paddlehub is required by PaddleHubModel")
-
-    _model: paddlehub.module.Module
-
-    def __init__(
-        self, model: paddlehub.module.Module, metadata: t.Optional[MetadataType] = None
-    ):
-        super(PaddleHubModel, self).__init__(model, metadata=metadata)
+    def __init__(self, model: PathType, metadata: t.Optional[MetadataType] = None):
+        try:
+            import paddlehub as hub
+        except ImportError:
+            raise MissingDependencyException("paddlehub is required by PaddleHubModel")
+        if os.path.isdir(model):
+            module = hub.Module(directory=model)
+            self._dir = str(model)
+        else:
+            module = hub.Module(name=model)
+            self._dir = ""
+        super(PaddleHubModel, self).__init__(module, metadata=metadata)
 
     def save(self, path: PathType) -> None:
-        self._model.save_inference_model(str(path))
+        if self._dir != "":
+            copy_tree(self._dir, str(path))
+        else:
+            self._model.save_inference_model(str(path))
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
         try:
-            from paddlehub.module import Module
+            import paddlehub as hub
         except ImportError:
             raise MissingDependencyException("paddlehub is required by PaddleHubModel")
-        return Module.load(directory=str(path))
+        return hub.Module(directory=str(path))

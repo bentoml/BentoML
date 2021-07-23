@@ -21,6 +21,12 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+try:
+    import catboost
+    from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
+except ImportError:
+    raise MissingDependencyException("catboost is required by CatBoostModel")
+
 
 class CatBoostModel(ModelArtifact):
     """
@@ -59,11 +65,6 @@ class CatBoostModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import catboost
-    except ImportError:
-        raise MissingDependencyException("catboost is required by CatBoostModel")
-
     CATBOOST_EXTENSION = ".cbm"
     _model: catboost.core.CatBoost
 
@@ -85,10 +86,6 @@ class CatBoostModel(ModelArtifact):
 
     @classmethod
     def __model__type(cls, model_type: t.Optional[str] = "classifier"):
-        try:
-            from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
-        except ImportError:
-            raise MissingDependencyException("catboost is required by CatBoostModel")
         if model_type == "classifier":
             _model = CatBoostClassifier()
         elif model_type == "regressor":

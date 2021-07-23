@@ -5,7 +5,7 @@ import pandas as pd
 import xgboost as xgb
 
 from bentoml.xgboost import XgBoostModel
-from tests._internal.sklearn_utils import test_df
+from tests._internal.frameworks.sklearn_utils import test_df
 
 
 def predict_df(model: xgb.core.Booster, df: pd.DataFrame):

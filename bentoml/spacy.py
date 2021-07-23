@@ -21,6 +21,11 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+try:
+    import spacy
+except ImportError:
+    raise MissingDependencyException("spacy is required by SpacyModel")
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,11 +57,6 @@ class SpacyModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import spacy
-    except ImportError:
-        raise MissingDependencyException("spacy is required by SpacyModel")
-
     def __init__(
         self, model: spacy.language.Language, metadata: t.Optional[MetadataType] = None
     ):
@@ -64,10 +64,6 @@ class SpacyModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "spacy.language.Language":
-        try:
-            import spacy
-        except ImportError:
-            raise MissingDependencyException("spacy is required by SpacyModel")
         return spacy.util.load_model(cls.get_path(path))
 
     def save(self, path: PathType) -> None:

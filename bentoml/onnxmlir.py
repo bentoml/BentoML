@@ -23,6 +23,12 @@ from ._internal.types import MetadataType, PathType
 
 MT = t.TypeVar("MT")
 
+try:
+    # this has to be able to find the arch and OS specific PyRuntime .so file
+    from PyRuntime import ExecutionSession
+except ImportError:
+    raise MissingDependencyException("PyRuntime package library must be in python path")
+
 
 class OnnxMlirModel(ModelArtifact):
     """
@@ -69,13 +75,6 @@ class OnnxMlirModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType):  # type: ignore
-        try:
-            # this has to be able to find the arch and OS specific PyRuntime .so file
-            from PyRuntime import ExecutionSession
-        except ImportError:
-            raise MissingDependencyException(
-                "PyRuntime package library must be in python path"
-            )
         model_path: str = cls.get_path(path, cls.ONNXMLIR_MODEL_EXTENSION)
         inference_session = ExecutionSession(model_path, "run_main_graph")
         return inference_session

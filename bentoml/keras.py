@@ -103,20 +103,21 @@ class KerasModel(ModelArtifact):
             with open(cls.__get_custom_obj_fpath(path), "rb") as dco_file:
                 default_custom_objects = cloudpickle.load(dco_file)
 
-        if os.path.isfile(cls.__get_model_json_fpath(path)):
-            # load keras model via json and weights since json file are in path
-            with cls.sess.as_default():  # pylint: disable=not-context-manager
+        with cls.sess.as_default():  # pylint: disable=not-context-manager
+            if os.path.isfile(cls.__get_model_json_fpath(path)):
+                # load keras model via json and weights since json file are in path
                 with open(cls.__get_model_json_fpath(path), "r") as json_file:
                     model_json = json_file.read()
                 obj = keras.models.model_from_json(
                     model_json, custom_objects=default_custom_objects
                 )
                 obj.load_weights(cls.__get_model_weight_fpath(path))
-        else:
-            # otherwise, load keras model via standard load_model
-            obj = keras.models.load_model(
-                cls.__get_model_saved_fpath(path), custom_objects=default_custom_objects
-            )
+            else:
+                # otherwise, load keras model via standard load_model
+                obj = keras.models.load_model(
+                    cls.__get_model_saved_fpath(path),
+                    custom_objects=default_custom_objects,
+                )
         if isinstance(obj, dict):
             model = obj["model"]
         else:

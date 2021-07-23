@@ -5,7 +5,7 @@ from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
 
 from bentoml._internal.exceptions import InvalidArgument
 from bentoml.catboost import CatBoostModel
-from tests._internal.sklearn_utils import test_df
+from tests._internal.frameworks.sklearn_utils import test_df
 
 
 @pytest.fixture()

@@ -53,6 +53,22 @@ autodoc_mock_imports = [
     "trax",
     "flax",
     "jax",
+    "lightgbm",
+    "mlflow",
+    "onnx",
+    "onnxruntime",
+    "PyRuntime",
+    "paddlepaddle",
+    "paddlehub",
+    "pycaret",
+    "pyspark",
+    "pytorch_lightning",
+    "sklearn",
+    "joblib",
+    "spacy",
+    "statsmodels",
+    "transformers",
+    "xgboost",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

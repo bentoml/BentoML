@@ -9,9 +9,8 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-# Install LightGBM, pandas
-pip install paddlepaddle gast==0.3.3 pandas numpy
+pip install pandas numpy paddlepaddle paddlehub gast==0.3.3
 
-pytest "$GIT_ROOT"/tests/integration/frameworks/test_paddle_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/paddle --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

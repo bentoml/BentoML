@@ -24,6 +24,11 @@ from ._internal.types import MetadataType, PathType
 
 MT = t.TypeVar("MT")
 
+try:
+    import mlflow
+except ImportError:
+    raise MissingDependencyException("mlflow is required by MLflowModel")
+
 
 class MLflowModel(ModelArtifact):
     """
@@ -56,11 +61,6 @@ class MLflowModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import mlflow
-    except ImportError:
-        raise MissingDependencyException("mlflow is required by MLflowModel")
-
     def __init__(
         self,
         model: MT,
@@ -79,10 +79,6 @@ class MLflowModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> MT:
-        try:
-            import mlflow
-        except ImportError:
-            raise MissingDependencyException("mlflow is required by MLflowModel")
         project_path: str = str(os.path.join(path, cls._MODEL_NAMESPACE))
         return mlflow.pyfunc.load_model(project_path)
 

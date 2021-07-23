@@ -32,6 +32,15 @@ from ._internal.utils.tensorflow import (
     pretty_format_restored_model,
 )
 
+try:
+    import tensorflow as tf
+    from tensorflow.python.training.tracking.tracking import AutoTrackable
+
+    TF2 = tf.__version__.startswith("2")
+except ImportError:
+    raise MissingDependencyException("tensorflow is required by TensorflowModel")
+
+
 logger = logging.getLogger(__name__)
 
 TF1_AUTOTRACKABLE_NOT_CALLABLE_WARNING: str = """\
@@ -172,12 +181,6 @@ class TensorflowModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import tensorflow as tf
-        from tensorflow.python.training.tracking.tracking import AutoTrackable
-    except ImportError:
-        raise MissingDependencyException("tensorflow is required by TensorflowModel")
-
     def __init__(
         self,
         model: t.Union[tf.keras.Model, tf.Module, PathType, pathlib.PurePath],
@@ -187,12 +190,9 @@ class TensorflowModel(ModelArtifact):
         self._tmpdir = tempfile.TemporaryDirectory()
 
     @staticmethod
-    def __load_tf_saved__model(path: str) -> t.Union[AutoTrackable, t.Any]:
+    def __load_tf_saved_model(path: str) -> t.Union[AutoTrackable, t.Any]:
         try:
-            import tensorflow as tf
             from tensorflow.python.training.tracking.tracking import AutoTrackable
-
-            TF2 = tf.__version__.startswith("2")
         except ImportError:
             raise MissingDependencyException(
                 "tensorflow is required by TensorflowModel"
@@ -207,7 +207,7 @@ class TensorflowModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType):
-        model = cls.__load_tf_saved__model(str(path))
+        model = cls.__load_tf_saved_model(str(path))
         _TensorflowFunctionWrapper.hook_loaded_model(model)
         logger.warning(TF_FUNCTION_WARNING)
         # pretty format loaded model
@@ -264,15 +264,6 @@ class TensorflowModel(ModelArtifact):
             ValueError: If `obj` is not trackable.
         """
         # noqa: E501 # pylint: enable=line-too-long
-        try:
-            import tensorflow as tf
-
-            TF2 = tf.__version__.startswith("2")
-        except ImportError:
-            raise MissingDependencyException(
-                "tensorflow is required by TensorflowModel"
-            )
-
         if not _path_like(self._model):
             if TF2:
                 tf.saved_model.save(

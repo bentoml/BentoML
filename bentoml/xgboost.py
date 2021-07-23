@@ -21,6 +21,11 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+try:
+    import xgboost
+except ImportError:
+    raise MissingDependencyException("xgboost is required by XgBoostModel")
+
 
 class XgBoostModel(ModelArtifact):
     """
@@ -51,11 +56,6 @@ class XgBoostModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import xgboost
-    except ImportError:
-        raise MissingDependencyException("xgboost is required by XgBoostModel")
-
     XGBOOST_EXTENSION = ".model"
     _model: xgboost.core.Booster
 
@@ -66,11 +66,7 @@ class XgBoostModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "xgboost.core.Booster":
-        try:
-            import xgboost as xgb
-        except ImportError:
-            raise MissingDependencyException("xgboost is required by XgBoostModel")
-        bst = xgb.Booster()
+        bst = xgboost.Booster()
         bst.load_model(cls.get_path(path, cls.XGBOOST_EXTENSION))
         return bst
 

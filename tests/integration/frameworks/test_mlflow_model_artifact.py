@@ -1,35 +1,29 @@
 import os
-from collections import namedtuple
 
 import mlflow
 import numpy as np
 import pytest
-import sklearn.neighbors as skn
-from sklearn import datasets
 
+from bentoml._internal.exceptions import InvalidArgument
 from bentoml.mlflow import MLflowModel
-
-ModelWithData = namedtuple("ModelWithData", ["model", "data"])
-
-
-@pytest.fixture(scope="session")
-def sklearn_model():
-    iris = datasets.load_iris()
-    X = iris.data[:, :2]
-    Y = iris.target
-    knn_model = skn.KNeighborsClassifier()
-    knn_model.fit(X, Y)
-    return ModelWithData(model=knn_model, data=X)
+from tests._internal.frameworks.sklearn_utils import sklearn_model_data
 
 
-def test_mlflow_save_load(tmpdir, sklearn_model):
-    knn_model = sklearn_model.model
-    MLflowModel(knn_model, mlflow.sklearn).save(tmpdir)
-    assert os.path.exists(
-        MLflowModel.get_path(os.path.join(tmpdir, MLflowModel._MODEL_NAMESPACE), ".pkl")
-    )
+def test_mlflow_save_load(tmpdir):
+    (model, data) = sklearn_model_data()
+    MLflowModel(model, mlflow.sklearn).save(tmpdir)
 
-    mlflow_loaded: "skn.KNeighborsClassifier" = MLflowModel.load(tmpdir)
-    np.testing.assert_array_equal(
-        knn_model.predict(sklearn_model.data), mlflow_loaded.predict(sklearn_model.data)
-    )
+    # fmt: off
+    assert os.path.exists(os.path.join(tmpdir, MLflowModel._MODEL_NAMESPACE, "model.pkl"))  # noqa
+
+    mlflow_loaded = MLflowModel.load(tmpdir)
+    np.testing.assert_array_equal(model.predict(data), mlflow_loaded.predict(data))  # noqa
+    # fmt: on
+
+
+def test_invalid_mlflow_loader(tmpdir):
+    class Foo:
+        pass
+
+    with pytest.raises(InvalidArgument):
+        MLflowModel(Foo, os).save(tmpdir)

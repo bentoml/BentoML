@@ -26,6 +26,13 @@ from ._internal.types import MetadataType, PathType
 
 logger = logging.getLogger(__name__)
 
+try:
+    import pyspark
+    import pyspark.ml
+    import pyspark.sql
+except ImportError:
+    raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
+
 # NOTE: the usage of SPARK_SESSION_NAMESPACE is to provide a consistent session
 #  among imports if users need to use SparkSession.
 SPARK_SESSION_NAMESPACE: str = "PySparkMLlibModel"
@@ -74,13 +81,6 @@ class PySparkMLlibModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import pyspark
-        import pyspark.ml
-        import pyspark.sql
-    except ImportError:
-        raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
-
     _model: pyspark.ml.Model
 
     def __init__(
@@ -95,12 +95,6 @@ class PySparkMLlibModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> pyspark.ml.Model:
-        try:
-            import pyspark
-            import pyspark.ml
-            from pyspark.sql import SparkSession
-        except ImportError:
-            raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
 
         model_path: str = str(cls.get_path(path))
 
@@ -128,10 +122,8 @@ class PySparkMLlibModel(ModelArtifact):
         loaded_model = getattr(importlib.import_module(py_module), class_name)
         if not issubclass(loaded_model, pyspark.ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=loaded_model))
-            # fmt: off # noqa: E501
-            _spark_sess = SparkSession.builder.appName(
-                SPARK_SESSION_NAMESPACE
-            ).getOrCreate()
+            # fmt: off
+            _spark_sess = pyspark.sql.SparkSession.builder.appName(SPARK_SESSION_NAMESPACE).getOrCreate()  # noqa: E501
             # fmt: on
             model = loaded_model.load(_spark_sess.sparkContext, model_path)
         else:
@@ -140,10 +132,6 @@ class PySparkMLlibModel(ModelArtifact):
         return model
 
     def save(self, path: PathType) -> None:
-        try:
-            import pyspark.ml
-        except ImportError:
-            raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
         if not isinstance(self._model, pyspark.ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=self._model))
             self._model.save(self._spark_sess, self.get_path(path))

@@ -24,7 +24,7 @@ class _ArtifactMeta(type):
     will use as class attributes.
     """
 
-    _MODEL_NAMESPACE: str = "model"
+    _MODEL_NAMESPACE: str = "bentoml_model"
     _FILE_ENCODING: str = "utf-8"
 
     _FILE_EXTENSION: t.Dict[str, str] = {

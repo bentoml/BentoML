@@ -7,7 +7,7 @@ from fastai.learner import Learner
 from fastai.torch_core import Module
 
 from bentoml.fastai import FastaiModel
-from tests._internal.pytorch_utils import LinearModel, test_df
+from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
 
 
 def get_items(_x):

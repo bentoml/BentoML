@@ -6,7 +6,7 @@ import torch
 
 from bentoml._internal.exceptions import InvalidArgument
 from bentoml.coreml import CoreMLModel
-from tests._internal.pytorch_utils import LinearModel, test_df
+from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
 
 
 def pytorch_to_coreml(pytorch_model: LinearModel) -> "ct.models.MLModel":

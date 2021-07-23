@@ -7,7 +7,7 @@ import torch
 from torch import nn
 
 from bentoml.pytorch import PyTorchModel
-from tests._internal.pytorch_utils import LinearModel, test_df
+from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
 
 
 def predict_df(model: nn.Module, df: pd.DataFrame):

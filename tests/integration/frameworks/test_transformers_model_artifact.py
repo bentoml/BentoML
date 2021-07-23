@@ -3,7 +3,16 @@ import os
 import pytest
 from transformers import AutoModelWithLMHead, AutoTokenizer
 
+from bentoml._internal.exceptions import InvalidArgument, NotFound
 from bentoml.transformers import TransformersModel
+
+test_sentence = {"text": "A Bento box is a "}
+
+result = (
+    "A Bento box is a urn that is used to store the contents of a Bento box. "
+    + "It is usually used to store the contents of a Bento box in a storage container."
+    + "\n\nThe Bento box is a small, rectangular"
+)
 
 
 def predict_json(gpt, jsons):
@@ -15,13 +24,12 @@ def predict_json(gpt, jsons):
     return tokenizer.decode(output[0], skip_special_tokens=True)
 
 
-test_sentence = {"text": "A Bento box is a "}
+def create_invalid_transformers_class(name):
+    class Foo:
+        pass
 
-result = (
-    "A Bento box is a urn that is used to store the contents of a Bento box. "
-    + "It is usually used to store the contents of a Bento box in a storage container."
-    + "\n\nThe Bento box is a small, rectangular"
-)
+    Foo.__module__ = name
+    return Foo
 
 
 @pytest.fixture(scope="module")
@@ -41,3 +49,30 @@ def test_transformers_save_load(tmpdir, gpt_model):
     assert predict_json(gpt2_loaded, test_sentence) == predict_json(
         gpt_model, test_sentence
     )
+
+
+@pytest.mark.parametrize(
+    "invalid_dict, exc",
+    [
+        ({"test": "doesn't have model"}, InvalidArgument),
+        ({"model": "hi", "test": "doesn't have tokenizer"}, InvalidArgument),
+        (
+            {
+                "model": create_invalid_transformers_class("foo"),
+                "tokenizer": create_invalid_transformers_class("bar"),
+            },
+            InvalidArgument,
+        ),
+        (
+            {
+                "model": create_invalid_transformers_class("transformers"),
+                "tokenizer": create_invalid_transformers_class("foo"),
+            },
+            InvalidArgument,
+        ),
+        ("FooBar", NotFound),
+    ],
+)
+def test_invalid_transformers_load(invalid_dict, exc):
+    with pytest.raises(exc):
+        TransformersModel.load(invalid_dict)

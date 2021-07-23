@@ -6,7 +6,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 
 from bentoml.keras import KerasModel
-from tests._internal.tensorflow_utils import (
+from tests._internal.frameworks.tensorflow_utils import (
     CustomLayer,
     KerasSequentialModel,
     custom_activation,

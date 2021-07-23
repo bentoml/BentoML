@@ -1,4 +1,8 @@
+from collections import namedtuple
+
 import pandas as pd
+from sklearn.datasets import load_iris
+from sklearn.neighbors import KNeighborsClassifier
 
 test_data = {
     "mean radius": 10.80,
@@ -34,3 +38,15 @@ test_data = {
 }
 
 test_df = pd.DataFrame([test_data])
+
+
+ModelWithData = namedtuple("ModelWithData", ["model", "data"])
+
+
+def sklearn_model_data(clf=KNeighborsClassifier, num_data=4) -> ModelWithData:
+    model = clf()
+    iris = load_iris()
+    X = iris.data[:, :num_data]
+    Y = iris.target
+    model.fit(X, Y)
+    return ModelWithData(model=model, data=X)

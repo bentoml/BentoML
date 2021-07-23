@@ -23,7 +23,7 @@ def sklearn_model(num_data: t.Optional[int] = 4) -> "RandomForestClassifier":
 def test_sklearn_save_load(tmpdir):
     model = sklearn_model()
     SklearnModel(model).save(tmpdir)
-    assert os.path.exists(SklearnModel.get_path(tmpdir, '.pkl'))
+    assert os.path.exists(SklearnModel.get_path(tmpdir, ".pkl"))
 
     sklearn_loaded: t.Any = SklearnModel.load(tmpdir)
     assert sklearn_loaded.predict(test_df)[0] == model.predict(test_df)[0]

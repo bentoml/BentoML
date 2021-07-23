@@ -335,7 +335,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.7.10
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests with tf1
@@ -598,7 +598,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.7.10
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests

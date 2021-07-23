@@ -21,6 +21,21 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+try:
+    import torch
+    import torchvision
+except ImportError:
+    raise MissingDependencyException(
+        "torch and torchvision is required by DetectronModel"
+    )
+try:
+    import detectron2
+    from detectron2.checkpoint import DetectionCheckpointer
+    from detectron2.config import CfgNode, get_cfg
+    from detectron2.modeling import build_model
+except ImportError:
+    raise MissingDependencyException("detectron2 is required by DetectronModel")
+
 
 class DetectronModel(ModelArtifact):
     """
@@ -54,11 +69,6 @@ class DetectronModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import torch
-    except ImportError:
-        raise MissingDependencyException("torch is required by DetectronModel")
-
     _model: torch.nn.Module
 
     def __init__(
@@ -91,15 +101,6 @@ class DetectronModel(ModelArtifact):
             MissingDependencyException:
                 ``detectron2`` is required by :class:`~bentoml.detectron.DetectronModel`.
         """
-        try:
-            import detectron2
-            import torch
-            from detectron2.checkpoint import DetectionCheckpointer
-            from detectron2.config import get_cfg
-            from detectron2.modeling import build_model
-        except ImportError:
-            raise MissingDependencyException("detectron2 is required by DetectronModel")
-
         cfg: "detectron2.config.CfgNode" = get_cfg()
         weight_path = cls.get_path(path, cls.PTH_EXTENSION)
         yaml_path = cls.get_path(path, cls.YAML_EXTENSION)
@@ -115,12 +116,6 @@ class DetectronModel(ModelArtifact):
         return model
 
     def save(self, path: PathType) -> None:
-        try:
-            from detectron2.checkpoint import DetectionCheckpointer
-            from detectron2.config import CfgNode, get_cfg
-        except ImportError:
-            raise MissingDependencyException("detectron2 is required by DetectronModel")
-
         os.makedirs(path, exist_ok=True)
         checkpointer = DetectionCheckpointer(self._model, save_dir=path)
         checkpointer.save(self._MODEL_NAMESPACE)

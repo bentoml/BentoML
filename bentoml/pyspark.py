@@ -107,22 +107,22 @@ class PySparkMLlibModel(ModelArtifact):
         # NOTE (future ref): A large model metadata might
         #  comprise of multiple `part` files, instead of assigning,
         #  loop through the directory.
-        metadata_path: str = str(os.path.join(model_path, 'metadata/part-00000'))
+        metadata_path: str = str(os.path.join(model_path, "metadata/part-00000"))
 
         try:
-            with open(metadata_path, 'r') as meta_file:
+            with open(metadata_path, "r") as meta_file:
                 metadata = json.load(meta_file)
         except IOError:
             raise BentoMLException(
                 "Incorrectly serialized model was loaded. Unable to load metadata"
             )
-        if 'class' not in metadata:
-            raise BentoMLException('malformed metadata file.')
-        model_class = metadata['class']
+        if "class" not in metadata:
+            raise BentoMLException("malformed metadata file.")
+        model_class = metadata["class"]
 
         # process imports from metadata
-        stripped_apache_module: t.List[str] = model_class.split('.')[2:]
-        py_module = 'py' + '.'.join(stripped_apache_module[:-1])  # skip org.apache
+        stripped_apache_module: t.List[str] = model_class.split(".")[2:]
+        py_module = "py" + ".".join(stripped_apache_module[:-1])  # skip org.apache
         class_name = stripped_apache_module[-1]
 
         loaded_model = getattr(importlib.import_module(py_module), class_name)

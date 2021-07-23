@@ -35,7 +35,9 @@ def CancerClassifier(tmpdir):
 def test_catboost_save_load(tmpdir, CancerClassifier):
     model = CancerClassifier
     CatBoostModel(model).save(tmpdir)
-    assert os.path.exists(CatBoostModel.get_path(tmpdir, ".cbm"))
+    assert os.path.exists(
+        CatBoostModel.get_path(tmpdir, CatBoostModel.CATBOOST_EXTENSION)
+    )
 
     catboost_loaded = CatBoostModel.load(tmpdir)
     assert isinstance(catboost_loaded, CatBoost)

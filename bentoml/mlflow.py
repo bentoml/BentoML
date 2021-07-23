@@ -68,8 +68,8 @@ class MLflowModel(ModelArtifact):
         metadata: t.Optional[MetadataType] = None,
     ):
         super(MLflowModel, self).__init__(model, metadata=metadata)
-        if 'mlflow' not in loader_module.__name__:
-            raise InvalidArgument('given `loader_module` is not omitted by mlflow.')
+        if "mlflow" not in loader_module.__name__:
+            raise InvalidArgument("given `loader_module` is not omitted by mlflow.")
         self.__load__module(loader_module)
 
     @classmethod

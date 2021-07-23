@@ -34,7 +34,27 @@ napoleon_include_private_with_doc = False
 napoleon_numpy_docstring = False
 napoleon_include_special_with_doc = False
 
-autodoc_mock_imports = ["catboost"]
+# mock any heavy imports, eg: imports from frameworks library
+autodoc_mock_imports = [
+    "catboost",
+    "coremltools",
+    "detectron2",
+    "torch",
+    "torchvision",
+    "torchtext",
+    "easyocr",
+    "evalml",
+    "fastai",
+    "fasttext",
+    "mxnet",
+    "h2o",
+    "tensorflow",
+    "keras",
+    "trax",
+    "flax",
+    "jax",
+]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 

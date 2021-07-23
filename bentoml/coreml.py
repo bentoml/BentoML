@@ -21,6 +21,12 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import InvalidArgument, MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+try:
+    import coremltools
+    import coremltools.models
+except ImportError:
+    raise MissingDependencyException("coremltools>=4.0b2 is required by CoreMLModel")
+
 
 class CoreMLModel(ModelArtifact):
     """
@@ -52,13 +58,6 @@ class CoreMLModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import coremltools
-        import coremltools.models
-    except ImportError:
-        raise MissingDependencyException(
-            "coremltools>=4.0b2 is required by CoreMLModel"
-        )
     if int(coremltools.__version__.split(".")[0]) == 4:
         COREMLMODEL_EXTENSION = ".mlmodel"
     else:
@@ -75,13 +74,6 @@ class CoreMLModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "coremltools.models.MLModel":
-        try:
-            import coremltools
-            import coremltools.models
-        except ImportError:
-            raise MissingDependencyException(
-                "coremltools>=4.0b2 is required by CoreMLModel"
-            )
         get_path: str = cls.get_path(path, cls.COREMLMODEL_EXTENSION)
         if not os.path.exists(get_path):
             raise InvalidArgument(

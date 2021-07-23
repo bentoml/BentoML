@@ -54,7 +54,7 @@ class XgBoostModel(ModelArtifact):
     try:
         import xgboost
     except ImportError:
-        raise MissingDependencyException('xgboost is required by XgBoostModel')
+        raise MissingDependencyException("xgboost is required by XgBoostModel")
 
     XGBOOST_EXTENSION = ".model"
     _model: xgboost.core.Booster

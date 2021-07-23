@@ -64,7 +64,7 @@ class TransformersModel(ModelArtifact):
         import transformers
     except ImportError:
         raise MissingDependencyException(
-            'transformers is required by TransformersModel'
+            "transformers is required by TransformersModel"
         )
 
     _model_type: str = "AutoModelWithLMHead"

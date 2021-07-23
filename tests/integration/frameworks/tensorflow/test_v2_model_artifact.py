@@ -44,7 +44,7 @@ class NativeModel(tf.Module):
         self.dense = lambda inputs: tf.matmul(inputs, self.weights)
 
     @tf.function(
-        input_signature=[tf.TensorSpec(shape=None, dtype=tf.float64, name='inputs')]
+        input_signature=[tf.TensorSpec(shape=None, dtype=tf.float64, name="inputs")]
     )
     def __call__(self, inputs):
         return self.dense(inputs)
@@ -67,7 +67,7 @@ class NativeRaggedModel(tf.Module):
 
 
 @pytest.mark.parametrize(
-    'model_class, input_type, predict_fn',
+    "model_class, input_type, predict_fn",
     [
         (KerasModel, native_tensor, predict_native_model),
         (NativeModel, native_tensor, predict_native_model),
@@ -76,6 +76,6 @@ class NativeRaggedModel(tf.Module):
 )
 def test_tensorflow_v2_save_load(model_class, input_type, predict_fn, tmpdir):
     TensorflowModel(model_class()).save(tmpdir)
-    assert os.path.exists(os.path.join(tmpdir, 'saved_model.pb'))
+    assert os.path.exists(os.path.join(tmpdir, "saved_model.pb"))
     tf2_loaded = TensorflowModel.load(tmpdir)
     assert predict_fn(tf2_loaded, input_type) == predict_fn(model_class(), input_type)

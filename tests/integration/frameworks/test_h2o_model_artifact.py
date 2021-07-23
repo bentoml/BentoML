@@ -10,6 +10,13 @@ import pytest
 
 from bentoml.h2o import H2oModel
 
+test_data = {
+    "TemperatureCelcius": {"0": 21.6},
+    "ExhaustVacuumHg": {"0": 62.52},
+    "AmbientPressureMillibar": {"0": 1017.23},
+    "RelativeHumidity": {"0": 67.87},
+}
+
 
 def predict_dataframe(
     model: "h2o.model.model_base.ModelBase", df: "pd.DataFrame"
@@ -17,14 +24,6 @@ def predict_dataframe(
     hf = h2o.H2OFrame(df)
     pred = model.predict(hf)
     return pred.as_data_frame().to_json(orient="records")
-
-
-test_data = {
-    "TemperatureCelcius": {"0": 21.6},
-    "ExhaustVacuumHg": {"0": 62.52},
-    "AmbientPressureMillibar": {"0": 1017.23},
-    "RelativeHumidity": {"0": 67.87},
-}
 
 
 @pytest.fixture(scope="module")
@@ -55,6 +54,6 @@ def test_h2o_save_load(train_h2o_aml, tmpdir):
     assert os.path.exists(os.path.join(tmpdir, os.listdir(tmpdir)[0]))
 
     h2o_loaded: h2o.model.model_base.ModelBase = H2oModel.load(tmpdir)
-    assert predict_dataframe(train_h2o_aml.leader, test_df) == predict_dataframe(
-        h2o_loaded, test_df
-    )
+    # fmt: off
+    assert predict_dataframe(train_h2o_aml.leader, test_df) == predict_dataframe(h2o_loaded, test_df)
+    # fmt: on

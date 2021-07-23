@@ -1,5 +1,4 @@
 import os
-import typing as t
 
 import numpy as np
 import paddle

@@ -92,21 +92,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
     We don't want to abstract a lot of framework specific library code when creating new
     BentoML artifacts. This means we prefer duplication of codes for helper function
     rather than bad design abstraction. When create helper function in specific frameworks,
-    make sure that those helpers function are reserved, and follow the below format:
-
-    .. note::   
-        The reason for doing this is to make the library code more consistent and easier maintainability.
-        
-    .. code-block:: python
-    
-        class KerasModel(ModelArtifact):
-            
-            # function should start with two underscore, followed
-            #   by its descriptive function, with two underscore following it
-            #   and the desired scope of that function to apply to
-            def __helper_func_for__path(path: str, ...):
-                # this is a helper function that is related to path
-                pass
+    make sure that those helpers function are reserved functions.
 
     .. note:: 
         Make sure to add ``# noqa # pylint: disable=arguments-differ`` to :meth:`load` when implementing 

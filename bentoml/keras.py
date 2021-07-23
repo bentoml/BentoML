@@ -23,6 +23,14 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
 
+# fmt: off
+try:
+    import tensorflow as tf
+    from tensorflow import keras
+except ImportError:
+    raise MissingDependencyException("tensorflow is required by KerasModel as backend runtime.")
+# fmt: on
+
 
 class KerasModel(ModelArtifact):
     """
@@ -57,28 +65,12 @@ class KerasModel(ModelArtifact):
         TODO:
     """
 
-    # fmt: off
-    try:
-        import tensorflow as tf
-        import tensorflow.keras as tfk
-
-        if t.TYPE_CHECKING:
-            from tensorflow.python.client.session import (  # noqa # pylint disable=unused-import
-                BaseSession,
-            )
-            from tensorflow.python.framework.ops import (  # noqa # pylint disable=unused-import
-                _DefaultStack,
-            )
-    except ImportError:
-        raise MissingDependencyException("tensorflow is required by KerasModel as backend runtime.")
-    # fmt: on
-
-    graph: "_DefaultStack" = tf.compat.v1.get_default_graph()
-    sess: "BaseSession" = tf.compat.v1.Session(graph=graph)
+    graph = tf.compat.v1.get_default_graph()
+    sess = tf.compat.v1.Session(graph=graph)
 
     def __init__(
         self,
-        model: "tf.keras.models.Model",
+        model: "keras.models.Model",
         store_as_json: t.Optional[bool] = False,
         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[MetadataType] = None,
@@ -89,47 +81,41 @@ class KerasModel(ModelArtifact):
         self._custom_objects: t.Dict[str, t.Any] = custom_objects
 
     @classmethod
-    def __get_custom_object__path(cls, path: PathType) -> PathType:
+    def __get_custom_obj_fpath(cls, path: PathType) -> PathType:
         return cls.get_path(path, f"_custom_objects{cls.PICKLE_EXTENSION}")
 
     @classmethod
-    def __get_model_saved__path(cls, path: PathType) -> PathType:
+    def __get_model_saved_fpath(cls, path: PathType) -> PathType:
         return cls.get_path(path, cls.H5_EXTENSION)
 
     @classmethod
-    def __get_model_weight__path(cls, path: PathType) -> PathType:
+    def __get_model_weight_fpath(cls, path: PathType) -> PathType:
         return cls.get_path(path, f"_weights{cls.HDF5_EXTENSION}")
 
     @classmethod
-    def __get_model_json__path(cls, path: PathType) -> PathType:
+    def __get_model_json_fpath(cls, path: PathType) -> PathType:
         return cls.get_path(path, f"_json{cls.JSON_EXTENSION}")
 
     @classmethod
-    def load(cls, path: PathType) -> "tf.keras.models.Model":
-        try:
-            import tensorflow.keras as tfk
-        except ImportError:
-            raise MissingDependencyException(
-                "tensorflow is required by KerasModel as backend runtime."
-            )
+    def load(cls, path: PathType) -> "keras.models.Model":
         default_custom_objects = None
-        if os.path.isfile(cls.__get_custom_object__path(path)):
-            with open(cls.__get_custom_object__path(path), "rb") as dco_file:
+        if os.path.isfile(cls.__get_custom_obj_fpath(path)):
+            with open(cls.__get_custom_obj_fpath(path), "rb") as dco_file:
                 default_custom_objects = cloudpickle.load(dco_file)
 
-        if os.path.isfile(cls.__get_model_json__path(path)):
+        if os.path.isfile(cls.__get_model_json_fpath(path)):
             # load keras model via json and weights since json file are in path
             with cls.sess.as_default():  # pylint: disable=not-context-manager
-                with open(cls.__get_model_json__path(path), "r") as json_file:
+                with open(cls.__get_model_json_fpath(path), "r") as json_file:
                     model_json = json_file.read()
-                obj = tfk.models.model_from_json(
+                obj = keras.models.model_from_json(
                     model_json, custom_objects=default_custom_objects
                 )
-                obj.load_weights(cls.__get_model_weight__path(path))
+                obj.load_weights(cls.__get_model_weight_fpath(path))
         else:
             # otherwise, load keras model via standard load_model
-            obj = tfk.models.load_model(
-                cls.__get_model_saved__path(path), custom_objects=default_custom_objects
+            obj = keras.models.load_model(
+                cls.__get_model_saved_fpath(path), custom_objects=default_custom_objects
             )
         if isinstance(obj, dict):
             model = obj["model"]
@@ -139,25 +125,18 @@ class KerasModel(ModelArtifact):
         return model
 
     def save(self, path: PathType) -> None:
-        try:
-            import tensorflow as tf
-        except ImportError:
-            raise MissingDependencyException(
-                "tensorflow is required by KerasModel as backend runtime."
-            )
-
         tf.compat.v1.keras.backend.get_session()
 
         # save custom_objects for model
         if self._custom_objects:
-            with open(self.__get_custom_object__path(path), "wb") as custom_object_file:
+            with open(self.__get_custom_obj_fpath(path), "wb") as custom_object_file:
                 cloudpickle.dump(self._custom_objects, custom_object_file)
 
         if self._store_as_json:
             # save keras model using json and weights if requested
-            with open(self.__get_model_json__path(path), "w") as json_file:
+            with open(self.__get_model_json_fpath(path), "w") as json_file:
                 json_file.write(self._model.to_json())
-            self._model.save_weights(self.__get_model_weight__path(path))
+            self._model.save_weights(self.__get_model_weight_fpath(path))
         else:
             # otherwise, save standard keras model
-            self._model.save(self.__get_model_saved__path(path))
+            self._model.save(self.__get_model_saved_fpath(path))

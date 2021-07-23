@@ -18,10 +18,10 @@ def predict_df(model: t.Any, df: pd.DataFrame):
 
 # exported from
 #  https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def holt_model() -> "HoltWintersResults":
     df: pd.DataFrame = pd.read_csv(
-        'https://raw.githubusercontent.com/jbrownlee/Datasets/master/shampoo.csv'
+        "https://raw.githubusercontent.com/jbrownlee/Datasets/master/shampoo.csv"
     )
 
     # Taking a test-train split of 80 %
@@ -29,20 +29,20 @@ def holt_model() -> "HoltWintersResults":
     test = df[int(len(df) * 0.8) :]
 
     # Pre-processing the  Month  field
-    train.Timestamp = pd.to_datetime(train.Month, format='%m-%d')
+    train.Timestamp = pd.to_datetime(train.Month, format="%m-%d")
     train.index = train.Timestamp
-    test.Timestamp = pd.to_datetime(test.Month, format='%m-%d')
+    test.Timestamp = pd.to_datetime(test.Month, format="%m-%d")
     test.index = test.Timestamp
 
     # fitting the model based on  optimal parameters
     return ExponentialSmoothing(
-        np.asarray(train['Sales']), seasonal_periods=7, trend='add', seasonal='add',
+        np.asarray(train["Sales"]), seasonal_periods=7, trend="add", seasonal="add",
     ).fit()
 
 
 def test_statsmodels_save_load(tmpdir, holt_model):
     StatsModel(holt_model).save(tmpdir)
-    assert os.path.exists(StatsModel.get_path(tmpdir, '.pkl'))
+    assert os.path.exists(StatsModel.get_path(tmpdir, ".pkl"))
 
     statsmodels_loaded = StatsModel.load(tmpdir)
     assert (

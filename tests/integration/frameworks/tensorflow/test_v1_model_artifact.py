@@ -6,7 +6,7 @@ import tensorflow
 
 from bentoml.tensorflow import TensorflowModel
 
-if tensorflow.__version__.startswith('2'):
+if tensorflow.__version__.startswith("2"):
     tf = tensorflow.compat.v1
     tf.disable_v2_behavior()
 else:
@@ -20,8 +20,8 @@ test_tensor = tf.constant(test_data)
 
 
 def predict_v1_tensor_model(model, tensor):
-    pred_func = model.signatures['serving_default']
-    return pred_func(tensor)['prediction']
+    pred_func = model.signatures["serving_default"]
+    return pred_func(tensor)["prediction"]
 
 
 @pytest.fixture(scope="session")
@@ -35,7 +35,7 @@ def tf1_model_path():
         p = tf.argmax(input=inter1, axis=1)
 
         # loss
-        y = tf.placeholder(tf.float32, shape=[None, 1], name='y')
+        y = tf.placeholder(tf.float32, shape=[None, 1], name="y")
         loss = tf.losses.softmax_cross_entropy(y, inter1)
 
         # training operation
@@ -53,8 +53,8 @@ def tf1_model_path():
             prediction = sess.run(cnn_model["p"], {cnn_model["X"]: test_data})
             print(prediction)
 
-            inputs = {"X": cnn_model['X']}
-            outputs = {"prediction": cnn_model['p']}
+            inputs = {"X": cnn_model["X"]}
+            outputs = {"prediction": cnn_model["p"]}
 
             tf.saved_model.simple_save(sess, temp_dir, inputs=inputs, outputs=outputs)
         yield temp_dir
@@ -63,4 +63,4 @@ def tf1_model_path():
 def test_tensorflow_v1_save_load(tf1_model_path, tmpdir):
     assert not TensorflowModel(tf1_model_path).save(tmpdir)
     tf1_loaded = TensorflowModel.load(tf1_model_path)
-    assert predict_v1_tensor_model(tf1_loaded, test_tensor) == '[0]'
+    assert predict_v1_tensor_model(tf1_loaded, test_tensor) == "[0]"

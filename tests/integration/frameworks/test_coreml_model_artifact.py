@@ -6,10 +6,7 @@ import torch
 
 from bentoml._internal.exceptions import InvalidArgument
 from bentoml.coreml import CoreMLModel
-from tests.integration.frameworks.test_pytorch_model_artifact import (
-    LinearModel,
-    mock_df,
-)
+from tests._internal.pytorch_utils import LinearModel, test_df
 
 
 def pytorch_to_coreml(pytorch_model: LinearModel) -> "ct.models.MLModel":
@@ -20,9 +17,9 @@ def pytorch_to_coreml(pytorch_model: LinearModel) -> "ct.models.MLModel":
     module into a CoreML module.
     """
     pytorch_model.eval()
-    traced_model = torch.jit.trace(pytorch_model, torch.Tensor(mock_df.values))
+    traced_model = torch.jit.trace(pytorch_model, torch.Tensor(test_df.values))
     model: ct.models.MLModel = ct.convert(
-        traced_model, inputs=[ct.TensorType(name="input", shape=mock_df.shape)]
+        traced_model, inputs=[ct.TensorType(name="input", shape=test_df.shape)]
     )
     return model
 

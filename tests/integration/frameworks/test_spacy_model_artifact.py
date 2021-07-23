@@ -19,24 +19,24 @@ test_json: t.Dict[str, str] = {"text": "Google cloud is now a separate entity."}
 
 
 def predict_json(model: "spacy.language.Language", json: t.Dict[str, str]) -> str:
-    return model(json['text']).text
+    return model(json["text"]).text
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def spacy_model():
     examples = []
-    model = spacy.blank('en')
-    if 'ner' not in model.pipe_names:
-        ner = model.add_pipe('ner', last=True)
+    model = spacy.blank("en")
+    if "ner" not in model.pipe_names:
+        ner = model.add_pipe("ner", last=True)
     else:
-        ner = model.get_pipe('ner')
+        ner = model.get_pipe("ner")
 
     for text, annotations in train_data:
         examples.append(Example.from_dict(model.make_doc(text), annotations))
-        for ent in annotations.get('entities'):
+        for ent in annotations.get("entities"):
             ner.add_label(ent[2])
 
-    other_pipes = [pipe for pipe in model.pipe_names if pipe != 'ner']
+    other_pipes = [pipe for pipe in model.pipe_names if pipe != "ner"]
 
     with model.disable_pipes(*other_pipes):
         optimizer = model.begin_training()

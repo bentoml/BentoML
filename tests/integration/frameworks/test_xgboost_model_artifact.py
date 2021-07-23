@@ -29,7 +29,7 @@ def xgboost_model():
     dt = xgb.DMatrix(X_train, label=y_train)
 
     # specify parameters via map
-    param = {'max_depth': 3, 'eta': 0.3, 'objective': 'multi:softprob', 'num_class': 2}
+    param = {"max_depth": 3, "eta": 0.3, "objective": "multi:softprob", "num_class": 2}
     bst = xgb.train(param, dt)
 
     return bst
@@ -39,7 +39,7 @@ def test_xgboost_save_load(tmpdir):
     model = xgboost_model()
 
     XgBoostModel(model).save(tmpdir)
-    assert os.path.exists(XgBoostModel.get_path(tmpdir, '.model'))
+    assert os.path.exists(XgBoostModel.get_path(tmpdir, ".model"))
 
     xg_loaded: xgb.core.Booster = XgBoostModel.load(tmpdir)
     assert predict_df(xg_loaded, test_df) == 1

@@ -7,18 +7,7 @@ import torch
 from torch import nn
 
 from bentoml.pytorch import PyTorchModel
-
-mock_df = pd.DataFrame([[1, 1, 1, 1, 1]])
-
-
-class LinearModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.linear = nn.Linear(5, 1, bias=False)
-        torch.nn.init.ones_(self.linear.weight)
-
-    def forward(self, x):
-        return self.linear(x)
+from tests._internal.pytorch_utils import LinearModel, test_df
 
 
 def predict_df(model: nn.Module, df: pd.DataFrame):
@@ -41,4 +30,4 @@ def test_pytorch_save_load(test_type, tmpdir):
     assert os.path.exists(PyTorchModel.get_path(tmpdir, ".pt"))
 
     pytorch_loaded: nn.Module = PyTorchModel.load(tmpdir)
-    assert predict_df(model, mock_df) == predict_df(pytorch_loaded, mock_df)
+    assert predict_df(model, test_df) == predict_df(pytorch_loaded, test_df)

@@ -172,7 +172,7 @@ for i in range(runs):
     get_tar('IrisClassifier:20210618161150_3BFE59')
 e = time.monotonic()
 t = e-s
-print(f"get() w/o tar, {runs} times in {t} seconds @ a rate of {runs/t} gets/second")
+print(f"get() w/ tar, {runs} times in {t} seconds @ a rate of {runs/t} gets/second")
 
 
 ''' notes from previous version of file:

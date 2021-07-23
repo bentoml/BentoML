@@ -10,10 +10,11 @@ from tests._internal.frameworks.tensorflow_utils import (
     CustomLayer,
     KerasSequentialModel,
     custom_activation,
-    test_data,
 )
 
 TF2 = tf.__version__.startswith("2")
+
+test_data = [1, 2, 3, 4, 5]
 
 
 def predict_assert_equal(m1: keras.Model, m2: keras.Model):
@@ -49,8 +50,7 @@ def test_keras_save_load(model, kwargs, tmpdir):
         assert os.path.exists(KerasModel.get_path(tmpdir, ".h5"))
     if not TF2:
         # Initialize variables in the graph/model
-        init = tf.compat.v1.global_variables_initializer()
-        KerasModel.sess.run(init)
+        KerasModel.sess.run(tf.global_variables_initializer())
         with KerasModel.sess.as_default():
             keras_loaded = KerasModel.load(tmpdir)
             predict_assert_equal(keras_loaded, model)

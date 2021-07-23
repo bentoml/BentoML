@@ -16,7 +16,6 @@ def predict_df(model: xgb.core.Booster, df: pd.DataFrame):
 
 def xgboost_model():
     from sklearn.datasets import load_breast_cancer
-    from sklearn.model_selection import train_test_split
 
     # read in data
     cancer = load_breast_cancer()
@@ -24,9 +23,7 @@ def xgboost_model():
     X = cancer.data
     y = cancer.target
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
-
-    dt = xgb.DMatrix(X_train, label=y_train)
+    dt = xgb.DMatrix(X, label=y)
 
     # specify parameters via map
     param = {"max_depth": 3, "eta": 0.3, "objective": "multi:softprob", "num_class": 2}

@@ -34,7 +34,9 @@ def pyspark_model():
     return model
 
 
-def test_pyspark_mllib_save_load(tmpdir, pyspark_model):
+def test_pyspark_mllib_save_load(
+    tmpdir, pyspark_model
+):  # pylint: disable=redefined-outer-name
     PySparkMLlibModel(pyspark_model).save(tmpdir)
 
     pyspark_loaded: pyspark.ml.Model = PySparkMLlibModel.load(tmpdir)

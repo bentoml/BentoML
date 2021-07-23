@@ -10,9 +10,8 @@ test_df = pd.DataFrame([[5, 4, 3, 2]])
 
 
 class FooModel(pl.LightningModule):
-    # fmt: off
-    def forward(self, input): return input.add(1)
-    # fmt: on
+    def forward(self, input):
+        return input.add(1)
 
 
 def predict_df(model: pl.LightningModule, df: pd.DataFrame):

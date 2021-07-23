@@ -77,7 +77,6 @@ class EasyOCRModel(ModelArtifact):
         metadata: t.Optional[MetadataType] = None,
     ):
         super(EasyOCRModel, self).__init__(model, metadata=metadata)
-
         self._model: "easyocr.Reader" = model
         self._recog_network = recog_network
         self._detect_model = detect_model

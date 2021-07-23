@@ -122,7 +122,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         return self._metadata
 
     @classmethod
-    def load(cls: BA, path: PathType) -> MT:
+    def load(cls: BA, path: PathType) -> t.Any:
         """
         Load saved model into memory.
 

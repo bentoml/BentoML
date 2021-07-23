@@ -1,25 +1,14 @@
 import tempfile
-import typing as t
 
 import pytest
-import tensorflow
+import tensorflow as tf
 
 from bentoml.tensorflow import TensorflowModel
 
-if tensorflow.__version__.startswith("2"):
-    tf = tensorflow.compat.v1
-    tf.disable_v2_behavior()
-else:
-    tf = tensorflow
-
-tf.disable_eager_execution()
+test_data = [[1.1, 2.2]]
 
 
-test_data: t.List[t.List[float]] = [[1.1, 2.2]]
-test_tensor = tf.constant(test_data)
-
-
-def predict_v1_tensor_model(model, tensor):
+def predict__model(model, tensor):
     pred_func = model.signatures["serving_default"]
     return pred_func(tensor)["prediction"]
 
@@ -49,9 +38,7 @@ def tf1_model_path():
     with tempfile.TemporaryDirectory() as temp_dir:
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
-
-            prediction = sess.run(cnn_model["p"], {cnn_model["X"]: test_data})
-            print(prediction)
+            sess.run(cnn_model["p"], {cnn_model["X"]: test_data})
 
             inputs = {"X": cnn_model["X"]}
             outputs = {"prediction": cnn_model["p"]}
@@ -61,6 +48,9 @@ def tf1_model_path():
 
 
 def test_tensorflow_v1_save_load(tf1_model_path, tmpdir):
-    assert not TensorflowModel(tf1_model_path).save(tmpdir)
+    TensorflowModel(tf1_model_path).save(tmpdir)
     tf1_loaded = TensorflowModel.load(tf1_model_path)
-    assert predict_v1_tensor_model(tf1_loaded, test_tensor) == "[0]"
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        prediction: tf.Tensor = predict__model(tf1_loaded, tf.constant(test_data))
+        assert prediction.shape == (1,)

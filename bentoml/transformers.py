@@ -25,12 +25,6 @@ from ._internal.types import MetadataType, PathType
 
 try:
     import transformers
-    from transformers import (
-        FlaxPreTrainedModel,
-        PreTrainedModel,
-        PreTrainedTokenizer,
-        TFPreTrainedModel,
-    )
 except ImportError:
     raise MissingDependencyException("transformers is required by TransformersModel")
 
@@ -40,7 +34,7 @@ class TransformersModel(ModelArtifact):
     Model class for saving/loading :obj:`transformers` models.
 
     Args:
-        model (`Dict[str, Union[transformers.PreTrainedModel,transformers.PreTrainedTokenizer]`):
+        model (`Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]`):
             TODO:
         metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
@@ -70,7 +64,7 @@ class TransformersModel(ModelArtifact):
     Pack bundle under :code:`bento_packer.py`::
 
         TODO:
-    """
+    """  # noqa # pylint: enable=line-too-long
 
     _model_type: str = "AutoModelWithLMHead"
 
@@ -135,21 +129,7 @@ class TransformersModel(ModelArtifact):
             raise NotFound(f"transformers has no model type called {cls._model_type}")
 
     @classmethod
-    def load(
-        cls,
-        path: t.Union[
-            PathType,
-            t.Dict[
-                str,
-                t.Union[
-                    PreTrainedModel,
-                    PreTrainedModel,
-                    TFPreTrainedModel,
-                    FlaxPreTrainedModel,
-                ],
-            ],
-        ],
-    ):
+    def load(cls, path: t.Union[PathType, dict]):
         if isinstance(path, (str, os.PathLike, pathlib.PurePath)):
             str_path = str(path)
             if os.path.isdir(str_path):
@@ -165,11 +145,12 @@ class TransformersModel(ModelArtifact):
         elif isinstance(path, dict):
             loaded_model = cls._load_from_dict(path)
         else:
-            raise InvalidArgument(
-                "Expected either string representation of the model name or dict of format"
-                "{'model':<transformers model object>,'tokenizer':<tokenizer object>}, "
-                f"got {type(path)} instead"
-            )
+            err_msg: str = """\
+            Expected either model name or a dictionary only
+            containing `model` and `tokenizer` as keys, but
+            got {path} instead.
+            """
+            raise InvalidArgument(err_msg.format(path=type(path)))
         return loaded_model
 
     def _save_model_type(self, path: PathType, tokenizer_type: str) -> None:

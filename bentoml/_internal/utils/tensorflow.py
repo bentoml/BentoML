@@ -178,7 +178,7 @@ def _pretty_format_function_call(base, name, arg_names):
 
 
 def _pretty_format_positional(positional):
-    return f'Positional arguments ({len(positional)} total):\n    * \n{"    * ".join(str(a) for a in positional)}'
+    return f'Positional arguments ({len(positional)} total):\n    * \n{"    * ".join(str(a) for a in positional)}'  # noqa
 
 
 def pretty_format_function(function, obj="<object>", name="<function>"):

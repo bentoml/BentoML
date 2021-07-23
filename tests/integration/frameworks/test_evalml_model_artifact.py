@@ -25,6 +25,7 @@ def test_evalml_save_load(tmpdir, binary_pipeline):
     assert os.path.exists(EvalMLModel.get_path(tmpdir, ".pkl"))
 
     evalml_loaded: "evalml.pipelines.PipelineBase" = EvalMLModel.load(tmpdir)
-    # fmt: off
-    assert evalml_loaded.predict(test_df).to_numpy()== binary_pipeline.predict(test_df).to_numpy()
-    # fmt: on
+    assert (
+        evalml_loaded.predict(test_df).to_numpy()
+        == binary_pipeline.predict(test_df).to_numpy()
+    )

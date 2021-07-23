@@ -23,15 +23,12 @@ from ._internal.types import MetadataType, PathType
 
 try:
     import torch
-    import torchvision
 except ImportError:
-    raise MissingDependencyException(
-        "torch and torchvision is required by DetectronModel"
-    )
+    raise MissingDependencyException("torch is required by DetectronModel")
 try:
-    import detectron2
+    import detectron2  # pylint: disable=unused-import
     from detectron2.checkpoint import DetectionCheckpointer
-    from detectron2.config import CfgNode, get_cfg
+    from detectron2.config import get_cfg
     from detectron2.modeling import build_model
 except ImportError:
     raise MissingDependencyException("detectron2 is required by DetectronModel")
@@ -88,18 +85,21 @@ class DetectronModel(ModelArtifact):
         Load a detectron model from given yaml path.
 
         Args:
-            path (`Union[str, os.PathLike]`, or :obj:`~bentoml._internal.types.PathType`):
-                Given path containing saved yaml config for loading detectron model.
+            path (`Union[str, os.PathLike]`):
+                Given path containing saved yaml
+                 config for loading detectron model.
             device (`str`, `optional`, default to ``cpu``):
-                Device type to cast model. Default behaviour similar to :obj:`torch.device("cuda")`
-                Options: "cuda" or "cpu". If None is specified then return default config.MODEL.DEVICE
+                Device type to cast model. Default behaviour similar
+                 to :obj:`torch.device("cuda")` Options: "cuda" or "cpu".
+                 If None is specified then return default config.MODEL.DEVICE
 
         Returns:
             :class:`torch.nn.Module`
 
         Raises:
             MissingDependencyException:
-                ``detectron2`` is required by :class:`~bentoml.detectron.DetectronModel`.
+                ``detectron2`` is required by
+                 :class:`~bentoml.detectron.DetectronModel`.
         """
         cfg: "detectron2.config.CfgNode" = get_cfg()
         weight_path = cls.get_path(path, cls.PTH_EXTENSION)
@@ -120,7 +120,7 @@ class DetectronModel(ModelArtifact):
         checkpointer = DetectionCheckpointer(self._model, save_dir=path)
         checkpointer.save(self._MODEL_NAMESPACE)
 
-        cfg: "CfgNode" = get_cfg()
+        cfg: "detectron2.config.CfgNode" = get_cfg()
         if self._input_model_yaml:
             cfg.merge_from_file(self._input_model_yaml)
 

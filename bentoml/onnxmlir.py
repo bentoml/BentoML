@@ -42,10 +42,9 @@ class OnnxMlirModel(ModelArtifact):
 
     Args:
         model (`str`):
-            Given filepath or protobuf of converted model. Make sure to use corresponding library
-            to convert model from different frameworks to ONNX format
-        backend (`str`, `optional`, default to `onnxruntime`):
-            Name of ONNX inference runtime. ["onnxruntime", "onnxruntime-gpu"]
+            Given filepath or protobuf of converted model.
+             Make sure to use corresponding library to convert
+             model from different frameworks to ONNX format
         metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 

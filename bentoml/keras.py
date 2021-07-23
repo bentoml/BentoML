@@ -28,7 +28,7 @@ try:
     import tensorflow as tf
     from tensorflow import keras
 except ImportError:
-    raise MissingDependencyException("tensorflow is required by KerasModel as backend runtime.")
+    raise MissingDependencyException("tensorflow is required by KerasModel as backend runtime.")  # noqa
 # fmt: on
 
 

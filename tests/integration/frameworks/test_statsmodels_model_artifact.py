@@ -1,7 +1,6 @@
 import os
 import typing as t
 
-import joblib  # pylint: disable=unused-import
 import numpy as np
 import pandas as pd
 import pytest

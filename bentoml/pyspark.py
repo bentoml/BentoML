@@ -90,7 +90,8 @@ class PySparkMLlibModel(ModelArtifact):
         metadata: t.Optional[MetadataType] = None,
     ):
         super(PySparkMLlibModel, self).__init__(model, metadata=metadata)
-        # NOTES: referred to docstring, spark_session is mainly used for backward compatibility
+        # NOTES: referred to docstring, spark_session is mainly used
+        #  for backward compatibility.
         self._spark_sess = spark_session
 
     @classmethod

@@ -4,7 +4,6 @@ import typing as t
 import imageio
 import numpy as np
 import torch
-import torch.nn
 import torch.nn as nn
 from detectron2 import model_zoo
 from detectron2.checkpoint import DetectionCheckpointer
@@ -60,17 +59,19 @@ def test_detectron2_save_load(tmpdir):
     checkpointer = DetectionCheckpointer(model)
     checkpointer.load(cfg.MODEL.WEIGHTS)
 
-    # fmt: off
-    DetectronModel(model, input_model_yaml=model_zoo.get_config_file(model_url)).save(tmpdir)  # noqa
+    DetectronModel(model, input_model_yaml=model_zoo.get_config_file(model_url)).save(
+        tmpdir
+    )
 
     assert os.path.exists(DetectronModel.get_path(tmpdir, ".yaml"))
 
-    detectron_loaded: torch.nn.Module = DetectronModel.load(tmpdir, device=cloned.MODEL.DEVICE)
+    detectron_loaded: torch.nn.Module = DetectronModel.load(
+        tmpdir, device=cloned.MODEL.DEVICE
+    )
     assert repr(detectron_loaded) == repr(model)
 
-    image = imageio.imread('http://images.cocodataset.org/val2017/000000439715.jpg')
+    image = imageio.imread("http://images.cocodataset.org/val2017/000000439715.jpg")
     image = image[:, :, ::-1]
 
     responses = predict_image(detectron_loaded, image)
-    assert responses['scores'][0] > 0.9
-    # fmt: on
+    assert responses["scores"][0] > 0.9

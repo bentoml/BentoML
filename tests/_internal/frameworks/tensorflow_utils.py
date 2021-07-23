@@ -2,8 +2,6 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 
-test_data = [1, 2, 3, 4, 5]
-
 
 def custom_activation(x):
     return tf.nn.tanh(x) ** 2
@@ -42,21 +40,6 @@ def KerasSequentialModel() -> keras.models.Model:
     return net
 
 
-class KerasModel(tf.keras.Model):
-    def __init__(self):
-        super().__init__()
-        # Simple linear layer which sums the inputs
-        self.dense = tf.keras.layers.Dense(
-            units=1,
-            input_shape=(5,),
-            use_bias=False,
-            kernel_initializer=tf.keras.initializers.Ones(),
-        )
-
-    def call(self, inputs, **kwargs):
-        return self.dense(inputs)
-
-
 class NativeModel(tf.Module):
     def __init__(self):
         super().__init__()
@@ -70,12 +53,7 @@ class NativeModel(tf.Module):
         return self.dense(inputs)
 
 
-class NativeRaggedModel(tf.Module):
-    def __init__(self):
-        super().__init__()
-        self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
-        self.dense = lambda inputs: tf.matmul(inputs, self.weights)
-
+class NativeRaggedModel(NativeModel):
     @tf.function(
         input_signature=[
             tf.RaggedTensorSpec(tf.TensorShape([None, None]), tf.float64, 1, tf.int64)

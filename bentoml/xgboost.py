@@ -14,7 +14,6 @@
 #     limitations under the License.
 # ==============================================================================
 
-import os
 import typing as t
 
 from ._internal.artifacts import ModelArtifact

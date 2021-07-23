@@ -28,10 +28,10 @@ def test_easyocr_save_load(tmpdir):
     )
     assert [x[1] for x in model.readtext(IMAGE_PATH)] == TEST_RESULT
 
-    # fmt: off
-    EasyOCRModel(model, recog_network=recog_network, language_list=language_list).save(tmpdir)
+    EasyOCRModel(model, recog_network=recog_network, language_list=language_list).save(
+        tmpdir
+    )
     assert os.path.exists(EasyOCRModel.get_path(tmpdir, ".json"))
-    # fmt: on
 
     easyocr_loaded: easyocr.Reader = EasyOCRModel.load(tmpdir)
 

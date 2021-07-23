@@ -46,9 +46,10 @@ def test_transformers_save_load(tmpdir, gpt_model):
     assert os.path.exists(os.path.join(tmpdir, "tokenizer_type.txt"))
 
     gpt2_loaded = TransformersModel.load(tmpdir)
-    assert predict_json(gpt2_loaded, test_sentence) == predict_json(
-        gpt_model, test_sentence
-    )
+    # fmt: off
+    assert repr(TransformersModel.load(gpt_model)['model']) == repr(gpt2_loaded['model'])  # noqa
+    assert predict_json(gpt2_loaded, test_sentence) == predict_json(gpt_model, test_sentence)  # noqa
+    # fmt: on
 
 
 @pytest.mark.parametrize(
@@ -71,6 +72,7 @@ def test_transformers_save_load(tmpdir, gpt_model):
             InvalidArgument,
         ),
         ("FooBar", NotFound),
+        (create_invalid_transformers_class("test"), InvalidArgument),
     ],
 )
 def test_invalid_transformers_load(invalid_dict, exc):

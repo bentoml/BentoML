@@ -17,9 +17,8 @@
 import logging
 import os
 import pathlib
-import shutil
-import tempfile
 import typing as t
+from distutils.dir_util import copy_tree
 
 from ._internal.artifacts import ModelArtifact
 from ._internal.exceptions import MissingDependencyException
@@ -45,21 +44,9 @@ logger = logging.getLogger(__name__)
 
 TF1_AUTOTRACKABLE_NOT_CALLABLE_WARNING: str = """\
 Importing SavedModels from TensorFlow 1.x. `outputs = imported(inputs)`
-is not supported by BentoML due to `tensorflow` API.
-
-Recommended usage::
-
-    ```python
-    from tensorflow.python.saved_model import signature_constants
-
-    imported = tf.saved_model.load("path_to_v1_saved_model")
-    wrapped_function = imported.signatures[
-        signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-    wrapped_function(tf.ones([]))
-    ```
-
+ will not be supported by BentoML due to `tensorflow` API.\n
 See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
-details.
+ more details.
 """
 
 TF_FUNCTION_WARNING: str = """\
@@ -70,15 +57,10 @@ You can test the restored model object via `TensorflowModel.load(path)`
 """
 
 KERAS_MODEL_WARNING: str = """\
-BentoML detected that {name} is being used  to pack a Keras API
+BentoML detected that {name} is being used to pack a Keras API
  based model. In order to get optimal serving performance, we recommend
- either replacing {name} with KerasModel, or wrapping `keras_model.predict()`
- method with tf.function decorator.
+ to wrap your keras model `call()` methods with `@tf.function` decorator.
 """
-
-
-def _path_like(p) -> bool:
-    return isinstance(p, (str, bytes, pathlib.PurePath, os.PathLike))
 
 
 class _TensorflowFunctionWrapper:
@@ -187,16 +169,9 @@ class TensorflowModel(ModelArtifact):
         metadata: t.Optional[MetadataType] = None,
     ):
         super(TensorflowModel, self).__init__(model, metadata=metadata)
-        self._tmpdir = tempfile.TemporaryDirectory()
 
     @staticmethod
-    def __load_tf_saved_model(path: str) -> t.Union[AutoTrackable, t.Any]:
-        try:
-            from tensorflow.python.training.tracking.tracking import AutoTrackable
-        except ImportError:
-            raise MissingDependencyException(
-                "tensorflow is required by TensorflowModel"
-            )
+    def _load_tf_saved_model(path: str) -> t.Union[AutoTrackable, t.Any]:
         if TF2:
             return tf.saved_model.load(path)
         else:
@@ -207,7 +182,7 @@ class TensorflowModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType):
-        model = cls.__load_tf_saved_model(str(path))
+        model = cls._load_tf_saved_model(str(path))
         _TensorflowFunctionWrapper.hook_loaded_model(model)
         logger.warning(TF_FUNCTION_WARNING)
         # pretty format loaded model
@@ -216,7 +191,11 @@ class TensorflowModel(ModelArtifact):
             logger.warning(KERAS_MODEL_WARNING.format(name=cls.__name__))
         return model
 
-    def save(
+    @staticmethod
+    def _path_like(p) -> bool:
+        return isinstance(p, (str, bytes, pathlib.PurePath, os.PathLike))
+
+    def save(  # pylint: disable=arguments-differ
         self,
         path: PathType,
         signatures=None,
@@ -254,21 +233,20 @@ class TensorflowModel(ModelArtifact):
                 the :obj:`tf.saved_model.signature_constants` module.
             options (`tf.saved_model.SaveOptions`, `optional`, default to `None`):
                 :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
-        
-        .. note:: 
-            
+
+        .. note::
+
             Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
             from Tensorflow documentation for more information.
 
         Raises:
             ValueError: If `obj` is not trackable.
-        """
-        # noqa: E501 # pylint: enable=line-too-long
-        if not _path_like(self._model):
+        """  # noqa: E501 # pylint: enable=line-too-long
+        if not self._path_like(self._model):
             if TF2:
-                tf.saved_model.save(
-                    self._model, str(path), signatures=signatures, options=options,
-                )
+                # fmt: off
+                tf.saved_model.save(self._model, str(path), signatures=signatures, options=options)  # noqa # pylint: disable=line-too-long
+                # fmt: on
             else:
                 if options:
                     logger.warning(
@@ -278,9 +256,4 @@ class TensorflowModel(ModelArtifact):
                 tf.saved_model.save(self._model, str(path), signatures=signatures)
         else:
             assert os.path.isdir(self._model)
-            logger.warning(
-                "Given model is detected as a path that contains SavedModel"
-                "format. Running save will have no effects. Consider to use"
-                "the given path to load from SavedModel format with TensorflowModel.load()"
-            )
-            return
+            copy_tree(self._model, str(path))

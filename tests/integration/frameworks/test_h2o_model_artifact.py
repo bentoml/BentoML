@@ -55,5 +55,5 @@ def test_h2o_save_load(train_h2o_aml, tmpdir):
 
     h2o_loaded: h2o.model.model_base.ModelBase = H2oModel.load(tmpdir)
     # fmt: off
-    assert predict_dataframe(train_h2o_aml.leader, test_df) == predict_dataframe(h2o_loaded, test_df)
+    assert predict_dataframe(train_h2o_aml.leader, test_df) == predict_dataframe(h2o_loaded, test_df)  # noqa
     # fmt: on

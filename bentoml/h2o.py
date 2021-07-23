@@ -32,7 +32,8 @@ except ImportError:
 
 class H2oModel(ModelArtifact):
     """
-    Model class for saving/loading :obj:`h2o` models using :meth:`~h2o.saved_model` and :meth:`~h2o.load_model`
+    Model class for saving/loading :obj:`h2o` models
+     using meth:`~h2o.saved_model` and :meth:`~h2o.load_model`
 
     Args:
         model (`h2o.model.model_base.ModelBase`):

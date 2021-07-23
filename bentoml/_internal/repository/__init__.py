@@ -62,6 +62,28 @@ def get(tag):
         t = bento_yaml["metadata"]["created_at"]
         models = [model["name"] for model in bento_yaml["artifacts"]]
     return (name,version,str(t),models)
+
+def get_tar(tag):
+    # what kind of error to throw if tag malformed?
+    # and if it doesn't exist?
+    name, version = tag.split(":")
+    # TODO: change bundles path to general path
+    tag_path = os.path.join("/home/alxmke/bentoml/bundles-tar", name, version+".bento")
+    if not os.path.isfile(tag_path):
+        return None
+    
+    timev1 = False
+    timev2 = True
+    tf = tarfile.open(tag_path, mode='r')
+    bento_yaml = yaml.load(
+        tf.extractfile(os.path.join(version, "bentoml.yml")),
+        Loader=yaml.FullLoader,
+    )
+    t = bento_yaml["metadata"]["created_at"]
+    models = [model["name"] for model in bento_yaml["artifacts"]]
+    tf.close()
+
+    return (name,version,str(t),models)
     
 # BentoProtoBuffMessage
 # yatai client proto bentoml.yatai.proto.
@@ -83,43 +105,6 @@ def pull(tag, yatai=None):
     if not yatai:
         # set default yatai server  
         pass
-
-def get_tar(tag):
-    # what kind of error to throw if tag malformed?
-    # and if it doesn't exist?
-    name, version = tag.split(":")
-    # TODO: change bundles path to general path
-    tag_path = os.path.join("/home/alxmke/bentoml/bundles-tar", name, version+".bento")
-    if not os.path.isfile(tag_path):
-        return None
-    
-    timev1 = False
-    timev2 = True
-    tf = tarfile.open(tag_path, mode='r')
-    bento_yaml = yaml.load(
-        tf.extractfile(os.path.join(version, "bentoml.yml")),
-        Loader=yaml.FullLoader,
-    )
-    t = bento_yaml["metadata"]["created_at"]
-    models = [model["name"] for model in bento_yaml["artifacts"]]
-    tf.close()
-    return (name,version,str(t),models)
-    if os.path.isdir(tag_path) and False:
-        t = None
-        models = None
-        if timev1:  # ~60k tags/second
-            t = time.ctime(os.path.getctime(tag_path))
-            models_path = os.path.join(tag_path, "models")
-            models = sorted([m.name for m in os.scandir(models_path)])
-        elif timev2:  # ~460 tags/second
-            bento_yaml_path = os.path.join(tag_path, "bentoml.yml")
-            bento_yaml = None
-            with open(bento_yaml_path, 'r') as f:
-                bento_yaml = yaml.load(f, Loader=yaml.FullLoader)
-            t = bento_yaml["metadata"]["created_at"]
-            models = [model["name"] for model in bento_yaml["artifacts"]]
-        return (name,version,str(t),models)
-    return None
 
 # check benchmarks and proposals from:
 # https://stackoverflow.com/questions/3964681/find-all-files-in-a-directory-with-extension-txt-in-python
@@ -172,6 +157,23 @@ print()
 print("get_tar (THIS_NAME:DOES_NOT_EXIST):")
 print("bundle:", get_tar('THIS_NAME:DOES_NOT_EXIST'))
 print()
+
+# tar + non-tar benchmark
+runs = 1000
+s = time.monotonic()
+for i in range(runs):
+    get('IrisClassifier:20210618161150_3BFE59')
+e = time.monotonic()
+t = e-s
+print(f"get() w/o tar, {runs} times in {t} seconds @ a rate of {runs/t} gets/second")
+
+s = time.monotonic()
+for i in range(runs):
+    get_tar('IrisClassifier:20210618161150_3BFE59')
+e = time.monotonic()
+t = e-s
+print(f"get() w/o tar, {runs} times in {t} seconds @ a rate of {runs/t} gets/second")
+
 
 ''' notes from previous version of file:
 

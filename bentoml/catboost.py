@@ -69,7 +69,9 @@ class CatBoostModel(ModelArtifact):
         self._model_pool = model_pool
 
     @classmethod
-    def __init_model_type(cls, model_type: t.Optional[str] = "classifier"):
+    def __init_model_type(
+        cls, model_type: t.Optional[str] = "classifier"
+    ) -> t.Union[CatBoost, CatBoostClassifier, CatBoostRegressor]:
         if model_type == "classifier":
             _model = CatBoostClassifier()
         elif model_type == "regressor":

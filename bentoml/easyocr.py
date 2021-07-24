@@ -73,12 +73,12 @@ class EasyOCRModel(ModelArtifact):
         }
 
     @classmethod
-    def __get_json_file(cls, path: PathType) -> str:
-        return cls.get_path(path, cls.JSON_EXTENSION)
+    def __get_json_fpath(cls, path: PathType) -> str:
+        return str(cls.get_path(path, cls.JSON_EXTENSION))
 
     @classmethod
     def load(cls, path: PathType) -> "easyocr.Reader":
-        with open(cls.__get_json_file(path), "r") as f:
+        with open(cls.__get_json_fpath(path), "r") as f:
             model_params = json.load(f)
 
         return easyocr.Reader(
@@ -101,5 +101,5 @@ class EasyOCRModel(ModelArtifact):
         fname: str = f"{self._recog_network}{self.PTH_EXTENSION}"
         shutil.copyfile(os.path.join(src_folder, fname), os.path.join(path, fname))
 
-        with open(self.__get_json_file(path), "w") as f:
+        with open(self.__get_json_fpath(path), "w") as f:
             json.dump(self._model_metadata, f)

@@ -54,4 +54,4 @@ class XgBoostModel(ModelArtifact):
         return bst
 
     def save(self, path: PathType) -> None:
-        return self._model.save_model(self.get_path(path, self.XGBOOST_EXTENSION))
+        self._model.save_model(self.get_path(path, self.XGBOOST_EXTENSION))

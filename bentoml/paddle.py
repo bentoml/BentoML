@@ -14,6 +14,11 @@ except ImportError:
         "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
     )
 
+try:
+    import paddlehub as hub
+except ImportError:
+    hub = None
+
 
 class PaddlePaddleModel(ModelArtifact):
     """
@@ -99,9 +104,7 @@ class PaddleHubModel(ModelArtifact):
     """
 
     def __init__(self, model: PathType, metadata: t.Optional[MetadataType] = None):
-        try:
-            import paddlehub as hub
-        except ImportError:
+        if hub is None:
             raise MissingDependencyException("paddlehub is required by PaddleHubModel")
         if os.path.isdir(model):
             module = hub.Module(directory=model)
@@ -119,8 +122,6 @@ class PaddleHubModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
-        try:
-            import paddlehub as hub
-        except ImportError:
+        if hub is None:
             raise MissingDependencyException("paddlehub is required by PaddleHubModel")
         return hub.Module(directory=str(path))

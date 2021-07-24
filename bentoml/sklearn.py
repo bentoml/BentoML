@@ -4,6 +4,8 @@ from ._internal.artifacts import ModelArtifact
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
+MT = t.TypeVar("MT")
+
 try:
     import joblib
 except ImportError:
@@ -42,7 +44,7 @@ class SklearnModel(ModelArtifact):
         TODO:
     """
 
-    def __init__(self, model, metadata: t.Optional[MetadataType] = None):
+    def __init__(self, model: MT, metadata: t.Optional[MetadataType] = None):
         super(SklearnModel, self).__init__(model, metadata=metadata)
 
     @classmethod

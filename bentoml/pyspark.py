@@ -82,6 +82,7 @@ class PysparkMLlibModel(ModelArtifact):
     def load(cls, path: PathType) -> pyspark.ml.Model:
 
         model_path: str = str(cls.get_path(path))
+        model: "pyspark.ml.Model"
 
         # NOTE (future ref): A large model metadata might
         #  comprise of multiple `part` files, instead of assigning,

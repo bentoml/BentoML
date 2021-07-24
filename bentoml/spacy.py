@@ -51,4 +51,4 @@ class SpacyModel(ModelArtifact):
         return spacy.util.load_model(cls.get_path(path))
 
     def save(self, path: PathType) -> None:
-        return self._model.to_disk(self.get_path(path))
+        self._model.to_disk(self.get_path(path))

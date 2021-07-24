@@ -12,14 +12,22 @@ try:
 except ImportError:
     raise MissingDependencyException("transformers is required by TransformersModel")
 
+TransformersInput = t.TypeVar(
+    "TransformersInput",
+    bound=t.Union[
+        str, os.PathLike, transformers.PreTrainedModel, transformers.PreTrainedTokenizer
+    ],
+)
+
 
 class TransformersModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`transformers` models.
 
     Args:
-        model (`Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]`):
-            TODO:
+        model (`Union[str, os.PathLike, Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]]`):
+            A dictionary `{'model':<model_obj>, 'tokenizer':<tokenizer_obj>}`
+             to setup Transformers model
         metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
@@ -27,13 +35,9 @@ class TransformersModel(ModelArtifact):
         MissingDependencyException:
             :obj:`transformers` is required by TransformersModel
         InvalidArgument:
-            invalid argument type, model being packed
-            must be either a dictionary of format
-            {'model':transformers model object,
-            'tokenizer':transformers tokenizer object}
-            or a directory path where the model is saved
-            or a pre-trained model provided by transformers
-            which can be loaded using transformers.AutoModelWithLMHead
+            :obj:`model` must be either a dictionary
+             or a path for saved transformers model or
+             a pre-trained model string provided by transformers
         NotFound:
             if the provided model name or model path is not found
 
@@ -53,7 +57,7 @@ class TransformersModel(ModelArtifact):
     _model_type: str = "AutoModelWithLMHead"
 
     def __init__(
-        self, model, metadata: t.Optional[MetadataType] = None,
+        self, model: TransformersInput, metadata: t.Optional[MetadataType] = None,
     ):
         super(TransformersModel, self).__init__(model, metadata=metadata)
 
@@ -63,10 +67,10 @@ class TransformersModel(ModelArtifact):
     ) -> t.Dict[str, t.Any]:
         transformers_model = getattr(
             import_module("transformers"), model_type
-        ).from_pretrained(path)
+        ).from_pretrained(str(path))
         tokenizer = getattr(
             import_module("transformers"), tokenizer_type
-        ).from_pretrained(path)
+        ).from_pretrained(str(path))
         return {"model": transformers_model, "tokenizer": tokenizer}
 
     @staticmethod
@@ -112,20 +116,21 @@ class TransformersModel(ModelArtifact):
         except AttributeError:
             raise NotFound(f"transformers has no model type called {cls._model_type}")
 
+    # fmt: off
     @classmethod
-    def load(cls, path: t.Union[PathType, dict]):
+    def load(cls, path: t.Union[PathType, dict]):  # type: ignore
+        # fmt: on
         if isinstance(path, (str, os.PathLike, pathlib.PurePath)):
-            str_path = str(path)
-            if os.path.isdir(str_path):
+            if os.path.isdir(path):
                 with open(os.path.join(path, "__model__type.txt"), "r") as f:
                     _model_type = f.read().strip()
                 with open(os.path.join(path, "tokenizer_type.txt"), "r") as f:
                     _tokenizer_type = f.read().strip()
                 loaded_model = cls._load_from_directory(
-                    str_path, _model_type, _tokenizer_type
+                    path, _model_type, _tokenizer_type
                 )
             else:
-                loaded_model = cls._load_from_string(str_path)
+                loaded_model = cls._load_from_string(str(path))
         elif isinstance(path, dict):
             loaded_model = cls._load_from_dict(path)
         else:

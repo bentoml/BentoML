@@ -61,8 +61,8 @@ class KerasModel(ModelArtifact):
     ):
         super(KerasModel, self).__init__(model, metadata=metadata)
 
-        self._store_as_json: bool = store_as_json
-        self._custom_objects: t.Dict[str, t.Any] = custom_objects
+        self._store_as_json: t.Optional[bool] = store_as_json
+        self._custom_objects: t.Optional[t.Dict[str, t.Any]] = custom_objects
 
     @classmethod
     def __get_custom_obj_fpath(cls, path: PathType) -> PathType:

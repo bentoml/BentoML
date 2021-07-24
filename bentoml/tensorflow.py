@@ -50,18 +50,18 @@ BentoML detected that {name} is being used to pack a Keras API
 class _TensorflowFunctionWrapper:
     def __init__(
         self,
-        origin_func,
-        arg_names: t.Optional[str] = None,
-        arg_specs=None,
-        kwarg_specs=None,
-    ):
+        origin_func: t.Callable[..., t.Any],
+        arg_names: t.Optional[list] = None,
+        arg_specs: t.Optional[list] = None,
+        kwarg_specs: t.Optional[dict] = None,
+    ) -> None:
         self.origin_func = origin_func
         self.arg_names = arg_names
         self.arg_specs = arg_specs
         self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
         self.kwarg_specs.update(kwarg_specs or {})
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):  # type: ignore
         if self.arg_specs is None and self.kwarg_specs is None:
             return self.origin_func(*args, **kwargs)
 
@@ -88,11 +88,11 @@ class _TensorflowFunctionWrapper:
         }
         return self.origin_func(*transformed_args, **transformed_kwargs)
 
-    def __getattr__(self, k):
+    def __getattr__(self, k):  # type: ignore
         return getattr(self.origin_func, k)
 
     @classmethod
-    def hook_loaded_model(cls, loaded_model):
+    def hook_loaded_model(cls, loaded_model) -> None:  # type: ignore # noqa
         funcs = get_restored_functions(loaded_model)
         for k, func in funcs.items():
             arg_names = get_arg_names(func)
@@ -165,7 +165,9 @@ class TensorflowModel(ModelArtifact):
             return loaded
 
     @classmethod
-    def load(cls, path: PathType):
+    def load(cls, path: PathType):  # type: ignore
+        # TODO: type hint returns TF Session or
+        #  Keras model API
         model = cls._load_tf_saved_model(str(path))
         _TensorflowFunctionWrapper.hook_loaded_model(model)
         logger.warning(TF_FUNCTION_WARNING)
@@ -175,16 +177,12 @@ class TensorflowModel(ModelArtifact):
             logger.warning(KERAS_MODEL_WARNING.format(name=cls.__name__))
         return model
 
-    @staticmethod
-    def _path_like(p) -> bool:
-        return isinstance(p, (str, bytes, pathlib.PurePath, os.PathLike))
-
-    def save(  # pylint: disable=arguments-differ
+    def save(
         self,
         path: PathType,
-        signatures=None,
+        signatures: t.Optional[t.Union[t.Callable[..., t.Any], dict]] = None,
         options: t.Optional["tf.saved_model.SaveOptions"] = None,
-    ) -> None:
+    ) -> None:  # noqa # pylint: disable=arguments-differ
         """
         Save TensorFlow Trackable object `obj` from [SavedModel format] to path.
 
@@ -226,11 +224,11 @@ class TensorflowModel(ModelArtifact):
         Raises:
             ValueError: If `obj` is not trackable.
         """  # noqa: E501 # pylint: enable=line-too-long
-        if not self._path_like(self._model):
+        if not isinstance(self._model, (str, bytes, pathlib.PurePath, os.PathLike)):
             if TF2:
-                # fmt: off
-                tf.saved_model.save(self._model, str(path), signatures=signatures, options=options)  # noqa # pylint: disable=line-too-long
-                # fmt: on
+                tf.saved_model.save(
+                    self._model, str(path), signatures=signatures, options=options
+                )
             else:
                 if options:
                     logger.warning(
@@ -240,4 +238,4 @@ class TensorflowModel(ModelArtifact):
                 tf.saved_model.save(self._model, str(path), signatures=signatures)
         else:
             assert os.path.isdir(self._model)
-            copy_tree(self._model, str(path))
+            copy_tree(str(self._model), str(path))

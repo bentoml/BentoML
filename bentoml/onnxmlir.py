@@ -57,7 +57,7 @@ class ONNXMlirModel(ModelArtifact):
         self._model_so_path = None
 
     @classmethod
-    def load(cls, path: PathType) -> MT:  # type: ignore
+    def load(cls, path: PathType) -> "ExecutionSession":
         model_path: str = cls.get_path(path, cls.ONNXMLIR_EXTENSION)
         inference_session = ExecutionSession(model_path, "run_main_graph")
         return inference_session

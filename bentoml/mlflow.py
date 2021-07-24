@@ -1,6 +1,5 @@
 import os
 import typing as t
-from types import ModuleType
 
 from ._internal.artifacts import ModelArtifact
 from ._internal.types import MetadataType, PathType
@@ -48,7 +47,7 @@ class MLflowModel(ModelArtifact):
     def __init__(
         self,
         model: MT,
-        loader_module: ModuleType,
+        loader_module: t.Type["mlflow.pyfunc"],
         metadata: t.Optional[MetadataType] = None,
     ):
         super(MLflowModel, self).__init__(model, metadata=metadata)
@@ -57,7 +56,7 @@ class MLflowModel(ModelArtifact):
         self._loader_module: t.Type["mlflow.pyfunc"] = loader_module
 
     @classmethod
-    def load(cls, path: PathType) -> MT:
+    def load(cls, path: PathType) -> "mlflow.pyfunc.PyFuncModel":
         project_path: str = str(os.path.join(path, cls._MODEL_NAMESPACE))
         return mlflow.pyfunc.load_model(project_path)
 

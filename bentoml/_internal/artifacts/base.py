@@ -5,8 +5,6 @@ from pathlib import Path
 from ..types import MetadataType, PathType
 from ..utils.ruamel_yaml import YAML
 
-BA = t.TypeVar("BA", bound="ModelArtifact")
-
 MT = t.TypeVar("MT")
 
 
@@ -24,9 +22,9 @@ class _ArtifactMeta(type):
     will use as class attributes.
     """
 
-    _MODEL_NAMESPACE: str = "bentoml_model"
+    _MODEL_NAMESPACE: t.ClassVar[str] = "bentoml_model"
 
-    _FILE_EXTENSION: t.Dict[str, str] = {
+    _FILE_EXTENSION: t.ClassVar[t.Dict[str, str]] = {
         "H5_EXTENSION": ".h5",
         "HDF5_EXTENSION": ".hdf5",
         "JSON_EXTENSION": ".json",
@@ -39,9 +37,7 @@ class _ArtifactMeta(type):
     }
 
     @classmethod
-    def _get_path(
-        cls, path: PathType, ext: t.Optional[str] = ""
-    ) -> PathType:  # pylint: disable=unused-private-member
+    def _get_path(cls, path: PathType, ext: t.Optional[str] = "") -> PathType:
         """
         Return a default saved path for implemented artifacts.
 
@@ -58,17 +54,16 @@ class _ArtifactMeta(type):
 
         ::
 
-            PyTorchModel.get_path(os.getcwd(),".pt") # will return os.getcwd()/model.pt
+            PyTorchModel.get_path(os.getcwd(),".pt")
+            # Returns current_workdir/model.pt
         """
         return os.path.join(path, f"{cls._MODEL_NAMESPACE}{ext}")
 
-    # fmt: off
-    def __new__(mcls: t.Type["_ArtifactMeta"], name: str, mixins: tuple, namespace: dict) -> "_ArtifactMeta":  # noqa
+    def __new__(mcls, name, mixins, namespace):
         namespace["_MODEL_NAMESPACE"] = mcls._MODEL_NAMESPACE
         namespace["get_path"] = mcls._get_path
         namespace.update(**mcls._FILE_EXTENSION)
-        return t.cast(_ArtifactMeta, super(_ArtifactMeta, mcls).__new__(mcls, name, mixins, namespace))  # noqa
-    # fmt: on
+        return super(_ArtifactMeta, mcls).__new__(mcls, name, mixins, namespace)
 
 
 class ModelArtifact(object, metaclass=_ArtifactMeta):
@@ -107,20 +102,22 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         TODO:
     """
 
-    def __init__(self: BA, model: MT, metadata: t.Optional[MetadataType] = None):
+    def __init__(
+        self: "ModelArtifact", model: MT, metadata: t.Optional[MetadataType] = None
+    ):
         self._model = model
         self._metadata = metadata
 
     @property
-    def metadata(self: BA) -> t.Optional[MetadataType]:
+    def metadata(self: "ModelArtifact") -> t.Optional[MetadataType]:
         return self._metadata
 
     @property
-    def model(self: BA) -> MT:
+    def model(self: "ModelArtifact") -> MT:
         return self._model
 
     @classmethod
-    def load(cls: BA, path: PathType) -> t.Any:
+    def load(cls, path: PathType) -> MT:
         """
         Load saved model into memory.
 
@@ -133,7 +130,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         """
         raise NotImplementedError()
 
-    def save(self: BA, path: PathType) -> None:
+    def save(self: "ModelArtifact", path: PathType) -> None:
         """
         Perform save instance to given path.
 
@@ -160,12 +157,10 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         """
         raise NotImplementedError()
 
-    def __getattribute__(self: BA, item: str):  # type: ignore
+    def __getattribute__(self: "ModelArtifact", item: str):
         if item == "save":
 
-            def wrapped_save(*args, **kw):  # type: ignore
-                # args can be either string, ModuleType
-                # kwargs can be either bool, int, string, ModuleType
+            def wrapped_save(*args, **kw):
                 path: PathType = args[0]  # save(self, path)
                 if self.metadata:
                     yaml = YAML()
@@ -179,7 +174,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
             return wrapped_save
         elif item == "load":
 
-            def wrapped_load(*args, **kw):  # type: ignore
+            def wrapped_load(*args, **kw):
                 assert_msg: str = "`load()` requires positional `path`"
                 assert "path" in args, assert_msg
                 inherited = object.__getattribute__(self, item)

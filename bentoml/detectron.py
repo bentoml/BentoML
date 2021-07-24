@@ -55,7 +55,7 @@ class DetectronModel(ModelArtifact):
     def __init__(
         self,
         model: torch.nn.Module,
-        input_model_yaml: str = None,
+        input_model_yaml: t.Optional[str] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
         super(DetectronModel, self).__init__(model, metadata=metadata)

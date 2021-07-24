@@ -5,9 +5,20 @@ import zipfile
 import cloudpickle
 import torch.nn
 
-from ._internal.artifacts.base import MT, ModelArtifact
+from ._internal.artifacts.base import ModelArtifact
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
+
+try:
+    import torch
+except ImportError:
+    raise MissingDependencyException(
+        "torch is required by PyTorchModel and PyTorchLightningModel"
+    )
+try:
+    import pytorch_lightning
+except ImportError:
+    pytorch_lightning = None
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +53,6 @@ class PyTorchModel(ModelArtifact):
         TODO:
     """
 
-    try:
-        import torch
-    except ImportError:
-        raise MissingDependencyException(
-            "torch is required by PyTorchModel and PyTorchLightningModel"
-        )
-
     def __init__(
         self,
         model: t.Union[torch.nn.Module, torch.jit.ScriptModule],
@@ -61,22 +65,22 @@ class PyTorchModel(ModelArtifact):
         return cls.get_path(path, cls.PT_EXTENSION)
 
     @classmethod
-    def load(cls, path: PathType) -> t.Union[torch.nn.Module, torch.jit.ScriptModule]:
+    def load(
+        cls, path: PathType
+    ) -> t.Union["torch.nn.Module", "torch.jit.RecursiveScriptModule"]:
         # TorchScript Models are saved as zip files
         if zipfile.is_zipfile(cls.__get_weight_fpath(path)):
-            model: torch.jit.ScriptModule = torch.jit.load(cls.__get_weight_fpath(path))
+            return torch.jit.load(cls.__get_weight_fpath(path))
         else:
-            model: torch.nn.Module = cloudpickle.load(
-                open(cls.__get_weight_fpath(path), "rb")
-            )
-        return model
+            return cloudpickle.load(open(cls.__get_weight_fpath(path), "rb"))
 
     def save(self, path: PathType) -> None:
         # If model is a TorchScriptModule, we cannot apply standard pickling
         if isinstance(self._model, torch.jit.ScriptModule):
-            return torch.jit.save(self._model, self.__get_weight_fpath(path))
+            torch.jit.save(self._model, self.__get_weight_fpath(path))
+            return
 
-        return cloudpickle.dump(self._model, open(self.__get_weight_fpath(path), "wb"))
+        cloudpickle.dump(self._model, open(self.__get_weight_fpath(path), "wb"))
 
 
 class PyTorchLightningModel(ModelArtifact):
@@ -111,24 +115,22 @@ class PyTorchLightningModel(ModelArtifact):
     """
 
     def __init__(
-        self, model, metadata: t.Optional[MetadataType] = None,
-    ):
-
-        try:
-            import pytorch_lightning as pl  # noqa # pylint: disable=unused-import
-            import pytorch_lightning.core  # noqa # pylint: disable=unused-import
-        except ImportError:
+        self,
+        model: pytorch_lightning.LightningModule,
+        metadata: t.Optional[MetadataType] = None,
+    ):  # noqa
+        if pytorch_lightning is None:
             raise MissingDependencyException(
                 "pytorch_lightning is required by PyTorchLightningModel"
             )
         super(PyTorchLightningModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def __get_weight_fpath(cls, path: PathType) -> PathType:
-        return cls.get_path(path, cls.PT_EXTENSION)
+    def __get_weight_fpath(cls, path: PathType) -> str:
+        return str(cls.get_path(path, cls.PT_EXTENSION))
 
     @classmethod
-    def load(cls, path: PathType) -> MT:
+    def load(cls, path: PathType) -> "torch.jit.RecursiveScriptModule":
         return torch.jit.load(cls.__get_weight_fpath(path))
 
     def save(self, path: PathType) -> None:

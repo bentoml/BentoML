@@ -17,7 +17,7 @@ import os
 import shutil
 from pathlib import Path
 
-from bentoml._internal.exceptions import YataiRepositoryException
+from bentoml.exceptions import YataiRepositoryException
 from yatai.proto.repository_pb2 import BentoUri
 from yatai.repository.base_repository import BaseRepository
 

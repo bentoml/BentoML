@@ -6,7 +6,7 @@ from fastai.data.block import DataBlock
 from fastai.learner import Learner
 from fastai.torch_core import Module
 
-from bentoml.fastai import FastaiModel
+from bentoml.fastai import FastAIModel
 from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
 
 
@@ -36,7 +36,7 @@ def pack_models(path: str) -> None:
     dls = dblock.datasets(None).dataloaders()
     learner = Learner(dls, model, loss)
 
-    FastaiModel(learner).save(path)
+    FastAIModel(learner).save(path)
 
 
 def predict_df(model: "Learner", df: "pd.DataFrame"):
@@ -47,7 +47,7 @@ def predict_df(model: "Learner", df: "pd.DataFrame"):
 
 def test_fastai_save_pack(tmpdir):
     pack_models(tmpdir)
-    assert os.path.exists(FastaiModel.get_path(tmpdir, ".pkl"))
+    assert os.path.exists(FastAIModel.get_path(tmpdir, ".pkl"))
 
-    loaded_fastai: "Learner" = FastaiModel.load(tmpdir)
+    loaded_fastai: "Learner" = FastAIModel.load(tmpdir)
     assert predict_df(loaded_fastai, test_df) == 5.0

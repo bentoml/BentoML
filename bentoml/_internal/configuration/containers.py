@@ -8,9 +8,9 @@ from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
 from bentoml import __version__
+from bentoml.exceptions import BentoMLConfigException
 
 from ..configuration import expand_env_var, get_bentoml_deploy_version
-from ..exceptions import BentoMLConfigException
 from ..utils import get_free_port
 from ..utils.ruamel_yaml import YAML
 

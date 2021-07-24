@@ -10,7 +10,7 @@ import click
 import grpc
 import requests
 
-from ..exceptions import BentoMLException, BentoMLRpcError
+from bentoml.exceptions import BentoMLException, BentoMLRpcError
 
 # from ..bundle import (
 #     load_bento_service_metadata,

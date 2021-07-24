@@ -3,7 +3,7 @@ import os
 import pytest
 from transformers import AutoModelWithLMHead, AutoTokenizer
 
-from bentoml._internal.exceptions import InvalidArgument, NotFound
+from bentoml.exceptions import InvalidArgument, NotFound
 from bentoml.transformers import TransformersModel
 
 test_sentence = {"text": "A Bento box is a "}

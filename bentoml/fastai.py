@@ -1,24 +1,8 @@
-# ==============================================================================
-#     Copyright (c) 2021 Atalaya Tech. Inc
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
-# ==============================================================================
-
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
+from .exceptions import MissingDependencyException
 
 try:
     import fastai
@@ -27,10 +11,10 @@ try:
     # fastai v2
     import fastai.learner
 except ImportError:
-    raise MissingDependencyException("fastai v2 is required by FastaiModel")
+    raise MissingDependencyException("fastai v2 is required by FastAIModel")
 
 
-class FastaiModel(ModelArtifact):
+class FastAIModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`fastai` model
 
@@ -42,7 +26,7 @@ class FastaiModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`fastai` is required by FastaiModel
+            :obj:`fastai` is required by FastAIModel
 
     Example usage under :code:`train.py`::
 
@@ -62,7 +46,7 @@ class FastaiModel(ModelArtifact):
         model: "fastai.learner.Learner",
         metadata: t.Optional[MetadataType] = None,
     ):
-        super(FastaiModel, self).__init__(model, metadata=metadata)
+        super(FastAIModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> "fastai.learner.Learner":

@@ -1,25 +1,9 @@
-# ==============================================================================
-#     Copyright (c) 2021 Atalaya Tech. Inc
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
-# ==============================================================================
-
 import os
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import MissingDependencyException
 from ._internal.types import MetadataType, PathType
+from .exceptions import MissingDependencyException
 
 try:
     import h2o
@@ -27,10 +11,10 @@ try:
     if t.TYPE_CHECKING:
         import h2o.model
 except ImportError:
-    raise MissingDependencyException("h2o is required by H2oModel")
+    raise MissingDependencyException("h2o is required by H2OModel")
 
 
-class H2oModel(ModelArtifact):
+class H2OModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`h2o` models
      using meth:`~h2o.saved_model` and :meth:`~h2o.load_model`
@@ -43,7 +27,7 @@ class H2oModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`h2o` is required by H2oModel
+            :obj:`h2o` is required by H2OModel
 
     Example usage under :code:`train.py`::
 
@@ -63,7 +47,7 @@ class H2oModel(ModelArtifact):
         model: "h2o.model.model_base.ModelBase",
         metadata: t.Optional[MetadataType] = None,
     ):
-        super(H2oModel, self).__init__(model, metadata=metadata)
+        super(H2OModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> "h2o.model.model_base.ModelBase":

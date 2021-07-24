@@ -1,8 +1,9 @@
 import argparse
 from typing import Iterable, Iterator, Mapping, Optional, Sequence, Tuple
 
+from bentoml.exceptions import MissingDependencyException
+
 from ..adapters.string_input import StringInput
-from ..exceptions import MissingDependencyException
 from ..types import HTTPHeaders, InferenceTask
 from ..utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,

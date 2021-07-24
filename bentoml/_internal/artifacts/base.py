@@ -25,7 +25,6 @@ class _ArtifactMeta(type):
     """
 
     _MODEL_NAMESPACE: str = "bentoml_model"
-    _FILE_ENCODING: str = "utf-8"
 
     _FILE_EXTENSION: t.Dict[str, str] = {
         "H5_EXTENSION": ".h5",
@@ -40,7 +39,7 @@ class _ArtifactMeta(type):
     }
 
     @classmethod
-    def __get__path(
+    def _get_path(
         cls, path: PathType, ext: t.Optional[str] = ""
     ) -> PathType:  # pylint: disable=unused-private-member
         """
@@ -63,25 +62,20 @@ class _ArtifactMeta(type):
         """
         return os.path.join(path, f"{cls._MODEL_NAMESPACE}{ext}")
 
-    def __new__(mcls, name, mixins, namespace):
-        kwargs: t.Dict[str, t.Callable] = dict()
-        kwargs.update(
-            {
-                "_MODEL_NAMESPACE": mcls._MODEL_NAMESPACE,
-                "_FILE_ENCODING": mcls._FILE_ENCODING,
-                "get_path": mcls.__get__path,
-            },
-            **mcls._FILE_EXTENSION,
-        )
-        namespace.update(**kwargs)
-        return super(_ArtifactMeta, mcls).__new__(mcls, name, mixins, namespace)
+    # fmt: off
+    def __new__(mcls: t.Type["_ArtifactMeta"], name: str, mixins: tuple, namespace: dict) -> "_ArtifactMeta":  # noqa
+        namespace["_MODEL_NAMESPACE"] = mcls._MODEL_NAMESPACE
+        namespace["get_path"] = mcls._get_path
+        namespace.update(**mcls._FILE_EXTENSION)
+        return t.cast(_ArtifactMeta, super(_ArtifactMeta, mcls).__new__(mcls, name, mixins, namespace))  # noqa
+    # fmt: on
 
 
 class ModelArtifact(object, metaclass=_ArtifactMeta):
     """
-    :class:`~bentoml._internal.artifacts.ModelArtifact` is
-    the base abstraction for describing the trained model
-    serialization and deserialization process.
+    :class:`ModelArtifact` is the base abstraction
+     for describing the trained model serialization
+     and deserialization process.
 
     Args:
         model (`MT`):
@@ -118,8 +112,12 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         self._metadata = metadata
 
     @property
-    def metadata(self: BA) -> MetadataType:
+    def metadata(self: BA) -> t.Optional[MetadataType]:
         return self._metadata
+
+    @property
+    def model(self: BA) -> MT:
+        return self._model
 
     @classmethod
     def load(cls: BA, path: PathType) -> t.Any:
@@ -127,13 +125,13 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         Load saved model into memory.
 
         Args:
-            path (`Union[str, os.PathLike]`, or :obj:`~bentoml._internal.types.PathType`):
+            path (`Union[str, os.PathLike]`):
                 Given path to save artifacts metadata and objects.
 
         This will be used as a class method, interchangeable with
-        :meth:`~bentoml._internal.artifacts.ModelArtifact.save` to load model during
-        development pipeline.
+        :meth:`save` to load model during development pipeline.
         """
+        raise NotImplementedError()
 
     def save(self: BA, path: PathType) -> None:
         """
@@ -160,13 +158,15 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
             for method overloading, this ensures that model metadata will always be saved
             to given directory.
         """
+        raise NotImplementedError()
 
-    def __getattribute__(self: BA, item: str):
+    def __getattribute__(self: BA, item: str):  # type: ignore
         if item == "save":
 
-            def wrapped_save(*args, **kw):
-                # workaround method overloading.
-                path = args[0]  # save(self, path)
+            def wrapped_save(*args, **kw):  # type: ignore
+                # args can be either string, ModuleType
+                # kwargs can be either bool, int, string, ModuleType
+                path: PathType = args[0]  # save(self, path)
                 if self.metadata:
                     yaml = YAML()
                     yaml.dump(
@@ -179,10 +179,9 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
             return wrapped_save
         elif item == "load":
 
-            def wrapped_load(*args, **kw):
-                assert (
-                    "path" in args
-                ), "load() implementation requires positional first args `path`"
+            def wrapped_load(*args, **kw):  # type: ignore
+                assert_msg: str = "`load()` requires positional `path`"
+                assert "path" in args, assert_msg
                 inherited = object.__getattribute__(self, item)
                 return inherited(*args, **kw)
 

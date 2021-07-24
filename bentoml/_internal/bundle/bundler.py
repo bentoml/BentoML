@@ -16,6 +16,8 @@ from urllib.parse import urlparse
 
 import requests
 
+from bentoml.exceptions import BentoMLException, InvalidArgument
+
 from ..bundle.config import SavedBundleConfig
 from ..bundle.loader import _is_remote_path
 from ..bundle.templates import (
@@ -30,7 +32,6 @@ from ..environment.local_py_modules import (
     copy_zip_import_archives,
 )
 from ..environment.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
-from ..exceptions import BentoMLException, InvalidArgument
 from ..utils import archive_directory_to_tar, is_gcs_url, is_s3_url
 from ..utils.open_api import get_open_api_spec_json
 from ..utils.tempdir import TempDirectory

@@ -9,9 +9,10 @@ from google.protobuf.json_format import MessageToJson
 from simple_di import Provide, inject
 from werkzeug.exceptions import BadRequest, NotFound
 
+from bentoml.exceptions import BentoMLException
+
 from ..configuration import get_debug_mode
 from ..configuration.containers import BentoMLContainer
-from ..exceptions import BentoMLException
 from ..marshal.marshal import MARSHAL_REQUEST_HEADER, DataLoader
 from ..server.instruments import InstrumentMiddleware
 from ..types import HTTPRequest

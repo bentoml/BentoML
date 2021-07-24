@@ -8,9 +8,9 @@ from google.protobuf.struct_pb2 import Struct
 from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
+from bentoml.exceptions import BentoMLConfigException
 
 from ..configuration.containers import BentoMLContainer
-from ..exceptions import BentoMLConfigException
 from ..utils import dump_to_yaml_str
 from ..utils.ruamel_yaml import YAML
 

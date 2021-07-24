@@ -17,7 +17,7 @@ import os
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
-from bentoml._internal.exceptions import BentoMLException, LockUnavailable
+from bentoml.exceptions import BentoMLException, LockUnavailable
 
 from ..db.base import Base
 from ..db.stores.deployment import DeploymentStore

@@ -225,7 +225,8 @@ def resolve_bundle_path(
     pip_installed_bundle_path: Optional[str] = None,
     yatai_url: Optional[str] = None,
 ) -> str:
-    from ..exceptions import BentoMLException
+    from bentoml.exceptions import BentoMLException
+
     from ..yatai_client import get_yatai_client
 
     if pip_installed_bundle_path:

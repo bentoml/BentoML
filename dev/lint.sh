@@ -22,9 +22,9 @@ echo "Running pylint on test module..."
 pylint --rcfile="./pylintrc" tests
 
 echo "Running mypy on bentoml, yatai module..."
-mypy --config=mypy.ini --show-error-codes --no-incremental bentoml yatai
+mypy --config-file "$GIT_ROOT"/mypy.ini bentoml yatai
 
 echo "Running mypy on docker module..."
-mypy --config=mypy.ini --show-error-codes --no-incremental docker
+mypy --config-file "$GIT_ROOT"/mypy.ini docker
 
 echo "Done"

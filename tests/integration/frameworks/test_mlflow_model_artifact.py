@@ -4,7 +4,7 @@ import mlflow
 import numpy as np
 import pytest
 
-from bentoml._internal.exceptions import InvalidArgument
+from bentoml.exceptions import InvalidArgument
 from bentoml.mlflow import MLflowModel
 from tests._internal.frameworks.sklearn_utils import sklearn_model_data
 

@@ -23,12 +23,6 @@ from simple_di import Provide, inject
 from bentoml import __version__ as BENTOML_VERSION
 from bentoml._internal.bundle.loader import safe_retrieve
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.exceptions import (
-    BadInput,
-    BentoMLException,
-    InvalidArgument,
-    YataiRepositoryException,
-)
 from bentoml._internal.utils import ProtoMessageToDict
 from bentoml._internal.utils.docker_utils import (
     to_valid_docker_image_name,
@@ -36,6 +30,12 @@ from bentoml._internal.utils.docker_utils import (
 )
 from bentoml._internal.utils.tempdir import TempDirectory
 from bentoml._internal.utils.usage_stats import track
+from bentoml.exceptions import (
+    BadInput,
+    BentoMLException,
+    InvalidArgument,
+    YataiRepositoryException,
+)
 from yatai.db import DB
 from yatai.db.stores.lock import LockStore
 from yatai.deployment.docker_utils import ensure_docker_available_or_raise

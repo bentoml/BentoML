@@ -16,7 +16,8 @@ import logging
 
 import click
 
-from ..exceptions import CLIException
+from bentoml.exceptions import CLIException
+
 from ..utils import get_default_yatai_client, status_pb_to_error_code_and_message
 from ..utils.lazy_loader import LazyLoader
 from .click_utils import (

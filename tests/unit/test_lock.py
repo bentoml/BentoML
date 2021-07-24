@@ -2,7 +2,7 @@ import time
 
 import pytest
 
-from bentoml._internal.exceptions import LockUnavailable
+from bentoml.exceptions import LockUnavailable
 from tests._internal.threading_utils import ThreadWithResult, run_delayed_thread
 from yatai.yatai.db import DB
 from yatai.yatai.locking.lock import LockType, lock

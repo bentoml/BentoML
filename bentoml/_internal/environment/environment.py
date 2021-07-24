@@ -7,8 +7,9 @@ from typing import List
 
 from simple_di import Provide, inject
 
+from bentoml.exceptions import BentoMLException
+
 from ..configuration.containers import BentoMLContainer
-from ..exceptions import BentoMLException
 from ..utils import cached_property
 from ..utils.ruamel_yaml import YAML
 from .pip_pkg import (

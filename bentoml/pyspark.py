@@ -1,19 +1,3 @@
-# ==============================================================================
-#     Copyright (c) 2021 Atalaya Tech. Inc
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
-# ==============================================================================
-
 import importlib
 import json
 import logging
@@ -21,8 +5,8 @@ import os
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import BentoMLException, MissingDependencyException
 from ._internal.types import MetadataType, PathType
+from .exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +15,11 @@ try:
     import pyspark.ml
     import pyspark.sql
 except ImportError:
-    raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
+    raise MissingDependencyException("pyspark is required by PysparkMLlibModel")
 
 # NOTE: the usage of SPARK_SESSION_NAMESPACE is to provide a consistent session
 #  among imports if users need to use SparkSession.
-SPARK_SESSION_NAMESPACE: str = "PySparkMLlibModel"
+SPARK_SESSION_NAMESPACE: str = "PysparkMLlibModel"
 
 DEPRECATION_MLLIB_WARNING: str = """\
     {model} is using the older library `pyspark.mllib`.
@@ -45,7 +29,7 @@ DEPRECATION_MLLIB_WARNING: str = """\
     """
 
 
-class PySparkMLlibModel(ModelArtifact):
+class PysparkMLlibModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`pyspark` models
     using :obj:`pyspark.ml` and :obj:`pyspark.mllib`
@@ -60,7 +44,7 @@ class PySparkMLlibModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`pyspark` is required by PySparkMLlibModel
+            :obj:`pyspark` is required by PysparkMLlibModel
 
     .. WARNING::
 
@@ -89,7 +73,7 @@ class PySparkMLlibModel(ModelArtifact):
         spark_session: t.Optional["pyspark.sql.SparkSession"] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
-        super(PySparkMLlibModel, self).__init__(model, metadata=metadata)
+        super(PysparkMLlibModel, self).__init__(model, metadata=metadata)
         # NOTES: referred to docstring, spark_session is mainly used
         #  for backward compatibility.
         self._spark_sess = spark_session

@@ -1,34 +1,18 @@
-# ==============================================================================
-#     Copyright (c) 2021 Atalaya Tech. Inc
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
-# ==============================================================================
-
 import shutil
 import typing as t
 
 from ._internal.artifacts import ModelArtifact
-from ._internal.exceptions import BentoMLException, MissingDependencyException
 from ._internal.types import MetadataType, PathType
+from .exceptions import BentoMLException, MissingDependencyException
 
 try:
     import onnx
     import onnxruntime
 except ImportError:
-    raise MissingDependencyException('"onnx" package is required by OnnxModel')
+    raise MissingDependencyException('"onnx" package is required by ONNXModel')
 
 
-class OnnxModel(ModelArtifact):
+class ONNXModel(ModelArtifact):
     """
     Model class for saving/loading :obj:`onnx` models.
 
@@ -44,11 +28,11 @@ class OnnxModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`onnx` is required by OnnxModel
+            :obj:`onnx` is required by ONNXModel
         NotImplementedError:
             :obj:`backend` as onnx runtime is not supported by ONNX
         BentoMLException:
-            :obj:`backend` as onnx runtime is not supported by OnnxModel
+            :obj:`backend` as onnx runtime is not supported by ONNXModel
         InvalidArgument:
             :obj:`path` passed in :meth:`~save` is not either
              a :obj:`onnx.ModelProto` or filepath
@@ -75,15 +59,15 @@ class OnnxModel(ModelArtifact):
         backend: t.Optional[str] = "onnxruntime",
         metadata: t.Optional[MetadataType] = None,
     ):
-        super(OnnxModel, self).__init__(model, metadata=metadata)
+        super(ONNXModel, self).__init__(model, metadata=metadata)
         if backend not in self.SUPPORTED_ONNX_BACKEND:
             raise BentoMLException(
-                f'"{backend}" runtime is currently not supported for OnnxModel'
+                f'"{backend}" runtime is currently not supported for ONNXModel'
             )
         self._backend = backend
 
     @classmethod
-    def __model_file__path(cls, path: PathType) -> PathType:
+    def __get_model_fpath(cls, path: PathType) -> PathType:
         return cls.get_path(path, cls.ONNX_EXTENSION)
 
     @classmethod
@@ -93,11 +77,11 @@ class OnnxModel(ModelArtifact):
         if isinstance(path, onnx.ModelProto):
             return onnxruntime.InferenceSession(path.SerializeToString())
         else:
-            _get_path: str = cls.__model_file__path(path)
+            _get_path: str = cls.__get_model_fpath(path)
             return onnxruntime.InferenceSession(_get_path)
 
     def save(self, path: t.Union[PathType, "onnx.ModelProto"]) -> None:
         if isinstance(self._model, onnx.ModelProto):
-            onnx.save_model(self._model, self.__model_file__path(path))
+            onnx.save_model(self._model, self.__get_model_fpath(path))
         else:
-            shutil.copyfile(self._model, self.__model_file__path(path))
+            shutil.copyfile(self._model, self.__get_model_fpath(path))

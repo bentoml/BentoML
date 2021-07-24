@@ -1,20 +1,3 @@
-# ==============================================================================
-#     Copyright (c) 2021 Atalaya Tech. Inc
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
-# ==============================================================================
-
-#
 # # APIS in utils:
 # lock_pypi_versions
 # with_pip_install_options
@@ -41,7 +24,7 @@ SUPPORTED_RELEASES_COMBINATION: Dict[str, List[str]] = {
     "runtime": SUPPORTED_BASE_DISTROS + ["ami2", "alpine3.14"],
 }
 
-# re.Pattern is not introduced til
+# re.Pattern is not introduced til after 3.6
 SEMVER_REGEX = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)?$")
 
 logger = logging.getLogger(__name__)
@@ -49,8 +32,9 @@ logger = logging.getLogger(__name__)
 BACKWARD_COMPATIBILITY_WARNING: str = """\
 Since 1.0.0, we changed the format of docker tags, thus {classname}
 will only supports image tag from 1.0.0 forward, while detected bentoml_version
-is {bentoml_version}. Refers to https://hub.docker.com/r/bentoml/model-server/
-if you need older version of bentoml. Using devel image instead...
+is {bentoml_version}.
+Refers to https://hub.docker.com/r/bentoml/model-server/
+if you need older version of bentoml. Using default devel image instead...
 """  # noqa: E501
 
 

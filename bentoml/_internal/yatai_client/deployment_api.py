@@ -1,7 +1,8 @@
 import logging
 import time
 
-from ..exceptions import BentoMLException, YataiDeploymentException
+from bentoml.exceptions import BentoMLException, YataiDeploymentException
+
 from ..utils import status_pb_to_error_code_and_message
 from .label_utils import generate_gprc_labels_selector
 from .proto import status_pb2

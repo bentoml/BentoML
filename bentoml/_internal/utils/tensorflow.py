@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Sequence, TypeVar, Union
 
-from ..exceptions import MissingDependencyException
+from bentoml.exceptions import MissingDependencyException
 
 if TYPE_CHECKING:
     # fmt: off

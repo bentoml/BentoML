@@ -47,8 +47,8 @@ service Yatai {
     returns (DeleteBundleResponse);
 
   // Get a list of Bundle that are stored in current repository
-  rpc ListBundle(ListBundleRequest)
-    returns (ListBundleResponse);
+  rpc ListBundles(ListBundlesRequest)
+    returns (ListBundlesResponse);
 
   rpc UploadBundle(stream UploadBundleRequest)
     returns (UploadBundleResponse);

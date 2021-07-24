@@ -1,24 +1,19 @@
 syntax = "proto3";
-package bentoml;
+package yatai;
 
 import "google/protobuf/empty.proto";
 
 import "status.proto";
-import "deployment.proto";
-import "repository.proto";
+import "bundle.proto";
 
 
 // Yatai RPC Server
 //
-// A stateful service that provides a complete BentoML model management
-// and model serving/deployment workflow
+// A stateful service that provides a complete BentoML bundle management
 //
-// It provides two sets of APIs:
-//  Bento Repository: Manages saved Bento files, and making them available
+// It provides API:
+//  Bundle: Manages saved Bundle files, and making them available
 //                    for serving in production environments
-//  Serving Deployment: Deploys saved Bento to a varity of different cloud
-//                      platforms, track deploym//ent status, set up logging
-//                      monitoring for your model serving workloads, and
 service Yatai {
   // Health check ping endpoint
   rpc HealthCheck (google.protobuf.Empty)
@@ -28,62 +23,38 @@ service Yatai {
   rpc GetYataiServiceVersion (google.protobuf.Empty)
     returns (GetYataiServiceVersionResponse);
 
-  // Create new or update existing deployment
-  rpc ApplyDeployment(ApplyDeploymentRequest)
-    returns (ApplyDeploymentResponse);
+  // Add new saved Bundle to repository by providing the Bundle name and version
+  // this will return an upload address that allows client to upload the Bundle files
+  rpc AddBundle(AddBundleRequest)
+    returns (AddBundleResponse);
 
-  // Delete existing deployment
-  rpc DeleteDeployment(DeleteDeploymentRequest)
-    returns (DeleteDeploymentResponse);
-
-  // Get deployment specification (desired state)
-  rpc GetDeployment(GetDeploymentRequest)
-    returns (GetDeploymentResponse);
-
-  // Get deployment status (current state)
-  rpc DescribeDeployment(DescribeDeploymentRequest)
-    returns (DescribeDeploymentResponse);
-
-  // List active deployments, by default this will return all active deployments
-  rpc ListDeployments(ListDeploymentsRequest)
-    returns (ListDeploymentsResponse);
-
-  // Add new saved Bento to repository by providing the Bento name and version
-  // this will return an upload address that allows client to upload the bento files
-  rpc AddBento(AddBentoRequest)
-    returns (AddBentoResponse);
-
-  // RPC for updating a previously added Bento's information, including
-  // the BentoService's Metadata(apis, env, artifacts etc) and the upload status.
+  // RPC for updating a previously added Bundle's information, including
+  // the BundleService's Metadata(apis, env, artifacts etc) and the upload status.
   // Yatai server expects the client to use this RPC for notifying that, for a
-  // previously requested AddBento call, what's the uploading progress and when the
+  // previously requested AddBundle call, what's the uploading progress and when the
   // upload is completed
-  rpc UpdateBento(UpdateBentoRequest)
-    returns (UpdateBentoResponse);
+  rpc UpdateBundle(UpdateBundleRequest)
+    returns (UpdateBundleResponse);
 
-  // Get a file path to the saved Bento files, path must be accessible form client
+  // Get a file path to the saved Bundle files, path must be accessible form client
   // machine either through HTTP, FTP, etc
-  rpc GetBento(GetBentoRequest)
-    returns (GetBentoResponse);
+  rpc GetBundle(GetBundleRequest)
+    returns (GetBundleResponse);
 
-  // Deleting the Bento files that was added to this Yatai server earlier, this may
+  // Deleting the Bundle files that was added to this Yatai server earlier, this may
   // break existing deployments or create issues when doing deployment rollback
-  rpc DangerouslyDeleteBento(DangerouslyDeleteBentoRequest)
-    returns (DangerouslyDeleteBentoResponse);
+  rpc DeleteBundle(DeleteBundleRequest)
+    returns (DeleteBundleResponse);
 
-  // Get a list of Bento that are stored in current repository
-  rpc ListBento(ListBentoRequest)
-    returns (ListBentoResponse);
+  // Get a list of Bundle that are stored in current repository
+  rpc ListBundle(ListBundleRequest)
+    returns (ListBundleResponse);
 
-  // Create a container image from a Bento
-  rpc ContainerizeBento(ContainerizeBentoRequest)
-    returns (ContainerizeBentoResponse);
+  rpc UploadBundle(stream UploadBundleRequest)
+    returns (UploadBundleResponse);
 
-  rpc UploadBento(stream UploadBentoRequest)
-    returns (UploadBentoResponse);
-
-  rpc DownloadBento(DownloadBentoRequest)
-    returns (stream DownloadBentoResponse);
+  rpc DownloadBundle(DownloadBundleRequest)
+    returns (stream DownloadBundleResponse);
 }
 
 message HealthCheckResponse {
@@ -93,8 +64,4 @@ message HealthCheckResponse {
 message GetYataiServiceVersionResponse {
   Status status = 1;
   string version = 2;
-}
-
-message Chunk {
-  bytes content = 1;
 }

@@ -1,5 +1,5 @@
 syntax = "proto3";
-package bentoml;
+package yatai;
 
 message Status {
   // Borrowed from TensorFlow project:

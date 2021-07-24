@@ -1,4 +1,4 @@
-from .utils.lazy_loader import LazyLoader
+from ._internal.utils.lazy_loader import LazyLoader
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 

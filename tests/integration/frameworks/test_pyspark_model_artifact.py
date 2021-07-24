@@ -5,7 +5,7 @@ from pyspark.ml.classification import LogisticRegression
 from pyspark.ml.feature import VectorAssembler
 from pyspark.sql import SparkSession
 
-from bentoml.pyspark import SPARK_SESSION_NAMESPACE, PySparkMLlibModel
+from bentoml.pyspark import SPARK_SESSION_NAMESPACE, PysparkMLlibModel
 
 spark_session = SparkSession.builder.appName(SPARK_SESSION_NAMESPACE).getOrCreate()
 
@@ -37,9 +37,9 @@ def pyspark_model():
 def test_pyspark_mllib_save_load(
     tmpdir, pyspark_model
 ):  # pylint: disable=redefined-outer-name
-    PySparkMLlibModel(pyspark_model).save(tmpdir)
+    PysparkMLlibModel(pyspark_model).save(tmpdir)
 
-    pyspark_loaded: pyspark.ml.Model = PySparkMLlibModel.load(tmpdir)
+    pyspark_loaded: pyspark.ml.Model = PysparkMLlibModel.load(tmpdir)
 
     assert (
         predict_df(pyspark_loaded, test_pd_df).tolist()

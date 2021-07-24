@@ -378,7 +378,7 @@ ONNX Implementation
     import torch
     from bentoml import BentoService, api, env, artifacts
     from bentoml.adapters import JsonInput, JsonOutput
-    from bentoml.frameworks.onnx import OnnxModel
+    from bentoml.frameworks.onnx import ONNXModel
     from bentoml.service.artifacts.pickle import PickleArtifact
     from onnxruntime.capi.onnxruntime_pybind11_state import InvalidArgument
 
@@ -390,7 +390,7 @@ ONNX Implementation
 
     @env(infer_pip_packages=False, pip_packages=['onnxruntime-gpu'])
     @artifacts(
-        [OnnxModel('model', backend='onnxruntime-gpu'), PickleArtifact('tokenizer'), PickleArtifact('vocab')])
+        [ONNXModel('model', backend='onnxruntime-gpu'), PickleArtifact('tokenizer'), PickleArtifact('vocab')])
     class OnnxService(BentoService):
 
         def classify_categories(self, sentence):

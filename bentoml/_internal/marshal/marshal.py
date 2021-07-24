@@ -8,10 +8,11 @@ from typing import TYPE_CHECKING, Optional
 import psutil
 from simple_di import Provide, inject
 
+from bentoml.exceptions import RemoteException
+
 # from ..bundle import load_bento_service_metadata
 from ..bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
 from ..configuration.containers import BentoMLContainer
-from ..exceptions import RemoteException
 from ..types import HTTPRequest, HTTPResponse
 from .dispatcher import CorkDispatcher, NonBlockSema
 from .utils import MARSHAL_REQUEST_HEADER, DataLoader

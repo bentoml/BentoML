@@ -3,7 +3,7 @@ import re
 from typing import List
 
 # from ..adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
-from ..exceptions import InvalidArgument, NotFound
+from bentoml.exceptions import InvalidArgument, NotFound
 
 # from bentoml.saved_bundle.config import (
 #     DEFAULT_MAX_BATCH_SIZE,

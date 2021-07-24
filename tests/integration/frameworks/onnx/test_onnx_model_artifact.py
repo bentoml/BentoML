@@ -5,8 +5,8 @@ import onnxruntime
 import pandas as pd
 import pytest
 
-from bentoml._internal.exceptions import BentoMLException
-from bentoml.onnx import OnnxModel
+from bentoml.exceptions import BentoMLException
+from bentoml.onnx import ONNXModel
 from tests.integration.frameworks.test_sklearn_model_artifact import (
     random_forest,
     test_df,
@@ -36,17 +36,17 @@ def sklearn_onnx_model():
 )
 def test_raise_exc(kwargs, exc, sklearn_onnx_model, tmpdir):
     with pytest.raises(exc):
-        OnnxModel(sklearn_onnx_model, **kwargs).save(tmpdir)
+        ONNXModel(sklearn_onnx_model, **kwargs).save(tmpdir)
 
 
 def test_onnx_save_load_proto_onnxruntime(sklearn_onnx_model, tmpdir):
-    OnnxModel(sklearn_onnx_model).save(tmpdir)
-    assert os.path.exists(OnnxModel.get_path(tmpdir, ".onnx"))
+    ONNXModel(sklearn_onnx_model).save(tmpdir)
+    assert os.path.exists(ONNXModel.get_path(tmpdir, ".onnx"))
 
     model: "onnxruntime.InferenceSession" = onnxruntime.InferenceSession(
         sklearn_onnx_model.SerializeToString()
     )
-    onnx_loaded: "onnxruntime.InferenceSession" = OnnxModel.load(tmpdir)
+    onnx_loaded: "onnxruntime.InferenceSession" = ONNXModel.load(tmpdir)
     assert predict_df(onnx_loaded, test_df)[0] == predict_df(model, test_df)[0]
 
 
@@ -57,8 +57,8 @@ def test_onnx_save_load_filepath_onnxruntime(sklearn_onnx_model, tmpdir):
     model: "onnxruntime.InferenceSession" = onnxruntime.InferenceSession(
         sklearn_onnx_model.SerializeToString()
     )
-    OnnxModel(get_path).save(tmpdir)
-    assert os.path.exists(OnnxModel.get_path(tmpdir, ".onnx"))
+    ONNXModel(get_path).save(tmpdir)
+    assert os.path.exists(ONNXModel.get_path(tmpdir, ".onnx"))
 
-    onnx_loaded: "onnxruntime.InferenceSession" = OnnxModel.load(tmpdir)
+    onnx_loaded: "onnxruntime.InferenceSession" = ONNXModel.load(tmpdir)
     assert predict_df(onnx_loaded, test_df)[0] == predict_df(model, test_df)[0]

@@ -4,8 +4,8 @@ import coremltools as ct
 import pytest
 import torch
 
-from bentoml._internal.exceptions import InvalidArgument
 from bentoml.coreml import CoreMLModel
+from bentoml.exceptions import InvalidArgument
 from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
 
 

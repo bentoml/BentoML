@@ -21,9 +21,10 @@ import time
 import click
 from click import ClickException
 
+from bentoml.exceptions import BentoMLException
+
 # from bentoml import configure_logging
 from ..configuration import set_debug_mode
-from ..exceptions import BentoMLException
 from ..utils.ruamel_yaml import YAML
 from ..utils.usage_stats import track
 

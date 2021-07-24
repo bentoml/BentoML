@@ -65,7 +65,7 @@ def test_save_artifact(model, tmpdir):
 
 
 @pytest.mark.parametrize(
-    "model", [(create_mock_class("MockModel")), (create_mock_class("test")),],
+    "model", [(create_mock_class("MockModel")), (create_mock_class("test"))],
 )
 def test_pkl_artifact(model, tmpdir):
     pkl = PickleArtifact(model, metadata=_metadata)

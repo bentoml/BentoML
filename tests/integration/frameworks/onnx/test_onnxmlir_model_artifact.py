@@ -1,19 +1,3 @@
-# ==============================================================================
-#     Copyright (c) 2021 Atalaya Tech. Inc
-#
-#     Licensed under the Apache License, Version 2.0 (the "License");
-#     you may not use this file except in compliance with the License.
-#     You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#     Unless required by applicable law or agreed to in writing, software
-#     distributed under the License is distributed on an "AS IS" BASIS,
-#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#     See the License for the specific language governing permissions and
-#     limitations under the License.
-# ==============================================================================
-
 import os
 import subprocess
 import sys
@@ -23,7 +7,7 @@ import pandas as pd
 import pytest
 import tensorflow as tf
 
-from bentoml.onnxmlir import OnnxMlirModel
+from bentoml.onnxmlir import ONNXMlirModel
 from tests._internal.frameworks.tensorflow_utils import NativeModel
 
 try:
@@ -90,10 +74,10 @@ def compile_model(convert_to_onnx, tmpdir):
 
 def test_onnxmlir_save_load(compile_model, tmpdir):
     model = os.path.join(tmpdir, "model.so")
-    OnnxMlirModel(model).save(tmpdir)
-    assert os.path.exists(OnnxMlirModel.get_path(tmpdir, ".so"))
+    ONNXMlirModel(model).save(tmpdir)
+    assert os.path.exists(ONNXMlirModel.get_path(tmpdir, ".so"))
 
-    onnxmlir_loaded = OnnxMlirModel.load(tmpdir)
+    onnxmlir_loaded = ONNXMlirModel.load(tmpdir)
     # fmt: off
     assert predict_df(ExecutionSession(model, "run_main_graph"), test_df) == predict_df(onnxmlir_loaded, test_df)  # noqa
     # fmt: on

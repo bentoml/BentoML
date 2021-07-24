@@ -9,8 +9,8 @@ import click
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration import get_debug_mode
-from bentoml._internal.exceptions import BentoMLException
 from bentoml._internal.utils import reserve_free_port
+from bentoml.exceptions import BentoMLException
 
 from .configuration.containers import YataiContainer
 from .utils import ensure_node_available_or_raise

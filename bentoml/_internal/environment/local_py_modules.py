@@ -6,7 +6,7 @@ import re
 from shutil import copyfile
 from typing import List
 
-from ..exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException
 
 # from unittest.mock import patch
 # import modulefinder

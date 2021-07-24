@@ -11,8 +11,9 @@ from pathlib import PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+from bentoml.exceptions import BentoMLException
+
 from ..bundle.config import SavedBundleConfig
-from ..exceptions import BentoMLException
 
 # from ..bundle.pip_pkg import ZIPIMPORT_DIR
 from ..utils.gcs import is_gcs_url

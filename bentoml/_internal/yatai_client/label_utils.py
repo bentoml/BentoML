@@ -1,6 +1,7 @@
 import re
 
-from ..exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException
+
 from .proto.label_selectors_pb2 import LabelSelectors
 
 label_expression_operators = {

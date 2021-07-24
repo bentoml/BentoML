@@ -23,7 +23,8 @@ from datetime import datetime
 import humanfriendly
 from tabulate import tabulate
 
-from ..exceptions import BentoMLException
+from bentoml.exceptions import BentoMLException
+
 from ..utils import pb_to_yaml
 from .click_utils import _echo
 

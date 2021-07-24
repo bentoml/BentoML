@@ -91,7 +91,7 @@ Example Projects:
 
 * Medical image classification - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/fast-ai/fastai2_medical/medical_imaging.ipynb>`__
 
-.. autoclass:: bentoml.fastai.FastaiModel
+.. autoclass:: bentoml.fastai.FastAIModel
     :show-inheritance:
     :inherited-members:
 
@@ -136,7 +136,7 @@ Example Projects:
 * Loan Default Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/h2o/loan-prediction/h2o-loan-prediction.ipynb>`__
 * Prostate Cancer Prediction - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/h2o/prostate-cancer-classification/h2o-prostate-cancer-classification.ipynb>`__
 
-.. autoclass:: bentoml.h2o.H2oModel
+.. autoclass:: bentoml.h2o.H2OModel
 
 
 ======
@@ -155,14 +155,14 @@ Example Projects:
 
 * Image Classification with ResNet50 - `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/onnx/resnet50/resnet50.ipynb>`__
 
-.. autoclass:: bentoml.onnx.OnnxModel
+.. autoclass:: bentoml.onnx.ONNXModel
 
 
 =========
 ONNX-MLIR
 =========
 
-.. autoclass:: bentoml.onnxmlir.OnnxMlirModel
+.. autoclass:: bentoml.onnxmlir.ONNXMlirModel
 
 
 =====

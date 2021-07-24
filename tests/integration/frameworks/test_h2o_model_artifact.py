@@ -8,7 +8,7 @@ import h2o.model
 import pandas as pd
 import pytest
 
-from bentoml.h2o import H2oModel
+from bentoml.h2o import H2OModel
 
 test_data = {
     "TemperatureCelcius": {"0": 21.6},
@@ -50,10 +50,10 @@ def train_h2o_aml() -> h2o.automl.H2OAutoML:
 
 def test_h2o_save_load(train_h2o_aml, tmpdir):
     test_df: pd.DataFrame = pd.read_json(json.dumps(test_data))
-    H2oModel(train_h2o_aml.leader).save(tmpdir)
+    H2OModel(train_h2o_aml.leader).save(tmpdir)
     assert os.path.exists(os.path.join(tmpdir, os.listdir(tmpdir)[0]))
 
-    h2o_loaded: h2o.model.model_base.ModelBase = H2oModel.load(tmpdir)
+    h2o_loaded: h2o.model.model_base.ModelBase = H2OModel.load(tmpdir)
     # fmt: off
     assert predict_dataframe(train_h2o_aml.leader, test_df) == predict_dataframe(h2o_loaded, test_df)  # noqa
     # fmt: on

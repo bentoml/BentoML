@@ -49,8 +49,9 @@ class KerasModel(ModelArtifact):
         TODO:
     """
 
-    graph = tf.compat.v1.get_default_graph()
-    sess = tf.compat.v1.Session(graph=graph)
+    _graph = tf.compat.v1.get_default_graph()
+    # NOTES: sess should be user facing for V1 compatibility
+    sess = tf.compat.v1.Session(graph=_graph)
 
     def __init__(
         self,

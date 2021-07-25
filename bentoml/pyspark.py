@@ -22,11 +22,11 @@ except ImportError:
 SPARK_SESSION_NAMESPACE: str = "PysparkMLlibModel"
 
 DEPRECATION_MLLIB_WARNING: str = """\
-    {model} is using the older library `pyspark.mllib`.
-    Consider to upgrade your model to use `pyspark.ml`.
-    BentoML will still try to load {model} with `pyspark.sql.SparkSession`,
-    but expect unintended behaviour.
-    """
+{model} is using the older library `pyspark.mllib`.
+Consider to upgrade your model to use `pyspark.ml`.
+BentoML will still try to load {model} with `pyspark.sql.SparkSession`,
+but expect unintended behaviour.
+"""
 
 
 class PysparkMLlibModel(ModelArtifact):

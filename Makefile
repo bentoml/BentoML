@@ -20,6 +20,10 @@ install-test-deps: ## Install all test dependencies
 install-dev-deps: ## Install all dev dependencies
 	@echo Ensuring dev dependencies...
 	@pip install -e ".[dev]"
+install-yatai-deps: ## Install all yatai dependencies
+	@echo Ensuring yatai dependencies
+	@cd yatai && make yatai
+	@cd ..
 
 # Protos
 gen-protos: ## Build protobuf for Python and Node
@@ -41,9 +45,14 @@ install-watch-deps: ## Install MacOS dependencies for watching docs
 install-spellchecker-deps: ## Install MacOS dependencies for spellchecker
 	brew install enchant
 	pip install sphinxcontrib-spelling
-else
+else ifneq ("$(wildcard $(/etc/debian_version))","")
 install-watch-deps: ## Install Debian-based OS dependencies for watching docs
 	sudo apt install inotify-tools
 install-spellchecker-deps: ## Install Debian-based dependencies for spellchecker
 	sudo apt install libenchant-dev
+else
+install-watch-deps:  ## Inform users to install inotify-tools depending on their distros
+	@echo Make sure to install inotify-tools from your distros package manager
+install-spellchecker-deps: ## Inform users to install enchant depending on their distros
+	@echo Make sure to install enchant from your distros package manager
 endif

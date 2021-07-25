@@ -67,7 +67,7 @@ class PyTorchModel(ModelArtifact):
     @classmethod
     def load(
         cls, path: PathType
-    ) -> t.Union["torch.nn.Module", "torch.jit.RecursiveScriptModule"]:
+    ) -> t.Union["torch.nn.Module", "torch.jit.ScriptModule"]:
         # TorchScript Models are saved as zip files
         if zipfile.is_zipfile(cls.__get_weight_fpath(path)):
             return torch.jit.load(cls.__get_weight_fpath(path))
@@ -130,7 +130,7 @@ class PyTorchLightningModel(ModelArtifact):
         return str(cls.get_path(path, cls.PT_EXTENSION))
 
     @classmethod
-    def load(cls, path: PathType) -> "torch.jit.RecursiveScriptModule":
+    def load(cls, path: PathType) -> "torch.jit.ScriptModule":
         return torch.jit.load(cls.__get_weight_fpath(path))
 
     def save(self, path: PathType) -> None:

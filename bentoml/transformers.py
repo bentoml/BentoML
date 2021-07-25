@@ -62,7 +62,7 @@ class TransformersModel(ModelArtifact):
         super(TransformersModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def _load_from_directory(
+    def __load_from_directory(
         cls, path: PathType, model_type: str, tokenizer_type: str
     ) -> t.Dict[str, t.Any]:
         transformers_model = getattr(
@@ -74,7 +74,7 @@ class TransformersModel(ModelArtifact):
         return {"model": transformers_model, "tokenizer": tokenizer}
 
     @staticmethod
-    def _load_from_dict(transformers_dict: t.Dict[str, t.Any]) -> dict:
+    def __load_from_dict(transformers_dict: t.Dict[str, t.Any]) -> dict:
         if not transformers_dict.get("model"):
             raise InvalidArgument(
                 " 'model' key is not found in the dictionary."
@@ -104,7 +104,7 @@ class TransformersModel(ModelArtifact):
         return transformers_dict
 
     @classmethod
-    def _load_from_string(cls, model_name: str) -> dict:
+    def __load_from_string(cls, model_name: str) -> dict:
         try:
             transformers_model = getattr(
                 import_module("transformers"), cls._model_type
@@ -126,13 +126,13 @@ class TransformersModel(ModelArtifact):
                     _model_type = f.read().strip()
                 with open(os.path.join(path, "tokenizer_type.txt"), "r") as f:
                     _tokenizer_type = f.read().strip()
-                loaded_model = cls._load_from_directory(
+                loaded_model = cls.__load_from_directory(
                     path, _model_type, _tokenizer_type
                 )
             else:
-                loaded_model = cls._load_from_string(str(path))
+                loaded_model = cls.__load_from_string(str(path))
         elif isinstance(path, dict):
-            loaded_model = cls._load_from_dict(path)
+            loaded_model = cls.__load_from_dict(path)
         else:
             err_msg: str = """\
             Expected either model name or a dictionary only
@@ -142,7 +142,7 @@ class TransformersModel(ModelArtifact):
             raise InvalidArgument(err_msg.format(path=type(path)))
         return loaded_model
 
-    def _save_model_type(self, path: PathType, tokenizer_type: str) -> None:
+    def __save_model_type(self, path: PathType, tokenizer_type: str) -> None:
         with open(os.path.join(path, "__model__type.txt"), "w") as f:
             f.write(self._model_type)
         with open(os.path.join(path, "tokenizer_type.txt"), "w") as f:
@@ -153,4 +153,4 @@ class TransformersModel(ModelArtifact):
         tokenizer_type = self._model.get("tokenizer").__class__.__name__
         self._model.get("model").save_pretrained(path)
         self._model.get("tokenizer").save_pretrained(path)
-        self._save_model_type(path, tokenizer_type)
+        self.__save_model_type(path, tokenizer_type)

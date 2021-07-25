@@ -26,7 +26,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-TF1_AUTOTRACKABLE_NOT_CALLABLE_WARNING: str = """\
+AUTOTRACKABLE_CALLABLE_WARNING: str = """\
 Importing SavedModels from TensorFlow 1.x. `outputs = imported(inputs)`
  will not be supported by BentoML due to `tensorflow` API.\n
 See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
@@ -155,20 +155,20 @@ class TensorflowModel(ModelArtifact):
         super(TensorflowModel, self).__init__(model, metadata=metadata)
 
     @staticmethod
-    def _load_tf_saved_model(path: str) -> t.Union[AutoTrackable, t.Any]:
+    def __load_tf_saved_model(path: str) -> t.Union[AutoTrackable, t.Any]:
         if TF2:
             return tf.saved_model.load(path)
         else:
             loaded = tf.compat.v2.saved_model.load(path)
             if isinstance(loaded, AutoTrackable) and not hasattr(loaded, "__call__"):
-                logger.warning(TF1_AUTOTRACKABLE_NOT_CALLABLE_WARNING)
+                logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)
             return loaded
 
     @classmethod
     def load(cls, path: PathType):  # type: ignore
         # TODO: type hint returns TF Session or
         #  Keras model API
-        model = cls._load_tf_saved_model(str(path))
+        model = cls.__load_tf_saved_model(str(path))
         _TensorflowFunctionWrapper.hook_loaded_model(model)
         logger.warning(TF_FUNCTION_WARNING)
         # pretty format loaded model
@@ -177,42 +177,39 @@ class TensorflowModel(ModelArtifact):
             logger.warning(KERAS_MODEL_WARNING.format(name=cls.__name__))
         return model
 
-    def save(
+    def save(  # pylint: disable=arguments-differ
         self,
         path: PathType,
         signatures: t.Optional[t.Union[t.Callable[..., t.Any], dict]] = None,
         options: t.Optional["tf.saved_model.SaveOptions"] = None,
-    ) -> None:  # noqa # pylint: disable=arguments-differ
+    ) -> None:  # noqa
         """
         Save TensorFlow Trackable object `obj` from [SavedModel format] to path.
 
         Args:
             path (`Union[str, os.PathLike]`):
                 Path containing a trackable object to export.
-            signatures (`optional`, default to `None`):
-              `signatures` is one of three types:
+            signatures (`Union[Callable[..., Any], dict]`, `optional`, default to `None`):
+                `signatures` is one of three types:
 
-              a `tf.function` with an input signature specified, which will use the default serving signature key
+                a `tf.function` with an input signature specified, which will use the default serving signature key
+                
+                a dictionary, which maps signature keys to either :obj`tf.function` instances with input signatures or concrete functions. Keys of such a dictionary may be arbitrary strings, but will typically be from the :obj:`tf.saved_model.signature_constants` module.
 
-              `f.get_concrete_function` on a `@tf.function` decorated function `f`, in which case f will be used to
-                generate a signature for the SavedModel under the default serving signature key,
+                `f.get_concrete_function` on a `@tf.function` decorated function `f`, in which case f will be used to generate a signature for the SavedModel under the default serving signature key,
 
-                  Examples::
+                    :code:`tf.function` examples::
 
-                    >>> class Adder(tf.Module):
-                    ...   @tf.function
-                    ...   def add(self, x):
-                    ...     return x + x
+                      >>> class Adder(tf.Module):
+                      ...   @tf.function
+                      ...   def add(self, x):
+                      ...     return x + x
 
-                    >>> model = Adder()
-                    >>> tf.saved_model.save(
-                    ...   model, '/tmp/adder',signatures=model.add.get_concrete_function(
-                    ...     tf.TensorSpec([], tf.float32)))
+                      >>> model = Adder()
+                      >>> tf.saved_model.save(
+                      ...   model, '/tmp/adder',signatures=model.add.get_concrete_function(
+                      ...     tf.TensorSpec([], tf.float32)))
 
-              a dictionary, which maps signature keys to either :obj`tf.function`
-                instances with input signatures or concrete functions. Keys of such
-                a dictionary may be arbitrary strings, but will typically be from
-                the :obj:`tf.saved_model.signature_constants` module.
             options (`tf.saved_model.SaveOptions`, `optional`, default to `None`):
                 :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
 
@@ -233,7 +230,7 @@ class TensorflowModel(ModelArtifact):
                 if options:
                     logger.warning(
                         f"Parameter 'options: {str(options)}' is ignored when "
-                        f"using tensorflow v{tf.__version__}"
+                        f"using tensorflow {tf.__version__}"
                     )
                 tf.saved_model.save(self._model, str(path), signatures=signatures)
         else:

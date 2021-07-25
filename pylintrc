@@ -135,6 +135,7 @@ disable=print-statement,
         exception-escape,
         comprehension-escape,
         logging-fstring-interpolation,
+        logging-format-interpolation,
         logging-not-lazy,
 
         # Ignore "(C) Convention"

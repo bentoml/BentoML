@@ -5,11 +5,11 @@ import operator
 import os
 import re
 import shutil
+import typing as t
 from collections import defaultdict
 from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterator, List, MutableMapping, Optional, Tuple
 
 from absl import app, logging
 from dotenv import load_dotenv
@@ -35,14 +35,18 @@ from utils import (
 from docker import DockerClient
 from docker.errors import APIError, BuildError, ImageNotFound
 
+# TODO: Update some of the complex type hint cases for both utils.py and this one
+if t.TYPE_CHECKING:
+    from docker.models.images import Image
+
 README_TEMPLATE: Path = Path("./templates/docs/README.md.j2")
 
 DOCKERFILE_NAME: str = "Dockerfile"
 DOCKERFILE_TEMPLATE_SUFFIX: str = ".Dockerfile.j2"
-DOCKERFILE_BUILD_HIERARCHY: List[str] = ["base", "runtime", "cudnn", "devel"]
+DOCKERFILE_BUILD_HIERARCHY: t.List[str] = ["base", "runtime", "cudnn", "devel"]
 DOCKERFILE_NVIDIA_REGEX: re.Pattern = re.compile(r"(?:nvidia|cuda|cudnn)+")
 
-SUPPORTED_PYTHON_VERSION: List[str] = ["3.6", "3.7", "3.8"]
+SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.6", "3.7", "3.8"]
 
 NVIDIA_REPO_URL: str = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
 NVIDIA_ML_REPO_URL: str = (
@@ -72,12 +76,12 @@ if os.geteuid() == 0:
 class LogsMixin(object):
     """Utilities for docker build process to use as Mixin"""
 
-    def build_logs(self, resp: Iterator, image_tag: str):
+    def build_logs(self, resp: t.Iterator, image_tag: str) -> None:
         """
         Stream build logs to stderr.
 
         Args:
-            resp (:obj:`Iterator`):
+            resp (:obj:`t.Iterator`):
                 blocking generator from docker.api.build
             image_tag (:obj:`str`):
                 given model server tags.
@@ -91,7 +95,7 @@ class LogsMixin(object):
         last_event: str = ""
         image_id: str = ""
         output: str = ""
-        logs: List = []
+        logs: t.List = []
         built_regex = re.compile(r"(^Successfully built |sha256:)([0-9a-f]+)$")
         try:
             while True:
@@ -99,7 +103,7 @@ class LogsMixin(object):
                     # output logs to stdout
                     # https://docker-py.readthedocs.io/en/stable/user_guides/multiplex.html
                     output = next(resp).decode("utf-8")
-                    json_output: Dict = json.loads(output.strip("\r\n"))
+                    json_output: t.Dict = json.loads(output.strip("\r\n"))
                     # output to stderr when running in docker
                     if "stream" in json_output:
                         sprint(json_output["stream"])
@@ -125,12 +129,12 @@ class LogsMixin(object):
             log.fatal("ABORTING due to failure!")
 
     @staticmethod
-    def push_logs(resp: Iterator, image_id: str):
+    def push_logs(resp: t.Iterator, image_id: str) -> None:
         """
         Stream push logs to stderr
 
         Args:
-            resp (:obj:`Iterator`):
+            resp (:obj:`t.Iterator`):
                 blocking generator from docker.api.push(stream=True, decode=True)
             image_id (:obj:`str`):
                 id of docker.Images. This is the reference of
@@ -172,12 +176,12 @@ class GenerateMixin(object):
     """Utilities for generation of images metadata to be used as mixin."""
 
     @staticmethod
-    def cudnn(cuda_components: Dict):
+    def cudnn(cuda_components: t.Dict[str, t.Any]) -> t.Dict[str, str]:
         """
         Return cuDNN context
 
         Args:
-            cuda_components (:obj:`Dict[str, Union[Dict[str, ...], str, List[str]]`):
+            cuda_components (:obj:`t.Dict[str, Union[t.Dict[str, ...], str, t.List[str]]`):
                 CUDA dependencies definitions.
         """
         _cudnn = ""
@@ -196,20 +200,20 @@ class GenerateMixin(object):
         self,
         input_path: Path,
         output_path: Path,
-        metadata: Dict,
-        build_tag: Optional[str] = None,
-    ):
+        metadata: t.Dict,
+        build_tag: t.Optional[str] = None,
+    ) -> None:
         """
         Render .j2 templates to output path
 
         Args:
             input_path (:obj:`pathlib.Path`):
-                List of input path
+                t.List of input path
             output_path (:obj:`pathlib.Path`):
                 Output path
-            metadata (:obj:`Dict[str, Union[str, List[str], Dict[str, ...]]]`):
+            metadata (:obj:`t.Dict[str, Union[str, t.List[str], t.Dict[str, ...]]]`):
                 templates context
-            build_tag (:obj:`Optional[str]`):
+            build_tag (:obj:`t.Optional[str]`):
                 strictly use for FROM args for base image.
         """
 
@@ -228,26 +232,27 @@ class GenerateMixin(object):
             ouf.write(template.render(metadata=metadata, build_tag=build_tag))
         ouf.close()
 
-    def envars(self, additional_args: Optional[Dict[str, str]] = None):
+    def envars(
+        self, additional_args: t.Optional[t.Dict[str, str]] = None
+    ) -> t.Callable[[t.Union[str, dict, list]], dict]:
         """
         Create a dictionary of args that will be parsed during runtime
 
         Args:
-            additional_args (:obj:`Optional[Dict[str, str]]`):
+            additional_args (:obj:`t.Optional[t.Dict[str, str]]`):
                 optional variables to pass into build context.
 
         Returns:
-            Dict of args
+            t.Dict of args
         """
-        _args: Dict = {} if not additional_args else additional_args
+        _args: dict = {} if not additional_args else additional_args
         _args.update(self._default_args)
 
-        def update_args_dict(updater):
+        def update_args_dict(updater: t.Union[str, dict, list]) -> dict:
             # Args will have format ARG=foobar
             if isinstance(updater, str):
                 _arg, _, _value = updater.partition("=")
                 _args[_arg] = _value
-                return
             elif isinstance(updater, list):
                 for v in updater:
                     update_args_dict(v)
@@ -260,7 +265,7 @@ class GenerateMixin(object):
 
         return update_args_dict
 
-    def image_tags(self, **kwargs: str):
+    def image_tags(self, **kwargs: str) -> t.Tuple[str, str]:
         """Generate given BentoML release tag."""
         release_type = kwargs["release_type"]
         tag_spec = self.specs["tag"]
@@ -280,14 +285,14 @@ class GenerateMixin(object):
 
         return _tag, _build_tag
 
-    def aggregate_dists_releases(self, package: str) -> List[Tuple[str, str]]:
+    def aggregate_dists_releases(self, package: str) -> t.List[t.Tuple[str, str]]:
         """Aggregate all combos from manifest.yml"""
         return [
             (rel, d) for rel, dists in self.packages[package].items() for d in dists
         ]
 
     @lru_cache(maxsize=32)
-    def dockerfiles(self, pkg: str, distro: str, pyv: str) -> Dict:
+    def dockerfiles(self, pkg: str, distro: str, pyv: str) -> dict:
         """
         Generate template context for each distro releases.
         Args:
@@ -298,9 +303,9 @@ class GenerateMixin(object):
             build context that can be used with self.render
         """
 
-        _cuda_comp: Dict = get_data(self.cuda, self._cuda_version).copy()  # fmt: skip
+        _cuda_comp: dict = get_data(self.cuda, self._cuda_version).copy()
         # TODO: Better type annotation for nested dict.
-        _ctx: Dict = self.releases[distro].copy()
+        _ctx: dict = self.releases[distro].copy()
 
         _ctx["package"] = pkg
 
@@ -308,7 +313,7 @@ class GenerateMixin(object):
         _ctx["envars"] = self.envars()(_ctx["envars"])
 
         # set PYTHON_VERSION envars.
-        set_data(_ctx, pyv, "envars", "PYTHON_VERSION")  # fmt: skip
+        set_data(_ctx, pyv, "envars", "PYTHON_VERSION")
 
         # setup cuda deps
         if _ctx["cuda_prefix_url"]:
@@ -336,10 +341,10 @@ class GenerateMixin(object):
         return _ctx
 
     @lru_cache(maxsize=4)
-    def metadata(self, output_dir: str, pyv: str):
+    def metadata(self, output_dir: str, pyv: str) -> t.Tuple[dict, dict]:
         """Setup templates context"""
-        _paths: Dict[str, str] = {}
-        _tags: Dict = defaultdict()
+        _paths: t.Dict[str, str] = {}
+        _tags: dict = defaultdict()
 
         if os.geteuid() == 0:
             log.warning(
@@ -400,18 +405,18 @@ class GenerateMixin(object):
 
         return _tags, _paths
 
-    def generate_readmes(self, output_dir: str, paths: Dict[str, str]):
+    def generate_readmes(self, output_dir: str, paths: t.Dict[str, str]) -> None:
         """
         Generate README output. We will also handle README context in memory
         Args:
             output_dir (:obj:`str`):
                 target directory
-            paths (:obj:`Dict[str, str]`):
-                Dictionary of release tags and target dockerfile.
+            paths (:obj:`t.Dict[str, str]`):
+                t.Dictionary of release tags and target dockerfile.
         """
 
         # this will include both yatai-service and models-server path.
-        _release_context: MutableMapping = defaultdict(list)
+        _release_context: t.MutableMapping = defaultdict(list)
 
         # check if given distro is supported per package.
         for distro_version in self.releases.keys():
@@ -431,7 +436,7 @@ class GenerateMixin(object):
                 key=operator.itemgetter(0),
             )
 
-        _readme_context: Dict = {
+        _readme_context: t.Dict = {
             "ephemeral": False,
             "bentoml_package": "",
             "bentoml_release_version": FLAGS.bentoml_version,
@@ -460,7 +465,7 @@ class GenerateMixin(object):
                 metadata=_readme_context,
             )
 
-    def generate_dockerfiles(self):
+    def generate_dockerfiles(self) -> None:
         """
         Generate results targets from given context. This should only
         be used with --generate dockerfiles
@@ -491,9 +496,9 @@ class GenerateMixin(object):
 class BuildMixin(object):
     """Utilities for docker build process to be used as mixin."""
 
-    def build_images(self):
+    def build_images(self) -> None:
         """Build images."""
-        for image_tag, dockerfile_path in self.build_tags():
+        for image_tag, dockerfile_path in self.build_tags():  # type: ignore
             log.info(f"Building {image_tag} from {dockerfile_path}")
             try:
                 # this is should be when there are changed in base image.
@@ -521,9 +526,10 @@ class BuildMixin(object):
                 )
                 self.build_logs(resp, image_tag)
 
-    def build_tags(self):
+    def build_tags(self):  # type: ignore
         """Generate build tags."""
-        # We will build and push if args is parsed. Establish some variables.
+        # We will build and push if args is parsed.
+        # NOTE: type hint is a bit janky here as well
         if FLAGS.releases and FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY:
             build_tags = itertools.chain(
                 self.paths["base"].items(), self.paths[FLAGS.releases].items()
@@ -536,7 +542,7 @@ class BuildMixin(object):
 class PushMixin(object):
     """Utilities for push tasks to be used as mixin."""
 
-    def push_tags(self):
+    def push_tags(self):  # type: ignore
         """Generate push tags"""
         _paths = deepcopy(self.paths)
         if FLAGS.releases and FLAGS.releases in DOCKERFILE_BUILD_HIERARCHY:
@@ -549,7 +555,7 @@ class PushMixin(object):
             )
         return _release_tag
 
-    def push_images(self):
+    def push_images(self) -> None:
         """Push images to registries"""
 
         if not self._push_context:
@@ -559,7 +565,7 @@ class PushMixin(object):
 
         for registry, registry_spec in self.repository.items():
             # We will want to push README first.
-            login_payload: Dict = {
+            login_payload: t.Dict = {
                 "username": os.getenv(registry_spec["user"]),
                 "password": os.getenv(registry_spec["pwd"]),
             }
@@ -576,7 +582,7 @@ class PushMixin(object):
                 return
 
             # Then push image to registry.
-            for image_tag in self.push_tags():
+            for image_tag in self.push_tags():  # type: ignore
                 image = self._push_context[image_tag]
                 reg, tag = image_tag.split(":")
                 registry = "".join(
@@ -603,8 +609,8 @@ class PushMixin(object):
         api_url: str,
         repo_url: str,
         readme_path: Path,
-        login_payload: Dict[str, str],
-    ):
+        login_payload: t.Dict[str, str],
+    ) -> None:
         """
         Push readmes to registries. Currently only supported for hub.docker.com
 
@@ -615,7 +621,7 @@ class PushMixin(object):
                 defined under ``manifest.yml``
             readme_path (:obj:`pathlib.Path`):
                 generated readmes path
-            login_payload (:obj:`Dict[str, str]`):
+            login_payload (:obj:`t.Dict[str, str]`):
                 login credentials for given API
         """
 
@@ -642,14 +648,14 @@ class PushMixin(object):
                 cookies=logins.cookies,
             )
 
-    def background_upload(self, image, tag, registry):
+    def background_upload(self, image: "Image", tag: str, registry: str) -> None:
         """Upload a docker image."""
         image.tag(registry, tag=tag)
         log.debug(f"Pushing {repr(image)} to {registry}...")
         resp = docker_client.images.push(registry, tag=tag, stream=True, decode=True)
         self.push_logs(resp, image.id)
 
-    def auth_registries(self):
+    def auth_registries(self) -> None:
         """Setup auth registries for different registries"""
 
         # https://docs.docker.com/registry/spec/auth/token/
@@ -706,19 +712,19 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
 
     """
 
-    _paths: MutableMapping = defaultdict()
-    _tags: MutableMapping = defaultdict()
-    _push_context: Dict = {}
+    _paths: t.MutableMapping = defaultdict()
+    _tags: t.MutableMapping = defaultdict()
+    _push_context: dict = {}
 
     _template_env: Environment = Environment(
         extensions=["jinja2.ext.do"], trim_blocks=True, lstrip_blocks=True
     )
 
-    def __init__(self, release_spec: Dict, cuda_version: str):
+    def __init__(self, release_spec: dict, cuda_version: str) -> None:
         super(ManagerClient, self).__init__()
 
         # We will also default bentoml_version to FLAGs.bentoml_version
-        self._default_args: Dict = {"BENTOML_VERSION": FLAGS.bentoml_version}
+        self._default_args: t.Dict = {"BENTOML_VERSION": FLAGS.bentoml_version}
 
         # namedtuple are slower than just having class objects since we are dealing
         # with a lot of nested properties.
@@ -757,29 +763,29 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
                 ouf.write(json.dumps(self._tags, indent=2))
             ouf.close()
 
-    @cached_property
-    def paths(self):
+    @cached_property  # type: ignore
+    def paths(self) -> t.Dict[str, dict]:
         return {
             h: {k: self._paths[k] for k in self._paths.keys() if h in k}
             for h in DOCKERFILE_BUILD_HIERARCHY
         }
 
-    def generate(self, dry_run: bool = False):
+    def generate(self, dry_run: bool = False) -> None:
         if os.geteuid() != 0 and not dry_run:
             self.generate_dockerfiles()
 
-    def build(self, dry_run: bool = False):
+    def build(self, dry_run: bool = False) -> None:
         if not dry_run:
             self.build_images()
 
-    def push(self, dry_run: bool = False):
+    def push(self, dry_run: bool = False) -> None:
         # https://docs.docker.com/docker-hub/download-rate-limit/
         if not dry_run:
             self.auth_registries()
             self.push_images()
 
 
-def main(argv):
+def main(argv: str) -> None:
     if len(argv) > 1:
         raise RuntimeError("Too much arguments")
 

@@ -1,5 +1,5 @@
 from .._internal.artifacts.base import MT, ModelArtifact
-from .stores import _LocalStores
+from .manager import _ModelManager
 
 
 def save(name: str, artifact: ModelArtifact) -> str:

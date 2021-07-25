@@ -48,12 +48,12 @@ class SklearnModel(ModelArtifact):
         super(SklearnModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def __get_file_path(cls, path: PathType) -> PathType:
+    def __get_pickle_fpath(cls, path: PathType) -> PathType:
         return cls.get_path(path, cls.PICKLE_EXTENSION)
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
-        return joblib.load(cls.__get_file_path(path), mmap_mode="r")
+        return joblib.load(cls.__get_pickle_fpath(path), mmap_mode="r")
 
     def save(self, path: PathType) -> None:
-        joblib.dump(self._model, self.__get_file_path(path))
+        joblib.dump(self._model, self.__get_pickle_fpath(path))

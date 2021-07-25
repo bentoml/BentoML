@@ -59,7 +59,7 @@ class _ArtifactMeta(type):
         """
         return os.path.join(path, f"{cls._MODEL_NAMESPACE}{ext}")
 
-    def __new__(mcls, name, mixins, namespace):
+    def __new__(mcls, name, mixins, namespace):  # type: ignore
         namespace["_MODEL_NAMESPACE"] = mcls._MODEL_NAMESPACE
         namespace["get_path"] = mcls._get_path
         namespace.update(**mcls._FILE_EXTENSION)
@@ -157,10 +157,10 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         """
         raise NotImplementedError()
 
-    def __getattribute__(self: "ModelArtifact", item: str):
+    def __getattribute__(self: "ModelArtifact", item: str) -> t.Any:
         if item == "save":
 
-            def wrapped_save(*args, **kw):
+            def wrapped_save(*args, **kw):  # type: ignore
                 path: PathType = args[0]  # save(self, path)
                 if self.metadata:
                     yaml = YAML()
@@ -174,7 +174,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
             return wrapped_save
         elif item == "load":
 
-            def wrapped_load(*args, **kw):
+            def wrapped_load(*args, **kw):  # type: ignore
                 assert_msg: str = "`load()` requires positional `path`"
                 assert "path" in args, assert_msg
                 inherited = object.__getattribute__(self, item)

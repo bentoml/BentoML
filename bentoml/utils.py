@@ -13,21 +13,19 @@ from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 
+logger = logging.getLogger(__name__)
+
 SUPPORTED_PYTHON_VERSION: t.List = ["3.6", "3.7", "3.8"]
 SUPPORTED_BASE_DISTROS: t.List = ["slim", "centos7", "centos8"]
 SUPPORTED_GPU_DISTROS: t.List = SUPPORTED_BASE_DISTROS
 
-# NOTES: model-server only.
 SUPPORTED_RELEASES_COMBINATION: t.Dict[str, t.List[str]] = {
     "cudnn": SUPPORTED_BASE_DISTROS,
     "devel": SUPPORTED_BASE_DISTROS,
     "runtime": SUPPORTED_BASE_DISTROS + ["ami2", "alpine3.14"],
 }
 
-# re.Pattern is not introduced til after 3.6
 SEMVER_REGEX = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)?$")
-
-logger = logging.getLogger(__name__)
 
 BACKWARD_COMPATIBILITY_WARNING: str = """\
 Since 1.0.0, we changed the format of docker tags, thus {classname}
@@ -36,10 +34,6 @@ is {bentoml_version}.
 Refers to https://hub.docker.com/r/bentoml/model-server/
 if you need older version of bentoml. Using default devel image instead...
 """  # noqa: E501
-
-
-def get_suffix(gpu: bool) -> str:
-    return "runtime" if not gpu else "cudnn"
 
 
 class ImageProvider(object):
@@ -93,7 +87,7 @@ class ImageProvider(object):
     """
 
     # fmt: off
-    _release_fmt: t.ClassVar[str] = "bentoml/model-server:{release_type}-python{python_version}-{distros}{suffix}"  # noqa: E501 # pylint: enable=line-too-long
+    _release_fmt: t.ClassVar[str] = "bentoml/model-server:{release_type}-python{python_version}-{distros}{suffix}"  # noqa: E501 # pylint: disable=line-too-long
 
     _singleton: t.ClassVar[t.Optional["ImageProvider"]] = None
     # fmt: on
@@ -129,7 +123,7 @@ class ImageProvider(object):
                 self._release_type = bentoml_version
 
         # fmt: off
-        self._suffix: str = '-' + get_suffix(gpu) if self._release_type != 'devel' else ''  # noqa: E501
+        self._suffix: str = '-' + self.get_suffix(gpu) if self._release_type != 'devel' else ''  # noqa: E501
 
         # fmt: on
         if python_version:
@@ -171,13 +165,18 @@ class ImageProvider(object):
         ):
             raise RuntimeError(f"{distros} doesn't support devel tags.")
 
-        if _distros not in SUPPORTED_RELEASES_COMBINATION[get_suffix(gpu)]:
+        if _distros not in SUPPORTED_RELEASES_COMBINATION[self.get_suffix(gpu)]:
             raise RuntimeError(
                 f"{_distros} is not yet supported. "
-                f"Supported distros: {SUPPORTED_RELEASES_COMBINATION[get_suffix(gpu)]}"
+                "Supported distros: "
+                f"{SUPPORTED_RELEASES_COMBINATION[self.get_suffix(gpu)]}"
             )
 
         self._distros: str = _distros
+
+    @staticmethod
+    def get_suffix(gpu: bool) -> str:
+        return "runtime" if not gpu else "cudnn"
 
     def __repr__(self: "ImageProvider") -> str:
         return self._release_fmt.format(

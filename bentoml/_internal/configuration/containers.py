@@ -15,7 +15,7 @@ from ..utils import get_free_port
 from ..utils.ruamel_yaml import YAML
 
 if TYPE_CHECKING:
-    from bentoml._internal.marshal.marshal import MarshalApp
+    from ..marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ SCHEMA = Schema(
             "repository": {
                 "type": And(
                     str,
-                    lambda type: type in YATAI_REPOSITORY_TYPES,
+                    lambda _type: _type in YATAI_REPOSITORY_TYPES,
                     error="yatai.repository.type must be one of %s"
                     % YATAI_REPOSITORY_TYPES,
                 ),
@@ -121,7 +121,7 @@ class BentoMLConfiguration:
         override_config_file: str = None,
         validate_schema: bool = True,
     ):
-        # Default configuraiton
+        # Default configuration
         if default_config_file is None:
             default_config_file = os.path.join(
                 os.path.dirname(__file__), "default_configuration.yml"

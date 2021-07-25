@@ -5,11 +5,11 @@ from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
 try:
-    import jax
+    import jax  # noqa # pylint: disable=unused-import
 except ImportError:
     raise MissingDependencyException("jax is required by FlaxModel and TraxModel")
 try:
-    import flax
+    import flax  # pylint: disable=unused-import
 except ImportError:
     raise MissingDependencyException("flax is required by FlaxModel")
 

@@ -10,9 +10,9 @@ from simple_di import Provide, Provider, container, providers
 from bentoml import __version__
 from bentoml.exceptions import BentoMLConfigException
 
-from ..configuration import expand_env_var, get_bentoml_deploy_version
-from ..utils import get_free_port
-from ..utils.ruamel_yaml import YAML
+from bentoml._internal.configuration import expand_env_var, get_bentoml_deploy_version
+from bentoml._internal.utils import get_free_port
+from bentoml._internal.utils.ruamel_yaml import YAML
 
 if TYPE_CHECKING:
     from ..marshal.marshal import MarshalApp

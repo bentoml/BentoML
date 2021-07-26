@@ -37,6 +37,7 @@ class YataiClient:
     def deployment(self):
         return DeploymentAPIClient(self._yatai_service)
 
+
     # def __init__(self, yatai_service: Optional["YataiStub"] = None):
     #     self.yatai_service = yatai_service if yatai_service else get_yatai_service()
     #     self.bento_repository_api_client = None
@@ -65,7 +66,6 @@ def get_yatai_client(yatai_url: str = None) -> "YataiClient":
         yatai_client = get_yatai_client(custom_url)
     """
 
-    pass
     # yatai_service = get_yatai_service(channel_address=yatai_url)
     # return YataiClient(yatai_service=yatai_service)
 

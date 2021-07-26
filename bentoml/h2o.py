@@ -1,7 +1,7 @@
 import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -14,7 +14,7 @@ except ImportError:
     raise MissingDependencyException("h2o is required by H2OModel")
 
 
-class H2OModel(ModelArtifact):
+class H2OModel(Model):
     """
     Model class for saving/loading :obj:`h2o` models
      using meth:`~h2o.saved_model` and :meth:`~h2o.load_model`
@@ -33,11 +33,7 @@ class H2OModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """

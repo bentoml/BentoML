@@ -1,4 +1,5 @@
 import os
+import typing as t
 
 import pytest
 from transformers import AutoModelWithLMHead, AutoTokenizer
@@ -33,7 +34,7 @@ def create_invalid_transformers_class(name):
 
 
 @pytest.fixture(scope="module")
-def gpt_model() -> dict:
+def gpt_model() -> t.Dict[str, t.Union[AutoTokenizer, AutoModelWithLMHead]]:
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
     model = AutoModelWithLMHead.from_pretrained(
         "gpt2", pad_token_id=tokenizer.eos_token_id

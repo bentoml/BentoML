@@ -1,12 +1,13 @@
+import os
 import typing as t
 
 import cloudpickle
 
 from ..types import MetadataType, PathType
-from .base import ModelArtifact
+from .base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 
 
-class PickleArtifact(ModelArtifact):
+class PickleModel(Model):
     """
     Abstraction for saving/loading python objects with pickle serialization
     using ``cloudpickle``
@@ -21,11 +22,7 @@ class PickleArtifact(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -33,14 +30,18 @@ class PickleArtifact(ModelArtifact):
     def __init__(
         self, model: t.Any, metadata: t.Optional[MetadataType] = None,
     ):
-        super(PickleArtifact, self).__init__(model, metadata=metadata)
+        super(PickleModel, self).__init__(model, metadata=metadata)
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
-        with open(cls.get_path(path, cls.PICKLE_EXTENSION), "rb") as inf:
+        with open(
+            os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"), "rb"
+        ) as inf:
             model = cloudpickle.load(inf)
         return model
 
     def save(self, path: PathType) -> None:
-        with open(self.get_path(path, self.PICKLE_EXTENSION), "wb") as inf:
+        with open(
+            os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"), "wb"
+        ) as inf:
             cloudpickle.dump(self._model, inf)

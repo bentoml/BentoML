@@ -1,5 +1,3 @@
-import os
-
 import coremltools as ct
 import pytest
 import torch
@@ -7,6 +5,7 @@ import torch
 from bentoml.coreml import CoreMLModel
 from bentoml.exceptions import InvalidArgument
 from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
+from tests._internal.helpers import assert_have_file_extension
 
 
 def pytorch_to_coreml(pytorch_model: LinearModel) -> "ct.models.MLModel":
@@ -28,9 +27,7 @@ def test_coreml_save_load(tmpdir):
     pytorch_model = LinearModel()
     model = pytorch_to_coreml(pytorch_model)
     CoreMLModel(model).save(tmpdir)
-    assert os.path.exists(
-        CoreMLModel.get_path(tmpdir, CoreMLModel.COREMLMODEL_EXTENSION)
-    )
+    assert_have_file_extension(tmpdir, CoreMLModel.COREMLMODEL_EXTENSION)
 
     coreml_loaded = CoreMLModel.load(tmpdir)
     assert isinstance(coreml_loaded, ct.models.MLModel)

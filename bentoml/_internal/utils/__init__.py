@@ -19,6 +19,7 @@ _VALID_URLS.discard("")
 
 __all__ = [
     "reserve_free_port",
+    "get_free_port",
     "is_url",
     "dump_to_yaml_str",
     "pb_to_yaml",

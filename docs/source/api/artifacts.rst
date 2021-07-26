@@ -14,9 +14,9 @@ In a BentoService#artifacts returns an ArtifactCollection instance:
 Common Artifacts
 ++++++++++++++++
 
-PickleArtifact
+PickleModel
 
-.. autoclass:: bentoml.service.artifacts.common.PickleArtifact
+.. autoclass:: bentoml.service.artifacts.common.PickleModel
 
 JSONArtifact
 

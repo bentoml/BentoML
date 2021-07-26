@@ -4,9 +4,9 @@ daysUntilStale: 90
 daysUntilClose: 14
 # Issues with these labels will never be considered stale
 exemptLabels:
-  - pinned
-  - roadmap
-  - docs
+  - on-hold
+  - documentation
+  - stale-exempt
 # Label to use when marking an issue as stale
 staleLabel: stale
 # Comment to post when marking an issue as stale. Set to `false` to disable

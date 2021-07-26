@@ -33,9 +33,9 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
-PathType = Union[str, os.PathLike]
+PathType = Union[str, bytes, os.PathLike]
 
-MetadataType = Dict[str, Any]
+MetadataType = Dict[str, Any]  # TODO:
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

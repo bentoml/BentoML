@@ -1,8 +1,9 @@
 import json
 import os
+import shutil
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, PTH_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -14,7 +15,7 @@ except ImportError:
     raise MissingDependencyException("easyocr>=1.3 is required by EasyOCRModel")
 
 
-class EasyOCRModel(ModelArtifact):
+class EasyOCRModel(Model):
     """
     Model class for saving/loading :obj:`easyocr` models
 
@@ -42,11 +43,7 @@ class EasyOCRModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -57,9 +54,11 @@ class EasyOCRModel(ModelArtifact):
         recog_network: t.Optional[str] = "english_g2",
         detect_model: t.Optional[str] = "craft_mlt_25k",
         gpu: t.Optional[bool] = False,
-        language_list: t.Optional[t.List[str]] = ["en"],
+        language_list: t.Optional[t.List[str]] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
+        if not language_list:
+            language_list = ["en"]
         super(EasyOCRModel, self).__init__(model, metadata=metadata)
         self._model: "easyocr.Reader" = model
         self._recog_network = recog_network
@@ -72,13 +71,13 @@ class EasyOCRModel(ModelArtifact):
             "gpu": gpu,
         }
 
-    @classmethod
-    def __get_json_file(cls, path: PathType) -> str:
-        return cls.get_path(path, cls.JSON_EXTENSION)
+    @staticmethod
+    def __get_json_fpath(path: PathType) -> str:
+        return os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}")
 
     @classmethod
     def load(cls, path: PathType) -> "easyocr.Reader":
-        with open(cls.__get_json_file(path), "r") as f:
+        with open(cls.__get_json_fpath(path), "r") as f:
             model_params = json.load(f)
 
         return easyocr.Reader(
@@ -86,11 +85,10 @@ class EasyOCRModel(ModelArtifact):
         )
 
     def save(self, path: PathType) -> None:
-        import shutil
 
         src_folder: str = self._model.model_storage_directory
 
-        detect_filename: str = f"{self._detect_model}{self.PTH_EXTENSION}"
+        detect_filename: str = f"{self._detect_model}{PTH_EXTENSION}"
 
         if not os.path.exists(os.path.join(path, detect_filename)):
             shutil.copyfile(
@@ -98,8 +96,8 @@ class EasyOCRModel(ModelArtifact):
                 os.path.join(path, detect_filename),
             )
 
-        fname: str = f"{self._recog_network}{self.PTH_EXTENSION}"
+        fname: str = f"{self._recog_network}{PTH_EXTENSION}"
         shutil.copyfile(os.path.join(src_folder, fname), os.path.join(path, fname))
 
-        with open(self.__get_json_file(path), "w") as f:
+        with open(self.__get_json_fpath(path), "w") as f:
             json.dump(self._model_metadata, f)

@@ -39,7 +39,7 @@ Preface
 
         REQUEST_TIME = metrics_clint.Summary('request_processing_time', 'Time spend processing request')
 
-        @artifacts([KerasModelArtifact('model'), PickleArtifact('tokenizer')])
+        @artifacts([KerasModelArtifact('model'), PickleModel('tokenizer')])
         class TensorflowService(BentoService):
 
             @REQUEST_TIME.time()

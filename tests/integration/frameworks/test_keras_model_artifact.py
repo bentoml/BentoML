@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -11,6 +9,7 @@ from tests._internal.frameworks.tensorflow_utils import (
     KerasSequentialModel,
     custom_activation,
 )
+from tests._internal.helpers import assert_have_file_extension
 
 TF2 = tf.__version__.startswith("2")
 
@@ -42,12 +41,12 @@ def predict_assert_equal(m1: keras.Model, m2: keras.Model):
 def test_keras_save_load(model, kwargs, tmpdir):
     KerasModel(model, **kwargs).save(tmpdir)
     if kwargs["custom_objects"]:
-        assert os.path.exists(KerasModel.get_path(tmpdir, "_custom_objects.pkl"))
+        assert_have_file_extension(tmpdir, "_custom_objects.pkl")
     if kwargs["store_as_json"]:
-        assert os.path.exists(KerasModel.get_path(tmpdir, "_json.json"))
-        assert os.path.exists(KerasModel.get_path(tmpdir, "_weights.hdf5"))
+        assert_have_file_extension(tmpdir, "_json.json")
+        assert_have_file_extension(tmpdir, "_weights.hdf5")
     else:
-        assert os.path.exists(KerasModel.get_path(tmpdir, ".h5"))
+        assert_have_file_extension(tmpdir, ".h5")
     if not TF2:
         # Initialize variables in the graph/model
         KerasModel.sess.run(tf.global_variables_initializer())

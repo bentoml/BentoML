@@ -1,11 +1,10 @@
-import os
-
 import numpy as np
 import pandas as pd
 import xgboost as xgb
 
 from bentoml.xgboost import XgBoostModel
 from tests._internal.frameworks.sklearn_utils import test_df
+from tests._internal.helpers import assert_have_file_extension
 
 
 def predict_df(model: xgb.core.Booster, df: pd.DataFrame):
@@ -36,7 +35,7 @@ def test_xgboost_save_load(tmpdir):
     model = xgboost_model()
 
     XgBoostModel(model).save(tmpdir)
-    assert os.path.exists(XgBoostModel.get_path(tmpdir, ".model"))
+    assert_have_file_extension(tmpdir, ".model")
 
     xg_loaded: xgb.core.Booster = XgBoostModel.load(tmpdir)
     assert predict_df(xg_loaded, test_df) == 1

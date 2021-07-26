@@ -498,7 +498,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/run_pyspark_tests.sh
+        run: ./ci/integration/frameworks/run_pyspark_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -515,7 +515,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/run_sklearn_tests.sh
+        run: ./ci/integration/frameworks/run_sklearn_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -532,7 +532,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/run_spacy_tests.sh
+        run: ./ci/integration/frameworks/run_spacy_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -549,7 +549,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/run_statsmodels_tests.sh
+        run: ./ci/integration/frameworks/run_statsmodels_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -566,7 +566,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/run_pycaret_tests.sh
+        run: ./ci/integration/frameworks/run_pycaret_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

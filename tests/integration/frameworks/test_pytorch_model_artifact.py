@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,6 +6,7 @@ from torch import nn
 
 from bentoml.pytorch import PyTorchModel
 from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
+from tests._internal.helpers import assert_have_file_extension
 
 
 def predict_df(model: nn.Module, df: pd.DataFrame):
@@ -27,7 +26,7 @@ def test_pytorch_save_load(test_type, tmpdir):
     else:
         model = _model
     PyTorchModel(model).save(tmpdir)
-    assert os.path.exists(PyTorchModel.get_path(tmpdir, ".pt"))
+    assert_have_file_extension(tmpdir, ".pt")
 
     pytorch_loaded: nn.Module = PyTorchModel.load(tmpdir)
     assert predict_df(model, test_df) == predict_df(pytorch_loaded, test_df)

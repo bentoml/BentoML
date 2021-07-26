@@ -1,18 +1,30 @@
 import logging
+import os
 import typing as t
 import zipfile
 
 import cloudpickle
 import torch.nn
 
-from ._internal.artifacts.base import MT, ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, PT_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
+
+try:
+    import torch
+except ImportError:
+    raise MissingDependencyException(
+        "torch is required by PyTorchModel and PyTorchLightningModel"
+    )
+try:
+    import pytorch_lightning
+except ImportError:
+    pytorch_lightning = None
 
 logger = logging.getLogger(__name__)
 
 
-class PyTorchModel(ModelArtifact):
+class PyTorchModel(Model):
     """
     Model class for saving/loading :obj:`pytorch` models.
 
@@ -33,21 +45,10 @@ class PyTorchModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
-
-    try:
-        import torch
-    except ImportError:
-        raise MissingDependencyException(
-            "torch is required by PyTorchModel and PyTorchLightningModel"
-        )
 
     def __init__(
         self,
@@ -56,30 +57,30 @@ class PyTorchModel(ModelArtifact):
     ):
         super(PyTorchModel, self).__init__(model, metadata=metadata)
 
-    @classmethod
-    def __get_weight_fpath(cls, path: PathType) -> PathType:
-        return cls.get_path(path, cls.PT_EXTENSION)
+    @staticmethod
+    def __get_weight_fpath(path: PathType) -> PathType:
+        return os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}")
 
     @classmethod
-    def load(cls, path: PathType) -> t.Union[torch.nn.Module, torch.jit.ScriptModule]:
+    def load(
+        cls, path: PathType
+    ) -> t.Union["torch.nn.Module", "torch.jit.ScriptModule"]:
         # TorchScript Models are saved as zip files
         if zipfile.is_zipfile(cls.__get_weight_fpath(path)):
-            model: torch.jit.ScriptModule = torch.jit.load(cls.__get_weight_fpath(path))
+            return torch.jit.load(cls.__get_weight_fpath(path))
         else:
-            model: torch.nn.Module = cloudpickle.load(
-                open(cls.__get_weight_fpath(path), "rb")
-            )
-        return model
+            return cloudpickle.load(open(cls.__get_weight_fpath(path), "rb"))
 
     def save(self, path: PathType) -> None:
         # If model is a TorchScriptModule, we cannot apply standard pickling
         if isinstance(self._model, torch.jit.ScriptModule):
-            return torch.jit.save(self._model, self.__get_weight_fpath(path))
+            torch.jit.save(self._model, self.__get_weight_fpath(path))
+            return
 
-        return cloudpickle.dump(self._model, open(self.__get_weight_fpath(path), "wb"))
+        cloudpickle.dump(self._model, open(self.__get_weight_fpath(path), "wb"))
 
 
-class PyTorchLightningModel(ModelArtifact):
+class PyTorchLightningModel(Model):
     """
     Model class for saving/loading :obj:`pytorch_lightning` models.
 
@@ -101,34 +102,29 @@ class PyTorchLightningModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
 
-    Pack bundle under :code:`bento_packer.py`::
-
-        TODO:
     """
 
     def __init__(
-        self, model, metadata: t.Optional[MetadataType] = None,
-    ):
-
-        try:
-            import pytorch_lightning as pl  # noqa # pylint: disable=unused-import
-            import pytorch_lightning.core  # noqa # pylint: disable=unused-import
-        except ImportError:
+        self,
+        model: pytorch_lightning.LightningModule,
+        metadata: t.Optional[MetadataType] = None,
+    ):  # noqa
+        if pytorch_lightning is None:
             raise MissingDependencyException(
                 "pytorch_lightning is required by PyTorchLightningModel"
             )
         super(PyTorchLightningModel, self).__init__(model, metadata=metadata)
 
-    @classmethod
-    def __get_weight_fpath(cls, path: PathType) -> PathType:
-        return cls.get_path(path, cls.PT_EXTENSION)
+    @staticmethod
+    def __get_weight_fpath(path: PathType) -> str:
+        return str(os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}"))
 
     @classmethod
-    def load(cls, path: PathType) -> MT:
+    def load(cls, path: PathType) -> "torch.jit.ScriptModule":
         return torch.jit.load(cls.__get_weight_fpath(path))
 
     def save(self, path: PathType) -> None:

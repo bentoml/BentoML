@@ -3,7 +3,6 @@ def api(input, output):  # pylint: disable=unused-argument
     decorator for declaring a instance method in a bentoml.Service class as an
     InferenceAPI
     """
-    pass
 
 
 def batch_api(

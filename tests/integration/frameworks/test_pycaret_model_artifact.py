@@ -1,11 +1,10 @@
-import os
-
 from pycaret.classification import create_model, predict_model
 from pycaret.classification import setup as pycaret_setup
 from pycaret.classification import tune_model
 from pycaret.datasets import get_data
 
 from bentoml.pycaret import PycaretModel
+from tests._internal.helpers import assert_have_file_extension
 
 
 def set_dataset():
@@ -31,7 +30,7 @@ def test_pycaret_save_load(tmpdir):
     tdt = tune_model(dt)
 
     PycaretModel(tdt).save(tmpdir)
-    assert os.path.exists(PycaretModel.get_path(tmpdir, ".pkl"))
+    assert_have_file_extension(tmpdir, ".pkl")
 
     pycaret_loaded = PycaretModel.load(tmpdir)
     assert predict_data(pycaret_loaded, expected) == predict_data(tdt, expected)

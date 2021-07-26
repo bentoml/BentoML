@@ -1,6 +1,7 @@
+import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -11,7 +12,7 @@ except ImportError:
     raise MissingDependencyException("mxnet is required by GluonModel")
 
 
-class GluonModel(ModelArtifact):
+class GluonModel(Model):
     """
     Model class for saving/loading :obj:`mxnet.gluon` models
 
@@ -29,11 +30,7 @@ class GluonModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -45,9 +42,9 @@ class GluonModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "mxnet.gluon.Block":
-        json_path: str = cls.get_path(path, "-symbol.json")
-        params_path: str = cls.get_path(path, "-0000.params")
+        json_path: str = os.path.join(path, f"{MODEL_NAMESPACE}-symbol.json")
+        params_path: str = os.path.join(path, f"{MODEL_NAMESPACE}-0000.params")
         return gluon.nn.SymbolBlock.imports(json_path, ["data"], params_path)
 
     def save(self, path: PathType) -> None:
-        self._model.export(self.get_path(path))
+        self._model.export(os.path.join(path, MODEL_NAMESPACE))

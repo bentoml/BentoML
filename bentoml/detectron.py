@@ -1,7 +1,7 @@
 import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, PTH_EXTENSION, YAML_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -9,6 +9,7 @@ try:
     import torch
 except ImportError:
     raise MissingDependencyException("torch is required by DetectronModel")
+
 try:
     import detectron2  # pylint: disable=unused-import
     from detectron2.checkpoint import DetectionCheckpointer
@@ -18,7 +19,7 @@ except ImportError:
     raise MissingDependencyException("detectron2 is required by DetectronModel")
 
 
-class DetectronModel(ModelArtifact):
+class DetectronModel(Model):
     """
     Model class for saving/loading :obj:`detectron2` models,
     in the form of :class:`~detectron2.checkpoint.DetectionCheckpointer`
@@ -26,7 +27,7 @@ class DetectronModel(ModelArtifact):
     Args:
         model (`torch.nn.Module`):
             detectron2 model is of type :obj:`torch.nn.Module`
-        input_model_yaml (`str`, `optional`, default to `None`):
+        input_model_yaml (`detectron2.config.CfgNode`, `optional`, default to `None`):
             model config from :meth:`detectron2.model_zoo.get_config_file`
         metadata (`Dict[str, Any]`, `optional`, default to `None`):
             Class metadata
@@ -41,11 +42,7 @@ class DetectronModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -55,21 +52,21 @@ class DetectronModel(ModelArtifact):
     def __init__(
         self,
         model: torch.nn.Module,
-        input_model_yaml: str = None,
+        input_model_yaml: t.Optional[detectron2.config.CfgNode] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
         super(DetectronModel, self).__init__(model, metadata=metadata)
         self._input_model_yaml = input_model_yaml
 
-    # fmt: off
     @classmethod
-    def load(cls, path: PathType, device: t.Optional[str] = "cpu") -> torch.nn.Module:  # noqa # pylint: disable=arguments-differ
-        # fmt: on
+    def load(  # noqa # pylint: disable=arguments-differ
+        cls, path: PathType, device: t.Optional[str] = None
+    ) -> torch.nn.Module:
         """
         Load a detectron model from given yaml path.
 
         Args:
-            path (`Union[str, os.PathLike]`):
+            path (`Union[str, bytes, os.PathLike]`):
                 Given path containing saved yaml
                  config for loading detectron model.
             device (`str`, `optional`, default to ``cpu``):
@@ -85,15 +82,17 @@ class DetectronModel(ModelArtifact):
                 ``detectron2`` is required by
                  :class:`~bentoml.detectron.DetectronModel`.
         """
-        cfg: "detectron2.config.CfgNode" = get_cfg()
-        weight_path = cls.get_path(path, cls.PTH_EXTENSION)
-        yaml_path = cls.get_path(path, cls.YAML_EXTENSION)
+        cfg: detectron2.config.CfgNode = get_cfg()
+        weight_path = os.path.join(path, f"{MODEL_NAMESPACE}{PTH_EXTENSION}")
+        yaml_path = os.path.join(path, f"{MODEL_NAMESPACE}{YAML_EXTENSION}")
 
-        cfg.merge_from_file(yaml_path)
+        if os.path.isfile(yaml_path):
+            cfg.merge_from_file(yaml_path)
         model: torch.nn.Module = build_model(cfg)
-        model.eval()
         if device:
             model.to(device)
+
+        model.eval()
 
         checkpointer = DetectionCheckpointer(model)
         checkpointer.load(weight_path)
@@ -102,13 +101,11 @@ class DetectronModel(ModelArtifact):
     def save(self, path: PathType) -> None:
         os.makedirs(path, exist_ok=True)
         checkpointer = DetectionCheckpointer(self._model, save_dir=path)
-        checkpointer.save(self._MODEL_NAMESPACE)
-
-        cfg: "detectron2.config.CfgNode" = get_cfg()
+        checkpointer.save(MODEL_NAMESPACE)
         if self._input_model_yaml:
-            cfg.merge_from_file(self._input_model_yaml)
-
-        with open(
-            self.get_path(path, self.YAML_EXTENSION), 'w', encoding='utf-8'
-        ) as ouf:
-            ouf.write(cfg.dump())
+            with open(
+                os.path.join(path, f"{MODEL_NAMESPACE}{YAML_EXTENSION}"),
+                "w",
+                encoding="utf-8",
+            ) as ouf:
+                ouf.write(self._input_model_yaml.dump())

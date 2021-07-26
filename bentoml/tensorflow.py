@@ -186,7 +186,7 @@ class TensorflowModel(Model):
         Save TensorFlow Trackable object `obj` from [SavedModel format] to path.
 
         Args:
-            path (`Union[str, os.PathLike]`):
+            path (`Union[str, bytes, os.PathLike]`):
                 Path containing a trackable object to export.
             signatures (`Union[Callable[..., Any], dict]`, `optional`, default to `None`):
                 `signatures` is one of three types:

@@ -76,7 +76,7 @@ class PaddleHubModel(Model):
     Model class for saving/loading :obj:`paddlehub` models.
 
     Args:
-        model (`Union[str, os.PathLike]`):
+        model (`Union[str, bytes, os.PathLike]`):
             Either a custom :obj:`paddlehub.Module` directory, or
             pretrained model from PaddleHub registry.
         metadata (`Dict[str, Any]`, `optional`, default to `None`):

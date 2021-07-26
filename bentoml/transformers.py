@@ -121,8 +121,9 @@ class TransformersModel(Model):
     @classmethod
     def load(cls, path: t.Union[PathType, dict]):  # type: ignore
         # fmt: on
-        if isinstance(path, (str, os.PathLike, pathlib.PurePath)):
-            if os.path.isdir(path):
+        if isinstance(path, (str, bytes, os.PathLike, pathlib.PurePath)):
+            str_path = str(path)
+            if os.path.isdir(str_path):
                 with open(os.path.join(path, "__model__type.txt"), "r") as f:
                     _model_type = f.read().strip()
                 with open(os.path.join(path, "tokenizer_type.txt"), "r") as f:

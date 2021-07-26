@@ -66,7 +66,7 @@ class DetectronModel(Model):
         Load a detectron model from given yaml path.
 
         Args:
-            path (`Union[str, os.PathLike]`):
+            path (`Union[str, bytes, os.PathLike]`):
                 Given path containing saved yaml
                  config for loading detectron model.
             device (`str`, `optional`, default to ``cpu``):

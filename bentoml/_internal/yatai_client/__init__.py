@@ -12,9 +12,12 @@
 
 import logging
 
+from simple_di import inject
+
 from bentoml._internal.utils import cached_property
 from bentoml._internal.yatai_client.bento_repository_api import BentoRepositoryAPIClient
 from bentoml._internal.yatai_client.deployment_api import DeploymentAPIClient
+from bentoml._internal.yatai_client.utils import parse_grpc_url
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +39,6 @@ class YataiClient:
     @cached_property
     def deployment(self):
         return DeploymentAPIClient(self._yatai_service)
-
 
     # def __init__(self, yatai_service: Optional["YataiStub"] = None):
     #     self.yatai_service = yatai_service if yatai_service else get_yatai_service()
@@ -79,10 +81,11 @@ def get_yatai_service(
     tls_client_key: str,
     tls_client_cert: str,
 ):
+    import certifi
     import grpc
 
     from bentoml._internal.yatai_client.interceptor import header_client_interceptor
-    from bentoml.yatai_client.proto.yatai_service_pb2_grpc import YataiStub
+    from bentoml._internal.yatai_client.proto.yatai_service_pb2_grpc import YataiStub
 
     channel_address = channel_address.strip()
     schema, addr = parse_grpc_url(channel_address)

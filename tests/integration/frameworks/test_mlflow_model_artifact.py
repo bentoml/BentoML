@@ -7,6 +7,7 @@ import pytest
 from bentoml.exceptions import InvalidArgument
 from bentoml.mlflow import MLflowModel
 from tests._internal.frameworks.sklearn_utils import sklearn_model_data
+from tests._internal.helpers import assert_have_file_extension
 
 
 def test_mlflow_save_load(tmpdir):
@@ -14,7 +15,7 @@ def test_mlflow_save_load(tmpdir):
     MLflowModel(model, mlflow.sklearn).save(tmpdir)
 
     # fmt: off
-    assert os.path.exists(os.path.join(tmpdir, MLflowModel._MODEL_NAMESPACE, "model.pkl"))  # noqa
+    assert_have_file_extension(os.path.join(tmpdir, 'bentoml_model'), '.pkl')
 
     mlflow_loaded = MLflowModel.load(tmpdir)
     np.testing.assert_array_equal(model.predict(data), mlflow_loaded.predict(data))  # noqa

@@ -1,10 +1,9 @@
-import os
-
 import evalml
 import pandas as pd
 import pytest
 
 from bentoml.evalml import EvalMLModel
+from tests._internal.helpers import assert_have_file_extension
 
 test_df = pd.DataFrame([[42, "b"]])
 
@@ -22,7 +21,7 @@ def binary_pipeline() -> "evalml.pipelines.BinaryClassificationPipeline":
 
 def test_evalml_save_load(tmpdir, binary_pipeline):
     EvalMLModel(binary_pipeline).save(tmpdir)
-    assert os.path.exists(EvalMLModel.get_path(tmpdir, ".pkl"))
+    assert_have_file_extension(tmpdir, ".pkl")
 
     evalml_loaded: "evalml.pipelines.PipelineBase" = EvalMLModel.load(tmpdir)
     assert (

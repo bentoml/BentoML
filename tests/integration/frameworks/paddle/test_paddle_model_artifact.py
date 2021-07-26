@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import paddle
 import paddle.nn as nn
@@ -8,6 +6,7 @@ import pytest
 
 from bentoml.paddle import PaddlePaddleModel
 from tests._internal.frameworks.paddle_utils import LinearModel, test_df
+from tests._internal.helpers import assert_have_file_extension
 
 BATCH_SIZE = 8
 EPOCH_NUM = 5
@@ -65,7 +64,7 @@ def create_paddle_predictor(train_paddle_model, tmp_path_factory) -> "paddle.inf
 
 def test_paddle_save_load(tmpdir, train_paddle_model, create_paddle_predictor):
     PaddlePaddleModel(train_paddle_model).save(tmpdir)
-    assert os.path.exists(PaddlePaddleModel.get_path(tmpdir, ".pdmodel"))
+    assert_have_file_extension(tmpdir, ".pdmodel")
     paddle_loaded: nn.Layer = PaddlePaddleModel.load(tmpdir)
 
     # fmt: off

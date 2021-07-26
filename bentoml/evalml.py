@@ -1,6 +1,7 @@
+import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -11,7 +12,7 @@ except ImportError:
     raise MissingDependencyException("evalml is required by EvalMLModel")
 
 
-class EvalMLModel(ModelArtifact):
+class EvalMLModel(Model):
     """
     Model class for saving/loading :obj:`evalml` models
 
@@ -29,11 +30,7 @@ class EvalMLModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -47,8 +44,10 @@ class EvalMLModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "evalml.pipelines.PipelineBase":
-        model_file_path: str = cls.get_path(path, cls.PICKLE_EXTENSION)
+        model_file_path: str = os.path.join(
+            path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"
+        )
         return evalml.pipelines.PipelineBase.load(model_file_path)
 
     def save(self, path: PathType) -> None:
-        self._model.save(self.get_path(path, self.PICKLE_EXTENSION))
+        self._model.save(os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"))

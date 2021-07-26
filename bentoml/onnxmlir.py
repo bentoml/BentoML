@@ -1,7 +1,8 @@
+import os
 import shutil
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -14,7 +15,7 @@ except ImportError:
     raise MissingDependencyException("PyRuntime package library must be in python path")
 
 
-class ONNXMlirModel(ModelArtifact):
+class ONNXMlirModel(Model):
     """
     Model class for saving/loading :obj:`onnx-mlir` compiled models.
     onnx-mlir is a compiler technology that can take an onnx model and lower it
@@ -40,11 +41,7 @@ class ONNXMlirModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -58,10 +55,15 @@ class ONNXMlirModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "ExecutionSession":
-        model_path: str = cls.get_path(path, cls.ONNXMLIR_EXTENSION)
+        model_path: str = os.path.join(
+            path, f"{MODEL_NAMESPACE}{cls.ONNXMLIR_EXTENSION}"
+        )
         inference_session = ExecutionSession(model_path, "run_main_graph")
         return inference_session
 
     def save(self, path: PathType) -> None:
         # copies the model .so and places in the version controlled deployment path
-        shutil.copyfile(self._model, self.get_path(path, self.ONNXMLIR_EXTENSION))
+        shutil.copyfile(
+            self._model,
+            os.path.join(path, f"{MODEL_NAMESPACE}{self.ONNXMLIR_EXTENSION}"),
+        )

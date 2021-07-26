@@ -4,7 +4,7 @@ import pathlib
 import typing as t
 from distutils.dir_util import copy_tree
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
 from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
@@ -117,7 +117,7 @@ _TensorflowFunctionWrapper.__doc__ = """\
 """
 
 
-class TensorflowModel(ModelArtifact):
+class TensorflowModel(Model):
     """
     Artifact class for saving/loading :obj:`tensorflow` model
     with :obj:`tensorflow.saved_model` format
@@ -138,13 +138,10 @@ class TensorflowModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
 
-    Pack bundle under :code:`bento_packer.py`::
-
-        TODO:
     """
 
     def __init__(
@@ -155,7 +152,9 @@ class TensorflowModel(ModelArtifact):
         super(TensorflowModel, self).__init__(model, metadata=metadata)
 
     @staticmethod
-    def __load_tf_saved_model(path: str) -> t.Union[AutoTrackable, t.Any]:
+    def __load_tf_saved_model(
+        path: str,
+    ) -> t.Union[AutoTrackable, t.Any]:  # pylint: disable=unused-private-member
         if TF2:
             return tf.saved_model.load(path)
         else:
@@ -193,7 +192,7 @@ class TensorflowModel(ModelArtifact):
                 `signatures` is one of three types:
 
                 a `tf.function` with an input signature specified, which will use the default serving signature key
-                
+
                 a dictionary, which maps signature keys to either :obj`tf.function` instances with input signatures or concrete functions. Keys of such a dictionary may be arbitrary strings, but will typically be from the :obj:`tf.saved_model.signature_constants` module.
 
                 `f.get_concrete_function` on a `@tf.function` decorated function `f`, in which case f will be used to generate a signature for the SavedModel under the default serving signature key,

@@ -4,7 +4,7 @@ import logging
 import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -15,11 +15,11 @@ try:
     import pyspark.ml
     import pyspark.sql
 except ImportError:
-    raise MissingDependencyException("pyspark is required by PysparkMLlibModel")
+    raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
 
 # NOTE: the usage of SPARK_SESSION_NAMESPACE is to provide a consistent session
 #  among imports if users need to use SparkSession.
-SPARK_SESSION_NAMESPACE: str = "PysparkMLlibModel"
+SPARK_SESSION_NAMESPACE: str = "PySparkMLlibModel"
 
 DEPRECATION_MLLIB_WARNING: str = """\
 {model} is using the older library `pyspark.mllib`.
@@ -29,7 +29,7 @@ but expect unintended behaviour.
 """
 
 
-class PysparkMLlibModel(ModelArtifact):
+class PySparkMLlibModel(Model):
     """
     Model class for saving/loading :obj:`pyspark` models
     using :obj:`pyspark.ml` and :obj:`pyspark.mllib`
@@ -44,7 +44,7 @@ class PysparkMLlibModel(ModelArtifact):
 
     Raises:
         MissingDependencyException:
-            :obj:`pyspark` is required by PysparkMLlibModel
+            :obj:`pyspark` is required by PySparkMLlibModel
 
     .. WARNING::
 
@@ -56,11 +56,7 @@ class PysparkMLlibModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -73,7 +69,7 @@ class PysparkMLlibModel(ModelArtifact):
         spark_session: t.Optional["pyspark.sql.SparkSession"] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
-        super(PysparkMLlibModel, self).__init__(model, metadata=metadata)
+        super(PySparkMLlibModel, self).__init__(model, metadata=metadata)
         # NOTES: referred to docstring, spark_session is mainly used
         #  for backward compatibility.
         self._spark_sess = spark_session
@@ -81,7 +77,7 @@ class PysparkMLlibModel(ModelArtifact):
     @classmethod
     def load(cls, path: PathType) -> pyspark.ml.Model:
 
-        model_path: str = str(cls.get_path(path))
+        model_path: str = str(os.path.join(path, MODEL_NAMESPACE))
         model: "pyspark.ml.Model"
 
         # NOTE (future ref): A large model metadata might
@@ -120,6 +116,6 @@ class PysparkMLlibModel(ModelArtifact):
     def save(self, path: PathType) -> None:
         if not isinstance(self._model, pyspark.ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=self._model))
-            self._model.save(self._spark_sess, self.get_path(path))
+            self._model.save(self._spark_sess, os.path.join(path, MODEL_NAMESPACE))
         else:
-            self._model.save(self.get_path(path))
+            self._model.save(os.path.join(path, MODEL_NAMESPACE))

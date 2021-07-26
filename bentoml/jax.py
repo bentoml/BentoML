@@ -1,6 +1,6 @@
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -14,7 +14,7 @@ except ImportError:
     raise MissingDependencyException("flax is required by FlaxModel")
 
 
-class FlaxModel(ModelArtifact):
+class FlaxModel(Model):
     """
     Model class for saving/loading :obj:`flax` models
 

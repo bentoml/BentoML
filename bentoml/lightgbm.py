@@ -1,6 +1,7 @@
+import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, TXT_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -10,7 +11,7 @@ except ImportError:
     raise MissingDependencyException("lightgbm is required by LightGBMModel")
 
 
-class LightGBMModel(ModelArtifact):
+class LightGBMModel(Model):
     """
     Model class for saving/loading :obj:`lightgbm` models
 
@@ -28,11 +29,7 @@ class LightGBMModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -44,7 +41,9 @@ class LightGBMModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "lightgbm.Booster":
-        return lightgbm.Booster(model_file=cls.get_path(path, cls.TXT_EXTENSION))
+        return lightgbm.Booster(
+            model_file=os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}")
+        )
 
     def save(self, path: PathType) -> None:
-        self._model.save_model(self.get_path(path, self.TXT_EXTENSION))
+        self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}"))

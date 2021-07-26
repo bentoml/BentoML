@@ -3,7 +3,7 @@ import pathlib
 import typing as t
 from importlib import import_module
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import InvalidArgument, MissingDependencyException, NotFound
 
@@ -20,7 +20,7 @@ TransformersInput = t.TypeVar(
 )
 
 
-class TransformersModel(ModelArtifact):
+class TransformersModel(Model):
     """
     Model class for saving/loading :obj:`transformers` models.
 
@@ -45,13 +45,10 @@ class TransformersModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
 
-    Pack bundle under :code:`bento_packer.py`::
-
-        TODO:
     """  # noqa # pylint: enable=line-too-long
 
     _model_type: str = "AutoModelWithLMHead"
@@ -61,9 +58,9 @@ class TransformersModel(ModelArtifact):
     ):
         super(TransformersModel, self).__init__(model, metadata=metadata)
 
-    @classmethod
-    def __load_from_directory(
-        cls, path: PathType, model_type: str, tokenizer_type: str
+    @staticmethod
+    def __load_from_directory(  # pylint: disable=unused-private-member
+        path: PathType, model_type: str, tokenizer_type: str
     ) -> t.Dict[str, t.Any]:
         transformers_model = getattr(
             import_module("transformers"), model_type
@@ -74,7 +71,9 @@ class TransformersModel(ModelArtifact):
         return {"model": transformers_model, "tokenizer": tokenizer}
 
     @staticmethod
-    def __load_from_dict(transformers_dict: t.Dict[str, t.Any]) -> dict:
+    def __load_from_dict(
+        transformers_dict: t.Dict[str, t.Any]
+    ) -> dict:  # pylint: disable=unused-private-member
         if not transformers_dict.get("model"):
             raise InvalidArgument(
                 " 'model' key is not found in the dictionary."
@@ -104,7 +103,9 @@ class TransformersModel(ModelArtifact):
         return transformers_dict
 
     @classmethod
-    def __load_from_string(cls, model_name: str) -> dict:
+    def __load_from_string(
+        cls, model_name: str
+    ) -> dict:  # pylint: disable=unused-private-member
         try:
             transformers_model = getattr(
                 import_module("transformers"), cls._model_type

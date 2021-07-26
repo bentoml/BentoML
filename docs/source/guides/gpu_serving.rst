@@ -221,11 +221,11 @@ Tensorflow Implementation
     import bentoml
     from bentoml.adapters import JsonInput
     from bentoml.frameworks.keras import KerasModelArtifact
-    from bentoml.service.artifacts.common import PickleArtifact
+    from bentoml.service.artifacts.common import PickleModel
 
     @bentoml.env(pip_packages=['tensorflow', 'scikit-learn', 'pandas'] ,\
           docker_base_image="bentoml/model-server:0.12.1-py38-gpu")
-    @bentoml.artifacts([KerasModelArtifact('model'), PickleArtifact('tokenizer')])
+    @bentoml.artifacts([KerasModelArtifact('model'), PickleModel('tokenizer')])
     class TensorflowService(bentoml.BentoService):
 
         @api(input=JsonInput())
@@ -295,13 +295,13 @@ PyTorch Implementation
     from bentoml import BentoService, api, artifacts, env
     from bentoml.adapters import JsonInput, JsonOutput
     from bentoml.frameworks.pytorch import PyTorchModel
-    from bentoml.service.artifacts.pickle import PickleArtifact
+    from bentoml.service.artifacts.pickle import PickleModel
     import torch
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     @env(conda_dependencies=['pytorch', 'torchtext', 'cudatoolkit=11.1'], conda_channels=['pytorch', 'nvidia'])
-    @artifacts([PyTorchModel("model"), PickleArtifact("tokenizer"), PickleArtifact("vocab")])
+    @artifacts([PyTorchModel("model"), PickleModel("tokenizer"), PickleModel("vocab")])
     class PytorchService(BentoService):
 
         def classify_categories(self, sentence):
@@ -379,7 +379,7 @@ ONNX Implementation
     from bentoml import BentoService, api, env, artifacts
     from bentoml.adapters import JsonInput, JsonOutput
     from bentoml.frameworks.onnx import ONNXModel
-    from bentoml.service.artifacts.pickle import PickleArtifact
+    from bentoml.service.artifacts.pickle import PickleModel
     from onnxruntime.capi.onnxruntime_pybind11_state import InvalidArgument
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -390,7 +390,7 @@ ONNX Implementation
 
     @env(infer_pip_packages=False, pip_packages=['onnxruntime-gpu'])
     @artifacts(
-        [ONNXModel('model', backend='onnxruntime-gpu'), PickleArtifact('tokenizer'), PickleArtifact('vocab')])
+        [ONNXModel('model', backend='onnxruntime-gpu'), PickleModel('tokenizer'), PickleModel('vocab')])
     class OnnxService(BentoService):
 
         def classify_categories(self, sentence):

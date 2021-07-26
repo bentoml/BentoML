@@ -2,7 +2,8 @@ import os
 
 import pytest
 
-from bentoml._internal.artifacts import ModelArtifact, PickleArtifact
+from bentoml._internal.models import Model, PickleModel
+from tests._internal.helpers import assert_have_file_extension
 
 _metadata = {"test": "Hello", "num": 0.234}
 
@@ -16,18 +17,25 @@ def create_mock_class(name):
     return Foo
 
 
-class FooArtifact(ModelArtifact):
+class FooModel(Model):
     def __init__(self, model, metadata=None):
         super().__init__(model, metadata)
         if metadata is None:
             self._metadata = _metadata
 
     def save(self, path):
-        return self.get_path(path, ".est")
+        return os.path.join(path, "model.test")
 
     @classmethod
     def load(cls, path):
         return "foo"
+
+
+class InvalidModel(Model):
+    """InvalidModel doesn't have save and load implemented"""
+
+    def __init__(self, model=None):
+        super().__init__(model)
 
 
 @pytest.mark.parametrize(
@@ -41,8 +49,8 @@ class FooArtifact(ModelArtifact):
     ],
 )
 def test_base_artifact(args, kwargs, metadata):
-    ba = ModelArtifact(*args, **kwargs)
-    pkl = PickleArtifact(*args, **kwargs)
+    ba = Model(*args, **kwargs)
+    pkl = PickleModel(*args, **kwargs)
     assert all(
         [v == k] for k in [ba.__dict__, pkl.__dict__] for v in ["_model", "_metadata"]
     )
@@ -59,17 +67,29 @@ def test_base_artifact(args, kwargs, metadata):
     ],
 )
 def test_save_artifact(model, tmpdir):
-    foo = FooArtifact(model, metadata=_metadata)
+    foo = FooModel(model, metadata=_metadata)
     foo.save(tmpdir)
-    assert os.path.exists(foo.get_path(tmpdir, ".yml"))
+    assert_have_file_extension(tmpdir, ".yml")
 
 
 @pytest.mark.parametrize(
     "model", [(create_mock_class("MockModel")), (create_mock_class("test"))],
 )
 def test_pkl_artifact(model, tmpdir):
-    pkl = PickleArtifact(model, metadata=_metadata)
+    pkl = PickleModel(model, metadata=_metadata)
     pkl.save(tmpdir)
-    assert os.path.exists(pkl.get_path(tmpdir, ".pkl"))
-    assert os.path.exists(pkl.get_path(tmpdir, ".yml"))
-    assert model == PickleArtifact.load(tmpdir)
+    assert model == PickleModel.load(tmpdir)
+    assert_have_file_extension(tmpdir, ".pkl")
+    assert_have_file_extension(tmpdir, ".yml")
+
+
+@pytest.mark.parametrize(
+    "func, exc",
+    [
+        (InvalidModel().save, NotImplementedError),
+        (InvalidModel.load, NotImplementedError),
+    ],
+)
+def test_invalid_impl(func, exc):
+    with pytest.raises(exc):
+        func("/tmp/test")

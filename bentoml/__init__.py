@@ -13,11 +13,10 @@ del get_versions
 # # Configuring logging properly before loading other modules
 # configure_logging()
 
-from ._internal.artifacts import ModelArtifact as BaseModel
-from ._internal.artifacts import PickleArtifact
 from ._internal.bundle import containerize, load
 from ._internal.environment import env
 from ._internal.inference_api import api, batch_api
+from ._internal.models import Model, PickleModel
 from ._internal.repository import delete, get, ls, pull, push
 from ._internal.server import serve
 from ._internal.service import Service
@@ -26,8 +25,8 @@ from ._internal.yatai_client import YataiClient
 __all__ = [
     "__version__",
     "YataiClient",
-    "PickleArtifact",
-    "BaseModel",
+    "PickleModel",
+    "Model",
     "ls",
     "get",
     "delete",

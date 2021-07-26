@@ -1,11 +1,10 @@
-import os
-
 import pytest
 from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
 
 from bentoml.catboost import CatBoostModel
 from bentoml.exceptions import InvalidArgument
 from tests._internal.frameworks.sklearn_utils import test_df
+from tests._internal.helpers import assert_have_file_extension
 
 
 @pytest.fixture()
@@ -35,9 +34,7 @@ def CancerClassifier(tmpdir):
 def test_catboost_save_load(tmpdir, CancerClassifier):
     model = CancerClassifier
     CatBoostModel(model).save(tmpdir)
-    assert os.path.exists(
-        CatBoostModel.get_path(tmpdir, CatBoostModel.CATBOOST_EXTENSION)
-    )
+    assert_have_file_extension(tmpdir, ".cbm")
 
     catboost_loaded = CatBoostModel.load(tmpdir)
     assert isinstance(catboost_loaded, CatBoost)

@@ -51,7 +51,7 @@ will discard the task with appropriate status code and message.
     # my_bento_service.py
 
     import bentoml
-    from bentoml.service.artifacts.common import PickleArtifact
+    from bentoml.service.artifacts.common import PickleModel
     from my_custom_input import MyCustomJsonInput
 
     @bentoml.env(infer_pip=True)

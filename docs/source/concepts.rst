@@ -111,7 +111,7 @@ Listing recent BentoML bundles created:
     > bentoml list
     BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
     IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeInput>  model<SklearnModel>
-    IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeInput>  clf<PickleArtifact>
+    IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeInput>  clf<PickleModel>
     ...
 
 

@@ -1,11 +1,12 @@
 import logging
+import os
 import typing as t
 import zipfile
 
 import cloudpickle
 import torch.nn
 
-from ._internal.artifacts.base import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, PT_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -23,7 +24,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class PyTorchModel(ModelArtifact):
+class PyTorchModel(Model):
     """
     Model class for saving/loading :obj:`pytorch` models.
 
@@ -44,11 +45,7 @@ class PyTorchModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -60,9 +57,9 @@ class PyTorchModel(ModelArtifact):
     ):
         super(PyTorchModel, self).__init__(model, metadata=metadata)
 
-    @classmethod
-    def __get_weight_fpath(cls, path: PathType) -> PathType:
-        return cls.get_path(path, cls.PT_EXTENSION)
+    @staticmethod
+    def __get_weight_fpath(path: PathType) -> PathType:
+        return os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}")
 
     @classmethod
     def load(
@@ -83,7 +80,7 @@ class PyTorchModel(ModelArtifact):
         cloudpickle.dump(self._model, open(self.__get_weight_fpath(path), "wb"))
 
 
-class PyTorchLightningModel(ModelArtifact):
+class PyTorchLightningModel(Model):
     """
     Model class for saving/loading :obj:`pytorch_lightning` models.
 
@@ -105,13 +102,10 @@ class PyTorchLightningModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
 
-    Pack bundle under :code:`bento_packer.py`::
-
-        TODO:
     """
 
     def __init__(
@@ -125,9 +119,9 @@ class PyTorchLightningModel(ModelArtifact):
             )
         super(PyTorchLightningModel, self).__init__(model, metadata=metadata)
 
-    @classmethod
-    def __get_weight_fpath(cls, path: PathType) -> str:
-        return str(cls.get_path(path, cls.PT_EXTENSION))
+    @staticmethod
+    def __get_weight_fpath(path: PathType) -> str:
+        return str(os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}"))
 
     @classmethod
     def load(cls, path: PathType) -> "torch.jit.ScriptModule":

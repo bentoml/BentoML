@@ -9,6 +9,7 @@ import tensorflow as tf
 
 from bentoml.onnxmlir import ONNXMlirModel
 from tests._internal.frameworks.tensorflow_utils import NativeModel
+from tests._internal.helpers import assert_have_file_extension
 
 try:
     # this has to be able to find the arch and OS specific PyRuntime .so file
@@ -75,7 +76,7 @@ def compile_model(convert_to_onnx, tmpdir):
 def test_onnxmlir_save_load(compile_model, tmpdir):
     model = os.path.join(tmpdir, "model.so")
     ONNXMlirModel(model).save(tmpdir)
-    assert os.path.exists(ONNXMlirModel.get_path(tmpdir, ".so"))
+    assert_have_file_extension(tmpdir, ".so")
 
     onnxmlir_loaded = ONNXMlirModel.load(tmpdir)
     # fmt: off

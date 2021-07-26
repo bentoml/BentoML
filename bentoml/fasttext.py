@@ -1,6 +1,7 @@
+import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -10,7 +11,7 @@ except ImportError:
     raise MissingDependencyException("fasttext is required by FastTextModel")
 
 
-class FastTextModel(ModelArtifact):
+class FastTextModel(Model):
     """
     Model class for saving/loading :obj:`fasttext` models
 
@@ -28,11 +29,7 @@ class FastTextModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -46,7 +43,7 @@ class FastTextModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "fasttext.FastText._FastText":
-        return fasttext.load_model(cls.get_path(path))
+        return fasttext.load_model(os.path.join(path, MODEL_NAMESPACE))
 
     def save(self, path: PathType) -> None:
-        self._model.save_model(self.get_path(path))
+        self._model.save_model(os.path.join(path, MODEL_NAMESPACE))

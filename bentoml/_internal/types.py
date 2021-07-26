@@ -33,7 +33,7 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
-PathType = Union[str, bytes, os.PathLike]
+PathType = Union[str, os.PathLike]
 
 MetadataType = Dict[str, Any]  # TODO:
 

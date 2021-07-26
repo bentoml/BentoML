@@ -1,4 +1,3 @@
-import os
 from typing import List
 
 import easyocr
@@ -7,6 +6,7 @@ import numpy as np
 from easyocr import Reader
 
 from bentoml.easyocr import EasyOCRModel
+from tests._internal.helpers import assert_have_file_extension
 
 TEST_RESULT: List[str] = ["西", "愚园路", "东", "315", "309", "W", "Yuyuan Rd。", "E"]
 IMAGE_PATH: str = "./tests/_internal/_static/chinese.jpg"
@@ -31,8 +31,7 @@ def test_easyocr_save_load(tmpdir):
     EasyOCRModel(model, recog_network=recog_network, language_list=language_list).save(
         tmpdir
     )
-    assert os.path.exists(EasyOCRModel.get_path(tmpdir, ".json"))
-
+    assert_have_file_extension(tmpdir, ".json")
     easyocr_loaded: easyocr.Reader = EasyOCRModel.load(tmpdir)
 
     image = imageio.imread(IMAGE_PATH)

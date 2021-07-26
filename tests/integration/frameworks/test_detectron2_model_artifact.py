@@ -1,4 +1,3 @@
-import os
 import typing as t
 
 import imageio
@@ -12,6 +11,7 @@ from detectron2.data import transforms as T
 from detectron2.modeling import build_model
 
 from bentoml.detectron import DetectronModel
+from tests._internal.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
     from detectron2.config import CfgNode  # pylint: disable=unused-import
@@ -58,16 +58,12 @@ def test_detectron2_save_load(tmpdir):
 
     checkpointer = DetectionCheckpointer(model)
     checkpointer.load(cfg.MODEL.WEIGHTS)
+    # model_zoo.get_config_file(model_url)
+    DetectronModel(model, input_model_yaml=cloned).save(tmpdir)
 
-    DetectronModel(model, input_model_yaml=model_zoo.get_config_file(model_url)).save(
-        tmpdir
-    )
-
-    assert os.path.exists(DetectronModel.get_path(tmpdir, ".yaml"))
-
-    detectron_loaded: torch.nn.Module = DetectronModel.load(
-        tmpdir, device=cloned.MODEL.DEVICE
-    )
+    assert_have_file_extension(tmpdir, ".yaml")
+    detectron_loaded: torch.nn.Module = DetectronModel.load(tmpdir)
+    assert next(detectron_loaded.parameters()).device.type == "cpu"
     assert repr(detectron_loaded) == repr(model)
 
     image = imageio.imread("http://images.cocodataset.org/val2017/000000439715.jpg")

@@ -183,9 +183,9 @@ Transformers
 Statsmodels
 ===========
 
-For statsmodels, we recommend using PickleArtifact:
+For statsmodels, we recommend using PickleModel:
 
-.. autoclass:: bentoml.service.artifacts.common.PickleArtifact
+.. autoclass:: bentoml.service.artifacts.common.PickleModel
     :noindex:
 
 Example Projects:

@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pandas as pd
 from fastai.data.block import DataBlock
@@ -8,6 +6,7 @@ from fastai.torch_core import Module
 
 from bentoml.fastai import FastAIModel
 from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
+from tests._internal.helpers import assert_have_file_extension
 
 
 def get_items(_x):
@@ -47,7 +46,7 @@ def predict_df(model: "Learner", df: "pd.DataFrame"):
 
 def test_fastai_save_pack(tmpdir):
     pack_models(tmpdir)
-    assert os.path.exists(FastAIModel.get_path(tmpdir, ".pkl"))
+    assert_have_file_extension(tmpdir, ".pkl")
 
     loaded_fastai: "Learner" = FastAIModel.load(tmpdir)
     assert predict_df(loaded_fastai, test_df) == 5.0

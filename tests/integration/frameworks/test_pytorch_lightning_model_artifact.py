@@ -1,10 +1,9 @@
-import os
-
 import pandas as pd
 import pytorch_lightning as pl
 import torch
 
 from bentoml.pytorch import PyTorchLightningModel
+from tests._internal.helpers import assert_have_file_extension
 
 test_df = pd.DataFrame([[5, 4, 3, 2]])
 
@@ -22,7 +21,7 @@ def predict_df(model: pl.LightningModule, df: pd.DataFrame):
 def test_pl_save_load(tmpdir):
     model: pl.LightningModule = FooModel()
     PyTorchLightningModel(model).save(tmpdir)
-    assert os.path.exists(PyTorchLightningModel.get_path(tmpdir, ".pt"))
+    assert_have_file_extension(tmpdir, ".pt")
 
     pl_loaded: pl.LightningModule = PyTorchLightningModel.load(tmpdir)
 

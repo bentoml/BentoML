@@ -1,7 +1,7 @@
 import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import InvalidArgument, MissingDependencyException
 
@@ -11,8 +11,10 @@ try:
 except ImportError:
     raise MissingDependencyException("catboost is required by CatBoostModel")
 
+CatBoostType = t.Union[CatBoost, CatBoostClassifier, CatBoostRegressor]
 
-class CatBoostModel(ModelArtifact):
+
+class CatBoostModel(Model):
     """
     Model class for saving/loading :obj:`catboost` model.
 
@@ -40,11 +42,7 @@ class CatBoostModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -68,8 +66,8 @@ class CatBoostModel(ModelArtifact):
         self._model_export_parameters = model_export_parameters
         self._model_pool = model_pool
 
-    @classmethod
-    def __init_model_type(cls, model_type: t.Optional[str] = "classifier"):
+    @staticmethod
+    def __init_model_type(model_type: t.Optional[str] = "classifier") -> CatBoostType:
         if model_type == "classifier":
             _model = CatBoostClassifier()
         elif model_type == "regressor":
@@ -81,21 +79,23 @@ class CatBoostModel(ModelArtifact):
 
     def save(self, path: PathType) -> None:
         self._model.save_model(
-            self.get_path(path, self.CATBOOST_EXTENSION),
+            os.path.join(path, f"{MODEL_NAMESPACE}{self.CATBOOST_EXTENSION}"),
             format=self.CATBOOST_EXTENSION.split(".")[1],
             export_parameters=self._model_export_parameters,
             pool=self._model_pool,
         )
 
-    # fmt: off
     @classmethod
-    def load(cls, path: PathType, model_type: t.Optional[str] = "classifier") -> "catboost.core.CatBoost":  # noqa # pylint: disable=arguments-differ
-        # fmt: on
+    def load(  # noqa # pylint: disable=arguments-differ
+        cls, path: PathType, model_type: t.Optional[str] = "classifier"
+    ) -> "catboost.core.CatBoost":
         model = cls.__init_model_type(model_type=model_type)
-        get_path: str = cls.get_path(path, cls.CATBOOST_EXTENSION)
-        if not os.path.exists(get_path):
+        model_path: str = os.path.join(
+            path, f"{MODEL_NAMESPACE}{cls.CATBOOST_EXTENSION}"
+        )
+        if not os.path.exists(model_path):
             raise InvalidArgument(
                 f"given {path} doesn't contain {cls.CATBOOST_EXTENSION} object."
             )
-        model.load_model(get_path)
+        model.load_model(model_path)
         return model

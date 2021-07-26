@@ -3,7 +3,14 @@ import typing as t
 
 import cloudpickle
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import (
+    H5_EXTENSION,
+    HDF5_EXTENSION,
+    JSON_EXTENSION,
+    MODEL_NAMESPACE,
+    PICKLE_EXTENSION,
+    Model,
+)
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -16,7 +23,7 @@ except ImportError:
 # fmt: on
 
 
-class KerasModel(ModelArtifact):
+class KerasModel(Model):
     """
     Model class for saving/loading :obj:`keras` models using Tensorflow backend.
 
@@ -40,17 +47,14 @@ class KerasModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
 
-    graph = tf.compat.v1.get_default_graph()
-    sess = tf.compat.v1.Session(graph=graph)
+    _graph = tf.compat.v1.get_default_graph()
+    # NOTES: sess should be user facing for V1 compatibility
+    sess = tf.compat.v1.Session(graph=_graph)
 
     def __init__(
         self,
@@ -61,24 +65,24 @@ class KerasModel(ModelArtifact):
     ):
         super(KerasModel, self).__init__(model, metadata=metadata)
 
-        self._store_as_json: bool = store_as_json
-        self._custom_objects: t.Dict[str, t.Any] = custom_objects
+        self._store_as_json: t.Optional[bool] = store_as_json
+        self._custom_objects: t.Optional[t.Dict[str, t.Any]] = custom_objects
 
-    @classmethod
-    def __get_custom_obj_fpath(cls, path: PathType) -> PathType:
-        return cls.get_path(path, f"_custom_objects{cls.PICKLE_EXTENSION}")
+    @staticmethod
+    def __get_custom_obj_fpath(path: PathType) -> PathType:
+        return os.path.join(path, f"{MODEL_NAMESPACE}_custom_objects{PICKLE_EXTENSION}")
 
-    @classmethod
-    def __get_model_saved_fpath(cls, path: PathType) -> PathType:
-        return cls.get_path(path, cls.H5_EXTENSION)
+    @staticmethod
+    def __get_model_saved_fpath(path: PathType) -> PathType:
+        return os.path.join(path, f"{MODEL_NAMESPACE}{H5_EXTENSION}")
 
-    @classmethod
-    def __get_model_weight_fpath(cls, path: PathType) -> PathType:
-        return cls.get_path(path, f"_weights{cls.HDF5_EXTENSION}")
+    @staticmethod
+    def __get_model_weight_fpath(path: PathType) -> PathType:
+        return os.path.join(path, f"{MODEL_NAMESPACE}_weights{HDF5_EXTENSION}")
 
-    @classmethod
-    def __get_model_json_fpath(cls, path: PathType) -> PathType:
-        return cls.get_path(path, f"_json{cls.JSON_EXTENSION}")
+    @staticmethod
+    def __get_model_json_fpath(path: PathType) -> PathType:
+        return os.path.join(path, f"{MODEL_NAMESPACE}_json{JSON_EXTENSION}")
 
     @classmethod
     def load(cls, path: PathType) -> "keras.models.Model":

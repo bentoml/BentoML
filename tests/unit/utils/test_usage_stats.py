@@ -60,7 +60,7 @@ def mock_start_dev_server(
 def test_get_bento_service_event_properties(bento_service):
     properties = _get_bento_service_event_properties(bento_service)
 
-    assert "PickleArtifact" in properties["artifact_types"]
+    assert "PickleModel" in properties["artifact_types"]
     assert "DataframeInput" in properties["input_types"]
     assert "ImageInput" in properties["input_types"]
     assert "JsonInput" in properties["input_types"]

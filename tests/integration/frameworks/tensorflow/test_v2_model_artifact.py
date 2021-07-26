@@ -34,7 +34,6 @@ def test_tensorflow_v2_save_load(model_class, input_type, predict_fn, tmpdir):
     TensorflowModel(model_class).save(tmpdir)
     assert os.path.exists(os.path.join(tmpdir, "saved_model.pb"))
     tf2_loaded = TensorflowModel.load(tmpdir)
-    predict_fn(tf2_loaded, input_type)
     comparison = predict_fn(tf2_loaded, input_type) == predict_fn(
         model_class, input_type
     )

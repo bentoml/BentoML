@@ -2,7 +2,7 @@ import os
 import typing as t
 from distutils.dir_util import copy_tree
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -14,8 +14,13 @@ except ImportError:
         "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
     )
 
+try:
+    import paddlehub as hub
+except ImportError:
+    hub = None
 
-class PaddlePaddleModel(ModelArtifact):
+
+class PaddlePaddleModel(Model):
     """
     Model class for saving/loading :obj:`paddlepaddle` models.
 
@@ -33,11 +38,7 @@ class PaddlePaddleModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -58,8 +59,8 @@ class PaddlePaddleModel(ModelArtifact):
     def load(cls, path: PathType) -> paddle.inference.Predictor:
         # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
         config = pi.Config(
-            cls.get_path(path, cls.PADDLE_MODEL_EXTENSION),
-            cls.get_path(path, cls.PADDLE_PARAMS_EXTENSION),
+            os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_MODEL_EXTENSION}"),
+            os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_PARAMS_EXTENSION}"),
         )
         config.enable_memory_optim()
         return pi.create_predictor(config)
@@ -67,10 +68,10 @@ class PaddlePaddleModel(ModelArtifact):
     def save(self, path: PathType) -> None:
         # Override the model path if temp dir was set
         # TODO(aarnphm): What happens if model is a paddle.inference.Predictor?
-        paddle.jit.save(self._model, self.get_path(path))
+        paddle.jit.save(self._model, os.path.join(path, MODEL_NAMESPACE))
 
 
-class PaddleHubModel(ModelArtifact):
+class PaddleHubModel(Model):
     """
     Model class for saving/loading :obj:`paddlehub` models.
 
@@ -89,24 +90,20 @@ class PaddleHubModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
 
-    Pack bundle under :code:`bento_packer.py`::
-
-        TODO:
     """
 
     def __init__(self, model: PathType, metadata: t.Optional[MetadataType] = None):
-        try:
-            import paddlehub as hub
-        except ImportError:
+        if hub is None:
             raise MissingDependencyException("paddlehub is required by PaddleHubModel")
         if os.path.isdir(model):
             module = hub.Module(directory=model)
             self._dir = str(model)
         else:
+            # TODO: refactor to skip init Module in memory
             module = hub.Module(name=model)
             self._dir = ""
         super(PaddleHubModel, self).__init__(module, metadata=metadata)
@@ -115,12 +112,23 @@ class PaddleHubModel(ModelArtifact):
         if self._dir != "":
             copy_tree(self._dir, str(path))
         else:
-            self._model.save_inference_model(str(path))
+            self._model.save_inference_model(path)
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
-        try:
-            import paddlehub as hub
-        except ImportError:
+        if hub is None:
             raise MissingDependencyException("paddlehub is required by PaddleHubModel")
-        return hub.Module(directory=str(path))
+        # https://github.com/PaddlePaddle/PaddleHub/blob/release/v2.1/paddlehub/module/module.py#L233
+        # we don't have a custom name, so this should be stable
+        # TODO: fix a bug when loading as module
+        model_fpath = os.path.join(path, "__model__")
+        if os.path.isfile(model_fpath):
+            from paddlehub.module.manager import LocalModuleManager
+
+            manager = LocalModuleManager()
+            module_class = manager.install(directory=str(path))
+            module_class.directory = str(path)
+            return module_class
+        else:
+            # custom module that installed from directory
+            return hub.Module(directory=str(path))

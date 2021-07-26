@@ -1,7 +1,8 @@
+import os
 import shutil
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -12,7 +13,7 @@ except ImportError:
     raise MissingDependencyException('"onnx" package is required by ONNXModel')
 
 
-class ONNXModel(ModelArtifact):
+class ONNXModel(Model):
     """
     Model class for saving/loading :obj:`onnx` models.
 
@@ -41,11 +42,7 @@ class ONNXModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -55,7 +52,7 @@ class ONNXModel(ModelArtifact):
 
     def __init__(
         self,
-        model: str,
+        model: t.Union[PathType, onnx.ModelProto],
         backend: t.Optional[str] = "onnxruntime",
         metadata: t.Optional[MetadataType] = None,
     ):
@@ -68,7 +65,7 @@ class ONNXModel(ModelArtifact):
 
     @classmethod
     def __get_model_fpath(cls, path: PathType) -> PathType:
-        return cls.get_path(path, cls.ONNX_EXTENSION)
+        return os.path.join(path, f"{MODEL_NAMESPACE}{cls.ONNX_EXTENSION}")
 
     @classmethod
     def load(

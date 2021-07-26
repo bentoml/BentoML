@@ -3,7 +3,7 @@ import pathlib
 import typing as t
 from importlib import import_module
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import InvalidArgument, MissingDependencyException, NotFound
 
@@ -12,14 +12,22 @@ try:
 except ImportError:
     raise MissingDependencyException("transformers is required by TransformersModel")
 
+TransformersInput = t.TypeVar(
+    "TransformersInput",
+    bound=t.Union[
+        str, os.PathLike, transformers.PreTrainedModel, transformers.PreTrainedTokenizer
+    ],
+)
 
-class TransformersModel(ModelArtifact):
+
+class TransformersModel(Model):
     """
     Model class for saving/loading :obj:`transformers` models.
 
     Args:
-        model (`Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]`):
-            TODO:
+        model (`Union[str, os.PathLike, Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]]`):
+            A dictionary `{'model':<model_obj>, 'tokenizer':<tokenizer_obj>}`
+             to setup Transformers model
         metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
 
@@ -27,13 +35,9 @@ class TransformersModel(ModelArtifact):
         MissingDependencyException:
             :obj:`transformers` is required by TransformersModel
         InvalidArgument:
-            invalid argument type, model being packed
-            must be either a dictionary of format
-            {'model':transformers model object,
-            'tokenizer':transformers tokenizer object}
-            or a directory path where the model is saved
-            or a pre-trained model provided by transformers
-            which can be loaded using transformers.AutoModelWithLMHead
+            :obj:`model` must be either a dictionary
+             or a path for saved transformers model or
+             a pre-trained model string provided by transformers
         NotFound:
             if the provided model name or model path is not found
 
@@ -41,36 +45,35 @@ class TransformersModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
 
-    Pack bundle under :code:`bento_packer.py`::
-
-        TODO:
     """  # noqa # pylint: enable=line-too-long
 
     _model_type: str = "AutoModelWithLMHead"
 
     def __init__(
-        self, model, metadata: t.Optional[MetadataType] = None,
+        self, model: TransformersInput, metadata: t.Optional[MetadataType] = None,
     ):
         super(TransformersModel, self).__init__(model, metadata=metadata)
 
-    @classmethod
-    def _load_from_directory(
-        cls, path: PathType, model_type: str, tokenizer_type: str
+    @staticmethod
+    def __load_from_directory(  # pylint: disable=unused-private-member
+        path: PathType, model_type: str, tokenizer_type: str
     ) -> t.Dict[str, t.Any]:
         transformers_model = getattr(
             import_module("transformers"), model_type
-        ).from_pretrained(path)
+        ).from_pretrained(str(path))
         tokenizer = getattr(
             import_module("transformers"), tokenizer_type
-        ).from_pretrained(path)
+        ).from_pretrained(str(path))
         return {"model": transformers_model, "tokenizer": tokenizer}
 
     @staticmethod
-    def _load_from_dict(transformers_dict: t.Dict[str, t.Any]) -> dict:
+    def __load_from_dict(
+        transformers_dict: t.Dict[str, t.Any]
+    ) -> dict:  # pylint: disable=unused-private-member
         if not transformers_dict.get("model"):
             raise InvalidArgument(
                 " 'model' key is not found in the dictionary."
@@ -100,7 +103,9 @@ class TransformersModel(ModelArtifact):
         return transformers_dict
 
     @classmethod
-    def _load_from_string(cls, model_name: str) -> dict:
+    def __load_from_string(
+        cls, model_name: str
+    ) -> dict:  # pylint: disable=unused-private-member
         try:
             transformers_model = getattr(
                 import_module("transformers"), cls._model_type
@@ -112,8 +117,10 @@ class TransformersModel(ModelArtifact):
         except AttributeError:
             raise NotFound(f"transformers has no model type called {cls._model_type}")
 
+    # fmt: off
     @classmethod
-    def load(cls, path: t.Union[PathType, dict]):
+    def load(cls, path: t.Union[PathType, dict]):  # type: ignore
+        # fmt: on
         if isinstance(path, (str, bytes, os.PathLike, pathlib.PurePath)):
             str_path = str(path)
             if os.path.isdir(str_path):
@@ -121,13 +128,13 @@ class TransformersModel(ModelArtifact):
                     _model_type = f.read().strip()
                 with open(os.path.join(path, "tokenizer_type.txt"), "r") as f:
                     _tokenizer_type = f.read().strip()
-                loaded_model = cls._load_from_directory(
-                    str_path, _model_type, _tokenizer_type
+                loaded_model = cls.__load_from_directory(
+                    path, _model_type, _tokenizer_type
                 )
             else:
-                loaded_model = cls._load_from_string(str_path)
+                loaded_model = cls.__load_from_string(str(path))
         elif isinstance(path, dict):
-            loaded_model = cls._load_from_dict(path)
+            loaded_model = cls.__load_from_dict(path)
         else:
             err_msg: str = """\
             Expected either model name or a dictionary only
@@ -137,7 +144,7 @@ class TransformersModel(ModelArtifact):
             raise InvalidArgument(err_msg.format(path=type(path)))
         return loaded_model
 
-    def _save_model_type(self, path: PathType, tokenizer_type: str) -> None:
+    def __save_model_type(self, path: PathType, tokenizer_type: str) -> None:
         with open(os.path.join(path, "__model__type.txt"), "w") as f:
             f.write(self._model_type)
         with open(os.path.join(path, "tokenizer_type.txt"), "w") as f:
@@ -148,4 +155,4 @@ class TransformersModel(ModelArtifact):
         tokenizer_type = self._model.get("tokenizer").__class__.__name__
         self._model.get("model").save_pretrained(path)
         self._model.get("tokenizer").save_pretrained(path)
-        self._save_model_type(path, tokenizer_type)
+        self.__save_model_type(path, tokenizer_type)

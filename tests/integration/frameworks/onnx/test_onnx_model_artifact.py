@@ -2,21 +2,19 @@ import os
 
 import numpy as np
 import onnxruntime
-import pandas as pd
 import pytest
+from sklearn.ensemble import RandomForestClassifier
 
 from bentoml.exceptions import BentoMLException
 from bentoml.onnx import ONNXModel
-from tests.integration.frameworks.test_sklearn_model_artifact import (
-    random_forest,
-    test_df,
-)
+from tests._internal.frameworks.sklearn_utils import sklearn_model_data
+from tests._internal.helpers import assert_have_file_extension
 
 
-def predict_df(
-    model: onnxruntime.InferenceSession, df: pd.DataFrame,
+def predict_arr(
+    model: onnxruntime.InferenceSession, arr: np.array,
 ):
-    input_data = df.to_numpy().astype(np.float32)
+    input_data = arr.astype(np.float32)
     input_name = model.get_inputs()[0].name
     output_name = model.get_outputs()[0].name
     return model.run([output_name], {input_name: input_data})[0]
@@ -28,7 +26,11 @@ def sklearn_onnx_model():
     from skl2onnx.common.data_types import FloatTensorType
 
     init_types = [("float_input", FloatTensorType([None, 4]))]
-    return convert_sklearn(random_forest(), initial_types=init_types)
+    model_with_data = sklearn_model_data(clf=RandomForestClassifier, num_data=30)
+    return (
+        convert_sklearn(model_with_data.model, initial_types=init_types),
+        model_with_data.data,
+    )
 
 
 @pytest.mark.parametrize(
@@ -40,25 +42,27 @@ def test_raise_exc(kwargs, exc, sklearn_onnx_model, tmpdir):
 
 
 def test_onnx_save_load_proto_onnxruntime(sklearn_onnx_model, tmpdir):
-    ONNXModel(sklearn_onnx_model).save(tmpdir)
-    assert os.path.exists(ONNXModel.get_path(tmpdir, ".onnx"))
+    _model, data = sklearn_onnx_model
+    ONNXModel(_model).save(tmpdir)
+    assert_have_file_extension(tmpdir, ".onnx")
 
     model: "onnxruntime.InferenceSession" = onnxruntime.InferenceSession(
-        sklearn_onnx_model.SerializeToString()
+        _model.SerializeToString()
     )
     onnx_loaded: "onnxruntime.InferenceSession" = ONNXModel.load(tmpdir)
-    assert predict_df(onnx_loaded, test_df)[0] == predict_df(model, test_df)[0]
+    assert predict_arr(onnx_loaded, data)[0] == predict_arr(model, data)[0]
 
 
 def test_onnx_save_load_filepath_onnxruntime(sklearn_onnx_model, tmpdir):
+    _model, data = sklearn_onnx_model
     get_path: str = os.path.join(tmpdir, "test.onnx")
     with open(get_path, "wb") as inf:
-        inf.write(sklearn_onnx_model.SerializeToString())
+        inf.write(_model.SerializeToString())
     model: "onnxruntime.InferenceSession" = onnxruntime.InferenceSession(
-        sklearn_onnx_model.SerializeToString()
+        _model.SerializeToString()
     )
     ONNXModel(get_path).save(tmpdir)
-    assert os.path.exists(ONNXModel.get_path(tmpdir, ".onnx"))
+    assert_have_file_extension(tmpdir, ".onnx")
 
     onnx_loaded: "onnxruntime.InferenceSession" = ONNXModel.load(tmpdir)
-    assert predict_df(onnx_loaded, test_df)[0] == predict_df(model, test_df)[0]
+    assert predict_arr(onnx_loaded, data)[0] == predict_arr(model, data)[0]

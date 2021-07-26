@@ -1,8 +1,11 @@
+import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
+
+MT = t.TypeVar("MT")
 
 try:
     import joblib
@@ -15,7 +18,7 @@ except ImportError:
         )
 
 
-class SklearnModel(ModelArtifact):
+class SklearnModel(Model):
     """
     Model class for saving/loading :obj:`sklearn` models.
 
@@ -33,25 +36,21 @@ class SklearnModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
 
-    def __init__(self, model, metadata: t.Optional[MetadataType] = None):
+    def __init__(self, model: MT, metadata: t.Optional[MetadataType] = None):
         super(SklearnModel, self).__init__(model, metadata=metadata)
 
-    @classmethod
-    def __get_file_path(cls, path: PathType) -> PathType:
-        return cls.get_path(path, cls.PICKLE_EXTENSION)
+    @staticmethod
+    def __get_pickle_fpath(path: PathType) -> PathType:
+        return os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}")
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
-        return joblib.load(cls.__get_file_path(path), mmap_mode="r")
+        return joblib.load(cls.__get_pickle_fpath(path), mmap_mode="r")
 
     def save(self, path: PathType) -> None:
-        joblib.dump(self._model, self.__get_file_path(path))
+        joblib.dump(self._model, self.__get_pickle_fpath(path))

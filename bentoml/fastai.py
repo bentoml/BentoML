@@ -1,6 +1,7 @@
+import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -14,7 +15,7 @@ except ImportError:
     raise MissingDependencyException("fastai v2 is required by FastAIModel")
 
 
-class FastAIModel(ModelArtifact):
+class FastAIModel(Model):
     """
     Model class for saving/loading :obj:`fastai` model
 
@@ -32,11 +33,7 @@ class FastAIModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -50,7 +47,11 @@ class FastAIModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "fastai.learner.Learner":
-        return fastai.basics.load_learner(cls.get_path(path, cls.PICKLE_EXTENSION))
+        return fastai.basics.load_learner(
+            os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}")
+        )
 
     def save(self, path: PathType) -> None:
-        self._model.export(fname=self.get_path(path, self.PICKLE_EXTENSION))
+        self._model.export(
+            fname=os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}")
+        )

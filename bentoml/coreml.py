@@ -1,7 +1,7 @@
 import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import InvalidArgument, MissingDependencyException
 
@@ -12,7 +12,7 @@ except ImportError:
     raise MissingDependencyException("coremltools>=4.0b2 is required by CoreMLModel")
 
 
-class CoreMLModel(ModelArtifact):
+class CoreMLModel(Model):
     """
     Model class for saving/loading :obj:`coremltools.models.MLModel`
     model that can be used in a BentoML bundle.
@@ -33,11 +33,7 @@ class CoreMLModel(ModelArtifact):
 
         TODO
 
-    One then can define :code:`bento_service.py`::
-
-        TODO:
-
-    Pack bundle under :code:`bento_packer.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
     """
@@ -58,7 +54,9 @@ class CoreMLModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "coremltools.models.MLModel":
-        get_path: str = cls.get_path(path, cls.COREMLMODEL_EXTENSION)
+        get_path: str = os.path.join(
+            path, f"{MODEL_NAMESPACE}{cls.COREMLMODEL_EXTENSION}"
+        )
         if not os.path.exists(get_path):
             raise InvalidArgument(
                 f"given {path} doesn't contain {cls.COREMLMODEL_EXTENSION}."
@@ -66,4 +64,6 @@ class CoreMLModel(ModelArtifact):
         return coremltools.models.MLModel(get_path)
 
     def save(self, path: PathType) -> None:
-        self._model.save(self.get_path(path, self.COREMLMODEL_EXTENSION))
+        self._model.save(
+            os.path.join(path, f"{MODEL_NAMESPACE}{self.COREMLMODEL_EXTENSION}")
+        )

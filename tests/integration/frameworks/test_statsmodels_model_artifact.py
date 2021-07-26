@@ -1,4 +1,3 @@
-import os
 import typing as t
 
 import numpy as np
@@ -7,6 +6,7 @@ import pytest
 from statsmodels.tsa.holtwinters import ExponentialSmoothing, HoltWintersResults
 
 from bentoml.statsmodels import StatsModel
+from tests._internal.helpers import assert_have_file_extension
 
 test_df = pd.DataFrame([[0, 0, 1, 1]])
 
@@ -41,7 +41,7 @@ def holt_model() -> "HoltWintersResults":
 
 def test_statsmodels_save_load(tmpdir, holt_model):
     StatsModel(holt_model).save(tmpdir)
-    assert os.path.exists(StatsModel.get_path(tmpdir, ".pkl"))
+    assert_have_file_extension(tmpdir, ".pkl")
 
     statsmodels_loaded = StatsModel.load(tmpdir)
     assert (

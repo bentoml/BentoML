@@ -1,7 +1,8 @@
 import logging
+import os
 import typing as t
 
-from ._internal.artifacts import ModelArtifact
+from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -13,7 +14,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class SpacyModel(ModelArtifact):
+class SpacyModel(Model):
     """
     Model class for saving/loading :obj:`spacy` models with `spacy.Language.to_disk` and
     `spacy.util.load_model` methods
@@ -32,13 +33,10 @@ class SpacyModel(ModelArtifact):
 
         TODO:
 
-    One then can define :code:`bento_service.py`::
+    One then can define :code:`bento.py`::
 
         TODO:
 
-    Pack bundle under :code:`bento_packer.py`::
-
-        TODO:
     """
 
     def __init__(
@@ -48,7 +46,7 @@ class SpacyModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: PathType) -> "spacy.language.Language":
-        return spacy.util.load_model(cls.get_path(path))
+        return spacy.util.load_model(os.path.join(path, MODEL_NAMESPACE))
 
     def save(self, path: PathType) -> None:
-        return self._model.to_disk(self.get_path(path))
+        self._model.to_disk(os.path.join(path, MODEL_NAMESPACE))

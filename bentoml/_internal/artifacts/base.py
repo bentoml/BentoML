@@ -46,7 +46,7 @@ class _ArtifactMeta(type):
         Return a default saved path for implemented artifacts.
 
         Args:
-            path (`Union[str, os.PathLike]`):
+            path (`Union[str, bytes, os.PathLike]`):
                 Given path containing saved artifact.
             ext (`str`, `optional`, default to `""`):
                 Given extension. Some frameworks doesn't require
@@ -125,7 +125,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         Load saved model into memory.
 
         Args:
-            path (`Union[str, os.PathLike]`):
+            path (`Union[str, bytes, os.PathLike]`):
                 Given path to save artifacts metadata and objects.
 
         This will be used as a class method, interchangeable with
@@ -138,7 +138,7 @@ class ModelArtifact(object, metaclass=_ArtifactMeta):
         Perform save instance to given path.
 
         Args:
-            path (`Union[str, os.PathLike]`, or :obj:`~bentoml._internal.types.PathType`):
+            path (`Union[str, bytes, os.PathLike]`, or :obj:`~bentoml._internal.types.PathType`):
                 Given path to save artifacts metadata and objects.
 
         Usually this can be used with :meth:`~bentoml._internal.artifacts.ModelArtifact.load` to load

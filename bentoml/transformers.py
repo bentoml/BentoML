@@ -114,7 +114,7 @@ class TransformersModel(ModelArtifact):
 
     @classmethod
     def load(cls, path: t.Union[PathType, dict]):
-        if isinstance(path, (str, os.PathLike, pathlib.PurePath)):
+        if isinstance(path, (str, bytes, os.PathLike, pathlib.PurePath)):
             str_path = str(path)
             if os.path.isdir(str_path):
                 with open(os.path.join(path, "__model__type.txt"), "r") as f:

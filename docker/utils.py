@@ -490,7 +490,7 @@ def walk(path: pathlib.Path) -> t.Generator:
         yield p.resolve()
 
 
-def sprint(*args: str, **kwargs: str) -> None:
+def sprint(*args: t.Any, **kwargs: str) -> None:
     # stream logs inside docker container to sys.stderr
     print(*args, file=sys.stderr, flush=True, **kwargs)
 

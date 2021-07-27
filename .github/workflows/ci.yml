@@ -2,9 +2,9 @@ name: BentoML-CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, bentoml-1.0 ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, bentoml-1.0 ]
   schedule:
     - cron: '0 2 * * *'
 

@@ -4,7 +4,7 @@ from pathlib import Path
 from ..types import MetadataType, PathType
 from ..utils.ruamel_yaml import YAML
 
-MT = t.TypeVar("MT")
+MT = t.TypeVar("MT", bound=t.Any)
 
 H5_EXTENSION: str = ".h5"
 HDF5_EXTENSION: str = ".hdf5"
@@ -58,7 +58,7 @@ class Model(object):
         return self._metadata
 
     @classmethod
-    def load(cls, path: PathType) -> MT:
+    def load(cls, path: PathType) -> t.Any:
         """
         Load saved model into memory.
 

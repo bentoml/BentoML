@@ -42,7 +42,6 @@ class XgBoostModel(Model):
     def __init__(
         self, model: xgboost.core.Booster, metadata: t.Optional[MetadataType] = None
     ):
-        self._model: xgboost.core.Booster
         super(XgBoostModel, self).__init__(model, metadata=metadata)
 
     @classmethod

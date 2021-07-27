@@ -1,7 +1,7 @@
 # From versioneer
 from ._version import get_versions
 
-__version__ = get_versions()["version"]  # type: ignore
+__version__ = get_versions()["version"]
 del get_versions
 
 from bentoml._internal.configuration import inject_dependencies

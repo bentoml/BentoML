@@ -19,7 +19,7 @@ except ImportError:
 try:
     import pytorch_lightning
 except ImportError:
-    pytorch_lightning = None
+    pytorch_lightning = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +67,11 @@ class PyTorchModel(Model):
     ) -> t.Union["torch.nn.Module", "torch.jit.ScriptModule"]:
         # TorchScript Models are saved as zip files
         if zipfile.is_zipfile(cls.__get_weight_fpath(path)):
-            return torch.jit.load(cls.__get_weight_fpath(path))
+            return torch.jit.load(cls.__get_weight_fpath(path))  # type: ignore
         else:
-            return cloudpickle.load(open(cls.__get_weight_fpath(path), "rb"))
+            return cloudpickle.load(  # type: ignore
+                open(cls.__get_weight_fpath(path), "rb")
+            )
 
     def save(self, path: PathType) -> None:
         # If model is a TorchScriptModule, we cannot apply standard pickling
@@ -125,7 +127,7 @@ class PyTorchLightningModel(Model):
 
     @classmethod
     def load(cls, path: PathType) -> "torch.jit.ScriptModule":
-        return torch.jit.load(cls.__get_weight_fpath(path))
+        return torch.jit.load(cls.__get_weight_fpath(path))  # type: ignore
 
     def save(self, path: PathType) -> None:
         torch.jit.save(self._model.to_torchscript(), self.__get_weight_fpath(path))

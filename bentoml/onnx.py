@@ -74,11 +74,11 @@ class ONNXModel(Model):
         if isinstance(path, onnx.ModelProto):
             return onnxruntime.InferenceSession(path.SerializeToString())
         else:
-            _get_path: str = cls.__get_model_fpath(path)
+            _get_path = str(cls.__get_model_fpath(path))
             return onnxruntime.InferenceSession(_get_path)
 
     def save(self, path: t.Union[PathType, "onnx.ModelProto"]) -> None:
         if isinstance(self._model, onnx.ModelProto):
             onnx.save_model(self._model, self.__get_model_fpath(path))
         else:
-            shutil.copyfile(self._model, self.__get_model_fpath(path))
+            shutil.copyfile(self._model, str(self.__get_model_fpath(path)))

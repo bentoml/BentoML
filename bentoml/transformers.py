@@ -71,9 +71,9 @@ class TransformersModel(Model):
         return {"model": transformers_model, "tokenizer": tokenizer}
 
     @staticmethod
-    def __load_from_dict(
+    def __load_from_dict(  # pylint: disable=unused-private-member
         transformers_dict: t.Dict[str, t.Any]
-    ) -> dict:  # pylint: disable=unused-private-member
+    ) -> dict:
         if not transformers_dict.get("model"):
             raise InvalidArgument(
                 " 'model' key is not found in the dictionary."
@@ -103,9 +103,9 @@ class TransformersModel(Model):
         return transformers_dict
 
     @classmethod
-    def __load_from_string(
+    def __load_from_string(  # pylint: disable=unused-private-member
         cls, model_name: str
-    ) -> dict:  # pylint: disable=unused-private-member
+    ) -> dict:
         try:
             transformers_model = getattr(
                 import_module("transformers"), cls._model_type

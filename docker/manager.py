@@ -37,7 +37,7 @@ from docker.errors import APIError, BuildError, ImageNotFound
 
 # TODO: Update some of the complex type hint cases for both utils.py and this one
 if t.TYPE_CHECKING:
-    from docker.models.images import Image
+    from docker.models.images import Image  # pylint: disable=unused-import
 
 README_TEMPLATE: Path = Path("./templates/docs/README.md.j2")
 
@@ -498,7 +498,7 @@ class BuildMixin(object):
 
     def build_images(self) -> None:
         """Build images."""
-        for image_tag, dockerfile_path in self.build_tags():  # type: ignore
+        for image_tag, dockerfile_path in self.build_tags():
             log.info(f"Building {image_tag} from {dockerfile_path}")
             try:
                 # this is should be when there are changed in base image.
@@ -582,7 +582,7 @@ class PushMixin(object):
                 return
 
             # Then push image to registry.
-            for image_tag in self.push_tags():  # type: ignore
+            for image_tag in self.push_tags():
                 image = self._push_context[image_tag]
                 reg, tag = image_tag.split(":")
                 registry = "".join(
@@ -648,7 +648,7 @@ class PushMixin(object):
                 cookies=logins.cookies,
             )
 
-    def background_upload(self, image: "Image", tag: str, registry: str) -> None:
+    def background_upload(self, image: Image, tag: str, registry: str) -> None:
         """Upload a docker image."""
         image.tag(registry, tag=tag)
         log.debug(f"Pushing {repr(image)} to {registry}...")

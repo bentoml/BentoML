@@ -47,8 +47,6 @@ class DetectronModel(Model):
         TODO:
     """
 
-    _model: torch.nn.Module
-
     def __init__(
         self,
         model: torch.nn.Module,

@@ -152,9 +152,9 @@ class TensorflowModel(Model):
         super(TensorflowModel, self).__init__(model, metadata=metadata)
 
     @staticmethod
-    def __load_tf_saved_model(
+    def __load_tf_saved_model(  # pylint: disable=unused-private-member
         path: str,
-    ) -> t.Union[AutoTrackable, t.Any]:  # pylint: disable=unused-private-member
+    ) -> t.Union[AutoTrackable, t.Any]:
         if TF2:
             return tf.saved_model.load(path)
         else:

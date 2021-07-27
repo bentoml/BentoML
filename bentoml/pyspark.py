@@ -61,8 +61,6 @@ class PySparkMLlibModel(Model):
         TODO:
     """
 
-    _model: pyspark.ml.Model
-
     def __init__(
         self,
         model: pyspark.ml.Model,

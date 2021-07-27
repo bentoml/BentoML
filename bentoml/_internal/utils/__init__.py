@@ -5,10 +5,16 @@ import os
 import socket
 import tarfile
 from io import StringIO
-from typing import Callable, Optional
+from typing import (
+    Optional, TypeVar, Type, Union, overload, Dict, Iterator, Any, Tuple,
+    TYPE_CHECKING, Generic, Callable)
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
+from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
+
+if TYPE_CHECKING:
+    from bentoml._internal.yatai_client import YataiClient
 
 from ..utils.gcs import is_gcs_url
 from ..utils.lazy_loader import LazyLoader
@@ -41,17 +47,21 @@ DEFAULT_CHUNK_SIZE = 1024 * 8  # 8kb
 
 
 class _Missing(object):
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "no value"
 
-    def __reduce__(self):
+    def __reduce__(self) -> str:
         return "_missing"
 
 
 _missing = _Missing()
 
 
-class cached_property(property):
+T = TypeVar("T")
+V = TypeVar("V")
+
+
+class cached_property(property, Generic[T, V]):
     """A decorator that converts a function into a lazy property. The
     function wrapped is called the first time to retrieve the result
     and then that calculated result is used the next time you access
@@ -76,28 +86,32 @@ class cached_property(property):
     manual invocation.
     """
 
-    def __init__(
-        self, func: Callable, name: str = None, doc: str = None
-    ):  # pylint:disable=super-init-not-called
+    def __init__(self, func: Callable[[T], V], name: Optional[str] = None, doc: Optional[str] = None):  # pylint:disable=super-init-not-called
         self.__name__ = name or func.__name__
         self.__module__ = func.__module__
         self.__doc__ = doc or func.__doc__
         self.func = func
 
-    def __set__(self, obj, value):
+    def __set__(self, obj: T, value: V) -> None:
         obj.__dict__[self.__name__] = value
 
-    def __get__(self, obj, type=None):  # pylint:disable=redefined-builtin
+    @overload
+    def __get__(self, obj: None, type: Optional[Type[T]] = None) -> "cached_property": ...
+
+    @overload
+    def __get__(self, obj: T, type: Optional[Type[T]] = None) -> V: ...
+
+    def __get__(self, obj: Optional[T], type: Optional[Type[T]] = None) -> Union["cached_property", V]:  # pylint:disable=redefined-builtin
         if obj is None:
             return self
-        value = obj.__dict__.get(self.__name__, _missing)
+        value: V = obj.__dict__.get(self.__name__, _missing)
         if value is _missing:
             value = self.func(obj)
             obj.__dict__[self.__name__] = value
         return value
 
 
-class cached_contextmanager:
+class cached_contextmanager(Generic[T]):
     """
     Just like contextlib.contextmanager, but will cache the yield value for the same
     arguments. When one instance of the contextmanager exits, the cache value will
@@ -113,20 +127,21 @@ class cached_contextmanager:
             container.stop()
     """
 
-    def __init__(self, cache_key_template=None):
+    def __init__(self, cache_key_template: Optional[str] = None) -> None:
         self._cache_key_template = cache_key_template
-        self._cache = {}
+        self._cache: Dict[Union[str, Tuple], T] = {}
 
-    def __call__(self, func):
+    # TODO: use ParamSpec: https://github.com/python/mypy/issues/8645
+    def __call__(self, func: Callable[..., Iterator[T]]) -> Callable[..., _GeneratorContextManager[T]]:
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager
         @functools.wraps(func)
-        def _func(*args, **kwargs):
+        def _func(*args: Any, **kwargs: Any) -> Iterator[T]:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             bound_args.apply_defaults()
             if self._cache_key_template:
-                cache_key = self._cache_key_template.format(**bound_args.arguments)
+                cache_key: Union[str, Tuple] = self._cache_key_template.format(**bound_args.arguments)
             else:
                 cache_key = tuple(bound_args.arguments.values())
             if cache_key in self._cache:
@@ -141,7 +156,7 @@ class cached_contextmanager:
 
 
 @contextlib.contextmanager
-def reserve_free_port(host="localhost"):
+def reserve_free_port(host: str = "localhost") -> Iterator[int]:
     """
     detect free port and reserve until exit the context
     """
@@ -152,13 +167,13 @@ def reserve_free_port(host="localhost"):
     sock.close()
 
 
-def get_free_port(host="localhost"):
+def get_free_port(host: str = "localhost") -> int:
     """
     detect free port and reserve until exit the context
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((host, 0))
-    port = sock.getsockname()[1]
+    port: int = sock.getsockname()[1]
     sock.close()
     return port
 
@@ -170,7 +185,7 @@ def is_url(url: str) -> bool:
         return False
 
 
-def dump_to_yaml_str(yaml_dict):
+def dump_to_yaml_str(yaml_dict: Dict) -> str:
     from ..utils.ruamel_yaml import YAML
 
     yaml = YAML()
@@ -186,7 +201,7 @@ def pb_to_yaml(message: Message) -> str:
     return dump_to_yaml_str(message_dict)
 
 
-def ProtoMessageToDict(protobuf_msg: Message, **kwargs) -> object:
+def ProtoMessageToDict(protobuf_msg: Message, **kwargs: Any) -> object:
     from google.protobuf.json_format import MessageToDict
 
     if "preserving_proto_field_name" not in kwargs:
@@ -196,7 +211,7 @@ def ProtoMessageToDict(protobuf_msg: Message, **kwargs) -> object:
 
 
 # This function assume the status is not status.OK
-def status_pb_to_error_code_and_message(pb_status) -> (int, str):
+def status_pb_to_error_code_and_message(pb_status) -> Tuple[int, str]:
     from ..yatai_client.proto import status_pb2
 
     assert pb_status.status_code != status_pb2.Status.OK
@@ -205,14 +220,15 @@ def status_pb_to_error_code_and_message(pb_status) -> (int, str):
     return error_code, error_message
 
 
-class catch_exceptions(object):
-    def __init__(self, exceptions, fallback=None):
+class catch_exceptions(object, Generic[T]):
+    def __init__(self, exceptions: Union[Type[BaseException], Tuple[Type[BaseException], ...]], fallback: Optional[T] = None) -> None:
         self.exceptions = exceptions
         self.fallback = fallback
 
-    def __call__(self, func):
+    # TODO: use ParamSpec: https://github.com/python/mypy/issues/8645
+    def __call__(self, func: Callable[..., T]) -> Callable[..., Optional[T]]:
         @functools.wraps(func)
-        def _(*args, **kwargs):
+        def _(*args: Any, **kwargs: Any) -> Optional[T]:
             try:
                 return func(*args, **kwargs)
             except self.exceptions:
@@ -253,7 +269,7 @@ def resolve_bundle_path(
         )
 
 
-def get_default_yatai_client():
+def get_default_yatai_client() -> YataiClient:
     from bentoml._internal.yatai_client import YataiClient
 
     return YataiClient()
@@ -271,7 +287,7 @@ def resolve_bento_bundle_uri(bento_pb):
 
 def archive_directory_to_tar(
     source_dir: str, tarfile_dir: str, tarfile_name: str
-) -> (str, str):
+) -> Tuple[str, str]:
     file_name = f"{tarfile_name}.tar"
     tarfile_path = os.path.join(tarfile_dir, file_name)
     with tarfile.open(tarfile_path, mode="w:gz") as tar:

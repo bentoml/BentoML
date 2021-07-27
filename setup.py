@@ -39,7 +39,7 @@ install_requires = [
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "chardet",
-    "simple-di==0.1.0",
+    "simple-di==0.1.1",
     "cloudpickle",
 ]
 

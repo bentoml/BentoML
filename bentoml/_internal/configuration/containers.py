@@ -8,11 +8,10 @@ from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
 from bentoml import __version__
+from bentoml._internal.configuration import expand_env_var, get_bentoml_deploy_version
+from bentoml._internal.utils import get_free_port
+from bentoml._internal.utils.ruamel_yaml import YAML
 from bentoml.exceptions import BentoMLConfigException
-
-from ..configuration import expand_env_var, get_bentoml_deploy_version
-from ..utils import get_free_port
-from ..utils.ruamel_yaml import YAML
 
 if TYPE_CHECKING:
     from ..marshal.marshal import MarshalApp
@@ -79,36 +78,20 @@ SCHEMA = Schema(
         },
         "adapters": {"image_input": {"default_extensions": [str]}},
         "yatai": {
-            "remote": {
-                "url": Or(str, None),
-                "access_token": Or(str, None),
-                "access_token_header": Or(str, None),
-                "tls": {
-                    "root_ca_cert": Or(str, None),
-                    "client_key": Or(str, None),
-                    "client_cert": Or(str, None),
-                    "client_certificate_file": Or(str, None),
-                },
-            },
-            "repository": {
-                "type": And(
-                    str,
-                    lambda _type: _type in YATAI_REPOSITORY_TYPES,
-                    error="yatai.repository.type must be one of %s"
-                    % YATAI_REPOSITORY_TYPES,
-                ),
-                "file_system": {"directory": Or(str, None)},
-                "s3": {
+            "default_server": Or(str, None),
+            "servers": {
+                str: {
                     "url": Or(str, None),
-                    "endpoint_url": Or(str, None),
-                    "signature_version": Or(str, None),
-                    "expiration": Or(int, None),
+                    "access_token": Or(str, None),
+                    "access_token_header": Or(str, None),
+                    "tls": {
+                        "root_ca_cert": Or(str, None),
+                        "client_key": Or(str, None),
+                        "client_cert": Or(str, None),
+                        "client_certificate_file": Or(str, None),
+                    },
                 },
-                "gcs": {"url": Or(str, None), "expiration": Or(int, None)},
             },
-            "database": {"url": Or(str, None)},
-            "namespace": str,
-            "logging": {"path": Or(str, None)},
         },
     }
 )
@@ -313,13 +296,6 @@ class BentoMLContainerClass:
             namespace=namespace,
         )
 
-    @providers.SingletonFactory
-    @staticmethod
-    def yatai_metrics_client():
-        from ..metrics.prometheus import PrometheusClient
-
-        return PrometheusClient(multiproc=False, namespace="YATAI")
-
     bento_bundle_deployment_version = providers.Factory(
         get_bentoml_deploy_version,
         providers.Factory(
@@ -328,38 +304,18 @@ class BentoMLContainerClass:
             config.bento_bundle.deployment_version,
         ),
     )
+    default_yatai_server = config.yatai.servers[config.yatai.default_server]
 
-    yatai_database_url = providers.Factory(
-        lambda default, customized: customized or default,
-        providers.Factory(
-            "sqlite:///{}".format,
-            providers.Factory(os.path.join, bentoml_home, "storage.db"),
-        ),
-        config.yatai.database.url,
-    )
-
-    yatai_file_system_directory = providers.Factory(
-        lambda default, customized: customized or default,
-        providers.Factory(os.path.join, bentoml_home, "repository"),
-        config.yatai.repository.file_system.directory,
-    )
-
-    yatai_tls_root_ca_cert = providers.Factory(
+    default_yatai_server_tls_root_ca_cert = providers.Factory(
         lambda current, deprecated: current or deprecated,
-        config.yatai.remote.tls.root_ca_cert,
-        config.yatai.remote.tls.client_certificate_file,
+        config.yatai.servers[config.yatai.default_server].tls.root_ca_cert,
+        config.yatai.servers[config.yatai.default_server].tls.client_certificate_file,
     )
 
     logging_file_directory = providers.Factory(
         lambda default, customized: customized or default,
         providers.Factory(os.path.join, bentoml_home, "logs",),
         config.logging.file.directory,
-    )
-
-    yatai_logging_path = providers.Factory(
-        lambda default, customized: customized or default,
-        providers.Factory(os.path.join, logging_file_directory, "yatai_web_server.log"),
-        config.yatai.logging.path,
     )
 
 

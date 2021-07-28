@@ -1,7 +1,7 @@
 import io
 import itertools
 import json
-from typing import Iterable, Iterator, Mapping
+from typing import Iterable, Iterator, Mapping, Any, Union, Set
 
 from bentoml.exceptions import BadInput
 
@@ -24,7 +24,7 @@ def check_dataframe_column_contains(required_column_names, df):
 
 
 @catch_exceptions(Exception, fallback=None)
-def guess_orient(table, strict=False):
+def guess_orient(table: Any, strict: bool = False) -> Union[None, str, Set[str]]:
     if isinstance(table, list):
         if not table:
             if strict:

@@ -1,11 +1,11 @@
 # CSV utils following https://tools.ietf.org/html/rfc4180
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Union
 
 
-def csv_splitlines(string) -> Iterator[str]:
+def csv_splitlines(string: str) -> Iterator[str]:
     if '"' in string:
 
-        def _iter_line(line):
+        def _iter_line(line: str) -> Iterator[str]:
             quoted = False
             last_cur = 0
             for i, c in enumerate(line):
@@ -25,11 +25,11 @@ def csv_splitlines(string) -> Iterator[str]:
     return iter(string.splitlines())
 
 
-def csv_split(string, delimiter) -> Iterator[str]:
+def csv_split(string: str, delimiter: str) -> Iterator[str]:
     if '"' in string:
         dlen = len(delimiter)
 
-        def _iter_line(line):
+        def _iter_line(line: str) -> Iterator[str]:
             quoted = False
             last_cur = 0
             for i, c in enumerate(line):
@@ -45,11 +45,11 @@ def csv_split(string, delimiter) -> Iterator[str]:
         return iter(string.split(delimiter))
 
 
-def csv_row(tds: Iterable):
+def csv_row(tds: Iterable) -> str:
     return ",".join(csv_quote(td) for td in tds)
 
 
-def csv_unquote(string):
+def csv_unquote(string: str) -> str:
     if '"' in string:
         string = string.strip()
         assert string[0] == '"' and string[-1] == '"'
@@ -57,7 +57,7 @@ def csv_unquote(string):
     return string
 
 
-def csv_quote(td):
+def csv_quote(td: Union[int, str]) -> str:
     """
     >>> csv_quote(1)
     '1'

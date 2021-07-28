@@ -1,4 +1,7 @@
-def parse_grpc_url(url):
+from typing import Optional, Tuple
+
+
+def parse_grpc_url(url: str) -> Tuple[Optional[str], str]:
     """
     >>> parse_grpc_url("grpcs://yatai.com:43/query")
     ('grpcs', 'yatai.com:43/query')

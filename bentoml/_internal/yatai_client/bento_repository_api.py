@@ -10,27 +10,25 @@ import click
 import grpc
 import requests
 
-from bentoml.exceptions import BentoMLException, BentoMLRpcError
-
 # from ..bundle import (
 #     load_bento_service_metadata,
 #     load_from_dir,
 #     safe_retrieve,
 #     save_to_dir,
 # )
-from ..utils import (
+from bentoml._internal.utils import (
     is_gcs_url,
     is_s3_url,
     resolve_bento_bundle_uri,
     status_pb_to_error_code_and_message,
 )
-from ..utils.lazy_loader import LazyLoader
-from ..utils.tempdir import TempDirectory
-from .label_utils import generate_gprc_labels_selector
+from bentoml._internal.utils.lazy_loader import LazyLoader
+from bentoml._internal.utils.tempdir import TempDirectory
+from bentoml._internal.yatai_client.label_utils import generate_gprc_labels_selector
 
 # from .yatai.grpc_stream_utils import UploadBentoStreamRequests
-from .proto import status_pb2
-from .proto.repository_pb2 import (
+from bentoml._internal.yatai_client.proto import status_pb2
+from bentoml._internal.yatai_client.proto.repository_pb2 import (
     AddBentoRequest,
     BentoUri,
     ContainerizeBentoRequest,
@@ -41,14 +39,16 @@ from .proto.repository_pb2 import (
     UpdateBentoRequest,
     UploadStatus,
 )
+from bentoml.exceptions import BentoMLException, BentoMLRpcError
+
 from .proto.yatai_service_pb2_grpc import YataiStub
 
 # from .status import Status
 
 if TYPE_CHECKING:
-    from ..service import Service
-    from . import YataiClient
-    from .proto.repository_pb2 import Bento
+    from bentoml._internal.service import Service
+    from bentoml._internal.yatai_client import YataiClient
+    from bentoml._internal.yatai_client.proto.repository_pb2 import Bento
 
 logger = logging.getLogger(__name__)
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
@@ -138,7 +138,7 @@ class BentoRepositoryAPIClient:
             target_bundle_path = os.path.join(tmpdir, "bundle")
             self.download_to_directory(bento_pb, target_bundle_path)
 
-            from bentoml.yatai.client import get_yatai_client
+            from bentoml._internal.yatai_client import get_yatai_client
 
             labels = (
                 dict(bento_pb.bento_service_metadata.labels)

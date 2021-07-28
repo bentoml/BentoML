@@ -112,7 +112,7 @@ class PyTorchLightningModel(Model):
 
     def __init__(
         self,
-        model: pytorch_lightning.LightningModule,
+        model: "pytorch_lightning.LightningModule",
         metadata: t.Optional[MetadataType] = None,
     ):  # noqa
         if pytorch_lightning is None:

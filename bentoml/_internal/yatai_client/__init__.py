@@ -9,6 +9,10 @@
 #
 # logger = logging.getLogger(__name__)
 
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from bentoml._internal.yatai_client.proto.yatai_service_pb2_grpc import YataiStub
 
 import logging
 
@@ -33,11 +37,11 @@ class YataiClient:
         self.deploy_api_client = None
 
     @cached_property
-    def bundles(self):
+    def bundles(self) -> BentoRepositoryAPIClient:
         return BentoRepositoryAPIClient(self._yatai_service)
 
     @cached_property
-    def deployment(self):
+    def deployment(self) -> DeploymentAPIClient:
         return DeploymentAPIClient(self._yatai_service)
 
     # def __init__(self, yatai_service: Optional["YataiStub"] = None):
@@ -50,7 +54,7 @@ class YataiClient:
     #     return BentoRepositoryAPIClient(self.yatai_service)
 
 
-def get_yatai_client(yatai_url: str = None) -> "YataiClient":
+def get_yatai_client(yatai_url: Optional[str] = None) -> YataiClient:
     """
     Args:
         yatai_url (`str`):
@@ -80,7 +84,7 @@ def get_yatai_service(
     tls_root_ca_cert: str,
     tls_client_key: str,
     tls_client_cert: str,
-):
+) -> "YataiStub":
     import certifi
     import grpc
 

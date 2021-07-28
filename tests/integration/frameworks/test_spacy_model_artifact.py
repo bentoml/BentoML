@@ -50,7 +50,7 @@ def spacy_model():
 
 def test_spacy_save_load(tmpdir, spacy_model):
     SpacyModel(spacy_model).save(tmpdir)
-    assert os.path.isfile(os.path.join(tmpdir, "bentoml_model"))
+    assert os.path.exists(os.path.join(tmpdir, "bentoml_model"))
     spacy_loaded: spacy.language.Language = SpacyModel.load(tmpdir)
     assert predict_json(spacy_loaded, test_json) == predict_json(
         spacy_loaded, test_json

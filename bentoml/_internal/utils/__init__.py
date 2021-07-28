@@ -6,19 +6,43 @@ import socket
 import tarfile
 from io import StringIO
 from typing import (
-    Optional, TypeVar, Type, Union, overload, Dict, Iterator, Any, Tuple,
-    TYPE_CHECKING, Generic, Callable)
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ContextManager,
+    Dict,
+    Generic,
+    Iterator,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
-from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
 
 if TYPE_CHECKING:
     from bentoml._internal.yatai_client import YataiClient
 
-from ..utils.gcs import is_gcs_url
-from ..utils.lazy_loader import LazyLoader
-from ..utils.s3 import is_s3_url
+from bentoml._internal.utils.gcs import is_gcs_url
+from bentoml._internal.utils.lazy_loader import LazyLoader
+from bentoml._internal.utils.s3 import is_s3_url
+
+_T = TypeVar("_T")
+_T_co = TypeVar("_T_co", covariant=True)
+_F = TypeVar("_F", bound=Callable[..., Any])
+
+T = TypeVar("T")
+V = TypeVar("V")
+
+
+class GeneratorContextManager(ContextManager[_T_co]):
+    def __call__(self, func: _F) -> _F:
+        ...
+
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -57,11 +81,7 @@ class _Missing(object):
 _missing = _Missing()
 
 
-T = TypeVar("T")
-V = TypeVar("V")
-
-
-class cached_property(property, Generic[T, V]):
+class cached_property(Generic[T, V], property):
     """A decorator that converts a function into a lazy property. The
     function wrapped is called the first time to retrieve the result
     and then that calculated result is used the next time you access
@@ -86,7 +106,12 @@ class cached_property(property, Generic[T, V]):
     manual invocation.
     """
 
-    def __init__(self, func: Callable[[T], V], name: Optional[str] = None, doc: Optional[str] = None):  # pylint:disable=super-init-not-called
+    def __init__(
+        self,
+        func: Callable[[T], V],
+        name: Optional[str] = None,
+        doc: Optional[str] = None,
+    ):  # pylint:disable=super-init-not-called
         self.__name__ = name or func.__name__
         self.__module__ = func.__module__
         self.__doc__ = doc or func.__doc__
@@ -96,12 +121,16 @@ class cached_property(property, Generic[T, V]):
         obj.__dict__[self.__name__] = value
 
     @overload
-    def __get__(self, obj: None, type: Optional[Type[T]] = None) -> "cached_property": ...
+    def __get__(self, obj: None, type: Optional[Type[T]] = None) -> "cached_property":
+        ...
 
     @overload
-    def __get__(self, obj: T, type: Optional[Type[T]] = None) -> V: ...
+    def __get__(self, obj: T, type: Optional[Type[T]] = None) -> V:
+        ...
 
-    def __get__(self, obj: Optional[T], type: Optional[Type[T]] = None) -> Union["cached_property", V]:  # pylint:disable=redefined-builtin
+    def __get__(  # pylint:disable=redefined-builtin
+        self, obj: Optional[T], type: Optional[Type[T]] = None
+    ) -> Union["cached_property", V]:
         if obj is None:
             return self
         value: V = obj.__dict__.get(self.__name__, _missing)
@@ -131,8 +160,10 @@ class cached_contextmanager(Generic[T]):
         self._cache_key_template = cache_key_template
         self._cache: Dict[Union[str, Tuple], T] = {}
 
-    # TODO: use ParamSpec: https://github.com/python/mypy/issues/8645
-    def __call__(self, func: Callable[..., Iterator[T]]) -> Callable[..., _GeneratorContextManager[T]]:
+    # TODO: use ParamSpec 3.10: https://github.com/python/mypy/issues/8645
+    def __call__(
+        self, func: Callable[..., Iterator[T]]
+    ) -> Callable[..., GeneratorContextManager[T]]:
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager
@@ -141,7 +172,9 @@ class cached_contextmanager(Generic[T]):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             bound_args.apply_defaults()
             if self._cache_key_template:
-                cache_key: Union[str, Tuple] = self._cache_key_template.format(**bound_args.arguments)
+                cache_key: Union[str, Tuple] = self._cache_key_template.format(
+                    **bound_args.arguments
+                )
             else:
                 cache_key = tuple(bound_args.arguments.values())
             if cache_key in self._cache:
@@ -220,12 +253,16 @@ def status_pb_to_error_code_and_message(pb_status) -> Tuple[int, str]:
     return error_code, error_message
 
 
-class catch_exceptions(object, Generic[T]):
-    def __init__(self, exceptions: Union[Type[BaseException], Tuple[Type[BaseException], ...]], fallback: Optional[T] = None) -> None:
+class catch_exceptions(Generic[T], object):
+    def __init__(
+        self,
+        exceptions: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
+        fallback: Optional[T] = None,
+    ) -> None:
         self.exceptions = exceptions
         self.fallback = fallback
 
-    # TODO: use ParamSpec: https://github.com/python/mypy/issues/8645
+    # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
     def __call__(self, func: Callable[..., T]) -> Callable[..., Optional[T]]:
         @functools.wraps(func)
         def _(*args: Any, **kwargs: Any) -> Optional[T]:
@@ -269,7 +306,7 @@ def resolve_bundle_path(
         )
 
 
-def get_default_yatai_client() -> YataiClient:
+def get_default_yatai_client() -> "YataiClient":
     from bentoml._internal.yatai_client import YataiClient
 
     return YataiClient()

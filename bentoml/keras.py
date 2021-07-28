@@ -3,7 +3,7 @@ import typing as t
 
 import cloudpickle
 
-from bentoml._internal.models.base import (
+from ._internal.models.base import (
     H5_EXTENSION,
     HDF5_EXTENSION,
     JSON_EXTENSION,
@@ -11,8 +11,8 @@ from bentoml._internal.models.base import (
     PICKLE_EXTENSION,
     Model,
 )
-from bentoml._internal.types import MetadataType, PathType
-from bentoml.exceptions import MissingDependencyException
+from ._internal.types import MetadataType, PathType
+from .exceptions import MissingDependencyException
 
 # fmt: off
 try:

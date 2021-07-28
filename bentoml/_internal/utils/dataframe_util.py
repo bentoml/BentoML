@@ -1,7 +1,7 @@
 import io
 import itertools
 import json
-from typing import Iterable, Iterator, Mapping, Any, Union, Set
+from typing import Any, Iterable, Iterator, Mapping, Set, Union
 
 from bentoml.exceptions import BadInput
 

@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 
 def parse_grpc_url(url: str) -> Tuple[Optional[str], str]:

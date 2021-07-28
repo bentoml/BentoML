@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
-import time
 import sys
+import time
 
 import pytest
 

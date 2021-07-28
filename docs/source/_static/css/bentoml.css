@@ -186,13 +186,13 @@ a {
 /* Content related patch */
 
 .wy-nav-content {
-    max-width: 1200px !important;
+    max-width: 100%;
     background-color: var(--white);
 }
 
 /* The one with new line parameters */
 .rst-content dd dl.field-list.simple {
-    display: inline-table;
+    display: grid;
     margin-bottom: inherit;
 }
 

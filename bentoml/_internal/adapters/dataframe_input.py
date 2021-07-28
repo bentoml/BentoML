@@ -1,8 +1,9 @@
 import argparse
 from typing import Iterable, Iterator, Mapping, Optional, Sequence, Tuple
 
+from bentoml.exceptions import MissingDependencyException
+
 from ..adapters.string_input import StringInput
-from ..exceptions import MissingDependencyException
 from ..types import HTTPHeaders, InferenceTask
 from ..utils.dataframe_util import (
     PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS,
@@ -10,10 +11,10 @@ from ..utils.dataframe_util import (
 )
 from ..utils.lazy_loader import LazyLoader
 
-pandas = LazyLoader('pandas', globals(), 'pandas')
+pandas = LazyLoader("pandas", globals(), "pandas")
 
 DataFrameTask = InferenceTask[str]
-ApiFuncArgs = Tuple['pandas.DataFrame']
+ApiFuncArgs = Tuple["pandas.DataFrame"]
 
 
 class DataframeInput(StringInput):
@@ -82,10 +83,10 @@ class DataframeInput(StringInput):
 
         from bentoml import env, artifacts, api, BentoService
         from ..adapters import DataframeInput
-        from ..frameworks.sklearn import SklearnModelArtifact
+        from ..frameworks.sklearn import SklearnModel
 
         @env(infer_pip_packages=True)
-        @artifacts([SklearnModelArtifact('model')])
+        @artifacts([SklearnModel('model')])
         class IrisClassifier(BentoService):
 
             @api(
@@ -168,7 +169,7 @@ class DataframeInput(StringInput):
 
     @property
     def pip_dependencies(self):
-        return ['pandas']
+        return ["pandas"]
 
     @property
     def config(self):
@@ -176,15 +177,15 @@ class DataframeInput(StringInput):
         return dict(base_config, orient=self.orient, typ=self.typ, dtype=self.dtype,)
 
     def _get_type(self, item):
-        if item.startswith('int'):
-            return 'integer'
-        if item.startswith('float') or item.startswith('double'):
-            return 'number'
-        if item.startswith('str') or item.startswith('date'):
-            return 'string'
-        if item.startswith('bool'):
-            return 'boolean'
-        return 'object'
+        if item.startswith("int"):
+            return "integer"
+        if item.startswith("float") or item.startswith("double"):
+            return "number"
+        if item.startswith("str") or item.startswith("date"):
+            return "string"
+        if item.startswith("bool"):
+            return "boolean"
+        return "object"
 
     @property
     def request_schema(self):
@@ -214,7 +215,7 @@ class DataframeInput(StringInput):
     @classmethod
     def _detect_format(cls, task: InferenceTask) -> str:
         if task.aws_lambda_event:
-            headers = HTTPHeaders.from_dict(task.aws_lambda_event.get('headers', {}))
+            headers = HTTPHeaders.from_dict(task.aws_lambda_event.get("headers", {}))
             if headers.content_type == "application/json":
                 return "json"
             if headers.content_type == "text/csv":
@@ -227,7 +228,7 @@ class DataframeInput(StringInput):
                 return "csv"
         elif task.cli_args:
             parser = argparse.ArgumentParser()
-            parser.add_argument('--format', type=str, choices=['csv', 'json'])
+            parser.add_argument("--format", type=str, choices=["csv", "json"])
             parsed_args, _ = parser.parse_known_args(list(task.cli_args))
             return parsed_args.format or "json"
 

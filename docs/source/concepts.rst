@@ -17,10 +17,10 @@ the :doc:`Getting Started Guide <quickstart>`:
 
   import bentoml
   from bentoml.adapters import DataframeInput
-  from bentoml.frameworks.sklearn import SklearnModelArtifact
+  from bentoml.frameworks.sklearn import SklearnModel
 
   @bentoml.env(infer_pip_packages=True)
-  @bentoml.artifacts([SklearnModelArtifact('model')])
+  @bentoml.artifacts([SklearnModel('model')])
   class IrisClassifier(bentoml.BentoService):
 
       @bentoml.api(input=DataframeInput(), batch=True)
@@ -110,8 +110,8 @@ Listing recent BentoML bundles created:
 
     > bentoml list
     BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
-    IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeInput>  model<SklearnModelArtifact>
-    IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeInput>  clf<PickleArtifact>
+    IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeInput>  model<SklearnModel>
+    IrisClassifier:20200120082658_4169CF  2020-01-20 16:27  predict<DataframeInput>  clf<PickleModel>
     ...
 
 
@@ -282,7 +282,7 @@ BentoML makes it really easy to switch between base images by specifying a
 
   # e.g. using a custom image:
   @env(docker_base_image="mycompany/my-base-image:v123")
-  @artifacts([SklearnModelArtifact('model')])
+  @artifacts([SklearnModel('model')])
   class ExamplePredictionService(BentoService):
     ...
 
@@ -305,7 +305,7 @@ in at `~90MB`.
 
   # e.g. using BentoML slim image
   @env(docker_base_image="bentoml/model-server:0.12.0-slim-py37")
-  @artifacts([SklearnModelArtifact('model')])
+  @artifacts([SklearnModel('model')])
   class ExamplePredictionService(BentoService):
     ...
 
@@ -377,13 +377,13 @@ prediction service that packs two trained models:
 
     import bentoml
     from bentoml.adapters import DataframeInput
-    from bentoml.frameworks.sklearn import SklearnModelArtifact
-    from bentoml.frameworks.xgboost import XgboostModelArtifact
+    from bentoml.frameworks.sklearn import SklearnModel
+    from bentoml.frameworks.xgboost import XgBoostModel
 
     @bentoml.env(infer_pip_packages=True)
     @bentoml.artifacts([
-        SklearnModelArtifact("model_a"),
-        XgboostModelArtifact("model_b")
+        SklearnModel("model_a"),
+        XgBoostModel("model_b")
     ])
     class MyPredictionService(bentoml.BentoService):
 
@@ -601,7 +601,7 @@ or malformatted. Users can do this via the InferenceTask#discard API, here's an 
     from bentoml.types import JsonSerializable, InferenceTask  # type annotations are optional
 
     @env(infer_pip_packages=True)
-    @artifacts([SklearnModelArtifact('classifier')])
+    @artifacts([SklearnModel('classifier')])
     class MyPredictionService(BentoService):
 
             @api(input=JsonInput(), batch=True)
@@ -713,7 +713,7 @@ and host them when starting the API server.
 .. code-block:: python
 
     @env(auto_pip_dependencies=True)
-    @artifacts([SklearnModelArtifact('model')])
+    @artifacts([SklearnModel('model')])
     @web_static_content('./static')
     class IrisClassifier(BentoService):
 
@@ -1026,15 +1026,15 @@ list all the BentoService created:
 
     > bentoml list
     BENTO_SERVICE                                   AGE                  APIS                        ARTIFACTS
-    IrisClassifier:20200323212422_A1D30D            1 day and 22 hours   predict<DataframeInput>   model<SklearnModelArtifact>
-    IrisClassifier:20200304143410_CD5F13            3 weeks and 4 hours  predict<DataframeInput>   model<SklearnModelArtifact>
-    SentimentAnalysisService:20191219090607_189CFE  13 weeks and 6 days  predict<DataframeInput>   model<SklearnModelArtifact>
+    IrisClassifier:20200323212422_A1D30D            1 day and 22 hours   predict<DataframeInput>   model<SklearnModel>
+    IrisClassifier:20200304143410_CD5F13            3 weeks and 4 hours  predict<DataframeInput>   model<SklearnModel>
+    SentimentAnalysisService:20191219090607_189CFE  13 weeks and 6 days  predict<DataframeInput>   model<SklearnModel>
     TfModelService:20191216125343_06BCA3            14 weeks and 2 days  predict<JsonInput>        model<TensorflowSavedModelArtifact>
 
     > bentoml get IrisClassifier
     BENTO_SERVICE                         CREATED_AT        APIS                       ARTIFACTS
-    IrisClassifier:20200121114004_360ECB  2020-01-21 19:45  predict<DataframeInput>  model<SklearnModelArtifact>
-    IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeInput>  model<SklearnModelArtifact>
+    IrisClassifier:20200121114004_360ECB  2020-01-21 19:45  predict<DataframeInput>  model<SklearnModel>
+    IrisClassifier:20200121114004_360ECB  2020-01-21 19:40  predict<DataframeInput>  model<SklearnModel>
 
     > bentoml get IrisClassifier:20200323212422_A1D30D
     {
@@ -1056,7 +1056,7 @@ list all the BentoService created:
         "artifacts": [
           {
             "name": "model",
-            "artifactType": "SklearnModelArtifact"
+            "artifactType": "SklearnModel"
           }
         ],
         "apis": [

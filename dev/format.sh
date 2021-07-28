@@ -2,12 +2,9 @@
 
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 
-black -S "$GIT_ROOT"
-isort "$GIT_ROOT"/bentoml/.
-
-# format docker directory format.
-DOCKER_DIR="$GIT_ROOT"/docker
-isort "$DOCKER_DIR"
+cd "$GIT_ROOT" || exit 1
+black .
+isort .
 
 # format yatai webui
 WEB_SERVER_DIR="$GIT_ROOT"/yatai/web_server

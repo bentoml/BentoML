@@ -109,10 +109,10 @@ serving the iris classifier model trained above, which is saved under *bento_ser
 
     from bentoml import env, artifacts, api, BentoService
     from bentoml.adapters import DataframeInput
-    from bentoml.frameworks.sklearn import SklearnModelArtifact
+    from bentoml.frameworks.sklearn import SklearnModel
 
     @env(infer_pip_packages=True)
-    @artifacts([SklearnModelArtifact('model')])
+    @artifacts([SklearnModel('model')])
     class IrisClassifier(BentoService):
         """
         A minimum prediction service exposing a Scikit-learn model
@@ -131,9 +131,9 @@ serving the iris classifier model trained above, which is saved under *bento_ser
 Firstly, the :code:`@artifact(...)` here defines the required trained models to be
 packed with this prediction service. BentoML model artifacts are pre-built wrappers for
 persisting, loading and running a trained model. This example uses the
-:code:`SklearnModelArtifact` for the scikit-learn framework. BentoML also provide
-artifact class for other ML frameworks, including :code:`PytorchModelArtifact`,
-:code:`KerasModelArtifact`, and :code:`XgboostModelArtifact` etc.
+:code:`SklearnModel` for the scikit-learn framework. BentoML also provide
+artifact class for other ML frameworks, including :code:`PyTorchModel`,
+:code:`KerasModelArtifact`, and :code:`XgBoostModel` etc.
 
 The :code:`@env` decorator specifies the dependencies and environment settings required
 for this prediction service. It allows BentoML to reproduce the exact same environment

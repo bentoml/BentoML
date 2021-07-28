@@ -39,7 +39,7 @@ install_requires = [
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "chardet",
-    "simple-di==0.1.0",
+    "simple-di==0.1.1",
     "cloudpickle",
 ]
 
@@ -74,11 +74,13 @@ dev_requires = [
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
     # grpcio-tools version must be kept in sync with the version used in
-    # `dev/generate-protos-docker.sh` script
+    # `dev/gen_protos_docker.sh` script
     "grpcio-tools~=1.34.0",
     "grpcio-reflection~=1.34.0",
     "pylint>=2.5.2",
     "setuptools",
+    "mypy",
+    "autoflake",
     "tox-conda>=0.2.0",
     "tox>=3.12.1",
     "twine",
@@ -96,10 +98,13 @@ docs_requires = [
 ]
 
 types_requires = [
-    "mypy-protobuf",
     "types-click",
+    "types-chardet",
+    "types-setuptools",
     "types-protobuf>=0.1.14",
+    "mypy-protobuf",
     "grpc-stubs",
+    "pyspark-stubs",
 ]
 
 dev_all = install_requires + dev_requires + docs_requires + types_requires
@@ -109,7 +114,6 @@ extras_require = {
     "test": test_requires,
     "model_server": model_server_requires,
     "doc_builder": docs_requires,  # 'doc_builder' is required by readthedocs.io
-    "types_stub": types_requires,
 }
 
 setuptools.setup(

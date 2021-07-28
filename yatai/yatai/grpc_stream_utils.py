@@ -1,8 +1,8 @@
-import os
 import io
+import os
 import tarfile
-from yatai.yatai.proto.repository_pb2 import UploadBentoRequest, DownloadBentoResponse
 
+from yatai.proto.repository_pb2 import DownloadBentoResponse, UploadBentoRequest
 
 DEFAULT_FILE_CHUNK_SIZE = 1024 * 8
 
@@ -57,7 +57,7 @@ class _BentoBundleStreamRequestsOrResponses:
         self.is_request = is_request
         self.sent_init_message = False
         self.out_stream = FileStream()
-        self.tar = tarfile.TarFile(fileobj=self.out_stream, mode='w')
+        self.tar = tarfile.TarFile(fileobj=self.out_stream, mode="w")
 
     @staticmethod
     def _stream_file_into_tar(tarinfo, tar, file_handler, buf_size):
@@ -68,7 +68,7 @@ class _BentoBundleStreamRequestsOrResponses:
         # call object with no arguments for each call to its __next__()
         # method; if the value returned is equal to sentinel, StopIteration
         # will be raised, otherwise the value will be returned.
-        for b in iter(lambda: file_handler.read(buf_size), b''):
+        for b in iter(lambda: file_handler.read(buf_size), b""):
             out.write(b)
             yield
         blocks, remainder = divmod(tarinfo.size, tarfile.BLOCKSIZE)
@@ -101,7 +101,7 @@ class _BentoBundleStreamRequestsOrResponses:
         prefix_len = len(self.directory_path) + len(os.path.sep)
 
         # Add the directory path to tar
-        self.tar.add(name=self.directory_path, arcname='', recursive=False)
+        self.tar.add(name=self.directory_path, arcname="", recursive=False)
 
         # walk the directory and add to tarfile
         for path, dirs, files in os.walk(self.directory_path):
@@ -110,7 +110,7 @@ class _BentoBundleStreamRequestsOrResponses:
             # Add files to tar. Add the tar info and then stream the file into tar
             for f in files:
                 file_path = os.path.join(path, f)
-                with open(file_path, 'rb') as file:
+                with open(file_path, "rb") as file:
                     # Reading the file info and generate tarinfo from that.
                     # No file content is added to the tar at this point
                     tar_info = self.tar.gettarinfo(

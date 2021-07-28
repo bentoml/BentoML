@@ -4,11 +4,12 @@ import json
 from typing import Iterable, Iterator, Mapping
 
 from bentoml.exceptions import BadInput
-from bentoml.utils import catch_exceptions
-from bentoml.utils.csv import csv_quote, csv_row, csv_split, csv_splitlines, csv_unquote
-from bentoml.utils.lazy_loader import LazyLoader
 
-pandas = LazyLoader('pandas', globals(), 'pandas')
+from . import catch_exceptions
+from .csv import csv_quote, csv_row, csv_split, csv_splitlines, csv_unquote
+from .lazy_loader import LazyLoader
+
+pandas = LazyLoader("pandas", globals(), "pandas")
 
 
 def check_dataframe_column_contains(required_column_names, df):
@@ -31,16 +32,16 @@ def guess_orient(table, strict=False):
             else:
                 return "records"
         if isinstance(table[0], dict):
-            return 'records'
+            return "records"
         else:
-            return 'values'
+            return "values"
     elif isinstance(table, dict):
         if set(table) == {"columns", "index", "data"}:
-            return 'split'
+            return "split"
         if set(table) == {"schema", "data"} and "primaryKey" in table["schema"]:
-            return 'table'
+            return "table"
         if strict:
-            return {'columns', "index"}
+            return {"columns", "index"}
         else:
             return "columns"
 
@@ -80,21 +81,21 @@ def _from_json_index(state: DataFrameState, table: dict):
 
 
 def _from_json_split(state: DataFrameState, table: dict):
-    table_columns = {k: i for i, k in enumerate(table['columns'])}
+    table_columns = {k: i for i, k in enumerate(table["columns"])}
 
     if state.columns is None:  # make header
         state.columns = table_columns
-        for row in table['data']:
+        for row in table["data"]:
             yield csv_row(row)
     else:
         idxs = [state.columns[k] for k in table_columns]
-        for row in table['data']:
+        for row in table["data"]:
             yield csv_row(row[idx] for idx in idxs)
 
 
 def _from_csv_without_index(state: DataFrameState, table: Iterator[str]):
     row_str = next(table)  # skip column names
-    table_columns = tuple(csv_unquote(s) for s in csv_split(row_str, ','))
+    table_columns = tuple(csv_unquote(s) for s in csv_split(row_str, ","))
 
     if state.columns is None:
         state.columns = table_columns
@@ -128,11 +129,11 @@ def _from_csv_without_index(state: DataFrameState, table: Iterator[str]):
 
 
 _ORIENT_MAP = {
-    'records': _from_json_records,
-    'columns': _from_json_columns,
-    'values': _from_json_values,
-    'split': _from_json_split,
-    'index': _from_json_index,
+    "records": _from_json_records,
+    "columns": _from_json_columns,
+    "values": _from_json_values,
+    "split": _from_json_split,
+    "index": _from_json_index,
     # 'table': _from_json_table,
 }
 
@@ -173,13 +174,13 @@ def read_dataframes_from_json_n_csv(
     columns=None,
     dtype=None,
 ) -> ("pandas.DataFrame", Iterable[slice]):
-    '''
+    """
     load dataframes from multiple raw datas in json or csv format, efficiently
 
     Background: Each calling of pandas.read_csv or pandas.read_json cost about 100ms,
-    no matter how many lines it contains. Concat jsons/csvs before read_json/read_csv
+    no matter how many lines it contains. Concat ragged_tensor/csvs before read_json/read_csv
     to improve performance.
-    '''
+    """
     state = DataFrameState(
         columns={k: i for i, k in enumerate(columns)} if columns else None
     )

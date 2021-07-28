@@ -1,89 +1,49 @@
 import os
+import typing as t
 
-from bentoml.exceptions import InvalidArgument, MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.models.base import MODEL_NAMESPACE, TXT_EXTENSION, Model
+from ._internal.types import MetadataType, PathType
+from .exceptions import MissingDependencyException
 
-LIGHTGBM_MODEL_EXTENTION = ".txt"
+try:
+    import lightgbm
+except ImportError:
+    raise MissingDependencyException("lightgbm is required by LightGBMModel")
 
 
-class LightGBMModelArtifact(BentoServiceArtifact):
+class LightGBMModel(Model):
     """
-    Artifact class for saving and loading LightGBM Model
+    Model class for saving/loading :obj:`lightgbm` models
 
     Args:
-        name (string): name of the artifact
+        model (`lightgbm.Booster`):
+            LightGBM model instance is of type :class:`lightgbm.Booster`
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyException: lightgbm package is required for using
-            LightGBMModelArtifact
-        InvalidArgument: invalid argument type, model being packed must be instance of
-            lightgbm.Booster
+        MissingDependencyException:
+            :obj:`lightgbm` is required by LightGBMModel
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import lightgbm as lgb
-    >>> # Prepare data
-    >>> train_data = lgb.Dataset(...)
-    >>> # train model
-    >>> model = lgb.train(train_set=train_data, ...)
-    >>>
-    >>> import bentoml
-    >>> from bentoml.frameworks.lightgbm import LightGBMModelArtifact
-    >>> from bentoml.adapters import DataframeInput
-    >>>
-    >>> @bentoml.artifacts([LightGBMModelArtifact('model')])
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> class LgbModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=DataframeInput(), batch=True)
-    >>>     def predict(self, df):
-    >>>         return self.artifacts.model.predict(df)
-    >>>
-    >>> svc = LgbModelService()
-    >>> svc.pack('model', model)
+        TODO:
+
+    One then can define :code:`bento.py`::
+
+        TODO:
     """
 
-    def __init__(self, name):
-        super(LightGBMModelArtifact, self).__init__(name)
-        self._model = None
+    def __init__(
+        self, model: "lightgbm.Booster", metadata: t.Optional[MetadataType] = None,
+    ):
+        super(LightGBMModel, self).__init__(model, metadata=metadata)
 
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + LIGHTGBM_MODEL_EXTENTION)
+    @classmethod
+    def load(cls, path: PathType) -> "lightgbm.Booster":
+        return lightgbm.Booster(
+            model_file=os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}")
+        )
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
-        try:
-            import lightgbm as lgb
-        except ImportError:
-            raise MissingDependencyException(
-                "lightgbm package is required to use LightGBMModelArtifact"
-            )
-
-        if not isinstance(model, lgb.Booster):
-            raise InvalidArgument(
-                "Expect `model` argument to be a `lightgbm.Booster` instance"
-            )
-
-        self._model = model
-        return self
-
-    def load(self, path):
-        try:
-            import lightgbm as lgb
-        except ImportError:
-            raise MissingDependencyException(
-                "lightgbm package is required to use LightGBMModelArtifact"
-            )
-        bst = lgb.Booster(model_file=self._model_file_path(path))
-
-        return self.pack(bst)
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(['lightgbm'])
-
-    def save(self, dst):
-        return self._model.save_model(self._model_file_path(dst))
-
-    def get(self):
-        return self._model
+    def save(self, path: PathType) -> None:
+        self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}"))

@@ -1,110 +1,134 @@
 import os
-import tempfile
+import typing as t
+from distutils.dir_util import copy_tree
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.models.base import MODEL_NAMESPACE, Model
+from ._internal.types import MetadataType, PathType
+from .exceptions import MissingDependencyException
 
 try:
     import paddle
-    import paddle.inference as paddle_infer
+    import paddle.inference as pi
 except ImportError:
-    paddle = None
+    raise MissingDependencyException(
+        "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
+    )
+
+try:
+    import paddlehub as hub
+except ImportError:
+    hub = None
 
 
-class PaddlePaddleModelArtifact(BentoServiceArtifact):
+class PaddlePaddleModel(Model):
     """
-    Artifact class for saving and loading PaddlePaddle's PaddleInference model
+    Model class for saving/loading :obj:`paddlepaddle` models.
 
     Args:
-        name (string): name of the artifact
+        model (`Union[paddle.nn.Layer, paddle.inference.Predictor]`):
+            Every PaddlePaddle model is of type :obj:`paddle.nn.Layer`
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyException: paddle package is required for
-                                    PaddlePaddleModelArtifact
+        MissingDependencyException:
+            :obj:`paddlepaddle` is required by PaddlePaddleModel
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import pandas as pd
-    >>> import numpy as np
-    >>>
-    >>> from bentoml import env, artifacts, api, BentoService
-    >>> from bentoml.adapters import DataframeInput
-    >>> from bentoml.frameworks.paddle import PaddlePaddleModelArtifact
-    >>>
-    >>> @env(infer_pip_packages=True)
-    >>> @artifacts([PaddlePaddleModelArtifact('model')])
-    >>> class PaddleService(BentoService):
-    >>>    @api(input=DataframeInput(), batch=True)
-    >>>    def predict(self, df: pd.DataFrame):
-    >>>        input_data = df.to_numpy().astype(np.float32)
-    >>>        predictor = self.artifacts.model
-    >>>
-    >>>        input_names = predictor.get_input_names()
-    >>>        input_handle = predictor.get_input_handle(input_names[0])
-    >>>        input_handle.reshape(input_data.shape)
-    >>>        input_handle.copy_from_cpu(input_data)
-    >>>
-    >>>        predictor.run()
-    >>>
-    >>>        output_names = predictor.get_output_names()
-    >>>        output_handle = predictor.get_output_handle(output_names[0])
-    >>>        output_data = output_handle.copy_to_cpu()
-    >>>        return output_data
-    >>>
-    >>> service = PaddleService()
-    >>>
-    >>> service.pack('model', model_to_save)
+        TODO:
+
+    One then can define :code:`bento.py`::
+
+        TODO:
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
-        self._model = None
-        self._predictor = None
-        self._model_path = None
+    PADDLE_MODEL_EXTENSION: str = ".pdmodel"
+    PADDLE_PARAMS_EXTENSION: str = ".pdiparams"
 
-        if paddle is None:
-            raise MissingDependencyException(
-                "paddlepaddle package is required to use PaddlePaddleModelArtifact"
-            )
+    _model: t.Union[paddle.nn.Layer, paddle.inference.Predictor]
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
-        self._model = model
-        return self
+    def __init__(
+        self,
+        model: t.Union[paddle.nn.Layer, paddle.inference.Predictor],
+        metadata: t.Optional[MetadataType] = None,
+    ):
+        super(PaddlePaddleModel, self).__init__(model, metadata=metadata)
 
-    def load(self, path):
-        model = paddle.jit.load(self._file_path(path))
-        model = paddle.jit.to_static(model, input_spec=model._input_spec())
-        return self.pack(model)
+    @classmethod
+    def load(cls, path: PathType) -> paddle.inference.Predictor:
+        # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
+        config = pi.Config(
+            os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_MODEL_EXTENSION}"),
+            os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_PARAMS_EXTENSION}"),
+        )
+        config.enable_memory_optim()
+        return pi.create_predictor(config)
 
-    def _file_path(self, base_path):
-        return os.path.join(base_path, self.name)
-
-    def save(self, dst):
-        self._save(dst)
-
-    def _save(self, dst):
+    def save(self, path: PathType) -> None:
         # Override the model path if temp dir was set
-        self._model_path = self._file_path(dst)
-        paddle.jit.save(self._model, self._model_path)
+        # TODO(aarnphm): What happens if model is a paddle.inference.Predictor?
+        paddle.jit.save(self._model, os.path.join(path, MODEL_NAMESPACE))
 
-    def get(self):
-        # Create predictor, if one doesn't exist, when inference is run
-        if not self._predictor:
-            # If model isn't saved, save model to a temp dir
-            # because predictor init requires the path to a saved model
-            if self._model_path is None:
-                self._model_path = tempfile.TemporaryDirectory().name
-                self._save(self._model_path)
 
-            config = paddle_infer.Config(
-                self._model_path + ".pdmodel", self._model_path + ".pdiparams"
-            )
-            config.enable_memory_optim()
-            predictor = paddle_infer.create_predictor(config)
-            self._predictor = predictor
-        return self._predictor
+class PaddleHubModel(Model):
+    """
+    Model class for saving/loading :obj:`paddlehub` models.
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(['paddlepaddle'])
+    Args:
+        model (`Union[str, bytes, os.PathLike]`):
+            Either a custom :obj:`paddlehub.Module` directory, or
+            pretrained model from PaddleHub registry.
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+            Class metadata
+
+    Raises:
+        MissingDependencyException:
+            :obj:`paddlehub` and :obj:`paddlepaddle` are required by PaddleHubModel
+
+    Example usage under :code:`train.py`::
+
+        TODO:
+
+    One then can define :code:`bento.py`::
+
+        TODO:
+
+    """
+
+    def __init__(self, model: PathType, metadata: t.Optional[MetadataType] = None):
+        if hub is None:
+            raise MissingDependencyException("paddlehub is required by PaddleHubModel")
+        if os.path.isdir(model):
+            module = hub.Module(directory=model)
+            self._dir = str(model)
+        else:
+            # TODO: refactor to skip init Module in memory
+            module = hub.Module(name=model)
+            self._dir = ""
+        super(PaddleHubModel, self).__init__(module, metadata=metadata)
+
+    def save(self, path: PathType) -> None:
+        if self._dir != "":
+            copy_tree(self._dir, str(path))
+        else:
+            self._model.save_inference_model(path)
+
+    @classmethod
+    def load(cls, path: PathType) -> t.Any:
+        if hub is None:
+            raise MissingDependencyException("paddlehub is required by PaddleHubModel")
+        # https://github.com/PaddlePaddle/PaddleHub/blob/release/v2.1/paddlehub/module/module.py#L233
+        # we don't have a custom name, so this should be stable
+        # TODO: fix a bug when loading as module
+        model_fpath = os.path.join(path, "__model__")
+        if os.path.isfile(model_fpath):
+            from paddlehub.module.manager import LocalModuleManager
+
+            manager = LocalModuleManager()
+            module_class = manager.install(directory=str(path))
+            module_class.directory = str(path)
+            return module_class
+        else:
+            # custom module that installed from directory
+            return hub.Module(directory=str(path))

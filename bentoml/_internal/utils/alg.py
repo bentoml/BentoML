@@ -2,9 +2,9 @@ import time
 
 
 class FixedBucket:
-    '''
+    """
     Fixed size FIFO container.
-    '''
+    """
 
     def __init__(self, size):
         self._data = [None] * size
@@ -37,9 +37,9 @@ class FixedBucket:
 
 
 class TokenBucket:
-    '''
+    """
     Dynamic token bucket
-    '''
+    """
 
     def __init__(self, init_amount=0):
         self._amount = init_amount

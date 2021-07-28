@@ -1,41 +1,67 @@
 import logging
 import os
 import pathlib
-import shutil
-import tempfile
+import typing as t
+from distutils.dir_util import copy_tree
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
-from bentoml.utils.tensorflow import (
+from ._internal.models.base import Model
+from ._internal.types import MetadataType, PathType
+from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
     get_arg_names,
     get_input_signatures,
     get_restored_functions,
     pretty_format_restored_model,
 )
+from .exceptions import MissingDependencyException
+
+try:
+    import tensorflow as tf
+    from tensorflow.python.training.tracking.tracking import AutoTrackable
+
+    TF2 = tf.__version__.startswith("2")
+except ImportError:
+    raise MissingDependencyException("tensorflow is required by TensorflowModel")
+
 
 logger = logging.getLogger(__name__)
 
+AUTOTRACKABLE_CALLABLE_WARNING: str = """\
+Importing SavedModels from TensorFlow 1.x. `outputs = imported(inputs)`
+ will not be supported by BentoML due to `tensorflow` API.\n
+See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
+ more details.
+"""
 
-def _is_path_like(p):
-    return isinstance(p, (str, bytes, pathlib.PurePath, os.PathLike))
+TF_FUNCTION_WARNING: str = """\
+Due to TensorFlow's internal mechanism, only methods
+ wrapped under `@tf.function` decorator and the Keras default function
+ `__call__(inputs, training=False)` can be restored after a save & load.\n
+You can test the restored model object via `TensorflowModel.load(path)`
+"""
+
+KERAS_MODEL_WARNING: str = """\
+BentoML detected that {name} is being used to pack a Keras API
+ based model. In order to get optimal serving performance, we recommend
+ to wrap your keras model `call()` methods with `@tf.function` decorator.
+"""
 
 
 class _TensorflowFunctionWrapper:
-    """
-    TensorflowFunctionWrapper
-    transform input tensor following function input signature
-    """
-
-    def __init__(self, origin_func, arg_names=None, arg_specs=None, kwarg_specs=None):
+    def __init__(
+        self,
+        origin_func: t.Callable[..., t.Any],
+        arg_names: t.Optional[list] = None,
+        arg_specs: t.Optional[list] = None,
+        kwarg_specs: t.Optional[dict] = None,
+    ) -> None:
         self.origin_func = origin_func
         self.arg_names = arg_names
         self.arg_specs = arg_specs
         self.kwarg_specs = {k: v for k, v in zip(arg_names or [], arg_specs or [])}
         self.kwarg_specs.update(kwarg_specs or {})
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):  # type: ignore
         if self.arg_specs is None and self.kwarg_specs is None:
             return self.origin_func(*args, **kwargs)
 
@@ -62,11 +88,11 @@ class _TensorflowFunctionWrapper:
         }
         return self.origin_func(*transformed_args, **transformed_kwargs)
 
-    def __getattr__(self, k):
+    def __getattr__(self, k):  # type: ignore
         return getattr(self.origin_func, k)
 
     @classmethod
-    def hook_loaded_model(cls, loaded_model):
+    def hook_loaded_model(cls, loaded_model) -> None:  # type: ignore # noqa
         funcs = get_restored_functions(loaded_model)
         for k, func in funcs.items():
             arg_names = get_arg_names(func)
@@ -86,202 +112,126 @@ class _TensorflowFunctionWrapper:
             )
 
 
-def _load_tf_saved_model(path):
-    try:
-        import tensorflow as tf
-        from tensorflow.python.training.tracking.tracking import AutoTrackable
-
-        TF2 = tf.__version__.startswith('2')
-    except ImportError:
-        raise MissingDependencyException(
-            "Tensorflow package is required to use TfSavedModelArtifact"
-        )
-
-    if TF2:
-        return tf.saved_model.load(path)
-    else:
-        loaded = tf.compat.v2.saved_model.load(path)
-        if isinstance(loaded, AutoTrackable) and not hasattr(loaded, "__call__"):
-            logger.warning(
-                '''Importing SavedModels from TensorFlow 1.x.
-                `outputs = imported(inputs)` is not supported in bento service due to
-                tensorflow API.
-
-                Recommended usage:
-
-                ```python
-                from tensorflow.python.saved_model import signature_constants
-
-                imported = tf.saved_model.load(path_to_v1_saved_model)
-                wrapped_function = imported.signatures[
-                    signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-                wrapped_function(tf.ones([]))
-                ```
-
-                See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
-                details.
-                '''
-            )
-        return loaded
+_TensorflowFunctionWrapper.__doc__ = """\
+    TODO:
+"""
 
 
-class TensorflowSavedModelArtifact(BentoServiceArtifact):
+class TensorflowModel(Model):
     """
-    Artifact class for saving/loading Tensorflow model in tf.saved_model format
+    Artifact class for saving/loading :obj:`tensorflow` model
+    with :obj:`tensorflow.saved_model` format
 
     Args:
-        name (string): name of the artifact
+        model (`Union[tf.keras.Models, tf.Module, PathType, pathlib.PurePath]`):
+            Omit every tensorflow model instance of type :obj:`tf.keras.Models` or
+            :obj:`tf.Module`
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+            Class metadata
+
 
     Raises:
-        MissingDependencyException: tensorflow package is required for
-            TensorflowSavedModelArtifact
+        MissingDependencyException:
+            :obj:`tensorflow` is required by TensorflowModel
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import tensorflow as tf
-    >>>
-    >>> # Option 1: custom model with specific method call
-    >>> class Adder(tf.Module):
-    >>>     @tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=tf.float32)])
-    >>>     def add(self, x):
-    >>>         return x + x + 1.
-    >>> model_to_save = Adder()
-    >>> # ... compiling, training, etc
-    >>>
-    >>> # Option 2: Sequential model (direct call only)
-    >>> model_to_save = tf.keras.Sequential([
-    >>>     tf.keras.layers.Flatten(input_shape=(28, 28)),
-    >>>     tf.keras.layers.Dense(128, activation='relu'),
-    >>>     tf.keras.layers.Dense(10, activation='softmax')
-    >>> ])
-    >>> # ... compiling, training, etc
-    >>>
-    >>> import bentoml
-    >>> from bentoml.adapters import JsonInput
-    >>> from bentoml.frameworks.tensorflow import TensorflowSavedModelArtifact
-    >>>
-    >>> @bentoml.env(pip_packages=["tensorflow"])
-    >>> @bentoml.artifacts([TensorflowSavedModelArtifact('model')])
-    >>> class TfModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=JsonInput(), batch=False)
-    >>>     def predict(self, json):
-    >>>         input_data = json['input']
-    >>>         prediction = self.artifacts.model.add(input_data)
-    >>>         # prediction = self.artifacts.model(input_data)  # if Sequential mode
-    >>>         return prediction.numpy()
-    >>>
-    >>> svc = TfModelService()
-    >>>
-    >>> # Option 1: pack directly with Tensorflow trackable object
-    >>> svc.pack('model', model_to_save)
-    >>>
-    >>> # Option 2: save to file path then pack
-    >>> tf.saved_model.save(model_to_save, '/tmp/adder/1')
-    >>> svc.pack('model', '/tmp/adder/1')
+        TODO:
+
+    One then can define :code:`bento.py`::
+
+        TODO:
+
     """
 
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(
+        self,
+        model: t.Union[tf.keras.Model, tf.Module, PathType, pathlib.PurePath],
+        metadata: t.Optional[MetadataType] = None,
+    ):
+        super(TensorflowModel, self).__init__(model, metadata=metadata)
 
-        self._model = None
-        self._tmpdir = None
-        self._path = None
+    @staticmethod
+    def __load_tf_saved_model(  # pylint: disable=unused-private-member
+        path: str,
+    ) -> t.Union[AutoTrackable, t.Any]:
+        if TF2:
+            return tf.saved_model.load(path)
+        else:
+            loaded = tf.compat.v2.saved_model.load(path)
+            if isinstance(loaded, AutoTrackable) and not hasattr(loaded, "__call__"):
+                logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)
+            return loaded
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(['tensorflow'])
+    @classmethod
+    def load(cls, path: PathType):  # type: ignore
+        # TODO: type hint returns TF Session or
+        #  Keras model API
+        model = cls.__load_tf_saved_model(str(path))
+        _TensorflowFunctionWrapper.hook_loaded_model(model)
+        logger.warning(TF_FUNCTION_WARNING)
+        # pretty format loaded model
+        logger.info(pretty_format_restored_model(model))
+        if hasattr(model, "keras_api"):
+            logger.warning(KERAS_MODEL_WARNING.format(name=cls.__name__))
+        return model
 
-    def _saved_model_path(self, base_path):
-        return os.path.join(base_path, self.name + '_saved_model')
-
-    def pack(
-        self, obj, metadata=None, signatures=None, options=None
-    ):  # pylint:disable=arguments-differ
+    def save(  # pylint: disable=arguments-differ
+        self,
+        path: PathType,
+        signatures: t.Optional[t.Union[t.Callable[..., t.Any], dict]] = None,
+        options: t.Optional["tf.saved_model.SaveOptions"] = None,
+    ) -> None:  # noqa
         """
-        Pack the TensorFlow Trackable object `obj` to [SavedModel format].
+        Save TensorFlow Trackable object `obj` from [SavedModel format] to path.
+
         Args:
-          obj: A trackable object to export.
-          signatures: Optional, either a `tf.function` with an input signature
-            specified or the result of `f.get_concrete_function` on a
-            `@tf.function`-decorated function `f`, in which case `f` will be used to
-            generate a signature for the SavedModel under the default serving
-            signature key. `signatures` may also be a dictionary, in which case it
-            maps from signature keys to either `tf.function` instances with input
-            signatures or concrete functions. The keys of such a dictionary may be
-            arbitrary strings, but will typically be from the
-            `tf.saved_model.signature_constants` module.
-          options: Optional, `tf.saved_model.SaveOptions` object that specifies
-            options for saving.
+            path (`Union[str, bytes, os.PathLike]`):
+                Path containing a trackable object to export.
+            signatures (`Union[Callable[..., Any], dict]`, `optional`, default to `None`):
+                `signatures` is one of three types:
+
+                a `tf.function` with an input signature specified, which will use the default serving signature key
+
+                a dictionary, which maps signature keys to either :obj`tf.function` instances with input signatures or concrete functions. Keys of such a dictionary may be arbitrary strings, but will typically be from the :obj:`tf.saved_model.signature_constants` module.
+
+                `f.get_concrete_function` on a `@tf.function` decorated function `f`, in which case f will be used to generate a signature for the SavedModel under the default serving signature key,
+
+                    :code:`tf.function` examples::
+
+                      >>> class Adder(tf.Module):
+                      ...   @tf.function
+                      ...   def add(self, x):
+                      ...     return x + x
+
+                      >>> model = Adder()
+                      >>> tf.saved_model.save(
+                      ...   model, '/tmp/adder',signatures=model.add.get_concrete_function(
+                      ...     tf.TensorSpec([], tf.float32)))
+
+            options (`tf.saved_model.SaveOptions`, `optional`, default to `None`):
+                :obj:`tf.saved_model.SaveOptions` object that specifies options for saving.
+
+        .. note::
+
+            Refers to `Signatures explanation <https://www.tensorflow.org/api_docs/python/tf/saved_model/save>`_
+            from Tensorflow documentation for more information.
 
         Raises:
-          ValueError: If `obj` is not trackable.
-        """
-        if not _is_path_like(obj):
-            if self._tmpdir is not None:
-                self._tmpdir.cleanup()
-            else:
-                self._tmpdir = tempfile.TemporaryDirectory()
-            try:
-                import tensorflow as tf
-
-                TF2 = tf.__version__.startswith('2')
-            except ImportError:
-                raise MissingDependencyException(
-                    "Tensorflow package is required to use TfSavedModelArtifact."
-                )
+            ValueError: If `obj` is not trackable.
+        """  # noqa: E501 # pylint: enable=line-too-long
+        if not isinstance(self._model, (str, bytes, pathlib.PurePath, os.PathLike)):
             if TF2:
                 tf.saved_model.save(
-                    obj, self._tmpdir.name, signatures=signatures, options=options,
+                    self._model, str(path), signatures=signatures, options=options
                 )
             else:
-                if self.options:
+                if options:
                     logger.warning(
-                        "Parameter 'options: %s' is ignored when using Tensorflow "
-                        "version 1",
-                        str(options),
+                        f"Parameter 'options: {str(options)}' is ignored when "
+                        f"using tensorflow {tf.__version__}"
                     )
-                tf.saved_model.save(
-                    obj, self._tmpdir.name, signatures=signatures,
-                )
-            self._path = self._tmpdir.name
+                tf.saved_model.save(self._model, str(path), signatures=signatures)
         else:
-            self._path = obj
-        self._packed = True
-        loaded = self.get()
-        logger.warning(
-            "Due to TensorFlow's internal mechanism, only methods wrapped under "
-            "`@tf.function` decorator and the Keras default function "
-            "`__call__(inputs, training=False)` can be restored after a save & load.\n"
-            "You can test the restored model object by referring:\n"
-            f"<bento_svc>.artifacts.{self.name}\n"
-        )
-        logger.info(pretty_format_restored_model(loaded))
-        if hasattr(loaded, "keras_api"):
-            logger.warning(
-                f"BentoML detected that {self.__class__.__name__} is being used "
-                "to pack a Keras API based model. "
-                "In order to get optimal serving performance, we recommend "
-                f"either replacing {self.__class__.__name__} with KerasModelArtifact, "
-                "or wrapping the keras_model.predict method with tf.function decorator."
-            )
-        return self
-
-    def get(self):
-        if self._model is None:
-            loaded_model = _load_tf_saved_model(self._path)
-            _TensorflowFunctionWrapper.hook_loaded_model(loaded_model)
-            self._model = loaded_model
-        return self._model
-
-    def load(self, path):
-        saved_model_path = self._saved_model_path(path)
-        return self.pack(saved_model_path)
-
-    def save(self, dst):
-        # Copy exported SavedModel model directory to BentoML saved artifact directory
-        shutil.copytree(self._path, self._saved_model_path(dst))
-
-    def __del__(self):
-        if getattr(self, "_tmpdir", None) is not None:
-            self._tmpdir.cleanup()
+            assert os.path.isdir(self._model)
+            copy_tree(str(self._model), str(path))

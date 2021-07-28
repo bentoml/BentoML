@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta, abstractmethod
 
+from bentoml.exceptions import YataiDeploymentException
 from yatai.yatai.proto.deployment_pb2 import DeploymentSpec
-from bentoml._internal.exceptions import YataiDeploymentException
 
 
 def get_deployment_operator(yatai_service, deployment_pb):

@@ -9,22 +9,23 @@ from google.protobuf.json_format import MessageToJson
 from simple_di import Provide, inject
 from werkzeug.exceptions import BadRequest, NotFound
 
-from bentoml.configuration import get_debug_mode
-from bentoml.configuration.containers import BentoMLContainer
 from bentoml.exceptions import BentoMLException
-from bentoml.marshal.utils import MARSHAL_REQUEST_HEADER, DataLoader
-from bentoml.server.instruments import InstrumentMiddleware
-from bentoml.types import HTTPRequest
-from bentoml.utils.open_api import get_open_api_spec_json
+
+from ..configuration import get_debug_mode
+from ..configuration.containers import BentoMLContainer
+from ..marshal.marshal import MARSHAL_REQUEST_HEADER, DataLoader
+from ..server.instruments import InstrumentMiddleware
+from ..types import HTTPRequest
+from ..utils.open_api import get_open_api_spec_json
 
 if TYPE_CHECKING:
-    from bentoml.service import InferenceAPI
+    from ..service import InferenceAPI
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_INDEX_HTML = '''\
+DEFAULT_INDEX_HTML = """\
 <!DOCTYPE html>
 <head>
   <link rel="stylesheet" type="text/css" href="static_content/main.css">
@@ -82,9 +83,9 @@ DEFAULT_INDEX_HTML = '''\
       }})
   </script>
 </body>
-'''
+"""
 
-SWAGGER_HTML = '''\
+SWAGGER_HTML = """\
 <!DOCTYPE html>
 <head>
   <link rel="stylesheet" type="text/css" href="static_content/swagger-ui.css">
@@ -99,7 +100,7 @@ SWAGGER_HTML = '''\
       }})
   </script>
 </body>
-'''
+"""
 
 
 def _request_to_json(req):
@@ -164,7 +165,7 @@ class ModelApp:
         self.tracer = tracer
 
         self.swagger_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'static_content'
+            os.path.dirname(os.path.abspath(__file__)), "static_content"
         )
 
         for middleware in (InstrumentMiddleware,):
@@ -209,7 +210,7 @@ class ModelApp:
         """
         The index route for BentoML API server
         """
-        return send_from_directory(static_path, 'index.html')
+        return send_from_directory(static_path, "index.html")
 
     def default_index_view_func(self):
         """
@@ -222,7 +223,7 @@ class ModelApp:
             )
         return Response(
             response=DEFAULT_INDEX_HTML.format(
-                url='/docs.json', readme=self.bento_service.__doc__
+                url="/docs.json", readme=self.bento_service.__doc__
             ),
             status=200,
             mimetype="text/html",
@@ -237,7 +238,7 @@ class ModelApp:
                 response="Swagger is disabled", status=404, mimetype="text/html"
             )
         return Response(
-            response=SWAGGER_HTML.format(url='/docs.json'),
+            response=SWAGGER_HTML.format(url="/docs.json"),
             status=200,
             mimetype="text/html",
         )
@@ -399,15 +400,15 @@ class ModelApp:
                         e.status_code,
                     )
                 else:
-                    response = make_response('', e.status_code)
+                    response = make_response("", e.status_code)
             except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
                 log_exception(sys.exc_info())
 
                 response = make_response(
-                    'An error has occurred in BentoML user code when handling this '
-                    'request, find the error details in server logs',
+                    "An error has occurred in BentoML user code when handling this "
+                    "request, find the error details in server logs",
                     500,
                 )
 

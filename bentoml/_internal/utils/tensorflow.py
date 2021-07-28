@@ -1,7 +1,15 @@
 import logging
-from typing import Sequence, Union
+from typing import TYPE_CHECKING, Sequence, TypeVar, Union
 
 from bentoml.exceptions import MissingDependencyException
+
+if TYPE_CHECKING:
+    # fmt: off
+    from tensorflow.python.framework.type_spec import (  # noqa # pylint: disable=unused-import
+        TypeSpec,
+    )
+
+    # fmt: on
 
 logger = logging.getLogger(__name__)
 
@@ -20,36 +28,51 @@ TENSOR_CLASS_NAMES = (
     "Tensor",
 )
 
+ST = TypeVar("ST")
 
-def _isinstance(obj, klass: Union[str, type, Sequence]):
-    if not klass:
+
+def _isinstance_wrapper(obj: ST, sobj: Union[str, type, Sequence]) -> bool:
+    """
+    `isinstance` wrapper to check tensor spec
+
+    Args:
+        obj:
+            tensor class to check.
+        sobj:
+            class used to check with :obj:`obj`. Follows `TENSOR_CLASS_NAME`
+
+    Returns:
+        :obj:`bool`
+    """
+    if not sobj:
         return False
-    if isinstance(klass, str):
-        return type(obj).__name__ == klass.split('.')[-1]
-    if isinstance(klass, (tuple, list, set)):
-        return any(_isinstance(obj, k) for k in klass)
-    return isinstance(obj, klass)
+    if isinstance(sobj, str):
+        return type(obj).__name__ == sobj.split(".")[-1]
+    if isinstance(sobj, (tuple, list, set)):
+        return any(_isinstance_wrapper(obj, k) for k in sobj)
+    return isinstance(obj, sobj)
 
 
-def normalize_spec(value):
-    if not _isinstance(value, TENSOR_CLASS_NAMES):
+def normalize_spec(value: ST) -> "TypeSpec":
+    """normalize tensor spec"""
+    if not _isinstance_wrapper(value, TENSOR_CLASS_NAMES):
         return value
 
     import tensorflow as tf
 
-    if _isinstance(value, "RaggedTensor"):
+    if _isinstance_wrapper(value, "RaggedTensor"):
         return tf.RaggedTensorSpec.from_value(value)
-    if _isinstance(value, "SparseTensor"):
+    if _isinstance_wrapper(value, "SparseTensor"):
         return tf.SparseTensorSpec.from_value(value)
-    if _isinstance(value, "TensorArray"):
+    if _isinstance_wrapper(value, "TensorArray"):
         return tf.TensorArraySpec.from_tensor(value)
-    if _isinstance(value, ("Tensor", "EagerTensor")):
+    if _isinstance_wrapper(value, ("Tensor", "EagerTensor")):
         return tf.TensorSpec.from_tensor(value)
     return value
 
 
 def get_input_signatures(func):
-    if hasattr(func, 'function_spec'):  # for RestoredFunction
+    if hasattr(func, "function_spec"):  # for RestoredFunction
         if func.function_spec.input_signature:
             return ((func.function_spec.input_signature, {}),)
         else:
@@ -76,7 +99,7 @@ def get_input_signatures(func):
 
 
 def get_arg_names(func):
-    if hasattr(func, 'function_spec'):  # for RestoredFunction
+    if hasattr(func, "function_spec"):  # for RestoredFunction
         return func.function_spec.arg_names
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
         return func._arg_keywords
@@ -84,7 +107,7 @@ def get_arg_names(func):
 
 
 def get_output_signature(func):
-    if hasattr(func, 'function_spec'):  # for RestoredFunction
+    if hasattr(func, "function_spec"):  # for RestoredFunction
         # assume all concrete functions have same signature
         return get_output_signature(func.concrete_functions[0])
 
@@ -106,7 +129,7 @@ def get_restored_functions(m):
     return {
         k: v
         for k, v in function_map.items()
-        if k not in TF_KERAS_DEFAULT_FUNCTIONS and hasattr(v, 'function_spec')
+        if k not in TF_KERAS_DEFAULT_FUNCTIONS and hasattr(v, "function_spec")
     }
 
 
@@ -122,9 +145,9 @@ def get_serving_default_function(m):
 
 
 def cast_tensor_by_spec(_input, spec):
-    '''
+    """
     transform dtype & shape following spec
-    '''
+    """
     try:
         import tensorflow as tf
     except ImportError:
@@ -132,10 +155,10 @@ def cast_tensor_by_spec(_input, spec):
             "Tensorflow package is required to use TfSavedModelArtifact"
         )
 
-    if not _isinstance(spec, "TensorSpec"):
+    if not _isinstance_wrapper(spec, "TensorSpec"):
         return _input
 
-    if _isinstance(_input, ["Tensor", "EagerTensor"]):
+    if _isinstance_wrapper(_input, ["Tensor", "EagerTensor"]):
         # TensorFlow issue #43038
         # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
         return tf.cast(_input, dtype=spec.dtype, name=spec.name)
@@ -145,9 +168,9 @@ def cast_tensor_by_spec(_input, spec):
 
 def _pretty_format_function_call(base, name, arg_names):
     if arg_names:
-        part_sigs = ', '.join(f"{k}" for k in arg_names)
+        part_sigs = ", ".join(f"{k}" for k in arg_names)
     else:
-        part_sigs = ''
+        part_sigs = ""
 
     if name == "__call__":
         return f"{base}({part_sigs})"
@@ -155,24 +178,22 @@ def _pretty_format_function_call(base, name, arg_names):
 
 
 def _pretty_format_positional(positional):
-    return "Positional arguments ({} total):\n    * {}".format(
-        len(positional), "\n    * ".join(str(a) for a in positional)
-    )
+    return f'Positional arguments ({len(positional)} total):\n    * \n{"    * ".join(str(a) for a in positional)}'  # noqa
 
 
 def pretty_format_function(function, obj="<object>", name="<function>"):
-    ret = ''
+    ret = ""
     outs = get_output_signature(function)
     sigs = get_input_signatures(function)
     arg_names = get_arg_names(function)
 
-    if hasattr(function, 'function_spec'):
+    if hasattr(function, "function_spec"):
         arg_names = function.function_spec.arg_names
     else:
         arg_names = function._arg_keywords
 
     ret += _pretty_format_function_call(obj, name, arg_names)
-    ret += '\n------------\n'
+    ret += "\n------------\n"
 
     signature_descriptions = []
 
@@ -184,7 +205,7 @@ def pretty_format_function(function, obj="<object>", name="<function>"):
             )
         )
 
-    ret += '\n\n'.join(signature_descriptions)
+    ret += "\n\n".join(signature_descriptions)
     ret += f"\n\nReturn:\n  {outs}\n\n"
     return ret
 

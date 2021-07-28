@@ -3,7 +3,7 @@ import os.path
 import shutil
 import tempfile
 
-from bentoml.configuration import get_debug_mode
+from ..configuration import get_debug_mode
 
 logger = logging.getLogger(__name__)
 

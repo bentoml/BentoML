@@ -6,6 +6,7 @@ import io
 import json
 import logging
 import os
+import re
 import shutil
 import stat
 import tarfile
@@ -14,6 +15,8 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import requests
+
+from bentoml.exceptions import BentoMLException, InvalidArgument
 
 from ..bundle.config import SavedBundleConfig
 from ..bundle.loader import _is_remote_path
@@ -24,16 +27,18 @@ from ..bundle.templates import (
     MODEL_SERVER_DOCKERFILE_CPU,
 )
 from ..configuration import _is_pip_installed_bentoml
-from ..env.local_py_modules import copy_local_py_modules, copy_zip_import_archives
-from ..env.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
-from ..exceptions import BentoMLException
+from ..environment.local_py_modules import (
+    copy_local_py_modules,
+    copy_zip_import_archives,
+)
+from ..environment.pip_pkg import ZIPIMPORT_DIR, get_zipmodules
 from ..utils import archive_directory_to_tar, is_gcs_url, is_s3_url
 from ..utils.open_api import get_open_api_spec_json
 from ..utils.tempdir import TempDirectory
 from ..utils.usage_stats import track_save
 
 if TYPE_CHECKING:
-    from ..service import BentoService
+    from ..service import Service
 
 
 def versioneer():
@@ -72,24 +77,24 @@ def validate_version_str(version_str):
 
 
 DEFAULT_SAVED_BUNDLE_README = """\
-# Generated BentoService bundle - {}:{}
+# Generated Service bundle - {}:{}
 
 This is a ML Service bundle created with BentoML, it is not recommended to edit
 code or files contained in this directory. Instead, edit the code that uses BentoML
-to create this bundle, and save a new BentoService bundle.
+to create this bundle, and save a new Service bundle.
 """
 
 logger = logging.getLogger(__name__)
 
 
-def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
+def _write_bento_content_to_dir(bento_service: "Service", path: str):
     if not os.path.exists(path):
         raise BentoMLException("Directory '{}' not found".format(path))
 
     for artifact in bento_service.artifacts.get_artifact_list():
         if not artifact.packed:
             logger.warning(
-                "Missing declared artifact '%s' for BentoService '%s'",
+                "Missing declared artifact '%s' for Service '%s'",
                 artifact.name,
                 bento_service.name,
             )
@@ -98,10 +103,10 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
         os.mkdir(module_base_path)
     except FileExistsError:
         raise BentoMLException(
-            f"Existing module file found for BentoService {bento_service.name}"
+            f"Existing module file found for Service {bento_service.name}"
         )
 
-    # write README.md with custom BentoService's docstring if presented
+    # write README.md with custom Service's docstring if presented
     saved_bundle_readme = DEFAULT_SAVED_BUNDLE_README.format(
         bento_service.name, bento_service.version
     )
@@ -112,7 +117,7 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
     with open(os.path.join(path, "README.md"), "w") as f:
         f.write(saved_bundle_readme)
 
-    # save all model artifacts to 'base_path/name/artifacts/' directory
+    # save all model artifacts to 'path/name/artifacts/' directory
     bento_service.artifacts.save(module_base_path)
 
     # write conda environment, requirement.txt
@@ -135,7 +140,7 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
             )
         )
 
-    # write setup.py, this make saved BentoService bundle pip installable
+    # write setup.py, this make saved Service bundle pip installable
     setup_py_content = BENTO_SERVICE_BUNDLE_SETUP_PY_TEMPLATE.format(
         name=bento_service.name,
         pypi_package_version=bento_service.version,
@@ -163,10 +168,10 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
         )
         if not os.path.isdir(src_web_static_content_dir):
             raise BentoMLException(
-                f'web_static_content directory {src_web_static_content_dir} not found'
+                f"web_static_content directory {src_web_static_content_dir} not found"
             )
         dest_web_static_content_dir = os.path.join(
-            module_base_path, 'web_static_content'
+            module_base_path, "web_static_content"
         )
         shutil.copytree(src_web_static_content_dir, dest_web_static_content_dir)
 
@@ -199,11 +204,11 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
     # as package data after pip installed as a python package
     config.write_to_path(module_base_path)
 
-    bundled_pip_dependencies_path = os.path.join(path, 'bundled_pip_dependencies')
+    bundled_pip_dependencies_path = os.path.join(path, "bundled_pip_dependencies")
     _bundle_local_bentoml_if_installed_from_source(bundled_pip_dependencies_path)
     # delete mtime and sort file in tarballs to normalize the checksums
     for tarball_file_path in glob.glob(
-        os.path.join(bundled_pip_dependencies_path, '*.tar.gz')
+        os.path.join(bundled_pip_dependencies_path, "*.tar.gz")
     ):
         normalize_gztarball(tarball_file_path)
 
@@ -213,17 +218,17 @@ def _write_bento_content_to_dir(bento_service: "BentoService", path: str):
 
 
 def save_to_dir(
-    bento_service: "BentoService", path: str, version: str = None, silent: bool = False
+    bento_service: "Service", path: str, version: str = None, silent: bool = False
 ) -> None:
     """
-    Save given :class:`~bentoml.BentoService` along with all its artifacts,
+    Save given :class:`~bentoml.Service` along with all its artifacts,
     source code and dependencies to target file path, assuming path
     exist and empty. If target path is not empty, this call may override
     existing files in the given path.
 
     Args:
-        bento_service (:class:`~bentoml.service.BentoService`):
-            a BentoService instance
+        bento_service (:class:`~bentoml.service.Service`):
+            a Service instance
         path (`str`):
             Destination of where the bento service will be saved. The
             destination can be local path or remote path. The remote
@@ -236,11 +241,11 @@ def save_to_dir(
     """
     track_save(bento_service)
 
-    from ..service import BentoService
+    from ..service import Service
 
-    if not isinstance(bento_service, BentoService):
+    if not isinstance(bento_service, Service):
         raise BentoMLException(
-            "save_to_dir only works with instances of custom BentoService class"
+            "save_to_dir only works with instances of custom Service class"
         )
 
     if version is not None:
@@ -252,8 +257,8 @@ def save_to_dir(
         # If user provided path is an remote location, the bundle will first save to
         # a temporary directory and then upload to the remote location
         logger.info(
-            'Saving bento to an remote path. BentoML will first save the bento '
-            'to a local temporary directory and then upload to the remote path.'
+            "Saving bento to an remote path. BentoML will first save the bento "
+            "to a local temporary directory and then upload to the remote path."
         )
         with TempDirectory() as temp_dir:
             _write_bento_content_to_dir(bento_service, temp_dir)
@@ -274,7 +279,7 @@ def save_to_dir(
 
     if not silent:
         logger.info(
-            "BentoService bundle '%s:%s' created at: %s",
+            "Service bundle '%s:%s' created at: %s",
             bento_service.name,
             bento_service.version,
             path,
@@ -286,7 +291,7 @@ def normalize_gztarball(file_path: str):
     tar_io = io.BytesIO()
 
     with tarfile.open(file_path, "r:gz") as f:
-        with tarfile.TarFile("bundle.tar", mode='w', fileobj=tar_io) as nf:
+        with tarfile.TarFile("bundle.tar", mode="w", fileobj=tar_io) as nf:
             names = sorted(f.getnames())
             for name in names:
                 info = f.getmember(name)
@@ -301,16 +306,16 @@ def normalize_gztarball(file_path: str):
 def _bundle_local_bentoml_if_installed_from_source(target_path):
     """
     if bentoml is installed in editor mode(pip install -e), this will build a source
-    distribution with the local bentoml fork and add it to saved BentoService bundle
+    distribution with the local bentoml fork and add it to saved Service bundle
     path under bundled_pip_dependencies directory
     """
 
     # Find bentoml module path
-    (module_location,) = importlib.util.find_spec('bentoml').submodule_search_locations
+    (module_location,) = importlib.util.find_spec("bentoml").submodule_search_locations
 
-    bentoml_setup_py = os.path.abspath(os.path.join(module_location, '..', 'setup.py'))
+    bentoml_setup_py = os.path.abspath(os.path.join(module_location, "..", "setup.py"))
 
-    # this is for BentoML developer to create BentoService containing custom develop
+    # this is for BentoML developer to create Service containing custom develop
     # branches of BentoML library, it is True only when BentoML module is installed in
     # development mode via "pip install --editable ."
     if not _is_pip_installed_bentoml() and os.path.isfile(bentoml_setup_py):
@@ -321,9 +326,9 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
 
         # Create tmp directory inside bentoml module for storing the bundled
         # targz file. Since dist-dir can only be inside of the module directory
-        bundle_dir_name = '__bentoml_tmp_sdist_build'
+        bundle_dir_name = "__bentoml_tmp_sdist_build"
         source_dir = os.path.abspath(
-            os.path.join(module_location, '..', bundle_dir_name)
+            os.path.join(module_location, "..", bundle_dir_name)
         )
 
         if os.path.isdir(source_dir):
@@ -334,7 +339,7 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
 
         sandbox.run_setup(
             bentoml_setup_py,
-            ['-q', 'sdist', '--format', 'gztar', '--dist-dir', bundle_dir_name],
+            ["-q", "sdist", "--format", "gztar", "--dist-dir", bundle_dir_name],
         )
 
         # copy the generated targz to saved bundle directory and remove it from
@@ -350,8 +355,8 @@ def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
     """
     parsed_url = urlparse(remote_path)
     bucket_name = parsed_url.netloc
-    object_prefix_path = parsed_url.path.lstrip('/')
-    object_path = f'{object_prefix_path}/{file_name}'
+    object_prefix_path = parsed_url.path.lstrip("/")
+    object_path = f"{object_prefix_path}/{file_name}"
     if is_s3_url(remote_path):
         try:
             import boto3
@@ -359,8 +364,8 @@ def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
             raise BentoMLException(
                 '"boto3" package is required for saving bento to AWS S3 bucket'
             )
-        s3_client = boto3.client('s3')
-        with open(file_path, 'rb') as f:
+        s3_client = boto3.client("s3")
+        with open(file_path, "rb") as f:
             s3_client.upload_fileobj(f, bucket_name, object_path)
     elif is_gcs_url(remote_path):
         try:
@@ -368,7 +373,7 @@ def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
         except ImportError:
             raise BentoMLException(
                 '"google.cloud" package is required for saving bento to Google '
-                'Cloud Storage'
+                "Cloud Storage"
             )
         gcs_client = storage.Client()
         bucket = gcs_client.bucket(bucket_name)
@@ -378,6 +383,6 @@ def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
         http_response = requests.put(remote_path)
         if http_response.status_code != 200:
             raise BentoMLException(
-                f'Error uploading BentoService to {remote_path} '
-                f'{http_response.status_code}'
+                f"Error uploading Service to {remote_path} "
+                f"{http_response.status_code}"
             )

@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from tests.integration.utils import (
+from tests import (
     build_api_server_docker_image,
     run_api_server,
     run_api_server_docker_container,

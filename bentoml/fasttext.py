@@ -1,80 +1,49 @@
 import os
+import typing as t
 
-from bentoml.exceptions import MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.models.base import MODEL_NAMESPACE, Model
+from ._internal.types import MetadataType, PathType
+from .exceptions import MissingDependencyException
+
+try:
+    import fasttext
+except ImportError:
+    raise MissingDependencyException("fasttext is required by FastTextModel")
 
 
-class FasttextModelArtifact(BentoServiceArtifact):
+class FastTextModel(Model):
     """
-    Artifact class for saving and loading fasttext models
+    Model class for saving/loading :obj:`fasttext` models
 
     Args:
-        name (str): Name for the artifact
+        model (`fasttext.FastText._FastText`):
+            Base pipeline for all fasttext model
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyError: fasttext package is required for FasttextModelArtifact
+        MissingDependencyException:
+            :obj:`fasttext` is required by FastTextModel
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import fasttext
-    >>> # prepare training data and store to file
-    >>> training_data_file = 'training-data-file.train'
-    >>> model = fasttext.train_supervised(input=training_data_file)
-    >>>
-    >>> import bentoml
-    >>> from bentoml.adapters JsonInput
-    >>> from bentoml.frameworks.fasttext import FasttextModelArtifact
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([FasttextModelArtifact('model')])
-    >>> class FasttextModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=JsonInput(), batch=False)
-    >>>     def predict(self, parsed_json):
-    >>>         # K is the number of labels that successfully were predicted,
-    >>>         # among all the real labels
-    >>>         return self.artifacts.model.predict(parsed_json['text'], k=5)
-    >>>
-    >>> svc = FasttextModelService()
-    >>> svc.pack('model', model)
+        TODO:
+
+    One then can define :code:`bento.py`::
+
+        TODO:
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(
+        self,
+        model: "fasttext.FastText._FastText",
+        metadata: t.Optional[MetadataType] = None,
+    ):
+        super(FastTextModel, self).__init__(model, metadata=metadata)
 
-        self._model = None
+    @classmethod
+    def load(cls, path: PathType) -> "fasttext.FastText._FastText":
+        return fasttext.load_model(os.path.join(path, MODEL_NAMESPACE))
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(["fasttext"])
-
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name)
-
-    def pack(self, fasttext_model, metadata=None):  # pylint:disable=arguments-renamed
-        try:
-            import fasttext  # noqa # pylint: disable=unused-import
-        except ImportError:
-            raise MissingDependencyException(
-                "fasttext package is required to use FasttextModelArtifact"
-            )
-        self._model = fasttext_model
-        return self
-
-    def load(self, path):
-        try:
-            import fasttext  # noqa # pylint: disable=unused-import
-        except ImportError:
-            raise MissingDependencyException(
-                "fasttext package is required to use FasttextModelArtifact"
-            )
-
-        model = fasttext.load_model(self._model_file_path(path))
-        return self.pack(model)
-
-    def get(self):
-        return self._model
-
-    def save(self, dst):
-        self._model.save_model(self._model_file_path(dst))
+    def save(self, path: PathType) -> None:
+        self._model.save_model(os.path.join(path, MODEL_NAMESPACE))

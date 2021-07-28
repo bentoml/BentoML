@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import shutil
-import logging
 from pathlib import Path
 
-from bentoml._internal.exceptions import YataiRepositoryException
-from yatai.yatai.proto.repository_pb2 import BentoUri
-from yatai.yatai.repository.base_repository import BaseRepository
-
+from bentoml.exceptions import YataiRepositoryException
+from yatai.proto.repository_pb2 import BentoUri
+from yatai.repository.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ class FileSystemRepository(BaseRepository):
     def add(self, bento_name, bento_version):
         # Full path containing saved BentoService bundle, it the base path with service
         # name and service version as prefix. e.g.:
-        # with base_path = '/tmp/my_bento_repo/', the saved bento will resolve in
+        # with path = '/tmp/my_bento_repo/', the saved bento will resolve in
         # the directory: '/tmp/my_bento_repo/service_name/version/'
         target_dir = os.path.join(self.base_path, bento_name, bento_version)
 

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer
+from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     Lock = multiprocessing.synchronize.Lock
@@ -28,20 +28,20 @@ class InstrumentMiddleware:
         service_name = self.bento_service.name
 
         self.metrics_request_duration = metrics_client.Histogram(
-            name=service_name + '_request_duration_seconds',
+            name=service_name + "_request_duration_seconds",
             documentation=service_name + " API HTTP request duration in seconds",
-            labelnames=['endpoint', 'service_version', 'http_response_code'],
+            labelnames=["endpoint", "service_version", "http_response_code"],
         )
         self.metrics_request_total = metrics_client.Counter(
             name=service_name + "_request_total",
-            documentation='Total number of HTTP requests',
-            labelnames=['endpoint', 'service_version', 'http_response_code'],
+            documentation="Total number of HTTP requests",
+            labelnames=["endpoint", "service_version", "http_response_code"],
         )
         self.metrics_request_in_progress = metrics_client.Gauge(
             name=service_name + "_request_in_progress",
-            documentation='Total number of HTTP requests in progress now',
-            labelnames=['endpoint', 'service_version'],
-            multiprocess_mode='livesum',
+            documentation="Total number of HTTP requests in progress now",
+            labelnames=["endpoint", "service_version"],
+            multiprocess_mode="livesum",
         )
 
     def __call__(self, environ, start_response):

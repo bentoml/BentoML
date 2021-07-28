@@ -6,8 +6,9 @@ import os
 import pathlib
 import string
 import sys
+import typing as t
 from functools import reduce
-from typing import Any, Callable, Dict, Generator, Iterable, List, MutableMapping, Union
+from types import FunctionType
 
 from absl import flags
 from cerberus import Validator
@@ -15,27 +16,29 @@ from glom import Assign, Path, PathAccessError, PathAssignError, glom
 from ruamel import yaml
 
 __all__ = (
-    'FLAGS',
-    'cached_property',
-    'ColoredFormatter',
-    'mkdir_p',
-    'flatten',
-    'mapfunc',
-    'maxkeys',
-    'walk',
-    'load_manifest_yaml',
-    'sprint',
-    'jprint',
-    'pprint',
-    'get_data',
-    'set_data',
-    'get_nested',
+    "FLAGS",
+    "cached_property",
+    "ColoredFormatter",
+    "mkdir_p",
+    "flatten",
+    "mapfunc",
+    "maxkeys",
+    "walk",
+    "load_manifest_yaml",
+    "sprint",
+    "jprint",
+    "pprint",
+    "get_data",
+    "set_data",
+    "get_nested",
 )
 
 log = logging.getLogger(__name__)
 
 SUPPORTED_OS = ["debian10", "centos8", "centos7", "alpine3.14", "amazonlinux2"]
-SUPPORTED_GENERATE_TYPE = ['dockerfiles', 'images']
+SUPPORTED_GENERATE_TYPE = ["dockerfiles", "images"]
+
+ValidateType = t.Union[str, t.List[str]]
 
 # defined global vars.
 FLAGS = flags.FLAGS
@@ -79,22 +82,22 @@ flags.DEFINE_multi_string(
     "generate",
     [],
     f"Generation type. Options: {SUPPORTED_GENERATE_TYPE}",
-    short_name='g',
+    short_name="g",
 )
 flags.DEFINE_boolean(
-    "push", False, "Whether to push built image.", short_name='p',
+    "push", False, "Whether to push built image.", short_name="p",
 )
 flags.DEFINE_boolean(
-    "readmes", False, "Whether to stop at pushing readmes.", short_name='md',
+    "readmes", False, "Whether to stop at pushing readmes.", short_name="md",
 )
 flags.DEFINE_string(
     "releases",
     "",
     "Set of releases to build and tags, defaults to every release type.",
-    short_name='r',
+    short_name="r",
 )
 
-SPEC_SCHEMA = """
+SPEC_SCHEMA = r"""
 ---
 specs:
   required: true
@@ -177,7 +180,7 @@ specs:
             type: string
           valuesrules:
             type: string
-            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)' # noqa: W605, E501
+            regex: '((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w\-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)'
         registry:
           keysrules:
             type: string
@@ -189,7 +192,7 @@ repository:
   type: dict
   keysrules:
     type: string
-    regex: '(\w+)\.{1}(\w+)' # noqa: W605
+    regex: '(\w+)\.{1}(\w+)'
   valuesrules:
     type: dict
     matched: 'specs.repository'
@@ -241,7 +244,7 @@ releases:
     type: dict
     required: True
     matched: 'specs.releases'
-"""  # noqa: E501
+"""  # noqa: W605, E501 # pylint: disable=W1401
 
 
 class MetadataSpecValidator(Validator):
@@ -260,21 +263,21 @@ class MetadataSpecValidator(Validator):
     CUDNN_THRESHOLD: int = 1
     CUDNN_COUNTER: int = 0
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: str) -> None:
         if "packages" in kwargs:
             self.packages = kwargs["packages"]
         if "releases" in kwargs:
             self.releases = kwargs["releases"]
-        super(Validator, self).__init__(*args, **kwargs)
+        super(MetadataSpecValidator, self).__init__(*args, **kwargs)
 
-    def _check_with_packages(self, field, value):
+    def _check_with_packages(self, field: str, value: str) -> None:
         """
         Check if registry is defined in packages.
         """
         if value not in self.packages:
             self._error(field, f"{field} is not defined under packages")
 
-    def _check_with_args_format(self, field, value):
+    def _check_with_args_format(self, field: str, value: ValidateType) -> None:
         """
         Check if value has correct envars format: ARG=foobar
         This will be parsed at runtime when building docker images.
@@ -291,7 +294,7 @@ class MetadataSpecValidator(Validator):
             for v in value:
                 self._check_with_args_format(field, v)
 
-    def _check_with_keys_format(self, field, value):
+    def _check_with_keys_format(self, field: str, value: str) -> None:
         fmt_field = [t[1] for t in string.Formatter().parse(value) if t[1] is not None]
         for _keys in self.document.keys():
             if _keys == field:
@@ -301,14 +304,13 @@ class MetadataSpecValidator(Validator):
                     field, f"{value} doesn't contain {_keys} in defined document scope"
                 )
 
-    def _check_with_cudnn_threshold(self, field, value):
-        if 'cudnn' in value:
+    def _check_with_cudnn_threshold(self, field: str, value: str) -> None:
+        if "cudnn" in value:
             self.CUDNN_COUNTER += 1
-            pass
         if self.CUDNN_COUNTER > self.CUDNN_THRESHOLD:
             self._error(field, "Only allowed one CUDNN version per CUDA mapping")
 
-    def _check_with_available_dists(self, field, value):
+    def _check_with_available_dists(self, field: str, value: ValidateType) -> None:
         if isinstance(value, list):
             for v in value:
                 self._check_with_available_dists(field, v)
@@ -316,7 +318,9 @@ class MetadataSpecValidator(Validator):
             if value not in self.releases:
                 self._error(field, f"{field} is not defined under releases")
 
-    def _validate_supported_dists(self, supported_dists, field, value):
+    def _validate_supported_dists(
+        self, supported_dists: bool, field: str, value: ValidateType
+    ) -> None:
         """
         Validate if given is a supported OS.
 
@@ -335,7 +339,7 @@ class MetadataSpecValidator(Validator):
             for v in value:
                 self._validate_supported_dists(supported_dists, field, v)
 
-    def _validate_env_vars(self, env_vars, field, value):
+    def _validate_env_vars(self, env_vars: bool, field: str, value: str) -> None:
         """
         Validate if given is a environment variable.
 
@@ -348,7 +352,12 @@ class MetadataSpecValidator(Validator):
         else:
             self._error(field, f"{value} cannot be parsed as string.")
 
-    def _validate_matched(self, others, field, value):
+    def _validate_matched(
+        self,
+        others: t.Union[ValidateType, t.Dict[str, t.Any]],
+        field: str,
+        value: t.Union[ValidateType, t.Dict[str, t.Any]],
+    ) -> None:
         """
         Validate if a field is defined as a reference to match all given fields if
         we updated the default reference.
@@ -363,7 +372,7 @@ class MetadataSpecValidator(Validator):
                     f"{field} from {others} does not match",
                 )
         elif isinstance(others, str):
-            ref = get_nested(self.root_document, others.split('.'))
+            ref = get_nested(self.root_document, others.split("."))
             if len(value) != len(ref):
                 self._error(field, f"Reference {field} from {others} does not match")
         elif isinstance(others, list):
@@ -373,29 +382,35 @@ class MetadataSpecValidator(Validator):
             self._error(field, f"Unable to parse field type {type(others)}")
 
 
+class _Missing(object):
+    def __repr__(self) -> str:
+        return "no value"
+
+    def __reduce__(self) -> str:
+        return "_missing"
+
+
 class cached_property(property):
     """Direct ports from bentoml/utils/__init__.py"""
 
-    class _Missing(object):
-        def __repr__(self):
-            return "no value"
-
-        def __reduce__(self):
-            return "_missing"
-
     _missing = _Missing()
 
-    def __init__(self, func, name=None, doc=None):
-        super().__init__(doc)
+    def __init__(
+        self,
+        func: FunctionType,
+        name: t.Optional[str] = None,
+        doc: t.Optional[str] = None,
+    ) -> None:
+        super(cached_property, self).__init__(doc=doc)
         self.__name__ = name or func.__name__
         self.__doc__ = doc or func.__doc__
         self.__module__ = func.__module__
         self.func = func
 
-    def __set__(self, obj, value):
+    def __set__(self, obj, value):  # type: ignore
         obj.__dict__[self.__name__] = value
 
-    def __get__(self, obj, types=None):
+    def __get__(self, obj, types=None):  # type: ignore
         if obj is None:
             return self
         value = obj.__dict__.get(self.__name__, self._missing)
@@ -423,13 +438,13 @@ class ColoredFormatter(logging.Formatter):
         logging.CRITICAL: red + _format + reset,
     }
 
-    def format(self, record: logging.LogRecord):
+    def format(self, record: logging.LogRecord) -> str:
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
 
 
-def mkdir_p(path: str):
+def mkdir_p(path: str) -> None:
     try:
         os.makedirs(path)
     except OSError as e:
@@ -437,37 +452,37 @@ def mkdir_p(path: str):
             raise
 
 
-def flatten(arr: Iterable) -> Iterable[Union[Any, str]]:
+def flatten(arr: t.Iterable) -> t.Generator:  # TODO: better type hint
     for it in arr:
-        if isinstance(it, Iterable) and not isinstance(it, str):
+        if isinstance(it, t.Iterable) and not isinstance(it, str):
             yield from flatten(it)
         else:
             yield it
 
 
-def mapfunc(func: Callable, obj: Union[MutableMapping, List]):
+def mapfunc(func: t.Callable, obj: t.Union[t.MutableMapping, list]) -> t.Any:
     if isinstance(obj, list):
         return func(obj)
     if any(isinstance(v, dict) for v in obj):
         for v in obj:
             mapfunc(func, v)
-    if isinstance(obj, Dict):
+    if isinstance(obj, dict):
         for k, v in obj.items():
-            if isinstance(v, MutableMapping):
+            if isinstance(v, t.MutableMapping):
                 mapfunc(func, v)
             elif not isinstance(v, str):
                 obj[k] = func(v)
             continue
 
 
-def maxkeys(di: Dict) -> List:
+def maxkeys(di: dict) -> t.Any:
     if any(isinstance(v, dict) for v in di.values()):
         for v in di.values():
             return maxkeys(v)
     return max(di.items(), key=lambda x: len(set(x[0])))[1]
 
 
-def walk(path: pathlib.Path) -> Generator:
+def walk(path: pathlib.Path) -> t.Generator:
     for p in path.iterdir():
         if p.is_dir():
             yield from walk(p)
@@ -475,21 +490,21 @@ def walk(path: pathlib.Path) -> Generator:
         yield p.resolve()
 
 
-def sprint(*args, **kwargs):
+def sprint(*args: t.Any, **kwargs: str) -> None:
     # stream logs inside docker container to sys.stderr
     print(*args, file=sys.stderr, flush=True, **kwargs)
 
 
-def jprint(*args, **kwargs):
-    sprint(json.dumps(*args, indent=2), **kwargs)
+def jprint(*args: str, **kwargs: str) -> None:
+    sprint(json.dumps(args[0], indent=2), *args[1:], **kwargs)
 
 
-def pprint(*args):
+def pprint(*args: str) -> None:
     # custom pretty logs
     log.warning(f"{'-' * 59}\n\t{' ' * 8}| {''.join([*args])}\n\t{' ' * 8}{'-' * 59}")
 
 
-def get_data(obj: Union[Dict, MutableMapping], *path: str) -> Any:
+def get_data(obj: t.Union[dict, t.MutableMapping], *path: str) -> t.Any:
     """
     Get data from the object by dotted path.
     e.g: dependencies.cuda."11.3.1"
@@ -507,7 +522,7 @@ def get_data(obj: Union[Dict, MutableMapping], *path: str) -> Any:
         return data
 
 
-def set_data(obj: Dict, value: Union[Dict, List, str], *path: str) -> None:
+def set_data(obj: dict, value: t.Union[dict, list, str], *path: str) -> None:
     """
     Update data from the object with given value.
     e.g: dependencies.cuda."11.3.1"
@@ -523,14 +538,14 @@ def set_data(obj: Dict, value: Union[Dict, List, str], *path: str) -> None:
         exit(1)
 
 
-def get_nested(obj: Dict, keys: List[str]) -> Any:
+def get_nested(obj: t.Dict, keys: t.List[str]) -> t.Any:
     """Iterate through a nested dict from a list of keys"""
     return reduce(operator.getitem, keys, obj)
 
 
-def load_manifest_yaml(file: str) -> Dict:
+def load_manifest_yaml(file: str) -> dict:
     with open(file, "r") as input_file:
-        manifest: Dict = yaml.safe_load(input_file)
+        manifest: t.Dict = yaml.safe_load(input_file)
 
     v: MetadataSpecValidator = MetadataSpecValidator(
         yaml.safe_load(SPEC_SCHEMA),
@@ -546,4 +561,5 @@ def load_manifest_yaml(file: str) -> Dict:
     else:
         log.info(f"Valid {file}.")
 
-    return v.normalized(manifest)
+    normalized: dict = v.normalized(manifest)
+    return normalized

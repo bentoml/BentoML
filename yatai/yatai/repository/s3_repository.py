@@ -17,9 +17,9 @@ import logging
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.exceptions import YataiRepositoryException
-from yatai.yatai.proto.repository_pb2 import BentoUri
-from yatai.yatai.repository.base_repository import BaseRepository
+from bentoml.exceptions import YataiRepositoryException
+from yatai.proto.repository_pb2 import BentoUri
+from yatai.repository.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
@@ -39,29 +39,30 @@ class S3Repository(BaseRepository):
             BentoMLContainer.config.yatai.repository.s3.expiration
         ],
     ):
-        import boto3
         from urllib.parse import urlparse
+
+        import boto3
 
         self.uri_type = BentoUri.S3
 
         parse_result = urlparse(base_url)
         self.bucket = parse_result.netloc
-        self.base_path = parse_result.path.lstrip('/')
+        self.base_path = parse_result.path.lstrip("/")
 
         s3_client_args = {}
-        s3_client_args['config'] = boto3.session.Config(
+        s3_client_args["config"] = boto3.session.Config(
             signature_version=signature_version
         )
         if endpoint_url is not None:
-            s3_client_args['endpoint_url'] = endpoint_url
+            s3_client_args["endpoint_url"] = endpoint_url
         self.s3_client = boto3.client("s3", **s3_client_args)
         self.expiration = expiration
 
     def _get_object_name(self, bento_name, bento_version):
         if self.base_path:
-            return "/".join([self.base_path, bento_name, bento_version]) + '.tar.gz'
+            return "/".join([self.base_path, bento_name, bento_version]) + ".tar.gz"
         else:
-            return "/".join([bento_name, bento_version]) + '.tar.gz'
+            return "/".join([bento_name, bento_version]) + ".tar.gz"
 
     def add(self, bento_name, bento_version):
         # Generate pre-signed s3 path for upload
@@ -69,8 +70,8 @@ class S3Repository(BaseRepository):
         object_name = self._get_object_name(bento_name, bento_version)
         try:
             response = self.s3_client.generate_presigned_url(
-                'put_object',
-                Params={'Bucket': self.bucket, 'Key': object_name},
+                "put_object",
+                Params={"Bucket": self.bucket, "Key": object_name},
                 ExpiresIn=self.expiration,
             )
         except Exception as e:
@@ -80,7 +81,7 @@ class S3Repository(BaseRepository):
 
         return BentoUri(
             type=self.uri_type,
-            uri='s3://{}/{}'.format(self.bucket, object_name),
+            uri="s3://{}/{}".format(self.bucket, object_name),
             s3_presigned_url=response,
         )
 
@@ -91,8 +92,8 @@ class S3Repository(BaseRepository):
 
         try:
             response = self.s3_client.generate_presigned_url(
-                'get_object',
-                Params={'Bucket': self.bucket, 'Key': object_name},
+                "get_object",
+                Params={"Bucket": self.bucket, "Key": object_name},
                 ExpiresIn=self.expiration,
             )
             return response
@@ -102,7 +103,7 @@ class S3Repository(BaseRepository):
                 "falling back to using s3 path and client side credential for"
                 "downloading with boto3"
             )
-            return 's3://{}/{}'.format(self.bucket, object_name)
+            return "s3://{}/{}".format(self.bucket, object_name)
 
     def dangerously_delete(self, bento_name, bento_version):
         # Remove s3 path containing related Bento files
@@ -113,7 +114,7 @@ class S3Repository(BaseRepository):
 
         try:
             response = self.s3_client.delete_object(Bucket=self.bucket, Key=object_name)
-            DELETE_MARKER = 'DeleteMarker'  # whether object is successfully deleted.
+            DELETE_MARKER = "DeleteMarker"  # whether object is successfully deleted.
 
             # Note: as of boto3 v1.13.13. delete_object returns an incorrect format as
             # expected from documentation.
@@ -150,7 +151,7 @@ class S3Repository(BaseRepository):
                         f"the files may have already been deleted by the user."
                     )
                     return
-            elif 'ResponseMetadata' in response:
+            elif "ResponseMetadata" in response:
                 # Note: Use head_object to 'check' is the object deleted or not.
                 # head_object only try to retrieve the metadata without returning
                 # the object itself.
@@ -165,9 +166,9 @@ class S3Repository(BaseRepository):
                 except ClientError as e:
                     # expected ClientError with Code 404, as target object should be
                     # deleted and 'head_object' should raise
-                    error_response = e.response.get('Error', {})
-                    error_code = error_response.get('Code', None)
-                    if error_code == '404':
+                    error_response = e.response.get("Error", {})
+                    error_code = error_response.get("Code", None)
+                    if error_code == "404":
                         # Error code 404 means target file object does not exist, as
                         # expected after delete_object call
                         return
@@ -176,7 +177,7 @@ class S3Repository(BaseRepository):
                         raise e
             else:
                 raise YataiRepositoryException(
-                    'Unrecognized response format from s3 delete_object'
+                    "Unrecognized response format from s3 delete_object"
                 )
         except Exception as e:
             raise YataiRepositoryException(

@@ -1,0 +1,150 @@
+syntax = "proto3";
+package yatai;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+import "status.proto";
+import "label_selectors.proto";
+
+
+message Bundle {
+    message InferenceAPI {
+        message IODescriptor {
+            string type = 1;
+            google.protobuf.Struct options = 2;
+        }
+
+        string name = 1;
+        string docs = 2;
+        IODescriptor input = 3;
+        IODescriptor output = 4;
+        google.protobuf.Struct http_options = 5;
+    }
+
+    message Model {
+        string name = 1;
+        string version = 2;
+        string type = 3;
+        google.protobuf.Struct metadata = 4;
+        google.protobuf.Struct options = 5;
+        google.protobuf.Struct context = 6;
+    }
+
+    message Environment {
+        string requirements_txt = 10;
+        string environment_yml = 11;
+        string docker_base_image = 12;
+    }
+
+    string name = 1;
+    string version = 2;
+    google.protobuf.Timestamp created_at = 3;
+    string bentoml_version = 4;
+
+    repeated Model models = 5;
+    repeated InferenceAPI apis = 6;
+    map<string, string> labels = 7;
+
+    string readme = 8;
+    string swagger_json = 9;
+
+    Environment env = 10;
+}
+
+message Uri {
+	enum StorageType {
+        FILE_SYSTEM = 0;
+        S3 = 1;
+	    GCS = 2;
+        ABS = 3;
+	}
+	StorageType type = 1;
+	string uri = 2;
+	string pre_signed_url = 3;
+}
+
+message UploadStatus {
+  enum Status {
+      UNINITIALIZED = 0; // default
+      UPLOADING = 1;
+      DONE = 2;
+      ERROR = 3;
+      TIMEOUT = 4;
+  }
+  Status status = 1;
+  google.protobuf.Timestamp updated_at = 2;
+  string error_message = 3;
+}
+
+
+message AddBundleRequest {
+	Bundle bundle = 1;
+}
+message AddBundleResponse {
+  Status status = 1;
+	Uri uri = 2;
+}
+
+message UpdateBundleRequest {
+  string name = 1;
+  string version = 2;
+  UploadStatus upload_status = 3;
+}
+message UpdateBundleResponse {
+  Status status = 1;
+}
+
+message UploadBundleRequest{
+    string name = 1;
+    string version = 2;
+    bytes chunk = 3;
+}
+message UploadBundleResponse{
+    Status status = 1;
+}
+
+message DownloadBundleRequest {
+    string name = 1;
+    string version = 2;
+}
+message DownloadBundleResponse {
+    bytes chunk = 1;
+    Status status = 2;
+}
+
+message ListBundlesRequest {
+  enum SORTABLE_COLUMN {
+      created_at = 0;
+      name = 1;
+  }
+  string bundle_name = 1;
+  int32 offset = 2;
+  int32 limit = 3;
+  SORTABLE_COLUMN order_by = 4;
+  bool ascending_order = 5;
+  LabelSelectors label_selectors = 6;
+}
+message ListBundlesResponse {
+  Status status = 1;
+  repeated Bundle bundles = 2;
+}
+
+message GetBundleRequest {
+  string name = 1;
+  string version = 2;
+}
+message GetBundleResponse {
+  Status status = 1;
+  Bundle bundle = 2;
+  Uri uri = 3;
+  UploadStatus upload_status = 4;
+}
+
+message DeleteBundleRequest {
+  string name = 1;
+  string version = 2;
+}
+message DeleteBundleResponse {
+  Status status = 1;
+}

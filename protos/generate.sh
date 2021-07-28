@@ -9,15 +9,19 @@ fi
 
 # YataiService protobuf
 PROTO_PATH="$BENTOML_REPO"/protos
-YATAI_PATH="$BENTOML_REPO"/yatai
+PROTO_TEST_PATH="$PROTO_PATH"/tests
 
-# Protos output path
-PY_OUT_PATH="$YATAI_PATH"/yatai/proto
-JS_OUT_PATH="$YATAI_PATH"/web_server/src/generated
+# Protos output for YataiServer
+SERVER_OUT_PATH="$BENTOML_REPO"/yatai/yatai/proto
+
+# Protos output for YataiClient
+CLIENT_OUT_PATH="$BENTOML_REPO"/bentoml/_internal/yatai_client/proto
+
+# Protos output for Yatai webserver
+JS_OUT_PATH="$BENTOML_REPO"/yatai/web_server/src/generated
 
 # Test gRPC servicer
-PROTO_TEST_PATH="$PROTO_PATH"/tests
-PY_TEST_OUT_PATH="$BENTOML_REPO"/tests/yatai/proto
+PY_TEST_OUT_PATH="$BENTOML_REPO"/tests/unit/yatai/proto
 
 run_check(){
   if [[ $EUID -eq 0 ]]; then
@@ -35,39 +39,41 @@ WARN
 }
 
 cleanup(){
-  log_info "Removing existing generated proto client code.."
-  rm -rf "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
-  mkdir -p "$PY_OUT_PATH" "$PY_TEST_OUT_PATH"
-  touch "$PY_OUT_PATH"/__init__.py "$PY_TEST_OUT_PATH"/__init__.py "$PY_OUT_PATH"/__init__.pyi
-
-  # js part of yatai gRPC
+  log_info "Removing existing generated proto client code..."
+  rm -rf "$SERVER_OUT_PATH" "$CLIENT_OUT_PATH" "$PY_TEST_OUT_PATH"
   rm -rf "$JS_OUT_PATH"
+
+  mkdir -p "$SERVER_OUT_PATH" "$CLIENT_OUT_PATH" "$PY_TEST_OUT_PATH"
   mkdir -p "$JS_OUT_PATH"
+
+  touch "$PY_TEST_OUT_PATH"/__init__.py
+  touch "$SERVER_OUT_PATH"/__init__.py "$CLIENT_OUT_PATH"/__init__.py
 }
 
 generate_protos(){
-  log_info "Generate proto message code.."
+  log_info "Generate proto message code..."
   find "$PROTO_PATH"/ -name '*.proto' -not -path "${PROTO_TEST_PATH}/*" | while read -r protofile; do
   python -m grpc_tools.protoc \
     -I"$PROTO_PATH" \
-    --python_out="$PY_OUT_PATH" \
-    --mypy_out="$PY_OUT_PATH" \
+    --python_out="$SERVER_OUT_PATH" \
+    --python_out="$CLIENT_OUT_PATH" \
     "$protofile"
   done
 
-  log_info "Generate gRPC test servicer.."
+  log_info "Generate gRPC test servicer..."
   python -m grpc_tools.protoc \
     -I"$PROTO_TEST_PATH" \
     --python_out="$PY_TEST_OUT_PATH" \
     --grpc_python_out="$PY_TEST_OUT_PATH" \
     "$PROTO_TEST_PATH"/mock_service.proto
 
-  log_info "Generate yatai gRPC servicer.."
+  log_info "Generate yatai gRPC servicer..."
   python -m grpc_tools.protoc \
     -I"$PROTO_PATH" \
-    --python_out="$PY_OUT_PATH" \
-    --grpc_python_out="$PY_OUT_PATH" \
-    --mypy_out="$PY_OUT_PATH" \
+    --python_out="$SERVER_OUT_PATH" \
+    --python_out="$CLIENT_OUT_PATH" \
+    --grpc_python_out="$SERVER_OUT_PATH" \
+    --grpc_python_out="$CLIENT_OUT_PATH" \
     "$PROTO_PATH"/yatai_service.proto
 
   log_info "Generating gRPC JavaScript code..."
@@ -82,11 +88,11 @@ fix_grpc_service_code(){
 
   log_info "Fix imports for $PKGNAME in generated gRPC service code from $OUT_DIR..."
   find "$OUT_DIR" -name '*_pb2*.py' | while read -r pyfile; do
-  sed -i'.old' "s/^import \([^ ]*\)_pb2 \(.*\)$/import $PKGNAME.yatai.proto.\1_pb2 \2/" "$pyfile"
-  sed -i'.old' "s/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from $PKGNAME.yatai.proto.\1 import \2_pb2\3/" "$pyfile"
+  sed -i'.old' "s/^import \([^ ]*\)_pb2 \(.*\)$/import $PKGNAME.proto.\1_pb2 \2/" "$pyfile"
+  sed -i'.old' "s/^from \([^ ]*\) import \([^ ]*\)_pb2\(.*\)$/from $PKGNAME.proto.\1 import \2_pb2\3/" "$pyfile"
   # Fix google.protobuf package imports
-  sed -i'.old' "s/^import $PKGNAME.yatai.proto.google.\([^ ]*\)_pb2 as \([^ ]*\)$/import google.\1_pb2 as \2/" "$pyfile"
-  sed -i'.old' "s/^from $PKGNAME.yatai.proto.google.\([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from google.\1 import \2_pb2 as \3/" "$pyfile"
+  sed -i'.old' "s/^import $PKGNAME.proto.google.\([^ ]*\)_pb2 as \([^ ]*\)$/import google.\1_pb2 as \2/" "$pyfile"
+  sed -i'.old' "s/^from $PKGNAME.proto.google.\([^ ]*\) import \([^ ]*\)_pb2 as \([^ ]*\)$/from google.\1 import \2_pb2 as \3/" "$pyfile"
   rm "$pyfile".old
   done
 }
@@ -115,15 +121,15 @@ edit_init() {
   echo "]" >> "$PKG_INIT"
 }
 
-log_warn() {
+log_warn(){
 	echo -e "\033[2mWARN::\033[0m \e[1;32m$*\e[m" 1>&2
 }
 
-log_error() {
+log_error(){
 	echo -e "\033[2mERROR::\033[0m \e[1;31m$*\e[m" 1>&2
 }
 
-log_info() {
+log_info(){
 	echo -e "\033[2mINFO::\033[0m \e[1;34m$*\e[m" 1>&2
 }
 
@@ -134,10 +140,12 @@ main(){
 
   generate_protos
 
-  fix_grpc_service_code "yatai" "$PY_OUT_PATH"
-  fix_grpc_service_code "tests" "$PY_TEST_OUT_PATH"
+  fix_grpc_service_code "bentoml._internal.yatai_client" "$CLIENT_OUT_PATH"
+  fix_grpc_service_code "yatai.yatai" "$SERVER_OUT_PATH"
+  fix_grpc_service_code "tests.unit.yatai" "$PY_TEST_OUT_PATH"
 
-  edit_init "$PY_OUT_PATH"
+  edit_init "$CLIENT_OUT_PATH"
+  edit_init "$SERVER_OUT_PATH"
   edit_init "$PY_TEST_OUT_PATH"
 
   log_info "Finished generating gRPC servicer."

@@ -1,94 +1,56 @@
 import os
+import typing as t
 
-from bentoml.exceptions import InvalidArgument, MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.models.base import MODEL_NAMESPACE, Model
+from ._internal.types import MetadataType, PathType
+from .exceptions import MissingDependencyException
 
-XGBOOST_MODEL_EXTENSION = ".model"
+try:
+    import xgboost
+except ImportError:
+    raise MissingDependencyException("xgboost is required by XgBoostModel")
 
 
-class XgboostModelArtifact(BentoServiceArtifact):
+class XgBoostModel(Model):
     """
-    Artifact class for saving and loading Xgboost model
+    Artifact class for saving/loading :obj:`xgboost` model
 
     Args:
-        name (string): name of the artifact
+        model (`xgboost.core.Booster`):
+            Every xgboost model instance of type :obj:`xgboost.core.Booster`
+        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        ImportError: xgboost package is required for using XgboostModelArtifact
-        TypeError: invalid argument type, model being packed must be instance of
-            xgboost.core.Booster
+        MissingDependencyException:
+            :obj:`xgboost` is required by XgBoostModel
+        TypeError:
+           model must be instance of :obj:`xgboost.core.Booster`
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import xgboost
-    >>>
-    >>> # prepare data
-    >>> params = {... params}
-    >>> dtrain = xgboost.DMatrix(...)
-    >>>
-    >>> # train model
-    >>> model_to_save = xgboost.train(params=params, dtrain=dtrain)
-    >>>
-    >>> import bentoml
-    >>> from bentoml.frameworks.xgboost import XgboostModelArtifact
-    >>> from bentoml.adapters import DataframeInput
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts(XgboostModelArtifact('model'))
-    >>> class XGBoostModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=DataframeInput(), batch=True)
-    >>>     def predict(self, df):
-    >>>         result = self.artifacts.model.predict(df)
-    >>>         return result
-    >>>
-    >>> svc = XGBoostModelService()
-    >>> # Pack xgboost model
-    >>> svc.pack('model', model_to_save)
+        TODO:
+
+    One then can define :code:`bento.py`::
+
+        TODO:
+
     """
 
-    def __init__(self, name):
-        super(XgboostModelArtifact, self).__init__(name)
-        self._model = None
+    XGBOOST_EXTENSION = ".model"
 
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(['xgboost'])
+    def __init__(
+        self, model: xgboost.core.Booster, metadata: t.Optional[MetadataType] = None
+    ):
+        super(XgBoostModel, self).__init__(model, metadata=metadata)
 
-    def _model_file_path(self, base_path):
-        return os.path.join(base_path, self.name + XGBOOST_MODEL_EXTENSION)
+    @classmethod
+    def load(cls, path: PathType) -> "xgboost.core.Booster":
+        bst = xgboost.Booster()
+        bst.load_model(os.path.join(path, f"{MODEL_NAMESPACE}{cls.XGBOOST_EXTENSION}"))
+        return bst
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
-        try:
-            import xgboost as xgb
-        except ImportError:
-            raise MissingDependencyException(
-                "xgboost package is required to use XgboostModelArtifact"
-            )
-
-        if not isinstance(model, xgb.core.Booster):
-            raise InvalidArgument(
-                "Expect `model` argument to be a `xgboost.core.Booster` instance"
-            )
-
-        self._model = model
-        return self
-
-    def load(self, path):
-        try:
-            import xgboost as xgb
-        except ImportError:
-            raise MissingDependencyException(
-                "xgboost package is required to use XgboostModelArtifact"
-            )
-        bst = xgb.Booster()
-        bst.load_model(self._model_file_path(path))
-
-        return self.pack(bst)
-
-    def save(self, dst):
-        return self._model.save_model(self._model_file_path(dst))
-
-    def get(self):
-        return self._model
+    def save(self, path: PathType) -> None:
+        self._model.save_model(
+            os.path.join(path, f"{MODEL_NAMESPACE}{self.XGBOOST_EXTENSION}")
+        )

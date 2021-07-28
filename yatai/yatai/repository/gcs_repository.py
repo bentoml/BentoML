@@ -18,9 +18,9 @@ from urllib.parse import urlparse
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.exceptions import YataiRepositoryException
-from yatai.yatai.proto.repository_pb2 import BentoUri
-from yatai.yatai.repository.base_repository import BaseRepository
+from bentoml.exceptions import YataiRepositoryException
+from yatai.proto.repository_pb2 import BentoUri
+from yatai.repository.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
@@ -39,22 +39,22 @@ class GCSRepository(BaseRepository):
         except ImportError:
             raise YataiRepositoryException(
                 '"google-cloud-storage" package is required for Google Cloud '
-                'Storage Repository. You can install it with pip: '
+                "Storage Repository. You can install it with pip: "
                 '"pip install google-cloud-storage"'
             )
         self.uri_type = BentoUri.GCS
 
         parse_result = urlparse(base_url)
         self.bucket = parse_result.netloc
-        self.base_path = parse_result.path.lstrip('/')
+        self.base_path = parse_result.path.lstrip("/")
         self.gcs_client = storage.Client()
         self.expiration = expiration
 
     def _get_object_name(self, bento_name, bento_version):
         if self.base_path:
-            return "/".join([self.base_path, bento_name, bento_version]) + '.tar.gz'
+            return "/".join([self.base_path, bento_name, bento_version]) + ".tar.gz"
         else:
-            return "/".join([bento_name, bento_version]) + '.tar.gz'
+            return "/".join([bento_name, bento_version]) + ".tar.gz"
 
     def add(self, bento_name, bento_version):
         object_name = self._get_object_name(bento_name, bento_version)
@@ -72,7 +72,7 @@ class GCSRepository(BaseRepository):
 
         return BentoUri(
             type=self.uri_type,
-            uri='gs://{}/{}'.format(self.bucket, object_name),
+            uri="gs://{}/{}".format(self.bucket, object_name),
             gcs_presigned_url=response,
         )
 
@@ -95,7 +95,7 @@ class GCSRepository(BaseRepository):
                 "falling back to using gs path and client side credential for"
                 "downloading with google.cloud.storage"
             )
-            return 'gs://{}/{}'.format(self.bucket, object_name)
+            return "gs://{}/{}".format(self.bucket, object_name)
 
     def dangerously_delete(self, bento_name, bento_version):
         # Remove gcs path containing related Bento files

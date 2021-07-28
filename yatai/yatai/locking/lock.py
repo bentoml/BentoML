@@ -1,11 +1,11 @@
-from contextlib import contextmanager
-from bentoml._internal.exceptions import LockUnavailable
-
 import logging
 import random
 import time
+from contextlib import contextmanager
 
-from yatai.yatai.db.stores.lock import LockStore, LOCK_STATUS
+from bentoml.exceptions import LockUnavailable
+
+from ..db.stores.lock import LOCK_STATUS, LockStore
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ def lock(
                 sess.commit()
                 logger.debug("Session acquired")
                 for lck in locks:
-                    op = 'READ' if lck[1] == LOCK_STATUS.read_lock else 'WRITE'
+                    op = "READ" if lck[1] == LOCK_STATUS.read_lock else "WRITE"
                     logger.debug(f"\t{op} on {lck[0]}")
                 start = time.time()
 

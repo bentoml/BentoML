@@ -6,7 +6,7 @@ from collections import defaultdict
 from tabulate import tabulate
 
 
-def wrap_line(s, line_width=120, sep='\n'):
+def wrap_line(s, line_width=120, sep="\n"):
     ls = s.split(sep)
     outs = []
     for line in ls:
@@ -42,9 +42,9 @@ def percentile(data, pers):
 
 
 class DynamicBucketMerge:
-    '''
+    """
     real time speed stat
-    '''
+    """
 
     def __init__(self, sample_range=1, bucket_num=10):
         self.bucket_num = bucket_num
@@ -209,12 +209,12 @@ class Stat:
             )
 
     def print_exec(self):
-        headers = ['exceptions', 'count']
+        headers = ["exceptions", "count"]
         rs = [
             (wrap_line(str(v[0]), 50)[:1000], len(v),)
             for k, v in self.exceptions.items()
         ]
-        print(tabulate(rs, headers=headers, tablefmt='fancy_grid'))
+        print(tabulate(rs, headers=headers, tablefmt="fancy_grid"))
 
 
 def default_verify_response(status, _):
@@ -298,8 +298,8 @@ class BenchmarkClient:
             while True:
                 req_start = time.time()
                 req_url = self.url_override or url
-                err = ''
-                group = ''
+                err = ""
+                group = ""
                 # noinspection PyUnresolvedReferences
                 try:
                     async with sess.request(

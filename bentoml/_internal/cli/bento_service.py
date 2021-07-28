@@ -10,29 +10,26 @@ import psutil
 from simple_di import Provide, inject
 
 from bentoml import __version__
-from bentoml.cli.click_utils import (
+
+from ..bundle import load_bento_service_api, load_bento_service_metadata, load_from_dir
+from ..configuration.containers import BentoMLContainer
+from ..server import start_dev_server, start_prod_server
+from ..utils import ProtoMessageToDict, resolve_bundle_path
+from ..utils.docker_utils import validate_tag
+from ..utils.lazy_loader import LazyLoader
+from ..utils.open_api import get_open_api_spec_json
+from ..yatai_client import get_yatai_client
+from .click_utils import (
     CLI_COLOR_SUCCESS,
     BentoMLCommandGroup,
     _echo,
     conditional_argument,
 )
-from bentoml.cli.utils import Spinner
-from bentoml.configuration.containers import BentoMLContainer
-from bentoml.saved_bundle import (
-    load_bento_service_api,
-    load_bento_service_metadata,
-    load_from_dir,
-)
-from bentoml.server import start_dev_server, start_prod_server
-from bentoml.utils import ProtoMessageToDict, resolve_bundle_path
-from bentoml.utils.docker_utils import validate_tag
-from bentoml.utils.lazy_loader import LazyLoader
-from bentoml.utils.open_api import get_open_api_spec_json
-from bentoml.yatai.client import get_yatai_client
+from .utils import Spinner
 
 if TYPE_CHECKING:
-    from bentoml.yatai.client import YataiClient
-    from bentoml.yatai.proto.repository_pb2 import BentoServiceMetadata
+    from ..yatai_client import YataiClient
+    from ..yatai_client.proto.repository_pb2 import BentoServiceMetadata
 
 try:
     import click_completion
@@ -42,11 +39,11 @@ try:
 except ImportError:
     # click_completion package is optional to use BentoML cli,
     click_completion = None
-    shell_types = click.Choice(['bash', 'zsh', 'fish', 'powershell'])
+    shell_types = click.Choice(["bash", "zsh", "fish", "powershell"])
 
 logger = logging.getLogger(__name__)
 
-yatai_proto = LazyLoader('yatai_proto', globals(), 'bentoml.yatai.proto')
+yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 
 def add_options(options):
@@ -91,23 +88,23 @@ def create_bento_service_cli(
 
     batch_options = [
         click.option(
-            '--enable-microbatch/--disable-microbatch',
+            "--enable-microbatch/--disable-microbatch",
             default=None,
             help="Deprecated option for running API server with micro-batch enabled.",
-            envvar='BENTOML_ENABLE_MICROBATCH',
+            envvar="BENTOML_ENABLE_MICROBATCH",
         ),
         click.option(
-            '--mb-max-batch-size',
+            "--mb-max-batch-size",
             type=click.INT,
             help="Specify micro batching maximal batch size.",
-            envvar='BENTOML_MB_MAX_BATCH_SIZE',
+            envvar="BENTOML_MB_MAX_BATCH_SIZE",
             default=default_mb_max_batch_size,
         ),
         click.option(
-            '--mb-max-latency',
+            "--mb-max-latency",
             type=click.INT,
             help="Specify micro batching maximal latency in milliseconds.",
-            envvar='BENTOML_MB_MAX_LATENCY',
+            envvar="BENTOML_MB_MAX_LATENCY",
             default=default_mb_max_latency,
         ),
     ]
@@ -127,10 +124,10 @@ def create_bento_service_cli(
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.argument("api_name", type=click.STRING)
-    @click.argument('run_args', nargs=-1, type=click.UNPROCESSED)
+    @click.argument("run_args", nargs=-1, type=click.UNPROCESSED)
     def run(api_name, run_args, bento=None):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--yatai-url', type=str, default=default_yatai_url)
+        parser.add_argument("--yatai-url", type=str, default=default_yatai_url)
         parsed_args, _ = parser.parse_known_args(run_args)
         yatai_url = parsed_args.yatai_url
         saved_bundle_path = resolve_bundle_path(
@@ -148,10 +145,10 @@ def create_bento_service_cli(
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.option(
-        '--yatai-url',
+        "--yatai-url",
         type=click.STRING,
         default=default_yatai_url,
-        help='Remote YataiService URL. Optional. '
+        help="Remote YataiService URL. Optional. "
         'Example: "--yatai-url http://localhost:50050"',
     )
     def info(bento=None, yatai_url=None):
@@ -174,10 +171,10 @@ def create_bento_service_cli(
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.option(
-        '--yatai-url',
+        "--yatai-url",
         type=click.STRING,
         default=default_yatai_url,
-        help='Remote YataiService URL. Optional. '
+        help="Remote YataiService URL. Optional. "
         'Example: "--yatai-url http://localhost:50050"',
     )
     def open_api_spec(bento=None, yatai_url=None):
@@ -200,30 +197,30 @@ def create_bento_service_cli(
         type=click.INT,
         default=default_port,
         help="The port to listen on for the REST api server, default is 5000",
-        envvar='BENTOML_PORT',
+        envvar="BENTOML_PORT",
     )
     @add_options(batch_options)
     @click.option(
-        '--run-with-ngrok',
+        "--run-with-ngrok",
         is_flag=True,
         default=default_run_with_ngrok,
         help="Use ngrok to relay traffic on a public endpoint to this "
         "API server on localhost",
-        envvar='BENTOML_ENABLE_NGROK',
+        envvar="BENTOML_ENABLE_NGROK",
     )
     @click.option(
-        '--yatai-url',
+        "--yatai-url",
         type=click.STRING,
         default=default_yatai_url,
-        help='Remote YataiService URL. Optional. '
+        help="Remote YataiService URL. Optional. "
         'Example: "--yatai-url http://localhost:50050"',
     )
     @click.option(
-        '--enable-swagger/--disable-swagger',
+        "--enable-swagger/--disable-swagger",
         is_flag=True,
         default=default_enable_swagger,
         help="Run API server with Swagger UI enabled",
-        envvar='BENTOML_ENABLE_SWAGGER',
+        envvar="BENTOML_ENABLE_SWAGGER",
     )
     def serve(
         port,
@@ -270,7 +267,7 @@ def create_bento_service_cli(
         type=click.INT,
         default=default_port,
         help="The port to listen on for the REST api server, default is 5000",
-        envvar='BENTOML_PORT',
+        envvar="BENTOML_PORT",
     )
     @click.option(
         "-w",
@@ -278,7 +275,7 @@ def create_bento_service_cli(
         type=click.INT,
         default=default_workers,
         help="Number of workers will start for the gunicorn server",
-        envvar='BENTOML_GUNICORN_WORKERS',
+        envvar="BENTOML_GUNICORN_WORKERS",
     )
     @click.option(
         "--timeout",
@@ -288,25 +285,25 @@ def create_bento_service_cli(
     )
     @add_options(batch_options)
     @click.option(
-        '--microbatch-workers',
+        "--microbatch-workers",
         type=click.INT,
         default=default_microbatch_workers,
         help="Number of micro-batch request dispatcher workers",
-        envvar='BENTOML_MICROBATCH_WORKERS',
+        envvar="BENTOML_MICROBATCH_WORKERS",
     )
     @click.option(
-        '--yatai-url',
+        "--yatai-url",
         type=click.STRING,
         default=default_yatai_url,
-        help='Remote YataiService URL. Optional. '
+        help="Remote YataiService URL. Optional. "
         'Example: "--yatai-url http://localhost:50050"',
     )
     @click.option(
-        '--enable-swagger/--disable-swagger',
+        "--enable-swagger/--disable-swagger",
         is_flag=True,
         default=default_enable_swagger,
         help="Run API server with Swagger UI enabled",
-        envvar='BENTOML_ENABLE_SWAGGER',
+        envvar="BENTOML_ENABLE_SWAGGER",
     )
     def serve_gunicorn(
         port,
@@ -356,19 +353,19 @@ def create_bento_service_cli(
         short_help="Install shell command completion",
     )
     @click.option(
-        '--append/--overwrite',
+        "--append/--overwrite",
         help="Append the completion code to the file",
         default=None,
     )
-    @click.argument('shell', required=False, type=shell_types)
-    @click.argument('path', required=False)
+    @click.argument("shell", required=False, type=shell_types)
+    @click.argument("path", required=False)
     def install_completion(append, shell, path):
         if click_completion:
             # click_completion package is imported
             shell, path = click_completion.core.install(
                 shell=shell, path=path, append=append
             )
-            click.echo('%s completion installed in %s' % (shell, path))
+            click.echo("%s completion installed in %s" % (shell, path))
         else:
             click.echo(
                 "'click_completion' is required for BentoML auto-completion, "
@@ -377,28 +374,28 @@ def create_bento_service_cli(
 
     # bentoml containerize {service_name}:{service_tag} -t {docker_tags}
     @bentoml_cli.command(
-        help='Containerizes given Bento into a ready-to-use Docker image.',
+        help="Containerizes given Bento into a ready-to-use Docker image.",
         short_help="Containerizes given Bento into a ready-to-use Docker image",
     )
     @click.argument("bento", type=click.STRING)
-    @click.option('--push', is_flag=True)
+    @click.option("--push", is_flag=True)
     @click.option(
-        '-t',
-        '--tag',
+        "-t",
+        "--tag",
         help="Optional image tag. If not specified, Bento will generate one from "
         "the name of the Bento.",
         required=False,
         callback=validate_tag,
     )
     @click.option(
-        '--build-arg', multiple=True, help="pass through docker image build arguments"
+        "--build-arg", multiple=True, help="pass through docker image build arguments"
     )
     @click.option(
-        '--yatai-url',
+        "--yatai-url",
         type=click.STRING,
         default=default_yatai_url,
-        help='Specify the YataiService for running the containerization, default to '
-        'the Local YataiService with local docker daemon. Example: '
+        help="Specify the YataiService for running the containerization, default to "
+        "the Local YataiService with local docker daemon. Example: "
         '"--yatai-url http://localhost:50050"',
     )
     def containerize(bento, push, tag, build_arg, yatai_url):
@@ -434,25 +431,26 @@ def create_bento_service_cli(
         bento_metadata: "BentoServiceMetadata" = load_bento_service_metadata(saved_bundle_path)  # noqa: E501
         # fmt: on
 
-        bento_tag = f'{bento_metadata.name}:{bento_metadata.version}'
+        bento_tag = f"{bento_metadata.name}:{bento_metadata.version}"
         yatai_client: "YataiClient" = get_yatai_client(yatai_url)
+        bento_tag = ""
         docker_build_args = {}
         if build_arg:
             for arg in build_arg:
                 key, value = arg.split("=", 1)
                 docker_build_args[key] = value
         if yatai_url is not None:
-            spinner_message = f'Sending containerize RPC to YataiService at {yatai_url}'
+            spinner_message = f"Sending containerize RPC to YataiService at {yatai_url}"
         else:
             spinner_message = (
-                f'Containerizing {bento_tag} with local YataiService and docker '
-                f'daemon from local environment'
+                f"Containerizing {bento_tag} with local YataiService and docker "
+                f"daemon from local environment"
             )
         with Spinner(spinner_message):
             tag: str = yatai_client.repository.containerize(
                 bento=bento_tag, tag=tag, build_args=docker_build_args, push=push,
             )
-            _echo(f'\nBuild container image: {tag}', CLI_COLOR_SUCCESS)
+            _echo(f"\nBuild container image: {tag}", CLI_COLOR_SUCCESS)
 
     # pylint: enable=unused-variable
     return bentoml_cli

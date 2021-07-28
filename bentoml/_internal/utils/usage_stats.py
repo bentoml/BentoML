@@ -7,9 +7,10 @@ import uuid
 from functools import lru_cache
 
 from bentoml import __version__ as BENTOML_VERSION
-from bentoml.configuration import _is_pip_installed_bentoml
-from bentoml.utils import ProtoMessageToDict
-from bentoml.utils.ruamel_yaml import YAML
+
+from ..configuration import _is_pip_installed_bentoml
+from ..utils import ProtoMessageToDict
+from ..utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +43,10 @@ def _session_id():
 def _api_key():
     if _is_pip_installed_bentoml():
         # Use prod amplitude key
-        return '1ad6ee0e81b9666761aebd55955bbd3a'
+        return "1ad6ee0e81b9666761aebd55955bbd3a"
     else:
         # Use dev amplitude key
-        return '7f65f2446427226eb86f6adfacbbf47a'
+        return "7f65f2446427226eb86f6adfacbbf47a"
 
 
 def _send_amplitude_event(event_type, event_properties):
@@ -99,9 +100,9 @@ def _get_bento_service_event_properties(bento_service, properties=None):
         properties["artifact_types"] = ["NO_ARTIFACT"]
 
     env_dict = ProtoMessageToDict(bento_service_metadata.env)
-    if 'conda_env' in env_dict:
-        env_dict['conda_env'] = YAML().load(env_dict['conda_env'])
-    properties['env'] = env_dict
+    if "conda_env" in env_dict:
+        env_dict["conda_env"] = YAML().load(env_dict["conda_env"])
+    properties["env"] = env_dict
 
     return properties
 
@@ -123,7 +124,7 @@ def track(event_type, event_properties=None):
     if event_properties is None:
         event_properties = {}
 
-    event_properties['py_version'] = _py_version()
+    event_properties["py_version"] = _py_version()
     event_properties["bento_version"] = BENTOML_VERSION
     event_properties["platform_info"] = _platform()
 

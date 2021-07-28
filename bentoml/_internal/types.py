@@ -23,36 +23,39 @@ from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
 
-from bentoml.utils.dataclasses import json_serializer
+from .utils.dataclasses import json_serializer
 
 BATCH_HEADER = "Bentoml-Is-Batch-Request"
 
 # For non latin1 characters: https://tools.ietf.org/html/rfc8187
 # Also https://github.com/benoitc/gunicorn/issues/1778
-HEADER_CHARSET = 'latin1'
+HEADER_CHARSET = "latin1"
 
-JSON_CHARSET = 'utf-8'
+JSON_CHARSET = "utf-8"
+
+PathType = Union[str, os.PathLike]
+
+MetadataType = Dict[str, Any]  # TODO:
 
 
-@json_serializer(fields=['uri', 'name'], compat=True)
+@json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
 class FileLike:
     """
     An universal lazy-loading wrapper for file-like objects.
     It accepts URI, file path or bytes and provides interface like opened file object.
 
-    Attributes
-    ----------
-    bytes : bytes, optional
+    Class attributes:
 
-    uri : str, optional
+    - bytes (`bytes`, `optional`):
+    - uri (`str`, `optional`):
         The set of possible uris is:
 
-        - ``file:///home/user/input.json``
-        - ``http://site.com/input.csv`` (Not implemented)
-        - ``https://site.com/input.csv`` (Not implemented)
+        - :code:`file:///home/user/input.json`
+        - :code:`http://site.com/input.csv` (Not implemented)
+        - :code:`https://site.com/input.csv` (Not implemented)
 
-    name : str, default None
+    - name (`str`, `optional`, default to :obj:`None`)
 
     """
 
@@ -76,16 +79,17 @@ class FileLike:
 
     @property
     def path(self):
-        r'''
+        r"""
         supports:
 
-        /home/user/file
-        C:\Python27\Scripts\pip.exe
-        \\localhost\c$\WINDOWS\clock.avi
-        \\networkstorage\homes\user
+            /home/user/file
+            C:\Python27\Scripts\pip.exe
+            \\localhost\c$\WINDOWS\clock.avi
+            \\networkstorage\homes\user
 
-        https://stackoverflow.com/a/61922504/3089381
-        '''
+        .. note::
+            https://stackoverflow.com/a/61922504/3089381
+        """
         parsed = urllib.parse.urlparse(self.uri)
         raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))
         host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
@@ -128,42 +132,42 @@ class HTTPHeaders(CIMultiDict):
     A case insensitive mapping of HTTP headers' keys and values.
     It also parses several commonly used fields for easier access.
 
-    Attributes
-    ----------
-    content_type : str
-        The value of ``Content-Type``, for example:
-        - ``application/json``
-        - ``text/plain``
-        - ``text/csv``
+    Class attributes:
 
-    charset : str
+    - content_type (`str`):
+        The value of ``Content-Type``, for example:
+
+        - :code:`application/json`
+        - :code:`text/plain`
+        - :code:`text/csv`
+
+    - charset (`str`):
         The charset option of ``Content-Type``
 
-    content_encoding : str
+    - content_encoding (`str`):
         The charset option of ``Content-Encoding``
 
-    Methods
-    -------
-    from_dict : create a HTTPHeaders object from a dict
+    Class contains the following method:
 
-    from_sequence : create a HTTPHeaders object from a list/tuple
+    - from_dict : create a HTTPHeaders object from a dict
 
+    - from_sequence : create a HTTPHeaders object from a list/tuple
     """
 
     @property
     def content_type(self) -> str:
-        return parse_options_header(self.get('content-type'))[0].lower()
+        return parse_options_header(self.get("content-type"))[0].lower()
 
     @property
     def charset(self) -> Optional[str]:
-        _, options = parse_options_header(self.get('content-type'))
-        charset = options.get('charset', None)
+        _, options = parse_options_header(self.get("content-type"))
+        charset = options.get("charset", None)
         assert charset is None or isinstance(charset, str)
         return charset
 
     @property
     def content_encoding(self) -> str:
-        return parse_options_header(self.get('content-encoding'))[0].lower()
+        return parse_options_header(self.get("content-encoding"))[0].lower()
 
     @property
     def is_batch_input(self) -> Optional[bool]:
@@ -188,12 +192,11 @@ class HTTPRequest:
     A common HTTP Request object.
     It also parses several commonly used fields for easier access.
 
-    Attributes
-    ----------
-    headers : HTTPHeaders
+    Class attributes:
 
-    body : bytes
+    - headers (`HTTPHeaders`)
 
+     - body (`bytes`)
     """
 
     headers: HTTPHeaders = HTTPHeaders()
@@ -212,10 +215,10 @@ class HTTPRequest:
         if not self.body:
             return None, None, {}
         environ = {
-            'wsgi.input': io.BytesIO(self.body),
-            'CONTENT_LENGTH': len(self.body),
-            'CONTENT_TYPE': self.headers.get('content-type', ''),
-            'REQUEST_METHOD': 'POST',
+            "wsgi.input": io.BytesIO(self.body),
+            "CONTENT_LENGTH": len(self.body),
+            "CONTENT_TYPE": self.headers.get("content-type", ""),
+            "REQUEST_METHOD": "POST",
         }
         stream, form, files = parse_form_data(environ, silent=False)
         wrapped_files = {
@@ -303,7 +306,7 @@ class InferenceResult(Generic[Output]):
 
     # payload
     data: Optional[Output] = None
-    err_msg: str = ''
+    err_msg: str = ""
 
     # meta
     task_id: Optional[str] = None
@@ -324,8 +327,8 @@ class InferenceResult(Generic[Output]):
 
     @classmethod
     def complete_discarded(
-        cls, tasks: Iterable['InferenceTask'], results: Iterable['InferenceResult'],
-    ) -> Iterator['InferenceResult']:
+        cls, tasks: Iterable["InferenceTask"], results: Iterable["InferenceResult"],
+    ) -> Iterator["InferenceResult"]:
         """
         Generate InferenceResults based on successful inference results and
         fallback results of discarded tasks.
@@ -341,7 +344,7 @@ class InferenceResult(Generic[Output]):
                     yield next(iterable_results)
         except StopIteration:
             raise StopIteration(
-                'The results does not match the number of tasks'
+                "The results does not match the number of tasks"
             ) from None
 
 
@@ -383,18 +386,17 @@ class InferenceTask(Generic[Input]):
     cli_args: Optional[Sequence[str]] = None
     inference_job_args: Optional[Mapping[str, Any]] = None
 
-    def discard(self, err_msg="", **context):
+    def discard(self, err_msg: Optional[str] = "", **context: str):
         """
         Discard this task. All subsequent steps will be skipped.
 
-        Parameters
-        ----------
-        err_msg: str
-            The reason why this task got discarded. It would be the body of
-            HTTP Response, a field in AWS lambda event or CLI stderr message.
+        Args:
+            err_msg (`str`):
+                The reason why this task got discarded. It would be the body of
+                HTTP Response, a field in AWS lambda event or CLI stderr message.
 
-        *other contexts
-            Other contexts of the fallback ``InferenceResult``
+            **context (`str`):
+                Other contexts of the fallback ``InferenceResult``
         """
         self.is_discarded = True
         self.error = InferenceError(err_msg=err_msg, **context)

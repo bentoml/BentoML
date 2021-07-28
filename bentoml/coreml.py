@@ -1,115 +1,69 @@
-import logging
 import os
+import typing as t
 
-from bentoml.exceptions import InvalidArgument, MissingDependencyException
-from bentoml.service.artifacts import BentoServiceArtifact
-from bentoml.service.env import BentoServiceEnv
+from ._internal.models.base import MODEL_NAMESPACE, Model
+from ._internal.types import MetadataType, PathType
+from .exceptions import InvalidArgument, MissingDependencyException
 
-logger = logging.getLogger(__name__)
+try:
+    import coremltools
+    import coremltools.models
+except ImportError:
+    raise MissingDependencyException("coremltools>=4.0b2 is required by CoreMLModel")
 
 
-COREML_MODEL_FILE_EXTENTION = ".mlmodel"
-
-
-class CoreMLModelArtifact(BentoServiceArtifact):
+class CoreMLModel(Model):
     """
-    Artifact class for saving/loading coreml.models.MLModel objects
-    with coremltools.models.MLModel.save and coremltools.models.MLModel(path).
+    Model class for saving/loading :obj:`coremltools.models.MLModel`
+    model that can be used in a BentoML bundle.
 
     Args:
-        name (string): name of the artifact
+        model (`coremltools.models.MLModel`):
+            :class:`~coreml.models.MLModel` instance
+        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+            Class metadata
 
     Raises:
-        MissingDependencyException: coremltools package required for CoreMLModelArtifact
-        InvalidArgument: invalid argument type, model being packed must be instance of
-            coremltools.models.MLModel
+        MissingDependencyException:
+            :obj:`coremltools` is required by CoreMLModel
+        InvalidArgument:
+            model is not an instance of :class:`~coremltools.models.MLModel`
 
-    Example usage:
+    Example usage under :code:`train.py`::
 
-    >>> import coremltools as ct
-    >>> import torch.nn as nn
-    >>>
-    >>> class Net(nn.Module):
-    >>>     def __init__(self):
-    >>>         super(Net, self).__init__()
-    >>>         ...
-    >>>
-    >>>     def forward(self, x):
-    >>>         ...
-    >>>
-    >>> net = Net()
-    >>> # Train model with data, then convert to CoreML.
-    >>> model = ct.convert(net, ...)
-    >>>
-    >>> import bentoml
-    >>> import PIL.Image
-    >>> from bentoml.adapters import ImageInput
-    >>> from bentoml.frameworks.coreml import CoreMLModelArtifact
-    >>>
-    >>> @bentoml.env(infer_pip_packages=True)
-    >>> @bentoml.artifacts([CoreMLModelArtifact('model')])
-    >>> class CoreMLModelService(bentoml.BentoService):
-    >>>
-    >>>     @bentoml.api(input=ImageInput(), batch=True)
-    >>>     def predict(self, imgs):
-    >>>         outputs = [self.artifacts.model(PIL.Image.fromarray(_.astype("uint8")))
-    >>>                    for img in imgs]
-    >>>         return outputs
-    >>>
-    >>>
-    >>> svc = CoreMLModelService()
-    >>>
-    >>> # Pytorch model can be packed directly.
-    >>> svc.pack('model', model)
+        TODO
+
+    One then can define :code:`bento.py`::
+
+        TODO:
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
-        self._model = None
+    if int(coremltools.__version__.split(".")[0]) == 4:
+        COREMLMODEL_EXTENSION = ".mlmodel"
+    else:
+        # for coremltools>=5.0
+        COREMLMODEL_EXTENSION = ".mlpackage"
+    _model: "coremltools.models.MLModel"
 
-    def _file_path(self, base_path):
-        return os.path.join(base_path, self.name + COREML_MODEL_FILE_EXTENTION)
+    def __init__(
+        self,
+        model: "coremltools.models.MLModel",
+        metadata: t.Optional[MetadataType] = None,
+    ):
+        super(CoreMLModel, self).__init__(model, metadata=metadata)
 
-    def pack(self, model, metadata=None):  # pylint:disable=arguments-differ
-        try:
-            import coremltools
-        except ImportError:
-            raise MissingDependencyException(
-                "coremltools>=4.0b2 package is required to use CoreMLModelArtifact"
-            )
-
-        if not isinstance(model, coremltools.models.MLModel):
+    @classmethod
+    def load(cls, path: PathType) -> "coremltools.models.MLModel":
+        get_path: str = os.path.join(
+            path, f"{MODEL_NAMESPACE}{cls.COREMLMODEL_EXTENSION}"
+        )
+        if not os.path.exists(get_path):
             raise InvalidArgument(
-                "CoreMLModelArtifact can only pack type 'coremltools.models.MLModel'"
+                f"given {path} doesn't contain {cls.COREMLMODEL_EXTENSION}."
             )
+        return coremltools.models.MLModel(get_path)
 
-        self._model = model
-        return self
-
-    def load(self, path):
-        try:
-            import coremltools
-        except ImportError:
-            raise MissingDependencyException(
-                "coremltools package is required to use CoreMLModelArtifact"
-            )
-
-        model = coremltools.models.MLModel(self._file_path(path))
-
-        if not isinstance(model, coremltools.models.MLModel):
-            raise InvalidArgument(
-                "Expecting CoreMLModelArtifact loaded object type to be "
-                "'coremltools.models.MLModel' but actually it is {}".format(type(model))
-            )
-
-        return self.pack(model)
-
-    def set_dependencies(self, env: BentoServiceEnv):
-        if env._infer_pip_packages:
-            env.add_pip_packages(['coremltools>=4.0b2'])
-
-    def get(self):
-        return self._model
-
-    def save(self, dst):
-        self._model.save(self._file_path(dst))
+    def save(self, path: PathType) -> None:
+        self._model.save(
+            os.path.join(path, f"{MODEL_NAMESPACE}{self.COREMLMODEL_EXTENSION}")
+        )

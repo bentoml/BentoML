@@ -1,3 +1,5 @@
+import logging
+
 import click
 from simple_di import Provide, inject
 
@@ -8,10 +10,14 @@ from bentoml._internal.configuration.containers import (
     YATAI_REPOSITORY_TYPES,
     BentoMLContainer,
 )
-from yatai.yatai_service import start_yatai_service_grpc_server
 
+from ..yatai_service import start_yatai_service_grpc_server
+
+logger = logging.getLogger(__name__)
 
 # TODO: make this its own CLI command
+
+
 @inject
 def add_yatai_service_sub_commands(
     cli,
@@ -30,88 +36,88 @@ def add_yatai_service_sub_commands(
 ):
     # pylint: disable=unused-variable
 
-    @cli.command(help='Start BentoML YataiService for model management and deployment')
+    @cli.command(help="Start BentoML YataiService for model management and deployment")
     @click.option(
-        '--db-url',
+        "--db-url",
         type=click.STRING,
-        help='Database URL following RFC-1738, and usually can include username, '
-        'password, hostname, database name as well as optional keyword arguments '
-        'for additional configuration',
-        envvar='BENTOML_DB_URL',
+        help="Database URL following RFC-1738, and usually can include username, "
+        "password, hostname, database name as well as optional keyword arguments "
+        "for additional configuration",
+        envvar="BENTOML_DB_URL",
         default=default_db_url,
     )
     @click.option(
-        '--repo-base-url',
+        "--repo-base-url",
         type=click.STRING,
-        help='Deprecated option for base URL for storing BentoML saved bundle files, '
-        'this can be a file system path(POSIX/Windows), or a S3 URL, '
+        help="Deprecated option for base URL for storing BentoML saved bundle files, "
+        "this can be a file system path(POSIX/Windows), or a S3 URL, "
         'usually starting with "s3://"',
-        envvar='BENTOML_REPO_BASE_URL',
+        envvar="BENTOML_REPO_BASE_URL",
     )
     @click.option(
-        '--grpc-port',
+        "--grpc-port",
         type=click.INT,
         default=50051,
-        help='Port to run YataiService gRPC server',
-        envvar='BENTOML_GRPC_PORT',
+        help="Port to run YataiService gRPC server",
+        envvar="BENTOML_GRPC_PORT",
     )
     @click.option(
-        '--ui-port',
+        "--ui-port",
         type=click.INT,
         default=3000,
-        help='Port to run YataiService Web UI server',
-        envvar='BENTOML_WEB_UI_PORT',
+        help="Port to run YataiService Web UI server",
+        envvar="BENTOML_WEB_UI_PORT",
     )
     @click.option(
-        '--ui/--no-ui',
+        "--ui/--no-ui",
         default=True,
-        help='Run YataiService with or without Web UI, when running with --no-ui, it '
-        'will only run the gRPC server',
-        envvar='BENTOML_ENABLE_WEB_UI',
+        help="Run YataiService with or without Web UI, when running with --no-ui, it "
+        "will only run the gRPC server",
+        envvar="BENTOML_ENABLE_WEB_UI",
     )
     @click.option(
-        '--web-prefix-path',
+        "--web-prefix-path",
         type=click.STRING,
-        default='.',
-        help='Add a location prefix to the URL when running YataiService'
-        'behind a reverse proxy server',
-        envvar='BENTOML_YATAI_WEB_PREFIX_PATH',
+        default=".",
+        help="Add a location prefix to the URL when running YataiService"
+        "behind a reverse proxy server",
+        envvar="BENTOML_YATAI_WEB_PREFIX_PATH",
     )
     @click.option(
-        '--repository-type',
+        "--repository-type",
         type=click.Choice(YATAI_REPOSITORY_TYPES, case_sensitive=False),
         default=default_repository_type,
-        help='Type of the repository implementation',
-        envvar='BENTOML_YATAI_REPOSITORY_TYPE',
+        help="Type of the repository implementation",
+        envvar="BENTOML_YATAI_REPOSITORY_TYPE",
     )
     @click.option(
-        '--file-system-directory',
+        "--file-system-directory",
         type=click.STRING,
         default=default_file_system_directory,
-        help='Specifies the directory path for the file system repository type',
-        envvar='BENTOML_YATAI_FILE_SYSTEM_DIRECTORY',
+        help="Specifies the directory path for the file system repository type",
+        envvar="BENTOML_YATAI_FILE_SYSTEM_DIRECTORY",
     )
     @click.option(
-        '--s3-url',
+        "--s3-url",
         type=click.STRING,
         default=default_s3_url,
-        help='Specifies the S3 URL for the S3 repository type',
-        envvar='BENTOML_YATAI_S3_URL',
+        help="Specifies the S3 URL for the S3 repository type",
+        envvar="BENTOML_YATAI_S3_URL",
     )
     @click.option(
-        '--s3-endpoint-url',
+        "--s3-endpoint-url",
         type=click.STRING,
         default=default_s3_endpoint_url,
-        help='S3 Endpoint URL is used for deploying with storage services that are '
-        'compatible with Amazon S3, such as MinIO',
-        envvar='BENTOML_S3_ENDPOINT_URL',
+        help="S3 Endpoint URL is used for deploying with storage services that are "
+        "compatible with Amazon S3, such as MinIO",
+        envvar="BENTOML_S3_ENDPOINT_URL",
     )
     @click.option(
-        '--gcs-url',
+        "--gcs-url",
         type=click.STRING,
         default=default_gcs_url,
-        help='Specifies the GCS URL for the GCS repository type',
-        envvar='BENTOML_YATAI_GCS_URL',
+        help="Specifies the GCS URL for the GCS repository type",
+        envvar="BENTOML_YATAI_GCS_URL",
     )
     def yatai_service_start(
         db_url,

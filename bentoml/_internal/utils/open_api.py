@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from simple_di import Provide, inject
 
-from bentoml.configuration.containers import BentoMLContainer
+from ..configuration.containers import BentoMLContainer
 
 
 @inject
@@ -24,8 +24,8 @@ def get_open_api_spec_json(
             version=bento_service.version,
             title=bento_service.name,
             description="To get a client SDK, copy all content from <a "
-            "href=\"/docs.json\">docs</a> and paste into "
-            "<a href=\"https://editor.swagger.io\">editor.swagger.io</a> then click "
+            'href="/docs.json">docs</a> and paste into '
+            '<a href="https://editor.swagger.io">editor.swagger.io</a> then click '
             "the tab <strong>Generate Client</strong> and choose the language.",
         ),
         tags=[{"name": "infra"}, {"name": "app"}],

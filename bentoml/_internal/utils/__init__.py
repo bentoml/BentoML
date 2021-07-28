@@ -1,17 +1,3 @@
-# Copyright 2019 Atalaya Tech, Inc.
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-# http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import contextlib
 import functools
 import inspect
@@ -19,7 +5,7 @@ import os
 import socket
 import tarfile
 from io import StringIO
-from typing import Optional
+from typing import Callable, Optional
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 from google.protobuf.message import Message
@@ -31,10 +17,9 @@ from ..utils.s3 import is_s3_url
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 
-
 __all__ = [
-    "cached_property",
     "reserve_free_port",
+    "get_free_port",
     "is_url",
     "dump_to_yaml_str",
     "pb_to_yaml",
@@ -42,6 +27,7 @@ __all__ = [
     "status_pb_to_error_code_and_message",
     "catch_exceptions",
     "cached_contextmanager",
+    "cached_property",
     "resolve_bento_bundle_uri",
     "is_gcs_url",
     "is_s3_url",
@@ -82,16 +68,16 @@ class cached_property(property):
 
     The class has to have a `__dict__` in order for this property to
     work.
+
+    Implementation detail: A subclass of python's builtin property
+    decorator, we override __get__ to check for a cached value. If one
+    chooses to invoke __get__ by hand the property will still work as
+    expected because the lookup logic is replicated in __get__ for
+    manual invocation.
     """
 
-    # implementation detail: A subclass of python's builtin property
-    # decorator, we override __get__ to check for a cached value. If one
-    # chooses to invoke __get__ by hand the property will still work as
-    # expected because the lookup logic is replicated in __get__ for
-    # manual invocation.
-
     def __init__(
-        self, func, name=None, doc=None
+        self, func: Callable, name: str = None, doc: str = None
     ):  # pylint:disable=super-init-not-called
         self.__name__ = name or func.__name__
         self.__module__ = func.__module__
@@ -117,14 +103,14 @@ class cached_contextmanager:
     arguments. When one instance of the contextmanager exits, the cache value will
     also be poped.
 
-    Example Usage:
     (To reuse the container based on the same image)
+    Example Usage::
 
-    >>> @cached_contextmanager("{docker_image.id}")
-    >>> def start_docker_container_from_image(docker_image, timeout=60):
-    >>>     container = ...
-    >>>     yield container
-    >>>     container.stop()
+        @cached_contextmanager("{docker_image.id}")
+        def start_docker_container_from_image(docker_image, timeout=60):
+            container = ...
+            yield container
+            container.stop()
     """
 
     def __init__(self, cache_key_template=None):
@@ -185,7 +171,7 @@ def is_url(url: str) -> bool:
 
 
 def dump_to_yaml_str(yaml_dict):
-    from bentoml.utils.ruamel_yaml import YAML
+    from ..utils.ruamel_yaml import YAML
 
     yaml = YAML()
     string_io = StringIO()
@@ -211,7 +197,7 @@ def ProtoMessageToDict(protobuf_msg: Message, **kwargs) -> object:
 
 # This function assume the status is not status.OK
 def status_pb_to_error_code_and_message(pb_status) -> (int, str):
-    from bentoml.yatai.proto import status_pb2
+    from ..yatai_client.proto import status_pb2
 
     assert pb_status.status_code != status_pb2.Status.OK
     error_code = status_pb2.Status.Code.Name(pb_status.status_code)
@@ -241,7 +227,8 @@ def resolve_bundle_path(
     yatai_url: Optional[str] = None,
 ) -> str:
     from bentoml.exceptions import BentoMLException
-    from bentoml.yatai.client import get_yatai_client
+
+    from ..yatai_client import get_yatai_client
 
     if pip_installed_bundle_path:
         assert (
@@ -267,7 +254,7 @@ def resolve_bundle_path(
 
 
 def get_default_yatai_client():
-    from bentoml.yatai.client import YataiClient
+    from bentoml._internal.yatai_client import YataiClient
 
     return YataiClient()
 
@@ -285,10 +272,10 @@ def resolve_bento_bundle_uri(bento_pb):
 def archive_directory_to_tar(
     source_dir: str, tarfile_dir: str, tarfile_name: str
 ) -> (str, str):
-    file_name = f'{tarfile_name}.tar'
+    file_name = f"{tarfile_name}.tar"
     tarfile_path = os.path.join(tarfile_dir, file_name)
     with tarfile.open(tarfile_path, mode="w:gz") as tar:
         # Use arcname to prevent storing the full path to the bundle,
         # from source_dir/path/to/file to path/to/file
-        tar.add(source_dir, arcname='')
+        tar.add(source_dir, arcname="")
     return tarfile_path, file_name

@@ -34,13 +34,13 @@ def expand_env_var(env_var):
 # development branches of BentoML
 BENTOML_VERSION = __version__
 # e.g. from '0.4.2+5.g6cac97f.dirty' to '0.4.2'
-LAST_PYPI_RELEASE_VERSION = __version__.split('+')[0]
+LAST_PYPI_RELEASE_VERSION = __version__.split("+")[0]
 
 
 def _is_pip_installed_bentoml():
-    is_installed_package = hasattr(version_mod, 'version_json')
-    is_tagged = not __version__.startswith('0+untagged')
-    is_clean = not version_mod.get_versions()['dirty']
+    is_installed_package = hasattr(version_mod, "version_json")
+    is_tagged = not __version__.startswith("0+untagged")
+    is_clean = not version_mod.get_versions()["dirty"]
     return is_installed_package and is_tagged and is_clean
 
 

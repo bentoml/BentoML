@@ -51,8 +51,7 @@
     "eslint-config-prettier": "^6.7.0",
     "eslint-plugin-import": "^2.19.1",
     "file-loader": "^6.1.0",
-    "husky": ">=4",
-    "jest": "^24.9.0",
+    "jest": "^25",
     "lint-staged": ">=10",
     "nodemon": "^2.0.2",
     "prettier": "2.0.1",
@@ -83,11 +82,6 @@
     },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   },
   "lint-staged": {
     "*.js": "eslint --cache --fix",

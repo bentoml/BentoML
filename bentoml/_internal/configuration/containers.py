@@ -8,14 +8,13 @@ from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
 from bentoml import __version__
-
-from ..configuration import expand_env_var, get_bentoml_deploy_version
-from ..exceptions import BentoMLConfigException
-from ..utils import get_free_port
-from ..utils.ruamel_yaml import YAML
+from bentoml._internal.configuration import expand_env_var, get_bentoml_deploy_version
+from bentoml._internal.utils import get_free_port
+from bentoml._internal.utils.ruamel_yaml import YAML
+from bentoml.exceptions import BentoMLConfigException
 
 if TYPE_CHECKING:
-    from ..server.marshal.marshal import MarshalApp
+    from ..marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,43 +71,27 @@ SCHEMA = Schema(
         },
         "tracing": {
             "type": Or(
-                And(str, Use(str.lower), lambda s: s in ('zipkin', 'jaeger')), None
+                And(str, Use(str.lower), lambda s: s in ("zipkin", "jaeger")), None
             ),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
         "adapters": {"image_input": {"default_extensions": [str]}},
         "yatai": {
-            "remote": {
-                "url": Or(str, None),
-                "access_token": Or(str, None),
-                "access_token_header": Or(str, None),
-                "tls": {
-                    "root_ca_cert": Or(str, None),
-                    "client_key": Or(str, None),
-                    "client_cert": Or(str, None),
-                    "client_certificate_file": Or(str, None),
-                },
-            },
-            "repository": {
-                "type": And(
-                    str,
-                    lambda type: type in YATAI_REPOSITORY_TYPES,
-                    error="yatai.repository.type must be one of %s"
-                    % YATAI_REPOSITORY_TYPES,
-                ),
-                "file_system": {"directory": Or(str, None)},
-                "s3": {
+            "default_server": Or(str, None),
+            "servers": {
+                str: {
                     "url": Or(str, None),
-                    "endpoint_url": Or(str, None),
-                    "signature_version": Or(str, None),
-                    "expiration": Or(int, None),
+                    "access_token": Or(str, None),
+                    "access_token_header": Or(str, None),
+                    "tls": {
+                        "root_ca_cert": Or(str, None),
+                        "client_key": Or(str, None),
+                        "client_cert": Or(str, None),
+                        "client_certificate_file": Or(str, None),
+                    },
                 },
-                "gcs": {"url": Or(str, None), "expiration": Or(int, None)},
             },
-            "database": {"url": Or(str, None)},
-            "namespace": str,
-            "logging": {"path": Or(str, None)},
         },
     }
 )
@@ -121,7 +104,7 @@ class BentoMLConfiguration:
         override_config_file: str = None,
         validate_schema: bool = True,
     ):
-        # Default configuraiton
+        # Default configuration
         if default_config_file is None:
             default_config_file = os.path.join(
                 os.path.dirname(__file__), "default_configuration.yml"
@@ -202,13 +185,13 @@ class BentoMLContainerClass:
         jaeger_server_address: str = Provide[config.tracing.jaeger.address],
         jaeger_server_port: int = Provide[config.tracing.jaeger.port],
     ):
-        if tracer_type and tracer_type.lower() == 'zipkin' and zipkin_server_url:
+        if tracer_type and tracer_type.lower() == "zipkin" and zipkin_server_url:
             from ..tracing.zipkin import get_zipkin_tracer
 
             return get_zipkin_tracer(zipkin_server_url)
         elif (
             tracer_type
-            and tracer_type.lower() == 'jaeger'
+            and tracer_type.lower() == "jaeger"
             and jaeger_server_address
             and jaeger_server_port
         ):
@@ -250,7 +233,9 @@ class BentoMLContainerClass:
 
     bentoml_home = providers.Factory(
         lambda: expand_env_var(
-            os.environ.get("BENTOML_HOME", os.path.join("~", "bentoml"))
+            os.environ.get(
+                "BENTOML_HOME", os.path.join(os.environ["XDG_DATA_HOME"], "bentoml")
+            )
         )
     )
 
@@ -279,7 +264,7 @@ class BentoMLContainerClass:
     @providers.Factory
     @staticmethod
     def proxy_app() -> "MarshalApp":
-        from ..marshal.marshal import MarshalApp
+        from bentoml._internal.marshal.marshal import MarshalApp
 
         return MarshalApp()
 
@@ -311,53 +296,26 @@ class BentoMLContainerClass:
             namespace=namespace,
         )
 
-    @providers.SingletonFactory
-    @staticmethod
-    def yatai_metrics_client():
-        from ..metrics.prometheus import PrometheusClient
-
-        return PrometheusClient(multiproc=False, namespace="YATAI")
-
     bento_bundle_deployment_version = providers.Factory(
         get_bentoml_deploy_version,
         providers.Factory(
             lambda default, customized: customized or default,
-            __version__.split('+')[0],
+            __version__.split("+")[0],
             config.bento_bundle.deployment_version,
         ),
     )
+    default_yatai_server = config.yatai.servers[config.yatai.default_server]
 
-    yatai_database_url = providers.Factory(
-        lambda default, customized: customized or default,
-        providers.Factory(
-            "sqlite:///{}".format,
-            providers.Factory(os.path.join, bentoml_home, "storage.db"),
-        ),
-        config.yatai.database.url,
-    )
-
-    yatai_file_system_directory = providers.Factory(
-        lambda default, customized: customized or default,
-        providers.Factory(os.path.join, bentoml_home, "repository"),
-        config.yatai.repository.file_system.directory,
-    )
-
-    yatai_tls_root_ca_cert = providers.Factory(
+    default_yatai_server_tls_root_ca_cert = providers.Factory(
         lambda current, deprecated: current or deprecated,
-        config.yatai.remote.tls.root_ca_cert,
-        config.yatai.remote.tls.client_certificate_file,
+        config.yatai.servers[config.yatai.default_server].tls.root_ca_cert,
+        config.yatai.servers[config.yatai.default_server].tls.client_certificate_file,
     )
 
     logging_file_directory = providers.Factory(
         lambda default, customized: customized or default,
         providers.Factory(os.path.join, bentoml_home, "logs",),
         config.logging.file.directory,
-    )
-
-    yatai_logging_path = providers.Factory(
-        lambda default, customized: customized or default,
-        providers.Factory(os.path.join, logging_file_directory, "yatai_web_server.log"),
-        config.yatai.logging.path,
     )
 
 

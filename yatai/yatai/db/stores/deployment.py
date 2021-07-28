@@ -12,40 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import datetime
+import logging
 from contextlib import contextmanager
 
-from sqlalchemy import (
-    Column,
-    String,
-    Integer,
-    DateTime,
-    JSON,
-    UniqueConstraint,
-    desc,
-)
-from sqlalchemy.orm.exc import NoResultFound
 from google.protobuf.json_format import ParseDict
+from sqlalchemy import JSON, Column, DateTime, Integer, String, UniqueConstraint, desc
+from sqlalchemy.orm.exc import NoResultFound
 
-from bentoml.exceptions import YataiDeploymentException
-from bentoml.yatai.deployment import ALL_NAMESPACE_TAG
-from bentoml.yatai.db.base import Base
-from bentoml.yatai.db.stores.label import (
-    LabelStore,
-    RESOURCE_TYPE,
-)
-from bentoml.yatai.proto import deployment_pb2
-from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
-from bentoml.utils import ProtoMessageToDict
+from bentoml._internal.utils import ProtoMessageToDict
+from yatai.db.base import Base
+from yatai.db.stores.label import RESOURCE_TYPE, LabelStore
+from yatai.deployment import ALL_NAMESPACE_TAG
+from yatai.exceptions import YataiDeploymentException
+from yatai.proto import deployment_pb2
+from yatai.proto.deployment_pb2 import DeploymentSpec, ListDeploymentsRequest
 
 logger = logging.getLogger(__name__)
 
 
 class Deployment(Base):
-    __tablename__ = 'deployments'
+    __tablename__ = "deployments"
     __table_args__ = tuple(
-        UniqueConstraint('name', 'namespace', name='_name_namespace_uc')
+        UniqueConstraint("name", "namespace", name="_name_namespace_uc")
     )
 
     id = Column(Integer, primary_key=True)
@@ -189,7 +178,7 @@ class DeploymentStore(object):
         if operator:
             operator_name = DeploymentSpec.DeploymentOperator.Name(operator)
             query = query.filter(
-                Deployment.spec['operator'].as_string().contains(operator_name)
+                Deployment.spec["operator"].as_string().contains(operator_name)
             )
         # We are not defaulting limit to 200 in the signature,
         # because protobuf will pass 0 as value

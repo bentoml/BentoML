@@ -23,16 +23,17 @@ from datetime import datetime
 import humanfriendly
 from tabulate import tabulate
 
-from bentoml.cli.click_utils import _echo
 from bentoml.exceptions import BentoMLException
-from bentoml.utils import pb_to_yaml
+
+from ..utils import pb_to_yaml
+from .click_utils import _echo
 
 logger = logging.getLogger(__name__)
 
 
 class Spinner:
     def __init__(self, message, delay=0.1):
-        self.spinner = itertools.cycle(['-', '/', '|', '\\'])
+        self.spinner = itertools.cycle(["-", "/", "|", "\\"])
         self.delay = delay
         self.busy = False
         self._screen_lock = None
@@ -50,11 +51,11 @@ class Spinner:
     def remove_spinner(self, cleanup=False):
         with self._screen_lock:
             if self.spinner_visible:
-                sys.stdout.write('\b')
+                sys.stdout.write("\b")
                 self.spinner_visible = False
                 if cleanup:
-                    sys.stdout.write(' ')  # overwrite spinner with blank
-                    sys.stdout.write('\r')  # move to next line
+                    sys.stdout.write(" ")  # overwrite spinner with blank
+                    sys.stdout.write("\r")  # move to next line
                 sys.stdout.flush()
 
     def spinner_task(self):
@@ -75,14 +76,14 @@ class Spinner:
             self.busy = False
             self.remove_spinner(cleanup=True)
         else:
-            sys.stdout.write('\r')
+            sys.stdout.write("\r")
 
 
 def parse_key_value_pairs(key_value_pairs_str):
     result = {}
     if key_value_pairs_str:
-        for key_value_pair in key_value_pairs_str.split(','):
-            key, value = key_value_pair.split('=')
+        for key_value_pair in key_value_pairs_str.split(","):
+            key, value = key_value_pair.split("=")
             key = key.strip()
             value = value.strip()
             if key in result:
@@ -95,7 +96,7 @@ def echo_docker_api_result(docker_generator):
     layers = {}
     for line in docker_generator:
         if "stream" in line:
-            cleaned = line['stream'].rstrip("\n")
+            cleaned = line["stream"].rstrip("\n")
             if cleaned != "":
                 yield cleaned
         if "status" in line and line["status"] == "Pushing":
@@ -113,24 +114,24 @@ def echo_docker_api_result(docker_generator):
 
 
 def _print_deployment_info(deployment, output_type):
-    if output_type == 'yaml':
+    if output_type == "yaml":
         _echo(pb_to_yaml(deployment))
     else:
         from google.protobuf.json_format import MessageToDict
 
         deployment_info = MessageToDict(deployment)
-        if deployment_info['state'] and deployment_info['state']['infoJson']:
-            deployment_info['state']['infoJson'] = json.loads(
-                deployment_info['state']['infoJson']
+        if deployment_info["state"] and deployment_info["state"]["infoJson"]:
+            deployment_info["state"]["infoJson"] = json.loads(
+                deployment_info["state"]["infoJson"]
             )
-        _echo(json.dumps(deployment_info, indent=2, separators=(',', ': ')))
+        _echo(json.dumps(deployment_info, indent=2, separators=(",", ": ")))
 
 
 def _format_labels_for_print(labels):
     if not labels:
         return None
-    result = [f'{label_key}:{labels[label_key]}' for label_key in labels]
-    return '\n'.join(result)
+    result = [f"{label_key}:{labels[label_key]}" for label_key in labels]
+    return "\n".join(result)
 
 
 def _format_deployment_age_for_print(deployment_pb):
@@ -147,27 +148,27 @@ def human_friendly_age_from_datetime(dt, detailed=False, max_unit=2):
 
 
 def _print_deployments_table(deployments, wide=False):
-    from bentoml.yatai.proto.deployment_pb2 import DeploymentSpec, DeploymentState
+    from ..yatai_client.proto.deployment_pb2 import DeploymentSpec, DeploymentState
 
     table = []
     if wide:
         headers = [
-            'NAME',
-            'NAMESPACE',
-            'PLATFORM',
-            'BENTO_SERVICE',
-            'STATUS',
-            'AGE',
-            'LABELS',
+            "NAME",
+            "NAMESPACE",
+            "PLATFORM",
+            "BENTO_SERVICE",
+            "STATUS",
+            "AGE",
+            "LABELS",
         ]
     else:
         headers = [
-            'NAME',
-            'NAMESPACE',
-            'PLATFORM',
-            'BENTO_SERVICE',
-            'STATUS',
-            'AGE',
+            "NAME",
+            "NAMESPACE",
+            "PLATFORM",
+            "BENTO_SERVICE",
+            "STATUS",
+            "AGE",
         ]
     for deployment in deployments:
         row = [
@@ -175,24 +176,24 @@ def _print_deployments_table(deployments, wide=False):
             deployment.namespace,
             DeploymentSpec.DeploymentOperator.Name(deployment.spec.operator)
             .lower()
-            .replace('_', '-'),
-            f'{deployment.spec.bento_name}:{deployment.spec.bento_version}',
+            .replace("_", "-"),
+            f"{deployment.spec.bento_name}:{deployment.spec.bento_version}",
             DeploymentState.State.Name(deployment.state.state)
             .lower()
-            .replace('_', ' '),
+            .replace("_", " "),
             _format_deployment_age_for_print(deployment),
         ]
         if wide:
             row.append(_format_labels_for_print(deployment.labels))
         table.append(row)
-    table_display = tabulate(table, headers, tablefmt='plain')
+    table_display = tabulate(table, headers, tablefmt="plain")
     _echo(table_display)
 
 
 def _print_deployments_info(deployments, output_type):
-    if output_type == 'table':
+    if output_type == "table":
         _print_deployments_table(deployments)
-    elif output_type == 'wide':
+    elif output_type == "wide":
         _print_deployments_table(deployments, wide=True)
     else:
         for deployment in deployments:

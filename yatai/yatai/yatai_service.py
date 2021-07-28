@@ -1,93 +1,90 @@
 import atexit
-from concurrent import futures
 import logging
 import os
 import subprocess
 import time
+from concurrent import futures
 
-import certifi
 import click
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration import get_debug_mode
-from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.exceptions import BentoMLException
 from bentoml._internal.utils import reserve_free_port
-from yatai.yatai.utils import ensure_node_available_or_raise, parse_grpc_url
+from bentoml.exceptions import BentoMLException
+
+from .configuration.containers import YataiContainer
+from .utils import ensure_node_available_or_raise
+
+# TODO move this to bentoml client
+# @inject
+# def get_yatai_service(
+#     channel_address: str = Provide[YataiContainer.default_server.url],
+#     access_token: str = Provide[YataiContainer.default_server.access_token],
+#     access_token_header: str = Provide[
+#         YataiContainer.default_server.access_token_header
+#     ],
+#     tls_root_ca_cert: str = Provide[YataiContainer.default_server.tls.root_ca_cert],
+#     tls_client_key: str = Provide[YataiContainer.default_server.tls.client_key],
+#     tls_client_cert: str = Provide[YataiContainer.default_server.tls.client_cert],
+#     db_url: str = Provide[YataiContainer.yatai_database_url],
+#     default_namespace: str = Provide[YataiContainer.config.namespace],
+#     repository_type: str = Provide[YataiContainer.config.repository.type],
+#     file_system_directory: str = Provide[YataiContainer.yatai_file_system_directory],
+#     s3_url: str = Provide[YataiContainer.config.repository.s3.url],
+#     s3_endpoint_url: str = Provide[YataiContainer.config.repository.s3.endpoint_url],
+#     gcs_url: str = Provide[YataiContainer.config.repository.gcs.url],
+# ):
+#     if channel_address:
+#         # Lazily import grpcio for YataiService gRPC related actions
+#         import grpc
 
 
-@inject
-def get_yatai_service(
-    channel_address: str = Provide[BentoMLContainer.config.yatai.remote.url],
-    access_token: str = Provide[BentoMLContainer.config.yatai.remote.access_token],
-    access_token_header: str = Provide[
-        BentoMLContainer.config.yatai.remote.access_token_header
-    ],
-    tls_root_ca_cert: str = Provide[BentoMLContainer.yatai_tls_root_ca_cert],
-    tls_client_key: str = Provide[BentoMLContainer.config.yatai.remote.tls.client_key],
-    tls_client_cert: str = Provide[
-        BentoMLContainer.config.yatai.remote.tls.client_cert
-    ],
-    db_url: str = Provide[BentoMLContainer.yatai_database_url],
-    default_namespace: str = Provide[BentoMLContainer.config.yatai.namespace],
-    repository_type: str = Provide[BentoMLContainer.config.yatai.repository.type],
-    file_system_directory: str = Provide[BentoMLContainer.yatai_file_system_directory],
-    s3_url: str = Provide[BentoMLContainer.config.yatai.repository.s3.url],
-    s3_endpoint_url: str = Provide[
-        BentoMLContainer.config.yatai.repository.s3.endpoint_url
-    ],
-    gcs_url: str = Provide[BentoMLContainer.config.yatai.repository.gcs.url],
-):
-    if channel_address:
-        # Lazily import grpcio for YataiSerivce gRPC related actions
-        import grpc
-        from bentoml._internal.yatai_client.interceptor import header_client_interceptor
-        from yatai.yatai.proto.yatai_service_pb2_grpc import YataiStub
+#         from yatai.proto.yatai_service_pb2_grpc import YataiStub
 
-        channel_address = channel_address.strip()
-        logger.debug("Connecting YataiService gRPC server at: %s", channel_address)
-        scheme, addr = parse_grpc_url(channel_address)
-        header_adder_interceptor = header_client_interceptor.header_adder_interceptor(
-            access_token_header, access_token
-        )
-        if scheme in ("grpcs", "https"):
-            tls_root_ca_cert = (
-                tls_root_ca_cert or certifi.where()
-            )  # default: Mozilla ca cert
-            with open(tls_root_ca_cert, "rb") as fb:
-                ca_cert = fb.read()
-            if tls_client_key:
-                with open(tls_client_key, "rb") as fb:
-                    tls_client_key = fb.read()
-            if tls_client_cert:
-                with open(tls_client_cert, "rb") as fb:
-                    tls_client_cert = fb.read()
-            credentials = grpc.ssl_channel_credentials(
-                ca_cert, tls_client_key, tls_client_cert
-            )
-            channel = grpc.intercept_channel(
-                grpc.secure_channel(addr, credentials), header_adder_interceptor
-            )
-        else:
-            channel = grpc.intercept_channel(
-                grpc.insecure_channel(addr), header_adder_interceptor
-            )
-        return YataiStub(channel)
-    else:
-        from yatai.yatai.db import DB
-        from yatai.yatai.repository import create_repository
-        from yatai.yatai.yatai_service_impl import get_yatai_service_impl
+#         channel_address = channel_address.strip()
+#         logger.debug("Connecting YataiService gRPC server at: %s", channel_address)
+#         scheme, addr = parse_grpc_url(channel_address)
+#         header_adder_interceptor = header_adder_interceptor(
+#             access_token_header, access_token
+#         )
+#         if scheme in ("grpcs", "https"):
+#             tls_root_ca_cert = (
+#                 tls_root_ca_cert or certifi.where()
+#             )  # default: Mozilla ca cert
+#             with open(tls_root_ca_cert, "rb") as fb:
+#                 ca_cert = fb.read()
+#             if tls_client_key:
+#                 with open(tls_client_key, "rb") as fb:
+#                     tls_client_key = fb.read()
+#             if tls_client_cert:
+#                 with open(tls_client_cert, "rb") as fb:
+#                     tls_client_cert = fb.read()
+#             credentials = grpc.ssl_channel_credentials(
+#                 ca_cert, tls_client_key, tls_client_cert
+#             )
+#             channel = grpc.intercept_channel(
+#                 grpc.secure_channel(addr, credentials), header_adder_interceptor
+#             )
+#         else:
+#             channel = grpc.intercept_channel(
+#                 grpc.insecure_channel(addr), header_adder_interceptor
+#             )
+#         return YataiStub(channel)
+#     else:
+#         from .db import DB
+#         from .repository import create_repository
+#         from .yatai_service_impl import get_yatai_service_impl
 
-        LocalYataiService = get_yatai_service_impl()
+#         LocalYataiService = get_yatai_service_impl()
 
-        logger.debug("Creating local YataiService instance")
-        return LocalYataiService(
-            repository=create_repository(
-                repository_type, file_system_directory, s3_url, s3_endpoint_url, gcs_url
-            ),
-            database=DB(db_url),
-            default_namespace=default_namespace,
-        )
+#         logger.debug("Creating local YataiService instance")
+#         return LocalYataiService(
+#             repository=create_repository(
+#                 repository_type, file_system_directory, s3_url, s3_endpoint_url, gcs_url  # noqa: E501
+#             ),
+#             database=DB(db_url),
+#             default_namespace=default_namespace,
+#         )
 
 
 @inject
@@ -102,20 +99,17 @@ def start_yatai_service_grpc_server(
     s3_url: str,
     s3_endpoint_url: str,
     gcs_url: str,
-    web_ui_log_path: str = Provide[BentoMLContainer.yatai_logging_path],
-    yatai_metrics_client=Provide[BentoMLContainer.yatai_metrics_client],
+    web_ui_log_path: str = Provide[YataiContainer.logging_path],
+    yatai_metrics_client=Provide[YataiContainer.metrics_client],
 ):
     # Lazily import grpcio for YataiService gRPC related actions
     import grpc
-    from yatai.yatai.db import DB
-    from yatai.yatai.repository import create_repository
-    from yatai.yatai.yatai_service_impl import get_yatai_service_impl
-    from yatai.yatai.proto.yatai_service_pb2_grpc import add_YataiServicer_to_server
-    from yatai.yatai.proto.yatai_service_pb2_grpc import YataiServicer
-    from yatai.yatai.grpc_interceptor import (
-        PromServerInterceptor,
-        ServiceLatencyInterceptor,
-    )
+
+    from .db import DB
+    from .interceptor import PromServerInterceptor, ServiceLatencyInterceptor
+    from .proto.yatai_service_pb2_grpc import YataiServicer, add_YataiServicer_to_server
+    from .repository import create_repository
+    from .yatai_service_impl import get_yatai_service_impl
 
     YataiServicerImpl = get_yatai_service_impl(YataiServicer)
     yatai_service = YataiServicerImpl(
@@ -135,8 +129,9 @@ def start_yatai_service_grpc_server(
     if debug_mode:
         try:
             logger.debug("Enabling gRPC server reflection for debugging")
-            from bentoml.yatai.proto import yatai_service_pb2
             from grpc_reflection.v1alpha import reflection
+
+            from yatai.proto import yatai_service_pb2
 
             SERVICE_NAMES = (
                 yatai_service_pb2.DESCRIPTOR.services_by_name["Yatai"].full_name,
@@ -151,10 +146,10 @@ def start_yatai_service_grpc_server(
     server.add_insecure_port(f"[::]:{grpc_port}")
 
     # NOTE: the current implementation sets prometheus_port to
-    # 50052 to accommodate with Makefile setups. Currently there
-    # isn't a way to find the reserve_free_port dynamically inside
-    # Makefile to find the free ports for prometheus_port without
-    # the help of a shell scripts.
+    #   50052 to accommodate with Makefile setups. Currently there
+    #   isn't a way to find the reserve_free_port dynamically inside
+    #   Makefile to find the free ports for prometheus_port without
+    #   the help of a shell scripts.
     prometheus_port = 50052
     with reserve_free_port() as port:
         prometheus_port = port

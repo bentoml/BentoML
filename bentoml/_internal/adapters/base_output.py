@@ -1,7 +1,8 @@
 import itertools
 from typing import Iterable, Iterator, Sequence, Tuple
 
-from ..exceptions import APIDeprecated
+from bentoml.exceptions import APIDeprecated
+
 from ..types import (
     ApiFuncReturnValue,
     AwsLambdaEvent,

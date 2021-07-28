@@ -44,7 +44,7 @@ def start_dev_server(
     if run_with_ngrok:
         from threading import Timer
 
-        from bentoml.utils.flask_ngrok import start_ngrok
+        from ..utils.flask_ngrok import start_ngrok
 
         thread = Timer(1, start_ngrok, args=(port,))
         thread.setDaemon(True)

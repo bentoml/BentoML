@@ -98,7 +98,7 @@ Verify the saved bundle created:
         "artifacts": [
           {
             "name": "model",
-            "artifactType": "SklearnModelArtifact"
+            "artifactType": "SklearnModel"
           }
         ],
         "apis": [

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from bentoml._internal.exceptions import InvalidArgument
+from bentoml.exceptions import InvalidArgument
 
 
 def raise_if_api_names_not_found_in_bento_service_metadata(metadata, api_names):

@@ -1,6 +1,0 @@
-bento_server:
-  microbatch:
-    workers: 1
-    max_batch_size: 1
-  cors:  # standard: https://fetch.spec.whatwg.org/#http-cors-protocol
-    enabled: False

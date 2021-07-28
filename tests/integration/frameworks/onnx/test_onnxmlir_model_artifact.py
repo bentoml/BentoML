@@ -19,7 +19,7 @@ except ImportError:
 
 sys.path.append("/workdir/onnx-mlir/build/Debug/lib/")
 
-test_data = np.array([1, 2, 3, 4, 5], dtype=np.float64)
+test_data = np.array([[1, 2, 3, 4, 5]], dtype=np.float64)
 test_df = pd.DataFrame(test_data, columns=["A", "B", "C", "D", "E"])
 test_tensor = np.asfarray(test_data)
 

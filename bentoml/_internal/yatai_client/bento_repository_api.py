@@ -10,22 +10,22 @@ import click
 import grpc
 import requests
 
-from bentoml.exceptions import BentoMLException, BentoMLRpcError
-
 # from ..bundle import (
 #     load_bento_service_metadata,
 #     load_from_dir,
 #     safe_retrieve,
 #     save_to_dir,
 # )
-from ..utils import (
+from bentoml._internal.utils import (
     is_gcs_url,
     is_s3_url,
     resolve_bento_bundle_uri,
     status_pb_to_error_code_and_message,
 )
-from ..utils.lazy_loader import LazyLoader
-from ..utils.tempdir import TempDirectory
+from bentoml._internal.utils.lazy_loader import LazyLoader
+from bentoml._internal.utils.tempdir import TempDirectory
+from bentoml.exceptions import BentoMLException, BentoMLRpcError
+
 from .label_utils import generate_gprc_labels_selector
 
 # from .yatai.grpc_stream_utils import UploadBentoStreamRequests

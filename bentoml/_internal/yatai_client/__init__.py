@@ -84,7 +84,7 @@ def get_yatai_service(
     tls_root_ca_cert: str,
     tls_client_key: str,
     tls_client_cert: str,
-) -> YataiStub:
+) -> "YataiStub":
     import certifi
     import grpc
 

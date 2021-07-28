@@ -2,9 +2,11 @@ import os
 import yaml
 import time
 import tarfile
+import shutil
 
 def list(name=None):
     # TODO: change bundles path to general path
+    # home alxmke -> bentoml home; bentoml/_internal/configuration/containers
     names_path = os.path.abspath("/home/alxmke/bentoml/bundles")
     timev1 = True
     timev2 = False
@@ -89,11 +91,57 @@ def get_tar(tag):
 # yatai client proto bentoml.yatai.proto.
 
 # bentoml delete [--yes] <-
-def delete(name=None, tag=None):
+def delete(name=None, tag=None, yes=None):
     if tag:
-        path = bundles(tag=tag).get("path")
-    if name:
-        pass
+        # what kind of error to throw if tag malformed?
+        # and if it doesn't exist?
+        name, version = tag.split(":")
+        # TODO: change bundles path to general path
+        tag_path = os.path.join("/home/alxmke/bentoml/bundles", name, version)
+        if not os.path.isdir(tag_path):
+            return None
+        while not yes:
+            print(f"delete {tag}? [y/N]: ", end="")
+            yes = input()
+            if yes != "y" and yes != "N":
+                print("answer must be y or N: ")
+                yes = None
+        if yes == "y":
+            print(f"deleting {tag}")
+            shutil.rmtree(tag_path)
+        else:
+            print(f"skipping {tag}")
+        # check other methods of deleting whole directory
+    elif name:
+        # TODO: change bundles path to general path
+        name_path = os.path.join("/home/alxmke/bentoml/bundles", name)
+        if not os.path.isdir(name_path):
+            return None
+        if yes:
+            print(f"deleting {name}")
+            shutil.rmtree(name_path)
+        else:
+            any_no = False
+            for v in os.scandir(name_path):
+                version = v.name
+                tag = f"{name}:{version}"
+                print(f"delete {tag}? [y/N]: ", end="")
+                while not yes:
+                    yes = input()
+                    if yes != "y" and yes != "N":
+                        print("answer must be y or N: ")
+                        yes = None
+                if yes == "y":
+                    print(f"deleting {tag}")
+                    tag_path = os.path.join(name_path, version)
+                    shutil.rmtree(tag_path)
+                else:
+                    any_no = True
+                    print(f"skipping {tag}")
+                yes = None
+            if not any_no:
+                print(f"deleting {name}")
+                shutil.rmtree(name_path)
 
 def push(tag, yatai=None):
     if not yatai:
@@ -174,6 +222,29 @@ e = time.monotonic()
 t = e-s
 print(f"get() w/ tar, {runs} times in {t} seconds @ a rate of {runs/t} gets/second")
 
+# tag, name -- without yes
+original_tag = "IrisClassifier:20210618161150_3BFE59"
+copy_tag = "IrisClassifierTest:20210618161150_3BFE59"
+original_name, original_version = original_tag.split(':')
+copy_name, copy_version = copy_tag.split(':')
+shutil.copytree(
+    os.path.join("/home/alxmke/bentoml/bundles", original_name),
+    os.path.join("/home/alxmke/bentoml/bundles", copy_name),
+)
+delete(tag=copy_tag)
+delete(name=copy_name)
+
+# tag, name -- with yes
+original_tag = "IrisClassifier:20210618161150_3BFE59"
+copy_tag = "IrisClassifierTest:20210618161150_3BFE59"
+original_name, original_version = original_tag.split(':')
+copy_name, copy_version = copy_tag.split(':')
+shutil.copytree(
+    os.path.join("/home/alxmke/bentoml/bundles", original_name),
+    os.path.join("/home/alxmke/bentoml/bundles", copy_name),
+)
+delete(tag=copy_tag, yes="y")
+delete(name=copy_name, yes="y")
 
 ''' notes from previous version of file:
 

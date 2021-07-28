@@ -1,3 +1,4 @@
+from genericpath import isdir
 import os
 import yaml
 import time
@@ -37,6 +38,36 @@ def list(name=None):
             bundles.append((name,version,str(t),models))
     return bundles
 
+def list_tar(name=None):
+    # TODO: change bundles path to general path
+    # home alxmke -> bentoml home; bentoml/_internal/configuration/containers
+    names_path = os.path.abspath("/home/alxmke/bentoml/bundles-tar")
+    timev1 = False
+    bundles = []
+    names = os.scandir(names_path)
+    names = names if not name else [n for n in names if n.name == name]
+    for n in names:
+        name = n.name
+        name_path = os.path.join(names_path, name)
+        for v in os.scandir(name_path):
+            version = v.name
+            version_path = os.path.join(name_path, version)
+            t = time.ctime(os.path.getctime(version_path))
+            tf = tarfile.open(version_path, mode='r')
+            vname = version.replace(".bento", "")
+            models = []
+            models_prefix = vname+"/models/"
+            k = len(models_prefix)
+            for member in tf.getmembers():
+                mname = member.name
+                if mname.startswith(models_prefix):
+                    mname = mname[k:]
+                    if "/" not in mname:
+                        models.append(mname)
+            tf.close()
+            bundles.append((name, vname, str(t),sorted(models)))
+    return bundles
+
 # TODO: look into scandir stat
 
 def get(tag):
@@ -74,8 +105,6 @@ def get_tar(tag):
     if not os.path.isfile(tag_path):
         return None
     
-    timev1 = False
-    timev2 = True
     tf = tarfile.open(tag_path, mode='r')
     bento_yaml = yaml.load(
         tf.extractfile(os.path.join(version, "bentoml.yml")),
@@ -91,6 +120,7 @@ def get_tar(tag):
 # yatai client proto bentoml.yatai.proto.
 
 # bentoml delete [--yes] <-
+# yes --> skip-confirmation
 def delete(name=None, tag=None, yes=None):
     if tag:
         # what kind of error to throw if tag malformed?
@@ -104,7 +134,7 @@ def delete(name=None, tag=None, yes=None):
             print(f"delete {tag}? [y/N]: ", end="")
             yes = input()
             if yes != "y" and yes != "N":
-                print("answer must be y or N: ")
+                print("answer must be y or N.")
                 yes = None
         if yes == "y":
             print(f"deleting {tag}")
@@ -125,11 +155,11 @@ def delete(name=None, tag=None, yes=None):
             for v in os.scandir(name_path):
                 version = v.name
                 tag = f"{name}:{version}"
-                print(f"delete {tag}? [y/N]: ", end="")
                 while not yes:
+                    print(f"delete {tag}? [y/N]: ", end="")
                     yes = input()
                     if yes != "y" and yes != "N":
-                        print("answer must be y or N: ")
+                        print("answer must be y or N.")
                         yes = None
                 if yes == "y":
                     print(f"deleting {tag}")
@@ -173,14 +203,32 @@ def bundles(name=None):
             print(name, version)
 
 
-i = 0
 print("list all:")
+i = 0
+s = time.monotonic()
 for bundle in list():
     if i < 10:
         print(bundle)
     if i > 6000:
         print(bundle)
     i+=1
+e = time.monotonic()
+t = e-s
+print(f"list() w/o tar, {i} tags in {t} seconds @ a rate of {i/t} gets/second")
+print()
+
+print("list (w/ tar) all:")
+i = 0
+s = time.monotonic()
+for bundle in list_tar():
+    if i < 10:
+        print(bundle)
+    if i > 6000:
+        print(bundle)
+    i+=1
+e = time.monotonic()
+t = e-s
+print(f"list() w/ tar, {i} tags in {t} seconds @ a rate of {i/t} gets/second")
 print()
 
 print("list all w/ name IrisClassifier642:")
@@ -221,6 +269,7 @@ for i in range(runs):
 e = time.monotonic()
 t = e-s
 print(f"get() w/ tar, {runs} times in {t} seconds @ a rate of {runs/t} gets/second")
+print()
 
 # tag, name -- without yes
 original_tag = "IrisClassifier:20210618161150_3BFE59"
@@ -231,8 +280,12 @@ shutil.copytree(
     os.path.join("/home/alxmke/bentoml/bundles", original_name),
     os.path.join("/home/alxmke/bentoml/bundles", copy_name),
 )
+print(f"deleting by tag, no --yes: {copy_tag}")
 delete(tag=copy_tag)
+print()
+print(f"deleting by name, no --yes: {copy_name}")
 delete(name=copy_name)
+print()
 
 # tag, name -- with yes
 original_tag = "IrisClassifier:20210618161150_3BFE59"

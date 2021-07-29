@@ -73,7 +73,13 @@ class DataframeOutput(JsonOutput):
                 i += task.batch
             try:
                 result = df_to_json(result, self.output_orient)
-                rv.append(InferenceResult(http_status=200, data=result))
+                rv.append(
+                    InferenceResult(
+                        data=result,
+                        http_status=200,
+                        http_headers={"Content-Type": "application/json"}
+                    )
+                )
             except Exception as e:  # pylint: disable=broad-except
                 rv.append(InferenceError(err_msg=str(e), http_status=500))
         return rv

@@ -231,12 +231,24 @@ class BentoMLContainerClass:
         config.bento_server.workers,
     )
 
+    '''
     bentoml_home = providers.Factory(
         lambda: expand_env_var(
             os.environ.get(
-                "BENTOML_HOME", os.path.join(os.environ["XDG_DATA_HOME"], "bentoml")
+                "BENTOML_HOME", # os.path.join(os.environ["XDG_DATA_HOME"], "bentoml")
             )
         )
+    )
+    '''
+    bentoml_home = providers.Factory(
+        lambda: expand_env_var(
+            os.environ.get("BENTOML_HOME", os.path.join("~", "bentoml"))
+        )
+    )
+    bundle_store_path = providers.Factory(
+        lambda default, customized: customized or default,
+        providers.Factory(os.path.join, bentoml_home, "logs",),
+        config.logging.file.directory,
     )
 
     bundle_path: Provider[str] = providers.Static("")

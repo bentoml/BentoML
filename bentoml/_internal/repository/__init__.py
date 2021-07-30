@@ -3,12 +3,18 @@ import os
 import time
 import shutil
 from bentoml._internal.configuration.containers import BentoMLContainerClass  # need to change to explicit path after in-file testing
+
 # home alxmke -> bentoml home; bentoml/_internal/configuration/containers
 from click import confirm, echo
-bentoml_home = BentoMLContainerClass.bentoml_home
+
+from simple_di import Provide
+bentoml_home = BentoMLContainerClass.bentoml_home._provide()
+
+#root_bundle_store: str = Provide[
+#    BentoMLContainerClass.bentoml_home
+#]+"/bundles/"
 
 def list(name=None):
-    # TODO: change bundles path to general path
     names_path = os.path.abspath(bentoml_home)
     bundles = []
     names = os.scandir(names_path)

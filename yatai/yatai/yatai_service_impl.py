@@ -67,8 +67,8 @@ from yatai.proto.yatai_service_pb2 import (
     GetYataiServiceVersionResponse,
     HealthCheckResponse,
 )
-from yatai.repository.base_repository import BaseRepository
-from yatai.repository.file_system_repository import FileSystemRepository
+from yatai.bundle_stores.base_repository import BaseRepository
+from yatai.bundle_stores.file_system_repository import FileSystemRepository
 from yatai.status import Status
 from yatai.utils import docker_build_logs
 from yatai.validator import validate_deployment_pb

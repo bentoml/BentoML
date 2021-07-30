@@ -12,25 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from yatai.repository.base_repository import BaseRepository
-from yatai.repository.file_system_repository import FileSystemRepository
-from yatai.repository.gcs_repository import GCSRepository
-from yatai.repository.s3_repository import S3Repository
+from yatai.bundle_stores.base_repository import BaseRepository
+from yatai.bundle_stores.file_system_repository import FileSystemRepository
+from yatai.bundle_stores.gcs_repository import GCSRepository
+from yatai.bundle_stores.s3_repository import S3Repository
 
 
-def create_repository(
-    repository_type: str,
+def create_bundle_store(
+    store_type: str,
     file_system_directory=None,
     s3_url=None,
     s3_endpoint_url=None,
     gcs_url=None,
 ) -> BaseRepository:
     """Creates a repository based on a provided type and parameters"""
-    if repository_type == "s3":
+    if store_type == "s3":
         return S3Repository(s3_url, endpoint_url=s3_endpoint_url)
-    elif repository_type == "gcs":
+    elif store_type == "gcs":
         return GCSRepository(gcs_url)
-    elif repository_type == "file_system":
+    elif store_type == "file_system":
         return FileSystemRepository(file_system_directory)
     else:
-        raise ValueError("Unrecognized repository type {}" % repository_type)
+        raise ValueError("Unrecognized repository type {}" % store_type)

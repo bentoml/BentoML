@@ -19,12 +19,12 @@ from simple_di import Provide, inject
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml.exceptions import YataiRepositoryException
 from yatai.proto.repository_pb2 import BentoUri
-from yatai.repository.base_repository import BaseRepository
+from yatai.bundle_stores.base_bundle_store import BaseBundleStore
 
 logger = logging.getLogger(__name__)
 
 
-class S3Repository(BaseRepository):
+class S3Repository(BaseBundleStore):
     @inject
     def __init__(
         self,

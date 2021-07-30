@@ -13,6 +13,8 @@ install_requires = [
     "psycopg2",
     "psycopg2-binary",
     "ruamel.yaml>=0.15.0",
+    "fastapi",
+    "pydantic",
 ]
 
 setuptools.setup(

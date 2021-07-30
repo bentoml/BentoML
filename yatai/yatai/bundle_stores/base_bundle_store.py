@@ -16,7 +16,7 @@
 from abc import ABCMeta, abstractmethod
 
 
-class BaseRepository(object):
+class BaseBundleStore(object):
     """
     BaseRepository is the interface for managing BentoML saved bundle files over either
      a file system or a cloud blob storage systems such as AWS S3 or MinIO

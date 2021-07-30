@@ -2,6 +2,8 @@ bento_bundle:
   deployment_version: Null
   default_docker_base_image: Null
 
+bundle_store_path: Null
+  
 bento_server:
   port: 5000
   ngrok:

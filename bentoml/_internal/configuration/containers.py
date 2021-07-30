@@ -33,6 +33,7 @@ SCHEMA = Schema(
             "deployment_version": Or(str, None),
             "default_docker_base_image": Or(str, None),
         },
+        "bundle_store_path": Or(str, None),
         "bento_server": {
             "port": And(int, lambda port: port > 0),
             "workers": Or(And(int, lambda workers: workers > 0), None),
@@ -242,13 +243,20 @@ class BentoMLContainerClass:
     '''
     bentoml_home = providers.Factory(
         lambda: expand_env_var(
-            os.environ.get("BENTOML_HOME", os.path.join("~", "bentoml"))
+            os.environ.get(
+                "BENTOML_HOME",
+                os.path.join("~", "bentoml"),
+            )
         )
     )
     bundle_store_path = providers.Factory(
         lambda default, customized: customized or default,
-        providers.Factory(os.path.join, bentoml_home, "logs",),
-        config.logging.file.directory,
+        providers.Factory(
+            os.path.join,
+            bentoml_home._provide(),
+            "bundles",
+        ),
+        config.bundle_store_path,
     )
 
     bundle_path: Provider[str] = providers.Static("")

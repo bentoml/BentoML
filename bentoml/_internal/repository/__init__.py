@@ -1,21 +1,18 @@
-from genericpath import isdir
 import os
 import time
 import shutil
-from bentoml._internal.configuration.containers import BentoMLContainerClass  # need to change to explicit path after in-file testing
 
-# home alxmke -> bentoml home; bentoml/_internal/configuration/containers
+from simple_di import Provide, inject
+from bentoml._internal.configuration.containers import BentoMLContainerClass
 from click import confirm, echo
 
-from simple_di import Provide
-bentoml_home = BentoMLContainerClass.bentoml_home._provide()
-
-#root_bundle_store: str = Provide[
-#    BentoMLContainerClass.bentoml_home
-#]+"/bundles/"
+@inject
+def _get_bundle_store_path(bundle_store_path: str = Provide[BentoMLContainerClass.bundle_store_path]):
+    return bundle_store_path
+bundle_store_path = _get_bundle_store_path()
 
 def list(name=None):
-    names_path = os.path.abspath(bentoml_home)
+    names_path = os.path.abspath(bundle_store_path)
     bundles = []
     names = os.scandir(names_path)
     names = names if not name else [n for n in names if n.name == name]
@@ -33,7 +30,7 @@ def list(name=None):
 
 def get(tag):
     name, version = tag.split(":")
-    tag_path = os.path.join(bentoml_home, name, version)
+    tag_path = os.path.join(bundle_store_path, name, version)
     if not os.path.isdir(tag_path):
         return None
     
@@ -43,9 +40,10 @@ def get(tag):
     return (name,version,str(t),models)
 
 def delete(name=None, tag=None, yes=None):
+    # add delete all case
     if tag:
         name, version = tag.split(":")
-        tag_path = os.path.join(bentoml_home, name, version)
+        tag_path = os.path.join(bundle_store_path, name, version)
         if not os.path.isdir(tag_path):
             return None
         if confirm(f"delete {tag}?"):
@@ -54,7 +52,7 @@ def delete(name=None, tag=None, yes=None):
         else:
             echo(f"skipping {tag}")
     elif name:
-        name_path = os.path.join(bentoml_home, name)
+        name_path = os.path.join(bundle_store_path, name)
         if not os.path.isdir(name_path):
             return None
         if yes:
@@ -65,13 +63,13 @@ def delete(name=None, tag=None, yes=None):
             for v in os.scandir(name_path):
                 version = v.name
                 tag = f"{name}:{version}"
-                if confirm("delete {tag}?"):
-                    echo("deleting {tag}")
+                if confirm(f"delete {tag}?"):
+                    echo(f"deleting {tag}")
                     tag_path = os.path.join(name_path, version)
                     shutil.rmtree(tag_path)
                 else:
                     any_no = True
-                    echo("skipping {tag}")
+                    echo(f"skipping {tag}")
             if not any_no:
                 echo(f"deleting {name}")
                 shutil.rmtree(name_path)

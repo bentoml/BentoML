@@ -1,7 +1,7 @@
 from bentoml._internal.repository.__init__ import *
 
-if __name__ == "__main__":
-    print(bentoml_home)
+def test_api_fns():
+    print(bundle_store_path)
 
     print("list all:")
     i = 0

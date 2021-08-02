@@ -1,10 +1,12 @@
 import os
 import time
 import shutil
-
 from simple_di import Provide, inject
 from bentoml._internal.configuration.containers import BentoMLContainerClass
-from click import confirm, echo
+from click import confirm
+import logging
+
+logger = logging.getLogger(__name__)
 
 @inject
 def _get_bundle_store_path(bundle_store_path: str = Provide[BentoMLContainerClass.bundle_store_path]):
@@ -12,6 +14,19 @@ def _get_bundle_store_path(bundle_store_path: str = Provide[BentoMLContainerClas
 bundle_store_path = _get_bundle_store_path()
 
 def list(name=None):
+    """List a set of bundles under a specified name. If a name is not
+    specified, all bundles will be listed.
+
+    Args:
+        name (str): a name specifying a set of bundles to be deleted.
+        skip_confirmation (bool): a flag which specifies whether or not to skip
+            deletion confirmation.
+
+    Returns:
+        tuple: a list of information about bundles each in the form of a tuple
+            of (name, version, creation_time, models).
+    """
+
     names_path = os.path.abspath(bundle_store_path)
     bundles = []
     names = os.scandir(names_path)
@@ -29,6 +44,17 @@ def list(name=None):
     return bundles
 
 def get(tag):
+    """Get a bundle specified by an individual tag.
+
+    Args:
+        tag (str): a tag (of the form name:version) specifying one bundle to be
+            returned.
+    
+    Returns:
+        tuple: information about a bundle as a tuple in the form of 
+            (name, version, creation_time, models).
+    """
+
     name, version = tag.split(":")
     tag_path = os.path.join(bundle_store_path, name, version)
     if not os.path.isdir(tag_path):
@@ -39,24 +65,48 @@ def get(tag):
     models = sorted([m.name for m in os.scandir(models_path)])
     return (name,version,str(t),models)
 
-def delete(name=None, tag=None, yes=None):
-    # add delete all case
+'''
+# delete bundles with the following keys:
+# tag:  bentoml delete FraudDetector:20210401_EF4C13 --yes
+# name: bentoml delete FraudDetector --yes
+# labels?
+# all?  bentoml delete --all -y
+# bentoml.delete(tag, name, labels)
+def delete(tag, name, labels):
+    pass
+'''
+
+def delete(name=None, tag=None, skip_confirmation=None):
+    """Delete a set of bundles under a specific name, or an individual tag. If
+    neither a tag or name is specified, all bundles will be selected for
+    deletion. If skip_confirmation is set to True, then bundles will be deleted
+    without confirmation, otherwise, the user will be asked for confirmation of
+    deletion.
+
+    Args:
+        name (str): a name specifying a set of bundles to be deleted.
+        tag (str): a tag (of the form name:version) specifying one bundle to be
+            deleted.
+        skip_confirmation (bool): a flag which specifies whether or not to skip
+            deletion confirmation.
+    """
+
     if tag:
         name, version = tag.split(":")
         tag_path = os.path.join(bundle_store_path, name, version)
         if not os.path.isdir(tag_path):
             return None
         if confirm(f"delete {tag}?"):
-            echo(f"deleting {tag}")
+            logger.info(f"deleting {tag}")
             shutil.rmtree(tag_path)
         else:
-            echo(f"skipping {tag}")
+            logger.info(f"skipping {tag}")
     elif name:
         name_path = os.path.join(bundle_store_path, name)
         if not os.path.isdir(name_path):
             return None
-        if yes:
-            echo(f"deleting {name}")
+        if skip_confirmation:
+            logger.info(f"deleting {name}")
             shutil.rmtree(name_path)
         else:
             any_no = False
@@ -64,15 +114,31 @@ def delete(name=None, tag=None, yes=None):
                 version = v.name
                 tag = f"{name}:{version}"
                 if confirm(f"delete {tag}?"):
-                    echo(f"deleting {tag}")
+                    logger.info(f"deleting {tag}")
                     tag_path = os.path.join(name_path, version)
                     shutil.rmtree(tag_path)
                 else:
                     any_no = True
-                    echo(f"skipping {tag}")
+                    logger.info(f"skipping {tag}")
             if not any_no:
-                echo(f"deleting {name}")
+                logger.info(f"deleting {name}")
                 shutil.rmtree(name_path)
+    else:
+        if skip_confirmation:
+            shutil.rmtree(bundle_store_path)
+        else:
+            names_path = os.path.abspath(bundle_store_path)
+            for n in os.scandir(names_path):
+                name = n.name
+                name_path = os.path.join(names_path, name)
+                for v in os.scandir(name_path):
+                    version = v.name
+                    version_path = os.path.join(name_path, version)
+                    tag = f"{name}:{version}"
+                    if confirm(f"delete {tag}?"):
+                        logger.info(f"deleting {tag}")
+                        shutil.rmtree(version_path)
+
 
 def push(tag, yatai=None):
     if not yatai:
@@ -87,53 +153,13 @@ def pull(tag, yatai=None):
 
 ''' notes from previous version of file:
 
-# name:version = tag
-
 #BundleManagar ("~/home/bumdles")
 # Add("name", "version") => path
 
-# See all the bundles I built during development
 #   returns list of bundles containing name
 # bentoml list => show all bundles (from where?)
 # bentoml list 'name' => show versions of bundle named 'name' (from where?)
 # bentoml.list(name=None) => [Bento]
 def list(name=None):
-    pass
-    #bentoml/yatai/yatai_service_impl.py -- ListBento
-
-# Show metadata for bundle with tag 'tag'
-# - (which part of 'FraudDetector:20210401_EF4C13' contains tag?)
-#   returns metadata (form of what?)
-# bentoml get FraudDetector:20210401_EF4C13 => show bundle metadata
-# betnoml.get(tag) => Bento
-def get(tag):
-    pass
-
-# delete bundles with the following keys:
-# tag:  bentoml delete FraudDetector:20210401_EF4C13 --yes
-# name: bentoml delete FraudDetector --yes
-# labels?
-# all?  bentoml delete --all -y
-# betnoml.delete(tag, name, labels)
-def delete(tag, name, labels):
-    pass
-
-# bentoml push FraudDetector:20210401_EF4C13 --yatai=URL
-# betnoml.push(tag, yatai=..)
-def delete(tag, yatai):
-    pass
-
-# bentoml pull FraudDetector:20210401_EF4C13
-# betnoml.pull(tag, yatai=..)
-def pull(tag, yatai):
-    pass
-
-# Containerize to docker image
-# bentoml.containerize(tag | bundle_path, image_tag="..", ..)
-def containerize(tag_or_bundle_path, image_tag):
-    pass
-
-# bentoml.serve(tag | bundle_path, mode=development, ..)
-def serve(tag_or_bundle_path, mode="development"):
     pass
 '''

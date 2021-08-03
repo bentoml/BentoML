@@ -7,12 +7,13 @@ import re
 import sys
 from pathlib import Path
 from shutil import copyfile
-from typing import List
+from typing import List, Tuple
 from unittest.mock import patch
 
 from bentoml.exceptions import BentoMLException
 
 from .pip_pkg import get_all_pip_installed_modules
+from ..types import PathType
 
 logger = logging.getLogger(__name__)
 
@@ -69,11 +70,18 @@ def _import_module_from_file(path):
     return m
 
 
-def find_local_py_modules_used(target_module_file):
-    """Find all local python module dependencies of target_module, and copy all the
+def find_local_py_modules_used(target_module_file: PathType) -> List[Tuple[str, str]]:
+    """Find all local python module dependencies of target_module, and list all the
     local module python files to the destination directory while maintaining the module
     structure unchanged to ensure all imports in target_module still works when loading
     from the destination directory again
+
+    Args:
+       path (`Union[str, bytes, os.PathLike]`):
+            Path to a python source file
+
+       Returns:
+            list of (source file path, target file path) pairs
     """
 
     target_module = _import_module_from_file(target_module_file)

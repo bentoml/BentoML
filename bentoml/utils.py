@@ -188,7 +188,7 @@ class ImageProvider(object):
         )
 
 
-def lock_pypi_versions(package_list: t.List[str]):
+def lock_pypi_versions(package_list: t.List[str]) -> t.List[str]:
     """
     Lock versions of pypi packages in current virtualenv
 
@@ -227,7 +227,7 @@ def with_pip_install_options(
     index_url: t.Optional[str] = None,
     extra_index_url: t.Optional[str] = None,
     find_links: t.Optional[str] = None,
-):
+) -> t.List[str]:
     """
     Lock versions of pypi packages in current virtualenv
 
@@ -269,7 +269,7 @@ def with_pip_install_options(
     return pkgs_with_options
 
 
-def find_required_pypi_packages(path: PathType, lock_versions: bool = True):
+def find_required_pypi_packages(path: PathType, lock_versions: bool = True) -> t.List[str]:
     """
     Find required pypi packages in a python source file
 

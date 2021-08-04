@@ -77,7 +77,7 @@ class DataframeOutput(JsonOutput):
                     InferenceResult(
                         data=result,
                         http_status=200,
-                        http_headers={"Content-Type": "application/json"}
+                        http_headers={"Content-Type": "application/json"},
                     )
                 )
             except Exception as e:  # pylint: disable=broad-except

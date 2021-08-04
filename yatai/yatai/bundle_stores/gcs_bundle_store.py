@@ -19,8 +19,8 @@ from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml.exceptions import YataiRepositoryException
-from yatai.proto.repository_pb2 import BentoUri
 from yatai.bundle_stores.base_bundle_store import BaseBundleStore
+from yatai.proto.repository_pb2 import BentoUri
 
 logger = logging.getLogger(__name__)
 

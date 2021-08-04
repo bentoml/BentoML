@@ -44,10 +44,16 @@ def _is_pip_installed_bentoml():
     return is_installed_package and is_tagged and is_clean
 
 
-def get_local_config_file():
+def get_local_bentoml_config_file():
     if "BENTOML_CONFIG" in os.environ:
         # User local config file for customizing bentoml
         return expand_env_var(os.environ.get("BENTOML_CONFIG"))
+    return None
+
+
+def get_local_yatai_server_config_file():
+    if "BENTOML_YATAI_SERVER_CONFIG" in os.environ:
+        return expand_env_var(os.environ.get("BENTOML_YATAI_SERVER_CONFIG"))
     return None
 
 
@@ -116,13 +122,25 @@ def inject_dependencies():
         BentoMLContainer,
     )
 
-    config_file = get_local_config_file()
-    if config_file and config_file.endswith(".yml"):
-        configuration = BentoMLConfiguration(override_config_file=config_file)
-    else:
-        configuration = BentoMLConfiguration()
+    bentoml_config_file = get_local_bentoml_config_file()
+    yatai_server_config_file = get_local_yatai_server_config_file()
 
-    BentoMLContainer.config.set(configuration.as_dict())
+    bentoml_override_config_file = (
+        bentoml_config_file
+        if bentoml_config_file and bentoml_config_file.endswith(".yml")
+        else None
+    )
+    yatai_override_config_file = (
+        yatai_server_config_file
+        if yatai_server_config_file and yatai_server_config_file.endswith(".yml")
+        else None
+    )
+    bentoml_configuration = BentoMLConfiguration(
+        override_config_file=bentoml_override_config_file,
+        override_yatai_config_file=yatai_override_config_file,
+    )
+
+    BentoMLContainer.config.set(bentoml_configuration.as_dict())
 
     end = timer()
 

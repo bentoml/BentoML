@@ -1,70 +1,166 @@
 from bentoml._internal.repository.__init__ import *
+import tempfile
+from pathlib import Path
 
-def test_api_fns():
-    print(bundle_store_path)
+# test list all
+def test_list_all():
+    LBM = LocalBundleManagement()
+    bundles_dir = tempfile.TemporaryDirectory()
+    bundles_dir_name = bundles_dir.name
+    LBM._bundle_store_path = bundles_dir_name
 
-    print("list all:")
-    i = 0
-    s = time.monotonic()
-    for bundle in list():
-        if i < 10:
-            print(bundle)
-        if i > 6000:
-            print(bundle)
-        i+=1
-    e = time.monotonic()
-    t = e-s
-    print(f"list() w/o tar, {i} tags in {t} seconds @ a rate of {i/t} gets/second")
-    print()
+    # set up temporary bundles
+    test_bundles = [
+        ("name1", "version1", None, ["model1", "model2", "model3"]),
+        ("name1", "version2", None, ["model1", "model2", "model3"]),
+        ("name2", "version1", None, ["model1", "model2", "model3"]),
+        ("name2", "version2", None, ["model1", "model2", "model3"]),
+    ]
+    for test_bundle in test_bundles:
+        name, version, _, models = test_bundle
+        for model in models:
+            p = Path(os.path.join(bundles_dir_name, name, version, model))
+            p.mkdir(parents=True, exist_ok=True)
 
-    print("list all w/ name IrisClassifier642:")
-    i = 0
-    for bundle in list("IrisClassifier642"):
-        print(bundle)
-        i+=1
-    print()
+    bundles = LBM.list()
+    bundles = [(n,v,None,m) for n,v,_,m in bundles]
 
-    print("get (IrisClassifier642:20210618161150_3BFE59):")
-    print("bundle:", get('IrisClassifier642:20210618161150_3BFE59'))
-    print()
+    expected_bundles = [
+        ("name1", "version1", None, ["model1", "model2", "model3"]),
+        ("name1", "version2", None, ["model1", "model2", "model3"]),
+        ("name2", "version1", None, ["model1", "model2", "model3"]),
+        ("name2", "version2", None, ["model1", "model2", "model3"]),
+    ]
+    assert bundles == expected_bundles
 
-    print("get (THIS_NAME:DOES_NOT_EXIST):")
-    print("bundle:", get('THIS_NAME:DOES_NOT_EXIST'))
-    print()
+    bundles_dir.cleanup()
 
-    # tar + non-tar benchmark
-    runs = 1000
-    s = time.monotonic()
-    for i in range(runs):
-        get('IrisClassifier:20210618161150_3BFE59')
-    e = time.monotonic()
-    t = e-s
-    print(f"get() w/o tar, {runs} times in {t} seconds @ a rate of {runs/t} gets/second")
+# test list all with name
+def test_list_all_name():
+    LBM = LocalBundleManagement()
+    bundles_dir = tempfile.TemporaryDirectory()
+    bundles_dir_name = bundles_dir.name
+    LBM._bundle_store_path = bundles_dir_name
 
-    # tag, name -- without yes
-    original_tag = "IrisClassifier:20210618161150_3BFE59"
-    copy_tag = "IrisClassifierTest:20210618161150_3BFE59"
-    original_name, original_version = original_tag.split(':')
-    copy_name, copy_version = copy_tag.split(':')
-    shutil.copytree(
-        os.path.join("/home/alxmke/bentoml/bundles", original_name),
-        os.path.join("/home/alxmke/bentoml/bundles", copy_name),
-    )
-    print(f"deleting by tag, no --yes: {copy_tag}")
-    delete(tag=copy_tag)
-    print()
-    print(f"deleting by name, no --yes: {copy_name}")
-    delete(name=copy_name)
-    print()
+    # set up temporary bundles
+    test_bundles = [
+        ("name1", "version1", None, ["model1", "model2", "model3"]),
+        ("name1", "version2", None, ["model1", "model2", "model3"]),
+        ("name2", "version1", None, ["model1", "model2", "model3"]),
+        ("name2", "version2", None, ["model1", "model2", "model3"]),
+    ]
+    for test_bundle in test_bundles:
+        name, version, _, models = test_bundle
+        for model in models:
+            p = Path(os.path.join(bundles_dir_name, name, version, model))
+            p.mkdir(parents=True, exist_ok=True)
 
-    # tag, name -- with yes
-    original_tag = "IrisClassifier:20210618161150_3BFE59"
-    copy_tag = "IrisClassifierTest:20210618161150_3BFE59"
-    original_name, original_version = original_tag.split(':')
-    copy_name, copy_version = copy_tag.split(':')
-    shutil.copytree(
-        os.path.join("/home/alxmke/bentoml/bundles", original_name),
-        os.path.join("/home/alxmke/bentoml/bundles", copy_name),
-    )
-    delete(tag=copy_tag, yes="y")
-    delete(name=copy_name, yes="y")
+    bundles = LBM.list("name1")
+    bundles = [(n,v,None,m) for n,v,_,m in bundles]
+
+    expected_bundles = [
+        ("name1", "version1", None, ["model1", "model2", "model3"]),
+        ("name1", "version2", None, ["model1", "model2", "model3"]),
+    ]
+    assert bundles == expected_bundles
+
+    bundles_dir.cleanup()
+
+# test get tag
+def test_get_tag():
+    LBM = LocalBundleManagement()
+    bundles_dir = tempfile.TemporaryDirectory()
+    bundles_dir_name = bundles_dir.name
+    LBM._bundle_store_path = bundles_dir_name
+
+    # set up temporary bundles
+    test_bundle = ("name1", "version1", None, ["model1"])
+    p = Path(os.path.join(bundles_dir_name, "name1", "version1", "model1"))
+    p.mkdir(parents=True, exist_ok=True)
+
+
+    bundle = list(LBM.get("name1:version1"))
+    bundle[2] = None # don't check time
+    bundle = tuple(bundle)
+    
+    assert bundle == test_bundle
+
+    bundles_dir.cleanup()
+
+# test get tag doesn't exist
+def test_get_tag_doesnt_exist():
+    LBM = LocalBundleManagement()
+    bundles_dir = tempfile.TemporaryDirectory()
+    bundles_dir_name = bundles_dir.name
+    LBM._bundle_store_path = bundles_dir_name
+
+    bundle = LBM.get('THIS_NAME:DOES_NOT_EXIST')
+
+    assert bundle == None
+
+    bundles_dir.cleanup()
+
+# delete with tag, name, all, and without --yes
+def delete_without_yes():
+    LBM = LocalBundleManagement()
+    LBM._confirm = lambda s: True
+    bundles_dir = tempfile.TemporaryDirectory()
+    bundles_dir_name = bundles_dir.name
+    LBM._bundle_store_path = bundles_dir_name
+
+    # set up temporary bundles
+    test_bundles = [
+        ("name1", "version1", None, ["model1", "model2", "model3"]),
+        ("name1", "version2", None, ["model1", "model2", "model3"]),
+        ("name2", "version1", None, ["model1", "model2", "model3"]),
+        ("name2", "version2", None, ["model1", "model2", "model3"]),
+    ]
+    for test_bundle in test_bundles:
+        name, version, _, models = test_bundle
+        for model in models:
+            p = Path(os.path.join(bundles_dir_name, name, version, model))
+            p.mkdir(parents=True, exist_ok=True)
+
+    LBM.delete(tag="name1:version1")
+    # test tag deleted
+    assert not LBM.get("name1:version1")
+    LBM.delete(name="name1")
+    # test name deleted
+    assert not LBM.list("name1")
+    LBM.delete()
+    # test all deleted
+    assert not LBM.list()
+
+    bundles_dir.cleanup()
+
+# delete with tag, name, all, and with --yes
+def delete_with_yes():
+    LBM = LocalBundleManagement()
+    bundles_dir = tempfile.TemporaryDirectory()
+    bundles_dir_name = bundles_dir.name
+    LBM._bundle_store_path = bundles_dir_name
+
+    # set up temporary bundles
+    test_bundles = [
+        ("name1", "version1", None, ["model1", "model2", "model3"]),
+        ("name1", "version2", None, ["model1", "model2", "model3"]),
+        ("name2", "version1", None, ["model1", "model2", "model3"]),
+        ("name2", "version2", None, ["model1", "model2", "model3"]),
+    ]
+    for test_bundle in test_bundles:
+        name, version, _, models = test_bundle
+        for model in models:
+            p = Path(os.path.join(bundles_dir_name, name, version, model))
+            p.mkdir(parents=True, exist_ok=True)
+
+    LBM.delete(tag="name1:version1", skip_confirmation=True)
+    # test tag deleted
+    assert not LBM.get("name1:version1")
+    LBM.delete(name="name1", skip_confirmation=True)
+    # test name deleted
+    assert not LBM.list("name1")
+    LBM.delete(skip_confirmation=True)
+    # test all deleted
+    assert not LBM.list()
+
+    bundles_dir.cleanup()

@@ -120,7 +120,7 @@ class BentoMLConfiguration:
             self.config = YAML().load(f.read())
 
         with open(default_config_file, "rb") as f:
-            self.config['yatai'] = YAML().load(f.read())
+            self.config["yatai"] = YAML().load(f.read())
 
         if validate_schema:
             try:
@@ -132,30 +132,43 @@ class BentoMLConfiguration:
                 ) from e
 
         # User override configuration
+        override_default_config = (
+            True
+            if override_config_file is not None
+            or override_yatai_config_file is not None
+            else False
+        )
         if override_config_file is not None:
             LOGGER.info("Applying user config override from %s" % override_config_file)
             if not os.path.exists(override_config_file):
                 raise BentoMLConfigException(
                     f"Config file {override_config_file} not found"
                 )
-
             with open(override_config_file, "rb") as f:
                 override_config = YAML().load(f.read())
-
-            # TODO make this independent from override bento config.
-            if override_yatai_config_file is not None:
-                override_config['yatai'] = YAML().load(f.read())
-
             always_merger.merge(self.config, override_config)
 
-            if validate_schema:
-                try:
-                    SCHEMA.validate(self.config)
-                except SchemaError as e:
-                    raise BentoMLConfigException(
-                        "Configuration after user override does not conform to"
-                        " the required schema."
-                    ) from e
+        if override_yatai_config_file is not None:
+            LOGGER.info(
+                "Applying user yatai server config override from %s"
+                % override_yatai_config_file
+            )
+            if not os.path.exists(override_yatai_config_file):
+                raise BentoMLConfigException(
+                    f"Config file {override_yatai_config_file} not found"
+                )
+            with open(override_yatai_config_file, "rb") as f:
+                override_yatai_config = YAML().load(f.read())
+            always_merger.merge(self.config, override_yatai_config)
+
+        if validate_schema and override_default_config:
+            try:
+                SCHEMA.validate(self.config)
+            except SchemaError as e:
+                raise BentoMLConfigException(
+                    "Configuration after user override does not conform to"
+                    " the required schema."
+                ) from e
 
     def override(self, keys: list, value):
         if keys is None:

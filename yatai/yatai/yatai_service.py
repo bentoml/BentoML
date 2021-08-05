@@ -1,12 +1,11 @@
+import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-import uvicorn
 
 from yatai.api import api_router
 
 
 class YataiService:
-
     def __init__(self, port, host):
         self.app = FastAPI()
         self._port = port
@@ -22,7 +21,10 @@ class YataiService:
     def setup_middleware(self):
         ## TODO get these info from the option
         self.app.middleware(
-            CORSMiddleware, allow_origins=['*'], allow_methods=['*'], allow_headers=['*']
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_methods=["*"],
+            allow_headers=["*"],
         )
 
 

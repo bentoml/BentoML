@@ -36,6 +36,8 @@ from bentoml.exceptions import (
     InvalidArgument,
     YataiRepositoryException,
 )
+from yatai.bundle_stores.base_repository import BaseRepository
+from yatai.bundle_stores.file_system_repository import FileSystemRepository
 from yatai.db import DB
 from yatai.db.stores.lock import LockStore
 from yatai.deployment.docker_utils import ensure_docker_available_or_raise
@@ -67,8 +69,6 @@ from yatai.proto.yatai_service_pb2 import (
     GetYataiServiceVersionResponse,
     HealthCheckResponse,
 )
-from yatai.bundle_stores.base_repository import BaseRepository
-from yatai.bundle_stores.file_system_repository import FileSystemRepository
 from yatai.status import Status
 from yatai.utils import docker_build_logs
 from yatai.validator import validate_deployment_pb

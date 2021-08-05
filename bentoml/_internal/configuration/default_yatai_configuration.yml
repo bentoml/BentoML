@@ -1,0 +1,11 @@
+default_server: default
+servers:
+  default:
+    url: Null
+    access_token: Null
+    access_token_header: access_token
+    tls:
+      root_ca_cert: Null
+      client_certificate_file: Null
+      client_key: Null
+      client_cert: Null

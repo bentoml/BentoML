@@ -1,5 +1,5 @@
-from typing import Optional, List
 from enum import Enum
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -44,17 +44,16 @@ class Metadata(BaseModel):
 
 
 class StorageType(str, Enum):
-    filesystem = 'filesystem'
-    s3 = 's3'
-    gcs = 'gcs'
-    abs = 'abs'
+    filesystem = "filesystem"
+    s3 = "s3"
+    gcs = "gcs"
+    abs = "abs"
 
 
 class Uri(BaseModel):
     type: StorageType
     uri: str
     pre_signed_url: Optional[str] = None
-
 
 
 class AddBundleRequest(BaseModel):
@@ -69,6 +68,6 @@ class GetBundleResponse(BaseModel):
     metadata: Metadata
     uri: Uri
 
+
 class ListBundleResponse(BaseModel):
     bundles: Optional[List[Metadata]] = None
-

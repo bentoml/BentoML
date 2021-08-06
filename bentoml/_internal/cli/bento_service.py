@@ -10,6 +10,7 @@ import psutil
 from simple_di import Provide, inject
 
 from bentoml import __version__
+from bentoml._internal.repository import LocalBundleManagement
 
 from ..bundle import load_bento_service_api, load_bento_service_metadata, load_from_dir
 from ..configuration.containers import BentoMLContainer
@@ -451,6 +452,68 @@ def create_bento_service_cli(
                 bento=bento_tag, tag=tag, build_args=docker_build_args, push=push,
             )
             _echo(f"\nBuild container image: {tag}", CLI_COLOR_SUCCESS)
+
+    @bentoml_cli.command(
+        name="list",
+        help="List a set of bundles under a specified name or tag, otherwise"
+        " all bundles will be listed.",
+        short_help="List a set of specific bundles",
+    )
+    @click.option(
+        "-n",
+        "--name",
+        type=click.STRING,
+        help="Optional name of bundles. If not specified, the list will be"
+        "determined by the other specified identifiers.",
+        required=False,
+    )
+    def list(name):
+        l = LocalBundleManagement.list(name=name, tag=tag)
+
+    @bentoml_cli.command(
+        name="get",
+        help="Get a bundle with a specified tag.",
+        short_help="Get a bundle with a specified tag.",
+    )
+    @click.argument("tag", type=click.STRING)
+    def get(tag):
+        t = LocalBundleManagement.get(tag)
+
+    @bentoml_cli.command(
+        name="delete",
+        help="Delete a set of bundles under a specific name, or an individual"
+        "tag. If neither a tag or name is specified, all bundles will be "
+        "selected for deletion. If skip_confirmation is set to True, then "
+        "bundles will be deleted without confirmation, otherwise, the user "
+        "will be asked for confirmation of deletion.",
+        short_help="Delete a specific set of bundles",
+    )
+    @click.option(
+        "-t",
+        "--tag",
+        type=click.STRING,
+        help="Optional bundle tag. If not specified, the list will be"
+        "determined by the other specified identifiers.",
+        required=False,
+    )
+    @click.option(
+        "-n",
+        "--name",
+        type=click.STRING,
+        help="Optional name of bundles. If not specified, the list will be"
+        "determined by the other specified identifiers.",
+        required=False,
+    )
+    @click.option(
+        "-y",
+        "--yes",
+        type=click.BOOL,
+        help="Optional flag which specifies whether or not to skip deletion "
+        "confirmation.",
+        required=False,
+    )
+    def delete(name, tag, yes):
+        t = LocalBundleManagement.delete(name=name, tag=tag, skip_confirmation=yes)
 
     # pylint: enable=unused-variable
     return bentoml_cli

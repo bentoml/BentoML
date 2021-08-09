@@ -11,17 +11,103 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+'''
 import os
+'''
 
 import click
 from tabulate import tabulate
 
+'''
 from ..utils import pb_to_yaml
 from ..utils.lazy_loader import LazyLoader
 from ..yatai_client import get_yatai_client
 from .click_utils import _echo, _is_valid_bento_name, _is_valid_bento_tag
 from .utils import _format_labels_for_print, human_friendly_age_from_datetime
+'''
 
+from bentoml._internal.repository import LocalBundleManagement
+from bentoml import __version__
+from .click_utils import BentoMLCommandGroup
+
+
+# @inject
+def create_bento_service_cli():
+    @click.group(cls=BentoMLCommandGroup)
+    @click.version_option(version=__version__)
+    def bentoml_cli():
+        """
+        BentoML CLI tool
+        """
+
+    @bentoml_cli.command(
+        name="list",
+        help="List a set of bundles under a specified name or tag, otherwise"
+        " all bundles will be listed.",
+        short_help="List a set of specific bundles",
+    )
+    @click.option(
+        "-n",
+        "--name",
+        type=click.STRING,
+        help="Optional name of bundles. If not specified, the list will be"
+        "determined by the other specified identifiers.",
+        required=False,
+    )
+    def list(name):
+        # l = LocalBundleManagement.list(name=name)
+        click.echo("list")
+
+    @bentoml_cli.command(
+        name="get",
+        help="Get a bundle with a specified tag.",
+        short_help="Get a bundle with a specified tag.",
+    )
+    @click.argument("tag", type=click.STRING)
+    def get(tag):
+        # t = LocalBundleManagement.get(tag)
+        click.echo("get")
+
+
+    @bentoml_cli.command(
+        name="delete",
+        help="Delete a set of bundles under a specific name, or an individual"
+        "tag. If neither a tag or name is specified, all bundles will be "
+        "selected for deletion. If skip_confirmation is set to True, then "
+        "bundles will be deleted without confirmation, otherwise, the user "
+        "will be asked for confirmation of deletion.",
+        short_help="Delete a specific set of bundles",
+    )
+    @click.option(
+        "-t",
+        "--tag",
+        type=click.STRING,
+        help="Optional bundle tag. If not specified, the list will be"
+        "determined by the other specified identifiers.",
+        required=False,
+    )
+    @click.option(
+        "-n",
+        "--name",
+        type=click.STRING,
+        help="Optional name of bundles. If not specified, the list will be"
+        "determined by the other specified identifiers.",
+        required=False,
+    )
+    @click.option(
+        "-y",
+        "--yes",
+        type=click.BOOL,
+        help="Optional flag which specifies whether or not to skip deletion "
+        "confirmation.",
+        required=False,
+    )
+    def delete(name, tag, yes):
+        # t = LocalBundleManagement.delete(name=name, tag=tag, skip_confirmation=yes)
+        click.echo("delete")
+
+    return bentoml_cli
+'''
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 
@@ -322,3 +408,4 @@ Specify target service bundles to remove:
         yc.repository.download_to_directory(bento_pb, target_dir)
 
         _echo(f"Save {bento} artifact to directory {target_dir}")
+'''

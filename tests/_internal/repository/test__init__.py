@@ -1,3 +1,4 @@
+import pytest
 from bentoml._internal.repository.__init__ import *
 import tempfile
 from pathlib import Path
@@ -122,13 +123,13 @@ def delete_without_yes():
             p.mkdir(parents=True, exist_ok=True)
 
     LBM.delete(tag="name1:version1")
-    # test tag deleted
+    # TODO: test tag deleted
     assert not LBM.get("name1:version1")
     LBM.delete(name="name1")
-    # test name deleted
+    # TODO: test name deleted
     assert not LBM.list("name1")
     LBM.delete()
-    # test all deleted
+    # TODO: test all deleted
     assert not LBM.list()
 
     bundles_dir.cleanup()
@@ -154,13 +155,13 @@ def delete_with_yes():
             p.mkdir(parents=True, exist_ok=True)
 
     LBM.delete(tag="name1:version1", skip_confirmation=True)
-    # test tag deleted
+    # TODO: test tag deleted
     assert not LBM.get("name1:version1")
     LBM.delete(name="name1", skip_confirmation=True)
-    # test name deleted
+    # TODO: test name deleted
     assert not LBM.list("name1")
     LBM.delete(skip_confirmation=True)
-    # test all deleted
+    # TODO: test all deleted
     assert not LBM.list()
 
     bundles_dir.cleanup()

@@ -468,7 +468,7 @@ def create_bento_service_cli(
         required=False,
     )
     def list(name):
-        l = LocalBundleManagement.list(name=name, tag=tag)
+        l = LocalBundleManagement.list(name=name)
 
     @bentoml_cli.command(
         name="get",

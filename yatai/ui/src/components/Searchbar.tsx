@@ -4,7 +4,6 @@ import {
   Menu,
   MenuItem,
   Button,
-  Spinner,
   Popover,
   Position,
   MenuDivider
@@ -16,18 +15,14 @@ export interface ISearchbarProps {
 
 const Searchbar: React.FC<ISearchbarProps> = (props) => {
   const [searchValue, setSearch] = React.useState("");
-  const [searching, setSearching] = React.useState(false);
-  const maybeSpinner = searching ? <Spinner size={20} /> : undefined;
 
-  const handleSearch = async () => {
-    setSearching(true);
-    await props.handleFilter(searchValue);
-    setSearching(false);
+  const handleSearch = () => {
+    props.handleFilter(searchValue);
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    window.setTimeout(() => setSearch(value), 10);
+    setSearch(value);
   };
 
   const populateSearch = (searchArgs: string) => {
@@ -90,9 +85,13 @@ const Searchbar: React.FC<ISearchbarProps> = (props) => {
         large={true}
         placeholder="Search for a bundle..."
         leftElement={filterMenu}
-        rightElement={maybeSpinner}
         value={searchValue}
         onChange={handleSearchChange}
+        onKeyDown={(keyEvent) => {
+          if (keyEvent.key === "Enter") {
+            handleSearch();
+          }
+        }}
       />
     </div>
   );

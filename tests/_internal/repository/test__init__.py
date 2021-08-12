@@ -1,16 +1,37 @@
 import pytest
-from bentoml._internal.repository.__init__ import *
+# from bentoml._internal.repository import LocalBundleManagement
 import tempfile
+import os
 from pathlib import Path
+import bentoml
+LocalBundleManagement = bentoml._internal.repository
+
+
+@pytest.fixture
+def bundles_dir(tmpdir):
+    test_bundles = [
+        ("name1", "version1", None, ["model1", "model2", "model3"]),
+        ("name1", "version2", None, ["model1", "model2", "model3"]),
+        ("name2", "version1", None, ["model1", "model2", "model3"]),
+        ("name2", "version2", None, ["model1", "model2", "model3"]),
+    ]
+    for test_bundle in test_bundles:
+        name, version, _, models = test_bundle
+        for model in models:
+            tmpdir.mkdir(name).mkdir(version).mkdir(model)
+    return tmpdir
+
 
 # test list all
 def test_list_all():
     LBM = LocalBundleManagement()
-    bundles_dir = tempfile.TemporaryDirectory()
-    bundles_dir_name = bundles_dir.name
-    LBM._bundle_store_path = bundles_dir_name
+    '''
+    #bundles_dir = tempfile.TemporaryDirectory()
+    #bundles_dir_name = bundles_dir.name
+    #LBM._bundle_store_path = bundles_dir_name
 
     # set up temporary bundles
+
     test_bundles = [
         ("name1", "version1", None, ["model1", "model2", "model3"]),
         ("name1", "version2", None, ["model1", "model2", "model3"]),
@@ -22,6 +43,8 @@ def test_list_all():
         for model in models:
             p = Path(os.path.join(bundles_dir_name, name, version, model))
             p.mkdir(parents=True, exist_ok=True)
+    '''
+    LBM._bundle_store_path = bundles_dir()
 
     bundles = LBM.list()
     bundles = [(n,v,None,m) for n,v,_,m in bundles]

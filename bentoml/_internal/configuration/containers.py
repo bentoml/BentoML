@@ -97,6 +97,14 @@ SCHEMA = Schema(
     }
 )
 
+def pretty(d, indent=0):
+    for key, value in d.items():
+        print('  '*indent + str(key) + ": ", end = "")
+        if isinstance(value, dict):
+            print()
+            pretty(value, indent+1)
+        else:
+            print(value)
 
 class BentoMLConfiguration:
     def __init__(
@@ -107,21 +115,21 @@ class BentoMLConfiguration:
         override_yatai_config_file: str = None,
         validate_schema: bool = True,
     ):
+        self.config = None
         # Default configuration
         if default_config_file is None:
             default_config_file = os.path.join(
                 os.path.dirname(__file__), "default_configuration.yml"
             )
+            with open(default_config_file, "rb") as f:
+                self.config = YAML().load(f.read())
+        
         if default_yatai_server_config_file is None:
-            default_config_file = os.path.join(
+            default_yatai_server_config_file = os.path.join(
                 os.path.dirname(__file__), "default_yatai_configuration.yml"
             )
-
-        with open(default_config_file, "rb") as f:
-            self.config = YAML().load(f.read())
-
-        with open(default_config_file, "rb") as f:
-            self.config["yatai"] = YAML().load(f.read())
+            with open(default_yatai_server_config_file, "rb") as f:
+                self.config["yatai"] = YAML().load(f.read())
 
         if validate_schema:
             try:

@@ -24,7 +24,7 @@ build-yatai-web: ## Build BentoML Web UI server and frontend
 	cd web_server && yarn build
 watch-yatai-web: ## Start BentoML Web UI server in dev mode
 	bentoml yatai-service-start --no-ui & \
-	cd web_server && yarn dev 127.0.0.1:50051 3000 . 127.0.0.1:50052
+	cd web_server && yarn dev 127.0.0.1:50051 3000 logs/log.txt . 127.0.0.1:50052
 run-yatai-web: ## Run production BentoML Web UI server and frontend
 	bentoml yatai-service-start --no-ui & \
-	cd web_server && yarn start 127.0.0.1:50051 3000 . 127.0.0.1:50052
+	cd web_server && yarn start 127.0.0.1:50051 3000 logs/log.txt . 127.0.0.1:50052

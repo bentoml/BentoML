@@ -35,7 +35,7 @@ def test_xgboost_save_load(tmpdir):
     model = xgboost_model()
 
     XgBoostModel(model).save(tmpdir)
-    assert_have_file_extension(tmpdir, ".model")
+    assert_have_file_extension(tmpdir, ".json")
 
     xg_loaded: xgb.core.Booster = XgBoostModel.load(tmpdir)
     assert predict_df(xg_loaded, test_df) == 1

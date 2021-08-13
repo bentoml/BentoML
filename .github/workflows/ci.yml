@@ -230,7 +230,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6.10
+          python-version: 3.7.10
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
@@ -247,7 +247,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6.10
+          python-version: 3.7.10
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
@@ -317,7 +317,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6.10
+          python-version: 3.7.10
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
@@ -613,7 +613,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6.10
+          python-version: 3.7.10
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
@@ -630,7 +630,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6.10
+          python-version: 3.7.10
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests

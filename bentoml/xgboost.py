@@ -1,7 +1,7 @@
 import os
 import typing as t
 
-from ._internal.models.base import MODEL_NAMESPACE, Model
+from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from .exceptions import MissingDependencyException
 
@@ -37,8 +37,6 @@ class XgBoostModel(Model):
 
     """
 
-    XGBOOST_EXTENSION = ".model"
-
     def __init__(
         self, model: xgboost.core.Booster, metadata: t.Optional[MetadataType] = None
     ):
@@ -47,10 +45,8 @@ class XgBoostModel(Model):
     @classmethod
     def load(cls, path: PathType) -> "xgboost.core.Booster":
         bst = xgboost.Booster()
-        bst.load_model(os.path.join(path, f"{MODEL_NAMESPACE}{cls.XGBOOST_EXTENSION}"))
+        bst.load_model(os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"))
         return bst
 
     def save(self, path: PathType) -> None:
-        self._model.save_model(
-            os.path.join(path, f"{MODEL_NAMESPACE}{self.XGBOOST_EXTENSION}")
-        )
+        self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"))

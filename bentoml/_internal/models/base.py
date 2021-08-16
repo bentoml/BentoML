@@ -18,6 +18,16 @@ YML_EXTENSION: str = ".yml"
 MODEL_NAMESPACE: str = "bentoml_model"
 
 
+def _check_dir_path_exists_or_create(path: PathType) -> None:
+    path = Path(path)
+
+    if path.exists():
+        if not path.is_dir():
+            raise OSError(20, f"{path} is not a directory")
+    else:
+        path.mkdir(parents=True)
+
+
 class Model(object):
     """
     :class:`Model` is the base abstraction
@@ -103,6 +113,7 @@ class Model(object):
 
             def wrapped_save(*args, **kw):  # type: ignore
                 path: PathType = args[0]  # save(self, path)
+                _check_dir_path_exists_or_create(path)
                 if self.metadata:
                     yaml = YAML()
                     yaml.dump(

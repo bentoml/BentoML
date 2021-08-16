@@ -9,15 +9,69 @@ from .exceptions import InvalidArgument, MissingDependencyException, NotFound
 
 try:
     import transformers
+
 except ImportError:
     raise MissingDependencyException("transformers is required by TransformersModel")
 
-TransformersInput = t.TypeVar(
-    "TransformersInput",
-    bound=t.Union[
-        str, os.PathLike, transformers.PreTrainedModel, transformers.PreTrainedTokenizer
+flax_supported: bool = transformers.__version__.startswith("4")
+if not flax_supported:
+    raise ImportError(
+        "BentoML will only support transformers 4.x in order to include Flax supports"
+    )
+
+TransformersModelInput = t.TypeVar(
+    "TransformersModelInput",
+    bound=t.Union[str, os.PathLike, transformers.PreTrainedModel],
+)
+TransformersModelOutput = t.TypeVar(
+    "TransformersModelOutput",
+    bound=t.Dict[
+        str,
+        t.Union[
+            transformers.models.auto.auto_factory._BaseAutoModelClass,
+            transformers.AutoTokenizer,
+        ],
     ],
 )
+
+FRAMEWORK_ALIASES: t.Dict[str, str] = {"pt": "pytorch", "tf": "tensorflow"}
+
+FRAMEWORK_AUTOMODEL_PREFIX_MAPPING: t.Dict[str, str] = {
+    "pytorch": "AutoModel",
+    "tensorflow": "TFAutoModel",
+    "flax": "FlaxAutoModel",
+}
+
+AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
+    "causal": "ForCausalLM",
+    "masked": "ForMaskedLM",
+    "seq-to-seq": "ForSeq2SeqLM",
+}
+
+
+def _lm_head_module_name(framework: str, lm_head: str) -> str:
+    if (
+        framework not in FRAMEWORK_AUTOMODEL_PREFIX_MAPPING
+        and framework not in FRAMEWORK_ALIASES
+    ):
+        raise AttributeError(
+            f"{framework} is either invalid aliases or not supported by transformers."
+            " Accepted: pt(alias to pytorch), tf(alias to tensorflow), and flax"
+        )
+    if lm_head not in AUTOMODEL_LM_HEAD_MAPPING:
+        raise AttributeError(
+            f"`{lm_head}` alias for lm_head is invalid."
+            f" Accepted: {[*AUTOMODEL_LM_HEAD_MAPPING.keys()]}."
+            " If you need any other AutoModel type provided by transformers,"
+            " feel free to open a PR at https://github.com/bentoml/BentoML."
+        )
+    framework_prefix = (
+        FRAMEWORK_ALIASES[framework] if framework in FRAMEWORK_ALIASES else framework
+    )
+    return (
+        FRAMEWORK_AUTOMODEL_PREFIX_MAPPING[framework_prefix]
+        + AUTOMODEL_LM_HEAD_MAPPING[lm_head]
+    )
 
 
 class TransformersModel(Model):
@@ -51,17 +105,15 @@ class TransformersModel(Model):
 
     """  # noqa # pylint: enable=line-too-long
 
-    _model_type: str = "AutoModelWithLMHead"
-
     def __init__(
-        self, model: TransformersInput, metadata: t.Optional[MetadataType] = None,
+        self, model: TransformersModelInput, metadata: t.Optional[MetadataType] = None,
     ):
         super(TransformersModel, self).__init__(model, metadata=metadata)
 
     @staticmethod
-    def __load_from_directory(  # pylint: disable=unused-private-member
+    def __load_from_directory(
         path: PathType, model_type: str, tokenizer_type: str
-    ) -> t.Dict[str, t.Any]:
+    ) -> TransformersModelOutput:
         transformers_model = getattr(
             import_module("transformers"), model_type
         ).from_pretrained(str(path))
@@ -71,9 +123,20 @@ class TransformersModel(Model):
         return {"model": transformers_model, "tokenizer": tokenizer}
 
     @staticmethod
-    def __load_from_dict(  # pylint: disable=unused-private-member
-        transformers_dict: t.Dict[str, t.Any]
-    ) -> dict:
+    def __load_from_string(model_name: str, lm_head: str) -> TransformersModelOutput:
+        try:
+            transformers_model = getattr(
+                import_module("transformers"), lm_head
+            ).from_pretrained(model_name)
+            tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
+            return {"model": transformers_model, "tokenizer": tokenizer}
+        except EnvironmentError:
+            raise NotFound(f"{model_name} is not provided by transformers")
+
+    @staticmethod
+    def __validate_transformers_dict(
+        transformers_dict: TransformersModelOutput,
+    ) -> None:
         if not transformers_dict.get("model"):
             raise InvalidArgument(
                 " 'model' key is not found in the dictionary."
@@ -100,59 +163,48 @@ class TransformersModel(Model):
                     type(transformers_dict.get("tokenizer"))
                 )
             )
-        return transformers_dict
 
     @classmethod
-    def __load_from_string(  # pylint: disable=unused-private-member
-        cls, model_name: str
-    ) -> dict:
-        try:
-            transformers_model = getattr(
-                import_module("transformers"), cls._model_type
-            ).from_pretrained(model_name)
-            tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
-            return {"model": transformers_model, "tokenizer": tokenizer}
-        except EnvironmentError:
-            raise NotFound(f"{model_name} is not available within transformers")
-        except AttributeError:
-            raise NotFound(f"transformers has no model type called {cls._model_type}")
-
-    # fmt: off
-    @classmethod
-    def load(cls, path: t.Union[PathType, dict]):  # type: ignore
-        # fmt: on
-        if isinstance(path, (str, bytes, os.PathLike, pathlib.PurePath)):
-            str_path = str(path)
-            if os.path.isdir(str_path):
-                with open(os.path.join(path, "__model__type.txt"), "r") as f:
+    def load(
+        cls,
+        name_or_path_or_dict: t.Union[PathType, dict],
+        framework: t.Optional[str] = "pt",
+        lm_head: t.Optional[str] = "causal",
+    ) -> TransformersModelOutput:
+        if isinstance(
+            name_or_path_or_dict, (str, bytes, os.PathLike, pathlib.PurePath)
+        ):
+            name_or_path = str(name_or_path_or_dict)
+            if os.path.isdir(name_or_path):
+                with open(
+                    os.path.join(name_or_path, "__model_class_type.txt"), "r"
+                ) as f:
                     _model_type = f.read().strip()
-                with open(os.path.join(path, "tokenizer_type.txt"), "r") as f:
+                with open(
+                    os.path.join(name_or_path, "__tokenizer_class_type.txt"), "r"
+                ) as f:
                     _tokenizer_type = f.read().strip()
-                loaded_model = cls.__load_from_directory(
-                    path, _model_type, _tokenizer_type
+                loaded_dict = cls.__load_from_directory(
+                    name_or_path, _model_type, _tokenizer_type
                 )
             else:
-                loaded_model = cls.__load_from_string(str(path))
-        elif isinstance(path, dict):
-            loaded_model = cls.__load_from_dict(path)
+                _lm_head = _lm_head_module_name(framework, lm_head)
+                loaded_dict = cls.__load_from_string(name_or_path, _lm_head)
         else:
-            err_msg: str = """\
-            Expected either model name or a dictionary only
-            containing `model` and `tokenizer` as keys, but
-            got {path} instead.
-            """
-            raise InvalidArgument(err_msg.format(path=type(path)))
-        return loaded_model
+            cls.__validate_transformers_dict(name_or_path_or_dict)
+            loaded_dict = name_or_path_or_dict
+        return loaded_dict
 
-    def __save_model_type(self, path: PathType, tokenizer_type: str) -> None:
-        with open(os.path.join(path, "__model__type.txt"), "w") as f:
-            f.write(self._model_type)
-        with open(os.path.join(path, "tokenizer_type.txt"), "w") as f:
+    @staticmethod
+    def __save_model_type(path: PathType, model_type: str, tokenizer_type: str) -> None:
+        with open(os.path.join(path, "__model_class_type.txt"), "w") as f:
+            f.write(model_type)
+        with open(os.path.join(path, "__tokenizer_class_type.txt"), "w") as f:
             f.write(tokenizer_type)
 
     def save(self, path: PathType) -> None:
-        self._model_type = self._model.get("model").__class__.__name__
-        tokenizer_type = self._model.get("tokenizer").__class__.__name__
+        _model_type = self._model.get("model").__class__.__name__
+        _tokenizer_type = self._model.get("tokenizer").__class__.__name__
         self._model.get("model").save_pretrained(path)
         self._model.get("tokenizer").save_pretrained(path)
-        self.__save_model_type(path, tokenizer_type)
+        self.__save_model_type(path, _model_type, _tokenizer_type)

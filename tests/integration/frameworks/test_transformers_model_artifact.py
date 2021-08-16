@@ -83,9 +83,7 @@ def test_invalid_transformers_load(invalid_dict, exc):
         TransformersModel.load(invalid_dict)
 
 
-@pytest.mark.parametrize(
-    "frameworks, tensors_type", [("pt", "pt"), ("tf", "tf"), ("flax", "jax")]
-)
+@pytest.mark.parametrize("frameworks, tensors_type", [("pt", "pt"), ("tf", "tf")])
 def test_transformers_load_frameworks(frameworks, tensors_type):
     loaded = TransformersModel.load("gpt2", framework=frameworks)
     assert (

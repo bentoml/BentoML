@@ -86,6 +86,9 @@ def create_bento_service_cli(
         BentoMLContainer.config.bento_server.microbatch.workers
     ],
     default_timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
+    default_daemon: bool = Provide[
+        BentoMLContainer.config.bento_server.daemon.enabled
+    ]
 ):
     # pylint: disable=unused-variable
 
@@ -308,6 +311,12 @@ def create_bento_service_cli(
         help="Run API server with Swagger UI enabled",
         envvar='BENTOML_ENABLE_SWAGGER',
     )
+    @click.option(
+        "--daemon",
+        type=click.BOOL,
+        default=default_daemon,
+        help="Daemonize the Gunicorn process",
+    )
     def serve_gunicorn(
         port,
         workers,
@@ -319,6 +328,7 @@ def create_bento_service_cli(
         microbatch_workers,
         yatai_url,
         enable_swagger,
+        daemon
     ):
         if not psutil.POSIX:
             _echo(
@@ -349,6 +359,7 @@ def create_bento_service_cli(
             mb_max_batch_size=mb_max_batch_size,
             mb_max_latency=mb_max_latency,
             microbatch_workers=microbatch_workers,
+            daemon=daemon
         )
 
     @bentoml_cli.command(

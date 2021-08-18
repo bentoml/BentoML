@@ -31,6 +31,7 @@ def start_dev_server(
     run_with_ngrok: Optional[bool] = None,
     enable_swagger: Optional[bool] = None,
     timeout: Optional[int] = None,
+    daemon: Optional[bool] = None
 ):
     BentoMLContainer.bundle_path.set(bundle_path)
 
@@ -57,7 +58,7 @@ def start_dev_server(
     import multiprocessing
 
     model_server_proc = multiprocessing.Process(
-        target=_start_dev_server, args=(BentoMLContainer,), daemon=True,
+        target=_start_dev_server, args=(BentoMLContainer,), daemon=daemon,
     )
     model_server_proc.start()
 
@@ -76,6 +77,7 @@ def start_prod_server(
     mb_max_batch_size: Optional[int] = None,
     mb_max_latency: Optional[int] = None,
     microbatch_workers: Optional[int] = None,
+    daemon: bool = True
 ):
     import psutil
 
@@ -101,7 +103,7 @@ def start_prod_server(
     import multiprocessing
 
     model_server_job = multiprocessing.Process(
-        target=_start_prod_server, args=(BentoMLContainer,), daemon=True
+        target=_start_prod_server, args=(BentoMLContainer,), daemon=daemon
     )
     model_server_job.start()
 

@@ -59,9 +59,9 @@ def _is_pip_installed_bentoml():
 
 
 def get_local_config_file():
-    if "BENTOML_CONFIG" in os.environ:
+    if "QWAK_BENTOML_CONFIG" in os.environ:
         # User local config file for customizing bentoml
-        return expand_env_var(os.environ.get("BENTOML_CONFIG"))
+        return expand_env_var(os.environ.get("QWAK_BENTOML_CONFIG"))
     return None
 
 

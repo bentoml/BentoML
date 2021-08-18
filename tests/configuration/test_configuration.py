@@ -13,12 +13,12 @@ def test_get_local_config_file():
 
     assert config_file is None
 
-    os.environ["BENTOML_CONFIG"] = "/tmp/bentoml.cfg"
+    os.environ["QWAK_BENTOML_CONFIG"] = "/tmp/bentoml.cfg"
     config_file = get_local_config_file()
 
     assert config_file == "/tmp/bentoml.cfg"
 
-    del os.environ["BENTOML_CONFIG"]
+    del os.environ["QWAK_BENTOML_CONFIG"]
 
 
 def test_get_debug_mode():

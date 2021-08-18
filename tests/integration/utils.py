@@ -134,10 +134,10 @@ def run_api_server_docker_container(image, config_file=None, timeout=60):
     command_args = "--workers 1"
 
     if config_file is not None:
-        environment = ["BENTOML_CONFIG=/home/bentoml/bentoml_config.yml"]
+        environment = ["QWAK_BENTOML_CONFIG=/home/bentoml/bentoml_config.yml"]
         volumes = {
             os.path.abspath(config_file): {
-                "bind": "/home/bentoml/bentoml_config.yml",
+                "bind": "/home/bentoml/QWAK_BENTOML_CONFIG.yml",
                 "mode": "ro",
             }
         }
@@ -193,7 +193,7 @@ def run_api_server(bundle_path, config_file=None, dev_server=False, timeout=20):
             pass
 
     if config_file is not None:
-        my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
+        my_env["QWAK_BENTOML_CONFIG"] = os.path.abspath(config_file)
 
     p = subprocess.Popen(
         cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=my_env,

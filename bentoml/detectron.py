@@ -81,6 +81,9 @@ class DetectronModel(Model):
                  :class:`~bentoml.detectron.DetectronModel`.
         """
         cfg: detectron2.config.CfgNode = get_cfg()
+        if device:
+            cfg.MODEL.DEVICE = device
+
         weight_path = os.path.join(path, f"{MODEL_NAMESPACE}{PTH_EXTENSION}")
         yaml_path = os.path.join(path, f"{MODEL_NAMESPACE}{YAML_EXTENSION}")
 

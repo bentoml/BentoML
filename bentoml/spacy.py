@@ -1,6 +1,7 @@
 import logging
 import os
 import typing as t
+from pathlib import Path
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
@@ -45,8 +46,19 @@ class SpacyModel(Model):
         super(SpacyModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(cls, path: PathType) -> "spacy.language.Language":
-        return spacy.util.load_model(os.path.join(path, MODEL_NAMESPACE))
+    def load(cls, path: PathType, **load_model_kwargs) -> "spacy.language.Language":
+        if Path(path).exists():
+            name = os.path.join(path, MODEL_NAMESPACE)
+        else:
+            name = path
+            if name.startswith("blank:"):  # shortcut for blank model
+                return spacy.util.get_lang_class(name.replace("blank:", ""))
+            else:
+                try:  # then we try loading model from the package
+                    spacy.util.load_model_from_package(name, **load_model_kwargs)
+                except OSError:
+                    spacy.cli.download(name)
+        return spacy.util.load_model(name, **load_model_kwargs)
 
     def save(self, path: PathType) -> None:
         self._model.to_disk(os.path.join(path, MODEL_NAMESPACE))

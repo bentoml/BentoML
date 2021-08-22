@@ -9,7 +9,7 @@ from spacy.util import minibatch
 
 from bentoml.spacy import SpacyModel
 
-train_data: t.List[t.Tuple[str, t.Type[dict]]] = [
+train_data: t.List[t.Tuple[str, dict]] = [
     ("Google has changed the logo of its apps", {"entities": [(0, 6, "ORG")]}),
     ("Facebook has introduced a new app!", {"entities": [(0, 8, "ORG")]}),
     ("Amazon has partnered with small businesses.", {"entities": [(0, 6, "ORG")]}),
@@ -48,10 +48,12 @@ def spacy_model():
     return model
 
 
-def test_spacy_save_load(tmpdir, spacy_model):
+@pytest.mark.parametrize(
+    "loaded_pipe, predict_fn", [(SpacyModel.load("en_core_web_sm"), predict_json),]
+)
+def test_spacy_save_load(tmpdir, spacy_model, loaded_pipe, predict_fn):
     SpacyModel(spacy_model).save(tmpdir)
     assert os.path.exists(os.path.join(tmpdir, "bentoml_model"))
     spacy_loaded: spacy.language.Language = SpacyModel.load(tmpdir)
-    assert predict_json(spacy_loaded, test_json) == predict_json(
-        spacy_loaded, test_json
-    )
+    assert predict_fn(spacy_loaded, test_json) == test_json["text"]
+    assert predict_fn(loaded_pipe, test_json) == test_json["text"]

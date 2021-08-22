@@ -10,7 +10,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 # Install Spacy
-pip install spacy==3.0.6
+pip install spacy==3.1.2
 
 pytest "$GIT_ROOT"/tests/integration/frameworks/test_spacy_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 

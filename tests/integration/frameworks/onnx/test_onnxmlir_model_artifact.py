@@ -37,7 +37,7 @@ def tensorflow_model(tmpdir):
 
 @pytest.fixture()
 def convert_to_onnx(tensorflow_model, tmpdir):
-    model_path = os.path.join(tmpdir, "model.onnx")
+    model_path = os.path.join(str(tmpdir), "model.onnx")
     command = [
         "python",
         "-m",
@@ -57,7 +57,7 @@ def convert_to_onnx(tensorflow_model, tmpdir):
 @pytest.fixture()
 def compile_model(convert_to_onnx, tmpdir):
     sys.path.append("/workdir/onnx-mlir/build/Debug/lib/")
-    model_location = os.path.join(tmpdir, "model.onnx")
+    model_location = os.path.join(str(tmpdir), "model.onnx")
     command = ["./onnx-mlir", "--EmitLib", model_location]
     onnx_mlir_loc = "/workdir/onnx-mlir/build/Debug/bin"
 

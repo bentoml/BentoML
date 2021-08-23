@@ -56,14 +56,19 @@ class PaddlePaddleModel(Model):
         super(PaddlePaddleModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(cls, path: PathType) -> paddle.inference.Predictor:
+    def load(
+        cls, path: PathType, config: t.Optional[pi.Config] = None
+    ) -> paddle.inference.Predictor:
         # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
-        config = pi.Config(
-            os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_MODEL_EXTENSION}"),
-            os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_PARAMS_EXTENSION}"),
-        )
-        config.enable_memory_optim()
-        return pi.create_predictor(config)
+        if config is not None:
+            _config = config
+        else:
+            _config = pi.Config(
+                os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_MODEL_EXTENSION}"),
+                os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_PARAMS_EXTENSION}"),
+            )
+            _config.enable_memory_optim()
+        return pi.create_predictor(_config)
 
     def save(self, path: PathType) -> None:
         # Override the model path if temp dir was set

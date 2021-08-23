@@ -10,7 +10,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 # Install pycaret
-pip install pycaret
+pip install numba==0.53.1 pycaret==2.3.3
 
 pytest "$GIT_ROOT"/tests/integration/frameworks/test_pycaret_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 

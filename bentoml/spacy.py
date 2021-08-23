@@ -56,8 +56,13 @@ class SpacyModel(Model):
             else:
                 try:  # then we try loading model from the package
                     spacy.util.load_model_from_package(name, **load_model_kwargs)
-                except OSError:
+                except (ModuleNotFoundError, OSError):
+                    logger.warning(
+                        f"module {name} is not available. Installing from pip..."
+                    )
                     spacy.cli.download(name)
+                finally:
+                    return spacy.util.load_model(name, **load_model_kwargs)
         return spacy.util.load_model(name, **load_model_kwargs)
 
     def save(self, path: PathType) -> None:

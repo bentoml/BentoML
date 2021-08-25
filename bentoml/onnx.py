@@ -4,6 +4,7 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
+from ._internal.utils import _flatten_list
 from .exceptions import BentoMLException, MissingDependencyException
 
 try:
@@ -69,13 +70,34 @@ class ONNXModel(Model):
 
     @classmethod
     def load(
-        cls, path: t.Union[PathType, onnx.ModelProto]
+        cls,
+        path: t.Union[PathType, onnx.ModelProto],
+        backend: t.Optional[str] = "onnxruntime",
+        sess_opts: t.Optional[onnxruntime.SessionOptions] = None,
+        providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
     ) -> "onnxruntime.InferenceSession":
+        if backend not in cls.SUPPORTED_ONNX_BACKEND:
+            raise BentoMLException(
+                f'"{backend}" runtime is currently not supported for ONNXModel'
+            )
+        if providers:
+            if not all(
+                i in onnxruntime.get_all_providers() for i in _flatten_list(providers)
+            ):
+                raise BentoMLException(
+                    f"'{providers}' can't be parsed by `onnxruntime`"
+                )
+        else:
+            providers = onnxruntime.get_available_providers()
         if isinstance(path, onnx.ModelProto):
-            return onnxruntime.InferenceSession(path.SerializeToString())
+            return onnxruntime.InferenceSession(
+                path.SerializeToString(), sess_options=sess_opts, providers=providers
+            )
         else:
             _get_path = str(cls.__get_model_fpath(path))
-            return onnxruntime.InferenceSession(_get_path)
+            return onnxruntime.InferenceSession(
+                _get_path, sess_options=sess_opts, providers=providers
+            )
 
     def save(self, path: t.Union[PathType, "onnx.ModelProto"]) -> None:
         if isinstance(self._model, onnx.ModelProto):

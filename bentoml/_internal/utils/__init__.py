@@ -13,6 +13,7 @@ from typing import (
     Dict,
     Generic,
     Iterator,
+    List,
     Optional,
     Tuple,
     Type,
@@ -37,6 +38,22 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 
 T = TypeVar("T")
 V = TypeVar("V")
+
+
+def _yield_first_val(iterable):
+    if isinstance(iterable, tuple):
+        yield iterable[0]
+    elif isinstance(iterable, str):
+        yield iterable
+    else:
+        for i in iterable:
+            yield i
+
+
+def _flatten_list(lst) -> List[str]:
+    if not isinstance(lst, list):
+        raise AttributeError
+    return [k for i in lst for k in _yield_first_val(i)]
 
 
 class GeneratorContextManager(ContextManager[_T_co]):

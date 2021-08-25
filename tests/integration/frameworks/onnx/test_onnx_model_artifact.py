@@ -36,9 +36,35 @@ def sklearn_onnx_model():
 @pytest.mark.parametrize(
     "kwargs, exc", [({"backend": "not_supported"}, BentoMLException)]
 )
-def test_raise_exc(kwargs, exc, sklearn_onnx_model, tmpdir):
+def test_save_raise_exc(kwargs, exc, sklearn_onnx_model, tmpdir):
+    with pytest.raises(exc):
+        ONNXModel.load("", **kwargs)
     with pytest.raises(exc):
         ONNXModel(sklearn_onnx_model, **kwargs).save(tmpdir)
+
+
+@pytest.mark.parametrize(
+    "kwargs, exc",
+    [
+        ({"backend": "not_supported"}, BentoMLException),
+        ({"providers": ["NotSupported"]}, BentoMLException),
+    ],
+)
+def test_load_raise_exc(kwargs, exc):
+    with pytest.raises(exc):
+        ONNXModel.load("", **kwargs)
+
+
+def test_load_with_options(sklearn_onnx_model, tmpdir):
+    _model, data = sklearn_onnx_model
+    ONNXModel(_model).save(tmpdir)
+    opts = onnxruntime.SessionOptions()
+    opts.intra_op_num_threads = 2
+    opts.inter_op_num_threads = 2
+    opts.execution_mode = onnxruntime.ExecutionMode.ORT_PARALLEL
+    opts.log_verbosity_level = 1
+    loaded = ONNXModel.load(tmpdir, sess_opts=opts)
+    assert predict_arr(loaded, data)[0] == 0
 
 
 def test_onnx_save_load_proto_onnxruntime(sklearn_onnx_model, tmpdir):

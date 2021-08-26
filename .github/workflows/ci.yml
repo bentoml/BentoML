@@ -1,4 +1,4 @@
-name: BentoML-CI
+name: CI
 
 on:
   push:

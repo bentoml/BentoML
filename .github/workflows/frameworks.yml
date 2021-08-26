@@ -1,4 +1,4 @@
-name: frameworks-integration-tests
+name: frameworks
 
 on:
   push:

@@ -189,3 +189,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: bentoml
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
+
+concurrency:
+  group: integration-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true

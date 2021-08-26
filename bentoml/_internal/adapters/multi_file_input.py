@@ -115,7 +115,10 @@ class MultiFileInput(BaseInputAdapter):
     BATCH_MODE_SUPPORTED = True
 
     def __init__(
-        self, input_names: Sequence[str], allow_none: bool = False, **base_kwargs,
+        self,
+        input_names: Sequence[str],
+        allow_none: bool = False,
+        **base_kwargs,
     ):
 
         super().__init__(**base_kwargs)
@@ -170,7 +173,10 @@ class MultiFileInput(BaseInputAdapter):
                     f"fields {self.input_names}",
                 )
             else:
-                task = InferenceTask(http_headers=req.headers, data=files,)
+                task = InferenceTask(
+                    http_headers=req.headers,
+                    data=files,
+                )
         return task
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> MultiFileTask:

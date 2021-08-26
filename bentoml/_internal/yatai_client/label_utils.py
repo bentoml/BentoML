@@ -89,7 +89,8 @@ def generate_gprc_labels_selector(label_selectors, label_query):
             operator = "Exists" if operator.capitalize() == "Exists" else "DoesNotExist"
             label_selectors.match_expressions.append(
                 LabelSelectors.LabelSelectorExpression(
-                    key=key, operator=label_expression_operators[operator],
+                    key=key,
+                    operator=label_expression_operators[operator],
                 )
             )
         elif len(elements) == 3:

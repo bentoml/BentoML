@@ -145,7 +145,8 @@ class FileInput(BaseInputAdapter):
                 task = InferenceTask(http_headers=req.headers, data=input_file)
         elif req.body:
             task = InferenceTask(
-                http_headers=req.headers, data=FileLike(bytes_=req.body),
+                http_headers=req.headers,
+                data=FileLike(bytes_=req.body),
             )
         else:
             task = InferenceTask(data=None)
@@ -171,7 +172,8 @@ class FileInput(BaseInputAdapter):
         parsed_args, _ = parser.parse_known_args(list(cli_args))
 
         for t in self.from_inference_job(
-            input_=parsed_args.input, input_file=parsed_args.input_file,
+            input_=parsed_args.input,
+            input_file=parsed_args.input_file,
         ):
             t.cli_args = cli_args
             yield t
@@ -203,7 +205,8 @@ class FileInput(BaseInputAdapter):
         else:
             for d in input_:
                 yield InferenceTask(
-                    inference_job_args=extra_args, data=FileLike(bytes_=d.encode()),
+                    inference_job_args=extra_args,
+                    data=FileLike(bytes_=d.encode()),
                 )
 
     def extract_user_func_args(

@@ -3,15 +3,22 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import InvalidArgument, MissingDependencyException
+from ._internal.utils import LazyLoader
+from .exceptions import InvalidArgument
 
-try:
-    import catboost
-    from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
-except ImportError:
-    raise MissingDependencyException("catboost is required by CatBoostModel")
+if t.TYPE_CHECKING:
+    import catboost as cbt  # pylint: disable=unused-import
+else:
+    cbt = LazyLoader("cbt", globals(), "catboost")
 
-CatBoostType = t.Union[CatBoost, CatBoostClassifier, CatBoostRegressor]
+CatBoostModelType = t.TypeVar(
+    "CatBoostModelType",
+    bound=t.Union[
+        "cbt.core.CatBoost",
+        "cbt.core.CatBoostClassifier",
+        "cbt.core.CatBoostRegressor",
+    ],
+)
 
 
 class CatBoostModel(Model):
@@ -48,14 +55,14 @@ class CatBoostModel(Model):
     """
 
     CATBOOST_EXTENSION = ".cbm"
-    _model: catboost.core.CatBoost
+    _model: "cbt.core.CatBoost"
 
     def __init__(
         self,
-        model: t.Optional["catboost.core.CatBoost"] = None,
+        model: t.Optional["cbt.core.CatBoost"] = None,
         model_type: t.Optional[str] = "classifier",
         model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
-        model_pool: t.Optional["catboost.core.Pool"] = None,
+        model_pool: t.Optional["cbt.core.Pool"] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
         if model:
@@ -67,13 +74,15 @@ class CatBoostModel(Model):
         self._model_pool = model_pool
 
     @staticmethod
-    def __init_model_type(model_type: t.Optional[str] = "classifier") -> CatBoostType:
+    def __init_model_type(
+        model_type: t.Optional[str] = "classifier",
+    ) -> CatBoostModelType:
         if model_type == "classifier":
-            _model = CatBoostClassifier()
+            _model = cbt.core.CatBoostClassifier()
         elif model_type == "regressor":
-            _model = CatBoostRegressor()
+            _model = cbt.core.CatBoostRegressor()
         else:
-            _model = CatBoost()
+            _model = cbt.core.CatBoost()
 
         return _model
 
@@ -87,8 +96,8 @@ class CatBoostModel(Model):
 
     @classmethod
     def load(  # noqa # pylint: disable=arguments-differ
-        cls, path: PathType, model_type: t.Optional[str] = "classifier"
-    ) -> "catboost.core.CatBoost":
+        cls, path: PathType, model_type: str = "classifier"
+    ) -> "cbt.core.CatBoost":
         model = cls.__init_model_type(model_type=model_type)
         model_path: str = os.path.join(
             path, f"{MODEL_NAMESPACE}{cls.CATBOOST_EXTENSION}"

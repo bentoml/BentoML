@@ -3,16 +3,18 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
+from ._internal.utils import LazyLoader
 from .exceptions import MissingDependencyException
 
-try:
-    import fastai
-    import fastai.basics  # noqa
-
-    # fastai v2
-    import fastai.learner
-except ImportError:
-    raise MissingDependencyException("fastai v2 is required by FastAIModel")
+if t.TYPE_CHECKING:
+    import fastai  # pylint: disable=unused-import
+    import fastai.basics as basics  # pylint: disable=unused-import
+    import fastai.learner as learner
+else:
+    fastai = LazyLoader("fastai", globals(), "fastai")
+    basics = LazyLoader("basics", globals(), "fastai.basics")
+    learner = LazyLoader("learner", globals(), "fastai.learner")
+    assert learner, MissingDependencyException("fastai2 is required by FastAIModel")
 
 
 class FastAIModel(Model):
@@ -38,16 +40,18 @@ class FastAIModel(Model):
         TODO:
     """
 
+    _model: "learner.Learner"
+
     def __init__(
         self,
-        model: "fastai.learner.Learner",
+        model: "learner.Learner",
         metadata: t.Optional[MetadataType] = None,
     ):
         super(FastAIModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(cls, path: PathType) -> "fastai.learner.Learner":
-        return fastai.basics.load_learner(
+    def load(cls, path: PathType) -> "learner.Learner":
+        return basics.load_learner(
             os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}")
         )
 

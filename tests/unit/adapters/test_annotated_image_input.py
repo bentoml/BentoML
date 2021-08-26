@@ -154,7 +154,9 @@ def test_anno_image_input_http_request_multipart_form_image_only(
     input_adapter, img_file
 ):
     body, content_type = encode_multipart_formdata(
-        dict(image=("test.jpg", read_bin(img_file)),)
+        dict(
+            image=("test.jpg", read_bin(img_file)),
+        )
     )
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)

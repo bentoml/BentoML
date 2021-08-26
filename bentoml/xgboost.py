@@ -6,7 +6,7 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader
 
 if t.TYPE_CHECKING:
-    import xgboost
+    import xgboost as xgb  # pylint: disable=unused-import
 else:
     xgb = LazyLoader("xgb", globals(), "xgboost")
 
@@ -38,14 +38,14 @@ class XgBoostModel(Model):
     """
 
     def __init__(
-        self, model: "xgboost.core.Booster", metadata: t.Optional[MetadataType] = None
+        self, model: "xgb.core.Booster", metadata: t.Optional[MetadataType] = None
     ):
         super(XgBoostModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(
+    def load(  # noqa # pylint: disable=arguments-differ
         cls, path: PathType, infer_params: t.Dict[str, t.Union[str, int]] = None
-    ) -> "xgboost.core.Booster":
+    ) -> "xgb.core.Booster":
         return xgb.core.Booster(
             params=infer_params,
             model_file=os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"),

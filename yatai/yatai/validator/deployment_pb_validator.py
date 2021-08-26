@@ -67,7 +67,7 @@ deployment_schema = {
 
 class YataiDeploymentValidator(Validator):
     def _validate_bento_service_version(self, bento_service_version, field, value):
-        """ Test the given BentoService version is not "latest"
+        """Test the given BentoService version is not "latest"
 
         The rule's arguments are validated against this schema:
         {'type': 'boolean'}
@@ -80,7 +80,7 @@ class YataiDeploymentValidator(Validator):
             )
 
     def _validate_deployment_labels(self, deployment_labels, field, value):
-        """ Test label key value schema
+        """Test label key value schema
 
         The rule's arguments are validated against this schema:
         {'type': 'boolean'}

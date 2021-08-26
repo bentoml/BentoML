@@ -6,17 +6,20 @@ logger = logging.getLogger(__name__)
 
 
 class LazyLoader(types.ModuleType):
-    """LazyLoader module borrowed from Tensorflow
-  https://github.com/tensorflow/tensorflow/blob/v2.2.0/tensorflow/python/util/lazy_loader.py
-  with a slight modification of "module caching".
+    """
+    LazyLoader module borrowed from Tensorflow
+      https://github.com/tensorflow/tensorflow/blob/v2.2.0/tensorflow/python/util/lazy_loader.py
+      with a addition of "module caching".
 
-  Lazily import a module, mainly to avoid pulling in large dependencies.
-  `contrib`, and `ffmpeg` are examples of modules that are large and not always
-  needed, and this allows them to only be loaded when they are used.
-  """
+      Lazily import a module, mainly to avoid pulling in large dependencies.
+      `contrib`, and `ffmpeg` are examples of modules that are large and not always
+      needed, and this allows them to only be loaded when they are used.
+    """
 
     # The lint error here is incorrect.
-    def __init__(self, local_name, parent_module_globals, name, warning=None):
+    def __init__(
+        self, local_name: str, parent_module_globals: dict, name: str, warning=None
+    ):
         self._local_name = local_name
         self._parent_module_globals = parent_module_globals
         self._warning = warning
@@ -24,7 +27,7 @@ class LazyLoader(types.ModuleType):
 
         super(LazyLoader, self).__init__(name)
 
-    def _load(self):
+    def _load(self) -> types.ModuleType:
         """Load the module and insert it into the parent's globals."""
         # Import the target module and insert it into the parent's namespace
         module = importlib.import_module(self.__name__)

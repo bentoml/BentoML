@@ -3,12 +3,12 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
+if t.TYPE_CHECKING:
     import fasttext
-except ImportError:
-    raise MissingDependencyException("fasttext is required by FastTextModel")
+else:
+    fasttext = LazyLoader("fasttext", globals(), "fasttext")
 
 
 class FastTextModel(Model):
@@ -33,6 +33,8 @@ class FastTextModel(Model):
 
         TODO:
     """
+
+    _model: "fasttext.FastText._FastText"
 
     def __init__(
         self,

@@ -50,7 +50,10 @@ class StringInput(BaseInputAdapter):
             bytes_ = req.body
             charset = req.headers.charset or "utf-8"
         try:
-            return InferenceTask(http_headers=req.headers, data=bytes_.decode(charset),)
+            return InferenceTask(
+                http_headers=req.headers,
+                data=bytes_.decode(charset),
+            )
         except UnicodeDecodeError:
             return InferenceTask().discard(
                 http_status=400,
@@ -63,7 +66,10 @@ class StringInput(BaseInputAdapter):
             )
 
     def from_aws_lambda_event(self, event: AwsLambdaEvent) -> InferenceTask[str]:
-        return InferenceTask(aws_lambda_event=event, data=event.get("body", ""),)
+        return InferenceTask(
+            aws_lambda_event=event,
+            data=event.get("body", ""),
+        )
 
     def from_cli(self, cli_args: Tuple[str]) -> Iterator[InferenceTask[str]]:
         import argparse
@@ -76,13 +82,17 @@ class StringInput(BaseInputAdapter):
         parsed_args, _ = parser.parse_known_args(list(cli_args))
 
         for t in self.from_inference_job(
-            input_=parsed_args.input, input_file=parsed_args.input_file,
+            input_=parsed_args.input,
+            input_file=parsed_args.input_file,
         ):
             t.cli_args = cli_args
             yield t
 
     def from_inference_job(  # pylint: disable=arguments-differ
-        self, input_=None, input_file=None, **extra_args,
+        self,
+        input_=None,
+        input_file=None,
+        **extra_args,
     ) -> Iterator[InferenceTask[str]]:
         """
         Generate InferenceTask from calling bentom_svc.run(input_=None, input_file=None)
@@ -105,7 +115,8 @@ class StringInput(BaseInputAdapter):
                 try:
                     charset = chardet.detect(bytes_)["encoding"] or "utf-8"
                     yield InferenceTask(
-                        inference_job_args=extra_args, data=bytes_.decode(charset),
+                        inference_job_args=extra_args,
+                        data=bytes_.decode(charset),
                     )
                 except UnicodeDecodeError:
                     yield InferenceTask().discard(

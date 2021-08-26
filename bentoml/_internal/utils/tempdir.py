@@ -18,7 +18,9 @@ class TempDirectory(object):
     """
 
     def __init__(
-        self, cleanup=True, prefix="temp",
+        self,
+        cleanup=True,
+        prefix="temp",
     ):
 
         self._cleanup = cleanup

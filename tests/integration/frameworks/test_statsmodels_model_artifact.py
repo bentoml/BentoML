@@ -35,7 +35,10 @@ def holt_model() -> "HoltWintersResults":
 
     # fitting the model based on  optimal parameters
     return ExponentialSmoothing(
-        np.asarray(train["Sales"]), seasonal_periods=7, trend="add", seasonal="add",
+        np.asarray(train["Sales"]),
+        seasonal_periods=7,
+        trend="add",
+        seasonal="add",
     ).fit()
 
 

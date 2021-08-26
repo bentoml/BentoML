@@ -5,14 +5,16 @@ import typing as t
 
 from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, PTH_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
+from ._internal.utils import LazyLoader
 from .exceptions import MissingDependencyException
 
-try:
-    import easyocr
-
-    assert easyocr.__version__ >= "1.3"
-except ImportError:
-    raise MissingDependencyException("easyocr>=1.3 is required by EasyOCRModel")
+if t.TYPE_CHECKING:
+    import easyocr  # pylint: disable=unused-import
+else:
+    easyocr = LazyLoader("easyocr", globals(), "easyocr")
+    assert easyocr.__version__ >= "1.3", MissingDependencyException(
+        "easyocr>=1.3 is required by EasyOCRModel"
+    )
 
 
 class EasyOCRModel(Model):

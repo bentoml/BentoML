@@ -211,7 +211,10 @@ class Stat:
     def print_exec(self):
         headers = ["exceptions", "count"]
         rs = [
-            (wrap_line(str(v[0]), 50)[:1000], len(v),)
+            (
+                wrap_line(str(v[0]), 50)[:1000],
+                len(v),
+            )
             for k, v in self.exceptions.items()
         ]
         print(tabulate(rs, headers=headers, tablefmt="fancy_grid"))

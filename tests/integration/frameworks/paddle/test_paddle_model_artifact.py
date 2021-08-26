@@ -88,6 +88,7 @@ def test_paddle_load_custom_conf(train_paddle_model, tmp_path_factory):
     conf = paddle.inference.Config(tmp_path + ".pdmodel", tmp_path + ".pdiparams")
     conf.enable_memory_optim()
     conf.set_cpu_math_library_num_threads(1)
+    paddle.set_device("cpu")
     loaded_with_customs: nn.Layer = PaddlePaddleModel.load(tmp_path, config=conf)
     assert predict_df(loaded_with_customs, test_df) == np.array(
         [[0.68022454]], dtype=np.float32

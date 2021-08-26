@@ -3,13 +3,12 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
-    import evalml
-    import evalml.pipelines
-except ImportError:
-    raise MissingDependencyException("evalml is required by EvalMLModel")
+if t.TYPE_CHECKING:
+    import evalml.pipelines as pipelines  # pylint: disable=unused-import
+else:
+    pipelines = LazyLoader("pipelines", globals(), "evalml.pipelines")
 
 
 class EvalMLModel(Model):
@@ -35,19 +34,21 @@ class EvalMLModel(Model):
         TODO:
     """
 
+    _model: "pipelines.PipelineBase"
+
     def __init__(
         self,
-        model: "evalml.pipelines.PipelineBase",
+        model: "pipelines.PipelineBase",
         metadata: t.Optional[MetadataType] = None,
     ):
         super(EvalMLModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(cls, path: PathType) -> "evalml.pipelines.PipelineBase":
+    def load(cls, path: PathType) -> "pipelines.PipelineBase":
         model_file_path: str = os.path.join(
             path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"
         )
-        return evalml.pipelines.PipelineBase.load(model_file_path)
+        return pipelines.PipelineBase.load(model_file_path)
 
     def save(self, path: PathType) -> None:
         self._model.save(os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"))

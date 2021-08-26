@@ -3,14 +3,15 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import InvalidArgument, MissingDependencyException
+from ._internal.utils import LazyLoader
+from .exceptions import InvalidArgument
 
 MT = t.TypeVar("MT")
 
-try:
-    import mlflow
-except ImportError:
-    raise MissingDependencyException("mlflow is required by MLflowModel")
+if t.TYPE_CHECKING:
+    import mlflow  # pylint: disable=unused-import
+else:
+    mlflow = LazyLoader("mlflow", globals(), "mlflow")
 
 
 class MLflowModel(Model):

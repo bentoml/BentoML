@@ -297,7 +297,9 @@ def test_conda_default_file_lazy_read():
     # should raise when yml file not found in "save"
     with pytest.raises(BentoMLException):
 
-        @bentoml.env(conda_env_yml_file="a_file_that_does_not_exist.yml",)
+        @bentoml.env(
+            conda_env_yml_file="a_file_that_does_not_exist.yml",
+        )
         class ExampleSvcII(bentoml.BentoService):
             pass
 

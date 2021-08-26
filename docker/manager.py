@@ -48,7 +48,9 @@ DOCKERFILE_NVIDIA_REGEX: re.Pattern = re.compile(r"(?:nvidia|cuda|cudnn)+")
 
 SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.6", "3.7", "3.8"]
 
-NVIDIA_REPO_URL: str = "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
+NVIDIA_REPO_URL: str = (
+    "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
+)
 NVIDIA_ML_REPO_URL: str = (
     "https://developer.download.nvidia.com/compute/machine-learning/repos/{}/x86_64"
 )
@@ -574,7 +576,9 @@ class PushMixin(object):
             for package, registry_url in registry_spec["registry"].items():
                 _, _url = registry_url.split("/", maxsplit=1)
                 readme_path = Path("docs", package, "README.md")
-                repo_url: str = f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
+                repo_url: str = (
+                    f"{get_nested(registry_spec, ['urls', 'repos'])}/{_url}/"
+                )
                 self.push_readmes(api_url, repo_url, readme_path, login_payload)
 
             if FLAGS.readmes:

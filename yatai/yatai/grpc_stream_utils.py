@@ -82,7 +82,9 @@ class _BentoBundleStreamRequestsOrResponses:
     def _create_request_or_response(bento_name, bento_version, value, is_request):
         if is_request:
             return UploadBentoRequest(
-                bento_name=bento_name, bento_version=bento_version, bento_bundle=value,
+                bento_name=bento_name,
+                bento_version=bento_version,
+                bento_bundle=value,
             )
         else:
             return DownloadBentoResponse(bento_bundle=value)
@@ -114,7 +116,9 @@ class _BentoBundleStreamRequestsOrResponses:
                     # Reading the file info and generate tarinfo from that.
                     # No file content is added to the tar at this point
                     tar_info = self.tar.gettarinfo(
-                        name=file_path, arcname=os.path.join(arc_path, f), fileobj=file,
+                        name=file_path,
+                        arcname=os.path.join(arc_path, f),
+                        fileobj=file,
                     )
                     self.tar.addfile(tar_info)
                     # stream the file content into the tar

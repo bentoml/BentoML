@@ -4,22 +4,19 @@ import typing as t
 import zipfile
 
 import cloudpickle
-import torch.nn
 
 from ._internal.models.base import MODEL_NAMESPACE, PT_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
-    import torch
-except ImportError:
-    raise MissingDependencyException(
-        "torch is required by PyTorchModel and PyTorchLightningModel"
-    )
-try:
-    import pytorch_lightning
-except ImportError:
-    pytorch_lightning = None  # type: ignore
+if t.TYPE_CHECKING:
+    import pytorch_lightning as pl  # pylint: disable=unused-import
+    import torch  # pylint: disable=unused-import
+    import torch.nn as nn  # pylint: disable=unused-import
+else:
+    torch = LazyLoader("torch", globals(), "torch")
+    nn = LazyLoader("nn", globals(), "torch.nn")
+    pl = LazyLoader("pl", globals(), "pytorch_lightning")
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +49,7 @@ class PyTorchModel(Model):
 
     def __init__(
         self,
-        model: t.Union[torch.nn.Module, torch.jit.ScriptModule],
+        model: t.Union["torch.nn.Module", "torch.jit.ScriptModule"],
         metadata: t.Optional[MetadataType] = None,
     ):
         super(PyTorchModel, self).__init__(model, metadata=metadata)
@@ -112,13 +109,9 @@ class PyTorchLightningModel(Model):
 
     def __init__(
         self,
-        model: "pytorch_lightning.LightningModule",
+        model: "pl.LightningModule",
         metadata: t.Optional[MetadataType] = None,
     ):  # noqa
-        if pytorch_lightning is None:
-            raise MissingDependencyException(
-                "pytorch_lightning is required by PyTorchLightningModel"
-            )
         super(PyTorchLightningModel, self).__init__(model, metadata=metadata)
 
     @staticmethod

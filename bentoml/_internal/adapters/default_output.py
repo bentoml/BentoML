@@ -57,7 +57,9 @@ class DefaultOutput(BaseOutputAdapter):
         self.backup_adapter = JsonOutput()
 
     def pack_user_func_return_value(
-        self, return_result: ApiFuncReturnValue, tasks: Tuple[InferenceTask],
+        self,
+        return_result: ApiFuncReturnValue,
+        tasks: Tuple[InferenceTask],
     ) -> Tuple[InferenceResult]:
         if self.actual_adapter is None:
             self.actual_adapter = detect_suitable_adapter(return_result)()

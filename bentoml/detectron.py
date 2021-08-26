@@ -3,20 +3,17 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, PTH_EXTENSION, YAML_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
-    import torch
-except ImportError:
-    raise MissingDependencyException("torch is required by DetectronModel")
-
-try:
-    import detectron2  # pylint: disable=unused-import
-    from detectron2.checkpoint import DetectionCheckpointer
-    from detectron2.config import get_cfg
-    from detectron2.modeling import build_model
-except ImportError:
-    raise MissingDependencyException("detectron2 is required by DetectronModel")
+if t.TYPE_CHECKING:
+    import detectron2.checkpoint as checkpoint  # pylint: disable=unused-import
+    import detectron2.config as config  # pylint: disable=unused-import
+    import detectron2.modeling as modeling  # pylint: disable=unused-import
+    import torch.nn as nn  # pylint: disable=unused-import
+else:
+    checkpoint = LazyLoader("checkpoint", globals(), "detectron2.checkpoint")
+    config = LazyLoader("config", globals(), "detectron2.config")
+    modeling = LazyLoader("modeling", globals(), "detectron2.modeling")
 
 
 class DetectronModel(Model):
@@ -49,8 +46,8 @@ class DetectronModel(Model):
 
     def __init__(
         self,
-        model: torch.nn.Module,
-        input_model_yaml: t.Optional[detectron2.config.CfgNode] = None,
+        model: "nn.Module",
+        input_model_yaml: t.Optional["config.CfgNode"] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
         super(DetectronModel, self).__init__(model, metadata=metadata)
@@ -58,8 +55,8 @@ class DetectronModel(Model):
 
     @classmethod
     def load(  # noqa # pylint: disable=arguments-differ
-        cls, path: PathType, device: t.Optional[str] = None
-    ) -> torch.nn.Module:
+        cls, path: PathType, device: str = "cpu"
+    ) -> "nn.Module":
         """
         Load a detectron model from given yaml path.
 
@@ -80,7 +77,7 @@ class DetectronModel(Model):
                 ``detectron2`` is required by
                  :class:`~bentoml.detectron.DetectronModel`.
         """
-        cfg: detectron2.config.CfgNode = get_cfg()
+        cfg: "config.CfgNode" = config.get_cfg()
         if device:
             cfg.MODEL.DEVICE = device
 
@@ -89,19 +86,23 @@ class DetectronModel(Model):
 
         if os.path.isfile(yaml_path):
             cfg.merge_from_file(yaml_path)
-        model: torch.nn.Module = build_model(cfg)
+        model: "nn.Module" = modeling.build_model(cfg)
         if device:
             model.to(device)
 
         model.eval()
 
-        checkpointer = DetectionCheckpointer(model)
+        checkpointer: "checkpoint.DetectionCheckpointer" = (
+            checkpoint.DetectionCheckpointer(model)
+        )
         checkpointer.load(weight_path)
         return model
 
     def save(self, path: PathType) -> None:
         os.makedirs(path, exist_ok=True)
-        checkpointer = DetectionCheckpointer(self._model, save_dir=path)
+        checkpointer: "checkpoint.DetectionCheckpointer" = (
+            checkpoint.DetectionCheckpointer(self._model, save_dir=path)
+        )
         checkpointer.save(MODEL_NAMESPACE)
         if self._input_model_yaml:
             with open(

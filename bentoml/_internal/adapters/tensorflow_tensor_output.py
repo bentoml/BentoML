@@ -50,7 +50,9 @@ class TfTensorOutput(JsonOutput):
         return ["tensorflow"]
 
     def pack_user_func_return_value(
-        self, return_result, tasks: Sequence[InferenceTask],
+        self,
+        return_result,
+        tasks: Sequence[InferenceTask],
     ) -> Sequence[InferenceResult[str]]:
         rv = []
         results = tf_to_numpy(return_result)

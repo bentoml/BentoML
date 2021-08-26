@@ -6,6 +6,7 @@ from distutils.dir_util import copy_tree
 
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
+from ._internal.utils import LazyLoader
 from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
     get_arg_names,
@@ -13,16 +14,14 @@ from ._internal.utils.tensorflow import (
     get_restored_functions,
     pretty_format_restored_model,
 )
-from .exceptions import MissingDependencyException
 
-try:
-    import tensorflow as tf
+if t.TYPE_CHECKING:
+    import tensorflow as tf  # pylint: disable=arguments-differ
     from tensorflow.python.training.tracking.tracking import AutoTrackable
+else:
+    tf = LazyLoader("tf", globals(), "tensorflow")
 
-    TF2 = tf.__version__.startswith("2")
-except ImportError:
-    raise MissingDependencyException("tensorflow is required by TensorflowModel")
-
+TF2 = tf.__version__.startswith("2")
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +145,7 @@ class TensorflowModel(Model):
 
     def __init__(
         self,
-        model: t.Union[tf.keras.Model, tf.Module, PathType, pathlib.PurePath],
+        model: t.Union["tf.keras.Model", "tf.Module", PathType, pathlib.PurePath],
         metadata: t.Optional[MetadataType] = None,
     ):
         super(TensorflowModel, self).__init__(model, metadata=metadata)

@@ -224,7 +224,8 @@ class AnnotatedImageInput(MultiFileInput):
                 )
             except UnicodeDecodeError:
                 task.discard(
-                    http_status=400, err_msg="JSON must be in unicode",
+                    http_status=400,
+                    err_msg="JSON must be in unicode",
                 )
             except json.JSONDecodeError:
                 task.discard(

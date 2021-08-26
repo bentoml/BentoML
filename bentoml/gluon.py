@@ -3,13 +3,13 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
+if t.TYPE_CHECKING:
     import mxnet  # pylint: disable=unused-import
-    from mxnet import gluon
-except ImportError:
-    raise MissingDependencyException("mxnet is required by GluonModel")
+    import mxnet.gluon as gluon
+else:
+    gluon = LazyLoader("gluon", globals(), "mxnet.gluon")
 
 
 class GluonModel(Model):
@@ -35,8 +35,12 @@ class GluonModel(Model):
         TODO:
     """
 
+    _model: "gluon.HybridBlock"
+
     def __init__(
-        self, model: "mxnet.gluon.Block", metadata: t.Optional[MetadataType] = None,
+        self,
+        model: "mxnet.gluon.HybridBlock",
+        metadata: t.Optional[MetadataType] = None,
     ):
         super(GluonModel, self).__init__(model, metadata=metadata)
 
@@ -44,7 +48,7 @@ class GluonModel(Model):
     def load(cls, path: PathType) -> "mxnet.gluon.Block":
         json_path: str = os.path.join(path, f"{MODEL_NAMESPACE}-symbol.json")
         params_path: str = os.path.join(path, f"{MODEL_NAMESPACE}-0000.params")
-        return gluon.nn.SymbolBlock.imports(json_path, ["data"], params_path)
+        return gluon.SymbolBlock.imports(json_path, ["data"], params_path)
 
     def save(self, path: PathType) -> None:
         self._model.export(os.path.join(path, MODEL_NAMESPACE))

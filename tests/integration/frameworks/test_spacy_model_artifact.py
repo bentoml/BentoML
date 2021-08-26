@@ -49,7 +49,10 @@ def spacy_model():
 
 
 @pytest.mark.parametrize(
-    "loaded_pipe, predict_fn", [(SpacyModel.load("en_core_web_sm"), predict_json),]
+    "loaded_pipe, predict_fn",
+    [
+        (SpacyModel.load("en_core_web_sm"), predict_json),
+    ],
 )
 def test_spacy_save_load(tmpdir, spacy_model, loaded_pipe, predict_fn):
     SpacyModel(spacy_model).save(tmpdir)

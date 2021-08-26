@@ -22,7 +22,8 @@ def test_delete_bento_by_tag(bento_service, yatai_client):
 
     yatai_client.repository.get(bento_service.tag)
     yatai_client.repository.delete(
-        bento_name=bento_service.name, bento_version=bento_service.version,
+        bento_name=bento_service.name,
+        bento_version=bento_service.version,
     )
     with pytest.raises(BentoMLException) as excinfo:
         yatai_client.repository.get(bento_service.tag)
@@ -120,7 +121,10 @@ def test_delete_all_bentos_from_cli(example_bento_service_class, yatai_client):
 
     runner = CliRunner()
     cli = create_bentoml_cli()
-    result = runner.invoke(cli.commands["delete"], ["--all", "-y"],)
+    result = runner.invoke(
+        cli.commands["delete"],
+        ["--all", "-y"],
+    )
     assert result.exit_code == 0
     assert len(yatai_client.repository.list()) == 0
 
@@ -137,7 +141,10 @@ def test_delete_multiple_bentos_by_tag_from_cli(
 
     runner = CliRunner()
     cli = create_bentoml_cli()
-    result = runner.invoke(cli.commands["delete"], [svc1.tag, "-y"],)
+    result = runner.invoke(
+        cli.commands["delete"],
+        [svc1.tag, "-y"],
+    )
     assert result.exit_code == 0
     assert (
         len(yatai_client.repository.list(bento_name=example_bento_service_class.name))

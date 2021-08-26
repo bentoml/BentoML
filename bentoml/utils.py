@@ -115,7 +115,8 @@ class ImageProvider(object):
             # we only support the new format with 0.14.0 forward
             if int(major) == 0 and int(minor) <= 13:
                 msg = BACKWARD_COMPATIBILITY_WARNING.format(
-                    classname=self.__class__.__name__, bentoml_version=bentoml_version,
+                    classname=self.__class__.__name__,
+                    bentoml_version=bentoml_version,
                 )
                 logger.warning(msg)
                 self._release_type: str = "devel"

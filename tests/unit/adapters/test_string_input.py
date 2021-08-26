@@ -9,7 +9,9 @@ def test_string_input(make_api):
     from bentoml.adapters import JsonOutput, StringInput
 
     api = make_api(
-        input_adapter=StringInput(), output_adapter=JsonOutput(), user_func=lambda i: i,
+        input_adapter=StringInput(),
+        output_adapter=JsonOutput(),
+        user_func=lambda i: i,
     )
 
     body = b'{"a": 1}'

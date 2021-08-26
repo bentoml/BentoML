@@ -152,7 +152,10 @@ class BentoRepositoryAPIClient:
             )
 
     def upload(
-        self, bento_service: "Service", version: str = None, labels: Dict = None,
+        self,
+        bento_service: "Service",
+        version: str = None,
+        labels: Dict = None,
     ) -> "BentoUri":
         """
         Save and upload given :class:`~bentoml.Service`
@@ -679,7 +682,9 @@ class BentoRepositoryAPIClient:
                 bento_bundle_path=saved_bento_bundle_path,
             )
             result = self.yatai_service.UploadBento(
-                iter(streaming_request_generator,),
+                iter(
+                    streaming_request_generator,
+                ),
                 timeout=DEFAULT_GRPC_REQUEST_TIMEOUT,
             )
             if result.status.status_code != status_pb2.Status.OK:

@@ -10,8 +10,8 @@ from bentoml._internal.configuration import inject_dependencies
 
 # Inject dependencies and configurations
 inject_dependencies()
-#
-# # Configuring logging properly before loading other modules
+
+# Configuring logging properly before loading other modules
 # configure_logging()
 
 from bentoml._internal.bundle import containerize, load

@@ -85,10 +85,16 @@ flags.DEFINE_multi_string(
     short_name="g",
 )
 flags.DEFINE_boolean(
-    "push", False, "Whether to push built image.", short_name="p",
+    "push",
+    False,
+    "Whether to push built image.",
+    short_name="p",
 )
 flags.DEFINE_boolean(
-    "readmes", False, "Whether to stop at pushing readmes.", short_name="md",
+    "readmes",
+    False,
+    "Whether to stop at pushing readmes.",
+    short_name="md",
 )
 flags.DEFINE_string(
     "releases",
@@ -285,7 +291,8 @@ class MetadataSpecValidator(Validator):
         if isinstance(value, str):
             if "=" not in value:
                 self._error(
-                    field, f"{value} should have format ARG=foobar",
+                    field,
+                    f"{value} should have format ARG=foobar",
                 )
             else:
                 envars, _, _ = value.partition("=")

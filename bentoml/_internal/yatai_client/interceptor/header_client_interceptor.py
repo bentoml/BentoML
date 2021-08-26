@@ -37,7 +37,12 @@ def header_adder_interceptor(header, value):
         metadata = []
         if client_call_details.metadata is not None:
             metadata = list(client_call_details.metadata)
-        metadata.append((header, value,))
+        metadata.append(
+            (
+                header,
+                value,
+            )
+        )
         client_call_details = _ClientCallDetails(
             client_call_details.method,
             client_call_details.timeout,

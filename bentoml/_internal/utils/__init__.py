@@ -9,7 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ContextManager,
     Dict,
     Generic,
     Iterator,
@@ -26,6 +25,7 @@ from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 from google.protobuf.message import Message
 
 if TYPE_CHECKING:
+    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
     from bentoml._internal.yatai_client import YataiClient
 
 from .gcs import is_gcs_url
@@ -54,11 +54,6 @@ def _flatten_list(lst) -> List[str]:
     if not isinstance(lst, list):
         raise AttributeError
     return [k for i in lst for k in _yield_first_val(i)]
-
-
-class GeneratorContextManager(ContextManager[_T_co]):
-    def __call__(self, func: _F) -> _F:
-        ...
 
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -139,11 +134,15 @@ class cached_property(Generic[T, V], property):
         obj.__dict__[self.__name__] = value
 
     @overload
-    def __get__(self, obj: None, type: Optional[Type[T]] = None) -> "cached_property":
+    def __get__(  # pylint: disable=redefined-builtin
+        self, obj: None, type: Optional[Type[T]] = None
+    ) -> "cached_property":
         ...
 
     @overload
-    def __get__(self, obj: T, type: Optional[Type[T]] = None) -> V:
+    def __get__(  # pylint: disable=redefined-builtin
+        self, obj: T, type: Optional[Type[T]] = None
+    ) -> V:
         ...
 
     def __get__(  # pylint:disable=redefined-builtin
@@ -181,7 +180,7 @@ class cached_contextmanager(Generic[T]):
     # TODO: use ParamSpec 3.10: https://github.com/python/mypy/issues/8645
     def __call__(
         self, func: Callable[..., Iterator[T]]
-    ) -> Callable[..., GeneratorContextManager[T]]:
+    ) -> Callable[..., "_GeneratorContextManager[T]"]:
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager

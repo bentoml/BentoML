@@ -186,7 +186,10 @@ class CorkDispatcher:
                     await asyncio.sleep(self.tick_interval)
                     continue
 
-                n_call_out = min(self.max_batch_size, n,)
+                n_call_out = min(
+                    self.max_batch_size,
+                    n,
+                )
                 # call
                 self._sema.acquire()
                 inputs_info = tuple(self._queue.pop() for _ in range(n_call_out))

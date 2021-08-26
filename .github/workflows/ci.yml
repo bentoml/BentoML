@@ -191,5 +191,5 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
 concurrency:
-  group: integration-${{ github.event.pull_request.number || github.sha }}
+  group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

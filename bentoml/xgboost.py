@@ -3,12 +3,12 @@ import typing as t
 
 from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
+if t.TYPE_CHECKING:
     import xgboost
-except ImportError:
-    raise MissingDependencyException("xgboost is required by XgBoostModel")
+else:
+    xgb = LazyLoader("xgb", globals(), "xgboost")
 
 
 class XgBoostModel(Model):
@@ -38,15 +38,18 @@ class XgBoostModel(Model):
     """
 
     def __init__(
-        self, model: xgboost.core.Booster, metadata: t.Optional[MetadataType] = None
+        self, model: "xgboost.core.Booster", metadata: t.Optional[MetadataType] = None
     ):
         super(XgBoostModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(cls, path: PathType) -> "xgboost.core.Booster":
-        bst = xgboost.Booster()
-        bst.load_model(os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"))
-        return bst
+    def load(
+        cls, path: PathType, infer_params: t.Dict[str, t.Union[str, int]] = None
+    ) -> "xgboost.core.Booster":
+        return xgb.core.Booster(
+            params=infer_params,
+            model_file=os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"),
+        )
 
     def save(self, path: PathType) -> None:
         self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"))

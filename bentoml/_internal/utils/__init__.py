@@ -28,9 +28,9 @@ from google.protobuf.message import Message
 if TYPE_CHECKING:
     from bentoml._internal.yatai_client import YataiClient
 
-from bentoml._internal.utils.gcs import is_gcs_url
-from bentoml._internal.utils.lazy_loader import LazyLoader
-from bentoml._internal.utils.s3 import is_s3_url
+from .gcs import is_gcs_url
+from .lazy_loader import LazyLoader
+from .s3 import is_s3_url
 
 _T = TypeVar("_T")
 _T_co = TypeVar("_T_co", covariant=True)
@@ -80,6 +80,7 @@ __all__ = [
     "is_s3_url",
     "archive_directory_to_tar",
     "resolve_bundle_path",
+    "LazyLoader",
 ]
 
 yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")

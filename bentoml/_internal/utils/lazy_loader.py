@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 class LazyLoader(types.ModuleType):
     """LazyLoader module borrowed from Tensorflow
   https://github.com/tensorflow/tensorflow/blob/v2.2.0/tensorflow/python/util/lazy_loader.py
+  with a slight modification of "module caching".
 
   Lazily import a module, mainly to avoid pulling in large dependencies.
   `contrib`, and `ffmpeg` are examples of modules that are large and not always
@@ -19,6 +20,7 @@ class LazyLoader(types.ModuleType):
         self._local_name = local_name
         self._parent_module_globals = parent_module_globals
         self._warning = warning
+        self._module = None
 
         super(LazyLoader, self).__init__(name)
 
@@ -42,9 +44,11 @@ class LazyLoader(types.ModuleType):
         return module
 
     def __getattr__(self, item):
-        module = self._load()
-        return getattr(module, item)
+        if not self._module:
+            self._module = self._load()
+        return getattr(self._module, item)
 
     def __dir__(self):
-        module = self._load()
-        return dir(module)
+        if not self._module:
+            self._module = self._load()
+        return dir(self._module)

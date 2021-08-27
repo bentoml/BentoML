@@ -144,3 +144,4 @@ tests/integration/data
 
 # Emacs buffers
 *~
+**/*.ipynb

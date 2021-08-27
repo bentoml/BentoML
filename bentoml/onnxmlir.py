@@ -4,16 +4,14 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
+from .exceptions import MissingDependencyException
 
 MT = t.TypeVar("MT")
 
-if t.TYPE_CHECKING:
-    from PyRuntime import ExecutionSession  # pylint: disable=unused-import
-else:
-    ExecutionSession = LazyLoader(
-        "ExecutionSession", globals(), "PyRuntime.ExecutionSession"
-    )
+try:
+    from PyRuntime import ExecutionSession
+except ImportError:
+    raise MissingDependencyException("PyRuntime is not found in PYTHONPATH")
 
 
 class ONNXMlirModel(Model):

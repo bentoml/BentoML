@@ -11,6 +11,6 @@ cd "$GIT_ROOT" || exit
 
 pip install pandas numpy paddlepaddle paddlehub gast==0.3.3
 
-pytest "$GIT_ROOT"/tests/integration/frameworks/paddle --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/paddle --cov=bentoml --cov-config=.coveragerc -vvv
 
 test $error = 0 # Return non-zero if pytest failed

@@ -16,10 +16,13 @@ from ._internal.utils.tensorflow import (
 )
 
 if t.TYPE_CHECKING:
-    import tensorflow as tf  # pylint: disable=arguments-differ
-    from tensorflow.python.training.tracking.tracking import AutoTrackable
+    import tensorflow as tf  # pylint: disable=unused-import
+    import tensorflow.python.training.tracking.tracking as tracking  # pylint: disable=unused-import
 else:
     tf = LazyLoader("tf", globals(), "tensorflow")
+    tracking = LazyLoader(
+        "tf", globals(), "tensorflow.python.training.tracking.tracking"
+    )
 
 TF2 = tf.__version__.startswith("2")
 
@@ -153,12 +156,14 @@ class TensorflowModel(Model):
     @staticmethod
     def __load_tf_saved_model(  # pylint: disable=unused-private-member
         path: str,
-    ) -> t.Union[AutoTrackable, t.Any]:
+    ) -> t.Union["tracking.AutoTrackable", t.Any]:
         if TF2:
             return tf.saved_model.load(path)
         else:
             loaded = tf.compat.v2.saved_model.load(path)
-            if isinstance(loaded, AutoTrackable) and not hasattr(loaded, "__call__"):
+            if isinstance(loaded, tracking.AutoTrackable) and not hasattr(
+                loaded, "__call__"
+            ):
                 logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)
             return loaded
 

@@ -137,7 +137,10 @@ class ImageInput(FileInput):
     """
 
     def __init__(
-        self, accept_image_formats=None, pilmode="RGB", **base_kwargs,
+        self,
+        accept_image_formats=None,
+        pilmode="RGB",
+        **base_kwargs,
     ):
         assert imageio, "`imageio` dependency can be imported"
 

@@ -58,7 +58,11 @@ def parse_grpc_url(url):
 
 
 def wrap_interator_inc_counter(
-    iterator, counter, grpc_type, grpc_service_name, grpc_method_name,
+    iterator,
+    counter,
+    grpc_type,
+    grpc_service_name,
+    grpc_method_name,
 ):
     for item in iterator:
         counter.labels(

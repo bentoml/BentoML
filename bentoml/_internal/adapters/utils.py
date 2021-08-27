@@ -11,7 +11,7 @@ TF_B64_KEY = "b64"
 
 
 class B64JsonEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
+    """Special json encoder for numpy types"""
 
     def default(self, o):  # pylint: disable=method-hidden
         import base64
@@ -29,7 +29,7 @@ class B64JsonEncoder(json.JSONEncoder):
 
 
 class NumpyJsonEncoder(B64JsonEncoder):
-    """ Special json encoder for numpy types """
+    """Special json encoder for numpy types"""
 
     def default(self, o):  # pylint: disable=method-hidden
         import numpy as np
@@ -44,7 +44,7 @@ class NumpyJsonEncoder(B64JsonEncoder):
 
 
 class TfTensorJsonEncoder(NumpyJsonEncoder):
-    """ Special json encoder for numpy types """
+    """Special json encoder for numpy types"""
 
     def default(self, o):  # pylint: disable=method-hidden
 
@@ -108,7 +108,7 @@ def get_default_accept_image_formats(
     ],
 ):
     """With default bentoML config, this returns:
-        ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
+    ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp']
     """
     return default_extensions
 

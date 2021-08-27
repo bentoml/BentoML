@@ -9,10 +9,9 @@ from .exceptions import MissingDependencyException
 MT = t.TypeVar("MT")
 
 try:
-    # this has to be able to find the arch and OS specific PyRuntime .so file
     from PyRuntime import ExecutionSession
 except ImportError:
-    raise MissingDependencyException("PyRuntime package library must be in python path")
+    raise MissingDependencyException("PyRuntime is not found in PYTHONPATH")
 
 
 class ONNXMlirModel(Model):

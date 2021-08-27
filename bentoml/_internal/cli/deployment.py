@@ -78,7 +78,8 @@ def get_deployment_sub_command():
             )
             raise CLIException(f"{error_code}:{error_message}")
         _echo(
-            f"Successfully created deployment {deployment_name}", CLI_COLOR_SUCCESS,
+            f"Successfully created deployment {deployment_name}",
+            CLI_COLOR_SUCCESS,
         )
         _print_deployment_info(result.deployment, output)
 
@@ -109,7 +110,8 @@ def get_deployment_sub_command():
             )
             raise CLIException(f"{error_code}:{error_message}")
         _echo(
-            f"Successfully applied deployment {deployment_name}", CLI_COLOR_SUCCESS,
+            f"Successfully applied deployment {deployment_name}",
+            CLI_COLOR_SUCCESS,
         )
         _print_deployment_info(result.deployment, output)
 
@@ -183,7 +185,10 @@ def get_deployment_sub_command():
     #     default=ALL_NAMESPACE_TAG,
     # )
     @click.option(
-        "-p", "--platform", type=click.Choice(["sagemaker", "lambda"]), help="platform",
+        "-p",
+        "--platform",
+        type=click.Choice(["sagemaker", "lambda"]),
+        help="platform",
     )
     @click.option(
         "--limit",
@@ -198,7 +203,9 @@ def get_deployment_sub_command():
         "In (value3, value3a), key4 DoesNotExist)",
     )
     @click.option(
-        "--order-by", type=click.Choice(["created_at", "name"]), default="created_at",
+        "--order-by",
+        type=click.Choice(["created_at", "name"]),
+        default="created_at",
     )
     @click.option(
         "--asc/--desc",

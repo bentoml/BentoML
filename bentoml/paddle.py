@@ -4,20 +4,16 @@ from distutils.dir_util import copy_tree
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
-    import paddle
-    import paddle.inference as pi
-except ImportError:
-    raise MissingDependencyException(
-        "paddlepaddle is required by PaddlePaddleModel and PaddleHubModel"
-    )
-
-try:
-    import paddlehub as hub
-except ImportError:
-    hub = None
+if t.TYPE_CHECKING:
+    import paddle  # pylint: disable=unused-import
+    import paddle.inference as pi  # pylint: disable=unused-import
+    import paddlehub as hub  # pylint: disable=unused-import
+else:
+    paddle = LazyLoader("paddle", globals(), "paddle")
+    pi = LazyLoader("pi", globals(), "paddle.inference")
+    hub = LazyLoader("hub", globals(), "paddlehub")
 
 
 class PaddlePaddleModel(Model):
@@ -46,29 +42,27 @@ class PaddlePaddleModel(Model):
     PADDLE_MODEL_EXTENSION: str = ".pdmodel"
     PADDLE_PARAMS_EXTENSION: str = ".pdiparams"
 
-    _model: t.Union[paddle.nn.Layer, paddle.inference.Predictor]
+    _model: t.Union["paddle.nn.Layer", "pi.Predictor"]
 
     def __init__(
         self,
-        model: t.Union[paddle.nn.Layer, paddle.inference.Predictor],
+        model: t.Union["paddle.nn.Layer", "pi.Predictor"],
         metadata: t.Optional[MetadataType] = None,
     ):
         super(PaddlePaddleModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(
-        cls, path: PathType, config: t.Optional[pi.Config] = None
-    ) -> paddle.inference.Predictor:
+    def load(  # pylint: disable=arguments-differ
+        cls, path: PathType, config: t.Optional["pi.Config"] = None
+    ) -> "pi.Predictor":
         # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
-        if config is not None:
-            _config = config
-        else:
-            _config = pi.Config(
+        if config is None:
+            config = pi.Config(
                 os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_MODEL_EXTENSION}"),
                 os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_PARAMS_EXTENSION}"),
             )
-            _config.enable_memory_optim()
-        return pi.create_predictor(_config)
+            config.enable_memory_optim()
+        return pi.create_predictor(config)
 
     def save(self, path: PathType) -> None:
         # Override the model path if temp dir was set
@@ -102,8 +96,6 @@ class PaddleHubModel(Model):
     """
 
     def __init__(self, model: PathType, metadata: t.Optional[MetadataType] = None):
-        if hub is None:
-            raise MissingDependencyException("paddlehub is required by PaddleHubModel")
         if os.path.isdir(model):
             module = hub.Module(directory=model)
             self._dir = str(model)
@@ -121,17 +113,15 @@ class PaddleHubModel(Model):
 
     @classmethod
     def load(cls, path: PathType) -> t.Any:
-        if hub is None:
-            raise MissingDependencyException("paddlehub is required by PaddleHubModel")
         # https://github.com/PaddlePaddle/PaddleHub/blob/release/v2.1/paddlehub/module/module.py#L233
         # we don't have a custom name, so this should be stable
         # TODO: fix a bug when loading as module
         model_fpath = os.path.join(path, "__model__")
         if os.path.isfile(model_fpath):
-            from paddlehub.module.manager import LocalModuleManager
+            import paddlehub.module.manager as manager  # noqa
 
-            manager = LocalModuleManager()
-            module_class = manager.install(directory=str(path))
+            man = manager.LocalModuleManager()
+            module_class = man.install(directory=str(path))
             module_class.directory = str(path)
             return module_class
         else:

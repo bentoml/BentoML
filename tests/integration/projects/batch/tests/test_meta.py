@@ -92,7 +92,9 @@ async def test_cors(host):
 )
 async def test_api_server_metrics(host, metrics):
     await pytest.assert_request(
-        "POST", f"http://{host}/echo_json", data='"hi"',
+        "POST",
+        f"http://{host}/echo_json",
+        data='"hi"',
     )
 
     await pytest.assert_request(

@@ -351,8 +351,7 @@ def _bundle_local_bentoml_if_installed_from_source(target_path):
 
 
 def _upload_file_to_remote_path(remote_path, file_path: str, file_name: str):
-    """Upload file to remote path
-    """
+    """Upload file to remote path"""
     parsed_url = urlparse(remote_path)
     bucket_name = parsed_url.netloc
     object_prefix_path = parsed_url.path.lstrip("/")

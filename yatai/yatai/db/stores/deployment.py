@@ -144,7 +144,9 @@ class DeploymentStore(object):
                 sess.query(Deployment).filter_by(name=name, namespace=namespace).one()
             )
             LabelStore.delete(
-                sess, resource_type=RESOURCE_TYPE.deployment, resource_id=deployment.id,
+                sess,
+                resource_type=RESOURCE_TYPE.deployment,
+                resource_id=deployment.id,
             )
             return sess.delete(deployment)
         except NoResultFound:

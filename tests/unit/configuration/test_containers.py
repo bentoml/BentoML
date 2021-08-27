@@ -56,7 +56,8 @@ invalid_key1:
 
     with pytest.raises(BentoMLConfigException) as e:
         BentoMLConfiguration(
-            default_config_file=config.name, validate_schema=True,
+            default_config_file=config.name,
+            validate_schema=True,
         )
 
     assert e is not None
@@ -77,7 +78,8 @@ bento_server:
 
     container.config.set(
         BentoMLConfiguration(
-            default_config_file=config_auto_workers.name, validate_schema=False,
+            default_config_file=config_auto_workers.name,
+            validate_schema=False,
         ).as_dict(),
     )
     os.remove(config_auto_workers.name)
@@ -96,7 +98,8 @@ bento_server:
 
     container.config.set(
         BentoMLConfiguration(
-            default_config_file=config_manual_workers.name, validate_schema=False,
+            default_config_file=config_manual_workers.name,
+            validate_schema=False,
         ).as_dict(),
     )
     os.remove(config_manual_workers.name)

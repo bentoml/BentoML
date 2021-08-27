@@ -18,7 +18,7 @@ YML_EXTENSION: str = ".yml"
 MODEL_NAMESPACE: str = "bentoml_model"
 
 
-def _check_dir_path_exists_or_create(path: PathType) -> None:
+def _validate_or_create_dir(path: PathType) -> None:
     path = Path(path)
 
     if path.exists():
@@ -39,21 +39,21 @@ class Model(object):
             Given model definition. Omit various type depending on given frameworks.
         metadata (`Dict[str, Any]`,  `optional`, default to `None`):
             Class metadata
-    
+
     .. note::
-        Make sure to add ``# noqa # pylint: disable=arguments-differ`` to :meth:`load` when implementing 
+        Make sure to add ``# noqa # pylint: disable=arguments-differ`` to :meth:`load` when implementing
         newly integration or custom artifacts if the behaviour of ``load`` subclass takes different parameters
-        
+
         .. code-block:: python
 
             from bentoml._internal.artifacts import Model
-            
+
             class CustomModel(Model):
                 def __init__(self, model, metadata=None):...
 
                 @classmethod
                 def load(cls, path: str, args1, args2):...  # noqa # pylint: disable=arguments-differ
-            
+
     Example usage for creating a custom ``Model``::
 
         TODO:
@@ -79,7 +79,7 @@ class Model(object):
         This will be used as a class method, interchangeable with
         :meth:`save` to load model during development pipeline.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def save(self: "Model", path: PathType) -> None:
         """
@@ -106,18 +106,19 @@ class Model(object):
             for method overloading, this ensures that model metadata will always be saved
             to given directory.
         """  # noqa # pylint: enable=line-too-long
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def __getattribute__(self: "Model", item: str) -> t.Any:
         if item == "save":
 
             def wrapped_save(*args, **kw):  # type: ignore
                 path: PathType = args[0]  # save(self, path)
-                _check_dir_path_exists_or_create(path)
+                _validate_or_create_dir(path)
                 if self.metadata:
                     yaml = YAML()
                     yaml.dump(
-                        self.metadata, Path(path, f"{MODEL_NAMESPACE}{YML_EXTENSION}"),
+                        self.metadata,
+                        Path(path, f"{MODEL_NAMESPACE}{YML_EXTENSION}"),
                     )
 
                 inherited = object.__getattribute__(self, item)

@@ -77,7 +77,8 @@ def metrics_patch(cls):
             func = super(_MarshalApp, self).request_dispatcher
             api_route = request.match_info.get("path", "/")
             _metrics_request_in_progress = self.metrics_request_in_progress.labels(
-                endpoint=api_route, http_method=request.method,
+                endpoint=api_route,
+                http_method=request.method,
             )
             _metrics_request_in_progress.inc()
             time_st = time.time()
@@ -212,7 +213,9 @@ class MarshalApp:
 
         if self._conn is None or self._conn.closed:
             if self.outbound_unix_socket:
-                self._conn = aiohttp.UnixConnector(path=self.outbound_unix_socket,)
+                self._conn = aiohttp.UnixConnector(
+                    path=self.outbound_unix_socket,
+                )
             else:
                 self._conn = aiohttp.TCPConnector(limit=30)
         return self._conn
@@ -335,7 +338,11 @@ class MarshalApp:
                     body = await resp.read()
             except ClientConnectionError:
                 return Response(status=503, body=b"Service Unavailable")
-        return Response(status=resp.status, body=body, headers=resp.headers,)
+        return Response(
+            status=resp.status,
+            body=body,
+            headers=resp.headers,
+        )
 
     async def _batch_handler_template(self, requests, api_route, max_latency):
         """
@@ -382,7 +389,8 @@ class MarshalApp:
                 )
             except asyncio.TimeoutError as e:
                 raise RemoteException(
-                    e, payload=HTTPResponse(status=408, body=b"Request timeout"),
+                    e,
+                    payload=HTTPResponse(status=408, body=b"Request timeout"),
                 )
 
             if resp.status != 200:
@@ -440,7 +448,8 @@ class MarshalApp:
 
     @inject
     def run(
-        self, port=Provide[BentoMLContainer.config.bento_server.port],
+        self,
+        port=Provide[BentoMLContainer.config.bento_server.port],
     ):
         logger.info("Starting BentoML API proxy in development mode..")
         from aiohttp.web import run_app

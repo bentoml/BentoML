@@ -12,15 +12,14 @@ from ._internal.models.base import (
     Model,
 )
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-# fmt: off
-try:
-    import tensorflow as tf
-    from tensorflow import keras
-except ImportError:
-    raise MissingDependencyException("tensorflow is required by KerasModel as backend runtime.")  # noqa
-# fmt: on
+if t.TYPE_CHECKING:
+    import tensorflow as tf  # pylint: disable=unused-import
+    import tensorflow.keras as tfk  # pylint: disable=unused-import
+else:
+    tf = LazyLoader("tf", globals(), "tensorflow")
+    tfk = LazyLoader("tfk", globals(), "tensorflow.keras")
 
 
 class KerasModel(Model):
@@ -58,7 +57,7 @@ class KerasModel(Model):
 
     def __init__(
         self,
-        model: "keras.models.Model",
+        model: "tfk.models.Model",
         store_as_json: t.Optional[bool] = False,
         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[MetadataType] = None,
@@ -85,7 +84,7 @@ class KerasModel(Model):
         return os.path.join(path, f"{MODEL_NAMESPACE}_json{JSON_EXTENSION}")
 
     @classmethod
-    def load(cls, path: PathType) -> "keras.models.Model":
+    def load(cls, path: PathType) -> "tfk.models.Model":
         default_custom_objects = None
         if os.path.isfile(cls.__get_custom_obj_fpath(path)):
             with open(cls.__get_custom_obj_fpath(path), "rb") as dco_file:
@@ -96,13 +95,13 @@ class KerasModel(Model):
                 # load keras model via json and weights since json file are in path
                 with open(cls.__get_model_json_fpath(path), "r") as json_file:
                     model_json = json_file.read()
-                obj = keras.models.model_from_json(
+                obj = tfk.models.model_from_json(
                     model_json, custom_objects=default_custom_objects
                 )
                 obj.load_weights(cls.__get_model_weight_fpath(path))
             else:
                 # otherwise, load keras model via standard load_model
-                obj = keras.models.load_model(
+                obj = tfk.models.load_model(
                     cls.__get_model_saved_fpath(path),
                     custom_objects=default_custom_objects,
                 )

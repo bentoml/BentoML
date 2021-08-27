@@ -3,28 +3,26 @@
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
-echo "Running flake8 on bentoml, yatai module..."
+log(){
+	echo -e "\033[2mINFO::\033[0m \e[1;32m$*\e[m" 1>&2
+}
+
+log "Running flake8 on bentoml, yatai directory..."
 flake8 --config=.flake8 bentoml yatai/yatai
 
-echo "Running flake8 on docker directory..."
-flake8 --config=.flake8 docker/manager.py docker/utils.py
+log "Running flake8 on test, docker directory..."
+flake8 --config=.flake8 tests docker
 
-echo "Running flake8 on test module..."
-flake8 --config=.flake8 tests
-
-echo "Running pylint on bentoml, yatai module..."
+log "Running pylint on bentoml, yatai directory..."
 pylint --rcfile="./pylintrc" bentoml yatai/yatai
 
-echo "Running pylint on docker directory..."
-pylint --rcfile="./pylintrc" docker/manager.py docker/utils.py
+log "Running pylint on test, docker directory..."
+pylint --rcfile="./pylintrc" tests docker
 
-echo "Running pylint on test module..."
-pylint --rcfile="./pylintrc" tests
-
-echo "Running mypy on bentoml, yatai module..."
+log "Running mypy on bentoml, yatai directory..."
 mypy --config-file "$GIT_ROOT"/mypy.ini bentoml yatai
 
-echo "Running mypy on docker module..."
+log "Running mypy on docker directory..."
 mypy --config-file "$GIT_ROOT"/mypy.ini docker
 
-echo "Done"
+log "Done"

@@ -2,16 +2,14 @@ import typing as t
 
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
-    import jax  # noqa # pylint: disable=unused-import
-except ImportError:
-    raise MissingDependencyException("jax is required by FlaxModel and TraxModel")
-try:
+if t.TYPE_CHECKING:
     import flax  # pylint: disable=unused-import
-except ImportError:
-    raise MissingDependencyException("flax is required by FlaxModel")
+    import jax  # pylint: disable=unused-import
+else:
+    jax = LazyLoader("jax", globals(), "jax")
+    flax = LazyLoader("flax", globals(), "flax")
 
 
 class FlaxModel(Model):
@@ -42,7 +40,9 @@ class FlaxModel(Model):
     """
 
     def __init__(
-        self, model: "flax.linen.Module", metadata: t.Optional[MetadataType] = None,
+        self,
+        model: "flax.linen.Module",
+        metadata: t.Optional[MetadataType] = None,
     ):
         super(FlaxModel, self).__init__(model, metadata=metadata)
 

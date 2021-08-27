@@ -41,6 +41,7 @@ install_requires = [
     "chardet",
     "simple-di==0.1.1",
     "cloudpickle",
+    "mypy",
 ]
 
 
@@ -53,7 +54,7 @@ model_server_requires = [
 test_requires = [
     "idna<=2.8",  # for moto
     "ecdsa==0.14",  # for moto
-    "black==19.10b0",
+    "black==21.4b2",
     "codecov",
     "coverage>=4.4",
     "flake8>=3.8.2",

@@ -53,7 +53,9 @@ def start_dev_server(
     import multiprocessing
 
     model_server_proc = multiprocessing.Process(
-        target=_start_dev_server, args=(BentoMLContainer,), daemon=True,
+        target=_start_dev_server,
+        args=(BentoMLContainer,),
+        daemon=True,
     )
     model_server_proc.start()
 

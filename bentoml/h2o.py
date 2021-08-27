@@ -3,15 +3,14 @@ import typing as t
 
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
-    import h2o
-
-    if t.TYPE_CHECKING:
-        import h2o.model
-except ImportError:
-    raise MissingDependencyException("h2o is required by H2OModel")
+if t.TYPE_CHECKING:
+    import h2o  # pylint: disable=unused-import
+    import h2o.model as hm  # pylint: disable=unused-import
+else:
+    h2o = LazyLoader("h2o", globals(), "h2o")
+    hm = LazyLoader("hm", globals(), "h2o.model")
 
 
 class H2OModel(Model):
@@ -40,13 +39,13 @@ class H2OModel(Model):
 
     def __init__(
         self,
-        model: "h2o.model.model_base.ModelBase",
+        model: "hm.model_base.ModelBase",
         metadata: t.Optional[MetadataType] = None,
     ):
         super(H2OModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    def load(cls, path: PathType) -> "h2o.model.model_base.ModelBase":
+    def load(cls, path: PathType) -> "hm.model_base.ModelBase":
         h2o.init()
         h2o.no_progress()
         # NOTE: model_path should be the first item in

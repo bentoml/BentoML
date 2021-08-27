@@ -448,7 +448,10 @@ def create_bento_service_cli(
             )
         with Spinner(spinner_message):
             tag: str = yatai_client.repository.containerize(
-                bento=bento_tag, tag=tag, build_args=docker_build_args, push=push,
+                bento=bento_tag,
+                tag=tag,
+                build_args=docker_build_args,
+                push=push,
             )
             _echo(f"\nBuild container image: {tag}", CLI_COLOR_SUCCESS)
 

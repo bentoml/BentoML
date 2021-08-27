@@ -217,7 +217,8 @@ def test_gunicorn_serve_command():
         "bentoml.cli.bento_service.start_prod_server"
     ) as mocked_start_prod_server:
         runner.invoke(
-            gunicorn_cmd, ["/"],
+            gunicorn_cmd,
+            ["/"],
         )
         mocked_start_prod_server.assert_called()
         mocked_start_prod_server.assert_called_with(
@@ -267,7 +268,8 @@ def test_serve_command():
         "bentoml.cli.bento_service.start_dev_server",
     ) as mocked_start_dev_server:
         runner.invoke(
-            serve_cmd, ["/"],
+            serve_cmd,
+            ["/"],
         )
         mocked_start_dev_server.assert_called()
         mocked_start_dev_server.assert_called_with(

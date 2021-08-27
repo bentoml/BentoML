@@ -161,7 +161,9 @@ def add_bento_sub_command(cli):
         "In (value3, value3a), key4 DoesNotExist)",
     )
     @click.option(
-        "--order-by", type=click.Choice(["created_at", "name"]), default="created_at",
+        "--order-by",
+        type=click.Choice(["created_at", "name"]),
+        default="created_at",
     )
     @click.option("--ascending-order", is_flag=True)
     @click.option(
@@ -226,17 +228,17 @@ def add_bento_sub_command(cli):
     ):
         """Delete bento bundles in target YataiService. When the --yatai-url option is not specified, it will use local Yatai by default.
 
-Specify target service bundles to remove:
+        Specify target service bundles to remove:
 
-* Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
+        * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
 
-* Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
+        * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
 
-* Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+        * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
 
-* Bulk delete by tag, e.g.: `bentoml delete --tag env=dev`
+        * Bulk delete by tag, e.g.: `bentoml delete --tag env=dev`
 
-* Bulk delete all, e.g.: `bentoml delete --all`
+        * Bulk delete all, e.g.: `bentoml delete --all`
         """  # noqa
         yc = get_yatai_client(yatai_url)
         # Backward compatible with the previous CLI, allows deletion with tag/s
@@ -265,10 +267,14 @@ Specify target service bundles to remove:
                     )
         else:
             yc.repository.delete(
-                prune=all, labels=labels, require_confirm=False if yes else True,
+                prune=all,
+                labels=labels,
+                require_confirm=False if yes else True,
             )
 
-    @cli.command(help="Pull BentoService from remote yatai server",)
+    @cli.command(
+        help="Pull BentoService from remote yatai server",
+    )
     @click.argument("bento", type=click.STRING)
     @click.option(
         "--yatai-url",

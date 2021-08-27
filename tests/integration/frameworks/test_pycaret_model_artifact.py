@@ -24,7 +24,12 @@ def predict_data(model, data):
 def test_pycaret_save_load(tmpdir):
     data, expected = set_dataset()
     _ = pycaret_setup(
-        data=data, target="default", silent=True, html=False, session_id=420, n_jobs=1,
+        data=data,
+        target="default",
+        silent=True,
+        html=False,
+        session_id=420,
+        n_jobs=1,
     )
     dt = create_model("dt")  # create a decision tree classifier
     tdt = tune_model(dt)

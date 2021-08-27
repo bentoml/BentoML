@@ -4,14 +4,15 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import _flatten_list
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.utils import LazyLoader, _flatten_list
+from .exceptions import BentoMLException
 
-try:
-    import onnx
-    import onnxruntime
-except ImportError:
-    raise MissingDependencyException('"onnx" package is required by ONNXModel')
+if t.TYPE_CHECKING:
+    import onnx  # pylint: disable=unused-import
+    import onnxruntime  # pylint: disable=unused-import
+else:
+    onnx = LazyLoader("onnx", globals(), "onnx")
+    onnxruntime = LazyLoader("onnxruntime", globals(), "onnxruntime")
 
 
 class ONNXModel(Model):
@@ -53,7 +54,7 @@ class ONNXModel(Model):
 
     def __init__(
         self,
-        model: t.Union[PathType, onnx.ModelProto],
+        model: t.Union[PathType, "onnx.ModelProto"],
         backend: t.Optional[str] = "onnxruntime",
         metadata: t.Optional[MetadataType] = None,
     ):
@@ -69,18 +70,18 @@ class ONNXModel(Model):
         return os.path.join(path, f"{MODEL_NAMESPACE}{cls.ONNX_EXTENSION}")
 
     @classmethod
-    def load(
+    def load(  # pylint: disable=arguments-differ
         cls,
-        path: t.Union[PathType, onnx.ModelProto],
+        path: t.Union[PathType, "onnx.ModelProto"],
         backend: t.Optional[str] = "onnxruntime",
-        sess_opts: t.Optional[onnxruntime.SessionOptions] = None,
         providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
+        sess_opts: t.Optional["onnxruntime.SessionOptions"] = None,
     ) -> "onnxruntime.InferenceSession":
         if backend not in cls.SUPPORTED_ONNX_BACKEND:
             raise BentoMLException(
                 f'"{backend}" runtime is currently not supported for ONNXModel'
             )
-        if providers:
+        if providers is not None:
             if not all(
                 i in onnxruntime.get_all_providers() for i in _flatten_list(providers)
             ):

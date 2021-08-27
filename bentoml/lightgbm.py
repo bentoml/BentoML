@@ -3,12 +3,12 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, TXT_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-try:
-    import lightgbm
-except ImportError:
-    raise MissingDependencyException("lightgbm is required by LightGBMModel")
+if t.TYPE_CHECKING:
+    import lightgbm  # pylint: disable=unused-import
+else:
+    lightgbm = LazyLoader("lightgbm", globals(), "lightgbm")
 
 
 class LightGBMModel(Model):
@@ -35,7 +35,9 @@ class LightGBMModel(Model):
     """
 
     def __init__(
-        self, model: "lightgbm.Booster", metadata: t.Optional[MetadataType] = None,
+        self,
+        model: "lightgbm.Booster",
+        metadata: t.Optional[MetadataType] = None,
     ):
         super(LightGBMModel, self).__init__(model, metadata=metadata)
 

@@ -229,7 +229,8 @@ class HTTPRequest:
     @classmethod
     def from_flask_request(cls, request):
         return cls(
-            tuple((k, v) for k, v in request.headers.items()), request.get_data(),
+            tuple((k, v) for k, v in request.headers.items()),
+            request.get_data(),
         )
 
     def to_flask_request(self):
@@ -327,7 +328,9 @@ class InferenceResult(Generic[Output]):
 
     @classmethod
     def complete_discarded(
-        cls, tasks: Iterable["InferenceTask"], results: Iterable["InferenceResult"],
+        cls,
+        tasks: Iterable["InferenceTask"],
+        results: Iterable["InferenceResult"],
     ) -> Iterator["InferenceResult"]:
         """
         Generate InferenceResults based on successful inference results and

@@ -174,7 +174,12 @@ class DataframeInput(StringInput):
     @property
     def config(self):
         base_config = super().config
-        return dict(base_config, orient=self.orient, typ=self.typ, dtype=self.dtype,)
+        return dict(
+            base_config,
+            orient=self.orient,
+            typ=self.typ,
+            dtype=self.dtype,
+        )
 
     def _get_type(self, item):
         if item.startswith("int"):
@@ -242,7 +247,11 @@ class DataframeInput(StringInput):
         )
 
         df, batchs = read_dataframes_from_json_n_csv(
-            datas, fmts, orient=self.orient, columns=self.columns, dtype=self.dtype,
+            datas,
+            fmts,
+            orient=self.orient,
+            columns=self.columns,
+            dtype=self.dtype,
         )
 
         if df is None:
@@ -264,7 +273,10 @@ class DataframeInput(StringInput):
         return (df,)
 
     def from_inference_job(
-        self, input_=None, input_file=None, **extra_args,
+        self,
+        input_=None,
+        input_file=None,
+        **extra_args,
     ) -> Iterator[InferenceTask[str]]:
         # TODO: generate small batches of InferenceTasks from large input files
         return super().from_inference_job(

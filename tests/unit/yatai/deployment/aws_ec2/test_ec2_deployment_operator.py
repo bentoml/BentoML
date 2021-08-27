@@ -98,7 +98,8 @@ def test_make_cloudformation_template(tmpdir):
     MagicMock(),
 )
 @patch(
-    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service", MagicMock(),
+    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service",
+    MagicMock(),
 )
 def test_ec2_add_success():
     def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
@@ -303,7 +304,8 @@ def test_ec2_describe_no_bucket_failure():
     MagicMock(),
 )
 @patch(
-    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service", MagicMock(),
+    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service",
+    MagicMock(),
 )
 def test_ec2_update_success():
     def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument
@@ -364,7 +366,8 @@ def test_ec2_update_success():
     MagicMock(),
 )
 @patch(
-    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service", MagicMock(),
+    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service",
+    MagicMock(),
 )
 @patch(
     "bentoml.yatai.deployment.aws_ec2.operator.AwsEc2DeploymentOperator.describe",
@@ -395,7 +398,8 @@ def test_ec2_update_describe_failure():
     MagicMock(),
 )
 @patch(
-    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service", MagicMock(),
+    "bentoml.yatai.deployment.aws_ec2.operator.deploy_ec2_service",
+    MagicMock(),
 )
 def test_ec2_update_no_bucket_failure():
     def mock_boto_client(self, op_name, args):  # pylint: disable=unused-argument

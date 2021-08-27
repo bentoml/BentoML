@@ -278,7 +278,7 @@ class DeploymentAPIClient:
         data_capture_s3_prefix=None,
         data_capture_sample_percent=None,
     ):
-        """ Update current sagemaker deployment
+        """Update current sagemaker deployment
 
         Args:
             namespace:

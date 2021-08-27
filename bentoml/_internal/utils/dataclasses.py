@@ -5,7 +5,7 @@ from dataclasses import is_dataclass
 
 
 class DataclassJsonEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
+    """Special json encoder for numpy types"""
 
     def default(self, o):  # pylint: disable=method-hidden
         if is_dataclass(o):

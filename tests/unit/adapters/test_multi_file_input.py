@@ -45,7 +45,10 @@ def test_file_input_aws_lambda_event(input_adapter, bin_file):
     file_bytes = open(str(bin_file), "rb").read()
 
     body, content_type = encode_multipart_formdata(
-        dict(x=("test.bin", file_bytes), y=("test.bin", file_bytes),)
+        dict(
+            x=("test.bin", file_bytes),
+            y=("test.bin", file_bytes),
+        )
     )
     headers = {"Content-Type": content_type}
     aws_lambda_event = {"headers": headers, "body": body}
@@ -59,7 +62,10 @@ def test_file_input_http_request_multipart_form(input_adapter, bin_file):
     file_bytes = open(str(bin_file), "rb").read()
 
     body, content_type = encode_multipart_formdata(
-        dict(x=("test.bin", file_bytes), y=("test.bin", file_bytes),)
+        dict(
+            x=("test.bin", file_bytes),
+            y=("test.bin", file_bytes),
+        )
     )
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
@@ -82,7 +88,11 @@ def test_file_input_http_request_malformatted_input_missing_file(
     headers = (("Content-Type", "images/jpeg"),)
     requests.append(HTTPRequest(headers=headers, body=body))
 
-    body, content_type = encode_multipart_formdata(dict(x=("test.bin", file_bytes),))
+    body, content_type = encode_multipart_formdata(
+        dict(
+            x=("test.bin", file_bytes),
+        )
+    )
     headers = (("Content-Type", content_type),)
     requests.append(HTTPRequest(headers=headers, body=body))
 
@@ -94,7 +104,11 @@ def test_file_input_http_request_none_file(bin_file):
     file_bytes = open(str(bin_file), "rb").read()
     allow_none_input_adapter = MultiFileInput(input_names=["x", "y"], allow_none=True)
 
-    body, content_type = encode_multipart_formdata(dict(x=("test.bin", file_bytes),))
+    body, content_type = encode_multipart_formdata(
+        dict(
+            x=("test.bin", file_bytes),
+        )
+    )
     headers = (("Content-Type", content_type),)
     request = HTTPRequest(headers=headers, body=body)
     task = allow_none_input_adapter.from_http_request(request)

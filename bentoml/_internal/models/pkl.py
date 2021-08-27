@@ -28,7 +28,9 @@ class PickleModel(Model):
     """
 
     def __init__(
-        self, model: t.Any, metadata: t.Optional[MetadataType] = None,
+        self,
+        model: t.Any,
+        metadata: t.Optional[MetadataType] = None,
     ):
         super(PickleModel, self).__init__(model, metadata=metadata)
 

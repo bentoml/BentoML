@@ -6,16 +6,19 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.utils import LazyLoader
+from .exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
-try:
-    import pyspark
-    import pyspark.ml
-    import pyspark.sql
-except ImportError:
-    raise MissingDependencyException("pyspark is required by PySparkMLlibModel")
+if t.TYPE_CHECKING:
+    import pyspark  # pylint: disable=unused-import
+    import pyspark.ml as ml  # pylint: disable=unused-import
+    import pyspark.sql as sql  # pylint: disable=unused-import
+else:
+    pyspark = LazyLoader("pyspark", globals(), "pyspark")
+    ml = LazyLoader("ml", globals(), "pyspark.ml")
+    sql = LazyLoader("sql", globals(), "pyspark.sql")
 
 # NOTE: the usage of SPARK_SESSION_NAMESPACE is to provide a consistent session
 #  among imports if users need to use SparkSession.
@@ -61,9 +64,11 @@ class PySparkMLlibModel(Model):
         TODO:
     """
 
+    _model: "pyspark.ml.Model"
+
     def __init__(
         self,
-        model: pyspark.ml.Model,
+        model: "pyspark.ml.Model",
         spark_session: t.Optional["pyspark.sql.SparkSession"] = None,
         metadata: t.Optional[MetadataType] = None,
     ):
@@ -73,10 +78,9 @@ class PySparkMLlibModel(Model):
         self._spark_sess = spark_session
 
     @classmethod
-    def load(cls, path: PathType) -> pyspark.ml.Model:
+    def load(cls, path: PathType) -> "pyspark.ml.Model":
 
         model_path: str = str(os.path.join(path, MODEL_NAMESPACE))
-        model: "pyspark.ml.Model"
 
         # NOTE (future ref): A large model metadata might
         #  comprise of multiple `part` files, instead of assigning,
@@ -100,11 +104,11 @@ class PySparkMLlibModel(Model):
         class_name = stripped_apache_module[-1]
 
         loaded_model = getattr(importlib.import_module(py_module), class_name)
-        if not issubclass(loaded_model, pyspark.ml.Model):
+        if not issubclass(loaded_model, ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=loaded_model))
-            # fmt: off
-            _spark_sess = pyspark.sql.SparkSession.builder.appName(SPARK_SESSION_NAMESPACE).getOrCreate()  # noqa: E501
-            # fmt: on
+            _spark_sess = sql.SparkSession.builder.appName(
+                SPARK_SESSION_NAMESPACE
+            ).getOrCreate()
             model = loaded_model.load(_spark_sess.sparkContext, model_path)
         else:
             model = loaded_model.load(model_path)
@@ -112,7 +116,7 @@ class PySparkMLlibModel(Model):
         return model
 
     def save(self, path: PathType) -> None:
-        if not isinstance(self._model, pyspark.ml.Model):
+        if not isinstance(self._model, ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=self._model))
             self._model.save(self._spark_sess, os.path.join(path, MODEL_NAMESPACE))
         else:

@@ -426,4 +426,7 @@ class ModelApp:
 
     @inject
     def metrics_view_func(self, client=Provide[BentoMLContainer.metrics_client]):
-        return Response(client.generate_latest(), mimetype=client.CONTENT_TYPE_LATEST,)
+        return Response(
+            client.generate_latest(),
+            mimetype=client.CONTENT_TYPE_LATEST,
+        )

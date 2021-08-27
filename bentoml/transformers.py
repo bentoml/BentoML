@@ -5,32 +5,36 @@ from importlib import import_module
 
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import InvalidArgument, MissingDependencyException, NotFound
+from ._internal.utils import LazyLoader
+from .exceptions import BentoMLException, InvalidArgument, NotFound
 
-try:
-    import transformers
-
-except ImportError:
-    raise MissingDependencyException("transformers is required by TransformersModel")
+if t.TYPE_CHECKING:
+    import transformers  # noqa # pylint: disable=unused-import
+    from transformers import (  # noqa # pylint: disable=unused-import
+        AutoTokenizer,
+        PreTrainedModel,
+    )
+    from transformers.models.auto.auto_factory import (  # noqa # pylint: disable=unused-import
+        _BaseAutoModelClass,
+    )
+else:
+    transformers = LazyLoader("transformers", globals(), "transformers")
 
 flax_supported: bool = transformers.__version__.startswith("4")
 if not flax_supported:
-    raise ImportError(
-        "BentoML will only support transformers 4.x in order to include Flax supports"
+    raise BentoMLException(
+        "BentoML will only support transformers 4.x forwards to support FlaxModel"
     )
 
 TransformersModelInput = t.TypeVar(
     "TransformersModelInput",
-    bound=t.Union[str, os.PathLike, transformers.PreTrainedModel],
+    bound=t.Union[str, os.PathLike, "PreTrainedModel"],
 )
 TransformersModelOutput = t.TypeVar(
     "TransformersModelOutput",
     bound=t.Dict[
         str,
-        t.Union[
-            transformers.models.auto.auto_factory._BaseAutoModelClass,
-            transformers.AutoTokenizer,
-        ],
+        t.Union["AutoTokenizer", "_BaseAutoModelClass"],
     ],
 )
 
@@ -106,12 +110,14 @@ class TransformersModel(Model):
     """  # noqa # pylint: enable=line-too-long
 
     def __init__(
-        self, model: TransformersModelInput, metadata: t.Optional[MetadataType] = None,
+        self,
+        model: TransformersModelInput,
+        metadata: t.Optional[MetadataType] = None,
     ):
         super(TransformersModel, self).__init__(model, metadata=metadata)
 
     @staticmethod
-    def __load_from_directory(
+    def _load_from_directory(
         path: PathType, model_type: str, tokenizer_type: str
     ) -> TransformersModelOutput:
         transformers_model = getattr(
@@ -123,7 +129,7 @@ class TransformersModel(Model):
         return {"model": transformers_model, "tokenizer": tokenizer}
 
     @staticmethod
-    def __load_from_string(model_name: str, lm_head: str) -> TransformersModelOutput:
+    def _load_from_string(model_name: str, lm_head: str) -> TransformersModelOutput:
         try:
             transformers_model = getattr(
                 import_module("transformers"), lm_head
@@ -134,7 +140,7 @@ class TransformersModel(Model):
             raise NotFound(f"{model_name} is not provided by transformers")
 
     @staticmethod
-    def __validate_transformers_dict(
+    def _validate_transformers_dict(
         transformers_dict: TransformersModelOutput,
     ) -> None:
         if not transformers_dict.get("model"):
@@ -165,7 +171,7 @@ class TransformersModel(Model):
             )
 
     @classmethod
-    def load(
+    def load(  # pylint: disable=arguments-differ
         cls,
         name_or_path_or_dict: t.Union[PathType, dict],
         framework: t.Optional[str] = "pt",
@@ -184,19 +190,19 @@ class TransformersModel(Model):
                     os.path.join(name_or_path, "__tokenizer_class_type.txt"), "r"
                 ) as f:
                     _tokenizer_type = f.read().strip()
-                loaded_dict = cls.__load_from_directory(
+                loaded_dict = cls._load_from_directory(
                     name_or_path, _model_type, _tokenizer_type
                 )
             else:
                 _lm_head = _lm_head_module_name(framework, lm_head)
-                loaded_dict = cls.__load_from_string(name_or_path, _lm_head)
+                loaded_dict = cls._load_from_string(name_or_path, _lm_head)
         else:
-            cls.__validate_transformers_dict(name_or_path_or_dict)
+            cls._validate_transformers_dict(name_or_path_or_dict)
             loaded_dict = name_or_path_or_dict
         return loaded_dict
 
     @staticmethod
-    def __save_model_type(path: PathType, model_type: str, tokenizer_type: str) -> None:
+    def _save_model_type(path: PathType, model_type: str, tokenizer_type: str) -> None:
         with open(os.path.join(path, "__model_class_type.txt"), "w") as f:
             f.write(model_type)
         with open(os.path.join(path, "__tokenizer_class_type.txt"), "w") as f:
@@ -207,4 +213,4 @@ class TransformersModel(Model):
         _tokenizer_type = self._model.get("tokenizer").__class__.__name__
         self._model.get("model").save_pretrained(path)
         self._model.get("tokenizer").save_pretrained(path)
-        self.__save_model_type(path, _model_type, _tokenizer_type)
+        self._save_model_type(path, _model_type, _tokenizer_type)

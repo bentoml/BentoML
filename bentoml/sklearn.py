@@ -3,19 +3,14 @@ import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
 MT = t.TypeVar("MT")
 
 try:
     import joblib
 except ImportError:
-    try:
-        from sklearn.externals import joblib
-    except ImportError:
-        raise MissingDependencyException(
-            "sklearn module is required to use SklearnModel"
-        )
+    joblib = LazyLoader("joblib", globals(), "sklearn.externals.joblib")
 
 
 class SklearnModel(Model):

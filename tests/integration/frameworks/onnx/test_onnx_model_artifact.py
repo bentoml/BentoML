@@ -12,7 +12,8 @@ from tests._internal.helpers import assert_have_file_extension
 
 
 def predict_arr(
-    model: onnxruntime.InferenceSession, arr: np.array,
+    model: onnxruntime.InferenceSession,
+    arr: np.array,
 ):
     input_data = arr.astype(np.float32)
     input_name = model.get_inputs()[0].name
@@ -59,23 +60,20 @@ def test_load_with_options(sklearn_onnx_model, tmpdir):
     _model, data = sklearn_onnx_model
     ONNXModel(_model).save(tmpdir)
     opts = onnxruntime.SessionOptions()
-    opts.intra_op_num_threads = 2
-    opts.inter_op_num_threads = 2
-    opts.execution_mode = onnxruntime.ExecutionMode.ORT_PARALLEL
+    opts.intra_op_num_threads = 1
+    opts.inter_op_num_threads = 1
+    opts.execution_mode = onnxruntime.ExecutionMode.ORT_SEQUENTIAL
     opts.log_verbosity_level = 1
     loaded = ONNXModel.load(tmpdir, sess_opts=opts)
     assert predict_arr(loaded, data)[0] == 0
 
 
-def test_onnx_save_load_proto_onnxruntime(sklearn_onnx_model, tmpdir):
+def test_onnx_save_load_proto_onnxruntime(sklearn_onnx_model):
     _model, data = sklearn_onnx_model
-    ONNXModel(_model).save(tmpdir)
-    assert_have_file_extension(tmpdir, ".onnx")
-
     model: "onnxruntime.InferenceSession" = onnxruntime.InferenceSession(
         _model.SerializeToString()
     )
-    onnx_loaded: "onnxruntime.InferenceSession" = ONNXModel.load(tmpdir)
+    onnx_loaded: "onnxruntime.InferenceSession" = ONNXModel.load(_model)
     assert predict_arr(onnx_loaded, data)[0] == predict_arr(model, data)[0]
 
 

@@ -159,7 +159,11 @@ class YataiContainerClass:
 
     logging_file_directory = providers.Factory(
         lambda default, customized: customized or default,
-        providers.Factory(os.path.join, bentoml_home, "logs",),
+        providers.Factory(
+            os.path.join,
+            bentoml_home,
+            "logs",
+        ),
         config.logging.file.directory,
     )
 

@@ -194,11 +194,16 @@ def read_dataframes_from_json_n_csv(
     try:
         if not header:
             df = pandas.read_csv(
-                io.StringIO(table), index_col=None, dtype=dtype, header=None,
+                io.StringIO(table),
+                index_col=None,
+                dtype=dtype,
+                header=None,
             )
         else:
             df = pandas.read_csv(
-                io.StringIO("\n".join((header, table))), index_col=None, dtype=dtype,
+                io.StringIO("\n".join((header, table))),
+                index_col=None,
+                dtype=dtype,
             )
         return df, lens
     except pandas.errors.EmptyDataError:

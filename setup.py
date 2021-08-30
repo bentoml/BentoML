@@ -8,33 +8,21 @@ with open("README.md", "r", encoding="utf8") as f:
 install_requires = [
     "aiohttp",
     "aiohttp_cors==0.7.0",
-    "alembic",
     "urllib3<=1.25.11",
-    "boto3",
-    "cerberus",
-    "certifi",
+    "cerberus", # data validation
     "click>=7.0",
-    "configparser",
     "deepmerge",
     "docker",
-    "flask",
-    "grpcio",
-    "gunicorn",
     "humanfriendly",
     "numpy",
     "packaging",
-    "prometheus_client",
-    "protobuf>=3.8.0",
     "psutil",
     # python-dateutil required by pandas and boto3, this makes sure the version
     # works for both
     "python-dateutil>=2.7.3,<3.0.0",
-    "python-json-logger",
     "requests",
     "ruamel.yaml>=0.15.0",
     "schema",
-    "sqlalchemy-utils<0.36.8",
-    "sqlalchemy>=1.3.0,<1.4.0",
     "tabulate",
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
@@ -48,6 +36,8 @@ model_server_requires = [
     "opentracing",
     "py_zipkin",
     "jaeger_client",
+    "prometheus_client",
+    "python-json-logger",
 ]
 
 test_requires = [

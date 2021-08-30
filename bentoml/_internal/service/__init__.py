@@ -2,17 +2,8 @@ import logging
 import re
 from typing import List
 
-# from ..adapters import BaseInputAdapter, BaseOutputAdapter, DefaultOutput
 from bentoml.exceptions import InvalidArgument, NotFound
 
-# from bentoml.saved_bundle.config import (
-#     DEFAULT_MAX_BATCH_SIZE,
-#     DEFAULT_MAX_LATENCY,
-#     SavedBundleConfig,
-# )
-# from bentoml.saved_bundle.pip_pkg import seek_pip_packages
-# from bentoml.service.artifacts import ArtifactCollection, ServiceArtifact
-# from bentoml.service.env import ServiceEnv
 from ..inference_api.inference_api import InferenceAPI
 
 BENTOML_RESERVED_API_NAMES = [

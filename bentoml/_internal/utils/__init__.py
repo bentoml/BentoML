@@ -26,7 +26,6 @@ from google.protobuf.message import Message
 
 if TYPE_CHECKING:
     from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
-    from bentoml._internal.yatai_client import YataiClient
 
 from .gcs import is_gcs_url
 from .lazy_loader import LazyLoader
@@ -273,11 +272,15 @@ def status_pb_to_error_code_and_message(pb_status) -> Tuple[int, str]:
 class catch_exceptions(Generic[T], object):
     def __init__(
         self,
-        exceptions: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
+        catch_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
+        throw_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
         fallback: Optional[T] = None,
+        raises: Optional[bool] = True,
     ) -> None:
-        self.exceptions = exceptions
-        self.fallback = fallback
+        self._catch_exc = catch_exc
+        self._throw_exc = throw_exc
+        self._fallback = fallback
+        self._raises = raises
 
     # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
     def __call__(self, func: Callable[..., T]) -> Callable[..., Optional[T]]:
@@ -285,8 +288,10 @@ class catch_exceptions(Generic[T], object):
         def _(*args: Any, **kwargs: Any) -> Optional[T]:
             try:
                 return func(*args, **kwargs)
-            except self.exceptions:
-                return self.fallback
+            except self._catch_exc:
+                if self._raises:
+                    raise self._throw_exc
+                return self._fallback
 
         return _
 

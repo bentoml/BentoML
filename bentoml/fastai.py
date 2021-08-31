@@ -1,20 +1,31 @@
 import os
 import typing as t
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader, catch_exceptions
+from .exceptions import BentoMLException, MissingDependencyException
 
-if t.TYPE_CHECKING:
-    import fastai  # pylint: disable=unused-import
-    import fastai.basics as basics  # pylint: disable=unused-import
+_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="fastai",
+        module=__name__,
+        inst="Make sure to install PyTorch first,"
+        " then `pip install fastai`. Refers to"
+        " https://github.com/fastai/fastai#installing",
+    )
+)
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    import fastai
+    import fastai.basics as basics
     import fastai.learner as learner
 else:
     fastai = LazyLoader("fastai", globals(), "fastai")
     basics = LazyLoader("basics", globals(), "fastai.basics")
     learner = LazyLoader("learner", globals(), "fastai.learner")
-    assert learner, MissingDependencyException("fastai2 is required by FastAIModel")
 
 
 class FastAIModel(Model):
@@ -42,19 +53,23 @@ class FastAIModel(Model):
 
     _model: "learner.Learner"
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def __init__(
         self,
         model: "learner.Learner",
         metadata: t.Optional[MetadataType] = None,
     ):
+        assert learner, BentoMLException("Only fastai2 is supported by BentoML")
         super(FastAIModel, self).__init__(model, metadata=metadata)
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def load(cls, path: PathType) -> "learner.Learner":
         return basics.load_learner(
             os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}")
         )
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def save(self, path: PathType) -> None:
         self._model.export(
             fname=os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}")

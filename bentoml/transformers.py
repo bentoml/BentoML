@@ -3,28 +3,34 @@ import pathlib
 import typing as t
 from importlib import import_module
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, InvalidArgument, NotFound
+from ._internal.utils import LazyLoader, catch_exceptions
+from .exceptions import (
+    BentoMLException,
+    InvalidArgument,
+    MissingDependencyException,
+    NotFound,
+)
 
-if t.TYPE_CHECKING:
-    import transformers  # noqa # pylint: disable=unused-import
-    from transformers import (  # noqa # pylint: disable=unused-import
-        AutoTokenizer,
-        PreTrainedModel,
+_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="transformers",
+        module=__name__,
+        inst="`pip install transformers`",
     )
-    from transformers.models.auto.auto_factory import (  # noqa # pylint: disable=unused-import
-        _BaseAutoModelClass,
-    )
+)
+
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    import transformers
+    from transformers import AutoTokenizer, PreTrainedModel  # noqa
+    from transformers.models.auto.auto_factory import _BaseAutoModelClass  # noqa
 else:
     transformers = LazyLoader("transformers", globals(), "transformers")
-
-flax_supported: bool = transformers.__version__.startswith("4")
-if not flax_supported:
-    raise BentoMLException(
-        "BentoML will only support transformers 4.x forwards to support FlaxModel"
-    )
 
 TransformersModelInput = t.TypeVar(
     "TransformersModelInput",
@@ -51,6 +57,15 @@ AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
     "masked": "ForMaskedLM",
     "seq-to-seq": "ForSeq2SeqLM",
 }
+
+
+@catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+def _check_flax_supported() -> None:
+    _supported: bool = transformers.__version__.startswith("4")
+    if not _supported:
+        raise BentoMLException(
+            "BentoML will only support transformers 4.x forwards to support FlaxModel"
+        )
 
 
 def _lm_head_module_name(framework: str, lm_head: str) -> str:
@@ -109,11 +124,13 @@ class TransformersModel(Model):
 
     """  # noqa # pylint: enable=line-too-long
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def __init__(
         self,
         model: TransformersModelInput,
         metadata: t.Optional[MetadataType] = None,
     ):
+        _check_flax_supported()
         super(TransformersModel, self).__init__(model, metadata=metadata)
 
     @staticmethod
@@ -171,6 +188,7 @@ class TransformersModel(Model):
             )
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def load(  # pylint: disable=arguments-differ
         cls,
         name_or_path_or_dict: t.Union[PathType, dict],
@@ -208,6 +226,7 @@ class TransformersModel(Model):
         with open(os.path.join(path, "__tokenizer_class_type.txt"), "w") as f:
             f.write(tokenizer_type)
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def save(self, path: PathType) -> None:
         _model_type = self._model.get("model").__class__.__name__
         _tokenizer_type = self._model.get("tokenizer").__class__.__name__

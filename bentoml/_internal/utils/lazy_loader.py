@@ -1,5 +1,6 @@
 import importlib
 import logging
+import sys
 import types
 
 logger = logging.getLogger(__name__)
@@ -25,13 +26,15 @@ class LazyLoader(types.ModuleType):
         self._warning = warning
         self._module = None
 
-        super(LazyLoader, self).__init__(name)
+        super(LazyLoader, self).__init__(str(name))
 
     def _load(self) -> types.ModuleType:
         """Load the module and insert it into the parent's globals."""
         # Import the target module and insert it into the parent's namespace
         module = importlib.import_module(self.__name__)
         self._parent_module_globals[self._local_name] = module
+        # The additional add to sys.modules ensures library is actually loaded.
+        sys.modules[self._local_name] = module
 
         # Emit a warning if one was specified
         if self._warning:
@@ -47,11 +50,11 @@ class LazyLoader(types.ModuleType):
         return module
 
     def __getattr__(self, item):
-        if not self._module:
+        if self._module is None:
             self._module = self._load()
         return getattr(self._module, item)
 
     def __dir__(self):
-        if not self._module:
+        if self._module is None:
             self._module = self._load()
         return dir(self._module)

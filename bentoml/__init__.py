@@ -21,11 +21,9 @@ from bentoml._internal.models import Model, PickleModel
 from bentoml._internal.repository import delete, get, ls, pull, push
 from bentoml._internal.server import serve
 from bentoml._internal.service import Service
-from bentoml._internal.yatai_client import YataiClient
 
 __all__ = [
     "__version__",
-    "YataiClient",
     "PickleModel",
     "Model",
     "ls",

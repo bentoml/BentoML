@@ -2,14 +2,35 @@ import os
 import typing as t
 from distutils.dir_util import copy_tree
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.utils import LazyLoader, catch_exceptions
+from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:
-    import paddle  # pylint: disable=unused-import
-    import paddle.inference as pi  # pylint: disable=unused-import
-    import paddlehub as hub  # pylint: disable=unused-import
+_paddle_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="paddlepaddle",
+        module=__name__,
+        inst="`pip install paddlepaddle` for CPU options"
+        " or `pip install paddlepaddle-gpu` for GPU options.",
+    )
+)
+
+_hub_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="paddlehub",
+        module=__name__,
+        inst="`pip install paddlepaddle`," " then `pip install paddlehub`",
+    )
+)
+
+
+if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
+    import paddle
+    import paddle.inference as pi
+    import paddlehub as hub
 else:
     paddle = LazyLoader("paddle", globals(), "paddle")
     pi = LazyLoader("pi", globals(), "paddle.inference")
@@ -52,6 +73,7 @@ class PaddlePaddleModel(Model):
         super(PaddlePaddleModel, self).__init__(model, metadata=metadata)
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_paddle_exc)
     def load(  # pylint: disable=arguments-differ
         cls, path: PathType, config: t.Optional["pi.Config"] = None
     ) -> "pi.Predictor":
@@ -64,6 +86,7 @@ class PaddlePaddleModel(Model):
             config.enable_memory_optim()
         return pi.create_predictor(config)
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_paddle_exc)
     def save(self, path: PathType) -> None:
         # Override the model path if temp dir was set
         # TODO(aarnphm): What happens if model is a paddle.inference.Predictor?
@@ -95,6 +118,7 @@ class PaddleHubModel(Model):
 
     """
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_hub_exc)
     def __init__(self, model: PathType, metadata: t.Optional[MetadataType] = None):
         if os.path.isdir(model):
             module = hub.Module(directory=model)
@@ -105,6 +129,7 @@ class PaddleHubModel(Model):
             self._dir = ""
         super(PaddleHubModel, self).__init__(module, metadata=metadata)
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_hub_exc)
     def save(self, path: PathType) -> None:
         if self._dir != "":
             copy_tree(self._dir, str(path))
@@ -112,6 +137,7 @@ class PaddleHubModel(Model):
             self._model.save_inference_model(path)
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_hub_exc)
     def load(cls, path: PathType) -> t.Any:
         # https://github.com/PaddlePaddle/PaddleHub/blob/release/v2.1/paddlehub/module/module.py#L233
         # we don't have a custom name, so this should be stable

@@ -7,7 +7,6 @@ import os
 # import numpy as np
 import pytest
 
-# from bentoml._internal.yatai_client import YataiClient
 # from tests.bento_services.service import MockBentoService
 
 

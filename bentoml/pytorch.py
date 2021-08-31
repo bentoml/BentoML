@@ -1,24 +1,44 @@
-import logging
 import os
 import typing as t
 import zipfile
 
 import cloudpickle
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import MODEL_NAMESPACE, PT_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.utils import LazyLoader, catch_exceptions
+from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:
-    import pytorch_lightning as pl  # pylint: disable=unused-import
-    import torch  # pylint: disable=unused-import
-    import torch.nn as nn  # pylint: disable=unused-import
+_torch_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="pytorch",
+        module=__name__,
+        inst="Refers to https://pytorch.org/get-started/locally/"
+        " to setup PyTorch correctly.",
+    )
+)
+
+_pl_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="pytorch_lightning",
+        module=__name__,
+        inst="Refers to https://pytorch.org/get-started/locally/"
+        " to setup PyTorch correctly. Then run `pip install pytorch_lightning`",
+    )
+)
+
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    import pytorch_lightning as pl
+    import torch
+    import torch.nn as nn
 else:
     torch = LazyLoader("torch", globals(), "torch")
     nn = LazyLoader("nn", globals(), "torch.nn")
     pl = LazyLoader("pl", globals(), "pytorch_lightning")
-
-logger = logging.getLogger(__name__)
 
 
 class PyTorchModel(Model):
@@ -59,6 +79,7 @@ class PyTorchModel(Model):
         return os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}")
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_torch_exc)
     def load(
         cls, path: PathType
     ) -> t.Union["torch.nn.Module", "torch.jit.ScriptModule"]:
@@ -70,6 +91,7 @@ class PyTorchModel(Model):
                 open(cls.__get_weight_fpath(path), "rb")
             )
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_torch_exc)
     def save(self, path: PathType) -> None:
         # If model is a TorchScriptModule, we cannot apply standard pickling
         if isinstance(self._model, torch.jit.ScriptModule):
@@ -119,8 +141,10 @@ class PyTorchLightningModel(Model):
         return str(os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}"))
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_pl_exc)
     def load(cls, path: PathType) -> "torch.jit.ScriptModule":
         return torch.jit.load(cls.__get_weight_fpath(path))  # type: ignore
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_pl_exc)
     def save(self, path: PathType) -> None:
         torch.jit.save(self._model.to_torchscript(), self.__get_weight_fpath(path))

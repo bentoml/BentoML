@@ -62,6 +62,7 @@ test_requires = [
 ]
 
 dev_requires = [
+    "boto3",
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
     # grpcio-tools version must be kept in sync with the version used in

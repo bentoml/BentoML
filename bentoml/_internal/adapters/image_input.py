@@ -8,7 +8,7 @@ from ..utils.lazy_loader import LazyLoader
 # BentoML optional dependencies, using lazy load to avoid ImportError
 imageio = LazyLoader("imageio", globals(), "imageio")
 numpy = LazyLoader("numpy", globals(), "numpy")
-
+import imageio
 
 ApiFuncArgs = Tuple[
     Sequence["numpy.ndarray"],
@@ -27,7 +27,7 @@ class ImageInput(FileInput):
     accept_image_formats : List[str]
         A list of acceptable image formats.
         Default value is loaded from bentoml config
-        'apiserver/default_image_input_accept_file_extensions', which is
+        'apiserver/default_image_input_accept_file_extensions', which isgit 
         set to ['.jpg', '.png', '.jpeg', '.tiff', '.webp', '.bmp'] by default.
         List of all supported format can be found here:
         https://imageio.readthedocs.io/en/stable/formats.html

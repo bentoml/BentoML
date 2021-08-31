@@ -1,16 +1,17 @@
-from dataclasses import dataclass
 from http import HTTPStatus
 
 
-@dataclass
 class BentoMLException(Exception):
     """
     Base class for all BentoML's errors.
     Each custom exception should be derived from this class
     """
 
-    message: str = ""
     error_code: int = HTTPStatus.INTERNAL_SERVER_ERROR
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
 
 
 class RemoteException(BentoMLException):

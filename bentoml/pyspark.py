@@ -4,17 +4,29 @@ import logging
 import os
 import typing as t
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException
+from ._internal.utils import LazyLoader, catch_exceptions
+from .exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
-if t.TYPE_CHECKING:
-    import pyspark  # pylint: disable=unused-import
-    import pyspark.ml as ml  # pylint: disable=unused-import
-    import pyspark.sql as sql  # pylint: disable=unused-import
+_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="pyspark.mllib",
+        module=__name__,
+        inst="First install Apache Spark, https://spark.apache.org/downloads.html."
+        " Then run `pip install pyspark`",
+    )
+)
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    import pyspark
+    import pyspark.ml as ml
+    import pyspark.sql as sql
 else:
     pyspark = LazyLoader("pyspark", globals(), "pyspark")
     ml = LazyLoader("ml", globals(), "pyspark.ml")
@@ -78,6 +90,7 @@ class PySparkMLlibModel(Model):
         self._spark_sess = spark_session
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def load(cls, path: PathType) -> "pyspark.ml.Model":
 
         model_path: str = str(os.path.join(path, MODEL_NAMESPACE))
@@ -115,6 +128,7 @@ class PySparkMLlibModel(Model):
 
         return model
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def save(self, path: PathType) -> None:
         if not isinstance(self._model, ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=self._model))

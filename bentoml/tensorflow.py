@@ -4,9 +4,11 @@ import pathlib
 import typing as t
 from distutils.dir_util import copy_tree
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.utils import LazyLoader, catch_exceptions
 from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
     get_arg_names,
@@ -14,10 +16,20 @@ from ._internal.utils.tensorflow import (
     get_restored_functions,
     pretty_format_restored_model,
 )
+from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:
-    import tensorflow as tf  # pylint: disable=unused-import
-    import tensorflow.python.training.tracking.tracking as tracking  # pylint: disable=unused-import
+_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="tensorflow",
+        module=__name__,
+        inst="`pip install -U tensorflow`",
+    )
+)
+
+
+if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
+    import tensorflow as tf
+    import tensorflow.python.training.tracking.tracking as tracking
 else:
     tf = LazyLoader("tf", globals(), "tensorflow")
     tracking = LazyLoader(
@@ -154,6 +166,7 @@ class TensorflowModel(Model):
         super(TensorflowModel, self).__init__(model, metadata=metadata)
 
     @staticmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def __load_tf_saved_model(  # pylint: disable=unused-private-member
         path: str,
     ) -> t.Union["tracking.AutoTrackable", t.Any]:
@@ -168,6 +181,7 @@ class TensorflowModel(Model):
             return loaded
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def load(cls, path: PathType):  # type: ignore
         # TODO: type hint returns TF Session or
         #  Keras model API
@@ -180,6 +194,7 @@ class TensorflowModel(Model):
             logger.warning(KERAS_MODEL_WARNING.format(name=cls.__name__))
         return model
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def save(  # pylint: disable=arguments-differ
         self,
         path: PathType,

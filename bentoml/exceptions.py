@@ -49,7 +49,7 @@ class NotFound(BentoMLException):
 
 
 class BentoMLConfigException(BentoMLException):
-    """Raise when BentoML is misconfigured or when required configuration is missing"""
+    """Raise when BentoML is mis-configured or when required configuration is missing"""
 
 
 class MissingDependencyException(BentoMLException):

@@ -1,15 +1,26 @@
 import os
 import typing as t
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import MODEL_NAMESPACE, PTH_EXTENSION, YAML_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.utils import LazyLoader, catch_exceptions
+from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:
-    import detectron2.checkpoint as checkpoint  # pylint: disable=unused-import
-    import detectron2.config as config  # pylint: disable=unused-import
-    import detectron2.modeling as modeling  # pylint: disable=unused-import
-    import torch.nn as nn  # pylint: disable=unused-import
+_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="detectron2",
+        module=__name__,
+        inst="Refers to https://detectron2.readthedocs.io/en/latest/tutorials/install.html",  # noqa
+    )
+)
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    import detectron2.checkpoint as checkpoint
+    import detectron2.config as config
+    import detectron2.modeling as modeling
+    import torch.nn as nn
 else:
     checkpoint = LazyLoader("checkpoint", globals(), "detectron2.checkpoint")
     config = LazyLoader("config", globals(), "detectron2.config")
@@ -54,6 +65,7 @@ class DetectronModel(Model):
         self._input_model_yaml = input_model_yaml
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def load(  # noqa # pylint: disable=arguments-differ
         cls, path: PathType, device: str = "cpu"
     ) -> "nn.Module":
@@ -98,6 +110,7 @@ class DetectronModel(Model):
         checkpointer.load(weight_path)
         return model
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def save(self, path: PathType) -> None:
         os.makedirs(path, exist_ok=True)
         checkpointer: "checkpoint.DetectionCheckpointer" = (

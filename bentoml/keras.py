@@ -3,6 +3,8 @@ import typing as t
 
 import cloudpickle
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import (
     H5_EXTENSION,
     HDF5_EXTENSION,
@@ -12,11 +14,19 @@ from ._internal.models.base import (
     Model,
 )
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.utils import LazyLoader, catch_exceptions
+from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:
-    import tensorflow as tf  # pylint: disable=unused-import
-    import tensorflow.keras as tfk  # pylint: disable=unused-import
+_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="keras",
+        module=__name__,
+        inst="`pip install tensorflow` since BentoML will use Tensorflow as Keras backend.",  # noqa
+    )
+)
+if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
+    import tensorflow as tf
+    import tensorflow.keras as tfk
 else:
     tf = LazyLoader("tf", globals(), "tensorflow")
     tfk = LazyLoader("tfk", globals(), "tensorflow.keras")
@@ -84,6 +94,7 @@ class KerasModel(Model):
         return os.path.join(path, f"{MODEL_NAMESPACE}_json{JSON_EXTENSION}")
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def load(cls, path: PathType) -> "tfk.models.Model":
         default_custom_objects = None
         if os.path.isfile(cls.__get_custom_obj_fpath(path)):
@@ -112,6 +123,7 @@ class KerasModel(Model):
 
         return model
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def save(self, path: PathType) -> None:
         tf.compat.v1.keras.backend.get_session()
 

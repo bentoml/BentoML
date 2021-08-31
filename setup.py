@@ -9,7 +9,7 @@ install_requires = [
     "aiohttp",
     "aiohttp_cors==0.7.0",
     "urllib3<=1.25.11",
-    "cerberus", # data validation
+    "cerberus",  # data validation
     "click>=7.0",
     "deepmerge",
     "docker",

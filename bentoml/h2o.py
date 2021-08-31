@@ -1,13 +1,27 @@
 import os
 import typing as t
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.utils import LazyLoader, catch_exceptions
+from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:
-    import h2o  # pylint: disable=unused-import
-    import h2o.model as hm  # pylint: disable=unused-import
+_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="h2o",
+        module=__name__,
+        inst="Refers to"
+        " https://docs.h2o.ai/h2o/latest-stable/h2o-docs/downloading.html#install-in-python",  # noqa
+    )
+)
+
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    import h2o
+    import h2o.model as hm
 else:
     h2o = LazyLoader("h2o", globals(), "h2o")
     hm = LazyLoader("hm", globals(), "h2o.model")
@@ -45,6 +59,7 @@ class H2OModel(Model):
         super(H2OModel, self).__init__(model, metadata=metadata)
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def load(cls, path: PathType) -> "hm.model_base.ModelBase":
         h2o.init()
         h2o.no_progress()
@@ -53,5 +68,6 @@ class H2OModel(Model):
         model_path: str = str(os.path.join(path, os.listdir(path)[0]))
         return h2o.load_model(model_path)
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def save(self, path: PathType) -> None:
         h2o.save_model(model=self._model, path=str(path), force=True)

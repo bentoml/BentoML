@@ -1,12 +1,25 @@
 import typing as t
 
+import bentoml._internal.constants as const
+
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.utils import LazyLoader, catch_exceptions
+from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:
-    import flax  # pylint: disable=unused-import
-    import jax  # pylint: disable=unused-import
+_exc = MissingDependencyException(
+    const.IMPORT_ERROR_MSG.format(
+        fwr="flax",
+        module=__name__,
+        inst="Refers to https://flax.readthedocs.io/en/latest/installation.html",
+    )
+)
+
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    import flax
+    import jax
 else:
     jax = LazyLoader("jax", globals(), "jax")
     flax = LazyLoader("flax", globals(), "flax")
@@ -47,8 +60,10 @@ class FlaxModel(Model):
         super(FlaxModel, self).__init__(model, metadata=metadata)
 
     @classmethod
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def load(cls, path: PathType) -> "flax.linen.Module":
         ...
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def save(self, path: PathType) -> None:
         ...

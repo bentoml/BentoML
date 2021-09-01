@@ -1,4 +1,4 @@
-from typing import Any, Dict, NewType
+from typing import Any, Dict, NewType, Tuple
 
 from bentoml.exceptions import InvalidArgument
 

@@ -22,8 +22,6 @@ from typing import (
 )
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
-from google.protobuf.message import Message
-
 if TYPE_CHECKING:
     from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
 
@@ -160,7 +158,7 @@ class cached_contextmanager(Generic[T]):
     """
     Just like contextlib.contextmanager, but will cache the yield value for the same
     arguments. When one instance of the contextmanager exits, the cache value will
-    also be poped.
+    also be popped.
 
     (To reuse the container based on the same image)
     Example Usage::
@@ -241,22 +239,6 @@ def dump_to_yaml_str(yaml_dict: Dict) -> str:
     string_io = StringIO()
     yaml.dump(yaml_dict, string_io)
     return string_io.getvalue()
-
-
-def pb_to_yaml(message: Message) -> str:
-    from google.protobuf.json_format import MessageToDict
-
-    message_dict = MessageToDict(message)
-    return dump_to_yaml_str(message_dict)
-
-
-def ProtoMessageToDict(protobuf_msg: Message, **kwargs: Any) -> object:
-    from google.protobuf.json_format import MessageToDict
-
-    if "preserving_proto_field_name" not in kwargs:
-        kwargs["preserving_proto_field_name"] = True
-
-    return MessageToDict(protobuf_msg, **kwargs)
 
 
 # This function assume the status is not status.OK

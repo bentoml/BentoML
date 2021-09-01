@@ -228,6 +228,7 @@ class SavedBundleConfig(object):
                 if "artifact_type" in artifact_config:
                     artifact_metadata.artifact_type = artifact_config["artifact_type"]
                 if "metadata" in artifact_config:
+                    # TODO: Do we need to use protobuf here?
                     if isinstance(artifact_config["metadata"], dict):
                         s = Struct()
                         s.update(artifact_config["metadata"])

@@ -7,8 +7,6 @@ class BentoMLException(Exception):
     Each custom exception should be derived from this class
     """
 
-    __slots__ = ("error_code",)
-
     error_code: int = HTTPStatus.INTERNAL_SERVER_ERROR
 
     def __init__(self, msg: str):

@@ -14,8 +14,8 @@ class NumpyNdarray(IODescriptor):
     def openapi_schema(self):
         pass
 
-    def from_http_request(self, request: HTTPRequest) -> np.ndarray:
+    def from_http_request(self, request: HTTPRequest) -> "np.ndarray":
         pass
 
-    def to_http_response(self, obj: np.ndarray) -> HTTPResponse:
+    def to_http_response(self, obj: "np.ndarray") -> HTTPResponse:
         pass

@@ -12,7 +12,7 @@ class IODescriptor(ABC):
     """
 
     def __init__(self, name: Optional[str] = None):
-        self.name = name
+        self._name = name
 
     @abstractmethod
     def openapi_schema(self):

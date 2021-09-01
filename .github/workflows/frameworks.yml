@@ -49,6 +49,8 @@ jobs:
 
   detectron2_integration_tests:
     runs-on: ubuntu-latest
+    needs:
+      - pytorch_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -100,6 +102,8 @@ jobs:
 
   fastai_integration_tests:
     runs-on: ubuntu-latest
+    needs:
+      - pytorch_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -154,6 +158,8 @@ jobs:
   # TODO(aarnphm): add Trax/Flax support
   keras_with_tf1_integration_tests:
     runs-on: ubuntu-latest
+    needs:
+      - tensorflow_v1_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -171,6 +177,8 @@ jobs:
 
   keras_with_tf2_integration_tests:
     runs-on: ubuntu-latest
+    needs:
+      - tensorflow_v2_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -292,6 +300,8 @@ jobs:
 
   pytorch_lightning_integration_tests:
     runs-on: ubuntu-latest
+    needs:
+      - pytorch_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:

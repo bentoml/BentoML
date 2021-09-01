@@ -8,13 +8,11 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="h2o",
-        module=__name__,
-        inst="Refers to"
-        " https://docs.h2o.ai/h2o/latest-stable/h2o-docs/downloading.html#install-in-python",  # noqa
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="h2o",
+    module=__name__,
+    inst="Refers to"
+    " https://docs.h2o.ai/h2o/latest-stable/h2o-docs/downloading.html#install-in-python",  # noqa
 )
 
 
@@ -59,7 +57,9 @@ class H2OModel(Model):
         super(H2OModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(cls, path: PathType) -> "hm.model_base.ModelBase":
         h2o.init()
         h2o.no_progress()
@@ -68,6 +68,8 @@ class H2OModel(Model):
         model_path: str = str(os.path.join(path, os.listdir(path)[0]))
         return h2o.load_model(model_path)
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         h2o.save_model(model=self._model, path=str(path), force=True)

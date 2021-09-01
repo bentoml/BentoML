@@ -9,14 +9,12 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, _flatten_list, catch_exceptions
 from .exceptions import BentoMLException, MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="onnxruntime & onnx",
-        module=__name__,
-        inst="Refers to https://onnxruntime.ai/"
-        " to correctly install backends options"
-        " and platform suitable for your application usecase.",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="onnxruntime & onnx",
+    module=__name__,
+    inst="Refers to https://onnxruntime.ai/"
+    " to correctly install backends options"
+    " and platform suitable for your application usecase.",
 )
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
@@ -82,7 +80,9 @@ class ONNXModel(Model):
         return os.path.join(path, f"{MODEL_NAMESPACE}{cls.ONNX_EXTENSION}")
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(  # pylint: disable=arguments-differ
         cls,
         path: t.Union[PathType, "onnx.ModelProto"],
@@ -113,7 +113,9 @@ class ONNXModel(Model):
                 _get_path, sess_options=sess_opts, providers=providers
             )
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: t.Union[PathType, "onnx.ModelProto"]) -> None:
         if isinstance(self._model, onnx.ModelProto):
             onnx.save_model(self._model, self.__get_model_fpath(path))

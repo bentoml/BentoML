@@ -18,12 +18,10 @@ from ._internal.utils.tensorflow import (
 )
 from .exceptions import MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="tensorflow",
-        module=__name__,
-        inst="`pip install -U tensorflow`",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="tensorflow",
+    module=__name__,
+    inst="`pip install -U tensorflow`",
 )
 
 
@@ -166,7 +164,9 @@ class TensorflowModel(Model):
         super(TensorflowModel, self).__init__(model, metadata=metadata)
 
     @staticmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def __load_tf_saved_model(  # pylint: disable=unused-private-member
         path: str,
     ) -> t.Union["tracking.AutoTrackable", t.Any]:
@@ -181,7 +181,9 @@ class TensorflowModel(Model):
             return loaded
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(cls, path: PathType):  # type: ignore
         # TODO: type hint returns TF Session or
         #  Keras model API
@@ -194,7 +196,9 @@ class TensorflowModel(Model):
             logger.warning(KERAS_MODEL_WARNING.format(name=cls.__name__))
         return model
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(  # pylint: disable=arguments-differ
         self,
         path: PathType,

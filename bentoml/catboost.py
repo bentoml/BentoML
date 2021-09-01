@@ -8,12 +8,10 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import InvalidArgument, MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="catboost",
-        module=__name__,
-        inst="`pip install catboost`",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="catboost",
+    module=__name__,
+    inst="`pip install catboost`",
 )
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
@@ -84,7 +82,11 @@ class CatBoostModel(Model):
         self._model_pool = model_pool
 
     @staticmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError,
+        throw_exc=MissingDependencyException,
+        msg=_exc,
+    )
     def __init_model_type(
         model_type: t.Optional[str] = "classifier",
     ) -> CatBoostModelType:
@@ -97,7 +99,11 @@ class CatBoostModel(Model):
 
         return _model
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError,
+        throw_exc=MissingDependencyException,
+        msg=_exc,
+    )
     def save(self, path: PathType) -> None:
         self._model.save_model(
             os.path.join(path, f"{MODEL_NAMESPACE}{self.CATBOOST_EXTENSION}"),
@@ -107,7 +113,11 @@ class CatBoostModel(Model):
         )
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError,
+        throw_exc=MissingDependencyException,
+        msg=_exc,
+    )
     def load(  # noqa # pylint: disable=arguments-differ
         cls, path: PathType, model_type: str = "classifier"
     ) -> "cbt.core.CatBoost":

@@ -61,8 +61,6 @@ __all__ = [
     "get_free_port",
     "is_url",
     "dump_to_yaml_str",
-    "pb_to_yaml",
-    "ProtoMessageToDict",
     "status_pb_to_error_code_and_message",
     "catch_exceptions",
     "cached_contextmanager",
@@ -256,11 +254,13 @@ class catch_exceptions(Generic[T], object):
         self,
         catch_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
         throw_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
+        msg: Optional[str] = "",
         fallback: Optional[T] = None,
         raises: Optional[bool] = True,
     ) -> None:
         self._catch_exc = catch_exc
         self._throw_exc = throw_exc
+        self._msg = msg
         self._fallback = fallback
         self._raises = raises
 
@@ -272,7 +272,7 @@ class catch_exceptions(Generic[T], object):
                 return func(*args, **kwargs)
             except self._catch_exc:
                 if self._raises:
-                    raise self._throw_exc
+                    raise self._throw_exc(self._msg)
                 return self._fallback
 
         return _

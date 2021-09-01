@@ -8,14 +8,12 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import BentoMLException, MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="fastai",
-        module=__name__,
-        inst="Make sure to install PyTorch first,"
-        " then `pip install fastai`. Refers to"
-        " https://github.com/fastai/fastai#installing",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="fastai",
+    module=__name__,
+    inst="Make sure to install PyTorch first,"
+    " then `pip install fastai`. Refers to"
+    " https://github.com/fastai/fastai#installing",
 )
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -53,7 +51,9 @@ class FastAIModel(Model):
 
     _model: "learner.Learner"
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def __init__(
         self,
         model: "learner.Learner",
@@ -63,13 +63,17 @@ class FastAIModel(Model):
         super(FastAIModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(cls, path: PathType) -> "learner.Learner":
         return basics.load_learner(
             os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}")
         )
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         self._model.export(
             fname=os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}")

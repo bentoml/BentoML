@@ -10,12 +10,10 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="spacy",
-        module=__name__,
-        inst="`pip install spacy`",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="spacy",
+    module=__name__,
+    inst="`pip install spacy`",
 )
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
@@ -59,7 +57,9 @@ class SpacyModel(Model):
         super(SpacyModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(cls, path: PathType, **load_model_kwargs) -> "spacy.language.Language":
         if Path(path).exists():
             name = os.path.join(path, MODEL_NAMESPACE)
@@ -80,6 +80,8 @@ class SpacyModel(Model):
                     model = spacy.util.load_model(name, **load_model_kwargs)
         return model
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         self._model.to_disk(os.path.join(path, MODEL_NAMESPACE))

@@ -10,12 +10,10 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import BentoMLException, MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="easyocr",
-        module=__name__,
-        inst="`pip install easyocr`",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="easyocr",
+    module=__name__,
+    inst="`pip install easyocr`",
 )
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
@@ -57,7 +55,9 @@ class EasyOCRModel(Model):
         TODO:
     """
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def __init__(
         self,
         model: "easyocr.Reader",
@@ -89,7 +89,9 @@ class EasyOCRModel(Model):
         return os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}")
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(cls, path: PathType) -> "easyocr.Reader":
         with open(cls.__get_json_fpath(path), "r") as f:
             model_params = json.load(f)
@@ -98,7 +100,9 @@ class EasyOCRModel(Model):
             model_storage_directory=path, download_enabled=False, **model_params
         )
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
 
         src_folder: str = self._model.model_storage_directory

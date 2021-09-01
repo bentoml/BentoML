@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import Optional, TypeVar
 
 from ..types import HTTPRequest, HTTPResponse
 
@@ -10,6 +10,9 @@ class IODescriptor(ABC):
     """IODescriptor describes the input/output data format of an InferenceAPI defined
     in a bentoml.Service
     """
+
+    def __init__(self, name: Optional[str] = None):
+        self.name = name
 
     @abstractmethod
     def openapi_schema(self):

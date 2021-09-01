@@ -2,7 +2,7 @@ from ..types import HTTPRequest, HTTPResponse
 from .base import IODescriptor
 
 
-class String(IODescriptor):
+class Str(IODescriptor):
     def openapi_schema(self):
         pass
 

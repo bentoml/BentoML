@@ -33,10 +33,12 @@ class Image(IODescriptor):
     def openapi_schema(self):
         pass
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def from_http_request(
         self, request: HTTPRequest
     ) -> t.Union["np.ndarray", "PIL.Image"]:
         pass
 
+    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
     def to_http_response(self, obj: t.Union["np.ndarray", "PIL.Image"]) -> HTTPResponse:
         pass

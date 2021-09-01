@@ -16,9 +16,10 @@ inject_dependencies()
 
 from bentoml._internal.bundle import containerize, load
 from bentoml._internal.environment import env
-from bentoml._internal.inference_api import api, batch_api
 from bentoml._internal.models import Model, PickleModel
-from bentoml._internal.repository import delete, get, ls, pull, push
+
+# from bentoml._internal.inference_api import api, batch_api
+# from bentoml._internal.repository import delete, get, ls, pull, push
 from bentoml._internal.server import serve
 from bentoml._internal.service import Service
 
@@ -26,16 +27,9 @@ __all__ = [
     "__version__",
     "PickleModel",
     "Model",
-    "ls",
-    "get",
-    "delete",
-    "push",
-    "pull",
     "containerize",
     "serve",
     "Service",
     "env",
     "load",
-    "api",
-    "batch_api",
 ]

@@ -11,10 +11,10 @@ MultipartIO = NewType("MultipartIO", Tuple[Any, ...])
 class Multipart(IODescriptor):
     def __init__(self, *items: Tuple[IODescriptor, ...]):
         for i in items:
-            if i.name is None:
+            if i._name is None:
                 # TODO: should the item name be set to index by default?
                 raise InvalidArgument("Multipart IO must specify name for each io item")
-        self.items = items
+        self._items = items
 
     def openapi_schema(self):
         pass

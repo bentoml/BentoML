@@ -14,8 +14,8 @@ class PandasDataFrame(IODescriptor):
     def openapi_schema(self):
         pass
 
-    def from_http_request(self, request: HTTPRequest) -> pd.DataFrame:
+    def from_http_request(self, request: HTTPRequest) -> "pd.DataFrame":
         pass
 
-    def to_http_response(self, obj: pd.DataFrame) -> HTTPResponse:
+    def to_http_response(self, obj: "pd.DataFrame") -> HTTPResponse:
         pass

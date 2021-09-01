@@ -8,9 +8,9 @@ if t.TYPE_CHECKING:
 
 
 class JSON(IODescriptor):
-    def __init__(self, pydantic_model: pydantic.main.BaseModel = None):
+    def __init__(self, pydantic_model: "pydantic.main.BaseModel" = None):
         if pydantic_model is not None:
-            self.pydantic_model = pydantic_model
+            self._pydantic_model = pydantic_model
 
     def openapi_schema(self):
         pass

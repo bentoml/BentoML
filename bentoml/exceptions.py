@@ -9,8 +9,9 @@ class BentoMLException(Exception):
 
     error_code: int = HTTPStatus.INTERNAL_SERVER_ERROR
 
-    def __init__(self, msg: str):
-        super().__init__(msg)
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
 
 
 class RemoteException(BentoMLException):

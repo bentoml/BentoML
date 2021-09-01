@@ -8,13 +8,12 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="detectron2",
-        module=__name__,
-        inst="Refers to https://detectron2.readthedocs.io/en/latest/tutorials/install.html",  # noqa
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="detectron2",
+    module=__name__,
+    inst="Refers to https://detectron2.readthedocs.io/en/latest/tutorials/install.html",  # noqa
 )
+
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import detectron2.checkpoint as checkpoint
@@ -65,7 +64,9 @@ class DetectronModel(Model):
         self._input_model_yaml = input_model_yaml
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(  # noqa # pylint: disable=arguments-differ
         cls, path: PathType, device: str = "cpu"
     ) -> "nn.Module":
@@ -110,7 +111,9 @@ class DetectronModel(Model):
         checkpointer.load(weight_path)
         return model
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         os.makedirs(path, exist_ok=True)
         checkpointer: "checkpoint.DetectionCheckpointer" = (

@@ -8,13 +8,11 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="lightgbm",
-        module=__name__,
-        inst="Either `pip install lightgbm` or"
-        " https://lightgbm.readthedocs.io/en/latest/Installation-Guide.html#",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="lightgbm",
+    module=__name__,
+    inst="Either `pip install lightgbm` or"
+    " https://lightgbm.readthedocs.io/en/latest/Installation-Guide.html#",
 )
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
@@ -54,12 +52,16 @@ class LightGBMModel(Model):
         super(LightGBMModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(cls, path: PathType) -> "lightgbm.Booster":
         return lightgbm.Booster(
             model_file=os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}")
         )
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}"))

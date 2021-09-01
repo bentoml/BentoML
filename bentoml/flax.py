@@ -7,12 +7,10 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="flax",
-        module=__name__,
-        inst="Refers to https://flax.readthedocs.io/en/latest/installation.html",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="flax",
+    module=__name__,
+    inst="Refers to https://flax.readthedocs.io/en/latest/installation.html",
 )
 
 
@@ -60,10 +58,14 @@ class FlaxModel(Model):
         super(FlaxModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(cls, path: PathType) -> "flax.linen.Module":
         ...
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         ...

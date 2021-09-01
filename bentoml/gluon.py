@@ -8,12 +8,10 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="mxnet.gluon",
-        module=__name__,
-        inst="`pip install mxnet`",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="mxnet.gluon",
+    module=__name__,
+    inst="`pip install mxnet`",
 )
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -57,12 +55,16 @@ class GluonModel(Model):
         super(GluonModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(cls, path: PathType) -> "mxnet.gluon.Block":
         json_path: str = os.path.join(path, f"{MODEL_NAMESPACE}-symbol.json")
         params_path: str = os.path.join(path, f"{MODEL_NAMESPACE}-0000.params")
         return gluon.SymbolBlock.imports(json_path, ["data"], params_path)
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         self._model.export(os.path.join(path, MODEL_NAMESPACE))

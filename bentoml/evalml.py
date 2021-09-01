@@ -8,12 +8,10 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="evalml",
-        module=__name__,
-        inst="`pip install evalml --no-dependencies`",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="evalml",
+    module=__name__,
+    inst="`pip install evalml --no-dependencies`",
 )
 
 if t.TYPE_CHECKING:  # pragma: no cover
@@ -58,13 +56,17 @@ class EvalMLModel(Model):
         super(EvalMLModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(cls, path: PathType) -> "pipelines.PipelineBase":
         model_file_path: str = os.path.join(
             path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"
         )
         return pipelines.PipelineBase.load(model_file_path)
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         self._model.save(os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"))

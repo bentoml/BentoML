@@ -15,12 +15,10 @@ from .exceptions import (
     NotFound,
 )
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="transformers",
-        module=__name__,
-        inst="`pip install transformers`",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="transformers",
+    module=__name__,
+    inst="`pip install transformers`",
 )
 
 
@@ -59,7 +57,9 @@ AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
 }
 
 
-@catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+@catch_exceptions(
+    catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+)
 def _check_flax_supported() -> None:
     _supported: bool = transformers.__version__.startswith("4")
     if not _supported:
@@ -124,7 +124,9 @@ class TransformersModel(Model):
 
     """  # noqa # pylint: enable=line-too-long
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def __init__(
         self,
         model: TransformersModelInput,
@@ -188,7 +190,9 @@ class TransformersModel(Model):
             )
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(  # pylint: disable=arguments-differ
         cls,
         name_or_path_or_dict: t.Union[PathType, dict],
@@ -226,7 +230,9 @@ class TransformersModel(Model):
         with open(os.path.join(path, "__tokenizer_class_type.txt"), "w") as f:
             f.write(tokenizer_type)
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         _model_type = self._model.get("model").__class__.__name__
         _tokenizer_type = self._model.get("tokenizer").__class__.__name__

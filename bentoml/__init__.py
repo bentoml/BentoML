@@ -5,6 +5,7 @@ __version__ = get_versions()["version"]
 del get_versions
 
 from bentoml._internal.configuration import inject_dependencies
+
 # from bentoml._internal.utils.log import configure_logging
 
 # Inject dependencies and configurations

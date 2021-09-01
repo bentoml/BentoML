@@ -11,22 +11,18 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import MissingDependencyException
 
-_torch_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="pytorch",
-        module=__name__,
-        inst="Refers to https://pytorch.org/get-started/locally/"
-        " to setup PyTorch correctly.",
-    )
+_torch_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="pytorch",
+    module=__name__,
+    inst="Refers to https://pytorch.org/get-started/locally/"
+    " to setup PyTorch correctly.",
 )
 
-_pl_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="pytorch_lightning",
-        module=__name__,
-        inst="Refers to https://pytorch.org/get-started/locally/"
-        " to setup PyTorch correctly. Then run `pip install pytorch_lightning`",
-    )
+_pl_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="pytorch_lightning",
+    module=__name__,
+    inst="Refers to https://pytorch.org/get-started/locally/"
+    " to setup PyTorch correctly. Then run `pip install pytorch_lightning`",
 )
 
 
@@ -79,7 +75,11 @@ class PyTorchModel(Model):
         return os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}")
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_torch_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError,
+        throw_exc=MissingDependencyException,
+        msg=_torch_exc,
+    )
     def load(
         cls, path: PathType
     ) -> t.Union["torch.nn.Module", "torch.jit.ScriptModule"]:
@@ -91,7 +91,11 @@ class PyTorchModel(Model):
                 open(cls.__get_weight_fpath(path), "rb")
             )
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_torch_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError,
+        throw_exc=MissingDependencyException,
+        msg=_torch_exc,
+    )
     def save(self, path: PathType) -> None:
         # If model is a TorchScriptModule, we cannot apply standard pickling
         if isinstance(self._model, torch.jit.ScriptModule):
@@ -141,10 +145,14 @@ class PyTorchLightningModel(Model):
         return str(os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}"))
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_pl_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_pl_exc
+    )
     def load(cls, path: PathType) -> "torch.jit.ScriptModule":
         return torch.jit.load(cls.__get_weight_fpath(path))  # type: ignore
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_pl_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_pl_exc
+    )
     def save(self, path: PathType) -> None:
         torch.jit.save(self._model.to_torchscript(), self.__get_weight_fpath(path))

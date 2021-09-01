@@ -8,14 +8,12 @@ from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader, catch_exceptions
 from .exceptions import MissingDependencyException
 
-_exc = MissingDependencyException(
-    const.IMPORT_ERROR_MSG.format(
-        fwr="xgboost",
-        module=__name__,
-        inst="`pip install xgboost`. Refers to"
-        " https://xgboost.readthedocs.io/en/latest/install.html"
-        " for GPU information.",
-    )
+_exc = const.IMPORT_ERROR_MSG.format(
+    fwr="xgboost",
+    module=__name__,
+    inst="`pip install xgboost`. Refers to"
+    " https://xgboost.readthedocs.io/en/latest/install.html"
+    " for GPU information.",
 )
 
 
@@ -57,7 +55,9 @@ class XgBoostModel(Model):
         super(XgBoostModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def load(  # noqa # pylint: disable=arguments-differ
         cls, path: PathType, infer_params: t.Dict[str, t.Union[str, int]] = None
     ) -> "xgb.core.Booster":
@@ -66,6 +66,8 @@ class XgBoostModel(Model):
             model_file=os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"),
         )
 
-    @catch_exceptions(catch_exc=ModuleNotFoundError, throw_exc=_exc)
+    @catch_exceptions(
+        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
+    )
     def save(self, path: PathType) -> None:
         self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"))

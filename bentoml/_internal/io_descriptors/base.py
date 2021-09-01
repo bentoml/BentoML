@@ -11,9 +11,6 @@ class IODescriptor(ABC):
     in a bentoml.Service
     """
 
-    def __init__(self, name: Optional[str] = None):
-        self._name = name
-
     @abstractmethod
     def openapi_schema(self):
         pass

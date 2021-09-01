@@ -270,7 +270,9 @@ def with_pip_install_options(
     return pkgs_with_options
 
 
-def find_required_pypi_packages(path: PathType, lock_versions: bool = True) -> t.List[str]:
+def find_required_pypi_packages(
+    path: PathType, lock_versions: bool = True
+) -> t.List[str]:
     """
     Find required pypi packages in a python source file
 

@@ -28,7 +28,7 @@ DEFAULT_PIL_MODE = "RGB"
 
 class Image(IODescriptor):
     def __init__(self, pilmode=DEFAULT_PIL_MODE):
-        self._pilmode = pilmode
+        self.pilmode = pilmode
 
     def openapi_schema(self):
         pass

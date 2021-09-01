@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bash Script that installs the dependencies specified in the BentoService archive
+# Bash Script that installs the dependencies specified in the Bento
 #
 # Usage:
 #   * `bentoml-init.sh` to run the full script

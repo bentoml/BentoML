@@ -69,9 +69,8 @@ dev_requires = [
     "setuptools",
     "mypy",
     "autoflake",
-    "tox-conda>=0.2.0",
-    "tox>=3.12.1",
     "twine",
+    "wheel",
 ] + test_requires
 
 docs_requires = [

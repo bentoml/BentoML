@@ -1,4 +1,4 @@
-from typing import Any, NewType, Tuple
+from typing import Any, Dict, NewType
 
 from bentoml.exceptions import InvalidArgument
 
@@ -9,11 +9,24 @@ MultipartIO = NewType("MultipartIO", Tuple[Any, ...])
 
 
 class Multipart(IODescriptor):
-    def __init__(self, *items: Tuple[IODescriptor, ...]):
-        for i in items:
-            if i._name is None:
-                # TODO: should the item name be set to index by default?
-                raise InvalidArgument("Multipart IO must specify name for each io item")
+    """
+    Example:
+
+    from bentoml.io import Image, JSON
+    @svc.api(input={'img': Image(), 'annotation': JSON()}, output=JSON())
+    """
+
+    def __init__(self, *items: Dict[str, IODescriptor]):
+        for name, descriptor in items:
+            if not isinstance(descriptor, IODescriptor):
+                raise InvalidArgument(
+                    "Multipart IO item must be instance of another IODescriptor type"
+                )
+            if isinstance(descriptor, Multipart):
+                raise InvalidArgument(
+                    "Multipart IO can not contain nested Multipart item"
+                )
+
         self._items = items
 
     def openapi_schema(self):

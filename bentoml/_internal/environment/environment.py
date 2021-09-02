@@ -5,13 +5,13 @@ from pathlib import Path
 from sys import version_info
 from typing import List
 
+import yaml
 from simple_di import Provide, inject
 
 from bentoml.exceptions import BentoMLException
 
 from ..configuration.containers import BentoMLContainer
 from ..utils import cached_property
-from ..utils.ruamel_yaml import YAML
 from .pip_pkg import (
     EPP_NO_ERROR,
     EPP_PKG_NOT_EXIST,
@@ -54,8 +54,6 @@ class CondaEnv(object):
         default_env_yaml_file: str = None,
         override_channels: bool = False,
     ):
-        self._yaml = YAML()
-        self._yaml.default_flow_style = False
         self.default_env_yaml_file = default_env_yaml_file
 
         if name:
@@ -81,9 +79,10 @@ class CondaEnv(object):
                     f"Can not find conda environment config yaml file at: "
                     f"`{self.default_env_yaml_file}`"
                 )
-            return self._yaml.load(env_yml_file)
+            with open(env_yml_file, "rb") as f:
+                return yaml.safe_load(f)
         else:
-            return self._yaml.load(DEFAULT_CONDA_ENV_BASE_YAML)
+            return yaml.safe_load(DEFAULT_CONDA_ENV_BASE_YAML)
 
     def set_name(self, name):
         self._conda_env["name"] = name

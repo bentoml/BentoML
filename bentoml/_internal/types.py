@@ -38,6 +38,18 @@ PathType = Union[str, os.PathLike]
 MetadataType = Dict[str, Any]  # TODO:
 
 
+@dataclass(frozen=True)
+class BentoTag:
+    name: str
+    version: str
+
+    def __str__(self):
+        return f"{self.name}:{self.version}"
+
+    def __repr__(self) -> str:
+        return f"<BentoTag {str(self)}>"
+
+
 @json_serializer(fields=["uri", "name"], compat=True)
 @dataclass(frozen=False)
 class FileLike:

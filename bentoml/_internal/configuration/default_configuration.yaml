@@ -49,13 +49,3 @@ tracing:
   jaeger:
     address: Null
     port: Null
-
-adapters:
-  image_input:
-    default_extensions:
-      - .jpg
-      - .png
-      - .jpeg
-      - .tiff
-      - .webp
-      - .bmp

@@ -19,9 +19,6 @@ from ..bundle.config import SavedBundleConfig
 from ..utils.gcs import is_gcs_url
 from ..utils.s3 import is_s3_url
 
-if TYPE_CHECKING:
-    from ..yatai_client.proto.repository_pb2 import BentoServiceMetadata
-
 logger = logging.getLogger(__name__)
 
 

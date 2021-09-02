@@ -133,49 +133,6 @@ def human_friendly_age_from_datetime(dt, detailed=False, max_unit=2):
     return humanfriendly.format_timespan(datetime.utcnow() - dt, detailed, max_unit)
 
 
-def _print_deployments_table(deployments, wide=False):
-    from ..yatai_client.proto.deployment_pb2 import DeploymentSpec, DeploymentState
-
-    table = []
-    if wide:
-        headers = [
-            "NAME",
-            "NAMESPACE",
-            "PLATFORM",
-            "BENTO_SERVICE",
-            "STATUS",
-            "AGE",
-            "LABELS",
-        ]
-    else:
-        headers = [
-            "NAME",
-            "NAMESPACE",
-            "PLATFORM",
-            "BENTO_SERVICE",
-            "STATUS",
-            "AGE",
-        ]
-    for deployment in deployments:
-        row = [
-            deployment.name,
-            deployment.namespace,
-            DeploymentSpec.DeploymentOperator.Name(deployment.spec.operator)
-            .lower()
-            .replace("_", "-"),
-            f"{deployment.spec.bento_name}:{deployment.spec.bento_version}",
-            DeploymentState.State.Name(deployment.state.state)
-            .lower()
-            .replace("_", " "),
-            _format_deployment_age_for_print(deployment),
-        ]
-        if wide:
-            row.append(_format_labels_for_print(deployment.labels))
-        table.append(row)
-    table_display = tabulate(table, headers, tablefmt="plain")
-    _echo(table_display)
-
-
 def _print_deployments_info(deployments, output_type):
     if output_type == "table":
         _print_deployments_table(deployments)

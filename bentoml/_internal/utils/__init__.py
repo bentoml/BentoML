@@ -4,7 +4,6 @@ import inspect
 import os
 import socket
 import tarfile
-from io import StringIO
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -60,8 +59,6 @@ __all__ = [
     "reserve_free_port",
     "get_free_port",
     "is_url",
-    "dump_to_yaml_str",
-    "status_pb_to_error_code_and_message",
     "catch_exceptions",
     "cached_contextmanager",
     "cached_property",
@@ -73,7 +70,6 @@ __all__ = [
     "LazyLoader",
 ]
 
-yatai_proto = LazyLoader("yatai_proto", globals(), "bentoml.yatai.proto")
 
 DEFAULT_CHUNK_SIZE = 1024 * 8  # 8kb
 
@@ -228,25 +224,6 @@ def is_url(url: str) -> bool:
         return urlparse(url).scheme in _VALID_URLS
     except Exception:  # pylint:disable=broad-except
         return False
-
-
-def dump_to_yaml_str(yaml_dict: Dict) -> str:
-    from ..utils.ruamel_yaml import YAML
-
-    yaml = YAML()
-    string_io = StringIO()
-    yaml.dump(yaml_dict, string_io)
-    return string_io.getvalue()
-
-
-# This function assume the status is not status.OK
-def status_pb_to_error_code_and_message(pb_status) -> Tuple[int, str]:
-    from ..yatai_client.proto import status_pb2
-
-    assert pb_status.status_code != status_pb2.Status.OK
-    error_code = status_pb2.Status.Code.Name(pb_status.status_code)
-    error_message = pb_status.error_message
-    return error_code, error_message
 
 
 class catch_exceptions(Generic[T], object):

@@ -1,31 +1,24 @@
 import logging
 import multiprocessing
 import os
-from typing import TYPE_CHECKING
+import typing as t
 
+import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
 from bentoml import __version__
-from bentoml._internal.configuration import expand_env_var, get_bentoml_deploy_version
-from bentoml._internal.utils import get_free_port
-from bentoml._internal.utils.ruamel_yaml import YAML
 from bentoml.exceptions import BentoMLConfigException
 
-if TYPE_CHECKING:
-    from ..marshal.marshal import MarshalApp
+from ..utils import get_free_port
+from . import expand_env_var, get_bentoml_deploy_version
+
+if t.TYPE_CHECKING:
+    from ..server.marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
-
-YATAI_REPOSITORY_S3 = "s3"
-YATAI_REPOSITORY_GCS = "gcs"
-YATAI_REPOSITORY_FILE_SYSTEM = "file_system"
-YATAI_REPOSITORY_TYPES = [
-    YATAI_REPOSITORY_FILE_SYSTEM,
-    YATAI_REPOSITORY_S3,
-    YATAI_REPOSITORY_GCS,
-]
+SYSTEM_HOME = os.path.expanduser('~')
 
 SCHEMA = Schema(
     {
@@ -76,8 +69,7 @@ SCHEMA = Schema(
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
-        "adapters": {"image_input": {"default_extensions": [str]}},
-        "yatai": {
+        Optional("yatai"): {
             "default_server": Or(str, None),
             "servers": {
                 str: {
@@ -100,27 +92,15 @@ SCHEMA = Schema(
 class BentoMLConfiguration:
     def __init__(
         self,
-        default_config_file: str = None,
-        default_yatai_server_config_file: str = None,
-        override_config_file: str = None,
-        override_yatai_config_file: str = None,
+        override_config_file: t.Optional[str] = None,
         validate_schema: bool = True,
     ):
-        # Default configuration
-        if default_config_file is None:
-            default_config_file = os.path.join(
-                os.path.dirname(__file__), "default_configuration.yml"
-            )
-        if default_yatai_server_config_file is None:
-            default_yatai_server_config_file = os.path.join(
-                os.path.dirname(__file__), "default_yatai_configuration.yml"
-            )
-
+        # Load default configuration
+        default_config_file = os.path.join(
+            os.path.dirname(__file__), "default_configuration.yaml"
+        )
         with open(default_config_file, "rb") as f:
-            self.config = YAML().load(f.read())
-
-        with open(default_yatai_server_config_file, "rb") as f:
-            self.config["yatai"] = YAML().load(f.read())
+            self.config = yaml.safe_load(f)
 
         if validate_schema:
             try:
@@ -132,12 +112,6 @@ class BentoMLConfiguration:
                 ) from e
 
         # User override configuration
-        override_default_config = (
-            True
-            if override_config_file is not None
-            or override_yatai_config_file is not None
-            else False
-        )
         if override_config_file is not None:
             LOGGER.info("Applying user config override from %s" % override_config_file)
             if not os.path.exists(override_config_file):
@@ -145,30 +119,20 @@ class BentoMLConfiguration:
                     f"Config file {override_config_file} not found"
                 )
             with open(override_config_file, "rb") as f:
-                override_config = YAML().load(f.read())
+                override_config = yaml.safe_load(f)
             always_merger.merge(self.config, override_config)
 
-        if override_yatai_config_file is not None:
-            LOGGER.info(
-                "Applying user yatai server config override from %s"
-                % override_yatai_config_file
-            )
-            if not os.path.exists(override_yatai_config_file):
-                raise BentoMLConfigException(
-                    f"Config file {override_yatai_config_file} not found"
-                )
-            with open(override_yatai_config_file, "rb") as f:
-                override_yatai_config = YAML().load(f.read())
-            always_merger.merge(self.config, override_yatai_config)
+            if validate_schema:
+                try:
+                    SCHEMA.validate(self.config)
+                except SchemaError as e:
+                    raise BentoMLConfigException(
+                        "Configuration after user override does not conform to"
+                        " the required schema."
+                    ) from e
 
-        if validate_schema and override_default_config:
-            try:
-                SCHEMA.validate(self.config)
-            except SchemaError as e:
-                raise BentoMLConfigException(
-                    "Configuration after user override does not conform to"
-                    " the required schema."
-                ) from e
+        # TODO:
+        # Find local yatai configurations and merge with it
 
     def override(self, keys: list, value):
         if keys is None:
@@ -261,7 +225,7 @@ class BentoMLContainerClass:
     bentoml_home = providers.Factory(
         lambda: expand_env_var(
             os.environ.get(
-                "BENTOML_HOME", os.path.join(os.environ["XDG_DATA_HOME"], "bentoml")
+                "BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml")
             )
         )
     )
@@ -291,7 +255,7 @@ class BentoMLContainerClass:
     @providers.Factory
     @staticmethod
     def proxy_app() -> "MarshalApp":
-        from bentoml._internal.marshal.marshal import MarshalApp
+        from ..server.marshal.marshal import MarshalApp
 
         return MarshalApp()
 
@@ -317,7 +281,7 @@ class BentoMLContainerClass:
         multiproc_dir=prometheus_multiproc_dir,
         namespace=config.bento_server.metrics.namespace,
     ):
-        from ..metrics.prometheus import PrometheusClient
+        from ..server.metrics.prometheus import PrometheusClient
 
         return PrometheusClient(
             multiproc_lock=multiproc_lock,
@@ -332,13 +296,6 @@ class BentoMLContainerClass:
             __version__.split("+")[0],
             config.bento_bundle.deployment_version,
         ),
-    )
-    default_yatai_server = config.yatai.servers[config.yatai.default_server]
-
-    default_yatai_server_tls_root_ca_cert = providers.Factory(
-        lambda current, deprecated: current or deprecated,
-        config.yatai.servers[config.yatai.default_server].tls.root_ca_cert,
-        config.yatai.servers[config.yatai.default_server].tls.client_certificate_file,
     )
 
     logging_file_directory = providers.Factory(

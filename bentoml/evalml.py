@@ -5,8 +5,7 @@ import bentoml._internal.constants as const
 
 from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, catch_exceptions
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
 _exc = const.IMPORT_ERROR_MSG.format(
     fwr="evalml",
@@ -19,8 +18,8 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import evalml
     import evalml.pipelines as pipelines
 else:
-    evalml = LazyLoader("evalml", globals(), "evalml")
-    pipelines = LazyLoader("pipelines", globals(), "evalml.pipelines")
+    evalml = LazyLoader("evalml", globals(), "evalml", exc_msg=_exc)
+    pipelines = LazyLoader("pipelines", globals(), "evalml.pipelines", exc_msg=_exc)
 
 
 class EvalMLModel(Model):
@@ -56,17 +55,11 @@ class EvalMLModel(Model):
         super(EvalMLModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def load(cls, path: PathType) -> "pipelines.PipelineBase":
         model_file_path: str = os.path.join(
             path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"
         )
         return pipelines.PipelineBase.load(model_file_path)
 
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def save(self, path: PathType) -> None:
         self._model.save(os.path.join(path, f"{MODEL_NAMESPACE}{PICKLE_EXTENSION}"))

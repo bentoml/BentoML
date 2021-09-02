@@ -5,8 +5,8 @@ import bentoml._internal.constants as const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, catch_exceptions
-from .exceptions import InvalidArgument, MissingDependencyException
+from ._internal.utils import LazyLoader
+from .exceptions import InvalidArgument
 
 _exc = const.IMPORT_ERROR_MSG.format(
     fwr="mlflow",
@@ -19,7 +19,7 @@ MT = t.TypeVar("MT")
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import mlflow
 else:
-    mlflow = LazyLoader("mlflow", globals(), "mlflow")
+    mlflow = LazyLoader("mlflow", globals(), "mlflow", exc_msg=_exc)
 
 
 class MLflowModel(Model):
@@ -61,15 +61,9 @@ class MLflowModel(Model):
         self._loader_module: t.Type["mlflow.pyfunc"] = loader_module
 
     @classmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def load(cls, path: PathType) -> "mlflow.pyfunc.PyFuncModel":
         project_path: str = str(os.path.join(path, MODEL_NAMESPACE))
         return mlflow.pyfunc.load_model(project_path)
 
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def save(self, path: PathType) -> None:
         self._loader_module.save_model(self._model, os.path.join(path, MODEL_NAMESPACE))

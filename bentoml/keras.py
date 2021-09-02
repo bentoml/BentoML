@@ -14,8 +14,7 @@ from ._internal.models.base import (
     Model,
 )
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, catch_exceptions
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
 _exc = const.IMPORT_ERROR_MSG.format(
     fwr="keras",
@@ -26,8 +25,8 @@ if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import tensorflow as tf
     import tensorflow.keras as tfk
 else:
-    tf = LazyLoader("tf", globals(), "tensorflow")
-    tfk = LazyLoader("tfk", globals(), "tensorflow.keras")
+    tf = LazyLoader("tf", globals(), "tensorflow", exc_msg=_exc)
+    tfk = LazyLoader("tfk", globals(), "tensorflow.keras", exc_msg=_exc)
 
 
 class KerasModel(Model):
@@ -92,9 +91,6 @@ class KerasModel(Model):
         return os.path.join(path, f"{MODEL_NAMESPACE}_json{JSON_EXTENSION}")
 
     @classmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def load(cls, path: PathType) -> "tfk.models.Model":
         default_custom_objects = None
         if os.path.isfile(cls.__get_custom_obj_fpath(path)):
@@ -123,9 +119,6 @@ class KerasModel(Model):
 
         return model
 
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def save(self, path: PathType) -> None:
         tf.compat.v1.keras.backend.get_session()
 

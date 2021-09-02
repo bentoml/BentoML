@@ -5,8 +5,7 @@ import bentoml._internal.constants as const
 
 from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, catch_exceptions
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
 _exc = const.IMPORT_ERROR_MSG.format(
     fwr="xgboost",
@@ -20,7 +19,7 @@ _exc = const.IMPORT_ERROR_MSG.format(
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import xgboost as xgb
 else:
-    xgb = LazyLoader("xgb", globals(), "xgboost")
+    xgb = LazyLoader("xgb", globals(), "xgboost", exc_msg=_exc)
 
 
 class XgBoostModel(Model):
@@ -55,9 +54,6 @@ class XgBoostModel(Model):
         super(XgBoostModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def load(  # noqa # pylint: disable=arguments-differ
         cls, path: PathType, infer_params: t.Dict[str, t.Union[str, int]] = None
     ) -> "xgb.core.Booster":
@@ -66,8 +62,5 @@ class XgBoostModel(Model):
             model_file=os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"),
         )
 
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def save(self, path: PathType) -> None:
         self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"))

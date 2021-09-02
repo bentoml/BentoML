@@ -4,8 +4,7 @@ import bentoml._internal.constants as const
 
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, catch_exceptions
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
 _exc = const.IMPORT_ERROR_MSG.format(
     fwr="flax",
@@ -19,8 +18,8 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import flax
     import jax
 else:
-    jax = LazyLoader("jax", globals(), "jax")
-    flax = LazyLoader("flax", globals(), "flax")
+    jax = LazyLoader("jax", globals(), "jax", exc_msg=_exc)
+    flax = LazyLoader("flax", globals(), "flax", exc_msg=_exc)
 
 
 class FlaxModel(Model):
@@ -58,14 +57,8 @@ class FlaxModel(Model):
         super(FlaxModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def load(cls, path: PathType) -> "flax.linen.Module":
         ...
 
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def save(self, path: PathType) -> None:
         ...

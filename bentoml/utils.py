@@ -10,7 +10,6 @@ import typing as t
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.environment.local_py_modules import find_local_py_modules_used
 from ._internal.environment.pip_pkg import get_pkg_version, seek_pip_packages
 from ._internal.types import PathType
 

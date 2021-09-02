@@ -5,8 +5,7 @@ import bentoml._internal.constants as const
 
 from ._internal.models.base import MODEL_NAMESPACE, TXT_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, catch_exceptions
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
 _exc = const.IMPORT_ERROR_MSG.format(
     fwr="lightgbm",
@@ -18,7 +17,7 @@ _exc = const.IMPORT_ERROR_MSG.format(
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import lightgbm
 else:
-    lightgbm = LazyLoader("lightgbm", globals(), "lightgbm")
+    lightgbm = LazyLoader("lightgbm", globals(), "lightgbm", exc_msg=_exc)
 
 
 class LightGBMModel(Model):
@@ -52,16 +51,10 @@ class LightGBMModel(Model):
         super(LightGBMModel, self).__init__(model, metadata=metadata)
 
     @classmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def load(cls, path: PathType) -> "lightgbm.Booster":
         return lightgbm.Booster(
             model_file=os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}")
         )
 
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def save(self, path: PathType) -> None:
         self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}"))

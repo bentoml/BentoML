@@ -9,8 +9,6 @@ from functools import lru_cache
 from bentoml import __version__ as BENTOML_VERSION
 
 from ..configuration import _is_pip_installed_bentoml
-from ..utils import ProtoMessageToDict
-from ..utils.ruamel_yaml import YAML
 
 logger = logging.getLogger(__name__)
 
@@ -98,11 +96,6 @@ def _get_bento_service_event_properties(bento_service, properties=None):
         properties["artifact_types"] = list(artifact_types)
     else:
         properties["artifact_types"] = ["NO_ARTIFACT"]
-
-    env_dict = ProtoMessageToDict(bento_service_metadata.env)
-    if "conda_env" in env_dict:
-        env_dict["conda_env"] = YAML().load(env_dict["conda_env"])
-    properties["env"] = env_dict
 
     return properties
 

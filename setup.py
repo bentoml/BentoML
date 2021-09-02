@@ -8,8 +8,6 @@ with open("README.md", "r", encoding="utf8") as f:
 install_requires = [
     "aiohttp",
     "aiohttp_cors==0.7.0",
-    "urllib3<=1.25.11",
-    "cerberus",  # data validation
     "click>=7.0",
     "deepmerge",
     "docker",
@@ -17,23 +15,20 @@ install_requires = [
     "numpy",
     "packaging",
     "psutil",
-    # python-dateutil required by pandas and boto3, this makes sure the version
-    # works for both
-    "python-dateutil>=2.7.3,<3.0.0",
     "requests",
-    "ruamel.yaml>=0.15.0",
-    "schema",
-    "tabulate",
+    "schema",  # Schema validation
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "chardet",
     "simple-di==0.1.1",
     "cloudpickle",
     "mypy",
+    "rich",
+    "pyyaml",
 ]
 
 
-model_server_requires = [
+model_server_optional = [
     "opentracing",
     "py_zipkin",
     "jaeger_client",
@@ -96,7 +91,7 @@ dev_all = install_requires + dev_requires + docs_requires + types_requires
 extras_require = {
     "dev": dev_all,
     "test": test_requires,
-    "model_server": model_server_requires,
+    "model_server": model_server_optional,
     "doc_builder": docs_requires,  # 'doc_builder' is required by readthedocs.io
 }
 

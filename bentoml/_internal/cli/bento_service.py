@@ -27,10 +27,6 @@ from .click_utils import (
 )
 from .utils import Spinner
 
-if TYPE_CHECKING:
-    from ..yatai_client import YataiClient
-    from ..yatai_client.proto.repository_pb2 import BentoServiceMetadata
-
 try:
     import click_completion
 

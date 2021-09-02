@@ -5,13 +5,13 @@ import re
 import time
 
 import click
+import yaml
 from click import ClickException
 
 from bentoml.exceptions import BentoMLException
 
 # from bentoml import configure_logging
 from ..configuration import set_debug_mode
-from ..utils.ruamel_yaml import YAML
 from ..utils.usage_stats import track
 
 # Available CLI colors for _echo:
@@ -227,10 +227,9 @@ def validate_labels_query_callback(
 
 
 def parse_yaml_file_callback(ctx, param, value):  # pylint: disable=unused-argument
-    yaml = YAML()
     yml_content = value.read()
     try:
-        return yaml.load(yml_content)
+        return yaml.safe_load(yml_content)
     except Exception:
         raise click.BadParameter(
             "Input value is not recognizable yaml file or yaml content"

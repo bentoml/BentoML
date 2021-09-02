@@ -1,8 +1,9 @@
 import typing as t
 from pathlib import Path
 
+import yaml
+
 from ..types import MetadataType, PathType
-from ..utils.ruamel_yaml import YAML
 
 MT = t.TypeVar("MT", bound=t.Any)
 
@@ -14,7 +15,6 @@ PTH_EXTENSION: str = ".pth"
 PT_EXTENSION: str = ".pt"
 TXT_EXTENSION: str = ".txt"
 YAML_EXTENSION: str = ".yaml"
-YML_EXTENSION: str = ".yml"
 MODEL_NAMESPACE: str = "bentoml_model"
 
 
@@ -115,11 +115,10 @@ class Model(object):
                 path: PathType = args[0]  # save(self, path)
                 _validate_or_create_dir(path)
                 if self.metadata:
-                    yaml = YAML()
-                    yaml.dump(
-                        self.metadata,
-                        Path(path, f"{MODEL_NAMESPACE}{YML_EXTENSION}"),
-                    )
+                    with open(
+                        Path(path, f"{MODEL_NAMESPACE}{YAML_EXTENSION}", "r")
+                    ) as f:
+                        yaml.dump(self.metadata, f)
 
                 inherited = object.__getattribute__(self, item)
                 return inherited(*args, **kw)

@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 DEBUG_ENV_VAR = "BENTOML_DEBUG"
+CONFIG_ENV_VAR = "BENTOML_CONFIG"
 
 
 def expand_env_var(env_var):
@@ -45,15 +46,9 @@ def _is_pip_installed_bentoml():
 
 
 def get_local_bentoml_config_file():
-    if "BENTOML_CONFIG" in os.environ:
+    if CONFIG_ENV_VAR in os.environ:
         # User local config file for customizing bentoml
-        return expand_env_var(os.environ.get("BENTOML_CONFIG"))
-    return None
-
-
-def get_local_yatai_server_config_file():
-    if "BENTOML_YATAI_SERVER_CONFIG" in os.environ:
-        return expand_env_var(os.environ.get("BENTOML_YATAI_SERVER_CONFIG"))
+        return expand_env_var(os.environ.get(CONFIG_ENV_VAR))
     return None
 
 
@@ -123,21 +118,20 @@ def inject_dependencies():
     )
 
     bentoml_config_file = get_local_bentoml_config_file()
-    yatai_server_config_file = get_local_yatai_server_config_file()
+    if bentoml_config_file:
+        if not bentoml_config_file.endswith((".yml", ".yaml")):
+            raise Exception(
+                "BentoML config file specified in ENV VAR does not end with `.yaml`: "
+                f"`BENTOML_CONFIG={bentoml_config_file}`"
+            )
+        if os.isfile(bentoml_config_file):
+            raise FileNotFoundError(
+                "BentoML config file specified in ENV VAR not found: "
+                f"`BENTOML_CONFIG={bentoml_config_file}`"
+            )
 
-    bentoml_override_config_file = (
-        bentoml_config_file
-        if bentoml_config_file and bentoml_config_file.endswith(".yml")
-        else None
-    )
-    yatai_override_config_file = (
-        yatai_server_config_file
-        if yatai_server_config_file and yatai_server_config_file.endswith(".yml")
-        else None
-    )
     bentoml_configuration = BentoMLConfiguration(
-        override_config_file=bentoml_override_config_file,
-        override_yatai_config_file=yatai_override_config_file,
+        override_config_file=bentoml_config_file,
     )
 
     BentoMLContainer.config.set(bentoml_configuration.as_dict())

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 
-from bentoml.xgboost import XgBoostModel
+from bentoml.xgboost import _XgBoostModel
 from tests._internal.frameworks.sklearn_utils import test_df
 from tests._internal.helpers import assert_have_file_extension
 
@@ -34,8 +34,8 @@ def xgboost_model():
 def test_xgboost_save_load(tmpdir):
     model = xgboost_model()
 
-    XgBoostModel(model).save(tmpdir)
+    _XgBoostModel(model).save(tmpdir)
     assert_have_file_extension(tmpdir, ".json")
 
-    xg_loaded: xgb.core.Booster = XgBoostModel.load(tmpdir)
+    xg_loaded: xgb.core.Booster = _XgBoostModel.load(tmpdir)
     assert predict_df(xg_loaded, test_df) == 1

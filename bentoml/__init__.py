@@ -1,7 +1,10 @@
-from bentoml._internal.configuration import inject_dependencies
-
 # From versioneer
 from ._version import get_versions
+
+__version__ = get_versions()["version"]
+del get_versions
+
+from bentoml._internal.configuration import inject_dependencies
 
 # TODO:
 # from bentoml._internal.utils.log import configure_logging
@@ -18,9 +21,6 @@ from bentoml._internal.environment import env
 from bentoml._internal.models import Model, PickleModel
 from bentoml._internal.server import serve
 from bentoml._internal.service import Service
-
-__version__ = get_versions()["version"]
-del get_versions
 
 __all__ = [
     "__version__",

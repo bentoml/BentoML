@@ -6,9 +6,12 @@ with open("README.md", "r", encoding="utf8") as f:
     long_description = f.read()
 
 install_requires = [
-    "aiohttp",
     "aiohttp_cors==0.7.0",
     "click>=7.0",
+    "simple-di==0.1.1",
+    'contextvars;python_version < "3.7"',
+    'dataclasses;python_version < "3.7"',
+    "aiohttp",
     "deepmerge",
     "docker",
     "humanfriendly",
@@ -17,14 +20,13 @@ install_requires = [
     "psutil",
     "requests",
     "schema",  # Schema validation
-    'contextvars;python_version < "3.7"',
-    'dataclasses;python_version < "3.7"',
     "chardet",
-    "simple-di==0.1.1",
     "cloudpickle",
     "mypy",
     "rich",
     "pyyaml",
+    "attrs",
+    "cattrs",
 ]
 
 

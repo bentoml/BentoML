@@ -4,6 +4,8 @@ import inspect
 import os
 import socket
 import tarfile
+import uuid
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -29,36 +31,19 @@ from .lazy_loader import LazyLoader
 from .s3 import is_s3_url
 
 _T = TypeVar("_T")
-_T_co = TypeVar("_T_co", covariant=True)
-_F = TypeVar("_F", bound=Callable[..., Any])
-
-T = TypeVar("T")
-V = TypeVar("V")
-
-
-def _yield_first_val(iterable):
-    if isinstance(iterable, tuple):
-        yield iterable[0]
-    elif isinstance(iterable, str):
-        yield iterable
-    else:
-        for i in iterable:
-            yield i
-
-
-def _flatten_list(lst) -> List[str]:
-    if not isinstance(lst, list):
-        raise AttributeError
-    return [k for i in lst for k in _yield_first_val(i)]
-
+_V = TypeVar("_V")
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+
+DEFAULT_CHUNK_SIZE = 1024 * 8  # 8kb
+
 
 __all__ = [
     "reserve_free_port",
     "get_free_port",
     "is_url",
+    "randomize_hash",
     "catch_exceptions",
     "cached_contextmanager",
     "cached_property",
@@ -71,7 +56,24 @@ __all__ = [
 ]
 
 
-DEFAULT_CHUNK_SIZE = 1024 * 8  # 8kb
+def _yield_first_val(iterable):
+    if isinstance(iterable, tuple):
+        yield iterable[0]
+    elif isinstance(iterable, str):
+        yield iterable
+    else:
+        for i in iterable:
+            yield i
+
+
+def flatten_list(lst) -> List[str]:
+    if not isinstance(lst, list):
+        raise AttributeError
+    return [k for i in lst for k in _yield_first_val(i)]
+
+
+def randomize_hash():
+    return f'{datetime.now().strftime("%Y%m%d%H%M%S")}_{uuid.uuid4().hex[:6].upper()}'
 
 
 class _Missing(object):
@@ -85,7 +87,7 @@ class _Missing(object):
 _missing = _Missing()
 
 
-class cached_property(Generic[T, V], property):
+class cached_property(Generic[_T, _V], property):
     """A decorator that converts a function into a lazy property. The
     function wrapped is called the first time to retrieve the result
     and then that calculated result is used the next time you access
@@ -112,7 +114,7 @@ class cached_property(Generic[T, V], property):
 
     def __init__(
         self,
-        func: Callable[[T], V],
+        func: Callable[[_T], _V],
         name: Optional[str] = None,
         doc: Optional[str] = None,
     ):  # pylint:disable=super-init-not-called
@@ -121,34 +123,34 @@ class cached_property(Generic[T, V], property):
         self.__doc__ = doc or func.__doc__
         self.func = func
 
-    def __set__(self, obj: T, value: V) -> None:
+    def __set__(self, obj: _T, value: _V) -> None:
         obj.__dict__[self.__name__] = value
 
     @overload
     def __get__(  # pylint: disable=redefined-builtin
-        self, obj: None, type: Optional[Type[T]] = None
+        self, obj: None, type: Optional[Type[_T]] = None
     ) -> "cached_property":
         ...
 
     @overload
     def __get__(  # pylint: disable=redefined-builtin
-        self, obj: T, type: Optional[Type[T]] = None
-    ) -> V:
+        self, obj: _T, type: Optional[Type[_T]] = None
+    ) -> _V:
         ...
 
     def __get__(  # pylint:disable=redefined-builtin
-        self, obj: Optional[T], type: Optional[Type[T]] = None
-    ) -> Union["cached_property", V]:
+        self, obj: Optional[_T], type: Optional[Type[_T]] = None
+    ) -> Union["cached_property", _V]:
         if obj is None:
             return self
-        value: V = obj.__dict__.get(self.__name__, _missing)
+        value: _V = obj.__dict__.get(self.__name__, _missing)
         if value is _missing:
             value = self.func(obj)
             obj.__dict__[self.__name__] = value
         return value
 
 
-class cached_contextmanager(Generic[T]):
+class cached_contextmanager(Generic[_T]):
     """
     Just like contextlib.contextmanager, but will cache the yield value for the same
     arguments. When one instance of the contextmanager exits, the cache value will
@@ -166,17 +168,18 @@ class cached_contextmanager(Generic[T]):
 
     def __init__(self, cache_key_template: Optional[str] = None) -> None:
         self._cache_key_template = cache_key_template
-        self._cache: Dict[Union[str, Tuple], T] = {}
+        self._cache: Dict[Union[str, Tuple], _T] = {}
 
-    # TODO: use ParamSpec 3.10: https://github.com/python/mypy/issues/8645
+    # TODO: use ParamSpec 3.10: https://github.com/python/mypy/issues/8645.
+    #   One possible solution is to use typing_extensions >=3.8
     def __call__(
-        self, func: Callable[..., Iterator[T]]
-    ) -> Callable[..., "_GeneratorContextManager[T]"]:
+        self, func: Callable[..., Iterator[_T]]
+    ) -> Callable[..., "_GeneratorContextManager[_T]"]:
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager
         @functools.wraps(func)
-        def _func(*args: Any, **kwargs: Any) -> Iterator[T]:
+        def _func(*args: Any, **kwargs: Any) -> Iterator[_T]:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             bound_args.apply_defaults()
             if self._cache_key_template:
@@ -194,6 +197,35 @@ class cached_contextmanager(Generic[T]):
                     self._cache.pop(cache_key)
 
         return _func
+
+
+class catch_exceptions(Generic[_T], object):
+    def __init__(
+        self,
+        catch_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
+        throw_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
+        msg: Optional[str] = "",
+        fallback: Optional[_T] = None,
+        raises: Optional[bool] = True,
+    ) -> None:
+        self._catch_exc = catch_exc
+        self._throw_exc = throw_exc
+        self._msg = msg
+        self._fallback = fallback
+        self._raises = raises
+
+    # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
+    def __call__(self, func: Callable[..., _T]) -> Callable[..., Optional[_T]]:
+        @functools.wraps(func)
+        def _(*args: Any, **kwargs: Any) -> Optional[_T]:
+            try:
+                return func(*args, **kwargs)
+            except self._catch_exc:
+                if self._raises:
+                    raise self._throw_exc(self._msg)
+                return self._fallback
+
+        return _
 
 
 @contextlib.contextmanager
@@ -226,43 +258,12 @@ def is_url(url: str) -> bool:
         return False
 
 
-class catch_exceptions(Generic[T], object):
-    def __init__(
-        self,
-        catch_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
-        throw_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
-        msg: Optional[str] = "",
-        fallback: Optional[T] = None,
-        raises: Optional[bool] = True,
-    ) -> None:
-        self._catch_exc = catch_exc
-        self._throw_exc = throw_exc
-        self._msg = msg
-        self._fallback = fallback
-        self._raises = raises
-
-    # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
-    def __call__(self, func: Callable[..., T]) -> Callable[..., Optional[T]]:
-        @functools.wraps(func)
-        def _(*args: Any, **kwargs: Any) -> Optional[T]:
-            try:
-                return func(*args, **kwargs)
-            except self._catch_exc:
-                if self._raises:
-                    raise self._throw_exc(self._msg)
-                return self._fallback
-
-        return _
-
-
 def resolve_bundle_path(
     bento: str,
     pip_installed_bundle_path: Optional[str] = None,
     yatai_url: Optional[str] = None,
 ) -> str:
     from bentoml.exceptions import BentoMLException
-
-    from ..yatai_client import get_yatai_client
 
     if pip_installed_bundle_path:
         assert (
@@ -273,24 +274,12 @@ def resolve_bundle_path(
     if os.path.isdir(bento) or is_s3_url(bento) or is_gcs_url(bento):
         # saved_bundle already support loading local, s3 path and gcs path
         return bento
-
-    elif ":" in bento:
-        # assuming passing in BentoService in the form of Name:Version tag
-        yatai_client = get_yatai_client(yatai_url)
-        bento_pb = yatai_client.repository.get(bento)
-        return resolve_bento_bundle_uri(bento_pb)
     else:
         raise BentoMLException(
             f'BentoService "{bento}" not found - either specify the file path of '
             f"the BentoService saved bundle, or the BentoService id in the form of "
             f'"name:version"'
         )
-
-
-def get_default_yatai_client() -> "YataiClient":
-    from bentoml._internal.yatai_client import YataiClient
-
-    return YataiClient()
 
 
 def resolve_bento_bundle_uri(bento_pb):

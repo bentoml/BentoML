@@ -6,7 +6,7 @@ import bentoml._internal.constants as const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, _flatten_list
+from ._internal.utils import LazyLoader, flatten_list
 from .exceptions import BentoMLException
 
 _exc = const.IMPORT_ERROR_MSG.format(
@@ -93,7 +93,7 @@ class ONNXModel(Model):
             )
         if providers is not None:
             if not all(
-                i in onnxruntime.get_all_providers() for i in _flatten_list(providers)
+                i in onnxruntime.get_all_providers() for i in flatten_list(providers)
             ):
                 raise BentoMLException(
                     f"'{providers}' can't be parsed by `onnxruntime`"

@@ -10,7 +10,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 # Install EvalML
-pip install evalml>=0.25.0
+pip install evalml>=0.25.0 --no-dependencies
 pytest "$GIT_ROOT"/tests/integration/frameworks/test_evalml_model_artifact.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

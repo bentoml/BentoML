@@ -22,6 +22,16 @@ else:
     xgb = LazyLoader("xgb", globals(), "xgboost", exc_msg=_exc)
 
 
+def save(
+    name: str,
+    model: "xgb.core.Booster",
+    *,
+    metadata: t.Optional[MetadataType] = None,
+    **save_options,
+):
+    _instance = XgBoostModel(model, metadata=metadata)
+
+
 class XgBoostModel(Model):
     """
     Artifact class for saving/loading :obj:`xgboost` model

@@ -18,6 +18,7 @@ if t.TYPE_CHECKING:
     from ..server.marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
+
 SYSTEM_HOME = os.path.expanduser("~")
 
 SCHEMA = Schema(

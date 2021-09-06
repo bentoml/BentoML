@@ -1,13 +1,13 @@
 import os
 import typing as t
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="mxnet.gluon",
     module=__name__,
     inst="`pip install mxnet`",

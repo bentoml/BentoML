@@ -16,7 +16,6 @@ inject_dependencies()
 # configure_logging()
 
 # force users to use modules imports for frameworks
-import bentoml.catboost
 from bentoml._internal.environment import env
 from bentoml._internal.models import Model, PickleModel
 from bentoml._internal.server import serve

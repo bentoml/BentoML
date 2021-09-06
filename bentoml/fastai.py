@@ -1,14 +1,14 @@
 import os
 import typing as t
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="fastai",
     module=__name__,
     inst="Make sure to install PyTorch first,"

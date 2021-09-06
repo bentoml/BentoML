@@ -4,7 +4,7 @@ import pathlib
 import typing as t
 from distutils.dir_util import copy_tree
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
@@ -17,7 +17,7 @@ from ._internal.utils.tensorflow import (
     pretty_format_restored_model,
 )
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="tensorflow",
     module=__name__,
     inst="`pip install -U tensorflow`",

@@ -6,7 +6,6 @@ import socket
 import tarfile
 import uuid
 from datetime import datetime
-
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -63,8 +62,7 @@ def _yield_first_val(iterable):
     elif isinstance(iterable, str):
         yield iterable
     else:
-        for i in iterable:
-            yield i
+        yield from iterable
 
 
 def flatten_list(lst) -> List[str]:

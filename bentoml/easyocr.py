@@ -3,14 +3,14 @@ import os
 import shutil
 import typing as t
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, PTH_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="easyocr",
     module=__name__,
     inst="`pip install easyocr`",

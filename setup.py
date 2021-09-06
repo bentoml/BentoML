@@ -25,7 +25,7 @@ install_requires = [
     "mypy",
     "rich",
     "pyyaml",
-    "attrs",
+    "attrs>=20",
     "cattrs",
 ]
 

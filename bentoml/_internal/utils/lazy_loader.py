@@ -44,8 +44,8 @@ class LazyLoader(types.ModuleType):
             self._parent_module_globals[self._local_name] = module
             # The additional add to sys.modules ensures library is actually loaded.
             sys.modules[self._local_name] = module
-        except ModuleNotFoundError:
-            raise MissingDependencyException(self._exc_msg)
+        except ModuleNotFoundError as e:
+            raise MissingDependencyException(f"{e}, {self._exc_msg}")
 
         # Emit a warning if one was specified
         if self._warning:

@@ -4,7 +4,7 @@ import logging
 import os
 import typing as t
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
@@ -13,7 +13,7 @@ from .exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="pyspark.mllib",
     module=__name__,
     inst="First install Apache Spark, https://spark.apache.org/downloads.html."

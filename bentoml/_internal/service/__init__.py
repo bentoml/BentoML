@@ -4,17 +4,17 @@ from ...exceptions import BentoMLException, InvalidArgument
 from ..io_descriptors import IODescriptor
 from ..utils.validation import check_is_dns1123_subdomain
 from .inference_api import InferenceAPI
-from .runner import _Runner
+from .runner import Runner
 
 
 class Service:
     apis: Dict[str, InferenceAPI] = []
-    runners: List[_Runner] = []
+    runners: List[Runner] = []
 
     # version is only set when load from a bento
     version: Optional[str] = None
 
-    def __init__(self, name: str, runners: Optional[List[_Runner]] = None):
+    def __init__(self, name: str, runners: Optional[List[Runner]] = None):
         # Service name must be a valid dns1123 subdomain string
         check_is_dns1123_subdomain(name)
         self.name = name

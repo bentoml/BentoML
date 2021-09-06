@@ -3,7 +3,7 @@ import typing as t
 
 import cloudpickle
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import (
     H5_EXTENSION,
@@ -16,7 +16,7 @@ from ._internal.models.base import (
 from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="keras",
     module=__name__,
     inst="`pip install tensorflow` since BentoML will use Tensorflow as Keras backend.",  # noqa

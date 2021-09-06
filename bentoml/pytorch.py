@@ -4,20 +4,20 @@ import zipfile
 
 import cloudpickle
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, PT_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader
 
-_torch_exc = const.IMPORT_ERROR_MSG.format(
+_torch_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="pytorch",
     module=__name__,
     inst="Refers to https://pytorch.org/get-started/locally/"
     " to setup PyTorch correctly.",
 )
 
-_pl_exc = const.IMPORT_ERROR_MSG.format(
+_pl_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="pytorch_lightning",
     module=__name__,
     inst="Refers to https://pytorch.org/get-started/locally/"

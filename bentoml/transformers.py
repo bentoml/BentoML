@@ -3,14 +3,14 @@ import pathlib
 import typing as t
 from importlib import import_module
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import Model
 from ._internal.types import MetadataType, PathType
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, InvalidArgument, NotFound
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="transformers",
     module=__name__,
     inst="`pip install transformers`",

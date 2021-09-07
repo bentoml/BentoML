@@ -68,7 +68,7 @@ class Model(object):
         return self._metadata
 
     @classmethod
-    def load(cls, path: PathType) -> t.Any:
+    def load(cls, path: PathType, **kwargs) -> t.Any:
         """
         Load saved model into memory.
 

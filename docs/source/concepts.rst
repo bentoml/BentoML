@@ -378,12 +378,12 @@ prediction service that packs two trained models:
     import bentoml
     from bentoml.adapters import DataframeInput
     from bentoml.frameworks.sklearn import SklearnModel
-    from bentoml.frameworks.xgboost import XgBoostModel
+    from bentoml.frameworks.xgboost import _XgBoostModel
 
     @bentoml.env(infer_pip_packages=True)
     @bentoml.artifacts([
         SklearnModel("model_a"),
-        XgBoostModel("model_b")
+        _XgBoostModel("model_b")
     ])
     class MyPredictionService(bentoml.BentoService):
 

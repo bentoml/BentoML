@@ -1,14 +1,14 @@
 import os
 import typing as t
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, catch_exceptions
-from .exceptions import InvalidArgument, MissingDependencyException
+from ._internal.utils import LazyLoader
+from .exceptions import InvalidArgument
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="catboost",
     module=__name__,
     inst="`pip install catboost`",
@@ -17,7 +17,7 @@ _exc = const.IMPORT_ERROR_MSG.format(
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import catboost as cbt
 else:
-    cbt = LazyLoader("cbt", globals(), "catboost")
+    cbt = LazyLoader("cbt", globals(), "catboost", exc_msg=_exc)
 
 CatBoostModelType = t.TypeVar(
     "CatBoostModelType",
@@ -82,11 +82,6 @@ class CatBoostModel(Model):
         self._model_pool = model_pool
 
     @staticmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError,
-        throw_exc=MissingDependencyException,
-        msg=_exc,
-    )
     def __init_model_type(
         model_type: t.Optional[str] = "classifier",
     ) -> CatBoostModelType:
@@ -99,11 +94,6 @@ class CatBoostModel(Model):
 
         return _model
 
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError,
-        throw_exc=MissingDependencyException,
-        msg=_exc,
-    )
     def save(self, path: PathType) -> None:
         self._model.save_model(
             os.path.join(path, f"{MODEL_NAMESPACE}{self.CATBOOST_EXTENSION}"),
@@ -113,11 +103,6 @@ class CatBoostModel(Model):
         )
 
     @classmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError,
-        throw_exc=MissingDependencyException,
-        msg=_exc,
-    )
     def load(  # noqa # pylint: disable=arguments-differ
         cls, path: PathType, model_type: str = "classifier"
     ) -> "cbt.core.CatBoost":

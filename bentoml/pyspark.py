@@ -4,16 +4,16 @@ import logging
 import os
 import typing as t
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, catch_exceptions
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.utils import LazyLoader
+from .exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="pyspark.mllib",
     module=__name__,
     inst="First install Apache Spark, https://spark.apache.org/downloads.html."
@@ -26,9 +26,9 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import pyspark.ml as ml
     import pyspark.sql as sql
 else:
-    pyspark = LazyLoader("pyspark", globals(), "pyspark")
-    ml = LazyLoader("ml", globals(), "pyspark.ml")
-    sql = LazyLoader("sql", globals(), "pyspark.sql")
+    pyspark = LazyLoader("pyspark", globals(), "pyspark", exc_msg=_exc)
+    ml = LazyLoader("ml", globals(), "pyspark.ml", exc_msg=_exc)
+    sql = LazyLoader("sql", globals(), "pyspark.sql", exc_msg=_exc)
 
 # NOTE: the usage of SPARK_SESSION_NAMESPACE is to provide a consistent session
 #  among imports if users need to use SparkSession.
@@ -88,9 +88,6 @@ class PySparkMLlibModel(Model):
         self._spark_sess = spark_session
 
     @classmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def load(cls, path: PathType) -> "pyspark.ml.Model":
 
         model_path: str = str(os.path.join(path, MODEL_NAMESPACE))
@@ -128,9 +125,6 @@ class PySparkMLlibModel(Model):
 
         return model
 
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def save(self, path: PathType) -> None:
         if not isinstance(self._model, ml.Model):
             logger.warning(DEPRECATION_MLLIB_WARNING.format(model=self._model))

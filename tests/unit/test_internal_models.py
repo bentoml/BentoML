@@ -66,7 +66,7 @@ def test_base_artifact(args, kwargs, metadata):
         (create_mock_class("1")),
     ],
 )
-def test_save_artifact(model, tmpdir):
+def test_save_model(model, tmpdir):
     foo = FooModel(model, metadata=_metadata)
     foo.save(tmpdir)
     assert_have_file_extension(tmpdir, ".yml")
@@ -76,7 +76,7 @@ def test_save_artifact(model, tmpdir):
     "model",
     [(create_mock_class("MockModel")), (create_mock_class("test"))],
 )
-def test_pkl_artifact(model, tmpdir):
+def test_pkl_model(model, tmpdir):
     pkl = PickleModel(model, metadata=_metadata)
     pkl.save(tmpdir)
     assert model == PickleModel.load(tmpdir)

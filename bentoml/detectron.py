@@ -1,14 +1,13 @@
 import os
 import typing as t
 
-import bentoml._internal.constants as const
+import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, PTH_EXTENSION, YAML_EXTENSION, Model
 from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader, catch_exceptions
-from .exceptions import MissingDependencyException
+from ._internal.utils import LazyLoader
 
-_exc = const.IMPORT_ERROR_MSG.format(
+_exc = _const.IMPORT_ERROR_MSG.format(
     fwr="detectron2",
     module=__name__,
     inst="Refers to https://detectron2.readthedocs.io/en/latest/tutorials/install.html",  # noqa
@@ -21,9 +20,11 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import detectron2.modeling as modeling
     import torch.nn as nn
 else:
-    checkpoint = LazyLoader("checkpoint", globals(), "detectron2.checkpoint")
-    config = LazyLoader("config", globals(), "detectron2.config")
-    modeling = LazyLoader("modeling", globals(), "detectron2.modeling")
+    checkpoint = LazyLoader(
+        "checkpoint", globals(), "detectron2.checkpoint", exc_msg=_exc
+    )
+    config = LazyLoader("config", globals(), "detectron2.config", exc_msg=_exc)
+    modeling = LazyLoader("modeling", globals(), "detectron2.modeling", exc_msg=_exc)
 
 
 class DetectronModel(Model):
@@ -64,9 +65,6 @@ class DetectronModel(Model):
         self._input_model_yaml = input_model_yaml
 
     @classmethod
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def load(  # noqa # pylint: disable=arguments-differ
         cls, path: PathType, device: str = "cpu"
     ) -> "nn.Module":
@@ -111,9 +109,6 @@ class DetectronModel(Model):
         checkpointer.load(weight_path)
         return model
 
-    @catch_exceptions(
-        catch_exc=ModuleNotFoundError, throw_exc=MissingDependencyException, msg=_exc
-    )
     def save(self, path: PathType) -> None:
         os.makedirs(path, exist_ok=True)
         checkpointer: "checkpoint.DetectionCheckpointer" = (

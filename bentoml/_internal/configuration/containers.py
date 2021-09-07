@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:
     from ..server.marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
-SYSTEM_HOME = os.path.expanduser('~')
+SYSTEM_HOME = os.path.expanduser("~")
 
 SCHEMA = Schema(
     {
@@ -224,9 +224,7 @@ class BentoMLContainerClass:
 
     bentoml_home = providers.Factory(
         lambda: expand_env_var(
-            os.environ.get(
-                "BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml")
-            )
+            os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml"))
         )
     )
 

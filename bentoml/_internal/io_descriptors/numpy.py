@@ -13,7 +13,7 @@ else:
 class NumpyNdarray(IODescriptor):
     def __init__(
         self,
-        dtype: Union[np.dtype, str, None] = None,
+        dtype: Union["np.dtype", str, None] = None,
         enforce_dtype: bool = False,
         shape: Optional[Tuple] = None,
         enforce_shape: bool = False,

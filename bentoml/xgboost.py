@@ -42,8 +42,9 @@ def _save_model(
     return _stores.modelstore.save_model(name, _instance)
 
 
-def _load_model(name: str) -> "xgb.core.Booster":
-    ...
+def _load_model(name: str, **load_kwargs) -> "xgb.core.Booster":
+    path = _stores.modelstore.get_model(name)
+    return _XgBoostModel.load(path, **load_kwargs)
 
 
 def _load_model_runner(*args, **kw) -> "_XgBoostRunner":
@@ -103,34 +104,34 @@ class _XgBoostModel(Model):
         return _XgBoostRunner(*runner_args, **runner_kwargs)
 
 
-@attr.s
 class _XgBoostRunner(Runner):
-    _infer_api_callback = attr.ib(default="predict")
-    _infer_params = attr.ib(
-        default=attr.Factory(lambda self: self._setup_infer_params(), takes_self=True)
-    )
+    def __init__(self, name, model_path, *, infer_api_callback: str = "predict"):
+        super(_XgBoostRunner, self).__init__(name)
+        self._model_path = model_path
+        self._infer_api_callback = infer_api_callback
+        self._infer_params = self._setup_infer_params()
 
     @property
     def num_concurrency(self):
-        if self._on_gpu:
+        if self.resource_limits.on_gpu:
             return 1
         return self._num_threads_per_process
 
     @property
     def num_replica(self):
-        if self._on_gpu:
-            return self.GPU
+        if self.resource_limits.on_gpu:
+            return self.resource_limits.gpu
         return 1
 
     @property
     def _num_threads_per_process(self):
-        return int(round(self.CPU))
+        return int(round(self.resource_limits.cpu))
 
     def _setup_infer_params(self):
         # will accept np.ndarray, pd.DataFrame
         infer_params = {"predictor": "cpu_predictor"}
 
-        if self._on_gpu:
+        if self.resource_limits.on_gpu:
             # will accept cupy.ndarray, cudf.DataFrame
             infer_params["predictor"] = "gpu_predictor"
             infer_params["tree_method"] = "gpu_hist"
@@ -139,7 +140,7 @@ class _XgBoostRunner(Runner):
         return infer_params
 
     def _setup(self) -> None:
-        if not self._on_gpu:
+        if not self.resource_limits.on_gpu:
             self._model = _XgBoostModel.load(
                 self._model_path,
                 infer_params=self._infer_params,

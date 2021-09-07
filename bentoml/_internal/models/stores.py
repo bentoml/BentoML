@@ -61,7 +61,7 @@ class LocalModelStore:
         path.symlink_to(Path(self._BASE_DIR, name, "latest"))
         return f"{name}:{version}"
 
-    def get_model(self, name: str, model_instance: "_MT", **load_kwargs) -> t.Any:
+    def get_model(self, name: str) -> Path:
         """
         bentoml.pytorch.load("my_nlp_model")
         """
@@ -72,8 +72,7 @@ class LocalModelStore:
                 "Given model name is not found in BentoML model stores. "
                 "Make sure to have the correct model name."
             )
-        else:
-            return model_instance.load(path, **load_kwargs)
+        return path
 
     def delete_model(self, name: str, skip_confirm: bool = False):
         """

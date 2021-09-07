@@ -43,7 +43,7 @@ __all__ = [
     "reserve_free_port",
     "get_free_port",
     "is_url",
-    "randomize_hash",
+    "generate_new_version_id",
     "catch_exceptions",
     "cached_contextmanager",
     "cached_property",
@@ -71,8 +71,8 @@ def flatten_list(lst) -> List[str]:
     return [k for i in lst for k in _yield_first_val(i)]
 
 
-def randomize_hash():
-    return f'{datetime.now().strftime("%Y%m%d%H%M%S")}_{uuid.uuid4().hex[:6].upper()}'
+def generate_new_version_id():
+    return f'{datetime.now().strftime("%Y%m%d")}_{uuid.uuid4().hex[:6].upper()}'
 
 
 class _Missing(object):

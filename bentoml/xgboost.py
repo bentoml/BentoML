@@ -37,17 +37,16 @@ def _save_model(
     model: "xgb.core.Booster",
     *,
     metadata: t.Optional[MetadataType] = None,
-    **save_options,
-):
+) -> str:
     _instance = _XgBoostModel(model, metadata=metadata)
-    return _stores.modelstore.get_model(name, _instance, **save_options)
+    return _stores.modelstore.save_model(name, _instance)
 
 
-def _load_model(name: str):
+def _load_model(name: str) -> "xgb.core.Booster":
     ...
 
 
-def _load_model_runner(*args, **kw):
+def _load_model_runner(*args, **kw) -> "_XgBoostRunner":
     ...
 
 

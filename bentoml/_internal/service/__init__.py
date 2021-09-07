@@ -8,10 +8,12 @@ from .runner import Runner
 
 
 class Service:
-    apis: Dict[str, InferenceAPI] = []
-    runners: List[Runner] = []
+    _apis: Dict[str, InferenceAPI] = {}
+    _runners: Dict[str, Runner] = {}
 
-    # version is only set when load from a bento
+    # Name of the service, it is a required parameter for __init__
+    name: str
+    # Version of the service, only applicable if the service was load from a bento
     version: Optional[str] = None
 
     def __init__(self, name: str, runners: Optional[List[Runner]] = None):
@@ -20,7 +22,7 @@ class Service:
         self.name = name
 
         if runners is not None:
-            self.runners = runners
+            self._runners = {r.name: r for r in runners}
 
     def api(
         self,
@@ -30,17 +32,14 @@ class Service:
         api_doc: Optional[str] = None,
         route: Optional[str] = None,
     ):
-        """
-        Decorate a user defined function to make it an InferenceAPI of this service
-        """
-        if not api_name.isidentifier():
-            raise InvalidArgument("")
+        """Decorate a user defined function to make it an InferenceAPI of this service"""
 
         def decorator(func):
             _api_name = func.__name__ if api_name is None else api_name
             _route = _api_name if route is None else route
+            _api_doc = func.__doc__ if api_doc is None else api_doc
 
-            if _api_name in self.apis:
+            if _api_name in self._apis:
                 raise BentoMLException(
                     f"API {api_name} is already defined in Service {self.name}"
                 )
@@ -50,9 +49,15 @@ class Service:
                 user_defined_callback=func,
                 input_descriptor=input,
                 output_descriptor=output,
-                doc=api_doc,
+                doc=_api_doc,
                 route=_route,
             )
-            self.apis[api.name] = api
+            self._apis[api.name] = api
 
         return decorator
+
+    def asgi_app(self):
+        pass
+
+    def wsgi_app(self):
+        pass

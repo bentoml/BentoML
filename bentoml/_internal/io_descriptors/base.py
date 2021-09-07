@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 from ..types import HTTPRequest, HTTPResponse
 
@@ -22,3 +22,16 @@ class IODescriptor(ABC):
     @abstractmethod
     def to_http_response(self, obj: IOPyObj) -> HTTPResponse:
         pass
+
+    # TODO: gRPC support
+    # @abstractmethod
+    # def generate_protobuf(self):
+    #     pass
+    #
+    # @abstractmethod
+    # def from_grpc_request(self, request: GRPCRequest) -> IOPyObj:
+    #     pass
+    #
+    # @abstractmethod
+    # def to_grpc_response(self, obj: IOPyObj) -> GRPCResponse:
+    #     pass

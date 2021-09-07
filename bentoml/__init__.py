@@ -15,7 +15,6 @@ inject_dependencies()
 # Configuring logging properly before loading other modules
 # configure_logging()
 
-# force users to use modules imports for frameworks
 from bentoml._internal.environment import env
 from bentoml._internal.models import Model, PickleModel
 from bentoml._internal.server import serve

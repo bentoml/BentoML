@@ -197,7 +197,8 @@ def lock_pypi_versions(package_list: t.List[str]) -> t.List[str]:
             List contains package names
 
     Raises:
-        ValueError: if one package in `package_list` is not available in current virtualenv
+        ValueError: if one package in `package_list` is not
+         available in current virtualenv
 
     Returns:
 
@@ -250,7 +251,8 @@ def with_pip_install_options(
 
         Example Results:
 
-        * ['pandas==1.2.4 --index-url=https://mirror.baidu.com/pypi/simple', 'numpy==1.20.3 --index-url=https://mirror.baidu.com/pypi/simple']
+        * ['pandas==1.2.4 --index-url=https://mirror.baidu.com/pypi/simple',
+            'numpy==1.20.3 --index-url=https://mirror.baidu.com/pypi/simple']
     """
 
     options = []

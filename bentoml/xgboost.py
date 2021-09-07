@@ -1,7 +1,10 @@
 import os
 import typing as t
 
+import attr
+
 import bentoml._internal.constants as _const
+import bentoml._internal.models.stores as _stores
 
 from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, Model
 from ._internal.service.runner import Runner
@@ -37,16 +40,15 @@ def _save_model(
     **save_options,
 ):
     _instance = _XgBoostModel(model, metadata=metadata)
-
-
-save = _save_model
+    return _stores.modelstore.get_model(name, _instance, **save_options)
 
 
 def _load_model(name: str):
     ...
 
 
-load = _load_model
+def _load_model_runner(*args, **kw):
+    ...
 
 
 class _XgBoostModel(Model):
@@ -87,7 +89,7 @@ class _XgBoostModel(Model):
         infer_params: t.Dict[str, t.Union[str, int]] = None,
         nthread: int = -1,
     ) -> "xgb.core.Booster":
-        if "nthread" not in infer_params and nthread > 0:
+        if infer_params and "nthread" not in infer_params:
             infer_params["nthread"] = nthread
         return xgb.core.Booster(
             params=infer_params,
@@ -97,12 +99,18 @@ class _XgBoostModel(Model):
     def save(self, path: PathType) -> None:
         self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"))
 
-    @classmethod
-    def load_runner(cls, *runner_args, **runner_kwargs):
+    @staticmethod
+    def load_runner(*runner_args, **runner_kwargs):
         return _XgBoostRunner(*runner_args, **runner_kwargs)
 
 
+@attr.s
 class _XgBoostRunner(Runner):
+    _infer_api_callback = attr.ib(default="predict")
+    _infer_params = attr.ib(
+        default=attr.Factory(lambda self: self._setup_infer_params(), takes_self=True)
+    )
+
     @property
     def num_concurrency(self):
         if self._on_gpu:
@@ -119,32 +127,17 @@ class _XgBoostRunner(Runner):
     def _num_threads_per_process(self):
         return int(round(self.CPU))
 
-    def __init__(
-        self,
-        model_path,
-        infer_api_callback: str = "predict",
-        on_gpu=False,
-        batch_axis=0,
-    ):
-        super(_XgBoostRunner, self).__init__(
-            model_path, infer_api_callback=infer_api_callback
-        )
-        self._batch_axis = batch_axis
-        self._on_gpu = on_gpu
-        self._infer_api_callback = "predict"
-        # information to pass to  marshal server
-        infer_params = {
-            "predictor": "cpu_predictor"
-        }  # will accept np.ndarray, pd.DataFrame
+    def _setup_infer_params(self):
+        # will accept np.ndarray, pd.DataFrame
+        infer_params = {"predictor": "cpu_predictor"}
 
         if self._on_gpu:
-            infer_params[
-                "predictor"
-            ] = "gpu_predictor"  # will accept cupy.ndarray, cudf.DataFrame
+            # will accept cupy.ndarray, cudf.DataFrame
+            infer_params["predictor"] = "gpu_predictor"
             infer_params["tree_method"] = "gpu_hist"
-
             # infer_params['gpu_id'] = bentoml.get_gpu_device()
-        self._infer_params = infer_params
+
+        return infer_params
 
     def _setup(self) -> None:
         if not self._on_gpu:
@@ -163,6 +156,11 @@ class _XgBoostRunner(Runner):
         self, input_data: t.Union["np.ndarray", "pd.DataFrame", "xgb.DMatrix"]
     ) -> "np.ndarray":
         if not isinstance(input_data, xgb.DMatrix):
-            input_data = xgb.DMatrix(input_data, nthreads=self._num_threads_per_process)
+            input_data = xgb.DMatrix(input_data, nthread=self._num_threads_per_process)
         res = self._infer_func(input_data)
         return np.asarray(res)
+
+
+save = _save_model
+load = _load_model
+load_runner = _load_model_runner

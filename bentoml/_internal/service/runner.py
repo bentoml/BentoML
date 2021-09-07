@@ -32,7 +32,7 @@ class RunnerResourceLimits:
         return mem.total
 
     @property
-    def on_gpu(self):
+    def on_gpu(self) -> bool:
         return self.gpu > 0.0
 
 
@@ -43,18 +43,41 @@ class RunnerBatchOptions:
     max_latency_ms = attr.ib(type=int, default=10000)
 
 
-@attr.s
-class Runner:
-    name = attr.ib(type=str)
+class Runner(ABC):
+    """
+    Usage:
+    r = bentoml.xgboost.load_runner()
+    r.resource_limits.cpu = 2
+    r.resource_limits.mem = "2Gi"
 
-    resource_limits = attr.ib(factory=RunnerResourceLimits, init=False)
-    batch_options = attr.ib(factory=RunnerBatchOptions, init=False)
+    class XgboostRunner(Runner):
 
-    run_batch = attr.ib(type=callable)
+        def __init__(self, name, model_path):
+            super().__init__(name)
+            self.model_path = model_path
 
-    @run_batch.validate
-    def _validate_run_batch(self):
-        pass
+        def _setup(self):
+            self.model = load(model_path)
+            ...
+    """
 
+    def __init__(self, name):
+        self.name = name
+        self.resource_limits = RunnerResourceLimits()
+        self.batch_options = RunnerBatchOptions()
 
-XGBoostRunner = Runner("my_runner", run_batch=xgboost_run_batch)
+    @property
+    def num_concurrency(self):
+        return 1
+
+    @property
+    def num_replica(self):
+        return 1
+
+    @abstractmethod
+    def _setup(self):
+        ...
+
+    @abstractmethod
+    def _run_batch(self):
+        ...

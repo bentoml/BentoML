@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 
 
 def _cpu_converter(cpu: Union[int, float, str]) -> float:
@@ -20,18 +21,18 @@ def _mem_converter(mem: Union[int, str]) -> int:
     if isinstance(mem, str):
         unit_match = re.match("([0-9]+)([A-Za-z]{1,2})", mem)
         mem_multipliers = {
-            k: 1000,
-            M: 1000 ** 2,
-            G: 1000 ** 3,
-            T: 1000 ** 4,
-            P: 1000 ** 5,
-            E: 1000 ** 6,
-            Ki: 1024,
-            Mi: 1024 ** 2,
-            Gi: 1024 ** 3,
-            Ti: 1024 ** 4,
-            Pi: 1024 ** 5,
-            Ei: 1024 ** 6,
+            "k": 1000,
+            "M": 1000 ** 2,
+            "G": 1000 ** 3,
+            "T": 1000 ** 4,
+            "P": 1000 ** 5,
+            "E": 1000 ** 6,
+            "Ki": 1024,
+            "Mi": 1024 ** 2,
+            "Gi": 1024 ** 3,
+            "Ti": 1024 ** 4,
+            "Pi": 1024 ** 5,
+            "Ei": 1024 ** 6,
         }
         if unit_match:
             base = int(unit_match[1])
@@ -42,6 +43,7 @@ def _mem_converter(mem: Union[int, str]) -> int:
     raise ValueError(f"Invalid MEM resource limit '{mem}'")
 
 
+@lru_cache(size=1)
 def _query_cpu_count() -> float:
     # Query active cpu processor count using cgroup v1 API, based on OpenJDK
     # implementation for `active_processor_count` using cgroup v1:

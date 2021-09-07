@@ -12,12 +12,12 @@ class Multipart(IODescriptor):
     """
     Example:
 
-    from bentoml.io import Image, JSON
-    @svc.api(input={'img': Image(), 'annotation': JSON()}, output=JSON())
+    from bentoml.io import Image, JSON, Multipart
+    @svc.api(input=Multipart(img=Image(), annotation=JSON()}), output=JSON())
     """
 
-    def __init__(self, *items: Dict[str, IODescriptor]):
-        for name, descriptor in items:
+    def __init__(self, **inputs: Dict[str, IODescriptor]):
+        for name, descriptor in inputs.items():
             if not isinstance(descriptor, IODescriptor):
                 raise InvalidArgument(
                     "Multipart IO item must be instance of another IODescriptor type"
@@ -27,7 +27,7 @@ class Multipart(IODescriptor):
                     "Multipart IO can not contain nested Multipart item"
                 )
 
-        self._items = items
+        self._inputs = inputs
 
     def openapi_schema(self):
         pass

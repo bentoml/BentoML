@@ -1,8 +1,10 @@
 import logging
 import typing as t
+from contextlib import contextmanager
 from pathlib import Path
 
 from simple_di import Provide, inject
+import attr
 
 from ..configuration.containers import BentoMLContainer
 from ..models.base import Model, _validate_or_create_dir
@@ -33,6 +35,19 @@ def _process_name(model_name: str, sep: str = ":") -> t.Tuple[str, str]:
         return name, version
 
 
+@attr.s
+class ModelInfo:
+    path = attr.ib(type=PathType)
+    module = attr.ib(type=str)
+
+
+@attr.s
+class StoreCtx:
+    path = attr.ib(type=PathType)
+    version = attr.ib(type=str)
+    metadata = attr.ib(type=t.Dict[str, t.Any], factory=dict)
+
+
 class LocalModelStore:
     @inject
     def __init__(self, base_dir: PathType = Provide[BentoMLContainer.bentoml_home]):
@@ -51,15 +66,31 @@ class LocalModelStore:
             path = Path(self._BASE_DIR, name)
         return [_f.name for _f in path.iterdir()]
 
-    def save_model(self, name: str, model_instance: "_MT") -> str:
+    @contextmanager
+    def add(self, name: str, module: str, save_options: t.Dict[str, t.Any]):
         """
-        bentoml.pytorch.save("my_nlp_model", MyTorchModel()) -> name:version
+        with bentoml.models.add(name, module, options) as ctx:
+            # ctx(path, version, metadata)
+            model.save(ctx.path)
+            ctx.metadata["parama_a"] = value_a
         """
         version = generate_new_version_id()
         path = Path(self._BASE_DIR, name, version)
-        self._create_stores(path, model_instance)
-        path.symlink_to(Path(self._BASE_DIR, name, "latest"))
-        return f"{name}:{version}"
+        _validate_or_create_dir(path)
+        latest_path = Path(self._BASE_DIR, name, "latest")
+
+        try:
+            latest_path.unlink()
+        except FileNotFoundError:
+            pass
+
+        latest_path.symlink_to(path)
+        ctx = StoreCtx(path=path, version=version)
+
+        yield ctx
+
+        # TODO save yaml file after model_yaml is ready
+
 
     def get_model(self, name: str) -> Path:
         """
@@ -72,7 +103,9 @@ class LocalModelStore:
                 "Given model name is not found in BentoML model stores. "
                 "Make sure to have the correct model name."
             )
-        return path
+
+        # TODO return module after model_yaml is ready
+        return ModelInfo(path=path.resolve(), module="")
 
     def delete_model(self, name: str, skip_confirm: bool = False):
         """
@@ -112,3 +145,8 @@ class LocalModelStore:
 
 # Global modelstore instance
 modelstore = LocalModelStore()
+
+ls = modelstore.list_model
+add = modelstore.add
+delete = modelstore.delete_model
+get = modelstore.get_model

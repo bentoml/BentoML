@@ -430,12 +430,9 @@ def create_bento_service_cli(
 
         _echo(f"Found Bento: {saved_bundle_path}")
 
-        # fmt: off
-        bento_metadata: "BentoServiceMetadata" = load_bento_service_metadata(saved_bundle_path)  # noqa: E501
-        # fmt: on
-
-        bento_tag = f'{bento_metadata.name}:{bento_metadata.version}'
         yatai_client: "YataiClient" = get_yatai_client(yatai_url)
+        bento_metadata: "BentoServiceMetadata" = yatai_client.repository.get(bento)
+        bento_tag = f'{bento_metadata.name}:{bento_metadata.version}'
         docker_build_args = {}
         if build_arg:
             for arg in build_arg:

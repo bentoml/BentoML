@@ -1,34 +1,36 @@
-Deploying to KNative
+Deploying to Knative
 ====================
 
-Knative is kubernetes based platform to deploy and manage serverless workloads. It is a
+Knative components build on top of Kubernetes to simplify deploying and managing serverless workloads. It is a
 solution for deploying ML workload that requires more computing power that abstracts away
 infrastructure management and without worry about vendor lock.
 
+For more information see the Knative documentation: https://knative.dev/docs/
+
 This guide demonstrates how to serve a scikit-learn based iris classifier model with
-BentoML on a KNative cluster. The same deployment steps are also applicable for models
+BentoML on a Knative cluster. The same deployment steps are also applicable for models
 trained with other machine learning frameworks, see more BentoML examples :doc:`here <../examples>`.
 
 Prerequisites
 -------------
 
-* A kubernetes cluster.
+* A kubernetes cluster:
 
     * `minikube` is the recommended way to run Kubernetes locally:: https://kubernetes.io/docs/tasks/tools/install-minikube/
 
     * Kubernetes guide: https://kubernetes.io/docs/setup/
 
-* Knative with istio as network layer
+* Knative with Istio as a networking layer:
 
-    * Knative install instruction: https://knative.dev/docs/install/any-kubernetes-cluster/
+    * Knative installation instructions: https://knative.dev/docs/admin/install/
 
-    * Install istio for knative: https://knative.dev/docs/install/installing-istio/
+    * Installing Istio for knative: https://knative.dev/docs/admin/install/installing-istio/
 
 * Python 3.6 or above and install required packages: `bentoml` and `scikit-learn`
 
-    * .. code-block:: bash
+    .. code-block:: bash
 
-            pip install bentoml scikit-learn
+        pip install bentoml scikit-learn
 
 
 Knative deployment with BentoML
@@ -105,7 +107,7 @@ BentoService and available for sending test request:
 
 
 ======================================
-Deploy BentoML model server to KNative
+Deploy BentoML model server to Knative
 ======================================
 
 BentoML provides a convenient way to containerize the model API server with Docker:
@@ -126,7 +128,7 @@ BentoML provides a convenient way to containerize the model API server with Dock
     docker push {docker_username}/iris-classifier
 
 
-Make sure Knative serving components are running.
+Make sure Knative Serving components are running.
 
 .. code-block:: bash
 
@@ -176,7 +178,7 @@ readyinessProbe to the /healthz endpoint on BentoService.
 
 
 
-Create bentoml namespace and then deploy BentoService to Knative with kubectl apply command.
+Create bentoml namespace and then deploy BentoService to Knative by using the kubectl apply command.
 
 .. code-block:: bash
 

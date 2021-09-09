@@ -7,7 +7,8 @@ import pathlib
 import string
 import sys
 from functools import reduce
-from typing import Any, Callable, Dict, Generator, Iterable, List, MutableMapping, Union
+from typing import (Any, Callable, Dict, Generator, Iterable, List,
+                    MutableMapping, Union)
 
 from absl import flags
 from cerberus import Validator

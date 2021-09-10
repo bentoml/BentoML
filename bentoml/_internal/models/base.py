@@ -15,7 +15,7 @@ PTH_EXTENSION: str = ".pth"
 PT_EXTENSION: str = ".pt"
 TXT_EXTENSION: str = ".txt"
 YAML_EXTENSION: str = ".yaml"
-MODEL_NAMESPACE: str = "bentoml_model"
+MODEL_NAMESPACE: str = "bentoml_saved_model"
 
 
 def _validate_or_create_dir(path: PathType) -> None:
@@ -114,11 +114,10 @@ class Model(object):
             def wrapped_save(*args, **kw):  # type: ignore
                 path: PathType = args[0]  # save(self, path)
                 _validate_or_create_dir(path)
+                metadata_yaml = Path(path, f"bentoml_model_metadata{YAML_EXTENSION}")
                 if self.metadata:
-                    with open(
-                        Path(path, f"{MODEL_NAMESPACE}{YAML_EXTENSION}", "r")
-                    ) as f:
-                        yaml.dump(self.metadata, f)
+                    with metadata_yaml.open("w", encoding="utf-8") as f:
+                        yaml.safe_dump(self.metadata, f)
 
                 inherited = object.__getattribute__(self, item)
                 return inherited(*args, **kw)

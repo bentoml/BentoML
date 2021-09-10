@@ -1,7 +1,6 @@
 import os
+import sys
 import typing as t
-
-import attr
 
 import bentoml._internal.constants as _const
 import bentoml._internal.models.stores as _stores
@@ -32,22 +31,32 @@ else:
     )
 
 
-def _save_model(
+def save(
     name: str,
     model: "xgb.core.Booster",
     *,
+    infer_params: t.Dict[str, t.Union[str, int]] = None,
     metadata: t.Optional[MetadataType] = None,
 ) -> str:
+    cur_frame = sys._getframe().f_back.f_code.co_filename
     _instance = _XgBoostModel(model, metadata=metadata)
-    return _stores.modelstore.save_model(name, _instance)
+    save_options = dict(infer_params=infer_params)
+    with _stores.add(
+        name, module=_instance.__module__, save_options=save_options, stacks=cur_frame
+    ) as ctx:
+        _version = ctx.version
+        _instance.save(ctx.path)
+    return f"{name}:{_version}"
 
 
-def _load_model(name: str, **load_kwargs) -> "xgb.core.Booster":
-    path = _stores.modelstore.get_model(name)
-    return _XgBoostModel.load(path, **load_kwargs)
+def load(name: str, **load_kwargs) -> "xgb.core.Booster":
+    model_info = _stores.get(name)
+    return _XgBoostModel.load(
+        model_info.path, **{**model_info.save_options, **load_kwargs}
+    )
 
 
-def _load_model_runner(*args, **kw) -> "_XgBoostRunner":
+def load_runner(*args, **kw) -> "_XgBoostRunner":
     ...
 
 
@@ -78,7 +87,10 @@ class _XgBoostModel(Model):
     """
 
     def __init__(
-        self, model: "xgb.core.Booster", metadata: t.Optional[MetadataType] = None
+        self,
+        model: "xgb.core.Booster",
+        *,
+        metadata: t.Optional[MetadataType] = None,
     ):
         super(_XgBoostModel, self).__init__(model, metadata=metadata)
 
@@ -89,7 +101,7 @@ class _XgBoostModel(Model):
         infer_params: t.Dict[str, t.Union[str, int]] = None,
         nthread: int = -1,
     ) -> "xgb.core.Booster":
-        if infer_params and "nthread" not in infer_params:
+        if infer_params is not None and "nthread" not in infer_params:
             infer_params["nthread"] = nthread
         return xgb.core.Booster(
             params=infer_params,
@@ -159,8 +171,3 @@ class _XgBoostRunner(Runner):
             input_data = xgb.DMatrix(input_data, nthread=self._num_threads_per_process)
         res = self._infer_func(input_data)
         return np.asarray(res)
-
-
-save = _save_model
-load = _load_model
-load_runner = _load_model_runner

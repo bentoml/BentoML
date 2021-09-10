@@ -1,20 +1,43 @@
 import logging
 import typing as t
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 
-from simple_di import Provide, inject
 import attr
+import yaml
+from simple_di import Provide, inject
+
+from bentoml import __version__ as BENTOML_VERSION
 
 from ..configuration.containers import BentoMLContainer
-from ..models.base import Model, _validate_or_create_dir
-from ..types import PathType
+from ..models.base import _validate_or_create_dir
+from ..types import MetadataType, PathType
 from ..utils import generate_new_version_id
 
 LOCAL_MODELSTORE_NAMESPACE = "models"
-_MT = t.TypeVar("_MT", bound=Model)
+BENTOML_MODEL_YAML = "bentoml_model.yaml"
 
 logger = logging.getLogger(__name__)
+
+
+def _gen_model_yaml(
+    *,
+    module=None,
+    save_options=None,
+    metadata: MetadataType = None,
+    stacks: str = None,
+    **context_kwargs,
+) -> dict:
+    return dict(
+        api_version="v1",
+        bentoml_version=BENTOML_VERSION,
+        created_at=datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+        module=module,
+        save_options=save_options,
+        metadata=metadata,
+        context=dict(source=stacks, **context_kwargs),
+    )
 
 
 def _process_name(model_name: str, sep: str = ":") -> t.Tuple[str, str]:
@@ -39,6 +62,7 @@ def _process_name(model_name: str, sep: str = ":") -> t.Tuple[str, str]:
 class ModelInfo:
     path = attr.ib(type=PathType)
     module = attr.ib(type=str)
+    save_options = attr.ib(type=t.Dict[str, t.Any], factory=dict)
 
 
 @attr.s
@@ -67,12 +91,12 @@ class LocalModelStore:
         return [_f.name for _f in path.iterdir()]
 
     @contextmanager
-    def add(self, name: str, module: str, save_options: t.Dict[str, t.Any]):
+    def add_model(self, name: str, **yaml_kwargs) -> "StoreCtx":
         """
         with bentoml.models.add(name, module, options) as ctx:
             # ctx(path, version, metadata)
             model.save(ctx.path)
-            ctx.metadata["parama_a"] = value_a
+            ctx.metadata["params_a"] = value_a
         """
         version = generate_new_version_id()
         path = Path(self._BASE_DIR, name, version)
@@ -85,14 +109,14 @@ class LocalModelStore:
             pass
 
         latest_path.symlink_to(path)
-        ctx = StoreCtx(path=path, version=version)
+        # save bentoml_model.yml
+        model_yaml = Path(path, BENTOML_MODEL_YAML)
+        with model_yaml.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(_gen_model_yaml(**yaml_kwargs), f)
 
-        yield ctx
+        yield StoreCtx(path=path, version=version)
 
-        # TODO save yaml file after model_yaml is ready
-
-
-    def get_model(self, name: str) -> Path:
+    def get_model(self, name: str) -> ModelInfo:
         """
         bentoml.pytorch.load("my_nlp_model")
         """
@@ -103,9 +127,15 @@ class LocalModelStore:
                 "Given model name is not found in BentoML model stores. "
                 "Make sure to have the correct model name."
             )
+        model_yaml = Path(path, BENTOML_MODEL_YAML)
+        with model_yaml.open("r", encoding="utf-8") as f:
+            _info = yaml.safe_load(f)
 
-        # TODO return module after model_yaml is ready
-        return ModelInfo(path=path.resolve(), module="")
+        return ModelInfo(
+            path=path.resolve(),
+            module=_info["module"],
+            save_options=_info["save_options"],
+        )
 
     def delete_model(self, name: str, skip_confirm: bool = False):
         """
@@ -137,16 +167,11 @@ class LocalModelStore:
     def import_model(self, name: str):
         ...
 
-    @staticmethod
-    def _create_stores(path: PathType, model_instance: "_MT"):
-        Path(path).mkdir(parents=True)
-        model_instance.save(path)
-
 
 # Global modelstore instance
 modelstore = LocalModelStore()
 
 ls = modelstore.list_model
-add = modelstore.add
+add = modelstore.add_model
 delete = modelstore.delete_model
 get = modelstore.get_model

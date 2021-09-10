@@ -24,7 +24,7 @@ def test_fasttext_save_load(tmpdir):
         model = fasttext.train_supervised(input=inf)
 
     FastTextModel(model).save(tmpdir)
-    assert os.path.isfile(os.path.join(tmpdir, "bentoml_model"))
+    assert os.path.isfile(os.path.join(tmpdir, "bentoml_saved_model"))
 
     fasttext_loaded: "fasttext.FastText._FastText" = FastTextModel.load(tmpdir)
     assert fasttext_loaded.predict(test_json["text"])[0] == ("__label__bar",)

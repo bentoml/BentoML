@@ -1,27 +1,15 @@
 import io
 import os
 import urllib
-import uuid
-from dataclasses import dataclass, field
-from typing import (
-    Any,
-    BinaryIO,
-    Dict,
-    Generic,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from dataclasses import dataclass
+from typing import Any, BinaryIO, Dict, Mapping, Optional, Sequence, Tuple, Union
 
+import attr
 from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
+
+from bentoml.exceptions import BentoMLException
 
 from .utils.dataclasses import json_serializer
 
@@ -38,16 +26,21 @@ PathType = Union[str, os.PathLike]
 GenericDictType = Dict[str, Any]  # TODO:
 
 
-@dataclass(frozen=True)
+@attr.s
 class BentoTag:
-    name: str
-    version: str
+    name = attr.id(type=str)
+    version: attr.id(type=str)
 
     def __str__(self):
         return f"{self.name}:{self.version}"
 
-    def __repr__(self) -> str:
-        return f"<BentoTag {str(self)}>"
+    @classmethod
+    def from_str(cls, tag_str: str):
+        try:
+            name, version = tag_str.split(":")
+            return cls(name, version)
+        except ValueError:
+            raise BentoMLException(f"Invalid Bento Tag '{tag_str}'")
 
 
 @json_serializer(fields=["uri", "name"], compat=True)
@@ -290,129 +283,3 @@ class HTTPResponse:
         return flask.Response(
             status=self.status, headers=tuple(self.headers.items()), response=self.body
         )
-
-
-# https://tools.ietf.org/html/rfc7159#section-3
-JsonSerializable = Union[bool, None, Dict, List, int, float, str]
-
-# https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html
-AwsLambdaEvent = Union[Dict, List, str, int, float, None]
-
-Input = TypeVar("Input")
-Output = TypeVar("Output")
-
-ApiFuncArgs = TypeVar("ApiFuncArgs")
-BatchApiFuncArgs = TypeVar("BatchApiFuncArgs")
-ApiFuncReturnValue = TypeVar("ApiFuncReturnValue")
-BatchApiFuncReturnValue = TypeVar("BatchApiFuncReturnValue")
-
-
-@json_serializer(compat=True)
-@dataclass
-class InferenceResult(Generic[Output]):
-    """
-    The data structure that returned by BentoML API server.
-    Contains result data and context like HTTP headers.
-    """
-
-    version: int = 0
-
-    # payload
-    data: Optional[Output] = None
-    err_msg: str = ""
-
-    # meta
-    task_id: Optional[str] = None
-
-    # context
-    http_status: int = 501
-    http_headers: HTTPHeaders = HTTPHeaders()
-    aws_lambda_event: Optional[dict] = None
-    cli_status: Optional[int] = 0
-
-    def __post_init__(self):
-        if self.http_headers is None:
-            self.http_headers = HTTPHeaders()
-        elif isinstance(self.http_headers, dict):
-            self.http_headers = HTTPHeaders.from_dict(self.http_headers)
-        elif isinstance(self.http_headers, (tuple, list)):
-            self.http_headers = HTTPHeaders.from_sequence(self.http_headers)
-
-    @classmethod
-    def complete_discarded(
-        cls,
-        tasks: Iterable["InferenceTask"],
-        results: Iterable["InferenceResult"],
-    ) -> Iterator["InferenceResult"]:
-        """
-        Generate InferenceResults based on successful inference results and
-        fallback results of discarded tasks.
-
-        """
-        iterable_results = iter(results)
-        try:
-            for task in tasks:
-                if task.is_discarded:
-                    assert task.error
-                    yield task.error
-                else:
-                    yield next(iterable_results)
-        except StopIteration:
-            raise StopIteration(
-                "The results does not match the number of tasks"
-            ) from None
-
-
-@json_serializer(compat=True)
-@dataclass
-class InferenceError(InferenceResult):
-    """
-    The default InferenceResult when errors happened.
-    """
-
-    # context
-    http_status: int = 500
-    cli_status: int = 1
-
-
-@json_serializer(compat=True)
-@dataclass
-class InferenceTask(Generic[Input]):
-    """
-    The data structure passed to the BentoML API server for inferring.
-    Contains payload data and context like HTTP headers or CLI args.
-    """
-
-    version: int = 0
-
-    # payload
-    data: Optional[Input] = None
-    error: Optional[InferenceResult] = None
-
-    # meta
-    task_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    is_discarded: bool = False
-    batch: Optional[int] = None
-
-    # context
-    http_method: Optional[str] = None
-    http_headers: HTTPHeaders = HTTPHeaders()
-    aws_lambda_event: Optional[dict] = None
-    cli_args: Optional[Sequence[str]] = None
-    inference_job_args: Optional[Mapping[str, Any]] = None
-
-    def discard(self, err_msg: Optional[str] = "", **context: str):
-        """
-        Discard this task. All subsequent steps will be skipped.
-
-        Args:
-            err_msg (`str`):
-                The reason why this task got discarded. It would be the body of
-                HTTP Response, a field in AWS lambda event or CLI stderr message.
-
-            **context (`str`):
-                Other contexts of the fallback ``InferenceResult``
-        """
-        self.is_discarded = True
-        self.error = InferenceError(err_msg=err_msg, **context)
-        return self

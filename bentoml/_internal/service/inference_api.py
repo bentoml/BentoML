@@ -8,24 +8,32 @@ RESERVED_API_NAMES = [
     "index",
     "swagger",
     "docs",
-    "healthz",
     "metrics",
-    "feedback",
+    "healthz",
+    "livez",
+    "readyz",
 ]
 
 
 class InferenceAPI:
     def __init__(
         self,
-        name: str,
         user_defined_callback: callable,
         input_descriptor: IODescriptor,
         output_descriptor: IODescriptor,
+        name: Optional[str],
         doc: Optional[str] = None,
         route: Optional[str] = None,
     ):
-        self._validate_name(name)
-        self._validate_route(route)
+        # Use user_defined_callback function variable if name not specified
+        name = user_defined_callback.__name__ if name is None else name
+        # Use user_defined_callback function docstring `__doc__` if doc not specified
+        doc = user_defined_callback.__doc__ if doc is None else doc
+        # Use API name as route if route not specified
+        route = name if route is None else route
+
+        InferenceAPI._validate_name(name)
+        InferenceAPI._validate_route(route)
 
         self.name = name
         self.func = user_defined_callback

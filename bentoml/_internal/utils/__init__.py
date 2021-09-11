@@ -75,7 +75,15 @@ def flatten_list(lst) -> List[str]:
 
 
 def generate_new_version_id():
-    return f'{datetime.now().strftime("%Y%m%d")}_{uuid.uuid4().hex[:6].upper()}'
+    """
+    The default function for generating a new unique version string when saving a new
+    bento or a new model
+    """
+    date_string = datetime.now().strftime("%Y%m%d")
+    random_hash = uuid.uuid4().hex[:6].upper()
+
+    # Example output: '20210910_D246ED'
+    return f"{date_string}_{random_hash}"
 
 
 def validate_or_create_dir(path: PathType) -> None:

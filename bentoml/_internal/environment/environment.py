@@ -156,9 +156,9 @@ class BentoServiceEnv(object):
             BentoMLContainer.config.bento_bundle.default_docker_base_image
         ],
         zipimport_archives: List[str] = None,
-        bentoml_deployment_version: str = Provide[
-            BentoMLContainer.bento_bundle_deployment_version
-        ],
+        # bentoml_deployment_version: str = Provide[
+        #     BentoMLContainer.preferred_bentoml_version
+        # ],
     ):
         self._python_version = PYTHON_VERSION
         self._pip_index_url = pip_index_url

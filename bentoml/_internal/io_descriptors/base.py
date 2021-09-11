@@ -12,7 +12,11 @@ class IODescriptor(ABC):
     """
 
     @abstractmethod
-    def openapi_schema(self):
+    def openapi_request_schema(self):
+        pass
+
+    @abstractmethod
+    def openapi_responses_schema(self):
         pass
 
     @abstractmethod

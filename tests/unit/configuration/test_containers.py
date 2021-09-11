@@ -174,32 +174,6 @@ def test_prometheus_multiproc_dir():
     )
 
 
-def test_default_bento_bundle_deployment_version():
-    container = BentoMLContainer
-    config = BentoMLConfiguration().as_dict()
-    container.config.set(config)
-
-    assert container.bento_bundle_deployment_version.get() is not None
-
-
-def test_customized_bento_bundle_deployment_version():
-    override_config = tempfile.NamedTemporaryFile(delete=False)
-    override_config.write(
-        b"""
-bento_bundle:
-  deployment_version: 0.0.1
-"""
-    )
-    override_config.close()
-
-    container = BentoMLContainer
-    config = BentoMLConfiguration(override_config_file=override_config.name).as_dict()
-    container.config.set(config)
-
-    assert container.bento_bundle_deployment_version.get() == "0.0.1"
-    os.remove(override_config.name)
-
-
 def test_yatai_database_url():
     container = BentoMLContainer
     config = BentoMLConfiguration().as_dict()

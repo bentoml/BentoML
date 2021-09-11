@@ -8,11 +8,11 @@ from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
-from bentoml import __version__
+from bentoml._internal.utils import generate_new_version_id
 from bentoml.exceptions import BentoMLConfigException
 
 from ..utils import get_free_port
-from . import expand_env_var, get_bentoml_deploy_version
+from . import expand_env_var
 
 if t.TYPE_CHECKING:
     from ..server.marshal.marshal import MarshalApp
@@ -22,10 +22,6 @@ SYSTEM_HOME = os.path.expanduser("~")
 
 SCHEMA = Schema(
     {
-        "bento_bundle": {
-            "deployment_version": Or(str, None),
-            "default_docker_base_image": Or(str, None),
-        },
         "bento_server": {
             "port": And(int, lambda port: port > 0),
             "workers": Or(And(int, lambda workers: workers > 0), None),
@@ -38,9 +34,7 @@ SCHEMA = Schema(
                 "max_latency": Or(And(int, lambda latency: latency > 0), None),
             },
             "ngrok": {"enabled": bool},
-            "swagger": {"enabled": bool},
             "metrics": {"enabled": bool, "namespace": str},
-            "feedback": {"enabled": bool},
             "logging": {"level": str},
             "cors": {
                 "enabled": bool,
@@ -286,15 +280,6 @@ class BentoMLContainerClass:
             multiproc_dir=multiproc_dir,
             namespace=namespace,
         )
-
-    bento_bundle_deployment_version = providers.Factory(
-        get_bentoml_deploy_version,
-        providers.Factory(
-            lambda default, customized: customized or default,
-            __version__.split("+")[0],
-            config.bento_bundle.deployment_version,
-        ),
-    )
 
     logging_file_directory = providers.Factory(
         lambda default, customized: customized or default,

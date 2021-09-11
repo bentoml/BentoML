@@ -3,15 +3,17 @@ import logging
 import os
 import pkgutil
 import sys
+import typing as t
 import zipfile
 import zipimport
-from typing import Dict
+
+if t.TYPE_CHECKING:
+    from bentoml._internal.service import Service
+
 
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1
 EPP_PKG_VERSION_MISMATCH = 2
-
-ZIPIMPORT_DIR = "zipimports"
 
 __mm = None
 
@@ -104,7 +106,7 @@ class ModuleManager(object):
                     self.setuptools_module_set.add(mn)
 
         self.searched_modules = {}
-        self.zip_modules: Dict[str, zipimport.zipimporter] = {}
+        self.zip_modules: t.Dict[str, zipimport.zipimporter] = {}
         for m in pkgutil.iter_modules():
             if m.name not in self.searched_modules:
                 if isinstance(m.module_finder, zipimport.zipimporter):
@@ -258,3 +260,122 @@ class DepSeekWork(object):
                         filename.replace(".py", "")
                     )
                     self.seek_in_source(content)
+
+
+def lock_pypi_versions(package_list: t.List[str]) -> t.List[str]:
+    """
+    Lock versions of pypi packages in current virtualenv
+
+    Args:
+        package_list List[str]:
+            List contains package names
+
+    Raises:
+        ValueError: if one package in `package_list` is not
+         available in current virtualenv
+
+    Returns:
+
+        list of lines for requirements.txt
+
+        Example Results:
+
+        * ['numpy==1.20.3', 'pandas==1.2.4', 'scipy==1.4.1']
+    """
+    pkgs_with_version = []
+
+    for pkg in package_list:
+        version = get_pkg_version(pkg)
+        print(pkg, version)
+        if version:
+            pkg_line = f"{pkg}=={version}"
+            pkgs_with_version.append(pkg_line)
+        else:
+            # better warning or throw an exception?
+            raise ValueError(f"package {pkg} is not available in current virtualenv")
+
+    return pkgs_with_version
+
+
+def with_pip_install_options(
+    package_lines: t.List[str],
+    index_url: t.Optional[str] = None,
+    extra_index_url: t.Optional[str] = None,
+    find_links: t.Optional[str] = None,
+) -> t.List[str]:
+    """
+    Lock versions of pypi packages in current virtualenv
+
+    Args:
+        package_lines List[str]:
+            List contains items each representing one line of requirements.txt
+
+        index_url Optional[str]:
+            value of --index-url
+
+        extra_index_url Optional[str]:
+            value of --extra_index-url
+
+        find_links Optional[str]:
+            value of --find-links
+
+    Returns:
+
+        list of lines for requirements.txt
+
+        Example Results:
+
+        * ['pandas==1.2.4 --index-url=https://mirror.baidu.com/pypi/simple',
+            'numpy==1.20.3 --index-url=https://mirror.baidu.com/pypi/simple']
+    """
+
+    options = []
+    if index_url:
+        options.append(f"--index-url={index_url}")
+    if extra_index_url:
+        options.append(f"--extra-index-url={extra_index_url}")
+    if find_links:
+        options.append(f"--find-links={find_links}")
+
+    if not options:
+        return package_lines
+
+    option_str = " ".join(options)
+    pkgs_with_options = [pkg + " " + option_str for pkg in package_lines]
+    return pkgs_with_options
+
+
+def find_required_pypi_packages(
+    svc: "Service", lock_versions: bool = True
+) -> t.List[str]:
+    """
+    Find required pypi packages in a python source file
+
+    Args:
+        path (`Union[str, bytes, os.PathLike]`):
+            Path to a python source file
+
+        lock_versions bool:
+            if the versions of packages should be locked
+
+    Returns:
+
+        list of lines for requirements.txt
+
+        Example Results:
+
+        * ['numpy==1.20.3', 'pandas==1.2.4']
+        * ['numpy', 'pandas']
+    """
+    module_name = svc.__module__
+    module = sys.modules[module_name]
+    reqs, unknown_modules = seek_pip_packages(module.__file__)
+    for module_name in unknown_modules:
+        logger.warning("unknown package dependency for module: %s", module_name)
+
+    if lock_versions:
+        pkg_lines = ["%s==%s" % pkg for pkg in reqs.items()]
+    else:
+        pkg_lines = list(reqs.keys())
+
+    return pkg_lines

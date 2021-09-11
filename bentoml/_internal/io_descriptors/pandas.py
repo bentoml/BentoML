@@ -29,7 +29,10 @@ class PandasDataFrame(IODescriptor):
         self._shape = shape
         self._enforce_shape = enforce_shape
 
-    def openapi_schema(self):
+    def openapi_request_schema(self):
+        pass
+
+    def openapi_responses_schema(self):
         pass
 
     def from_http_request(self, request: HTTPRequest) -> "pd.DataFrame":

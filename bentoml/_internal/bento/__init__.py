@@ -9,8 +9,8 @@ Here's an example file structure of a Bento
     /example_bento
      - readme.md
      - bento.yml
-     - /api/
-         - swagger.json # swagger definition
+     - /apis/
+         - openapi.yaml # openapi spec
          - proto.pb # Note: gRPC proto is not currently available
      - /env/
          - /python
@@ -69,13 +69,6 @@ An example `bento.yml` file in a Bento directory:
 
     models:
     - my_nlp_model:20210709_C154BA
-        created_at: ..
-        type: ..
-
-    env:
-        python_version: '3.7.2'
-        pip_requirements_txt: ...
-        conda_environments_yml: ...
 
 
 
@@ -84,18 +77,3 @@ Build docker image from a Bento directory:
     cd bento_path
     docker build -f ./env/docker/Dockerfile .
 """
-
-
-# TODO:
-def build():
-    pass
-
-
-# TODO:
-def load():
-    pass
-
-
-# TODO:
-def containerize():
-    pass

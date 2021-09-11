@@ -15,16 +15,12 @@ inject_dependencies()
 # Configuring logging properly before loading other modules
 # configure_logging()
 
-from bentoml._internal.environment import env
 from bentoml._internal.models import Model, PickleModel
-from bentoml._internal.server import serve
 from bentoml._internal.service import Service
 
 __all__ = [
     "__version__",
     "PickleModel",
     "Model",
-    "serve",
     "Service",
-    "env",
 ]

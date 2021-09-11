@@ -3,8 +3,8 @@ import typing as t
 from contextlib import contextmanager
 from pathlib import Path
 
-from simple_di import Provide, inject
 import attr
+from simple_di import Provide, inject
 
 from ..configuration.containers import BentoMLContainer
 from ..models.base import Model, _validate_or_create_dir
@@ -59,11 +59,11 @@ class LocalModelStore:
         bentoml models list -> t.List[models name under BENTOML_HOME/models]
         bentoml models list my_nlp_models -> t.List[model_version]
         """
-        if not name:
-            path = self._BASE_DIR
-        else:
-            name, version = _process_name(name)
+        if name:
             path = Path(self._BASE_DIR, name)
+        else:
+            path = self._BASE_DIR
+
         return [_f.name for _f in path.iterdir()]
 
     @contextmanager
@@ -90,7 +90,6 @@ class LocalModelStore:
         yield ctx
 
         # TODO save yaml file after model_yaml is ready
-
 
     def get_model(self, name: str) -> Path:
         """

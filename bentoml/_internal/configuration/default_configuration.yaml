@@ -1,7 +1,3 @@
-bento_bundle:
-  deployment_version: Null
-  default_docker_base_image: Null
-
 bento_server:
   port: 5000
   ngrok:
@@ -13,13 +9,9 @@ bento_server:
     workers: 1
     max_batch_size: Null
     max_latency: Null
-  swagger:
-    enabled: True
   metrics:
     enabled: True
     namespace: BENTOML
-  feedback:
-    enabled: True
   logging:
     level: INFO
   cors:

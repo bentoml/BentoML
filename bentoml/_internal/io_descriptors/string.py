@@ -3,7 +3,10 @@ from .base import IODescriptor
 
 
 class Str(IODescriptor):
-    def openapi_schema(self):
+    def openapi_request_schema(self):
+        pass
+
+    def openapi_responses_schema(self):
         pass
 
     def from_http_request(self, request: HTTPRequest) -> str:

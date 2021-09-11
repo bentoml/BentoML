@@ -32,7 +32,10 @@ class Image(IODescriptor):
     def __init__(self, pilmode=DEFAULT_PIL_MODE):
         self.pilmode = pilmode
 
-    def openapi_schema(self):
+    def openapi_request_schema(self):
+        pass
+
+    def openapi_responses_schema(self):
         pass
 
     def from_http_request(

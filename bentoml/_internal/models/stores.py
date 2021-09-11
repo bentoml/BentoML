@@ -11,33 +11,13 @@ from simple_di import Provide, inject
 from bentoml import __version__ as BENTOML_VERSION
 
 from ..configuration.containers import BentoMLContainer
-from ..models.base import _validate_or_create_dir
-from ..types import MetadataType, PathType
-from ..utils import generate_new_version_id
+from ..types import GenericDictType, PathType
+from ..utils import generate_new_version_id, validate_or_create_dir
 
 LOCAL_MODELSTORE_NAMESPACE = "models"
 BENTOML_MODEL_YAML = "bentoml_model.yaml"
 
 logger = logging.getLogger(__name__)
-
-
-def _gen_model_yaml(
-    *,
-    module=None,
-    save_options=None,
-    metadata: MetadataType = None,
-    stacks: str = None,
-    **context_kwargs,
-) -> dict:
-    return dict(
-        api_version="v1",
-        bentoml_version=BENTOML_VERSION,
-        created_at=datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
-        module=module,
-        save_options=save_options,
-        metadata=metadata,
-        context=dict(source=stacks, **context_kwargs),
-    )
 
 
 def _process_name(model_name: str, sep: str = ":") -> t.Tuple[str, str]:
@@ -57,26 +37,62 @@ def _process_name(model_name: str, sep: str = ":") -> t.Tuple[str, str]:
             version = "latest"
         return name, version
 
+# reserved field for model_yaml
+
+def _gen_model_yaml(
+    *,
+    module=None,
+    save_options=None,
+    metadata: GenericDictType = None,
+    stacks: str = None,
+    **context_kwargs,
+) -> dict:
+    return dict(
+        api_version="v1",
+        bentoml_version=BENTOML_VERSION,
+        created_at=datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+        module=module,
+        save_options=save_options,
+        metadata=metadata,
+        context=dict(source=stacks, **context_kwargs),
+    )
+
+# for YAML file
+# api_version = attr.ib(type=str)
+# bentoml_version = attr.ib(type=str)
+
+# TODO: will be used with models.get
+@attr.s
+class ModelDetails:
+    name = attr.ib(type=str)
+    version = attr.ib(type=str)
+    module = attr.ib(type=str)
+    created_at = attr.ib(type=str)
+    labels = attr.ib(type=t.Dict[str, str], factory=dict)
+    context = attr.ib(type=GenericDictType, factory=dict)
+    save_options = attr.ib(type=GenericDictType, factory=dict)
+    metadata = attr.ib(type=GenericDictType, factory=dict)
+
 
 @attr.s
 class ModelInfo:
     path = attr.ib(type=PathType)
     module = attr.ib(type=str)
-    save_options = attr.ib(type=t.Dict[str, t.Any], factory=dict)
+    save_options = attr.ib(type=GenericDictType, factory=dict)
 
 
 @attr.s
 class StoreCtx:
     path = attr.ib(type=PathType)
     version = attr.ib(type=str)
-    metadata = attr.ib(type=t.Dict[str, t.Any], factory=dict)
+    metadata = attr.ib(type=GenericDictType, factory=dict)
 
 
 class LocalModelStore:
     @inject
     def __init__(self, base_dir: PathType = Provide[BentoMLContainer.bentoml_home]):
         self._BASE_DIR = Path(base_dir, LOCAL_MODELSTORE_NAMESPACE)
-        _validate_or_create_dir(self._BASE_DIR)
+        validate_or_create_dir(self._BASE_DIR)
 
     def list_model(self, name: t.Optional[str] = None) -> t.List[str]:
         """
@@ -91,7 +107,7 @@ class LocalModelStore:
         return [_f.name for _f in path.iterdir()]
 
     @contextmanager
-    def add_model(self, name: str, **yaml_kwargs) -> "StoreCtx":
+    def add_model(self, name: str, **yaml_kwargs: str) -> t.Iterator[StoreCtx]: # register_model
         """
         with bentoml.models.add(name, module, options) as ctx:
             # ctx(path, version, metadata)
@@ -100,7 +116,7 @@ class LocalModelStore:
         """
         version = generate_new_version_id()
         path = Path(self._BASE_DIR, name, version)
-        _validate_or_create_dir(path)
+        validate_or_create_dir(path)
         latest_path = Path(self._BASE_DIR, name, "latest")
 
         try:
@@ -172,6 +188,6 @@ class LocalModelStore:
 modelstore = LocalModelStore()
 
 ls = modelstore.list_model
-add = modelstore.add_model
+add = modelstore.add_model # register model
 delete = modelstore.delete_model
 get = modelstore.get_model

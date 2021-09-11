@@ -13,7 +13,7 @@ from ._internal.models.base import (
     PICKLE_EXTENSION,
     Model,
 )
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 
 _exc = _const.IMPORT_ERROR_MSG.format(
@@ -38,9 +38,9 @@ class KerasModel(Model):
             Keras model instance and its subclasses.
         store_as_json (`bool`, `optional`, default to `False`):
             Whether to store Keras model as JSON and weights
-        custom_objects (`Dict[str, Any]`, `optional`, default to `None`):
+        custom_objects (`GenericDictType`, `optional`, default to `None`):
             Dictionary of Keras custom objects for model
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -67,7 +67,7 @@ class KerasModel(Model):
         model: "tfk.models.Model",
         store_as_json: t.Optional[bool] = False,
         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         super(KerasModel, self).__init__(model, metadata=metadata)
 

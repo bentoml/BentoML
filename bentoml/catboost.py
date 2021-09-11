@@ -4,7 +4,7 @@ import typing as t
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 from .exceptions import InvalidArgument
 
@@ -38,12 +38,12 @@ class CatBoostModel(Model):
             CatBoost model
         model_type (`str`, `optional`, default to `classifier`):
             CatBoost model type. Options: ["classifier", "regressor", ""]
-        model_export_parameters (`Dict[str, Any]`, `optional`, default to `None`):
+        model_export_parameters (`GenericDictType`, `optional`, default to `None`):
             Additional format-dependent parameters.
         model_pool (`catboost.core.Pool`, `optional`, default to `None`):
             Dataset previously used for training, refers to
             ``catboost.core.Pools`` for more info.
-        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+        metadata (`GenericDictType`, `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -71,7 +71,7 @@ class CatBoostModel(Model):
         model_type: t.Optional[str] = "classifier",
         model_export_parameters: t.Optional[t.Dict[str, t.Any]] = None,
         model_pool: t.Optional["cbt.core.Pool"] = None,
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         if model:
             _model = model

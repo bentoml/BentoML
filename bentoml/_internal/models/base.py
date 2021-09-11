@@ -1,31 +1,28 @@
 import typing as t
 from pathlib import Path
+from enum import Enum, auto
 
 import yaml
 
-from ..types import MetadataType, PathType
+from ..types import GenericDictType, PathType
 
 MT = t.TypeVar("MT", bound=t.Any)
-
-H5_EXTENSION: str = ".h5"
-HDF5_EXTENSION: str = ".hdf5"
-JSON_EXTENSION: str = ".json"
-PICKLE_EXTENSION: str = ".pkl"
-PTH_EXTENSION: str = ".pth"
-PT_EXTENSION: str = ".pt"
-TXT_EXTENSION: str = ".txt"
-YAML_EXTENSION: str = ".yaml"
 MODEL_NAMESPACE: str = "bentoml_saved_model"
 
+class AutoNameExtension(Enum):
+    def _generate_next_value_(name, start, count, last_values):
+        return f".{name.lower()}"
 
-def _validate_or_create_dir(path: PathType) -> None:
-    path = Path(path)
+class Extension(AutoNameExtension):
+    H5 = auto()
+    HDF5 = auto()
+    JSON = auto()
+    PICKLE = auto()
+    PTH = auto()
+    PT = auto()
+    TXT = auto()
+    YAML = auto()
 
-    if path.exists():
-        if not path.is_dir():
-            raise OSError(20, f"{path} is not a directory")
-    else:
-        path.mkdir(parents=True)
 
 
 class Model(object):
@@ -37,7 +34,7 @@ class Model(object):
     Args:
         model (`MT`):
             Given model definition. Omit various type depending on given frameworks.
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     .. note::
@@ -59,12 +56,14 @@ class Model(object):
         TODO:
     """
 
-    def __init__(self: "Model", model: MT, metadata: t.Optional[MetadataType] = None):
+    def __init__(
+        self: "Model", model: MT, metadata: t.Optional[GenericDictType] = None
+    ):
         self._model = model
         self._metadata = metadata
 
     @property
-    def metadata(self: "Model") -> t.Optional[MetadataType]:
+    def metadata(self: "Model") -> t.Optional[GenericDictType]:
         return self._metadata
 
     @classmethod
@@ -113,7 +112,7 @@ class Model(object):
 
             def wrapped_save(*args, **kw):  # type: ignore
                 path: PathType = args[0]  # save(self, path)
-                _validate_or_create_dir(path)
+                validate_or_create_dir(path)
                 metadata_yaml = Path(path, f"bentoml_model_metadata{YAML_EXTENSION}")
                 if self.metadata:
                     with metadata_yaml.open("w", encoding="utf-8") as f:

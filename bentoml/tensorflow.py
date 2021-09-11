@@ -7,7 +7,7 @@ from distutils.dir_util import copy_tree
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
@@ -137,7 +137,7 @@ class TensorflowModel(Model):
         model (`Union[tf.keras.Models, tf.Module, PathType, pathlib.PurePath]`):
             Omit every tensorflow model instance of type :obj:`tf.keras.Models` or
             :obj:`tf.Module`
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
 
@@ -158,7 +158,7 @@ class TensorflowModel(Model):
     def __init__(
         self,
         model: t.Union["tf.keras.Model", "tf.Module", PathType, pathlib.PurePath],
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         super(TensorflowModel, self).__init__(model, metadata=metadata)
 

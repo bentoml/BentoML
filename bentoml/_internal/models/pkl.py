@@ -3,7 +3,7 @@ import typing as t
 
 import cloudpickle
 
-from ..types import MetadataType, PathType
+from ..types import GenericDictType, PathType
 from .base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
 
 
@@ -30,7 +30,7 @@ class PickleModel(Model):
     def __init__(
         self,
         model: t.Any,
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         super(PickleModel, self).__init__(model, metadata=metadata)
 

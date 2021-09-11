@@ -35,7 +35,7 @@ JSON_CHARSET = "utf-8"
 
 PathType = Union[str, os.PathLike]
 
-MetadataType = Dict[str, Any]  # TODO:
+GenericDictType = Dict[str, Any]  # TODO:
 
 
 @dataclass(frozen=True)

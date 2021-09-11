@@ -4,7 +4,7 @@ import typing as t
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 
 _exc = _const.IMPORT_ERROR_MSG.format(
@@ -29,7 +29,7 @@ class EvalMLModel(Model):
     Args:
         model (`evalml.pipelines.PipelineBase`):
             Base pipeline for all EvalML model
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -50,7 +50,7 @@ class EvalMLModel(Model):
     def __init__(
         self,
         model: "pipelines.PipelineBase",
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         super(EvalMLModel, self).__init__(model, metadata=metadata)
 

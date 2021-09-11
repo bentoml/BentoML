@@ -3,7 +3,7 @@ import shutil
 import typing as t
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from .exceptions import MissingDependencyException
 
 MT = t.TypeVar("MT")
@@ -29,7 +29,7 @@ class ONNXMlirModel(Model):
             Given filepath or protobuf of converted model.
              Make sure to use corresponding library to convert
              model from different frameworks to ONNX format
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -47,7 +47,7 @@ class ONNXMlirModel(Model):
 
     ONNXMLIR_EXTENSION: str = ".so"
 
-    def __init__(self, model: str, metadata: t.Optional[MetadataType] = None):
+    def __init__(self, model: str, metadata: t.Optional[GenericDictType] = None):
         super(ONNXMlirModel, self).__init__(model, metadata=metadata)
         self._inference_session = None
         self._model_so_path = None

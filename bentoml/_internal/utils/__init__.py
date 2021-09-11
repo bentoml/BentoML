@@ -21,6 +21,7 @@ from typing import (
     Union,
     overload,
 )
+from pathlib import Path
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 if TYPE_CHECKING:
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
 from .gcs import is_gcs_url
 from .lazy_loader import LazyLoader
 from .s3 import is_s3_url
+from ..types import PathType
 
 _T = TypeVar("_T")
 _V = TypeVar("_V")
@@ -40,19 +42,20 @@ DEFAULT_CHUNK_SIZE = 1024 * 8  # 8kb
 
 
 __all__ = [
+    "catch_exceptions",
+    "cached_contextmanager",
+    "cached_property",
+    "LazyLoader",
     "reserve_free_port",
     "get_free_port",
     "is_url",
     "generate_new_version_id",
-    "catch_exceptions",
-    "cached_contextmanager",
-    "cached_property",
     "resolve_bento_bundle_uri",
     "is_gcs_url",
     "is_s3_url",
     "archive_directory_to_tar",
     "resolve_bundle_path",
-    "LazyLoader",
+    "validate_or_create_dir"
 ]
 
 
@@ -74,6 +77,15 @@ def flatten_list(lst) -> List[str]:
 def generate_new_version_id():
     return f'{datetime.now().strftime("%Y%m%d")}_{uuid.uuid4().hex[:6].upper()}'
 
+
+def validate_or_create_dir(path: PathType) -> None:
+    path = Path(path)
+
+    if path.exists():
+        if not path.is_dir():
+            raise OSError(20, f"{path} is not a directory")
+    else:
+        path.mkdir(parents=True)
 
 class _Missing(object):
     def __repr__(self) -> str:

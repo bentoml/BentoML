@@ -6,7 +6,7 @@ from importlib import import_module
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, InvalidArgument, NotFound
 
@@ -93,7 +93,7 @@ class TransformersModel(Model):
         model (`Union[str, os.PathLike, Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]]`):
             A dictionary `{'model':<model_obj>, 'tokenizer':<tokenizer_obj>}`
              to setup Transformers model
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -119,7 +119,7 @@ class TransformersModel(Model):
     def __init__(
         self,
         model: TransformersModelInput,
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         _check_flax_supported()
         super(TransformersModel, self).__init__(model, metadata=metadata)

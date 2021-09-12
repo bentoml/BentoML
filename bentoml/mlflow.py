@@ -14,7 +14,7 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     inst="`pip install mlflow`",
 )
 
-MT = t.TypeVar("MT")
+MT = t.TypeVar("_MT")
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import mlflow

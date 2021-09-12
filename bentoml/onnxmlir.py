@@ -6,7 +6,7 @@ from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import GenericDictType, PathType
 from .exceptions import MissingDependencyException
 
-MT = t.TypeVar("MT")
+MT = t.TypeVar("_MT")
 
 try:
     from PyRuntime import ExecutionSession

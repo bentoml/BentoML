@@ -1,2 +1,2 @@
 # pylint: disable # noqa
-from ._internal.models.stores import add, delete, get, ls
+from ._internal.models.store import delete, get, ls, register

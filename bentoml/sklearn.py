@@ -13,7 +13,7 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     inst="`pip install scikit-learn`",
 )
 
-MT = t.TypeVar("MT")
+MT = t.TypeVar("_MT")
 
 try:  # pragma: no cover
     import joblib

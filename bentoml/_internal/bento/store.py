@@ -7,9 +7,11 @@ from typing import List, Optional
 
 from simple_di import Provide, inject
 
-from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.types import BentoTag, PathType
 from bentoml.exceptions import BentoMLException
+
+from ..configuration.containers import BentoMLContainer
+from ..types import BentoTag, PathType
+from ..utils import validate_or_create_dir
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +21,8 @@ BENTO_STORE_PREFIX = "bentos"
 class LocalBentoStore:
     @inject
     def __init__(self, bentoml_home: PathType = Provide[BentoMLContainer.bentoml_home]):
-        self.base_dir = os.path.join(bentoml_home, BENTO_STORE_PREFIX)
-        if not os.path.isdir(self.base_dir):
-            Path(self.base_dir).mkdir(parents=True)
+        self._BASE_DIR = os.path.join(bentoml_home, BENTO_STORE_PREFIX)
+        validate_or_create_dir(self._BASE_DIR)
 
     def list_bento(self, name: Optional[str] = None) -> List[str]:
         pass
@@ -59,16 +60,14 @@ class LocalBentoStore:
                 shutil.rmtree(bento_path)
             else:
                 # Build is most likely successful, link latest bento path
-                latest_path = Path(self.base_dir, bento_tag.name, "latest")
+                latest_path = Path(self._BASE_DIR, bento_tag.name, "latest")
                 if latest_path.is_symlink():
                     latest_path.unlink()
                 latest_path.symlink_to(bento_path)
 
-    def _create_bento_path(self, tag: BentoTag):
-        bento_path = os.path.join(self.base_dir, tag.name, tag.version)
-        if os.path.isdir(bento_path):
-            raise BentoMLException(f"Bento path {bento_path} already exist")
-        Path(bento_path).mkdir(parents=True)
+    def _create_bento_path(self, tag: BentoTag) -> "Path":
+        bento_path = Path(self._BASE_DIR, tag.name, tag.version)
+        validate_or_create_dir(bento_path)
         return bento_path
 
 

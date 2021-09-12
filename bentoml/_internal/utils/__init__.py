@@ -6,6 +6,7 @@ import socket
 import tarfile
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,16 +22,15 @@ from typing import (
     Union,
     overload,
 )
-from pathlib import Path
 from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
 
 if TYPE_CHECKING:
     from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
 
+from ..types import PathType
 from .gcs import is_gcs_url
 from .lazy_loader import LazyLoader
 from .s3 import is_s3_url
-from ..types import PathType
 
 _T = TypeVar("_T")
 _V = TypeVar("_V")
@@ -55,7 +55,7 @@ __all__ = [
     "is_s3_url",
     "archive_directory_to_tar",
     "resolve_bundle_path",
-    "validate_or_create_dir"
+    "validate_or_create_dir",
 ]
 
 
@@ -95,6 +95,7 @@ def validate_or_create_dir(path: PathType) -> None:
     else:
         path.mkdir(parents=True)
 
+
 class _Missing(object):
     def __repr__(self) -> str:
         return "no value"
@@ -104,6 +105,22 @@ class _Missing(object):
 
 
 _missing = _Missing()
+
+
+def init_docstrings(*init: str):
+    def decorator(func):
+        func.__doc__ = "".join(init) + ("" if func.__doc__ is None else func.__doc__)
+        return func
+
+    return decorator
+
+
+def returns_docstrings(*returns: str):
+    def decorator(func):
+        func.__doc__ = func.__doc__ + "".join(returns)
+        return func
+
+    return decorator
 
 
 class cached_property(Generic[_T, _V], property):

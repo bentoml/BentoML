@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import yaml
 
 from bentoml._internal.configuration import is_pip_installed_bentoml
-from bentoml._internal.models.stores import modelstore
+from bentoml._internal.models.store import _model_store
 from bentoml._internal.utils import generate_new_version_id
 from bentoml._internal.utils.tempdir import TempDirectory
 from bentoml.exceptions import BentoMLException, InvalidArgument
@@ -114,7 +114,7 @@ def build_bento(
         # `models/{model_name}/{model_version}` directory
         for model_tag in models:
             try:
-                model_info = modelstore.get_model(model_tag)
+                model_info = _model_store.get_model(model_tag)
             except FileNotFoundError:
                 raise BentoMLException(
                     f"Model {model_tag} not found in local model store"

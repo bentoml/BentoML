@@ -9,6 +9,7 @@ from multidict import CIMultiDict
 from werkzeug.formparser import parse_form_data
 from werkzeug.http import parse_options_header
 
+from bentoml._internal.utils import generate_new_version_id
 from bentoml.exceptions import BentoMLException
 
 from .utils.dataclasses import json_serializer
@@ -28,19 +29,44 @@ GenericDictType = Dict[str, Any]  # TODO:
 
 @attr.s
 class BentoTag:
-    name = attr.id(type=str)
-    version: attr.id(type=str)
+    name = attr.ib(type=str)
+    version = attr.ib(type=str)
 
     def __str__(self):
         return f"{self.name}:{self.version}"
 
     @classmethod
-    def from_str(cls, tag_str: str):
+    def from_str(cls, tag_str: str) -> "BentoTag":
         try:
             name, version = tag_str.split(":")
+            if not version:
+                # in case users mistakenly define "bento:"
+                raise BentoMLException(
+                    f"{tag_str} contains leading ':'. Maybe you "
+                    f"meant to use `{tag_str}:latest`?"
+                )
             return cls(name, version)
         except ValueError:
-            raise BentoMLException(f"Invalid Bento Tag '{tag_str}'")
+            raise BentoMLException(f"Invalid {cls.__name__} {tag_str}")
+
+
+@attr.s
+class ModelTag:
+    name = attr.ib(type=str)
+    version = attr.ib(type=str)
+
+    def __str__(self):
+        return f"{self.name}:{self.version}"
+
+    @classmethod
+    def from_str(cls, name: str) -> "ModelTag":
+        if "latest" in name:
+            raise BentoMLException(f"{name} shouldn't tag latest")
+        try:
+            _name, _version = name.split(":")
+            return cls(_name, _version)
+        except ValueError:
+            return cls(name, generate_new_version_id())
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

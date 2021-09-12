@@ -3,7 +3,7 @@ import sys
 import typing as t
 
 import bentoml._internal.constants as _const
-import bentoml._internal.models.stores as _stores
+import bentoml._internal.models.store as _stores
 
 from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, Model
 from ._internal.service.runner import Runner
@@ -41,7 +41,7 @@ def save(
     cur_frame = sys._getframe().f_back.f_code.co_filename
     _instance = _XgBoostModel(model, metadata=metadata)
     save_options = dict(infer_params=infer_params)
-    with _stores.add(
+    with _stores.register(
         name, module=_instance.__module__, save_options=save_options, stacks=cur_frame
     ) as ctx:
         _version = ctx.version
@@ -58,9 +58,6 @@ def load(name: str, **load_kwargs) -> "xgb.core.Booster":
 
 def load_runner(*args, **kw) -> "_XgBoostRunner":
     ...
-
-
-
 
 
 class _XgBoostRunner(Runner):
@@ -118,6 +115,7 @@ class _XgBoostRunner(Runner):
             input_data = xgb.DMatrix(input_data, nthread=self._num_threads_per_process)
         res = self._infer_func(input_data)
         return np.asarray(res)
+
 
 class _XgBoostModel(Model):
     """

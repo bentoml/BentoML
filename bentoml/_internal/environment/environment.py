@@ -11,7 +11,6 @@ from simple_di import Provide, inject
 from bentoml.exceptions import BentoMLException
 
 from ..configuration.containers import BentoMLContainer
-from ..utils import cached_property
 from .pip_pkg import (
     EPP_NO_ERROR,
     EPP_PKG_NOT_EXIST,
@@ -70,7 +69,6 @@ class CondaEnv(object):
         if dependencies:
             self.add_conda_dependencies(dependencies)
 
-    @cached_property
     def _conda_env(self):
         if self.default_env_yaml_file:
             env_yml_file = Path(self.default_env_yaml_file)

@@ -24,6 +24,20 @@ else:
     onnx = LazyLoader("onnx", globals(), "onnx", exc_msg=_exc)
     onnxruntime = LazyLoader("onnxruntime", globals(), "onnxruntime", exc_msg=_exc)
 
+def _yield_first_val(iterable):
+    if isinstance(iterable, tuple):
+        yield iterable[0]
+    elif isinstance(iterable, str):
+        yield iterable
+    else:
+        yield from iterable
+
+
+def flatten_list(lst) -> t.List[str]:
+    if not isinstance(lst, list):
+        raise AttributeError
+    return [k for i in lst for k in _yield_first_val(i)]
+
 
 class ONNXModel(Model):
     """

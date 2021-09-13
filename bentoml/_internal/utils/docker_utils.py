@@ -1,7 +1,7 @@
 import logging
 import re
 
-from bentoml.exceptions import YataiDeploymentException
+from bentoml.exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
@@ -45,14 +45,14 @@ def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
     )
 
     if not valid_name_pattern.match(name):
-        raise YataiDeploymentException(
+        raise BentoMLException(
             f"Provided Docker Image tag {tag} is invalid. "
             "Name components may contain lowercase letters, digits "
             "and separators. A separator is defined as a period, "
             "one or two underscores, or one or more dashes."
         )
     if version and not valid_version_pattern.match(version):
-        raise YataiDeploymentException(
+        raise BentoMLException(
             f"Provided Docker Image tag {tag} is invalid. "
             "A tag name must be valid ASCII and may contain "
             "lowercase and uppercase letters, digits, underscores, "

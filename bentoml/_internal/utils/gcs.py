@@ -1,7 +1,4 @@
-import logging
 from urllib.parse import urlparse
-
-logger = logging.getLogger(__name__)
 
 
 def is_gcs_url(url):

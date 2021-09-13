@@ -29,7 +29,7 @@ if you need older version of bentoml. Using default devel image instead...
 """  # noqa: E501
 
 RELEASE_FORMAT = (
-    "bentoml/model-server:{release_type}-python{python_version}-{distro}" "{suffix}"
+    "bentoml/model-server:{release_type}-python{python_version}-{distro}{suffix}"
 )
 
 

@@ -70,36 +70,6 @@ def _send_amplitude_event(event_type, event_properties):
         logger.debug(str(err))
 
 
-def _get_bento_service_event_properties(bento_service, properties=None):
-    bento_service_metadata = bento_service.get_bento_service_metadata_pb()
-
-    if properties is None:
-        properties = {}
-
-    artifact_types = set()
-    input_types = set()
-    output_types = set()
-
-    for artifact in bento_service_metadata.artifacts:
-        artifact_types.add(artifact.artifact_type)
-
-    for api in bento_service_metadata.apis:
-        input_types.add(api.input_type)
-        output_types.add(api.output_type)
-
-    if input_types:
-        properties["input_types"] = list(input_types)
-    if output_types:
-        properties["output_types"] = list(output_types)
-
-    if artifact_types:
-        properties["artifact_types"] = list(artifact_types)
-    else:
-        properties["artifact_types"] = ["NO_ARTIFACT"]
-
-    return properties
-
-
 @lru_cache(maxsize=1)
 def _do_not_track() -> bool:
     """Returns if tracking is disabled from the environment variable
@@ -122,8 +92,3 @@ def track(event_type, event_properties=None):
     event_properties["platform_info"] = _platform()
 
     return _send_amplitude_event(event_type, event_properties)
-
-
-def track_save(bento_service, extra_properties=None):
-    properties = _get_bento_service_event_properties(bento_service, extra_properties)
-    return track("save", properties)

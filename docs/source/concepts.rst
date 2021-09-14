@@ -29,7 +29,7 @@ the :doc:`Getting Started Guide <quickstart>`:
 
 
 Each BentoService class can contain multiple ML models through the
-:code:`@bentoml.artifact` decorator. And multiple inference APIs can be defined for
+:code:`@bentoml.artifacts` decorator. And multiple inference APIs can be defined for
 client to access this service. Each inference API requires a input type specified via an
 :code:`InputAdapter` instance, which defines the expected input data type and data
 format of this API. BentoML provides API input adapters that covers most model serving

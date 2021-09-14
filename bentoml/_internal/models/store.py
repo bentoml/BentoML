@@ -206,9 +206,9 @@ class LocalModelStore:
 
 
 # Global modelstore instance
-_model_store = LocalModelStore()
+modelstore = LocalModelStore()
 
-ls = _model_store.list_model
-register = _model_store.register_model
-delete = _model_store.delete_model
-get = _model_store.get_model
+ls = modelstore.list_model
+register = modelstore.register_model
+delete = modelstore.delete_model
+get = modelstore.get_model

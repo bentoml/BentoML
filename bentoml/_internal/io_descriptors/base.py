@@ -20,11 +20,11 @@ class IODescriptor(ABC):
         pass
 
     @abstractmethod
-    def from_http_request(self, request: HTTPRequest) -> IOPyObj:
+    async def from_http_request(self, request: HTTPRequest) -> IOPyObj:
         pass
 
     @abstractmethod
-    def to_http_response(self, obj: IOPyObj) -> HTTPResponse:
+    async def to_http_response(self, obj: IOPyObj) -> HTTPResponse:
         pass
 
     # TODO: gRPC support
@@ -33,9 +33,9 @@ class IODescriptor(ABC):
     #     pass
     #
     # @abstractmethod
-    # def from_grpc_request(self, request: GRPCRequest) -> IOPyObj:
+    # async def from_grpc_request(self, request: GRPCRequest) -> IOPyObj:
     #     pass
     #
     # @abstractmethod
-    # def to_grpc_response(self, obj: IOPyObj) -> GRPCResponse:
+    # async def to_grpc_response(self, obj: IOPyObj) -> GRPCResponse:
     #     pass

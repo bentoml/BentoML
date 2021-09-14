@@ -1,8 +1,11 @@
 import typing as t
 
+from multipart.multipart import parse_options_header
+from starlette.requests import Request
+from starlette.responses import Response
+
 import bentoml._internal.constants as const
 
-from ..types import HTTPRequest, HTTPResponse
 from ..utils import LazyLoader
 from .base import IODescriptor
 
@@ -38,10 +41,21 @@ class Image(IODescriptor):
     def openapi_responses_schema(self):
         pass
 
-    def from_http_request(
-        self, request: HTTPRequest
+    async def from_http_request(
+        self, request: Request
     ) -> t.Union["np.ndarray", "PIL.Image"]:
-        pass
+        content_type_header = self.headers.get("Content-Type")
+        content_type, _ = parse_options_header(content_type_header)
 
-    def to_http_response(self, obj: t.Union["np.ndarray", "PIL.Image"]) -> HTTPResponse:
+        if content_type == "application/json":
+            json = await request.json()
+
+        else:
+            form = await request.form()
+            filename = form["upload_file"].filename
+            contents = await form["upload_file"].read()
+
+    async def to_http_response(
+        self, obj: t.Union["np.ndarray", "PIL.Image"]
+    ) -> Response:
         pass

@@ -1,5 +1,3 @@
-from enum import Enum, auto
-
 MODEL_STORE_PREFIX = "models"
 SAVE_NAMESPACE = "saved_model"
 MODEL_YAML_NAMESPACE = "model_details"
@@ -17,6 +15,8 @@ SAVE_INIT_DOCS = """\
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
+        metadata (`~bentoml._internal.types.GenericDictType`):
+            Custom metadata for given model.
 """
 
 SAVE_RETURNS_DOCS = """\

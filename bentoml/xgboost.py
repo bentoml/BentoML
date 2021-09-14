@@ -79,6 +79,8 @@ def save(
     """
     model (`xgboost.core.Booster`):
         instance of model to be saved
+    infer_params (`t.Dict[str, t.Union[str, int]]`):
+        Params for booster initialization
     """
     with _stores.register(
         name, module=__name__, options=infer_params, metadata=metadata

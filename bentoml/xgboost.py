@@ -1,14 +1,19 @@
 import os
-import sys
 import typing as t
 
 import bentoml._internal.constants as _const
 import bentoml._internal.models.store as _stores
 
-from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, Model
+from ._internal.models import (
+    JSON_EXT,
+    LOAD_INIT_DOCS,
+    SAVE_INIT_DOCS,
+    SAVE_NAMESPACE,
+    SAVE_RETURNS_DOCS,
+)
 from ._internal.service.runner import Runner
-from ._internal.types import GenericDictType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.types import GenericDictType
+from ._internal.utils import LazyLoader, init_docstrings, returns_docstrings
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import numpy as np
@@ -30,7 +35,40 @@ else:
         "pd", globals(), "pandas", exc_msg="Install pandas with `pip install pandas`"
     )
 
+LOAD_RETURNS_DOCS = """\
+    Returns:
+        an instance of `xgboost.core.Booster` from BentoML modelstore.
+"""
 
+
+@init_docstrings(LOAD_INIT_DOCS)
+@returns_docstrings(LOAD_RETURNS_DOCS)
+def load(
+    name: str,
+    infer_params: t.Dict[str, t.Union[str, int]] = None,
+    nthread: int = -1,
+) -> "xgb.core.Booster":
+    """
+    infer_params (`t.Dict[str, t.Union[str, int]]`):
+        Params for booster initialization
+    nthread (`int`, default to -1):
+        Number of thread will be used for this booster.
+         Default to -1, which will use XgBoost internal threading
+         strategy.
+    """
+    model_info = _stores.get(name)
+    if infer_params is None:
+        infer_params = model_info.options
+    if "nthread" not in infer_params:
+        infer_params["nthread"] = nthread
+    return xgb.core.Booster(
+        params=infer_params,
+        model_file=os.path.join(model_info.path, f"{SAVE_NAMESPACE}{JSON_EXT}"),
+    )
+
+
+@init_docstrings(SAVE_INIT_DOCS)
+@returns_docstrings(SAVE_RETURNS_DOCS)
 def save(
     name: str,
     model: "xgb.core.Booster",
@@ -38,26 +76,19 @@ def save(
     infer_params: t.Dict[str, t.Union[str, int]] = None,
     metadata: t.Optional[GenericDictType] = None,
 ) -> str:
-    cur_frame = sys._getframe().f_back.f_code.co_filename
-    _instance = _XgBoostModel(model, metadata=metadata)
-    save_options = dict(infer_params=infer_params)
+    """
+    model (`xgboost.core.Booster`):
+        instance of model to be saved
+    """
     with _stores.register(
-        name, module=_instance.__module__, save_options=save_options, stacks=cur_frame
+        name, module=__name__, options=infer_params, metadata=metadata
     ) as ctx:
-        _version = ctx.version
-        _instance.save(ctx.path)
-    return f"{name}:{_version}"
+        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{JSON_EXT}"))
+    return f"{name}:{ctx.version}"
 
 
-def load(name: str, **load_kwargs) -> "xgb.core.Booster":
-    model_info = _stores.get(name)
-    return _XgBoostModel.load(
-        model_info.path, **{**model_info.save_options, **load_kwargs}
-    )
-
-
-def load_runner(*args, **kw) -> "_XgBoostRunner":
-    ...
+def load_runner(*args, **kwargs) -> "_XgBoostRunner":
+    return _XgBoostRunner(*args, **kwargs)
 
 
 class _XgBoostRunner(Runner):
@@ -97,13 +128,13 @@ class _XgBoostRunner(Runner):
 
     def _setup(self) -> None:
         if not self.resource_limits.on_gpu:
-            self._model = _XgBoostModel.load(
+            self._model = load(
                 self._model_path,
                 infer_params=self._infer_params,
                 nthread=self.num_concurrency,
             )
         else:
-            self._model = _XgBoostModel.load(
+            self._model = load(
                 self._model_path, infer_params=self._infer_params, nthread=1
             )
         self._infer_func = getattr(self._model, self._infer_api_callback)
@@ -115,59 +146,3 @@ class _XgBoostRunner(Runner):
             input_data = xgb.DMatrix(input_data, nthread=self._num_threads_per_process)
         res = self._infer_func(input_data)
         return np.asarray(res)
-
-
-class _XgBoostModel(Model):
-    """
-    Artifact class for saving/loading :obj:`xgboost` model
-
-    Args:
-        model (`xgboost.core.Booster`):
-            Every xgboost model instance of type :obj:`xgboost.core.Booster`
-        metadata (`GenericDictType`,  `optional`, default to `None`):
-            Class metadata
-
-    Raises:
-        MissingDependencyException:
-            :obj:`xgboost` is required by _XgBoostModel
-        TypeError:
-           model must be instance of :obj:`xgboost.core.Booster`
-
-    Example usage under :code:`train.py`::
-
-        TODO:
-
-    One then can define :code:`bento.py`::
-
-        TODO:
-
-    """
-
-    def __init__(
-        self,
-        model: "xgb.core.Booster",
-        *,
-        metadata: t.Optional[GenericDictType] = None,
-    ):
-        super(_XgBoostModel, self).__init__(model, metadata=metadata)
-
-    @classmethod
-    def load(  # noqa # pylint: disable=arguments-differ
-        cls,
-        path: PathType,
-        infer_params: t.Dict[str, t.Union[str, int]] = None,
-        nthread: int = -1,
-    ) -> "xgb.core.Booster":
-        if infer_params is not None and "nthread" not in infer_params:
-            infer_params["nthread"] = nthread
-        return xgb.core.Booster(
-            params=infer_params,
-            model_file=os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"),
-        )
-
-    def save(self, path: PathType) -> None:
-        self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"))
-
-    @staticmethod
-    def load_runner(*runner_args, **runner_kwargs):
-        return _XgBoostRunner(*runner_args, **runner_kwargs)

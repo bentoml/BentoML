@@ -11,11 +11,11 @@ from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
 
-from ...exceptions import BentoMLException
+from ...exceptions import InvalidArgument
 from ..configuration.containers import BentoMLContainer
 from ..types import GenericDictType, ModelTag, PathType
 from ..utils import validate_or_create_dir
-from . import MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE, Extensions
+from . import MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE, YAML_EXT
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,7 @@ RESERVED_MODEL_FIELD = [
 class StoreCtx(object):
     name = attr.ib(type=str)
     version = attr.ib(type=str)
+    path = attr.ib(type=PathType)
     labels = attr.ib(type=t.Dict[str, str], factory=dict, kw_only=True)
     options = attr.ib(type=GenericDictType, factory=dict, kw_only=True)
     metadata = attr.ib(type=GenericDictType, factory=dict, kw_only=True)
@@ -41,7 +42,6 @@ class StoreCtx(object):
 
 @attr.s
 class ModelInfo(StoreCtx):
-    path = attr.ib(type=PathType)
     module = attr.ib(type=str, kw_only=True)
     created_at = attr.ib(type=str, kw_only=True)
     context = attr.ib(type=GenericDictType, factory=dict)
@@ -62,17 +62,17 @@ def dump_model_yaml(
         labels=ctx.labels,
         options=ctx.options,
         metadata=ctx.metadata,
-        path=model_yaml.parent,
+        path=str(ctx.path),
         created_at=datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
         context={} if framework_context is None else framework_context,
         module=module,
     )
     with model_yaml.open("w", encoding="utf-8") as f:
-        yaml.safe_dump(info, f)
+        yaml.safe_dump(attr.asdict(info), f)
 
 
 def load_model_yaml(path: PathType) -> "ModelInfo":
-    with Path(path, f"{MODEL_YAML_NAMESPACE}{Extensions.YAML}").open(
+    with Path(path, f"{MODEL_YAML_NAMESPACE}{YAML_EXT}").open(
         "r", encoding="utf-8"
     ) as f:
         info = yaml.safe_load(f)
@@ -84,11 +84,6 @@ class LocalModelStore:
     def __init__(self, base_dir: PathType = Provide[BentoMLContainer.bentoml_home]):
         self._BASE_DIR = Path(base_dir, MODEL_STORE_PREFIX)
         validate_or_create_dir(self._BASE_DIR)
-
-    def _create_model_path(self, tag: ModelTag):
-        model_path = Path(self._BASE_DIR, tag.name, tag.version)
-        validate_or_create_dir(model_path)
-        return model_path
 
     def list_model(self, name: t.Optional[str] = None) -> t.List[str]:
         """
@@ -102,15 +97,21 @@ class LocalModelStore:
             path = Path(self._BASE_DIR, tag.name)
         return [_f.name for _f in path.iterdir()]
 
+    def _create_path(self, tag: ModelTag):
+        model_path = Path(self._BASE_DIR, tag.name, tag.version)
+        validate_or_create_dir(model_path)
+        return model_path
+
     @contextmanager
     def register_model(
         self,
         name: str,
         *,
-        options: GenericDictType,
-        metadata: GenericDictType,
-        labels: GenericDictType,
-        framework_context: dict,
+        module: str = "",
+        options: GenericDictType = None,
+        metadata: GenericDictType = None,
+        labels: GenericDictType = None,
+        framework_context: dict = None,
     ) -> "t.Iterator[StoreCtx]":
         """
         with bentoml.models.register(name, options, metadata, labels) as ctx:
@@ -119,35 +120,33 @@ class LocalModelStore:
             ctx.metadata["params_a"] = value_a
         """
         model_tag = ModelTag.from_str(name)
-        model_path = self._create_model_path(model_tag)
-        model_yaml = Path(model_path, f"{MODEL_YAML_NAMESPACE}{Extensions.YAML}")
+        model_path = self._create_path(model_tag)
+        model_yaml = Path(model_path, f"{MODEL_YAML_NAMESPACE}{YAML_EXT}")
 
         ctx = StoreCtx(
             name=model_tag.name,
+            path=model_path,
             version=model_tag.version,
             labels=labels,
             metadata=metadata,
             options=options,
         )
         try:
-            dump_model_yaml(model_yaml, ctx, framework_context=framework_context)
             yield ctx
+        except StopIteration:
+            # save has failed
+            logger.warning(
+                f"Failed saving models {str(model_tag)}, deleting {model_path}..."
+            )
+            shutil.rmtree(model_path)
         finally:
             latest_path = Path(self._BASE_DIR, model_tag.name, "latest")
-            if not model_yaml.is_file():
-                # Build has failed
-                logger.warning(
-                    f"Failed saving models {str(model_tag)}, deleting {model_path}"
-                )
-                shutil.rmtree(model_path)
-            else:
-                if not latest_path.is_symlink():
-                    raise BentoMLException(
-                        "latest should be symlink instead of a directory."
-                    )
-                else:
-                    latest_path.unlink()
-                latest_path.symlink_to(model_path)
+            dump_model_yaml(
+                model_yaml, ctx, framework_context=framework_context, module=module
+            )
+            if latest_path.is_symlink():
+                latest_path.unlink()
+            latest_path.symlink_to(model_path)
 
     def get_model(self, name: str) -> "ModelInfo":
         """
@@ -186,6 +185,24 @@ class LocalModelStore:
 
     def import_model(self, name: str):
         ...
+
+    def __getattribute__(self, item):
+        inherited = object.__getattribute__(self, item)
+        if "model" in item:
+
+            def wrapped_check_identifier(*args, **kwargs):
+                name: str = args[0]  # get_model(name), register_model(name)
+                if not name.isidentifier():
+                    raise InvalidArgument(
+                        f"Invalid model name: '{name}'. A valid identifier "
+                        "may only contain letters, numbers, underscores "
+                        "and not starting with a number."
+                    )
+                return inherited(*args, **kwargs)
+
+            return wrapped_check_identifier
+        else:
+            return inherited
 
 
 # Global modelstore instance

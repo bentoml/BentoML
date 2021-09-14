@@ -1,4 +1,5 @@
 import logging
+import shutil
 import typing as t
 from contextlib import contextmanager
 from datetime import datetime
@@ -13,8 +14,8 @@ from bentoml import __version__ as BENTOML_VERSION
 from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
 from ..types import GenericDictType, ModelTag, PathType
-from ..utils import generate_new_version_id, validate_or_create_dir
-from . import MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE
+from ..utils import validate_or_create_dir
+from . import MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE, Extensions
 
 logger = logging.getLogger(__name__)
 
@@ -29,34 +30,53 @@ RESERVED_MODEL_FIELD = [
 ]
 
 
-# reserved field for model_yaml
-# api_version = v1
-# created_at=datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
-
-# for YAML file
-# api_version = attr.ib(type=str)
-# bentoml_version = attr.ib(type=str)
-
-# TODO: will be used with models.get
 @attr.s
-class StoreCtx:
-    name = attr.ib(type=str)
-    labels = attr.ib(type=t.Dict[str, str], factory=dict)
-    options = attr.ib(type=GenericDictType, factory=dict)
-    metadata = attr.ib(type=GenericDictType, factory=dict)
-
-
-@attr.s
-class ModelInfo:
+class StoreCtx(object):
     name = attr.ib(type=str)
     version = attr.ib(type=str)
-    module = attr.ib(type=str)
+    labels = attr.ib(type=t.Dict[str, str], factory=dict, kw_only=True)
+    options = attr.ib(type=GenericDictType, factory=dict, kw_only=True)
+    metadata = attr.ib(type=GenericDictType, factory=dict, kw_only=True)
+
+
+@attr.s
+class ModelInfo(StoreCtx):
     path = attr.ib(type=PathType)
-    created_at = attr.ib(type=str)
+    module = attr.ib(type=str, kw_only=True)
+    created_at = attr.ib(type=str, kw_only=True)
     context = attr.ib(type=GenericDictType, factory=dict)
-    labels = attr.ib(type=t.Dict[str, str], factory=dict)
-    options = attr.ib(type=GenericDictType, factory=dict)
-    metadata = attr.ib(type=GenericDictType, factory=dict)
+    api_version = attr.ib(init=False, type=str, default="v1")
+    bentoml_version = attr.ib(init=False, type=str, default=BENTOML_VERSION)
+
+
+def dump_model_yaml(
+    model_yaml: Path,
+    ctx: "StoreCtx",
+    *,
+    framework_context: dict = None,
+    module: str = __name__,
+) -> None:
+    info = ModelInfo(
+        name=ctx.name,
+        version=ctx.version,
+        labels=ctx.labels,
+        options=ctx.options,
+        metadata=ctx.metadata,
+        path=model_yaml.parent,
+        created_at=datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+        context={} if framework_context is None else framework_context,
+        module=module,
+    )
+    with model_yaml.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(info, f)
+
+
+def load_model_yaml(path: PathType) -> "ModelInfo":
+    with Path(path, f"{MODEL_YAML_NAMESPACE}{Extensions.YAML}").open(
+        "r", encoding="utf-8"
+    ) as f:
+        info = yaml.safe_load(f)
+    return ModelInfo(**info)
 
 
 class LocalModelStore:
@@ -86,9 +106,11 @@ class LocalModelStore:
     def register_model(
         self,
         name: str,
+        *,
         options: GenericDictType,
         metadata: GenericDictType,
         labels: GenericDictType,
+        framework_context: dict,
     ) -> "t.Iterator[StoreCtx]":
         """
         with bentoml.models.register(name, options, metadata, labels) as ctx:
@@ -98,58 +120,58 @@ class LocalModelStore:
         """
         model_tag = ModelTag.from_str(name)
         model_path = self._create_model_path(model_tag)
-        model_yaml = Path(model_path, MODEL_YAML_NAMESPACE)
-        latest_path = Path(self._BASE_DIR, model_tag.name, "latest")
+        model_yaml = Path(model_path, f"{MODEL_YAML_NAMESPACE}{Extensions.YAML}")
 
+        ctx = StoreCtx(
+            name=model_tag.name,
+            version=model_tag.version,
+            labels=labels,
+            metadata=metadata,
+            options=options,
+        )
         try:
-            yield StoreCtx(
-                name=model_tag.name,
-                path=model_path,
-                version=model_tag.version,
-                labels=labels,
-                metadata=metadata,
-                options=options,
-            )
+            dump_model_yaml(model_yaml, ctx, framework_context=framework_context)
+            yield ctx
         finally:
+            latest_path = Path(self._BASE_DIR, model_tag.name, "latest")
             if not model_yaml.is_file():
-                pass
-            latest_path.unlink()
+                # Build has failed
+                logger.warning(
+                    f"Failed saving models {str(model_tag)}, deleting {model_path}"
+                )
+                shutil.rmtree(model_path)
+            else:
+                if not latest_path.is_symlink():
+                    raise BentoMLException(
+                        "latest should be symlink instead of a directory."
+                    )
+                else:
+                    latest_path.unlink()
+                latest_path.symlink_to(model_path)
 
-        latest_path.symlink_to(model_path)
-        with model_yaml.open("w", encoding="utf-8") as f:
-            yaml.safe_dump(ModelInfo(**options), f)
-
-    def get_model(self, name: str) -> ModelInfo:
+    def get_model(self, name: str) -> "ModelInfo":
         """
         bentoml.pytorch.get("my_nlp_model")
         """
-        model_tag = ModelTag.from_str(name)
-        path = Path(self._BASE_DIR, model_tag.name, model_tag.version)
+        name, version = ModelTag.process_str(name)
+        path = Path(self._BASE_DIR, name, version)
         if not path.exists():
             raise FileNotFoundError(
                 "Given model name is not found in BentoML model stores. "
                 "Make sure to have the correct model name."
             )
-        model_yaml = Path(path, MODEL_YAML_NAMESPACE)
-        with model_yaml.open("r", encoding="utf-8") as f:
-            _info = yaml.safe_load(f)
-
-        return ModelInfo(
-            path=path.resolve(),
-            module=_info["module"],
-            save_options=_info["save_options"],
-        )
+        return load_model_yaml(path)
 
     def delete_model(self, name: str, skip_confirm: bool = False):
         """
         bentoml models delete
         """
-        model_tag = ModelTag.from_str(name)
-        basepath = Path(self._BASE_DIR, model_tag.name)
+        model_name, version = ModelTag.process_str(name)
+        basepath = Path(self._BASE_DIR, model_name)
         if ":" not in name:
             basepath.rmdir()
         else:
-            path = Path(basepath, model_tag.version)
+            path = Path(basepath, version)
             path.rmdir()
             path.unlink(missing_ok=True)
 

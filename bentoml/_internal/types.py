@@ -61,12 +61,27 @@ class ModelTag:
     @classmethod
     def from_str(cls, name: str) -> "ModelTag":
         if "latest" in name:
-            raise BentoMLException(f"{name} shouldn't tag latest")
+            raise BentoMLException(f"`latest` is reserved for BentoML inner logics.")
         try:
             _name, _version = name.split(":")
+            if not _version:
+                # in case users mistakenly define "bento:"
+                raise BentoMLException(
+                    f"{name} contains leading ':'. Maybe you "
+                    f"meant to use `{name}:latest`?"
+                )
             return cls(_name, _version)
         except ValueError:
             return cls(name, generate_new_version_id())
+
+    @staticmethod
+    def process_str(name: str) -> (str, str):
+        try:
+            _name, _version = name.split(":")
+            return _name, _version
+        except ValueError:
+            # when name is a model name without versioning
+            return name, "latest"
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

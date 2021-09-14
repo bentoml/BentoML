@@ -11,8 +11,8 @@ _MT = t.TypeVar("_MT", bound=t.Any)
 _T = t.TypeVar("_T")
 
 MODEL_STORE_PREFIX = "models"
-SAVE_NAMESPACE: str = "saved_model"
-METADATA_NAMESPACE: str = "metadata"
+SAVE_NAMESPACE = "saved_model"
+METADATA_NAMESPACE = "metadata"
 MODEL_YAML_NAMESPACE = "model_details"
 
 SAVE_INIT_DOCS = """\
@@ -72,32 +72,14 @@ class Extensions(_AutoLowerAttrs):
     YAML = auto()
 
 
-def create_model_metadata(metadata: GenericDictType, path: PathType):
+def dump_model_metadata(metadata: GenericDictType, path: PathType) -> None:
     metadata_yaml = Path(path, f"{METADATA_NAMESPACE}{Extensions.YAML}")
     with metadata_yaml.open("w", encoding="utf-8") as f:
         yaml.safe_dump(metadata, f)
 
 
-def check_signature(compare_func: t.Callable[..., _T]):
-    def decorator(func: t.Callable[..., _T]):
-        compare_spec = inspect.getfullargspec(compare_func)
-        func_spec = inspect.getfullargspec(func)
-        assert set(func_spec.args) == set(compare_spec.args), (
-            f"args signature of `{func.__name__}` "
-            f"doesn't match `{'.'.join([inspect.getmodule(compare_func).__name__, compare_func.__name__])}`"
-        )
-        assert "return" in func_spec.annotations, (
-            "functions should be annotated, " "currently return type is ambiguous."
-        )
-
-    return decorator
-
-
-# fmt: off
-def save_spec(name: str, model: "_MT", **model_options) -> str: ...  # noqa # pylint: disable
-def load_spec(name: str) -> t.Any: ...  # noqa # pylint: disable
-# fmt : on
-
-
-check_save = check_signature(save_spec)
-check_load = check_signature(load_spec)
+def load_model_metadata(path: PathType) -> dict:
+    with Path(path, f"{METADATA_NAMESPACE}{Extensions.YAML}").open(
+        "r", encoding="utf-8"
+    ) as f:
+        return yaml.safe_load(f)

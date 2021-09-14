@@ -24,6 +24,7 @@ else:
     onnx = LazyLoader("onnx", globals(), "onnx", exc_msg=_exc)
     onnxruntime = LazyLoader("onnxruntime", globals(), "onnxruntime", exc_msg=_exc)
 
+
 def _yield_first_val(iterable):
     if isinstance(iterable, tuple):
         yield iterable[0]

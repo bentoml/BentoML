@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, Optional, Tuple, Union
 
-from ..types import HTTPRequest, HTTPResponse
+from starlette.requests import Request
+from starlette.responses import Response
+
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
@@ -32,10 +34,10 @@ class NumpyNdarray(IODescriptor):
     def openapi_responses_schema(self):
         pass
 
-    def from_http_request(self, request: HTTPRequest) -> "np.ndarray":
+    async def from_http_request(self, request: Request) -> "np.ndarray":
         pass
 
-    def to_http_response(self, obj: "np.ndarray") -> HTTPResponse:
+    async def to_http_response(self, obj: "np.ndarray") -> Response:
         pass
 
     @classmethod

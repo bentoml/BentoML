@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar
 
-from ..types import HTTPRequest, HTTPResponse
+from starlette.requests import Request
+from starlette.responses import Response
 
 IOPyObj = TypeVar("IOPyObj")
 
@@ -20,11 +21,11 @@ class IODescriptor(ABC):
         pass
 
     @abstractmethod
-    async def from_http_request(self, request: HTTPRequest) -> IOPyObj:
+    async def from_http_request(self, request: Request) -> IOPyObj:
         pass
 
     @abstractmethod
-    async def to_http_response(self, obj: IOPyObj) -> HTTPResponse:
+    async def to_http_response(self, obj: IOPyObj) -> Response:
         pass
 
     # TODO: gRPC support

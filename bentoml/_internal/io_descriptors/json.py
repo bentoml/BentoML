@@ -1,15 +1,16 @@
 import dataclasses
 import json
-import typing
+import typing as t
 
-
+from starlette.requests import Request
+from starlette.responses import Response
 
 from bentoml.exceptions import BadInput, InvalidArgument, MissingDependencyException
-from ..types import HTTPResponse, HTTPRequest
+
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
-if typing.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import numpy as np
     import pydantic
 else:
@@ -46,6 +47,7 @@ class JSON(IODescriptor):
     def __init__(
         self,
         pydantic_model: "pydantic.BaseModel" = None,
+        validate_json: bool = True,
         json_encoder: json.JSONEncoder = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
@@ -61,9 +63,8 @@ class JSON(IODescriptor):
                 )
             self._pydantic_model = pydantic_model
 
-
+        self._validate_json = validate_json
         self._json_encoder = json_encoder
-
 
     def openapi_request_schema(self):
         pass
@@ -78,17 +79,17 @@ class JSON(IODescriptor):
             schema = {"type": "object"}
         return {MIME_TYPE_JSON: {"schema": schema}}
 
-    async def from_http_request(self, request: Request) -> typing.Any:
-        json = await request.json()
-        if self._pydantic_model:
+    async def from_http_request(self, request: Request) -> t.Any:
+        json_obj = await request.json()
+        if self._pydantic_model and self._validate_json:
             try:
-                return self._pydantic_model.parse_obj(json)
+                return self._pydantic_model.parse_obj(json_obj)
             except pydantic.ValidationError:
                 raise BadInput("Malformated JSON Request received")
         else:
-            return json
+            return json_obj
 
-    async def to_http_response(self, obj: typing.Any) -> Response:
+    async def to_http_response(self, obj: t.Any) -> Response:
         json_str = json.dumps(
             obj,
             cls=self._json_encoder,

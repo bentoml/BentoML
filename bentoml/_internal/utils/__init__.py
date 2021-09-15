@@ -62,7 +62,6 @@ def generate_new_version_id():
     return f"{date_string}_{random_hash}"
 
 
-
 class catch_exceptions(Generic[_T], object):
     def __init__(
         self,

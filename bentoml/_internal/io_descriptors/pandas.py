@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
-from ..types import HTTPRequest, HTTPResponse
+from starlette.requests import Request
+from starlette.responses import Response
+
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
@@ -35,10 +37,10 @@ class PandasDataFrame(IODescriptor):
     def openapi_responses_schema(self):
         pass
 
-    def from_http_request(self, request: HTTPRequest) -> "pd.DataFrame":
+    async def from_http_request(self, request: Request) -> "pd.DataFrame":
         pass
 
-    def to_http_response(self, obj: "pd.DataFrame") -> HTTPResponse:
+    async def to_http_response(self, obj: "pd.DataFrame") -> Response:
         pass
 
     @classmethod

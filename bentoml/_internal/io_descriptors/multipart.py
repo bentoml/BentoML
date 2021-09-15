@@ -1,11 +1,13 @@
-from typing import Any, Dict, NewType, Tuple
+import typing as t
+
+from starlette.requests import Request
+from starlette.responses import Response
 
 from bentoml.exceptions import InvalidArgument
 
-from ..types import HTTPRequest, HTTPResponse
 from .base import IODescriptor
 
-MultipartIO = NewType("MultipartIO", Tuple[Any, ...])
+MultipartIO = t.NewType("MultipartIO", t.Tuple[t.Any, ...])
 
 
 class Multipart(IODescriptor):
@@ -16,7 +18,7 @@ class Multipart(IODescriptor):
     @svc.api(input=Multipart(img=Image(), annotation=JSON()}), output=JSON())
     """
 
-    def __init__(self, **inputs: Dict[str, IODescriptor]):
+    def __init__(self, **inputs: t.Dict[str, IODescriptor]):
         for name, descriptor in inputs.items():
             if not isinstance(descriptor, IODescriptor):
                 raise InvalidArgument(
@@ -35,8 +37,8 @@ class Multipart(IODescriptor):
     def openapi_responses_schema(self):
         pass
 
-    def from_http_request(self, request: HTTPRequest) -> MultipartIO:
+    async def from_http_request(self, request: Request) -> MultipartIO:
         pass
 
-    def to_http_response(self, *obj: MultipartIO) -> HTTPResponse:
+    async def to_http_response(self, *obj: MultipartIO) -> Response:
         pass

@@ -1,24 +1,22 @@
+import abc
+
+from simple_di import Provide, inject
+from bentoml._internal.configuration.containers import BentoMLContainer
 import os
-import typing as t
-from abc import ABC, abstractmethod
+from typing import Optional, Union, Callable
 
 import attr
 import psutil
 
-from .utils import _cpu_converter, _mem_converter, _query_cpu_count
-
-if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
-    import numpy as np
-    import pandas as pd
-
-_T = t.TypeVar("_T", bound=t.Union[t.List, "np.array", "pd.DataFrame"])
+from .utils import _cpu_converter, _mem_converter, _query_cgroup_cpu_count
 
 
 @attr.s
-class RunnerResourceLimits:
-    cpu = attr.ib(converter=_cpu_converter, type=float)
-    mem = attr.ib(converter=_mem_converter, type=int)
+class ResourceQuota:
+    cpu = attr.ib(converter=_cpu_converter, type=Optional[float])
+    ram = attr.ib(converter=_mem_converter, type=Optional[int])
     gpu = attr.ib(type=float)
+    gram = attr.ib(converter=_mem_converter, type=Optional[int], default=None)
 
     @cpu.default
     def _get_default_cpu(self) -> float:
@@ -27,8 +25,8 @@ class RunnerResourceLimits:
         else:
             return float(os.cpu_count())
 
-    @mem.default
-    def _get_default_mem(self) -> int:
+    @ram.default
+    def _get_default_ram(self) -> int:
         from psutil import virtual_memory
 
         mem = virtual_memory()
@@ -40,18 +38,54 @@ class RunnerResourceLimits:
         return 0.0
 
     @property
-    def on_gpu(self) -> bool:
-        return self.gpu > 0.0
+    def gpu_device_id(self) -> int:
+        return 0
 
 
 @attr.s
-class RunnerBatchOptions:
+class BatchOptions:
     enabled = attr.ib(type=bool, default=True)
     max_batch_size = attr.ib(type=int, default=10000)
     max_latency_ms = attr.ib(type=int, default=10000)
 
 
-class Runner(ABC):
+class _RunnerImplMixin:
+    @inject
+    def _impl_ref(
+        self, deployment_type: str = Provide[BentoMLContainer.deployment_type]
+    ) -> "RunnerImpl":
+        # TODO(jiang): cache impl
+        if deployment_type == "local":
+            return LocalRunner(self)
+        else:
+            return RemoteRunner(self)
+
+    async def run(self, *args, **kwargs):
+        return await self._impl_ref().run(*args, **kwargs)
+
+    async def run_batch(self, *args, **kwargs):
+        return await self._impl_ref().run_batch(*args, **kwargs)
+
+
+class _BaseRunner(_RunnerImplMixin, abc.ABC):
+    name: str
+    resource_limit: ResourceQuota
+    batch_options: BatchOptions
+
+    @abc.abstractproperty
+    def num_concurrency(self) -> Optional[int]:
+        ...
+
+    @abc.abstractproperty
+    def num_replica(self) -> int:
+        ...
+
+    @abc.abstractmethod
+    def _setup(self) -> None:
+        ...
+
+
+class Runner(_BaseRunner, abc.ABC):
     """
     Usage:
     r = bentoml.xgboost.load_runner()
@@ -120,23 +154,65 @@ class Runner(ABC):
 
     """
 
-    def __init__(self, name):
-        self.name = name
-        self.resource_limits = RunnerResourceLimits()
-        self.batch_options = RunnerBatchOptions()
-
-    @property
-    def num_concurrency(self):
-        return 1
-
-    @property
-    def num_replica(self):
-        return 1
-
-    @abstractmethod
-    def _setup(self, *args, **kwargs):
+    @abc.abstractmethod
+    def _run_batch(self, *args, **kwargs):
         ...
 
-    @abstractmethod
-    def _run_batch(self, input_data: "_T") -> "_T":
+
+class SimpleRunner(_BaseRunner):
+    @abc.abstractmethod
+    def _run(self, *args, **kwargs):
         ...
+
+
+class RunnerImpl:
+    def __init__(self, runner: Union[Runner, SimpleRunner]):
+        self._runner = runner
+
+    @abc.abstractmethod
+    async def run(self, *args, **kwargs):
+        ...
+
+    @abc.abstractmethod
+    async def run_batch(self, *args, **kwargs):
+        ...
+
+
+class RemoteRunner(RunnerImpl):
+    @property
+    def _client(self):
+        from bentoml._internal.server.runner_client import get_runner_client
+
+        return get_runner_client(self._runner.name)
+
+    async def run(self, *args, **kwargs):
+        return await self._client.run(*args, **kwargs)
+
+    async def run_batch(self, *args, **kwargs):
+        return await self._client.run_batch(*args, **kwargs)
+
+
+class LocalRunner(RunnerImpl):
+    def _setup(self):
+        self._runner._setup()
+
+    async def run(self, *args, **kwargs):
+        if isinstance(self._runner, Runner):
+            params = Params(args, kwargs)
+            params.apply(single_to_batch)
+
+            bresult = self._runner._run_batch(*params.args, **params.kwargs)
+            return batch_to_single(bresult)
+
+        if isinstance(self._runner, SimpleRunner):
+            return self._runner._run(*args, **kwargs)
+
+    async def run_batch(self, *args, **kwargs):
+        if isinstance(self._runner, Runner):
+            return self._runner._run_batch(*args, **kwargs)
+        if isinstance(self._runner, SimpleRunner):
+            results = []
+            params = Params(args, kwargs)
+            for iparams in params.iter(batch_to_single_list):
+                results.append(self._runner._run(*iparams.args, **iparams.kwargs))
+            return single_list_to_batch(results)

@@ -19,7 +19,7 @@ def serve(
 
 
 def start_dev_server(
-    bundle_path: str,
+    bento_path: str,
     port: Optional[int] = None,
     mb_max_batch_size: Optional[int] = None,
     mb_max_latency: Optional[int] = None,
@@ -27,7 +27,7 @@ def start_dev_server(
     enable_swagger: Optional[bool] = None,
     timeout: Optional[int] = None,
 ):
-    BentoMLContainer.bundle_path.set(bundle_path)
+    BentoMLContainer.bento_path.set(bento_path)
 
     bento_server = BentoMLContainer.config.bento_server
     bento_server.port.set(port or skip)
@@ -52,9 +52,7 @@ def start_dev_server(
     import multiprocessing
 
     model_server_proc = multiprocessing.Process(
-        target=_start_dev_server,
-        args=(BentoMLContainer,),
-        daemon=True,
+        target=_start_dev_server, args=(BentoMLContainer,), daemon=True,
     )
     model_server_proc.start()
 
@@ -65,7 +63,7 @@ def start_dev_server(
 
 
 def start_prod_server(
-    bundle_path: str,
+    bento_path: str,
     port: Optional[int] = None,
     workers: Optional[int] = None,
     timeout: Optional[int] = None,
@@ -80,7 +78,7 @@ def start_prod_server(
         psutil.POSIX
     ), "BentoML API Server production mode only supports POSIX platforms"
 
-    BentoMLContainer.bundle_path.set(bundle_path)
+    BentoMLContainer.bento_path.set(bento_path)
 
     bento_server = BentoMLContainer.config.bento_server
     bento_server.port.set(port or skip)

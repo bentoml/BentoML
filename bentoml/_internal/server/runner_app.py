@@ -50,8 +50,8 @@ class RunnerApp(BaseApp):
         pass
 
     async def run(self, request: "Request") -> "Response":
-        body = await request.body()
-        ...
+        form = await request.form()
+        # TODO(jiang)
 
     async def run_batch(self, request: "Request") -> "Response":
         ...

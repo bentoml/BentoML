@@ -23,7 +23,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.1.8",
     "@types/lodash": "^4.14.149",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "express": "^4.17.1",
     "lodash": "^4.17.21",
     "morgan": "^1.10.0",

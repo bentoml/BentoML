@@ -23,7 +23,7 @@ install_requires = [
     "aiohttp",
     "aiohttp_cors==0.7.0",
     "alembic",
-    "urllib3<=1.25.11",
+    "urllib3<=1.26.6",
     "boto3",
     "cerberus",
     "certifi",

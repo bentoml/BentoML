@@ -147,7 +147,7 @@ class FastaiModelArtifact(BentoServiceArtifact):
     >>> from bentoml.frameworks.fastai import FastaiModelArtifact
     >>> from bentoml.adapters import FileAdapter
     >>>
-    >>> @bentoml.artifact([FastaiModelArtifact('learner')])
+    >>> @bentoml.artifacts([FastaiModelArtifact('learner')])
     >>> @bentoml.env(infer_pip_packages=True)
     >>> class FastaiImageService(bentoml.BentoService):
     >>>

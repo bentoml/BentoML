@@ -65,22 +65,6 @@ def validate_or_create_dir(path: PathType) -> None:
         path.mkdir(parents=True)
 
 
-def init_docstrings(*init: str):
-    def decorator(func):
-        func.__doc__ = "".join(init) + ("" if func.__doc__ is None else func.__doc__)
-        return func
-
-    return decorator
-
-
-def returns_docstrings(*returns: str):
-    def decorator(func):
-        func.__doc__ = func.__doc__ + "".join(returns)
-        return func
-
-    return decorator
-
-
 class catch_exceptions(Generic[_T], object):
     def __init__(
         self,

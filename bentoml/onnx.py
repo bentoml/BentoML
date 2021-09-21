@@ -6,7 +6,7 @@ import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
 from ._internal.types import GenericDictType, PathType
-from ._internal.utils import LazyLoader, flatten_list
+from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException
 
 _exc = _const.IMPORT_ERROR_MSG.format(

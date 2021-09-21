@@ -1,5 +1,7 @@
 import logging
+import os
 import shutil
+import tarfile
 import typing as t
 from contextlib import contextmanager
 from datetime import datetime
@@ -13,9 +15,9 @@ from bentoml import __version__ as BENTOML_VERSION
 
 from ...exceptions import InvalidArgument
 from ..configuration.containers import BentoMLContainer
-from ..types import GenericDictType, ModelTag, PathType
-from ..utils import validate_or_create_dir
-from . import MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE, YAML_EXT
+from ..types import GenericDictType, PathType
+from ..utils import generate_new_version_id, validate_or_create_dir
+from . import EXPORTED_STORE_PREFIX, MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE, YAML_EXT
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,29 @@ RESERVED_MODEL_FIELD = [
     "labels",
     "context",
 ]
+
+
+def validate_name(name: str):
+    if not name.isidentifier():
+        raise InvalidArgument(
+            f"Invalid model name: '{name}'. A valid identifier "
+            "may only contain letters, numbers, underscores "
+            "and not starting with a number."
+        )
+
+
+def generate_model_name(name: str):
+    version = generate_new_version_id()
+    return f"{name}:{version}"
+
+
+def process_model_name(name: str) -> (str, str):
+    try:
+        _name, _version = name.split(":")
+        return _name, _version
+    except ValueError:
+        # when name is a model name without versioning
+        return name, "latest"
 
 
 @attr.s
@@ -93,12 +118,13 @@ class LocalModelStore:
         if not name:
             path = self._BASE_DIR
         else:
-            tag = ModelTag.from_str(name)
-            path = Path(self._BASE_DIR, tag.name)
+            _name, _ = process_model_name(name)
+            path = Path(self._BASE_DIR, _name)
         return [_f.name for _f in path.iterdir()]
 
-    def _create_path(self, tag: ModelTag):
-        model_path = Path(self._BASE_DIR, tag.name, tag.version)
+    def _create_path(self, tag: str):
+        name, version = process_model_name(tag)
+        model_path = Path(self._BASE_DIR, name, version)
         validate_or_create_dir(model_path)
         return model_path
 
@@ -119,28 +145,27 @@ class LocalModelStore:
             model.save(ctx.model_path, metadata=ctx.metadata)
             ctx.metadata["params_a"] = value_a
         """
-        model_tag = ModelTag.from_str(name)
-        model_path = self._create_path(model_tag)
+        tag = generate_model_name(name)
+        _name, _version = tag.split(":")
+        model_path = self._create_path(tag)
         model_yaml = Path(model_path, f"{MODEL_YAML_NAMESPACE}{YAML_EXT}")
 
         ctx = StoreCtx(
-            name=model_tag.name,
+            name=_name,
             path=model_path,
-            version=model_tag.version,
+            version=_version,
             labels=labels,
             metadata=metadata,
             options=options,
         )
         try:
             yield ctx
-        except StopIteration:
+        except Exception:  # noqa
             # save has failed
-            logger.warning(
-                f"Failed saving models {str(model_tag)}, deleting {model_path}..."
-            )
+            logger.warning(f"Failed to save {tag}, deleting {model_path}...")
             shutil.rmtree(model_path)
         finally:
-            latest_path = Path(self._BASE_DIR, model_tag.name, "latest")
+            latest_path = Path(self._BASE_DIR, _name, "latest")
             dump_model_yaml(
                 model_yaml, ctx, framework_context=framework_context, module=module
             )
@@ -152,7 +177,7 @@ class LocalModelStore:
         """
         bentoml.pytorch.get("my_nlp_model")
         """
-        name, version = ModelTag.process_str(name)
+        name, version = process_model_name(name)
         path = Path(self._BASE_DIR, name, version)
         if not path.exists():
             raise FileNotFoundError(
@@ -165,14 +190,21 @@ class LocalModelStore:
         """
         bentoml models delete
         """
-        model_name, version = ModelTag.process_str(name)
+        model_name, version = process_model_name(name)
         basepath = Path(self._BASE_DIR, model_name)
-        if ":" not in name:
-            basepath.rmdir()
-        else:
-            path = Path(basepath, version)
-            path.rmdir()
-            path.unlink(missing_ok=True)
+        try:
+            if ":" not in name:
+                basepath.rmdir()
+            else:
+                path = Path(basepath, version)
+                path.rmdir()
+                path.unlink(missing_ok=True)
+        finally:
+            indexed = sorted(basepath.iterdir(), key=os.path.getctime)
+            latest_path = Path(basepath, "latest")
+            if latest_path.is_symlink():
+                latest_path.unlink()
+            latest_path.symlink_to(indexed[-1])
 
     def push_model(self, name: str):
         ...
@@ -181,28 +213,15 @@ class LocalModelStore:
         ...
 
     def export_model(self, name: str):
+        model_info = self.get_model(name)
+        fname = f"{model_info.name}_{model_info.version}.tar.gz"
+        compressed_path = os.path.join(self._BASE_DIR, EXPORTED_STORE_PREFIX, fname)
+        with tarfile.open(compressed_path, mode="x:gz") as tfile:
+            tfile.add(str(model_info.path), arcname="")
+        return compressed_path
+
+    def import_model(self, path: PathType):
         ...
-
-    def import_model(self, name: str):
-        ...
-
-    def __getattribute__(self, item):
-        inherited = object.__getattribute__(self, item)
-        if "model" in item:
-
-            def wrapped_check_identifier(*args, **kwargs):
-                name: str = args[0]  # get_model(name), register_model(name)
-                if not name.isidentifier():
-                    raise InvalidArgument(
-                        f"Invalid model name: '{name}'. A valid identifier "
-                        "may only contain letters, numbers, underscores "
-                        "and not starting with a number."
-                    )
-                return inherited(*args, **kwargs)
-
-            return wrapped_check_identifier
-        else:
-            return inherited
 
 
 # Global modelstore instance

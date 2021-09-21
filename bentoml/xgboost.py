@@ -13,7 +13,8 @@ from ._internal.models import (
 )
 from ._internal.service.runner import Runner
 from ._internal.types import GenericDictType
-from ._internal.utils import LazyLoader, init_docstrings, returns_docstrings
+from ._internal.utils import LazyLoader
+from .models import docstrings
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import numpy as np
@@ -41,21 +42,23 @@ LOAD_RETURNS_DOCS = """\
 """
 
 
-@init_docstrings(LOAD_INIT_DOCS)
-@returns_docstrings(LOAD_RETURNS_DOCS)
+@docstrings(
+    f"""
+{LOAD_INIT_DOCS}
+        infer_params (`t.Dict[str, t.Union[str, int]]`):
+            Params for booster initialization
+        nthread (`int`, default to -1):
+            Number of thread will be used for this booster.
+             Default to -1, which will use XgBoost internal threading
+             strategy.
+{LOAD_RETURNS_DOCS}
+"""
+)
 def load(
     name: str,
     infer_params: t.Dict[str, t.Union[str, int]] = None,
     nthread: int = -1,
 ) -> "xgb.core.Booster":
-    """
-    infer_params (`t.Dict[str, t.Union[str, int]]`):
-        Params for booster initialization
-    nthread (`int`, default to -1):
-        Number of thread will be used for this booster.
-         Default to -1, which will use XgBoost internal threading
-         strategy.
-    """
     model_info = _stores.get(name)
     if infer_params is None:
         infer_params = model_info.options
@@ -67,8 +70,16 @@ def load(
     )
 
 
-@init_docstrings(SAVE_INIT_DOCS)
-@returns_docstrings(SAVE_RETURNS_DOCS)
+@docstrings(
+    f"""
+{SAVE_INIT_DOCS}
+        model (`xgboost.core.Booster`):
+            Instance of model to be saved
+        infer_params (`t.Dict[str, t.Union[str, int]]`):
+            Params for booster initialization
+{SAVE_RETURNS_DOCS}
+"""
+)
 def save(
     name: str,
     model: "xgb.core.Booster",
@@ -76,12 +87,7 @@ def save(
     infer_params: t.Dict[str, t.Union[str, int]] = None,
     metadata: t.Optional[GenericDictType] = None,
 ) -> str:
-    """
-    model (`xgboost.core.Booster`):
-        instance of model to be saved
-    infer_params (`t.Dict[str, t.Union[str, int]]`):
-        Params for booster initialization
-    """
+    """ """
     with _stores.register(
         name, module=__name__, options=infer_params, metadata=metadata
     ) as ctx:

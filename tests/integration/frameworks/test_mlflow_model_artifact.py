@@ -15,7 +15,7 @@ def test_mlflow_save_load(tmpdir):
     MLflowModel(model, mlflow.sklearn).save(tmpdir)
 
     # fmt: off
-    assert_have_file_extension(os.path.join(tmpdir, 'bentoml_model'), '.pkl')
+    assert_have_file_extension(os.path.join(tmpdir, 'saved_model'), '.pkl')
 
     mlflow_loaded = MLflowModel.load(tmpdir)
     np.testing.assert_array_equal(model.predict(data), mlflow_loaded.predict(data))  # noqa

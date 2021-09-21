@@ -20,24 +20,30 @@ JSON_CHARSET = "utf-8"
 
 PathType = Union[str, os.PathLike]
 
-MetadataType = Dict[str, Any]  # TODO:
+GenericDictType = Dict[str, Any]  # TODO:
 
 
 @attr.s
 class BentoTag:
-    name = attr.id(type=str)
-    version: attr.id(type=str)
+    name = attr.ib(type=str)
+    version = attr.ib(type=str)
 
     def __str__(self):
         return f"{self.name}:{self.version}"
 
     @classmethod
-    def from_str(cls, tag_str: str):
+    def from_str(cls, tag_str: str) -> "BentoTag":
         try:
             name, version = tag_str.split(":")
+            if not version:
+                # in case users mistakenly define "bento:"
+                raise BentoMLException(
+                    f"{tag_str} contains leading ':'. Maybe you "
+                    f"meant to use `{tag_str}:latest`?"
+                )
             return cls(name, version)
         except ValueError:
-            raise BentoMLException(f"Invalid Bento Tag '{tag_str}'")
+            raise BentoMLException(f"Invalid {cls.__name__} {tag_str}")
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

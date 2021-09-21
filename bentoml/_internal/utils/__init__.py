@@ -1,31 +1,23 @@
 import contextlib
 import functools
-import inspect
-import os
 import socket
-import tarfile
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generic,
     Iterator,
-    List,
     Optional,
     Tuple,
     Type,
     TypeVar,
     Union,
-    overload,
 )
-from urllib.parse import urlparse, uses_netloc, uses_params, uses_relative
+from urllib.parse import uses_netloc, uses_params, uses_relative
 
-if TYPE_CHECKING:
-    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
-
+from ..types import PathType
 from .gcs import is_gcs_url
 from .lazy_loader import LazyLoader
 from .s3 import is_s3_url
@@ -47,6 +39,7 @@ __all__ = [
     "is_gcs_url",
     "is_s3_url",
     "LazyLoader",
+    "validate_or_create_dir",
 ]
 
 
@@ -60,6 +53,16 @@ def generate_new_version_id():
 
     # Example output: '20210910_D246ED'
     return f"{date_string}_{random_hash}"
+
+
+def validate_or_create_dir(path: PathType) -> None:
+    path = Path(path)
+
+    if path.exists():
+        if not path.is_dir():
+            raise OSError(20, f"{path} is not a directory")
+    else:
+        path.mkdir(parents=True)
 
 
 class catch_exceptions(Generic[_T], object):

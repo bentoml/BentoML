@@ -4,7 +4,7 @@ import typing as t
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException
 
@@ -33,7 +33,7 @@ class FastAIModel(Model):
     Args:
         model (`fastai.learner.Learner`):
             Learner model from fastai
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -54,7 +54,7 @@ class FastAIModel(Model):
     def __init__(
         self,
         model: "learner.Learner",
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         assert learner, BentoMLException("Only fastai2 is supported by BentoML")
         super(FastAIModel, self).__init__(model, metadata=metadata)

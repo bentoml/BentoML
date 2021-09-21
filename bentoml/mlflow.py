@@ -4,7 +4,7 @@ import typing as t
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 from .exceptions import InvalidArgument
 
@@ -14,7 +14,7 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     inst="`pip install mlflow`",
 )
 
-MT = t.TypeVar("MT")
+MT = t.TypeVar("_MT")
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import mlflow
@@ -31,7 +31,7 @@ class MLflowModel(Model):
             All mlflow models are of type :obj:`mlflow.models.Model`
         loader_module (`types.ModuleType`):
             flavors supported by :obj:`mlflow`
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -53,7 +53,7 @@ class MLflowModel(Model):
         self,
         model: MT,
         loader_module: t.Type["mlflow.pyfunc"],
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         super(MLflowModel, self).__init__(model, metadata=metadata)
         if "mlflow" not in loader_module.__name__:

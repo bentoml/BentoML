@@ -5,7 +5,7 @@ from distutils.dir_util import copy_tree
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 
 _paddle_exc = _const.IMPORT_ERROR_MSG.format(
@@ -39,7 +39,7 @@ class PaddlePaddleModel(Model):
     Args:
         model (`Union[paddle.nn.Layer, paddle.inference.Predictor]`):
             Every PaddlePaddle model is of type :obj:`paddle.nn.Layer`
-        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+        metadata (`GenericDictType`, `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -63,7 +63,7 @@ class PaddlePaddleModel(Model):
     def __init__(
         self,
         model: t.Union["paddle.nn.Layer", "pi.Predictor"],
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         super(PaddlePaddleModel, self).__init__(model, metadata=metadata)
 
@@ -94,7 +94,7 @@ class PaddleHubModel(Model):
         model (`Union[str, bytes, os.PathLike]`):
             Either a custom :obj:`paddlehub.Module` directory, or
             pretrained model from PaddleHub registry.
-        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+        metadata (`GenericDictType`, `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -111,7 +111,7 @@ class PaddleHubModel(Model):
 
     """
 
-    def __init__(self, model: PathType, metadata: t.Optional[MetadataType] = None):
+    def __init__(self, model: PathType, metadata: t.Optional[GenericDictType] = None):
         if os.path.isdir(model):
             module = hub.Module(directory=model)
             self._dir = str(model)

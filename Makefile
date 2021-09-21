@@ -12,10 +12,6 @@ lint: format ## Lint code
 	./dev/lint.sh
 install-local: ## Install BentoML from current directory in editable mode
 	pip install --editable .
-	cd yatai && make install-yatai
-	if [[ ! -d ./yatai/ui/node_modules ]]; then \
-		cd yatai && make install-web-deps; \
-	fi; \
 
 install-test-deps: ## Install all test dependencies
 	@echo Ensuring test dependencies...

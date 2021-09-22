@@ -13,8 +13,8 @@ from ._internal.models import (
 )
 from ._internal.service.runner import Runner
 from ._internal.types import GenericDictType
-from ._internal.utils import LazyLoader
-from .models import docstrings
+from ._internal.utils import LazyLoader, generate_random_name
+from .utils import docstrings
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import numpy as np
@@ -36,28 +36,26 @@ else:
         "pd", globals(), "pandas", exc_msg="Install pandas with `pip install pandas`"
     )
 
-LOAD_RETURNS_DOCS = """\
-    Returns:
-        an instance of `xgboost.core.Booster` from BentoML modelstore.
-"""
-
 
 @docstrings(
     f"""
 {LOAD_INIT_DOCS}
-        infer_params (`t.Dict[str, t.Union[str, int]]`):
-            Params for booster initialization
-        nthread (`int`, default to -1):
-            Number of thread will be used for this booster.
-             Default to -1, which will use XgBoost internal threading
-             strategy.
-{LOAD_RETURNS_DOCS}
+    infer_params (`t.Dict[str, t.Union[str, int]]`):
+        Params for booster initialization
+    nthread (`int`, default to -1):
+        Number of thread will be used for this booster.
+         Default to -1, which will use XgBoost internal threading
+         strategy.
+
+Returns:
+    an instance of `xgboost.core.Booster` from BentoML modelstore.
 """
 )
 def load(
     name: str,
     infer_params: t.Dict[str, t.Union[str, int]] = None,
     nthread: int = -1,
+    **xgboost_load_args,
 ) -> "xgb.core.Booster":
     model_info = _stores.get(name)
     if infer_params is None:
@@ -67,16 +65,17 @@ def load(
     return xgb.core.Booster(
         params=infer_params,
         model_file=os.path.join(model_info.path, f"{SAVE_NAMESPACE}{JSON_EXT}"),
+        **xgboost_load_args,
     )
 
 
 @docstrings(
     f"""
 {SAVE_INIT_DOCS}
-        model (`xgboost.core.Booster`):
-            Instance of model to be saved
-        infer_params (`t.Dict[str, t.Union[str, int]]`):
-            Params for booster initialization
+    model (`xgboost.core.Booster`):
+        Instance of model to be saved
+    infer_params (`t.Dict[str, t.Union[str, int]]`):
+        Params for booster initialization
 {SAVE_RETURNS_DOCS}
 """
 )
@@ -87,7 +86,6 @@ def save(
     infer_params: t.Dict[str, t.Union[str, int]] = None,
     metadata: t.Optional[GenericDictType] = None,
 ) -> str:
-    """ """
     with _stores.register(
         name, module=__name__, options=infer_params, metadata=metadata
     ) as ctx:
@@ -100,9 +98,14 @@ def load_runner(*args, **kwargs) -> "_XgBoostRunner":
 
 
 class _XgBoostRunner(Runner):
-    def __init__(self, name, model_path, *, infer_api_callback: str = "predict"):
-        super(_XgBoostRunner, self).__init__(name)
-        self._model_path = model_path
+    def __init__(
+        self,
+        name,
+        runner_name=generate_random_name(__name__),
+        *,
+        infer_api_callback: str = "predict",
+    ):
+        super(_XgBoostRunner, self).__init__(name, runner_name)
         self._infer_api_callback = infer_api_callback
         self._infer_params = self._setup_infer_params()
 
@@ -137,13 +140,13 @@ class _XgBoostRunner(Runner):
     def _setup(self) -> None:
         if not self.resource_limits.on_gpu:
             self._model = load(
-                self._model_path,
+                self._model_name,
                 infer_params=self._infer_params,
                 nthread=self.num_concurrency,
             )
         else:
             self._model = load(
-                self._model_path, infer_params=self._infer_params, nthread=1
+                self._model_name, infer_params=self._infer_params, nthread=1
             )
         self._infer_func = getattr(self._model, self._infer_api_callback)
 

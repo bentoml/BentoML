@@ -22,6 +22,8 @@ install_requires = [
     "schema",  # Schema validation
     "chardet",
     "cloudpickle",
+    "starlette",
+    "python-multipart",
     "mypy",
     "rich",
     "pyyaml",

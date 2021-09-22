@@ -37,21 +37,21 @@ TF2 = tf.__version__.startswith("2")
 
 logger = logging.getLogger(__name__)
 
-AUTOTRACKABLE_CALLABLE_WARNING: str = """\
+AUTOTRACKABLE_CALLABLE_WARNING: str = """
 Importing SavedModels from TensorFlow 1.x. `outputs = imported(inputs)`
  will not be supported by BentoML due to `tensorflow` API.\n
 See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
  more details.
 """
 
-TF_FUNCTION_WARNING: str = """\
+TF_FUNCTION_WARNING: str = """
 Due to TensorFlow's internal mechanism, only methods
  wrapped under `@tf.function` decorator and the Keras default function
  `__call__(inputs, training=False)` can be restored after a save & load.\n
 You can test the restored model object via `TensorflowModel.load(path)`
 """
 
-KERAS_MODEL_WARNING: str = """\
+KERAS_MODEL_WARNING: str = """
 BentoML detected that {name} is being used to pack a Keras API
  based model. In order to get optimal serving performance, we recommend
  to wrap your keras model `call()` methods with `@tf.function` decorator.
@@ -123,7 +123,7 @@ class _tf_function_wrapper:
             )
 
 
-_tf_function_wrapper.__doc__ = """\
+_tf_function_wrapper.__doc__ = """
     TODO:
 """
 

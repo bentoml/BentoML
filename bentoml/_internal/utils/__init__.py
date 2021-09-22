@@ -55,6 +55,10 @@ def generate_new_version_id():
     return f"{date_string}_{random_hash}"
 
 
+def generate_random_name(name: str):
+    return f"{name}_{uuid.uuid4().hex[:6].upper()}"
+
+
 def validate_or_create_dir(path: PathType) -> None:
     path = Path(path)
 

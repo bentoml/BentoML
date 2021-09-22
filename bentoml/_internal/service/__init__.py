@@ -7,6 +7,10 @@ from bentoml.exceptions import BentoMLException
 from .inference_api import InferenceAPI
 from .runner import Runner
 
+RUNNER_DOCS = """
+
+"""
+
 
 class Service:
     """

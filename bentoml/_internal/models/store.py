@@ -115,6 +115,7 @@ class LocalModelStore:
         bentoml models list -> t.List[models name under BENTOML_HOME/models]
         bentoml models list my_nlp_models -> t.List[model_version]
         """
+        validate_name(name)
         if not name:
             path = self._BASE_DIR
         else:
@@ -145,6 +146,7 @@ class LocalModelStore:
             model.save(ctx.model_path, metadata=ctx.metadata)
             ctx.metadata["params_a"] = value_a
         """
+        validate_name(name)
         tag = generate_model_name(name)
         _name, _version = tag.split(":")
         model_path = self._create_path(tag)
@@ -177,6 +179,7 @@ class LocalModelStore:
         """
         bentoml.pytorch.get("my_nlp_model")
         """
+        validate_name(name)
         name, version = process_model_name(name)
         path = Path(self._BASE_DIR, name, version)
         if not path.exists():

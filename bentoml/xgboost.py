@@ -1,9 +1,7 @@
 import os
 import typing as t
 
-import bentoml._internal.constants as _const
-import bentoml._internal.models.store as _stores
-
+from ._internal import constants as _const
 from ._internal.models import (
     JSON_EXT,
     LOAD_INIT_DOCS,
@@ -11,10 +9,11 @@ from ._internal.models import (
     SAVE_NAMESPACE,
     SAVE_RETURNS_DOCS,
 )
-from ._internal.service.runner import Runner
+from ._internal.models import store as _stores
+from ._internal.service import RUNNER_INIT_DOCS, RUNNER_RETURNS_DOCS, Runner
 from ._internal.types import GenericDictType
-from ._internal.utils import LazyLoader, generate_random_name
-from .utils import docstrings
+from ._internal.utils import LazyLoader, generate_random_name  # noqa
+from .utils import docstrings  # noqa
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import numpy as np
@@ -93,6 +92,15 @@ def save(
     return f"{name}:{ctx.version}"
 
 
+@docstrings(
+    f"""
+{RUNNER_INIT_DOCS}
+    infer_api_callback (`str`, default to `predict`):
+        callback function for inference call for `xgboost.core.Booster`
+
+{RUNNER_RETURNS_DOCS.format(model=__name__)}
+"""
+)
 def load_runner(*args, **kwargs) -> "_XgBoostRunner":
     return _XgBoostRunner(*args, **kwargs)
 

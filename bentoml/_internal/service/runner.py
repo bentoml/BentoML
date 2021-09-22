@@ -51,28 +51,19 @@ class RunnerBatchOptions:
     max_latency_ms = attr.ib(type=int, default=10000)
 
 
-class Runner(ABC):
-    """
-    Usage:
+USAGE_DOC = """\
+Usage::
     r = bentoml.xgboost.load_runner()
     r.resource_limits.cpu = 2
     r.resource_limits.mem = "2Gi"
 
-    Runners config override:
-    "runners": {
+    # Runners config override:
+    runners = {
         "my_model:any": {
-            "resource_limits": {
-                "cpu": 1
-            },
-            "batch_options": {
-                "max_batch_size": 1000
-            }
-        }
-        "runner_bar": {
-            "resource_limits": {
-                "cpu": 200m
-            }
-        }
+            "resource_limits": {"cpu": 1},
+            "batch_options": {"max_batch_size": 1000},
+        },
+        "runner_bar": {"resource_limits": {"cpu": "200m"}},
     }
 
     # bentoml.xgboost.py:
@@ -80,14 +71,13 @@ class Runner(ABC):
 
         def __init__(self, runner_name, model_path):
             super().__init__(name)
-            self.model_path = model_path
 
         def _setup(self):
             self.model = load(model_path)
             ...
 
     # model_tag example:
-    #   "my_nlp_model:20210810_A23CDE", "my_nlp_model:latest"
+    #  "my_nlp_model:20210810_A23CDE", "my_nlp_model:latest"
     def load_runner(model_tag: str):
         model_info = bentoml.models.get(model_tag)
         assert model_info.module == "bentoml.xgboost"
@@ -117,9 +107,35 @@ class Runner(ABC):
 
         def _run_batch(self, ...):
             pass
+"""
 
-    """
+RUNNER_INIT_DOCS = f"""\
+Runner is a tiny computation unit that runs framework inference. Runner makes it
+ easy to leverage multiple threads or processes in a Python-centric model serving
+ architecture, where users can also have the ability to fine tune the performance
+ per thread/processes level.
+ 
+{USAGE_DOC}
+Users can also customize options for each Runner with::
+    cpu (`float`, default to `1.0`): # of CPUs for a Runner
+    mem (`Union[str, int]`, default to `100Mi`): Default memory allocated for a Runner
+    gpu (`float`, default to `0.0`): # of GPUs for a Runner
+    enable_batch (`bool`, default to `True`): enable dynamic-batching by default
+    max_batch_size (`int`, default to `10000`): maximum batch size
+    max_latency_ms (`int`, default to `10000`): maximum latency before raises Error
 
+Args:
+    name (`str`):
+        Model name previously saved in BentoML modelstore.
+    runner_name (`Optional[str]`, default to `module_name_uuid`):
+        name of given runner"""
+
+RUNNER_RETURNS_DOCS = """\
+Returns:
+    Runner instances for {model}. Users can then access `run_batch` to start running inference."""
+
+
+class Runner(ABC):
     def __init__(
         self,
         model_name,
@@ -130,7 +146,7 @@ class Runner(ABC):
         gpu: float = 0.0,
         enable_batch: bool = True,
         max_batch_size: int = 10000,
-        max_latency_ms: int = 10000
+        max_latency_ms: int = 10000,
     ):
         self._model_name = model_name
         self._runner_name = runner_name

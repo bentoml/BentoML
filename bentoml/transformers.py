@@ -3,19 +3,20 @@ import pathlib
 import typing as t
 from importlib import import_module
 
-import bentoml._internal.constants as _const
-
-from ._internal.models.base import Model
-from ._internal.types import GenericDictType, PathType
-from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, InvalidArgument, NotFound
-
-_exc = _const.IMPORT_ERROR_MSG.format(
-    fwr="transformers",
-    module=__name__,
-    inst="`pip install transformers`",
+from ._internal import constants as _const
+from ._internal.models import (
+    JSON_EXT,
+    LOAD_INIT_DOCS,
+    SAVE_INIT_DOCS,
+    SAVE_NAMESPACE,
+    SAVE_RETURNS_DOCS,
 )
-
+from ._internal.models import store as _stores
+from ._internal.service import RUNNER_INIT_DOCS, RUNNER_RETURNS_DOCS, Runner
+from ._internal.types import GenericDictType, PathType
+from ._internal.utils import LazyLoader, generate_random_name  # noqa
+from .exceptions import BentoMLException, InvalidArgument, NotFound
+from .utils import docstrings  # noqa
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -23,6 +24,11 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from transformers import AutoTokenizer, PreTrainedModel  # noqa
     from transformers.models.auto.auto_factory import _BaseAutoModelClass  # noqa
 else:
+    _exc = _const.IMPORT_ERROR_MSG.format(
+        fwr="transformers",
+        module=__name__,
+        inst="`pip install transformers`",
+    )
     transformers = LazyLoader("transformers", globals(), "transformers", exc_msg=_exc)
 
 TransformersModelInput = t.TypeVar(
@@ -85,140 +91,137 @@ def _lm_head_module_name(framework: str, lm_head: str) -> str:
     )
 
 
-class TransformersModel(Model):
-    """
-    Model class for saving/loading :obj:`transformers` models.
+def _load_from_directory(
+    path: PathType, model_type: str, tokenizer_type: str
+) -> TransformersModelOutput:
+    transformers_model = getattr(
+        import_module("transformers"), model_type
+    ).from_pretrained(str(path))
+    tokenizer = getattr(import_module("transformers"), tokenizer_type).from_pretrained(
+        str(path)
+    )
+    return {"model": transformers_model, "tokenizer": tokenizer}
 
-    Args:
-        model (`Union[str, os.PathLike, Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]]`):
-            A dictionary `{'model':<model_obj>, 'tokenizer':<tokenizer_obj>}`
-             to setup Transformers model
-        metadata (`GenericDictType`,  `optional`, default to `None`):
-            Class metadata
 
-    Raises:
-        MissingDependencyException:
-            :obj:`transformers` is required by TransformersModel
-        InvalidArgument:
-            :obj:`model` must be either a dictionary
-             or a path for saved transformers model or
-             a pre-trained model string provided by transformers
-        NotFound:
-            if the provided model name or model path is not found
-
-    Example usage under :code:`train.py`::
-
-        TODO:
-
-    One then can define :code:`bento.py`::
-
-        TODO:
-
-    """  # noqa # pylint: enable=line-too-long
-
-    def __init__(
-        self,
-        model: TransformersModelInput,
-        metadata: t.Optional[GenericDictType] = None,
-    ):
-        _check_flax_supported()
-        super(TransformersModel, self).__init__(model, metadata=metadata)
-
-    @staticmethod
-    def _load_from_directory(
-        path: PathType, model_type: str, tokenizer_type: str
-    ) -> TransformersModelOutput:
+def _load_from_string(model_name: str, lm_head: str) -> TransformersModelOutput:
+    try:
         transformers_model = getattr(
-            import_module("transformers"), model_type
-        ).from_pretrained(str(path))
-        tokenizer = getattr(
-            import_module("transformers"), tokenizer_type
-        ).from_pretrained(str(path))
+            import_module("transformers"), lm_head
+        ).from_pretrained(model_name)
+        tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
         return {"model": transformers_model, "tokenizer": tokenizer}
+    except EnvironmentError:
+        raise NotFound(f"{model_name} is not provided by transformers")
 
-    @staticmethod
-    def _load_from_string(model_name: str, lm_head: str) -> TransformersModelOutput:
-        try:
-            transformers_model = getattr(
-                import_module("transformers"), lm_head
-            ).from_pretrained(model_name)
-            tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
-            return {"model": transformers_model, "tokenizer": tokenizer}
-        except EnvironmentError:
-            raise NotFound(f"{model_name} is not provided by transformers")
 
-    @staticmethod
-    def _validate_transformers_dict(
-        transformers_dict: TransformersModelOutput,
-    ) -> None:
-        if not transformers_dict.get("model"):
-            raise InvalidArgument(
-                " 'model' key is not found in the dictionary."
-                " Expecting a dictionary of with keys 'model' and 'tokenizer'"
-            )
-        if not transformers_dict.get("tokenizer"):
-            raise InvalidArgument(
-                "'tokenizer' key is not found in the dictionary. "
-                "Expecting a dictionary of with keys 'model' and 'tokenizer'"
-            )
+def _validate_transformers_dict(
+    transformers_dict: TransformersModelOutput,
+) -> None:
+    if not transformers_dict.get("model"):
+        raise InvalidArgument(
+            " 'model' key is not found in the dictionary."
+            " Expecting a dictionary of with keys 'model' and 'tokenizer'"
+        )
+    if not transformers_dict.get("tokenizer"):
+        raise InvalidArgument(
+            "'tokenizer' key is not found in the dictionary. "
+            "Expecting a dictionary of with keys 'model' and 'tokenizer'"
+        )
 
-        model_class = str(type(transformers_dict.get("model")).__module__)
-        tokenizer_class = str(type(transformers_dict.get("tokenizer")).__module__)
-        # if either model or tokenizer is not an object of transformers
-        if not model_class.startswith("transformers"):
-            raise InvalidArgument(
-                "Expecting a transformers model object but object passed is {}".format(
-                    type(transformers_dict.get("model"))
-                )
+    model_class = str(type(transformers_dict.get("model")).__module__)
+    tokenizer_class = str(type(transformers_dict.get("tokenizer")).__module__)
+    # if either model or tokenizer is not an object of transformers
+    if not model_class.startswith("transformers"):
+        raise InvalidArgument(
+            "Expecting a transformers model object but object passed is {}".format(
+                type(transformers_dict.get("model"))
             )
-        if not tokenizer_class.startswith("transformers"):
-            raise InvalidArgument(
-                "Expecting a transformers model object but object passed is {}".format(
-                    type(transformers_dict.get("tokenizer"))
-                )
+        )
+    if not tokenizer_class.startswith("transformers"):
+        raise InvalidArgument(
+            "Expecting a transformers model object but object passed is {}".format(
+                type(transformers_dict.get("tokenizer"))
             )
+        )
 
-    @classmethod
-    def load(  # pylint: disable=arguments-differ
-        cls,
-        name_or_path_or_dict: t.Union[PathType, dict],
-        framework: t.Optional[str] = "pt",
-        lm_head: t.Optional[str] = "causal",
-    ) -> TransformersModelOutput:
-        if isinstance(
-            name_or_path_or_dict, (str, bytes, os.PathLike, pathlib.PurePath)
-        ):
-            name_or_path = str(name_or_path_or_dict)
-            if os.path.isdir(name_or_path):
-                with open(
-                    os.path.join(name_or_path, "__model_class_type.txt"), "r"
-                ) as f:
-                    _model_type = f.read().strip()
-                with open(
-                    os.path.join(name_or_path, "__tokenizer_class_type.txt"), "r"
-                ) as f:
-                    _tokenizer_type = f.read().strip()
-                loaded_dict = cls._load_from_directory(
-                    name_or_path, _model_type, _tokenizer_type
-                )
-            else:
-                _lm_head = _lm_head_module_name(framework, lm_head)
-                loaded_dict = cls._load_from_string(name_or_path, _lm_head)
+
+def load(  # pylint: disable=arguments-differ
+    cls,
+    name_or_path_or_dict: t.Union[PathType, dict],
+    framework: t.Optional[str] = "pt",
+    lm_head: t.Optional[str] = "causal",
+) -> TransformersModelOutput:
+    _check_flax_supported()
+    if isinstance(name_or_path_or_dict, (str, bytes, os.PathLike, pathlib.PurePath)):
+        name_or_path = str(name_or_path_or_dict)
+        if os.path.isdir(name_or_path):
+            with open(os.path.join(name_or_path, "__model_class_type.txt"), "r") as f:
+                _model_type = f.read().strip()
+            with open(
+                os.path.join(name_or_path, "__tokenizer_class_type.txt"), "r"
+            ) as f:
+                _tokenizer_type = f.read().strip()
+            loaded_dict = cls._load_from_directory(
+                name_or_path, _model_type, _tokenizer_type
+            )
         else:
-            cls._validate_transformers_dict(name_or_path_or_dict)
-            loaded_dict = name_or_path_or_dict
-        return loaded_dict
+            _lm_head = _lm_head_module_name(framework, lm_head)
+            loaded_dict = cls._load_from_string(name_or_path, _lm_head)
+    else:
+        cls._validate_transformers_dict(name_or_path_or_dict)
+        loaded_dict = name_or_path_or_dict
+    return loaded_dict
 
-    @staticmethod
-    def _save_model_type(path: PathType, model_type: str, tokenizer_type: str) -> None:
-        with open(os.path.join(path, "__model_class_type.txt"), "w") as f:
-            f.write(model_type)
-        with open(os.path.join(path, "__tokenizer_class_type.txt"), "w") as f:
-            f.write(tokenizer_type)
 
-    def save(self, path: PathType) -> None:
-        _model_type = self._model.get("model").__class__.__name__
-        _tokenizer_type = self._model.get("tokenizer").__class__.__name__
-        self._model.get("model").save_pretrained(path)
-        self._model.get("tokenizer").save_pretrained(path)
-        self._save_model_type(path, _model_type, _tokenizer_type)
+def _save_model_type(path: PathType, model_type: str, tokenizer_type: str) -> None:
+    with open(os.path.join(path, "__model_class_type.txt"), "w") as f:
+        f.write(model_type)
+    with open(os.path.join(path, "__tokenizer_class_type.txt"), "w") as f:
+        f.write(tokenizer_type)
+
+
+def save(
+    name: str,
+    model: TransformersModelInput,
+    *,
+    metadata: t.Optional[GenericDictType] = None,
+) -> str:
+    _check_flax_supported()
+    with _stores.register(name, module=__name__, metadata=metadata) as ctx:
+        _model_type = model.get("model").__class__.__name__
+        _tokenizer_type = model.get("tokenizer").__class__.__name__
+        model.get("model").save_pretrained(ctx.path)
+        model.get("tokenizer").save_pretrained(ctx.path)
+        _save_model_type(ctx.path, _model_type, _tokenizer_type)
+    return f"{name}:{ctx.version}"
+
+
+TRANSFORMERS_DOC = """\
+Model class for saving/loading :obj:`transformers` models.
+
+Args:
+    model (`Union[str, os.PathLike, Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]]`):
+        A dictionary `{'model':<model_obj>, 'tokenizer':<tokenizer_obj>}`
+         to setup Transformers model
+    metadata (`GenericDictType`,  `optional`, default to `None`):
+        Class metadata
+
+Raises:
+    MissingDependencyException:
+        :obj:`transformers` is required by TransformersModel
+    InvalidArgument:
+        :obj:`model` must be either a dictionary
+         or a path for saved transformers model or
+         a pre-trained model string provided by transformers
+    NotFound:
+        if the provided model name or model path is not found
+
+Example usage under :code:`train.py`::
+
+    TODO:
+
+One then can define :code:`bento.py`::
+
+    TODO:
+
+"""

@@ -5,11 +5,7 @@ from bentoml._internal.utils.validation import check_is_dns1123_subdomain
 from bentoml.exceptions import BentoMLException
 
 from .inference_api import InferenceAPI
-from .runner import Runner
-
-RUNNER_DOCS = """
-
-"""
+from .runner import RUNNER_INIT_DOCS, RUNNER_RETURNS_DOCS, Runner
 
 
 class Service:

@@ -31,12 +31,12 @@ else:
     )
     transformers = LazyLoader("transformers", globals(), "transformers", exc_msg=_exc)
 
-TransformersModelInput = t.TypeVar(
-    "TransformersModelInput",
+TransformersInput = t.TypeVar(
+    "TransformersInput",
     bound=t.Union[str, os.PathLike, "PreTrainedModel"],
 )
-TransformersModelOutput = t.TypeVar(
-    "TransformersModelOutput",
+TransformersOutput = t.TypeVar(
+    "TransformersOutput",
     bound=t.Dict[
         str,
         t.Union["AutoTokenizer", "_BaseAutoModelClass"],
@@ -93,7 +93,7 @@ def _lm_head_module_name(framework: str, lm_head: str) -> str:
 
 def _load_from_directory(
     path: PathType, model_type: str, tokenizer_type: str
-) -> TransformersModelOutput:
+) -> TransformersOutput:
     transformers_model = getattr(
         import_module("transformers"), model_type
     ).from_pretrained(str(path))
@@ -103,7 +103,7 @@ def _load_from_directory(
     return {"model": transformers_model, "tokenizer": tokenizer}
 
 
-def _load_from_string(model_name: str, lm_head: str) -> TransformersModelOutput:
+def _load_from_string(model_name: str, lm_head: str) -> TransformersOutput:
     try:
         transformers_model = getattr(
             import_module("transformers"), lm_head
@@ -115,7 +115,7 @@ def _load_from_string(model_name: str, lm_head: str) -> TransformersModelOutput:
 
 
 def _validate_transformers_dict(
-    transformers_dict: TransformersModelOutput,
+    transformers_dict: TransformersOutput,
 ) -> None:
     if not transformers_dict.get("model"):
         raise InvalidArgument(
@@ -146,11 +146,10 @@ def _validate_transformers_dict(
 
 
 def load(  # pylint: disable=arguments-differ
-    cls,
     name_or_path_or_dict: t.Union[PathType, dict],
     framework: t.Optional[str] = "pt",
     lm_head: t.Optional[str] = "causal",
-) -> TransformersModelOutput:
+) -> TransformersOutput:
     _check_flax_supported()
     if isinstance(name_or_path_or_dict, (str, bytes, os.PathLike, pathlib.PurePath)):
         name_or_path = str(name_or_path_or_dict)
@@ -161,14 +160,14 @@ def load(  # pylint: disable=arguments-differ
                 os.path.join(name_or_path, "__tokenizer_class_type.txt"), "r"
             ) as f:
                 _tokenizer_type = f.read().strip()
-            loaded_dict = cls._load_from_directory(
+            loaded_dict = _load_from_directory(
                 name_or_path, _model_type, _tokenizer_type
             )
         else:
             _lm_head = _lm_head_module_name(framework, lm_head)
-            loaded_dict = cls._load_from_string(name_or_path, _lm_head)
+            loaded_dict = _load_from_string(name_or_path, _lm_head)
     else:
-        cls._validate_transformers_dict(name_or_path_or_dict)
+        _validate_transformers_dict(name_or_path_or_dict)
         loaded_dict = name_or_path_or_dict
     return loaded_dict
 
@@ -182,7 +181,7 @@ def _save_model_type(path: PathType, model_type: str, tokenizer_type: str) -> No
 
 def save(
     name: str,
-    model: TransformersModelInput,
+    model: TransformersInput,
     *,
     metadata: t.Optional[GenericDictType] = None,
 ) -> str:

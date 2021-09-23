@@ -19,6 +19,8 @@ if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import numpy as np
     import pandas as pd
     import xgboost as xgb
+
+    from ._internal.models.store import LocalModelStore  # noqa
 else:
     _exc = _const.IMPORT_ERROR_MSG.format(
         fwr="xgboost",
@@ -28,12 +30,8 @@ else:
         " for GPU information.",
     )
     xgb = LazyLoader("xgb", globals(), "xgboost", exc_msg=_exc)
-    np = LazyLoader(
-        "np", globals(), "numpy", exc_msg="Install numpy with `pip install numpy`"
-    )
-    pd = LazyLoader(
-        "pd", globals(), "pandas", exc_msg="Install pandas with `pip install pandas`"
-    )
+    np = LazyLoader("np", globals(), "numpy")
+    pd = LazyLoader("pd", globals(), "pandas")
 
 
 @docstrings(

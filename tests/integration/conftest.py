@@ -10,6 +10,11 @@ def clean_context():
         yield stack
 
 
+@pytest.fixture(scope="session")
+def test_modelstore():
+    ...
+
+
 @pytest.fixture()
 def trained_pytorch_classifier():
     import torch

@@ -1,6 +1,13 @@
 import typing as t
 
-from ._internal.models.store import delete, get, ls, register  # noqa # pylint: disable
+from ._internal.models.store import (  # noqa # pylint: disable
+    delete,
+    export,
+    get,
+    impt,
+    ls,
+    register,
+)
 
 _T = t.TypeVar("_T")
 

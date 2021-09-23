@@ -13,7 +13,7 @@ from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
 
-from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration.containers import BentoMLContainer
 from ..types import GenericDictType, PathType
 from ..utils import generate_new_version_id, validate_or_create_dir
@@ -30,6 +30,7 @@ RESERVED_MODEL_FIELD = [
     "labels",
     "context",
 ]
+SUPPORTED_COMPRESSION_TYPE = [".tar.gz"]
 
 
 def validate_name(name: str):
@@ -42,11 +43,13 @@ def validate_name(name: str):
 
 
 def generate_model_name(name: str):
+    validate_name(name)
     version = generate_new_version_id()
     return f"{name}:{version}"
 
 
 def process_model_name(name: str) -> (str, str):
+    validate_name(name)
     try:
         _name, _version = name.split(":")
         return _name, _version
@@ -70,8 +73,8 @@ class ModelInfo(StoreCtx):
     module = attr.ib(type=str, kw_only=True)
     created_at = attr.ib(type=str, kw_only=True)
     context = attr.ib(type=GenericDictType, factory=dict)
-    api_version = attr.ib(init=False, type=str, default="v1")
-    bentoml_version = attr.ib(init=False, type=str, default=BENTOML_VERSION)
+    api_version = attr.ib(type=str, default="v1")
+    bentoml_version = attr.ib(type=str, default=BENTOML_VERSION)
 
 
 def dump_model_yaml(
@@ -108,7 +111,8 @@ class LocalModelStore:
     @inject
     def __init__(self, base_dir: PathType = Provide[BentoMLContainer.bentoml_home]):
         self._BASE_DIR = Path(base_dir, MODEL_STORE_PREFIX)
-        validate_or_create_dir(self._BASE_DIR)
+        self._EXPORT_DIR = Path(base_dir, EXPORTED_STORE_PREFIX)
+        validate_or_create_dir(self._BASE_DIR, self._EXPORT_DIR)
 
     def list_model(self, name: t.Optional[str] = None) -> t.List[str]:
         """
@@ -118,8 +122,11 @@ class LocalModelStore:
         if not name:
             path = self._BASE_DIR
         else:
-            _name, _ = process_model_name(name)
-            path = Path(self._BASE_DIR, _name)
+            _name, _version = process_model_name(name)
+            if _version == "latest":
+                path = Path(self._BASE_DIR, _name)
+            else:
+                path = Path(self._BASE_DIR, _name, _version)
         return [_f.name for _f in path.iterdir()]
 
     def _create_path(self, tag: str):
@@ -212,16 +219,31 @@ class LocalModelStore:
     def pull_model(self, name: str):
         ...
 
-    def export_model(self, name: str):
+    def export_model(self, name: str, override=False):
         model_info = self.get_model(name)
         fname = f"{model_info.name}_{model_info.version}.tar.gz"
-        compressed_path = os.path.join(self._BASE_DIR, EXPORTED_STORE_PREFIX, fname)
-        with tarfile.open(compressed_path, mode="x:gz") as tfile:
-            tfile.add(str(model_info.path), arcname="")
-        return compressed_path
+        compressed_path = os.path.join(self._EXPORT_DIR, fname)
+        try:
+            if not override and Path(compressed_path).exists():
+                raise FileExistsError
+            with tarfile.open(compressed_path, mode="w:gz") as tfile:
+                tfile.add(str(model_info.path), arcname=model_info.name)
+            return compressed_path
+        except FileExistsError as e:
+            raise BentoMLException(
+                f"`{name}` has already been exported. Path"
+                f" of exported model: {compressed_path}.\n `override`"
+                " is default to `False`. If you want to override existing"
+                f" save exports do `bentoml.models.export({name}, override=True)`"
+            )
 
     def import_model(self, path: PathType):
-        ...
+        _path_obj = Path(path)
+        if _path_obj.suffixes not in SUPPORTED_COMPRESSION_TYPE:
+            raise BentoMLException(
+                f"Compression type from {path} is not yet supported. "
+                f"Currently supports: {SUPPORTED_COMPRESSION_TYPE}."
+            )
 
 
 # Global modelstore instance
@@ -231,3 +253,5 @@ ls = modelstore.list_model
 register = modelstore.register_model
 delete = modelstore.delete_model
 get = modelstore.get_model
+export = modelstore.export_model
+impt = modelstore.import_model

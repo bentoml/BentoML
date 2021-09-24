@@ -1,3 +1,4 @@
+import inspect
 import logging
 import os
 import shutil
@@ -13,7 +14,7 @@ from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
 
-from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration.containers import BentoMLContainer
 from ..types import GenericDictType, PathType
 from ..utils import generate_new_version_id, validate_or_create_dir
@@ -30,6 +31,7 @@ RESERVED_MODEL_FIELD = [
     "labels",
     "context",
 ]
+SUPPORTED_COMPRESSION_TYPE = [".tar.gz"]
 
 
 def validate_name(name: str):
@@ -42,6 +44,7 @@ def validate_name(name: str):
 
 
 def generate_model_name(name: str):
+    validate_name(name)
     version = generate_new_version_id()
     return f"{name}:{version}"
 
@@ -49,8 +52,10 @@ def generate_model_name(name: str):
 def process_model_name(name: str) -> (str, str):
     try:
         _name, _version = name.split(":")
+        validate_name(_name)
         return _name, _version
     except ValueError:
+        validate_name(name)
         # when name is a model name without versioning
         return name, "latest"
 
@@ -70,8 +75,8 @@ class ModelInfo(StoreCtx):
     module = attr.ib(type=str, kw_only=True)
     created_at = attr.ib(type=str, kw_only=True)
     context = attr.ib(type=GenericDictType, factory=dict)
-    api_version = attr.ib(init=False, type=str, default="v1")
-    bentoml_version = attr.ib(init=False, type=str, default=BENTOML_VERSION)
+    api_version = attr.ib(type=str, default="v1")
+    bentoml_version = attr.ib(type=str, default=BENTOML_VERSION)
 
 
 def dump_model_yaml(
@@ -108,7 +113,8 @@ class LocalModelStore:
     @inject
     def __init__(self, base_dir: PathType = Provide[BentoMLContainer.bentoml_home]):
         self._BASE_DIR = Path(base_dir, MODEL_STORE_PREFIX)
-        validate_or_create_dir(self._BASE_DIR)
+        self._EXPORT_DIR = Path(base_dir, EXPORTED_STORE_PREFIX)
+        validate_or_create_dir(self._BASE_DIR, self._EXPORT_DIR)
 
     def list_model(self, name: t.Optional[str] = None) -> t.List[str]:
         """
@@ -117,9 +123,13 @@ class LocalModelStore:
         """
         if not name:
             path = self._BASE_DIR
+        elif ":" not in name:
+            path = Path(self._BASE_DIR, name)
         else:
-            _name, _ = process_model_name(name)
-            path = Path(self._BASE_DIR, _name)
+            _name, _version = process_model_name(name)
+            path = Path(self._BASE_DIR, _name, _version)
+            if _version == "latest":
+                path = path.resolve()
         return [_f.name for _f in path.iterdir()]
 
     def _create_path(self, tag: str):
@@ -146,14 +156,14 @@ class LocalModelStore:
             ctx.metadata["params_a"] = value_a
         """
         tag = generate_model_name(name)
-        _name, _version = tag.split(":")
+        _, version = tag.split(":")
         model_path = self._create_path(tag)
         model_yaml = Path(model_path, f"{MODEL_YAML_NAMESPACE}{YAML_EXT}")
 
         ctx = StoreCtx(
-            name=_name,
+            name=name,
             path=model_path,
-            version=_version,
+            version=version,
             labels=labels,
             metadata=metadata,
             options=options,
@@ -165,7 +175,7 @@ class LocalModelStore:
             logger.warning(f"Failed to save {tag}, deleting {model_path}...")
             shutil.rmtree(model_path)
         finally:
-            latest_path = Path(self._BASE_DIR, _name, "latest")
+            latest_path = Path(self._BASE_DIR, name, "latest")
             dump_model_yaml(
                 model_yaml, ctx, framework_context=framework_context, module=module
             )
@@ -212,16 +222,60 @@ class LocalModelStore:
     def pull_model(self, name: str):
         ...
 
-    def export_model(self, name: str):
+    def export_model(self, name: str, override=False):
         model_info = self.get_model(name)
         fname = f"{model_info.name}_{model_info.version}.tar.gz"
-        compressed_path = os.path.join(self._BASE_DIR, EXPORTED_STORE_PREFIX, fname)
-        with tarfile.open(compressed_path, mode="x:gz") as tfile:
-            tfile.add(str(model_info.path), arcname="")
-        return compressed_path
+        compressed_path = os.path.join(self._EXPORT_DIR, fname)
+        try:
+            if not override and Path(compressed_path).exists():
+                raise FileExistsError
+            with tarfile.open(compressed_path, mode="w:gz") as tfile:
+                tfile.add(str(model_info.path), arcname="")
+            return compressed_path
+        except FileExistsError:
+            raise BentoMLException(
+                f"`{name}` has already been exported. Path"
+                f" of exported model: {compressed_path}.\n `override`"
+                " is default to `False`. If you want to override existing"
+                f" save exports do `bentoml.models.export({name}, override=True)`"
+            )
 
-    def import_model(self, path: PathType):
-        ...
+    def import_model(self, path: PathType, override=False) -> str:
+        _path_obj = Path(path)
+        if "".join(_path_obj.suffixes) not in SUPPORTED_COMPRESSION_TYPE:
+            raise BentoMLException(
+                f"Compression type from {path} is not yet supported. "
+                f"Currently supports: {SUPPORTED_COMPRESSION_TYPE}."
+            )
+
+        name, *version = _path_obj.stem.partition(".")[0].rsplit("_", 2)
+        tag = f"{name}:{'_'.join(version)}"
+        target = Path(self._BASE_DIR, name, "_".join(version))
+        validate_or_create_dir(target)
+        try:
+            if not override and any(target.iterdir()):
+                raise FileExistsError
+            with tarfile.open(path, mode="r:gz") as tfile:
+                tfile.extractall(path=str(target))
+            return str(target)
+        except FileExistsError:
+            model_info = self.get_model(tag)
+            _LOAD_INST = """\
+            import {module}
+            model = {module}.load("{name}", **kwargs)
+            """
+            _LOAD_RUNNER_INST = """\
+            import {module}
+            runner = {module}.load_runner("{name}", **kwargs)
+            """
+            raise FileExistsError(
+                f"Model `{tag}` have already been imported.\n"
+                f"Import the model directly with `load`:\n\n"
+                f"{inspect.cleandoc(_LOAD_INST.format(module=model_info.module, name=tag))}\n\n"
+                f"Use runner directly with `load_runner`:\n\n"
+                f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n\n"
+                f"If one wants to override, do `bentoml.models.impt({path},override=True)`"
+            )
 
 
 # Global modelstore instance
@@ -231,3 +285,5 @@ ls = modelstore.list_model
 register = modelstore.register_model
 delete = modelstore.delete_model
 get = modelstore.get_model
+export = modelstore.export_model
+imports = modelstore.import_model

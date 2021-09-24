@@ -55,18 +55,15 @@ def generate_new_version_id():
     return f"{date_string}_{random_hash}"
 
 
-def generate_random_name(name: str):
-    return f"{name}_{uuid.uuid4().hex[:6].upper()}"
+def validate_or_create_dir(*path: PathType) -> None:
+    for p in path:
+        path = Path(p)
 
-
-def validate_or_create_dir(path: PathType) -> None:
-    path = Path(path)
-
-    if path.exists():
-        if not path.is_dir():
-            raise OSError(20, f"{path} is not a directory")
-    else:
-        path.mkdir(parents=True)
+        if path.exists():
+            if not path.is_dir():
+                raise OSError(20, f"{path} is not a directory")
+        else:
+            path.mkdir(parents=True)
 
 
 class catch_exceptions(Generic[_T], object):

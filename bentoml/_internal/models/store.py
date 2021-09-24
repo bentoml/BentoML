@@ -1,3 +1,4 @@
+import inspect
 import logging
 import os
 import shutil
@@ -49,11 +50,12 @@ def generate_model_name(name: str):
 
 
 def process_model_name(name: str) -> (str, str):
-    validate_name(name)
     try:
         _name, _version = name.split(":")
+        validate_name(_name)
         return _name, _version
     except ValueError:
+        validate_name(name)
         # when name is a model name without versioning
         return name, "latest"
 
@@ -121,12 +123,13 @@ class LocalModelStore:
         """
         if not name:
             path = self._BASE_DIR
+        elif ":" not in name:
+            path = Path(self._BASE_DIR, name)
         else:
             _name, _version = process_model_name(name)
+            path = Path(self._BASE_DIR, _name, _version)
             if _version == "latest":
-                path = Path(self._BASE_DIR, _name)
-            else:
-                path = Path(self._BASE_DIR, _name, _version)
+                path = path.resolve()
         return [_f.name for _f in path.iterdir()]
 
     def _create_path(self, tag: str):
@@ -153,14 +156,14 @@ class LocalModelStore:
             ctx.metadata["params_a"] = value_a
         """
         tag = generate_model_name(name)
-        _name, _version = tag.split(":")
+        _, version = tag.split(":")
         model_path = self._create_path(tag)
         model_yaml = Path(model_path, f"{MODEL_YAML_NAMESPACE}{YAML_EXT}")
 
         ctx = StoreCtx(
-            name=_name,
+            name=name,
             path=model_path,
-            version=_version,
+            version=version,
             labels=labels,
             metadata=metadata,
             options=options,
@@ -172,7 +175,7 @@ class LocalModelStore:
             logger.warning(f"Failed to save {tag}, deleting {model_path}...")
             shutil.rmtree(model_path)
         finally:
-            latest_path = Path(self._BASE_DIR, _name, "latest")
+            latest_path = Path(self._BASE_DIR, name, "latest")
             dump_model_yaml(
                 model_yaml, ctx, framework_context=framework_context, module=module
             )
@@ -237,12 +240,39 @@ class LocalModelStore:
                 f" save exports do `bentoml.models.export({name}, override=True)`"
             )
 
-    def import_model(self, path: PathType):
+    def import_model(self, path: PathType) -> str:
         _path_obj = Path(path)
-        if _path_obj.suffixes not in SUPPORTED_COMPRESSION_TYPE:
+        if "".join(_path_obj.suffixes) not in SUPPORTED_COMPRESSION_TYPE:
             raise BentoMLException(
                 f"Compression type from {path} is not yet supported. "
                 f"Currently supports: {SUPPORTED_COMPRESSION_TYPE}."
+            )
+
+        name, *version = _path_obj.stem.partition(".")[0].rsplit("_", 2)
+        tag = f"{name}:{'_'.join(version)}"
+        target = Path(self._BASE_DIR, name, "_".join(version))
+        try:
+            if target.is_dir():
+                raise IsADirectoryError
+            with tarfile.open(str(_path_obj), mode="w|gz") as tfile:
+                tfile.extractall(target)
+            return str(target)
+        except IsADirectoryError:
+            model_info = self.get_model(tag)
+            _LOAD_INST = """\
+            import {module}
+            model = {module}.load("{name}", **kwargs)
+            """
+            _LOAD_RUNNER_INST = """\
+            import {module}
+            runner = {module}.load_runner("{name}", **kwargs)
+            """
+            raise IsADirectoryError(
+                f"Model `{tag}` have already been imported.\n"
+                f"Import the model directly with `load`:\n\n"
+                f"{inspect.cleandoc(_LOAD_INST.format(module=model_info.module, name=tag))}\n\n"
+                f"Use runner directly with `load_runner`:\n\n"
+                f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n"
             )
 
 

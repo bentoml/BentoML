@@ -232,7 +232,7 @@ class LocalModelStore:
             with tarfile.open(compressed_path, mode="w:gz") as tfile:
                 tfile.add(str(model_info.path), arcname="")
             return compressed_path
-        except FileExistsError as e:
+        except FileExistsError:
             raise BentoMLException(
                 f"`{name}` has already been exported. Path"
                 f" of exported model: {compressed_path}.\n `override`"

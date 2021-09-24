@@ -230,7 +230,7 @@ class LocalModelStore:
             if not override and Path(compressed_path).exists():
                 raise FileExistsError
             with tarfile.open(compressed_path, mode="w:gz") as tfile:
-                tfile.add(str(model_info.path), arcname=model_info.name)
+                tfile.add(str(model_info.path), arcname="")
             return compressed_path
         except FileExistsError as e:
             raise BentoMLException(
@@ -240,7 +240,7 @@ class LocalModelStore:
                 f" save exports do `bentoml.models.export({name}, override=True)`"
             )
 
-    def import_model(self, path: PathType) -> str:
+    def import_model(self, path: PathType, override=False) -> str:
         _path_obj = Path(path)
         if "".join(_path_obj.suffixes) not in SUPPORTED_COMPRESSION_TYPE:
             raise BentoMLException(
@@ -251,13 +251,14 @@ class LocalModelStore:
         name, *version = _path_obj.stem.partition(".")[0].rsplit("_", 2)
         tag = f"{name}:{'_'.join(version)}"
         target = Path(self._BASE_DIR, name, "_".join(version))
+        validate_or_create_dir(target)
         try:
-            if target.is_dir():
-                raise IsADirectoryError
-            with tarfile.open(str(_path_obj), mode="w|gz") as tfile:
-                tfile.extractall(target)
+            if not override and any(target.iterdir()):
+                raise FileExistsError
+            with tarfile.open(path, mode="r:gz") as tfile:
+                tfile.extractall(path=str(target))
             return str(target)
-        except IsADirectoryError:
+        except FileExistsError:
             model_info = self.get_model(tag)
             _LOAD_INST = """\
             import {module}
@@ -267,12 +268,13 @@ class LocalModelStore:
             import {module}
             runner = {module}.load_runner("{name}", **kwargs)
             """
-            raise IsADirectoryError(
+            raise FileExistsError(
                 f"Model `{tag}` have already been imported.\n"
                 f"Import the model directly with `load`:\n\n"
                 f"{inspect.cleandoc(_LOAD_INST.format(module=model_info.module, name=tag))}\n\n"
                 f"Use runner directly with `load_runner`:\n\n"
-                f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n"
+                f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n\n"
+                f"If one wants to override, do `bentoml.models.impt({path},override=True)`"
             )
 
 
@@ -284,4 +286,4 @@ register = modelstore.register_model
 delete = modelstore.delete_model
 get = modelstore.get_model
 export = modelstore.export_model
-impt = modelstore.import_model
+imports = modelstore.import_model

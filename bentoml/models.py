@@ -4,10 +4,12 @@ from ._internal.models.store import (  # noqa # pylint: disable
     delete,
     export,
     get,
-    impt,
+    imports,
     ls,
     register,
 )
+
+__all__ = ["delete", "export", "imports", "get", "ls", "register"]
 
 _T = t.TypeVar("_T")
 

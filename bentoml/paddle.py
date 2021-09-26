@@ -21,7 +21,6 @@ _hub_exc = _const.IMPORT_ERROR_MSG.format(
     inst="`pip install paddlepaddle`," " then `pip install paddlehub`",
 )
 
-
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import paddle
     import paddle.inference as pi

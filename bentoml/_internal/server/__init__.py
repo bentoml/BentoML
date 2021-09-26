@@ -7,7 +7,6 @@ from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-
 # TODO:
 def serve(
     bundle_path_or_tag: str,

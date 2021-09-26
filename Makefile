@@ -19,10 +19,6 @@ install-test-deps: ## Install all test dependencies
 install-dev-deps: ## Install all dev dependencies
 	@echo Ensuring dev dependencies...
 	@pip install -e ".[dev]"
-install-yatai-deps: ## Install all yatai dependencies
-	@echo Ensuring yatai dependencies
-	@cd yatai && make yatai
-	@cd ..
 
 # Protos
 gen-protos: ## Build protobuf for Python and Node

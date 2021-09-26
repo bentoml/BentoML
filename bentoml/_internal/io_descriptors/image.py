@@ -25,7 +25,6 @@ else:
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
-
 DEFAULT_PIL_MODE = "RGB"
 
 

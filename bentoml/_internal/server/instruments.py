@@ -10,7 +10,6 @@ from ..configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     Lock = multiprocessing.synchronize.Lock
 
-
 logger = logging.getLogger(__name__)
 
 

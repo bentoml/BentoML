@@ -12,7 +12,7 @@ from ._internal.models import (
 from ._internal.models import store as _stores
 from ._internal.service import RUNNER_INIT_DOCS, RUNNER_RETURNS_DOCS, Runner
 from ._internal.types import GenericDictType
-from ._internal.utils import LazyLoader, generate_random_name  # noqa
+from ._internal.utils import LazyLoader, randomize_runner_name  # noqa
 from .utils import docstrings  # noqa
 
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
@@ -43,6 +43,10 @@ else:
         Number of thread will be used for this booster.
          Default to -1, which will use XgBoost internal threading
          strategy.
+
+Example::
+    import bentoml.xgboost
+    model = bentoml.xgboost.load('xgboost_ngrams', infer_params=my_infer_params)
 
 Returns:
     an instance of `xgboost.core.Booster` from BentoML modelstore.
@@ -99,19 +103,23 @@ def save(
 {RUNNER_RETURNS_DOCS.format(model=__name__)}
 """
 )
-def load_runner(*args, **kwargs) -> "_XgBoostRunner":
-    return _XgBoostRunner(*args, **kwargs)
+def load_runner(
+    name: str, model_path: str, infer_api_callback: str = "predict"
+) -> "_XgBoostRunner":
+    return _XgBoostRunner(
+        name=name, model_path=model_path, infer_api_callback=infer_api_callback
+    )
 
 
 class _XgBoostRunner(Runner):
     def __init__(
         self,
-        name,
-        runner_name=generate_random_name(__name__),
+        model_path: str,
+        name=randomize_runner_name(__name__),
         *,
         infer_api_callback: str = "predict",
     ):
-        super(_XgBoostRunner, self).__init__(name, runner_name)
+        super(_XgBoostRunner, self).__init__(name, model_path)
         self._infer_api_callback = infer_api_callback
         self._infer_params = self._setup_infer_params()
 
@@ -146,13 +154,13 @@ class _XgBoostRunner(Runner):
     def _setup(self) -> None:
         if not self.resource_limits.on_gpu:
             self._model = load(
-                self._model_name,
+                self.model_path,
                 infer_params=self._infer_params,
                 nthread=self.num_concurrency,
             )
         else:
             self._model = load(
-                self._model_name, infer_params=self._infer_params, nthread=1
+                self.model_path, infer_params=self._infer_params, nthread=1
             )
         self._infer_func = getattr(self._model, self._infer_api_callback)
 

@@ -24,7 +24,6 @@ _pl_exc = _const.IMPORT_ERROR_MSG.format(
     " to setup PyTorch correctly. Then run `pip install pytorch_lightning`",
 )
 
-
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pytorch_lightning as pl

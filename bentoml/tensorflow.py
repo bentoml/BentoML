@@ -23,7 +23,6 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     inst="`pip install -U tensorflow`",
 )
 
-
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import tensorflow as tf
     import tensorflow.python.training.tracking.tracking as tracking

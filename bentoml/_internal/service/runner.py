@@ -136,41 +136,24 @@ Returns:
 
 
 class Runner(ABC):
-    def __init__(
-        self,
-        model_name,
-        runner_name,
-        *,
-        cpu: float = 1.0,
-        mem: t.Union[str, int] = "100Mi",
-        gpu: float = 0.0,
-        enable_batch: bool = True,
-        max_batch_size: int = 10000,
-        max_latency_ms: int = 10000,
-    ):
-        self._model_name = model_name
-        self._runner_name = runner_name
-        self.resource_limits = RunnerResourceLimits(cpu=cpu, mem=mem, gpu=gpu)
-        self.batch_options = RunnerBatchOptions(
-            enabled=enable_batch,
-            max_batch_size=max_batch_size,
-            max_latency_ms=max_latency_ms,
-        )
+    def __init__(self, name: str, model_path: str):
+        self.name = name
+        self.model_path = model_path
+        self.resource_limits = RunnerResourceLimits()
+        self.batch_options = RunnerBatchOptions()
+
+    # fmt: off
+    @property
+    @abstractmethod
+    def num_concurrency(self): return 1
 
     @property
     @abstractmethod
-    def num_concurrency(self):
-        return 1
-
-    @property
-    @abstractmethod
-    def num_replica(self):
-        return 1
+    def num_replica(self): return 1
 
     @abstractmethod
-    def _setup(self, *args, **kwargs):
-        ...
+    def _setup(self, *args, **kwargs): ...
 
     @abstractmethod
-    def _run_batch(self, input_data: "_T") -> "_T":
-        ...
+    def _run_batch(self, input_data: "_T") -> "_T": ...
+    # fmt: on

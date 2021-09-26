@@ -28,11 +28,6 @@ Returns:
 LOAD_INIT_DOCS = """\
 Load a model from BentoML modelstore with given name.
 
-Examples::
-    import bentoml.pytorch           
-    # load model
-    model = bentoml.pytorch.load("my_nlp_model")
-
 Args:
     name (`str`):
         Name of a saved model in BentoML modelstore."""

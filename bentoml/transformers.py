@@ -14,14 +14,22 @@ from ._internal.models import (
 from ._internal.models import store as _stores
 from ._internal.service import RUNNER_INIT_DOCS, RUNNER_RETURNS_DOCS, Runner
 from ._internal.types import GenericDictType, PathType
-from ._internal.utils import LazyLoader, generate_random_name  # noqa
+from ._internal.utils import LazyLoader, randomize_runner_name  # noqa
 from .exceptions import BentoMLException, InvalidArgument, NotFound
 from .utils import docstrings  # noqa
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import transformers
-    from transformers import AutoTokenizer, PreTrainedModel  # noqa
+    from transformers import (  # noqa
+        AutoModel,
+        AutoTokenizer,
+        FlaxAutoModel,
+        FlaxPreTrainedModel,
+        PreTrainedModel,
+        TFAutoModel,
+        TFPreTrainedModel,
+    )
     from transformers.models.auto.auto_factory import _BaseAutoModelClass  # noqa
 else:
     _exc = _const.IMPORT_ERROR_MSG.format(
@@ -31,15 +39,17 @@ else:
     )
     transformers = LazyLoader("transformers", globals(), "transformers", exc_msg=_exc)
 
+_T = t.TypeVar("_T")
+
 TransformersInput = t.TypeVar(
     "TransformersInput",
-    bound=t.Union[str, os.PathLike, "PreTrainedModel"],
+    bound=t.Union[str, PreTrainedModel, TFPreTrainedModel, FlaxPreTrainedModel],
 )
 TransformersOutput = t.TypeVar(
     "TransformersOutput",
     bound=t.Dict[
         str,
-        t.Union["AutoTokenizer", "_BaseAutoModelClass"],
+        t.Union[AutoTokenizer, _BaseAutoModelClass],
     ],
 )
 
@@ -224,3 +234,29 @@ One then can define :code:`bento.py`::
     TODO:
 
 """
+
+
+class _TransformersRunner(Runner):
+    def __init__(self, name, runner_name=randomize_runner_name(__name__)):
+        ...
+
+    @property
+    def num_concurrency(self):
+        return self.num_replica
+
+    @property
+    def num_replica(self):
+        # TODO: supports multiple GPUS
+        return 1
+
+    def _setup(self, *args, **kwargs):
+        pass
+
+    def _run_batch(self, input_data: "_T") -> "_T":
+        pass
+
+
+# model = transformers.BertModel.from_pretrained("bert_uncased")
+
+# torch.save(model, "bert.pt")
+# torch.load('bert.pt')

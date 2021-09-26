@@ -31,7 +31,6 @@ install_requires = [
     "cattrs",
 ]
 
-
 model_server_optional = [
     "opentracing",
     "py_zipkin",

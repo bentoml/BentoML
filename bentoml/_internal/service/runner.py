@@ -52,10 +52,9 @@ class RunnerBatchOptions:
 
 
 class Runner(ABC):
-    def __init__(self, name: str, model_path: str):
+    def __init__(self, name: str, resource_quota=None, batch_options=None):
         self.name = name
-        self.model_path = model_path
-        self.resource_limits = RunnerResourceLimits()
+        self.resource_quota = RunnerResourceLimits()
         self.batch_options = RunnerBatchOptions()
 
     # fmt: off

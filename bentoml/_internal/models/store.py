@@ -190,7 +190,9 @@ class LocalModelStore:
         name, version = _process_model_tag(tag)
         path = Path(self._BASE_DIR, name, version)
         if not path.exists():
-            raise FileNotFoundError(f"{name} is not found under BentoML modelstore.")
+            raise FileNotFoundError(
+                f"Model '{tag}' is not found under BentoML modelstore {self._BASE_DIR}."
+            )
         return load_model_yaml(path)
 
     def delete_model(self, tag: str, skip_confirm: bool = False):

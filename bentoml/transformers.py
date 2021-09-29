@@ -155,7 +155,7 @@ def _validate_transformers_dict(
         )
 
 
-def load(  # pylint: disable=arguments-differ
+def load(
     name_or_path_or_dict: t.Union[PathType, dict],
     framework: t.Optional[str] = "pt",
     lm_head: t.Optional[str] = "causal",
@@ -191,18 +191,27 @@ def _save_model_type(path: PathType, model_type: str, tokenizer_type: str) -> No
 
 def save(
     name: str,
-    model: TransformersInput,
     *,
+    model: TransformersInput,
+    tokenizer: t.Optional[transformers.AutoTokenizer] = None,
     metadata: t.Optional[GenericDictType] = None,
 ) -> str:
     _check_flax_supported()
-    with _stores.register(name, module=__name__, metadata=metadata) as ctx:
+    context = {"transformers": transformers.__version__}
+    options = {"model": model.__class__.__name__}
+    with _stores.register(
+        name, module=__name__, framework_context=context, metadata=metadata
+    ) as ctx:
         _model_type = model.get("model").__class__.__name__
         _tokenizer_type = model.get("tokenizer").__class__.__name__
         model.get("model").save_pretrained(ctx.path)
         model.get("tokenizer").save_pretrained(ctx.path)
         _save_model_type(ctx.path, _model_type, _tokenizer_type)
     return f"{name}:{ctx.version}"
+
+
+def load_runner(name: str, model_path: str):
+    return _TransformersRunner(name=name, model_path=model_path)
 
 
 TRANSFORMERS_DOC = """\
@@ -237,7 +246,8 @@ One then can define :code:`bento.py`::
 
 
 class _TransformersRunner(Runner):
-    def __init__(self, name, runner_name=randomize_runner_name(__name__)):
+    def __init__(self, name, model_path: str):
+        super().__init__(name, model_path)
         ...
 
     @property

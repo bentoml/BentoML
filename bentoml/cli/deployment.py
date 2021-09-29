@@ -117,7 +117,7 @@ def get_deployment_sub_command():
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "default" '
+        help='Deployment namespace managed by Qwak, default value is "default" '
         'which can be changed in BentoML configuration file',
     )
     @click.option(

@@ -259,7 +259,7 @@ class TensorflowSavedModelArtifact(BentoServiceArtifact):
         logger.info(pretty_format_restored_model(loaded))
         if hasattr(loaded, "keras_api"):
             logger.warning(
-                f"BentoML detected that {self.__class__.__name__} is being used "
+                f"Qwak detected that {self.__class__.__name__} is being used "
                 "to pack a Keras API based model. "
                 "In order to get optimal serving performance, we recommend "
                 f"either replacing {self.__class__.__name__} with KerasModelArtifact, "

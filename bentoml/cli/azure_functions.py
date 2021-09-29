@@ -56,8 +56,8 @@ def get_azure_functions_sub_command():
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, default value is "dev" which '
-        'can be changed in BentoML configuration yatai_service/default_namespace',
+        help='Deployment namespace managed by Qwak, default value is "dev" which '
+        'can be changed in Qwak configuration yatai_service/default_namespace',
     )
     @click.argument('name', type=click.STRING)
     @click.option(
@@ -136,7 +136,7 @@ def get_azure_functions_sub_command():
     ):
         _echo(
             message='Azure Functions deployment functionalities are being migrated to '
-            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'a separate tool and related CLI commands will be deprecated in Qwak '
             'itself, please use https://github.com/bentoml/azure-functions-deploy '
             'going forward.',
             color='yellow',
@@ -183,8 +183,8 @@ def get_azure_functions_sub_command():
         '-n',
         '--namespace',
         type=click.STRING,
-        help='Deployment namespace managed by BentoML, the default value is "dev" '
-        'which can be changed in BentoML configuration file',
+        help='Deployment namespace managed by Qwak, the default value is "dev" '
+        'which can be changed in Qwak configuration file',
     )
     @click.option(
         '--min-instances',
@@ -214,7 +214,7 @@ def get_azure_functions_sub_command():
     ):
         _echo(
             message='Azure Functions deployment functionalities are being migrated to '
-            'a separate tool and related CLI commands will be deprecated in BentoML '
+            'a separate tool and related CLI commands will be deprecated in Qwak '
             'itself, please use https://github.com/bentoml/azure-functions-deploy '
             'going forward.',
             color='yellow',

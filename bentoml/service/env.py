@@ -225,7 +225,7 @@ class BentoServiceEnv(object):
 
                 logger.warning(
                     f"Python {PYTHON_VERSION} found in current environment is not "
-                    f"officially supported by BentoML. The docker base image used is"
+                    f"officially supported by Qwak. The docker base image used is"
                     f"'{self._docker_base_image}' which will use conda to install "
                     f"Python {PYTHON_VERSION} in the build process. Supported Python "
                     f"versions are: f{', '.join(PYTHON_SUPPORTED_VERSIONS)}"

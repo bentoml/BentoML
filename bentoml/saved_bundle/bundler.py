@@ -54,8 +54,8 @@ if TYPE_CHECKING:
 DEFAULT_SAVED_BUNDLE_README = """\
 # Generated BentoService bundle - {}:{}
 
-This is a ML Service bundle created with BentoML, it is not recommended to edit
-code or files contained in this directory. Instead, edit the code that uses BentoML
+This is a ML Service bundle created with Qwak, it is not recommended to edit
+code or files contained in this directory. Instead, edit the code that uses Qwak
 to create this bundle, and save a new BentoService bundle.
 """
 
@@ -232,7 +232,7 @@ def save_to_dir(
         # If user provided path is an remote location, the bundle will first save to
         # a temporary directory and then upload to the remote location
         logger.info(
-            'Saving bento to an remote path. BentoML will first save the bento '
+            'Saving bento to an remote path. Qwak will first save the bento '
             'to a local temporary directory and then upload to the remote path.'
         )
         with TempDirectory() as temp_dir:

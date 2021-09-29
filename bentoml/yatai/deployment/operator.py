@@ -45,7 +45,7 @@ def get_deployment_operator(yatai_service, deployment_pb):
         return AwsEc2DeploymentOperator(yatai_service)
     elif operator == DeploymentSpec.CUSTOM:
         raise NotImplementedError(
-            "Custom deployment operator is not supported in current version of BentoML"
+            "Custom deployment operator is not supported in current version of Qwak."
         )
     else:
         raise YataiDeploymentException("DeployOperator must be set")

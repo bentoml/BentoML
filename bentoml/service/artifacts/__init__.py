@@ -36,8 +36,8 @@ class BentoServiceArtifact:
     def _copy(self):
         """
         Create a new empty artifact instance with the same name and arguments, this
-        is only used internally for BentoML to create new artifact instances when
-        creating a new BentoService instance. BentoML stores a reference to the
+        is only used internally for Qwak to create new artifact instances when
+        creating a new BentoService instance. Qwak stores a reference to the
         arguments provided for initializing this artifact class for the purpose of
         recreating a new instance with the same config
         """

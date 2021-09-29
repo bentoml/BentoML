@@ -65,7 +65,7 @@ class FileSystemRepository(BaseRepository):
         saved_path = os.path.join(self.base_path, bento_name, bento_version)
         if not os.path.exists(saved_path):
             logger.warning(
-                "BentoML bundle %s:%s not found in target repository",
+                "Qwak bundle %s:%s not found in target repository",
                 bento_name,
                 bento_version,
             )

@@ -135,8 +135,8 @@ class PytorchModelArtifact(BentoServiceArtifact):
 
     def set_dependencies(self, env: BentoServiceEnv):
         logger.warning(
-            "BentoML by default does not include spacy and torchvision package when "
-            "using PytorchModelArtifact. To make sure BentoML bundle those packages if "
+            "Qwak by default does not include spacy and torchvision package when "
+            "using PytorchModelArtifact. To make sure Qwak bundle those packages if "
             "they are required for your model, either import those packages in "
             "BentoService definition file or manually add them via "
             "`@env(pip_packages=['torchvision'])` when defining a BentoService"

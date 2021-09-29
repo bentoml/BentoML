@@ -13,7 +13,7 @@ class PickleArtifact(BentoServiceArtifact):
     Args:
         name (str): Name for the artifact
         pickle_module (module|str): The python module will be used for pickle
-            and unpickle artifact, default pickle module in BentoML's fork of
+            and unpickle artifact, default pickle module in Qwak's fork of
             `cloudpickle`, which is identical to the Apache Spark fork
         pickle_extension (str): The extension format for pickled file.
     """

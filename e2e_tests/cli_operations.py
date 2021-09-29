@@ -6,7 +6,7 @@ logger = logging.getLogger('bentoml.test')
 
 
 def delete_deployment(deployment_type, deployment_name, deployment_namespace=None):
-    logger.info(f'Delete deployment {deployment_name} with BentoML CLI')
+    logger.info(f'Delete deployment {deployment_name} with Qwak CLI')
     delete_deployment_command = [
         'bentoml',
         deployment_type,

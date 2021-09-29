@@ -9,7 +9,6 @@ from bentoml import _version as version_mod
 # used within functions in this file
 logger = logging.getLogger(__name__)
 
-
 DEBUG_ENV_VAR = "BENTOML_DEBUG"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
 

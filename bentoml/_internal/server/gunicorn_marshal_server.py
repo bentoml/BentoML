@@ -8,7 +8,6 @@ from ..configuration.containers import BentoMLContainer
 
 marshal_logger = logging.getLogger("bentoml.marshal")
 
-
 if TYPE_CHECKING:  # make type checkers happy
     from bentoml._internal.marshal.marshal import MarshalApp
 

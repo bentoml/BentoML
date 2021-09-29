@@ -13,12 +13,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-
 TF_KERAS_DEFAULT_FUNCTIONS = {
     "_default_save_signature",
     "call_and_return_all_conditional_losses",
 }
-
 
 TENSOR_CLASS_NAMES = (
     "RaggedTensor",

@@ -14,7 +14,6 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     " https://docs.h2o.ai/h2o/latest-stable/h2o-docs/downloading.html#install-in-python",  # noqa
 )
 
-
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import h2o

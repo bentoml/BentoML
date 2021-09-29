@@ -31,7 +31,6 @@ PYTHON_VERSION = "{minor_version}.{micro}".format(
     minor_version=PYTHON_MINOR_VERSION, micro=version_info.micro
 )
 
-
 DEFAULT_CONDA_ENV_BASE_YAML = """
 name: bentoml-default-conda-env
 dependencies: []

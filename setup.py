@@ -22,13 +22,14 @@ install_requires = [
     "schema",  # Schema validation
     "chardet",
     "cloudpickle",
+    "starlette",
+    "python-multipart",
     "mypy",
     "rich",
     "pyyaml",
     "attrs>=20",
     "cattrs",
 ]
-
 
 model_server_optional = [
     "opentracing",

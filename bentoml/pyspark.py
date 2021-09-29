@@ -34,7 +34,7 @@ else:
 #  among imports if users need to use SparkSession.
 SPARK_SESSION_NAMESPACE: str = "PySparkMLlibModel"
 
-DEPRECATION_MLLIB_WARNING: str = """\
+DEPRECATION_MLLIB_WARNING: str = """
 {model} is using the older library `pyspark.mllib`.
 Consider to upgrade your model to use `pyspark.ml`.
 BentoML will still try to load {model} with `pyspark.sql.SparkSession`,

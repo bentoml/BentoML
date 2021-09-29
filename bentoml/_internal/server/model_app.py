@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
 
-
 DEFAULT_INDEX_HTML = """\
 <!DOCTYPE html>
 <head>

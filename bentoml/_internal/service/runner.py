@@ -52,91 +52,24 @@ class RunnerBatchOptions:
 
 
 class Runner(ABC):
-    """
-    Usage:
-    r = bentoml.xgboost.load_runner()
-    r.resource_limits.cpu = 2
-    r.resource_limits.mem = "2Gi"
-
-    Runners config override:
-    "runners": {
-        "my_model:any": {
-            "resource_limits": {
-                "cpu": 1
-            },
-            "batch_options": {
-                "max_batch_size": 1000
-            }
-        }
-        "runner_bar": {
-            "resource_limits": {
-                "cpu": 200m
-            }
-        }
-    }
-
-    # bentoml.xgboost.py:
-    class _XgboostRunner(Runner):
-
-        def __init__(self, runner_name, model_path):
-            super().__init__(name)
-            self.model_path = model_path
-
-        def _setup(self):
-            self.model = load(model_path)
-            ...
-
-    # model_tag example:
-    #   "my_nlp_model:20210810_A23CDE", "my_nlp_model:latest"
-    def load_runner(model_tag: str):
-        model_info = bentoml.models.get(model_tag)
-        assert model_info.module == "bentoml.xgboost"
-        return _XgboostRunner(model_tag, model_info.path)
-
-    def save(name: str, model: xgboost.Model, **save_options):
-        with bentoml.models.add(
-            name,
-            module=__module__,
-            options: save_options) as ctx:
-
-            # ctx( path, version, metadata )
-            model.save(ctx.path)
-            ctx.metadata.set('param_a', 'value_b')
-            ctx.metadata.set('param_foo', 'value_bar')
-
-    def load(name: str) -> xgboost.Model:
-        model_info = bentoml.models.get(model_tag)
-        assert model_info.module == "bentoml.xgboost"
-        return xgboost.load_model(model_info.path)
-
-    # custom runner
-    class _MyRunner(Runner):
-
-        def _setup(self):
-            self.model = load("./my_model.pt")
-
-        def _run_batch(self, ...):
-            pass
-
-    """
-
-    def __init__(self, name):
+    def __init__(self, name: str, model_path: str):
         self.name = name
+        self.model_path = model_path
         self.resource_limits = RunnerResourceLimits()
         self.batch_options = RunnerBatchOptions()
 
+    # fmt: off
     @property
-    def num_concurrency(self):
-        return 1
+    @abstractmethod
+    def num_concurrency(self): return 1
 
     @property
-    def num_replica(self):
-        return 1
+    @abstractmethod
+    def num_replica(self): return 1
 
     @abstractmethod
-    def _setup(self, *args, **kwargs):
-        ...
+    def _setup(self, *args, **kwargs): ...
 
     @abstractmethod
-    def _run_batch(self, input_data: "_T") -> "_T":
-        ...
+    def _run_batch(self, input_data: "_T") -> "_T": ...
+    # fmt: on

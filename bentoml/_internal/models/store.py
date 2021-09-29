@@ -18,7 +18,7 @@ from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration.containers import BentoMLContainer
 from ..types import GenericDictType, PathType
 from ..utils import generate_new_version_id, validate_or_create_dir
-from . import EXPORTED_STORE_PREFIX, MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE, YAML_EXT
+from . import MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE, YAML_EXT
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,8 @@ RESERVED_MODEL_FIELD = [
     "labels",
     "context",
 ]
-SUPPORTED_COMPRESSION_TYPE = [".tar.gz"]
+SUPPORTED_COMPRESSION_TYPE = [".gz"]
+MODEL_TAR_EXTENSION = ".models.tar.gz"
 
 
 def validate_name(name: str):
@@ -43,21 +44,21 @@ def validate_name(name: str):
         )
 
 
-def generate_model_name(name: str):
+def _generate_model_tag(name: str):
     validate_name(name)
     version = generate_new_version_id()
     return f"{name}:{version}"
 
 
-def process_model_name(name: str) -> (str, str):
+def _process_model_tag(tag: str) -> (str, str):
     try:
-        _name, _version = name.split(":")
+        _name, _version = tag.split(":")
         validate_name(_name)
         return _name, _version
     except ValueError:
-        validate_name(name)
+        validate_name(tag)
         # when name is a model name without versioning
-        return name, "latest"
+        return tag, "latest"
 
 
 @attr.s
@@ -113,27 +114,26 @@ class LocalModelStore:
     @inject
     def __init__(self, base_dir: PathType = Provide[BentoMLContainer.bentoml_home]):
         self._BASE_DIR = Path(base_dir, MODEL_STORE_PREFIX)
-        self._EXPORT_DIR = Path(base_dir, EXPORTED_STORE_PREFIX)
-        validate_or_create_dir(self._BASE_DIR, self._EXPORT_DIR)
+        validate_or_create_dir(self._BASE_DIR)
 
-    def list_model(self, name: t.Optional[str] = None) -> t.List[str]:
+    def list_model(self, tag: t.Optional[str] = None) -> t.List[str]:
         """
         bentoml models list -> t.List[models name under BENTOML_HOME/models]
         bentoml models list my_nlp_models -> t.List[model_version]
         """
-        if not name:
+        if not tag:
             path = self._BASE_DIR
-        elif ":" not in name:
-            path = Path(self._BASE_DIR, name)
+        elif ":" not in tag:
+            path = Path(self._BASE_DIR, tag)
         else:
-            _name, _version = process_model_name(name)
-            path = Path(self._BASE_DIR, _name, _version)
-            if _version == "latest":
+            name, version = _process_model_tag(tag)
+            path = Path(self._BASE_DIR, name, version)
+            if version == "latest":
                 path = path.resolve()
         return [_f.name for _f in path.iterdir()]
 
     def _create_path(self, tag: str):
-        name, version = process_model_name(tag)
+        name, version = _process_model_tag(tag)
         model_path = Path(self._BASE_DIR, name, version)
         validate_or_create_dir(model_path)
         return model_path
@@ -155,7 +155,7 @@ class LocalModelStore:
             model.save(ctx.model_path, metadata=ctx.metadata)
             ctx.metadata["params_a"] = value_a
         """
-        tag = generate_model_name(name)
+        tag = _generate_model_tag(name)
         _, version = tag.split(":")
         model_path = self._create_path(tag)
         model_yaml = Path(model_path, f"{MODEL_YAML_NAMESPACE}{YAML_EXT}")
@@ -183,27 +183,24 @@ class LocalModelStore:
                 latest_path.unlink()
             latest_path.symlink_to(model_path)
 
-    def get_model(self, name: str) -> "ModelInfo":
+    def get_model(self, tag: str) -> "ModelInfo":
         """
         bentoml.pytorch.get("my_nlp_model")
         """
-        name, version = process_model_name(name)
+        name, version = _process_model_tag(tag)
         path = Path(self._BASE_DIR, name, version)
         if not path.exists():
-            raise FileNotFoundError(
-                "Given model name is not found in BentoML model stores. "
-                "Make sure to have the correct model name."
-            )
+            raise FileNotFoundError(f"{name} is not found under BentoML modelstore.")
         return load_model_yaml(path)
 
-    def delete_model(self, name: str, skip_confirm: bool = False):
+    def delete_model(self, tag: str, skip_confirm: bool = False):
         """
         bentoml models delete
         """
-        model_name, version = process_model_name(name)
+        model_name, version = _process_model_tag(tag)
         basepath = Path(self._BASE_DIR, model_name)
         try:
-            if ":" not in name:
+            if ":" not in tag:
                 basepath.rmdir()
             else:
                 path = Path(basepath, version)
@@ -216,49 +213,39 @@ class LocalModelStore:
                 latest_path.unlink()
             latest_path.symlink_to(indexed[-1])
 
-    def push_model(self, name: str):
+    def push_model(self, tag: str):
         ...
 
-    def pull_model(self, name: str):
+    def pull_model(self, tag: str):
         ...
 
-    def export_model(self, name: str, override=False):
-        model_info = self.get_model(name)
-        fname = f"{model_info.name}_{model_info.version}.tar.gz"
-        compressed_path = os.path.join(self._EXPORT_DIR, fname)
-        try:
-            if not override and Path(compressed_path).exists():
-                raise FileExistsError
-            with tarfile.open(compressed_path, mode="w:gz") as tfile:
-                tfile.add(str(model_info.path), arcname="")
-            return compressed_path
-        except FileExistsError:
-            raise BentoMLException(
-                f"`{name}` has already been exported. Path"
-                f" of exported model: {compressed_path}.\n `override`"
-                " is default to `False`. If you want to override existing"
-                f" save exports do `bentoml.models.export({name}, override=True)`"
-            )
+    def export_model(self, tag: str, exported_path: PathType) -> None:
+        model_info = self.get_model(tag)
+        fname = f"{model_info.name}_{model_info.version}{MODEL_TAR_EXTENSION}"
+        with tarfile.open(os.path.join(exported_path, fname), mode="w:gz") as tfile:
+            tfile.add(str(model_info.path), arcname="")
 
     def import_model(self, path: PathType, override=False) -> str:
         _path_obj = Path(path)
-        if "".join(_path_obj.suffixes) not in SUPPORTED_COMPRESSION_TYPE:
+        if _path_obj.suffix not in SUPPORTED_COMPRESSION_TYPE:
             raise BentoMLException(
                 f"Compression type from {path} is not yet supported. "
                 f"Currently supports: {SUPPORTED_COMPRESSION_TYPE}."
             )
-
-        name, *version = _path_obj.stem.partition(".")[0].rsplit("_", 2)
-        tag = f"{name}:{'_'.join(version)}"
-        target = Path(self._BASE_DIR, name, "_".join(version))
-        validate_or_create_dir(target)
         try:
-            if not override and any(target.iterdir()):
-                raise FileExistsError
             with tarfile.open(path, mode="r:gz") as tfile:
+                with tfile.extractfile(
+                    f"{MODEL_YAML_NAMESPACE}{YAML_EXT}"
+                ) as model_yaml:
+                    model_info = ModelInfo(**yaml.safe_load(model_yaml))
+                    target = Path(self._BASE_DIR, model_info.name, model_info.version)
+                    validate_or_create_dir(target)
+                    if not override and any(target.iterdir()):
+                        raise FileExistsError
                 tfile.extractall(path=str(target))
             return str(target)
         except FileExistsError:
+            tag = f"{model_info.name}:{model_info.version}"
             model_info = self.get_model(tag)
             _LOAD_INST = """\
             import {module}
@@ -274,7 +261,7 @@ class LocalModelStore:
                 f"{inspect.cleandoc(_LOAD_INST.format(module=model_info.module, name=tag))}\n\n"
                 f"Use runner directly with `load_runner`:\n\n"
                 f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n\n"
-                f"If one wants to override, do `bentoml.models.impt({path},override=True)`"
+                f"If one wants to override, do\n\nbentoml.models.imports('{path}', override=True)"
             )
 
 

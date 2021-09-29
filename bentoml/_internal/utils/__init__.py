@@ -30,7 +30,6 @@ _VALID_URLS.discard("")
 
 DEFAULT_CHUNK_SIZE = 1024 * 8  # 8kb
 
-
 __all__ = [
     "reserve_free_port",
     "get_free_port",
@@ -41,6 +40,10 @@ __all__ = [
     "LazyLoader",
     "validate_or_create_dir",
 ]
+
+
+def randomize_runner_name(module_name: str):
+    return f"{module_name.split('.')[-1]}_{uuid.uuid4().hex[:6].lower()}"
 
 
 def generate_new_version_id():

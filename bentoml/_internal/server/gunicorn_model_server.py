@@ -8,7 +8,6 @@ from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-
 if TYPE_CHECKING:  # make type checkers happy
     from .model_app import ModelApp
 

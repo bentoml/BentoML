@@ -11,6 +11,9 @@ from ._internal.service import Runner
 from ._internal.types import GenericDictType
 from .exceptions import BentoMLException, MissingDependencyException
 
+# from bentoml.runner import RunnerIOConatainer, register_io_container
+
+
 try:
     import xgboost as xgb
 except ImportError:
@@ -23,6 +26,25 @@ except ImportError:
 
 if t.TYPE_CHECKING:
     import pandas as pd
+
+
+# class DMatrixContainer(RunnerIOConatainer):
+#     batch_type = xgb.DMatrix
+#     item_type = xgb.DMatrix
+#
+#     def flatten(self):
+#         pass
+#
+#     def squeeze(self):
+#         pass
+#
+#     def serialize(self):
+#         pass
+#
+#     def deserialize(self):
+#         pass
+#
+# register_io_container(DMatrixContainer)
 
 
 def _get_model_info(tag, booster_params):
@@ -152,11 +174,8 @@ def load_runner(
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
     """
-    model_info, model_file, booster_params = _get_model_info(tag, booster_params)
-
     return _XgBoostRunner(
-        name=model_info.tag,
-        model_file=model_file,
+        name=tag,
         predict_fn_name=predict_fn_name,
         booster_params=booster_params,
         resource_quota=resource_quota,
@@ -167,32 +186,38 @@ def load_runner(
 class _XgBoostRunner(Runner):
     def __init__(
         self,
-        name: str,
-        model_file: str,
+        tag: str,
         predict_fn_name: str,
         booster_params: t.Dict[str, t.Union[str, int]],
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
     ):
-        super(_XgBoostRunner, self).__init__(name, resource_quota, batch_options)
+        super().__init__(tag, resource_quota, batch_options)
+        model_info, model_file, booster_params = _get_model_info(tag, booster_params)
+
+        self._model_info = model_info
         self._model_file = model_file
         self._predict_fn_name = predict_fn_name
         self._booster_params = self._setup_booster_params(booster_params)
 
     @property
+    def required_models(self):
+        return [self.model_info.tag]
+
+    @property
     def num_concurrency_per_replica(self):
-        if self.resource_limits.on_gpu:
+        if self.resource_quota.on_gpu:
             return 1
-        return int(round(self.resource_limits.cpu))
+        return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self):
-        if self.resource_limits.on_gpu:
-            return self.resource_limits.gpu
+        if self.resource_quota.on_gpu:
+            return self.resource_quota.gpu
         return 1
 
     def _setup_booster_params(self, booster_params):
-        if self.resource_limits.on_gpu:
+        if self.resource_quota.on_gpu:
             booster_params["predictor"] = "gpu_predictor"
             booster_params["tree_method"] = "gpu_hist"
             # TODO: bentoml.get_gpu_device()
@@ -205,6 +230,9 @@ class _XgBoostRunner(Runner):
         return booster_params
 
     def _setup(self) -> None:
+        # self.resource_quota.gpus -> List[str]
+        gpu_device_id = self.resource_quota.gpus[self.replica_id]
+
         self._model = xgb.core.Booster(
             params=self._booster_params,
             model_file=self._model_file,

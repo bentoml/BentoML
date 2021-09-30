@@ -1,10 +1,10 @@
 import os
 import re
+import typing as t
 from functools import lru_cache
-from typing import Union
 
 
-def _cpu_converter(cpu: Union[int, float, str]) -> float:
+def _cpu_converter(cpu: t.Union[int, float, str]) -> float:
     if isinstance(cpu, (int, float)):
         return float(cpu)
 
@@ -46,7 +46,7 @@ def _mem_converter(mem: Union[int, str]) -> int:
 
 
 @lru_cache(maxsize=1)
-def _query_cpu_count() -> float:
+def _query_cgroup_cpu_count() -> float:
     # Query active cpu processor count using cgroup v1 API, based on OpenJDK
     # implementation for `active_processor_count` using cgroup v1:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupSubsystem_linux.cpp
@@ -90,3 +90,20 @@ def _query_cpu_count() -> float:
         limit_count = share_count
 
     return float(min(limit_count, cpu_count))
+
+
+def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
+    if gpus is None:
+        return None
+
+    if isinstance(gpus, str):
+        if gpus == "all":
+            # TODO: query physical gpu devices
+            return
+        else:
+            # TODO: query physical gpu devices
+            return
+
+    if isinstance(gpus, int):
+        # TODO: query physical gpu devices
+        return

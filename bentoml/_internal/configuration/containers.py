@@ -8,7 +8,6 @@ from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
-from bentoml._internal.utils import generate_new_version_id
 from bentoml.exceptions import BentoMLConfigException
 
 from ..utils import get_free_port
@@ -27,11 +26,10 @@ SCHEMA = Schema(
             "workers": Or(And(int, lambda workers: workers > 0), None),
             "timeout": And(int, lambda timeout: timeout > 0),
             "max_request_size": And(int, lambda size: size > 0),
-            "microbatch": {
+            "batch_options": {
                 Optional("enabled", default=True): bool,
-                "workers": Or(And(int, lambda workers: workers > 0), None),
                 "max_batch_size": Or(And(int, lambda size: size > 0), None),
-                "max_latency": Or(And(int, lambda latency: latency > 0), None),
+                "max_latency_ms": Or(And(int, lambda latency: latency > 0), None),
             },
             "ngrok": {"enabled": bool},
             "metrics": {"enabled": bool, "namespace": str},

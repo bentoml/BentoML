@@ -1,15 +1,12 @@
-import logging
-import os
-import sys
 from functools import partial
-from typing import TYPE_CHECKING, Dict
+import logging
+import sys
+from typing import Dict, TYPE_CHECKING
 
 from google.protobuf.json_format import MessageToJson
 from simple_di import Provide, inject
-from starlette.exceptions import HTTPException
+from starlette.requests import Request
 from starlette.responses import Response
-
-BadRequest = HTTPException(400)
 
 from bentoml.exceptions import BentoMLException
 
@@ -18,7 +15,8 @@ from ..configuration.containers import BentoMLContainer
 from ..server.instruments import InstrumentMiddleware
 from ..types import HTTPRequest
 from ..utils.open_api import get_open_api_spec_json
-from .marshal.marshal import MARSHAL_REQUEST_HEADER, DataLoader
+from .marshal.marshal import DataLoader, MARSHAL_REQUEST_HEADER
+
 
 if TYPE_CHECKING:
     from ..service import InferenceAPI
@@ -235,36 +233,9 @@ class ServiceApp:
         return jsonify(docs)
 
     @staticmethod
-    def healthz_view_func():
-        """
-        Health check for BentoML API server.
-        Make sure it works with Kubernetes liveness probe
-        """
-        return Response(response="\n", status=200, mimetype="text/plain")
-
-    @staticmethod
     def metadata_json_func(bento_service):
         bento_service_metadata = bento_service.get_bento_service_metadata_pb()
         return jsonify(MessageToJson(bento_service_metadata))
-
-    @staticmethod
-    def feedback_view_func(bento_service):
-        """
-        User send feedback along with the request_id. It will be stored is feedback logs
-        ready for further process.
-        """
-        data = request.get_json()
-
-        if not data:
-            raise BadRequest("Failed parsing feedback JSON data")
-
-        if "request_id" not in data:
-            raise BadRequest("Missing 'request_id' in feedback JSON data")
-
-        data["service_name"] = bento_service.name
-        data["service_version"] = bento_service.version
-        feedback_logger.info(data)
-        return "success"
 
     def setup_routes(self):
         """
@@ -316,7 +287,7 @@ class ServiceApp:
         """
         Setup a route for each InferenceAPI object defined in bento_service
         """
-        for api in self.bento_service.inference_apis:
+        for api in self.bento_service._apis:
             route_function = self.bento_service_api_func_wrapper(api)
             self.app.add_route(
                 path="/{}".format(api.route),
@@ -358,7 +329,7 @@ class ServiceApp:
                     response_body = DataLoader.merge_responses(responses)
                     response = make_response(response_body)
                 else:
-                    req = HTTPRequest.from_flask_request(request)
+                    req = Request.from_flask_request(request)
                     resp = api.handle_request(req)
                     response = resp.to_flask_response()
             except BentoMLException as e:
@@ -387,6 +358,7 @@ class ServiceApp:
 
             return response
 
+        '''
         def api_func_with_tracing():
             with self.tracer.span(
                 service_name=f"BentoService.{self.bento_service.name}",
@@ -396,7 +368,11 @@ class ServiceApp:
                 return api_func()
 
         return api_func_with_tracing
+        '''
 
     @inject
     def metrics_view_func(self, client=Provide[BentoMLContainer.metrics_client]):
-        return Response(client.generate_latest(), mimetype=client.CONTENT_TYPE_LATEST,)
+        return Response(
+            client.generate_latest(),
+            media_type=client.CONTENT_TYPE_LATEST,
+        )

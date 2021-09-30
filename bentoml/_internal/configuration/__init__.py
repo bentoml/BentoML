@@ -1,6 +1,8 @@
+from functools import lru_cache
 import logging
 import os
-from functools import lru_cache
+
+import yaml
 
 from bentoml import __version__
 from bentoml import _version as version_mod
@@ -69,14 +71,8 @@ def get_debug_mode():
     return False
 
 
-def inject_dependencies():
-    """Inject dependencies and configuration to BentoML packages"""
-
-    from timeit import default_timer as timer
-
-    start = timer()
-
-    logger.debug("Start dependency injection")
+def load_global_config():
+    """Load global configuration of BentoML"""
 
     from bentoml._internal.configuration.containers import (
         BentoMLConfiguration,
@@ -102,6 +98,11 @@ def inject_dependencies():
 
     BentoMLContainer.config.set(bentoml_configuration.as_dict())
 
-    end = timer()
 
-    logger.debug("Dependency injection completed in %.3f seconds", end - start)
+def save_global_config(config_file):
+    from bentoml._internal.configuration.containers import (
+        BentoMLContainer,
+    )
+
+    content = yaml.safe_dump(BentoMLContainer.config)
+    config_file.write(content)

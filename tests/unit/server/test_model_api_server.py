@@ -5,7 +5,7 @@ from io import BytesIO
 import simple_di
 
 from bentoml.configuration.containers import BentoMLContainer
-from bentoml.server.model_app import ModelApp
+from bentoml.server.model_app import ServiceApp
 
 CUR_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -17,7 +17,7 @@ def test_api_function_route(bento_bundle_path, img_file):
     import numpy as np  # noqa # pylint: disable=unused-import
 
     BentoMLContainer.metrics_client._cache = simple_di.sentinel  # reset metrics_client
-    rest_server = ModelApp(
+    rest_server = ServiceApp(
         bundle_path=bento_bundle_path,
         enable_swagger=True,
         enable_metrics=True,
@@ -43,10 +43,7 @@ def test_api_function_route(bento_bundle_path, img_file):
     docs = json.loads(response.data.decode())
     assert f"/{CUSTOM_ROUTE}" in docs["paths"]
 
-    response = test_client.post(
-        f"/{CUSTOM_ROUTE}",
-        data='{"a": 1}',
-    )
+    response = test_client.post(f"/{CUSTOM_ROUTE}", data='{"a": 1}',)
     assert 200 == response.status_code
     assert '{"a": 1}' == response.data.decode()
 
@@ -101,7 +98,7 @@ def test_api_function_route(bento_bundle_path, img_file):
 
 def test_api_function_route_with_disabled_swagger(bento_bundle_path):
     BentoMLContainer.metrics_client._cache = simple_di.sentinel  # reset metrics_client
-    rest_server = ModelApp(
+    rest_server = ServiceApp(
         bundle_path=bento_bundle_path,
         enable_swagger=False,
         enable_metrics=True,

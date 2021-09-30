@@ -75,6 +75,12 @@ class BatchOptions:
 
 
 class _RunnerImplMixin:
+    @t.overload
+    def _impl_ref(
+        self, deployment_type: str = Provide[BentoMLContainer.deployment_type]
+    ) -> "_RunnerImplMixin":
+        ...
+
     @inject
     def _impl_ref(
         self, deployment_type: str = Provide[BentoMLContainer.deployment_type]
@@ -113,19 +119,19 @@ class _BaseRunner(_RunnerImplMixin, ABC):
         return os.environ.get("_BENTOML_RUNNER_GPU_DEVICE_IDS", "").split(",")
 
     @property
-    def num_concurrency_per_replica(self):
+    def num_concurrency_per_replica(self) -> int:
         return 1
 
     @property
-    def num_replica(self):
+    def num_replica(self) -> int:
         return 1
 
     @property
-    def required_models(self):
+    def required_models(self) -> t.List[str]:
         return []
 
     @abstractmethod
-    def _setup(self):
+    def _setup(self) -> None:
         ...
 
 
@@ -185,6 +191,10 @@ class SimpleRunner(_BaseRunner, ABC):
 
 
 class RunnerImpl:
+    @t.overload
+    def __init__(self, runner: "_RunnerImplMixin"):
+        ...  # pylint:disable=redefined-builtin
+
     def __init__(self, runner: t.Union[Runner, SimpleRunner]):
         self._runner = runner
 
@@ -219,7 +229,7 @@ class RemoteRunner(RunnerImpl):
 
 class LocalRunner(RunnerImpl):
     def _setup(self):
-        self._runner._setup()
+        self._runner._setup()  # noqa
 
     async def async_run(self, *args, **kwargs):
         if isinstance(self._runner, Runner):
@@ -245,5 +255,5 @@ class LocalRunner(RunnerImpl):
     def run(self, *args, **kwargs):
         ...
 
-    def batch_run(self, *args, **kwargs):
+    def run_batch(self, *args, **kwargs):
         ...

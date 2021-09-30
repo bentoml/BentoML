@@ -28,7 +28,9 @@ class ResourceQuota:
     # gpus:
     #   "all", 2, "device=1,2"
     gpus = attr.ib(
-        converter=_gpu_converter, type=t.List[str], default=attr.Factory(list)
+        converter=_gpu_converter,
+        type=t.List[str],
+        default=attr.Factory(list),
     )
 
     @cpu.default
@@ -106,13 +108,26 @@ class _RunnerImplMixin:
 
 class _BaseRunner(_RunnerImplMixin, ABC):
     name: str
-    resource_quota: ResourceQuota
-    batch_options: BatchOptions
+    resource_quota: "ResourceQuota"
+    batch_options: "BatchOptions"
 
-    def __init__(self, name: str, resource_quota=None, batch_options=None):
+    def __init__(
+        self,
+        name: str,
+        resource_quota: t.Dict[str, t.Any] = None,
+        batch_options: t.Dict[str, t.Any] = None,
+    ):
         self.name = name
-        self.resource_quota = ResourceQuota(**resource_quota)
-        self.batch_options = BatchOptions(**batch_options)
+        self.resource_quota = (
+            ResourceQuota(**resource_quota)
+            if resource_quota is not None
+            else ResourceQuota()
+        )
+        self.batch_options = (
+            BatchOptions(**batch_options)
+            if batch_options is not None
+            else BatchOptions()
+        )
 
     @property
     def gpu_device_ids(self) -> t.List[str]:
@@ -182,7 +197,7 @@ class SimpleRunner(_BaseRunner, ABC):
     subclasses.
 
     A SimpleRunner only exposes `run` method to its users.
-        `SimpleRunner._run` can accept arbituary input type that are pickle-serializable
+        `SimpleRunner._run` can accept arbitrary input type that are pickle-serializable
     """
 
     @abstractmethod
@@ -228,7 +243,7 @@ class RemoteRunner(RunnerImpl):
 
 
 class LocalRunner(RunnerImpl):
-    def _setup(self):
+    def _setup(self) -> None:
         self._runner._setup()  # noqa
 
     async def async_run(self, *args, **kwargs):

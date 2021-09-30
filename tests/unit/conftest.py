@@ -196,7 +196,6 @@ def pytest_addoption(parser):
 #         assert input_jsons
 #         return [{"ok": True}] * len(input_jsons)
 
-
 # @pytest.fixture()
 # def example_bento_service_class():
 #     # When the MockBentoService got saved and loaded again in the test, the two class
@@ -205,7 +204,6 @@ def pytest_addoption(parser):
 #     MockBentoService._bento_service_bundle_path = None
 #     MockBentoService._bento_service_bundle_version = None
 #     return MockBentoService
-
 
 # @pytest.fixture()
 # def bento_service(example_bento_service_class):
@@ -216,7 +214,6 @@ def pytest_addoption(parser):
 #     test_svc.pack("model", test_model)
 #     return test_svc
 
-
 # @pytest.fixture()
 # def bento_bundle_path(bento_service):
 #     """Create a new MockBentoService, saved it to tmpdir, and return full saved_path
@@ -224,7 +221,6 @@ def pytest_addoption(parser):
 #     saved_path = bento_service.save()
 #     yield saved_path
 #     delete_saved_bento_service(bento_service.name, bento_service.version)
-
 
 # def delete_saved_bento_service(name, version):
 #     yc = YataiClient()

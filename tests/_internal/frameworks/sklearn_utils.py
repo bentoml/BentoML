@@ -39,7 +39,6 @@ test_data = {
 
 test_df = pd.DataFrame([test_data])
 
-
 ModelWithData = namedtuple("ModelWithData", ["model", "data"])
 
 

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import yaml
 
 from bentoml._internal.configuration import is_pip_installed_bentoml
-from bentoml._internal.models.stores import modelstore
+from bentoml._internal.models.store import modelstore
 from bentoml._internal.utils import generate_new_version_id
 from bentoml._internal.utils.tempdir import TempDirectory
 from bentoml.exceptions import BentoMLException, InvalidArgument

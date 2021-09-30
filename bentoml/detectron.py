@@ -4,7 +4,7 @@ import typing as t
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, PTH_EXTENSION, YAML_EXTENSION, Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 
 _exc = _const.IMPORT_ERROR_MSG.format(
@@ -37,7 +37,7 @@ class DetectronModel(Model):
             detectron2 model is of type :obj:`torch.nn.Module`
         input_model_yaml (`detectron2.config.CfgNode`, `optional`, default to `None`):
             model config from :meth:`detectron2.model_zoo.get_config_file`
-        metadata (`Dict[str, Any]`, `optional`, default to `None`):
+        metadata (`GenericDictType`, `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -59,7 +59,7 @@ class DetectronModel(Model):
         self,
         model: "nn.Module",
         input_model_yaml: t.Optional["config.CfgNode"] = None,
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         super(DetectronModel, self).__init__(model, metadata=metadata)
         self._input_model_yaml = input_model_yaml

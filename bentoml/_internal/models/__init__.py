@@ -1,4 +1,14 @@
-from .base import Model
-from .pkl import PickleModel
+MODEL_STORE_PREFIX = "models"
+EXPORTED_STORE_PREFIX = "exported"
+SAVE_NAMESPACE = "saved_model"
+MODEL_YAML_NAMESPACE = "model_details"
 
-__all__ = ["Model", "PickleModel"]
+H5_EXT = ".h5"
+HDF5_EXT = ".hdf5"
+JSON_EXT = ".json"
+PKL_EXT = ".pkl"
+PTH_EXT = ".pth"
+PT_EXT = ".pt"
+TXT_EXT = ".txt"
+YAML_EXT = ".yaml"
+MODEL_EXT = ".model"

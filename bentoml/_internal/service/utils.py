@@ -52,7 +52,6 @@ def _query_cpu_count() -> float:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupSubsystem_linux.cpp
     # For cgroup v2, see:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupV2Subsystem_linux.cpp
-
     def _read_integer_file(filename):
         with open(filename, "r") as f:
             return int(f.read().rstrip())

@@ -10,13 +10,11 @@ import zipimport
 if t.TYPE_CHECKING:
     from bentoml._internal.service import Service
 
-
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1
 EPP_PKG_VERSION_MISMATCH = 2
 
 __mm = None
-
 
 logger = logging.getLogger(__name__)
 

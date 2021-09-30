@@ -43,7 +43,6 @@ def mock_tensorflow_module():
 
 mock_tensorflow_module()
 
-
 STR_BYTES = b"hello world"
 STR = STR_BYTES.decode("utf-8")
 STR_B64 = base64.b64encode(STR_BYTES).decode()
@@ -61,7 +60,6 @@ TEST_INPUTS = [
     {"instances": [{"b64": BIN_B64}]},
 ]
 
-
 TEST_HEADERS = [
     ((BATCH_HEADER, "true"),),
     ((BATCH_HEADER, "true"),),
@@ -71,7 +69,6 @@ TEST_HEADERS = [
     ((BATCH_HEADER, "false"),),
     ((BATCH_HEADER, "true"),),
 ]
-
 
 EXPECTED_RESULTS = [
     [[[1, 2]], [[3, 4]]],

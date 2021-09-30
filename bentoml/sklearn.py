@@ -4,7 +4,7 @@ import typing as t
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, PICKLE_EXTENSION, Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 
 _exc = _const.IMPORT_ERROR_MSG.format(
@@ -13,7 +13,7 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     inst="`pip install scikit-learn`",
 )
 
-MT = t.TypeVar("MT")
+MT = t.TypeVar("_MT")
 
 try:  # pragma: no cover
     import joblib
@@ -28,7 +28,7 @@ class SklearnModel(Model):
     Args:
         model (`Any`, that is omitted by `sklearn`):
             Any model that is omitted by `sklearn`
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -44,7 +44,7 @@ class SklearnModel(Model):
         TODO:
     """
 
-    def __init__(self, model: MT, metadata: t.Optional[MetadataType] = None):
+    def __init__(self, model: MT, metadata: t.Optional[GenericDictType] = None):
         super(SklearnModel, self).__init__(model, metadata=metadata)
 
     @staticmethod

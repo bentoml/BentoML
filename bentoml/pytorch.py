@@ -7,7 +7,7 @@ import cloudpickle
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import MODEL_NAMESPACE, PT_EXTENSION, Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 
 _torch_exc = _const.IMPORT_ERROR_MSG.format(
@@ -23,7 +23,6 @@ _pl_exc = _const.IMPORT_ERROR_MSG.format(
     inst="Refers to https://pytorch.org/get-started/locally/"
     " to setup PyTorch correctly. Then run `pip install pytorch_lightning`",
 )
-
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -44,7 +43,7 @@ class PyTorchModel(Model):
         model (`Union[torch.nn.Module, torch.jit.ScriptModule]`):
             Accepts either `torch.nn.Module` or
              `torch.jit.ScriptModule`.
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -65,7 +64,7 @@ class PyTorchModel(Model):
     def __init__(
         self,
         model: t.Union["torch.nn.Module", "torch.jit.ScriptModule"],
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         super(PyTorchModel, self).__init__(model, metadata=metadata)
 
@@ -101,7 +100,7 @@ class PyTorchLightningModel(Model):
     Args:
         model (`pytorch_lightning.LightningModule`):
             Accepts `pytorch_lightning.LightningModule`
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
     Raises:
@@ -125,7 +124,7 @@ class PyTorchLightningModel(Model):
     def __init__(
         self,
         model: "pl.LightningModule",
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):  # noqa
         super(PyTorchLightningModel, self).__init__(model, metadata=metadata)
 

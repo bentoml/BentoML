@@ -216,3 +216,25 @@ class LocalRunner(RunnerImpl):
             for iparams in params.iter(batch_to_single_list):
                 results.append(self._runner._run(*iparams.args, **iparams.kwargs))
             return single_list_to_batch(results)
+
+# class Runner(ABC):
+#     def __init__(self, name: str, resource_quota=None, batch_options=None):
+#         self.name = name
+#         self.resource_quota = RunnerResourceLimits()
+#         self.batch_options = RunnerBatchOptions()
+
+#     # fmt: off
+#     @property
+#     @abstractmethod
+#     def num_concurrency(self): return 1
+
+#     @property
+#     @abstractmethod
+#     def num_replica(self): return 1
+
+#     @abstractmethod
+#     def _setup(self, *args, **kwargs): ...
+
+#     @abstractmethod
+#     def _run_batch(self, input_data: "_T") -> "_T": ...
+#     # fmt: on

@@ -1,121 +1,189 @@
 import os
 import typing as t
 
-import attr
+import numpy as np
 
-import bentoml._internal.constants as _const
-import bentoml._internal.models.stores as _stores
+from bentoml import __version__ as BENTOML_VERSION
 
-from ._internal.models.base import JSON_EXTENSION, MODEL_NAMESPACE, Model
-from ._internal.service.runner import Runner
-from ._internal.types import MetadataType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
+from ._internal.models import store as _stores
+from ._internal.service import Runner
+from ._internal.types import GenericDictType
+from .exceptions import BentoMLException, MissingDependencyException
 
-if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
-    import numpy as np
-    import pandas as pd
+try:
     import xgboost as xgb
-else:
-    _exc = _const.IMPORT_ERROR_MSG.format(
-        fwr="xgboost",
-        module=__name__,
-        inst="`pip install xgboost`. Refers to"
-        " https://xgboost.readthedocs.io/en/latest/install.html"
-        " for GPU information.",
+except ImportError:
+    raise MissingDependencyException(
+        """xgboost is required in order to use module `bentoml.xgboost`, install
+        xgboost with `pip install xgboost`. For more information, refers to 
+        https://xgboost.readthedocs.io/en/latest/install.html
+        """
     )
-    xgb = LazyLoader("xgb", globals(), "xgboost", exc_msg=_exc)
-    np = LazyLoader(
-        "np", globals(), "numpy", exc_msg="Install numpy with `pip install numpy`"
-    )
-    pd = LazyLoader(
-        "pd", globals(), "pandas", exc_msg="Install pandas with `pip install pandas`"
+
+if t.TYPE_CHECKING:
+    import pandas as pd
+
+
+def _get_model_info(tag, booster_params):
+    model_info = _stores.get(tag)
+    if model_info.module != __name__:
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model_info.module}, failed loading "
+            f"with {__name__}."
+        )
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{MODEL_EXT}")
+    for key, value in model_info.options.items():
+        if key not in booster_params:
+            booster_params[key] = value  # apply booster_params override
+    if "nthread" not in booster_params:
+        booster_params["nthread"] = -1  # apply default nthread parameter
+
+    return model_info, model_file, booster_params
+
+
+def load(
+    tag: str,
+    booster_params: t.Dict[str, t.Union[str, int]] = None,
+) -> "xgb.core.Booster":
+    """
+    Load a model from BentoML local modelstore with given name.
+
+    Args:
+        tag (`str`):
+            Tag of a saved model in BentoML local modelstore.
+        booster_params (`t.Dict[str, t.Union[str, int]]`):
+            Params for xgb.core.Booster initialization
+
+    Returns:
+        an instance of `xgboost.core.Booster` from BentoML modelstore.
+
+    Examples::
+        import bentoml.xgboost
+        booster = bentoml.xgboost.load(
+            'my_model:20201012_DE43A2', booster_params=dict(gpu_id=0))
+    """
+    _, model_file, booster_params = _get_model_info(tag, booster_params)
+
+    return xgb.core.Booster(
+        params=booster_params,
+        model_file=model_file,
     )
 
 
-def _save_model(
+def save(
     name: str,
     model: "xgb.core.Booster",
     *,
-    metadata: t.Optional[MetadataType] = None,
+    booster_params: t.Dict[str, t.Union[str, int]] = None,
+    metadata: t.Optional[GenericDictType] = None,
 ) -> str:
-    _instance = _XgBoostModel(model, metadata=metadata)
-    return _stores.modelstore.save_model(name, _instance)
-
-
-def _load_model(name: str, **load_kwargs) -> "xgb.core.Booster":
-    path = _stores.modelstore.get_model(name)
-    return _XgBoostModel.load(path, **load_kwargs)
-
-
-def _load_model_runner(*args, **kw) -> "_XgBoostRunner":
-    ...
-
-
-class _XgBoostModel(Model):
     """
-    Artifact class for saving/loading :obj:`xgboost` model
+    Save a model instance to BentoML modelstore.
 
     Args:
+        name (`str`):
+            Name for given model instance. This should pass Python identifier check.
         model (`xgboost.core.Booster`):
-            Every xgboost model instance of type :obj:`xgboost.core.Booster`
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
-            Class metadata
+            Instance of model to be saved
+        booster_params (`t.Dict[str, t.Union[str, int]]`):
+            Params for booster initialization
+        metadata (`~bentoml._internal.types.GenericDictType`, default to `None`):
+            Custom metadata for given model.
 
-    Raises:
-        MissingDependencyException:
-            :obj:`xgboost` is required by _XgBoostModel
-        TypeError:
-           model must be instance of :obj:`xgboost.core.Booster`
+    Returns:
+        tag (`str` with a format `name:version`) where `name` is the defined name user
+        set for their models, and version will be generated by BentoML.
 
-    Example usage under :code:`train.py`::
+    Examples::
+        import xgboost as xgb
+        import bentoml.xgboost
 
-        TODO:
+        # read in data
+        dtrain = xgb.DMatrix('demo/data/agaricus.txt.train')
+        dtest = xgb.DMatrix('demo/data/agaricus.txt.test')
+        # specify parameters via map
+        param = dict(max_depth=2, eta=1, objective='binary:logistic')
+        num_round = 2
+        bst = xgb.train(param, dtrain, num_round)
+        ...
 
-    One then can define :code:`bento.py`::
+        tag = bentoml.xgboost.save("my_xgboost_model", bst, booster_params=param)
+        # example tag: my_xgboost_model:20210929_153BC4
 
-        TODO:
-
+        # load the booster back:
+        bst = bentoml.xgboost.load("my_xgboost_model:latest") # or
+        bst = bentoml.xgboost.load(tag)
     """
+    context = {"xgboost": xgb.__version__, "bentoml_version": BENTOML_VERSION}
+    with _stores.register(
+        name,
+        module=__name__,
+        options=booster_params,
+        framework_context=context,
+        metadata=metadata,
+    ) as ctx:
+        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{MODEL_EXT}"))
+        return f"{name}:{ctx.version}"
 
-    def __init__(
-        self, model: "xgb.core.Booster", metadata: t.Optional[MetadataType] = None
-    ):
-        super(_XgBoostModel, self).__init__(model, metadata=metadata)
 
-    @classmethod
-    def load(  # noqa # pylint: disable=arguments-differ
-        cls,
-        path: PathType,
-        infer_params: t.Dict[str, t.Union[str, int]] = None,
-        nthread: int = -1,
-    ) -> "xgb.core.Booster":
-        if infer_params and "nthread" not in infer_params:
-            infer_params["nthread"] = nthread
-        return xgb.core.Booster(
-            params=infer_params,
-            model_file=os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"),
-        )
+def load_runner(
+    tag: str,
+    predict_fn_name: str = "predict",
+    *,
+    booster_params: t.Dict[str, t.Union[str, int]] = None,
+    resource_quota: t.Dict[str, t.Any] = None,
+    batch_options: t.Dict[str, t.Any] = None,
+) -> "_XgBoostRunner":
+    """\
+    Runner represents a unit of serving logic that can be scaled horizontally to
+    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
+    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
 
-    def save(self, path: PathType) -> None:
-        self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{JSON_EXTENSION}"))
+    Returns:
+        Runner instances for the target `bentoml.xgboost` model
 
-    @staticmethod
-    def load_runner(*runner_args, **runner_kwargs):
-        return _XgBoostRunner(*runner_args, **runner_kwargs)
+    Examples::
+        import xgboost as xgb
+        import bentoml.xgboost
+        import pandas as pd
+
+        input_data = pd.from_csv("/path/to/csv")
+        runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
+        runner.run(xgb.DMatrix(input_data))
+    """
+    model_info, model_file, booster_params = _get_model_info(tag, booster_params)
+
+    return _XgBoostRunner(
+        name=model_info.tag,
+        model_file=model_file,
+        predict_fn_name=predict_fn_name,
+        booster_params=booster_params,
+        resource_quota=resource_quota,
+        batch_options=batch_options,
+    )
 
 
 class _XgBoostRunner(Runner):
-    def __init__(self, name, model_path, *, infer_api_callback: str = "predict"):
-        super(_XgBoostRunner, self).__init__(name)
-        self._model_path = model_path
-        self._infer_api_callback = infer_api_callback
-        self._infer_params = self._setup_infer_params()
+    def __init__(
+        self,
+        name: str,
+        model_file: str,
+        predict_fn_name: str,
+        booster_params: t.Dict[str, t.Union[str, int]],
+        resource_quota: t.Dict[str, t.Any],
+        batch_options: t.Dict[str, t.Any],
+    ):
+        super(_XgBoostRunner, self).__init__(name, resource_quota, batch_options)
+        self._model_file = model_file
+        self._predict_fn_name = predict_fn_name
+        self._booster_params = self._setup_booster_params(booster_params)
 
     @property
-    def num_concurrency(self):
+    def num_concurrency_per_replica(self):
         if self.resource_limits.on_gpu:
             return 1
-        return self._num_threads_per_process
+        return int(round(self.resource_limits.cpu))
 
     @property
     def num_replica(self):
@@ -123,44 +191,30 @@ class _XgBoostRunner(Runner):
             return self.resource_limits.gpu
         return 1
 
-    @property
-    def _num_threads_per_process(self):
-        return int(round(self.resource_limits.cpu))
-
-    def _setup_infer_params(self):
-        # will accept np.ndarray, pd.DataFrame
-        infer_params = {"predictor": "cpu_predictor"}
-
+    def _setup_booster_params(self, booster_params):
         if self.resource_limits.on_gpu:
-            # will accept cupy.ndarray, cudf.DataFrame
-            infer_params["predictor"] = "gpu_predictor"
-            infer_params["tree_method"] = "gpu_hist"
-            # infer_params['gpu_id'] = bentoml.get_gpu_device()
+            booster_params["predictor"] = "gpu_predictor"
+            booster_params["tree_method"] = "gpu_hist"
+            # TODO: bentoml.get_gpu_device()
+            # booster_params['gpu_id'] = bentoml.get_gpu_device()
+            booster_params["nthread"] = 1
+        else:
+            booster_params["predictor"] = "cpu_predictor"
+            booster_params["nthread"] = self.num_concurrency_per_replica
 
-        return infer_params
+        return booster_params
 
     def _setup(self) -> None:
-        if not self.resource_limits.on_gpu:
-            self._model = _XgBoostModel.load(
-                self._model_path,
-                infer_params=self._infer_params,
-                nthread=self.num_concurrency,
-            )
-        else:
-            self._model = _XgBoostModel.load(
-                self._model_path, infer_params=self._infer_params, nthread=1
-            )
-        self._infer_func = getattr(self._model, self._infer_api_callback)
+        self._model = xgb.core.Booster(
+            params=self._booster_params,
+            model_file=self._model_file,
+        )
+        self._predict_fn = self._model[self._predict_fn_name]
 
     def _run_batch(
-        self, input_data: t.Union["np.ndarray", "pd.DataFrame", "xgb.DMatrix"]
+        self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
     ) -> "np.ndarray":
         if not isinstance(input_data, xgb.DMatrix):
-            input_data = xgb.DMatrix(input_data, nthread=self._num_threads_per_process)
-        res = self._infer_func(input_data)
+            input_data = xgb.DMatrix(input_data)
+        res = self._predict_fn(input_data)
         return np.asarray(res)
-
-
-save = _save_model
-load = _load_model
-load_runner = _load_model_runner

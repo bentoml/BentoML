@@ -7,7 +7,7 @@ from distutils.dir_util import copy_tree
 import bentoml._internal.constants as _const
 
 from ._internal.models.base import Model
-from ._internal.types import MetadataType, PathType
+from ._internal.types import GenericDictType, PathType
 from ._internal.utils import LazyLoader
 from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
@@ -23,7 +23,6 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     inst="`pip install -U tensorflow`",
 )
 
-
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import tensorflow as tf
     import tensorflow.python.training.tracking.tracking as tracking
@@ -37,21 +36,21 @@ TF2 = tf.__version__.startswith("2")
 
 logger = logging.getLogger(__name__)
 
-AUTOTRACKABLE_CALLABLE_WARNING: str = """\
+AUTOTRACKABLE_CALLABLE_WARNING: str = """
 Importing SavedModels from TensorFlow 1.x. `outputs = imported(inputs)`
  will not be supported by BentoML due to `tensorflow` API.\n
 See https://www.tensorflow.org/api_docs/python/tf/saved_model/load for
  more details.
 """
 
-TF_FUNCTION_WARNING: str = """\
+TF_FUNCTION_WARNING: str = """
 Due to TensorFlow's internal mechanism, only methods
  wrapped under `@tf.function` decorator and the Keras default function
  `__call__(inputs, training=False)` can be restored after a save & load.\n
 You can test the restored model object via `TensorflowModel.load(path)`
 """
 
-KERAS_MODEL_WARNING: str = """\
+KERAS_MODEL_WARNING: str = """
 BentoML detected that {name} is being used to pack a Keras API
  based model. In order to get optimal serving performance, we recommend
  to wrap your keras model `call()` methods with `@tf.function` decorator.
@@ -123,7 +122,7 @@ class _tf_function_wrapper:
             )
 
 
-_tf_function_wrapper.__doc__ = """\
+_tf_function_wrapper.__doc__ = """
     TODO:
 """
 
@@ -137,7 +136,7 @@ class TensorflowModel(Model):
         model (`Union[tf.keras.Models, tf.Module, PathType, pathlib.PurePath]`):
             Omit every tensorflow model instance of type :obj:`tf.keras.Models` or
             :obj:`tf.Module`
-        metadata (`Dict[str, Any]`,  `optional`, default to `None`):
+        metadata (`GenericDictType`,  `optional`, default to `None`):
             Class metadata
 
 
@@ -158,7 +157,7 @@ class TensorflowModel(Model):
     def __init__(
         self,
         model: t.Union["tf.keras.Model", "tf.Module", PathType, pathlib.PurePath],
-        metadata: t.Optional[MetadataType] = None,
+        metadata: t.Optional[GenericDictType] = None,
     ):
         super(TensorflowModel, self).__init__(model, metadata=metadata)
 

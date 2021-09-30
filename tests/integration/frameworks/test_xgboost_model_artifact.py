@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 
-from bentoml.xgboost import _XgBoostModel
+import bentoml.xgboost as bxgb
 from tests._internal.frameworks.sklearn_utils import test_df
 from tests._internal.helpers import assert_have_file_extension
 

@@ -28,7 +28,9 @@ class ResourceQuota:
     # gpus:
     #   "all", 2, "device=1,2"
     gpus = attr.ib(
-        converter=_gpu_converter, type=t.List[str], default=attr.Factory(list)
+        converter=_gpu_converter,
+        type=t.List[str],
+        default=attr.Factory(list),
     )
 
     @cpu.default
@@ -75,6 +77,12 @@ class BatchOptions:
 
 
 class _RunnerImplMixin:
+    @t.overload
+    def _impl_ref(
+        self, deployment_type: str = Provide[BentoMLContainer.deployment_type]
+    ) -> "_RunnerImplMixin":
+        ...
+
     @inject
     def _impl_ref(
         self, deployment_type: str = Provide[BentoMLContainer.deployment_type]
@@ -100,32 +108,45 @@ class _RunnerImplMixin:
 
 class _BaseRunner(_RunnerImplMixin, ABC):
     name: str
-    resource_quota: ResourceQuota
-    batch_options: BatchOptions
+    resource_quota: "ResourceQuota"
+    batch_options: "BatchOptions"
 
-    def __init__(self, name: str, resource_quota=None, batch_options=None):
+    def __init__(
+        self,
+        name: str,
+        resource_quota: t.Dict[str, t.Any] = None,
+        batch_options: t.Dict[str, t.Any] = None,
+    ):
         self.name = name
-        self.resource_quota = ResourceQuota(**resource_quota)
-        self.batch_options = BatchOptions(**batch_options)
+        self.resource_quota = (
+            ResourceQuota(**resource_quota)
+            if resource_quota is not None
+            else ResourceQuota()
+        )
+        self.batch_options = (
+            BatchOptions(**batch_options)
+            if batch_options is not None
+            else BatchOptions()
+        )
 
     @property
     def gpu_device_ids(self) -> t.List[str]:
         return os.environ.get("_BENTOML_RUNNER_GPU_DEVICE_IDS", "").split(",")
 
     @property
-    def num_concurrency_per_replica(self):
+    def num_concurrency_per_replica(self) -> int:
         return 1
 
     @property
-    def num_replica(self):
+    def num_replica(self) -> int:
         return 1
 
     @property
-    def required_models(self):
+    def required_models(self) -> t.List[str]:
         return []
 
     @abstractmethod
-    def _setup(self):
+    def _setup(self) -> None:
         ...
 
 
@@ -176,7 +197,7 @@ class SimpleRunner(_BaseRunner, ABC):
     subclasses.
 
     A SimpleRunner only exposes `run` method to its users.
-        `SimpleRunner._run` can accept arbituary input type that are pickle-serializable
+        `SimpleRunner._run` can accept arbitrary input type that are pickle-serializable
     """
 
     @abstractmethod
@@ -185,6 +206,10 @@ class SimpleRunner(_BaseRunner, ABC):
 
 
 class RunnerImpl:
+    @t.overload
+    def __init__(self, runner: "_RunnerImplMixin"):
+        ...  # pylint:disable=redefined-builtin
+
     def __init__(self, runner: t.Union[Runner, SimpleRunner]):
         self._runner = runner
 
@@ -218,8 +243,8 @@ class RemoteRunner(RunnerImpl):
 
 
 class LocalRunner(RunnerImpl):
-    def _setup(self):
-        self._runner._setup()
+    def _setup(self) -> None:
+        self._runner._setup()  # noqa
 
     async def async_run(self, *args, **kwargs):
         if isinstance(self._runner, Runner):
@@ -245,5 +270,5 @@ class LocalRunner(RunnerImpl):
     def run(self, *args, **kwargs):
         ...
 
-    def batch_run(self, *args, **kwargs):
+    def run_batch(self, *args, **kwargs):
         ...

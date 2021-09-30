@@ -61,7 +61,7 @@ def _process_model_tag(tag: str) -> (str, str):
         return tag, "latest"
 
 
-@attr.s(slots=True)
+@attr.s
 class StoreCtx(object):
     name = attr.ib(type=str)
     version = attr.ib(type=str)
@@ -87,7 +87,7 @@ class StoreCtx(object):
     )
 
 
-@attr.s(slots=True)
+@attr.s
 class ModelInfo(StoreCtx):
     context = attr.ib(
         factory=dict,
@@ -116,7 +116,7 @@ def dump_model_yaml(
         metadata=ctx.metadata,
         path=str(ctx.path),
         created_at=datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
-        context={} if framework_context is None else framework_context,
+        context=framework_context,
         module=module,
     )
     with model_yaml.open("w", encoding="utf-8") as f:

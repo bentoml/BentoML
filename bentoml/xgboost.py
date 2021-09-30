@@ -212,7 +212,7 @@ class _XgBoostRunner(Runner):
     @property
     def num_replica(self):
         if self.resource_quota.on_gpu:
-            return self.resource_quota.gpus
+            return len(self.resource_quota.gpus)
         return 1
 
     def _setup_booster_params(self, booster_params):

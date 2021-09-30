@@ -159,7 +159,7 @@ def load_runner(
     """\
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
-    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
+    wrap around a XgBoost booster model, which optimize it for the BentoML runtime.
 
     Returns:
         Runner instances for the target `bentoml.xgboost` model

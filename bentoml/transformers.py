@@ -3,14 +3,10 @@ import pathlib
 import typing as t
 from importlib import import_module
 
-from ._internal import constants as _const
 from ._internal.models import JSON_EXT, SAVE_NAMESPACE
 from ._internal.models import store as _stores
 from ._internal.service import Runner
-from ._internal.types import PathType
-from ._internal.utils import LazyLoader, randomize_runner_name  # noqa
-from .exceptions import BentoMLException, InvalidArgument, NotFound
-from .utils import docstrings  # noqa
+from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -25,13 +21,12 @@ if t.TYPE_CHECKING:  # pragma: no cover
         TFPreTrainedModel,
     )
     from transformers.models.auto.auto_factory import _BaseAutoModelClass  # noqa
-else:
-    _exc = _const.IMPORT_ERROR_MSG.format(
-        fwr="transformers",
-        module=__name__,
-        inst="`pip install transformers`",
-    )
-    transformers = LazyLoader("transformers", globals(), "transformers", exc_msg=_exc)
+try:
+    import transformers
+except ImportError:
+    raise MissingDependencyException(
+        """transformers is required in order to use module `bentoml.transformers`, install transformers with 
+        `pip install transformers`.""")
 
 _T = t.TypeVar("_T")
 
@@ -208,44 +203,31 @@ def import_from_huggingface_hub(name: str):
     ...
 
 
-def load_runner(name: str, model_path: str):
-    return _TransformersRunner(name=name, model_path=model_path)
+def load_runner(tag: str, *, tasks: str, resource_quota: t.Dict[str, t.Any] = None,
+                batch_options: t.Dict[str, t.Any] = None) -> "_TransformersRunner":
+    """\
+    Runner represents a unit of serving logic that can be scaled horizontally to
+    maximize throughput. `bentoml.transformers.load_runner` implements a Runner class that
+    wrap around a Transformers model, which optimize it for the BentoML runtime.
 
-
-TRANSFORMERS_DOC = """\
-Model class for saving/loading :obj:`transformers` models.
-
-Args:
-    model (`Union[str, os.PathLike, Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]]`):
-        A dictionary `{'model':<model_obj>, 'tokenizer':<tokenizer_obj>}`
-         to setup Transformers model
-    metadata (`t.Dict[str, t.Any]`,  `optional`, default to `None`):
-        Class metadata
-
-Raises:
-    MissingDependencyException:
-        :obj:`transformers` is required by TransformersModel
-    InvalidArgument:
-        :obj:`model` must be either a dictionary
-         or a path for saved transformers model or
-         a pre-trained model string provided by transformers
-    NotFound:
-        if the provided model name or model path is not found
-
-Example usage under :code:`train.py`::
-
-    TODO:
-
-One then can define :code:`bento.py`::
-
-    TODO:
-
-"""
+    Returns:
+        Runner instances for the target `bentoml.transformers` model
+    """
+    return _TransformersRunner(tag=tag, tasks=tasks, resource_quota=resource_quota, batch_options=batch_options)
 
 
 class _TransformersRunner(Runner):
-    def __init__(self, name, model_path: str):
-        super().__init__(name, model_path)
+    def __init__(self, tag: str,
+                tasks: str,
+                resource_quota: t.Dict[str, t.Any],
+                batch_options: t.Dict[str, t.Any]):
+        super().__init__(tag, resource_quota, batch_options)
+        try:
+            transformers.pipelines.check_task(tasks)
+        except KeyError as e:
+            raise BentoMLException(f"{e}, givent tasks is not recognized by transformers.")
+        self._tasks = tasks
+        
         ...
 
     @property
@@ -257,7 +239,7 @@ class _TransformersRunner(Runner):
         # TODO: supports multiple GPUS
         return 1
 
-    def _setup(self, *args, **kwargs):
+    def _setup(self):
         pass
 
     def _run_batch(self, input_data: "_T") -> "_T":

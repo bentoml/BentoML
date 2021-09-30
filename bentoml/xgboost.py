@@ -3,15 +3,12 @@ import typing as t
 
 import numpy as np
 
-from bentoml import __version__ as BENTOML_VERSION
-
 from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
 from ._internal.models import store as _stores
 from ._internal.service import Runner
-from ._internal.types import GenericDictType
 from .exceptions import BentoMLException, MissingDependencyException
 
-# from bentoml.runner import RunnerIOConatainer, register_io_container
+# from bentoml.runner import RunnerIOContainer, register_io_container
 
 
 try:
@@ -47,7 +44,7 @@ if t.TYPE_CHECKING:
 # register_io_container(DMatrixContainer)
 
 
-def _get_model_info(tag, booster_params):
+def _get_model_info(tag, booster_params: t.Dict[str, t.Any]):
     model_info = _stores.get(tag)
     if model_info.module != __name__:
         raise BentoMLException(
@@ -55,6 +52,8 @@ def _get_model_info(tag, booster_params):
             f"with {__name__}."
         )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{MODEL_EXT}")
+    if booster_params is None:
+        booster_params = dict()
     for key, value in model_info.options.items():
         if key not in booster_params:
             booster_params[key] = value  # apply booster_params override
@@ -98,7 +97,7 @@ def save(
     model: "xgb.core.Booster",
     *,
     booster_params: t.Dict[str, t.Union[str, int]] = None,
-    metadata: t.Optional[GenericDictType] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
 ) -> str:
     """
     Save a model instance to BentoML modelstore.
@@ -110,7 +109,7 @@ def save(
             Instance of model to be saved
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Params for booster initialization
-        metadata (`~bentoml._internal.types.GenericDictType`, default to `None`):
+        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
 
     Returns:
@@ -137,7 +136,7 @@ def save(
         bst = bentoml.xgboost.load("my_xgboost_model:latest") # or
         bst = bentoml.xgboost.load(tag)
     """
-    context = {"xgboost": xgb.__version__, "bentoml_version": BENTOML_VERSION}
+    context = {"xgboost": xgb.__version__}
     with _stores.register(
         name,
         module=__name__,
@@ -175,7 +174,7 @@ def load_runner(
         runner.run(xgb.DMatrix(input_data))
     """
     return _XgBoostRunner(
-        name=tag,
+        tag=tag,
         predict_fn_name=predict_fn_name,
         booster_params=booster_params,
         resource_quota=resource_quota,
@@ -202,7 +201,7 @@ class _XgBoostRunner(Runner):
 
     @property
     def required_models(self):
-        return [self.model_info.tag]
+        return [self._model_info.tag]
 
     @property
     def num_concurrency_per_replica(self):
@@ -213,7 +212,7 @@ class _XgBoostRunner(Runner):
     @property
     def num_replica(self):
         if self.resource_quota.on_gpu:
-            return self.resource_quota.gpu
+            return self.resource_quota.gpus
         return 1
 
     def _setup_booster_params(self, booster_params):

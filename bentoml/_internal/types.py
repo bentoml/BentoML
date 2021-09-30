@@ -20,8 +20,6 @@ JSON_CHARSET = "utf-8"
 
 PathType = Union[str, os.PathLike]
 
-GenericDictType = Dict[str, Any]  # TODO:
-
 
 @attr.s
 class BentoTag:

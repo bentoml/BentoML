@@ -16,7 +16,7 @@ from bentoml import __version__ as BENTOML_VERSION
 
 from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration.containers import BentoMLContainer
-from ..types import GenericDictType, PathType
+from ..types import PathType
 from ..utils import generate_new_version_id, validate_or_create_dir
 from . import MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE, YAML_EXT
 
@@ -61,21 +61,41 @@ def _process_model_tag(tag: str) -> (str, str):
         return tag, "latest"
 
 
-@attr.s
+@attr.s(slots=True)
 class StoreCtx(object):
     name = attr.ib(type=str)
     version = attr.ib(type=str)
     path = attr.ib(type=PathType)
-    labels = attr.ib(type=t.Dict[str, str], factory=dict, kw_only=True)
-    options = attr.ib(type=GenericDictType, factory=dict, kw_only=True)
-    metadata = attr.ib(type=GenericDictType, factory=dict, kw_only=True)
+    tag = attr.ib(type=str)
+    labels = attr.ib(
+        factory=list,
+        type=t.List[str],
+        kw_only=True,
+        converter=attr.converters.default_if_none(list()),
+    )
+    options = attr.ib(
+        factory=dict,
+        type=t.Dict[str, t.Any],
+        kw_only=True,
+        converter=attr.converters.default_if_none(dict()),
+    )
+    metadata = attr.ib(
+        factory=dict,
+        type=t.Dict[str, t.Any],
+        kw_only=True,
+        converter=attr.converters.default_if_none(dict()),
+    )
 
 
-@attr.s
+@attr.s(slots=True)
 class ModelInfo(StoreCtx):
+    context = attr.ib(
+        factory=dict,
+        type=t.Dict[str, t.Any],
+        converter=attr.converters.default_if_none(dict()),
+    )
     module = attr.ib(type=str, kw_only=True)
     created_at = attr.ib(type=str, kw_only=True)
-    context = attr.ib(type=GenericDictType, factory=dict)
     api_version = attr.ib(type=str, default="v1")
     bentoml_version = attr.ib(type=str, default=BENTOML_VERSION)
 
@@ -90,6 +110,7 @@ def dump_model_yaml(
     info = ModelInfo(
         name=ctx.name,
         version=ctx.version,
+        tag=ctx.tag,
         labels=ctx.labels,
         options=ctx.options,
         metadata=ctx.metadata,
@@ -144,9 +165,9 @@ class LocalModelStore:
         name: str,
         *,
         module: str = "",
-        options: GenericDictType = None,
-        metadata: GenericDictType = None,
-        labels: GenericDictType = None,
+        labels: t.List[str] = None,
+        options: t.Dict[str, t.Any] = None,
+        metadata: t.Dict[str, t.Any] = None,
         framework_context: dict = None,
     ) -> "t.Iterator[StoreCtx]":
         """
@@ -162,8 +183,9 @@ class LocalModelStore:
 
         ctx = StoreCtx(
             name=name,
-            path=model_path,
             version=version,
+            tag=f"{name}:{version}",
+            path=model_path,
             labels=labels,
             metadata=metadata,
             options=options,

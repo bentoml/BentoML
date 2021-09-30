@@ -220,6 +220,7 @@ class BentoMLContainerClass:
         )
     )
 
+    deployment_type: Provider[str] = providers.Static("local")
     bundle_path: Provider[str] = providers.Static("")
 
     service_host: Provider[str] = providers.Static("0.0.0.0")

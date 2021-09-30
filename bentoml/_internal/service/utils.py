@@ -16,7 +16,7 @@ def _cpu_converter(cpu: t.Union[int, float, str]) -> float:
     raise ValueError(f"Invalid CPU resource limit '{cpu}'")
 
 
-def _mem_converter(mem: Union[int, str]) -> int:
+def _mem_converter(mem: t.Union[int, str]) -> int:
     if isinstance(mem, int):
         return mem
 

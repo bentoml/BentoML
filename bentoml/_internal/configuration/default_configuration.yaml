@@ -1,14 +1,14 @@
 bento_server:
   port: 5000
-  ngrok:
-    enabled: False
   workers: 1
   timeout: 60
   max_request_size: 20971520
-  microbatch:
-    workers: 1
-    max_batch_size: Null
-    max_latency: Null
+  batch_options:
+    enabled: True
+    max_batch_size: 10000
+    max_latency_ms: 10000
+  ngrok:
+    enabled: False
   metrics:
     enabled: True
     namespace: BENTOML

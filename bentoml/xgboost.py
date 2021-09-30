@@ -25,7 +25,7 @@ if t.TYPE_CHECKING:
     import pandas as pd
 
 
-# class DMatrixContainer(RunnerIOConatainer):
+# class DMatrixContainer(RunnerIOContainer):
 #     batch_type = xgb.DMatrix
 #     item_type = xgb.DMatrix
 #

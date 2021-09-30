@@ -4,16 +4,10 @@ import typing as t
 from importlib import import_module
 
 from ._internal import constants as _const
-from ._internal.models import (
-    JSON_EXT,
-    LOAD_INIT_DOCS,
-    SAVE_INIT_DOCS,
-    SAVE_NAMESPACE,
-    SAVE_RETURNS_DOCS,
-)
+from ._internal.models import JSON_EXT, SAVE_NAMESPACE
 from ._internal.models import store as _stores
-from ._internal.service import RUNNER_INIT_DOCS, RUNNER_RETURNS_DOCS, Runner
-from ._internal.types import GenericDictType, PathType
+from ._internal.service import Runner
+from ._internal.types import PathType
 from ._internal.utils import LazyLoader, randomize_runner_name  # noqa
 from .exceptions import BentoMLException, InvalidArgument, NotFound
 from .utils import docstrings  # noqa
@@ -194,7 +188,7 @@ def save(
     *,
     model: TransformersInput,
     tokenizer: t.Optional[transformers.AutoTokenizer] = None,
-    metadata: t.Optional[GenericDictType] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
 ) -> str:
     _check_flax_supported()
     context = {"transformers": transformers.__version__}
@@ -210,6 +204,10 @@ def save(
     return f"{name}:{ctx.version}"
 
 
+def import_from_huggingface_hub(name: str):
+    ...
+
+
 def load_runner(name: str, model_path: str):
     return _TransformersRunner(name=name, model_path=model_path)
 
@@ -221,7 +219,7 @@ Args:
     model (`Union[str, os.PathLike, Dict[str, Union[transformers.PreTrainedModel, transformers.PreTrainedTokenizer]]`):
         A dictionary `{'model':<model_obj>, 'tokenizer':<tokenizer_obj>}`
          to setup Transformers model
-    metadata (`GenericDictType`,  `optional`, default to `None`):
+    metadata (`t.Dict[str, t.Any]`,  `optional`, default to `None`):
         Class metadata
 
 Raises:

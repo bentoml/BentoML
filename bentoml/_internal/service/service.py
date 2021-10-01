@@ -68,9 +68,11 @@ class Service:
             )
         self._apis[api.name] = api
 
+    @property
     def _asgi_app(self):
         return self._app
 
+    @property
     def _wsgi_app(self):
         return self._app
 

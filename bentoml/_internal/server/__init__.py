@@ -20,6 +20,7 @@ from typing import Optional
 
 from simple_di import skip
 
+from bentoml._internal.bento import load_bento
 from bentoml._internal.configuration import CONFIG_ENV_VAR, save_global_config
 from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -34,7 +35,7 @@ def serve_debug(
     run_with_ngrok: Optional[bool] = None,
     timeout: Optional[int] = None,
 ):
-    bento = load_from_dir(bento_path_or_tag)
+    bento = load_bento(bento_path_or_tag)
 
     bento_server = BentoMLContainer.config.bento_server
     bento_server.port.set(port or skip)
@@ -56,10 +57,7 @@ def serve_debug(
             Watcher(
                 name="ngrok",
                 cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_ngrok_server()"',
-                env={
-                    "LC_ALL": "en_US.utf-8",
-                    "LANG": "en_US.utf-8",
-                },
+                env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
                 numprocesses=1,
                 stop_children=True,
             )
@@ -69,10 +67,7 @@ def serve_debug(
         Watcher(
             name="ngrok",
             cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_dev_server()"',
-            env={
-                "LC_ALL": "en_US.utf-8",
-                "LANG": "en_US.utf-8",
-            },
+            env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
             numprocesses=1,
             stop_children=True,
         )
@@ -81,10 +76,7 @@ def serve_debug(
         Watcher(
             name="ngrok",
             cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_dev_proxy()"',
-            env={
-                "LC_ALL": "en_US.utf-8",
-                "LANG": "en_US.utf-8",
-            },
+            env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
             numprocesses=1,
             stop_children=True,
         )
@@ -105,7 +97,7 @@ def serve(
     max_batch_size: Optional[int] = None,
     max_latency_ms: Optional[int] = None,
 ):
-    bento = load_from_dir(bento_path_or_tag)
+    bento = load_bento(bento_path_or_tag)
 
     import psutil
 
@@ -155,7 +147,7 @@ def serve(
         )
     )
 
-    for runner_name, runner in bento.runners.items():
+    for runner_name, runner in bento._runners.items():
         watchers.append(
             Watcher(
                 name="ngrok",
@@ -210,7 +202,7 @@ def start_prod_server1(
     max_batch_size: Optional[int] = None,
     max_latency_ms: Optional[int] = None,
 ):
-    bento = load_from_dir(bento_path_or_tag)
+    bento = load_bento(bento_path_or_tag)
     import psutil
 
     assert (
@@ -227,68 +219,86 @@ def start_prod_server1(
 
     BentoMLContainer.forward_port.get()  # generate port before fork
 
+    import json
+    import os
+
     from circus.arbiter import Arbiter
+    from circus.sockets import CircusSocket
     from circus.util import DEFAULT_ENDPOINT_DEALER, DEFAULT_ENDPOINT_SUB
     from circus.watcher import Watcher
 
+    uds_path = tempfile.mkdtemp()
+
     watchers = []
+    sockets_map = {}
 
-    watchers.append(
-        Watcher(
-            name="ngrok",
-            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_api_server()"',
-            env={
-                "LC_ALL": "en_US.utf-8",
-                "LANG": "en_US.utf-8",
-            },
-            numprocesses=1,
-            stop_children=True,
+    for runner_name, runner in bento._runners.items():
+        uds_name = f"runner_{runner_name}"
+
+        sockets_map[runner_name] = CircusSocket(
+            name=uds_name, path=os.path.join(uds_path, f"{uds_name}.sock")
         )
-    )
 
-    watchers.append(
-        Watcher(
-            name="ngrok",
-            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_proxy()"',
-            env={
-                "LC_ALL": "en_US.utf-8",
-                "LANG": "en_US.utf-8",
-            },
-            numprocesses=1,
-            stop_children=True,
-        )
-    )
-
-    for runner in bento.runners.values():
         watchers.append(
             Watcher(
-                name="ngrok",
-                cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_runner_server({runner.name})"',
-                env={
-                    "LC_ALL": "en_US.utf-8",
-                    "LANG": "en_US.utf-8",
-                },
-                numprocesses=runner.replicas,
+                name=f"runner_{runner_name}",
+                cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_runner_server({bento_path_or_tag}, {runner_name}, instance_id=$(CIRCUS.WID), fd=$(circus.sockets.{uds_name}))"',
+                env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+                numprocesses=runner.num_replica,
                 stop_children=True,
             )
         )
+
+    cmd_runner_arg = json.dumps(
+        {k: f"$(circus.sockets.{v.name})" for k, v in sockets_map.items()}
+    )
+    watchers.append(
+        Watcher(
+            name="ngrok",
+            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_api_server({bento_path_or_tag}, instance_id=$(CIRCUS.WID), runner_fd_map={cmd_runner_arg})"',
+            env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+            numprocesses=1,
+            stop_children=True,
+        )
+    )
+
+    '''
+    watchers.append(
+        Watcher(
+            name="dynamic_batching",
+            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_proxy({bento_path_or_tag}, instance_id=$(CIRCUS.WID))"',
+            env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+            numprocesses=1,
+            stop_children=True,
+        )
+    )
+    '''
 
     arbiter = Arbiter(
         watchers=watchers,
         endpoint=DEFAULT_ENDPOINT_DEALER,
         pubsub_endpoint=DEFAULT_ENDPOINT_SUB,
+        sockets=[s for s in sockets_map.values()],
     )
 
     arbiter.start()
 
 
-def _start_prod_api_server():
-    BentoMLContainer.api_server.get().run()
+def _start_prod_api_server(
+    bento_path_or_tag: str, instance_id: int, runner_fd_map: str
+):
+    bento = load_bento(bento_path_or_tag)
+    bento._asgi_app()
 
 
-def _start_prod_runner_server(name, fd):
+def _start_prod_runner_server(
+    bento_path_or_tag: str, name: str, instance_id: int, fd: int
+):
     import uvicorn
 
-    runner = BentoMLContainer.service.get_runner_by_name(name)
+    from bentoml._internal.server.runner_app import RunnerApp
 
-    uvicorn.run(runner._asgi_app, fd=fd, log_level="info")
+    bento = load_bento(bento_path_or_tag)
+    runner = bento._runners.get(name)
+
+    uvicorn.run(RunnerApp(runner), fd=fd, log_level="info")

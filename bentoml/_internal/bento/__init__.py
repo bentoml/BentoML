@@ -77,3 +77,6 @@ Build docker image from a Bento directory:
     cd bento_path
     docker build -f ./env/docker/Dockerfile .
 """
+from .load import load_bento
+
+__all__ = ['load_bento']

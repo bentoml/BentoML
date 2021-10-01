@@ -109,4 +109,5 @@ class JsonOutput(BaseOutputAdapter):
         return {
             "statusCode": result.http_status,
             "body": result.err_msg or result.data,
+            "headers": dict(),
         }

@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
@@ -9,31 +10,38 @@ from ..configuration.containers import BentoMLContainer
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from starlette.applications import Starlette
+    from starlette.requests import Request
+    from starlette.responses import Response
+
+    from bentoml._internal.runner import Runner
+
 
 class RunnerApp(BaseApp):
     @inject
     def __init__(
-        self,
-        bundle_path: str = Provide[BentoMLContainer.bundle_path],
-        runner_name: str = None,
-        tracer=Provide[BentoMLContainer.tracer],
+        self, runner: "Runner", tracer=Provide[BentoMLContainer.tracer],
     ):
-        from starlette.applications import Starlette
-
-        from bentoml.saved_bundle.loader import load_from_dir
-
-        assert bundle_path, repr(bundle_path)
-
-        self.bento_service = load_from_dir(bundle_path)
-        self.runner = self.bento_service.get_runner(runner_name)
-        self.app_name = self.runner.name
-
-        self.asgi_app = Starlette(
-            on_startup=[self.on_startup], on_shutdown=[self.on_shutdown]
-        )
+        self.runner = runner
         self.tracer = tracer
 
-        self.setup_routes()
+    @property
+    def asgi_app(self) -> "Starlette":
+        from starlette.applications import Starlette
+        from starlette.routing import Route
+
+        routes = [
+            Route("/run", self.run, methods=["POST"]),
+            Route("/run_batch", self.run_batch, methods=["POST"]),
+        ]
+        return Starlette(
+            routes=routes, on_startup=[self.on_startup], on_shutdown=[self.on_shutdown]
+        )
+
+    @property
+    def name(self) -> str:
+        return self.runner.name
 
     def on_startup(self):
         pass
@@ -41,18 +49,9 @@ class RunnerApp(BaseApp):
     def on_shutdown(self):
         pass
 
-    async def run(self, request):
+    async def run(self, request: "Request") -> "Response":
+        body = await request.body()
         ...
 
-    async def run_batch(self, request):
+    async def run_batch(self, request: "Request") -> "Response":
         ...
-
-    def setup_routes(self):
-        self.asgi_app.add_route(path="/run", name="run", route=self.run)
-        self.asgi_app.add_route(
-            path="/run_batch", name="run_batch", route=self.run_batch
-        )
-
-    def get_app(self):
-
-        return self.asgi_app

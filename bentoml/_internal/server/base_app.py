@@ -13,24 +13,28 @@ logger = logging.getLogger(__name__)
 
 class BaseApp(abc.ABC):
     asgi_app: "Starlette"
-    name: str
     _is_ready: bool = False
 
     @abc.abstractmethod
     def setup(self) -> None:
         ...
 
-    def _setup(self) -> None:
+    def perform_setup(self) -> None:
         self.setup()
         self._is_ready = True
 
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        ...
+
     @abc.abstractmethod
     def on_startup(self):
-        pass
+        ...
 
     @abc.abstractmethod
     def on_shutdown(self):
-        pass
+        ...
 
     async def livez(self):
         """

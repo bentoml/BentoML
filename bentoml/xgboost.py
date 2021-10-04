@@ -52,8 +52,7 @@ def _get_model_info(tag, booster_params: t.Dict[str, t.Any]):
             f"with {__name__}."
         )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{MODEL_EXT}")
-    if booster_params is None:
-        booster_params = dict()
+    booster_params = dict() if booster_params is None else booster_params
     for key, value in model_info.options.items():
         if key not in booster_params:
             booster_params[key] = value  # apply booster_params override
@@ -145,7 +144,7 @@ def save(
         metadata=metadata,
     ) as ctx:
         model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{MODEL_EXT}"))
-        return f"{name}:{ctx.version}"
+        return ctx.tag
 
 
 def load_runner(

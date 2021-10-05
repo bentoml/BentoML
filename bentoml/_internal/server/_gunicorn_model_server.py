@@ -9,7 +9,7 @@ from ..configuration.containers import BentoMLContainer
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # make type checkers happy
-    from .model_app import ModelApp
+    from .model_app import ServiceApp
 
 
 class GunicornModelServer(Application):  # pylint: disable=abstract-method
@@ -65,7 +65,7 @@ class GunicornModelServer(Application):  # pylint: disable=abstract-method
 
     @property
     @inject
-    def app(self, app: "ModelApp" = Provide[BentoMLContainer.model_app]):
+    def app(self, app: "ServiceApp" = Provide[BentoMLContainer.model_app]):
         return app
 
     def load(self):

@@ -19,6 +19,10 @@ class RemoteException(BentoMLException):
     Raise when known exceptions happened in remote process
     """
 
+    def __init__(self, message: str, payload=None):
+        self.payload = payload
+        super().__init__(message)
+
 
 class InvalidArgument(BentoMLException):
     """

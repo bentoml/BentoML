@@ -1,19 +1,19 @@
 import logging
 import multiprocessing
 import os
-import typing as t
+from typing import Dict, Optional as OptionalType, TYPE_CHECKING, cast
 
-import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
+import yaml
 
 from bentoml.exceptions import BentoMLConfigException
 
-from ..utils import get_free_port
 from . import expand_env_var
+from ..utils import get_free_port
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ..server.marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ SCHEMA = Schema(
 class BentoMLConfiguration:
     def __init__(
         self,
-        override_config_file: t.Optional[str] = None,
+        override_config_file: OptionalType[str] = None,
         validate_schema: bool = True,
     ):
         # Load default configuration
@@ -189,15 +189,15 @@ class BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
+        allow_origins=config.bento_server.cors.allow_origins,
         allow_credentials=config.bento_server.cors.access_control_allow_credentials,
         expose_headers=config.bento_server.cors.access_control_expose_headers,
         allow_methods=config.bento_server.cors.access_control_allow_methods,
         allow_headers=config.bento_server.cors.access_control_allow_headers,
         max_age=config.bento_server.cors.access_control_max_age,
-    ):
-        import aiohttp_cors
-
+    ) -> Dict:
         kwargs = dict(
+            allow_origins=allow_origins,
             allow_credentials=allow_credentials,
             expose_headers=expose_headers,
             allow_methods=allow_methods,
@@ -206,8 +206,7 @@ class BentoMLContainerClass:
         )
 
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
-
-        return aiohttp_cors.ResourceOptions(**filtered_kwargs)
+        return filtered_kwargs
 
     api_server_workers = providers.Factory(
         lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
@@ -221,7 +220,6 @@ class BentoMLContainerClass:
     )
 
     deployment_type: Provider[str] = providers.Static("local")
-    bundle_path: Provider[str] = providers.Static("")
 
     service_host: Provider[str] = providers.Static("0.0.0.0")
     service_port: Provider[int] = config.bento_server.port
@@ -246,16 +244,16 @@ class BentoMLContainerClass:
     @providers.Factory
     @staticmethod
     def proxy_app() -> "MarshalApp":
-        from ..server.marshal.marshal import MarshalApp
+        from ..marshal.marshal import MarshalApp
 
         return MarshalApp()
 
     @providers.Factory
     @staticmethod
-    def model_app():
-        from ..server.model_app import ModelApp
+    def service_app():
+        from ..server.service_app import ServiceApp
 
-        return ModelApp()
+        return ServiceApp()
 
     prometheus_lock = providers.SingletonFactory(multiprocessing.Lock)
 
@@ -268,14 +266,12 @@ class BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def metrics_client(
-        multiproc_lock=prometheus_lock,
         multiproc_dir=prometheus_multiproc_dir,
         namespace=config.bento_server.metrics.namespace,
     ):
         from ..server.metrics.prometheus import PrometheusClient
 
         return PrometheusClient(
-            multiproc_lock=multiproc_lock,
             multiproc_dir=multiproc_dir,
             namespace=namespace,
         )
@@ -289,6 +285,10 @@ class BentoMLContainerClass:
         ),
         config.logging.file.directory,
     )
+
+    uds_mapping: Provider[Dict[str, str]] = providers.Static(dict())
+
+    plasma_db = providers.Static(None)
 
 
 BentoMLContainer = BentoMLContainerClass()

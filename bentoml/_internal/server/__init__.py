@@ -57,7 +57,10 @@ def serve_debug(
             Watcher(
                 name="ngrok",
                 cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_ngrok_server()"',
-                env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+                env={
+                    "LC_ALL": "en_US.utf-8",
+                    "LANG": "en_US.utf-8",
+                },
                 numprocesses=1,
                 stop_children=True,
             )
@@ -67,7 +70,10 @@ def serve_debug(
         Watcher(
             name="ngrok",
             cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_dev_server()"',
-            env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+            env={
+                "LC_ALL": "en_US.utf-8",
+                "LANG": "en_US.utf-8",
+            },
             numprocesses=1,
             stop_children=True,
         )
@@ -76,7 +82,10 @@ def serve_debug(
         Watcher(
             name="ngrok",
             cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_dev_proxy()"',
-            env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+            env={
+                "LC_ALL": "en_US.utf-8",
+                "LANG": "en_US.utf-8",
+            },
             numprocesses=1,
             stop_children=True,
         )
@@ -110,7 +119,7 @@ def serve(
     bento_server.microbatch.max_batch_size.set(max_batch_size or skip)
     bento_server.microbatch.max_latency.set(max_latency_ms or skip)
 
-    config_file, config_path = tempfile.mkstemp(suffix='yml', text=True)
+    config_file, config_path = tempfile.mkstemp(suffix="yml", text=True)
     save_global_config(config_file)  # save the container state to yml file
 
     from circus.arbiter import Arbiter
@@ -243,7 +252,10 @@ def start_prod_server1(
             Watcher(
                 name=f"runner_{runner_name}",
                 cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_runner_server({bento_path_or_tag}, {runner_name}, instance_id=$(CIRCUS.WID), fd=$(circus.sockets.{uds_name}))"',
-                env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+                env={
+                    "LC_ALL": "en_US.utf-8",
+                    "LANG": "en_US.utf-8",
+                },
                 numprocesses=runner.num_replica,
                 stop_children=True,
             )
@@ -256,13 +268,16 @@ def start_prod_server1(
         Watcher(
             name="ngrok",
             cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_api_server({bento_path_or_tag}, instance_id=$(CIRCUS.WID), runner_fd_map={cmd_runner_arg})"',
-            env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+            env={
+                "LC_ALL": "en_US.utf-8",
+                "LANG": "en_US.utf-8",
+            },
             numprocesses=1,
             stop_children=True,
         )
     )
 
-    '''
+    """
     watchers.append(
         Watcher(
             name="dynamic_batching",
@@ -272,7 +287,7 @@ def start_prod_server1(
             stop_children=True,
         )
     )
-    '''
+    """
 
     arbiter = Arbiter(
         watchers=watchers,

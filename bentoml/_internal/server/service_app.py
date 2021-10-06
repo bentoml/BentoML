@@ -1,7 +1,7 @@
-from functools import partial
 import logging
 import sys
-from typing import Dict, TYPE_CHECKING
+from functools import partial
+from typing import TYPE_CHECKING, Dict
 
 from google.protobuf.json_format import MessageToJson
 from simple_di import Provide, inject
@@ -15,8 +15,7 @@ from ..configuration.containers import BentoMLContainer
 from ..server.instruments import InstrumentMiddleware
 from ..types import HTTPRequest
 from ..utils.open_api import get_open_api_spec_json
-from .marshal.marshal import DataLoader, MARSHAL_REQUEST_HEADER
-
+from .marshal.marshal import MARSHAL_REQUEST_HEADER, DataLoader
 
 if TYPE_CHECKING:
     from ..service import InferenceAPI
@@ -147,8 +146,9 @@ class ServiceApp:
         ],
         tracer=Provide[BentoMLContainer.tracer],
     ):
-        from bentoml.saved_bundle.loader import load_from_dir
         from starlette.applications import Starlette
+
+        from bentoml.saved_bundle.loader import load_from_dir
 
         assert bundle_path, repr(bundle_path)
 
@@ -194,7 +194,7 @@ class ServiceApp:
         from starlette.templating import Jinja2Templates
 
         templates = Jinja2Templates(directory=self.static_path)
-        return templates.TemplateResponse('index.html', {'request': request})
+        return templates.TemplateResponse("index.html", {"request": request})
 
     def default_index_view_func(self):
         """
@@ -305,7 +305,7 @@ class ServiceApp:
     ):
         if enable_access_control:
             assert (
-                access_control_options.get('access_control_allow_origin') is not None
+                access_control_options.get("access_control_allow_origin") is not None
             ), "To enable cors, access_control_allow_origin must be set"
 
             from starlette.middleware.cors import CORSMiddleware
@@ -358,7 +358,7 @@ class ServiceApp:
 
             return response
 
-        '''
+        """
         def api_func_with_tracing():
             with self.tracer.span(
                 service_name=f"BentoService.{self.bento_service.name}",
@@ -368,7 +368,7 @@ class ServiceApp:
                 return api_func()
 
         return api_func_with_tracing
-        '''
+        """
 
     @inject
     def metrics_view_func(self, client=Provide[BentoMLContainer.metrics_client]):

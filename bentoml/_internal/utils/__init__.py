@@ -15,28 +15,21 @@ from typing import (
     TypeVar,
     Union,
 )
-from urllib.parse import uses_netloc, uses_params, uses_relative
 
 from ..types import PathType
-from .gcs import is_gcs_url
 from .lazy_loader import LazyLoader
-from .s3 import is_s3_url
 
 _T = TypeVar("_T")
 _V = TypeVar("_V")
 
-_VALID_URLS = set(uses_relative + uses_netloc + uses_params)
-_VALID_URLS.discard("")
-
-DEFAULT_CHUNK_SIZE = 1024 * 8  # 8kb
 
 __all__ = [
+    "cached_property",
+    "cached_contextmanager",
     "reserve_free_port",
     "get_free_port",
     "generate_new_version_id",
     "catch_exceptions",
-    "is_gcs_url",
-    "is_s3_url",
     "LazyLoader",
     "validate_or_create_dir",
 ]
@@ -119,3 +112,66 @@ def get_free_port(host: str = "localhost") -> int:
     port: int = sock.getsockname()[1]
     sock.close()
     return port
+
+
+class cached_property(object):
+    """A property that is only computed once per instance and then replaces
+    itself with an ordinary attribute. Deleting the attribute resets the
+    property.
+    """
+
+    def __init__(self, func):
+        try:
+            functools.update_wrapper(self, func)
+        except AttributeError:
+            pass
+        self.func = func
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+        value = obj.__dict__[self.func.__name__] = self.func(obj)
+        return value
+
+
+class cached_contextmanager:
+    """
+    Just like contextlib.contextmanager, but will cache the yield value for the same
+    arguments. When one instance of the contextmanager exits, the cache value will
+    also be poped.
+    Example Usage:
+    (To reuse the container based on the same image)
+    >>> @cached_contextmanager("{docker_image.id}")
+    >>> def start_docker_container_from_image(docker_image, timeout=60):
+    >>>     container = ...
+    >>>     yield container
+    >>>     container.stop()
+    """
+
+    def __init__(self, cache_key_template=None):
+        self._cache_key_template = cache_key_template
+        self._cache = {}
+
+    def __call__(self, func):
+        func_m = contextlib.contextmanager(func)
+
+        @contextlib.contextmanager
+        @functools.wraps(func)
+        def _func(*args, **kwargs):
+            import inspect
+
+            bound_args = inspect.signature(func).bind(*args, **kwargs)
+            bound_args.apply_defaults()
+            if self._cache_key_template:
+                cache_key = self._cache_key_template.format(**bound_args.arguments)
+            else:
+                cache_key = tuple(bound_args.arguments.values())
+            if cache_key in self._cache:
+                yield self._cache[cache_key]
+            else:
+                with func_m(*args, **kwargs) as value:
+                    self._cache[cache_key] = value
+                    yield value
+                    self._cache.pop(cache_key)
+
+        return _func

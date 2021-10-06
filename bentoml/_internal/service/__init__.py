@@ -1,4 +1,3 @@
 from .service import Service
 
-
-__all__ = ['Service']
+__all__ = ["Service"]

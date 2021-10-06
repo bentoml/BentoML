@@ -79,4 +79,4 @@ Build docker image from a Bento directory:
 """
 from .load import load_bento
 
-__all__ = ['load_bento']
+__all__ = ["load_bento"]

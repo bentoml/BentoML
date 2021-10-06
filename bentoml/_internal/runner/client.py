@@ -1,4 +1,4 @@
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from simple_di import Provide, inject
 
@@ -7,7 +7,7 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from aiohttp import BaseConnector
 
-    from .runner_transport import Transporter
+    from .transport import Transporter
 
 
 class RunnerClient:
@@ -16,7 +16,7 @@ class RunnerClient:
         self._conn = None
         self._client = None
         self._timeout = timeout
-        from .runner_transport import PlasmaNdarrayTransporter
+        from .transport import PlasmaNdarrayTransporter
 
         self._transporter = transporter or PlasmaNdarrayTransporter()
 

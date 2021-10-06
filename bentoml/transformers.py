@@ -47,14 +47,27 @@ except ImportError:
 
 _T = t.TypeVar("_T")
 
-TransformersInput = t.TypeVar(
-    "TransformersInput",
+ModelInputType = t.TypeVar(
+    "ModelInputType",
     bound=t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
+)
+TokenizerInputType = t.TypeVar(
+    "TokenizerInputType",
+    bound=t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"],
 )
 TransformersOutput = t.TypeVar(
     "TransformersOutput",
     bound=t.Tuple["AutoTokenizer", "_BaseAutoModelClass"],
 )
+
+
+def _check_flax_supported() -> None:
+    _supported: bool = transformers.__version__.startswith("4")
+    if not _supported:
+        raise BentoMLException(
+            "BentoML will only support transformers 4.x forwards to support FlaxModel"
+        )
+
 
 _SAVE_CONFLICTS_ERR = """\
 `tokenizer=None` if `model` is type `str`, currently got `tokenizer={tokenizer}`
@@ -69,7 +82,7 @@ If you are training a model from scratch using transformers, to save into BentoM
 
 _FRAMEWORK_ALIASES: t.Dict[str, str] = {"pt": "pytorch", "tf": "tensorflow"}
 
-_FRAMEWORK_AUTOMODEL_PREFIX_MAPPING: t.Dict[str, str] = {
+_AUTOMODEL_PREFIX_MAPPING: t.Dict[str, str] = {
     "pytorch": "AutoModel",
     "tensorflow": "TFAutoModel",
     "flax": "FlaxAutoModel",
@@ -78,21 +91,23 @@ _FRAMEWORK_AUTOMODEL_PREFIX_MAPPING: t.Dict[str, str] = {
 _AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
     "causal": "ForCausalLM",
     "masked": "ForMaskedLM",
-    "seq-to-seq": "ForSeq2SeqLM",
+    "seq2seq": "ForSeq2SeqLM",
+    "sequence-classification": "ForSequenceClassification",
+    "question-answering": "ForQuestionAnswering",
+    "token-classification": "ForTokenClassification",
+    "multiple-choice": "ForMultipleChoice",
+    "next-sentence-prediction": "ForNextSentencePrediction",
+    "image-classification": "ForImageClassification",
+    "audio-classification": "ForAudioClassification",
+    "ctc": "ForCTC",
+    "speech-seq2seq": "ForSpeechSeq2Seq",
+    "object-detection": "ForObjectDetection",
 }
 
 
-def _check_flax_supported() -> None:
-    _supported: bool = transformers.__version__.startswith("4")
-    if not _supported:
-        raise BentoMLException(
-            "BentoML will only support transformers 4.x forwards to support FlaxModel"
-        )
-
-
-def _lm_head_module_name(framework: str, lm_head: str) -> str:
+def _infer_autoclass(framework: str, lm_head: str) -> str:
     if (
-        framework not in _FRAMEWORK_AUTOMODEL_PREFIX_MAPPING
+        framework not in _AUTOMODEL_PREFIX_MAPPING
         and framework not in _FRAMEWORK_ALIASES
     ):
         raise AttributeError(
@@ -109,10 +124,13 @@ def _lm_head_module_name(framework: str, lm_head: str) -> str:
     framework_prefix = (
         _FRAMEWORK_ALIASES[framework] if framework in _FRAMEWORK_ALIASES else framework
     )
-    return (
-        _FRAMEWORK_AUTOMODEL_PREFIX_MAPPING[framework_prefix]
-        + _AUTOMODEL_LM_HEAD_MAPPING[lm_head]
-    )
+    class_inst = f"{_AUTOMODEL_PREFIX_MAPPING[framework_prefix]}{_AUTOMODEL_LM_HEAD_MAPPING[lm_head]}"
+    try:
+        return getattr(importlib.import_module("transformers"), class_inst)
+    except AttributeError as e:
+        raise BentoMLException(
+            f"{e}\n\nPlease refers to https://huggingface.co/transformers/model_doc/auto.html"
+        )
 
 
 # model = bentoml.transformers.load("my_transformers_name", framework='pt')
@@ -124,7 +142,7 @@ def load(
 ) -> TransformersOutput:
     _check_flax_supported()
     model_info = _stores.get(tag)
-    _lm_head = _lm_head_module_name(framework, lm_head)
+    _lm_head = _infer_autoclass(framework, lm_head)
 
     model = getattr(import_module("transformers"), _lm_head).from_pretrained(
         model_info.path
@@ -152,13 +170,12 @@ def _infer_model_tokenizer_class(model_name: str) -> t.Dict[str, str]:
 
 # save logics
 #  when model is a type string -> download from huggingface hub to bentoml modelstore
-#  when model is a TransformersInput -> tokenizer should also be provided -> then just saved it directly to modelstore
+#  when model is a ModelInputType -> tokenizer should also be provided -> then just saved it directly to modelstore
+# TODO: supports for serializing a pipeline
 def save(
     name: str,
-    model: t.Union[str, TransformersInput],
-    tokenizer: t.Optional[
-        t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]
-    ] = None,
+    model: t.Union[str, ModelInputType],
+    tokenizer: TokenizerInputType = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     *model_args,
     **transformers_kwargs,

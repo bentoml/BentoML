@@ -5,7 +5,7 @@ import numpy as np
 
 from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
 from ._internal.models import store as _stores
-from ._internal.service import Runner
+from ._internal.service.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
 # from bentoml.runner import RunnerIOContainer, register_io_container

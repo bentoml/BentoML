@@ -2,7 +2,7 @@ import io
 import os
 import urllib
 from dataclasses import dataclass
-from typing import Any, BinaryIO, Dict, Optional, Union
+from typing import Any, BinaryIO, Dict, List, Optional, Union
 
 import attr
 
@@ -19,6 +19,10 @@ HEADER_CHARSET = "latin1"
 JSON_CHARSET = "utf-8"
 
 PathType = Union[str, os.PathLike]
+
+JSONSerializable = Union[
+    str, int, float, None, List["JSONSerializable"], Dict[str, "JSONSerializable"]
+]
 
 
 @attr.s

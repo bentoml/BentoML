@@ -76,8 +76,7 @@ def metrics_patch(cls):
             func = super(_MarshalApp, self).request_dispatcher
             api_route = request.match_info.get("path", "/")
             _metrics_request_in_progress = self.metrics_request_in_progress.labels(
-                endpoint=api_route,
-                http_method=request.method,
+                endpoint=api_route, http_method=request.method,
             )
             _metrics_request_in_progress.inc()
             time_st = time.time()
@@ -137,15 +136,6 @@ class MarshalApp:
             BentoMLContainer.config.bento_server.max_request_size
         ],
         outbound_unix_socket: str = None,
-        enable_access_control: bool = Provide[
-            BentoMLContainer.config.bento_server.cors.enabled
-        ],
-        access_control_allow_origin: Optional[str] = Provide[
-            BentoMLContainer.config.bento_server.cors.access_control_allow_origin
-        ],
-        access_control_options: Optional["ResourceOptions"] = Provide[
-            BentoMLContainer.access_control_options
-        ],
         timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
         tracer=Provide[BentoMLContainer.tracer],
     ):
@@ -163,10 +153,6 @@ class MarshalApp:
         self._cleanup_tasks = None
         self.max_request_size = max_request_size
         self.tracer = tracer
-
-        self.enable_access_control = enable_access_control
-        self.access_control_allow_origin = access_control_allow_origin
-        self.access_control_options = access_control_options
 
         # self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)  # noqa: E501
 
@@ -212,9 +198,7 @@ class MarshalApp:
 
         if self._conn is None or self._conn.closed:
             if self.outbound_unix_socket:
-                self._conn = aiohttp.UnixConnector(
-                    path=self.outbound_unix_socket,
-                )
+                self._conn = aiohttp.UnixConnector(path=self.outbound_unix_socket,)
             else:
                 self._conn = aiohttp.TCPConnector(limit=30)
         return self._conn
@@ -337,11 +321,7 @@ class MarshalApp:
                     body = await resp.read()
             except ClientConnectionError:
                 return Response(status=503, body=b"Service Unavailable")
-        return Response(
-            status=resp.status,
-            body=body,
-            headers=resp.headers,
-        )
+        return Response(status=resp.status, body=body, headers=resp.headers,)
 
     async def _batch_handler_template(self, requests, api_route, max_latency):
         """
@@ -377,19 +357,19 @@ class MarshalApp:
                     raw = await resp.read()
             except ClientConnectionError as e:
                 raise RemoteException(
-                    e, payload=HTTPResponse.new(status=503, body=b"Service Unavailable")
+                    repr(e),
+                    payload=HTTPResponse.new(status=503, body=b"Service Unavailable"),
                 )
             except asyncio.CancelledError as e:
                 raise RemoteException(
-                    e,
+                    repr(e),
                     payload=HTTPResponse(
                         status=500, body=b"Cancelled before upstream responses"
                     ),
                 )
             except asyncio.TimeoutError as e:
                 raise RemoteException(
-                    e,
-                    payload=HTTPResponse(status=408, body=b"Request timeout"),
+                    repr(e), payload=HTTPResponse(status=408, body=b"Request timeout"),
                 )
 
             if resp.status != 200:
@@ -408,47 +388,23 @@ class MarshalApp:
             )
 
     def get_app(self) -> "Application":
-        from aiohttp import hdrs
-        from aiohttp.web import Application
+        from starlette.applications import Starlette
 
-        methods = hdrs.METH_ALL.copy()
+        app = Starlette()
 
-        if self.enable_access_control:
-            # ref: https://github.com/aio-libs/aiohttp-cors/issues/241
-            methods.remove(hdrs.METH_OPTIONS)
+        # app = Application(client_max_size=self.max_request_size)
+        # app.on_cleanup.append(self.cleanup)
 
-        app = Application(client_max_size=self.max_request_size)
-        app.on_cleanup.append(self.cleanup)
+        ALL_METHODS = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
 
-        for method in methods:
-            app.router.add_route(method, "/", self.relay_handler)
-            app.router.add_route(method, "/{path:.*}", self.request_dispatcher)
-
-        if self.enable_access_control:
-            assert (
-                self.access_control_allow_origin is not None
-            ), "To enable cors, access_control_allow_origin must be set"
-            assert self.access_control_options is not None
-
-            import aiohttp_cors
-
-            # Configure default CORS settings.
-            cors = aiohttp_cors.setup(
-                app,
-                defaults={
-                    self.access_control_allow_origin: self.access_control_options
-                },
-            )
-            # Configure CORS on all routes.
-            for route in list(app.router.routes()):
-                cors.add(route)
+        app.add_route(methods=ALL_METHODS, path="/", route=self.relay_handler)
+        # app.router.add_route(method, "/{path:.*}", self.request_dispatcher)
 
         return app
 
     @inject
     def run(
-        self,
-        port=Provide[BentoMLContainer.config.bento_server.port],
+        self, port=Provide[BentoMLContainer.config.bento_server.port],
     ):
         logger.info("Starting BentoML API proxy in development mode..")
         from aiohttp.web import run_app

@@ -16,7 +16,6 @@ class PrometheusClient:
         *,
         namespace: str = "",
         multiproc: bool = True,
-        multiproc_lock: Optional["Lock"] = None,
         multiproc_dir: Optional[str] = None,
     ):
         """
@@ -33,20 +32,22 @@ class PrometheusClient:
 
         if multiproc:
             assert multiproc_dir is not None, "multiproc_dir must be provided"
-            if multiproc_lock is not None:
-                multiproc_lock.acquire()
-            try:
-                logger.debug("Setting up prometheus_multiproc_dir: %s", multiproc_dir)
-                # Wipe prometheus metrics directory between runs
-                # https://github.com/prometheus/client_python#multiprocess-mode-gunicorn
-                # Ignore errors so it does not fail when directory does not exist
-                shutil.rmtree(multiproc_dir, ignore_errors=True)
-                os.makedirs(multiproc_dir, exist_ok=True)
+            os.environ["prometheus_multiproc_dir"] = multiproc_dir
 
-                os.environ["prometheus_multiproc_dir"] = multiproc_dir
-            finally:
-                if multiproc_lock is not None:
-                    multiproc_lock.release()
+    @classmethod
+    def clean_multiproc_dir(cls, multiproc_dir: Optional[str]):
+        assert multiproc_dir is not None, "multiproc_dir must be provided"
+        logger.debug("Setting up prometheus_multiproc_dir: %s", multiproc_dir)
+        # Wipe prometheus metrics directory between runs
+        # https://github.com/prometheus/client_python#multiprocess-mode-gunicorn
+        # Ignore errors so it does not fail when directory does not exist
+        shutil.rmtree(multiproc_dir, ignore_errors=True)
+        os.makedirs(multiproc_dir, exist_ok=True)
+
+    @classmethod
+    def mark_process_dead(cls, pid: int):
+        # TODO(jiang)
+        pass
 
     @property
     def registry(self):

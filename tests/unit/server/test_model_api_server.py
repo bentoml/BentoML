@@ -43,7 +43,10 @@ def test_api_function_route(bento_bundle_path, img_file):
     docs = json.loads(response.data.decode())
     assert f"/{CUSTOM_ROUTE}" in docs["paths"]
 
-    response = test_client.post(f"/{CUSTOM_ROUTE}", data='{"a": 1}',)
+    response = test_client.post(
+        f"/{CUSTOM_ROUTE}",
+        data='{"a": 1}',
+    )
     assert 200 == response.status_code
     assert '{"a": 1}' == response.data.decode()
 

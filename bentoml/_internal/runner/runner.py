@@ -102,10 +102,10 @@ class _BaseRunner(_RunnerImplMixin, abc.ABC):
 
     @abc.abstractproperty
     def gpu_device_mapping(self) -> Union[None, Sequence[str], Dict[str, float]]:
-        '''
+        """
         ["1", "2"]
         {"1": 0.1, "2": 0.1}
-        '''
+        """
         ...
 
     @abc.abstractmethod

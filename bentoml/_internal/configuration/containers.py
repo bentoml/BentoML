@@ -1,17 +1,19 @@
 import logging
 import multiprocessing
 import os
-from typing import Dict, Optional as OptionalType, TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Dict
+from typing import Optional as OptionalType
+from typing import cast
 
+import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
-import yaml
 
 from bentoml.exceptions import BentoMLConfigException
 
-from . import expand_env_var
 from ..utils import get_free_port
+from . import expand_env_var
 
 if TYPE_CHECKING:
     from ..server.marshal.marshal import MarshalApp

@@ -225,5 +225,12 @@ class Service:
         from bentoml._internal.bento.build import build_bento
 
         build_bento(
-            self, models, version, description, include, exclude, env, labels,
+            self,
+            models,
+            version,
+            description,
+            include,
+            exclude,
+            env,
+            labels,
         )

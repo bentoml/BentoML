@@ -21,7 +21,9 @@ if TYPE_CHECKING:
 class RunnerApp(BaseApp):
     @inject
     def __init__(
-        self, runner: "Runner", tracer=Provide[BentoMLContainer.tracer],
+        self,
+        runner: "Runner",
+        tracer=Provide[BentoMLContainer.tracer],
     ):
         self.runner = runner
         self.tracer = tracer

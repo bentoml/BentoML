@@ -1,21 +1,21 @@
 import os
-import pathlib
 import typing as t
 from importlib import import_module
+from pathlib import Path
 
-from ._internal.models import JSON_EXT, SAVE_NAMESPACE
 from ._internal.models import store as _stores
-from ._internal.service import Runner
-from ._internal.types import PathType
-from .exceptions import BentoMLException, MissingDependencyException, NotFound
+from ._internal.service.runner import Runner
+from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from transformers import (
+    from transformers import (  # noqa
+        AutoConfig,
         AutoModel,
         AutoTokenizer,
         FlaxAutoModel,
         FlaxPreTrainedModel,
+        PretrainedConfig,
         PreTrainedModel,
         PreTrainedTokenizer,
         PreTrainedTokenizerFast,
@@ -24,7 +24,21 @@ if t.TYPE_CHECKING:  # pragma: no cover
     )
     from transformers.models.auto.auto_factory import _BaseAutoModelClass  # noqa
 try:
+    import jax.numpy as jnp
     import transformers
+    from transformers import AutoConfig, PretrainedConfig
+    from transformers.file_utils import (
+        CONFIG_NAME,
+        FLAX_WEIGHTS_NAME,
+        TF2_WEIGHTS_NAME,
+        TF_WEIGHTS_NAME,
+        WEIGHTS_NAME,
+        cached_path,
+        hf_bucket_url,
+        is_offline_mode,
+        is_remote_url,
+    )
+    from transformers.models.auto.modeling_auto import MODEL_FOR_PRETRAINING_MAPPING
 except ImportError:
     raise MissingDependencyException(
         """transformers is required in order to use module `bentoml.transformers`, install transformers with 
@@ -39,19 +53,15 @@ TransformersInput = t.TypeVar(
 )
 TransformersOutput = t.TypeVar(
     "TransformersOutput",
-    bound=t.Dict[
-        str,
-        t.Union["AutoTokenizer", "_BaseAutoModelClass"],
-    ],
+    bound=t.Tuple["AutoTokenizer", "_BaseAutoModelClass"],
 )
 
 _SAVE_CONFLICTS_ERR = """\
-Either `model_name` or combination of (`model`, `tokenizer`) args should only be used
-ONCE AT THE TIME. Currently both are in use, thus BentoML doesn't understand your intention.
+`tokenizer=None` if `model` is type `str`, currently got `tokenizer={tokenizer}`
 
 If you want to save the weight directly from
 `transformers` and save it to BentoML do:
-    `bentoml.transformers.save('bert_model', model_name='bert-uncased')`.
+    `bentoml.transformers.save('bert_model', model='bert-uncased')`.
 
 If you are training a model from scratch using transformers, to save into BentoML do:
     `bentoml.transformers.save('bert_model', model=my_bert_model, tokenizer=my_tokenizer)`
@@ -105,57 +115,22 @@ def _lm_head_module_name(framework: str, lm_head: str) -> str:
     )
 
 
-def _load_from_directory(
-    path: PathType, model_type: str, tokenizer_type: str
-) -> TransformersOutput:
-    transformers_model = getattr(
-        import_module("transformers"), model_type
-    ).from_pretrained(str(path))
-    tokenizer = getattr(import_module("transformers"), tokenizer_type).from_pretrained(
-        str(path)
-    )
-    return {"model": transformers_model, "tokenizer": tokenizer}
-
-
-def _load_from_string(model_name: str, lm_head: str) -> TransformersOutput:
-    try:
-        transformers_model = getattr(
-            import_module("transformers"), lm_head
-        ).from_pretrained(model_name)
-        tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
-        return {"model": transformers_model, "tokenizer": tokenizer}
-    except EnvironmentError:
-        raise NotFound(f"{model_name} is not provided by transformers")
-
-
-# model = bentoml.transformers.load("my_transformers_name", model_name="", framework='pt')
+# model = bentoml.transformers.load("my_transformers_name", framework='pt')
 def load(
     tag: str,
     *,
-    model_name: t.Union[PathType] = None,
     framework: t.Optional[str] = "pt",
     lm_head: t.Optional[str] = "causal",
 ) -> TransformersOutput:
     _check_flax_supported()
     model_info = _stores.get(tag)
-    name_or_path = str(model_name)
-    if os.path.isdir(name_or_path):
-        with open(os.path.join(name_or_path, "__model_class_type.txt"), "r") as f:
-            _model_type = f.read().strip()
-        with open(os.path.join(name_or_path, "__tokenizer_class_type.txt"), "r") as f:
-            _tokenizer_type = f.read().strip()
-        loaded_dict = _load_from_directory(name_or_path, _model_type, _tokenizer_type)
-    else:
-        _lm_head = _lm_head_module_name(framework, lm_head)
-        loaded_dict = _load_from_string(name_or_path, _lm_head)
-    return loaded_dict
+    _lm_head = _lm_head_module_name(framework, lm_head)
 
-
-def _save_model_type(path: PathType, model_type: str, tokenizer_type: str) -> None:
-    with open(os.path.join(path, "__model_class_type.txt"), "w") as f:
-        f.write(model_type)
-    with open(os.path.join(path, "__tokenizer_class_type.txt"), "w") as f:
-        f.write(tokenizer_type)
+    model = getattr(import_module("transformers"), _lm_head).from_pretrained(
+        model_info.path
+    )
+    tokenizer = transformers.AutoTokenizer.from_pretrained(model_info.path)
+    return model, tokenizer
 
 
 # my_model = transformers.AutoModel.from_pretrained("bert-uncased")
@@ -170,31 +145,37 @@ def _save_model_type(path: PathType, model_type: str, tokenizer_type: str) -> No
 
 
 def _infer_model_tokenizer_class(model_name: str) -> t.Dict[str, str]:
-    ...
+    # config = AutoConfig.from_pretrained(model_name)
+    # if type(config) in MODEL_FOR_PRETRAINING_MAPPING.values()
+    return {}
 
 
+# save logics
+#  when model is a type string -> download from huggingface hub to bentoml modelstore
+#  when model is a TransformersInput -> tokenizer should also be provided -> then just saved it directly to modelstore
 def save(
     name: str,
-    model_name: t.Optional[str],
-    model: t.Optional[TransformersInput] = None,
+    model: t.Union[str, TransformersInput],
     tokenizer: t.Optional[
         t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]
     ] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    *model_args,
+    **transformers_kwargs,
 ) -> str:
     _check_flax_supported()
     context = {"transformers": transformers.__version__}
-    if model_name:
-        assert not (model or tokenizer), _SAVE_CONFLICTS_ERR
-        options = _infer_model_tokenizer_class(model_name)
+
+    if isinstance(model, str):
+        assert not tokenizer, _SAVE_CONFLICTS_ERR
+        options = _infer_model_tokenizer_class(model)
     else:
-        assert (
-            model and tokenizer
-        ), f"`model` and `tokenizer` cannot be emptied if since `model_name={model_name}`"
+        assert tokenizer, f"`tokenizer` cannot be None or undefined."
         options = {
             "model": model.__class__.__name__,
             "tokenizer": tokenizer.__class__.__name__,
         }
+
     with _stores.register(
         name,
         module=__name__,
@@ -202,8 +183,100 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:
-        if model_name:
-            pass
+        if isinstance(model, str):
+            config = transformers_kwargs.pop("config", None)
+            cache_dir = transformers_kwargs.pop("cache_dir", ctx.path)
+            force_download = transformers_kwargs.pop("force_download", False)
+            resume_download = transformers_kwargs.pop("resume_download", True)
+            proxies = transformers_kwargs.pop("proxies", None)
+            local_files_only = transformers_kwargs.pop("local_files_only", False)
+            use_auth_token = transformers_kwargs.pop("use_auth_token", None)
+            revision = transformers_kwargs.pop("revision", None)
+            mirror = transformers_kwargs.pop("mirror", None)
+            # below are the fields that we aren't accepting for save
+            # from_tf = transformers_kwargs.pop("from_tf", False)
+            # state_dict = transformers_kwargs.pop("state_dict", None)
+            # output_loading_info = transformers_kwargs.pop("output_loading_info", False)
+
+            if is_offline_mode() and not local_files_only:
+                local_files_only = True
+            if not isinstance(config, PretrainedConfig):
+                config_path = config if config is not None else model
+                config = AutoConfig.from_pretrained(
+                    config_path,
+                    *model_args,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    resume_download=resume_download,
+                    proxies=proxies,
+                    local_files_only=local_files_only,
+                    use_auth_token=use_auth_token,
+                    revision=revision,
+                    **transformers_kwargs,
+                )
+
+            if os.path.isdir(model):
+                # if (
+                #     from_tf
+                #     and Path(
+                #         model, TF_WEIGHTS_NAME + ".index"
+                #     ).is_file()
+                # ):
+                #     # Load from a TF 1.0 checkpoint in priority if from_tf
+                #     archive_file = Path(
+                #         model, TF_WEIGHTS_NAME + ".index"
+                #     )
+                # elif (
+                #     from_tf
+                #     and Path(
+                #         model, TF2_WEIGHTS_NAME
+                #     ).is_file()
+                # ):
+                #     # Load from a TF 2.0 checkpoint in priority if from_tf
+                #     archive_file = Path(
+                #         model, TF2_WEIGHTS_NAME
+                #     )
+                if Path(model, WEIGHTS_NAME).is_file():
+                    # Load from a PyTorch checkpoint
+                    archive_file = Path(model, WEIGHTS_NAME)
+                elif Path(model, FLAX_WEIGHTS_NAME).is_file():
+                    # Load from a Flax checkpoint
+                    archive_file = Path(model, FLAX_WEIGHTS_NAME)
+                else:
+                    raise EnvironmentError(
+                        f"Error no file named {[WEIGHTS_NAME, FLAX_WEIGHTS_NAME]} found in directory {model}"
+                    )
+            elif Path(model).is_file() or is_remote_url(model):
+                archive_file = model
+            else:
+                archive_file = hf_bucket_url(
+                    model,
+                    filename=WEIGHTS_NAME,
+                    revision=revision,
+                    mirror=mirror,
+                )
+
+            try:
+                # Load from URL or cache if already cached
+                resolved_archive_file = cached_path(
+                    archive_file,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    proxies=proxies,
+                    resume_download=resume_download,
+                    local_files_only=local_files_only,
+                    use_auth_token=use_auth_token,
+                )
+                ctx.path = resolved_archive_file
+            except EnvironmentError:
+                msg = (
+                    f"Can't load weights for '{model}'. Make sure that:\n\n"
+                    f"- '{model}' is a correct model identifier listed on "
+                    f"'https://huggingface.co/models'\n\n - or '{model}' "
+                    "is the correct path to a directory containing a file named one "
+                    f"of {WEIGHTS_NAME}, {TF2_WEIGHTS_NAME}, {TF_WEIGHTS_NAME}.\n\n"
+                )
+                raise EnvironmentError(msg)
         else:
             model.save_pretrained(ctx.path)
             tokenizer.save_pretrained(ctx.path)
@@ -247,11 +320,9 @@ class _TransformersRunner(Runner):
             transformers.pipelines.check_task(tasks)
         except KeyError as e:
             raise BentoMLException(
-                f"{e}, givent tasks is not recognized by transformers."
+                f"{e}, given tasks is not recognized by transformers."
             )
         self._tasks = tasks
-
-        ...
 
     @property
     def num_concurrency(self):
@@ -263,7 +334,7 @@ class _TransformersRunner(Runner):
         return 1
 
     def _setup(self):
-        self
+        self._pipeline = transformers.pipeline(self._tasks)
 
     def _run_batch(self, input_data: "_T") -> "_T":
-        pass
+        return self._pipeline(input_data)

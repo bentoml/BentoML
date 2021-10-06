@@ -48,7 +48,7 @@ class NdarrayContainer(BatchContainer[np.ndarray, np.ndarray]):
         if all(i is None for i in self._indexes):
             return np.stack(self._datas)
         batches = tuple(
-            np.expand_dims(a, axis=self.options['batch_axis']) if i is None else a
+            np.expand_dims(a, axis=self.options["batch_axis"]) if i is None else a
             for a, i in zip(self._datas, self._indexes)
         )
         return np.concatenate(batches)
@@ -66,7 +66,7 @@ class NdarrayContainer(BatchContainer[np.ndarray, np.ndarray]):
 
 
 class NdarrayBox(BatchContainer[np.ndarray, np.ndarray]):
-    def __init__(self, raw, size, , **options):
+    def __init__(self, raw, size, **options):
         pass
 
     def unbox(self, indexes: Sequence[IndexType]) -> List[np.ndarray]:

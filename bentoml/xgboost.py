@@ -52,7 +52,6 @@ def _get_model_info(tag, booster_params: t.Dict[str, t.Any]):
             f"with {__name__}."
         )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{MODEL_EXT}")
-    booster_params = dict() if booster_params is None else booster_params
     for key, value in model_info.options.items():
         if key not in booster_params:
             booster_params[key] = value  # apply booster_params override
@@ -83,6 +82,7 @@ def load(
         booster = bentoml.xgboost.load(
             'my_model:20201012_DE43A2', booster_params=dict(gpu_id=0))
     """
+    booster_params = dict() if booster_params is None else booster_params
     _, model_file, booster_params = _get_model_info(tag, booster_params)
 
     return xgb.core.Booster(

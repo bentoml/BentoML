@@ -18,9 +18,7 @@ from typing import (
 from urllib.parse import uses_netloc, uses_params, uses_relative
 
 from ..types import PathType
-from .gcs import is_gcs_url
 from .lazy_loader import LazyLoader
-from .s3 import is_s3_url
 
 _T = TypeVar("_T")
 _V = TypeVar("_V")

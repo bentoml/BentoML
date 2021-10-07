@@ -5,24 +5,22 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import List, Optional
 
-from simple_di import Provide, inject
-
-from bentoml.exceptions import BentoMLException
-
-from ..configuration.containers import BentoMLContainer
 from ..types import BentoTag, PathType
 from ..utils import validate_or_create_dir
 
 logger = logging.getLogger(__name__)
 
-BENTO_STORE_PREFIX = "bentos"
 
+class BentoStore:
+    """A BentoStore manage bentos under the given base_dir.
 
-class LocalBentoStore:
-    @inject
-    def __init__(self, bentoml_home: PathType = Provide[BentoMLContainer.bentoml_home]):
-        self._BASE_DIR = os.path.join(bentoml_home, BENTO_STORE_PREFIX)
-        validate_or_create_dir(self._BASE_DIR)
+    Note that BentoStore is designed to rely on just the file system itself. It assumes
+    that no direct modification of files could be made for anything under the base_dir
+    """
+
+    def __init__(self, base_dir: PathType):
+        self._base_dir = base_dir
+        validate_or_create_dir(self._base_dir)
 
     def list_bento(self, name: Optional[str] = None) -> List[str]:
         pass
@@ -60,15 +58,12 @@ class LocalBentoStore:
                 shutil.rmtree(bento_path)
             else:
                 # Build is most likely successful, link latest bento path
-                latest_path = Path(self._BASE_DIR, bento_tag.name, "latest")
+                latest_path = Path(self._base_dir, bento_tag.name, "latest")
                 if latest_path.is_symlink():
                     latest_path.unlink()
                 latest_path.symlink_to(bento_path)
 
     def _create_bento_path(self, tag: BentoTag) -> "Path":
-        bento_path = Path(self._BASE_DIR, tag.name, tag.version)
+        bento_path = Path(self._base_dir, tag.name, tag.version)
         validate_or_create_dir(bento_path)
         return bento_path
-
-
-bento_store = LocalBentoStore()

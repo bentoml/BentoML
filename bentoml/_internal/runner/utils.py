@@ -94,16 +94,18 @@ def _query_cgroup_cpu_count() -> float:
 
 def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
     if gpus is None:
-        return None
+        return []
 
     if isinstance(gpus, str):
         if gpus == "all":
             # TODO: query physical gpu devices
-            return
+            return []
         else:
             # TODO: query physical gpu devices
-            return
+            return []
 
     if isinstance(gpus, int):
         # TODO: query physical gpu devices
-        return
+        return []
+
+    return []

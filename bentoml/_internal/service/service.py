@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+import sys
+import typing as t
 
 from bentoml._internal.io_descriptors import IODescriptor
 from bentoml._internal.utils.validation import check_is_dns1123_subdomain
@@ -9,19 +10,27 @@ from .inference_api import InferenceAPI
 
 
 class Service:
-    """
-    Default Service/Bento description goes here
+    """The service definition is the manifestation of the Service Oriented Architecture
+    and the core building block in BentoML where users define the service runtime
+    architecture and model serving logic.
+
+    A BentoML service is defined via instantiate this Service class. When creating a
+    Service instance, user must provide a Service name and list of runners that are
+    required by this Service. The instance can then be used to define InferenceAPIs via
+    the `api` decorator.
     """
 
-    _apis: Dict[str, InferenceAPI] = {}
-    _runners: Dict[str, Runner] = {}
+    _apis: t.Dict[str, InferenceAPI] = {}
+    _runners: t.Dict[str, Runner] = {}
 
     # Name of the service, it is a required parameter for __init__
     name: str
     # Version of the service, only applicable if the service was load from a bento
-    version: Optional[str] = None
+    version: t.Optional[str] = None
+    # Working dir of the service, set when the service was load from a bento
+    _working_dir: t.Optional[str] = None
 
-    def __init__(self, name: str, runners: Optional[List[Runner]] = None):
+    def __init__(self, name: str, runners: t.Optional[t.List[Runner]] = None):
         # Service name must be a valid dns1123 subdomain string
         check_is_dns1123_subdomain(name)
         self.name = name
@@ -29,15 +38,20 @@ class Service:
         if runners is not None:
             self._runners = {r.name: r for r in runners}
 
+    def __del__(self):
+        # working dir was added to sys.path in the .loader.import_service function
+        if self._working_dir:
+            sys.path.remove(self._working_dir)
+
     def api(
         self,
         input: IODescriptor,
         output: IODescriptor,
-        api_name: Optional[str] = None,
-        api_doc: Optional[str] = None,
-        route: Optional[str] = None,
+        api_name: t.Optional[str] = None,
+        api_doc: t.Optional[str] = None,
+        route: t.Optional[str] = None,
     ):
-        """Decorate a user defined function to make it an InferenceAPI of this service"""
+        """Decorator for adding InferenceAPI to this service"""
 
         def decorator(func):
             self._add_inference_api(func, input, output, api_name, api_doc, route)
@@ -49,9 +63,9 @@ class Service:
         func: callable,
         input: IODescriptor,
         output: IODescriptor,
-        api_name: Optional[str],
-        api_doc: Optional[str],
-        route: Optional[str],
+        api_name: t.Optional[str],
+        api_doc: t.Optional[str],
+        route: t.Optional[str],
     ):
         api = InferenceAPI(
             name=api_name,

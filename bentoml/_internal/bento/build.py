@@ -10,21 +10,24 @@ import re
 import shutil
 import stat
 import tarfile
+import typing as t
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import yaml
+from simple_di import Provide, inject
 
-from bentoml._internal.configuration import is_pip_installed_bentoml
-from bentoml._internal.models.store import modelstore
-from bentoml._internal.utils import generate_new_version_id
-from bentoml._internal.utils.tempdir import TempDirectory
 from bentoml.exceptions import BentoMLException, InvalidArgument
 
-from .store import bento_store
+from ..configuration import is_pip_installed_bentoml
+from ..configuration.containers import BentoMLContainer
+from ..utils import generate_new_version_id
+from ..utils.tempdir import TempDirectory
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bentoml._internal.service import Service
+
+    from ..bento.store import BentoStore
+    from ..models.store import ModelStore
 
 logger = logging.getLogger(__name__)
 
@@ -90,15 +93,18 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
             shutil.copytree(tempdir, target_path)
 
 
+@inject
 def build_bento(
-    svc: Service,
-    models: List[str],
-    version: Optional[str] = None,
-    description: Optional[str] = None,
-    include: Optional[List[str]] = None,
-    exclude: Optional[List[str]] = None,
-    env: Optional[Dict[str, Any]] = None,
-    labels: Optional[Dict[str, str]] = None,
+    svc: "Service",
+    models: t.List[str],
+    version: t.Optional[str] = None,
+    description: t.Optional[str] = None,
+    include: t.Optional[t.List[str]] = None,
+    exclude: t.Optional[t.List[str]] = None,
+    env: t.Optional[t.Dict[str, t.Any]] = None,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ):
     """
     Build a Bento for this Service. A Bento is a file archive containing all the
@@ -239,7 +245,7 @@ def build_bento(
         # `models/{model_name}/{model_version}` directory
         for model_tag in models:
             try:
-                model_info = modelstore.get_model(model_tag)
+                model_info = model_store.get(model_tag)
             except FileNotFoundError:
                 raise BentoMLException(
                     f"Model {model_tag} not found in local model store"

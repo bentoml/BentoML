@@ -1,8 +1,5 @@
 import inspect
 import logging
-import os
-import shutil
-import tarfile
 import typing as t
 from contextlib import contextmanager
 from datetime import datetime
@@ -18,7 +15,7 @@ from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration.containers import BentoMLContainer
 from ..types import PathType
 from ..utils import generate_new_version_id, validate_or_create_dir
-from . import MODEL_STORE_PREFIX, MODEL_YAML_NAMESPACE, YAML_EXT
+from . import MODEL_YAML_NAMESPACE, YAML_EXT
 
 logger = logging.getLogger(__name__)
 
@@ -131,36 +128,39 @@ def load_model_yaml(path: PathType) -> "ModelInfo":
     return ModelInfo(**info)
 
 
-class LocalModelStore:
+class ModelStore:
     @inject
-    def __init__(self, base_dir: PathType = Provide[BentoMLContainer.bentoml_home]):
-        self._BASE_DIR = Path(base_dir, MODEL_STORE_PREFIX)
-        validate_or_create_dir(self._BASE_DIR)
+    def __init__(
+        self,
+        base_dir: PathType = Provide[BentoMLContainer.default_model_store_base_dir],
+    ):
+        self._base_dir = Path(base_dir)
+        validate_or_create_dir(self._base_dir)
 
-    def list_model(self, tag: t.Optional[str] = None) -> t.List[str]:
+    def list(self, tag: t.Optional[str] = None) -> t.List[str]:
         """
         bentoml models list -> t.List[models name under BENTOML_HOME/models]
         bentoml models list my_nlp_models -> t.List[model_version]
         """
         if not tag:
-            path = self._BASE_DIR
+            path = self._base_dir
         elif ":" not in tag:
-            path = Path(self._BASE_DIR, tag)
+            path = Path(self._base_dir, tag)
         else:
             name, version = _process_model_tag(tag)
-            path = Path(self._BASE_DIR, name, version)
+            path = Path(self._base_dir, name, version)
             if version == "latest":
                 path = path.resolve()
         return [_f.name for _f in path.iterdir() if not _f.is_symlink()]
 
     def _create_path(self, tag: str):
         name, version = _process_model_tag(tag)
-        model_path = Path(self._BASE_DIR, name, version)
+        model_path = Path(self._base_dir, name, version)
         validate_or_create_dir(model_path)
         return model_path
 
     @contextmanager
-    def register_model(
+    def register(
         self,
         name: str,
         *,
@@ -197,7 +197,7 @@ class LocalModelStore:
             logger.warning(f"Failed to save {tag}, deleting {model_path}...")
             shutil.rmtree(model_path)
         finally:
-            latest_path = Path(self._BASE_DIR, name, "latest")
+            latest_path = Path(self._base_dir, name, "latest")
             dump_model_yaml(
                 model_yaml, ctx, framework_context=framework_context, module=module
             )
@@ -205,24 +205,24 @@ class LocalModelStore:
                 latest_path.unlink()
             latest_path.symlink_to(model_path)
 
-    def get_model(self, tag: str) -> "ModelInfo":
+    def get(self, tag: str) -> "ModelInfo":
         """
         bentoml.pytorch.get("my_nlp_model")
         """
         name, version = _process_model_tag(tag)
-        path = Path(self._BASE_DIR, name, version)
+        path = Path(self._base_dir, name, version)
         if not path.exists():
             raise FileNotFoundError(
-                f"Model '{tag}' is not found under BentoML modelstore {self._BASE_DIR}."
+                f"Model '{tag}' is not found under BentoML modelstore {self._base_dir}."
             )
         return load_model_yaml(path)
 
-    def delete_model(self, tag: str, skip_confirm: bool = False):
+    def delete(self, tag: str, skip_confirm: bool = False):
         """
         bentoml models delete
         """
         model_name, version = _process_model_tag(tag)
-        basepath = Path(self._BASE_DIR, model_name)
+        basepath = Path(self._base_dir, model_name)
         try:
             if ":" not in tag:
                 basepath.rmdir()
@@ -237,19 +237,19 @@ class LocalModelStore:
                 latest_path.unlink()
             latest_path.symlink_to(indexed[-1])
 
-    def push_model(self, tag: str):
+    def push(self, tag: str):
         ...
 
-    def pull_model(self, tag: str):
+    def pull(self, tag: str):
         ...
 
-    def export_model(self, tag: str, exported_path: PathType) -> None:
-        model_info = self.get_model(tag)
+    def export(self, tag: str, exported_path: PathType) -> None:
+        model_info = self.get(tag)
         fname = f"{model_info.name}_{model_info.version}{MODEL_TAR_EXTENSION}"
         with tarfile.open(os.path.join(exported_path, fname), mode="w:gz") as tfile:
             tfile.add(str(model_info.path), arcname="")
 
-    def import_model(self, path: PathType, override=False) -> str:
+    def import(self, path: PathType, override=False) -> str:
         _path_obj = Path(path)
         if _path_obj.suffix not in SUPPORTED_COMPRESSION_TYPE:
             raise BentoMLException(
@@ -262,7 +262,7 @@ class LocalModelStore:
                     f"{MODEL_YAML_NAMESPACE}{YAML_EXT}"
                 ) as model_yaml:
                     model_info = ModelInfo(**yaml.safe_load(model_yaml))
-                    target = Path(self._BASE_DIR, model_info.name, model_info.version)
+                    target = Path(self._base_dir, model_info.name, model_info.version)
                     validate_or_create_dir(target)
                     if not override and any(target.iterdir()):
                         raise FileExistsError
@@ -287,14 +287,3 @@ class LocalModelStore:
                 f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n\n"
                 f"If one wants to override, do\n\nbentoml.models.imports('{path}', override=True)"
             )
-
-
-# Global modelstore instance
-modelstore = LocalModelStore()
-
-ls = modelstore.list_model
-register = modelstore.register_model
-delete = modelstore.delete_model
-get = modelstore.get_model
-export = modelstore.export_model
-imports = modelstore.import_model

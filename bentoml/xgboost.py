@@ -2,9 +2,10 @@ import os
 import typing as t
 
 import numpy as np
+from simple_di import Provide, inject
 
+from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
-from ._internal.models import store as _stores
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -20,6 +21,8 @@ except ImportError:
 
 if t.TYPE_CHECKING:
     import pandas as pd
+
+    from ._internal.models.store import ModelStore
 
 # TODO: support xgb.DMatrix runner io container
 # from bentoml.runner import RunnerIOContainer, register_io_container
@@ -42,8 +45,10 @@ if t.TYPE_CHECKING:
 # register_io_container(DMatrixContainer)
 
 
-def _get_model_info(tag, booster_params: t.Dict[str, t.Any]):
-    model_info = _stores.get(tag)
+def _get_model_info(
+    tag: str, booster_params: t.Dict[str, t.Any], model_store: "ModelStore"
+):
+    model_info = model_store.get(tag)
     if model_info.module != __name__:
         raise BentoMLException(
             f"Model {tag} was saved with module {model_info.module}, failed loading "
@@ -61,9 +66,11 @@ def _get_model_info(tag, booster_params: t.Dict[str, t.Any]):
     return model_info, model_file, booster_params
 
 
+@inject
 def load(
     tag: str,
     booster_params: t.Dict[str, t.Union[str, int]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "xgb.core.Booster":
     """
     Load a model from BentoML local modelstore with given name.
@@ -82,7 +89,7 @@ def load(
         booster = bentoml.xgboost.load(
             'my_model:20201012_DE43A2', booster_params=dict(gpu_id=0))
     """
-    _, model_file, booster_params = _get_model_info(tag, booster_params)
+    _, model_file, booster_params = _get_model_info(tag, booster_params, model_store)
 
     return xgb.core.Booster(
         params=booster_params,
@@ -90,12 +97,14 @@ def load(
     )
 
 
+@inject
 def save(
     name: str,
     model: "xgb.core.Booster",
     *,
     booster_params: t.Dict[str, t.Union[str, int]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     """
     Save a model instance to BentoML modelstore.
@@ -135,7 +144,7 @@ def save(
         bst = bentoml.xgboost.load(tag)
     """
     context = {"xgboost": xgb.__version__}
-    with _stores.register(
+    with model_store.register(
         name,
         module=__name__,
         options=booster_params,
@@ -147,6 +156,7 @@ def save(
 
 
 class _XgBoostRunner(Runner):
+    @inject
     def __init__(
         self,
         tag: str,
@@ -154,9 +164,12 @@ class _XgBoostRunner(Runner):
         booster_params: t.Dict[str, t.Union[str, int]],
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
-        model_info, model_file, booster_params = _get_model_info(tag, booster_params)
+        model_info, model_file, booster_params = _get_model_info(
+            tag, booster_params, model_store
+        )
 
         self._model_info = model_info
         self._model_file = model_file
@@ -197,7 +210,7 @@ class _XgBoostRunner(Runner):
             params=self._booster_params,
             model_file=self._model_file,
         )
-        self._predict_fn = self._model[self._predict_fn_name]
+        self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     def _run_batch(
         self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
@@ -208,6 +221,7 @@ class _XgBoostRunner(Runner):
         return np.asarray(res)
 
 
+@inject
 def load_runner(
     tag: str,
     predict_fn_name: str = "predict",
@@ -215,6 +229,7 @@ def load_runner(
     booster_params: t.Dict[str, t.Union[str, int]] = None,
     resource_quota: t.Dict[str, t.Any] = None,
     batch_options: t.Dict[str, t.Any] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _XgBoostRunner:
     """\
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -239,4 +254,5 @@ def load_runner(
         booster_params=booster_params,
         resource_quota=resource_quota,
         batch_options=batch_options,
+        model_store=model_store,
     )

@@ -19,6 +19,7 @@ if t.TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 SYSTEM_HOME = os.path.expanduser("~")
 
+
 SCHEMA = Schema(
     {
         "bento_server": {
@@ -160,6 +161,37 @@ class BentoMLContainerClass:
 
     config = providers.Configuration()
 
+    bentoml_home = providers.Static(
+        expand_env_var(
+            os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml"))
+        )
+    )
+
+    default_bento_store_base_dir: Provider[str] = providers.Factory(
+        os.path.join,
+        bentoml_home,
+        "bentos",
+    )
+    default_model_store_base_dir: Provider[str] = providers.Factory(
+        os.path.join,
+        bentoml_home,
+        "models",
+    )
+
+    @providers.SingletonFactory
+    @staticmethod
+    def bento_store(base_dir=default_bento_store_base_dir):
+        from ..bento.store import BentoStore
+
+        return BentoStore(base_dir)
+
+    @providers.SingletonFactory
+    @staticmethod
+    def model_store(base_dir=default_model_store_base_dir):
+        from ..models.store import ModelStore
+
+        return ModelStore(base_dir)
+
     @providers.SingletonFactory
     @staticmethod
     def tracer(
@@ -211,12 +243,6 @@ class BentoMLContainerClass:
     api_server_workers = providers.Factory(
         lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
         config.bento_server.workers,
-    )
-
-    bentoml_home = providers.Factory(
-        lambda: expand_env_var(
-            os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml"))
-        )
     )
 
     deployment_type: Provider[str] = providers.Static("local")

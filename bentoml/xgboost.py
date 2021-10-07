@@ -5,11 +5,8 @@ import numpy as np
 
 from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
 from ._internal.models import store as _stores
-from ._internal.service.runner import Runner
+from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
-
-# from bentoml.runner import RunnerIOContainer, register_io_container
-
 
 try:
     import xgboost as xgb
@@ -24,8 +21,9 @@ except ImportError:
 if t.TYPE_CHECKING:
     import pandas as pd
 
-
-# class DMatrixContainer(RunnerIOContainer):
+# TODO: support xgb.DMatrix runner io container
+# from bentoml.runner import RunnerIOContainer, register_io_container
+# class DMatrixContainer(RunnerIOConatainer):
 #     batch_type = xgb.DMatrix
 #     item_type = xgb.DMatrix
 #
@@ -147,40 +145,6 @@ def save(
         return ctx.tag
 
 
-def load_runner(
-    tag: str,
-    predict_fn_name: str = "predict",
-    *,
-    booster_params: t.Dict[str, t.Union[str, int]] = None,
-    resource_quota: t.Dict[str, t.Any] = None,
-    batch_options: t.Dict[str, t.Any] = None,
-) -> "_XgBoostRunner":
-    """\
-    Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
-    wrap around a XgBoost booster model, which optimize it for the BentoML runtime.
-
-    Returns:
-        Runner instances for the target `bentoml.xgboost` model
-
-    Examples::
-        import xgboost as xgb
-        import bentoml.xgboost
-        import pandas as pd
-
-        input_data = pd.from_csv("/path/to/csv")
-        runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
-        runner.run(xgb.DMatrix(input_data))
-    """
-    return _XgBoostRunner(
-        tag=tag,
-        predict_fn_name=predict_fn_name,
-        booster_params=booster_params,
-        resource_quota=resource_quota,
-        batch_options=batch_options,
-    )
-
-
 class _XgBoostRunner(Runner):
     def __init__(
         self,
@@ -218,8 +182,8 @@ class _XgBoostRunner(Runner):
         if self.resource_quota.on_gpu:
             booster_params["predictor"] = "gpu_predictor"
             booster_params["tree_method"] = "gpu_hist"
-            # TODO: bentoml.get_gpu_device()
-            # booster_params['gpu_id'] = bentoml.get_gpu_device()
+            # Use the first device reported by CUDA runtime
+            booster_params["gpu_id"] = 0
             booster_params["nthread"] = 1
         else:
             booster_params["predictor"] = "cpu_predictor"
@@ -228,9 +192,6 @@ class _XgBoostRunner(Runner):
         return booster_params
 
     def _setup(self) -> None:
-        # self.resource_quota.gpus -> List[str]
-        gpu_device_id = self.resource_quota.gpus[self.replica_id]
-
         self._model = xgb.core.Booster(
             params=self._booster_params,
             model_file=self._model_file,
@@ -244,3 +205,37 @@ class _XgBoostRunner(Runner):
             input_data = xgb.DMatrix(input_data)
         res = self._predict_fn(input_data)
         return np.asarray(res)
+
+
+def load_runner(
+    tag: str,
+    predict_fn_name: str = "predict",
+    *,
+    booster_params: t.Dict[str, t.Union[str, int]] = None,
+    resource_quota: t.Dict[str, t.Any] = None,
+    batch_options: t.Dict[str, t.Any] = None,
+) -> _XgBoostRunner:
+    """\
+    Runner represents a unit of serving logic that can be scaled horizontally to
+    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
+    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
+
+    Returns:
+        Runner instances for the target `bentoml.xgboost` model
+
+    Examples::
+        import xgboost as xgb
+        import bentoml.xgboost
+        import pandas as pd
+
+        input_data = pd.from_csv("/path/to/csv")
+        runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
+        runner.run(xgb.DMatrix(input_data))
+    """
+    return _XgBoostRunner(
+        tag=tag,
+        predict_fn_name=predict_fn_name,
+        booster_params=booster_params,
+        resource_quota=resource_quota,
+        batch_options=batch_options,
+    )

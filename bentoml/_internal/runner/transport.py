@@ -56,7 +56,7 @@ class Container(Generic[SingleType, BatchType, PayloadType]):
         ...
 
 
-class NdarrayContainer(Container["np.ndarray", "np.ndarray", bytes]):
+class NdarrayContainer(Container[np.ndarray, np.ndarray, bytes]):
     def __init__(self, batch_axis=0):
         self.batch_axis = batch_axis
         self._datas = []

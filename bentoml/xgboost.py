@@ -13,7 +13,7 @@ try:
 except ImportError:
     raise MissingDependencyException(
         """xgboost is required in order to use module `bentoml.xgboost`, install
-        xgboost with `pip install xgboost`. For more information, refers to 
+        xgboost with `pip install xgboost`. For more information, refers to
         https://xgboost.readthedocs.io/en/latest/install.html
         """
     )
@@ -50,6 +50,7 @@ def _get_model_info(tag, booster_params: t.Dict[str, t.Any]):
             f"with {__name__}."
         )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{MODEL_EXT}")
+    booster_params = dict() if booster_params is None else booster_params
     for key, value in model_info.options.items():
         if key not in booster_params:
             booster_params[key] = value  # apply booster_params override

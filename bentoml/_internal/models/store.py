@@ -151,7 +151,7 @@ class LocalModelStore:
             path = Path(self._BASE_DIR, name, version)
             if version == "latest":
                 path = path.resolve()
-        return [_f.name for _f in path.iterdir()]
+        return [_f.name for _f in path.iterdir() if not _f.is_symlink()]
 
     def _create_path(self, tag: str):
         name, version = _process_model_tag(tag)

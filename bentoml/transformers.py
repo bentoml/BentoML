@@ -4,7 +4,7 @@ from importlib import import_module
 from pathlib import Path
 
 from ._internal.models import store as _stores
-from ._internal.service.runner import Runner
+from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
@@ -34,30 +34,23 @@ try:
         TF_WEIGHTS_NAME,
         WEIGHTS_NAME,
         cached_path,
+        filename_to_url,
+        get_from_cache,
         hf_bucket_url,
         is_offline_mode,
         is_remote_url,
     )
-    from transformers.models.auto.modeling_auto import MODEL_FOR_PRETRAINING_MAPPING
 except ImportError:
     raise MissingDependencyException(
         """transformers is required in order to use module `bentoml.transformers`, install transformers with 
         `pip install transformers`."""
     )
 
-_T = t.TypeVar("_T")
+_V = t.TypeVar("_V")
 
-ModelInputType = t.TypeVar(
-    "ModelInputType",
+ModelType = t.TypeVar(
+    "ModelType",
     bound=t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
-)
-TokenizerInputType = t.TypeVar(
-    "TokenizerInputType",
-    bound=t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"],
-)
-TransformersOutput = t.TypeVar(
-    "TransformersOutput",
-    bound=t.Tuple["AutoTokenizer", "_BaseAutoModelClass"],
 )
 
 
@@ -105,7 +98,7 @@ _AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
 }
 
 
-def _infer_autoclass(framework: str, lm_head: str) -> str:
+def _infer_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
     if (
         framework not in _AUTOMODEL_PREFIX_MAPPING
         and framework not in _FRAMEWORK_ALIASES
@@ -126,7 +119,7 @@ def _infer_autoclass(framework: str, lm_head: str) -> str:
     )
     class_inst = f"{_AUTOMODEL_PREFIX_MAPPING[framework_prefix]}{_AUTOMODEL_LM_HEAD_MAPPING[lm_head]}"
     try:
-        return getattr(importlib.import_module("transformers"), class_inst)
+        return getattr(import_module("transformers"), class_inst)
     except AttributeError as e:
         raise BentoMLException(
             f"{e}\n\nPlease refers to https://huggingface.co/transformers/model_doc/auto.html"
@@ -137,18 +130,16 @@ def _infer_autoclass(framework: str, lm_head: str) -> str:
 def load(
     tag: str,
     *,
-    framework: t.Optional[str] = "pt",
-    lm_head: t.Optional[str] = "causal",
-) -> TransformersOutput:
+    framework: str = "pt",
+    lm_head: str = "causal",
+) -> t.Tuple["AutoTokenizer", "_BaseAutoModelClass"]:
     _check_flax_supported()
     model_info = _stores.get(tag)
-    _lm_head = _infer_autoclass(framework, lm_head)
+    _autoclass = _infer_autoclass(framework, lm_head)
 
-    model = getattr(import_module("transformers"), _lm_head).from_pretrained(
-        model_info.path
-    )
+    model = _autoclass.from_pretrained(model_info.path)
     tokenizer = transformers.AutoTokenizer.from_pretrained(model_info.path)
-    return model, tokenizer
+    return (model, tokenizer)
 
 
 # my_model = transformers.AutoModel.from_pretrained("bert-uncased")
@@ -170,14 +161,15 @@ def _infer_model_tokenizer_class(model_name: str) -> t.Dict[str, str]:
 
 # save logics
 #  when model is a type string -> download from huggingface hub to bentoml modelstore
-#  when model is a ModelInputType -> tokenizer should also be provided -> then just saved it directly to modelstore
+#  when model is a ModelType -> tokenizer should also be provided -> then just saved it directly to modelstore
 # TODO: supports for serializing a pipeline
 def save(
     name: str,
-    model: t.Union[str, ModelInputType],
-    tokenizer: TokenizerInputType = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     *model_args,
+    model: t.Union[str, ModelType],
+    tokenizer: t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"] = None,
+    config: "PretrainedConfig" = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     **transformers_kwargs,
 ) -> str:
     _check_flax_supported()
@@ -187,7 +179,7 @@ def save(
         assert not tokenizer, _SAVE_CONFLICTS_ERR
         options = _infer_model_tokenizer_class(model)
     else:
-        assert tokenizer, f"`tokenizer` cannot be None or undefined."
+        assert tokenizer, "`tokenizer` cannot be None or undefined."
         options = {
             "model": model.__class__.__name__,
             "tokenizer": tokenizer.__class__.__name__,
@@ -201,36 +193,51 @@ def save(
         metadata=metadata,
     ) as ctx:
         if isinstance(model, str):
-            config = transformers_kwargs.pop("config", None)
-            cache_dir = transformers_kwargs.pop("cache_dir", ctx.path)
+            # assuming users will want model from modelhub
+            revision = transformers_kwargs.pop("revision", None)
+            mirror = transformers_kwargs.pop("mirror", None)
+
             force_download = transformers_kwargs.pop("force_download", False)
             resume_download = transformers_kwargs.pop("resume_download", True)
             proxies = transformers_kwargs.pop("proxies", None)
             local_files_only = transformers_kwargs.pop("local_files_only", False)
             use_auth_token = transformers_kwargs.pop("use_auth_token", None)
-            revision = transformers_kwargs.pop("revision", None)
-            mirror = transformers_kwargs.pop("mirror", None)
             # below are the fields that we aren't accepting for save
             # from_tf = transformers_kwargs.pop("from_tf", False)
             # state_dict = transformers_kwargs.pop("state_dict", None)
             # output_loading_info = transformers_kwargs.pop("output_loading_info", False)
 
-            if is_offline_mode() and not local_files_only:
-                local_files_only = True
-            if not isinstance(config, PretrainedConfig):
-                config_path = config if config is not None else model
-                config = AutoConfig.from_pretrained(
-                    config_path,
-                    *model_args,
-                    cache_dir=cache_dir,
-                    force_download=force_download,
-                    resume_download=resume_download,
-                    proxies=proxies,
-                    local_files_only=local_files_only,
-                    use_auth_token=use_auth_token,
-                    revision=revision,
-                    **transformers_kwargs,
-                )
+            config_file_url = hf_bucket_url(
+                model, filename=CONFIG_NAME, revision=revision, mirror=mirror
+            )
+            resolved_config_path = cached_path(
+                config_file_url,
+                cache_dir=ctx.path,
+                force_download=force_download,
+                proxies=proxies,
+                resume_download=resume_download,
+                local_files_only=local_files_only,
+                use_auth_token=use_auth_token,
+            )
+            url, _ = filename_to_url(resolved_config_path, cache_dir=ctx.path)
+            print(url)
+
+            # if is_offline_mode() and not local_files_only:
+            #     local_files_only = True
+            # if not isinstance(config, PretrainedConfig):
+            #     config_path = config if config is not None else model
+            #     config = AutoConfig.from_pretrained(
+            #         config_path,
+            #         *model_args,
+            #         cache_dir=ctx.path,
+            #         force_download=force_download,
+            #         resume_download=resume_download,
+            #         proxies=proxies,
+            #         local_files_only=local_files_only,
+            #         use_auth_token=use_auth_token,
+            #         revision=revision,
+            #         **transformers_kwargs,
+            #     )
 
             if os.path.isdir(model):
                 # if (
@@ -353,5 +360,5 @@ class _TransformersRunner(Runner):
     def _setup(self):
         self._pipeline = transformers.pipeline(self._tasks)
 
-    def _run_batch(self, input_data: "_T") -> "_T":
+    def _run_batch(self, input_data: _V) -> _V:
         return self._pipeline(input_data)

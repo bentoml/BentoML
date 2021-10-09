@@ -79,6 +79,8 @@ def load(
             Tag of a saved model in BentoML local modelstore.
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Params for xgb.core.Booster initialization
+        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
 
     Returns:
         an instance of `xgboost.core.Booster` from BentoML modelstore.
@@ -118,6 +120,8 @@ def save(
             Params for booster initialization
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
+        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
 
     Returns:
         tag (`str` with a format `name:version`) where `name` is the defined name user

@@ -1,5 +1,10 @@
 import inspect
+import itertools
 import logging
+import operator
+import os
+import shutil
+import tarfile
 import typing as t
 from contextlib import contextmanager
 from datetime import datetime
@@ -144,6 +149,17 @@ class ModelStore:
         """
         if not tag:
             path = self._base_dir
+            return sorted(
+                list(
+                    itertools.chain.from_iterable(
+                        [
+                            [f"{_d.name}:{ver}" for ver in self.list(_d.name)]
+                            for _d in path.iterdir()
+                        ]
+                    )
+                ),
+                key=operator.itemgetter(0),
+            )
         elif ":" not in tag:
             path = Path(self._base_dir, tag)
         else:
@@ -246,10 +262,15 @@ class ModelStore:
     def export(self, tag: str, exported_path: PathType) -> None:
         model_info = self.get(tag)
         fname = f"{model_info.name}_{model_info.version}{MODEL_TAR_EXTENSION}"
+        exported_path = (
+            os.path.expandvars(exported_path)
+            if "$" in str(exported_path)
+            else exported_path
+        )
         with tarfile.open(os.path.join(exported_path, fname), mode="w:gz") as tfile:
-            tfile.add(str(model_info.path), arcname="")
+            tfile.add(model_info.path, arcname="")
 
-    def import(self, path: PathType, override=False) -> str:
+    def imports(self, path: PathType, override=False) -> str:
         _path_obj = Path(path)
         if _path_obj.suffix not in SUPPORTED_COMPRESSION_TYPE:
             raise BentoMLException(
@@ -270,7 +291,7 @@ class ModelStore:
             return str(target)
         except FileExistsError:
             tag = f"{model_info.name}:{model_info.version}"
-            model_info = self.get_model(tag)
+            model_info = self.get(tag)
             _LOAD_INST = """\
             import {module}
             model = {module}.load("{name}", **kwargs)

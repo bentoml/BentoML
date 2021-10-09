@@ -5,9 +5,9 @@ from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
 
-SingleType = TypeVar('SingleType')
-BatchType = TypeVar('BatchType')
-PayloadType = TypeVar('PayloadType')
+SingleType = TypeVar("SingleType")
+BatchType = TypeVar("BatchType")
+PayloadType = TypeVar("PayloadType")
 
 IndexType = Union[None, int]
 
@@ -32,7 +32,8 @@ class Container(Generic[SingleType, BatchType, PayloadType]):
     @overload
     @abc.abstractmethod
     def iter(
-        self, indexes: Sequence[IndexType],
+        self,
+        indexes: Sequence[IndexType],
     ) -> Iterator[Union[SingleType, BatchType]]:
         ...
 
@@ -55,7 +56,7 @@ class Container(Generic[SingleType, BatchType, PayloadType]):
         ...
 
 
-class NdarrayContainer(Container["np.ndarray", "np.ndarray", bytes]):
+class NdarrayContainer(Container[np.ndarray, np.ndarray, bytes]):
     def __init__(self, batch_axis=0):
         self.batch_axis = batch_axis
         self._datas = []

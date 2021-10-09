@@ -1,4 +1,3 @@
-MODEL_STORE_PREFIX = "models"
 EXPORTED_STORE_PREFIX = "exported"
 SAVE_NAMESPACE = "saved_model"
 MODEL_YAML_NAMESPACE = "model_details"

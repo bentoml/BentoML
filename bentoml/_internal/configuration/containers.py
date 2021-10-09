@@ -1,23 +1,24 @@
 import logging
 import multiprocessing
 import os
-from typing import Dict, Optional as OptionalType, TYPE_CHECKING, cast
+import typing as t
 
+import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
-import yaml
 
 from bentoml.exceptions import BentoMLConfigException
 
-from . import expand_env_var
 from ..utils import get_free_port
+from . import expand_env_var
 
-if TYPE_CHECKING:
-    from ..server.marshal.marshal import MarshalApp
+if t.TYPE_CHECKING:
+    from ..marshal.marshal import MarshalApp
 
 LOGGER = logging.getLogger(__name__)
 SYSTEM_HOME = os.path.expanduser("~")
+
 
 SCHEMA = Schema(
     {
@@ -84,7 +85,7 @@ SCHEMA = Schema(
 class BentoMLConfiguration:
     def __init__(
         self,
-        override_config_file: OptionalType[str] = None,
+        override_config_file: t.Optional[str] = None,
         validate_schema: bool = True,
     ):
         # Load default configuration
@@ -160,6 +161,37 @@ class BentoMLContainerClass:
 
     config = providers.Configuration()
 
+    bentoml_home = providers.Static(
+        expand_env_var(
+            os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml"))
+        )
+    )
+
+    default_bento_store_base_dir: Provider[str] = providers.Factory(
+        os.path.join,
+        bentoml_home,
+        "bentos",
+    )
+    default_model_store_base_dir: Provider[str] = providers.Factory(
+        os.path.join,
+        bentoml_home,
+        "models",
+    )
+
+    @providers.SingletonFactory
+    @staticmethod
+    def bento_store(base_dir=default_bento_store_base_dir):
+        from ..bento.store import BentoStore
+
+        return BentoStore(base_dir)
+
+    @providers.SingletonFactory
+    @staticmethod
+    def model_store(base_dir=default_model_store_base_dir):
+        from ..models.store import ModelStore
+
+        return ModelStore(base_dir)
+
     @providers.SingletonFactory
     @staticmethod
     def tracer(
@@ -195,7 +227,7 @@ class BentoMLContainerClass:
         allow_methods=config.bento_server.cors.access_control_allow_methods,
         allow_headers=config.bento_server.cors.access_control_allow_headers,
         max_age=config.bento_server.cors.access_control_max_age,
-    ) -> Dict:
+    ) -> t.Dict:
         kwargs = dict(
             allow_origins=allow_origins,
             allow_credentials=allow_credentials,
@@ -213,12 +245,6 @@ class BentoMLContainerClass:
         config.bento_server.workers,
     )
 
-    bentoml_home = providers.Factory(
-        lambda: expand_env_var(
-            os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml"))
-        )
-    )
-
     deployment_type: Provider[str] = providers.Static("local")
 
     service_host: Provider[str] = providers.Static("0.0.0.0")
@@ -230,14 +256,14 @@ class BentoMLContainerClass:
     @providers.Factory
     @staticmethod
     def model_server():
-        from ..server.gunicorn_model_server import GunicornModelServer
+        from ..server._gunicorn_model_server import GunicornModelServer
 
         return GunicornModelServer()
 
     @providers.Factory
     @staticmethod
     def proxy_server():
-        from ..server.gunicorn_marshal_server import GunicornMarshalServer
+        from ..server._gunicorn_marshal_server import GunicornMarshalServer
 
         return GunicornMarshalServer()
 
@@ -286,7 +312,7 @@ class BentoMLContainerClass:
         config.logging.file.directory,
     )
 
-    uds_mapping: Provider[Dict[str, str]] = providers.Static(dict())
+    uds_mapping: Provider[t.Dict[str, str]] = providers.Static(dict())
 
     plasma_db = providers.Static(None)
 

@@ -1,6 +1,6 @@
-from functools import lru_cache
 import logging
 import os
+from functools import lru_cache
 
 import yaml
 
@@ -100,9 +100,7 @@ def load_global_config():
 
 
 def save_global_config(config_file):
-    from bentoml._internal.configuration.containers import (
-        BentoMLContainer,
-    )
+    from bentoml._internal.configuration.containers import BentoMLContainer
 
     content = yaml.safe_dump(BentoMLContainer.config)
     config_file.write(content)

@@ -38,9 +38,10 @@ Here's an example file structure of a Bento
            - bentoml_model.yml
            - model.pkl
 
+
 An example `bento.yml` file in a Bento directory:
 
-    service: bento.py:svc
+    service: bento:svc
     name: FraudDetector
     version: 20210709_DE14C9
     bentoml_version: 1.1.0
@@ -77,6 +78,6 @@ Build docker image from a Bento directory:
     cd bento_path
     docker build -f ./env/docker/Dockerfile .
 """
-from .load import load_bento
+from .build import build_bento
 
-__all__ = ['load_bento']
+__all__ = ["build_bento"]

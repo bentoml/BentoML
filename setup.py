@@ -86,6 +86,7 @@ types_requires = [
     "types-chardet",
     "types-setuptools",
     "pyspark-stubs",
+    "types-filelock",
 ]
 
 dev_all = install_requires + dev_requires + docs_requires + types_requires

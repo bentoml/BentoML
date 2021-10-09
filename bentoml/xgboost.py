@@ -9,6 +9,12 @@ from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    import pandas as pd
+
+    from ._internal.models.store import ModelStore
+
 try:
     import xgboost as xgb
 except ImportError:
@@ -18,11 +24,6 @@ except ImportError:
         https://xgboost.readthedocs.io/en/latest/install.html
         """
     )
-
-if t.TYPE_CHECKING:
-    import pandas as pd
-
-    from ._internal.models.store import ModelStore
 
 # TODO: support xgb.DMatrix runner io container
 # from bentoml.runner import RunnerIOContainer, register_io_container
@@ -89,7 +90,7 @@ def load(
         import bentoml.xgboost
         booster = bentoml.xgboost.load(
             'my_model:20201012_DE43A2', booster_params=dict(gpu_id=0))
-    """
+    """  # noqa
     booster_params = dict() if booster_params is None else booster_params
     _, model_file, booster_params = _get_model_info(tag, booster_params, model_store)
 
@@ -146,7 +147,7 @@ def save(
         # load the booster back:
         bst = bentoml.xgboost.load("my_xgboost_model:latest") # or
         bst = bentoml.xgboost.load(tag)
-    """
+    """  # noqa
     context = {"xgboost": xgb.__version__}
     with model_store.register(
         name,
@@ -209,14 +210,17 @@ class _XgBoostRunner(Runner):
 
         return booster_params
 
-    def _setup(self) -> None:
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    def _setup(
+        self,
+    ) -> None:
         self._model = xgb.core.Booster(
             params=self._booster_params,
             model_file=self._model_file,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    def _run_batch(
+    def _run_batch(  # pylint: disable=arguments-differ
         self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
     ) -> "np.ndarray":
         if not isinstance(input_data, xgb.DMatrix):
@@ -235,13 +239,30 @@ def load_runner(
     batch_options: t.Dict[str, t.Any] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _XgBoostRunner:
-    """\
+    """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
     wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
 
+    Args:
+        tag (`str`):
+            Model tag to retrieve model from modelstore
+        predict_fn_name (`str`, default to `predict`):
+            Options for inference functions. If you want to use `run`
+             or `run_batch` in a thread context then use `inplace_predict`.
+             Otherwise, `predict` are the de facto functions.
+        booster_params (`t.Dict[str, t.Union[str, int]]`, default to `None`):
+            Parameters for boosters. Refers to https://xgboost.readthedocs.io/en/latest/parameter.html
+             for more information
+        resource_quota (`t.Dict[str, t.Any]`, default to `None`):
+            Dictionary to configure resources allocation for runner.
+        batch_options (`t.Dict[str, t.Any]`, default to `None`):
+            Dictionary to configure batch options for runner in a service context.
+        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
+
     Returns:
-        Runner instances for the target `bentoml.xgboost` model
+        Runner instances for `bentoml.xgboost` model
 
     Examples::
         import xgboost as xgb
@@ -251,7 +272,7 @@ def load_runner(
         input_data = pd.from_csv("/path/to/csv")
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
-    """
+    """  # noqa
     return _XgBoostRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,

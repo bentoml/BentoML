@@ -190,7 +190,6 @@ class ModelStore:
         with bentoml.models.register(name, options, metadata, labels) as ctx:
             # ctx(model_path, version, metadata)
             model.save(ctx.model_path, metadata=ctx.metadata)
-            ctx.metadata["params_a"] = value_a
         """
         tag = _generate_model_tag(name)
         _, version = tag.split(":")
@@ -303,8 +302,8 @@ class ModelStore:
             raise FileExistsError(
                 f"Model `{tag}` have already been imported.\n"
                 f"Import the model directly with `load`:\n\n"
-                f"{inspect.cleandoc(_LOAD_INST.format(module=model_info.module, name=tag))}\n\n"
+                f"{inspect.cleandoc(_LOAD_INST.format(module=model_info.module, name=tag))}\n\n"  # noqa
                 f"Use runner directly with `load_runner`:\n\n"
-                f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n\n"
-                f"If one wants to override, do\n\nbentoml.models.imports('{path}', override=True)"
+                f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n\n"  # noqa
+                f"If one wants to override, do\n\nbentoml.models.imports('{path}', override=True)"  # noqa
             )

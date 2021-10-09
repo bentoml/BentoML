@@ -23,7 +23,6 @@ install_requires = [
     "cloudpickle",
     "starlette",
     "python-multipart",
-    "mypy",
     "rich",
     "pyyaml",
     "attrs>=20",

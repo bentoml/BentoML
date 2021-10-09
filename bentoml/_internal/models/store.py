@@ -182,9 +182,9 @@ class ModelStore:
         *,
         module: str = "",
         labels: t.List[str] = None,
-        options: t.Dict[str, t.Any] = None,
-        metadata: t.Dict[str, t.Any] = None,
-        framework_context: dict = None,
+        options: t.Optional[t.Dict[str, t.Any]] = None,
+        metadata: t.Optional[t.Dict[str, t.Any]] = None,
+        framework_context: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> "t.Iterator[StoreCtx]":
         """
         with bentoml.models.register(name, options, metadata, labels) as ctx:

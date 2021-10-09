@@ -13,19 +13,18 @@ from pathlib import Path
 import importlib_metadata
 import requests
 from filelock import FileLock
-from simple_di import Provide, inject
+from simple_di import Provide, WrappedCallable
+from simple_di import inject as _inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner import Runner
-from ._internal.types import PathType
 from .exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    import io
-
+    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
     from transformers import (  # noqa
         AutoConfig,
         AutoModel,
@@ -62,10 +61,12 @@ except ImportError:
     )
 
 _V = t.TypeVar("_V")
-
 _ModelType = t.TypeVar(
     "_ModelType",
     bound=t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
+)
+inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
+    _inject, squeeze_none=False
 )
 
 
@@ -171,7 +172,6 @@ def _load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
         )
 
 
-# model = bentoml.transformers.load("my_transformers_name", framework='pt')
 @inject
 def load(
     tag: str,
@@ -216,13 +216,13 @@ def load(
 def _download_from_hub(
     hf_url: str,
     output_dir: str,
-    force_download=False,
-    proxies=None,
-    etag_timeout=10,
-    resume_download=False,
+    force_download: bool = False,
+    proxies: t.Union[str, None] = None,
+    etag_timeout: int = 10,
+    resume_download: bool = False,
     user_agent: t.Union[t.Dict[str, str], str, None] = None,
     use_auth_token: t.Union[bool, str, None] = None,
-) -> PathType:
+) -> None:
     """
     Modification of https://github.com/huggingface/transformers/blob/master/src/transformers/file_utils.py
     """  # noqa
@@ -276,7 +276,7 @@ def _download_from_hub(
     fpath = Path(output_dir, fname)
     # From now on, etag is not None.
     if fpath.exists() and not force_download:
-        return fpath
+        return
 
     # Prevent parallel downloads of the same file with a lock.
     lock_path = fpath.with_suffix(".lock")
@@ -285,27 +285,32 @@ def _download_from_hub(
         # If the download just completed while the lock was activated.
         if os.path.exists(fpath) and not force_download:
             # Even if returning early like here, the lock will be released.
-            return fpath
+            return
+
+        _tmp_file_manager: t.Union[
+            t.Callable[[], "_GeneratorContextManager[t.BinaryIO]"],
+            t.Callable[[t.Any, t.Any], t.IO[str]],
+        ]
 
         if resume_download:
             incomplete_path = fpath.with_suffix(".incomplete")
 
             @contextmanager
-            def _resume_file_manager() -> "io.BufferedWriter":
+            def _resume_file_manager() -> t.Generator[t.BinaryIO, None, None]:
                 with open(incomplete_path, "ab") as f:
                     yield f
 
-            temp_file_manager = _resume_file_manager
+            _tmp_file_manager = _resume_file_manager
             if os.path.exists(incomplete_path):
                 resume_size = os.stat(incomplete_path).st_size
             else:
                 resume_size = 0
         else:
-            temp_file_manager = functools.partial(
+            _tmp_file_manager = functools.partial(
                 tempfile.NamedTemporaryFile, mode="wb", dir=output_dir, delete=False
             )
             resume_size = 0
-    with temp_file_manager() as temp_file:
+    with _tmp_file_manager() as temp_file:
         http_get(
             url_to_download,
             temp_file,
@@ -336,8 +341,8 @@ def _save(
     tokenizer: t.Union[None, "PreTrainedTokenizer", "PreTrainedTokenizerFast"],
     metadata: t.Optional[t.Dict[str, t.Any]],
     model_store: "ModelStore",
-    **transformers_options_kwargs,
-):
+    **transformers_options_kwargs: str,
+) -> str:
     _check_flax_supported()
     context = {"transformers": transformers.__version__}
 
@@ -365,8 +370,12 @@ def _save(
             mirror = transformers_options_kwargs.pop("mirror", None)
             proxies = transformers_options_kwargs.pop("proxies", None)
             use_auth_token = transformers_options_kwargs.pop("use_auth_token", None)
-            force_download = transformers_options_kwargs.pop("force_download", False)
-            resume_download = transformers_options_kwargs.pop("resume_download", True)
+            force_download = bool(
+                transformers_options_kwargs.pop("force_download", False)
+            )
+            resume_download = bool(
+                transformers_options_kwargs.pop("resume_download", True)
+            )
 
             # download config file
             config_file_url = hf_bucket_url(
@@ -374,7 +383,7 @@ def _save(
             )
             _download_from_hub(
                 config_file_url,
-                output_dir=ctx.path,
+                output_dir=str(ctx.path),
                 proxies=proxies,
                 use_auth_token=use_auth_token,
                 force_download=force_download,
@@ -405,7 +414,7 @@ def _save(
             )
             _download_from_hub(
                 weight_file_url,
-                output_dir=ctx.path,
+                output_dir=str(ctx.path),
                 proxies=proxies,
                 use_auth_token=use_auth_token,
                 force_download=force_download,
@@ -421,7 +430,7 @@ def _save(
             ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
         else:
             model.save_pretrained(ctx.path)
-            tokenizer.save_pretrained(ctx.path)
+            tokenizer.save_pretrained(ctx.path)  # type: ignore
         return ctx.tag
 
 
@@ -433,7 +442,7 @@ def save(
     tokenizer: t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"],
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    **transformers_options_kwargs,
+    **transformers_options_kwargs: str,
 ) -> str:
     """
     Save a model instance to BentoML modelstore.
@@ -496,7 +505,7 @@ def save(
 
         tag = bentoml.transformers.save("flax_gpt2", model=model, tokenizer=tokenizer)
     """  # noqa
-    if isinstance(model, str):
+    if isinstance(model, str) or not tokenizer:
         raise EnvironmentError(
             "If you want to import model directly from huggingface hub"
             " please use `import_from_huggingface_hub` instead. `save` should"
@@ -519,8 +528,8 @@ def import_from_huggingface_hub(
     save_namespace: t.Union[str, None] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    **transformers_options_kwargs,
-):
+    **transformers_options_kwargs: str,
+) -> str:
     """
     Import a model directly from hugging face hub
 
@@ -611,16 +620,16 @@ class _TransformersRunner(Runner):
         self._lm_head = lm_head
 
     @property
-    def num_concurrency(self):
+    def num_concurrency(self) -> int:
         return self.num_replica
 
     @property
-    def num_replica(self):
+    def num_replica(self) -> int:
         # TODO: supports multiple GPUS
         return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self):
+    def _setup(self) -> None:  # type: ignore
         try:
             _ = self._model_store.get(self.name)
             model, tokenizer = load(
@@ -635,7 +644,7 @@ class _TransformersRunner(Runner):
             self._tasks, model=model, tokenizer=tokenizer
         )
 
-    def _run_batch(self, input_data: _V) -> _V:
+    def _run_batch(self, input_data: _V) -> _V:  # type: ignore
         return self._pipeline(input_data)
 
 
@@ -645,8 +654,8 @@ def load_runner(
     tasks: str,
     framework: str = "pt",
     lm_head: str = "causal",
-    resource_quota: t.Dict[str, t.Any] = None,
-    batch_options: t.Dict[str, t.Any] = None,
+    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
+    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_TransformersRunner":
     """

@@ -174,7 +174,7 @@ class Runner(_BaseRunner, ABC):
     """
 
     @abstractmethod
-    def _run_batch(self, *args, **kwargs):
+    def _run_batch(self: "_BaseRunner", *args, **kwargs) -> t.Any:
         ...
 
 

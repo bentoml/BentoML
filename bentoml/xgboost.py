@@ -1,8 +1,10 @@
+import functools
 import os
 import typing as t
 
 import numpy as np
-from simple_di import Provide, inject
+from simple_di import Provide, WrappedCallable
+from simple_di import inject as _inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
@@ -13,7 +15,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
 
-    from ._internal.models.store import ModelStore
+    from ._internal.models.store import ModelInfo, ModelStore
 
 try:
     import xgboost as xgb
@@ -24,6 +26,10 @@ except ImportError:
         https://xgboost.readthedocs.io/en/latest/install.html
         """
     )
+
+inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
+    _inject, squeeze_none=False
+)
 
 # TODO: support xgb.DMatrix runner io container
 # from bentoml.runner import RunnerIOContainer, register_io_container
@@ -48,7 +54,7 @@ except ImportError:
 
 def _get_model_info(
     tag: str, booster_params: t.Dict[str, t.Any], model_store: "ModelStore"
-):
+) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
         raise BentoMLException(
@@ -69,7 +75,7 @@ def _get_model_info(
 @inject
 def load(
     tag: str,
-    booster_params: t.Dict[str, t.Union[str, int]] = None,
+    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "xgb.core.Booster":
     """
@@ -105,8 +111,8 @@ def save(
     name: str,
     model: "xgb.core.Booster",
     *,
-    booster_params: t.Dict[str, t.Union[str, int]] = None,
-    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
+    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     """
@@ -182,22 +188,24 @@ class _XgBoostRunner(Runner):
         self._booster_params = self._setup_booster_params(booster_params)
 
     @property
-    def required_models(self):
+    def required_models(self) -> t.List[str]:
         return [self._model_info.tag]
 
     @property
-    def num_concurrency_per_replica(self):
+    def num_concurrency_per_replica(self) -> int:
         if self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
 
     @property
-    def num_replica(self):
+    def num_replica(self) -> int:
         if self.resource_quota.on_gpu:
             return len(self.resource_quota.gpus)
         return 1
 
-    def _setup_booster_params(self, booster_params):
+    def _setup_booster_params(
+        self, booster_params: t.Dict[str, t.Any]
+    ) -> t.Dict[str, t.Any]:
         if self.resource_quota.on_gpu:
             booster_params["predictor"] = "gpu_predictor"
             booster_params["tree_method"] = "gpu_hist"
@@ -211,16 +219,14 @@ class _XgBoostRunner(Runner):
         return booster_params
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(
-        self,
-    ) -> None:
+    def _setup(self) -> None:  # type: ignore
         self._model = xgb.core.Booster(
             params=self._booster_params,
             model_file=self._model_file,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    def _run_batch(  # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore
         self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
     ) -> "np.ndarray":
         if not isinstance(input_data, xgb.DMatrix):
@@ -234,9 +240,9 @@ def load_runner(
     tag: str,
     predict_fn_name: str = "predict",
     *,
-    booster_params: t.Dict[str, t.Union[str, int]] = None,
-    resource_quota: t.Dict[str, t.Any] = None,
-    batch_options: t.Dict[str, t.Any] = None,
+    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
+    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
+    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _XgBoostRunner:
     """

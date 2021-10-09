@@ -31,6 +31,14 @@ bento_server:
     access_control_max_age: Null
     access_control_expose_headers: Null
 
+health:
+  port: 8081
+  workers: 1
+  timeout: 60
+  max_request_size: 20971520
+  logging:
+    level: INFO
+
 logging:
   level: INFO
   console:

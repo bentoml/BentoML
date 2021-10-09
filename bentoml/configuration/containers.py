@@ -69,6 +69,13 @@ SCHEMA = Schema(
                 "access_control_expose_headers": Or([str], str, None),
             },
         },
+        "health": {
+            "port": And(int, lambda port: port > 0),
+            "workers": Or(And(int, lambda workers: workers > 0), None),
+            "timeout": And(int, lambda timeout: timeout > 0),
+            "max_request_size": And(int, lambda size: size > 0),
+            "logging": {"level": str},
+        },
         "logging": {
             "level": And(
                 str,

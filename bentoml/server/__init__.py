@@ -53,6 +53,12 @@ def start_dev_server(
         )
     model_server_proc.start()
 
+    health_server_proc = multiprocessing.Process(
+        target=_start_dev_health,
+        daemon=True,
+    )
+    health_server_proc.start()
+
     try:
         _start_dev_proxy(
             port=port,
@@ -63,6 +69,7 @@ def start_dev_server(
         )
     finally:
         model_server_proc.terminate()
+        health_server_proc.terminate()
 
 
 def _start_dev_server(
@@ -76,6 +83,15 @@ def _start_dev_server(
     bento_service = load_from_dir(saved_bundle_path)
     api_server = BentoAPIServer(bento_service, enable_swagger=enable_swagger)
     api_server.start(port=api_server_port)
+
+
+def _start_dev_health():
+    logger.info("Starting BentoML Health server in development mode..")
+
+    from bentoml.health.health_server import BentoHealthServer
+
+    health_server = BentoHealthServer()
+    health_server.start()
 
 
 def _start_dev_proxy(
@@ -135,6 +151,16 @@ def start_prod_server(
     )
     model_server_job.start()
 
+    health_server_job = multiprocessing.Process(
+        target=_start_prod_health,
+        kwargs=dict(
+            timeout=timeout,
+            prometheus_lock=prometheus_lock,
+        ),
+        daemon=True,
+    )
+    health_server_job.start()
+
     try:
         _start_prod_proxy(
             saved_bundle_path=saved_bundle_path,
@@ -149,6 +175,7 @@ def start_prod_server(
         )
     finally:
         model_server_job.terminate()
+        health_server_job.terminate()
 
 
 def _start_prod_server(
@@ -171,6 +198,22 @@ def _start_prod_server(
         workers=workers,
         prometheus_lock=prometheus_lock,
         enable_swagger=enable_swagger,
+    )
+    gunicorn_app.run()
+
+
+def _start_prod_health(
+    timeout: int,
+    prometheus_lock: Optional[multiprocessing.Lock] = None,
+):
+
+    logger.info("Starting BentoML Health server in production mode..")
+
+    from bentoml.server.gunicorn_health import gunicorn_health_server
+
+    gunicorn_app = gunicorn_health_server()(
+        timeout=timeout,
+        prometheus_lock=prometheus_lock,
     )
     gunicorn_app.run()
 

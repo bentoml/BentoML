@@ -23,7 +23,6 @@ install_requires = [
     "cloudpickle",
     "starlette",
     "python-multipart",
-    "mypy",
     "rich",
     "pyyaml",
     "attrs>=20",
@@ -86,6 +85,7 @@ types_requires = [
     "types-chardet",
     "types-setuptools",
     "pyspark-stubs",
+    "types-filelock",
 ]
 
 dev_all = install_requires + dev_requires + docs_requires + types_requires

@@ -58,7 +58,6 @@ test_requires = [
 ]
 
 dev_requires = [
-    "boto3",
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
     "pylint>=2.5.2",

@@ -13,6 +13,6 @@ cd "$GIT_ROOT" || exit
 # On Linux we'd might install torch==1.5.0+cpu torchvision==0.6.0+cpu but this runs on Mac.
 pip install coremltools==4.0b2 numpy==1.19.5 torch==1.5.0 torchvision==0.6.0 -f https://download.pytorch.org/whl/torch_stable.html
 
-pytest "$GIT_ROOT"/tests/integration/frameworks/test_coreml_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_coreml_impl.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

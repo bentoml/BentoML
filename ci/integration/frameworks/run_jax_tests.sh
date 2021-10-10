@@ -13,6 +13,6 @@ cd "$GIT_ROOT" || exit
 # Install required packages for h2o model artifacts test
 pip install jax jaxlib flax trax
 
-pytest -s "$GIT_ROOT"/tests/integration/frameworks/test_jax_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest -s "$GIT_ROOT"/tests/integration/frameworks/test_jax_impl.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

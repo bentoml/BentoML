@@ -11,6 +11,6 @@ cd "$GIT_ROOT" || exit
 
 # Install PyTorch
 pip install sklearn pandas
-pytest "$GIT_ROOT"/tests/integration/frameworks/test_sklearn_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_sklearn_impl.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

@@ -12,6 +12,6 @@ cd "$GIT_ROOT" || exit
 # Install pycaret
 pip install numba==0.53.1 pycaret==2.3.3
 
-pytest "$GIT_ROOT"/tests/integration/frameworks/test_pycaret_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_pycaret_impl.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

@@ -12,6 +12,6 @@ cd "$GIT_ROOT" || exit
 # Install LightGBM, pandas
 pip install lightgbm pandas
 
-pytest "$GIT_ROOT"/tests/integration/frameworks/test_lightgbm_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_lightgbm_impl.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

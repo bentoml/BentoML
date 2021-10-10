@@ -427,7 +427,8 @@ def _save(
             ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
         else:
             model.save_pretrained(ctx.path)
-            tokenizer.save_pretrained(ctx.path)  # type: t.Union["PreTrain"]
+            # TODO(aarnphm): mypy recognize "PreTrainedTokenizer" as type Any
+            tokenizer.save_pretrained(ctx.path)  # type: ignore
         return ctx.tag
 
 

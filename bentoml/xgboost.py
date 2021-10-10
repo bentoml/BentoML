@@ -7,7 +7,7 @@ from simple_di import Provide, WrappedCallable
 from simple_di import inject as _inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -19,7 +19,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
 
 try:
     import xgboost as xgb
-except ImportError:
+except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """xgboost is required in order to use module `bentoml.xgboost`, install
         xgboost with `pip install xgboost`. For more information, refers to
@@ -33,7 +33,7 @@ inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
 
 # TODO: support xgb.DMatrix runner io container
 # from bentoml.runner import RunnerIOContainer, register_io_container
-# class DMatrixContainer(RunnerIOConatainer):
+# class DMatrixContainer(RunnerIOContainer):
 #     batch_type = xgb.DMatrix
 #     item_type = xgb.DMatrix
 #
@@ -57,19 +57,19 @@ def _get_model_info(
 ) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        raise BentoMLException(
+        raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with module {model_info.module}, failed loading "
             f"with {__name__}."
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{MODEL_EXT}")
-    booster_params = dict() if booster_params is None else booster_params
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.json")
+    _booster_params = dict() if not booster_params else booster_params
     for key, value in model_info.options.items():
-        if key not in booster_params:
-            booster_params[key] = value  # apply booster_params override
-    if "nthread" not in booster_params:
-        booster_params["nthread"] = -1  # apply default nthread parameter
+        if key not in _booster_params:
+            _booster_params[key] = value  # pragma: no cover
+    if "nthread" not in _booster_params:
+        _booster_params["nthread"] = -1  # apply default nthread parameter
 
-    return model_info, model_file, booster_params
+    return model_info, model_file, _booster_params
 
 
 @inject
@@ -97,12 +97,11 @@ def load(
         booster = bentoml.xgboost.load(
             'my_model:20201012_DE43A2', booster_params=dict(gpu_id=0))
     """  # noqa
-    booster_params = dict() if booster_params is None else booster_params
-    _, model_file, booster_params = _get_model_info(tag, booster_params, model_store)
+    _, _model_file, _booster_params = _get_model_info(tag, booster_params, model_store)
 
     return xgb.core.Booster(
-        params=booster_params,
-        model_file=model_file,
+        params=_booster_params,
+        model_file=_model_file,
     )
 
 
@@ -162,7 +161,7 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:
-        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{MODEL_EXT}"))
+        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}.json"))
         return ctx.tag
 
 

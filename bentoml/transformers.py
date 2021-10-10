@@ -612,7 +612,7 @@ class _TransformersRunner(Runner):
             transformers.pipelines.check_task(tasks)
         except KeyError as e:
             raise BentoMLException(
-                f"{e}, given tasks is not recognized by transformers."
+                f"{e}, as `{tasks}` is not recognized by transformers."
             )
         self._tasks = tasks
         self._model_store = model_store

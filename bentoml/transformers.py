@@ -52,8 +52,7 @@ try:
         http_get,
         http_user_agent,
     )
-
-except ImportError:
+except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         "transformers is required in order "
         "to use module `bentoml.transformers`,"
@@ -74,7 +73,7 @@ def _clean_name(name: str) -> str:
     return re.sub(r"\W|^(?=\d)-", "_", name)
 
 
-def _check_flax_supported() -> None:
+def _check_flax_supported() -> None:  # pragma: no cover
     _supported: bool = transformers.__version__.startswith("4")
     _flax_available = (
         importlib.util.find_spec("jax") is not None
@@ -179,9 +178,7 @@ def load(
     framework: str = "pt",
     lm_head: str = "causal",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Tuple[
-    "_BaseAutoModelClass", t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]
-]:
+) -> t.Tuple[_ModelType, t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -204,7 +201,7 @@ def load(
         import bentoml.transformers
         model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="flax", lm_head="masked")
     """  # noqa
-    _check_flax_supported()
+    _check_flax_supported()  # pragma: no cover
     model_info = model_store.get(tag)
     _autoclass = _load_autoclass(framework, lm_head)
 
@@ -343,7 +340,7 @@ def _save(
     model_store: "ModelStore",
     **transformers_options_kwargs: str,
 ) -> str:
-    _check_flax_supported()
+    _check_flax_supported()  # pragma: no cover
     context = {"transformers": transformers.__version__}
 
     if isinstance(model, str):
@@ -430,7 +427,7 @@ def _save(
             ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
         else:
             model.save_pretrained(ctx.path)
-            tokenizer.save_pretrained(ctx.path)  # type: ignore
+            tokenizer.save_pretrained(ctx.path)  # type: t.Union["PreTrain"]
         return ctx.tag
 
 

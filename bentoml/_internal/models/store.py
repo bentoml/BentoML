@@ -213,7 +213,7 @@ class ModelStore:
         )
         try:
             yield ctx
-        except Exception:  # noqa
+        except Exception:  # noqa # pylint: disable=broad-except
             # save has failed
             logger.warning(f"Failed to save {tag}, deleting {model_path}...")
             shutil.rmtree(model_path)

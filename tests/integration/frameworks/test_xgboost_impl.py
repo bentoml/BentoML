@@ -66,7 +66,9 @@ def wrong_module(modelstore: "ModelStore"):
         ),
     ],
 )
-def test_xgboost_save_load(booster_params, metadata, modelstore, cleanup):
+def test_xgboost_save_load(
+    booster_params, metadata, modelstore
+):  # noqa # pylint: disable
     model = xgboost_model()
     tag = bentoml.xgboost.save(
         TEST_MODEL_NAME,
@@ -77,7 +79,7 @@ def test_xgboost_save_load(booster_params, metadata, modelstore, cleanup):
     )
     assert modelstore.get(tag).metadata is not None
     assert_have_file_extension(
-        os.path.join(modelstore._base_dir, TEST_MODEL_NAME, "latest"), ".json"
+        os.path.join(modelstore._base_dir, TEST_MODEL_NAME, tag.split(":")[-1]), ".json"
     )
 
     xgb_loaded = bentoml.xgboost.load(

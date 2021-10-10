@@ -53,7 +53,9 @@ inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
 
 
 def _get_model_info(
-    tag: str, booster_params: t.Dict[str, t.Any], model_store: "ModelStore"
+    tag: str,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
+    model_store: "ModelStore",
 ) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
@@ -75,7 +77,7 @@ def _get_model_info(
 @inject
 def load(
     tag: str,
-    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "xgb.core.Booster":
     """

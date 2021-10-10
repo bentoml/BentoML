@@ -110,9 +110,6 @@ def test_transformers_save_load(modelstore, frameworks, tensors_type, kwargs):
     model, tokenizer = bentoml.transformers.load(
         tag, framework=frameworks, model_store=modelstore
     )
-    assert isinstance(
-        type(model), transformers.models.gpt2.modeling_gpt2.GPT2LMHeadModel
-    )
     assert (
         generate_from_text(model, tokenizer, test_sentence, return_tensors=tensors_type)
         == result

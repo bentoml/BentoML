@@ -95,8 +95,12 @@ def gunicorn_bento_server(
             else:
                 self.bind = bind
 
+            # 1. To share all model artifacts between Gunicorn workers,
+            #    we set 'preload_app' to True. False on default)
+            #    - Ref. : https://docs.gunicorn.org/en/stable/settings.html#preload-app
             self.options = {
                 "bind": self.bind,
+                "preload_app": True,
                 "timeout": timeout,  # TODO
                 "limit_request_line": max_request_size,
                 "loglevel": loglevel.upper(),

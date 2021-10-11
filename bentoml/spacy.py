@@ -1,5 +1,5 @@
-import logging
 import functools
+import logging
 import os
 import typing as t
 
@@ -31,6 +31,7 @@ inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
     _inject, squeeze_none=False
 )
 
+
 def _get_model_info(
     tag: str,
     model_store: "ModelStore",
@@ -44,6 +45,7 @@ def _get_model_info(
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.json")
     return model_info, model_file
 
+
 @inject
 def load(
     tag: str,
@@ -51,22 +53,23 @@ def load(
 ) -> "spacy.language.Language":
     """
     Load a model from BentoML local modelstore with given name.
-    
+
     Args:
         tag('str'):
             Tag of a saved model in BentoML local modelstore.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
-            
+
     Returns:
         an instance of `spacy.language.Language` from BentoML modelstore
-    
+
     Examples:
         import bentoml.spacy
         nlp = bentoml.spacy.load("my_spacy_model:latest")
-    """ # noqa
+    """  # noqa
     _, model_file = _get_model_info(tag, model_store)
     return spacy.load(model_file)
+
 
 @inject
 def save(
@@ -74,7 +77,7 @@ def save(
     model: "spacy.language.Language",
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     """
     Save a model instance to BentoML modelstore.
@@ -108,20 +111,18 @@ def save(
         # save the model instance
         tag = bentoml.spacy.save("my_spacy_model", nlp)
         # example tag: my_spacy_model:20211011_52A340
-        
+
         # load the pipeline back
         nlp = bentoml.spacy.load("my_spacy_model:latest") # or
         nlp = bentoml.spacy.load(tag)
-    """ # noqa
+    """  # noqa
     context = {"spacy": spacy.__version__}
     with model_store.register(
-        name,
-        module=__name__,
-        framework_context=context,
-        metadata=metadata
+        name, module=__name__, framework_context=context, metadata=metadata
     ) as ctx:
         model.to_disk(os.path.join(ctx.path, f"{SAVE_NAMESPACE}.json"))
         return ctx.tag
+
 
 # class SpacyModel(Model):
 #     """

@@ -47,7 +47,9 @@ class ResourceQuota:
 
     @property
     def on_gpu(self) -> bool:
-        return len(self.gpus) > 0
+        if self.gpus is not None:
+            return len(self.gpus) > 0
+        return False
 
 
 @attr.s
@@ -172,7 +174,7 @@ class Runner(_BaseRunner, ABC):
     """
 
     @abstractmethod
-    def _run_batch(self, *args, **kwargs):
+    def _run_batch(self: "_BaseRunner", *args, **kwargs) -> t.Any:
         ...
 
 

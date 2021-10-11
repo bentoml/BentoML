@@ -10,6 +10,6 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 pip install fastai
-pytest "$GIT_ROOT"/tests/integration/frameworks/test_fastai_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_fastai_impl.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

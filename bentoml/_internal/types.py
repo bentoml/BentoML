@@ -1,8 +1,9 @@
 import io
 import os
+import pathlib
+import typing as t
 import urllib
 from dataclasses import dataclass
-from typing import Any, BinaryIO, Dict, List, Optional, Union
 
 import attr
 
@@ -18,10 +19,10 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
-PathType = Union[str, os.PathLike]
+PathType = t.Union[str, os.PathLike, pathlib.Path]
 
-JSONSerializable = Union[
-    str, int, float, None, List["JSONSerializable"], Dict[str, "JSONSerializable"]
+JSONSerializable = t.Union[
+    str, int, float, None, t.List["JSONSerializable"], t.Dict[str, "JSONSerializable"]
 ]
 
 
@@ -69,11 +70,11 @@ class FileLike:
 
     """
 
-    bytes_: Optional[bytes] = None
-    uri: Optional[str] = None
-    name: Optional[str] = None
+    bytes_: t.Optional[bytes] = None
+    uri: t.Optional[str] = None
+    name: t.Optional[str] = None
 
-    _stream: Optional[BinaryIO] = None
+    _stream: t.Optional[t.BinaryIO] = None
 
     def __post_init__(self):
         if self.name is None:

@@ -1,6 +1,7 @@
-import os
+from pathlib import Path
 
 
-def assert_have_file_extension(dir: str, ext: str):
-    assert os.path.isdir(dir), f"{dir} is not a directory"
-    assert any(f.endswith(ext) for f in os.listdir(dir))
+def assert_have_file_extension(directory: str, ext: str):
+    _dir = Path(directory)
+    assert _dir.is_dir(), f"{directory} is not a directory"
+    assert any(f.suffix == ext for f in _dir.iterdir())

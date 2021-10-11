@@ -11,6 +11,6 @@ cd "$GIT_ROOT" || exit
 
 python -m pip install pip --upgrade
 python -m pip install tensorflow==2.2.0
-pytest -s "$GIT_ROOT"/tests/integration/frameworks/tensorflow/test_v2_model_artifact.py --cov=bentoml --cov-config=.coveragerc
+pytest -s "$GIT_ROOT"/tests/integration/frameworks/tensorflow/test_v2_impl.py --cov=bentoml --cov-config=.coveragerc
 
 test $error = 0 # Return non-zero if pytest failed

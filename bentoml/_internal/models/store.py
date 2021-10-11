@@ -1,5 +1,8 @@
+import functools
 import inspect
+import itertools
 import logging
+import operator
 import os
 import shutil
 import tarfile
@@ -10,7 +13,8 @@ from pathlib import Path
 
 import attr
 import yaml
-from simple_di import Provide, inject
+from simple_di import Provide, WrappedCallable
+from simple_di import inject as _inject
 
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -34,8 +38,12 @@ RESERVED_MODEL_FIELD = [
 SUPPORTED_COMPRESSION_TYPE = [".gz"]
 MODEL_TAR_EXTENSION = ".models.tar.gz"
 
+inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
+    _inject, squeeze_none=False
+)
 
-def validate_name(name: str):
+
+def validate_name(name: str) -> None:
     if not name.isidentifier():
         raise InvalidArgument(
             f"Invalid model name: '{name}'. A valid identifier "
@@ -44,13 +52,13 @@ def validate_name(name: str):
         )
 
 
-def _generate_model_tag(name: str):
+def _generate_model_tag(name: str) -> str:
     validate_name(name)
     version = generate_new_version_id()
     return f"{name}:{version}"
 
 
-def _process_model_tag(tag: str) -> (str, str):
+def _process_model_tag(tag: str) -> t.Tuple[str, str]:
     try:
         _name, _version = tag.split(":")
         validate_name(_name)
@@ -71,19 +79,19 @@ class StoreCtx(object):
         factory=list,
         type=t.List[str],
         kw_only=True,
-        converter=attr.converters.default_if_none(list()),
+        converter=attr.converters.default_if_none(list()),  # type: ignore
     )
     options = attr.ib(
         factory=dict,
         type=t.Dict[str, t.Any],
         kw_only=True,
-        converter=attr.converters.default_if_none(dict()),
+        converter=attr.converters.default_if_none(dict()),  # type: ignore
     )
     metadata = attr.ib(
         factory=dict,
         type=t.Dict[str, t.Any],
         kw_only=True,
-        converter=attr.converters.default_if_none(dict()),
+        converter=attr.converters.default_if_none(dict()),  # type: ignore
     )
 
 
@@ -92,7 +100,7 @@ class ModelInfo(StoreCtx):
     context = attr.ib(
         factory=dict,
         type=t.Dict[str, t.Any],
-        converter=attr.converters.default_if_none(dict()),
+        converter=attr.converters.default_if_none(dict()),  # type: ignore
     )
     module = attr.ib(type=str, kw_only=True)
     created_at = attr.ib(type=str, kw_only=True)
@@ -104,7 +112,7 @@ def dump_model_yaml(
     model_yaml: Path,
     ctx: "StoreCtx",
     *,
-    framework_context: dict = None,
+    framework_context: t.Optional[t.Dict[str, t.Any]] = None,
     module: str = __name__,
 ) -> None:
     info = ModelInfo(
@@ -137,7 +145,7 @@ class ModelStore:
         self,
         base_dir: PathType = Provide[BentoMLContainer.default_model_store_base_dir],
     ):
-        self._base_dir = base_dir
+        self._base_dir = Path(base_dir)
         validate_or_create_dir(self._base_dir)
 
     def list(self, tag: t.Optional[str] = None) -> t.List[str]:
@@ -147,6 +155,17 @@ class ModelStore:
         """
         if not tag:
             path = self._base_dir
+            return sorted(
+                list(
+                    itertools.chain.from_iterable(
+                        [
+                            [f"{_d.name}:{ver}" for ver in self.list(_d.name)]
+                            for _d in path.iterdir()
+                        ]
+                    )
+                ),
+                key=operator.itemgetter(0),
+            )
         elif ":" not in tag:
             path = Path(self._base_dir, tag)
         else:
@@ -154,9 +173,9 @@ class ModelStore:
             path = Path(self._base_dir, name, version)
             if version == "latest":
                 path = path.resolve()
-        return [_f.name for _f in path.iterdir()]
+        return [_f.name for _f in path.iterdir() if not _f.is_symlink()]
 
-    def _create_path(self, tag: str):
+    def _create_path(self, tag: str) -> Path:
         name, version = _process_model_tag(tag)
         model_path = Path(self._base_dir, name, version)
         validate_or_create_dir(model_path)
@@ -168,16 +187,15 @@ class ModelStore:
         name: str,
         *,
         module: str = "",
-        labels: t.List[str] = None,
-        options: t.Dict[str, t.Any] = None,
-        metadata: t.Dict[str, t.Any] = None,
-        framework_context: dict = None,
+        labels: t.Union[None, t.List[str]] = None,
+        options: t.Optional[t.Dict[str, t.Any]] = None,
+        metadata: t.Optional[t.Dict[str, t.Any]] = None,
+        framework_context: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> "t.Iterator[StoreCtx]":
         """
         with bentoml.models.register(name, options, metadata, labels) as ctx:
             # ctx(model_path, version, metadata)
             model.save(ctx.model_path, metadata=ctx.metadata)
-            ctx.metadata["params_a"] = value_a
         """
         tag = _generate_model_tag(name)
         _, version = tag.split(":")
@@ -195,7 +213,7 @@ class ModelStore:
         )
         try:
             yield ctx
-        except Exception:  # noqa
+        except Exception:  # noqa # pylint: disable=broad-except
             # save has failed
             logger.warning(f"Failed to save {tag}, deleting {model_path}...")
             shutil.rmtree(model_path)
@@ -220,7 +238,7 @@ class ModelStore:
             )
         return load_model_yaml(path)
 
-    def delete(self, tag: str, skip_confirm: bool = False):
+    def delete(self, tag: str, skip_confirm: bool = False) -> None:
         """
         bentoml models delete
         """
@@ -240,19 +258,29 @@ class ModelStore:
                 latest_path.unlink()
             latest_path.symlink_to(indexed[-1])
 
-    def push(self, tag: str):
+    def push(self, tag: str) -> None:
         ...
 
-    def pull(self, tag: str):
+    def pull(self, tag: str) -> None:
         ...
 
-    def export_model(self, tag: str, exported_path: PathType) -> None:
-        model_info = self.get_model(tag)
+    def export(self, tag: str, exported_path: PathType) -> None:
+        from timeit import default_timer
+
+        model_info = self.get(tag)
         fname = f"{model_info.name}_{model_info.version}{MODEL_TAR_EXTENSION}"
+        exported_path = (
+            os.path.expandvars(exported_path)
+            if "$" in str(exported_path)
+            else exported_path
+        )
+        _start = default_timer()
         with tarfile.open(os.path.join(exported_path, fname), mode="w:gz") as tfile:
-            tfile.add(str(model_info.path), arcname="")
+            tfile.add(model_info.path, arcname="")
+        logger.info(f"Elapsed time: {default_timer() - _start}")
+        logger.info(f"Exported model to {os.path.join(exported_path, fname)}")
 
-    def import_model(self, path: PathType, override=False) -> str:
+    def imports(self, path: PathType, override: bool = False) -> str:
         _path_obj = Path(path)
         if _path_obj.suffix not in SUPPORTED_COMPRESSION_TYPE:
             raise BentoMLException(
@@ -261,19 +289,19 @@ class ModelStore:
             )
         try:
             with tarfile.open(path, mode="r:gz") as tfile:
-                with tfile.extractfile(
-                    f"{MODEL_YAML_NAMESPACE}{YAML_EXT}"
-                ) as model_yaml:
-                    model_info = ModelInfo(**yaml.safe_load(model_yaml))
-                    target = Path(self._base_dir, model_info.name, model_info.version)
-                    validate_or_create_dir(target)
-                    if not override and any(target.iterdir()):
-                        raise FileExistsError
+                model_yaml = tfile.extractfile(f"{MODEL_YAML_NAMESPACE}{YAML_EXT}")
+                if not model_yaml:
+                    raise EnvironmentError("Given tarfile does not include model YAML.")
+                model_info = ModelInfo(**yaml.safe_load(model_yaml))
+                target = Path(self._base_dir, model_info.name, model_info.version)
+                validate_or_create_dir(target)
+                if not override and any(target.iterdir()):
+                    raise FileExistsError
                 tfile.extractall(path=str(target))
             return str(target)
         except FileExistsError:
             tag = f"{model_info.name}:{model_info.version}"
-            model_info = self.get_model(tag)
+            model_info = self.get(tag)
             _LOAD_INST = """\
             import {module}
             model = {module}.load("{name}", **kwargs)
@@ -285,8 +313,8 @@ class ModelStore:
             raise FileExistsError(
                 f"Model `{tag}` have already been imported.\n"
                 f"Import the model directly with `load`:\n\n"
-                f"{inspect.cleandoc(_LOAD_INST.format(module=model_info.module, name=tag))}\n\n"
+                f"{inspect.cleandoc(_LOAD_INST.format(module=model_info.module, name=tag))}\n\n"  # noqa
                 f"Use runner directly with `load_runner`:\n\n"
-                f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n\n"
-                f"If one wants to override, do\n\nbentoml.models.imports('{path}', override=True)"
+                f"{inspect.cleandoc(_LOAD_RUNNER_INST.format(module=model_info.module, name=tag))}\n\n"  # noqa
+                f"If one wants to override, do\n\nbentoml.models.imports('{path}', override=True)"  # noqa
             )

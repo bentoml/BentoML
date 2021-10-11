@@ -23,7 +23,6 @@ install_requires = [
     "cloudpickle",
     "starlette",
     "python-multipart",
-    "mypy",
     "rich",
     "pyyaml",
     "attrs>=20",
@@ -59,7 +58,6 @@ test_requires = [
 ]
 
 dev_requires = [
-    "boto3",
     "flake8>=3.8.2",
     "gitpython>=2.0.2",
     "pylint>=2.5.2",
@@ -86,6 +84,7 @@ types_requires = [
     "types-chardet",
     "types-setuptools",
     "pyspark-stubs",
+    "types-filelock",
 ]
 
 dev_all = install_requires + dev_requires + docs_requires + types_requires

@@ -2,15 +2,15 @@ import pandas as pd
 import pytorch_lightning as pl
 import torch
 
-from bentoml.pytorch import PyTorchLightningModel
+import bentoml.pytorch_lightning
 from tests._internal.helpers import assert_have_file_extension
 
 test_df = pd.DataFrame([[5, 4, 3, 2]])
 
 
-class FooModel(pl.LightningModule):
-    def forward(self, input):
-        return input.add(1)
+class AdditionModel(pl.LightningModule):
+    def forward(self, inputs):
+        return inputs.add(1)
 
 
 def predict_df(model: pl.LightningModule, df: pd.DataFrame):
@@ -18,13 +18,16 @@ def predict_df(model: pl.LightningModule, df: pd.DataFrame):
     return model(input_tensor).numpy().tolist()
 
 
-def test_pl_save_load(tmpdir):
-    model: pl.LightningModule = FooModel()
-    PyTorchLightningModel(model).save(tmpdir)
-    assert_have_file_extension(tmpdir, ".pt")
-
-    pl_loaded: pl.LightningModule = PyTorchLightningModel.load(tmpdir)
-
-    assert (
-        predict_df(model, test_df) == predict_df(pl_loaded, test_df) == [[6, 5, 4, 3]]
+def test_pl_save_load(modelstore):
+    model: "pl.LightningModule" = AdditionModel()
+    tag = bentoml.pytorch_lightning.save(
+        "pytorch_lightning_test", model, model_store=modelstore
     )
+    info = modelstore.get(tag)
+    assert_have_file_extension(info.path, ".pt")
+
+    pl_loaded: "pl.LightningModule" = bentoml.pytorch_lightning.load(
+        tag, model_store=modelstore
+    )
+
+    assert predict_df(pl_loaded, test_df) == [[6, 5, 4, 3]]

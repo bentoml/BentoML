@@ -1,5 +1,3 @@
-import os
-
 import pytest
 import requests
 from transformers import set_seed
@@ -10,9 +8,9 @@ import bentoml.transformers
 from bentoml.exceptions import BentoMLException
 from tests._internal.helpers import assert_have_file_extension
 
-REVISION_ID_INVALID = "aaaaaaa"
-
 set_seed(123)
+
+REVISION_ID_INVALID = "e10"
 
 model_name = "gpt2"
 test_sentence = {"text": "A Bento box is a "}
@@ -85,15 +83,16 @@ def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
         model_name, model_store=modelstore, **kwargs
     )
+    info = modelstore.get(tag)
     try:
         if kwargs["from_tf"]:
             assert_have_file_extension(
-                os.path.join(modelstore._base_dir, model_name, tag.split(":")[-1]),
+                info.path,
                 ".h5",
             )
     except KeyError:
         assert_have_file_extension(
-            os.path.join(modelstore._base_dir, model_name, tag.split(":")[-1]),
+            info.path,
             ".msgpack",
         )
 
@@ -113,3 +112,7 @@ def test_transformers_save_load(modelstore, frameworks, tensors_type, kwargs):
         generate_from_text(model, tokenizer, test_sentence, return_tensors=tensors_type)
         == result
     )
+
+
+def test_transformers_runner():
+    ...

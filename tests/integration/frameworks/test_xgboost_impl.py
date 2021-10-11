@@ -77,10 +77,9 @@ def test_xgboost_save_load(
         metadata=metadata,
         model_store=modelstore,
     )
-    assert modelstore.get(tag).metadata is not None
-    assert_have_file_extension(
-        os.path.join(modelstore._base_dir, TEST_MODEL_NAME, tag.split(":")[-1]), ".json"
-    )
+    info = modelstore.get(tag)
+    assert info.metadata is not None
+    assert_have_file_extension(info.path, ".json")
 
     xgb_loaded = bentoml.xgboost.load(
         tag, model_store=modelstore, booster_params=booster_params

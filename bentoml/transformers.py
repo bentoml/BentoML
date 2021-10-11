@@ -427,8 +427,10 @@ def _save(
             ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
         else:
             model.save_pretrained(ctx.path)
-            # TODO(aarnphm): mypy recognize "PreTrainedTokenizer" as type Any
-            tokenizer.save_pretrained(ctx.path)  # type: ignore
+            _tokenizer: t.Union[
+                "PreTrainedTokenizer", "PreTrainedTokenizerFast"
+            ] = tokenizer
+            _tokenizer.save_pretrained(ctx.path)
         return ctx.tag
 
 
@@ -630,8 +632,9 @@ class _TransformersRunner(Runner):
         # TODO: supports multiple GPUS
         return 1
 
+    # TODO: fix type annotation
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore
+    def _setup(self) -> None:  # type: ignore[override]
         try:
             _ = self._model_store.get(self.name)
             model, tokenizer = load(
@@ -646,7 +649,8 @@ class _TransformersRunner(Runner):
             self._tasks, model=model, tokenizer=tokenizer
         )
 
-    def _run_batch(self, input_data: _V) -> _V:  # type: ignore
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    def _run_batch(self, input_data: _V) -> _V:  # type: ignore[override]
         return self._pipeline(input_data)
 
 

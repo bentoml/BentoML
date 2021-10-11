@@ -220,15 +220,16 @@ class _XgBoostRunner(Runner):
         return booster_params
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self, **kwargs) -> None:  # type: ignore
+    def _setup(self) -> None:  # type: ignore
         self._model = xgb.core.Booster(
             params=self._booster_params,
             model_file=self._model_file,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(  # type: ignore
-        self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix], **kwargs
+        self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
     ) -> "np.ndarray":
         if not isinstance(input_data, xgb.DMatrix):
             input_data = xgb.DMatrix(input_data)

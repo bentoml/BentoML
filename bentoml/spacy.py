@@ -12,17 +12,18 @@ from ._internal.models import SAVE_NAMESPACE
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
-import bentoml._internal.constants as _const
-_exc = _const.IMPORT_ERROR_MSG.format(
-    fwr="spacy",
-    module=__name__,
-    inst="`pip install spacy`",
-)
-
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
-    import spacy
+    try:
+        import spacy
+    except ImportError:
+        raise MissingDependencyException(
+            """spacy is required in order to use module `bentoml.spacy`, install
+            spacy with `pip install spacy`. For more information, refer to
+            https://spacy.io/usage
+            """
+        )
 else:
-    spacy = LazyLoader("spacy", globals(), "spacy", exc_msg=_exc)
+    spacy = LazyLoader("spacy", globals(), "spacy")
 
 logger = logging.getLogger(__name__)
 

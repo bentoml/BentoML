@@ -1,9 +1,7 @@
 import functools
 import typing as t
-import zipfile
 from pathlib import Path
 
-import cloudpickle
 from simple_di import Provide, WrappedCallable
 from simple_di import inject as _inject
 
@@ -12,55 +10,52 @@ from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import MissingDependencyException
 
+_PL_IMPORT_ERROR = f"""\
+`pytorch_lightning` and `torch` is required in order to use module `{__name__}`\n
+Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
+Then run `pip install pytorch_lightning`
+"""
 _PT_EXTENSION = ".pt"
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
+    import pytorch_lightning as pl
     import torch
     import torch.nn as nn
 
     from ._internal.models.store import ModelStore
 
 try:
+    import pytorch_lightning as pl
     import torch
     import torch.nn as nn
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException(
-        "torch is required in order "
-        "to use module `bentoml.pytorch`. "
-        "Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly."
-    )
+    raise MissingDependencyException(_PL_IMPORT_ERROR)
 
 inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
     _inject, squeeze_none=False
 )
 
 
-@inject
+@_inject
 def load(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Union["torch.nn.Module", "torch.jit.ScriptModule"]:
+) -> "pl.LightningModule":
     model_info = model_store.get(tag)
     weight_file = Path(model_info.path, f"{SAVE_NAMESPACE}{_PT_EXTENSION}")
-    # TorchScript Models are saved as zip files
-    # This also includes pl.LightningModule
-    if zipfile.is_zipfile(str(weight_file)):
-        return torch.jit.load(str(weight_file))
-    else:
-        with weight_file.open("rb") as file:
-            return cloudpickle.load(file)
+    return torch.jit.load(str(weight_file))
 
 
 @inject
 def save(
     name: str,
-    model: t.Union["torch.nn.Module", "torch.jit.ScriptModule", "pl.LightningModule"],
+    model: "pl.LightningModule",
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ):
-    context = dict(torch=torch.__version__)
+    context = dict(torch=torch.__version__, pytorch_lightning=pl.__version__)
     with model_store.register(
         name,
         module=__name__,
@@ -69,14 +64,10 @@ def save(
         metadata=metadata,
     ) as ctx:
         weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{_PT_EXTENSION}")
-        if isinstance(model, torch.jit.ScriptModule):
-            torch.jit.save(model, str(weight_file))
-        else:
-            with weight_file.open("wb") as file:
-                cloudpickle.dump(model, file)
+        torch.jit.save(model.to_torchscript(), str(weight_file))
 
 
-class _PyTorchRunner(Runner):
+class _PyTorchLightningRunner(Runner):
     def __init__(
         self,
         tag: str,
@@ -85,7 +76,6 @@ class _PyTorchRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
-        ...
 
     @property
     def required_models(self) -> t.List[str]:
@@ -114,7 +104,7 @@ def load_runner(
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ):
-    return _PyTorchRunner(
+    return _PyTorchLightningRunner(
         tag=tag,
         resource_quota=resource_quota,
         batch_options=batch_options,

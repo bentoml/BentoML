@@ -618,6 +618,10 @@ class _TransformersRunner(Runner):
         self._lm_head = lm_head
 
     @property
+    def required_models(self) -> t.List[str]:
+        return [self._model_store.get(self.name).tag]
+
+    @property
     def num_concurrency(self) -> int:
         return self.num_replica
 

@@ -2,7 +2,6 @@ import os
 
 import pytest
 import requests
-import transformers.models.gpt2.modeling_gpt2
 from transformers import set_seed
 from transformers.file_utils import CONFIG_NAME, hf_bucket_url
 from transformers.testing_utils import DUMMY_UNKWOWN_IDENTIFIER as MODEL_ID

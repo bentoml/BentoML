@@ -227,6 +227,7 @@ class _XgBoostRunner(Runner):
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(  # type: ignore
         self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
     ) -> "np.ndarray":

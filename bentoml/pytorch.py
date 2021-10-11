@@ -1,140 +1,209 @@
-import os
+import functools
+import re
 import typing as t
 import zipfile
+from pathlib import Path
 
 import cloudpickle
+from simple_di import Provide, WrappedCallable
+from simple_di import inject as _inject
 
-import bentoml._internal.constants as _const
+from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
+from .exceptions import MissingDependencyException
 
-from ._internal.models.base import MODEL_NAMESPACE, PT_EXTENSION, Model
-from ._internal.types import GenericDictType, PathType
-from ._internal.utils import LazyLoader
-
-_torch_exc = _const.IMPORT_ERROR_MSG.format(
-    fwr="pytorch",
-    module=__name__,
-    inst="Refers to https://pytorch.org/get-started/locally/"
-    " to setup PyTorch correctly.",
-)
-
-_pl_exc = _const.IMPORT_ERROR_MSG.format(
-    fwr="pytorch_lightning",
-    module=__name__,
-    inst="Refers to https://pytorch.org/get-started/locally/"
-    " to setup PyTorch correctly. Then run `pip install pytorch_lightning`",
+_PT_EXTENSION = ".pt"
+_ModelType = t.TypeVar(
+    "_ModelType", bound=t.Union["torch.nn.Module", "torch.jit.ScriptModule"]
 )
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    import pytorch_lightning as pl
+    import numpy as np
+
+    from ._internal.models.store import ModelStore
+
+try:
     import torch
-    import torch.nn as nn
-else:
-    torch = LazyLoader("torch", globals(), "torch", exc_msg=_torch_exc)
-    nn = LazyLoader("nn", globals(), "torch.nn", exc_msg=_torch_exc)
-    pl = LazyLoader("pl", globals(), "pytorch_lightning", exc_msg=_pl_exc)
+    import torch.nn.parallel as parallel
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        "torch is required in order "
+        "to use module `bentoml.pytorch`. "
+        "Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly."
+    )
+
+infer_mode_compat = torch.__version__.startswith("1.9")
+
+inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
+    _inject, squeeze_none=False
+)
 
 
-class PyTorchModel(Model):
-    """
-    Model class for saving/loading :obj:`pytorch` models.
+def _is_gpu_enabled() -> bool:  # pragma: no cover
+    return torch.cuda.is_available()
 
-    Args:
-        model (`Union[torch.nn.Module, torch.jit.ScriptModule]`):
-            Accepts either `torch.nn.Module` or
-             `torch.jit.ScriptModule`.
-        metadata (`GenericDictType`,  `optional`, default to `None`):
-            Class metadata
 
-    Raises:
-        MissingDependencyException:
-            :obj:`torch` is required by PyTorchModel
-        InvalidArgument:
-            :obj:`model` is not an instance of :class:`torch.nn.Module`
+def _clean_name(name: str) -> str:  # pragma: no cover
+    return re.sub(r"\W|^(?=\d)-", "_", name)
 
-    Example usage under :code:`train.py`::
 
-        TODO:
-
-    One then can define :code:`bento.py`::
-
-        TODO:
-    """
-
-    def __init__(
-        self,
-        model: t.Union["torch.nn.Module", "torch.jit.ScriptModule"],
-        metadata: t.Optional[GenericDictType] = None,
-    ):
-        super(PyTorchModel, self).__init__(model, metadata=metadata)
-
-    @staticmethod
-    def __get_weight_fpath(path: PathType) -> PathType:
-        return os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}")
-
-    @classmethod
-    def load(
-        cls, path: PathType
-    ) -> t.Union["torch.nn.Module", "torch.jit.ScriptModule"]:
-        # TorchScript Models are saved as zip files
-        if zipfile.is_zipfile(cls.__get_weight_fpath(path)):
-            return torch.jit.load(cls.__get_weight_fpath(path))  # type: ignore
-        else:
-            return cloudpickle.load(  # type: ignore
-                open(cls.__get_weight_fpath(path), "rb")
+@inject
+def load(
+    tag: str,
+    device_id: t.Optional[str] = "cpu",
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> _ModelType:
+    model_info = model_store.get(tag)
+    weight_file = Path(model_info.path, f"{SAVE_NAMESPACE}{_PT_EXTENSION}")
+    # TorchScript Models are saved as zip files
+    if zipfile.is_zipfile(str(weight_file)):
+        _load: t.Callable[[str], _ModelType] = functools.partial(
+            torch.jit.load, map_location=device_id
+        )
+        return _load(str(weight_file))
+    else:
+        with weight_file.open("rb") as file:
+            _cload: t.Callable[[t.BinaryIO], _ModelType] = functools.partial(
+                cloudpickle.load
             )
-
-    def save(self, path: PathType) -> None:
-        # If model is a TorchScriptModule, we cannot apply standard pickling
-        if isinstance(self._model, torch.jit.ScriptModule):
-            torch.jit.save(self._model, self.__get_weight_fpath(path))
-            return
-
-        cloudpickle.dump(self._model, open(self.__get_weight_fpath(path), "wb"))
+            return _cload(file)
 
 
-class PyTorchLightningModel(Model):
-    """
-    Model class for saving/loading :obj:`pytorch_lightning` models.
+@inject
+def save(
+    name: str,
+    model: _ModelType,
+    *,
+    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> str:
+    context = dict(torch=torch.__version__)
+    with model_store.register(
+        name,
+        module=__name__,
+        options=None,
+        framework_context=context,
+        metadata=metadata,
+    ) as ctx:
+        weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{_PT_EXTENSION}")
+        if isinstance(model, torch.jit.ScriptModule):
+            torch.jit.save(model, str(weight_file))
+        else:
+            with weight_file.open("wb") as file:
+                cloudpickle.dump(model, file)
+        return ctx.tag
 
-    Args:
-        model (`pytorch_lightning.LightningModule`):
-            Accepts `pytorch_lightning.LightningModule`
-        metadata (`GenericDictType`,  `optional`, default to `None`):
-            Class metadata
 
-    Raises:
-        MissingDependencyException:
-            :obj:`torch` and :obj:`pytorch_lightning` is required
-             by PyTorchLightningModel
-        InvalidArgument:
-            :obj:`model` is not an instance of
-             :class:`pytorch_lightning.LightningModule`
+@inject
+def import_from_torch_hub(
+    repo: str,
+    model: str,
+    *args: str,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    **kwargs: str,
+) -> str:
+    with model_store.register(
+        _clean_name(repo),
+        module=__name__,
+        options=None,
+        framework_context=dict(torch=torch.__version__),
+    ) as ctx:
+        torch.hub.set_dir(ctx.path)
+        torch.hub.load(
+            repo,
+            model,
+            *args,
+            **kwargs,
+        )
+        return ctx.tag
 
-    Example usage under :code:`train.py`::
 
-        TODO:
-
-    One then can define :code:`bento.py`::
-
-        TODO:
-
-    """
-
+class _PyTorchRunner(Runner):
+    @inject
     def __init__(
         self,
-        model: "pl.LightningModule",
-        metadata: t.Optional[GenericDictType] = None,
-    ):  # noqa
-        super(PyTorchLightningModel, self).__init__(model, metadata=metadata)
+        tag: str,
+        predict_fn_name: str,
+        resource_quota: t.Dict[str, t.Any],
+        batch_options: t.Dict[str, t.Any],
+        device_id: t.Union[str, int, t.List[t.Union[str, int]]],
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    ):
+        super().__init__(tag, resource_quota, batch_options)
+        self._model_store = model_store
+        self._predict_fn_name = predict_fn_name
+        self._configure_torch(device_id)
 
-    @staticmethod
-    def __get_weight_fpath(path: PathType) -> str:
-        return str(os.path.join(path, f"{MODEL_NAMESPACE}{PT_EXTENSION}"))
+    def _configure_torch(
+        self, device_id: t.Union[str, int, t.List[t.Union[str, int]]]
+    ) -> None:
+        if isinstance(device_id, list):
+            self._devices = list(torch.device(dev) for dev in device_id)
+        else:
+            self._devices = [torch.device(device_id)]
+        if _is_gpu_enabled():
+            torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        else:
+            torch.set_default_tensor_type("torch.FloatTensor")
+        torch.set_num_threads(self.num_concurrency_per_replica)
+        torch.set_num_interop_threads(self.num_concurrency_per_replica)
 
-    @classmethod
-    def load(cls, path: PathType) -> "torch.jit.ScriptModule":
-        return torch.jit.load(cls.__get_weight_fpath(path))  # type: ignore
+    @property
+    def required_models(self) -> t.List[str]:
+        return [self._model_store.get(self.name).tag]
 
-    def save(self, path: PathType) -> None:
-        torch.jit.save(self._model.to_torchscript(), self.__get_weight_fpath(path))
+    @property
+    def num_concurrency_per_replica(self) -> int:
+        # TODO(aarnphm): use resource_quota.gpus instead
+        if _is_gpu_enabled():
+            return 1
+        return int(round(self.resource_quota.cpu))
+
+    @property
+    def num_replica(self) -> int:
+        # TODO(aarnphm): use resource_quota.gpus instead
+        if _is_gpu_enabled():
+            return torch.cuda.device_count()
+        return 1
+
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    @torch.no_grad()
+    def _setup(self) -> None:  # type: ignore[override]
+        self._model = parallel.DistributedDataParallel(
+            load(self.name, model_store=self._model_store, device_id=None),
+            device_ids=self._devices,
+        )
+        if self.resource_quota.on_gpu:
+            torch.cuda.empty_cache()
+        self._predict_fn = getattr(self._model, self._predict_fn_name)
+
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    @torch.no_grad()
+    def _run_batch(self, *inputs: "np.ndarray", **kwargs: str) -> t.Any:
+        if infer_mode_compat:
+            with torch.inference_mode():
+                return self._predict_fn(*inputs, **kwargs)
+        return self._predict_fn(*inputs, **kwargs)
+
+
+@inject
+def load_runner(
+    tag: str,
+    *,
+    predict_fn_name: str = "__call__",
+    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
+    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    device_id: t.Union[str, int, t.List[t.Union[str, int]]] = "cpu",
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> "_PyTorchRunner":
+    _runner: t.Callable[[str], "_PyTorchRunner"] = functools.partial(
+        _PyTorchRunner,
+        predict_fn_name=predict_fn_name,
+        resource_quota=resource_quota,
+        batch_options=batch_options,
+        device_id=device_id,
+        model_store=model_store,
+    )
+    return _runner(tag)

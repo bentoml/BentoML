@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
-from torch import nn
+import torch.nn as nn
 
-from bentoml.pytorch import PyTorchModel
+import bentoml.pytorch
 from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
 from tests._internal.helpers import assert_have_file_extension
 
@@ -16,7 +16,7 @@ def predict_df(model: nn.Module, df: pd.DataFrame):
 
 
 @pytest.mark.parametrize("test_type", ["", "tracedmodel", "scriptedmodel"])
-def test_pytorch_save_load(test_type, tmpdir):
+def test_pytorch_save_load(test_type, modelstore):
     _model: nn.Module = LinearModel()
     if "trace" in test_type:
         tracing_inp = torch.ones(5)
@@ -25,8 +25,9 @@ def test_pytorch_save_load(test_type, tmpdir):
         model = torch.jit.script(_model)
     else:
         model = _model
-    PyTorchModel(model).save(tmpdir)
-    assert_have_file_extension(tmpdir, ".pt")
+    tag = bentoml.pytorch.save("pytorch_test", model, model_store=modelstore)
+    info = modelstore.get(tag)
+    assert_have_file_extension(info.path, ".pt")
 
-    pytorch_loaded: nn.Module = PyTorchModel.load(tmpdir)
+    pytorch_loaded: nn.Module = bentoml.pytorch.load(tag, model_store=modelstore)
     assert predict_df(model, test_df) == predict_df(pytorch_loaded, test_df)

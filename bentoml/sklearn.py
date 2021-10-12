@@ -6,13 +6,14 @@ from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
-from ._internal.service.runner import Runner
+from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
 
 try:
-    import sklearn.externals.joblib as joblib
+    import sklearn
+    import joblib
     from joblib import parallel_backend
 
 except ImportError:

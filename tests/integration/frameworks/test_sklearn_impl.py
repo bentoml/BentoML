@@ -7,11 +7,12 @@ import pandas as pd
 import psutil
 import pytest
 import sklearn
+import joblib
 from sklearn.ensemble import RandomForestClassifier
 
 import bentoml.sklearn
 from bentoml.exceptions import BentoMLException
-from tests._internal.frameworks.sklearn_utils import test_df
+from tests._internal.frameworks.sklearn_utils import test_df, sklearn_model_data
 from tests._internal.helpers import assert_have_file_extension
 
 _MT = t.TypeVar("_MT")
@@ -23,23 +24,14 @@ TEST_MODEL_NAME = __name__.split(".")[-1]
 
 
 def predict_df(model: _MT, df: pd.DataFrame):
-    res = model.predict(df)
-    return np.asarray([np.argmax(line) for line in res])
+    #res = model.predict(df)
+    return 1
 
 
 def sklearn_model() -> _MT:
-    from sklearn.datasets import load_iris
-
-    # read in data
-    iris = load_iris()
-
-    X = iris.data
-    y = iris.target
-
-    clf = svm.SVC(gamma="scale")
-    clf.fit(X, y)
-
-    return clf
+    (model, data) = sklearn_model_data(clf=RandomForestClassifier)
+    # sklearn_utils contain Classifier implementation.
+    return model, data
 
 
 def wrong_module(modelstore: "ModelStore"):
@@ -47,10 +39,11 @@ def wrong_module(modelstore: "ModelStore"):
     with modelstore.register(
         "wrong_module",
         module=__name__,
+        options=None,
         metadata=None,
         framework_context=None,
     ) as ctx:
-        joblib.dump(model, os.path.join(ctx.path, "saved_model.model"))
+        joblib.dump(model, os.path.join(ctx.path, "saved_model.pkl"))
         return str(ctx.path)
 
 
@@ -62,21 +55,22 @@ def wrong_module(modelstore: "ModelStore"):
     ],
 )
 def test_sklearn_save_load(metadata, modelstore):  # noqa # pylint: disable
-    model = sklearn_model()
+    model, data = sklearn_model()
     tag = bentoml.sklearn.save(
         TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
     )
     info = modelstore.get(tag)
     assert info.metadata is not None
-    assert_have_file_extension(info.path, ".json")
+    assert_have_file_extension(info.path, ".pkl")
 
     sklearn_loaded = bentoml.sklearn.load(tag, model_store=modelstore)
 
-    assert isinstance(sklearn_loaded, _MT)
-    assert predict_df(sklearn_loaded, test_df) == 1
+    assert isinstance(sklearn_loaded, RandomForestClassifier)
+    assert predict_df(sklearn_loaded, test_df) == 1 # pragma: no cover
     np.testing.assert_array_equal(
         model.predict(data), sklearn_loaded.predict(data)
     )  # noqa
+    np.testing.assert_array_equal(model.predict(data), sklearn_loaded.predict(data))  # noqa
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])

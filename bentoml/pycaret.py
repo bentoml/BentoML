@@ -113,7 +113,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "_PaddlePaddleRunner":
+) -> "_PycaretRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that

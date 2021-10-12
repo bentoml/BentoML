@@ -1,5 +1,7 @@
 import functools
+import os
 import re
+import shutil
 import typing as t
 import zipfile
 from pathlib import Path
@@ -11,6 +13,7 @@ from simple_di import inject as _inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
+from ._internal.types import PathType
 from .exceptions import MissingDependencyException
 
 _PT_EXTENSION = ".pt"
@@ -45,10 +48,6 @@ def _is_gpu_enabled() -> bool:  # pragma: no cover
     return torch.cuda.is_available()
 
 
-def _clean_name(name: str) -> str:  # pragma: no cover
-    return re.sub(r"\W|^(?=\d)-", "_", name)
-
-
 @inject
 def load(
     tag: str,
@@ -67,7 +66,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of either `torch.jit.ScriptedModule` or `torch.nn.Module` from BentoML modelstore.
+        an instance of either `torch.jit.ScriptModule` or `torch.nn.Module` from BentoML modelstore.
 
     Examples::
         import bentoml.pytorch
@@ -84,10 +83,10 @@ def load(
         return _load(str(weight_file))
     else:
         with weight_file.open("rb") as file:
-            _cload: t.Callable[[t.BinaryIO], _ModelType] = functools.partial(
+            __load: t.Callable[[t.BinaryIO], _ModelType] = functools.partial(
                 cloudpickle.load
             )
-            return _cload(file)
+            return __load(file)
 
 
 @inject
@@ -151,31 +150,6 @@ def save(
         else:
             with weight_file.open("wb") as file:
                 cloudpickle.dump(model, file)
-        return ctx.tag
-
-
-@inject
-def import_from_torch_hub(
-    repo: str,
-    model: str,
-    *args: str,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    **kwargs: str,
-) -> str:
-    # TODO: wip
-    with model_store.register(
-        _clean_name(repo),
-        module=__name__,
-        options=None,
-        framework_context=dict(torch=torch.__version__),
-    ) as ctx:
-        torch.hub.set_dir(ctx.path)
-        torch.hub.load(
-            repo,
-            model,
-            *args,
-            **kwargs,
-        )
         return ctx.tag
 
 

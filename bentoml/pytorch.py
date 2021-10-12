@@ -1,4 +1,5 @@
 import functools
+import os
 import typing as t
 import zipfile
 from pathlib import Path
@@ -13,17 +14,17 @@ from ._internal.runner import Runner
 from .exceptions import MissingDependencyException
 
 _PT_EXTENSION = ".pt"
+_RV = t.TypeVar("_RV")
 _ModelType = t.TypeVar(
     "_ModelType", bound=t.Union["torch.nn.Module", "torch.jit.ScriptModule"]
 )
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    import numpy as np
-
     from ._internal.models.store import ModelStore
 
 try:
+    import numpy as np
     import torch
     import torch.nn.parallel as parallel
 except ImportError:  # pragma: no cover
@@ -165,29 +166,21 @@ class _PyTorchRunner(Runner):
         self,
         tag: str,
         predict_fn_name: str,
+        device_id: str,
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
-        device_id: t.Union[str, int, t.List[t.Union[str, int]]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
-        self._model_store = model_store
         self._predict_fn_name = predict_fn_name
-        self._configure_torch(device_id)
-
-    def _configure_torch(
-        self, device_id: t.Union[str, int, t.List[t.Union[str, int]]]
-    ) -> None:
-        if isinstance(device_id, list):
-            self._devices = list(torch.device(dev) for dev in device_id)
-        else:
-            self._devices = [torch.device(device_id)]
-        if _is_gpu_enabled():
-            torch.set_default_tensor_type("torch.cuda.FloatTensor")
-        else:
-            torch.set_default_tensor_type("torch.FloatTensor")
-        torch.set_num_threads(self.num_concurrency_per_replica)
-        torch.set_num_interop_threads(self.num_concurrency_per_replica)
+        self._model_store = model_store
+        if "cuda" in device_id:
+            try:
+                _, dev = device_id.split(":")
+                self.resource_quota.gpus = [dev]
+            except ValueError:
+                self.resource_quota.gpus = list(range(torch.cuda.device_count()))
+        self._device_id = device_id
 
     @property
     def required_models(self) -> t.List[str]:
@@ -195,36 +188,62 @@ class _PyTorchRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        # TODO(aarnphm): use resource_quota.gpus instead
-        if _is_gpu_enabled():
+        if _is_gpu_enabled() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        # TODO(aarnphm): use resource_quota.gpus instead
-        if _is_gpu_enabled():
+        if _is_gpu_enabled() and self.resource_quota.on_gpu:
             return torch.cuda.device_count()
         return 1
+
+    def _configure(self) -> None:
+        torch.set_num_threads(self.num_concurrency_per_replica)
+        if self.resource_quota.on_gpu and _is_gpu_enabled():
+            torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        else:
+            torch.set_default_tensor_type("torch.FloatTensor")
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     @torch.no_grad()
     def _setup(self) -> None:  # type: ignore[override]
-        self._model = parallel.DistributedDataParallel(
-            load(self.name, model_store=self._model_store, device_id=None),
-            device_ids=self._devices,
-        )
-        if self.resource_quota.on_gpu:
+        self._configure()
+        if self.resource_quota.on_gpu and _is_gpu_enabled():
+            self._model = parallel.DataParallel(
+                load(
+                    self.name, model_store=self._model_store, device_id=self._device_id
+                ),
+            )
             torch.cuda.empty_cache()
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
+        else:
+            self._model = load(
+                self.name,
+                model_store=self._model_store,
+                device_id=self._device_id,
+            )
+        self._predict_fn: t.Callable[..., _RV] = getattr(
+            self._model, self._predict_fn_name
+        )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     @torch.no_grad()
-    def _run_batch(self, *inputs: "np.ndarray", **kwargs: str) -> t.Any:
+    def _run_batch(  # type: ignore[override]
+        self,
+        inputs: t.Union["np.ndarray", "torch.Tensor"],
+        **kwargs: str,
+    ) -> _RV:
+        if isinstance(inputs, np.ndarray):
+            input_tensor = torch.from_numpy(inputs)
+        else:
+            input_tensor = inputs
+        if self.resource_quota.on_gpu:
+            input_tensor = input_tensor.cuda()
+
         if infer_mode_compat:
             with torch.inference_mode():
-                return self._predict_fn(*inputs, **kwargs)
-        return self._predict_fn(*inputs, **kwargs)
+                return self._predict_fn(input_tensor, **kwargs)
+        return self._predict_fn(input_tensor, **kwargs)
 
 
 @inject
@@ -232,7 +251,7 @@ def load_runner(
     tag: str,
     *,
     predict_fn_name: str = "__call__",
-    device_id: t.Union[str, int, t.List[t.Union[str, int]]] = "cpu",
+    device_id: t.Union[str, int, t.List[t.Union[str, int]]] = "cpu:0",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

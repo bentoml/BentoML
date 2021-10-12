@@ -133,7 +133,7 @@ def save(
             def configure_optimizers(self):
                 return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
 
-        tag = bentoml.xgboost.save("lit_classifier", LitClassifier())
+        tag = bentoml.pytorch_lightning.save("lit_classifier", LitClassifier())
         # example tag: lit_classifier:20201012_DE43A2
     """  # noqa
     context = dict(torch=torch.__version__, pytorch_lightning=pl.__version__)

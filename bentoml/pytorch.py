@@ -1,7 +1,4 @@
 import functools
-import os
-import re
-import shutil
 import typing as t
 import zipfile
 from pathlib import Path
@@ -13,7 +10,6 @@ from simple_di import inject as _inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from ._internal.types import PathType
 from .exceptions import MissingDependencyException
 
 _PT_EXTENSION = ".pt"
@@ -133,8 +129,18 @@ def save(
                 log_probs = F.log_softmax(out, dim=1)
                 return log_probs
 
-        tag = bentoml.xgboost.save("ngrams", NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE))
+        tag = bentoml.pytorch.save("ngrams", NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE))
         # example tag: ngrams:20201012_DE43A2
+
+    Integration with Torch Hub and BentoML::
+        import bentoml.pytorch
+        import torch
+
+        resnet50 = torch.hub.load("pytorch/vision", "resnet50", pretrained=True)
+        ...
+        # trained a custom resnet50
+
+        tag = bentoml.pytorch.save("resnet50", resnet50)
     """  # noqa
     context = dict(torch=torch.__version__)
     with model_store.register(
@@ -226,9 +232,9 @@ def load_runner(
     tag: str,
     *,
     predict_fn_name: str = "__call__",
+    device_id: t.Union[str, int, t.List[t.Union[str, int]]] = "cpu",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
-    device_id: t.Union[str, int, t.List[t.Union[str, int]]] = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PyTorchRunner":
     """
@@ -261,9 +267,9 @@ def load_runner(
     _runner: t.Callable[[str], "_PyTorchRunner"] = functools.partial(
         _PyTorchRunner,
         predict_fn_name=predict_fn_name,
+        device_id=device_id,
         resource_quota=resource_quota,
         batch_options=batch_options,
-        device_id=device_id,
         model_store=model_store,
     )
     return _runner(tag)

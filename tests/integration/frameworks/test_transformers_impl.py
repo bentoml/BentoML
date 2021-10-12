@@ -29,20 +29,6 @@ def generate_from_text(model, tokenizer, jsons, return_tensors="pt"):
 
 
 @pytest.mark.parametrize(
-    "autoclass, exc",
-    [
-        ({"framework": "xgboost", "lm_head": "test"}, AttributeError),
-        ({"framework": "xgb", "lm_head": "test"}, AttributeError),
-        ({"framework": "pt", "lm_head": "test"}, AttributeError),
-        ({"framework": "flax", "lm_head": "ctc"}, BentoMLException),
-    ],
-)
-def test_load_autoclass(autoclass, exc):
-    with pytest.raises(exc):
-        bentoml.transformers._load_autoclass(**autoclass)
-
-
-@pytest.mark.parametrize(
     "kwargs, exc",
     [
         (

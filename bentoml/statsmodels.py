@@ -2,6 +2,7 @@ import functools
 import os
 import typing as t
 
+import statsmodels
 import numpy as np
 from simple_di import Provide, WrappedCallable
 from simple_di import inject as _inject

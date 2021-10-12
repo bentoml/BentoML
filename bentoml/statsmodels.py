@@ -13,9 +13,10 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
 
-if t.TYPE_CHECKING: # pragma: no cover  
+if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    import pandas as pd 
+    import pandas as pd
+
     from ._internals.models.store import ModelInfo, ModelStore
 
 try:
@@ -34,19 +35,21 @@ inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
     _inject, squeeze_none=False
 )
 
+
 def _get_model_info(
     tag: str,
     model_store: "ModelStore",
 ) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        raise BentoMLException( # pragma: no cover
+        raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with module {model_info.module}, failed loading"
             f"with {__name__}"
         )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.pkl")
-    
+
     return model_info, model_file
+
 
 @inject
 def load(
@@ -68,7 +71,7 @@ def load(
     Examples::
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
-    
+
     return sm.load(fname=model_file)
 
 
@@ -120,13 +123,10 @@ class _StatsModelsRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
-        model_info, model_file = _get_model_info(
-            tag, model_store
-        )
-        
+        model_info, model_file = _get_model_info(tag, model_store)
+
         self._model_info = model_info
         self._model_file = model_file
-
 
     @property
     def required_models(self) -> t.List[str]:
@@ -149,10 +149,7 @@ class _StatsModelsRunner(Runner):
         self._model = sm.load(fname=model_file)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(
-        self, 
-        input_data: t.Union[np.ndarray, "pd.DataFrame"]
-    ) -> t.Any:
+    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:
         parallel, p_func, n_jobs = parallel_func(
             predict, n_jobs=self.num_concurrency_per_replica, verbose=0
         )

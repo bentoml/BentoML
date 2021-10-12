@@ -47,7 +47,7 @@ class ResourceQuota:
 
     @property
     def on_gpu(self) -> bool:
-        if self.gpus:
+        if self.gpus is not None:
             return len(self.gpus) > 0
         return False
 

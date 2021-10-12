@@ -1,12 +1,9 @@
-import json
 import os
 import typing as t
 
 import numpy as np
 import pandas as pd
-import psutil
 import pytest
-import sklearn
 import joblib
 from sklearn.ensemble import RandomForestClassifier
 

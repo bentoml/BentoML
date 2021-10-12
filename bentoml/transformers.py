@@ -122,7 +122,13 @@ If you are training a model from scratch using transformers, to save into BentoM
 def load(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Tuple["PretrainedConfig", _ModelType, _TokenizerType]:
+    from_tf: bool = False,
+    from_flax: bool = False,
+    return_config: bool = False,
+) -> t.Union[
+    t.Tuple["PretrainedConfig", _ModelType, _TokenizerType],
+    t.Tuple[_ModelType, _TokenizerType],
+]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -131,6 +137,12 @@ def load(
             Tag of a saved model in BentoML local modelstore.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
+        from_tf (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+            Load the model weights from a TensorFlow checkpoint save file
+        from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+            Load the model weights from a Flax checkpoint save file
+        return_config (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+            Additionally returns `PretrainedConfig`
 
     Returns:
         a Tuple containing `model` and `tokenizer` for your given model saved at BentoML modelstore.
@@ -145,12 +157,14 @@ def load(
 
     config = AutoConfig.from_pretrained(model_info.path)
     model = getattr(import_module("transformers"), _model).from_pretrained(
-        model_info.path
+        model_info.path, from_tf=from_tf, from_flax=from_flax
     )
     tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
-        model_info.path
+        model_info.path, from_tf=from_tf, from_flax=from_flax
     )
-    return config, model, tokenizer
+    if return_config:
+        return config, model, tokenizer
+    return model, tokenizer  # pragma: no cover
 
 
 def _download_from_hub(
@@ -550,7 +564,7 @@ class _TransformersRunner(Runner):
         tag: str,
         tasks: str,
         *,
-        framework: str,
+        frameworks: str,
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -564,7 +578,7 @@ class _TransformersRunner(Runner):
             )
         self._tasks = tasks
         self._model_store = model_store
-        self._framework = framework
+        self._frameworks = frameworks
 
     @property
     def required_models(self) -> t.List[str]:
@@ -583,17 +597,19 @@ class _TransformersRunner(Runner):
     def _setup(self) -> None:  # type: ignore[override]
         try:
             _ = self._model_store.get(self.name)
-            config, model, tokenizer = load(self.name, model_store=self._model_store)
+            config, model, tokenizer = load(
+                self.name, model_store=self._model_store, return_config=True
+            )
         except FileNotFoundError:
             config, model, tokenizer = None, None, None
         self._pipeline: t.Callable[
             [t.Union[_PV, t.List[_PV]]], t.Union[_PV, t.List[_PV]]
         ] = transformers.pipeline(
             self._tasks,
+            config=config,
             model=model,
             tokenizer=tokenizer,
-            config=config,
-            framework=self._framework,
+            framework=self._frameworks,
         )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
@@ -605,7 +621,7 @@ def load_runner(
     tag: str,
     *,
     tasks: str,
-    framework: str = "pt",
+    frameworks: str = "pt",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -627,8 +643,8 @@ def load_runner(
         tasks (`str`):
             Given tasks for pipeline. Refers to https://huggingface.co/transformers/task_summary.html
              for more information.
-        framework (`str`, default to `pt`):
-            Given frameworks supported by transformers: PyTorch, Tensorflow, Flax
+        frameworks (`str`, default to `pt`):
+            Given frameworks supported by transformers: PyTorch, Tensorflow
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
@@ -650,7 +666,7 @@ def load_runner(
     _runner: t.Callable[[str], "_TransformersRunner"] = functools.partial(
         _TransformersRunner,
         tasks=tasks,
-        framework=framework,
+        frameworks=frameworks,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

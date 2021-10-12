@@ -12,41 +12,6 @@ logger = logging.getLogger(__name__)
 
 # Some constants taken from cuda.h
 CUDA_SUCCESS = 0
-CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT = 16
-CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR = 39
-CU_DEVICE_ATTRIBUTE_CLOCK_RATE = 13
-CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE = 36
-
-
-@lru_cache(maxsize=1)
-def _convert_sm_ver_to_cores(major, minor):
-    # Returns the number of CUDA cores per multiprocessor for a given
-    # Compute Capability version. There is no way to retrieve that via
-    # the API, so it needs to be hard-coded.
-    # See _ConvertSMVer2Cores in helper_cuda.h in NVIDIA's CUDA Samples.
-    return {
-        (1, 0): 8,  # Tesla
-        (1, 1): 8,
-        (1, 2): 8,
-        (1, 3): 8,
-        (2, 0): 32,  # Fermi
-        (2, 1): 48,
-        (3, 0): 192,  # Kepler
-        (3, 2): 192,
-        (3, 5): 192,
-        (3, 7): 192,
-        (5, 0): 128,  # Maxwell
-        (5, 2): 128,
-        (5, 3): 128,
-        (6, 0): 64,  # Pascal
-        (6, 1): 128,
-        (6, 2): 128,
-        (7, 0): 64,  # Volta
-        (7, 2): 64,
-        (7, 5): 64,  # Turing
-        (8, 0): 64,  # Ampere
-        (8, 6): 64,
-    }.get((major, minor), 0)
 
 
 @lru_cache(maxsize=1)
@@ -150,6 +115,7 @@ def _query_cgroup_cpu_count() -> float:
 
 
 def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
+    # https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html
     if gpus is not None:
         err = ctypes.c_char_p()
         device = ctypes.c_int()

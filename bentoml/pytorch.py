@@ -200,6 +200,7 @@ class _PyTorchRunner(Runner):
 
     def _configure(self) -> None:
         torch.set_num_threads(self.num_concurrency_per_replica)
+        torch.set_num_interop_threads(self.num_concurrency_per_replica)
         if self.resource_quota.on_gpu and _is_gpu_enabled():
             torch.set_default_tensor_type("torch.cuda.FloatTensor")
         else:

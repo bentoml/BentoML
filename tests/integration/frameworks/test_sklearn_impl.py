@@ -7,10 +7,9 @@ import pandas as pd
 import psutil
 import pytest
 import sklearn
-
 from sklearn.ensemble import RandomForestClassifier
 
-import bentoml.sklearn 
+import bentoml.sklearn
 from bentoml.exceptions import BentoMLException
 from tests._internal.frameworks.sklearn_utils import test_df
 from tests._internal.helpers import assert_have_file_extension
@@ -22,7 +21,8 @@ if t.TYPE_CHECKING:
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
-def predict_df(model: _MT, df:pd.DataFrame):
+
+def predict_df(model: _MT, df: pd.DataFrame):
     res = model.predict(df)
     return np.asarray([np.argmax(line) for line in res])
 
@@ -36,7 +36,7 @@ def sklearn_model() -> _MT:
     X = iris.data
     y = iris.target
 
-    clf = svm.SVC(gamma='scale')
+    clf = svm.SVC(gamma="scale")
     clf.fit(X, y)
 
     return clf
@@ -61,28 +61,22 @@ def wrong_module(modelstore: "ModelStore"):
         ({"acc": 0.876}),
     ],
 )
-def test_sklearn_save_load(
-    metadata, modelstore
-): #noqa # pylint: disable
+def test_sklearn_save_load(metadata, modelstore):  # noqa # pylint: disable
     model = sklearn_model()
     tag = bentoml.sklearn.save(
-        TEST_MODEL_NAME, 
-        model, 
-        metadata=metadata, 
-        model_store=modelstore
+        TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
     )
     info = modelstore.get(tag)
     assert info.metadata is not None
     assert_have_file_extension(info.path, ".json")
 
-    sklearn_loaded = bentoml.sklearn.load(
-        tag, 
-        model_store=modelstore
-    )
+    sklearn_loaded = bentoml.sklearn.load(tag, model_store=modelstore)
 
     assert isinstance(sklearn_loaded, _MT)
     assert predict_df(sklearn_loaded, test_df) == 1
-    np.testing.assert_array_equal(model.predict(data), sklearn_loaded.predict(data))  # noqa
+    np.testing.assert_array_equal(
+        model.predict(data), sklearn_loaded.predict(data)
+    )  # noqa
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])

@@ -1,5 +1,4 @@
 import functools
-import os
 import typing as t
 import zipfile
 from pathlib import Path
@@ -179,7 +178,9 @@ class _PyTorchRunner(Runner):
                 _, dev = device_id.split(":")
                 self.resource_quota.gpus = [dev]
             except ValueError:
-                self.resource_quota.gpus = list(range(torch.cuda.device_count()))
+                self.resource_quota.gpus = [
+                    str(i) for i in range(torch.cuda.device_count())
+                ]
         self._device_id = device_id
 
     @property

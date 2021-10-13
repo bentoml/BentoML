@@ -31,11 +31,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_catboost_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_catboost_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -59,11 +61,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_detectron2_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_detectron2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -84,11 +88,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_easyocr_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_easyocr_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -109,11 +115,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_evalml_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_evalml_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -137,11 +145,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_fastai_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_fastai_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -162,11 +172,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_fasttext_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_fasttext_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -189,11 +201,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_gluon_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_gluon_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -214,11 +228,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_h2o_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_h2o_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -241,11 +257,13 @@ jobs:
         with:
           python-version: 3.7.10
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -270,11 +288,13 @@ jobs:
         with:
           python-version: 3.7.10
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -295,11 +315,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_lightgbm_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_lightgbm_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -320,11 +342,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_mlflow_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_mlflow_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -345,11 +369,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/onnx/run_onnx_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/onnx/run_onnx_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -375,11 +401,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -400,11 +428,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_paddle_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_paddle_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -425,11 +455,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_pycaret_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_pycaret_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -450,11 +482,13 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_pyspark_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_pyspark_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -475,11 +509,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_pytorch_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_pytorch_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -507,15 +543,17 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_pytorch_lightning_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_pytorch_lightning_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -536,11 +574,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_sklearn_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_sklearn_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -561,11 +601,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_spacy_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_spacy_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -586,11 +628,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_statsmodels_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_statsmodels_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -611,11 +655,13 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/tensorflow/run_tf1_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/tensorflow/run_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -639,11 +685,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/tensorflow/run_tf2_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/tensorflow/run_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -667,11 +715,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_transformers_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_transformers_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -692,11 +742,13 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.only_changed == 'true'
-        run: ./ci/integration/frameworks/run_xgboost_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_xgboost_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

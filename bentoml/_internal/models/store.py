@@ -232,26 +232,32 @@ class ModelStore:
             )
         return load_model_yaml(path)
 
-    def delete(self, tag: str, skip_confirm: bool = False) -> None:
+    def delete(self, tag: str, skip_confirm: bool = True) -> None:
         model_name, version = _process_model_tag(tag)
         basepath = Path(self._base_dir, model_name)
-        try:
-            if ":" not in tag:
-                shutil.rmtree(basepath)
-            else:
-                path = Path(basepath, version)
-                path.rmdir()
-                path.unlink(missing_ok=True)
-        finally:
+        if skip_confirm:
             try:
-                indexed = sorted(basepath.iterdir(), key=os.path.getctime)
-                latest_path = Path(basepath, "latest")
-                if latest_path.is_symlink():
-                    latest_path.unlink()
-                latest_path.symlink_to(indexed[-1])
-            except FileNotFoundError:
-                # this is when we delete the whole folder
-                pass
+                if ":" not in tag:
+                    shutil.rmtree(basepath)
+                else:
+                    path = Path(basepath, version)
+                    path.rmdir()
+                    path.unlink(missing_ok=True)
+            finally:
+                try:
+                    indexed = sorted(basepath.iterdir(), key=os.path.getctime)
+                    latest_path = Path(basepath, "latest")
+                    if latest_path.is_symlink():
+                        latest_path.unlink()
+                    latest_path.symlink_to(indexed[-1])
+                except FileNotFoundError:
+                    # this is when we delete the whole folder
+                    pass
+        raise BentoMLException(
+            f"`skip_confirm={skip_confirm}`, thus you won't"
+            f" be able to delete given {tag}. If you want to"
+            f" surpass this check changed `skip_confirm=True`"
+        )
 
     def push(self, tag: str) -> None:
         ...

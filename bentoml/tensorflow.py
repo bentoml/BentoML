@@ -333,7 +333,7 @@ def load_runner(
     Args:
         tag (`str`):
             Model tag to retrieve model from modelstore
-        predict_fn_name (`str`, default to `predict`):
+        predict_fn_name (`str`, default to `__call__`):
             inference function to be used.
         device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `CPU:0`):
             Optional devices to put the given model on. Refers to https://www.tensorflow.org/api_docs/python/tf/config

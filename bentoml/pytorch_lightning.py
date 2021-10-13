@@ -4,8 +4,10 @@ from pathlib import Path
 
 from simple_di import Provide, inject
 
+from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner
+
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import PT_EXT, SAVE_NAMESPACE
 from .exceptions import MissingDependencyException
 
 _PL_IMPORT_ERROR = f"""\
@@ -13,7 +15,6 @@ _PL_IMPORT_ERROR = f"""\
 Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
 Then run `pip install pytorch_lightning`
 """
-_PT_EXTENSION = ".pt"
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -22,8 +23,6 @@ if t.TYPE_CHECKING:  # pragma: no cover
 try:
     import pytorch_lightning as pl
     import torch
-
-    from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
 
@@ -54,7 +53,7 @@ def load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa
     model_info = model_store.get(tag)
-    weight_file = Path(model_info.path, f"{SAVE_NAMESPACE}{_PT_EXTENSION}")
+    weight_file = Path(model_info.path, f"{SAVE_NAMESPACE}{PT_EXT}")
     _load: t.Callable[[str], "pl.LightningModule"] = functools.partial(
         torch.jit.load, map_location=device_id
     )
@@ -138,7 +137,7 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:
-        weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{_PT_EXTENSION}")
+        weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{PT_EXT}")
         torch.jit.save(model.to_torchscript(), str(weight_file))
         return ctx.tag
 

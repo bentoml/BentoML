@@ -263,11 +263,6 @@ class _TensorflowRunner(Runner):
         assert any(device_id in d.name for d in device_lib.list_local_devices())
         self._model_store = model_store
 
-        # setup a global session for model runner
-        self._session = tf.compat.v1.Session(
-            config=tf.compat.v1.ConfigProto(**self._config_proto)
-        )
-
     def _configure(self, device_id: str):
         # self.devices is a TensorflowEagerContext
         self._device = tf.device(device_id)
@@ -298,25 +293,29 @@ class _TensorflowRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
+        # setup a global session for model runner
+        self._session = tf.compat.v1.Session(
+            config=tf.compat.v1.ConfigProto(**self._config_proto)
+        )
         self._model = load(self.name, model_store=self._model_store)
         if not TF2:
             self._predict_fn = self._model.signatures["serving_default"]
         else:
             self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    # pylint: disable=arguments-differ
     def _run_batch(
-        self, input_data: t.Union[np.ndarray, tf.Tensor]
+        self, input_data: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]
     ) -> t.Union[np.ndarray, tf.Tensor]:
-        with self._session as sess, self._device:
+        with self._device:
             if not isinstance(input_data, tf.Tensor):
                 input_data = tf.convert_to_tensor(input_data, dtype=tf.float32)
-            if not TF2:
-                sess.run(tf.global_variables_initializer())
-            else:
+            if TF2:
                 tf.compat.v1.global_variables_initializer()
-            if not TF2:
-                sess.run(self._model, {"input": input_data})
+            else:
+                with self._session as sess:
+                    sess.run(tf.global_variables_initializer())
+                    sess.run(self._model, {"input": input_data})
             res = self._predict_fn(input_data)
             return res if TF2 else res["prediction"]
 

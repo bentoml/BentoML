@@ -14,7 +14,7 @@ from tests._internal.frameworks.sklearn_utils import test_df
 from tests._internal.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
-    from bentoml import ModelStore
+    from bentoml._internal.models.store import ModelInfo, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -43,6 +43,25 @@ def xgboost_model() -> "xgb.Booster":
     return bst
 
 
+@pytest.fixture(scope="module")
+def save_proc(
+    modelstore: "ModelStore",
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
+    def _(booster_params, metadata) -> "ModelInfo":
+        model = xgboost_model()
+        tag = bentoml.xgboost.save(
+            TEST_MODEL_NAME,
+            model,
+            booster_params=booster_params,
+            metadata=metadata,
+            model_store=modelstore,
+        )
+        info = modelstore.get(tag)
+        return info
+
+    return _
+
+
 def wrong_module(modelstore: "ModelStore"):
     model = xgboost_model()
     with modelstore.register(
@@ -67,22 +86,14 @@ def wrong_module(modelstore: "ModelStore"):
     ],
 )
 def test_xgboost_save_load(
-    booster_params, metadata, modelstore
+    booster_params, metadata, modelstore, save_proc
 ):  # noqa # pylint: disable
-    model = xgboost_model()
-    tag = bentoml.xgboost.save(
-        TEST_MODEL_NAME,
-        model,
-        booster_params=booster_params,
-        metadata=metadata,
-        model_store=modelstore,
-    )
-    info = modelstore.get(tag)
+    info = save_proc(booster_params, metadata)
     assert info.metadata is not None
     assert_have_file_extension(info.path, ".json")
 
     xgb_loaded = bentoml.xgboost.load(
-        tag, model_store=modelstore, booster_params=booster_params
+        info.tag, model_store=modelstore, booster_params=booster_params
     )
     config = json.loads(xgb_loaded.save_config())
     if not booster_params:
@@ -100,5 +111,29 @@ def test_xgboost_load_exc(exc, modelstore):
         bentoml.xgboost.load(tag, model_store=modelstore)
 
 
-def test_xgboost_load_runner():
-    ...
+def test_xgboost_runner_setup_run_batch(modelstore, save_proc):
+    booster_params = dict()
+    info = save_proc(booster_params, None)
+    runner = bentoml.xgboost.load_runner(info.tag, model_store=modelstore)
+    runner._setup()
+
+    assert isinstance(runner._model, xgb.Booster)
+    assert info.tag in runner.required_models
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
+
+    assert np.asarray([np.argmax(_l) for _l in runner._run_batch(test_df)]) == 1
+
+
+@pytest.mark.gpus
+def test_xgboost_runner_setup_on_gpu(modelstore, save_proc):
+    booster_params = dict()
+    info = save_proc(booster_params, None)
+    resource_quota = dict(gpus=0, cpu=0.4)
+    runner = bentoml.xgboost.load_runner(
+        info.tag, model_store=modelstore, resource_quota=resource_quota
+    )
+    runner._setup()
+    print(runner.resource_quota.gpus)
+    assert runner.num_concurrency_per_replica == 1
+    assert runner.num_replica == 1

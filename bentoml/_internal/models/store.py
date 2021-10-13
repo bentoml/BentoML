@@ -239,24 +239,25 @@ class ModelStore:
         return load_model_yaml(path)
 
     def delete(self, tag: str, skip_confirm: bool = False) -> None:
-        """
-        bentoml models delete
-        """
         model_name, version = _process_model_tag(tag)
         basepath = Path(self._base_dir, model_name)
         try:
             if ":" not in tag:
-                basepath.rmdir()
+                shutil.rmtree(basepath)
             else:
                 path = Path(basepath, version)
                 path.rmdir()
                 path.unlink(missing_ok=True)
         finally:
-            indexed = sorted(basepath.iterdir(), key=os.path.getctime)
-            latest_path = Path(basepath, "latest")
-            if latest_path.is_symlink():
-                latest_path.unlink()
-            latest_path.symlink_to(indexed[-1])
+            try:
+                indexed = sorted(basepath.iterdir(), key=os.path.getctime)
+                latest_path = Path(basepath, "latest")
+                if latest_path.is_symlink():
+                    latest_path.unlink()
+                latest_path.symlink_to(indexed[-1])
+            except FileNotFoundError:
+                # this is when we delete the whole folder
+                pass
 
     def push(self, tag: str) -> None:
         ...

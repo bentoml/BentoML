@@ -14,18 +14,6 @@ logger = logging.getLogger(__name__)
 CUDA_SUCCESS = 0
 
 
-@lru_cache(maxsize=1)
-def _cuda_lib() -> "ctypes.CDLL":
-    libs = ("libcuda.so", "cuda.dll")
-    for lib in libs:
-        try:
-            return ctypes.CDLL(lib)
-        except OSError:
-            continue
-    else:
-        raise OSError(f"could not load any of: {' '.join(libs)}")
-
-
 def _cpu_converter(cpu: t.Union[int, float, str]) -> float:
     if isinstance(cpu, (int, float)):
         return float(cpu)
@@ -114,6 +102,18 @@ def _query_cgroup_cpu_count() -> float:
     return float(min(limit_count, cpu_count))
 
 
+@lru_cache(maxsize=1)
+def _cuda_lib() -> "ctypes.CDLL":
+    libs = ("libcuda.so", "cuda.dll")
+    for lib in libs:
+        try:
+            return ctypes.CDLL(lib)
+        except OSError:
+            continue
+    else:
+        raise OSError(f"could not load any of: {' '.join(libs)}")
+
+
 def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
     # https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html
     if gpus is not None:
@@ -134,7 +134,8 @@ def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[s
             if res != CUDA_SUCCESS:
                 drv.cuGetErrorString(res, ctypes.byref(err))
                 logger.error(
-                    f"cuDeviceGetCount failed with error code {res}: {err.value.decode()}"
+                    "cuDeviceGetCount failed "
+                    f"with error code {res}: {err.value.decode()}"
                 )
 
             def _validate_dev(dev_id: t.Union[int, str]) -> bool:
@@ -142,7 +143,8 @@ def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[s
                 if _res != CUDA_SUCCESS:
                     drv.cuGetErrorString(res, ctypes.byref(err))
                     logger.warning(
-                        f"cuDeviceGetCount failed with error code {res}: {err.value.decode()}"
+                        "cuDeviceGet failed "
+                        f"with error code {res}: {err.value.decode()}"
                     )
                     return False
                 return True

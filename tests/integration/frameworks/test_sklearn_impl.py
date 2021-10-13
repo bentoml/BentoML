@@ -1,16 +1,29 @@
 import os
 import typing as t
 
+import joblib
 import numpy as np
 import pandas as pd
 import pytest
-import joblib
 from sklearn.ensemble import RandomForestClassifier
 
 import bentoml.sklearn
 from bentoml.exceptions import BentoMLException
-from tests._internal.frameworks.sklearn_utils import test_df, sklearn_model_data
+from tests._internal.frameworks.sklearn_utils import sklearn_model_data, test_df
 from tests._internal.helpers import assert_have_file_extension
+
+# fmt: off
+test_res_array = np.array(
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+)
+
+# fmt: on
 
 _MT = t.TypeVar("_MT")
 
@@ -18,11 +31,6 @@ if t.TYPE_CHECKING:
     from bentoml import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
-
-
-def predict_df(model: _MT, df: pd.DataFrame):
-    #res = model.predict(df)
-    return 1
 
 
 def wrong_module(modelstore: "ModelStore"):
@@ -57,11 +65,12 @@ def test_sklearn_save_load(metadata, modelstore):  # noqa # pylint: disable
     sklearn_loaded = bentoml.sklearn.load(tag, model_store=modelstore)
 
     assert isinstance(sklearn_loaded, RandomForestClassifier)
-    assert predict_df(sklearn_loaded, test_df) == 1 # pragma: no cover
+
     np.testing.assert_array_equal(
         model.predict(data), sklearn_loaded.predict(data)
     )  # noqa
-    np.testing.assert_array_equal(model.predict(data), sklearn_loaded.predict(data))  # noqa
+
+    np.testing.assert_array_equal(model.predict(data), test_res_array)
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])

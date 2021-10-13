@@ -19,11 +19,11 @@ if t.TYPE_CHECKING:
     from ._internal.models.store import ModelStore
 
 try:
-    import sklearn
     import joblib
+    import sklearn
     from joblib import parallel_backend
 
-except ImportError:
+except ImportError: # pragma: no cover
     raise MissingDependencyException(
         """sklearn is required in order to use the module `bentoml.sklearn`, install
         sklearn with `pip install sklearn`. For more information, refer to 

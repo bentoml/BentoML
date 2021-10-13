@@ -1,15 +1,22 @@
 import os
 import typing as t
 
+import sklearn
 import numpy as np
-from simple_di import Provide, inject
+from simple_di import Provide, WrappedCallable
+from simple_di import inject as _inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import MODEL_EXT, SAVE_NAMESPACE
-from ._internal.service.runner import Runner
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
+
+if t.TYPE_CHECKING:
+    import pandas as pd
+
+    from ._internal.models.store import ModelStore
 
 try:
     import sklearn.externals.joblib as joblib
@@ -17,13 +24,15 @@ try:
 
 except ImportError:
     raise MissingDependencyException(
-        "sklearn is required in order to use bentoml.sklearn. Do `pip install sklearn`"
+        """sklearn is required in order to use the module `bentoml.sklearn`, install
+        sklearn with `pip install sklearn`. For more information, refer to 
+        https://scikit-learn.org/stable/install.html
+        """
     )
 
-if t.TYPE_CHECKING:
-    import pandas as pd
-
-    from ._internal.models.store import ModelStore
+inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
+    _inject, squeeze_none=False
+)
 
 
 def _get_model_info(tag: str, model_store: "ModelStore"):
@@ -80,10 +89,10 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (``):
             Instance of model to be saved
-        sk_params (`t.Dict[str, t.Union[str, int]]`):
-            Params for sk initialization
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
+        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
 
     Returns:
         tag (`str` with a format `name:version`) where `name` is the defined name user

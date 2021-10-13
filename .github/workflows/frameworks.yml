@@ -100,6 +100,8 @@ jobs:
 
   evalml_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
+    needs: easyocr_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -157,6 +159,8 @@ jobs:
 
   fasttext_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
+    needs: catboost_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -240,6 +244,7 @@ jobs:
 
   keras_with_tf1_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
     needs:
       - tensorflow_v1_integration_tests
     steps:
@@ -269,7 +274,6 @@ jobs:
 
   keras_with_tf2_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
     needs:
       - keras_with_tf1_integration_tests
       - tensorflow_v2_integration_tests
@@ -299,6 +303,8 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
   lightgbm_integration_tests:
+    if: always()
+    needs: xgboost_integration_tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -726,6 +732,8 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
   xgboost_integration_tests:
+    if: always()
+    needs: catboost_integration_tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

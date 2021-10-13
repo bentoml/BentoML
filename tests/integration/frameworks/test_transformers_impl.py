@@ -6,7 +6,6 @@ from transformers.file_utils import CONFIG_NAME, hf_bucket_url
 from transformers.testing_utils import DUMMY_UNKWOWN_IDENTIFIER as MODEL_ID
 
 import bentoml.transformers
-from bentoml.exceptions import BentoMLException
 from tests._internal.helpers import assert_have_file_extension
 
 set_seed(123)
@@ -88,11 +87,11 @@ def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
         )
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize(
     "kwargs, frameworks, tensors_type",
     [({"from_tf": False}, "pt", "pt"), ({"from_tf": True}, "tf", "tf")],
 )
+@pytest.mark.runslow
 def test_transformers_save_load(modelstore, frameworks, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
         "gpt2", model_store=modelstore, **kwargs

@@ -2,8 +2,7 @@ import functools
 import typing as t
 from pathlib import Path
 
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
@@ -27,11 +26,6 @@ try:
     from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
-
-
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 
 @inject
@@ -180,12 +174,11 @@ def load_runner(
         runner = bentoml.pytorch_lightning.load_runner("lit_classifier:20201012_DE43A2")
         runner.run(pd.DataFrame("/path/to/csv"))
     """  # noqa
-    _runner: t.Callable[[str], "_PyTorchLightningRunner"] = functools.partial(
-        _PyTorchLightningRunner,
+    return _PyTorchLightningRunner(
+        tag=tag,
         predict_fn_name="__call__",
         device_id="cpu",
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
-    return _runner(tag)

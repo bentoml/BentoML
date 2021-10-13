@@ -1,11 +1,9 @@
-import functools
 import os
 import typing as t
 
 import numpy as np
 import sklearn
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
@@ -31,10 +29,6 @@ except ImportError:
          https://scikit-learn.org/stable/install.html
         """
     )
-
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 
 def _get_model_info(
@@ -122,8 +116,8 @@ class _SklearnRunner(Runner):
     def __init__(
         self,
         tag: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
@@ -198,10 +192,9 @@ def load_runner(
         runner = bentoml.sklearn.load_runner("my_model:20201012_DE43A2")
         runner.run(input_data)
     """  # noqa
-    _runner: t.Callable[[str], "_SklearnRunner"] = functools.partial(
-        _SklearnRunner,
+    return _SklearnRunner(
+        tag=tag,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
-    return _runner(tag)

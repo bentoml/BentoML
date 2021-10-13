@@ -1,8 +1,6 @@
-import functools
 import typing as t
 
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
@@ -17,11 +15,6 @@ try:
     ...
 except ImportError:  # pragma: no cover
     raise MissingDependencyException("")
-
-
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 
 @inject

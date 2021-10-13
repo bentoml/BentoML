@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf8") as f:
 
 install_requires = [
     "click>=7.0",
-    "simple-di==0.1.1",
+    "simple-di>=0.1.1",
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "aiohttp",

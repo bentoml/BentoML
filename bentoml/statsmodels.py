@@ -1,10 +1,8 @@
-import functools
 import os
 import typing as t
 
 import numpy as np
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
@@ -31,10 +29,6 @@ except ImportError:  # pragma: no cover
          https://www.statsmodels.org/stable/install.html
          """
     )
-
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 
 def _get_model_info(
@@ -120,8 +114,8 @@ class _StatsModelsRunner(Runner):
         self,
         tag: str,
         predict_fn_name: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
@@ -150,8 +144,8 @@ class _StatsModelsRunner(Runner):
         self._model = sm.load(self._model_file)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:  # type: ignore[override]
+    # pylint: disable=arguments-differ
+    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:  # type: ignore[override] # noqa
         parallel, p_func, _ = parallel_func(
             self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
         )
@@ -189,11 +183,10 @@ def load_runner(
 
     Examples::
     """  # noqa
-    _runner: t.Callable[[str], _StatsModelsRunner] = functools.partial(
-        _StatsModelsRunner,
+    return _StatsModelsRunner(
+        tag=tag,
         predict_fn_name=predict_fn_name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
-    return _runner(tag)

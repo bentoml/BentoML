@@ -49,16 +49,18 @@ def test_tensorflow_v2_setup_run_batch(modelstore):
     assert tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
-    assert runner._run_batch(native_data).numpy() == np.array([[15.]])
+    assert runner._run_batch(native_data).numpy() == np.array([[15.0]])
 
 
 @pytest.mark.gpus
 def test_tensorflow_v2_setup_on_gpu(modelstore):
     model_class = NativeModel()
     tag = bentoml.tensorflow.save(MODEL_NAME, model_class, model_store=modelstore)
-    runner = bentoml.tensorflow.load_runner(tag, model_store=modelstore, resource_quota=dict(gpus=0))
+    runner = bentoml.tensorflow.load_runner(
+        tag, model_store=modelstore, resource_quota=dict(gpus=0)
+    )
     runner._setup()
 
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
-    assert runner._run_batch(native_tensor) == np.array([[15.]])
+    assert runner._run_batch(native_tensor) == np.array([[15.0]])

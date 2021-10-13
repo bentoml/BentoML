@@ -1,10 +1,8 @@
-import functools
 import os
 import typing as t
 
 import numpy as np
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
@@ -27,9 +25,6 @@ except ImportError:  # pragma: no cover
         """
     )
 
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 # TODO: support xgb.DMatrix runner io container
 # from bentoml.runner import RunnerIOContainer, register_io_container
@@ -173,9 +168,9 @@ class _XgBoostRunner(Runner):
         self,
         tag: str,
         predict_fn_name: str,
-        booster_params: t.Dict[str, t.Union[str, int]],
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
@@ -281,12 +276,11 @@ def load_runner(
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
     """  # noqa
-    _runner: t.Callable[[str], "_XgBoostRunner"] = functools.partial(
-        _XgBoostRunner,
+    return _XgBoostRunner(
+        tag=tag,
         predict_fn_name=predict_fn_name,
         booster_params=booster_params,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
-    return _runner(tag)

@@ -151,7 +151,7 @@ class _StatsModelsRunner(Runner):
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:  # type: ignore[override]
+    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:  # type: ignore[override] # noqa
         parallel, p_func, _ = parallel_func(
             self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
         )

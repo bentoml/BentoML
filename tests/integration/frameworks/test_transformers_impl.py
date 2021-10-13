@@ -95,7 +95,9 @@ def test_transformers_save_load(modelstore, frameworks, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
         "gpt2", model_store=modelstore, **kwargs
     )
-    model, tokenizer = bentoml.transformers.load(tag, model_store=modelstore, **kwargs)
+    _, model, tokenizer = bentoml.transformers.load(
+        tag, model_store=modelstore, **kwargs
+    )
     assert (
         generate_from_text(model, tokenizer, test_sentence, return_tensors=tensors_type)
         == result

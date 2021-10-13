@@ -25,14 +25,8 @@ def predict_df(model: _MT, df: pd.DataFrame):
     return 1
 
 
-def sklearn_model() -> _MT:
-    (model, data) = sklearn_model_data(clf=RandomForestClassifier)
-    # sklearn_utils contain Classifier implementation.
-    return model, data
-
-
 def wrong_module(modelstore: "ModelStore"):
-    model = sklearn_model()
+    model, data = sklearn_model_data(clf=RandomForestClassifier)
     with modelstore.register(
         "wrong_module",
         module=__name__,
@@ -52,7 +46,7 @@ def wrong_module(modelstore: "ModelStore"):
     ],
 )
 def test_sklearn_save_load(metadata, modelstore):  # noqa # pylint: disable
-    model, data = sklearn_model()
+    model, data = sklearn_model_data(clf=RandomForestClassifier)
     tag = bentoml.sklearn.save(
         TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
     )

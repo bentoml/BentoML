@@ -1,7 +1,17 @@
+import ctypes
+import itertools
+import logging
 import os
 import re
 import typing as t
 from functools import lru_cache
+
+from ...exceptions import BentoMLException
+
+logger = logging.getLogger(__name__)
+
+# Some constants taken from cuda.h
+CUDA_SUCCESS = 0
 
 
 def _cpu_converter(cpu: t.Union[int, float, str]) -> float:
@@ -92,20 +102,70 @@ def _query_cgroup_cpu_count() -> float:
     return float(min(limit_count, cpu_count))
 
 
+@lru_cache(maxsize=1)
+def _cuda_lib() -> "ctypes.CDLL":
+    libs = ("libcuda.so", "cuda.dll")
+    for lib in libs:
+        try:
+            return ctypes.CDLL(lib)
+        except OSError:
+            continue
+    else:
+        raise OSError(f"could not load any of: {' '.join(libs)}")
+
+
 def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
-    if gpus is None:
-        return []
+    # https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html
+    if gpus is not None:
+        err = ctypes.c_char_p()
+        device = ctypes.c_int()
+        num_gpus = ctypes.c_int()
 
-    if isinstance(gpus, str):
-        if gpus == "all":
-            # TODO: query physical gpu devices
-            return []
-        else:
-            # TODO: query physical gpu devices
-            return []
+        try:
+            drv = _cuda_lib()
+            res = drv.cuInit(0)
+            if res != CUDA_SUCCESS:
+                drv.cuGetErrorString(res, ctypes.byref(err))
+                logger.error(
+                    f"cuInit failed with error code {res}: {err.value.decode()}"
+                )
 
-    if isinstance(gpus, int):
-        # TODO: query physical gpu devices
-        return []
+            res = drv.cuDeviceGetCount(ctypes.byref(num_gpus))
+            if res != CUDA_SUCCESS:
+                drv.cuGetErrorString(res, ctypes.byref(err))
+                logger.error(
+                    "cuDeviceGetCount failed "
+                    f"with error code {res}: {err.value.decode()}"
+                )
 
-    return []
+            def _validate_dev(dev_id: t.Union[int, str]) -> bool:
+                _res = drv.cuDeviceGet(ctypes.byref(device), int(dev_id))
+                if _res != CUDA_SUCCESS:
+                    drv.cuGetErrorString(res, ctypes.byref(err))
+                    logger.warning(
+                        "cuDeviceGet failed "
+                        f"with error code {res}: {err.value.decode()}"
+                    )
+                    return False
+                return True
+
+            if any([isinstance(gpus, i) for i in [str, int]]):
+                if gpus == "all":
+                    return [str(dev) for dev in range(num_gpus.value)]
+                else:
+                    if _validate_dev(gpus):
+                        return [str(gpus)]
+                    raise BentoMLException(
+                        f"Unknown GPU devices. Available devices: {num_gpus.value}"
+                    )
+            else:
+                return list(
+                    itertools.chain.from_iterable([_gpu_converter(gpu) for gpu in gpus])
+                )
+        except OSError as e:
+            raise BentoMLException(
+                f"{e}\nMake sure to have CUDA "
+                f"installed you are intending "
+                f"to use GPUs with BentoML."
+            )
+    return list()

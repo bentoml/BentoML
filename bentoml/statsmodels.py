@@ -1,27 +1,55 @@
 import functools
+import os
 import typing as t
 
+import statsmodels
+import numpy as np
 from simple_di import Provide, WrappedCallable
 from simple_di import inject as _inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from .exceptions import MissingDependencyException
+from .exceptions import BentoMLException, MissingDependencyException
+
+_MT = t.TypeVar("_MT")
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelStore
+    import pandas as pd
+
+    from ._internals.models.store import ModelInfo, ModelStore
 
 try:
-    ...
-except ImportError:  # pragma: no cover
-    raise MissingDependencyException("")
+    import statsmodels.api as sm
+    from statsmodels.tools.parallel import parallel_func
 
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        """statsmodels is required in order to use bentoml.statsmodels, install
+         statsmodels with `pip install statsmodels`. For more information, refer to
+         https://www.statsmodels.org/stable/install.html
+         """
+    )
 
 inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
     _inject, squeeze_none=False
 )
+
+
+def _get_model_info(
+    tag: str,
+    model_store: "ModelStore",
+) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
+    model_info = model_store.get(tag)
+    if model_info.module != __name__:
+        raise BentoMLException(  # pragma: no cover
+            f"Model {tag} was saved with module {model_info.module}, failed loading"
+            f"with {__name__}"
+        )
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.pkl")
+
+    return model_info, model_file
 
 
 @inject
@@ -39,18 +67,21 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `xgboost.core.Booster` from BentoML modelstore.
+        an instance of pickled model from BentoML modelstore.
 
     Examples::
     """  # noqa
+    _, model_file = _get_model_info(tag, model_store)
+
+    return sm.load(fname=model_file)
 
 
 @inject
 def save(
     name: str,
-    model: t.Any,
+    model: _MT,
     *,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    metadata: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     """
@@ -59,7 +90,7 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`xgboost.core.Booster`):
+        model (`t.Any):
             Instance of model to be saved
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
@@ -72,6 +103,15 @@ def save(
 
     Examples::
     """  # noqa
+    context = {"statsmodels": statsmodels.__version__}
+    with model_store.register(
+        name,
+        module=__name__,
+        metadata=metadata,
+        framework_context=context,
+    ) as ctx:
+        model.save(os.path.join(ctx.path, f"{SAVE_NAMESPACE}.pkl"))
+        return ctx.tag
 
 
 class _StatsModelsRunner(Runner):
@@ -84,26 +124,36 @@ class _StatsModelsRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
+        model_info, model_file = _get_model_info(tag, model_store)
+
+        self._model_info = model_info
+        self._model_file = model_file
 
     @property
     def required_models(self) -> t.List[str]:
-        ...
+        return [self._model_info.tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        ...
+        # NOTE: Statsmodels currently doesn't use GPU, so return max. no. of CPU's.
+        return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        ...
+        # NOTE: Statsmodels currently doesn't use GPU, so just return 1.
+        return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        ...
+
+        self._model = sm.load(fname=model_file)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data) -> t.Any:
-        ...
+    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:
+        parallel, p_func, n_jobs = parallel_func(
+            predict, n_jobs=self.num_concurrency_per_replica, verbose=0
+        )
+        parallel(p_func(self.model))
 
 
 @inject

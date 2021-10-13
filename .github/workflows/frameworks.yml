@@ -13,56 +13,61 @@ on:
     - cron: '0 0 * * 1/2'
 
 jobs:
+
   catboost_integration_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
         with:
-          python-version: 3.7
-      - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
-      - name: Run tests
-        run: ./ci/integration/frameworks/run_catboost_tests.sh
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
-
-  coreml_integration_tests:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # fetch all tags and branches
+          files: |
+            bentoml/catboost.py
+            tests/integration/frameworks/test_catboost_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_coreml_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_catboost_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
   detectron2_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
     needs:
-      - pytorch_integration_tests
+      - pytorch_lightning_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/detectron.py
+            tests/integration/frameworks/test_detectron2_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7.10
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_detectron2_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_detectron2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -72,54 +77,116 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/easyocr.py
+            tests/integration/frameworks/test_easyocr_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7.10
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_easyocr_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_easyocr_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
   evalml_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
+    needs: easyocr_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/evalml.py
+            tests/integration/frameworks/test_evalml_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_evalml_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_evalml_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
   fastai_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
     needs:
-      - pytorch_integration_tests
+      - pytorch_lightning_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/fastai.py
+            tests/integration/frameworks/test_fastai_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
-      - name: Install fastai
-        run: python -m pip install fastai
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_fastai_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_fastai_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
+
+  fasttext_integration_tests:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: catboost_integration_tests
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/fasttext.py
+            tests/integration/frameworks/test_fasttext_impl.py
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install test dependencies
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
+      - name: Run tests
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_fasttext_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  # TODO(aarnphm): add Trax/Flax support
 
   gluon_integration_tests:
     runs-on: ubuntu-latest
@@ -127,14 +194,24 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/gluon.py
+            tests/integration/frameworks/test_gluon_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_gluon_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_gluon_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -144,34 +221,54 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/h2o.py
+            tests/integration/frameworks/test_h2o_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7.10
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_h2o_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_h2o_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
-  # TODO(aarnphm): add Trax/Flax support
   keras_with_tf1_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
     needs:
       - tensorflow_v1_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/keras.py
+            tests/integration/frameworks/test_keras_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.7.10
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
-      - name: Run tests with tf1
-        run: ./ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
+      - name: Run tests
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -183,31 +280,53 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/keras.py
+            tests/integration/frameworks/test_keras_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.7.10
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
-      - name: Run tests with tf2
-        run: ./ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
+      - name: Run tests
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
   lightgbm_integration_tests:
+    if: always()
+    needs: xgboost_integration_tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/lightgbm.py
+            tests/integration/frameworks/test_lightgbm_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8.8
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_lightgbm_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_lightgbm_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -217,14 +336,24 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/mlflow.py
+            tests/integration/frameworks/test_mlflow_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8.8
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_mlflow_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_mlflow_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -234,33 +363,56 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/onnx.py
+            tests/integration/frameworks/onnx/test_onnx_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/onnx/run_onnx_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/onnx/run_onnx_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
   onnxmlir_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - onnx_integration_tests
     container:
       image: onnxmlirczar/onnx-mlir-dev:latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/onnxmlir.py
+            tests/integration/frameworks/onnx/test_onnxmlir_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8.5
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -269,15 +421,81 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/paddle.py
+            tests/integration/frameworks/paddle
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_paddle_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_paddle_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  pycaret_integration_tests:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: fasttext_integration_tests
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/pycaret.py
+            tests/integration/frameworks/test_pycaret_impl.py
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install test dependencies
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
+      - name: Run tests
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_pycaret_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  pyspark_mllib_integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/pyspark.py
+            tests/integration/frameworks/test_pyspark_impl.py
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install test dependencies
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
+      - name: Run tests
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_pyspark_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -287,14 +505,24 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/pytorch.py
+            tests/integration/frameworks/test_pytorch_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_pytorch_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_pytorch_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -309,49 +537,59 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/pytorch.py
+            bentoml/pytorch_lightning.py
+            tests/integration/frameworks/test_pytorch_lightning_impl.py
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Run tests
-        run: ./ci/integration/frameworks/run_pytorch_lightning_tests.sh
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
-
-  pyspark_mllib_integration_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
-      - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
-      - name: Run tests
-        run: ./ci/integration/frameworks/run_pyspark_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_pytorch_lightning_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
   sklearn_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
+    needs: catboost_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/sklearn.py
+            tests/integration/frameworks/test_sklearn_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_sklearn_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_sklearn_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -361,48 +599,53 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
         with:
-          python-version: 3.7
-      - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
-      - name: Run tests
-        run: ./ci/integration/frameworks/run_spacy_tests.sh
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
-
-  statsmodel_integration_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
-      - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
-      - name: Run tests
-        run: ./ci/integration/frameworks/run_statsmodels_tests.sh
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
-
-  pycaret_integration_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # fetch all tags and branches
+          files: |
+            bentoml/spacy.py
+            tests/integration/frameworks/test_spacy_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_pycaret_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_spacy_tests.sh
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v1.0.12
+
+  statsmodels_integration_tests:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: fasttext_integration_tests
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/statsmodels.py
+            tests/integration/frameworks/test_statsmodels_impl.py
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install test dependencies
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
+      - name: Run tests
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_statsmodels_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -412,14 +655,24 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/tensorflow.py
+            tests/integration/frameworks/tensorflow/test_v1_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7.10
+          python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_tf1_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/tensorflow/run_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -429,48 +682,83 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/tensorflow.py
+            tests/integration/frameworks/tensorflow/test_v2_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_tf2_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/tensorflow/run_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
   transformers_integration_tests:
     runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - pytorch_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/transformers.py
+            tests/integration/frameworks/test_transformers_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8.8
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_transformers_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_transformers_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
   xgboost_integration_tests:
+    if: always()
+    needs: catboost_integration_tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
+      - uses: tj-actions/changed-files@v10.1
+        id: modified
+        with:
+          files: |
+            bentoml/xgboost.py
+            tests/integration/frameworks/test_xgboost_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8.8
+          python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/run_xgboost_tests.sh
+        if: steps.modified.outputs.any_changed == 'true'
+        run: |
+          ./ci/integration/frameworks/run_xgboost_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

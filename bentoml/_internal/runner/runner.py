@@ -22,11 +22,11 @@ class ResourceQuota:
     mem = attr.ib(converter=_mem_converter, type=int)
 
     # Example gpus value: "all", 2, "device=1,2"
-    # Default to "all", returns all available GPU devices in current environment
+    # Default to "None", returns all available GPU devices in current environment
     gpus = attr.ib(
         converter=_gpu_converter,
         type=t.List[str],
-        default="all",
+        default=None,
     )
 
     @cpu.default

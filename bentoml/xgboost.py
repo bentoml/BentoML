@@ -281,11 +281,12 @@ def load_runner(
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
     """  # noqa
-    return _XgBoostRunner(
-        tag=tag,
+    _runner: t.Callable[[str], "_XgBoostRunner"] = functools.partial(
+        _XgBoostRunner,
         predict_fn_name=predict_fn_name,
         booster_params=booster_params,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
+    return _runner(tag)

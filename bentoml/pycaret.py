@@ -1,3 +1,4 @@
+import os
 import typing as t
 
 from simple_di import Provide, inject
@@ -5,17 +6,36 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from .exceptions import MissingDependencyException
+from ._internal.types import PathType
+from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     from _internal.models.store import ModelStore
 
 try:
-    ...
+    from pycaret.classification import *
+    from pycaret.utils import version
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException("")
+    raise MissingDependencyException(
+        """pycaret is required in order to use module`bentoml.pycaret`, install
+         pycaret with `pip install pycaret` or `pip install pycaret[full]`. 
+         For more information, refer to 
+         https://pycaret.readthedocs.io/en/latest/installation.html
+        """)
 
+def _get_model_info(
+    tag: str, model_store: "ModelStore"
+) -> t.Tuple["ModelInfo", PathType]:
+    model_info = model_store.get(tag)
+    if model_info.module != __name__:
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model_info.module}, failed loading "
+            f"with {__name__}."
+        )
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}")
+
+    return model_info, model_file
 
 @inject
 def load(
@@ -32,16 +52,18 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `xgboost.core.Booster` from BentoML modelstore.
+        an instance of `sklearn.pipeline.Pipeline` from BentoML modelstore.
 
     Examples::
     """  # noqa
+    _, model_file = _get_model_info(tag,model_store)
+    return load_model(model_file)
 
 
 @inject
 def save(
     name: str,
-    model: t.Any,
+    model: "sklearn.pipeline.Pipeline",
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -65,6 +87,15 @@ def save(
 
     Examples::
     """  # noqa
+    context = {"pycaret": version()}
+    with model_store.register(
+        name,
+        module=__name__,
+        metadata=metadata,
+        framework_context=context,
+    ) as ctx:
+        save_model(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}"))
+        return ctx.tag
 
 
 class _PycaretRunner(Runner):

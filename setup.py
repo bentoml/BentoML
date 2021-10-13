@@ -120,6 +120,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.6.1",
+    package_data={"bentoml": ["py.typed"]},
     entry_points={"console_scripts": ["bentoml=bentoml:bentoml._internal.cli.cli"]},
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",

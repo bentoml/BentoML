@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import re
-import sys
 import tempfile
 import typing as t
 from contextlib import contextmanager
@@ -174,8 +173,9 @@ def load(
     try:
         model_class = getattr(import_module("transformers"), _model)
     except AttributeError:  # noqa
-        # Cover cases where some model repo doesn't include a model name under their config.json
-        # examples: google/bert_uncased-L-2-H-128-A-2
+        # Cover cases where some model repo doesn't include a model
+        #  name under their config.json. An example is
+        #  google/bert_uncased-L-2-H-128-A-2
         # TODO: should we support different AutoModel class for different tasks?
         model_class = AutoModel
     model = model_class.from_pretrained(

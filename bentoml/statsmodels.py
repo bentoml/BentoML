@@ -15,6 +15,7 @@ _MT = t.TypeVar("_MT")
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
+    from joblib.parallel import Parallel
 
     from ._internal.models.store import ModelInfo, ModelStore
 
@@ -146,10 +147,13 @@ class _StatsModelsRunner(Runner):
 
     # pylint: disable=arguments-differ
     def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:  # type: ignore[override] # noqa
+        # TODO: type hint return type.
+        parallel: "Parallel"
+        p_func: t.Callable[..., t.Any]
         parallel, p_func, _ = parallel_func(
             self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
         )
-        parallel(p_func(self._model))
+        return parallel(p_func(input_data))
 
 
 @inject

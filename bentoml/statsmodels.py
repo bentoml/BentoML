@@ -145,7 +145,6 @@ class _StatsModelsRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        gpu_device_id = self.resource_quota.gpus[self.replica_id]
 
         self._model = sm.load(fname=model_file)
 

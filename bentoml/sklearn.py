@@ -1,6 +1,7 @@
 import os
 import typing as t
 
+import sklearn
 import numpy as np
 from simple_di import Provide, WrappedCallable
 from simple_di import inject as _inject

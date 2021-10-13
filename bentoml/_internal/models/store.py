@@ -1,4 +1,3 @@
-import functools
 import inspect
 import itertools
 import logging
@@ -13,8 +12,7 @@ from pathlib import Path
 
 import attr
 import yaml
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -37,10 +35,6 @@ RESERVED_MODEL_FIELD = [
 ]
 SUPPORTED_COMPRESSION_TYPE = [".gz"]
 MODEL_TAR_EXTENSION = ".models.tar.gz"
-
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 
 def validate_name(name: str) -> None:

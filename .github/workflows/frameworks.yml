@@ -25,6 +25,8 @@ jobs:
         with:
           files: |
             bentoml/catboost.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_catboost_tests.sh
             tests/integration/frameworks/test_catboost_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -55,6 +57,8 @@ jobs:
         with:
           files: |
             bentoml/detectron.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_detectron2_tests.sh
             tests/integration/frameworks/test_detectron2_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -82,6 +86,8 @@ jobs:
         with:
           files: |
             bentoml/easyocr.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_easyocr_tests.sh
             tests/integration/frameworks/test_easyocr_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -111,6 +117,8 @@ jobs:
         with:
           files: |
             bentoml/evalml.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_evalml_tests.sh
             tests/integration/frameworks/test_evalml_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -141,6 +149,8 @@ jobs:
         with:
           files: |
             bentoml/fastai.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_fastai_tests.sh
             tests/integration/frameworks/test_fastai_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -170,6 +180,8 @@ jobs:
         with:
           files: |
             bentoml/fasttext.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_fasttext_tests.sh
             tests/integration/frameworks/test_fasttext_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -199,6 +211,8 @@ jobs:
         with:
           files: |
             bentoml/gluon.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_gluon_tests.sh
             tests/integration/frameworks/test_gluon_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -226,6 +240,8 @@ jobs:
         with:
           files: |
             bentoml/h2o.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_h2o_tests.sh
             tests/integration/frameworks/test_h2o_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -256,6 +272,8 @@ jobs:
         with:
           files: |
             bentoml/keras.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
             tests/integration/frameworks/test_keras_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -285,6 +303,8 @@ jobs:
         with:
           files: |
             bentoml/keras.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
             tests/integration/frameworks/test_keras_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -314,6 +334,8 @@ jobs:
         with:
           files: |
             bentoml/lightgbm.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_lightgbm_tests.sh
             tests/integration/frameworks/test_lightgbm_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -341,6 +363,8 @@ jobs:
         with:
           files: |
             bentoml/mlflow.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_mlflow_tests.sh
             tests/integration/frameworks/test_mlflow_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -368,6 +392,8 @@ jobs:
         with:
           files: |
             bentoml/onnx.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/onnx/run_onnx_tests.sh
             tests/integration/frameworks/onnx/test_onnx_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -400,6 +426,8 @@ jobs:
         with:
           files: |
             bentoml/onnxmlir.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
             tests/integration/frameworks/onnx/test_onnxmlir_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -427,6 +455,8 @@ jobs:
         with:
           files: |
             bentoml/paddle.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_paddle_tests.sh
             tests/integration/frameworks/paddle
       - name: Setup python
         uses: actions/setup-python@v2
@@ -456,6 +486,8 @@ jobs:
         with:
           files: |
             bentoml/pycaret.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_pycaret_tests.sh
             tests/integration/frameworks/test_pycaret_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -483,6 +515,8 @@ jobs:
         with:
           files: |
             bentoml/pyspark.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_pyspark_tests.sh
             tests/integration/frameworks/test_pyspark_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -510,6 +544,8 @@ jobs:
         with:
           files: |
             bentoml/pytorch.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_pytorch_tests.sh
             tests/integration/frameworks/test_pytorch_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -544,6 +580,8 @@ jobs:
           files: |
             bentoml/pytorch.py
             bentoml/pytorch_lightning.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_pytorch_lightning_tests.sh
             tests/integration/frameworks/test_pytorch_lightning_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -577,6 +615,8 @@ jobs:
         with:
           files: |
             bentoml/sklearn.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_sklearn_tests.sh
             tests/integration/frameworks/test_sklearn_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -604,6 +644,8 @@ jobs:
         with:
           files: |
             bentoml/spacy.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_spacy_tests.sh
             tests/integration/frameworks/test_spacy_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -633,6 +675,8 @@ jobs:
         with:
           files: |
             bentoml/statsmodels.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_statsmodels_tests.sh
             tests/integration/frameworks/test_statsmodels_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -660,6 +704,8 @@ jobs:
         with:
           files: |
             bentoml/tensorflow.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/tensorflow/run_tf1_tests.sh
             tests/integration/frameworks/tensorflow/test_v1_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -687,6 +733,8 @@ jobs:
         with:
           files: |
             bentoml/tensorflow.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/tensorflow/run_tf2_tests.sh
             tests/integration/frameworks/tensorflow/test_v2_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -717,6 +765,8 @@ jobs:
         with:
           files: |
             bentoml/transformers.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_transformers_tests.sh
             tests/integration/frameworks/test_transformers_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
@@ -746,6 +796,8 @@ jobs:
         with:
           files: |
             bentoml/xgboost.py
+            bentoml/_internal/runner
+            ci/integration/frameworks/run_xgboost_tests.sh
             tests/integration/frameworks/test_xgboost_impl.py
       - name: Setup python
         uses: actions/setup-python@v2

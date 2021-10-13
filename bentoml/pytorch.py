@@ -4,8 +4,7 @@ import zipfile
 from pathlib import Path
 
 import cloudpickle
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
@@ -34,10 +33,6 @@ except ImportError:  # pragma: no cover
     )
 
 infer_mode_compat = torch.__version__.startswith("1.9")
-
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 
 def _is_gpu_available() -> bool:  # pragma: no cover
@@ -166,8 +161,8 @@ class _PyTorchRunner(Runner):
         tag: str,
         predict_fn_name: str,
         device_id: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
@@ -227,7 +222,7 @@ class _PyTorchRunner(Runner):
             self._model, self._predict_fn_name
         )
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    # pylint: disable=arguments-differ
     @torch.no_grad()
     def _run_batch(  # type: ignore[override]
         self,
@@ -252,7 +247,7 @@ def load_runner(
     tag: str,
     *,
     predict_fn_name: str = "__call__",
-    device_id: t.Union[str, int, t.List[t.Union[str, int]]] = "cpu:0",
+    device_id: str = "cpu:0",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -284,12 +279,11 @@ def load_runner(
         runner = bentoml.pytorch.load_runner("ngrams:20201012_DE43A2")
         runner.run(pd.DataFrame("/path/to/csv"))
     """  # noqa
-    _runner: t.Callable[[str], "_PyTorchRunner"] = functools.partial(
-        _PyTorchRunner,
+    return _PyTorchRunner(
+        tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
-    return _runner(tag)

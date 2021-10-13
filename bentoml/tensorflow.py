@@ -98,7 +98,7 @@ class _tf_function_wrapper:  # pragma: no cover
         # how signature with kwargs works?
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
         transformed_args = tuple(
-            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)  # type: ignore[arg-type]
+            cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)  # type: ignore[arg-type] # noqa
         )
 
         transformed_kwargs = {

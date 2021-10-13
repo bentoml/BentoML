@@ -3,7 +3,8 @@ import tempfile
 import pytest
 import tensorflow as tf
 
-from bentoml.tensorflow import TensorflowModel
+import bentoml.tensorflow
+from tests._internal.helpers import assert_have_file_extension
 
 test_data = [[1.1, 2.2]]
 
@@ -47,9 +48,13 @@ def tf1_model_path():
         yield temp_dir
 
 
-def test_tensorflow_v1_save_load(tf1_model_path, tmpdir):
-    TensorflowModel(tf1_model_path).save(tmpdir)
-    tf1_loaded = TensorflowModel.load(tf1_model_path)
+def test_tensorflow_v1_save_load(tf1_model_path, modelstore):
+    tag = bentoml.tensorflow.save(
+        "tensorflow_test", tf1_model_path, model_store=modelstore
+    )
+    model_info = modelstore.get(tag)
+    assert_have_file_extension(model_info.path, ".pb")
+    tf1_loaded = bentoml.tensorflow.load("tensorflow_test", model_store=modelstore)
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         prediction: tf.Tensor = predict__model(tf1_loaded, tf.constant(test_data))

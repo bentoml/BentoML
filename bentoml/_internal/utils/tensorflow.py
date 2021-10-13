@@ -1,15 +1,11 @@
 import logging
-from typing import TYPE_CHECKING, Sequence, TypeVar, Union
+import typing as t
 
 from bentoml.exceptions import MissingDependencyException
 
-if TYPE_CHECKING:
-    # fmt: off
-    from tensorflow.python.framework.type_spec import (  # noqa # pylint: disable=unused-import
-        TypeSpec,
-    )
-
-    # fmt: on
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    from tensorflow.python.framework.type_spec import TypeSpec
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +22,10 @@ TENSOR_CLASS_NAMES = (
     "Tensor",
 )
 
-ST = TypeVar("ST")
+ST = t.TypeVar("ST")
 
 
-def _isinstance_wrapper(obj: ST, sobj: Union[str, type, Sequence]) -> bool:
+def _isinstance_wrapper(obj: ST, sobj: t.Union[str, type, t.Sequence]) -> bool:
     """
     `isinstance` wrapper to check tensor spec
 

@@ -40,7 +40,7 @@ inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
 )
 
 
-def _is_gpu_enabled() -> bool:  # pragma: no cover
+def _is_gpu_available() -> bool:  # pragma: no cover
     return torch.cuda.is_available()
 
 
@@ -189,19 +189,19 @@ class _PyTorchRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        if _is_gpu_enabled() and self.resource_quota.on_gpu:
+        if _is_gpu_available() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        if _is_gpu_enabled() and self.resource_quota.on_gpu:
+        if _is_gpu_available() and self.resource_quota.on_gpu:
             return torch.cuda.device_count()
         return 1
 
     def _configure(self) -> None:
         torch.set_num_threads(self.num_concurrency_per_replica)
-        if self.resource_quota.on_gpu and _is_gpu_enabled():
+        if self.resource_quota.on_gpu and _is_gpu_available():
             torch.set_default_tensor_type("torch.cuda.FloatTensor")
         else:
             torch.set_default_tensor_type("torch.FloatTensor")
@@ -210,7 +210,7 @@ class _PyTorchRunner(Runner):
     @torch.no_grad()
     def _setup(self) -> None:  # type: ignore[override]
         self._configure()
-        if self.resource_quota.on_gpu and _is_gpu_enabled():
+        if self.resource_quota.on_gpu and _is_gpu_available():
             self._model = parallel.DataParallel(
                 load(
                     self.name, model_store=self._model_store, device_id=self._device_id
@@ -267,12 +267,12 @@ def load_runner(
             Model tag to retrieve model from modelstore
         predict_fn_name (`str`, default to `__call__`):
             inference function to be used.
+        device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `cpu`):
+            Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure batch options for runner in a service context.
-        device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `cpu`):
-            Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 

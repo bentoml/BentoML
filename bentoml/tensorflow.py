@@ -5,6 +5,7 @@ import pathlib
 import typing as t
 from distutils.dir_util import copy_tree
 
+import numpy as np
 from simple_di import Provide, WrappedCallable
 from simple_di import inject as _inject
 
@@ -26,16 +27,22 @@ if t.TYPE_CHECKING:  # pragma: no cover
 
 try:
     import tensorflow as tf
-    import tensorflow.python.training.tracking.tracking as tracking
+    from tensorflow.python.client import device_lib
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """\
-    `tensorflow` is required in order to use `bentoml.transformers`.
+        f"""\
+    `tensorflow` is required in order to use `bentoml.tensorflow`.
     Instruction: `pip install tensorflow`
     """
     )
 
 TF2 = tf.__version__.startswith("2")
+
+try:
+    import tensorflow.python.training.tracking.tracking as tracking
+except ImportError:  # pragma: no cover
+    # v1 compat
+    import tensorflow_core.python.training.tracking.tracking as tracking
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +71,11 @@ inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
 )
 
 
-class _tf_function_wrapper:
+def _is_gpu_available() -> bool:
+    return len(tf.config.list_physical_devices("GPU")) > 0
+
+
+class _tf_function_wrapper:  # pragma: no cover
     def __init__(
         self,
         origin_func: t.Callable[..., t.Any],
@@ -94,7 +105,6 @@ class _tf_function_wrapper:
         # INFO:
         # how signature with kwargs works?
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
-
         transformed_args = tuple(
             cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)
         )
@@ -233,6 +243,7 @@ def save(
         else:
             assert os.path.isdir(model)
             copy_tree(str(model), str(ctx.path))
+        return ctx.tag
 
 
 class _TensorflowRunner(Runner):
@@ -240,37 +251,82 @@ class _TensorflowRunner(Runner):
     def __init__(
         self,
         tag: str,
+        predict_fn_name: str,
+        device_id: str,
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
+        self._configure(device_id)
+        self._predict_fn_name = predict_fn_name
+        assert any(device_id in d.name for d in device_lib.list_local_devices())
+        self._model_store = model_store
+
+        # setup a global session for model runner
+        self._session = tf.compat.v1.Session(
+            config=tf.compat.v1.ConfigProto(**self._config_proto)
+        )
+
+    def _configure(self, device_id: str):
+        # self.devices is a TensorflowEagerContext
+        self._device = tf.device(device_id)
+        if TF2 and "GPU" in device_id:
+            tf.config.set_visible_devices(device_id, "GPU")
+        self._config_proto = dict(
+            allow_soft_placement=True,
+            log_device_placement=True,
+            intra_op_parallelism_threads=self.num_concurrency_per_replica,
+            inter_op_parallelism_threads=self.num_concurrency_per_replica,
+        )
 
     @property
     def required_models(self) -> t.List[str]:
-        ...
+        return [self._model_store.get(self.name).tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        ...
+        if _is_gpu_available() and self.resource_quota.on_gpu:
+            return 1
+        return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        ...
+        if _is_gpu_available() and self.resource_quota.on_gpu:
+            return len(tf.config.list_physical_devices("GPU"))
+        return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        ...
+        self._model = load(self.name, model_store=self._model_store)
+        if not TF2:
+            self._predict_fn = self._model.signatures["serving_default"]
+        else:
+            self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data) -> t.Any:
-        ...
+    def _run_batch(
+        self, input_data: t.Union[np.ndarray, tf.Tensor]
+    ) -> t.Union[np.ndarray, tf.Tensor]:
+        with self._session as sess, self._device:
+            if not isinstance(input_data, tf.Tensor):
+                input_data = tf.convert_to_tensor(input_data, dtype=tf.float32)
+            if not TF2:
+                sess.run(tf.global_variables_initializer())
+            else:
+                tf.compat.v1.global_variables_initializer()
+            if not TF2:
+                sess.run(self._model, {"input": input_data})
+            res = self._predict_fn(input_data)
+            return res if TF2 else res["prediction"]
 
 
 @inject
 def load_runner(
     tag: str,
     *,
+    predict_fn_name: str = "__call__",
+    device_id: t.Union[str, int, t.List[t.Union[str, int]]] = "CPU:0",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -283,6 +339,10 @@ def load_runner(
     Args:
         tag (`str`):
             Model tag to retrieve model from modelstore
+        predict_fn_name (`str`, default to `predict`):
+            inference function to be used.
+        device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `CPU:0`):
+            Optional devices to put the given model on. Refers to https://www.tensorflow.org/api_docs/python/tf/config
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
@@ -295,9 +355,13 @@ def load_runner(
 
     Examples::
     """  # noqa
-    return _TensorflowRunner(
-        tag=tag,
+
+    _runner: t.Callable[[str], "_TensorflowRunner"] = functools.partial(
+        _TensorflowRunner,
+        predict_fn_name=predict_fn_name,
+        device_id=device_id,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
+    return _runner(tag)

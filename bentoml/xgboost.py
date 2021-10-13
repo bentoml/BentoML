@@ -5,7 +5,7 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import JSON_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -58,7 +58,7 @@ def _get_model_info(
             f"Model {tag} was saved with module {model_info.module}, failed loading "
             f"with {__name__}."
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.json")
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{JSON_EXT}")
     _booster_params = dict() if not booster_params else booster_params
     for key, value in model_info.options.items():
         if key not in _booster_params:
@@ -158,7 +158,7 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:
-        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}.json"))
+        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{JSON_EXT}"))
         return ctx.tag
 
 
@@ -215,15 +215,15 @@ class _XgBoostRunner(Runner):
         return booster_params
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore
+    def _setup(self) -> None:  # type: ignore[override]
         self._model = xgb.core.Booster(
             params=self._booster_params,
             model_file=self._model_file,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(  # type: ignore
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[override]
         self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
     ) -> "np.ndarray":
         if not isinstance(input_data, xgb.DMatrix):

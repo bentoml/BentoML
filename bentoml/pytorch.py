@@ -7,11 +7,10 @@ import cloudpickle
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import PT_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import MissingDependencyException
 
-_PT_EXTENSION = ".pt"
 _RV = t.TypeVar("_RV")
 _ModelType = t.TypeVar(
     "_ModelType", bound=t.Union["torch.nn.Module", "torch.jit.ScriptModule"]
@@ -27,9 +26,10 @@ try:
     import torch.nn.parallel as parallel
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "torch is required in order "
-        "to use module `bentoml.pytorch`. "
-        "Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly."
+        """
+        torch is required in order to use module `bentoml.pytorch`.
+        Instruction: Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
+        """
     )
 
 infer_mode_compat = torch.__version__.startswith("1.9")
@@ -65,7 +65,7 @@ def load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa
     model_info = model_store.get(tag)
-    weight_file = Path(model_info.path, f"{SAVE_NAMESPACE}{_PT_EXTENSION}")
+    weight_file = Path(model_info.path, f"{SAVE_NAMESPACE}{PT_EXT}")
     # TorchScript Models are saved as zip files
     if zipfile.is_zipfile(str(weight_file)):
         _load: t.Callable[[str], _ModelType] = functools.partial(
@@ -145,7 +145,7 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:
-        weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{_PT_EXTENSION}")
+        weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{PT_EXT}")
         if isinstance(model, torch.jit.ScriptModule):
             torch.jit.save(model, str(weight_file))
         else:

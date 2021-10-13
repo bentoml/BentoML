@@ -1,9 +1,10 @@
 import numpy as np
+import psutil
 import pytest
 import tensorflow as tf
 import tensorflow.keras as keras
 
-from bentoml.keras import KerasModel
+import bentoml.keras
 from tests._internal.frameworks.tensorflow_utils import (
     CustomLayer,
     KerasSequentialModel,
@@ -12,13 +13,15 @@ from tests._internal.frameworks.tensorflow_utils import (
 from tests._internal.helpers import assert_have_file_extension
 
 TF2 = tf.__version__.startswith("2")
+MODEL_NAME = __name__.split(".")[-1]
 
 test_data = [1, 2, 3, 4, 5]
+res = KerasSequentialModel().predict(np.array([test_data]))
 
 
-def predict_assert_equal(m1: keras.Model, m2: keras.Model):
+def predict_assert_equal(model: keras.Model):
     t_data = np.array([test_data])
-    assert m1.predict(t_data) == m2.predict(t_data)
+    assert model.predict(t_data) == res
 
 
 @pytest.mark.parametrize(
@@ -38,21 +41,46 @@ def predict_assert_equal(m1: keras.Model, m2: keras.Model):
         ),
     ],
 )
-def test_keras_save_load(model, kwargs, tmpdir):
-    KerasModel(model, **kwargs).save(tmpdir)
-    if kwargs["custom_objects"]:
-        assert_have_file_extension(tmpdir, "_custom_objects.pkl")
+def test_keras_save_load(model, kwargs, modelstore):
+    tag = bentoml.keras.save(MODEL_NAME, model, **kwargs, model_store=modelstore)
+    model_info = modelstore.get(tag)
+    if kwargs["custom_objects"] is not None:
+        assert_have_file_extension(model_info.path, ".pkl")
     if kwargs["store_as_json"]:
-        assert_have_file_extension(tmpdir, "_json.json")
-        assert_have_file_extension(tmpdir, "_weights.hdf5")
+        assert_have_file_extension(model_info.path, ".json")
+        assert_have_file_extension(model_info.path, ".hdf5")
     else:
-        assert_have_file_extension(tmpdir, ".h5")
+        assert_have_file_extension(model_info.path, ".h5")
     if not TF2:
         # Initialize variables in the graph/model
-        KerasModel.sess.run(tf.global_variables_initializer())
-        with KerasModel.sess.as_default():
-            keras_loaded = KerasModel.load(tmpdir)
-            predict_assert_equal(keras_loaded, model)
+        bentoml.keras._sess.run(tf.global_variables_initializer())
+        with bentoml.keras._default_sess():
+            loaded = bentoml.keras.load(tag, model_store=modelstore)
+            predict_assert_equal(loaded)
     else:
-        keras_loaded = KerasModel.load(tmpdir)
-        predict_assert_equal(keras_loaded, model)
+        loaded = bentoml.keras.load(tag, model_store=modelstore)
+        predict_assert_equal(loaded)
+
+
+def test_keras_v2_setup_run_batch(modelstore):
+    model_class = KerasSequentialModel()
+    tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
+    runner = bentoml.keras.load_runner(tag, model_store=modelstore)
+    runner._setup()
+
+    assert tag in runner.required_models
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
+    assert runner._run_batch([test_data]) == res
+
+
+@pytest.mark.gpus
+def test_tensorflow_v2_setup_on_gpu(modelstore):
+    model_class = KerasSequentialModel()
+    tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
+    runner = bentoml.keras.load_runner(tag, model_store=modelstore)
+    runner._setup()
+
+    assert runner.num_concurrency_per_replica == 1
+    assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
+    assert runner._run_batch([test_data]) == res

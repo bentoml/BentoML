@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import sys
 import tempfile
 import typing as t
 from contextlib import contextmanager
@@ -16,6 +17,7 @@ from filelock import FileLock
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import JSON_EXT
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -23,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
+    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager  # noqa
     from transformers import (  # noqa
         FlaxPreTrainedModel,
         PretrainedConfig,
@@ -50,9 +52,10 @@ try:
     )
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        "transformers is required in order "
-        "to use module `bentoml.transformers`,"
-        "install transformers with `pip install transformers`."
+        """\
+        transformers is required in order to use module `bentoml.transformers`.
+        Instruction: Install transformers with `pip install transformers`.
+        """
     )
 
 _PV = t.TypeVar("_PV")
@@ -122,7 +125,9 @@ def load(
     tag: str,
     from_tf: bool = False,
     from_flax: bool = False,
+    use_tokenizer_eos_token_id: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    **kwargs: str,
 ) -> t.Tuple[
     "PretrainedConfig",
     t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
@@ -140,6 +145,11 @@ def load(
             Load the model weights from a TensorFlow checkpoint save file
         from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
             Load the model weights from a Flax checkpoint save file
+        use_tokenizer_eos_token_id (:obj:`bool`, `Optional`, defaults to :obj:`False`):
+            Uses tokenizer.eos_token_id as `pad_token_id` arguments for loaded model. This applies to GPT2
+             and its variations.
+        kwargs (:obj:`str`, `Optional`):
+            kwargs that can be parsed to transformers Models instance.
 
     Returns:
         a Tuple containing `model` and `tokenizer` for your given model saved at BentoML modelstore.
@@ -152,18 +162,29 @@ def load(
     model_info = model_store.get(tag)
     _model, _tokenizer = model_info.options["model"], model_info.options["tokenizer"]
 
-    config = AutoConfig.from_pretrained(model_info.path)
     tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
         model_info.path, from_tf=from_tf, from_flax=from_flax
     )
+    if use_tokenizer_eos_token_id:
+        kwargs["pad_token_id"] = tokenizer.eos_token_id
+    config, unused_kwargs = AutoConfig.from_pretrained(
+        model_info.path, return_unused_kwargs=True, **kwargs
+    )
+
     try:
-        model = getattr(import_module("transformers"), _model).from_pretrained(
-            model_info.path, config=config, from_tf=from_tf, from_flax=from_flax
-        )
-    except AttributeError:
-        model = AutoModel.from_pretrained(
-            model_info.path, config=config, from_tf=from_tf, from_flax=from_flax
-        )
+        model_class = getattr(import_module("transformers"), _model)
+    except AttributeError:  # noqa
+        # Cover cases where some model repo doesn't include a model name under their config.json
+        # examples: google/bert_uncased-L-2-H-128-A-2
+        # TODO: should we support different AutoModel class for different tasks?
+        model_class = AutoModel
+    model = model_class.from_pretrained(
+        model_info.path,
+        config=config,
+        from_tf=from_tf,
+        from_flax=from_flax,
+        **unused_kwargs,
+    )
     return config, model, tokenizer
 
 
@@ -283,7 +304,7 @@ def _download_from_hub(
     os.chmod(fname, 0o666 & ~umask)
     logger.info(f"creating metadata file for {fpath.name}")
     meta = {"url": hf_url, "etag": etag}
-    meta_path = fpath.with_suffix(".metadata.json")
+    meta_path = fpath.with_suffix(f".metadata{JSON_EXT}")
     with meta_path.open("w") as meta_file:
         json.dump(meta, meta_file)
 

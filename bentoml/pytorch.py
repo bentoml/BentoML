@@ -28,8 +28,9 @@ except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """
         torch is required in order to use module `bentoml.pytorch`.
-        Instruction: Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
-        """
+         Instruction: Refers to https://pytorch.org/get-started/locally/
+         to setup PyTorch correctly.
+        """  # noqa
     )
 
 infer_mode_compat = torch.__version__.startswith("1.9")

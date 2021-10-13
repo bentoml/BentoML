@@ -4,6 +4,8 @@ from pathlib import Path
 
 from simple_di import Provide, inject
 
+from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner
+
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PT_EXT, SAVE_NAMESPACE
 from .exceptions import MissingDependencyException
@@ -23,8 +25,6 @@ try:
     import torch
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
-
-from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner
 
 
 @inject

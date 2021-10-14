@@ -232,8 +232,6 @@ def load(
         model = _load_autoclass(framework, lm_head).from_pretrained(
             model_info.path,
             config=config,
-            from_tf=from_tf,
-            from_flax=from_flax,
             **kwargs,
         )
     except (AttributeError, BentoMLException):  # noqa

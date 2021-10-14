@@ -16,8 +16,7 @@ from tests._internal.helpers import assert_have_file_extension
 MODEL_NAME = __name__.split(".")[-1]
 TF2 = tf.__version__.startswith("2")
 
-if TF2:
-    import tensorflow_hub as hub
+import tensorflow_hub as hub
 
 native_data = [[1, 2, 3, 4, 5]]
 native_tensor = tf.constant(native_data, dtype=tf.float64)

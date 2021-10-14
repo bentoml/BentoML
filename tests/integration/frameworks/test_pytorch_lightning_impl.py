@@ -46,7 +46,7 @@ def test_pytorch_lightning_runner_setup_run_batch(modelstore):
     assert torch.get_num_threads() == runner.num_concurrency_per_replica
 
     res = runner._run_batch(torch.from_numpy(test_df.to_numpy()))
-    assert res.numpy().tolist() == [[6,5,4,3]]
+    assert res.numpy().tolist() == [[6, 5, 4, 3]]
 
 
 @pytest.mark.gpus
@@ -56,7 +56,9 @@ def test_pytorch_lightning_runner_setup_on_gpu(modelstore, dev):
     tag = bentoml.pytorch_lightning.save(
         "pytorch_lightning_test", model, model_store=modelstore
     )
-    runner = bentoml.pytorch_lightning.load_runner(tag, model_store=modelstore,device_id=dev)
+    runner = bentoml.pytorch_lightning.load_runner(
+        tag, model_store=modelstore, device_id=dev
+    )
     runner._setup()
     assert runner.num_concurrency_per_replica == 1
     assert torch.cuda.device_count() == runner.num_replica

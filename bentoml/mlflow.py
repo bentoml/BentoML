@@ -1,5 +1,4 @@
 import os
-import types
 import typing as t
 
 from simple_di import Provide, inject
@@ -7,7 +6,7 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from .exceptions import MissingDependencyException, InvalidArgument
+from .exceptions import InvalidArgument, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -21,7 +20,8 @@ except ImportError:  # pragma: no cover
         """\
         `mlflow` is required to use with `bentoml.mlflow`.
         Instruction: `pip install -U mlflow`
-        """)
+        """
+    )
 
 
 @inject
@@ -85,7 +85,7 @@ def save(
         module=__name__,
         options=None,
         framework_context=context,
-        metadata=metadata
+        metadata=metadata,
     ) as ctx:
         loader_module.save_model(model, os.path.join(ctx.path, SAVE_NAMESPACE))
         return ctx.tag

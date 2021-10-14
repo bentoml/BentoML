@@ -45,9 +45,6 @@ jobs:
 
   detectron2_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - pytorch_lightning_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -106,8 +103,6 @@ jobs:
 
   evalml_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs: easyocr_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -137,9 +132,6 @@ jobs:
 
   fastai_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - pytorch_lightning_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -169,8 +161,6 @@ jobs:
 
   fasttext_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs: catboost_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -260,9 +250,6 @@ jobs:
 
   keras_with_tf1_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - tensorflow_v1_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -322,8 +309,6 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
   lightgbm_integration_tests:
-    if: always()
-    needs: xgboost_integration_tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -412,9 +397,6 @@ jobs:
 
   onnxmlir_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - onnx_integration_tests
     container:
       image: onnxmlirczar/onnx-mlir-dev:latest
     steps:
@@ -475,8 +457,6 @@ jobs:
 
   pycaret_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs: fasttext_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -604,8 +584,6 @@ jobs:
 
   sklearn_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs: catboost_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -664,8 +642,6 @@ jobs:
 
   statsmodels_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs: fasttext_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -753,9 +729,6 @@ jobs:
 
   transformers_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - pytorch_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -784,8 +757,6 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
   xgboost_integration_tests:
-    if: always()
-    needs: catboost_integration_tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

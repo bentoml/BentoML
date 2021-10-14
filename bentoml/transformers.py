@@ -321,7 +321,8 @@ def _save(
     _check_flax_supported()  # pragma: no cover
     context = {"transformers": transformers.__version__}
 
-    with model_store.register(
+    # TODO: type of register() doesn't get recognized
+    with model_store.register(  # type: ignore[var-annotated]
         name,
         module=__name__,
         framework_context=context,
@@ -418,7 +419,7 @@ def _save(
                 _tokenizer_inst = AutoTokenizer.from_pretrained(model_identifier)
                 _tokenizer_inst.save_pretrained(ctx.path)
                 ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
-        return ctx.tag
+        return ctx.tag  # type: ignore[no-any-return]
 
 
 @inject
@@ -518,7 +519,7 @@ def import_from_huggingface_hub(
     **transformers_options_kwargs: str,
 ) -> str:
     """
-    Import a model directly from hugging face hub
+    Import a model from hugging face hub and save it to bentoml modelstore.
 
     Args:
         name (`str`):

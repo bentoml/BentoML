@@ -178,10 +178,11 @@ class _KerasRunner(_TensorflowRunner):
             batch_options=batch_options,
             model_store=model_store,
         )
+        self._session = _sess
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override] # noqa
-        _sess.config = self._config_proto
+        self._session.config = self._config_proto
         self._model = load(self.name, model_store=self._model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
@@ -192,8 +193,10 @@ class _KerasRunner(_TensorflowRunner):
         if not isinstance(input_data, (np.ndarray, tf.Tensor)):
             input_data = np.array(input_data)
         with self._device:
-            if not TF2:
-                _sess.run(tf.global_variables_initializer())
+            if TF2:
+                tf.compat.v1.global_variables_initializer()
+            else:
+                self._session.run(tf.global_variables_initializer())
                 with _default_sess():
                     self._predict_fn(input_data)
             return self._predict_fn(input_data)

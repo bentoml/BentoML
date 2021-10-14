@@ -706,7 +706,7 @@ jobs:
             bentoml/tensorflow.py
             bentoml/_internal/runner
             ci/integration/frameworks/tensorflow/run_tf1_tests.sh
-            tests/integration/frameworks/tensorflow/test_v1_impl.py
+            tests/integration/frameworks/test_tensorflow_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -735,7 +735,7 @@ jobs:
             bentoml/tensorflow.py
             bentoml/_internal/runner
             ci/integration/frameworks/tensorflow/run_tf2_tests.sh
-            tests/integration/frameworks/tensorflow/test_v2_impl.py
+            tests/integration/frameworks/test_tensorflow_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:

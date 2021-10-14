@@ -142,31 +142,38 @@ class ModelStore:
         self._base_dir = Path(base_dir)
         validate_or_create_dir(self._base_dir)
 
-    def list(self, tag: t.Optional[str] = None) -> t.List[str]:
+    def list(self, tag: t.Optional[str] = None, detailed: bool = True) -> t.List[str]:
         """
         bentoml models list -> t.List[models name under BENTOML_HOME/models]
         bentoml models list my_nlp_models -> t.List[model_version]
+        bentoml models list my_nlp_models:20210292_A34821 -> [contents of given model directory]
         """
-        if not tag:
-            path = self._base_dir
-            return sorted(
-                list(
-                    itertools.chain.from_iterable(
-                        [
-                            [f"{_d.name}:{ver}" for ver in self.list(_d.name)]
-                            for _d in path.iterdir()
-                        ]
-                    )
-                ),
-                key=operator.itemgetter(0),
-            )
-        elif ":" not in tag:
+        if ":" not in tag:
             path = Path(self._base_dir, tag)
+        elif not tag:
+            path = self._base_dir
+            if detailed:
+                return sorted(
+                    list(
+                        itertools.chain.from_iterable(
+                            [
+                                [f"{_d.name}:{ver}" for ver in self.list(_d.name)]
+                                for _d in path.iterdir()
+                            ]
+                        )
+                    ),
+                    key=operator.itemgetter(0),
+                )
         else:
             name, version = _process_model_tag(tag)
             path = Path(self._base_dir, name, version)
             if version == "latest":
                 path = path.resolve()
+            return [
+                str(f).replace(str(path.resolve()), "")
+                for f in path.rglob("**/*")
+                if f.is_file()
+            ]
         return [_f.name for _f in path.iterdir() if not _f.is_symlink()]
 
     def _create_path(self, tag: str) -> Path:
@@ -185,7 +192,7 @@ class ModelStore:
         options: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
         framework_context: t.Optional[t.Dict[str, t.Any]] = None,
-    ) -> t.Iterator[StoreCtx]:
+    ) -> t.ContextManager["StoreCtx"]:
         """
         with bentoml.models.register(name, options, metadata, labels) as ctx:
             # ctx(model_path, version, metadata)

@@ -2,44 +2,47 @@ name: Frameworks
 
 on:
   push:
-    branches:
-      - master
-      - bentoml-1.0
+    branches: [master, bentoml-1.0]
   pull_request:
-    branches:
-      - master
-      - bentoml-1.0
+    branches: [master, bentoml-1.0]
   schedule:
     - cron: '0 0 * * 1/2'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      runner: ${{ steps.filter.outputs.runner }}
+      catboost: ${{ steps.filter.outputs.catboost }}
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            runner:
+              - bentoml/_internal/runner/**
+              - bentoml/_internal/models/**
+            catboost:
+              - bentoml/catboost.py
+              - ci/integration/frameworks/run_catboost_tests.sh
+              - tests/integration/frameworks/test_catboost_impl.py
 
   catboost_integration_tests:
+    needs: changes
+    if: ${{ needs.changes.outputs.runner == 'true' && needs.changes.outputs.catboost == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - uses: tj-actions/changed-files@v10.1
-        id: modified
-        with:
-          files: |
-            bentoml/catboost.py
-            bentoml/_internal/runner
-            ci/integration/frameworks/run_catboost_tests.sh
-            tests/integration/frameworks/test_catboost_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/integration/frameworks/run_catboost_tests.sh
+        run: ./ci/integration/frameworks/run_catboost_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -250,9 +253,6 @@ jobs:
 
   keras_with_tf1_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - tensorflow_v1_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -282,9 +282,6 @@ jobs:
 
   keras_with_tf2_integration_tests:
     runs-on: ubuntu-latest
-    if: always()
-    needs:
-      - tensorflow_v2_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -548,8 +545,6 @@ jobs:
 
   pytorch_lightning_integration_tests:
     runs-on: ubuntu-latest
-    needs:
-      - pytorch_integration_tests
     steps:
       - uses: actions/checkout@v2
         with:
@@ -790,5 +785,6 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
 concurrency:
-  group: integration-${{ github.head_ref }}
+  group: frameworks-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
   cancel-in-progress: true

@@ -210,6 +210,7 @@ def load(
         module_path = model_info.options["local_path"]
         if load_as_wrapper:
             wrapper_class = hub.KerasLayer if TF2 else hub.Module
+            print(wrapper_class)
             return wrapper_class(module_path)
         # In case users want to load as a SavedModel file object.
         # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93

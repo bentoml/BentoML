@@ -1,4 +1,4 @@
-name: Frameworks on PR
+name: framework-on-pr
 
 on:
   pull_request:

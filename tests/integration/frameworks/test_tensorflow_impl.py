@@ -169,7 +169,6 @@ def _plus_one_model_tf1():
         return module
 
 
-@pytest.mark.skipif(not TF2, reason="We can tests TF1 functionalities with TF2 compat")
 @pytest.mark.parametrize(
     "identifier, name, tags, is_module_v1, wrapped",
     [
@@ -184,6 +183,7 @@ def _plus_one_model_tf1():
         ),
     ],
 )
+@pytest.mark.skipif(not TF2, reason="We can tests TF1 functionalities with TF2 compat")
 def test_import_from_tfhub(modelstore, identifier, name, tags, is_module_v1, wrapped):
     tag = bentoml.tensorflow.import_from_tfhub(identifier, name, model_store=modelstore)
     model_info = modelstore.get(tag)

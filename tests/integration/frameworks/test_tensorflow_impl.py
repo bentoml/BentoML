@@ -18,6 +18,9 @@ TF2 = tf.__version__.startswith("2")
 
 import tensorflow_hub as hub
 
+test_data = [[1.1, 2.2]]
+test_tensor = tf.constant(test_data)
+
 native_data = [[1, 2, 3, 4, 5]]
 native_tensor = tf.constant(native_data, dtype=tf.float64)
 
@@ -57,7 +60,7 @@ def tf1_model_path():
     with tempfile.TemporaryDirectory() as temp_dir:
         with tf.compat.v1.Session() as sess:
             sess.run(tf.compat.v1.global_variables_initializer())
-            sess.run(cnn_model["p"], {cnn_model["X"]: native_data})
+            sess.run(cnn_model["p"], {cnn_model["X"]: test_data})
 
             inputs = {"X": cnn_model["X"]}
             outputs = {"prediction": cnn_model["p"]}
@@ -78,7 +81,7 @@ def test_tensorflow_v1_save_load(tf1_model_path, modelstore):
     tf1_loaded = bentoml.tensorflow.load("tensorflow_test", model_store=modelstore)
     with tf.compat.v1.Session() as sess:
         sess.run(tf.compat.v1.global_variables_initializer())
-        prediction = _model_dunder_call(tf1_loaded, native_tensor)
+        prediction = _model_dunder_call(tf1_loaded, test_tensor)
         assert prediction.shape == (1,)
 
 
@@ -90,7 +93,7 @@ def test_tensorflow_v1_setup_run_batch(tf1_model_path, modelstore):
     runner = bentoml.tensorflow.load_runner(tag, model_store=modelstore)
     runner._setup()
 
-    res = runner._run_batch(tf.constant(native_data))
+    res = runner._run_batch(test_tensor)
     assert res.shape == (1,)
 
 

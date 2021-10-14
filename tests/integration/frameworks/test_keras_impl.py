@@ -62,6 +62,7 @@ def test_keras_save_load(model, kwargs, modelstore):
         predict_assert_equal(loaded)
 
 
+@pytest.mark.skipif(not TF2, reason="Tests for Tensorflow 2.x")
 def test_keras_v2_setup_run_batch(modelstore):
     model_class = KerasSequentialModel()
     tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
@@ -72,6 +73,16 @@ def test_keras_v2_setup_run_batch(modelstore):
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
     assert runner._run_batch([test_data]) == res
+
+
+@pytest.mark.skipif(TF2, reason="Tests for Tensorflow 1.x")
+def test_keras_v1_setup_run_batch(modelstore):
+    model_class = KerasSequentialModel()
+    tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
+    runner = bentoml.keras.load_runner(tag, model_store=modelstore)
+    with runner._session.as_default():
+        runner._setup()
+        assert runner._run_batch([test_data]) == res
 
 
 @pytest.mark.gpus

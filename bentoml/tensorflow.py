@@ -1,6 +1,9 @@
 import logging
 import os
+import pathlib
+import re
 import typing as t
+import uuid
 from distutils.dir_util import copy_tree
 
 import numpy as np
@@ -33,14 +36,31 @@ except ImportError:  # pragma: no cover
     """
     )
 
-TF2 = tf.__version__.startswith("2")
-
 try:
     import tensorflow.python.training.tracking.tracking as tracking
 except ImportError:  # pragma: no cover
     import tensorflow_core.python.training.tracking.tracking as tracking
 
 logger = logging.getLogger(__name__)
+TF2 = tf.__version__.startswith("2")
+
+try:
+    import tensorflow_hub as hub
+    from tensorflow_hub import native_module, resolve
+except ImportError:  # pragma: no cover
+    logger.warning(
+        """\
+    If you want to use `bentoml.tensorflow.import_from_tensorflow_hub(),
+     make sure to `pip install --upgrade tensorflow_hub` before using.
+     """
+    )
+    hub = None
+    resolve, native_module = None, None
+
+
+def _clean_name(name: str) -> str:  # pragma: no cover
+    return re.sub(r"\W|^(?=\d)-", "_", name)
+
 
 AUTOTRACKABLE_CALLABLE_WARNING: str = """
 Importing SavedModels from TensorFlow 1.x. `outputs = imported(inputs)`
@@ -64,7 +84,10 @@ BentoML detected that {name} is being used to pack a Keras API
 
 
 def _is_gpu_available() -> bool:
-    return len(tf.config.list_physical_devices("GPU")) > 0
+    try:
+        return len(tf.config.list_physical_devices("GPU")) > 0
+    except AttributeError:
+        return tf.test.is_gpu_available()  # type: ignore
 
 
 class _tf_function_wrapper:  # pragma: no cover
@@ -146,6 +169,9 @@ def _load_tf_saved_model(path: str) -> t.Union["tracking.AutoTrackable", t.Any]:
 @inject
 def load(
     tag: str,
+    tfhub_tags: t.Optional[t.List[str]] = None,
+    tfhub_options: t.Optional["tf.saved_model.SaveOptions"] = None,
+    load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Any:  # returns tf.sessions or keras models
     """
@@ -154,6 +180,14 @@ def load(
     Args:
         tag (`str`):
             Tag of a saved model in BentoML local modelstore.
+        tfhub_tags (`str`, `optional`, defaults to `None`):
+            A set of strings specifying the graph variant to use, if loading from a v1 module.
+        tfhub_options (`tf.saved_model.SaveOptions`, `optional`, default to `None`):
+            `tf.saved_model.LoadOptions` object that specifies options for loading. This
+             argument can only be used from TensorFlow 2.3 onwards.
+        load_as_wrapper (`bool`, `optional`, default to `True`):
+            Load the given weight that is saved from tfhub as either `hub.KerasLayer` or `hub.Module`.
+             The latter only applies for TF1.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -163,14 +197,106 @@ def load(
     Examples::
     """  # noqa
     model_info = model_store.get(tag)
-    model = _load_tf_saved_model(str(model_info.path))
-    _tf_function_wrapper.hook_loaded_model(model)
-    logger.warning(TF_FUNCTION_WARNING)
-    # pretty format loaded model
-    logger.info(pretty_format_restored_model(model))
-    if hasattr(model, "keras_api"):
-        logger.warning(KERAS_MODEL_WARNING.format(name=__name__))
-    return model
+    if "tensorflow_hub" in model_info.context:
+        assert load_as_wrapper is not None, (
+            "You have to specified `load_as_wrapper=True | False`"
+            " to load a `tensorflow_hub` module. If True is chosen,"
+            " then BentoML will return either an instance of `hub.KerasLayer`"
+            " or `hub.Module` depending on your TF version. For most usecase,"
+            " we recommend to keep `load_as_wrapper=True`. If you wish to extend"
+            " the functionalities of the given model, set `load_as_wrapper=False`"
+            " will return a tf.SavedModel object."
+        )
+        module_path = model_info.options["local_path"]
+        if load_as_wrapper:
+            wrapper_class = hub.KerasLayer if TF2 else hub.Module
+            print(wrapper_class)
+            return wrapper_class(module_path)
+        # In case users want to load as a SavedModel file object.
+        # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
+        is_hub_module_v1 = tf.io.gfile.exists(
+            native_module.get_module_proto_path(module_path)
+        )
+        if tfhub_tags is None and is_hub_module_v1:
+            tfhub_tags = []
+
+        if tfhub_options:
+            if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
+                raise NotImplementedError(
+                    "options are not supported for TF < 2.3.x,"
+                    f" Current version: {tf.__version__}"
+                )
+            # tf.compat.v1.saved_model.load_v2() is TF2 tf.saved_model.load() before TF2
+            obj = tf.compat.v1.saved_model.load_v2(
+                module_path, tags=tfhub_tags, options=tfhub_options
+            )
+        else:
+            obj = tf.compat.v1.saved_model.load_v2(module_path, tags=tfhub_tags)
+        obj._is_hub_module_v1 = is_hub_module_v1  # pylint: disable=protected-access
+        return obj
+    else:
+        model = _load_tf_saved_model(str(model_info.path))
+        _tf_function_wrapper.hook_loaded_model(model)
+        logger.warning(TF_FUNCTION_WARNING)
+        # pretty format loaded model
+        logger.info(pretty_format_restored_model(model))
+        if hasattr(model, "keras_api"):
+            logger.warning(KERAS_MODEL_WARNING.format(name=__name__))
+        return model
+
+
+@inject
+def import_from_tfhub(
+    identifier: t.Union[str, "hub.Module", "hub.KerasLayer"],
+    name: t.Optional[str] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> str:
+    if hub is None:
+        raise MissingDependencyException(
+            """\
+            `tensorflow_hub` is required in order to use `bentoml.tensorflow.import_from_tensorflow_hub`.
+            Instruction: `pip install --upgrade tensorflow_hub`
+            """  # noqa
+        )
+    context = {
+        "tensorflow": tf.__version__,
+        "tensorflow_hub": hub.__version__,
+    }
+    if name is None:
+        if isinstance(identifier, str):
+            if identifier.startswith(("http://", "https://")):
+                name = _clean_name(identifier.split("/", maxsplit=3)[-1])
+            else:
+                name = _clean_name(identifier.split("/")[-1])
+        else:
+            name = f"{identifier.__class__.__name__}_{uuid.uuid4().hex[:5].upper()}"
+    with model_store.register(
+        name,
+        module=__name__,
+        options=None,
+        framework_context=context,
+        metadata=metadata,
+    ) as ctx:
+        if isinstance(identifier, str):
+            os.environ["TFHUB_CACHE_DIR"] = str(ctx.path)
+            fpath = resolve(identifier)
+            ctx.options = {"model": identifier, "local_path": fpath}
+        else:
+            if hasattr(identifier, "export"):
+                # hub.Module.export()
+                with tf.compat.v1.Session(
+                    graph=tf.compat.v1.get_default_graph()
+                ) as sess:
+                    sess.run(tf.compat.v1.global_variables_initializer())
+                    identifier.export(str(ctx.path), sess)
+            else:
+                tf.saved_model.save(identifier, str(ctx.path))
+            ctx.options = {
+                "model": identifier.__class__.__name__,
+                "local_path": resolve(str(ctx.path)),
+            }
+        return ctx.tag  # type: ignore[no-any-return]
 
 
 @inject
@@ -223,7 +349,10 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:
-        if isinstance(model, (tf.Module, tf.keras.Model)):
+        if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):
+            assert os.path.isdir(model)
+            copy_tree(str(model), str(ctx.path))
+        else:
             if TF2:
                 tf.saved_model.save(
                     model, str(ctx.path), signatures=signatures, options=options
@@ -235,9 +364,6 @@ def save(
                         f"using tensorflow {tf.__version__}"
                     )
                 tf.saved_model.save(model, str(ctx.path), signatures=signatures)
-        else:
-            assert os.path.isdir(model)
-            copy_tree(str(model), str(ctx.path))
         return ctx.tag  # type: ignore[no-any-return]
 
 
@@ -265,7 +391,7 @@ class _TensorflowRunner(Runner):
             tf.config.set_visible_devices(device_id, "GPU")
         self._config_proto = dict(
             allow_soft_placement=True,
-            log_device_placement=True,
+            log_device_placement=False,
             intra_op_parallelism_threads=self.num_concurrency_per_replica,
             inter_op_parallelism_threads=self.num_concurrency_per_replica,
         )
@@ -301,18 +427,16 @@ class _TensorflowRunner(Runner):
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
         self, input_data: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]
-    ) -> t.Union[np.ndarray, tf.Tensor]:
+    ) -> np.ndarray:
         with self._device:
             if not isinstance(input_data, tf.Tensor):
                 input_data = tf.convert_to_tensor(input_data, dtype=tf.float32)
             if TF2:
                 tf.compat.v1.global_variables_initializer()
             else:
-                with self._session as sess:
-                    sess.run(tf.global_variables_initializer())
-                    sess.run(self._model, {"input": input_data})
+                self._session.run(tf.compat.v1.global_variables_initializer())
             res = self._predict_fn(input_data)
-            return res if TF2 else res["prediction"]
+            return res.numpy() if TF2 else res["prediction"]
 
 
 @inject

@@ -147,7 +147,7 @@ class ModelStore:
         bentoml models list -> t.List[models name under BENTOML_HOME/models]
         bentoml models list my_nlp_models -> t.List[model_version]
         bentoml models list my_nlp_models:20210292_A34821 -> [contents of given model directory]
-        """
+        """  # noqa
         if ":" not in tag:
             path = Path(self._base_dir, tag)
         elif not tag:

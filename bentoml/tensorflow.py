@@ -200,13 +200,17 @@ def load(
     if "tensorflow_hub" in model_info.context:
         assert load_as_wrapper is not None, (
             "You have to specified `load_as_wrapper=True | False`"
-            " to load a `tensorflow_hub` module"
+            " to load a `tensorflow_hub` module. If True is chosen,"
+            " then BentoML will return either an instance of `hub.KerasLayer`"
+            " or `hub.Module` depending on your TF version. For most usecase,"
+            " we recommend to keep `load_as_wrapper=True`. If you wish to extend"
+            " the functionalities of the given model, set `load_as_wrapper=False`"
+            " will return a tf.SavedModel object."
         )
         module_path = model_info.options["local_path"]
         if load_as_wrapper:
             wrapper_class = hub.KerasLayer if TF2 else hub.Module
             return wrapper_class(module_path)
-
         # In case users want to load as a SavedModel file object.
         # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
         is_hub_module_v1 = tf.io.gfile.exists(

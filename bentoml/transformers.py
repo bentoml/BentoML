@@ -66,6 +66,61 @@ _TokenizerType = t.TypeVar(
     "_TokenizerType", bound=t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]
 )
 
+_FRAMEWORK_ALIASES: t.Dict[str, str] = {"pt": "pytorch", "tf": "tensorflow"}
+
+_AUTOMODEL_PREFIX_MAPPING: t.Dict[str, str] = {
+    "pytorch": "AutoModel",
+    "tensorflow": "TFAutoModel",
+    "flax": "FlaxAutoModel",
+}
+
+_AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
+    "causal": "ForCausalLM",
+    "masked": "ForMaskedLM",
+    "seq2seq": "ForSeq2SeqLM",
+    "sequence-classification": "ForSequenceClassification",
+    "question-answering": "ForQuestionAnswering",
+    "token-classification": "ForTokenClassification",
+    "multiple-choice": "ForMultipleChoice",
+    "next-sentence-prediction": "ForNextSentencePrediction",
+    "image-classification": "ForImageClassification",
+    "audio-classification": "ForAudioClassification",
+    "ctc": "ForCTC",
+    "speech-seq2seq": "ForSpeechSeq2Seq",
+    "object-detection": "ForObjectDetection",
+}
+
+
+def _load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
+    if (
+        framework not in _AUTOMODEL_PREFIX_MAPPING
+        and framework not in _FRAMEWORK_ALIASES
+    ):
+        raise AttributeError(
+            f"{framework} is either invalid aliases "
+            "or not supported by transformers. "
+            "Accepted: pt(alias to pytorch), "
+            "tf(alias to tensorflow), and flax."
+        )
+    if lm_head not in _AUTOMODEL_LM_HEAD_MAPPING:
+        raise AttributeError(
+            f"`{lm_head}` alias for lm_head is invalid."
+            f" Accepted: {[*_AUTOMODEL_LM_HEAD_MAPPING.keys()]}."
+            " If you need any other AutoModel type provided by transformers,"
+            " feel free to open a PR at https://github.com/bentoml/BentoML."
+        )
+    framework_prefix = (
+        _FRAMEWORK_ALIASES[framework] if framework in _FRAMEWORK_ALIASES else framework
+    )
+    class_inst = f"{_AUTOMODEL_PREFIX_MAPPING[framework_prefix]}{_AUTOMODEL_LM_HEAD_MAPPING[lm_head]}"  # noqa
+    try:
+        return getattr(import_module("transformers"), class_inst)
+    except AttributeError as e:
+        raise BentoMLException(
+            f"{e}\n\nPlease refers "
+            f"to https://huggingface.co/transformers/model_doc/auto.html."
+        )
+
 
 def _clean_name(name: str) -> str:
     return re.sub(r"\W|^(?=\d)-", "_", name)
@@ -124,7 +179,8 @@ def load(
     tag: str,
     from_tf: bool = False,
     from_flax: bool = False,
-    use_tokenizer_eos_token_id: bool = False,
+    framework: str = "pt",
+    lm_head: str = "causal",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **kwargs: str,
 ) -> t.Tuple[
@@ -144,9 +200,12 @@ def load(
             Load the model weights from a TensorFlow checkpoint save file
         from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
             Load the model weights from a Flax checkpoint save file
-        use_tokenizer_eos_token_id (:obj:`bool`, `Optional`, defaults to :obj:`False`):
-            Uses tokenizer.eos_token_id as `pad_token_id` arguments for loaded model. This applies to GPT2
-             and its variations.
+        framework (`str`, default to `pt`):
+            Given frameworks supported by transformers: PyTorch, Tensorflow, Flax
+        lm_head (`str`, default to `causal`):
+            Language model head for your model. For most usecase causal are applied.
+             Refers to huggingface.co/transformers for more details on which type of
+             language model head is applied to your use case and model.
         kwargs (:obj:`str`, `Optional`):
             kwargs that can be parsed to transformers Models instance.
 
@@ -164,27 +223,27 @@ def load(
     tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
         model_info.path, from_tf=from_tf, from_flax=from_flax
     )
-    if use_tokenizer_eos_token_id:
-        kwargs["pad_token_id"] = tokenizer.eos_token_id
-    config, unused_kwargs = AutoConfig.from_pretrained(
-        model_info.path, return_unused_kwargs=True, **kwargs
-    )
+    config = AutoConfig.from_pretrained(model_info.path)
 
     try:
-        model_class = getattr(import_module("transformers"), _model)
-    except AttributeError:  # noqa
         # Cover cases where some model repo doesn't include a model
         #  name under their config.json. An example is
         #  google/bert_uncased-L-2-H-128-A-2
-        # TODO: should we support different AutoModel class for different tasks?
-        model_class = AutoModel
-    model = model_class.from_pretrained(
-        model_info.path,
-        config=config,
-        from_tf=from_tf,
-        from_flax=from_flax,
-        **unused_kwargs,
-    )
+        model = _load_autoclass(framework, lm_head).from_pretrained(
+            model_info.path,
+            config=config,
+            from_tf=from_tf,
+            from_flax=from_flax,
+            **kwargs,
+        )
+    except (AttributeError, BentoMLException):  # noqa
+        model = getattr(import_module("transformers"), _model).from_pretrained(
+            model_info.path,
+            config=config,
+            from_tf=from_tf,
+            from_flax=from_flax,
+            **kwargs,
+        )
     return config, model, tokenizer
 
 
@@ -385,7 +444,13 @@ def _save(
                 with Path(ctx.path, CONFIG_NAME).open("r", encoding="utf-8") as of:
                     _config = json.loads(of.read())
                     try:
-                        ctx.options["model"] = "".join(_config["architectures"])
+                        arch = "".join(_config["architectures"])
+                        if from_tf:
+                            ctx.options["model"] = f"TF{arch}"
+                        elif from_flax:
+                            ctx.options["model"] = f"Flax{arch}"
+                        else:
+                            ctx.options["model"] = arch
                     except KeyError:
                         ctx.options["model"] = ""
                 ctx.options["pipeline"] = False
@@ -589,7 +654,8 @@ class _TransformersRunner(Runner):
         tag: str,
         tasks: str,
         *,
-        frameworks: str,
+        framework: str,
+        lm_head: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -603,7 +669,8 @@ class _TransformersRunner(Runner):
             )
         self._tasks = tasks
         self._model_store = model_store
-        self._frameworks = frameworks
+        self._framework = framework
+        self._lm_head = lm_head
 
     @property
     def required_models(self) -> t.List[str]:
@@ -622,12 +689,14 @@ class _TransformersRunner(Runner):
     def _setup(self) -> None:  # type: ignore[override]
         try:
             _ = self._model_store.get(self.name)
-            from_tf = "tf" in self._frameworks
+            from_tf = "tf" in self._framework
             config, model, tokenizer = load(
                 self.name,
                 model_store=self._model_store,
                 from_flax=False,
                 from_tf=from_tf,
+                framework=self._framework,
+                lm_head=self._lm_head,
             )
         except FileNotFoundError:
             config, model, tokenizer = None, None, None
@@ -638,10 +707,10 @@ class _TransformersRunner(Runner):
             config=config,
             model=model,
             tokenizer=tokenizer,
-            framework=self._frameworks,
+            framework=self._framework,
         )
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    # pylint: disable=arguments-differ
     def _run_batch(self, input_data: t.Union[_PV, t.List[_PV]]) -> t.Union[_PV, t.List[_PV]]:  # type: ignore[override] # noqa
         return self._pipeline(input_data)
 
@@ -650,7 +719,8 @@ def load_runner(
     tag: str,
     *,
     tasks: str,
-    frameworks: str = "pt",
+    framework: str = "pt",
+    lm_head: str = "casual",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -672,8 +742,12 @@ def load_runner(
         tasks (`str`):
             Given tasks for pipeline. Refers to https://huggingface.co/transformers/task_summary.html
              for more information.
-        frameworks (`str`, default to `pt`):
+        framework (`str`, default to `pt`):
             Given frameworks supported by transformers: PyTorch, Tensorflow
+        lm_head (`str`, default to `causal`):
+            Language model head for your model. For most usecase causal are applied.
+             Refers to huggingface.co/transformers for more details on which type of
+             language model head is applied to your usecase.
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
@@ -695,7 +769,8 @@ def load_runner(
     return _TransformersRunner(
         tag=tag,
         tasks=tasks,
-        frameworks=frameworks,
+        framework=framework,
+        lm_head=lm_head,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

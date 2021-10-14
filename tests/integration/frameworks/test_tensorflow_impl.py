@@ -4,7 +4,6 @@ import numpy as np
 import psutil
 import pytest
 import tensorflow as tf
-import tensorflow_hub as hub
 
 import bentoml.tensorflow
 from tests._internal.frameworks.tensorflow_utils import (
@@ -16,6 +15,9 @@ from tests._internal.helpers import assert_have_file_extension
 
 MODEL_NAME = __name__.split(".")[-1]
 TF2 = tf.__version__.startswith("2")
+
+if TF2:
+    import tensorflow_hub as hub
 
 native_data = [[1, 2, 3, 4, 5]]
 native_tensor = tf.constant(native_data, dtype=tf.float64)
@@ -169,23 +171,24 @@ def _plus_one_model_tf1():
 
 @pytest.mark.skipif(not TF2, reason="We can tests TF1 functionalities with TF2 compat")
 @pytest.mark.parametrize(
-    "identifier, name, tags, is_module_v1",
+    "identifier, name, tags, is_module_v1, wrapped",
     [
-        (_plus_one_model_tf1(), "module_hub_tf1", [], True),
-        (_plus_one_model_tf2(), "saved_model_tf2", ["serve"], False),
-        # (
-        #     "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
-        #     None,
-        #     None,
-        #     False,
-        # ),
+        (_plus_one_model_tf1(), "module_hub_tf1", [], True, False),
+        (_plus_one_model_tf2(), "saved_model_tf2", ["serve"], False, False),
+        (
+            "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+            None,
+            None,
+            False,
+            True,
+        ),
     ],
 )
-def test_import_from_tfhub(modelstore, identifier, name, tags, is_module_v1):
+def test_import_from_tfhub(modelstore, identifier, name, tags, is_module_v1, wrapped):
     tag = bentoml.tensorflow.import_from_tfhub(identifier, name, model_store=modelstore)
     model_info = modelstore.get(tag)
     assert "tensorflow_hub" in model_info.context
     module = bentoml.tensorflow.load(
-        tag, tfhub_tags=tags, load_as_wrapper=False, model_store=modelstore
+        tag, tfhub_tags=tags, load_as_wrapper=wrapped, model_store=modelstore
     )
     assert module._is_hub_module_v1 == is_module_v1

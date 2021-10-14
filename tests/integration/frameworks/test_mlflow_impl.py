@@ -1,30 +1,46 @@
 import os
 
 import mlflow
+import mlflow.models
 import numpy as np
 import pytest
 
+import bentoml.mlflow
 from bentoml.exceptions import InvalidArgument
-from bentoml.mlflow import MLflowModel
 from tests._internal.frameworks.sklearn_utils import sklearn_model_data
 from tests._internal.helpers import assert_have_file_extension
 
+MODEL_NAME=__name__.split(".")[-1]
 
-def test_mlflow_save_load(tmpdir):
+# fmt: off
+res_arr = np.array(
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2,
+     2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2,
+     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+     2, 2, 2, 2, 2, 2]
+)
+# fmt: on
+
+
+def test_mlflow_save_load(modelstore):
     (model, data) = sklearn_model_data()
-    MLflowModel(model, mlflow.sklearn).save(tmpdir)
+    tag = bentoml.mlflow.save(MODEL_NAME, model, mlflow.sklearn, model_store=modelstore)
+    model_info = modelstore.get(tag)
+    assert_have_file_extension(os.path.join(model_info.path, "saved_model"), '.pkl')
 
-    # fmt: off
-    assert_have_file_extension(os.path.join(tmpdir, 'saved_model'), '.pkl')
-
-    mlflow_loaded = MLflowModel.load(tmpdir)
-    np.testing.assert_array_equal(model.predict(data), mlflow_loaded.predict(data))  # noqa
-    # fmt: on
+    loaded = bentoml.mlflow.load(tag, model_store=modelstore)
+    np.testing.assert_array_equal(loaded.predict(data), res_arr)  # noqa
 
 
-def test_invalid_mlflow_loader(tmpdir):
-    class Foo:
+def test_invalid_mlflow_loader(modelstore):
+    class Foo(mlflow.models.Model):
         pass
 
     with pytest.raises(InvalidArgument):
-        MLflowModel(Foo, os).save(tmpdir)
+        bentoml.mlflow.save(MODEL_NAME, Foo, os, model_store=modelstore)

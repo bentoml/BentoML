@@ -1,3 +1,5 @@
+import os
+import types
 import typing as t
 
 from simple_di import Provide, inject
@@ -5,16 +7,21 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from .exceptions import MissingDependencyException
+from .exceptions import MissingDependencyException, InvalidArgument
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     from _internal.models.store import ModelStore
 
 try:
-    ...
+    import mlflow
+    import mlflow.models
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException("")
+    raise MissingDependencyException(
+        """\
+        `mlflow` is required to use with `bentoml.mlflow`.
+        Instruction: `pip install -U mlflow`
+        """)
 
 
 @inject
@@ -36,12 +43,15 @@ def load(
 
     Examples::
     """  # noqa
+    model_info = model_store.get(tag)
+    return mlflow.pyfunc.load_model(os.path.join(model_info.path, SAVE_NAMESPACE))
 
 
 @inject
 def save(
     name: str,
-    model: t.Any,
+    model: "mlflow.models.Model",
+    loader_module: t.Type["mlflow.pyfunc"],
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -52,8 +62,10 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`xgboost.core.Booster`):
-            Instance of model to be saved
+        model (`mlflow.models.Model`):
+            All mlflow models are of type :obj:`mlflow.models.Model`
+        loader_module (`types.ModuleType`):
+            flavors supported by :obj:`mlflow`
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -65,6 +77,18 @@ def save(
 
     Examples::
     """  # noqa
+    context = {"mlflow": mlflow.__version__}
+    if "mlflow" not in loader_module.__name__:
+        raise InvalidArgument("given `loader_module` is not omitted by mlflow.")
+    with model_store.register(
+        name,
+        module=__name__,
+        options=None,
+        framework_context=context,
+        metadata=metadata
+    ) as ctx:
+        loader_module.save_model(model, os.path.join(ctx.path, SAVE_NAMESPACE))
+        return ctx.tag
 
 
 class _MLflowRunner(Runner):
@@ -77,24 +101,25 @@ class _MLflowRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
+        self._model_store = model_store
 
     @property
     def required_models(self) -> t.List[str]:
-        ...
+        return [self._model_store.get(self.name).tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        ...
+        return 1
 
     @property
     def num_replica(self) -> int:
-        ...
+        return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
         ...
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    # pylint: disable=arguments-differ
     def _run_batch(self, input_data) -> t.Any:
         ...
 
@@ -133,74 +158,3 @@ def load_runner(
         batch_options=batch_options,
         model_store=model_store,
     )
-
-
-# import os
-# import typing as t
-#
-# import bentoml._internal.constants as _const
-#
-# from ._internal.models.base import MODEL_NAMESPACE, Model
-# from ._internal.types import GenericDictType, PathType
-# from ._internal.utils import LazyLoader
-# from .exceptions import InvalidArgument
-#
-# _exc = _const.IMPORT_ERROR_MSG.format(
-#     fwr="mlflow",
-#     module=__name__,
-#     inst="`pip install mlflow`",
-# )
-#
-# MT = t.TypeVar("_MT")
-#
-# if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
-#     import mlflow
-# else:
-#     mlflow = LazyLoader("mlflow", globals(), "mlflow", exc_msg=_exc)
-#
-#
-# class MLflowModel(Model):
-#     """
-#     Model class for saving/loading :obj:`mlflow` models
-#
-#     Args:
-#         model (`mlflow.models.Model`):
-#             All mlflow models are of type :obj:`mlflow.models.Model`
-#         loader_module (`types.ModuleType`):
-#             flavors supported by :obj:`mlflow`
-#         metadata (`GenericDictType`,  `optional`, default to `None`):
-#             Class metadata
-#
-#     Raises:
-#         MissingDependencyException:
-#             :obj:`mlflow` is required by MLflowModel
-#         ArtifactLoadingException:
-#             given `loader_module` is not supported by :obj:`mlflow`
-#
-#     Example usage under :code:`train.py`::
-#
-#         TODO:
-#
-#     One then can define :code:`bento.py`::
-#
-#         TODO:
-#     """
-#
-#     def __init__(
-#         self,
-#         model: MT,
-#         loader_module: t.Type["mlflow.pyfunc"],
-#         metadata: t.Optional[GenericDictType] = None,
-#     ):
-#         super(MLflowModel, self).__init__(model, metadata=metadata)
-#         if "mlflow" not in loader_module.__name__:
-#             raise InvalidArgument("given `loader_module` is not omitted by mlflow.")
-#         self._loader_module: t.Type["mlflow.pyfunc"] = loader_module
-#
-#     @classmethod
-#     def load(cls, path: PathType) -> "mlflow.pyfunc.PyFuncModel":
-#         project_path: str = str(os.path.join(path, MODEL_NAMESPACE))
-#         return mlflow.pyfunc.load_model(project_path)
-#
-#     def save(self, path: PathType) -> None:
-#         self._loader_module.save_model(self._model, os.path.join(path, MODEL_NAMESPACE))

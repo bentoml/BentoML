@@ -1,0 +1,108 @@
+runner:
+  - bentoml/_internal/runner/**
+  - bentoml/_internal/models/**
+catboost:
+  - bentoml/catboost.py
+  - ci/integration/frameworks/run_catboost_tests.sh
+  - tests/integration/frameworks/test_catboost_impl.py
+detectron2:
+  - bentoml/detectron.py
+  - ci/integration/frameworks/run_detectron2_tests.sh
+  - tests/integration/frameworks/test_detectron2_impl.py
+easyocr:
+  - bentoml/easyocr.py
+  - ci/integration/frameworks/run_easyocr_tests.sh
+  - tests/integration/frameworks/test_easyocr_impl.py
+evalml:
+  - bentoml/evalml.py
+  - ci/integration/frameworks/run_evalml_tests.sh
+  - tests/integration/frameworks/test_evalml_impl.py
+fastai:
+  - bentoml/fastai.py
+  - ci/integration/frameworks/run_fastai_tests.sh
+  - tests/integration/frameworks/test_fastai_impl.py
+fasttext:
+  - bentoml/fasttext.py
+  - ci/integration/frameworks/run_fasttext_tests.sh
+  - tests/integration/frameworks/test_fasttext_impl.py
+gluon:
+  - bentoml/gluon.py
+  - ci/integration/frameworks/run_gluon_tests.sh
+  - tests/integration/frameworks/test_gluon_impl.py
+h2o:
+  - bentoml/h2o.py
+  - ci/integration/frameworks/run_h2o_tests.sh
+  - tests/integration/frameworks/test_h2o_impl.py
+keras_tf1:
+  - bentoml/keras.py
+  - ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
+  - tests/integration/frameworks/test_keras_impl.py
+keras_tf2:
+  - bentoml/keras.py
+  - ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
+  - tests/integration/frameworks/test_keras_impl.py
+lightgbm:
+  - bentoml/lightgbm.py
+  - ci/integration/frameworks/run_lightgbm_tests.sh
+  - tests/integration/frameworks/test_lightgbm_impl.py
+mlflow:
+  - bentoml/mlflow.py
+  - ci/integration/frameworks/run_mlflow_tests.sh
+  - tests/integration/frameworks/test_mlflow_impl.py
+onnx:
+  - bentoml/onnx.py
+  - ci/integration/frameworks/onnx/run_onnx_tests.sh
+  - tests/integration/frameworks/onnx/test_onnx_impl.py
+onnxmlir:
+  - bentoml/onnxmlir.py
+  - ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
+  - tests/integration/frameworks/onnx/test_onnxmlir_impl.py
+paddle:
+  - bentoml/paddle.py
+  - ci/integration/frameworks/run_paddle_tests.sh
+  - tests/integration/frameworks/paddle
+pycaret:
+  - bentoml/pycaret.py
+  - ci/integration/frameworks/run_pycaret_tests.sh
+  - tests/integration/frameworks/test_pycaret_impl.py
+pyspark_mllib:
+  - bentoml/pyspark.py
+  - ci/integration/frameworks/run_pyspark_tests.sh
+  - tests/integration/frameworks/test_pyspark_impl.py
+pytorch:
+  - bentoml/pytorch.py
+  - ci/integration/frameworks/run_pytorch_tests.sh
+  - tests/integration/frameworks/test_pytorch_impl.py
+pytorch_lightning:
+  - bentoml/pytorch.py
+  - bentoml/pytorch_lightning.py
+  - ci/integration/frameworks/run_pytorch_lightning_tests.sh
+  - tests/integration/frameworks/test_pytorch_lightning_impl.py
+sklearn:
+  - bentoml/sklearn.py
+  - ci/integration/frameworks/run_sklearn_tests.sh
+  - tests/integration/frameworks/test_sklearn_impl.py
+spacy:
+  - bentoml/spacy.py
+  - ci/integration/frameworks/run_spacy_tests.sh
+  - tests/integration/frameworks/test_spacy_impl.py
+statsmodels:
+  - bentoml/statsmodels.py
+  - ci/integration/frameworks/run_statsmodels_tests.sh
+  - tests/integration/frameworks/test_statsmodels_impl.py
+tf1:
+  - bentoml/tensorflow.py
+  - ci/integration/frameworks/tensorflow/run_tf1_tests.sh
+  - tests/integration/frameworks/test_tensorflow_impl.py
+tf2:
+  - bentoml/tensorflow.py
+  - ci/integration/frameworks/tensorflow/run_tf2_tests.sh
+  - tests/integration/frameworks/test_tensorflow_impl.py
+transformers:
+  - bentoml/transformers.py
+  - ci/integration/frameworks/run_transformers_tests.sh
+  - tests/integration/frameworks/test_transformers_impl.py
+xgboost:
+  - bentoml/xgboost.py
+  - ci/integration/frameworks/run_xgboost_tests.sh
+  - tests/integration/frameworks/test_xgboost_impl.py

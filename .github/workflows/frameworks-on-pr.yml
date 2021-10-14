@@ -1,8 +1,6 @@
-name: Frameworks
+name: Frameworks on PR
 
 on:
-  push:
-    branches: [master, bentoml-1.0]
   pull_request:
     branches: [master, bentoml-1.0]
   schedule:
@@ -681,5 +679,5 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
 concurrency:
-  group: frameworks-${{ github.event.pull_request.number || github.sha }}
+  group: frameworks-on-pr${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

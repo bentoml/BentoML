@@ -22,7 +22,9 @@ except ImportError:  # pragma: no cover
          pycaret with `pip install pycaret` or `pip install pycaret[full]`. 
          For more information, refer to 
          https://pycaret.readthedocs.io/en/latest/installation.html
-        """)
+        """
+    )
+
 
 def _get_model_info(
     tag: str, model_store: "ModelStore"
@@ -36,6 +38,7 @@ def _get_model_info(
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}")
 
     return model_info, model_file
+
 
 @inject
 def load(
@@ -58,7 +61,7 @@ def load(
         import bentoml.pycaret
         dt = bentoml.pycaret.load("my_model:latest")
     """  # noqa
-    _, model_file = _get_model_info(tag,model_store)
+    _, model_file = _get_model_info(tag, model_store)
     return load_model(model_file)
 
 
@@ -91,18 +94,18 @@ def save(
         from pycaret.classification import *
         import bentoml.pycaret
         from pycaret.datasets import get_data
-        
+
         # get data
         dataset = get_data('credit')
         data = dataset.sample(frac=0.95, random_state=786)
-        
+
         # setup is needed to save
-        exp_clf101 = setup(data = data, target = 'default', session_id=123) 
-        
-        best_model = compare_models() # get the best model 
+        exp_clf101 = setup(data = data, target = 'default', session_id=123)
+
+        best_model = compare_models() # get the best model
         tuned_best = tune_model(best_model)
         final_model = finalize_model(tuned_best)
-        
+
         bentoml.pycaret.save("my_model", final_model)
     """  # noqa
     context = {"pycaret": version()}

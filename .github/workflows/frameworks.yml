@@ -2,15 +2,20 @@ name: Frameworks
 
 on:
   push:
-    branches: [master, bentoml-1.0]
+    branches:
+      - master
+      - bentoml-1.0
   pull_request:
-    branches: [master, bentoml-1.0]
+    branches:
+      - master
+      - bentoml-1.0
   schedule:
     - cron: '0 0 * * 1/2'
 
-# TODO(aarnphm): add Trax/Flax support
-
 jobs:
+
+  # TODO(aarnphm): add Trax/Flax support
+
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -46,10 +51,7 @@ jobs:
         id: filter
         with:
           filters: |
-            ci: &ci
-              - .github/workflows/frameworks.yml
             runner: &runner
-              - *ci
               - bentoml/_internal/runner/**
               - bentoml/_internal/models/**
             catboost:
@@ -157,8 +159,6 @@ jobs:
               - bentoml/xgboost.py
               - ci/integration/frameworks/run_xgboost_tests.sh
               - tests/integration/frameworks/test_xgboost_impl.py
-
-
 
   catboost_integration_tests:
     needs: changes

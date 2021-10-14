@@ -87,12 +87,12 @@ jobs:
             keras_tf1:
               - *runner
               - bentoml/keras.py
-              - ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
+              - ci/integration/frameworks/run_keras_tf1_tests.sh
               - tests/integration/frameworks/test_keras_impl.py
             keras_tf2:
               - *runner
               - bentoml/keras.py
-              - ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
+              - ci/integration/frameworks/run_keras_tf2_tests.sh
               - tests/integration/frameworks/test_keras_impl.py
             lightgbm:
               - *runner
@@ -107,13 +107,13 @@ jobs:
             onnx:
               - *runner
               - bentoml/onnx.py
-              - ci/integration/frameworks/onnx/run_onnx_tests.sh
-              - tests/integration/frameworks/onnx/test_onnx_impl.py
+              - ci/integration/frameworks/run_onnx_tests.sh
+              - tests/integration/frameworks/test_onnx_impl.py
             onnxmlir:
               - *runner
               - bentoml/onnxmlir.py
-              - ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
-              - tests/integration/frameworks/onnx/test_onnxmlir_impl.py
+              - ci/integration/frameworks/run_onnxmlir_tests.sh
+              - tests/integration/frameworks/test_onnxmlir_impl.py
             paddle:
               - *runner
               - bentoml/paddle.py
@@ -158,12 +158,12 @@ jobs:
             tf1:
               - *runner
               - bentoml/tensorflow.py
-              - ci/integration/frameworks/tensorflow/run_tf1_tests.sh
+              - ci/integration/frameworks/run_tf1_tests.sh
               - tests/integration/frameworks/test_tensorflow_impl.py
             tf2:
               - *runner
               - bentoml/tensorflow.py
-              - ci/integration/frameworks/tensorflow/run_tf2_tests.sh
+              - ci/integration/frameworks/run_tf2_tests.sh
               - tests/integration/frameworks/test_tensorflow_impl.py
             transformers:
               - *runner
@@ -345,7 +345,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
+        run: ./ci/integration/frameworks/run_keras_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -364,7 +364,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
+        run: ./ci/integration/frameworks/run_keras_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -421,7 +421,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/onnx/run_onnx_tests.sh
+        run: ./ci/integration/frameworks/run_onnx_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -442,7 +442,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
+        run: ./ci/integration/frameworks/run_onnxmlir_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -617,7 +617,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_tf1_tests.sh
+        run: ./ci/integration/frameworks/run_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -636,7 +636,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_tf2_tests.sh
+        run: ./ci/integration/frameworks/run_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

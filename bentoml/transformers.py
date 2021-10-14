@@ -39,7 +39,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
 try:
     import transformers
     from huggingface_hub import HfFolder
-    from transformers import AutoConfig, AutoModel, AutoTokenizer, Pipeline
+    from transformers import AutoConfig, AutoTokenizer, Pipeline
     from transformers.file_utils import (
         CONFIG_NAME,
         FLAX_WEIGHTS_NAME,

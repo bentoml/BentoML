@@ -22,9 +22,9 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run linting script
-        run: ./ci/linter.sh
+        run: ./ci/format_and_lint.sh
 
   documentation_spelling_check:
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run Unit Tests
         run: ./ci/unit_tests.sh
@@ -74,28 +74,6 @@ jobs:
         with:
           name: codecov-${{ matrix.os}}-python${{ matrix.python-version }}
           fail_ci_if_error: true
-
-  back_compatibility_integration_tests:
-    name: Backward Compatibility Integration Tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-      - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
-      - name: Run tests
-        run: ./ci/integration/run_back_compatibility_tests.sh
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}

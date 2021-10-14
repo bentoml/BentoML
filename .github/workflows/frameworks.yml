@@ -9,7 +9,7 @@ on:
     - cron: '0 0 * * 1/2'
 
 jobs:
-  changes:
+  changed_files:
     runs-on: ubuntu-latest
     outputs:
       catboost: ${{ steps.filter.outputs.catboost }}
@@ -179,8 +179,8 @@ jobs:
               - tests/integration/frameworks/test_xgboost_impl.py
 
   catboost_integration_tests:
-    needs: changes
-    if: ${{ needs.changes.outputs.catboost == 'true' }}
+    needs: changed_files
+    if: ${{ needs.changed_files.outputs.catboost == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

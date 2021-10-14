@@ -13,6 +13,31 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       catboost: ${{ steps.filter.outputs.catboost }}
+      detectron2: ${{ steps.filter.outputs.detectron2 }}
+      easyocr: ${{ steps.filter.outputs.easyocr }}
+      evalml: ${{ steps.filter.outputs.evalml }}
+      fastai: ${{ steps.filter.outputs.fastai }}
+      fasttext: ${{ steps.filter.outputs.fasttext }}
+      gluon: ${{ steps.filter.outputs.gluon }}
+      h2o: ${{ steps.filter.outputs.h2o }}
+      keras_tf1: ${{ steps.filter.outputs.keras_tf1 }}
+      keras_tf2: ${{ steps.filter.outputs.keras_tf2 }}
+      lightgbm: ${{ steps.filter.outputs.lightgbm }}
+      mlflow: ${{ steps.filter.outputs.mlflow }}
+      onnx: ${{ steps.filter.outputs.onnx }}
+      onnxmlir: ${{ steps.filter.outputs.onnxmlir }}
+      paddle: ${{ steps.filter.outputs.paddle }}
+      pycaret: ${{ steps.filter.outputs.pycaret }}
+      pyspark_mllib: ${{ steps.filter.outputs.pyspark_mllib }}
+      pytorch: ${{ steps.filter.outputs.pytorch }}
+      pytorch_lightning: ${{ steps.filter.outputs.pytorch_lightning }}
+      sklearn: ${{ steps.filter.outputs.sklearn }}
+      spacy: ${{ steps.filter.outputs.spacy }}
+      statsmodels: ${{ steps.filter.outputs.statsmodels}}
+      tf1: ${{ steps.filter.outputs.tf1 }}
+      tf2: ${{ steps.filter.outputs.tf2 }}
+      transformers: ${{ steps.filter.outputs.transformers }}
+      xgboost: ${{ steps.filter.outputs.xgboost }}
     steps:
       - uses: dorny/paths-filter@v2
         id: filter
@@ -26,6 +51,133 @@ jobs:
               - bentoml/catboost.py
               - ci/integration/frameworks/run_catboost_tests.sh
               - tests/integration/frameworks/test_catboost_impl.py
+            detectron2:
+              - *runner
+              - bentoml/detectron.py
+              - ci/integration/frameworks/run_detectron2_tests.sh
+              - tests/integration/frameworks/test_detectron2_impl.py
+            easyocr:
+              - *runner
+              - bentoml/easyocr.py
+              - ci/integration/frameworks/run_easyocr_tests.sh
+              - tests/integration/frameworks/test_easyocr_impl.py
+            evalml:
+              - *runner
+              - bentoml/evalml.py
+              - ci/integration/frameworks/run_evalml_tests.sh
+              - tests/integration/frameworks/test_evalml_impl.py
+            fastai:
+              - *runner
+              - bentoml/fastai.py
+              - ci/integration/frameworks/run_fastai_tests.sh
+              - tests/integration/frameworks/test_fastai_impl.py
+            fasttext:
+              - *runner
+              - bentoml/fasttext.py
+              - ci/integration/frameworks/run_fasttext_tests.sh
+              - tests/integration/frameworks/test_fasttext_impl.py
+            gluon:
+              - *runner
+              - bentoml/gluon.py
+              - ci/integration/frameworks/run_gluon_tests.sh
+              - tests/integration/frameworks/test_gluon_impl.py
+            h2o:
+              - *runner
+              - bentoml/h2o.py
+              - ci/integration/frameworks/run_h2o_tests.sh
+              - tests/integration/frameworks/test_h2o_impl.py
+            keras_tf1:
+              - *runner
+              - bentoml/keras.py
+              - ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
+              - tests/integration/frameworks/test_keras_impl.py
+            keras_tf2:
+              - *runner
+              - bentoml/keras.py
+              - ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
+              - tests/integration/frameworks/test_keras_impl.py
+            lightgbm:
+              - *runner
+              - bentoml/lightgbm.py
+              - ci/integration/frameworks/run_lightgbm_tests.sh
+              - tests/integration/frameworks/test_lightgbm_impl.py
+            mlflow:
+              - *runner
+              - bentoml/mlflow.py
+              - ci/integration/frameworks/run_mlflow_tests.sh
+              - tests/integration/frameworks/test_mlflow_impl.py
+            onnx:
+              - *runner
+              - bentoml/onnx.py
+              - ci/integration/frameworks/onnx/run_onnx_tests.sh
+              - tests/integration/frameworks/onnx/test_onnx_impl.py
+            onnxmlir:
+              - *runner
+              - bentoml/onnxmlir.py
+              - ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
+              - tests/integration/frameworks/onnx/test_onnxmlir_impl.py
+            paddle:
+              - *runner
+              - bentoml/paddle.py
+              - ci/integration/frameworks/run_paddle_tests.sh
+              - tests/integration/frameworks/paddle
+            pycaret:
+              - *runner
+              - bentoml/pycaret.py
+              - ci/integration/frameworks/run_pycaret_tests.sh
+              - tests/integration/frameworks/test_pycaret_impl.py
+            pyspark_mllib:
+              - *runner
+              - bentoml/pyspark.py
+              - ci/integration/frameworks/run_pyspark_tests.sh
+              - tests/integration/frameworks/test_pyspark_impl.py
+            pytorch:
+              - *runner
+              - bentoml/pytorch.py
+              - ci/integration/frameworks/run_pytorch_tests.sh
+              - tests/integration/frameworks/test_pytorch_impl.py
+            pytorch_lightning:
+              - *runner
+              - bentoml/pytorch.py
+              - bentoml/pytorch_lightning.py
+              - ci/integration/frameworks/run_pytorch_lightning_tests.sh
+              - tests/integration/frameworks/test_pytorch_lightning_impl.py
+            sklearn:
+              - *runner
+              - bentoml/sklearn.py
+              - ci/integration/frameworks/run_sklearn_tests.sh
+              - tests/integration/frameworks/test_sklearn_impl.py
+            spacy:
+              - *runner
+              - bentoml/spacy.py
+              - ci/integration/frameworks/run_spacy_tests.sh
+              - tests/integration/frameworks/test_spacy_impl.py
+            statsmodels:
+              - *runner
+              - bentoml/statsmodels.py
+              - ci/integration/frameworks/run_statsmodels_tests.sh
+              - tests/integration/frameworks/test_statsmodels_impl.py
+            tf1:
+              - *runner
+              - bentoml/tensorflow.py
+              - ci/integration/frameworks/tensorflow/run_tf1_tests.sh
+              - tests/integration/frameworks/test_tensorflow_impl.py
+            tf2:
+              - *runner
+              - bentoml/tensorflow.py
+              - ci/integration/frameworks/tensorflow/run_tf2_tests.sh
+              - tests/integration/frameworks/test_tensorflow_impl.py
+            transformers:
+              - *runner
+              - bentoml/transformers.py
+              - ci/integration/frameworks/run_transformers_tests.sh
+              - tests/integration/frameworks/test_transformers_impl.py
+            xgboost:
+              - *runner
+              - bentoml/xgboost.py
+              - ci/integration/frameworks/run_xgboost_tests.sh
+              - tests/integration/frameworks/test_xgboost_impl.py
+
   catboost_integration_tests:
     needs: changes
     if: ${{ needs.changes.outputs.catboost == 'true' }}
@@ -46,31 +198,21 @@ jobs:
         uses: codecov/codecov-action@v1.0.12
 
   detectron2_integration_tests:
+    needs: changed_files
+    if: ${{ needs.changed_files.outputs.detectron2 == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - uses: tj-actions/changed-files@v10.1
-        id: modified
-        with:
-          files: |
-            bentoml/detectron.py
-            bentoml/_internal/runner
-            ci/integration/frameworks/run_detectron2_tests.sh
-            tests/integration/frameworks/test_detectron2_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/integration/frameworks/run_detectron2_tests.sh
+        run: ./ci/integration/frameworks/run_detectron2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -80,26 +222,14 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - uses: tj-actions/changed-files@v10.1
-        id: modified
-        with:
-          files: |
-            bentoml/easyocr.py
-            bentoml/_internal/runner
-            ci/integration/frameworks/run_easyocr_tests.sh
-            tests/integration/frameworks/test_easyocr_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/integration/frameworks/run_easyocr_tests.sh
+        run: ./ci/integration/frameworks/run_easyocr_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -109,26 +239,14 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - uses: tj-actions/changed-files@v10.1
-        id: modified
-        with:
-          files: |
-            bentoml/evalml.py
-            bentoml/_internal/runner
-            ci/integration/frameworks/run_evalml_tests.sh
-            tests/integration/frameworks/test_evalml_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/integration/frameworks/run_evalml_tests.sh
+        run: ./ci/integration/frameworks/run_evalml_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -138,26 +256,14 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - uses: tj-actions/changed-files@v10.1
-        id: modified
-        with:
-          files: |
-            bentoml/fastai.py
-            bentoml/_internal/runner
-            ci/integration/frameworks/run_fastai_tests.sh
-            tests/integration/frameworks/test_fastai_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/integration/frameworks/run_fastai_tests.sh
+        run: ./ci/integration/frameworks/run_fastai_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -167,26 +273,14 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - uses: tj-actions/changed-files@v10.1
-        id: modified
-        with:
-          files: |
-            bentoml/fasttext.py
-            bentoml/_internal/runner
-            ci/integration/frameworks/run_fasttext_tests.sh
-            tests/integration/frameworks/test_fasttext_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/integration/frameworks/run_fasttext_tests.sh
+        run: ./ci/integration/frameworks/run_fasttext_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -198,26 +292,14 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - uses: tj-actions/changed-files@v10.1
-        id: modified
-        with:
-          files: |
-            bentoml/gluon.py
-            bentoml/_internal/runner
-            ci/integration/frameworks/run_gluon_tests.sh
-            tests/integration/frameworks/test_gluon_impl.py
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install test dependencies
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
-        if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/integration/frameworks/run_gluon_tests.sh
+        run: ./ci/integration/frameworks/run_gluon_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

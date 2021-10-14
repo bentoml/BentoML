@@ -47,11 +47,145 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          filters: .github/framework-filter.yml
+          filters: |
+            runner: &runner
+              - bentoml/_internal/runner/**
+              - bentoml/_internal/models/**
+            catboost:
+              - *runner
+              - bentoml/catboost.py
+              - ci/integration/frameworks/run_catboost_tests.sh
+              - tests/integration/frameworks/test_catboost_impl.py
+            detectron2:
+              - *runner
+              - bentoml/detectron.py
+              - ci/integration/frameworks/run_detectron2_tests.sh
+              - tests/integration/frameworks/test_detectron2_impl.py
+            easyocr:
+              - *runner
+              - bentoml/easyocr.py
+              - ci/integration/frameworks/run_easyocr_tests.sh
+              - tests/integration/frameworks/test_easyocr_impl.py
+            evalml:
+              - *runner
+              - bentoml/evalml.py
+              - ci/integration/frameworks/run_evalml_tests.sh
+              - tests/integration/frameworks/test_evalml_impl.py
+            fastai:
+              - *runner
+              - bentoml/fastai.py
+              - ci/integration/frameworks/run_fastai_tests.sh
+              - tests/integration/frameworks/test_fastai_impl.py
+            fasttext:
+              - *runner
+              - bentoml/fasttext.py
+              - ci/integration/frameworks/run_fasttext_tests.sh
+              - tests/integration/frameworks/test_fasttext_impl.py
+            gluon:
+              - *runner
+              - bentoml/gluon.py
+              - ci/integration/frameworks/run_gluon_tests.sh
+              - tests/integration/frameworks/test_gluon_impl.py
+            h2o:
+              - *runner
+              - bentoml/h2o.py
+              - ci/integration/frameworks/run_h2o_tests.sh
+              - tests/integration/frameworks/test_h2o_impl.py
+            keras_tf1:
+              - *runner
+              - bentoml/keras.py
+              - ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
+              - tests/integration/frameworks/test_keras_impl.py
+            keras_tf2:
+              - *runner
+              - bentoml/keras.py
+              - ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
+              - tests/integration/frameworks/test_keras_impl.py
+            lightgbm:
+              - *runner
+              - bentoml/lightgbm.py
+              - ci/integration/frameworks/run_lightgbm_tests.sh
+              - tests/integration/frameworks/test_lightgbm_impl.py
+            mlflow:
+              - *runner
+              - bentoml/mlflow.py
+              - ci/integration/frameworks/run_mlflow_tests.sh
+              - tests/integration/frameworks/test_mlflow_impl.py
+            onnx:
+              - *runner
+              - bentoml/onnx.py
+              - ci/integration/frameworks/onnx/run_onnx_tests.sh
+              - tests/integration/frameworks/onnx/test_onnx_impl.py
+            onnxmlir:
+              - *runner
+              - bentoml/onnxmlir.py
+              - ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
+              - tests/integration/frameworks/onnx/test_onnxmlir_impl.py
+            paddle:
+              - *runner
+              - bentoml/paddle.py
+              - ci/integration/frameworks/run_paddle_tests.sh
+              - tests/integration/frameworks/paddle
+            pycaret:
+              - *runner
+              - bentoml/pycaret.py
+              - ci/integration/frameworks/run_pycaret_tests.sh
+              - tests/integration/frameworks/test_pycaret_impl.py
+            pyspark_mllib:
+              - *runner
+              - bentoml/pyspark.py
+              - ci/integration/frameworks/run_pyspark_tests.sh
+              - tests/integration/frameworks/test_pyspark_impl.py
+            pytorch:
+              - *runner
+              - bentoml/pytorch.py
+              - ci/integration/frameworks/run_pytorch_tests.sh
+              - tests/integration/frameworks/test_pytorch_impl.py
+            pytorch_lightning:
+              - *runner
+              - bentoml/pytorch.py
+              - bentoml/pytorch_lightning.py
+              - ci/integration/frameworks/run_pytorch_lightning_tests.sh
+              - tests/integration/frameworks/test_pytorch_lightning_impl.py
+            sklearn:
+              - *runner
+              - bentoml/sklearn.py
+              - ci/integration/frameworks/run_sklearn_tests.sh
+              - tests/integration/frameworks/test_sklearn_impl.py
+            spacy:
+              - *runner
+              - bentoml/spacy.py
+              - ci/integration/frameworks/run_spacy_tests.sh
+              - tests/integration/frameworks/test_spacy_impl.py
+            statsmodels:
+              - *runner
+              - bentoml/statsmodels.py
+              - ci/integration/frameworks/run_statsmodels_tests.sh
+              - tests/integration/frameworks/test_statsmodels_impl.py
+            tf1:
+              - *runner
+              - bentoml/tensorflow.py
+              - ci/integration/frameworks/tensorflow/run_tf1_tests.sh
+              - tests/integration/frameworks/test_tensorflow_impl.py
+            tf2:
+              - *runner
+              - bentoml/tensorflow.py
+              - ci/integration/frameworks/tensorflow/run_tf2_tests.sh
+              - tests/integration/frameworks/test_tensorflow_impl.py
+            transformers:
+              - *runner
+              - bentoml/transformers.py
+              - ci/integration/frameworks/run_transformers_tests.sh
+              - tests/integration/frameworks/test_transformers_impl.py
+            xgboost:
+              - *runner
+              - bentoml/xgboost.py
+              - ci/integration/frameworks/run_xgboost_tests.sh
+              - tests/integration/frameworks/test_xgboost_impl.py
 
   catboost_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.catboost == 'true' }}
+    if: ${{ needs.changed_files.outputs.catboost == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -70,7 +204,7 @@ jobs:
 
   detectron2_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.detectron2 == 'true' }}
+    if: ${{ needs.changed_files.outputs.detectron2 == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -82,15 +216,14 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         if: steps.modified.outputs.any_changed == 'true'
-        run: |
-          ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_test_deps.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_detectron2_tests.sh
       - name: Upload test coverage to Codecov
 
   easyocr_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.easyocr == 'true' }}
+    if: ${{ needs.changed_files.outputs.easyocr == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -109,7 +242,7 @@ jobs:
 
   evalml_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.evalml == 'true' }}
+    if: ${{ needs.changed_files.outputs.evalml == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -128,7 +261,7 @@ jobs:
 
   fastai_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.fastai == 'true' }}
+    if: ${{ needs.changed_files.outputs.fastai == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -147,7 +280,7 @@ jobs:
 
   fasttext_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.fasttext == 'true' }}
+    if: ${{ needs.changed_files.outputs.fasttext == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -166,7 +299,7 @@ jobs:
 
   gluon_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.gluon == 'true' }}
+    if: ${{ needs.changed_files.outputs.gluon == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -185,7 +318,7 @@ jobs:
 
   h2o_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.h2o == 'true' }}
+    if: ${{ needs.changed_files.outputs.h2o == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -204,7 +337,7 @@ jobs:
 
   keras_with_tf1_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.keras_tf1 == 'true' }}
+    if: ${{ needs.changed_files.outputs.keras_tf1 == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -223,7 +356,7 @@ jobs:
 
   keras_with_tf2_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.keras_tf2 == 'true' }}
+    if: ${{ needs.changed_files.outputs.keras_tf2 == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -242,7 +375,7 @@ jobs:
 
   lightgbm_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.lightgbm == 'true' }}
+    if: ${{ needs.changed_files.outputs.lightgbm == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -261,7 +394,7 @@ jobs:
 
   mlflow_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.mlflow == 'true' }}
+    if: ${{ needs.changed_files.outputs.mlflow == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -280,7 +413,7 @@ jobs:
 
   onnx_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.onnx == 'true' }}
+    if: ${{ needs.changed_files.outputs.onnx == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -299,7 +432,7 @@ jobs:
 
   onnxmlir_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.onnxmlir == 'true' }}
+    if: ${{ needs.changed_files.outputs.onnxmlir == 'true' }}
     runs-on: ubuntu-latest
     container:
       image: onnxmlirczar/onnx-mlir-dev:latest
@@ -320,7 +453,7 @@ jobs:
 
   paddle_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.paddle == 'true' }}
+    if: ${{ needs.changed_files.outputs.paddle == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -339,7 +472,7 @@ jobs:
 
   pycaret_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.pycaret == 'true' }}
+    if: ${{ needs.changed_files.outputs.pycaret == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -358,7 +491,7 @@ jobs:
 
   pyspark_mllib_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.pyspark_mllib == 'true' }}
+    if: ${{ needs.changed_files.outputs.pyspark_mllib == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -377,7 +510,7 @@ jobs:
 
   pytorch_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.pytorch == 'true' }}
+    if: ${{ needs.changed_files.outputs.pytorch == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -396,7 +529,7 @@ jobs:
 
   pytorch_lightning_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.pytorch_lightning == 'true' }}
+    if: ${{ needs.changed_files.outputs.pytorch_lightning == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -418,7 +551,7 @@ jobs:
 
   sklearn_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.sklearn == 'true' }}
+    if: ${{ needs.changed_files.outputs.sklearn == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -437,7 +570,7 @@ jobs:
 
   spacy_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.spacy == 'true' }}
+    if: ${{ needs.changed_files.outputs.spacy == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -456,7 +589,7 @@ jobs:
 
   statsmodels_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.statsmodels == 'true' }}
+    if: ${{ needs.changed_files.outputs.statsmodels == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -475,7 +608,7 @@ jobs:
 
   tensorflow_v1_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.tf1 == 'true' }}
+    if: ${{ needs.changed_files.outputs.tf1 == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -494,7 +627,7 @@ jobs:
 
   tensorflow_v2_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.tf2 == 'true' }}
+    if: ${{ needs.changed_files.outputs.tf2 == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -513,7 +646,7 @@ jobs:
 
   transformers_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.transformers == 'true' }}
+    if: ${{ needs.changed_files.outputs.transformers == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -532,7 +665,7 @@ jobs:
 
   xgboost_integration_tests:
     needs: changed_files
-    if: ${{ needs.changed_files.outputs.runner == 'true' && needs.changed_files.outputs.xgboost == 'true' }}
+    if: ${{ needs.changed_files.outputs.xgboost == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

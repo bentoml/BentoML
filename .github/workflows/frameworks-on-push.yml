@@ -1,4 +1,4 @@
-name: Frameworks
+name: framework-on-push
 
 on:
   push:

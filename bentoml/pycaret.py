@@ -39,12 +39,11 @@ def _get_model_info(
 
     return model_info, model_file
 
-
 @inject
 def load(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> t.Any:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -55,7 +54,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `sklearn.pipeline.Pipeline` from BentoML modelstore.
+        an instance of the model from BentoML modelstore.
 
     Examples:
         import bentoml.pycaret
@@ -68,7 +67,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: "sklearn.pipeline.Pipeline",
+    model: t.Any,
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

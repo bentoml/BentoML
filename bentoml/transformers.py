@@ -440,21 +440,6 @@ def _save(
                     resume_download=resume_download,
                 )
 
-                # ctx.options will be None here
-                with Path(ctx.path, CONFIG_NAME).open("r", encoding="utf-8") as of:
-                    _config = json.loads(of.read())
-                    try:
-                        arch = "".join(_config["architectures"])
-                        if from_tf:
-                            ctx.options["model"] = f"TF{arch}"
-                        elif from_flax:
-                            ctx.options["model"] = f"Flax{arch}"
-                        else:
-                            ctx.options["model"] = arch
-                    except KeyError:
-                        ctx.options["model"] = ""
-                ctx.options["pipeline"] = False
-
                 # download weight file set correct filename
                 if from_tf:
                     weight_filename = TF2_WEIGHTS_NAME
@@ -477,6 +462,21 @@ def _save(
                     force_download=force_download,
                     resume_download=resume_download,
                 )
+
+                # ctx.options will be None here
+                with Path(ctx.path, CONFIG_NAME).open("r", encoding="utf-8") as of:
+                    _config = json.loads(of.read())
+                    try:
+                        arch = "".join(_config["architectures"])
+                        if from_tf:
+                            ctx.options["model"] = f"TF{arch}"
+                        elif from_flax:
+                            ctx.options["model"] = f"Flax{arch}"
+                        else:
+                            ctx.options["model"] = arch
+                    except KeyError:
+                        ctx.options["model"] = ""
+                ctx.options["pipeline"] = False
 
                 # NOTE: With Tokenizer there are way too many files
                 #  to be included, per frameworks. Thus we will load

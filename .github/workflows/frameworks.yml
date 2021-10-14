@@ -47,7 +47,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          filters: .github/workflows/framework-filter.yml
+          filters: .github/framework-filter.yml
 
   catboost_integration_tests:
     needs: changed_files

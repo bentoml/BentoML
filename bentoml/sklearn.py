@@ -6,7 +6,7 @@ import sklearn
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.types import PathType
 from .exceptions import BentoMLException, MissingDependencyException
@@ -40,7 +40,7 @@ def _get_model_info(
             f"Model {tag} was saved with module {model_info.module}, failed loading "
             f"with {__name__}."
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.pkl")
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PKL_EXT}")
 
     return model_info, model_file
 
@@ -107,7 +107,7 @@ def save(
         metadata=metadata,
         framework_context=context,
     ) as ctx:
-        joblib.dump(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}.pkl"))
+        joblib.dump(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         return ctx.tag
 
 

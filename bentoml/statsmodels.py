@@ -5,7 +5,7 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.types import PathType
 from .exceptions import BentoMLException, MissingDependencyException
@@ -15,6 +15,7 @@ _MT = t.TypeVar("_MT")
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
+    from joblib.parallel import Parallel
 
     from ._internal.models.store import ModelInfo, ModelStore
 
@@ -41,7 +42,7 @@ def _get_model_info(
             f"Model {tag} was saved with module {model_info.module}, failed loading"
             f"with {__name__}"
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.pkl")
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PKL_EXT}")
 
     return model_info, model_file
 
@@ -104,7 +105,7 @@ def save(
         metadata=metadata,
         framework_context=context,
     ) as ctx:
-        model.save(os.path.join(ctx.path, f"{SAVE_NAMESPACE}.pkl"))
+        model.save(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         return ctx.tag
 
 
@@ -146,10 +147,13 @@ class _StatsModelsRunner(Runner):
 
     # pylint: disable=arguments-differ
     def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:  # type: ignore[override] # noqa
+        # TODO: type hint return type.
+        parallel: "Parallel"
+        p_func: t.Callable[..., t.Any]
         parallel, p_func, _ = parallel_func(
             self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
         )
-        parallel(p_func(self._model))
+        return parallel(p_func(input_data))
 
 
 @inject

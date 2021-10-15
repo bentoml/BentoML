@@ -165,13 +165,16 @@ def build_bento(
     import bentoml
 
     if __name__ == "__main__":
+        from bento import svc
+
         bentoml.build(
-            "bento.py:svc",
+            svc,
             version="custom_version_str",
             description=open("readme.md").read(),
             models=['iris_classifier:v123'],
-            include=["*.py", "config.json"],
-            exclude=["*.storage"], # + anything specified in .bentoml_ignore file
+            include=["*"],
+            exclude=["*.storage", "credentials.yaml"],
+            # + anything specified in .bentoml_ignore file
             env=dict(
                 pip_install=bentoml.utils.find_required_pypi_packages(svc),
                 conda_environment="./environment.yaml",

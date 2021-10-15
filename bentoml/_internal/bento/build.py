@@ -276,3 +276,4 @@ def build_bento(
 
         # Create bento.yaml
         # TODO
+        bento_yaml = open(os.path.join(bento_path, "bento.yaml"), "w")

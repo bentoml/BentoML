@@ -108,8 +108,8 @@ def build_bento(
 ):
     """
     Build a Bento for this Service. A Bento is a file archive containing all the
-    specifications, source code, models files required to run and operate this
-    Service in production
+    specifications, source code, and model files required to run and operate this
+    service in production.
 
     Example Usages:
 
@@ -131,7 +131,7 @@ def build_bento(
 
     # For simple use cases, only models list is required:
     svc.bento_options.models = []
-    svc.bento_files.include
+    svc.bento_files.include = ["*"]
     svc.bento_env.pip_install = "./requirements.txt"
 
     # For advanced build use cases, here's all the common build options:
@@ -168,13 +168,13 @@ def build_bento(
             version="custom_version_str",
             description=open("readme.md").read(),
             models=['iris_classifier:v123'],
-            include=["**.py", "config.json"]
+            include=["*.py", "config.json"],
             exclude=["*.storage"], # + anything specified in .bentoml_ignore file
             env=dict(
                 pip_install=bentoml.utils.find_required_pypi_packages(svc),
                 conda_environment="./environment.yaml",
                  docker_options={
-                    "base_image": bentoml.utils.builtin_docker_image("slim", gpu=True)
+                    "base_image": bentoml.utils.builtin_docker_image("slim", gpu=True),
                     "entrypoint": "bentoml serve module_file:svc_name --production",
                     "setup_script": "./setup_docker_container.sh",
                 },

@@ -12,7 +12,9 @@ import stat
 import tarfile
 import typing as t
 import uuid
+from pathlib import Path
 
+import pathspec
 import yaml
 from simple_di import Provide, inject
 
@@ -256,7 +258,53 @@ def build_bento(
             shutil.copytree(model_info.path, target_path)
 
         # Copy all files base on include and exclude, into `{svc.name}` directory
-        # TODO
+        relpaths = [s for s in include if s.startswith("../")]
+        if len(relpaths) != 0:
+            raise InvalidArgument(
+                "Paths outside of the current working directory cannot be included; use a symlink or copy those files into the working directory manually."
+            )
+        out_path = os.path.join(bento_path, svc.name)
+        spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
+        exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
+        exclude_specs = {}
+
+        def to_ignore(p, names):
+            ret = []
+            path = Path(p)
+
+            # load ignore file in this directory, if it exists
+            try:
+                ignorefile = open(os.path.join(path, ".bentomlignore"))
+                exclude_specs[path] = pathspec.PathSpec.from_lines(
+                    "gitwildmatch", ignorefile
+                )
+            except FileNotFoundError:
+                pass
+
+            exclude = [False for e in names]
+            for ignore_path in exclude_specs:
+                try:
+                    rel = path.relative_to(ignore_path)
+                except ValueError:
+                    continue
+                for i, name in enumerate(names):
+                    if exclude_specs[ignore_path].match_file(os.path.join(rel, name)):
+                        exclude[i] = True
+
+            for idx, name in enumerate(names):
+                rel = os.path.join(path.relative_to(build_ctx), name)
+                if (
+                    exclude[idx]
+                    or not spec.match_file(rel)
+                    or exclude_spec.match_file(rel)
+                ):
+                    ret.append(name)
+
+            return ret
+
+        # symlinks=False copies the contents of the symlinks; it is assumed that
+        # the build directory is considered trusted.
+        shutil.copytree(build_ctx, out_path, symlinks=False, ignore=to_ignore)
 
         # Create env, docker, bentoml dev whl files
         # TODO

@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 import torch
 
 import bentoml.pytorch_lightning
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 test_df = pd.DataFrame([[5, 4, 3, 2]])
 

@@ -4,15 +4,15 @@ import torch
 
 from bentoml.coreml import CoreMLModel
 from bentoml.exceptions import InvalidArgument
-from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.frameworks.pytorch_utils import LinearModel, test_df
+from tests.utils.helpers import assert_have_file_extension
 
 
 def pytorch_to_coreml(pytorch_model: LinearModel) -> "ct.models.MLModel":
     """
     CoreML is not for training ML models but rather for converting pretrained models
     and running them on Apple devices. Therefore, in this train we convert the
-    pretrained LinearModel from the tests._internal.bento_services.pytorch
+    pretrained LinearModel from the tests.utils.bento_services.pytorch
     module into a CoreML module.
     """
     pytorch_model.eval()

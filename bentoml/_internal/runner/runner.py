@@ -114,8 +114,8 @@ class _BaseRunner(_RunnerImplMixin, ABC):
     def __init__(
         self,
         name: str,
-        resource_quota: t.Dict[str, t.Any] = None,
-        batch_options: t.Dict[str, t.Any] = None,
+        resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+        batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     ):
         self.name = name
         self.resource_quota = ResourceQuota(**resource_quota if resource_quota else {})

@@ -1,34 +1,64 @@
 import functools
 import typing as t
+from pathlib import Path
 
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+import cloudpickle
+import numpy as np
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
-from ._internal.runner import Runner
+from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE
 from .exceptions import MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     from _internal.models.store import ModelStore
+    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager  # noqa
+    from tensorflow.python.client.session import BaseSession
+    from tensorflow.python.framework.ops import Graph
 
 try:
-    ...
+    import tensorflow as tf
+
+    # TODO(aarnphm): separation of Keras and Tensorflow
+    # https://twitter.com/fchollet/status/1404967230048149506?lang=en
+    import tensorflow.keras as tfk
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException("")
+    raise MissingDependencyException(
+        """\
+        `tensorflow` is required to use `bentoml.keras`, since
+        we will use Tensorflow as Keras backend.\n
+        Instruction: Refers to https://www.tensorflow.org/install for
+        more information of your use case.
+        """
+    )
 
+from bentoml.tensorflow import _TensorflowRunner
 
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
+TF2 = tf.__version__.startswith("2")
+
+# Global instance of tf.Session()
+_graph: "Graph" = tf.compat.v1.get_default_graph()
+_sess: "BaseSession" = tf.compat.v1.Session(graph=_graph)
+
+# make sess.as_default() type safe
+_default_sess: t.Callable[
+    [], "_GeneratorContextManager[BaseSession]"
+] = functools.partial(_sess.as_default)
+
+_load: t.Callable[[t.BinaryIO], "tfk.Model"] = functools.partial(cloudpickle.load)
+
+_CUSTOM_OBJ_FNAME = f"{SAVE_NAMESPACE}_custom_objects{PKL_EXT}"
+_SAVED_MODEL_FNAME = f"{SAVE_NAMESPACE}{H5_EXT}"
+_MODEL_WEIGHT_FNAME = f"{SAVE_NAMESPACE}_weights{HDF5_EXT}"
+_MODEL_JSON_FNAME = f"{SAVE_NAMESPACE}_json{JSON_EXT}"
 
 
 @inject
 def load(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> "tfk.Model":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -44,12 +74,40 @@ def load(
     Examples::
     """  # noqa
 
+    model_info = model_store.get(tag)
+    default_custom_objects = None
+    if model_info.options["custom_objects"]:
+        assert Path(model_info.path, _CUSTOM_OBJ_FNAME).is_file()
+        with Path(model_info.path, _CUSTOM_OBJ_FNAME).open("rb") as dcof:
+            default_custom_objects = _load(dcof)
+
+    with _default_sess():
+        if model_info.options["store_as_json"]:
+            assert Path(model_info.path, _MODEL_JSON_FNAME).is_file()
+            with Path(model_info.path, _MODEL_JSON_FNAME).open("r") as jsonf:
+                model_json = jsonf.read()
+            model = tfk.models.model_from_json(
+                model_json, custom_objects=default_custom_objects
+            )
+        else:
+            model = tfk.models.load_model(
+                str(Path(model_info.path, _SAVED_MODEL_FNAME)),
+                custom_objects=default_custom_objects,
+            )
+        try:
+            # if model is a dictionary
+            return model["model"]
+        except TypeError:
+            return model
+
 
 @inject
 def save(
     name: str,
-    model: t.Any,
+    model: "tfk.Model",
     *,
+    store_as_json: t.Optional[bool] = False,
+    custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
@@ -59,8 +117,12 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`xgboost.core.Booster`):
+        model (`tensorflow.keras.Model`):
             Instance of model to be saved
+        store_as_json (`bool`, `optional`, default to `False`):
+            Whether to store Keras model as JSON and weights
+        custom_objects (`GenericDictType`, `optional`, default to `None`):
+            Dictionary of Keras custom objects for mod
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -72,56 +134,96 @@ def save(
 
     Examples::
     """  # noqa
+    tf.compat.v1.keras.backend.get_session()
+    context = {"tensorflow": tf.__version__}
+    options = {
+        "store_as_json": store_as_json,
+        "custom_objects": True if custom_objects is not None else False,
+    }
+    with model_store.register(
+        name,
+        module=__name__,
+        options=options,
+        framework_context=context,
+        metadata=metadata,
+    ) as ctx:
+        if custom_objects is not None:
+            with Path(ctx.path, _CUSTOM_OBJ_FNAME).open("wb") as cof:
+                cloudpickle.dump(custom_objects, cof)
+        if store_as_json:
+            with Path(ctx.path, _MODEL_JSON_FNAME).open("w") as jf:
+                jf.write(model.to_json())
+            model.save_weights(str(Path(ctx.path, _MODEL_WEIGHT_FNAME)))
+        else:
+            model.save(str(Path(ctx.path, _SAVED_MODEL_FNAME)))
+        return ctx.tag  # type: ignore
 
 
-class _KerasRunner(Runner):
+class _KerasRunner(_TensorflowRunner):
     @inject
     def __init__(
         self,
         tag: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        predict_fn_name: str,
+        device_id: str,
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
-
-    @property
-    def required_models(self) -> t.List[str]:
-        ...
-
-    @property
-    def num_concurrency_per_replica(self) -> int:
-        ...
-
-    @property
-    def num_replica(self) -> int:
-        ...
+        super().__init__(
+            tag=tag,
+            predict_fn_name=predict_fn_name,
+            device_id=device_id,
+            resource_quota=resource_quota,
+            batch_options=batch_options,
+            model_store=model_store,
+        )
+        self._session = _sess
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:
-        ...
+    def _setup(self) -> None:  # type: ignore[override] # noqa
+        self._session.config = self._config_proto
+        self._model = load(self.name, model_store=self._model_store)
+        self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data) -> t.Any:
-        ...
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[override]
+        self, input_data: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]
+    ) -> t.Union[np.ndarray, tf.Tensor]:
+        if not isinstance(input_data, (np.ndarray, tf.Tensor)):
+            input_data = np.array(input_data)
+        with self._device:
+            if TF2:
+                tf.compat.v1.global_variables_initializer()
+            else:
+                self._session.run(tf.global_variables_initializer())
+                with _default_sess():
+                    self._predict_fn(input_data)
+            return self._predict_fn(input_data)
 
 
 @inject
 def load_runner(
     tag: str,
     *,
+    predict_fn_name: str = "predict",
+    device_id: str = "CPU:0",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_KerasRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
-    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
+    maximize throughput. `bentoml.tensorflow.load_runner` implements a Runner class that
+    wrap around a Keras model, with Tensorflow as backend, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):
             Model tag to retrieve model from modelstore
+        predict_fn_name (`str`, default to `predict`):
+            inference function to be used.
+        device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `CPU:0`):
+            Optional devices to put the given model on. Refers to https://www.tensorflow.org/api_docs/python/tf/config
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
@@ -130,152 +232,15 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.xgboost` model
+        Runner instances for `bentoml.keras` model
 
     Examples::
     """  # noqa
     return _KerasRunner(
         tag=tag,
+        predict_fn_name=predict_fn_name,
+        device_id=device_id,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
-
-
-# import os
-# import typing as t
-#
-# import cloudpickle
-#
-# import bentoml._internal.constants as _const
-#
-# from ._internal.models.base import (
-#     H5_EXTENSION,
-#     HDF5_EXTENSION,
-#     JSON_EXTENSION,
-#     MODEL_NAMESPACE,
-#     PICKLE_EXTENSION,
-#     Model,
-# )
-# from ._internal.types import GenericDictType, PathType
-# from ._internal.utils import LazyLoader
-#
-# _exc = _const.IMPORT_ERROR_MSG.format(
-#     fwr="keras",
-#     module=__name__,
-#     inst="`pip install tensorflow` since BentoML will use Tensorflow as Keras backend.",  # noqa
-# )
-# if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
-#     import tensorflow as tf
-#     import tensorflow.keras as tfk
-# else:
-#     tf = LazyLoader("tf", globals(), "tensorflow", exc_msg=_exc)
-#     tfk = LazyLoader("tfk", globals(), "tensorflow.keras", exc_msg=_exc)
-#
-#
-# class KerasModel(Model):
-#     """
-#     Model class for saving/loading :obj:`keras` models using Tensorflow backend.
-#
-#     Args:
-#         model (`tf.keras.models.Model`):
-#             Keras model instance and its subclasses.
-#         store_as_json (`bool`, `optional`, default to `False`):
-#             Whether to store Keras model as JSON and weights
-#         custom_objects (`GenericDictType`, `optional`, default to `None`):
-#             Dictionary of Keras custom objects for model
-#         metadata (`GenericDictType`,  `optional`, default to `None`):
-#             Class metadata
-#
-#     Raises:
-#         MissingDependencyException:
-#             :obj:`tensorflow` is required by KerasModel
-#         InvalidArgument:
-#             model being packed must be instance of :class:`tf.keras.models.Model`
-#
-#     Example usage under :code:`train.py`::
-#
-#         TODO:
-#
-#     One then can define :code:`bento.py`::
-#
-#         TODO:
-#     """
-#
-#     _graph = tf.compat.v1.get_default_graph()
-#     # NOTES: sess should be user facing for V1 compatibility
-#     sess = tf.compat.v1.Session(graph=_graph)
-#
-#     def __init__(
-#         self,
-#         model: "tfk.models.Model",
-#         store_as_json: t.Optional[bool] = False,
-#         custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
-#         metadata: t.Optional[GenericDictType] = None,
-#     ):
-#         super(KerasModel, self).__init__(model, metadata=metadata)
-#
-#         self._store_as_json: t.Optional[bool] = store_as_json
-#         self._custom_objects: t.Optional[t.Dict[str, t.Any]] = custom_objects
-#
-#     @staticmethod
-#     def __get_custom_obj_fpath(path: PathType) -> PathType:
-#         return os.path.join(path, f"{MODEL_NAMESPACE}_custom_objects{PICKLE_EXTENSION}")
-#
-#     @staticmethod
-#     def __get_model_saved_fpath(path: PathType) -> PathType:
-#         return os.path.join(path, f"{MODEL_NAMESPACE}{H5_EXTENSION}")
-#
-#     @staticmethod
-#     def __get_model_weight_fpath(path: PathType) -> PathType:
-#         return os.path.join(path, f"{MODEL_NAMESPACE}_weights{HDF5_EXTENSION}")
-#
-#     @staticmethod
-#     def __get_model_json_fpath(path: PathType) -> PathType:
-#         return os.path.join(path, f"{MODEL_NAMESPACE}_json{JSON_EXTENSION}")
-#
-#     @classmethod
-#     def load(cls, path: PathType) -> "tfk.models.Model":
-#         default_custom_objects = None
-#         if os.path.isfile(cls.__get_custom_obj_fpath(path)):
-#             with open(cls.__get_custom_obj_fpath(path), "rb") as dco_file:
-#                 default_custom_objects = cloudpickle.load(dco_file)
-#
-#         with cls.sess.as_default():  # pylint: disable=not-context-manager
-#             if os.path.isfile(cls.__get_model_json_fpath(path)):
-#                 # load keras model via json and weights since json file are in path
-#                 with open(cls.__get_model_json_fpath(path), "r") as json_file:
-#                     model_json = json_file.read()
-#                 obj = tfk.models.model_from_json(
-#                     model_json, custom_objects=default_custom_objects
-#                 )
-#                 obj.load_weights(cls.__get_model_weight_fpath(path))
-#             else:
-#                 # otherwise, load keras model via standard load_model
-#                 obj = tfk.models.load_model(
-#                     cls.__get_model_saved_fpath(path),
-#                     custom_objects=default_custom_objects,
-#                 )
-#         if isinstance(obj, dict):
-#             model = obj["model"]
-#         else:
-#             model = obj
-#
-#         return model
-#
-#     def save(self, path: PathType) -> None:
-#         tf.compat.v1.keras.backend.get_session()
-#
-#         # save custom_objects for model
-#         if self._custom_objects:
-#             with open(self.__get_custom_obj_fpath(path), "wb") as custom_object_file:
-#                 cloudpickle.dump(self._custom_objects, custom_object_file)
-#
-#         if self._store_as_json:
-#             # save keras model using json and weights if requested
-#             with open(self.__get_model_json_fpath(path), "w") as json_file:
-#                 json_file.write(self._model.to_json())
-#             self._model.save_weights(self.__get_model_weight_fpath(path))
-#         else:
-#             # otherwise, save standard keras model
-#             self._model.save(self.__get_model_saved_fpath(path))

@@ -1,4 +1,3 @@
-import functools
 import inspect
 import itertools
 import logging
@@ -13,8 +12,7 @@ from pathlib import Path
 
 import attr
 import yaml
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from bentoml import __version__ as BENTOML_VERSION
 
@@ -37,10 +35,6 @@ RESERVED_MODEL_FIELD = [
 ]
 SUPPORTED_COMPRESSION_TYPE = [".gz"]
 MODEL_TAR_EXTENSION = ".models.tar.gz"
-
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 
 def validate_name(name: str) -> None:
@@ -148,31 +142,38 @@ class ModelStore:
         self._base_dir = Path(base_dir)
         validate_or_create_dir(self._base_dir)
 
-    def list(self, tag: t.Optional[str] = None) -> t.List[str]:
+    def list(self, tag: t.Optional[str] = None, detailed: bool = True) -> t.List[str]:
         """
         bentoml models list -> t.List[models name under BENTOML_HOME/models]
         bentoml models list my_nlp_models -> t.List[model_version]
-        """
-        if not tag:
-            path = self._base_dir
-            return sorted(
-                list(
-                    itertools.chain.from_iterable(
-                        [
-                            [f"{_d.name}:{ver}" for ver in self.list(_d.name)]
-                            for _d in path.iterdir()
-                        ]
-                    )
-                ),
-                key=operator.itemgetter(0),
-            )
-        elif ":" not in tag:
+        bentoml models list my_nlp_models:20210292_A34821 -> [contents of given model directory]
+        """  # noqa
+        if ":" not in tag:
             path = Path(self._base_dir, tag)
+        elif not tag:
+            path = self._base_dir
+            if detailed:
+                return sorted(
+                    list(
+                        itertools.chain.from_iterable(
+                            [
+                                [f"{_d.name}:{ver}" for ver in self.list(_d.name)]
+                                for _d in path.iterdir()
+                            ]
+                        )
+                    ),
+                    key=operator.itemgetter(0),
+                )
         else:
             name, version = _process_model_tag(tag)
             path = Path(self._base_dir, name, version)
             if version == "latest":
                 path = path.resolve()
+            return [
+                str(f).replace(str(path.resolve()), "")
+                for f in path.rglob("**/*")
+                if f.is_file()
+            ]
         return [_f.name for _f in path.iterdir() if not _f.is_symlink()]
 
     def _create_path(self, tag: str) -> Path:
@@ -191,12 +192,14 @@ class ModelStore:
         options: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
         framework_context: t.Optional[t.Dict[str, t.Any]] = None,
-    ) -> "t.Iterator[StoreCtx]":
+    ) -> t.ContextManager["StoreCtx"]:
         """
         with bentoml.models.register(name, options, metadata, labels) as ctx:
             # ctx(model_path, version, metadata)
             model.save(ctx.model_path, metadata=ctx.metadata)
         """
+        _exc, _failed = None, False
+
         tag = _generate_model_tag(name)
         _, version = tag.split(":")
         model_path = self._create_path(tag)
@@ -213,18 +216,30 @@ class ModelStore:
         )
         try:
             yield ctx
-        except Exception:  # noqa # pylint: disable=broad-except
+        except (
+            KeyboardInterrupt,
+            Exception,
+        ) as e:  # noqa # pylint: disable=broad-except
             # save has failed
+            _exc, _failed = e, True
             logger.warning(f"Failed to save {tag}, deleting {model_path}...")
             shutil.rmtree(model_path)
         finally:
-            latest_path = Path(self._base_dir, name, "latest")
-            dump_model_yaml(
-                model_yaml, ctx, framework_context=framework_context, module=module
-            )
-            if latest_path.is_symlink():
-                latest_path.unlink()
-            latest_path.symlink_to(model_path)
+            if not _failed:
+                latest_path = Path(self._base_dir, name, "latest")
+                dump_model_yaml(
+                    model_yaml, ctx, framework_context=framework_context, module=module
+                )
+                if latest_path.is_symlink():
+                    latest_path.unlink()
+                latest_path.symlink_to(model_path)
+                return
+            # mlflow doesn't cleanup directory created by ArtifactRepository when
+            #  failed, so we will try to remove the created directory. As such, we only
+            #  remove the directory if it is empty, else raise Exception.
+            if len(os.listdir(model_path.parent)) == 0:
+                shutil.rmtree(model_path.parent)
+            raise _exc
 
     def get(self, tag: str) -> "ModelInfo":
         """
@@ -238,26 +253,32 @@ class ModelStore:
             )
         return load_model_yaml(path)
 
-    def delete(self, tag: str, skip_confirm: bool = False) -> None:
+    def delete(self, tag: str, skip_confirm: bool = True) -> None:
         model_name, version = _process_model_tag(tag)
         basepath = Path(self._base_dir, model_name)
-        try:
-            if ":" not in tag:
-                shutil.rmtree(basepath)
-            else:
-                path = Path(basepath, version)
-                path.rmdir()
-                path.unlink(missing_ok=True)
-        finally:
+        if skip_confirm:
             try:
-                indexed = sorted(basepath.iterdir(), key=os.path.getctime)
-                latest_path = Path(basepath, "latest")
-                if latest_path.is_symlink():
-                    latest_path.unlink()
-                latest_path.symlink_to(indexed[-1])
-            except FileNotFoundError:
-                # this is when we delete the whole folder
-                pass
+                if ":" not in tag:
+                    shutil.rmtree(basepath)
+                else:
+                    path = Path(basepath, version)
+                    path.rmdir()
+                    path.unlink(missing_ok=True)
+            finally:
+                try:
+                    indexed = sorted(basepath.iterdir(), key=os.path.getctime)
+                    latest_path = Path(basepath, "latest")
+                    if latest_path.is_symlink():
+                        latest_path.unlink()
+                    latest_path.symlink_to(indexed[-1])
+                except FileNotFoundError:
+                    # this is when we delete the whole folder
+                    pass
+        raise BentoMLException(
+            f"`skip_confirm={skip_confirm}`, thus you won't"
+            f" be able to delete given {tag}. If you want to"
+            f" surpass this check changed `skip_confirm=True`"
+        )
 
     def push(self, tag: str) -> None:
         ...

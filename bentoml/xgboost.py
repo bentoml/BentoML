@@ -1,13 +1,11 @@
-import functools
 import os
 import typing as t
 
 import numpy as np
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import JSON_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -27,9 +25,6 @@ except ImportError:  # pragma: no cover
         """
     )
 
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 # TODO: support xgb.DMatrix runner io container
 # from bentoml.runner import RunnerIOContainer, register_io_container
@@ -63,7 +58,7 @@ def _get_model_info(
             f"Model {tag} was saved with module {model_info.module}, failed loading "
             f"with {__name__}."
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.json")
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{JSON_EXT}")
     _booster_params = dict() if not booster_params else booster_params
     for key, value in model_info.options.items():
         if key not in _booster_params:
@@ -163,7 +158,7 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:
-        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}.json"))
+        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{JSON_EXT}"))
         return ctx.tag
 
 
@@ -173,9 +168,9 @@ class _XgBoostRunner(Runner):
         self,
         tag: str,
         predict_fn_name: str,
-        booster_params: t.Dict[str, t.Union[str, int]],
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
@@ -220,15 +215,15 @@ class _XgBoostRunner(Runner):
         return booster_params
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore
+    def _setup(self) -> None:  # type: ignore[override]
         self._model = xgb.core.Booster(
             params=self._booster_params,
             model_file=self._model_file,
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(  # type: ignore
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[override]
         self, input_data: t.Union[np.ndarray, "pd.DataFrame", xgb.DMatrix]
     ) -> "np.ndarray":
         if not isinstance(input_data, xgb.DMatrix):
@@ -281,12 +276,11 @@ def load_runner(
         runner = bentoml.xgboost.load_runner("my_model:20201012_DE43A2")
         runner.run(xgb.DMatrix(input_data))
     """  # noqa
-    _runner: t.Callable[[str], "_XgBoostRunner"] = functools.partial(
-        _XgBoostRunner,
+    return _XgBoostRunner(
+        tag=tag,
         predict_fn_name=predict_fn_name,
         booster_params=booster_params,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
-    return _runner(tag)

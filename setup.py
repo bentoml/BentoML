@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf8") as f:
 
 install_requires = [
     "click>=7.0",
-    "simple-di==0.1.1",
+    "simple-di>=0.1.2",
     'contextvars;python_version < "3.7"',
     'dataclasses;python_version < "3.7"',
     "aiohttp",
@@ -120,6 +120,7 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.6.1",
+    package_data={"bentoml": ["py.typed"]},
     entry_points={"console_scripts": ["bentoml=bentoml:bentoml._internal.cli.cli"]},
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",

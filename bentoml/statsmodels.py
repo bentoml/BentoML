@@ -1,15 +1,13 @@
-import functools
 import os
 import typing as t
 
-import statsmodels
 import numpy as np
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
+from ._internal.types import PathType
 from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
@@ -17,13 +15,14 @@ _MT = t.TypeVar("_MT")
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
+    from joblib.parallel import Parallel
 
-    from ._internals.models.store import ModelInfo, ModelStore
+    from ._internal.models.store import ModelInfo, ModelStore
 
 try:
+    import statsmodels
     import statsmodels.api as sm
     from statsmodels.tools.parallel import parallel_func
-
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """statsmodels is required in order to use bentoml.statsmodels, install
@@ -32,22 +31,18 @@ except ImportError:  # pragma: no cover
          """
     )
 
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
-
 
 def _get_model_info(
     tag: str,
     model_store: "ModelStore",
-) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
+) -> t.Tuple["ModelInfo", PathType]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
         raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with module {model_info.module}, failed loading"
             f"with {__name__}"
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.pkl")
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PKL_EXT}")
 
     return model_info, model_file
 
@@ -56,7 +51,7 @@ def _get_model_info(
 def load(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> _MT:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -72,8 +67,8 @@ def load(
     Examples::
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
-
-    return sm.load(fname=model_file)
+    _load: t.Callable[[PathType], _MT] = sm.load
+    return _load(model_file)
 
 
 @inject
@@ -110,7 +105,7 @@ def save(
         metadata=metadata,
         framework_context=context,
     ) as ctx:
-        model.save(os.path.join(ctx.path, f"{SAVE_NAMESPACE}.pkl"))
+        model.save(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         return ctx.tag
 
 
@@ -119,13 +114,14 @@ class _StatsModelsRunner(Runner):
     def __init__(
         self,
         tag: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        predict_fn_name: str,
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
         model_info, model_file = _get_model_info(tag, model_store)
-
+        self._predict_fn_name = predict_fn_name
         self._model_info = model_info
         self._model_file = model_file
 
@@ -144,22 +140,27 @@ class _StatsModelsRunner(Runner):
         return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:
+    def _setup(self) -> None:  # type: ignore[override]
 
-        self._model = sm.load(fname=model_file)
+        self._model = sm.load(self._model_file)
+        self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:
-        parallel, p_func, n_jobs = parallel_func(
-            predict, n_jobs=self.num_concurrency_per_replica, verbose=0
+    # pylint: disable=arguments-differ
+    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:  # type: ignore[override] # noqa
+        # TODO: type hint return type.
+        parallel: "Parallel"
+        p_func: t.Callable[..., t.Any]
+        parallel, p_func, _ = parallel_func(
+            self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
         )
-        parallel(p_func(self.model))
+        return parallel(p_func(input_data))
 
 
 @inject
 def load_runner(
     tag: str,
     *,
+    predict_fn_name: str = "predict",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -172,6 +173,8 @@ def load_runner(
     Args:
         tag (`str`):
             Model tag to retrieve model from modelstore
+        predict_fn_name (`str`, default to `predict`):
+            Options for inference functions
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
@@ -186,6 +189,7 @@ def load_runner(
     """  # noqa
     return _StatsModelsRunner(
         tag=tag,
+        predict_fn_name=predict_fn_name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

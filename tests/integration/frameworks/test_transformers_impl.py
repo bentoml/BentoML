@@ -6,6 +6,7 @@ from transformers.file_utils import CONFIG_NAME, hf_bucket_url
 from transformers.testing_utils import DUMMY_UNKWOWN_IDENTIFIER as MODEL_ID
 
 import bentoml.transformers
+from bentoml.exceptions import BentoMLException
 from tests._internal.helpers import assert_have_file_extension
 
 set_seed(123)
@@ -28,8 +29,24 @@ result = (
 def generate_from_text(model, tokenizer, jsons, return_tensors="pt"):
     text = jsons.get("text")
     input_ids = tokenizer.encode(text, return_tensors=return_tensors)
-    output = model.generate(input_ids, max_length=50)
+    output = model.generate(
+        input_ids, max_length=50, pad_token_id=tokenizer.eos_token_id
+    )
     return tokenizer.decode(output[0], skip_special_tokens=True)
+
+
+@pytest.mark.parametrize(
+    "autoclass, exc",
+    [
+        ({"framework": "xgboost", "lm_head": "test"}, AttributeError),
+        ({"framework": "xgb", "lm_head": "test"}, AttributeError),
+        ({"framework": "pt", "lm_head": "test"}, AttributeError),
+        ({"framework": "flax", "lm_head": "ctc"}, BentoMLException),
+    ],
+)
+def test_load_autoclass(autoclass, exc):
+    with pytest.raises(exc):
+        bentoml.transformers._load_autoclass(**autoclass)
 
 
 @pytest.mark.parametrize(
@@ -91,12 +108,13 @@ def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
     "kwargs, frameworks, tensors_type",
     [({"from_tf": False}, "pt", "pt"), ({"from_tf": True}, "tf", "tf")],
 )
-@pytest.mark.runslow
 def test_transformers_save_load(modelstore, frameworks, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
         "gpt2", model_store=modelstore, **kwargs
     )
-    model, tokenizer = bentoml.transformers.load(tag, model_store=modelstore, **kwargs)
+    _, model, tokenizer = bentoml.transformers.load(
+        tag, framework=frameworks, model_store=modelstore
+    )
     assert (
         generate_from_text(model, tokenizer, test_sentence, return_tensors=tensors_type)
         == result

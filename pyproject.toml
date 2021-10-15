@@ -12,13 +12,17 @@ exclude = '''
     | dist
     | examples
     | guides
+    | stubs
+    | third_party
   )/
   | bentoml/_version.py
   | versioneer.py
-  | bentoml/utils/cloudpickle.py
-  | bentoml/_internal/yatai_client/proto
-  | yatai/yatai/proto
-  | tests/unit/yatai/proto
-  | third_party
 )
 '''
+
+[tool.pytest.ini_options]
+addopts = "-ra -p no:warnings"
+
+[tool.isort]
+profile = "black"
+skip_glob = ["third_party", "stubs"]

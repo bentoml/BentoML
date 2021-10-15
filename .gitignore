@@ -145,3 +145,5 @@ tests/integration/data
 # Emacs buffers
 *~
 **/*.ipynb
+stubs
+mlruns

@@ -15,13 +15,10 @@ def pytest_addoption(parser):
 
 
 def pytest_collection_modifyitems(config, items):
-    if config.getoption("--runslow") or config.getoption("--gpus"):
+    if config.getoption("--gpus"):
         return
-    skip_slow = pytest.mark.skip(reason="need --runslow option to run")
     skip_gpus = pytest.mark.skip(reason="need --gpus option to run")
     for item in items:
-        if "slow" in item.keywords:
-            item.add_marker(skip_slow)
         if "gpus" in item.keywords:
             item.add_marker(skip_gpus)
 

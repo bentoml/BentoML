@@ -9,7 +9,7 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from .exceptions import BentoMLException, InvalidArgument, MissingDependencyException
+from .exceptions import InvalidArgument, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -61,15 +61,18 @@ def _load(
             )
             if not mlmodel_fpath.exists():
                 raise MlflowException(
-                    f"Could not find an '{MLMODEL_FILE_NAME}' configuration file at '{str(model_info.path)}'",
+                    f"Could not find an '{MLMODEL_FILE_NAME}'"
+                    f" configuration file at '{str(model_info.path)}'",
                     RESOURCE_DOES_NOT_EXIST,
                 )
             model = mlflow.models.Model.load(mlmodel_fpath)
 
-            # flavors will usually consists of two keys, one is the frameworks impl, the other is
-            #  mlflow's python function. We will try to use the python function dictionary to load
+            # flavors will usually consists of two keys,
+            #  one is the frameworks impl, the other is
+            #  mlflow's python function. We will try to
+            #  use the python function dictionary to load
             #  the model instance
-            pyfunc_config = list(map(lambda x: x[1], model.flavors.items()))[1]
+            pyfunc_config = list(map(lambda x: x[1], model.flavors.items()))[1]  # type: ignore[no-any-return] # noqa # pylint: disable
             loader_module = getattr(mlflow, pyfunc_config["loader_module"])
     else:
         loader_module = mlflow.pyfunc
@@ -80,7 +83,7 @@ def _load(
 def load_projects(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    **mlflow_project_run_kwargs,
+    **mlflow_project_run_kwargs: str,
 ) -> t.Tuple[str, t.Callable[..., t.Any]]:
     return _load(
         tag=tag,
@@ -115,10 +118,9 @@ def load(
 def _save_to_modelstore(
     name: str,
     identifier: t.Union["mlflow.models.Model", str],
-    loader_module: t.Optional[t.Type["mlflow.pyfunc"]] = None,
-    *,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    loader_module: t.Type["mlflow.pyfunc"],
+    metadata: t.Optional[t.Dict[str, t.Any]],
+    model_store: "ModelStore",
 ) -> str:
     context = {"mlflow": mlflow.__version__, "import_from_uri": False}
     if isinstance(identifier, str):
@@ -141,18 +143,18 @@ def _save_to_modelstore(
             project_or_artifact_path = _download_artifact_from_uri(
                 identifier, output_path=ctx.path
             )
-            if (
-                len(
-                    list(Path(project_or_artifact_path).rglob(_MLFLOW_PROJECT_FILENAME))
-                )
-                != 0
-            ):
+            _g = Path(project_or_artifact_path).rglob(_MLFLOW_PROJECT_FILENAME)
+            if len(list(_g)) != 0:
                 ctx.options[_MLFLOW_PROJECT_FILENAME.lower()] = True
             ctx.options["artifacts_path"] = project_or_artifact_path
-
         else:
+            assert loader_module is not None, (
+                "`loader_module` is required"
+                " in order to save given model"
+                " from MLflow."
+            )
             loader_module.save_model(identifier, os.path.join(ctx.path, SAVE_NAMESPACE))
-        return ctx.tag
+        return ctx.tag  # type: ignore
 
 
 @inject
@@ -200,11 +202,11 @@ def import_from_uri(
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> str:
     return _save_to_modelstore(
         name=_uri_to_filename(uri),
         identifier=uri,
-        loader_module=None,
+        loader_module=mlflow.pyfunc,
         metadata=metadata,
         model_store=model_store,
     )
@@ -215,8 +217,8 @@ class _MLflowRunner(Runner):
     def __init__(
         self,
         tag: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
@@ -235,11 +237,11 @@ class _MLflowRunner(Runner):
         return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:
+    def _setup(self) -> None:  # type: ignore[override]
         ...
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data) -> t.Any:
+    def _run_batch(self, input_data: t.Any) -> t.Any:  # type: ignore[override]
         ...
 
 
@@ -247,8 +249,8 @@ class _MLflowRunner(Runner):
 def load_runner(
     tag: str,
     *,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_MLflowRunner":
     """

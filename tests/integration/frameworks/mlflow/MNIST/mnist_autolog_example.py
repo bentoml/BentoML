@@ -8,14 +8,14 @@
 # pylint: disable=arguments-differ
 # pylint: disable=unused-argument
 # pylint: disable=abstract-method
-import pytorch_lightning as pl
-import mlflow.pytorch
 import os
-import torch
 from argparse import ArgumentParser
+
+import mlflow.pytorch
+import pytorch_lightning as pl
+import torch
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.metrics.functional import accuracy
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
@@ -65,7 +65,9 @@ class MNISTDataModule(pl.LightningDataModule):
         :return: Returns the constructed dataloader
         """
         return DataLoader(
-            df, batch_size=self.args["batch_size"], num_workers=self.args["num_workers"],
+            df,
+            batch_size=self.args["batch_size"],
+            num_workers=self.args["num_workers"],
         )
 
     def train_dataloader(self):
@@ -120,7 +122,11 @@ class LightningMNISTClassifier(pl.LightningModule):
             help="number of workers (default: 3)",
         )
         parser.add_argument(
-            "--lr", type=float, default=0.001, metavar="LR", help="learning rate (default: 0.001)",
+            "--lr",
+            type=float,
+            default=0.001,
+            metavar="LR",
+            help="learning rate (default: 0.001)",
         )
         return parser
 
@@ -233,7 +239,12 @@ class LightningMNISTClassifier(pl.LightningModule):
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.args["lr"])
         self.scheduler = {
             "scheduler": torch.optim.lr_scheduler.ReduceLROnPlateau(
-                self.optimizer, mode="min", factor=0.2, patience=2, min_lr=1e-6, verbose=True,
+                self.optimizer,
+                mode="min",
+                factor=0.2,
+                patience=2,
+                min_lr=1e-6,
+                verbose=True,
             ),
             "monitor": "val_loss",
         }
@@ -245,10 +256,15 @@ if __name__ == "__main__":
 
     # Early stopping parameters
     parser.add_argument(
-        "--es_monitor", type=str, default="val_loss", help="Early stopping monitor parameter"
+        "--es_monitor",
+        type=str,
+        default="val_loss",
+        help="Early stopping monitor parameter",
     )
 
-    parser.add_argument("--es_mode", type=str, default="min", help="Early stopping mode parameter")
+    parser.add_argument(
+        "--es_mode", type=str, default="min", help="Early stopping mode parameter"
+    )
 
     parser.add_argument(
         "--es_verbose", type=bool, default=True, help="Early stopping verbose parameter"
@@ -288,7 +304,9 @@ if __name__ == "__main__":
     lr_logger = LearningRateMonitor()
 
     trainer = pl.Trainer.from_argparse_args(
-        args, callbacks=[lr_logger, early_stopping, checkpoint_callback], checkpoint_callback=True
+        args,
+        callbacks=[lr_logger, early_stopping, checkpoint_callback],
+        checkpoint_callback=True,
     )
     trainer.fit(model, dm)
     trainer.test()

@@ -1,2 +1,3 @@
-import bentoml.mlflow
 import sklearn
+
+import bentoml.mlflow

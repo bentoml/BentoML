@@ -102,8 +102,8 @@ jobs:
             mlflow:
               - *runner
               - bentoml/mlflow.py
+              - tests/integration/frameworks/mlflow
               - ci/integration/frameworks/run_mlflow_tests.sh
-              - tests/integration/frameworks/test_mlflow_impl.py
             onnx:
               - *runner
               - bentoml/onnx.py

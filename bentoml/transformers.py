@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager  # noqa
-    from transformers import (  # noqa
-        FlaxPreTrainedModel,
+    from transformers import FlaxPreTrainedModel  # noqa
+    from transformers import (
         PretrainedConfig,
         PreTrainedModel,
         PreTrainedTokenizer,

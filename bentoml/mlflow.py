@@ -1,20 +1,28 @@
+import functools
 import os
 import typing as t
+from hashlib import sha256
+from pathlib import Path
 
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from .exceptions import InvalidArgument, MissingDependencyException
+from .exceptions import BentoMLException, InvalidArgument, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     from _internal.models.store import ModelStore
+    from mlflow.pyfunc import PyFuncModel
 
 try:
     import mlflow
     import mlflow.models
+    from mlflow.exceptions import MlflowException
+    from mlflow.models.model import MLMODEL_FILE_NAME
+    from mlflow.protos.databricks_pb2 import RESOURCE_DOES_NOT_EXIST
+    from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -23,12 +31,70 @@ except ImportError:  # pragma: no cover
         """
     )
 
+_MLFLOW_PROJECT_FILENAME = "MLproject"
+
+
+def _uri_to_filename(uri: str) -> str:
+    return f"mlflow{sha256(uri.encode('utf-8')).hexdigest()}"
+
+
+def _load(
+    tag: str,
+    model_store: "ModelStore",
+    load_as_projects: bool = False,
+    **mlflow_project_run_kwargs: str,
+) -> t.Union[t.Tuple[str, t.Callable[..., t.Any]], "PyFuncModel"]:
+    model_info = model_store.get(tag)
+
+    if "import_from_uri" in model_info.context:
+        if load_as_projects:
+            assert _MLFLOW_PROJECT_FILENAME.lower() in model_info.options
+
+            uri = model_info.options["artifacts_path"]
+            func: t.Callable[[str], t.Callable[..., t.Any]] = functools.partial(
+                mlflow.projects.run, **mlflow_project_run_kwargs
+            )
+            return uri, func
+        else:
+            mlmodel_fpath = Path(
+                model_info.options["artifacts_path"], MLMODEL_FILE_NAME
+            )
+            if not mlmodel_fpath.exists():
+                raise MlflowException(
+                    f"Could not find an '{MLMODEL_FILE_NAME}' configuration file at '{str(model_info.path)}'",
+                    RESOURCE_DOES_NOT_EXIST,
+                )
+            model = mlflow.models.Model.load(mlmodel_fpath)
+
+            # flavors will usually consists of two keys, one is the frameworks impl, the other is
+            #  mlflow's python function. We will try to use the python function dictionary to load
+            #  the model instance
+            pyfunc_config = list(map(lambda x: x[1], model.flavors.items()))[1]
+            loader_module = getattr(mlflow, pyfunc_config["loader_module"])
+    else:
+        loader_module = mlflow.pyfunc
+    return loader_module.load_model(os.path.join(model_info.path, SAVE_NAMESPACE))
+
+
+@inject
+def load_projects(
+    tag: str,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    **mlflow_project_run_kwargs,
+) -> t.Tuple[str, t.Callable[..., t.Any]]:
+    return _load(
+        tag=tag,
+        model_store=model_store,
+        load_as_projects=True,
+        **mlflow_project_run_kwargs,
+    )
+
 
 @inject
 def load(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> "PyFuncModel":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -39,12 +105,54 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `xgboost.core.Booster` from BentoML modelstore.
+        an instance of `mlflow.pyfunc.PyFuncModel` from BentoML modelstore.
 
     Examples::
     """  # noqa
-    model_info = model_store.get(tag)
-    return mlflow.pyfunc.load_model(os.path.join(model_info.path, SAVE_NAMESPACE))
+    return _load(tag=tag, model_store=model_store)
+
+
+def _save_to_modelstore(
+    name: str,
+    identifier: t.Union["mlflow.models.Model", str],
+    loader_module: t.Optional[t.Type["mlflow.pyfunc"]] = None,
+    *,
+    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> str:
+    context = {"mlflow": mlflow.__version__, "import_from_uri": False}
+    if isinstance(identifier, str):
+        context["import_from_uri"] = True
+    else:
+        assert loader_module is not None, (
+            "`loader_module` cannot be None" " when saving model."
+        )
+        if "mlflow" not in loader_module.__name__:
+            raise InvalidArgument("given `loader_module` is not omitted by mlflow.")
+    with model_store.register(
+        name,
+        module=__name__,
+        options=None,
+        framework_context=context,
+        metadata=metadata,
+    ) as ctx:
+        if isinstance(identifier, str):
+            ctx.options = {"uri": identifier, _MLFLOW_PROJECT_FILENAME.lower(): False}
+            project_or_artifact_path = _download_artifact_from_uri(
+                identifier, output_path=ctx.path
+            )
+            if (
+                len(
+                    list(Path(project_or_artifact_path).rglob(_MLFLOW_PROJECT_FILENAME))
+                )
+                != 0
+            ):
+                ctx.options[_MLFLOW_PROJECT_FILENAME.lower()] = True
+            ctx.options["artifacts_path"] = project_or_artifact_path
+
+        else:
+            loader_module.save_model(identifier, os.path.join(ctx.path, SAVE_NAMESPACE))
+        return ctx.tag
 
 
 @inject
@@ -77,18 +185,29 @@ def save(
 
     Examples::
     """  # noqa
-    context = {"mlflow": mlflow.__version__}
-    if "mlflow" not in loader_module.__name__:
-        raise InvalidArgument("given `loader_module` is not omitted by mlflow.")
-    with model_store.register(
-        name,
-        module=__name__,
-        options=None,
-        framework_context=context,
+    return _save_to_modelstore(
+        name=name,
+        identifier=model,
+        loader_module=loader_module,
         metadata=metadata,
-    ) as ctx:
-        loader_module.save_model(model, os.path.join(ctx.path, SAVE_NAMESPACE))
-        return ctx.tag
+        model_store=model_store,
+    )
+
+
+@inject
+def import_from_uri(
+    uri: str,
+    *,
+    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+):
+    return _save_to_modelstore(
+        name=_uri_to_filename(uri),
+        identifier=uri,
+        loader_module=None,
+        metadata=metadata,
+        model_store=model_store,
+    )
 
 
 class _MLflowRunner(Runner):
@@ -134,8 +253,9 @@ def load_runner(
 ) -> "_MLflowRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
-    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
+    maximize throughput. `bentoml.mlflow.load_runner` implements a Runner class that
+    has to options to wrap around a PyFuncModel, or infer from given MLflow flavor to
+    load BentoML internal Runner implementation, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):
@@ -148,7 +268,8 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.xgboost` model
+        Runner instances loaded from `bentoml.mlflow`. This can be either a `mlflow.pyfunc.PyFuncModel`
+        Runner or BentoML runner instance that maps to MLflow flavors
 
     Examples::
     """  # noqa

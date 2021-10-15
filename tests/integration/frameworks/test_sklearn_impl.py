@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 import bentoml.sklearn
 from bentoml.exceptions import BentoMLException
-from tests._internal.frameworks.sklearn_utils import sklearn_model_data, test_df
+from tests._internal.frameworks.sklearn_utils import sklearn_model_data
 from tests._internal.helpers import assert_have_file_extension
 
 # fmt: off
@@ -97,6 +97,7 @@ def test_get_model_info_exc(exc, modelstore):
 
 
 def test_sklearn_runner_setup_run_batch(modelstore, save_proc):
+    _, data = sklearn_model_data()
     sklearn_params = dict()
     info = save_proc(None)
     runner = bentoml.sklearn.load_runner(info.tag, model_store=modelstore)
@@ -106,6 +107,8 @@ def test_sklearn_runner_setup_run_batch(modelstore, save_proc):
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
+    res = runner._run_batch(data)
+    assert all(res == test_res_array)
 
 @pytest.mark.gpus
 def test_sklearn_runner_setup_on_gpu(modelstore, save_proc):

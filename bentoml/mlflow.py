@@ -35,7 +35,7 @@ _MLFLOW_PROJECT_FILENAME = "MLproject"
 
 
 def _uri_to_filename(uri: str) -> str:
-    return f"mlflow{sha256(uri.encode('utf-8')).hexdigest()}"
+    return f"mlflow_{uri.split('/')[-1]}_{sha256(uri.encode('utf-8')).hexdigest()[:23]}"
 
 
 def _load(
@@ -45,8 +45,7 @@ def _load(
     **mlflow_project_run_kwargs: str,
 ) -> t.Union[t.Tuple[t.Callable[..., t.Any], str], "PyFuncModel"]:
     model_info = model_store.get(tag)
-
-    if "import_from_uri" in model_info.context:
+    if model_info.context["import_from_uri"]:
         if load_as_projects:
             assert _MLFLOW_PROJECT_FILENAME.lower() in model_info.options
 

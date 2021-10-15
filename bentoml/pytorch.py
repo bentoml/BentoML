@@ -231,7 +231,7 @@ class _PyTorchRunner(Runner):
         self,
         inputs: t.Union[np.ndarray, "torch.Tensor"],
         **kwargs: str,
-    ) -> np.ndarray:
+    ) -> "torch.Tensor":
         if isinstance(inputs, np.ndarray):
             input_tensor = torch.from_numpy(inputs)
         else:
@@ -245,7 +245,7 @@ class _PyTorchRunner(Runner):
                 res = self._predict_fn(input_tensor, **kwargs)
         else:
             res = self._predict_fn(input_tensor, **kwargs)
-        return res.numpy()
+        return res
 
 
 @inject

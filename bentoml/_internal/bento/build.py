@@ -272,7 +272,7 @@ def build_bento(
         os.mkdir(api_docs_path)
         openapi_docs_file = os.path.join(api_docs_path, "openapi.yaml")
         with open(openapi_docs_file, "w") as f:
-            yaml.safe_dump(svc.openapi_doc, f)
+            yaml.dump(svc.openapi_doc(), f)
 
         # Create bento.yaml
         # TODO

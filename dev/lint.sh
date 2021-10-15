@@ -8,10 +8,10 @@ log(){
 }
 
 log "Running flake8 on bentoml directory..."
-flake8 --config=.flake8 bentoml
+flake8 --config=setup.cfg bentoml
 
 log "Running flake8 on test, docker directory..."
-flake8 --config=.flake8 tests docker
+flake8 --config=setup.cfg tests docker
 
 log "Running pylint on bentoml directory..."
 pylint --rcfile="./pylintrc" bentoml

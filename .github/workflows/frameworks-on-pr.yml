@@ -87,12 +87,12 @@ jobs:
             keras_tf1:
               - *runner
               - bentoml/keras.py
-              - ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
+              - ci/integration/frameworks/run_keras_tf1_tests.sh
               - tests/integration/frameworks/test_keras_impl.py
             keras_tf2:
               - *runner
               - bentoml/keras.py
-              - ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
+              - ci/integration/frameworks/run_keras_tf2_tests.sh
               - tests/integration/frameworks/test_keras_impl.py
             lightgbm:
               - *runner
@@ -102,18 +102,18 @@ jobs:
             mlflow:
               - *runner
               - bentoml/mlflow.py
+              - tests/integration/frameworks/mlflow
               - ci/integration/frameworks/run_mlflow_tests.sh
-              - tests/integration/frameworks/test_mlflow_impl.py
             onnx:
               - *runner
               - bentoml/onnx.py
-              - ci/integration/frameworks/onnx/run_onnx_tests.sh
-              - tests/integration/frameworks/onnx/test_onnx_impl.py
+              - ci/integration/frameworks/run_onnx_tests.sh
+              - tests/integration/frameworks/test_onnx_impl.py
             onnxmlir:
               - *runner
               - bentoml/onnxmlir.py
-              - ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
-              - tests/integration/frameworks/onnx/test_onnxmlir_impl.py
+              - ci/integration/frameworks/run_onnxmlir_tests.sh
+              - tests/integration/frameworks/test_onnxmlir_impl.py
             paddle:
               - *runner
               - bentoml/paddle.py
@@ -158,12 +158,12 @@ jobs:
             tf1:
               - *runner
               - bentoml/tensorflow.py
-              - ci/integration/frameworks/tensorflow/run_tf1_tests.sh
+              - ci/integration/frameworks/run_tf1_tests.sh
               - tests/integration/frameworks/test_tensorflow_impl.py
             tf2:
               - *runner
               - bentoml/tensorflow.py
-              - ci/integration/frameworks/tensorflow/run_tf2_tests.sh
+              - ci/integration/frameworks/run_tf2_tests.sh
               - tests/integration/frameworks/test_tensorflow_impl.py
             transformers:
               - *runner
@@ -189,7 +189,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_catboost_tests.sh
       - name: Upload test coverage to Codecov
@@ -208,7 +208,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_detectron2_tests.sh
       - name: Upload test coverage to Codecov
@@ -227,7 +227,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_easyocr_tests.sh
       - name: Upload test coverage to Codecov
@@ -246,7 +246,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_evalml_tests.sh
       - name: Upload test coverage to Codecov
@@ -265,7 +265,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_fastai_tests.sh
       - name: Upload test coverage to Codecov
@@ -284,7 +284,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_fasttext_tests.sh
       - name: Upload test coverage to Codecov
@@ -305,7 +305,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_gluon_tests.sh
       - name: Upload test coverage to Codecov
@@ -324,7 +324,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_h2o_tests.sh
       - name: Upload test coverage to Codecov
@@ -343,9 +343,9 @@ jobs:
         with:
           python-version: 3.7.10
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_keras_tf1_tests.sh
+        run: ./ci/integration/frameworks/run_keras_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -362,9 +362,9 @@ jobs:
         with:
           python-version: 3.7.10
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_keras_tf2_tests.sh
+        run: ./ci/integration/frameworks/run_keras_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -381,7 +381,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_lightgbm_tests.sh
       - name: Upload test coverage to Codecov
@@ -400,7 +400,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_mlflow_tests.sh
       - name: Upload test coverage to Codecov
@@ -419,9 +419,9 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/onnx/run_onnx_tests.sh
+        run: ./ci/integration/frameworks/run_onnx_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -440,9 +440,9 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/onnx/run_onnxmlir_tests.sh
+        run: ./ci/integration/frameworks/run_onnxmlir_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -459,7 +459,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_paddle_tests.sh
       - name: Upload test coverage to Codecov
@@ -478,7 +478,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_pycaret_tests.sh
       - name: Upload test coverage to Codecov
@@ -497,7 +497,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_pyspark_tests.sh
       - name: Upload test coverage to Codecov
@@ -516,7 +516,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_pytorch_tests.sh
       - name: Upload test coverage to Codecov
@@ -535,7 +535,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -558,7 +558,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_sklearn_tests.sh
       - name: Upload test coverage to Codecov
@@ -577,7 +577,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_spacy_tests.sh
       - name: Upload test coverage to Codecov
@@ -596,7 +596,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_statsmodels_tests.sh
       - name: Upload test coverage to Codecov
@@ -615,9 +615,9 @@ jobs:
         with:
           python-version: 3.7
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_tf1_tests.sh
+        run: ./ci/integration/frameworks/run_tf1_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -634,9 +634,9 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
-        run: ./ci/integration/frameworks/tensorflow/run_tf2_tests.sh
+        run: ./ci/integration/frameworks/run_tf2_tests.sh
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 
@@ -653,7 +653,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_transformers_tests.sh
       - name: Upload test coverage to Codecov
@@ -672,7 +672,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_test_deps.sh.cmd
+        run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
         run: ./ci/integration/frameworks/run_xgboost_tests.sh
       - name: Upload test coverage to Codecov

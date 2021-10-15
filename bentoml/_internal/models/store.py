@@ -198,6 +198,8 @@ class ModelStore:
             # ctx(model_path, version, metadata)
             model.save(ctx.model_path, metadata=ctx.metadata)
         """
+        _exc, _failed = None, False
+
         tag = _generate_model_tag(name)
         _, version = tag.split(":")
         model_path = self._create_path(tag)
@@ -214,18 +216,30 @@ class ModelStore:
         )
         try:
             yield ctx
-        except Exception:  # noqa # pylint: disable=broad-except
+        except (
+            KeyboardInterrupt,
+            Exception,
+        ) as e:  # noqa # pylint: disable=broad-except
             # save has failed
+            _exc, _failed = e, True
             logger.warning(f"Failed to save {tag}, deleting {model_path}...")
             shutil.rmtree(model_path)
         finally:
-            latest_path = Path(self._base_dir, name, "latest")
-            dump_model_yaml(
-                model_yaml, ctx, framework_context=framework_context, module=module
-            )
-            if latest_path.is_symlink():
-                latest_path.unlink()
-            latest_path.symlink_to(model_path)
+            if not _failed:
+                latest_path = Path(self._base_dir, name, "latest")
+                dump_model_yaml(
+                    model_yaml, ctx, framework_context=framework_context, module=module
+                )
+                if latest_path.is_symlink():
+                    latest_path.unlink()
+                latest_path.symlink_to(model_path)
+                return
+            # mlflow doesn't cleanup directory created by ArtifactRepository when
+            #  failed, so we will try to remove the created directory. As such, we only
+            #  remove the directory if it is empty, else raise Exception.
+            if len(os.listdir(model_path.parent)) == 0:
+                shutil.rmtree(model_path.parent)
+            raise _exc
 
     def get(self, tag: str) -> "ModelInfo":
         """

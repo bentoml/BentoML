@@ -2,7 +2,7 @@
 set -x
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd "$GIT_ROOT"
+cd "$GIT_ROOT" || exit
 
 has_errors=0
 
@@ -24,15 +24,15 @@ fi
 # always empty if there are no linting errors
 
 echo "Running flake8 on bentoml module.."
-output=$( flake8 --config=.flake8 bentoml )
+output=$( flake8 --config=setup.cfg bentoml )
 first_line=$(echo "${output}" | head -1)
 echo "$output"
 if [ -n "$first_line" ]; then
   has_errors=1
 fi
 
-echo "Running flake8 on test module.."
-output=$( flake8 --config=.flake8 tests e2e_tests )
+echo "Running flake8 on tests and docker module.."
+output=$( flake8 --config=setup.cfg tests docker )
 first_line=$(echo "${output}" | head -1)
 echo "$output"
 if [ -n "$first_line" ]; then
@@ -47,8 +47,8 @@ if [ -n "$first_line" ]; then
   has_errors=1
 fi
 
-echo "Running pylint on test module.."
-output=$( pylint --rcfile="./pylintrc" tests e2e_tests )
+echo "Running pylint on tests and docker module.."
+output=$( pylint --rcfile="./pylintrc" tests docker )
 first_line=$(echo "${output}" | head -1)
 echo "$output"
 if [ -n "$first_line" ]; then

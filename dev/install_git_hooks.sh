@@ -5,5 +5,11 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 HOOKS_PATH="$GIT_ROOT/.git/hooks"
-cd "$HOOKS_PATH" && ln -s "$GIT_ROOT"/dev/githooks/* .
 
+files=$(find "./hooks"  -type f)
+for f in $files; do
+    fname=$(basename "$f")
+    if [ ! -f "$HOOKS_PATH/$fname" ]; then
+        ln -s "$GIT_ROOT/hooks/$fname" "$HOOKS_PATH/$fname"
+    fi
+done

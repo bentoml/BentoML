@@ -8,6 +8,7 @@ from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PT_EXT, SAVE_NAMESPACE
+from ._internal.models.store import StoreCtx
 from ._internal.runner import Runner
 from .exceptions import MissingDependencyException
 
@@ -138,6 +139,7 @@ def save(
 
         tag = bentoml.pytorch.save("resnet50", resnet50)
     """  # noqa
+    ctx: "StoreCtx"
     context = dict(torch=torch.__version__)
     with model_store.register(
         name,
@@ -152,7 +154,7 @@ def save(
         else:
             with weight_file.open("wb") as file:
                 cloudpickle.dump(model, file)
-        return ctx.tag
+        return ctx.tag  # type: ignore[no-any-return]
 
 
 class _PyTorchRunner(Runner):
@@ -227,9 +229,9 @@ class _PyTorchRunner(Runner):
     @torch.no_grad()
     def _run_batch(  # type: ignore[override]
         self,
-        inputs: t.Union["np.ndarray", "torch.Tensor"],
+        inputs: t.Union[np.ndarray, "torch.Tensor"],
         **kwargs: str,
-    ) -> _RV:
+    ) -> np.ndarray:
         if isinstance(inputs, np.ndarray):
             input_tensor = torch.from_numpy(inputs)
         else:
@@ -237,10 +239,13 @@ class _PyTorchRunner(Runner):
         if self.resource_quota.on_gpu:
             input_tensor = input_tensor.cuda()
 
+        res: "torch.Tensor"
         if infer_mode_compat:
             with torch.inference_mode():
-                return self._predict_fn(input_tensor, **kwargs)
-        return self._predict_fn(input_tensor, **kwargs)
+                res = self._predict_fn(input_tensor, **kwargs)
+        else:
+            res = self._predict_fn(input_tensor, **kwargs)
+        return res.numpy()
 
 
 @inject

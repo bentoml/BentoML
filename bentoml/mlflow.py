@@ -43,7 +43,7 @@ def _load(
     model_store: "ModelStore",
     load_as_projects: bool = False,
     **mlflow_project_run_kwargs: str,
-) -> t.Union[t.Tuple[str, t.Callable[..., t.Any]], "PyFuncModel"]:
+) -> t.Union[t.Tuple[t.Callable[..., t.Any], str], "PyFuncModel"]:
     model_info = model_store.get(tag)
 
     if "import_from_uri" in model_info.context:
@@ -54,7 +54,7 @@ def _load(
             func: t.Callable[[str], t.Callable[..., t.Any]] = functools.partial(
                 mlflow.projects.run, **mlflow_project_run_kwargs
             )
-            return uri, func
+            return func, uri
         else:
             mlmodel_fpath = Path(
                 model_info.options["artifacts_path"], MLMODEL_FILE_NAME
@@ -84,7 +84,7 @@ def load_projects(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **mlflow_project_run_kwargs: str,
-) -> t.Tuple[str, t.Callable[..., t.Any]]:
+) -> t.Tuple[t.Callable[..., t.Any], str]:
     return _load(
         tag=tag,
         model_store=model_store,

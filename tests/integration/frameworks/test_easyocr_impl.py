@@ -6,10 +6,10 @@ import numpy as np
 from easyocr import Reader
 
 from bentoml.easyocr import EasyOCRModel
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 TEST_RESULT: List[str] = ["西", "愚园路", "东", "315", "309", "W", "Yuyuan Rd。", "E"]
-IMAGE_PATH: str = "./tests/_internal/_static/chinese.jpg"
+IMAGE_PATH: str = "./tests/utils/_static/chinese.jpg"
 
 
 def predict_image(model: Reader, image: np.ndarray):

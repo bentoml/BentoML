@@ -4,7 +4,7 @@ from pycaret.classification import tune_model
 from pycaret.datasets import get_data
 
 from bentoml.pycaret import PycaretModel
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 
 def set_dataset():

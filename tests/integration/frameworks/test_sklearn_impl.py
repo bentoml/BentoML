@@ -10,8 +10,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 import bentoml.sklearn
 from bentoml.exceptions import BentoMLException
-from tests._internal.frameworks.sklearn_utils import sklearn_model_data
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.frameworks.sklearn_utils import sklearn_model_data
+from tests.utils.helpers import assert_have_file_extension
 
 # fmt: off
 test_res_array = np.array(

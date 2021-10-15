@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 
 import bentoml.pytorch
-from tests._internal.frameworks.pytorch_utils import LinearModel, test_df
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.frameworks.pytorch_utils import LinearModel, test_df
+from tests.utils.helpers import assert_have_file_extension
 
 
 def predict_df(model: nn.Module, df: pd.DataFrame):

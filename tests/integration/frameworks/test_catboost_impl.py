@@ -3,8 +3,8 @@ from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
 
 from bentoml.catboost import CatBoostModel
 from bentoml.exceptions import InvalidArgument
-from tests._internal.frameworks.sklearn_utils import test_df
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.frameworks.sklearn_utils import test_df
+from tests.utils.helpers import assert_have_file_extension
 
 
 @pytest.fixture()

@@ -14,7 +14,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from _internal.models.store import ModelStore
 
 try:
-    from pycaret.classification import *
+    from pycaret.internal.tabular import load_model, predict_model, save_model, setup
     from pycaret.utils import version
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -38,6 +38,7 @@ def _get_model_info(
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}")
 
     return model_info, model_file
+
 
 @inject
 def load(
@@ -126,28 +127,35 @@ class _PycaretRunner(Runner):
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        **pycaret_setup_kwargs,
     ):
         super().__init__(tag, resource_quota, batch_options)
+        model_info, model_file = _get_model_info(tag, model_store)
+
+        self._model_info = model_info
+        self._model_file = model_file
+        self._pycaret_setup_kwargs = pycaret_setup_kwargs
 
     @property
     def required_models(self) -> t.List[str]:
-        ...
+        return [self._model_info.tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        ...
+        return 1
 
     @property
     def num_replica(self) -> int:
-        ...
+        return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        ...
+        self._env = setup(**self._pycaret_setup_kwargs)
+        self._model = load_model(self._model_file)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data) -> t.Any:
-        ...
+    def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":
+        return predict_model(self._model, input_data)
 
 
 @inject
@@ -157,6 +165,7 @@ def load_runner(
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    **pycaret_setup_kwargs: None,
 ) -> "_PycaretRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -176,11 +185,35 @@ def load_runner(
     Returns:
         Runner instances for `bentoml.xgboost` model
 
-    Examples::
+    Examples:
+        import bentoml.pycaret
+        from pycaret.datasets import get_data
+        dataset = get_data('credit')
+
+        # pre-process data
+        data = dataset.sample(frac=0.95, random_state=786)
+        data_unseen = dataset.drop(data.index)
+        data.reset_index(inplace=True, drop=True)
+        data_unseen.reset_index(inplace=True, drop=True)
+
+        # create parmeters
+        # note: change my_usercase according to the type of model
+        params = {"my_usecase": "classification", "available_plots": {},
+                    "data": data, "target": "default", "session_id": 123}
+
+        # initialize runner
+        runner = bentoml.pycaret.load_runner(tag="my_model:latest", **params)
+
+        # set up the runner and pycaret environment
+        runner._setup()
+
+        prediction = runner._run_batch(input_data=data_unseen)
+        print(prediction)
     """  # noqa
     return _PycaretRunner(
         tag=tag,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
+        **pycaret_setup_kwargs,
     )

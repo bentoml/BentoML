@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 
 from bentoml.paddle import PaddlePaddleModel
-from tests._internal.frameworks.paddle_utils import LinearModel, test_df
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.frameworks.paddle_utils import LinearModel, test_df
+from tests.utils.helpers import assert_have_file_extension
 
 BATCH_SIZE = 8
 EPOCH_NUM = 5

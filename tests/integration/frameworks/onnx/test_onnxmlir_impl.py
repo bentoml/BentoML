@@ -8,8 +8,8 @@ import pytest
 import tensorflow as tf
 
 from bentoml.onnxmlir import ONNXMlirModel
-from tests._internal.frameworks.tensorflow_utils import NativeModel
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.frameworks.tensorflow_utils import NativeModel
+from tests.utils.helpers import assert_have_file_extension
 
 try:
     # this has to be able to find the arch and OS specific PyRuntime .so file

@@ -2,7 +2,7 @@ import mxnet
 import pytest
 
 from bentoml.gluon import GluonModel
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 
 @pytest.fixture()

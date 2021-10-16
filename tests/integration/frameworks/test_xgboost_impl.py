@@ -10,8 +10,8 @@ import xgboost as xgb
 
 import bentoml.xgboost
 from bentoml.exceptions import BentoMLException
-from tests._internal.frameworks.sklearn_utils import test_df
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.frameworks.sklearn_utils import test_df
+from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
     from bentoml._internal.models.store import ModelInfo, ModelStore

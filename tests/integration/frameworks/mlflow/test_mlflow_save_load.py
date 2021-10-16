@@ -7,8 +7,8 @@ import pytest
 
 import bentoml.mlflow
 from bentoml.exceptions import InvalidArgument
-from tests._internal.frameworks.sklearn_utils import sklearn_model_data
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.frameworks.sklearn_utils import sklearn_model_data
+from tests.utils.helpers import assert_have_file_extension
 
 MODEL_NAME = __name__.split(".")[-1]
 

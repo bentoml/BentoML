@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from bentoml.lightgbm import LightGBMModel
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 
 @pytest.fixture()

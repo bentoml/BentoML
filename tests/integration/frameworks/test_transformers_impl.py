@@ -7,7 +7,7 @@ from transformers.testing_utils import DUMMY_UNKWOWN_IDENTIFIER as MODEL_ID
 
 import bentoml.transformers
 from bentoml.exceptions import BentoMLException
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 set_seed(123)
 

@@ -11,7 +11,7 @@ from detectron2.data import transforms as T
 from detectron2.modeling import build_model
 
 from bentoml.detectron import DetectronModel
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
     from detectron2.config import CfgNode  # pylint: disable=unused-import

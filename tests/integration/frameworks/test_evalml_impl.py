@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from bentoml.evalml import EvalMLModel
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 test_df = pd.DataFrame([[42, "b"]])
 

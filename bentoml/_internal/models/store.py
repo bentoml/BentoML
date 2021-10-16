@@ -148,9 +148,7 @@ class ModelStore:
         bentoml models list my_nlp_models -> t.List[model_version]
         bentoml models list my_nlp_models:20210292_A34821 -> [contents of given model directory]
         """  # noqa
-        if ":" not in tag:
-            path = Path(self._base_dir, tag)
-        elif not tag:
+        if not tag:
             path = self._base_dir
             if detailed:
                 return sorted(
@@ -164,6 +162,8 @@ class ModelStore:
                     ),
                     key=operator.itemgetter(0),
                 )
+        elif ":" not in tag:
+            path = Path(self._base_dir, tag)
         else:
             name, version = _process_model_tag(tag)
             path = Path(self._base_dir, name, version)

@@ -11,6 +11,7 @@ cd "$GIT_ROOT" || exit
 
 # Install LightGBM, pandas
 pip install mlflow sklearn
+pip install boto3 moto
 
 pytest "$GIT_ROOT"/tests/integration/frameworks/mlflow --cov=bentoml --cov-config=.coveragerc
 

@@ -1,5 +1,6 @@
 from collections import namedtuple
 
+import numpy as np
 import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.neighbors import KNeighborsClassifier
@@ -38,6 +39,22 @@ test_data = {
 }
 
 test_df = pd.DataFrame([test_data])
+
+# fmt: off
+res_arr = np.array(
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+     0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+     1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2,
+     2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2,
+     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+     2, 2, 2, 2, 2, 2]
+)
+# fmt: on
+
 
 ModelWithData = namedtuple("ModelWithData", ["model", "data"])
 

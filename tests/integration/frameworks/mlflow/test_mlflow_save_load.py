@@ -7,25 +7,10 @@ import pytest
 
 import bentoml.mlflow
 from bentoml.exceptions import InvalidArgument
-from tests.utils.frameworks.sklearn_utils import sklearn_model_data
+from tests.utils.frameworks.sklearn_utils import res_arr, sklearn_model_data
 from tests.utils.helpers import assert_have_file_extension
 
 MODEL_NAME = __name__.split(".")[-1]
-
-# fmt: off
-res_arr = np.array(
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-     1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1,
-     1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-     1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2,
-     2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2,
-     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-     2, 2, 2, 2, 2, 2]
-)
-# fmt: on
 
 
 def test_mlflow_save_load(modelstore):

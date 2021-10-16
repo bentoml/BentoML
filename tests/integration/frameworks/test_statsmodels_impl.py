@@ -19,7 +19,7 @@ test_df = pd.DataFrame([[0, 0, 1, 1]])
 _MT = t.TypeVar("_MT")
 
 if t.TYPE_CHECKING:
-    from bentoml import ModelStore
+    from bentoml._internal.models.store import ModelStore, ModelInfo
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 

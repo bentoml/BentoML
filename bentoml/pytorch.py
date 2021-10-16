@@ -8,7 +8,6 @@ from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PT_EXT, SAVE_NAMESPACE
-from ._internal.models.store import StoreCtx
 from ._internal.runner import Runner
 from .exceptions import MissingDependencyException
 
@@ -19,7 +18,7 @@ _ModelType = t.TypeVar(
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from ._internal.models.store import ModelStore
+    from ._internal.models.store import ModelStore, StoreCtx
 
 try:
     import numpy as np

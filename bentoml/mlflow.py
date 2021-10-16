@@ -376,7 +376,7 @@ class _MLflowRunner:
             flavor = flavors[0]
             if flavor == "pyfunc":
                 flavor = "mlflow"
-            return getattr(importlib.import_module(f"bentoml.{flavor}"), "load_runner")(  # type: ignore
+            return getattr(importlib.import_module(f"bentoml.{flavor}"), "load_runner")(  # type: ignore # noqa # pylint: disable
                 tag,
                 *runners_args,
                 resource_quota=resource_quota,

@@ -120,7 +120,7 @@ def create_bento_service_cli(
     )
     @conditional_argument(pip_installed_bundle_path is None, "bento", type=click.STRING)
     @click.argument("api_name", type=click.STRING)
-    @click.argument("run_args", nargs=-1, type=click.UNPROCESSED)
+    @click.argument("runners_args", nargs=-1, type=click.UNPROCESSED)
     def run(api_name, run_args, bento=None):
         parser = argparse.ArgumentParser()
         parser.add_argument("--yatai-url", type=str, default=default_yatai_url)

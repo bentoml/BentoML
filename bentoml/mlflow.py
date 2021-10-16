@@ -72,7 +72,7 @@ def _is_s3_url(uri: str) -> bool:
 
 
 def _uri_to_filename(uri: str) -> str:
-    return f"b_{_clean_name(uri.rstrip('/').split('/')[-1])}_{sha256(uri.encode('utf-8')).hexdigest()[:23]}"  # noqa # pylint: disable
+    return f"b{sha256(uri.encode('utf-8')).hexdigest()[:23]}"
 
 
 def _load(

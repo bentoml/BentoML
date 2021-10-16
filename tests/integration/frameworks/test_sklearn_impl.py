@@ -98,7 +98,6 @@ def test_get_model_info_exc(exc, modelstore):
 
 def test_sklearn_runner_setup_run_batch(modelstore, save_proc):
     _, data = sklearn_model_data()
-    sklearn_params = dict()
     info = save_proc(None)
     runner = bentoml.sklearn.load_runner(info.tag, model_store=modelstore)
     runner._setup()

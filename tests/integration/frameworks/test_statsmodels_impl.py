@@ -16,8 +16,6 @@ from tests.utils.helpers import assert_have_file_extension
 test_df = pd.DataFrame([[0, 0, 1, 1]])
 
 # fmt: on
-_MT = t.TypeVar("_MT")
-
 if t.TYPE_CHECKING:
     from bentoml._internal.models.store import ModelStore, ModelInfo
 

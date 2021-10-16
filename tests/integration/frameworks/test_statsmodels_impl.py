@@ -8,7 +8,7 @@ import pytest
 import statsmodels
 from statsmodels.tsa.holtwinters import ExponentialSmoothing, HoltWintersResults
 
-import bentoml.statsmodels 
+import bentoml.statsmodels
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
@@ -23,6 +23,7 @@ if t.TYPE_CHECKING:
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
+
 def predict_df(model: t.Any, df: pd.DataFrame):
     return model.predict(int(df.iat[0, 0]))
 
@@ -34,15 +35,13 @@ def save_proc(
 ) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
     def _(metadata, holt_model) -> "ModelInfo":
         tag = bentoml.statsmodels.save(
-            TEST_MODEL_NAME,
-            holt_model,
-            metadata=metadata,
-            model_store=modelstore
+            TEST_MODEL_NAME, holt_model, metadata=metadata, model_store=modelstore
         )
         info = modelstore.get(tag)
         return info
-    
+
     return _
+
 
 def wrong_module(modelstore: "ModelStore", holt_model):
     with modelstore.register(
@@ -55,12 +54,14 @@ def wrong_module(modelstore: "ModelStore", holt_model):
         holt_model.save(os.path.join(ctx.path, "saved_model.pkl"))
         return ctx.tag
 
+
 def get_holt_model_data():
     df: pd.DataFrame = pd.read_csv(
         "https://raw.githubusercontent.com/jbrownlee/Datasets/master/shampoo.csv"
     )
     data = df[0 : int(len(df) * 0.8)]
     return data
+
 
 # exported from
 #  https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb
@@ -94,9 +95,11 @@ def holt_model() -> "HoltWintersResults":
     [
         ({"model": "Statsmodels", "test": True}),
         ({"acc": 0.876}),
-    ]
+    ],
 )
-def test_statsmodels_save_load(metadata, modelstore, holt_model):  # noqa # pylint: disable
+def test_statsmodels_save_load(
+    metadata, modelstore, holt_model
+):  # noqa # pylint: disable
     tag = bentoml.statsmodels.save(
         TEST_MODEL_NAME, holt_model, metadata=metadata, model_store=modelstore
     )
@@ -104,11 +107,12 @@ def test_statsmodels_save_load(metadata, modelstore, holt_model):  # noqa # pyli
     assert info.metadata is not None
     assert_have_file_extension(info.path, ".pkl")
 
-    statsmodels_loaded = bentoml.statsmodels.load(
-        tag, model_store=modelstore
-    )
+    statsmodels_loaded = bentoml.statsmodels.load(tag, model_store=modelstore)
 
-    assert isinstance(statsmodels_loaded, statsmodels.tsa.holtwinters.results.HoltWintersResultsWrapper)
+    assert isinstance(
+        statsmodels_loaded,
+        statsmodels.tsa.holtwinters.results.HoltWintersResultsWrapper,
+    )
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
@@ -122,21 +126,20 @@ def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
     data = get_holt_model_data()
     info = save_proc(None, holt_model)
     runner = bentoml.statsmodels.load_runner(
-        info.tag, 
-        predict_fn_name="predict",
-        model_store=modelstore
+        info.tag, predict_fn_name="predict", model_store=modelstore
     )
     runner._setup()
 
     assert info.tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
-    
-    #TODO: test run_batch from statsmodels
+
+    # TODO: test run_batch from statsmodels
     """
     res = runner._run_batch(data)
     assert all(res == test_df)
     """
+
 
 @pytest.mark.gpus
 def test_statsmodels_runner_setup_on_gpu(modelstore, save_proc):

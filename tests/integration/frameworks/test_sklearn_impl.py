@@ -109,6 +109,7 @@ def test_sklearn_runner_setup_run_batch(modelstore, save_proc):
     res = runner._run_batch(data)
     assert all(res == test_res_array)
 
+
 @pytest.mark.gpus
 def test_sklearn_runner_setup_on_gpu(modelstore, save_proc):
     info = save_proc(None)

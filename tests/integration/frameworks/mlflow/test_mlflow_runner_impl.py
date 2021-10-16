@@ -45,6 +45,7 @@ def pyfunc_tag(modelstore, tmpdir):
             with open(os.path.join(str(ctx.path), "saved_model", "MLmodel"), "w") as of:
                 yaml.safe_dump(mlmodel, of)
             return ctx.tag
+
     return _
 
 
@@ -68,7 +69,9 @@ def test_mlflow_pyfunc_runner(modelstore, pyfunc_tag):
     assert all(res == res_arr)
 
 
-@pytest.mark.parametrize("exc, ctag", [(BentoMLException, False), (BentoMLException, True)])
+@pytest.mark.parametrize(
+    "exc, ctag", [(BentoMLException, False), (BentoMLException, True)]
+)
 def test_mlflow_runner_exc(pyfunc_tag, modelstore, exc, ctag):
     with pytest.raises(exc):
         uri = str(Path(current_file, "SimpleMNIST").resolve())

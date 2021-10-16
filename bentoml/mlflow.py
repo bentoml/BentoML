@@ -412,7 +412,7 @@ class _MLflowRunner:
 @inject
 def load_runner(
     tag: str,
-    *,
+    *runner_args,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -441,7 +441,8 @@ def load_runner(
     Examples::
     """  # noqa
     return _MLflowRunner.to_runner_impl(
-        tag=tag,
+        tag,
+        *runner_args,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

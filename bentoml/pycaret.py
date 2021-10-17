@@ -142,7 +142,7 @@ class _PycaretRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        return 1
+        return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
@@ -155,6 +155,7 @@ class _PycaretRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":
+        # PyCaret is not designed to be ran in parallel. See https://github.com/pycaret/pycaret/issues/758
         return predict_model(self._model, input_data)
 
 
@@ -169,8 +170,8 @@ def load_runner(
 ) -> "_PycaretRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
-    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
+    maximize throughput. `bentoml.pycaret.load_runner` implements a Runner class that
+    wraps around a PyCaret model, which optimizes it for the BentoML runtime.
 
     Args:
         tag (`str`):
@@ -198,7 +199,7 @@ def load_runner(
 
         # create parmeters
         # note: change my_usercase according to the type of model
-        params = {"my_usecase": "classification", "available_plots": {},
+        params = {"ml_usecase": "classification", "available_plots": {},
                     "data": data, "target": "default", "session_id": 123}
 
         # initialize runner

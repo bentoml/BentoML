@@ -6,6 +6,10 @@ import sys
 import typing as t
 import zipfile
 import zipimport
+from collections import defaultdict
+
+import importlib_metadata
+from packaging.requirements import Requirement
 
 if t.TYPE_CHECKING:
     from bentoml._internal.service import Service
@@ -17,6 +21,27 @@ EPP_PKG_VERSION_MISMATCH = 2
 __mm = None
 
 logger = logging.getLogger(__name__)
+
+
+def split_requirement(requirement: str) -> t.Tuple[str, str]:
+    """
+    Split requirements. 'bentoml>=1.0.0' -> ['bentoml', '>=1.0.0']
+    """
+    req = Requirement(requirement)
+    name = req.name.replace("-", "_")
+    return name, str(req.specifier)
+
+
+def packages_distributions() -> t.Dict[str, t.List[str]]:
+    """Return a mapping of top-level packages to their distributions. We're
+    inlining this helper from the importlib_metadata "backport" here, since
+    it's not available in the builtin importlib.metadata.
+    """
+    pkg_to_dist = defaultdict(list)
+    for dist in importlib_metadata.distributions():
+        for pkg in (dist.read_text("top_level.txt") or "").split():
+            pkg_to_dist[pkg].append(dist.metadata["Name"])
+    return dict(pkg_to_dist)
 
 
 def parse_requirement_string(rs):

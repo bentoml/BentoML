@@ -78,10 +78,10 @@ def test_spacy_load_missing_deps_exc(modelstore):
     tag = bentoml.spacy.save("test_spacy", nlp, model_store=modelstore)
     info = modelstore.get(tag)
     parent = info.path
-    with Path(parent, 'model_details.yaml').open('r') as f:
+    with Path(parent, "model_details.yaml").open("r") as f:
         content = yaml.safe_load(f)
-    content['options']['additional_requirements'] = ['spacy-transformers>=1.0.3,<1.1.0']
-    with Path(parent, 'model_details.yaml').open('w') as of:
+    content["options"]["additional_requirements"] = ["spacy-transformers>=1.0.3,<1.1.0"]
+    with Path(parent, "model_details.yaml").open("w") as of:
         yaml.safe_dump(content, of)
     with pytest.raises(MissingDependencyException):
         _ = bentoml.spacy.load(tag, model_store=modelstore)

@@ -51,7 +51,7 @@ if not _check_compat:  # pragma: no cover
         f" detected spacy to have version {spacy.__version__}"
     )
 
-try:
+try:  # pragma: no cover
     import tensorflow
     import torch
 except ImportError:  # pragma: no cover

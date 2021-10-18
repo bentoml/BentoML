@@ -1,7 +1,8 @@
+from pathlib import Path
+
 import pytest
 import spacy
 
-from pathlib import Path
 import bentoml.spacy
 from bentoml.exceptions import BentoMLException
 

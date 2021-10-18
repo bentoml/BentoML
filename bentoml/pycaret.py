@@ -34,7 +34,7 @@ def _get_model_info(
 ) -> t.Tuple["ModelInfo", PathType]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        raise BentoMLException(
+        raise BentoMLException( # pragma: no cover
             f"Model {tag} was saved with module {model_info.module}, failed loading "
             f"with {__name__}."
         )

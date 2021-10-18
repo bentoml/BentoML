@@ -6,7 +6,7 @@ import pytest
 from statsmodels.tsa.holtwinters import ExponentialSmoothing, HoltWintersResults
 
 from bentoml.statsmodels import StatsModel
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 test_df = pd.DataFrame([[0, 0, 1, 1]])
 

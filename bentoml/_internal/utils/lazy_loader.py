@@ -2,6 +2,7 @@ import importlib
 import logging
 import sys
 import types
+import typing as t
 
 from bentoml.exceptions import MissingDependencyException
 
@@ -20,20 +21,19 @@ class LazyLoader(types.ModuleType):
      needed, and this allows them to only be loaded when they are used.
     """
 
-    # The lint error here is incorrect.
     def __init__(
         self,
         local_name: str,
         parent_module_globals: dict,
         name: str,
-        warning=None,
-        exc_msg: str = None,
+        warning: t.Optional[str] = None,
+        exc_msg: t.Optional[str] = None,
     ):
         self._local_name = local_name
         self._parent_module_globals = parent_module_globals
         self._warning = warning
         self._exc_msg = exc_msg
-        self._module = None
+        self._module: t.Optional[types.ModuleType] = None
 
         super(LazyLoader, self).__init__(str(name))
 
@@ -61,12 +61,12 @@ class LazyLoader(types.ModuleType):
 
         return module
 
-    def __getattr__(self, item):
+    def __getattr__(self, item):  # type: ignore[no-untyped-def]
         if self._module is None:
             self._module = self._load()
         return getattr(self._module, item)
 
-    def __dir__(self):
+    def __dir__(self) -> t.List[str]:
         if self._module is None:
             self._module = self._load()
         return dir(self._module)

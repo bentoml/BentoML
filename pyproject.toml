@@ -19,3 +19,10 @@ exclude = '''
   | versioneer.py
 )
 '''
+
+[tool.pytest.ini_options]
+addopts = "-ra -p no:warnings"
+
+[tool.isort]
+profile = "black"
+skip_glob = ["third_party", "stubs"]

@@ -2,8 +2,22 @@
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
-cd "$GIT_ROOT" || exit
-
 HOOKS_PATH="$GIT_ROOT/.git/hooks"
-cd "$HOOKS_PATH" && ln -s "$GIT_ROOT"/dev/githooks/* .
 
+cd "$HOOKS_PATH" || exit
+
+if [ ! -f "$HOOKS_PATH/commit-msg" ]; then
+  ln -s "$GIT_ROOT/hooks/commit-msg" .
+fi
+
+if [ ! -f "$HOOKS_PATH/prepare-commit-msg" ]; then
+  while true; do
+    read -p "Do you want to setup sign-off commits? " yn
+    case $yn in
+        [Yy]* )
+          ln -s "$GIT_ROOT/hooks/prepare-commit-msg" .; break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+fi

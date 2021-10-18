@@ -5,12 +5,12 @@ import tensorflow as tf
 import tensorflow.keras as keras
 
 import bentoml.keras
-from tests._internal.frameworks.tensorflow_utils import (
+from tests.utils.frameworks.tensorflow_utils import (
     CustomLayer,
     KerasSequentialModel,
     custom_activation,
 )
-from tests._internal.helpers import assert_have_file_extension
+from tests.utils.helpers import assert_have_file_extension
 
 TF2 = tf.__version__.startswith("2")
 MODEL_NAME = __name__.split(".")[-1]

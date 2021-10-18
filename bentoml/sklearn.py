@@ -13,7 +13,8 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
     import pandas as pd
 
     from ._internal.models.store import ModelInfo, ModelStore
@@ -22,7 +23,7 @@ try:
     import joblib
     from joblib import parallel_backend
 
-except ImportError:
+except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """sklearn is required in order to use the module `bentoml.sklearn`, install
          sklearn with `pip install sklearn`. For more information, refer to
@@ -36,10 +37,14 @@ def _get_model_info(
 ) -> t.Tuple["ModelInfo", PathType]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        raise BentoMLException(
-            f"Model {tag} was saved with module {model_info.module}, failed loading "
-            f"with {__name__}."
-        )
+        if model_info.module == "bentoml.mlflow":
+            pass
+        else:
+            raise BentoMLException(  # pragma: no cover
+                f"Model {tag} was saved with module"
+                f" {model_info.module}, failed loading"
+                f" with {__name__}."
+            )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PKL_EXT}")
 
     return model_info, model_file

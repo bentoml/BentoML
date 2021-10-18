@@ -196,7 +196,7 @@ class _KerasRunner(_TensorflowRunner):
             if TF2:
                 tf.compat.v1.global_variables_initializer()
             else:
-                self._session.run(tf.global_variables_initializer())
+                self._session.run(tf.compat.v1.global_variables_initializer())
                 with _default_sess():
                     self._predict_fn(input_data)
             return self._predict_fn(input_data)

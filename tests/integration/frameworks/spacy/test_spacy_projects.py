@@ -1,6 +1,7 @@
 import pytest
 import spacy
 
+from pathlib import Path
 import bentoml.spacy
 from bentoml.exceptions import BentoMLException
 
@@ -25,6 +26,6 @@ def test_spacy_projects_pull(modelstore):
 
 
 @pytest.mark.parametrize("tasks", ["assets", "document", "dvc", "push", "run"])
-def test_spacy_proejcts_tasks_exc(modelstore, tasks):
+def test_spacy_projects_tasks_exc(modelstore, tasks):
     with pytest.raises(BentoMLException):
         _, _ = bentoml.spacy.projects(tasks, model_store=modelstore)

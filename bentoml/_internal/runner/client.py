@@ -7,26 +7,19 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 if TYPE_CHECKING:
     from aiohttp import BaseConnector
 
-    from .transport import Transporter
-
 
 class RunnerClient:
-    def __init__(self, uds, timeout=None, transporter: "Transporter" = None):
+    def __init__(self, uds, timeout=None):
         self._uds = uds
         self._conn = None
         self._client = None
         self._timeout = timeout
-        from .transport import PlasmaNdarrayTransporter
-
-        self._transporter = transporter or PlasmaNdarrayTransporter()
 
     def _get_conn(self) -> "BaseConnector":
         import aiohttp
 
         if self._conn is None or self._conn.closed:
-            self._conn = aiohttp.UnixConnector(
-                path=self._uds,
-            )
+            self._conn = aiohttp.UnixConnector(path=self._uds,)
         return self._conn
 
     def _get_client(self):

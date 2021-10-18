@@ -14,6 +14,82 @@ logger = logging.getLogger(__name__)
 CUDA_SUCCESS = 0
 
 
+class Params:
+    def __init__(self, args, kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+    def map(self, function):
+        return type(self)(
+            tuple(function(a) for a in self.args),
+            {k: function(v) for k, v in self.kwargs.items()},
+        )
+
+    def imap(self, function: t.Callable[[t.Any], t.Iterable]):
+        args_iter = tuple(iter(function(a)) for a in self.args)
+        kwargs_iter = {k: iter(function(v)) for k, v in self.kwargs.items()}
+
+        while True:  # TODO(jiang): ?
+            try:
+                args = tuple(next(a) for a in args_iter)
+                kwargs = {k: next(v) for k, v in kwargs_iter.items()}
+                yield type(self)(args, kwargs)
+            except StopIteration:
+                break
+
+    @property
+    def sample(self):
+        if self.args:
+            return self.args[0]
+        return self.kwargs.values()[0]
+
+
+class TypeRef:
+    def __init__(self, module: str, qualname: str):
+        self.module = module
+        self.qualname = qualname
+
+    @classmethod
+    def from_instance(cls, instance: object) -> "TypeRef":
+        klass = type(instance)
+        return cls.from_type(klass)
+
+    @classmethod
+    def from_type(cls, klass: t.Union["TypeRef", type]) -> "TypeRef":
+        if isinstance(klass, type):
+            return cls(klass.__module__, klass.__qualname__)
+        return klass
+
+    def evaluate(self) -> type:
+        import importlib
+
+        m = importlib.import_module(self.module)
+        ref = t.ForwardRef(f"m.{self.qualname}")
+        localns = {"m": m}
+
+        if hasattr(t, "_eval_type"):  # python3.8 & python 3.9
+            _eval_type = getattr(t, "_eval_type")
+            return _eval_type(ref, globals(), localns)
+
+        if hasattr(ref, "_eval_type"):  # python3.6
+            _eval_type = getattr(ref, "_eval_type")
+            return _eval_type(globals(), localns)
+
+        raise SystemError("unsupported Python version")
+
+    def __eq__(self, o: t.Union["TypeRef", type]) -> bool:
+        '''
+        TypeRef("numpy", "ndarray") == np.ndarray
+        TypeRef("numpy", "ndarray") == TypeRef.from_instance(np.random.randint([2, 3]))
+        '''
+        if isinstance(o, type):
+            o = self.from_type(type)
+        return self.module == o.module and self.qualname == o.qualname
+
+    def __hash__(self):
+        return hash(f"{self.module}.{self.qualname}")
+
+
 def _cpu_converter(cpu: t.Union[int, float, str]) -> float:
     if isinstance(cpu, (int, float)):
         return float(cpu)

@@ -8,7 +8,10 @@ import psutil
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.runner.container import wrap_batch, wrap_single
+from bentoml._internal.runner.container import (
+    batch_data_to_container,
+    single_data_to_container,
+)
 from bentoml._internal.runner.utils import Params
 
 from .utils import (
@@ -263,13 +266,14 @@ class LocalRunner(RunnerImpl):
             results = []
             params = Params(args, kwargs).map(
                 partial(
-                    wrap_batch, batch_axis=self._runner.batch_options.input_batch_axis
+                    batch_data_to_container,
+                    batch_axis=self._runner.batch_options.input_batch_axis,
                 )
             )
             for iparams in params.imap(lambda c: c.slice_single()):
                 results.append(self._runner._run(*iparams.args, **iparams.kwargs))
 
-            output_container = wrap_single(
+            output_container = single_data_to_container(
                 results[0], batch_axis=self._runner.batch_options.output_batch_axis
             )
             for r in results[1:]:

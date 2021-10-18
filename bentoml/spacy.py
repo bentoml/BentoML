@@ -1,7 +1,6 @@
 import importlib
 import logging
 import os
-import re
 import sys
 import typing as t
 from hashlib import sha256
@@ -213,9 +212,11 @@ def projects(
     if tasks in PROJECTS_CMD_NOT_SUPPORTED:
         raise BentoMLException(
             """\
-        BentoML only supports `clone` and `pull` from git and remote storage
-        from SpaCy CLI to save into modelstore. Refers to https://spacy.io/api/cli#project
-        if for more information on SpaCy Projects.
+        BentoML only supports `clone` and `pull` for
+         git and remote storage from SpaCy CLI to
+         save into modelstore. Refers to
+         https://spacy.io/api/cli#project for more
+         information on SpaCy Projects.
         """
         )
     context = {

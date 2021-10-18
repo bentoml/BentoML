@@ -1,5 +1,6 @@
 import os
 import typing as t
+from logging import Logger
 
 from simple_di import Provide, inject
 
@@ -142,7 +143,7 @@ class _PycaretRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        return int(round(self.resource_quota.cpu))
+        return 1
 
     @property
     def num_replica(self) -> int:
@@ -155,7 +156,9 @@ class _PycaretRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":
-        # PyCaret is not designed to be ran in parallel. See https://github.com/pycaret/pycaret/issues/758
+        Logger.debug(
+            " PyCaret is not designed to be ran in parallel. See https://github.com/pycaret/pycaret/issues/758"
+        )
         return predict_model(self._model, input_data)
 
 

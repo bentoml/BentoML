@@ -1,6 +1,6 @@
+import logging
 import os
 import typing as t
-from logging import Logger
 
 from simple_di import Provide, inject
 
@@ -25,6 +25,8 @@ except ImportError:  # pragma: no cover
          https://pycaret.readthedocs.io/en/latest/installation.html
         """
     )
+
+logger = logging.getLogger(__name__)
 
 
 def _get_model_info(
@@ -156,7 +158,7 @@ class _PycaretRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":
-        Logger.debug(
+        logger.debug(
             " PyCaret is not designed to be ran in parallel. See https://github.com/pycaret/pycaret/issues/758"
         )
         return predict_model(self._model, input_data)

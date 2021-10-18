@@ -29,13 +29,27 @@ class Params:
         args_iter = tuple(iter(function(a)) for a in self.args)
         kwargs_iter = {k: iter(function(v)) for k, v in self.kwargs.items()}
 
-        while True:  # TODO(jiang): ?
-            try:
+        try:
+            while True:
                 args = tuple(next(a) for a in args_iter)
                 kwargs = {k: next(v) for k, v in kwargs_iter.items()}
                 yield type(self)(args, kwargs)
-            except StopIteration:
-                break
+        except StopIteration:
+            pass
+
+    def to_dict(self):
+        d = dict(**self.kwargs)
+        for i, v in enumerate(self.args):
+            d[i] = v
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        args = tuple(
+            v for _, v in sorted((k, v) for k, v in d.items() if isinstance(k, int))
+        )
+        kwargs = {k: v for k, v in d.items() if not isinstance(k, int)}
+        return cls(args, kwargs)
 
     @property
     def sample(self):

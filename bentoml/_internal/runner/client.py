@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Dict
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.runner.utils import Params
 
 if TYPE_CHECKING:
     from aiohttp import BaseConnector
@@ -41,20 +42,26 @@ class RunnerClient:
         return self._client
 
     async def async_run(self, *args, **kwargs):
+        from bentoml._internal.runner.transporter import data_to_payload
+
         URL = "http://127.0.0.1:8000/run"
-        payloads = {k: self._transporter.to_payload(v) for k, v in kwargs.items()}
+        param = Params(args, kwargs).map(data_to_payload)
+        payloads = param.to_dict()
         async with self._get_client() as client:
             async with client.post(URL, data=payloads) as resp:
                 text = await resp.text()
-        return self._transporter.from_payload(text)
+        return from_payload(text)  # TODO
 
     async def async_run_batch(self, *args, **kwargs):
+        from bentoml._internal.runner.transporter import data_to_payload
+
         URL = "http://127.0.0.1:8000/run_batch"
-        payloads = {k: self._transporter.to_payload(v) for k, v in kwargs.items()}
+        param = Params(args, kwargs).map(data_to_payload)
+        payloads = param.to_dict()
         async with self._get_client() as client:
             async with client.post(URL, data=payloads) as resp:
                 text = await resp.text()
-        return self._transporter.from_payload(text)
+        return from_payload(text)  # TODO
 
 
 @inject

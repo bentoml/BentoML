@@ -49,14 +49,9 @@ class NdarrayTransporter(Transporter["np.ndarray", bytes]):
 
 class DefaultTransporter(Transporter[t.Any, bytes]):
     def to_payload(self, data):
-        import cloudpickle
-
         return cloudpickle.dumps(data)
 
     def from_payload(self, payload):
-
-        import cloudpickle
-
         return cloudpickle.loads(payload)
 
 
@@ -65,13 +60,15 @@ class TransporterRegistry:
 
     @classmethod
     def register_transporter(
-        cls, data_type: t.Union[TypeRef, type], transporter_cls: t.Type[Transporter],
+        cls,
+        data_type: t.Union[TypeRef, type],
+        transporter_cls: t.Type[Transporter],
     ):
         data_type = TypeRef.from_type(data_type)
         cls.TRANSPORTER_TYPE_MAP[data_type] = transporter_cls
 
     @classmethod
-    def find_transporter_cls_by_type(cls, type_: type) -> t.Type["Transporter"]:
+    def find_by_type(cls, type_: type) -> t.Type["Transporter"]:
         typeref = TypeRef.from_type(type_)
         matched = cls.TRANSPORTER_TYPE_MAP.get(typeref)
         if matched:
@@ -89,6 +86,6 @@ register_builtin_transporters()
 
 
 def data_to_payload(data):
-    transporter_cls = TransporterRegistry.find_transporter_cls_by_type(type(data))
+    transporter_cls = TransporterRegistry.find_by_type(type(data))
     transporter = transporter_cls()
     return transporter.to_payload(data)

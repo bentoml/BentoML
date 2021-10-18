@@ -1,6 +1,6 @@
 import abc
 import typing as t
-from typing import TYPE_CHECKING, Generic, Iterator, Sequence, TypeVar, Union
+from typing import Generic, Iterator, Sequence, TYPE_CHECKING, TypeVar, Union
 
 from .utils import TypeRef
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class Container(Generic[SingleType, BatchType, PayloadType]):  # TODO(jiang): naming
+class DataContainer(Generic[SingleType, BatchType, PayloadType]):  # TODO(jiang): naming
     def __init__(self, batch_axis=None) -> None:
         self.batch_axis = batch_axis
 
@@ -41,7 +41,7 @@ class Container(Generic[SingleType, BatchType, PayloadType]):  # TODO(jiang): na
         ...
 
 
-class NdarrayContainer(Container["np.ndarray", "np.ndarray", bytes]):
+class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray", bytes]):
     def __init__(self, batch_axis=None) -> None:
         super().__init__(batch_axis=batch_axis)
         self._datas = []
@@ -97,15 +97,15 @@ class NdarrayContainer(Container["np.ndarray", "np.ndarray", bytes]):
 
 
 class DataContainerRegistry:
-    CONTAINER_SINGLE_TYPE_MAP: t.Dict[TypeRef, t.Type[Container]] = dict()
-    CONTAINER_BATCH_TYPE_MAP: t.Dict[TypeRef, t.Type[Container]] = dict()
+    CONTAINER_SINGLE_TYPE_MAP: t.Dict[TypeRef, t.Type[DataContainer]] = dict()
+    CONTAINER_BATCH_TYPE_MAP: t.Dict[TypeRef, t.Type[DataContainer]] = dict()
 
     @classmethod
     def register_container(
         cls,
         single_type: t.Union[TypeRef, type],
         batch_type: t.Union[TypeRef, type],
-        container_cls: t.Type[Container],
+        container_cls: t.Type[DataContainer],
     ):
         single_type = TypeRef.from_type(single_type)
         batch_type = TypeRef.from_type(batch_type)
@@ -114,12 +114,12 @@ class DataContainerRegistry:
         cls.CONTAINER_SINGLE_TYPE_MAP[single_type] = container_cls
 
     @classmethod
-    def find_container_by_single_type(cls, type_: type) -> t.Type["Container"]:
+    def find_by_single_type(cls, type_: type) -> t.Type["DataContainer"]:
         typeref = TypeRef.from_type(type_)
         return cls.CONTAINER_SINGLE_TYPE_MAP[typeref]
 
     @classmethod
-    def find_container_by_batch_type(cls, type_: type) -> t.Type["Container"]:
+    def find_by_batch_type(cls, type_: type) -> t.Type["DataContainer"]:
         typeref = TypeRef.from_type(type_)
         return cls.CONTAINER_BATCH_TYPE_MAP[typeref]
 
@@ -135,16 +135,14 @@ register_builtin_containers()
 
 
 def single_data_to_container(single_data, batch_axis=None):
-    container_cls = DataContainerRegistry.find_container_by_single_type(
-        type(single_data)
-    )
+    container_cls = DataContainerRegistry.find_by_single_type(type(single_data))
     container = container_cls(batch_axis=batch_axis)
     container.put_single(single_data)
     return container
 
 
 def batch_data_to_container(batch_data, batch_axis=None):
-    container_cls = DataContainerRegistry.find_container_by_batch_type(type(batch_data))
+    container_cls = DataContainerRegistry.find_by_batch_type(type(batch_data))
     container = container_cls(batch_axis=batch_axis)
     container.put_batch(batch_data)
     return container

@@ -95,7 +95,7 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`pl.LightningModule`):
+        model (`t.Union[torch.nn.Module, torch.jit.ScriptModule]`):
             Instance of model to be saved
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.

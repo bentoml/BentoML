@@ -326,9 +326,9 @@ class _PyFuncRunner(Runner):
 class _MLflowRunner:
     def __init__(self, *args: str, **kwargs: str):
         raise EnvironmentError(
-            f"{self.__class__.__name__} is designed to be initialized to"
-            f" its framework implementation via"
-            f" `{self.__class__.__name__}.to_runner_impl(tag,resource_quota,batch_options, **kwargs)`"  # noqa # pylint: disable
+            f"{self.__class__.__name__} is designed to initialized"
+            " BentoML internal runners implementation correspondingly via"
+            f" `{self.__class__.__name__}.to_runner_impl(tag, resource_quota, batch_options, **kwargs)`"  # noqa # pylint: disable
         )
 
     @classmethod

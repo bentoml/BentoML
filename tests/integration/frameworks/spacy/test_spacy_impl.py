@@ -1,10 +1,10 @@
 import random
-import shutil
 import typing as t
 from pathlib import Path
 
 import pytest
 import spacy
+import yaml
 from spacy.training import Example
 from spacy.util import minibatch
 
@@ -77,6 +77,11 @@ def test_spacy_load_missing_deps_exc(modelstore):
     nlp = spacy.load("en_core_web_sm")
     tag = bentoml.spacy.save("test_spacy", nlp, model_store=modelstore)
     info = modelstore.get(tag)
-    shutil.copyfile(Path(current_file, "meta.json"), Path(info.path, "meta.json"))
+    parent = info.path
+    with Path(parent, 'model_details.yaml').open('r') as f:
+        content = yaml.safe_load(f)
+    content['options']['additional_requirements'] = ['spacy-transformers>=1.0.3,<1.1.0']
+    with Path(parent, 'model_details.yaml').open('w') as of:
+        yaml.safe_dump(content, of)
     with pytest.raises(MissingDependencyException):
         _ = bentoml.spacy.load(tag, model_store=modelstore)

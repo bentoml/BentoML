@@ -9,8 +9,8 @@ import yaml
 import bentoml.mlflow
 import bentoml.sklearn
 from bentoml.exceptions import BentoMLException
-from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 from tests.integration.frameworks.mlflow.test_mlflow_save_load import res_arr
+from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 
 MODEL_NAME = __name__.split(".")[-1]
 

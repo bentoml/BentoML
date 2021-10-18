@@ -27,6 +27,8 @@ install_requires = [
     "pyyaml",
     "attrs>=20",
     "cattrs",
+    "packaging>=20.0",
+    "importlib_metadata",
 ]
 
 model_server_optional = [

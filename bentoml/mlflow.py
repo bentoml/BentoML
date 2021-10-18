@@ -2,7 +2,6 @@ import functools
 import importlib
 import logging
 import os
-import re
 import typing as t
 from hashlib import sha256
 from pathlib import Path
@@ -37,8 +36,6 @@ except ImportError:  # pragma: no cover
 
 logger = logging.getLogger(__name__)
 
-_RunnerType = t.Type[Runner]
-
 _MLFLOW_PROJECT_FILENAME = "MLproject"
 
 _S3_ERR_MSG = """\
@@ -66,13 +63,7 @@ def _is_s3_url(uri: str) -> bool:
 
 
 def _uri_to_filename(uri: str) -> str:
-    return f"b{sha256(uri.encode('utf-8')).hexdigest()[:23]}"
-
-
-def _clean_name(name: str) -> str:
-    if name[0].isdigit():
-        return _uri_to_filename(name)
-    return re.sub(r"\W|^(?=\d)-", "_", name)
+    return f"mlf{sha256(uri.encode('utf-8')).hexdigest()}"
 
 
 def _load(
@@ -97,7 +88,6 @@ def _load(
             model = mlflow.models.Model.load(mlmodel_fpath)  # pragma: no cover
             # fmt: off
             pyfunc_config = list(map(lambda x: x[1], model.flavors.items()))[0]  # type: ignore[no-any-return] # noqa # pylint: disable
-            print(pyfunc_config)
             loader_module = importlib.import_module(str(pyfunc_config['loader_module']))
             # fmt: on
     else:
@@ -355,7 +345,6 @@ class _MLflowRunner:
         model_info = model_store.get(tag)
         try:
             _, *flavors = model_info.options["flavor"].split(".")
-            print(flavors)
             flavor = flavors[0]
             if flavor == "pyfunc":
                 return _PyFuncRunner(
@@ -380,15 +369,15 @@ class _MLflowRunner:
                 If you wish to serve the results of MLflow Projects, it is recommended
                  to run the projects first,then save and load runner from the
                  trained weight to BentoML:
-                  
+
                   import bentoml.mlflow
-                  
+
                   run, uri = bentoml.mlflow.load_project(tag)
                   # run the projects
                   # access the model name via UI with `mlflow ui`
                   submitted = run(uri)
                   model_uri = f'runs:/{submitted}/model'
-                  
+
                   # then use BentoML frameworks to save and load the runner
                   tag = bentoml.mlflow.import_from_uri(model_uri)
                   runner = bentoml.mlflow.load_runner(tag)
@@ -404,7 +393,7 @@ class _MLflowRunner:
 @inject
 def load_runner(
     tag: str,
-    *runner_args,
+    *runner_args: str,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

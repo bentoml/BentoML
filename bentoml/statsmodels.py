@@ -1,6 +1,7 @@
 import os
 import typing as t
 
+import pandas as pd
 import numpy as np
 from simple_di import Provide, inject
 
@@ -14,7 +15,6 @@ _MT = t.TypeVar("_MT")
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    import pandas as pd
     from joblib.parallel import Parallel
 
     from ._internal.models.store import ModelInfo, ModelStore
@@ -38,8 +38,8 @@ def _get_model_info(
 ) -> t.Tuple["ModelInfo", PathType]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        if model_info.module == "bentoml.mlflow":
-            pass
+        if model_info.module == "bentoml.mlflow":  
+            pass  # pragma: no cover
         else:
             raise BentoMLException(  # pragma: no cover
                 f"Model {tag} was saved with module {model_info.module}, failed loading"
@@ -156,7 +156,7 @@ class _StatsModelsRunner(Runner):
         parallel, p_func, _ = parallel_func(
             self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
         )
-        return parallel(p_func(input_data))
+        return parallel(p_func(i) for i in input_data)[0]
 
 
 @inject

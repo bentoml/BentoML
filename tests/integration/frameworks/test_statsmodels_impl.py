@@ -14,6 +14,7 @@ from tests.utils.helpers import assert_have_file_extension
 
 # fmt: off
 test_df = pd.DataFrame([[0, 0, 1, 1]])
+test_df2 = np.array([0,0,1,1])
 
 # fmt: on
 if t.TYPE_CHECKING:
@@ -51,14 +52,6 @@ def wrong_module(modelstore: "ModelStore", holt_model):
     ) as ctx:
         holt_model.save(os.path.join(ctx.path, "saved_model.pkl"))
         return ctx.tag
-
-
-def get_holt_model_data():
-    df: pd.DataFrame = pd.read_csv(
-        "https://raw.githubusercontent.com/jbrownlee/Datasets/master/shampoo.csv"
-    )
-    data = df[0 : int(len(df) * 0.8)]
-    return data
 
 
 # exported from
@@ -112,6 +105,8 @@ def test_statsmodels_save_load(
         statsmodels.tsa.holtwinters.results.HoltWintersResultsWrapper,
     )
 
+    np.testing.assert_array_equal(holt_model.predict(), statsmodels_loaded.predict())
+
 
 @pytest.mark.parametrize("exc", [BentoMLException])
 def test_get_model_info_exc(exc, modelstore, holt_model):
@@ -121,7 +116,6 @@ def test_get_model_info_exc(exc, modelstore, holt_model):
 
 
 def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
-    data = get_holt_model_data()
     info = save_proc(None, holt_model)
     runner = bentoml.statsmodels.load_runner(
         info.tag, predict_fn_name="predict", model_store=modelstore
@@ -133,10 +127,12 @@ def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
     assert runner.num_replica == 1
 
     # TODO: test run_batch from statsmodels
-    """
-    res = runner._run_batch(data)
-    assert all(res == test_df)
-    """
+    res_pd = runner._run_batch(test_df)
+    res_np = runner._run_batch(test_df2)
+
+    expected_res = predict_df(holt_model, test_df)
+    assert all(res_pd ==  expected_res)
+    assert all(res_np ==  expected_res)
 
 
 @pytest.mark.gpus

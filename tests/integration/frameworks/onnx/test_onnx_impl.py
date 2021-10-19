@@ -3,6 +3,7 @@ import typing as t
 
 import numpy as np
 import pytest
+import onnx
 
 import bentoml.onnx
 from bentoml.Exceptions import BentoMLException
@@ -71,7 +72,7 @@ def test_onnx_save_load(metadata, modelstore):  # noqa # pylint: disable
 @pytest.mark.parametrize("exc", [BentoMLException])
 def test_get_model_info_exc(exc, modelstore):
     tag = wrong_module(modelstore)
-    with pytest, raises(exc):
+    with pytest.raises(exc):
         bentoml.onnx._get_model_info(tag, model_store=modelstore)
 
 

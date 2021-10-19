@@ -1,0 +1,2 @@
+remotes:
+  my_bucket: 's3://bentoml-mlflow-integration-tests'

@@ -1,5 +1,3 @@
-import typing as t
-
 from ._internal.environment.docker_image import builtin_docker_image
 from ._internal.environment.local_py_modules import find_local_py_modules_used
 from ._internal.environment.pip_pkg import (
@@ -15,5 +13,3 @@ __all__ = [
     "lock_pypi_versions",
     "find_local_py_modules_used",
 ]
-
-_T = t.TypeVar("_T")

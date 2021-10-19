@@ -37,10 +37,14 @@ def _get_model_info(
 ) -> t.Tuple["ModelInfo", PathType]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with module {model_info.module}, failed loading "
-            f"with {__name__}."
-        )
+        if model_info.module == "bentoml.mlflow":
+            pass
+        else:
+            raise BentoMLException(  # pragma: no cover
+                f"Model {tag} was saved with module"
+                f" {model_info.module}, failed loading"
+                f" with {__name__}."
+            )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PKL_EXT}")
 
     return model_info, model_file

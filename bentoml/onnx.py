@@ -1,14 +1,13 @@
 import os
 import typing as t
-import onnx
 
+import onnx
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import MissingDependencyException
-
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -94,7 +93,7 @@ def save(
     """  # noqa
     context = {"onnx": onnx.__version__}
     with model_store.register(
-        name, 
+        name,
         module=__name__,
         metadata=metadata,
         framework_context=context,
@@ -116,7 +115,6 @@ class _ONNXRunner(Runner):
         model_info, model_file = _get_model_info(tag, model_store)
         self._model_info = model_info
         self._model_file = model_file
-
 
     @property
     def required_models(self) -> t.List[str]:

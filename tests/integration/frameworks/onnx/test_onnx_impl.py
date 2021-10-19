@@ -100,6 +100,7 @@ def test_sklearn_runner_setup_on_gpu(modelstore, save_proc):
     # assert runner.num_concurrency_per_replica ==
     # assert runner.num_replica ==
 
+
 """
 import os
 

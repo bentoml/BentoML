@@ -5,7 +5,7 @@ import onnx
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import ONNX_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import MissingDependencyException
 

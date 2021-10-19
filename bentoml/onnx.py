@@ -7,11 +7,11 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import ONNX_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
-from .exceptions import MissingDependencyException
+from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelStore
+    from _internal.models.store import ModelInfo, ModelStore
 
 try:
     from onnx.external_data_helper import load_external_data_for_model

@@ -3,8 +3,7 @@ import importlib.util
 import logging
 import os
 import typing as t
-from distutils.dir_util import copy_tree
-from pathlib import Path, PurePath
+from pathlib import Path
 from urllib.parse import urlparse
 
 import yaml

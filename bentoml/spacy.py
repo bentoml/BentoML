@@ -4,7 +4,6 @@ import os
 import typing as t
 from hashlib import sha256
 from pathlib import Path
-from uuid import uuid4
 
 import yaml
 from simple_di import Provide, inject

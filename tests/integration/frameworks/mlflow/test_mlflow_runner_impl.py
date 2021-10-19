@@ -97,10 +97,9 @@ def test_mlflow_runner_forbidden_init():
         _ = bentoml.mlflow._MLflowRunner()
 
 
-def test_mlflow_runner_setup_raises(modelstore):
-    with pytest.raises(FileNotFoundError):
-        tag = bentoml.mlflow.import_from_uri(
-            MODEL_NAME, str(Path(current_file, "sklearn_clf")), model_store=modelstore
-        )
-        runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
-        runner._setup()
+def test_mlflow_runner_setup_handles_file_not_found(modelstore):
+    tag = bentoml.mlflow.import_from_uri(
+        MODEL_NAME, str(Path(current_file, "sklearn_clf")), model_store=modelstore
+    )
+    runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
+    runner._setup()

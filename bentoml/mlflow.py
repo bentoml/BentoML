@@ -330,7 +330,7 @@ class _MLflowRunner:
                     batch_options=batch_options,
                     model_store=model_store,
                 )
-            return getattr(importlib.import_module(f"bentoml.{flavor}"), "load_runner")(  # type: ignore # noqa # pylint: disable
+            runner = getattr(importlib.import_module(f"bentoml.{flavor}"), "load_runner")(  # type: ignore # noqa # pylint: disable
                 tag,
                 *runners_args,
                 resource_quota=resource_quota,
@@ -338,6 +338,8 @@ class _MLflowRunner:
                 model_store=model_store,
                 **runner_kwargs,
             )
+            setattr(runner, "_from_mlflow", True)
+            return runner
         except (IndexError, ImportError):
             if "mlproject_path" in model_info.options:
                 raise BentoMLException(

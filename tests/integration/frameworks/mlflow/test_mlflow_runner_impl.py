@@ -3,6 +3,7 @@ import pickle
 from pathlib import Path
 
 import mlflow
+import psutil
 import pytest
 import yaml
 
@@ -55,6 +56,13 @@ def test_mlflow_load_runner(modelstore):
     tag = bentoml.mlflow.save(MODEL_NAME, model, mlflow.sklearn, model_store=modelstore)
     runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
     assert isinstance(runner, bentoml.sklearn._SklearnRunner)
+    runner._setup()
+
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
+
+    res = runner._run_batch(data)
+    assert all(res == res_arr)
 
 
 def test_mlflow_pyfunc_runner(modelstore, pyfunc_tag):

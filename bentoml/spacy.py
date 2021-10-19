@@ -1,5 +1,6 @@
 import importlib
 import logging
+import os
 import typing as t
 from hashlib import sha256
 from pathlib import Path
@@ -93,9 +94,9 @@ def load(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     vocab: t.Union["Vocab", bool] = True,
-    disable: t.Iterable[str] = SimpleFrozenList(),
-    exclude: t.Iterable[str] = SimpleFrozenList(),
-    config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),
+    disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
+    exclude: t.Iterable[str] = SimpleFrozenList(),  # noqa
+    config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),  # noqa
 ) -> "spacy.language.Language":
     model_info = model_store.get(tag)
     if "projects_uri" in model_info.options:
@@ -199,10 +200,11 @@ def save(
 # bentoml.spacy.projects('save', /path/to/local/spacy/project)
 @inject
 def projects(
+    save_name: str,
     tasks: str,
     name: t.Optional[str] = None,
     repo_or_store: str = DEFAULT_SPACY_PROJECTS_REPO,
-    remotes_config: t.Optional[t.Mapping[str, t.Dict[str, str]]] = None,
+    remotes_config: t.Optional[t.Dict[str, t.Dict[str, str]]] = None,
     *,
     branch: str = DEFAULT_SPACY_PROJECTS_BRANCH,
     sparse_checkout: bool = False,
@@ -225,7 +227,7 @@ def projects(
         "tasks": tasks,
     }
     with model_store.register(
-        _uri_to_filename(uuid4().hex),
+        save_name,
         module=__name__,
         options=None,
         framework_context=context,
@@ -246,8 +248,9 @@ def projects(
                 branch=branch,
                 sparse_checkout=sparse_checkout,
             )
-        else:  # pragma: no cover
+        else:
             # works with S3 bucket, haven't failed yet
+            os.makedirs(output_path, exist_ok=True)
             assert (
                 remotes_config is not None
             ), """\
@@ -263,14 +266,14 @@ def projects(
                     }
                 }
                  """
-            with Path(ctx.path, "project.yml").open("w") as inf:
+            with Path(output_path, "project.yml").open("w") as inf:
                 yaml.safe_dump(remotes_config, inf)
             for remote in remotes_config["remotes"]:
                 for url, output_path in spacy.cli.project_pull(
                     output_path, remote=remote, verbose=verbose
                 ):
                     if url is not None:
-                        logger.debug(f"Pulled {output_path} from {repo_or_store}")
+                        logger.info(f"Pulled {output_path} from {repo_or_store}")
 
         return ctx.tag, output_path
 
@@ -382,9 +385,11 @@ class _SpacyRunner(Runner):
         inputs: t.Iterable[t.Tuple[str, t.Any]],
         as_tuples: bool = False,
         batch_size: t.Optional[int] = None,
-        disable: t.Iterable[str] = SimpleFrozenList(),
+        disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
         component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
     ) -> t.Iterator[t.Tuple[t.Union["Doc", "Doc"], t.Any]]:
+        if not isinstance(inputs, list):
+            inputs = list(inputs)
         return self._model.pipe(
             inputs,
             as_tuples=as_tuples,
@@ -404,9 +409,9 @@ def load_runner(
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     vocab: t.Union["Vocab", bool] = True,
-    disable: t.Iterable[str] = SimpleFrozenList(),
-    exclude: t.Iterable[str] = SimpleFrozenList(),
-    config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),
+    disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
+    exclude: t.Iterable[str] = SimpleFrozenList(),  # noqa
+    config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),  # noqa
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_SpacyRunner":
     return _SpacyRunner(

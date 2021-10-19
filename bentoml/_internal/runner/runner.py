@@ -173,6 +173,8 @@ class Runner(_BaseRunner, ABC):
     Note: for pandas.DataFrame and List, the batch_axis must be 0
     """
 
+    _from_mlflow: bool = False
+
     @abstractmethod
     def _run_batch(self: "_BaseRunner", *args, **kwargs) -> t.Any:
         ...

@@ -32,7 +32,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `xgboost.core.Booster` from BentoML modelstore.
+        an instance of Onnx model from BentoML modelstore.
 
     Examples::
     """  # noqa
@@ -52,7 +52,7 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`xgboost.core.Booster`):
+        model:
             Instance of model to be saved
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
@@ -109,8 +109,8 @@ def load_runner(
 ) -> "_ONNXRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
-    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
+    maximize throughput. `bentoml.onnx.load_runner` implements a Runner class that
+    wrap around an Onnx model, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):
@@ -123,7 +123,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.xgboost` model
+        Runner instances for `bentoml.onnx` model
 
     Examples::
     """  # noqa

@@ -8,16 +8,17 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PKL_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.types import PathType
+from ._internal.utils.lazy_loader import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    import pandas as pd
     from joblib.parallel import Parallel
-
+    import pandas as pd
     from ._internal.models.store import ModelInfo, ModelStore
+
 
 try:
     import statsmodels
@@ -31,6 +32,13 @@ except ImportError:  # pragma: no cover
          """
     )
 
+_exc_msg = """\
+`pandas` is required by `bentoml.statsmodels`, install pandas with 
+`pip install pandas`. For more information, refer to 
+https://pandas.pydata.org/docs/getting_started/install.html
+"""
+pd = LazyLoader('pd', globals(), 'pandas', exc_msg=_exc_msg)
+
 
 def _get_model_info(
     tag: str,
@@ -39,7 +47,7 @@ def _get_model_info(
     model_info = model_store.get(tag)
     if model_info.module != __name__:
         if model_info.module == "bentoml.mlflow":
-            pass
+            pass  # pragma: no cover
         else:
             raise BentoMLException(  # pragma: no cover
                 f"Model {tag} was saved with module {model_info.module}, failed loading"
@@ -166,7 +174,7 @@ class _StatsModelsRunner(Runner):
         parallel, p_func, _ = parallel_func(
             self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
         )
-        return parallel(p_func(input_data))
+        return parallel(p_func(i) for i in input_data)[0]
 
 
 @inject

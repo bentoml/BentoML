@@ -1,14 +1,22 @@
+import os
+import typing as t
+
+import catboost as cbt
 import pytest
 from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
 
-from bentoml.catboost import CatBoostModel
-from bentoml.exceptions import InvalidArgument
+import bentoml.catboost
+from bentoml.exceptions import BentoMLException, InvalidArgument
 from tests.utils.frameworks.sklearn_utils import test_df
 from tests.utils.helpers import assert_have_file_extension
 
+if t.TYPE_CHECKING:
+    from bentoml._internal.models.store import ModelInfo, ModelStore
 
-@pytest.fixture()
-def CancerClassifier(tmpdir):
+TEST_MODEL_NAME = __name__.split(".")[-1]
+
+
+def catboost_model() -> cbt.core.CatBoostClassifier:
     from sklearn.datasets import load_breast_cancer
 
     cancer = load_breast_cancer()
@@ -22,7 +30,6 @@ def CancerClassifier(tmpdir):
         learning_rate=1,
         loss_function="Logloss",
         verbose=False,
-        train_dir=f"{tmpdir}/catboost_info",
     )
 
     # train the model
@@ -31,19 +38,60 @@ def CancerClassifier(tmpdir):
     return clf
 
 
-def test_catboost_save_load(tmpdir, CancerClassifier):
-    model = CancerClassifier
-    CatBoostModel(model).save(tmpdir)
-    assert_have_file_extension(tmpdir, ".cbm")
+@pytest.fixture(scope="module")
+def save_proc(
+    modelstore: "ModelStore",
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
+    def _(model_params, metadata) -> "ModelInfo":
+        model = catboost_model()
+        tag = bentoml.catboost.save(
+            TEST_MODEL_NAME,
+            model,
+            model_params=model_params,
+            metadata=metadata,
+            model_store=modelstore,
+        )
+        info = modelstore.get(tag)
+        return info
 
-    catboost_loaded = CatBoostModel.load(tmpdir)
-    assert isinstance(catboost_loaded, CatBoost)
-    assert catboost_loaded.predict(test_df) == model.predict(test_df)
+    return _
 
 
-def test_invalid_catboost_load(tmpdir):
-    with pytest.raises(InvalidArgument):
-        CatBoostModel.load(tmpdir)
+def wrong_module(modelstore: "ModelStore"):
+    model = catboost_model()
+    with modelstore.register(
+        "wrong_module",
+        module=__name__,
+        options=None,
+        framework_context=None,
+        metadata=None,
+    ) as ctx:
+        model.save_model(os.path.join(ctx.path, "saved_model.model"))
+        return str(ctx.path)
+
+
+@pytest.mark.parametrize(
+    "model_params, metadata", [(dict(model_type="classifier"), {"acc": 0.876})]
+)
+def test_catboost_save_load(model_params, metadata, modelstore, save_proc):
+
+    model = catboost_model()
+    info = save_proc(model_params, metadata)
+    assert info.metadata is not None
+    assert_have_file_extension(info.path, ".cbm")
+
+    cbt_loaded = bentoml.catboost.load(
+        info.tag, model_params=model_params, model_store=modelstore
+    )
+    assert isinstance(cbt_loaded, CatBoostClassifier)
+    assert cbt_loaded.predict(test_df) == model.predict(test_df)
+
+
+@pytest.mark.parametrize("exc", [BentoMLException])
+def test_catboost_load_exc(exc, modelstore):
+    tag = wrong_module(modelstore)
+    with pytest.raises(exc):
+        bentoml.catboost.load(tag, model_store=modelstore)
 
 
 @pytest.mark.parametrize(
@@ -54,6 +102,11 @@ def test_invalid_catboost_load(tmpdir):
         ("", CatBoost),
     ],
 )
-def test_catboost_model_type(model_type, expected_model):
-    catboost_inst = CatBoostModel(model_type=model_type)
-    assert isinstance(catboost_inst._model, expected_model)
+def test_catboost_model_type(model_type, expected_model, modelstore, save_proc):
+    model_params = dict(model_type=model_type)
+    info = save_proc(model_params, None)
+    cbt_loaded = bentoml.catboost.load(
+        info.tag, model_params=model_params, model_store=modelstore
+    )
+
+    assert isinstance(cbt_loaded, expected_model)

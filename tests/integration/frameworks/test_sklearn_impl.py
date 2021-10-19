@@ -14,7 +14,7 @@ from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 from tests.utils.helpers import assert_have_file_extension
 
 # fmt: off
-test_res_array = np.array(
+res_arr = np.array(
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
      0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -29,7 +29,7 @@ test_res_array = np.array(
 _MT = t.TypeVar("_MT")
 
 if t.TYPE_CHECKING:
-    from bentoml import ModelStore
+    from bentoml._internal.models.store import ModelInfo, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -86,7 +86,7 @@ def test_sklearn_save_load(metadata, modelstore):  # noqa # pylint: disable
         model.predict(data), sklearn_loaded.predict(data)
     )  # noqa
 
-    np.testing.assert_array_equal(model.predict(data), test_res_array)
+    np.testing.assert_array_equal(model.predict(data), res_arr)
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
@@ -98,7 +98,6 @@ def test_get_model_info_exc(exc, modelstore):
 
 def test_sklearn_runner_setup_run_batch(modelstore, save_proc):
     _, data = sklearn_model_data()
-    sklearn_params = dict()
     info = save_proc(None)
     runner = bentoml.sklearn.load_runner(info.tag, model_store=modelstore)
     runner._setup()
@@ -108,7 +107,8 @@ def test_sklearn_runner_setup_run_batch(modelstore, save_proc):
     assert runner.num_replica == 1
 
     res = runner._run_batch(data)
-    assert all(res == test_res_array)
+    assert all(res == res_arr)
+
 
 
 @pytest.mark.gpus
@@ -121,7 +121,3 @@ def test_sklearn_runner_setup_on_gpu(modelstore, save_proc):
     runner._setup()
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1
-
-
-# runner.run
-# runner.run_batch

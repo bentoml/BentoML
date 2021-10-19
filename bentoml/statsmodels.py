@@ -1,8 +1,8 @@
 import os
 import typing as t
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -38,7 +38,7 @@ def _get_model_info(
 ) -> t.Tuple["ModelInfo", PathType]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        if model_info.module == "bentoml.mlflow":  
+        if model_info.module == "bentoml.mlflow":
             pass  # pragma: no cover
         else:
             raise BentoMLException(  # pragma: no cover

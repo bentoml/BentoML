@@ -18,7 +18,7 @@ test_df2 = np.array([0,0,1,1])
 
 # fmt: on
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelStore, ModelInfo
+    from bentoml._internal.models.store import ModelInfo, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -130,8 +130,8 @@ def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
     res_np = runner._run_batch(test_df2)
 
     expected_res = predict_df(holt_model, test_df)
-    assert all(res_pd ==  expected_res)
-    assert all(res_np ==  expected_res)
+    assert all(res_pd == expected_res)
+    assert all(res_np == expected_res)
 
 
 @pytest.mark.gpus

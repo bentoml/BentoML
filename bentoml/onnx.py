@@ -1,4 +1,6 @@
+import os
 import typing as t
+import onnx
 
 from simple_di import Provide, inject
 
@@ -7,14 +9,35 @@ from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import MissingDependencyException
 
+
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     from _internal.models.store import ModelStore
 
 try:
-    ...
+    from onnx.external_data_helper import load_external_data_for_model
+
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException("")
+    raise MissingDependencyException(
+        """onnx is required in order to use the module `bentoml.onnx`, install 
+        onnx with `pip install sklearn`. For more information, refer to 
+        https://onnx.ai/get-started.html
+        """
+    )
+
+
+def _get_model_info(
+    tag: str,
+    model_store: "ModelStore",
+) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
+    model_info = model_store.get(tag)
+    if model_info.module != __name__:
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model_info.module}, failed loading "
+            f"with {__name__}."
+        )
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+    return model_info, model_file
 
 
 @inject
@@ -32,10 +55,14 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `xgboost.core.Booster` from BentoML modelstore.
+        an instance of onnx model from BentoML modelstore.
 
     Examples::
     """  # noqa
+    _, model_file = _get_model_info(tag, model_store)
+    onnx_model = onnx.load(model_file)
+
+    return onnx_model
 
 
 @inject
@@ -52,7 +79,7 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`xgboost.core.Booster`):
+        model:
             Instance of model to be saved
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
@@ -65,6 +92,15 @@ def save(
 
     Examples::
     """  # noqa
+    context = {"onnx": onnx.__version__}
+    with model_store.register(
+        name, 
+        module=__name__,
+        metadata=metadata,
+        framework_context=context,
+    ) as ctx:
+        onnx.save(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+        return ctx.tag
 
 
 class _ONNXRunner(Runner):
@@ -77,10 +113,14 @@ class _ONNXRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
+        model_info, model_file = _get_model_info(tag, model_store)
+        self._model_info = model_info
+        self._model_file = model_file
+
 
     @property
     def required_models(self) -> t.List[str]:
-        ...
+        return [self._model_info.tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -92,7 +132,7 @@ class _ONNXRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        ...
+        self._model = onnx.load(filename=self._model_file)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data) -> t.Any:
@@ -109,8 +149,8 @@ def load_runner(
 ) -> "_ONNXRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
-    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
+    maximize throughput. `bentoml.onnx.load_runner` implements a Runner class that
+    wrap around a Onnx booster model, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):
@@ -123,7 +163,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.xgboost` model
+        Runner instances for `bentoml.onnx` model
 
     Examples::
     """  # noqa

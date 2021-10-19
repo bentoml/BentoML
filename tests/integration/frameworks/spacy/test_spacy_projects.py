@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 import spacy
+import spacy.cli
 
 import bentoml.spacy
 from bentoml.exceptions import BentoMLException
@@ -11,7 +12,7 @@ def test_spacy_projects_clone(modelstore):
     tag, project_path = bentoml.spacy.projects(
         "clone",
         name="integrations/huggingface_hub",
-        repo_or_store="https://github.com/aarnphm/projects",
+        repo_or_store="https://github.com/aarnphm/bentoml-spacy-projects-integration-tests",
         model_store=modelstore,
     )
     model_info = modelstore.get(tag)
@@ -23,7 +24,19 @@ def test_spacy_projects_clone(modelstore):
 
 
 def test_spacy_projects_pull(modelstore):
-    ...
+    project_yml = {
+        "remotes": {
+            "default": "https://github.com/aarnphm/bentoml-spacy-projects-integration-tests/tree/v3/pipelines/tagger_parser_ud",
+        }
+    }
+    tag, project_path = bentoml.spacy.projects(
+        "pull", remotes_config=project_yml, model_store=modelstore
+    )
+    model_info = modelstore.get(tag)
+    assert "project.yml" in [
+        i.name for i in Path(model_info.path, "saved_model").iterdir()
+    ]
+    spacy.cli.project_assets(project_path)
 
 
 @pytest.mark.parametrize("tasks", ["assets", "document", "dvc", "push", "run"])

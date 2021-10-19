@@ -1,11 +1,11 @@
 import importlib
 import logging
-import os
-import sys
 import typing as t
 from hashlib import sha256
 from pathlib import Path
+from uuid import uuid4
 
+import yaml
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -202,12 +202,12 @@ def projects(
     tasks: str,
     name: t.Optional[str] = None,
     repo_or_store: str = DEFAULT_SPACY_PROJECTS_REPO,
+    remotes_config: t.Optional[t.Mapping[str, t.Dict[str, str]]] = None,
     *,
     branch: str = DEFAULT_SPACY_PROJECTS_BRANCH,
     sparse_checkout: bool = False,
     verbose: bool = True,
-    remote: str = "defaults",
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Tuple[str, "Path"]:
     if tasks in PROJECTS_CMD_NOT_SUPPORTED:
@@ -225,7 +225,7 @@ def projects(
         "tasks": tasks,
     }
     with model_store.register(
-        _uri_to_filename(repo_or_store),
+        _uri_to_filename(uuid4().hex),
         module=__name__,
         options=None,
         framework_context=context,
@@ -246,23 +246,31 @@ def projects(
                 branch=branch,
                 sparse_checkout=sparse_checkout,
             )
-        else:
-            current_file = os.path.realpath(sys.argv[0])
-            assert "project.yml" in [
-                i.name for i in Path(current_file).parent.iterdir()
-            ], (
-                "`project.yml` is required "
-                f"in {str(Path(current_file).parent.resolve())}"
-                " to pull projects into"
-                " BentoML modelstore. Refers to"
-                " https://spacy.io/usage/projects#remote"
-                " for more information."
-            )
-            for url, output_path in spacy.cli.project_pull(
-                output_path, remote=remote, verbose=verbose
-            ):
-                if url is not None:
-                    logger.debug(f"Pulled {output_path} from {repo_or_store}")
+        else:  # pragma: no cover
+            # works with S3 bucket, haven't failed yet
+            assert (
+                remotes_config is not None
+            ), """\
+                `remotes_config` is required in order to pull projects into
+                 BentoML modelstore. Refers to
+                 https://spacy.io/usage/projects#remote
+                 for more information. We will accept remotes
+                 as shown:
+                 {
+                    'remotes':
+                    {
+                        'default':'s3://spacy-bucket',
+                    }
+                }
+                 """
+            with Path(ctx.path, "project.yml").open("w") as inf:
+                yaml.safe_dump(remotes_config, inf)
+            for remote in remotes_config["remotes"]:
+                for url, output_path in spacy.cli.project_pull(
+                    output_path, remote=remote, verbose=verbose
+                ):
+                    if url is not None:
+                        logger.debug(f"Pulled {output_path} from {repo_or_store}")
 
         return ctx.tag, output_path
 

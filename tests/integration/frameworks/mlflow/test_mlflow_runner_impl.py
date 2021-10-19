@@ -18,7 +18,7 @@ current_file = Path(__file__).parent
 
 
 @pytest.fixture()
-def pyfunc_tag(modelstore, tmpdir):
+def pyfunc_tag(modelstore):
     def _(flavor):
         model, _ = sklearn_model_data()
         options = {"flavor": flavor}
@@ -78,10 +78,21 @@ def test_mlflow_runner_exc(pyfunc_tag, modelstore, exc, ctag):
         uri = str(Path(current_file, "SimpleMNIST").resolve())
         tag = pyfunc_tag("mlflow.nonexistent")
         if not ctag:
-            tag = bentoml.mlflow.import_from_uri(uri, model_store=modelstore)
+            tag = bentoml.mlflow.import_from_uri(
+                MODEL_NAME, uri, model_store=modelstore
+            )
         _ = bentoml.mlflow.load_runner(tag, model_store=modelstore)
 
 
 def test_mlflow_runner_forbidden_init():
     with pytest.raises(EnvironmentError):
         _ = bentoml.mlflow._MLflowRunner()
+
+
+def test_mlflow_runner_setup_raises(modelstore):
+    with pytest.raises(FileNotFoundError):
+        tag = bentoml.mlflow.import_from_uri(
+            MODEL_NAME, str(Path(current_file, "sklearn_clf")), model_store=modelstore
+        )
+        runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
+        runner._setup()

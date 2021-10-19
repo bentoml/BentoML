@@ -1,10 +1,10 @@
-import functools
 import importlib
+import importlib.util
 import logging
 import os
 import typing as t
-from hashlib import sha256
-from pathlib import Path
+from distutils.dir_util import copy_tree
+from pathlib import Path, PurePath
 from urllib.parse import urlparse
 
 import yaml
@@ -23,7 +23,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
 
 try:
     import mlflow
-    import mlflow.models
+    from mlflow.models import Model
     from mlflow.models.model import MLMODEL_FILE_NAME
     from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 except ImportError:  # pragma: no cover
@@ -33,6 +33,7 @@ except ImportError:  # pragma: no cover
         Instruction: `pip install -U mlflow`
         """
     )
+
 
 logger = logging.getLogger(__name__)
 
@@ -62,55 +63,6 @@ def _is_s3_url(uri: str) -> bool:
     return urlparse(uri).scheme.startswith("s3")
 
 
-def _uri_to_filename(uri: str) -> str:
-    return f"mlf{sha256(uri.encode('utf-8')).hexdigest()}"
-
-
-def _load(
-    tag: str,
-    model_store: "ModelStore",
-    load_as_projects: bool,
-    **mlflow_project_run_kwargs: str,
-) -> t.Union[t.Tuple[t.Callable[..., t.Any], str], "PyFuncModel"]:
-    model_info = model_store.get(tag)
-    if model_info.context["import_from_uri"]:
-        model_folder = model_info.options["uri"].split("/")[-1]
-        if load_as_projects:
-            assert "mlproject_path" in model_info.options
-            func: t.Callable[[str], t.Callable[..., t.Any]] = functools.partial(
-                mlflow.projects.run, **mlflow_project_run_kwargs
-            )
-            return func, model_info.options["mlproject_path"]
-        else:
-            mlmodel_fpath = Path(model_info.path, model_folder, MLMODEL_FILE_NAME)
-            if not mlmodel_fpath.exists():
-                raise BentoMLException(f"{MLMODEL_FILE_NAME} cannot be found.")
-            model = mlflow.models.Model.load(mlmodel_fpath)  # pragma: no cover
-            # fmt: off
-            pyfunc_config = list(map(lambda x: x[1], model.flavors.items()))[0]  # type: ignore[no-any-return] # noqa # pylint: disable
-            loader_module = importlib.import_module(str(pyfunc_config['loader_module']))
-            # fmt: on
-    else:
-        model_folder = SAVE_NAMESPACE
-        loader_module = mlflow.pyfunc
-    return loader_module.load_model(os.path.join(model_info.path, model_folder))
-
-
-# TODO: supports different options for different type of tracking uri runs
-@inject
-def load_project(
-    tag: str,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    **mlflow_project_run_kwargs: str,
-) -> t.Tuple[t.Callable[..., t.Any], str]:
-    return _load(
-        tag=tag,
-        model_store=model_store,
-        load_as_projects=True,
-        **mlflow_project_run_kwargs,
-    )
-
-
 @inject
 def load(
     tag: str,
@@ -130,13 +82,33 @@ def load(
 
     Examples::
     """  # noqa
-    return _load(tag=tag, model_store=model_store, load_as_projects=False)
+    model_info = model_store.get(tag)
+    if model_info.context["import_from_uri"]:
+        model_folder = model_info.options["uri"].split("/")[-1]
+        if "mlproject_path" in model_info.options:
+            raise BentoMLException(
+                """\
+            BentoML doesn't support loading MLflow Projects.
+            """
+            )
+        mlmodel_fpath = Path(model_info.path, model_folder, MLMODEL_FILE_NAME)
+        if not mlmodel_fpath.exists():
+            raise BentoMLException(f"{MLMODEL_FILE_NAME} cannot be found.")
+        model = Model.load(mlmodel_fpath)  # pragma: no cover
+        # fmt: off
+        pyfunc_config = list(map(lambda x: x[1], model.flavors.items()))[0]  # type: ignore[no-any-return] # noqa # pylint: disable
+        loader_module = importlib.import_module(str(pyfunc_config['loader_module']))
+        # fmt: on
+    else:
+        model_folder = SAVE_NAMESPACE
+        loader_module = mlflow.pyfunc
+    return loader_module.load_model(os.path.join(model_info.path, model_folder))
 
 
 def _save(
     name: str,
     identifier: t.Union["mlflow.models.Model", str],
-    loader_module: t.Type["mlflow.pyfunc"],
+    loader_module: t.Optional[t.Type["mlflow.pyfunc"]],
     metadata: t.Optional[t.Dict[str, t.Any]],
     model_store: "ModelStore",
 ) -> str:
@@ -159,7 +131,7 @@ def _save(
         metadata=metadata,
     ) as ctx:
         if isinstance(identifier, str):
-            ctx.options = {"uri": identifier, "flavor": "na"}
+            ctx.options = {"uri": Path(identifier).as_uri(), "flavor": "na"}
             mlflow_obj_path = _download_artifact_from_uri(
                 identifier, output_path=ctx.path
             )
@@ -173,10 +145,10 @@ def _save(
                     _mlmodel_path = None
                     for f in Path(mlflow_obj_path).iterdir():
                         if f.is_dir():
-                            _f = f.resolve()
                             if any(f for f in f.glob("MLmodel")):
-                                _mlmodel_path = [i for i in _f.rglob("MLmodel")][0]
-                        if f.resolve().name == "MLmodel":
+                                _mlmodel_path = [i for i in f.rglob("MLmodel")][0]
+                                break
+                        elif f.resolve().name == "MLmodel":
                             _mlmodel_path = f
                             break
                     if _mlmodel_path is not None:
@@ -187,7 +159,9 @@ def _save(
                             # fmt: on
                 except (NotADirectoryError, NameError):
                     pass
-            if ctx.options["flavor"] == "na" and "mlproject_path" not in ctx.options:
+            if (
+                ctx.options["flavor"] == "na" and "mlproject_path" not in ctx.options
+            ):  # pragma: no cover
                 logger.warning(
                     f"`{identifier.split('/')[-1]}` is neither MLflow Projects"
                     " nor MLflow Models. This will result in errors when loading"
@@ -195,6 +169,7 @@ def _save(
                     f" to correct framework of choice for its S3 related-functions."
                 )
         else:
+            assert loader_module is not None, "`loader_module` cannot be None."
             ctx.options["flavor"] = loader_module.__name__
             loader_module.save_model(identifier, os.path.join(ctx.path, SAVE_NAMESPACE))
         return ctx.tag  # type: ignore
@@ -204,7 +179,7 @@ def _save(
 def save(
     name: str,
     model: "mlflow.models.Model",
-    loader_module: t.Type["mlflow.pyfunc"],
+    loader_module: t.Optional[t.Type["mlflow.pyfunc"]] = None,
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -241,7 +216,9 @@ def save(
 
 @inject
 def import_from_uri(
+    name: str,
     uri: str,
+    loader_module: t.Optional[t.Type["mlflow.pyfunc"]] = None,
     *,
     s3_default_region: t.Optional[str] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -259,9 +236,9 @@ def import_from_uri(
             )
             os.environ["AWS_DEFAULT_REGION"] = s3_default_region
     return _save(
-        name=_uri_to_filename(uri),
+        name=name,
         identifier=uri,
-        loader_module=mlflow.pyfunc,
+        loader_module=loader_module,
         metadata=metadata,
         model_store=model_store,
     )

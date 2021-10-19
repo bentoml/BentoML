@@ -126,7 +126,6 @@ def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
-    # TODO: test run_batch from statsmodels
     res_pd = runner._run_batch(test_df)
     res_np = runner._run_batch(test_df2)
 

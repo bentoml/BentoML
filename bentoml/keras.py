@@ -183,7 +183,17 @@ class _KerasRunner(_TensorflowRunner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override] # noqa
         self._session.config = self._config_proto
-        self._model = load(self.name, model_store=self._model_store)
+        try:
+            self._model = load(self.name, model_store=self._model_store)
+        except FileNotFoundError:
+            if self._from_mlflow:
+                # a special flags to determine whether the runner is
+                # loaded from mlflow
+                import bentoml.mlflow
+
+                self._model = bentoml.mlflow.load(
+                    self.name, model_store=self._model_store
+                )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ

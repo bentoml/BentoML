@@ -3,6 +3,7 @@ import pickle
 from pathlib import Path
 
 import mlflow
+import psutil
 import pytest
 import yaml
 
@@ -18,7 +19,7 @@ current_file = Path(__file__).parent
 
 
 @pytest.fixture()
-def pyfunc_tag(modelstore, tmpdir):
+def pyfunc_tag(modelstore):
     def _(flavor):
         model, _ = sklearn_model_data()
         options = {"flavor": flavor}
@@ -55,6 +56,13 @@ def test_mlflow_load_runner(modelstore):
     tag = bentoml.mlflow.save(MODEL_NAME, model, mlflow.sklearn, model_store=modelstore)
     runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
     assert isinstance(runner, bentoml.sklearn._SklearnRunner)
+    runner._setup()
+
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
+
+    res = runner._run_batch(data)
+    assert all(res == res_arr)
 
 
 def test_mlflow_pyfunc_runner(modelstore, pyfunc_tag):
@@ -78,10 +86,20 @@ def test_mlflow_runner_exc(pyfunc_tag, modelstore, exc, ctag):
         uri = str(Path(current_file, "SimpleMNIST").resolve())
         tag = pyfunc_tag("mlflow.nonexistent")
         if not ctag:
-            tag = bentoml.mlflow.import_from_uri(uri, model_store=modelstore)
+            tag = bentoml.mlflow.import_from_uri(
+                MODEL_NAME, uri, model_store=modelstore
+            )
         _ = bentoml.mlflow.load_runner(tag, model_store=modelstore)
 
 
 def test_mlflow_runner_forbidden_init():
     with pytest.raises(EnvironmentError):
         _ = bentoml.mlflow._MLflowRunner()
+
+
+def test_mlflow_runner_setup_handles_file_not_found(modelstore):
+    tag = bentoml.mlflow.import_from_uri(
+        MODEL_NAME, str(Path(current_file, "sklearn_clf")), model_store=modelstore
+    )
+    runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
+    runner._setup()

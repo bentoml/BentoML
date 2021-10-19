@@ -11,6 +11,8 @@ cd "$GIT_ROOT" || exit
 
 # Install Spacy
 pip install spacy==3.1.2 pyyaml
+pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+python -m pip install tensorflow==2.6.0
 python -m spacy download en_core_web_sm
 
 pytest "$GIT_ROOT"/tests/integration/frameworks/spacy --cov=bentoml --cov-config=.coveragerc

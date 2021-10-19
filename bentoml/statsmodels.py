@@ -127,6 +127,7 @@ class _StatsModelsRunner(Runner):
         self._predict_fn_name = predict_fn_name
         self._model_info = model_info
         self._model_file = model_file
+        self._model_store = model_store
 
     @property
     def required_models(self) -> t.List[str]:
@@ -144,8 +145,17 @@ class _StatsModelsRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
+        try:
+            self._model = sm.load(self._model_file)
+        except FileNotFoundError:
+            if self._from_mlflow:
+                # a special flags to determine whether the runner is
+                # loaded from mlflow
+                import bentoml.mlflow
 
-        self._model = sm.load(self._model_file)
+                self._model = bentoml.mlflow.load(
+                    self.name, model_store=self._model_store
+                )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ

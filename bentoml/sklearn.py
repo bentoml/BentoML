@@ -127,6 +127,7 @@ class _SklearnRunner(Runner):
     ):
         super().__init__(tag, resource_quota, batch_options)
         model_info, model_file = _get_model_info(tag, model_store)
+        self._model_store = model_store
         self._model_info = model_info
         self._model_file = model_file
         self._parallel_ctx = parallel_backend(
@@ -149,7 +150,17 @@ class _SklearnRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        self._model = joblib.load(filename=self._model_file)
+        try:
+            self._model = joblib.load(filename=self._model_file)
+        except FileNotFoundError:
+            if self._from_mlflow:
+                # a special flags to determine whether the runner is
+                # loaded from mlflow
+                import bentoml.mlflow
+
+                self._model = bentoml.mlflow.load(
+                    self.name, model_store=self._model_store
+                )
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]

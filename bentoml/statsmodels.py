@@ -2,13 +2,13 @@ import os
 import typing as t
 
 import numpy as np
-import pandas as pd
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PKL_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.types import PathType
+from ._internal.utils.lazy_loader import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
@@ -16,8 +16,9 @@ _MT = t.TypeVar("_MT")
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     from joblib.parallel import Parallel
-
+    import pandas as pd
     from ._internal.models.store import ModelInfo, ModelStore
+
 
 try:
     import statsmodels
@@ -30,6 +31,13 @@ except ImportError:  # pragma: no cover
          https://www.statsmodels.org/stable/install.html
          """
     )
+
+_exc_msg = """\
+`pandas` is required by `bentoml.statsmodels`, install pandas with 
+`pip install pandas`. For more information, refer to 
+https://pandas.pydata.org/docs/getting_started/install.html
+"""
+pd = LazyLoader('pd', globals(), 'pandas', exc_msg=_exc_msg)
 
 
 def _get_model_info(

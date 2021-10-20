@@ -15,7 +15,7 @@ from pycaret.datasets import get_data
 
 import bentoml.pycaret
 from bentoml.exceptions import BentoMLException
-from tests.utils.frameworks.pycaret_utils import test_df, train_df
+from tests.utils.frameworks.pycaret_utils import get_pycaret_data
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
@@ -23,16 +23,14 @@ if t.TYPE_CHECKING:
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
+pycaret_data = get_pycaret_data()
+
 
 def pycaret_model() -> t.Any:
-    dataset = get_data("credit")
-    data = dataset.sample(frac=0.95, random_state=786)
-    data_unseen = dataset.drop(data.index)
-    data.reset_index(inplace=True, drop=True)
-    data_unseen.reset_index(inplace=True, drop=True)
-
     # note: silent must be set to True to avoid the confirmation input of data types
-    env = pycaret_setup(data=data, target="default", session_id=123, silent=True)
+    env = pycaret_setup(
+        data=pycaret_data[0], target="default", session_id=123, silent=True
+    )
     dt = create_model("dt")
     tuned_dt = tune_model(dt)
     final_dt = finalize_model(tuned_dt)
@@ -58,7 +56,7 @@ def save_proc(
 def wrong_module(modelstore: "ModelStore"):
     model = pycaret_model()
     with modelstore.register(
-        "wrong_mmodule",
+        "wrong_module",
         module=__name__,
         options=None,
         framework_context=None,
@@ -84,7 +82,7 @@ def test_pycaret_save_load(metadata, modelstore, save_proc):  # noqa # pylint: d
         model_store=modelstore,
     )
     assert isinstance(pycaret_loaded, sklearn.pipeline.Pipeline)
-    assert predict_model(pycaret_loaded, data=test_df)["Score"][0] == 0.7609
+    assert predict_model(pycaret_loaded, data=pycaret_data[1])["Score"][0] == 0.7609
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
@@ -100,7 +98,7 @@ def test_pycaret_runner_setup_run_batch(modelstore, save_proc):
     params = {
         "ml_usecase": "classification",
         "available_plots": {},
-        "data": train_df,
+        "data": pycaret_data[0],
         "target": "default",
         "session_id": 123,
         "silent": True,
@@ -114,4 +112,4 @@ def test_pycaret_runner_setup_run_batch(modelstore, save_proc):
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1
 
-    assert runner._run_batch(test_df)["Score"][0] == 0.7609
+    assert runner._run_batch(pycaret_data[1])["Score"][0] == 0.7609

@@ -2,6 +2,7 @@ import logging
 import os
 import typing as t
 
+import pandas as pd
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -34,7 +35,7 @@ def _get_model_info(
 ) -> t.Tuple["ModelInfo", PathType]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        raise BentoMLException( # pragma: no cover
+        raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with module {model_info.module}, failed loading "
             f"with {__name__}."
         )
@@ -58,7 +59,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of the model from BentoML modelstore.
+        a Pycaret model instance. This depends on which type of model you save with BentoML (Classifier, Trees, SVM, etc).
 
     Examples:
         import bentoml.pycaret
@@ -82,7 +83,7 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`sklearn.pipeline.Pipeline`):
+        model (`t.Union[sklearn.pipeline.Pipeline, xgboost.Booster, lightgbm.basic.Booster]`):
             Instance of model to be saved
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
@@ -118,7 +119,7 @@ def save(
         metadata=metadata,
         framework_context=context,
     ) as ctx:
-        save_model(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}"))
+        save_model(model, os.path.join(ctx.path, SAVE_NAMESPACE))
         return ctx.tag
 
 
@@ -158,7 +159,7 @@ class _PycaretRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":
-        logger.debug(
+        logger.warning(
             " PyCaret is not designed to be ran in parallel. See https://github.com/pycaret/pycaret/issues/758"
         )
         return predict_model(self._model, input_data)

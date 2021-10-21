@@ -15,7 +15,6 @@ from pycaret.datasets import get_data
 
 import bentoml.pycaret
 from bentoml.exceptions import BentoMLException
-from tests.utils.frameworks.pycaret_utils import get_pycaret_data
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:

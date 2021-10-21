@@ -221,7 +221,7 @@ If you are developing new artifacts or modify GitHub Actions CI (adding integrat
 
 
 <details>
-<summary><h3>Optional[RECOMMENDED]: Install Git hooks</h3></summary>
+<summary>Optional[RECOMMENDED]: Install Git hooks</summary>
 <br>
 Run `./dev/install_git_hooks.sh` to install git hooks to automate
 commit and branch format enforcement described below.

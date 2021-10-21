@@ -3,23 +3,23 @@
 Ensure you have git, python and pip installed, BentoML supports Python 3.7+
 
 ```bash
-$ python --version
+python --version
 ```
 
 ```bash
-$ pip --version
+pip --version
 ```
 
 
 Clone the source code from BentoML's GitHub repository:
 ```bash
-$ git clone https://github.com/bentoml/BentoML.git
-$ cd BentoML
+git clone https://github.com/bentoml/BentoML.git
+cd BentoML
 ```
 
 Install BentoML with pip in `editable` mode:
 ```bash
-$ pip install --editable .
+pip install --editable .
 ```
 
 This will make `bentoml` available on your system which links to the sources of
@@ -27,7 +27,7 @@ your local clone and pick up changes you made locally.
 
 Test the BentoML installation:
 ```bash
-$ bentoml --version
+bentoml --version
 ```
 ```python
 import bentoml
@@ -60,12 +60,12 @@ pip install git+https://github.com/{your_github_username}/BentoML.git@{branch_na
 
 1. Install all test dependencies:
 ```
-$ pip install -e ".[test]"
+pip install -e ".[test]"
 ```
 
 2. Run all unit tests with current python version and environment
 ```bash
-$ ./ci/unit_tests.sh
+./ci/unit_tests.sh
 ```
 
 ## How to run integration tests
@@ -73,26 +73,26 @@ $ ./ci/unit_tests.sh
 After isntall all test dependencies, to run a specific integration tests suite after adding testcases do:
 ```bash
 # for example you added tests for mlflow
-$ pytest tests/integration/frameworks/mlflow --cov=bentoml --cov-config=.coveragerc
+pytest tests/integration/frameworks/mlflow --cov=bentoml --cov-config=.coveragerc
 ```
 
 ### Optional: Run unit test with all supported python versions
 
 Make sure you [have conda installed](https://docs.conda.io/projects/conda/en/latest/user-guide/install/):
 ```bash
-$ conda --version
+conda --version
 ```
 
 Bentoml tox file is configured to run in muiltple python versions:
 ```bash
-$ tox
+tox
 ```
 
 If you want to run tests under conda for specific version, use `-e` option:
 ```bash
-$ tox -e py37
+tox -e py37
 // or
-$ tox -e py36
+tox -e py36
 ```
 
 ## Run BentoML with verbose/debug logging
@@ -106,28 +106,28 @@ set_debug_mode(True)
 
 And/or set the `BENTOML_DEBUG` environment variable to `TRUE`:
 ```bash
-$ export BENTOML_DEBUG=TRUE
+export BENTOML_DEBUG=TRUE
 ```
 
 And/or use the `--verbose` option when running `bentoml` CLI command, e.g.:
 ```bash
-$ bentoml get IrisClassifier --verbose
+bentoml get IrisClassifier --verbose
 ```
 
 ## Style check and auto-formatting your code
 
 Make sure to install all dev dependencies:
 ```bash
-$ pip install -e ".[dev]"
+pip install -e ".[dev]"
 ```
 
 Run linter/format script:
 ```bash
 # if you have GNU make available you can do `make format`
-$ ./dev/format.sh
+./dev/format.sh
 
 # if you have GNU make available you can do `make lint`
-$ ./dev/lint.sh
+./dev/lint.sh
 ```
 
 ### Optional: Running `mypy` for better type annotation
@@ -136,31 +136,31 @@ Make sure to install [mypy](https://mypy.readthedocs.io/en/stable/getting_starte
 
 You might have to install stubs before running:
 ```bash
-$ mypy --install-types
+mypy --install-types
 ```
 
 After updating/modifying codebase (e.g: `bentoml/pytorch.py`), run `mypy`:
 ```bash
-$ mypy bentoml/pytorch.py
+mypy bentoml/pytorch.py
 ```
 
 ## How to edit, run, build documentation site
 
 Install all dev dependencies:
 ```bash
-$ pip install -e ".[dev]"
+pip install -e ".[dev]"
 ```
 
 To build documentation for locally:
 ```bash
-$ ./docs/build.sh
+./docs/build.sh
 ```
 
 Modify `*.rst` files inside the `docs` folder to update content, and to
 view your changes, run the following command:
 
 ```
-$ python -m http.server --directory ./docs/build/html
+python -m http.server --directory ./docs/build/html
 ```
 
 And go to your browser at `http://localhost:8000`
@@ -173,17 +173,17 @@ tab to show the change (macOS only):
 
 Install all dev dependencies:
 ```bash
-$ pip install -e ".[dev]"
+pip install -e ".[dev]"
 ```
 
 Install spellchecker dependencies:
 ```bash
-$ make install-spellchecker-deps
+make install-spellchecker-deps
 ```
 
 To run spellchecker locally:
 ```bash
-$ make spellcheck-doc
+make spellcheck-doc
 ```
 
 ### macOS
@@ -195,7 +195,7 @@ brew install fswatch
 
 Run the `watch.sh` script to start watching docs changes:
 ```bash
-$ ./docs/watch.sh
+./docs/watch.sh
 ```
 
 ### Linux
@@ -206,7 +206,7 @@ sudo apt install inotify-tools
 
 Run the `watch.sh` script to start watching docs changes:
 ```bash
-$ ./docs/watch.sh
+./docs/watch.sh
 ```
 
 ## Running BentoML Benchmark
@@ -228,7 +228,7 @@ commit and branch format enforcement described above.
 add upstream remotes to local BentoML clone:
 
 ```bash
-$ git remote add upstream git@github.com:bentoml/BentoML.git
+git remote add upstream git@github.com:bentoml/BentoML.git
 ```
 
 2. Make the changes either to fix a known issue or adding new feature

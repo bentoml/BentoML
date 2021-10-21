@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+LC_ALL=C
+
+local_branch="$(git rev-parse --abbrev-ref HEAD)"
+
+valid_branch_regex="^(chore|refactor|feat|feature|bugfix|improvement|library|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$"
+
+
+if [[ ! $local_branch =~ $valid_branch_regex ]]
+then
+    printf "Invalid branch name $local_branch, Aborting commits...\n"
+    printf "Branch names in this project must adhere to the following format:\n\t$valid_branch_regex.\n"
+    printf "To rename your branch to follow the format do \`git branch -m 'feature/$local_branch'\`\n"
+    exit 1
+fi
+
+exit 0

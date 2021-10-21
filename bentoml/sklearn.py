@@ -2,7 +2,6 @@ import os
 import typing as t
 
 import numpy as np
-import sklearn
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -17,10 +16,11 @@ if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
 
-    from ._internal.models.store import ModelInfo, ModelStore
+    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
 
 try:
     import joblib
+    import sklearn
     from joblib import parallel_backend
 
 except ImportError:  # pragma: no cover
@@ -111,7 +111,7 @@ def save(
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         joblib.dump(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         return ctx.tag
 

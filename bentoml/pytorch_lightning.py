@@ -18,7 +18,7 @@ Then run `pip install pytorch_lightning`
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from ._internal.models.store import ModelStore
+    from ._internal.models.store import ModelStore, StoreCtx
 
 try:
     import pytorch_lightning as pl
@@ -129,14 +129,14 @@ def save(
         tag = bentoml.pytorch_lightning.save("lit_classifier", LitClassifier())
         # example tag: lit_classifier:20201012_DE43A2
     """  # noqa
-    context = dict(torch=torch.__version__, pytorch_lightning=pl.__version__)
+    context = {"torch": torch.__version__, "pytorch_lightning": pl.__version__}
     with model_store.register(
         name,
         module=__name__,
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{PT_EXT}")
         torch.jit.save(model.to_torchscript(), str(weight_file))
         return ctx.tag

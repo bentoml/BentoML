@@ -223,9 +223,7 @@ If you are developing new artifacts or modify GitHub Actions CI (adding integrat
 <details>
     <summary>Optional: Install Git hooks</summary>
 
-    ```bash
-    ./dev/install_git_hooks.sh
-    ```
+    `./dev/install_git_hooks.sh`
 </details>
 
 

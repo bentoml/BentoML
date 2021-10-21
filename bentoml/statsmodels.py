@@ -15,8 +15,9 @@ _MT = t.TypeVar("_MT")
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from joblib.parallel import Parallel
     import pandas as pd
+    from joblib.parallel import Parallel
+
     from ._internal.models.store import ModelInfo, ModelStore
 
 
@@ -37,7 +38,7 @@ _exc_msg = """\
 `pip install pandas`. For more information, refer to 
 https://pandas.pydata.org/docs/getting_started/install.html
 """
-pd = LazyLoader('pd', globals(), 'pandas', exc_msg=_exc_msg)
+pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)
 
 
 def _get_model_info(

@@ -3,7 +3,6 @@ import os
 import bentoml
 from bentoml._internal.bento.store import BentoStore
 
-
 SYSTEM_HOME = os.path.expanduser("~")
 
 

@@ -129,7 +129,7 @@ def save(
         tag = bentoml.pytorch_lightning.save("lit_classifier", LitClassifier())
         # example tag: lit_classifier:20201012_DE43A2
     """  # noqa
-    context = dict(torch=torch.__version__, pytorch_lightning=pl.__version__)
+    context = {"torch": torch.__version__, "pytorch_lightning": pl.__version__}
     with model_store.register(
         name,
         module=__name__,

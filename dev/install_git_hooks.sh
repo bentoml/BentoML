@@ -19,7 +19,7 @@ if [ ! -f "$HOOKS_PATH/prepare-commit-msg" ]; then
         [Nn]* ) exit;;
         * ) echo "Please answer yes or no.";;
     esac
-done
+  done
 fi
 
 if [ ! -f "$HOOKS_PATH/pre-commit" ]; then

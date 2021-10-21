@@ -216,8 +216,13 @@ BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bent
 
 If you are developing new artifacts or modify GitHub Actions CI (adding integration test, unit tests, etc), use [`nektos/act`](https://github.com/nektos/act) to run Actions locally.
 
+
 ## Creating Pull Request on GitHub
 
+### Optional[RECOMMENDED]: Install Git hooks
+
+Run `./dev/install_git_hooks.sh` to install git hooks to automate
+commit and branch format enforcement described above.
 
 1. [Fork BentoML project](https://github.com/bentoml/BentoML/fork) on GitHub and
 add upstream remotes to local BentoML clone:
@@ -228,7 +233,20 @@ $ git remote add upstream git@github.com:bentoml/BentoML.git
 
 2. Make the changes either to fix a known issue or adding new feature
 
-3. Push changes to your fork and follow [this
+3. In order for us to manage PR and Issues systematically, we encourage developers to use hierarchical branch folders to manage branch naming.
+   Run `./dev/install_git_hooks.sh` to install `pre-commit` hooks. We will check if your branch naming
+   follows the given regex : `^(feature|bugfix|improv|lib|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$`. This
+   is partially based on how [Azure DevOps](https://docs.microsoft.com/en-us/azure/devops/repos/git/require-branch-folders?view=azure-devops&tabs=browser)
+   manages its repos and conventional commits spec (see below for more information):
+   - feature: new features/proposals users want to integrate into the library, not a new feature for a build script
+   - bugfix: bugfix of a feature, not a fix to a build script
+   - improv: improvements/refactor/cleanup production code, eg. reformat, pylint, etc.
+   - lib: related to internal libraries, features required by the production code
+   - prerelease: alpha/beta features that might should be included in the prerelease of the library. This would help testing new features/integrations for the library
+   - release: included all features that is production ready
+   - hotifx: patch of current bugs in production code
+
+4. Push changes to your fork and follow [this
    article](https://help.github.com/en/articles/creating-a-pull-request)
    on how to create a pull request on github. Name your pull request
    with one of the following prefixes, e.g. "feat: add support for
@@ -246,13 +264,8 @@ $ git remote add upstream git@github.com:bentoml/BentoML.git
    - ci: (changes to configuration files and scripts)
    - revert: (reverts a previous commit)
 
-4. Once your pull request created, an automated test run will be triggered on
+5. Once your pull request created, an automated test run will be triggered on
    your branch and the BentoML authors will be notified to review your code
    changes. Once tests are passed and reviewer has signed off, we will merge
    your pull request.
 
-
-## Optional: Install git hooks to enforce commit format
-
-Run `./dev/install_git_hooks.sh` to install git hooks to automate
-commit format enforcement described above.

@@ -13,7 +13,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
 
-    from ._internal.models.store import ModelInfo, ModelStore
+    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
 
 try:
     import xgboost as xgb
@@ -111,8 +111,8 @@ def save(
     name: str,
     model: "xgb.core.Booster",
     *,
-    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     """
@@ -161,7 +161,7 @@ def save(
         options=booster_params,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{JSON_EXT}"))
         return ctx.tag
 
@@ -253,9 +253,9 @@ def load_runner(
     tag: str,
     predict_fn_name: str = "predict",
     *,
-    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_XgBoostRunner":
     """

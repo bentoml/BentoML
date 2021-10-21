@@ -23,7 +23,7 @@ from .exceptions import MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelStore
+    from _internal.models.store import ModelStore, StoreCtx
 
 try:
     import tensorflow as tf
@@ -276,7 +276,7 @@ def import_from_tfhub(
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         if isinstance(identifier, str):
             os.environ["TFHUB_CACHE_DIR"] = str(ctx.path)
             fpath = resolve(identifier)
@@ -295,7 +295,8 @@ def import_from_tfhub(
                 "model": identifier.__class__.__name__,
                 "local_path": resolve(str(ctx.path)),
             }
-        return ctx.tag  # type: ignore[no-any-return]
+        tag = ctx.tag  # type: str
+        return tag
 
 
 @inject

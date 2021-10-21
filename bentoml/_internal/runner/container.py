@@ -1,99 +1,106 @@
 import abc
 import typing as t
-from typing import Generic, Iterator, Sequence, TYPE_CHECKING, TypeVar, Union
+from typing import TYPE_CHECKING
+
+import cloudpickle
+from simple_di import Provide, inject
+
+from bentoml._internal.configuration.containers import BentoMLContainer
 
 from .utils import TypeRef
 
-SingleType = TypeVar("SingleType")
-BatchType = TypeVar("BatchType")
-PayloadType = TypeVar("PayloadType")
+SingleType = t.TypeVar("SingleType")
+BatchType = t.TypeVar("BatchType")
 
-IndexType = Union[None, int]
+IndexType = t.Union[None, int]
 
 if TYPE_CHECKING:
     import numpy as np
 
 
-class DataContainer(Generic[SingleType, BatchType, PayloadType]):  # TODO(jiang): naming
-    def __init__(self, batch_axis=None) -> None:
-        self.batch_axis = batch_axis
+class DataContainer(t.Generic[SingleType, BatchType]):
+    def __init__(self, datas: t.List[SingleType] = None) -> None:
+        self._datas = datas or []
 
-    @abc.abstractmethod
-    def put_single(self, data: SingleType) -> None:
-        ...
-
-    @abc.abstractmethod
-    def put_batch(self, batch_data: BatchType) -> IndexType:
-        ...
-
-    @abc.abstractmethod
-    def slice_single(self) -> Iterator[SingleType]:
-        ...
-
-    @abc.abstractmethod
-    def slice(
-        self, indexes: Sequence[IndexType]
-    ) -> Iterator[Union[SingleType, BatchType]]:
-        ...
-
-    @abc.abstractmethod
-    def squeeze(self) -> BatchType:
-        ...
-
-
-class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray", bytes]):
-    def __init__(self, batch_axis=None) -> None:
-        super().__init__(batch_axis=batch_axis)
-        self._datas = []
-        self.indexes = []
-
-    def put_single(self, data):
-        self.indexes.append(None)
+    def append(self, data: SingleType) -> None:
         self._datas.append(data)
 
-    def put_batch(self, batch_data):
-        batch_size = batch_data.shape[self.batch_axis]
-        self.indexes.append(batch_size)
-        self._datas.append(batch_data)
-        return batch_size
+    def __getitem__(self, key) -> SingleType:
+        return self._datas[key]
 
-    def slice_single(self) -> Iterator["np.ndarray"]:
-        for d, i in zip(self._datas, self.indexes):
-            if i is None:
-                yield d
-            else:
-                leading_indices = (slice(None),) * self.batch_axis
-                for j in range(d.shape[self.batch_axis]):
-                    yield d[leading_indices + (j,)]
+    @abc.abstractmethod
+    def to_batch(self, batch_axis=0) -> BatchType:
+        ...
 
-    def slice(self, indexes) -> Iterator["np.ndarray"]:
-        squeezed_batch = self.squeeze()
+    @classmethod
+    @abc.abstractmethod
+    def from_batch(cls, batch_data, batch_axis=0) -> "DataContainer":
+        ...
 
-        cursor = 0
-        leading_indices = (slice(None),) * self.batch_axis  # to slice
-        for i in indexes:
-            if i is None:
-                yield squeezed_batch[leading_indices + (cursor,)]
-                cursor += 1
-            else:
-                yield squeezed_batch[leading_indices + (slice(cursor, cursor + i - 1),)]
-                cursor += i
+    @classmethod
+    def merge(cls, insts: t.List["DataContainer"]) -> "DataContainer":
+        return cls([i for inst in insts for i in inst._datas])
 
-        assert (
-            squeezed_batch.shape[self.batch_axis] == cursor
-        ), "indexes did not match the length of the batch"
+    @classmethod
+    @abc.abstractmethod
+    def to_payload(cls, container: "DataContainer",) -> t.List[bytes]:
+        ...
 
-    def squeeze(self) -> "np.ndarray":
+    @classmethod
+    @abc.abstractmethod
+    def from_payload(cls, payloads: t.List[bytes]) -> "DataContainer":
+        ...
+
+
+class Payload(t.NamedTuple):
+    datas: t.List[bytes]
+    meta: t.Dict[str, t.Union[bool, int, float, str]]
+
+
+class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
+    def to_batch(self, batch_axis=0) -> "np.ndarray":
         import numpy as np
 
-        if all(i is None for i in self.indexes):
-            return np.stack(self._datas, axis=self.batch_axis)
+        return np.stack(self._datas, axis=batch_axis)
 
-        batch_datas = tuple(
-            d if i is not None else np.expand_dims(d, axis=self.batch_axis)
-            for d, i in zip(self._datas, self.indexes)
+    @classmethod
+    @abc.abstractmethod
+    def from_batch(cls, batch_data, batch_axis=0) -> "DataContainer":
+        import numpy as np
+
+        return cls(np.split(batch_axis, batch_data.shape[batch_axis], axis=batch_axis))
+
+    @classmethod
+    @inject
+    def to_payload(
+        cls,
+        container: "NdarrayContainer",
+        plasma_db=Provide[BentoMLContainer.plasma_db],
+    ) -> Payload:
+        if plasma_db:
+            return Payload(
+                [plasma_db.put(d).binary() for d in container._datas], {"plasma": True},
+            )
+
+        return Payload(
+            [cloudpickle.dumps(d) for d in container._datas], {"plasma": True},
         )
-        return np.concatenate(batch_datas, axis=self.batch_axis)
+
+    @classmethod
+    @inject
+    def from_payload(
+        cls, payload: Payload, plasma_db=Provide[BentoMLContainer.plasma_db]
+    ):
+        datas = payload.datas
+
+        if payload.meta.get("plasma"):
+            assert plasma_db
+
+            import pyarrow.plasma as plasma
+
+            return cls([plasma_db.get(plasma.ObjectID(i)) for i in datas])
+
+        return cls([cloudpickle.loads(d) for d in datas])
 
 
 class DataContainerRegistry:
@@ -134,15 +141,12 @@ def register_builtin_containers():
 register_builtin_containers()
 
 
-def single_data_to_container(single_data, batch_axis=None):
+def single_data_to_container(single_data):
     container_cls = DataContainerRegistry.find_by_single_type(type(single_data))
-    container = container_cls(batch_axis=batch_axis)
-    container.put_single(single_data)
-    return container
+    return container_cls([single_data])
 
 
 def batch_data_to_container(batch_data, batch_axis=None):
     container_cls = DataContainerRegistry.find_by_batch_type(type(batch_data))
-    container = container_cls(batch_axis=batch_axis)
-    container.put_batch(batch_data)
+    container = container_cls.from_batch(batch_data, batch_axis=batch_axis)
     return container

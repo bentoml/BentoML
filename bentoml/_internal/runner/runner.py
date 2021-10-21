@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
-from functools import partial
 import os
 import typing as t
+from abc import ABC, abstractmethod
+from functools import partial
 
 import attr
 import psutil
@@ -29,11 +29,7 @@ class ResourceQuota:
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus = attr.ib(
-        converter=_gpu_converter,
-        type=t.List[str],
-        default=None,
-    )
+    gpus = attr.ib(converter=_gpu_converter, type=t.List[str], default=None,)
 
     @cpu.default
     def _get_default_cpu(self) -> float:
@@ -87,8 +83,7 @@ class _RunnerImplMixin:
 
     @inject
     def _impl_ref(
-        self,
-        remote_runner_mapping=Provide[BentoMLContainer.remote_runner_mapping],
+        self, remote_runner_mapping=Provide[BentoMLContainer.remote_runner_mapping],
     ) -> "RunnerImpl":
         remote_runner_uds = remote_runner_mapping.get(self.name)
         # TODO(jiang): cache impl
@@ -247,14 +242,11 @@ class LocalRunner(RunnerImpl):
                     single_data_to_container,
                     batch_axis=self._runner.batch_options.input_batch_axis,
                 )
-            ).map(lambda c: c.squeeze())
+            ).map(lambda c: c.to_batch())
             batch_result = self._runner._run_batch(*params.args, **params.kwargs)
-            return next(
-                batch_data_to_container(
-                    batch_result,
-                    batch_axis=self._runner.batch_options.output_batch_axis,
-                ).slice_single()
-            )
+            return batch_data_to_container(
+                batch_result, batch_axis=self._runner.batch_options.output_batch_axis,
+            )[0]
 
         if isinstance(self._runner, SimpleRunner):
             return self._runner._run(*args, **kwargs)
@@ -263,22 +255,7 @@ class LocalRunner(RunnerImpl):
         if isinstance(self._runner, Runner):
             return self._runner._run_batch(*args, **kwargs)
         if isinstance(self._runner, SimpleRunner):
-            results = []
-            params = Params(args, kwargs).map(
-                partial(
-                    batch_data_to_container,
-                    batch_axis=self._runner.batch_options.input_batch_axis,
-                )
-            )
-            for iparams in params.imap(lambda c: c.slice_single()):
-                results.append(self._runner._run(*iparams.args, **iparams.kwargs))
-
-            output_container = single_data_to_container(
-                results[0], batch_axis=self._runner.batch_options.output_batch_axis
-            )
-            for r in results[1:]:
-                output_container.put_single(r)
-            return output_container.squeeze()
+            raise RuntimeError("shall not call async_run on a simple runner")
 
     def run(self, *args, **kwargs):
         ...

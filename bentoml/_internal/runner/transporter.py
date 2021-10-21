@@ -29,7 +29,7 @@ class Transporter(t.Generic[DataType, PayloadType]):
 
 class NdarrayTransporter(Transporter["np.ndarray", bytes]):
     @inject
-    def __init__(self, plasma_client=Provide[BentoMLContainer.plasma_db]):
+    def __init__(self, plasma_db=Provide[BentoMLContainer.plasma_db]):
         self.plasma_client = plasma_client
 
     def to_payload(self, data):
@@ -60,9 +60,7 @@ class TransporterRegistry:
 
     @classmethod
     def register_transporter(
-        cls,
-        data_type: t.Union[TypeRef, type],
-        transporter_cls: t.Type[Transporter],
+        cls, data_type: t.Union[TypeRef, type], transporter_cls: t.Type[Transporter],
     ):
         data_type = TypeRef.from_type(data_type)
         cls.TRANSPORTER_TYPE_MAP[data_type] = transporter_cls

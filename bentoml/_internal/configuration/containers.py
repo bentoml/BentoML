@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import os
 import typing as t
+from typing import TYPE_CHECKING
 
 import yaml
 from deepmerge import always_merger
@@ -13,7 +14,7 @@ from bentoml.exceptions import BentoMLConfigException
 from ..utils import get_free_port
 from . import expand_env_var
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pyarrow._plasma import PlasmaClient
 
     from ..marshal.marshal import MarshalApp

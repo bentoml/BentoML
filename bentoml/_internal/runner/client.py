@@ -42,10 +42,10 @@ class RunnerClient:
         return self._client
 
     async def async_run(self, *args, **kwargs):
-        from bentoml._internal.runner.transporter import data_to_payload
+        from bentoml._internal.runner.container import single_data_to_container
 
         URL = "http://127.0.0.1:8000/run"
-        param = Params(args, kwargs).map(data_to_payload)
+        param = Params(args, kwargs).map(single_data_to_container)
         payloads = param.to_dict()
         async with self._get_client() as client:
             async with client.post(URL, data=payloads) as resp:

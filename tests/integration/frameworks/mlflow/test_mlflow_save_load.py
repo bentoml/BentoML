@@ -32,11 +32,6 @@ res_arr = np.array(
 # fmt: on
 
 
-@pytest.mark.parametrize("uri, expected", [("s3:/test", True), ("https://not", False)])
-def test_is_s3_url(uri, expected):
-    assert bentoml.mlflow._is_s3_url(uri) == expected
-
-
 def test_mlflow_save_load(modelstore):
     (model, data) = sklearn_model_data()
     tag = bentoml.mlflow.save(MODEL_NAME, model, mlflow.sklearn, model_store=modelstore)

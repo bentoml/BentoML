@@ -219,10 +219,14 @@ If you are developing new artifacts or modify GitHub Actions CI (adding integrat
 
 ## Creating Pull Request on GitHub
 
-### Optional[RECOMMENDED]: Install Git hooks
 
+<details>
+<summary><h3>Optional[RECOMMENDED]: Install Git hooks</h3></summary>
+<br>
 Run `./dev/install_git_hooks.sh` to install git hooks to automate
-commit and branch format enforcement described above.
+commit and branch format enforcement described below.
+</details>
+
 
 1. [Fork BentoML project](https://github.com/bentoml/BentoML/fork) on GitHub and
 add upstream remotes to local BentoML clone:

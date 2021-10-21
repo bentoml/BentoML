@@ -18,6 +18,11 @@ if TYPE_CHECKING:
     import numpy as np
 
 
+class Payload(t.NamedTuple):
+    datas: t.List[bytes]
+    meta: t.Dict[str, t.Union[bool, int, float, str]]
+
+
 class DataContainer(t.Generic[SingleType, BatchType]):
     def __init__(self, datas: t.List[SingleType] = None) -> None:
         self._datas = datas or []
@@ -33,28 +38,28 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ...
 
     @classmethod
-    @abc.abstractmethod
-    def from_batch(cls, batch_data, batch_axis=0) -> "DataContainer":
-        ...
-
-    @classmethod
     def merge(cls, insts: t.List["DataContainer"]) -> "DataContainer":
         return cls([i for inst in insts for i in inst._datas])
 
     @classmethod
     @abc.abstractmethod
-    def to_payload(cls, container: "DataContainer",) -> t.List[bytes]:
+    def from_batch(cls, batch_data, batch_axis=0) -> "DataContainer":
         ...
 
     @classmethod
     @abc.abstractmethod
-    def from_payload(cls, payloads: t.List[bytes]) -> "DataContainer":
+    def to_payload(cls, container: "DataContainer",) -> Payload:
         ...
 
+    @classmethod
+    @abc.abstractmethod
+    def from_payload(cls, payload: Payload) -> "DataContainer":
+        ...
 
-class Payload(t.NamedTuple):
-    datas: t.List[bytes]
-    meta: t.Dict[str, t.Union[bool, int, float, str]]
+    @classmethod
+    @abc.abstractmethod
+    def from_payloads(cls, payloads: t.List[Payload]) -> "DataContainer":
+        pass
 
 
 class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
@@ -83,7 +88,7 @@ class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
             )
 
         return Payload(
-            [cloudpickle.dumps(d) for d in container._datas], {"plasma": True},
+            [cloudpickle.dumps(d) for d in container._datas], {"plasma": False},
         )
 
     @classmethod

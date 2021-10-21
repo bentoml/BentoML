@@ -1,11 +1,19 @@
 [run]
 omit=
 	bentoml/_version.py
-	bentoml/_internal/adapters/pytorch_tensor_input.py
-	bentoml/_internal/utils/cloudpickle.py
-	bentoml/_internal/types.py
-	bentoml/_internal/yatai_client/proto/*
 	bentoml/__main__.py
+	bentoml/io.py
+	bentoml/utils.py
+	bentoml/_internal/types.py
 
 [report]
 show_missing = true
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise MissingDependencyException
+    except ImportError
+    if __name__ == .__main__.:

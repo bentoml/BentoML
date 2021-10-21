@@ -1,10 +1,8 @@
-import functools
 import os
 import typing as t
 
 import numpy as np
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
@@ -19,7 +17,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
 
 try:
     import catboost as cbt
-except ImportError:
+except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """catboost is required in order to use module `bentoml.catboost`, install
         catboost with `pip install catboost`. For more information, refers to
@@ -31,10 +29,6 @@ except ImportError:
 # TODO: support cbt.Pool runner io container
 
 CATBOOST_EXT = "cbm"
-
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 CatBoostModelType = t.TypeVar(
     "CatBoostModelType",

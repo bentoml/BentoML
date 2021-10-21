@@ -23,14 +23,12 @@ if t.TYPE_CHECKING:
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
-pycaret_data = get_pycaret_data()
+train_data, test_data = get_pycaret_data()
 
 
 def pycaret_model() -> t.Any:
     # note: silent must be set to True to avoid the confirmation input of data types
-    env = pycaret_setup(
-        data=pycaret_data[0], target="default", session_id=123, silent=True
-    )
+    env = pycaret_setup(data=train_data, target="default", session_id=123, silent=True)
     dt = create_model("dt")
     tuned_dt = tune_model(dt)
     final_dt = finalize_model(tuned_dt)
@@ -82,7 +80,7 @@ def test_pycaret_save_load(metadata, modelstore, save_proc):  # noqa # pylint: d
         model_store=modelstore,
     )
     assert isinstance(pycaret_loaded, sklearn.pipeline.Pipeline)
-    assert predict_model(pycaret_loaded, data=pycaret_data[1])["Score"][0] == 0.7609
+    assert predict_model(pycaret_loaded, data=test_data)["Score"][0] == 0.7609
 
 
 @pytest.mark.parametrize("exc", [BentoMLException])
@@ -103,4 +101,4 @@ def test_pycaret_runner_setup_run_batch(modelstore, save_proc):
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1
 
-    assert runner._run_batch(pycaret_data[1])["Score"][0] == 0.7609
+    assert runner._run_batch(test_data)["Score"][0] == 0.7609

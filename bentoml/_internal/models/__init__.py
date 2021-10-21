@@ -1,7 +1,6 @@
 EXPORTED_STORE_PREFIX = "exported"
 SAVE_NAMESPACE = "saved_model"
 MODEL_YAML_NAMESPACE = "model_details"
-PYCARET_CONFIG = "pycaret_config"
 
 H5_EXT = ".h5"
 HDF5_EXT = ".hdf5"

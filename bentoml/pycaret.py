@@ -2,17 +2,19 @@ import logging
 import os
 import typing as t
 
-import pandas as pd
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PKL_EXT, PYCARET_CONFIG, SAVE_NAMESPACE
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.types import PathType
 from .exceptions import BentoMLException, MissingDependencyException
 
+PYCARET_CONFIG = "pycaret_config"
+
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
+    import pandas as pd
     from _internal.models.store import ModelStore
 
 try:
@@ -71,6 +73,7 @@ def load(
 
     Examples:
         import bentoml.pycaret
+        # NOTE: pycaret setup config will be loaded
         dt = bentoml.pycaret.load("my_model:latest")
     """  # noqa
     _, model_file, pycaret_config = _get_model_info(tag, model_store)
@@ -81,7 +84,9 @@ def load(
 @inject
 def save(
     name: str,
-    model: t.Any,
+    model: t.Union[
+        "sklearn.pipeline.Pipeline", "xgboost.Booster", "lightgbm.basic.Booster"
+    ],
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -119,6 +124,7 @@ def save(
         tuned_best = tune_model(best_model)
         final_model = finalize_model(tuned_best)
 
+        # NOTE: pycaret setup config will be saved with the model
         bentoml.pycaret.save("my_model", final_model)
     """  # noqa
     context = {"pycaret": version()}
@@ -210,15 +216,11 @@ def load_runner(
         data.reset_index(inplace=True, drop=True)
         data_unseen.reset_index(inplace=True, drop=True)
 
-        # create parmeters
-        # note: change my_usercase according to the type of model
-        params = {"ml_usecase": "classification", "available_plots": {},
-                    "data": data, "target": "default", "session_id": 123}
-
         # initialize runner
-        runner = bentoml.pycaret.load_runner(tag="my_model:latest", **params)
+        # NOTE: loading the model will load the saved pycaret config too
+        runner = bentoml.pycaret.load_runner(tag="my_model:latest")
 
-        # set up the runner and pycaret environment
+        # set up the runner
         runner._setup()
 
         prediction = runner._run_batch(input_data=data_unseen)

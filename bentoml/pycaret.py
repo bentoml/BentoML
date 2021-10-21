@@ -6,7 +6,7 @@ import pandas as pd
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import PKL_EXT, PYCARET_CONFIG, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.types import PathType
 from .exceptions import BentoMLException, MissingDependencyException
@@ -16,7 +16,14 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from _internal.models.store import ModelStore
 
 try:
-    from pycaret.internal.tabular import load_model, predict_model, save_model, setup
+    from pycaret.internal.tabular import (
+        load_config,
+        load_model,
+        predict_model,
+        save_config,
+        save_model,
+        setup,
+    )
     from pycaret.utils import version
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -32,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 def _get_model_info(
     tag: str, model_store: "ModelStore"
-) -> t.Tuple["ModelInfo", PathType]:
+) -> t.Tuple["ModelInfo", PathType, PathType]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
         raise BentoMLException(  # pragma: no cover
@@ -40,8 +47,9 @@ def _get_model_info(
             f"with {__name__}."
         )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}")
+    pycaret_config = os.path.join(model_info.path, f"{PYCARET_CONFIG}{PKL_EXT}")
 
-    return model_info, model_file
+    return model_info, model_file, pycaret_config
 
 
 @inject
@@ -65,7 +73,8 @@ def load(
         import bentoml.pycaret
         dt = bentoml.pycaret.load("my_model:latest")
     """  # noqa
-    _, model_file = _get_model_info(tag, model_store)
+    _, model_file, pycaret_config = _get_model_info(tag, model_store)
+    load_config(pycaret_config)
     return load_model(model_file)
 
 
@@ -120,6 +129,7 @@ def save(
         framework_context=context,
     ) as ctx:
         save_model(model, os.path.join(ctx.path, SAVE_NAMESPACE))
+        save_config(os.path.join(ctx.path, f"{PYCARET_CONFIG}{PKL_EXT}"))
         return ctx.tag
 
 
@@ -131,14 +141,12 @@ class _PycaretRunner(Runner):
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-        **pycaret_setup_kwargs,
     ):
         super().__init__(tag, resource_quota, batch_options)
-        model_info, model_file = _get_model_info(tag, model_store)
+        model_info, model_file, _ = _get_model_info(tag, model_store)
 
         self._model_info = model_info
         self._model_file = model_file
-        self._pycaret_setup_kwargs = pycaret_setup_kwargs
 
     @property
     def required_models(self) -> t.List[str]:
@@ -154,7 +162,6 @@ class _PycaretRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        self._env = setup(**self._pycaret_setup_kwargs)
         self._model = load_model(self._model_file)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
@@ -222,5 +229,4 @@ def load_runner(
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
-        **pycaret_setup_kwargs,
     )

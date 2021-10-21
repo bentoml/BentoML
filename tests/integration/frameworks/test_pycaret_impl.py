@@ -95,16 +95,7 @@ def test_pycaret_load_exc(exc, modelstore):
 def test_pycaret_runner_setup_run_batch(modelstore, save_proc):
     info = save_proc(None)
 
-    params = {
-        "ml_usecase": "classification",
-        "available_plots": {},
-        "data": pycaret_data[0],
-        "target": "default",
-        "session_id": 123,
-        "silent": True,
-    }
-
-    runner = bentoml.pycaret.load_runner(tag=info.tag, model_store=modelstore, **params)
+    runner = bentoml.pycaret.load_runner(tag=info.tag, model_store=modelstore)
     runner._setup()
 
     assert isinstance(runner._model, sklearn.pipeline.Pipeline)

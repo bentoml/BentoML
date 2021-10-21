@@ -53,6 +53,5 @@ def test_create_simplebento(tmpdir, change_test_dir):
         ]
     )
     test_path = os.path.join(test_path, "test.simplebento")
-    assert set(os.listdir(test_path)) == set(["simplebento.py", "subdir", "subdir2"])
+    assert set(os.listdir(test_path)) == set(["simplebento.py", "subdir"])
     assert set(os.listdir(os.path.join(test_path, "subdir"))) == set(["somefile"])
-    assert os.listdir(os.path.join(test_path, "subdir2")) == []

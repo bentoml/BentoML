@@ -1,6 +1,4 @@
 import logging
-import os
-import shutil
 from contextlib import contextmanager
 from pathlib import Path
 from typing import List, Optional
@@ -44,24 +42,16 @@ class BentoStore:
         pass
 
     @contextmanager
-    def register_bento(self, tag: str):
+    def register_bento(self, tag: BentoTag):
         try:
-            bento_tag = BentoTag.from_str(tag)
-            bento_path = self._create_bento_path(bento_tag)
+            bento_path = self._create_bento_path(tag)
             yield bento_path
         finally:
-            if not os.path.isfile(os.path.join(bento_path, "bento.yaml")):
-                # Build has failed
-                logger.warning(
-                    f"Failed to create Bento for {tag}, deleting {bento_path}"
-                )
-                shutil.rmtree(bento_path)
-            else:
-                # Build is most likely successful, link latest bento path
-                latest_path = Path(self._base_dir, bento_tag.name, "latest")
-                if latest_path.is_symlink():
-                    latest_path.unlink()
-                latest_path.symlink_to(bento_path)
+            # Build is most likely successful, link latest bento path
+            latest_path = Path(self._base_dir, tag.name, "latest")
+            if latest_path.is_symlink():
+                latest_path.unlink()
+            latest_path.symlink_to(bento_path)
 
     def _create_bento_path(self, tag: BentoTag) -> "Path":
         bento_path = Path(self._base_dir, tag.name, tag.version)

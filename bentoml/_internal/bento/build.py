@@ -1,29 +1,18 @@
-import datetime
-import glob
-import gzip
 import importlib
-import io
-import json
 import logging
 import os
-import re
 import shutil
-import stat
-import tarfile
 import typing as t
-import uuid
-from pathlib import Path
 
-import pathspec
-import yaml
 from simple_di import Provide, inject
 
-from bentoml.exceptions import BentoMLException, InvalidArgument
+import bentoml
 
 from ..configuration import is_pip_installed_bentoml
 from ..configuration.containers import BentoMLContainer
-from ..utils import generate_new_version_id
 from ..utils.tempdir import TempDirectory
+
+from .bento import Bento
 
 if t.TYPE_CHECKING:
     from bentoml._internal.service import Service
@@ -32,29 +21,6 @@ if t.TYPE_CHECKING:
     from ..models.store import ModelStore
 
 logger = logging.getLogger(__name__)
-
-
-def validate_version_str(version_str):
-    """
-    Validate that version str format is either a simple version string that:
-        * Consist of only ALPHA / DIGIT / "-" / "." / "_"
-        * Length between 1-128
-    Or a valid semantic version https://github.com/semver/semver/blob/master/semver.md
-    """
-    regex = r"[A-Za-z0-9_.-]{1,128}\Z"
-    semver_regex = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa: E501
-    if (
-        re.match(regex, version_str) is None
-        and re.match(semver_regex, version_str) is None
-    ):
-        raise InvalidArgument(
-            'Invalid Service version: "{}", it can only consist'
-            ' ALPHA / DIGIT / "-" / "." / "_", and must be less than'
-            "128 characters".format(version_str)
-        )
-
-    if version_str.lower() == "latest":
-        raise InvalidArgument('Service version can not be set to "latest"')
 
 
 def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
@@ -97,7 +63,7 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
 
 @inject
 def build_bento(
-    svc: "Service",
+    svc: t.Union["Service", str],
     models: t.Optional[t.List[str]] = None,
     version: t.Optional[str] = None,
     description: t.Optional[str] = None,
@@ -107,7 +73,7 @@ def build_bento(
     labels: t.Optional[t.Dict[str, str]] = None,
     bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> Bento:
     """
     Build a Bento for this Service. A Bento is a file archive containing all the
     specifications, source code, and model files required to run and operate this
@@ -236,100 +202,23 @@ def build_bento(
             )
         )
     """
-    if version is None:
-        version = generate_new_version_id()
-
-    validate_version_str(version)
-
-    bento_tag = f"{svc.name}:{version}"
     build_ctx = os.getcwd()
-    logger.debug(f"Building BentoML service {bento_tag} from build context {build_ctx}")
 
-    with bento_store.register_bento(bento_tag) as bento_path:
-        # Copy required models from local modelstore, into
-        # `models/{model_name}/{model_version}` directory
-        models = [] if models is None else models
-        for runner in svc._runners.values():
-            models += runner.required_models
+    if isinstance(svc, str):
+        svc = bentoml.load(svc)
 
-        # TODO: remove duplicates in the models list
-        for model_tag in models:
-            try:
-                model_info = model_store.get(model_tag)
-            except FileNotFoundError:
-                raise BentoMLException(
-                    f"Model {model_tag} not found in local model store"
-                )
+    res = Bento(
+        svc,
+        build_ctx,
+        models,
+        version,
+        description,
+        include,
+        exclude,
+        env,
+        labels,
+        model_store,
+    )
+    res.save(bento_store)
 
-            model_name, model_version = model_tag.split(":")
-            target_path = os.path.join(bento_path, "models", model_name, model_version)
-            shutil.copytree(model_info.path, target_path)
-
-        # Copy all files base on include and exclude, into `{svc.name}` directory
-        relpaths = [s for s in include if s.startswith("../")]
-        if len(relpaths) != 0:
-            raise InvalidArgument(
-                "Paths outside of the current working directory cannot be included; use a symlink or copy those files into the working directory manually."
-            )
-        out_path = os.path.join(bento_path, svc.name)
-        spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
-        exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
-        exclude_specs = {}
-
-        def to_ignore(p, names):
-            ret = []
-            path = Path(p)
-
-            # load ignore file in this directory, if it exists
-            try:
-                ignorefile = open(os.path.join(path, ".bentomlignore"))
-                exclude_specs[path] = pathspec.PathSpec.from_lines(
-                    "gitwildmatch", ignorefile
-                )
-            except FileNotFoundError:
-                pass
-
-            exclude = [False for e in names]
-            for ignore_path in exclude_specs:
-                try:
-                    rel = path.relative_to(ignore_path)
-                except ValueError:
-                    continue
-                for i, name in enumerate(names):
-                    if exclude_specs[ignore_path].match_file(os.path.join(rel, name)):
-                        exclude[i] = True
-
-            for idx, name in enumerate(names):
-                rel = os.path.join(path.relative_to(build_ctx), name)
-                if (
-                    exclude[idx]
-                    or not spec.match_file(rel)
-                    or exclude_spec.match_file(rel)
-                ):
-                    ret.append(name)
-
-            return ret
-
-        # symlinks=False copies the contents of the symlinks; it is assumed that
-        # the build directory is considered trusted.
-        shutil.copytree(build_ctx, out_path, symlinks=False, ignore=to_ignore)
-
-        # Create env, docker, bentoml dev whl files
-        # TODO
-
-        # Create `readme.md` file
-        description = svc.__doc__ if description is None else description
-        readme_path = os.path.join(bento_path, "readme.md")
-        with open(readme_path, "w") as f:
-            f.write(description)
-
-        # Create 'api/openapi.yaml' file
-        api_docs_path = os.path.join(bento_path, "apis")
-        os.mkdir(api_docs_path)
-        openapi_docs_file = os.path.join(api_docs_path, "openapi.yaml")
-        with open(openapi_docs_file, "w") as f:
-            yaml.dump(svc.openapi_doc(), f)
-
-        # Create bento.yaml
-        # TODO
-        bento_yaml = open(os.path.join(bento_path, "bento.yaml"), "w")
+    return res

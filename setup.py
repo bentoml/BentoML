@@ -32,6 +32,7 @@ install_requires = [
     "pathspec",
     'typing_extensions >= 3.7.4',
     'aiofiles',
+    "fs",
 ]
 
 model_server_optional = [

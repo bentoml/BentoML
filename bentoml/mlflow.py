@@ -17,7 +17,7 @@ from .exceptions import BentoMLException, InvalidArgument, MissingDependencyExce
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
 
-    from _internal.models.store import ModelStore
+    from _internal.models.store import ModelStore, StoreCtx
     from mlflow.pyfunc import PyFuncModel
 
 try:
@@ -128,7 +128,7 @@ def _save(
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         if isinstance(identifier, str):
             ctx.options = {"uri": Path(identifier).as_uri(), "flavor": "na"}
             mlflow_obj_path = _download_artifact_from_uri(
@@ -171,7 +171,8 @@ def _save(
             assert loader_module is not None, "`loader_module` cannot be None."
             ctx.options["flavor"] = loader_module.__name__
             loader_module.save_model(identifier, os.path.join(ctx.path, SAVE_NAMESPACE))
-        return ctx.tag  # type: ignore
+        tag = ctx.tag  # type: str
+        return tag
 
 
 @inject
@@ -329,14 +330,16 @@ class _MLflowRunner:
                     batch_options=batch_options,
                     model_store=model_store,
                 )
-            runner = getattr(importlib.import_module(f"bentoml.{flavor}"), "load_runner")(  # type: ignore # noqa # pylint: disable
+            runner = getattr(
+                importlib.import_module(f"bentoml.{flavor}"), "load_runner"
+            )(  # noqa # pylint: disable
                 tag,
                 *runners_args,
                 resource_quota=resource_quota,
                 batch_options=batch_options,
                 model_store=model_store,
                 **runner_kwargs,
-            )
+            )  # type: Runner
             setattr(runner, "_from_mlflow", True)
             return runner
         except (IndexError, ImportError):

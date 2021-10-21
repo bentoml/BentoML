@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from joblib.parallel import Parallel
 
-    from ._internal.models.store import ModelInfo, ModelStore
+    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
 
 
 try:
@@ -34,11 +34,11 @@ except ImportError:  # pragma: no cover
     )
 
 _exc_msg = """\
-`pandas` is required by `bentoml.statsmodels`, install pandas with 
-`pip install pandas`. For more information, refer to 
-https://pandas.pydata.org/docs/getting_started/install.html
+`pandas` is required by `bentoml.statsmodels`, install pandas with
+ `pip install pandas`. For more information, refer to
+ https://pandas.pydata.org/docs/getting_started/install.html
 """
-pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)
+pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)  # noqa: F811
 
 
 def _get_model_info(
@@ -116,7 +116,7 @@ def save(
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         model.save(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         return ctx.tag
 

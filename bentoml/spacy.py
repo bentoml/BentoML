@@ -17,7 +17,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelStore
+    from _internal.models.store import ModelStore, StoreCtx
     from spacy import Config, Vocab
     from spacy.tokens.doc import Doc
 
@@ -120,7 +120,6 @@ def load(
                 f" sure that you save the correct package and model to BentoML"
                 f" via `bentoml.spacy.save()`"
             )
-            pass
 
     try:
         # check if pipeline has additional requirements then all related
@@ -129,7 +128,7 @@ def load(
         not_existed = list()
         dists = packages_distributions()
         for module_name in additional:
-            mod, spec = split_requirement(module_name)
+            mod, _ = split_requirement(module_name)
             if mod not in dists:
                 not_existed.append(module_name)
             if len(not_existed) > 0:
@@ -184,7 +183,7 @@ def save(
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         meta = model.meta  # type: t.Dict[str, t.Any]
         ctx.options = {
             "pip_package": f"{meta['lang']}_{meta['name']}",
@@ -192,7 +191,8 @@ def save(
         if "requirements" in meta:
             ctx.options["additional_requirements"] = meta["requirements"]
         model.to_disk(ctx.path)
-        return ctx.tag  # type: ignore[no-any-return]
+        tag = ctx.tag  # type: str
+        return tag
 
 
 # TODO: save local projects

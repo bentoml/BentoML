@@ -46,7 +46,7 @@ def pycaret_model(get_pycaret_data) -> t.Any:
     return final_dt
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def save_proc(
     pycaret_model,
     modelstore: "ModelStore",

@@ -1,6 +1,6 @@
 ## Install BentoML from source
 
-Ensure you have git, python and pip installed, BentoML supports python 3.6, 3.7, and 3.8
+Ensure you have git, python and pip installed, BentoML supports Python 3.7+
 
 ```bash
 $ python --version
@@ -11,15 +11,15 @@ $ pip --version
 ```
 
 
-Download the source code from BentoML's Github repository:
+Clone the source code from BentoML's GitHub repository:
 ```bash
 $ git clone https://github.com/bentoml/BentoML.git
 $ cd BentoML
 ```
 
 Install BentoML with pip in `editable` mode:
-```
-pip install --editable .
+```bash
+$ pip install --editable .
 ```
 
 This will make `bentoml` available on your system which links to the sources of
@@ -34,7 +34,7 @@ import bentoml
 print(bentoml.__version__)
 ```
 
-#### Install BentoML from other forks or branches
+### Install BentoML from other forks or branches
 
 The `pip` command support installing directly from remote git repository. This makes it
 easy to try out new BentoML feature that has not been released, test changes in a pull 
@@ -68,7 +68,15 @@ $ pip install -e ".[test]"
 $ ./ci/unit_tests.sh
 ```
 
-## Optional: Run unit test with all supported python versions
+## How to run integration tests
+
+After isntall all test dependencies, to run a specific integration tests suite after adding testcases do:
+```bash
+# for example you added tests for mlflow
+$ pytest tests/integration/frameworks/mlflow --cov=bentoml --cov-config=.coveragerc
+```
+
+### Optional: Run unit test with all supported python versions
 
 Make sure you [have conda installed](https://docs.conda.io/projects/conda/en/latest/user-guide/install/):
 ```bash
@@ -115,8 +123,10 @@ $ pip install -e ".[dev]"
 
 Run linter/format script:
 ```bash
+# if you have GNU make available you can do `make format`
 $ ./dev/format.sh
 
+# if you have GNU make available you can do `make lint`
 $ ./dev/lint.sh
 ```
 
@@ -129,9 +139,9 @@ You might have to install stubs before running:
 $ mypy --install-types
 ```
 
-After updating/modifying codebase (e.g: `bentoml/yatai/client`), run `mypy`:
+After updating/modifying codebase (e.g: `bentoml/pytorch.py`), run `mypy`:
 ```bash
-$ mypy bentoml/yatai/client
+$ mypy bentoml/pytorch.py
 ```
 
 ## How to edit, run, build documentation site
@@ -146,7 +156,7 @@ To build documentation for locally:
 $ ./docs/build.sh
 ```
 
-Modify \*.rst files inside the `docs` folder to update content, and to
+Modify `*.rst` files inside the `docs` folder to update content, and to
 view your changes, run the following command:
 
 ```
@@ -167,7 +177,7 @@ $ pip install -e ".[dev]"
 ```
 
 Install spellchecker dependencies:
-```
+```bash
 $ make install-spellchecker-deps
 ```
 
@@ -175,7 +185,6 @@ To run spellchecker locally:
 ```bash
 $ make spellcheck-doc
 ```
-
 
 ### macOS
 
@@ -185,7 +194,7 @@ brew install fswatch
 ```
 
 Run the `watch.sh` script to start watching docs changes:
-```
+```bash
 $ ./docs/watch.sh
 ```
 
@@ -196,77 +205,25 @@ sudo apt install inotify-tools
 ``` 
 
 Run the `watch.sh` script to start watching docs changes:
-```
+```bash
 $ ./docs/watch.sh
 ```
 
-## How to debug YataiService GRPC server
-
-Install all dev dependencies:
-```bash
-$ pip install -e ".[dev]"
-```
-
-Install grpcui:
-```bash
-$ go get github.com/fullstorydev/grpcui
-$ go install github.com/fullstorydev/grpcui/cmd/grpcui
-```
-
-Start Yatai server in debug mode:
-```bash
-$ bentoml yatai-service-start --debug
-```
-
-In another terminal session run grpcui:
-```bash
-$ grpcui -plain text localhost:50051
-
-gRPC Web UI available at http://127.0.0.1:60551/...
-```
-Navigate to the URL from above
-
-## How to use `YataiService` helm chart
-
-BentoML also provides a Helm chart under [`bentoml/yatai-chart`](https://github.com/bentoml/yatai-chart) for installing YataiService on Kubernetes.
-
 ## Running BentoML Benchmark
 BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).
-
-## How to run and develop BentoML Web UI
-
-Make sure you have `yarn` installed: https://classic.yarnpkg.com/en/docs/install 
-
-Install all npm packages required by BentoML Web UI:
-
-```bash
-# install npm packages required by BentoML's Node.js Web Server
-cd {PROJECT_ROOT}/web_server/
-yarn
-
-# install npm packages required by BentoML web frontend
-cd {PROJECT_ROOT}/ui/
-yarn
-```
-
-Build the Web Server and frontend UI code:
-```bash
-cd {PROJECT_ROOT}/web_server/
-npm run build
-```
 
 ## How to test GitHub Actions locally
 
 If you are developing new artifacts or modify GitHub Actions CI (adding integration test, unit tests, etc), use [`nektos/act`](https://github.com/nektos/act) to run Actions locally.
 
-## Creating Pull Request on Github
+## Creating Pull Request on GitHub
 
 
-1. [Fork BentoML project](https://github.com/bentoml/BentoML/fork) on github and
-add upstream to local BentoML clone:
+1. [Fork BentoML project](https://github.com/bentoml/BentoML/fork) on GitHub and
+add upstream remotes to local BentoML clone:
 
 ```bash
-$ git remote add upstream git@github.com:YOUR_USER_NAME/BentoML.git
+$ git remote add upstream git@github.com:bentoml/BentoML.git
 ```
 
 2. Make the changes either to fix a known issue or adding new feature

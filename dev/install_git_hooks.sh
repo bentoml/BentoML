@@ -12,7 +12,7 @@ fi
 
 if [ ! -f "$HOOKS_PATH/prepare-commit-msg" ]; then
   while true; do
-    read -p "Do you want to setup sign-off commits? " yn
+      read -p "Do you want to setup sign-off commits? Make sure you know what you are doing :) " yn
     case $yn in
         [Yy]* )
           ln -s "$GIT_ROOT/hooks/prepare-commit-msg" .; break;;
@@ -20,4 +20,8 @@ if [ ! -f "$HOOKS_PATH/prepare-commit-msg" ]; then
         * ) echo "Please answer yes or no.";;
     esac
 done
+fi
+
+if [ ! -f "$HOOKS_PATH/pre-commit" ]; then
+  ln -s "$GIT_ROOT/hooks/pre-commit" .
 fi

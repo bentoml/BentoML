@@ -1,27 +1,60 @@
+import os
 import typing as t
 
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import SAVE_NAMESPACE, TXT_EXT
 from ._internal.runner import Runner
-from .exceptions import MissingDependencyException
+from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     from _internal.models.store import ModelStore
 
 try:
-    ...
+    import lightgbm as lgb
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException("")
+    raise MissingDependencyException(
+        """lightgbm is required in order to use module `bentoml.lightgbm`, install
+        lightgbm with `pip install lightgbm`. For more information, refer to
+        https://github.com/microsoft/LightGBM/tree/master/python-package
+        """
+    )
+
+
+def _get_model_info(
+    tag: str,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
+    model_store: "ModelStore",
+) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
+    model_info = model_store.get(tag)
+    if model_info.module != __name__:
+        if model_info.module == "bentoml.mlflow":
+            pass
+        else:
+            raise BentoMLException(  # pragma: no cover
+                f"Model {tag} was saved with"
+                f" module {model_info.module},"
+                f" failed loading with {__name__}"
+            )
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{TXT_EXT}")
+    _booster_params = dict() if not booster_params else booster_params
+    for key, value in model_info.options.items():
+        if key not in _booster_params:
+            _booster_params[key] = value  # pragma: no cover
+    if "nthread" not in _booster_params:
+        _booster_params["nthread"] = -1  # apply default nthread parameter
+
+    return model_info, model_file, _booster_params
 
 
 @inject
 def load(
     tag: str,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> "lightgbm.basic.Booster":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -36,13 +69,17 @@ def load(
 
     Examples::
     """  # noqa
+    _, _model_file, _booster_params = _get_model_info(tag, booster_params, model_store)
+
+    return lgb.Booster(params=_booster_params, model_file=_model_file)
 
 
 @inject
 def save(
     name: str,
-    model: t.Any,
+    model: "lightgbm.basic.Booster",
     *,
+    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
@@ -65,6 +102,16 @@ def save(
 
     Examples::
     """  # noqa
+    context = {"lightgbm": lgb.__version__}
+    with model_store.register(
+        name,
+        module=__name__,
+        options=booster_params,
+        framework_context=context,
+        metadata=metadata,
+    ) as ctx:
+        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{TXT_EXT}"))
+        return ctx.tag
 
 
 class _LightGBMRunner(Runner):

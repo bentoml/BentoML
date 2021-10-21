@@ -223,7 +223,11 @@ If you are developing new artifacts or modify GitHub Actions CI (adding integrat
 <details>
     <summary>Optional: Install Git hooks</summary>
 
-    Run `./dev/install_git_hooks.sh` to install git hooks to automate commit and branch format enforcement described below.
+    ```bash
+    ./dev/install_git_hooks.sh
+    ```
+    
+    * Will install git hooks to automate commit and branch format enforcement described below.
 </details>
 
 

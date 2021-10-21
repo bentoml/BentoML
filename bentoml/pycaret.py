@@ -14,8 +14,11 @@ PYCARET_CONFIG = "pycaret_config"
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
+    import lightgbm
     import pandas as pd
-    from _internal.models.store import ModelStore
+    import sklearn
+    import xgboost
+    from _internal.models.store import ModelInfo, ModelStore
 
 try:
     from pycaret.internal.tabular import (
@@ -24,14 +27,14 @@ try:
         predict_model,
         save_config,
         save_model,
-        setup,
     )
     from pycaret.utils import version
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """pycaret is required in order to use module`bentoml.pycaret`, install
-         pycaret with `pip install pycaret` or `pip install pycaret[full]`. 
-         For more information, refer to 
+        """\
+        pycaret is required in order to use module`bentoml.pycaret`, install
+         pycaret with `pip install pycaret` or `pip install pycaret[full]`.
+         For more information, refer to
          https://pycaret.readthedocs.io/en/latest/installation.html
         """
     )
@@ -136,7 +139,7 @@ def save(
     ) as ctx:
         save_model(model, os.path.join(ctx.path, SAVE_NAMESPACE))
         save_config(os.path.join(ctx.path, f"{PYCARET_CONFIG}{PKL_EXT}"))
-        return ctx.tag
+        return ctx.tag  # type: ignore[no-any-return]
 
 
 class _PycaretRunner(Runner):
@@ -144,15 +147,16 @@ class _PycaretRunner(Runner):
     def __init__(
         self,
         tag: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
-        model_info, model_file, _ = _get_model_info(tag, model_store)
+        model_info, model_file, pycaret_config = _get_model_info(tag, model_store)
 
         self._model_info = model_info
         self._model_file = model_file
+        self._pycaret_config = pycaret_config
 
     @property
     def required_models(self) -> t.List[str]:
@@ -167,13 +171,15 @@ class _PycaretRunner(Runner):
         return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:
+    def _setup(self) -> None:  # type: ignore[override]
+        load_config(self._pycaret_config)
         self._model = load_model(self._model_file)
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":
+    # pylint: disable=arguments-differ
+    def _run_batch(self, input_data: "pd.DataFrame") -> "pd.DataFrame":  # type: ignore[override] # noqa # pylint: disable
         logger.warning(
-            " PyCaret is not designed to be ran in parallel. See https://github.com/pycaret/pycaret/issues/758"
+            "PyCaret is not designed to be ran"
+            " in parallel. See https://github.com/pycaret/pycaret/issues/758"  # noqa # pylint: disable
         )
         return predict_model(self._model, input_data)
 
@@ -182,10 +188,9 @@ class _PycaretRunner(Runner):
 def load_runner(
     tag: str,
     *,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    **pycaret_setup_kwargs: None,
 ) -> "_PycaretRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to

@@ -226,17 +226,15 @@ If you are developing new artifacts or modify GitHub Actions CI (adding integrat
     ```bash
     ./dev/install_git_hooks.sh
     ```
-    
-    * Will install git hooks to automate commit and branch format enforcement described below.
 </details>
 
 
 1. [Fork BentoML project](https://github.com/bentoml/BentoML/fork) on GitHub and
 add upstream remotes to local BentoML clone:
 
-```bash
-git remote add upstream git@github.com:bentoml/BentoML.git
-```
+    ```bash
+    git remote add upstream git@github.com:bentoml/BentoML.git
+    ```
 
 2. Make the changes either to fix a known issue or adding new feature
 

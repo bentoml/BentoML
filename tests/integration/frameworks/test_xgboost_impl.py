@@ -115,14 +115,13 @@ def test_xgboost_runner_setup_run_batch(modelstore, save_proc):
     booster_params = dict()
     info = save_proc(booster_params, None)
     runner = bentoml.xgboost.load_runner(info.tag, model_store=modelstore)
-    runner._setup()
 
-    assert isinstance(runner._model, xgb.Booster)
     assert info.tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
-    assert np.asarray([np.argmax(_l) for _l in runner._run_batch(test_df)]) == 1
+    assert np.asarray([np.argmax(_l) for _l in runner.run_batch(test_df)]) == 1
+    assert isinstance(runner._model, xgb.Booster)
 
 
 @pytest.mark.gpus

@@ -16,8 +16,8 @@ from .bento import Bento
 if t.TYPE_CHECKING:
     from bentoml._internal.service import Service
 
-    from ..bento.store import BentoStore
     from ..models.store import ModelStore
+    from ..store import Store
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ def build_bento(
     exclude: t.Optional[t.List[str]] = None,
     env: t.Optional[t.Dict[str, t.Any]] = None,
     labels: t.Optional[t.Dict[str, str]] = None,
-    bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    bento_store: "Store" = Provide[BentoMLContainer.bento_store],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Bento:
     """

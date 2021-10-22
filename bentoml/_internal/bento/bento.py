@@ -18,8 +18,8 @@ from ..utils.validation import validate_version_str
 if t.TYPE_CHECKING:
     from bentoml._internal.service import Service
 
-    from ..bento.store import BentoStore
     from ..models.store import ModelStore
+    from ..store import Store
 
 logger = logging.getLogger(__name__)
 
@@ -100,18 +100,17 @@ class Bento:
                 )
 
             cur_exclude_specs = []
-            for ignore_path, spec in exclude_specs:
+            for ignore_path, _spec in exclude_specs:
                 if fs.path.isparent(ignore_path, dir_path):
-                    cur_exclude_specs.append((ignore_path, spec))
+                    cur_exclude_specs.append((ignore_path, _spec))
 
             for f in files:
                 _path = fs.path.combine(dir_path, f.name)
                 if spec.match_file(_path) and not exclude_spec.match_file(_path):
                     if not any(
                         [
-                            spec.match_file(fs.path.relativefrom(ignore_path, _path))
-                            for ignore_path, spec in exclude_specs
-                            if fs.path.isparent(ignore_path, _path)
+                            _spec.match_file(fs.path.relativefrom(ignore_path, _path))
+                            for ignore_path, _spec in cur_exclude_specs
                         ]
                     ):
                         target_fs.makedirs(dir_path, recreate=True)
@@ -135,12 +134,12 @@ class Bento:
         with self.fs.open("bento.yaml", "w") as bento_yaml:
             pass
 
-    def save(self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]):
+    def save(self, bento_store: "Store" = Provide[BentoMLContainer.bento_store]):
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid")
 
-        with bento_store.register_bento(self.tag) as bento_path:
+        with bento_store.register(self.tag) as bento_path:
             # TODO: handle non-OSFS store types
             os.rmdir(bento_path)
             os.rename(self.fs.getsyspath("/"), bento_path)

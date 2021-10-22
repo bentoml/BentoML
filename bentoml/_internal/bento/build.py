@@ -11,7 +11,6 @@ import bentoml
 from ..configuration import is_pip_installed_bentoml
 from ..configuration.containers import BentoMLContainer
 from ..utils.tempdir import TempDirectory
-
 from .bento import Bento
 
 if t.TYPE_CHECKING:

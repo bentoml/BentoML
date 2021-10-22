@@ -23,10 +23,15 @@ class Payload(t.NamedTuple):
     meta: t.Dict[str, t.Union[bool, int, float, str]]
 
 
-# client: single -> client: container(batch) -> payload -> server: container(batch) -> server: batch
-
-
 class DataContainer(t.Generic[SingleType, BatchType]):
+    @classmethod
+    def create_payload(
+        cls,
+        data: bytes,
+        meta: t.Optional[t.Dict[str, t.Union[bool, int, float, str]]] = None,
+    ) -> Payload:
+        return cls.create_payload(data, dict(meta or dict(), container=cls.__name__))
+
     @classmethod
     @abc.abstractmethod
     def singles_to_batch(
@@ -94,9 +99,11 @@ class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
         cls, single_data, plasma_db=Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
-            return Payload(plasma_db.put(single_data).binary(), {"plasma": True},)
+            return cls.create_payload(
+                plasma_db.put(single_data).binary(), {"plasma": True},
+            )
 
-        return Payload(cloudpickle.dumps(single_data), {"plasma": False},)
+        return cls.create_payload(cloudpickle.dumps(single_data), {"plasma": False},)
 
     @classmethod
     @inject
@@ -109,6 +116,30 @@ class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
             assert plasma_db
             return plasma_db.get(plasma.ObjectID(payload.data))
 
+        return cloudpickle.loads(payload.data)
+
+    batch_to_payload = single_to_payload
+    payload_to_batch = payload_to_single
+
+
+class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
+    @classmethod
+    def singles_to_batch(cls, singles, batch_axis=0):
+        assert batch_axis == 0
+        return singles
+
+    @classmethod
+    def batch_to_singles(cls, batch, batch_axis=0):
+        assert batch_axis == 0
+        return batch
+
+    @classmethod
+    def single_to_payload(cls, single) -> Payload:
+        return cls.create_payload(cloudpickle.dumps(single))
+
+    @classmethod
+    @inject
+    def payload_to_single(cls, payload: Payload):
         return cloudpickle.loads(payload.data)
 
     batch_to_payload = single_to_payload
@@ -137,14 +168,14 @@ class DataContainerRegistry:
         cls, type_: t.Union[type, TypeRef]
     ) -> t.Type["DataContainer"]:
         typeref = TypeRef.from_type(type_)
-        return cls.CONTAINER_SINGLE_TYPE_MAP[typeref]
+        return cls.CONTAINER_SINGLE_TYPE_MAP.get(typeref, DefaultContainer)
 
     @classmethod
     def find_by_batch_type(
         cls, type_: t.Union[type, TypeRef]
     ) -> t.Type["DataContainer"]:
         typeref = TypeRef.from_type(type_)
-        return cls.CONTAINER_BATCH_TYPE_MAP[typeref]
+        return cls.CONTAINER_BATCH_TYPE_MAP.get(typeref, DefaultContainer)
 
     @classmethod
     def find_by_name(cls, name: str) -> t.Type["DataContainer"]:

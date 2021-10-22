@@ -10,7 +10,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelStore
+    from _internal.models.store import ModelStore, ModelInfo
 
 try:
     import lightgbm as lgb
@@ -54,7 +54,7 @@ def load(
     tag: str,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "lightgbm.basic.Booster":
+) -> "lgb.basic.Booster":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -77,7 +77,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: "lightgbm.basic.Booster",
+    model: "lgb.basic.Booster",
     *,
     booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,

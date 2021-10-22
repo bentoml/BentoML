@@ -5,27 +5,38 @@ import os
 import re
 import typing as t
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
 # Some constants taken from cuda.h
+
+
+if TYPE_CHECKING:
+    from aiohttp import MultipartWriter
+
+T = t.TypeVar("T")
+To = t.TypeVar("To")
+
+
 CUDA_SUCCESS = 0
 
 
-class Params:
-    def __init__(self, args, kwargs):
+class Params(t.Generic[T]):
+    def __init__(self, *args: T, **kwargs: T):
         self.args = args
         self.kwargs = kwargs
 
-    def map(self, function):
-        return type(self)(
-            tuple(function(a) for a in self.args),
-            {k: function(v) for k, v in self.kwargs.items()},
-        )
+    def map(self, function: t.Callable[[T], To]) -> "Params[To]":
+        args = tuple(function(a) for a in self.args)
+        kwargs = {k: function(v) for k, v in self.kwargs.items()}
+        return type(self)[To](*args, **kwargs)
 
-    def imap(self, function: t.Callable[[t.Any], t.Iterable]):
+    def imap(
+        self, function: t.Callable[[T], t.Iterable[To]]
+    ) -> "t.Iterator[Params[To]]":
         args_iter = tuple(iter(function(a)) for a in self.args)
         kwargs_iter = {k: iter(function(v)) for k, v in self.kwargs.items()}
 
@@ -33,29 +44,33 @@ class Params:
             while True:
                 args = tuple(next(a) for a in args_iter)
                 kwargs = {k: next(v) for k, v in kwargs_iter.items()}
-                yield type(self)(args, kwargs)
+                yield type(self)[To](*args, **kwargs)
         except StopIteration:
             pass
 
-    def to_dict(self):
+    def to_http_multipart(self) -> "MultipartWriter":
+        d = self.to_dict()
+        pass
+
+    def to_dict(self) -> t.Dict[t.Union[int, str], T]:
         d = dict(**self.kwargs)
         for i, v in enumerate(self.args):
             d[i] = v
         return d
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: t.Dict[t.Union[int, str], To]) -> "Params[To]":
         args = tuple(
             v for _, v in sorted((k, v) for k, v in d.items() if isinstance(k, int))
         )
         kwargs = {k: v for k, v in d.items() if not isinstance(k, int)}
-        return cls(args, kwargs)
+        return cls[To](*args, **kwargs)
 
     @property
-    def sample(self):
+    def sample(self) -> T:
         if self.args:
             return self.args[0]
-        return self.kwargs.values()[0]
+        return next(iter(self.kwargs.values()))
 
 
 class TypeRef:

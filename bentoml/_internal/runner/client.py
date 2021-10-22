@@ -45,7 +45,7 @@ class RunnerClient:
         from bentoml._internal.runner.container import AutoContainer
 
         URL = "http://127.0.0.1:8000/run"
-        param = Params(args, kwargs).map(AutoContainer.single_to_payload)
+        param = Params(*args, **kwargs).map(AutoContainer.single_to_payload)
         payloads = param.to_dict()  # TODO(jiang): multipart
         async with self._get_client() as client:
             async with client.post(URL, data=payloads) as resp:
@@ -56,7 +56,7 @@ class RunnerClient:
         from bentoml._internal.runner.container import AutoContainer
 
         URL = "http://127.0.0.1:8000/run_batch"
-        param = Params(args, kwargs).map(AutoContainer.batch_to_payload)
+        param = Params(*args, **kwargs).map(AutoContainer.batch_to_payload)
         payloads = param.to_dict()
         async with self._get_client() as client:
             async with client.post(URL, data=payloads) as resp:

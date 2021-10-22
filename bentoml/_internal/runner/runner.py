@@ -1,3 +1,4 @@
+import enum
 import os
 import typing as t
 from abc import ABC, abstractmethod
@@ -184,9 +185,6 @@ class SimpleRunner(_BaseRunner, ABC):
         ...
 
 
-import enum
-
-
 class RunnerState(enum.IntEnum):
     INIT = 0
     SETTING = 1
@@ -241,13 +239,15 @@ class RemoteRunner(RunnerImpl):
 
 class LocalRunner(RunnerImpl):
     def _setup(self) -> None:
+        self._state = RunnerState.SETTING
         self._runner._setup()  # noqa
+        self._state = RunnerState.SET
 
     async def async_run(self, *args, **kwargs):
         if self._state is RunnerState.INIT:
             self._setup()
         if isinstance(self._runner, Runner):
-            params = Params(args, kwargs)
+            params = Params(*args, **kwargs)
             params = params.map(
                 partial(
                     AutoContainer.singles_to_batch,
@@ -268,13 +268,13 @@ class LocalRunner(RunnerImpl):
         if isinstance(self._runner, Runner):
             return self._runner._run_batch(*args, **kwargs)
         if isinstance(self._runner, SimpleRunner):
-            raise RuntimeError("shall not call async_run on a simple runner")
+            raise RuntimeError("shall not call async_run_batch on a simple runner")
 
     def run(self, *args, **kwargs):
         if self._state is RunnerState.INIT:
             self._setup()
         if isinstance(self._runner, Runner):
-            params = Params(args, kwargs)
+            params = Params(*args, **kwargs)
             params = params.map(
                 partial(
                     AutoContainer.singles_to_batch,
@@ -295,4 +295,4 @@ class LocalRunner(RunnerImpl):
         if isinstance(self._runner, Runner):
             return self._runner._run_batch(*args, **kwargs)
         if isinstance(self._runner, SimpleRunner):
-            raise RuntimeError("shall not call async_run on a simple runner")
+            raise RuntimeError("shall not call run_batch on a simple runner")

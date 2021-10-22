@@ -42,33 +42,35 @@ class RunnerClient:
         return self._client
 
     async def async_run(self, *args, **kwargs):
-        from bentoml._internal.runner.container import single_data_to_container
+        from bentoml._internal.runner.container import AutoContainer
 
         URL = "http://127.0.0.1:8000/run"
-        param = Params(args, kwargs).map(single_data_to_container)
-        payloads = param.to_dict()
+        param = Params(args, kwargs).map(AutoContainer.single_to_payload)
+        payloads = param.to_dict()  # TODO(jiang): multipart
         async with self._get_client() as client:
             async with client.post(URL, data=payloads) as resp:
                 text = await resp.text()
-        return from_payload(text)  # TODO
+        return AutoContainer.payload_to_single(text)  # TODO
 
     async def async_run_batch(self, *args, **kwargs):
-        from bentoml._internal.runner.transporter import data_to_payload
+        from bentoml._internal.runner.container import AutoContainer
 
         URL = "http://127.0.0.1:8000/run_batch"
-        param = Params(args, kwargs).map(data_to_payload)
+        param = Params(args, kwargs).map(AutoContainer.batch_to_payload)
         payloads = param.to_dict()
         async with self._get_client() as client:
             async with client.post(URL, data=payloads) as resp:
                 text = await resp.text()
-        return from_payload(text)  # TODO
+        return AutoContainer.payload_to_batch(text)  # TODO
 
 
 @inject
 def get_runner_client(
     runner_name: str,
-    uds_mapping: Dict[str, int] = Provide[BentoMLContainer.uds_mapping],
+    remote_runner_mapping: Dict[str, int] = Provide[
+        BentoMLContainer.remote_runner_mapping
+    ],
     timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
 ) -> RunnerClient:
-    uds = uds_mapping.get(runner_name)
-    return RunnerClient(uds, timeout=timeout)
+    uds_fd = remote_runner_mapping.get(runner_name)
+    return RunnerClient(uds_fd, timeout=timeout)

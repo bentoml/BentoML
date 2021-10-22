@@ -8,10 +8,7 @@ import psutil
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.runner.container import (
-    batch_data_to_container,
-    single_data_to_container,
-)
+from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.runner.utils import Params
 
 from .utils import (
@@ -239,12 +236,12 @@ class LocalRunner(RunnerImpl):
             params = Params(args, kwargs)
             params = params.map(
                 partial(
-                    single_data_to_container,
+                    AutoContainer.singles_to_batch,
                     batch_axis=self._runner.batch_options.input_batch_axis,
                 )
-            ).map(lambda c: c.to_batch())
+            )
             batch_result = self._runner._run_batch(*params.args, **params.kwargs)
-            return batch_data_to_container(
+            return AutoContainer.batch_to_singles(
                 batch_result, batch_axis=self._runner.batch_options.output_batch_axis,
             )[0]
 

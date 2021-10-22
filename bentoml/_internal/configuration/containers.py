@@ -302,7 +302,7 @@ class BentoMLContainerClass:
         config.logging.file.directory,
     )
 
-    remote_runner_mapping: Provider[t.Dict[str, str]] = providers.Static(dict())
+    remote_runner_mapping: Provider[t.Dict[str, int]] = providers.Static(dict())
     plasma_db: "PlasmaClient" = providers.Static(None)
 
 

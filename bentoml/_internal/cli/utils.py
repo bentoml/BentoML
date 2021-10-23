@@ -1,5 +1,4 @@
 import itertools
-import json
 import logging
 import sys
 import threading
@@ -7,12 +6,8 @@ import time
 from datetime import datetime
 
 import humanfriendly
-from tabulate import tabulate
 
 from bentoml.exceptions import BentoMLException
-
-from ..utils import pb_to_yaml
-from .click_utils import _echo
 
 logger = logging.getLogger(__name__)
 
@@ -99,20 +94,6 @@ def echo_docker_api_result(docker_generator):
             raise BentoMLException(error["message"])
 
 
-def _print_deployment_info(deployment, output_type):
-    if output_type == "yaml":
-        _echo(pb_to_yaml(deployment))
-    else:
-        from google.protobuf.json_format import MessageToDict
-
-        deployment_info = MessageToDict(deployment)
-        if deployment_info["state"] and deployment_info["state"]["infoJson"]:
-            deployment_info["state"]["infoJson"] = json.loads(
-                deployment_info["state"]["infoJson"]
-            )
-        _echo(json.dumps(deployment_info, indent=2, separators=(",", ": ")))
-
-
 def _format_labels_for_print(labels):
     if not labels:
         return None
@@ -131,13 +112,3 @@ def _format_deployment_age_for_print(deployment_pb):
 
 def human_friendly_age_from_datetime(dt, detailed=False, max_unit=2):
     return humanfriendly.format_timespan(datetime.utcnow() - dt, detailed, max_unit)
-
-
-def _print_deployments_info(deployments, output_type):
-    if output_type == "table":
-        _print_deployments_table(deployments)
-    elif output_type == "wide":
-        _print_deployments_table(deployments, wide=True)
-    else:
-        for deployment in deployments:
-            _print_deployment_info(deployment, output_type)

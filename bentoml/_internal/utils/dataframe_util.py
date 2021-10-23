@@ -175,12 +175,12 @@ def read_dataframes_from_json_n_csv(
     dtype=None,
 ) -> ("pandas.DataFrame", Iterable[slice]):
     """
-    load dataframes from multiple raw datas in json or csv format, efficiently
+    Load dataframes from multiple raw data in json or csv format, efficiently
 
     Background: Each calling of pandas.read_csv or pandas.read_json cost about 100ms,
-    no matter how many lines it contains. Concat ragged_tensor/csvs before read_json/read_csv
+    no matter how many lines it contains. Concat ragged_tensor/csv before read_json/read_csv
     to improve performance.
-    """
+    """  # noqa: E501
     state = DataFrameState(
         columns={k: i for i, k in enumerate(columns)} if columns else None
     )

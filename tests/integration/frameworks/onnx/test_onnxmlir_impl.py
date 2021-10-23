@@ -76,7 +76,7 @@ def compile_model(convert_to_onnx, tmpdir):
 
 def test_onnxmlir_save_load(compile_model, tmpdir, modelstore):  # noqa
     model = os.path.join(tmpdir, "model.so")
-    tag = bentoml.onnxmlir.save("onnx_model_tests", model)
+    tag = bentoml.onnxmlir.save("onnx_model_tests", model, model_store=modelstore)
     info = modelstore.get(tag)
     assert "compiled_path" in info.options
     assert_have_file_extension(str(info.path), ".so")
@@ -88,7 +88,7 @@ def test_onnxmlir_save_load(compile_model, tmpdir, modelstore):  # noqa
 
 def test_onnxmlir_load_runner(compile_model, tmpdir, modelstore):  # noqa
     model = os.path.join(tmpdir, "model.so")
-    tag = bentoml.onnxmlir.save("onnx_model_tests", model)
+    tag = bentoml.onnxmlir.save("onnx_model_tests", model, model_store=modelstore)
     runner = bentoml.onnxmlir.load_runner(tag, model_store=modelstore)
 
     assert tag in runner.required_models

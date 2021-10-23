@@ -418,22 +418,11 @@ class _TensorflowRunner(Runner):
         self._session = tf.compat.v1.Session(
             config=tf.compat.v1.ConfigProto(**self._config_proto)
         )
-        try:
-            self._model = load(self.name, model_store=self._model_store)
-            if not TF2:
-                self._predict_fn = self._model.signatures["serving_default"]
-            else:
-                self._predict_fn = getattr(self._model, self._predict_fn_name)
-        except FileNotFoundError:
-            if self._from_mlflow:
-                # a special flags to determine whether the runner is
-                # loaded from mlflow
-                import bentoml.mlflow
-
-                self._model = bentoml.mlflow.load(
-                    self.name, model_store=self._model_store
-                )
-                self._predict_fn = getattr(self._model, "predict")
+        self._model = load(self.name, model_store=self._model_store)
+        if not TF2:
+            self._predict_fn = self._model.signatures["serving_default"]
+        else:
+            self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]

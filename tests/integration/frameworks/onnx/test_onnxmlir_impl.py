@@ -83,7 +83,7 @@ def test_onnxmlir_save_load(compile_model, tmpdir, modelstore):  # noqa
 
     session = bentoml.onnxmlir.load(tag, model_store=modelstore)
     print(type(predict_df(session, test_df)))
-    assert predict_df(session, test_df)[0] == np.ndarray([[15.0]])
+    assert predict_df(session, test_df)[0] == np.array([[15.0]])
 
 
 def test_onnxmlir_load_runner(compile_model, tmpdir, modelstore):  # noqa
@@ -97,4 +97,4 @@ def test_onnxmlir_load_runner(compile_model, tmpdir, modelstore):  # noqa
 
     runner._setup()
     res = runner._run_batch(test_df.to_numpy().astype(np.float64))
-    assert res[0] == np.ndarray([[15.0]])
+    assert res[0] == np.array([[15.0]])

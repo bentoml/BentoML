@@ -5,6 +5,7 @@ import typing as t
 from simple_di import Provide, inject
 
 import bentoml._internal.constants as _const
+
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
@@ -166,18 +167,33 @@ class _ONNXRunner(Runner):
     def __init__(
         self,
         tag: str,
-        backend,
-        providers,
+        backend: t.Optional[str] = "onnxruntime",
+        providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
+        sess_opts: t.Options["onnxruntime.SessionOptions"] = None,
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
         model_info, model_file = _get_model_info(tag, model_store)
+
+        if backend not in SUPPORTED_ONNX_BACKEND:
+            raise BentoMLException(
+                f"'{backend}' runtime is currently not supported for ONNXModel"
+            )
+        if providers:
+            if not all(
+                i in onnxruntime.get_all_providers() for i in flatten_list(providers)
+            ):
+            raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
+        else:
+            providers = onnxruntime.get_available_providers()
+
         self._model_info = model_info
         self._model_file = model_file
         self._backend = backend
         self._providers = providers
+        self._sess_opts = sess_opts
 
     @property
     def required_models(self) -> t.List[str]:
@@ -185,18 +201,33 @@ class _ONNXRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        ...
+        if self.resource_quota.on_gpu:
+            return 1
+        return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        ...
+        if self.resource_quota.on_gpu:
+            return len(self.resource_quota.gpus)
+        return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        ...
+        if isinstance(self._model_file, onnx.ModelProto):
+            self._model = onnxruntime.InferenceSession(
+                self._model_file.SerializeToString(), sess_options=self._sess_opts, \
+                providers=self._providers
+            )
+        else:
+            _path = os.path.join(self._model_file, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+            self._model = onnxruntime.InferenceSession(
+                _path, sess_options=self._sess_opts, providers=self._providers
+            )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data) -> t.Any:
+    def _run_batch(
+        self, input_data
+    ) -> t.Any:
         ...
 
 
@@ -204,6 +235,9 @@ class _ONNXRunner(Runner):
 def load_runner(
     tag: str,
     *,
+    backend: t.Optional[str] = "onnxruntime",
+    providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
+    sess_opts: t.Options["onnxruntime.SessionOptions"] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -230,6 +264,9 @@ def load_runner(
     """  # noqa
     return _ONNXRunner(
         tag=tag,
+        backend=backend,
+        providers=providers,
+        sess_opts=sess_opts,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

@@ -10,6 +10,14 @@ from ._internal.runner import Runner
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
+_exc = _const.IMPORT_ERROR_MSG.format(
+    fwr="onnxruntime & onnx",
+    module=__name__,
+    inst="Refers to https://onnxruntime.ai/"
+    " to correctly install backends options"
+    " and platform suitable for your application usecase.",
+)
+
 if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
     import onnx
     import onnxruntime
@@ -81,6 +89,8 @@ def load(  # pylint: disable=arguments-differ
 
     Examples::
     """  # noqa
+    _, model_file = _get_model_info(tag, model_store)
+
     if backend not in SUPPORTED_ONNX_BACKEND:
         raise BentoMLException(
             f"'{backend}' runtime is currently not supported for ONNXModel"
@@ -93,12 +103,12 @@ def load(  # pylint: disable=arguments-differ
     else:
         providers = onnxruntime.get_available_providers()
 
-    if isinstance(path, onnx.ModelProto):
+    if isinstance(model_file, onnx.ModelProto):
         return onnxruntime.InferenceSession(
-            path.SerializeToString(), sess_options=sess_opts, providers=providers
+            model_file.SerializeToString(), sess_options=sess_opts, providers=providers
         )
     else:
-        _get_path = os.path.join(path, f"{MODEL_NAMESPACE}{ONNX_EXT}")
+        _get_path = os.path.join(model_file, f"{SAVE_NAMESPACE}{ONNX_EXT}")
         return onnxruntime.InferenceSession(
             _get_path, sess_options=sess_opts, providers=providers
         )
@@ -154,6 +164,8 @@ class _ONNXRunner(Runner):
     def __init__(
         self,
         tag: str,
+        backend,
+        providers,
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -162,6 +174,8 @@ class _ONNXRunner(Runner):
         model_info, model_file = _get_model_info(tag, model_store)
         self._model_info = model_info
         self._model_file = model_file
+        self._backend = backend
+        self._providers = providers
 
     @property
     def required_models(self) -> t.List[str]:
@@ -177,28 +191,7 @@ class _ONNXRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        if backend not in SUPPORTED_ONNX_BACKEND:
-            raise BentoMLException(
-                f"'{backend}' runtime is currently not supported for ONNXModel"
-            )
-        if providers:
-            if not all(
-                i in onnxruntime.get_all_providers() for i in flatten_list(providers)
-            ):
-                raise BentoMLException(
-                    f"'{providers}'' cannot be parsed by `onnxruntime`"
-                )
-        else:
-            providers = onnxruntime.get_available_providers()
-        if isinstance(path, onnx.ModelProto):
-            self._model = onnxruntime.InferenceSession(
-                path.SerializeToString(), sess_options=sess_opts, providers=providers
-            )
-        else:
-            _get_path = os.path.join(path, f"{MODEL_NAMESPACE}{ONNX_EXT}")
-            self._model = onnxruntime.InferenceSession(
-                _get_path, sess_options=sess_opts, providers=providers
-            )
+        ...
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data) -> t.Any:

@@ -170,8 +170,8 @@ class _ONNXRunner(Runner):
         backend: t.Optional[str] = "onnxruntime",
         providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
         sess_opts: t.Options["onnxruntime.SessionOptions"] = None,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        resource_quota: t.Dict[str, t.Any] = None,
+        batch_options: t.Dict[str, t.Any] = None,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
@@ -185,7 +185,9 @@ class _ONNXRunner(Runner):
             if not all(
                 i in onnxruntime.get_all_providers() for i in flatten_list(providers)
             ):
-            raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
+                raise BentoMLException(
+                    f"'{providers}' cannot be parsed by `onnxruntime`"
+                )
         else:
             providers = onnxruntime.get_available_providers()
 
@@ -215,8 +217,9 @@ class _ONNXRunner(Runner):
     def _setup(self) -> None:
         if isinstance(self._model_file, onnx.ModelProto):
             self._model = onnxruntime.InferenceSession(
-                self._model_file.SerializeToString(), sess_options=self._sess_opts, \
-                providers=self._providers
+                self._model_file.SerializeToString(),
+                sess_options=self._sess_opts,
+                providers=self._providers,
             )
         else:
             _path = os.path.join(self._model_file, f"{SAVE_NAMESPACE}{ONNX_EXT}")
@@ -225,10 +228,8 @@ class _ONNXRunner(Runner):
             )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(
-        self, input_data
-    ) -> t.Any:
-        ...
+    def _run_batch(self, input_data) -> t.Any:
+        pass
 
 
 @inject

@@ -4,6 +4,7 @@ import typing as t
 
 from simple_di import Provide, inject
 
+import bentoml._internal.constants as _const
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
@@ -31,11 +32,12 @@ try:
 
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """onnx is required in order to use the module `bentoml.onnx`, install 
-        onnx with `pip install sklearn`. For more information, refer to 
+        """onnx is required in order to use the module `bentoml.onnx`, install
+        onnx with `pip install sklearn`. For more information, refer to
         https://onnx.ai/get-started.html
         """
     )
+
 
 # helper methods
 def _yield_first_val(iterable):

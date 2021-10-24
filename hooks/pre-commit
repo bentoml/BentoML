@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
 LC_ALL=C
 
-local_branch="$(git rev-parse --abbrev-ref HEAD)"
+GIT_ROOT="$(git rev-parse --show-toplevel)"
 
-valid_branch_regex="^(chore|refactor|feat|feature|bugfix|improvement|library|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$"
+LOCAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+VALID_BRANCH_REGEX="^(chore|refactor|feat|feature|bugfix|improvement|library|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$"
 
-if [ $local_branch != "bentoml-1.0" ]; then
-    if [[ ! $local_branch =~ $valid_branch_regex ]]
+cd "$GIT_ROOT" || exit
+
+./dev/format.sh || exit
+
+if [ "$LOCAL_BRANCH" != "bentoml-1.0" ]; then
+    if [[ ! "$LOCAL_BRANCH" =~ $VALID_BRANCH_REGEX ]]
     then
-        printf "Invalid branch name $local_branch, Aborting commits...\n"
-        printf "Branch names in this project must adhere to the following format:\n\t$valid_branch_regex.\n"
-        printf "To rename your branch to follow the format do \`git branch -m 'feature/$local_branch'\`\n"
-        exit 1
+        printf "Branch name %s doesn't follow the predefined format...\n" "$LOCAL_BRANCH"
+        printf "We aren't going to abort the commit, but we recommend that branch name should adhere to the following format:\n\t%s.\n" "$VALID_BRANCH_REGEX"
+        printf "To rename your branch to follow the format do \`git branch -m 'feature/%s'\`\n" "$LOCAL_BRANCH"
     fi
     exit 0
 fi
+

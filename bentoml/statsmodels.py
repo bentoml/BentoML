@@ -8,6 +8,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PKL_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.types import PathType
+from ._internal.utils.lazy_loader import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
@@ -17,7 +18,8 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from joblib.parallel import Parallel
 
-    from ._internal.models.store import ModelInfo, ModelStore
+    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
+
 
 try:
     import statsmodels
@@ -31,6 +33,13 @@ except ImportError:  # pragma: no cover
          """
     )
 
+_exc_msg = """\
+`pandas` is required by `bentoml.statsmodels`, install pandas with
+ `pip install pandas`. For more information, refer to
+ https://pandas.pydata.org/docs/getting_started/install.html
+"""
+pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)  # noqa: F811
+
 
 def _get_model_info(
     tag: str,
@@ -39,7 +48,7 @@ def _get_model_info(
     model_info = model_store.get(tag)
     if model_info.module != __name__:
         if model_info.module == "bentoml.mlflow":
-            pass
+            pass  # pragma: no cover
         else:
             raise BentoMLException(  # pragma: no cover
                 f"Model {tag} was saved with module {model_info.module}, failed loading"
@@ -107,7 +116,7 @@ def save(
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         model.save(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         return ctx.tag
 
@@ -127,6 +136,7 @@ class _StatsModelsRunner(Runner):
         self._predict_fn_name = predict_fn_name
         self._model_info = model_info
         self._model_file = model_file
+        self._model_store = model_store
 
     @property
     def required_models(self) -> t.List[str]:
@@ -144,8 +154,17 @@ class _StatsModelsRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
+        try:
+            self._model = sm.load(self._model_file)
+        except FileNotFoundError:
+            if self._from_mlflow:
+                # a special flags to determine whether the runner is
+                # loaded from mlflow
+                import bentoml.mlflow
 
-        self._model = sm.load(self._model_file)
+                self._model = bentoml.mlflow.load(
+                    self.name, model_store=self._model_store
+                )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
@@ -156,7 +175,7 @@ class _StatsModelsRunner(Runner):
         parallel, p_func, _ = parallel_func(
             self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
         )
-        return parallel(p_func(input_data))
+        return parallel(p_func(i) for i in input_data)[0]
 
 
 @inject

@@ -53,7 +53,7 @@ class BentoStore:
             if not os.path.isfile(os.path.join(bento_path, "bento.yaml")):
                 # Build has failed
                 logger.warning(
-                    f"Failed creating Bento file for {tag}, deleting {bento_path}"
+                    f"Failed to create Bento for {tag}, deleting {bento_path}"
                 )
                 shutil.rmtree(bento_path)
             else:

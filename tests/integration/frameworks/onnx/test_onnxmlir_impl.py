@@ -4,10 +4,11 @@ import sys
 
 import numpy as np
 import pandas as pd
+import psutil
 import pytest
 import tensorflow as tf
 
-from bentoml.onnxmlir import ONNXMlirModel
+import bentoml.onnxmlir
 from tests.utils.frameworks.tensorflow_utils import NativeModel
 from tests.utils.helpers import assert_have_file_extension
 
@@ -15,7 +16,7 @@ try:
     # this has to be able to find the arch and OS specific PyRuntime .so file
     from PyRuntime import ExecutionSession
 except ImportError:
-    raise Exception("PyRuntime package library must be in python path")
+    raise Exception("PyRuntime package library must be in PYTHONPATH")
 
 sys.path.append("/workdir/onnx-mlir/build/Debug/lib/")
 
@@ -47,7 +48,7 @@ def convert_to_onnx(tensorflow_model, tmpdir):
         "--output",
         model_path,
     ]
-    docker_proc = subprocess.Popen(
+    docker_proc = subprocess.Popen(  # noqa
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=tmpdir, text=True
     )
     stdout, stderr = docker_proc.communicate()
@@ -73,12 +74,27 @@ def compile_model(convert_to_onnx, tmpdir):
     assert "has been compiled" in stdout, "Failed to compile model"
 
 
-def test_onnxmlir_save_load(compile_model, tmpdir):
+def test_onnxmlir_save_load(compile_model, tmpdir, modelstore):  # noqa
     model = os.path.join(tmpdir, "model.so")
-    ONNXMlirModel(model).save(tmpdir)
-    assert_have_file_extension(tmpdir, ".so")
+    tag = bentoml.onnxmlir.save("onnx_model_tests", model, model_store=modelstore)
+    info = modelstore.get(tag)
+    assert "compiled_path" in info.options
+    assert_have_file_extension(str(info.path), ".so")
 
-    onnxmlir_loaded = ONNXMlirModel.load(tmpdir)
-    # fmt: off
-    assert predict_df(ExecutionSession(model, "run_main_graph"), test_df) == predict_df(onnxmlir_loaded, test_df)  # noqa
-    # fmt: on
+    session = bentoml.onnxmlir.load(tag, model_store=modelstore)
+    print(type(predict_df(session, test_df)))
+    assert predict_df(session, test_df)[0] == np.array([[15.0]])
+
+
+def test_onnxmlir_load_runner(compile_model, tmpdir, modelstore):  # noqa
+    model = os.path.join(tmpdir, "model.so")
+    tag = bentoml.onnxmlir.save("onnx_model_tests", model, model_store=modelstore)
+    runner = bentoml.onnxmlir.load_runner(tag, model_store=modelstore)
+
+    assert tag in runner.required_models
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
+
+    runner._setup()
+    res = runner._run_batch(test_df.to_numpy().astype(np.float64))
+    assert res[0] == np.array([[15.0]])

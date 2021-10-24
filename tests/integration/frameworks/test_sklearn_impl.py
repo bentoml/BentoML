@@ -25,9 +25,6 @@ res_arr = np.array(
 )
 
 # fmt: on
-
-_MT = t.TypeVar("_MT")
-
 if t.TYPE_CHECKING:
     from bentoml._internal.models.store import ModelInfo, ModelStore
 

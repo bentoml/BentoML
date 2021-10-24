@@ -68,13 +68,12 @@ def test_mlflow_load_runner(modelstore):
     tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri), model_store=modelstore)
     runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
     assert isinstance(runner, bentoml.mlflow._PyFuncRunner)
-    runner._setup()
 
     assert tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
-    res = runner._run_batch(data)
+    res = runner.run_batch(data)
     assert all(res == res_arr)
 
 

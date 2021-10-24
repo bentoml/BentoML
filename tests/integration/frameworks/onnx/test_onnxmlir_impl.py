@@ -95,6 +95,5 @@ def test_onnxmlir_load_runner(compile_model, tmpdir, modelstore):  # noqa
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
-    runner._setup()
-    res = runner._run_batch(test_df.to_numpy().astype(np.float64))
+    res = runner.run_batch(test_df.to_numpy().astype(np.float64))
     assert res[0] == np.array([[15.0]])

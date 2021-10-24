@@ -96,14 +96,20 @@ class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
     @classmethod
     @inject
     def single_to_payload(
-        cls, single_data, plasma_db=Provide[BentoMLContainer.plasma_db],
+        cls,
+        single_data,
+        plasma_db=Provide[BentoMLContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
             return cls.create_payload(
-                plasma_db.put(single_data).binary(), {"plasma": True},
+                plasma_db.put(single_data).binary(),
+                {"plasma": True},
             )
 
-        return cls.create_payload(cloudpickle.dumps(single_data), {"plasma": False},)
+        return cls.create_payload(
+            cloudpickle.dumps(single_data),
+            {"plasma": False},
+        )
 
     @classmethod
     @inject

@@ -38,6 +38,7 @@ def _yield_first_val(iterable):
     else:
         yield from iterable
 
+
 def flatten_list(lst) -> t.List[str]:
     if not isinstance(lst, list):
         raise AttributeError
@@ -88,9 +89,7 @@ def load(  # pylint: disable=arguments-differ
         if not all(
             i in onnxruntime.get_all_providers() for i in flatten_list(providers)
         ):
-            raise BentoMLException(
-                f"'{providers}' cannot be parsed by `onnxruntime`"
-            )
+            raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
     else:
         providers = onnxruntime.get_available_providers()
 
@@ -139,11 +138,15 @@ def save(
         metadata=metadata,
         framework_context=context,
     ) as ctx:
-    if isinstance(model, onnx.ModelProto):
-        onnx.save_model(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}"))
-    else:
-        shutil.copyfile(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT"))
-    return ctx.tag
+        if isinstance(model, onnx.ModelProto):
+            onnx.save_model(
+                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+            )
+        else:
+            shutil.copyfile(
+                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+            )
+        return ctx.tag
 
 
 class _ONNXRunner(Runner):
@@ -196,7 +199,6 @@ class _ONNXRunner(Runner):
             self._model = onnxruntime.InferenceSession(
                 _get_path, sess_options=sess_opts, providers=providers
             )
-        
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data) -> t.Any:

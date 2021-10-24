@@ -5,13 +5,118 @@ import os
 import re
 import typing as t
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 
 # Some constants taken from cuda.h
+
+
+if TYPE_CHECKING:
+    from aiohttp import MultipartWriter
+
+T = t.TypeVar("T")
+To = t.TypeVar("To")
+
+
 CUDA_SUCCESS = 0
+
+
+class Params(t.Generic[T]):
+    def __init__(self, *args: T, **kwargs: T):
+        self.args = args
+        self.kwargs = kwargs
+
+    def map(self, function: t.Callable[[T], To]) -> "Params[To]":
+        args = tuple(function(a) for a in self.args)
+        kwargs = {k: function(v) for k, v in self.kwargs.items()}
+        return type(self)[To](*args, **kwargs)
+
+    def imap(
+        self, function: t.Callable[[T], t.Iterable[To]]
+    ) -> "t.Iterator[Params[To]]":
+        args_iter = tuple(iter(function(a)) for a in self.args)
+        kwargs_iter = {k: iter(function(v)) for k, v in self.kwargs.items()}
+
+        try:
+            while True:
+                args = tuple(next(a) for a in args_iter)
+                kwargs = {k: next(v) for k, v in kwargs_iter.items()}
+                yield type(self)[To](*args, **kwargs)
+        except StopIteration:
+            pass
+
+    def to_http_multipart(self) -> "MultipartWriter":
+        d = self.to_dict()
+        pass
+
+    def to_dict(self) -> t.Dict[t.Union[int, str], T]:
+        d = dict(**self.kwargs)
+        for i, v in enumerate(self.args):
+            d[i] = v
+        return d
+
+    @classmethod
+    def from_dict(cls, d: t.Dict[t.Union[int, str], To]) -> "Params[To]":
+        args = tuple(
+            v for _, v in sorted((k, v) for k, v in d.items() if isinstance(k, int))
+        )
+        kwargs = {k: v for k, v in d.items() if not isinstance(k, int)}
+        return cls[To](*args, **kwargs)
+
+    @property
+    def sample(self) -> T:
+        if self.args:
+            return self.args[0]
+        return next(iter(self.kwargs.values()))
+
+
+class TypeRef:
+    def __init__(self, module: str, qualname: str):
+        self.module = module
+        self.qualname = qualname
+
+    @classmethod
+    def from_instance(cls, instance: object) -> "TypeRef":
+        klass = type(instance)
+        return cls.from_type(klass)
+
+    @classmethod
+    def from_type(cls, klass: t.Union["TypeRef", type]) -> "TypeRef":
+        if isinstance(klass, type):
+            return cls(klass.__module__, klass.__qualname__)
+        return klass
+
+    def evaluate(self) -> type:
+        import importlib
+
+        m = importlib.import_module(self.module)
+        ref = t.ForwardRef(f"m.{self.qualname}")
+        localns = {"m": m}
+
+        if hasattr(t, "_eval_type"):  # python3.8 & python 3.9
+            _eval_type = getattr(t, "_eval_type")
+            return _eval_type(ref, globals(), localns)
+
+        if hasattr(ref, "_eval_type"):  # python3.6
+            _eval_type = getattr(ref, "_eval_type")
+            return _eval_type(globals(), localns)
+
+        raise SystemError("unsupported Python version")
+
+    def __eq__(self, o: t.Union["TypeRef", type]) -> bool:
+        '''
+        TypeRef("numpy", "ndarray") == np.ndarray
+        TypeRef("numpy", "ndarray") == TypeRef.from_instance(np.random.randint([2, 3]))
+        '''
+        if isinstance(o, type):
+            o = self.from_type(type)
+        return self.module == o.module and self.qualname == o.qualname
+
+    def __hash__(self):
+        return hash(f"{self.module}.{self.qualname}")
 
 
 def _cpu_converter(cpu: t.Union[int, float, str]) -> float:

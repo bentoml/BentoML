@@ -3,30 +3,24 @@ from typing import TYPE_CHECKING, Dict
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.runner.utils import Params
 
 if TYPE_CHECKING:
     from aiohttp import BaseConnector
 
-    from .transport import Transporter
-
 
 class RunnerClient:
-    def __init__(self, uds, timeout=None, transporter: "Transporter" = None):
+    def __init__(self, uds, timeout=None):
         self._uds = uds
         self._conn = None
         self._client = None
         self._timeout = timeout
-        from .transport import PlasmaNdarrayTransporter
-
-        self._transporter = transporter or PlasmaNdarrayTransporter()
 
     def _get_conn(self) -> "BaseConnector":
         import aiohttp
 
         if self._conn is None or self._conn.closed:
-            self._conn = aiohttp.UnixConnector(
-                path=self._uds,
-            )
+            self._conn = aiohttp.UnixConnector(path=self._uds,)
         return self._conn
 
     def _get_client(self):
@@ -48,27 +42,35 @@ class RunnerClient:
         return self._client
 
     async def async_run(self, *args, **kwargs):
+        from bentoml._internal.runner.container import AutoContainer
+
         URL = "http://127.0.0.1:8000/run"
-        payloads = {k: self._transporter.to_payload(v) for k, v in kwargs.items()}
+        param = Params(*args, **kwargs).map(AutoContainer.single_to_payload)
+        payloads = param.to_dict()  # TODO(jiang): multipart
         async with self._get_client() as client:
             async with client.post(URL, data=payloads) as resp:
                 text = await resp.text()
-        return self._transporter.from_payload(text)
+        return AutoContainer.payload_to_single(text)  # TODO
 
     async def async_run_batch(self, *args, **kwargs):
+        from bentoml._internal.runner.container import AutoContainer
+
         URL = "http://127.0.0.1:8000/run_batch"
-        payloads = {k: self._transporter.to_payload(v) for k, v in kwargs.items()}
+        param = Params(*args, **kwargs).map(AutoContainer.batch_to_payload)
+        payloads = param.to_dict()
         async with self._get_client() as client:
             async with client.post(URL, data=payloads) as resp:
                 text = await resp.text()
-        return self._transporter.from_payload(text)
+        return AutoContainer.payload_to_batch(text)  # TODO
 
 
 @inject
 def get_runner_client(
     runner_name: str,
-    uds_mapping: Dict[str, int] = Provide[BentoMLContainer.uds_mapping],
+    remote_runner_mapping: Dict[str, int] = Provide[
+        BentoMLContainer.remote_runner_mapping
+    ],
     timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
 ) -> RunnerClient:
-    uds = uds_mapping.get(runner_name)
-    return RunnerClient(uds, timeout=timeout)
+    uds_fd = remote_runner_mapping.get(runner_name)
+    return RunnerClient(uds_fd, timeout=timeout)

@@ -29,6 +29,20 @@ except ImportError:  # pragma: no cover
         """
     )
 
+# helper methods
+def _yield_first_val(iterable):
+    if isinstance(iterable, tuple):
+        yield iterable[0]
+    elif isinstance(iterable, str):
+        yield iterable
+    else:
+        yield from iterable
+
+def flatten_list(lst) -> t.List[str]:
+    if not isinstance(lst, list):
+        raise AttributeError
+    return [k for i in lst for k in _yield_first_val(i)]
+
 
 def _get_model_info(
     tag: str,
@@ -45,10 +59,13 @@ def _get_model_info(
 
 
 @inject
-def load(
+def load(  # pylint: disable=arguments-differ
     tag: str,
+    backend: t.Optional[str] = "onnxruntime",
+    providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
+    sess_opts: t.Options["onnxruntime.SessionOptions"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> "onnxruntime.InferenceSession":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -63,10 +80,29 @@ def load(
 
     Examples::
     """  # noqa
-    _, model_file = _get_model_info(tag, model_store)
-    onnx_model = onnx.load(model_file)
+    if backend not in SUPPORTED_ONNX_BACKEND:
+        raise BentoMLException(
+            f"'{backend}' runtime is currently not supported for ONNXModel"
+        )
+    if providers:
+        if not all(
+            i in onnxruntime.get_all_providers() for i in flatten_list(providers)
+        ):
+            raise BentoMLException(
+                f"'{providers}' cannot be parsed by `onnxruntime`"
+            )
+    else:
+        providers = onnxruntime.get_available_providers()
 
-    return onnx_model
+    if isinstance(path, onnx.ModelProto):
+        return onnxruntime.InferenceSession(
+            path.SerializeToString(), sess_options=sess_opts, providers=providers
+        )
+    else:
+        _get_path = os.path.join(path, f"{MODEL_NAMESPACE}{ONNX_EXT}")
+        return onnxruntime.InferenceSession(
+            _get_path, sess_options=sess_opts, providers=providers
+        )
 
 
 @inject
@@ -138,7 +174,29 @@ class _ONNXRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        self._model = onnx.load(filename=self._model_file)
+        if backend not in SUPPORTED_ONNX_BACKEND:
+            raise BentoMLException(
+                f"'{backend}' runtime is currently not supported for ONNXModel"
+            )
+        if providers:
+            if not all(
+                i in onnxruntime.get_all_providers() for i in flatten_list(providers)
+            ):
+                raise BentoMLException(
+                    f"'{providers}'' cannot be parsed by `onnxruntime`"
+                )
+        else:
+            providers = onnxruntime.get_available_providers()
+        if isinstance(path, onnx.ModelProto):
+            self._model = onnxruntime.InferenceSession(
+                path.SerializeToString(), sess_options=sess_opts, providers=providers
+            )
+        else:
+            _get_path = os.path.join(path, f"{MODEL_NAMESPACE}{ONNX_EXT}")
+            self._model = onnxruntime.InferenceSession(
+                _get_path, sess_options=sess_opts, providers=providers
+            )
+        
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data) -> t.Any:
@@ -315,4 +373,5 @@ def load_runner(
 #             shutil.copyfile(self._model, str(self.__get_model_fpath(path)))
 
 
-ONNX_EXT=".onnx"
+SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
+ONNX_EXT: str = ".onnx"

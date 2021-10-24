@@ -5,7 +5,7 @@ import typing as t
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import ONNX_EXT, SAVE_NAMESPACE
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
@@ -313,3 +313,6 @@ def load_runner(
 #             onnx.save_model(self._model, self.__get_model_fpath(path))
 #         else:
 #             shutil.copyfile(self._model, str(self.__get_model_fpath(path)))
+
+
+ONNX_EXT=".onnx"

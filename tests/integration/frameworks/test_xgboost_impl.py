@@ -132,6 +132,6 @@ def test_xgboost_runner_setup_on_gpu(modelstore, save_proc):
     runner = bentoml.xgboost.load_runner(
         info.tag, model_store=modelstore, resource_quota=resource_quota
     )
-    runner._setup()
+
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1

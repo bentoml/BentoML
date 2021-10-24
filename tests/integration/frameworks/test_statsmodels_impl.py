@@ -120,14 +120,13 @@ def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
     runner = bentoml.statsmodels.load_runner(
         info.tag, predict_fn_name="predict", model_store=modelstore
     )
-    runner._setup()
 
     assert info.tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
-    res_pd = runner._run_batch(test_df)
-    res_np = runner._run_batch(test_df2)
+    res_pd = runner.run_batch(test_df)
+    res_np = runner.run_batch(test_df2)
 
     expected_res = predict_df(holt_model, test_df)
     assert all(res_pd == expected_res)
@@ -141,7 +140,7 @@ def test_statsmodels_runner_setup_on_gpu(modelstore, save_proc):
     runner = bentoml.statsmodels.load_runner(
         info.tag, model_store=modelstore, resource_quota=resource_quota
     )
-    runner._setup()
+
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1
 

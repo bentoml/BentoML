@@ -91,9 +91,8 @@ def test_tensorflow_v1_setup_run_batch(tf1_model_path, modelstore):
         "tensorflow_test", tf1_model_path, model_store=modelstore
     )
     runner = bentoml.tensorflow.load_runner(tag, model_store=modelstore)
-    runner._setup()
 
-    res = runner._run_batch(test_tensor)
+    res = runner.run_batch(test_tensor)
     assert res.shape == (1,)
 
 
@@ -125,12 +124,11 @@ def test_tensorflow_v2_setup_run_batch(modelstore):
     model_class = NativeModel()
     tag = bentoml.tensorflow.save(MODEL_NAME, model_class, model_store=modelstore)
     runner = bentoml.tensorflow.load_runner(tag, model_store=modelstore)
-    runner._setup()
 
     assert tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
-    assert runner._run_batch(native_data) == np.array([[15.0]])
+    assert runner.run_batch(native_data) == np.array([[15.0]])
 
 
 @pytest.mark.gpus
@@ -141,11 +139,10 @@ def test_tensorflow_v2_setup_on_gpu(modelstore):
     runner = bentoml.tensorflow.load_runner(
         tag, model_store=modelstore, resource_quota=dict(gpus=0), device_id="GPU:0"
     )
-    runner._setup()
 
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
-    assert runner._run_batch(native_tensor) == np.array([[15.0]])
+    assert runner.run_batch(native_tensor) == np.array([[15.0]])
 
 
 def _plus_one_model_tf2():

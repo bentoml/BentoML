@@ -171,10 +171,14 @@ class BentoMLContainerClass:
     )
 
     default_bento_store_base_dir: Provider[str] = providers.Factory(
-        os.path.join, bentoml_home, "bentos",
+        os.path.join,
+        bentoml_home,
+        "bentos",
     )
     default_model_store_base_dir: Provider[str] = providers.Factory(
-        os.path.join, bentoml_home, "models",
+        os.path.join,
+        bentoml_home,
+        "models",
     )
 
     @providers.SingletonFactory
@@ -283,7 +287,9 @@ class BentoMLContainerClass:
     prometheus_lock = providers.SingletonFactory(multiprocessing.Lock)
 
     prometheus_multiproc_dir = providers.Factory(
-        os.path.join, bentoml_home, "prometheus_multiproc_dir",
+        os.path.join,
+        bentoml_home,
+        "prometheus_multiproc_dir",
     )
 
     @providers.SingletonFactory
@@ -294,11 +300,18 @@ class BentoMLContainerClass:
     ):
         from ..server.metrics.prometheus import PrometheusClient
 
-        return PrometheusClient(multiproc_dir=multiproc_dir, namespace=namespace,)
+        return PrometheusClient(
+            multiproc_dir=multiproc_dir,
+            namespace=namespace,
+        )
 
     logging_file_directory = providers.Factory(
         lambda default, customized: customized or default,
-        providers.Factory(os.path.join, bentoml_home, "logs",),
+        providers.Factory(
+            os.path.join,
+            bentoml_home,
+            "logs",
+        ),
         config.logging.file.directory,
     )
 

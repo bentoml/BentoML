@@ -107,10 +107,10 @@ class TypeRef:
         raise SystemError("unsupported Python version")
 
     def __eq__(self, o: t.Union["TypeRef", type]) -> bool:
-        '''
+        """
         TypeRef("numpy", "ndarray") == np.ndarray
         TypeRef("numpy", "ndarray") == TypeRef.from_instance(np.random.randint([2, 3]))
-        '''
+        """
         if isinstance(o, type):
             o = self.from_type(type)
         return self.module == o.module and self.qualname == o.qualname

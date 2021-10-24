@@ -20,7 +20,9 @@ class RunnerClient:
         import aiohttp
 
         if self._conn is None or self._conn.closed:
-            self._conn = aiohttp.UnixConnector(path=self._uds,)
+            self._conn = aiohttp.UnixConnector(
+                path=self._uds,
+            )
         return self._conn
 
     def _get_client(self):

@@ -369,24 +369,14 @@ class _SpacyRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        try:
-            self._model = load(
-                self.name,
-                model_store=self._model_store,
-                vocab=self._vocab,
-                exclude=self._exclude,
-                disable=self._disable,
-                config=self._config,
-            )
-        except FileNotFoundError:
-            if self._from_mlflow:
-                # a special flags to determine whether the runner is
-                # loaded from mlflow
-                import bentoml.mlflow
-
-                self._model = bentoml.mlflow.load(
-                    self.name, model_store=self._model_store
-                )
+        self._model = load(
+            self.name,
+            model_store=self._model_store,
+            vocab=self._vocab,
+            exclude=self._exclude,
+            disable=self._disable,
+            config=self._config,
+        )
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]

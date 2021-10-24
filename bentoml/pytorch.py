@@ -206,31 +206,21 @@ class _PyTorchRunner(Runner):
     @torch.no_grad()
     def _setup(self) -> None:  # type: ignore[override]
         self._configure()
-        try:
-            if self.resource_quota.on_gpu and _is_gpu_available():
-                self._model = parallel.DataParallel(
-                    load(
-                        self.name,
-                        model_store=self._model_store,
-                        device_id=self._device_id,
-                    ),
-                )
-                torch.cuda.empty_cache()
-            else:
-                self._model = load(
+        if self.resource_quota.on_gpu and _is_gpu_available():
+            self._model = parallel.DataParallel(
+                load(
                     self.name,
                     model_store=self._model_store,
                     device_id=self._device_id,
-                )
-        except FileNotFoundError:
-            if self._from_mlflow:
-                # a special flags to determine whether the runner is
-                # loaded from mlflow
-                import bentoml.mlflow
-
-                self._model = bentoml.mlflow.load(
-                    self.name, model_store=self._model_store
-                )
+                ),
+            )
+            torch.cuda.empty_cache()
+        else:
+            self._model = load(
+                self.name,
+                model_store=self._model_store,
+                device_id=self._device_id,
+            )
         self._predict_fn: t.Callable[..., _RV] = getattr(
             self._model, self._predict_fn_name
         )

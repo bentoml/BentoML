@@ -1,17 +1,22 @@
 import os
+import shutil
 import typing as t
 
-import onnx
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import ONNX_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
+from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
+    import onnx
+    import onnxruntime
     from _internal.models.store import ModelInfo, ModelStore
+else:
+    onnx = LazyLoader("onnx", globals(), "onnx", exc_msg=_exc)
+    onnxruntime = LazyLoader("onnxruntime", globals(), "onnxruntime", exc_msg=_exc)
 
 try:
     from onnx.external_data_helper import load_external_data_for_model
@@ -98,8 +103,11 @@ def save(
         metadata=metadata,
         framework_context=context,
     ) as ctx:
-        onnx.save(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}"))
-        return ctx.tag
+    if isinstance(model, onnx.ModelProto):
+        onnx.save_model(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+    else:
+        shutil.copyfile(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT"))
+    return ctx.tag
 
 
 class _ONNXRunner(Runner):
@@ -176,14 +184,14 @@ def load_runner(
 # import os
 # import shutil
 # import typing as t
-#
+
 # import bentoml._internal.constants as _const
-#
+
 # from ._internal.models.base import MODEL_NAMESPACE, Model
 # from ._internal.types import GenericDictType, PathType
 # from ._internal.utils import LazyLoader
 # from .exceptions import BentoMLException
-#
+
 # _exc = _const.IMPORT_ERROR_MSG.format(
 #     fwr="onnxruntime & onnx",
 #     module=__name__,
@@ -191,15 +199,15 @@ def load_runner(
 #     " to correctly install backends options"
 #     " and platform suitable for your application usecase.",
 # )
-#
+
 # if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
 #     import onnx
 #     import onnxruntime
 # else:
 #     onnx = LazyLoader("onnx", globals(), "onnx", exc_msg=_exc)
 #     onnxruntime = LazyLoader("onnxruntime", globals(), "onnxruntime", exc_msg=_exc)
-#
-#
+
+
 # def _yield_first_val(iterable):
 #     if isinstance(iterable, tuple):
 #         yield iterable[0]
@@ -207,18 +215,18 @@ def load_runner(
 #         yield iterable
 #     else:
 #         yield from iterable
-#
-#
+
+
 # def flatten_list(lst) -> t.List[str]:
 #     if not isinstance(lst, list):
 #         raise AttributeError
 #     return [k for i in lst for k in _yield_first_val(i)]
-#
-#
+
+
 # class ONNXModel(Model):
 #     """
 #     Model class for saving/loading :obj:`onnx` models.
-#
+
 #     Args:
 #         model (`str`):
 #             Given filepath or protobuf of converted model.
@@ -228,7 +236,7 @@ def load_runner(
 #             Name of ONNX inference runtime. ["onnxruntime", "onnxruntime-gpu"]
 #         metadata (`GenericDictType`,  `optional`, default to `None`):
 #             Class metadata.
-#
+
 #     Raises:
 #         MissingDependencyException:
 #             :obj:`onnx` is required by ONNXModel
@@ -239,19 +247,19 @@ def load_runner(
 #         InvalidArgument:
 #             :obj:`path` passed in :meth:`~save` is not either
 #              a :obj:`onnx.ModelProto` or filepath
-#
+
 #     Example usage under :code:`train.py`::
-#
+
 #         TODO:
-#
+
 #     One then can define :code:`bento.py`::
-#
+
 #         TODO:
 #     """
-#
+
 #     SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 #     ONNX_EXTENSION: str = ".onnx"
-#
+
 #     def __init__(
 #         self,
 #         model: t.Union[PathType, "onnx.ModelProto"],
@@ -264,11 +272,11 @@ def load_runner(
 #                 f'"{backend}" runtime is currently not supported for ONNXModel'
 #             )
 #         self._backend = backend
-#
+
 #     @classmethod
 #     def __get_model_fpath(cls, path: PathType) -> PathType:
 #         return os.path.join(path, f"{MODEL_NAMESPACE}{cls.ONNX_EXTENSION}")
-#
+
 #     @classmethod
 #     def load(  # pylint: disable=arguments-differ
 #         cls,
@@ -299,7 +307,7 @@ def load_runner(
 #             return onnxruntime.InferenceSession(
 #                 _get_path, sess_options=sess_opts, providers=providers
 #             )
-#
+
 #     def save(self, path: t.Union[PathType, "onnx.ModelProto"]) -> None:
 #         if isinstance(self._model, onnx.ModelProto):
 #             onnx.save_model(self._model, self.__get_model_fpath(path))

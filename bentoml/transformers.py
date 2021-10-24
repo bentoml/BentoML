@@ -34,6 +34,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
         TFPreTrainedModel,
     )
     from transformers.models.auto.auto_factory import _BaseAutoModelClass  # noqa
+    from transformers.pipelines.base import Pipeline
 
     from ._internal.models.store import ModelStore, StoreCtx
 try:
@@ -697,9 +698,7 @@ class _TransformersRunner(Runner):
             )
         except FileNotFoundError:
             config, model, tokenizer = None, None, None
-        self._pipeline: t.Callable[
-            [t.Union[_PV, t.List[_PV]]], t.Union[_PV, t.List[_PV]]
-        ] = transformers.pipeline(
+        self._pipeline: "Pipeline" = transformers.pipeline(
             self._tasks,
             config=config,
             model=model,
@@ -709,7 +708,8 @@ class _TransformersRunner(Runner):
 
     # pylint: disable=arguments-differ
     def _run_batch(self, input_data: t.Union[_PV, t.List[_PV]]) -> t.Union[_PV, t.List[_PV]]:  # type: ignore[override] # noqa
-        return self._pipeline(input_data)
+        res = self._pipeline(input_data)  # type: t.Union[_PV, t.List[_PV]]
+        return res
 
 
 def load_runner(

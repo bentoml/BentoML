@@ -108,9 +108,9 @@ def test_pycaret_runner_setup_run_batch(get_pycaret_data, modelstore, save_proc)
 
     runner = bentoml.pycaret.load_runner(tag=info.tag, model_store=modelstore)
 
-    assert isinstance(runner._model, sklearn.pipeline.Pipeline)
     assert info.tag in runner.required_models
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1
 
     assert runner.run_batch(test_data)["Score"][0] == 0.7609
+    assert isinstance(runner._model, sklearn.pipeline.Pipeline)

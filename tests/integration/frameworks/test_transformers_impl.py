@@ -128,10 +128,9 @@ def test_transformers_runner_setup_run_batch(modelstore):
     runner = bentoml.transformers.load_runner(
         tag, tasks="text-classification", model_store=modelstore
     )
-
-    assert isinstance(runner._pipeline, transformers.pipelines.Pipeline)
     assert tag in runner.required_models
     assert runner.num_concurrency_per_replica == runner.num_replica == 1
 
     res = runner.run_batch(batched_sentence)
     assert all(i["score"] >= 0.8 for i in res)
+    assert isinstance(runner._pipeline, transformers.pipelines.Pipeline)

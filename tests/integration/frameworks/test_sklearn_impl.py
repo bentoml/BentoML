@@ -25,9 +25,6 @@ res_arr = np.array(
 )
 
 # fmt: on
-
-_MT = t.TypeVar("_MT")
-
 if t.TYPE_CHECKING:
     from bentoml._internal.models.store import ModelInfo, ModelStore
 
@@ -100,13 +97,12 @@ def test_sklearn_runner_setup_run_batch(modelstore, save_proc):
     _, data = sklearn_model_data()
     info = save_proc(None)
     runner = bentoml.sklearn.load_runner(info.tag, model_store=modelstore)
-    runner._setup()
 
     assert info.tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
-    res = runner._run_batch(data)
+    res = runner.run_batch(data)
     assert all(res == res_arr)
 
 
@@ -117,6 +113,6 @@ def test_sklearn_runner_setup_on_gpu(modelstore, save_proc):
     runner = bentoml.sklearn.load_runner(
         info.tag, model_store=modelstore, resource_quota=resource_quota
     )
-    runner._setup()
+
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1

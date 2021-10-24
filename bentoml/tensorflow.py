@@ -23,7 +23,7 @@ from .exceptions import MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelStore
+    from _internal.models.store import ModelStore, StoreCtx
 
 try:
     import tensorflow as tf
@@ -210,7 +210,6 @@ def load(
         module_path = model_info.options["local_path"]
         if load_as_wrapper:
             wrapper_class = hub.KerasLayer if TF2 else hub.Module
-            print(wrapper_class)
             return wrapper_class(module_path)
         # In case users want to load as a SavedModel file object.
         # https://github.com/tensorflow/hub/blob/master/tensorflow_hub/module_v2.py#L93
@@ -277,7 +276,7 @@ def import_from_tfhub(
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         if isinstance(identifier, str):
             os.environ["TFHUB_CACHE_DIR"] = str(ctx.path)
             fpath = resolve(identifier)
@@ -296,7 +295,8 @@ def import_from_tfhub(
                 "model": identifier.__class__.__name__,
                 "local_path": resolve(str(ctx.path)),
             }
-        return ctx.tag  # type: ignore[no-any-return]
+        tag = ctx.tag  # type: str
+        return tag
 
 
 @inject

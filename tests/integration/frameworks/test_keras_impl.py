@@ -67,12 +67,11 @@ def test_keras_v2_setup_run_batch(modelstore):
     model_class = KerasSequentialModel()
     tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
     runner = bentoml.keras.load_runner(tag, model_store=modelstore)
-    runner._setup()
 
     assert tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
-    assert runner._run_batch([test_data]) == res
+    assert runner.run_batch([test_data]) == res
 
 
 @pytest.mark.skipif(TF2, reason="Tests for Tensorflow 1.x")
@@ -81,8 +80,8 @@ def test_keras_v1_setup_run_batch(modelstore):
     tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
     runner = bentoml.keras.load_runner(tag, model_store=modelstore)
     with runner._session.as_default():
-        runner._setup()
-        assert runner._run_batch([test_data]) == res
+
+        assert runner.run_batch([test_data]) == res
 
 
 @pytest.mark.gpus
@@ -90,8 +89,7 @@ def test_tensorflow_v2_setup_on_gpu(modelstore):
     model_class = KerasSequentialModel()
     tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
     runner = bentoml.keras.load_runner(tag, model_store=modelstore)
-    runner._setup()
 
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
-    assert runner._run_batch([test_data]) == res
+    assert runner.run_batch([test_data]) == res

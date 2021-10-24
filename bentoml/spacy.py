@@ -1,11 +1,11 @@
 import importlib
 import logging
 import os
-import sys
 import typing as t
 from hashlib import sha256
 from pathlib import Path
 
+import yaml
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -17,7 +17,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelStore
+    from _internal.models.store import ModelStore, StoreCtx
     from spacy import Config, Vocab
     from spacy.tokens.doc import Doc
 
@@ -93,9 +93,9 @@ def load(
     tag: str,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     vocab: t.Union["Vocab", bool] = True,
-    disable: t.Iterable[str] = SimpleFrozenList(),
-    exclude: t.Iterable[str] = SimpleFrozenList(),
-    config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),
+    disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
+    exclude: t.Iterable[str] = SimpleFrozenList(),  # noqa
+    config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),  # noqa
 ) -> "spacy.language.Language":
     model_info = model_store.get(tag)
     if "projects_uri" in model_info.options:
@@ -120,7 +120,6 @@ def load(
                 f" sure that you save the correct package and model to BentoML"
                 f" via `bentoml.spacy.save()`"
             )
-            pass
 
     try:
         # check if pipeline has additional requirements then all related
@@ -129,7 +128,7 @@ def load(
         not_existed = list()
         dists = packages_distributions()
         for module_name in additional:
-            mod, spec = split_requirement(module_name)
+            mod, _ = split_requirement(module_name)
             if mod not in dists:
                 not_existed.append(module_name)
             if len(not_existed) > 0:
@@ -184,7 +183,7 @@ def save(
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         meta = model.meta  # type: t.Dict[str, t.Any]
         ctx.options = {
             "pip_package": f"{meta['lang']}_{meta['name']}",
@@ -192,22 +191,25 @@ def save(
         if "requirements" in meta:
             ctx.options["additional_requirements"] = meta["requirements"]
         model.to_disk(ctx.path)
-        return ctx.tag  # type: ignore[no-any-return]
+        tag = ctx.tag  # type: str
+        return tag
 
 
 # TODO: save local projects
 # bentoml.spacy.projects('save', /path/to/local/spacy/project)
 @inject
 def projects(
+    save_name: str,
     tasks: str,
     name: t.Optional[str] = None,
     repo_or_store: str = DEFAULT_SPACY_PROJECTS_REPO,
+    remotes_config: t.Optional[t.Dict[str, t.Dict[str, str]]] = None,
     *,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    sparse_checkout: bool = False,
     branch: str = DEFAULT_SPACY_PROJECTS_BRANCH,
+    sparse_checkout: bool = False,
     verbose: bool = True,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Tuple[str, "Path"]:
     if tasks in PROJECTS_CMD_NOT_SUPPORTED:
         raise BentoMLException(
@@ -224,7 +226,7 @@ def projects(
         "tasks": tasks,
     }
     with model_store.register(
-        _uri_to_filename(repo_or_store),
+        save_name,
         module=__name__,
         options=None,
         framework_context=context,
@@ -246,20 +248,31 @@ def projects(
                 sparse_checkout=sparse_checkout,
             )
         else:
-            current_file = os.path.realpath(sys.argv[0])
-            assert "project.yml" in [
-                i.name for i in Path(current_file).parent.iterdir()
-            ], (
-                "`project.yml` is required "
-                f"in {str(Path(current_file).parent.resolve())}"
-                f" to pull the projects into"
-                f" BentoML modelstore."
-            )
-            for url, output_path in spacy.cli.project_pull(
-                output_path, remote="defaults", verbose=verbose
-            ):
-                if url is not None:
-                    logger.debug(f"Pulled {output_path} from {repo_or_store}")
+            # works with S3 bucket, haven't failed yet
+            os.makedirs(output_path, exist_ok=True)
+            assert (
+                remotes_config is not None
+            ), """\
+                `remotes_config` is required in order to pull projects into
+                 BentoML modelstore. Refers to
+                 https://spacy.io/usage/projects#remote
+                 for more information. We will accept remotes
+                 as shown:
+                 {
+                    'remotes':
+                    {
+                        'default':'s3://spacy-bucket',
+                    }
+                }
+                 """
+            with Path(output_path, "project.yml").open("w") as inf:
+                yaml.safe_dump(remotes_config, inf)
+            for remote in remotes_config["remotes"]:
+                for url, output_path in spacy.cli.project_pull(
+                    output_path, remote=remote, verbose=verbose
+                ):
+                    if url is not None:
+                        logger.info(f"Pulled {output_path} from {repo_or_store}")
 
         return ctx.tag, output_path
 
@@ -272,10 +285,18 @@ class _SpacyRunner(Runner):
         gpu_device_id: t.Optional[int],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
+        vocab: t.Union["Vocab", bool],
+        disable: t.Iterable[str],
+        exclude: t.Iterable[str],
+        config: t.Union[t.Dict[str, t.Any], "Config"],
         backend_options: t.Optional[t.Literal["pytorch", "tensorflow"]] = "pytorch",
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        self._configure(backend_options)
+        self._vocab = vocab
+        self._disable = disable
+        self._exclude = exclude
+        self._config = config
+
         self._model_store = model_store
         self._backend_options = backend_options
         self._gpu_device_id = gpu_device_id
@@ -285,6 +306,7 @@ class _SpacyRunner(Runner):
                 resource_quota = dict(gpus=self._gpu_device_id)
             else:
                 resource_quota["gpus"] = self._gpu_device_id
+        self._configure(backend_options)
         super().__init__(tag, resource_quota, batch_options)
 
     def _configure(self, backend_options: t.Optional[str]) -> None:
@@ -347,7 +369,14 @@ class _SpacyRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        self._model = load(self.name, model_store=self._model_store)
+        self._model = load(
+            self.name,
+            model_store=self._model_store,
+            vocab=self._vocab,
+            exclude=self._exclude,
+            disable=self._disable,
+            config=self._config,
+        )
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
@@ -355,9 +384,11 @@ class _SpacyRunner(Runner):
         inputs: t.Iterable[t.Tuple[str, t.Any]],
         as_tuples: bool = False,
         batch_size: t.Optional[int] = None,
-        disable: t.Iterable[str] = SimpleFrozenList(),
+        disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
         component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
     ) -> t.Iterator[t.Tuple[t.Union["Doc", "Doc"], t.Any]]:
+        if not isinstance(inputs, list):
+            inputs = list(inputs)
         return self._model.pipe(
             inputs,
             as_tuples=as_tuples,
@@ -376,6 +407,10 @@ def load_runner(
     backend_options: t.Optional[t.Literal["pytorch", "tensorflow"]] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
+    vocab: t.Union["Vocab", bool] = True,
+    disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
+    exclude: t.Iterable[str] = SimpleFrozenList(),  # noqa
+    config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),  # noqa
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_SpacyRunner":
     return _SpacyRunner(
@@ -384,5 +419,9 @@ def load_runner(
         backend_options=backend_options,
         resource_quota=resource_quota,
         batch_options=batch_options,
+        vocab=vocab,
+        disable=disable,
+        exclude=exclude,
+        config=config,
         model_store=model_store,
     )

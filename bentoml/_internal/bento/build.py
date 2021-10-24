@@ -12,7 +12,9 @@ import stat
 import tarfile
 import typing as t
 import uuid
+from pathlib import Path
 
+import pathspec
 import yaml
 from simple_di import Provide, inject
 
@@ -108,8 +110,8 @@ def build_bento(
 ):
     """
     Build a Bento for this Service. A Bento is a file archive containing all the
-    specifications, source code, models files required to run and operate this
-    Service in production
+    specifications, source code, and model files required to run and operate this
+    service in production.
 
     Example Usages:
 
@@ -131,7 +133,7 @@ def build_bento(
 
     # For simple use cases, only models list is required:
     svc.bento_options.models = []
-    svc.bento_files.include
+    svc.bento_files.include = ["*"]
     svc.bento_env.pip_install = "./requirements.txt"
 
     # For advanced build use cases, here's all the common build options:
@@ -163,18 +165,21 @@ def build_bento(
     import bentoml
 
     if __name__ == "__main__":
+        from bento import svc
+
         bentoml.build(
-            "bento.py:svc",
+            svc,
             version="custom_version_str",
             description=open("readme.md").read(),
             models=['iris_classifier:v123'],
-            include=["**.py", "config.json"]
-            exclude=["*.storage"], # + anything specified in .bentoml_ignore file
+            include=["*"],
+            exclude=["*.storage", "credentials.yaml"],
+            # + anything specified in .bentoml_ignore file
             env=dict(
                 pip_install=bentoml.utils.find_required_pypi_packages(svc),
                 conda_environment="./environment.yaml",
                  docker_options={
-                    "base_image": bentoml.utils.builtin_docker_image("slim", gpu=True)
+                    "base_image": bentoml.utils.builtin_docker_image("slim", gpu=True),
                     "entrypoint": "bentoml serve module_file:svc_name --production",
                     "setup_script": "./setup_docker_container.sh",
                 },
@@ -256,7 +261,53 @@ def build_bento(
             shutil.copytree(model_info.path, target_path)
 
         # Copy all files base on include and exclude, into `{svc.name}` directory
-        # TODO
+        relpaths = [s for s in include if s.startswith("../")]
+        if len(relpaths) != 0:
+            raise InvalidArgument(
+                "Paths outside of the current working directory cannot be included; use a symlink or copy those files into the working directory manually."
+            )
+        out_path = os.path.join(bento_path, svc.name)
+        spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
+        exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
+        exclude_specs = {}
+
+        def to_ignore(p, names):
+            ret = []
+            path = Path(p)
+
+            # load ignore file in this directory, if it exists
+            try:
+                ignorefile = open(os.path.join(path, ".bentomlignore"))
+                exclude_specs[path] = pathspec.PathSpec.from_lines(
+                    "gitwildmatch", ignorefile
+                )
+            except FileNotFoundError:
+                pass
+
+            exclude = [False for e in names]
+            for ignore_path in exclude_specs:
+                try:
+                    rel = path.relative_to(ignore_path)
+                except ValueError:
+                    continue
+                for i, name in enumerate(names):
+                    if exclude_specs[ignore_path].match_file(os.path.join(rel, name)):
+                        exclude[i] = True
+
+            for idx, name in enumerate(names):
+                rel = os.path.join(path.relative_to(build_ctx), name)
+                if (
+                    exclude[idx]
+                    or not spec.match_file(rel)
+                    or exclude_spec.match_file(rel)
+                ):
+                    ret.append(name)
+
+            return ret
+
+        # symlinks=False copies the contents of the symlinks; it is assumed that
+        # the build directory is considered trusted.
+        shutil.copytree(build_ctx, out_path, symlinks=False, ignore=to_ignore)
 
         # Create env, docker, bentoml dev whl files
         # TODO
@@ -272,7 +323,8 @@ def build_bento(
         os.mkdir(api_docs_path)
         openapi_docs_file = os.path.join(api_docs_path, "openapi.yaml")
         with open(openapi_docs_file, "w") as f:
-            yaml.safe_dump(svc.openapi_doc, f)
+            yaml.dump(svc.openapi_doc(), f)
 
         # Create bento.yaml
         # TODO
+        bento_yaml = open(os.path.join(bento_path, "bento.yaml"), "w")

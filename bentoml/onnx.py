@@ -54,7 +54,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of onnx model from BentoML modelstore.
+        an instance of Onnx model from BentoML modelstore.
 
     Examples::
     """  # noqa
@@ -148,7 +148,7 @@ def load_runner(
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.onnx.load_runner` implements a Runner class that
-    wrap around a Onnx booster model, which optimize it for the BentoML runtime.
+    wrap around an Onnx model, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):

@@ -138,7 +138,6 @@ def save(
 
         tag = bentoml.pytorch.save("resnet50", resnet50)
     """  # noqa
-    ctx: "StoreCtx"
     context = dict(torch=torch.__version__)
     with model_store.register(
         name,
@@ -146,14 +145,14 @@ def save(
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{PT_EXT}")
         if isinstance(model, torch.jit.ScriptModule):
             torch.jit.save(model, str(weight_file))
         else:
             with weight_file.open("wb") as file:
                 cloudpickle.dump(model, file)
-        return ctx.tag  # type: ignore[no-any-return]
+        return ctx.tag
 
 
 class _PyTorchRunner(Runner):
@@ -210,7 +209,9 @@ class _PyTorchRunner(Runner):
         if self.resource_quota.on_gpu and _is_gpu_available():
             self._model = parallel.DataParallel(
                 load(
-                    self.name, model_store=self._model_store, device_id=self._device_id
+                    self.name,
+                    model_store=self._model_store,
+                    device_id=self._device_id,
                 ),
             )
             torch.cuda.empty_cache()

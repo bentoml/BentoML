@@ -37,7 +37,7 @@ def spacy_model():
         ner = model.get_pipe("ner")
 
     for text, annotations in train_data:
-        examples.append(Example.from_dict(model.make_doc(text), annotations))
+        examples.append(Example.from_dict(model.make_doc(text), annotations))  # noqa
         for ent in annotations.get("entities"):
             ner.add_label(ent[2])
 
@@ -64,6 +64,7 @@ def test_spacy_save_load(spacy_model, modelstore):
 
 def test_spacy_load_project_exc(modelstore):
     tag, _ = bentoml.spacy.projects(
+        "test",
         "clone",
         name="integrations/huggingface_hub",
         repo_or_store="https://github.com/aarnphm/projects",

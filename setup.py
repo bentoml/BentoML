@@ -29,6 +29,7 @@ install_requires = [
     "cattrs",
     "packaging>=20.0",
     "importlib_metadata",
+    "pathspec",
 ]
 
 model_server_optional = [

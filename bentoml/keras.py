@@ -12,7 +12,7 @@ from .exceptions import MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelStore
+    from _internal.models.store import ModelStore, StoreCtx
     from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager  # noqa
     from tensorflow.python.client.session import BaseSession
     from tensorflow.python.framework.ops import Graph
@@ -146,7 +146,7 @@ def save(
         options=options,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         if custom_objects is not None:
             with Path(ctx.path, _CUSTOM_OBJ_FNAME).open("wb") as cof:
                 cloudpickle.dump(custom_objects, cof)
@@ -156,7 +156,8 @@ def save(
             model.save_weights(str(Path(ctx.path, _MODEL_WEIGHT_FNAME)))
         else:
             model.save(str(Path(ctx.path, _SAVED_MODEL_FNAME)))
-        return ctx.tag  # type: ignore
+        tag = ctx.tag  # type: str
+        return tag
 
 
 class _KerasRunner(_TensorflowRunner):

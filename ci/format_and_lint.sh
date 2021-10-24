@@ -48,7 +48,23 @@ if [ -n "$first_line" ]; then
 fi
 
 echo "Running pylint on tests and docker module.."
-output=$( pylint --rcfile="./pylintrc" tests docker )
+output=$( pylint --rcfile="./pylintrc" --disable=E0401 tests docker )
+first_line=$(echo "${output}" | head -1)
+echo "$output"
+if [ -n "$first_line" ]; then
+  has_errors=1
+fi
+
+echo "Running mypy on bentoml module.."
+output=$( mypy --config-file "$GIT_ROOT"/mypy.ini bentoml )
+first_line=$(echo "${output}" | head -1)
+echo "$output"
+if [ -n "$first_line" ]; then
+  has_errors=1
+fi
+
+echo "Running mypy on docker module.."
+output=$( mypy --config-file "$GIT_ROOT"/mypy.ini docker )
 first_line=$(echo "${output}" | head -1)
 echo "$output"
 if [ -n "$first_line" ]; then

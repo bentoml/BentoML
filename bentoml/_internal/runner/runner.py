@@ -1,12 +1,16 @@
+import enum
 import os
 import typing as t
 from abc import ABC, abstractmethod
+from functools import partial
 
 import attr
 import psutil
 from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.runner.container import AutoContainer
+from bentoml._internal.runner.utils import Params
 
 from .utils import (
     _cpu_converter,
@@ -76,37 +80,7 @@ class BatchOptions:
     output_batch_axis = attr.ib(type=int, default=0)
 
 
-class _RunnerImplMixin:
-    @t.overload
-    def _impl_ref(
-        self, deployment_type: str = Provide[BentoMLContainer.deployment_type]
-    ) -> "_RunnerImplMixin":
-        ...
-
-    @inject
-    def _impl_ref(
-        self, deployment_type: str = Provide[BentoMLContainer.deployment_type]
-    ) -> "RunnerImpl":
-        # TODO(jiang): cache impl
-        if deployment_type == "local":
-            return LocalRunner(self)
-        else:
-            return RemoteRunner(self)
-
-    async def async_run(self, *args, **kwargs):
-        return await self._impl_ref().async_run(*args, **kwargs)
-
-    async def async_run_batch(self, *args, **kwargs):
-        return await self._impl_ref().async_run_batch(*args, **kwargs)
-
-    def run(self, *args, **kwargs):
-        return self._impl_ref().run(*args, **kwargs)
-
-    def run_batch(self, *args, **kwargs):
-        return self._impl_ref().run_batch(*args, **kwargs)
-
-
-class _BaseRunner(_RunnerImplMixin, ABC):
+class _BaseRunner:
     name: str
     resource_quota: "ResourceQuota"
     batch_options: "BatchOptions"
@@ -136,6 +110,29 @@ class _BaseRunner(_RunnerImplMixin, ABC):
     @abstractmethod
     def _setup(self, **kwargs) -> None:
         ...
+
+    @inject
+    def _impl_ref(
+        self,
+        remote_runner_mapping=Provide[BentoMLContainer.remote_runner_mapping],
+    ):
+        # TODO(jiang): cache impl
+        if self.name in remote_runner_mapping:
+            return RemoteRunner(self)
+        else:
+            return LocalRunner(self)
+
+    async def async_run(self, *args, **kwargs):
+        return await self._impl_ref().async_run(*args, **kwargs)
+
+    async def async_run_batch(self, *args, **kwargs):
+        return await self._impl_ref().async_run_batch(*args, **kwargs)
+
+    def run(self, *args, **kwargs):
+        return self._impl_ref().run(*args, **kwargs)
+
+    def run_batch(self, *args, **kwargs):
+        return self._impl_ref().run_batch(*args, **kwargs)
 
 
 class Runner(_BaseRunner, ABC):
@@ -193,29 +190,44 @@ class SimpleRunner(_BaseRunner, ABC):
         ...
 
 
-class RunnerImpl:
-    @t.overload
-    def __init__(self, runner: "_RunnerImplMixin"):
-        ...  # pylint:disable=redefined-builtin
+class RunnerState(enum.IntEnum):
+    INIT = 0
+    SETTING = 1
+    SET = 2
 
-    def __init__(self, runner: t.Union[Runner, SimpleRunner]):
+
+class RunnerImpl:
+    def __init__(self, runner: _BaseRunner):
         self._runner = runner
+        self._state: RunnerState = RunnerState.INIT
 
     @abstractmethod
-    async def run(self, *args, **kwargs):
+    async def async_run(self, *args, **kwargs):
         ...
 
     @abstractmethod
-    async def run_batch(self, *args, **kwargs):
+    async def async_run_batch(self, *args, **kwargs):
+        ...
+
+    @abstractmethod
+    def run(self, *args, **kwargs):
+        ...
+
+    @abstractmethod
+    def run_batch(self, *args, **kwargs):
         ...
 
 
 class RemoteRunner(RunnerImpl):
     @property
-    def _client(self):
-        from bentoml._internal.runner.client import get_runner_client
+    @inject
+    def _client(
+        self, remote_runner_mapping=Provide[BentoMLContainer.remote_runner_mapping]
+    ):
+        from .client import RunnerClient
 
-        return get_runner_client(self._runner.name)
+        uds = remote_runner_mapping.get(self._runner.name)
+        return RunnerClient(uds)  # TODO(jiang): timeout
 
     async def async_run(self, *args, **kwargs):
         return await self._client.async_run(*args, **kwargs)
@@ -230,50 +242,64 @@ class RemoteRunner(RunnerImpl):
         return self._client.run_batch(*args, **kwargs)
 
 
-class Params:
-    def __init__(self, *args: type, **kwargs: type):
-        self.args = args
-        self.kwargs = kwargs
-
-    def apply(self, function, inplace=False):
-        return type(self)(
-            *tuple(function(a) for a in self.args),
-            **{k: function(v) for k, v in self.kwargs.items()}
-        )
-
-
-class Signature:
-    params: Params
-    returns: type
-
-
 class LocalRunner(RunnerImpl):
     def _setup(self) -> None:
+        self._state = RunnerState.SETTING
         self._runner._setup()  # noqa
+        self._state = RunnerState.SET
 
     async def async_run(self, *args, **kwargs):
+        if self._state is RunnerState.INIT:
+            self._setup()
         if isinstance(self._runner, Runner):
-            params = Params(args, kwargs)
-            params.apply(single_to_batch)
-
-            bresult = self._runner._run_batch(*params.args, **params.kwargs)
-            return batch_to_single(bresult)
+            params = Params(*args, **kwargs)
+            params = params.map(
+                partial(
+                    AutoContainer.singles_to_batch,
+                    batch_axis=self._runner.batch_options.input_batch_axis,
+                )
+            )
+            batch_result = self._runner._run_batch(*params.args, **params.kwargs)
+            return AutoContainer.batch_to_singles(
+                batch_result,
+                batch_axis=self._runner.batch_options.output_batch_axis,
+            )[0]
 
         if isinstance(self._runner, SimpleRunner):
             return self._runner._run(*args, **kwargs)
 
     async def async_run_batch(self, *args, **kwargs):
+        if self._state is RunnerState.INIT:
+            self._setup()
         if isinstance(self._runner, Runner):
             return self._runner._run_batch(*args, **kwargs)
         if isinstance(self._runner, SimpleRunner):
-            results = []
-            params = Params(args, kwargs)
-            for iparams in params.iter(batch_to_single_list):
-                results.append(self._runner._run(*iparams.args, **iparams.kwargs))
-            return single_list_to_batch(results)
+            raise RuntimeError("shall not call async_run_batch on a simple runner")
 
     def run(self, *args, **kwargs):
-        ...
+        if self._state is RunnerState.INIT:
+            self._setup()
+        if isinstance(self._runner, Runner):
+            params = Params(*args, **kwargs)
+            params = params.map(
+                partial(
+                    AutoContainer.singles_to_batch,
+                    batch_axis=self._runner.batch_options.input_batch_axis,
+                )
+            )
+            batch_result = self._runner._run_batch(*params.args, **params.kwargs)
+            return AutoContainer.batch_to_singles(
+                batch_result,
+                batch_axis=self._runner.batch_options.output_batch_axis,
+            )[0]
+
+        if isinstance(self._runner, SimpleRunner):
+            return self._runner._run(*args, **kwargs)
 
     def run_batch(self, *args, **kwargs):
-        ...
+        if self._state is RunnerState.INIT:
+            self._setup()
+        if isinstance(self._runner, Runner):
+            return self._runner._run_batch(*args, **kwargs)
+        if isinstance(self._runner, SimpleRunner):
+            raise RuntimeError("shall not call run_batch on a simple runner")

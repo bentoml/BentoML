@@ -25,9 +25,9 @@ class NumpyNdarray(IODescriptor):
     def __init__(
         self,
         dtype: t.Optional[DTypeLike] = None,
-        enforce_dtype: t.Optional[bool] = False,
+        enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
-        enforce_shape: t.Optional[bool] = False,
+        enforce_shape: bool = False,
     ):
         if isinstance(dtype, str):
             dtype = np.dtype(dtype)

@@ -66,7 +66,7 @@ class JSON(IODescriptor):
     def __init__(
         self,
         pydantic_model: t.Optional["pydantic.BaseModel"] = None,
-        validate_json: t.Optional[bool] = True,
+        validate_json: bool = True,
         json_encoder: t.Optional[t.Type[json.JSONEncoder]] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:

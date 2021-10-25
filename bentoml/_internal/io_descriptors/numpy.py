@@ -44,10 +44,18 @@ class NumpyNdarray(IODescriptor):
         pass
 
     async def from_http_request(self, request: Request) -> ArrayLike:
-        ...
+        json_obj = await request.json()
+        res = np.array(json_obj)
+        if self._enforce_dtype:
+            assert self._dtype is not None, "dtype is None or not yet specified."
+            res = res.astype(self._dtype)
+        if self._enforce_shape:
+            assert self._shape is not None, "shape is None or not yet specified."
+            res = res.reshape(self._shape)
+        return res
 
-    async def to_http_response(self, obj: ArrayLike) -> Response:
-        ...
+    async def to_http_response(self, obj: "np.ndarray") -> Response:
+        return Response(obj.tolist(), media_type="application/json")
 
     @classmethod
     def from_sample(

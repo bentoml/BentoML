@@ -4,33 +4,22 @@ import typing as t
 
 from simple_di import Provide, inject
 
-import bentoml._internal.constants as _const
-
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
-_exc = _const.IMPORT_ERROR_MSG.format(
-    fwr="onnxruntime & onnx",
-    module=__name__,
-    inst="Refers to https://onnxruntime.ai/"
-    " to correctly install backends options"
-    " and platform suitable for your application usecase.",
-)
+SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
+ONNX_EXT: str = ".onnx"
 
-if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
-    import onnx
-    import onnxruntime
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
     from _internal.models.store import ModelInfo, ModelStore
-else:
-    onnx = LazyLoader("onnx", globals(), "onnx", exc_msg=_exc)
-    onnxruntime = LazyLoader("onnxruntime", globals(), "onnxruntime", exc_msg=_exc)
 
 try:
-    from onnx.external_data_helper import load_external_data_for_model
-
+    import onnx
+    import onnxruntime
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """onnx is required in order to use the module `bentoml.onnx`, install
@@ -71,7 +60,7 @@ def _get_model_info(
 
 
 @inject
-def load(  # pylint: disable=arguments-differ
+def load(  
     tag: str,
     backend: t.Optional[str] = "onnxruntime",
     providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
@@ -144,7 +133,7 @@ def save(
 
     Examples::
     """  # noqa
-    context = {"onnx": onnx.__version__}
+    context = {"onnx": onnx.__version__, "onnxruntime": onnxruntime.__version__}
     with model_store.register(
         name,
         module=__name__,
@@ -408,5 +397,4 @@ def load_runner(
 #             shutil.copyfile(self._model, str(self.__get_model_fpath(path)))
 
 
-SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
-ONNX_EXT: str = ".onnx"
+

@@ -30,8 +30,8 @@ else:
 
 MIME_TYPE_JSON = "application/json"
 
-_SerializedObj = t.TypeVar(
-    "_SerializedObj",
+_SerializableObj = t.TypeVar(
+    "_SerializableObj",
     bound=t.Union[
         "np.generic",
         ArrayLike,
@@ -42,7 +42,7 @@ _SerializedObj = t.TypeVar(
 
 
 class DefaultJsonEncoder(json.JSONEncoder):
-    def default(self, o: _SerializedObj) -> t.Any:
+    def default(self, o: _SerializableObj) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
 

@@ -1,3 +1,4 @@
+import logging
 import typing as t
 
 from starlette.requests import Request
@@ -19,6 +20,8 @@ else:
     np = LazyLoader("np", globals(), "numpy")
     ArrayLike = t.Type["np.ndarray"]
     DTypeLike = t.Union["np.dtype", str]
+
+logger = logging.getLogger(__name__)
 
 
 class NumpyNdarray(IODescriptor):
@@ -47,11 +50,17 @@ class NumpyNdarray(IODescriptor):
         json_obj = await request.json()
         res = np.array(json_obj)
         if self._enforce_dtype:
-            assert self._dtype is not None, "dtype is None or not yet specified."
-            res = res.astype(self._dtype)
+            if self._dtype is None:
+                logger.warning("dtype is None or not yet specified.")
+                pass
+            else:
+                res = res.astype(self._dtype)
         if self._enforce_shape:
-            assert self._shape is not None, "shape is None or not yet specified."
-            res = res.reshape(self._shape)
+            if self._shape is None:
+                logger.warning("shape is None or not yet specified.")
+                pass
+            else:
+                res = res.reshape(self._shape)
         return res
 
     async def to_http_response(self, obj: "np.ndarray") -> Response:

@@ -7,7 +7,6 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PTH_EXT, SAVE_NAMESPACE, YAML_EXT
 from ._internal.runner import Runner
-from ._internal.types import PathType
 from .exceptions import BentoMLException, MissingDependencyException
 
 try:
@@ -56,7 +55,6 @@ def load(
             "my_detectron_model:20201012_DE43A2")
     """  # noqa
 
-    print("adsfkjds", tag)
     model_info = model_store.get(tag)
     if model_info.module != __name__:
         raise BentoMLException(  # pragma: no cover

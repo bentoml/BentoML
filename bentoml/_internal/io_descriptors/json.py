@@ -13,8 +13,17 @@ from .base import IODescriptor
 if t.TYPE_CHECKING:
     import numpy as np
     import pydantic
+
+    _major, _minor = list(map(lambda x: int(x), np.__version__.split(".")[:2]))
+    if (_major, _minor) > (1, 20):
+        from numpy.typing import ArrayLike
+    else:
+        from ..typing_extensions.numpy import ArrayLike
+
 else:
     np = LazyLoader("np", globals(), "numpy")
+    ArrayLike = t.Any
+
     try:
         import pydantic
     except ModuleNotFoundError:
@@ -22,9 +31,19 @@ else:
 
 MIME_TYPE_JSON = "application/json"
 
+_SerializedObj = t.TypeVar(
+    "_SerializedObj",
+    bound=t.Union[
+        "np.generic",
+        ArrayLike,
+        "pydantic.BaseModel",
+        t.Any,
+    ],
+)
+
 
 class DefaultJsonEncoder(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o: _SerializedObj) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
 
@@ -46,9 +65,9 @@ class DefaultJsonEncoder(json.JSONEncoder):
 class JSON(IODescriptor):
     def __init__(
         self,
-        pydantic_model: "pydantic.BaseModel" = None,
-        validate_json: bool = True,
-        json_encoder: json.JSONEncoder = DefaultJsonEncoder,
+        pydantic_model: t.Optional["pydantic.BaseModel"] = None,
+        validate_json: t.Optional[bool] = True,
+        json_encoder: t.Optional[t.Type[json.JSONEncoder]] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
             if pydantic is None:
@@ -66,13 +85,13 @@ class JSON(IODescriptor):
         self._validate_json = validate_json
         self._json_encoder = json_encoder
 
-    def openapi_request_schema(self):
+    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         pass
 
-    def openapi_responses_schema(self):
+    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         pass
 
-    def openapi_schema(self):
+    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
         if self._pydantic_model:
             schema = self._pydantic_model.schema()
         else:
@@ -85,7 +104,7 @@ class JSON(IODescriptor):
             try:
                 return self._pydantic_model.parse_obj(json_obj)
             except pydantic.ValidationError:
-                raise BadInput("Malformated JSON Request received")
+                raise BadInput("Invalid JSON Request received")
         else:
             return json_obj
 

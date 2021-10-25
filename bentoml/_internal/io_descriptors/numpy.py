@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Tuple, Union
+import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -6,19 +6,28 @@ from starlette.responses import Response
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import numpy as np
+
+    _major, _minor = list(map(lambda x: int(x), np.__version__.split(".")[:2]))
+    if (_major, _minor) > (1, 20):
+        from numpy.typing import ArrayLike, DTypeLike
+    else:
+        from ..typing_extensions.numpy import ArrayLike, DTypeLike
+
 else:
     np = LazyLoader("np", globals(), "numpy")
+    ArrayLike = t.Type["np.ndarray"]
+    DTypeLike = t.Union["np.dtype", str]
 
 
 class NumpyNdarray(IODescriptor):
     def __init__(
         self,
-        dtype: Union["np.dtype", str, None] = None,
-        enforce_dtype: bool = False,
-        shape: Optional[Tuple] = None,
-        enforce_shape: bool = False,
+        dtype: t.Optional[DTypeLike] = None,
+        enforce_dtype: t.Optional[bool] = False,
+        shape: t.Optional[t.Tuple[int, ...]] = None,
+        enforce_shape: t.Optional[bool] = False,
     ):
         if isinstance(dtype, str):
             dtype = np.dtype(dtype)
@@ -28,23 +37,23 @@ class NumpyNdarray(IODescriptor):
         self._shape = shape
         self._enforce_shape = enforce_shape
 
-    def openapi_request_schema(self):
+    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         pass
 
-    def openapi_responses_schema(self):
+    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         pass
 
-    async def from_http_request(self, request: Request) -> "np.ndarray":
-        pass
+    async def from_http_request(self, request: Request) -> ArrayLike:
+        ...
 
-    async def to_http_response(self, obj: "np.ndarray") -> Response:
-        pass
+    async def to_http_response(self, obj: ArrayLike) -> Response:
+        ...
 
     @classmethod
     def from_sample(
         cls,
-        sample_input: "np.ndarray",
-        enforce_dtype=True,
-        enforce_shape=True,
-    ):
+        sample_input: ArrayLike,
+        enforce_dtype: t.Optional[bool] = True,
+        enforce_shape: t.Optional[bool] = True,
+    ) -> None:
         pass

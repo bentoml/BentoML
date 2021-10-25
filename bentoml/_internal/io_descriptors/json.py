@@ -6,7 +6,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from bentoml.exceptions import BadInput, InvalidArgument, MissingDependencyException
-
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
@@ -67,7 +66,7 @@ class JSON(IODescriptor):
         self,
         pydantic_model: t.Optional["pydantic.BaseModel"] = None,
         validate_json: bool = True,
-        json_encoder: t.Optional[t.Type[json.JSONEncoder]] = DefaultJsonEncoder,
+        json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
             if pydantic is None:

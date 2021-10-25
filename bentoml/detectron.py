@@ -1,124 +1,268 @@
 import os
 import typing as t
 
-import bentoml._internal.constants as _const
+import numpy as np
+from simple_di import Provide, inject
 
-from ._internal.models.base import MODEL_NAMESPACE, PTH_EXTENSION, YAML_EXTENSION, Model
-from ._internal.types import GenericDictType, PathType
-from ._internal.utils import LazyLoader
+from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import PTH_EXT, SAVE_NAMESPACE, YAML_EXT
+from ._internal.runner import Runner
+from ._internal.types import PathType
+from .exceptions import BentoMLException, MissingDependencyException
 
-_exc = _const.IMPORT_ERROR_MSG.format(
-    fwr="detectron2",
-    module=__name__,
-    inst="Refers to https://detectron2.readthedocs.io/en/latest/tutorials/install.html",  # noqa
-)
-
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+try:
+    import detectron2
     import detectron2.checkpoint as checkpoint
     import detectron2.config as config
     import detectron2.modeling as modeling
+    import torch
     import torch.nn as nn
-else:
-    checkpoint = LazyLoader(
-        "checkpoint", globals(), "detectron2.checkpoint", exc_msg=_exc
+
+except ImportError:  # pragma: no cover
+    raise MissingDependencyException(
+        """detectron2 is required in order to use module `bentoml.detectron`,
+        install detectron2 with `pip install detectron2`. For more
+        information, refers to
+        https://detectron2.readthedocs.io/en/latest/tutorials/install.html
+        """
     )
-    config = LazyLoader("config", globals(), "detectron2.config", exc_msg=_exc)
-    modeling = LazyLoader("modeling", globals(), "detectron2.modeling", exc_msg=_exc)
 
 
-class DetectronModel(Model):
+@inject
+def load(
+    tag: str,
+    device: str = "cpu",
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> "nn.Module":
     """
-    Model class for saving/loading :obj:`detectron2` models,
-    in the form of :class:`~detectron2.checkpoint.DetectionCheckpointer`
+    Load a model from BentoML local modelstore with given tag.
 
     Args:
-        model (`torch.nn.Module`):
-            detectron2 model is of type :obj:`torch.nn.Module`
-        input_model_yaml (`detectron2.config.CfgNode`, `optional`, default to `None`):
-            model config from :meth:`detectron2.model_zoo.get_config_file`
-        metadata (`GenericDictType`, `optional`, default to `None`):
-            Class metadata
+        tag (`str`):
+            Tag of a saved model in BentoML local modelstore.
+        device (`str`, `optional`, default to ``cpu``):
+            Device type to cast model. Default behaviour similar
+             to :obj:`torch.device("cuda")` Options: "cuda" or "cpu".
+             If None is specified then return default config.MODEL.DEVICE
+        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
 
-    Raises:
-        MissingDependencyException:
-            :obj:`detectron2` is required by DetectronModel
-        InvalidArgument:
-            model is not an instance of :class:`torch.nn.Module`
+    Returns:
+        an instance of `torch.nn.Module`
 
-    Example usage under :code:`train.py`::
+    Examples::
+        import bentoml.detectron
+        model = bentoml.detectron.load(
+            "my_detectron_model:20201012_DE43A2")
+    """  # noqa
 
-        TODO:
+    print("adsfkjds", tag)
+    model_info = model_store.get(tag)
+    if model_info.module != __name__:
+        raise BentoMLException(  # pragma: no cover
+            f"Model {tag} was saved with"
+            f" module {model_info.module},"
+            f" failed loading with {__name__}."
+        )
 
-    One then can define :code:`bento.py`::
+    cfg: config.CfgNode = config.get_cfg()
 
-        TODO:
+    weight_path = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PTH_EXT}")
+    yaml_path = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{YAML_EXT}")
+
+    if os.path.isfile(yaml_path):
+        cfg.merge_from_file(yaml_path)
+
+    if device:
+        cfg.MODEL.DEVICE = device
+
+    model: "nn.Module" = modeling.build_model(cfg)
+    if device:
+        model.to(device)
+
+    model.eval()
+
+    checkpointer: checkpoint.DetectionCheckpointer = checkpoint.DetectionCheckpointer(
+        model
+    )
+
+    checkpointer.load(weight_path)
+    return model
+
+
+@inject
+def save(
+    name: str,
+    model: "nn.Module",
+    *,
+    model_config: t.Optional[config.CfgNode] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> str:
     """
+    Save a model instance to BentoML modelstore.
 
-    def __init__(
-        self,
-        model: "nn.Module",
-        input_model_yaml: t.Optional["config.CfgNode"] = None,
-        metadata: t.Optional[GenericDictType] = None,
-    ):
-        super(DetectronModel, self).__init__(model, metadata=metadata)
-        self._input_model_yaml = input_model_yaml
+    Args:
+        name (`str`):
+            Name for given model instance. This should pass Python identifier check.
+        model (`torch.nn.Module`):
+            Instance of detectron2 model to be saved.
+        model_config (`detectron2.config.CfgNode`, `optional`, default to `None`):
+            model config from :meth:`detectron2.model_zoo.get_config_file`
+        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+            Custom metadata for given model.
+        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
 
-    @classmethod
-    def load(  # noqa # pylint: disable=arguments-differ
-        cls, path: PathType, device: str = "cpu"
-    ) -> "nn.Module":
-        """
-        Load a detectron model from given yaml path.
+    Returns:
+        tag (`str` with a format `name:version`) where `name` is the defined name user
+        set for their models, and version will be generated by BentoML.
 
-        Args:
-            path (`Union[str, bytes, os.PathLike]`):
-                Given path containing saved yaml
-                 config for loading detectron model.
-            device (`str`, `optional`, default to ``cpu``):
-                Device type to cast model. Default behaviour similar
-                 to :obj:`torch.device("cuda")` Options: "cuda" or "cpu".
-                 If None is specified then return default config.MODEL.DEVICE
+    Examples::
+        import bentoml.detectron
 
-        Returns:
-            :class:`torch.nn.Module`
+        # import some common detectron2 utilities
+        import detectron2
+        from detectron2 import model_zoo
+        from detectron2.config import get_cfg
+        from detectron2.modeling import build_model
 
-        Raises:
-            MissingDependencyException:
-                ``detectron2`` is required by
-                 :class:`~bentoml.detectron.DetectronModel`.
-        """
-        cfg: "config.CfgNode" = config.get_cfg()
-        if device:
-            cfg.MODEL.DEVICE = device
+        model_url: str = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
+        cfg: "CfgNode" = get_cfg()
+        cfg.merge_from_file(model_zoo.get_config_file(model_url))
+        # set threshold for this model
+        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5
+        cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(model_url)
+        cloned = cfg.clone()
+        cloned.MODEL.DEVICE = "cpu"
+        model: torch.nn.Module = build_model(cloned)
 
-        weight_path = os.path.join(path, f"{MODEL_NAMESPACE}{PTH_EXTENSION}")
-        yaml_path = os.path.join(path, f"{MODEL_NAMESPACE}{YAML_EXTENSION}")
-
-        if os.path.isfile(yaml_path):
-            cfg.merge_from_file(yaml_path)
-        model: "nn.Module" = modeling.build_model(cfg)
-        if device:
-            model.to(device)
-
-        model.eval()
-
-        checkpointer: "checkpoint.DetectionCheckpointer" = (
-            checkpoint.DetectionCheckpointer(model)
+        tag = bentoml.detectron.save(
+            "my_detectron_model",
+            model,
+            model_config=cfg,
         )
-        checkpointer.load(weight_path)
-        return model
 
-    def save(self, path: PathType) -> None:
-        os.makedirs(path, exist_ok=True)
-        checkpointer: "checkpoint.DetectionCheckpointer" = (
-            checkpoint.DetectionCheckpointer(self._model, save_dir=path)
-        )
-        checkpointer.save(MODEL_NAMESPACE)
-        if self._input_model_yaml:
+        # example tag: my_detectron_model:20211018_B9EABF
+
+        # load the model back:
+        loaded = bentoml.detectron.load("my_detectron_model:latest") # or
+        loaded = bentoml.detectron.load(tag)
+
+    """  # noqa
+
+    context = {"detectron": detectron2.__version__}
+    options = dict()
+    with model_store.register(
+        name,
+        module=__name__,
+        options=options,
+        framework_context=context,
+        metadata=metadata,
+    ) as ctx:  # type: StoreCtx
+
+        checkpointer = checkpoint.DetectionCheckpointer(model, save_dir=ctx.path)
+        checkpointer.save(SAVE_NAMESPACE)
+        if model_config:
             with open(
-                os.path.join(path, f"{MODEL_NAMESPACE}{YAML_EXTENSION}"),
+                os.path.join(ctx.path, f"{SAVE_NAMESPACE}{YAML_EXT}"),
                 "w",
                 encoding="utf-8",
             ) as ouf:
-                ouf.write(self._input_model_yaml.dump())
+                ouf.write(model_config.dump())
+
+        return ctx.tag
+
+
+class _DetectronRunner(Runner):
+    @inject
+    def __init__(
+        self,
+        tag: str,
+        predict_fn_name: str,
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    ):
+        super().__init__(tag, resource_quota, batch_options)
+        self._tag = tag
+        self._predict_fn_name = predict_fn_name
+        self._model_store = model_store
+
+    @property
+    def required_models(self) -> t.List[str]:
+        return [self._tag]
+
+    @property
+    def num_concurrency_per_replica(self) -> int:
+        return 1
+
+    @property
+    def num_replica(self) -> int:
+        if self.resource_quota.on_gpu:
+            return len(self.resource_quota.gpus)
+        return 1
+
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    def _setup(self) -> None:  # type: ignore[override]
+        if self.resource_quota.on_gpu:
+            device = "cuda"
+        else:
+            device = "cpu"
+        self._model = load(self._tag, device, self._model_store)
+        self._predict_fn = getattr(self._model, self._predict_fn_name)
+
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[override]
+        self, input_data: t.Union[np.ndarray, torch.Tensor]
+    ) -> np.ndarray:
+        images = np.split(input_data, input_data.shape[0], 0)
+        images = [image.squeeze(axis=0) for image in images]
+        if isinstance(input_data, np.ndarray):
+            images = [torch.from_numpy(image) for image in images]
+
+        inputs = [dict(image=image) for image in images]
+
+        res = self._predict_fn(inputs)
+        return np.asarray(res, dtype=object)
+
+
+@inject
+def load_runner(
+    tag: str,
+    predict_fn_name: str = "__call__",
+    *,
+    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
+    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> _DetectronRunner:
+    """
+    Runner represents a unit of serving logic that can be scaled horizontally to
+    maximize throughput. `bentoml.detectron.load_runner` implements a Runner class that
+    wrap around a torch.nn.Module model, which optimize it for the BentoML runtime.
+
+    Args:
+        tag (`str`):
+            Model tag to retrieve model from modelstore
+        predict_fn_name (`str`, default to `__call__`):
+            Options for inference functions. Default to `__call__`
+        resource_quota (`t.Dict[str, t.Any]`, default to `None`):
+            Dictionary to configure resources allocation for runner.
+        batch_options (`t.Dict[str, t.Any]`, default to `None`):
+            Dictionary to configure batch options for runner in a service context.
+        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+            BentoML modelstore, provided by DI Container.
+
+    Returns:
+        Runner instances for `bentoml.detectron` model
+
+    Examples:
+        TODO
+    """  # noqa
+    return _DetectronRunner(
+        tag=tag,
+        predict_fn_name=predict_fn_name,
+        resource_quota=resource_quota,
+        batch_options=batch_options,
+        model_store=model_store,
+    )

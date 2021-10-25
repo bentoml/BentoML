@@ -7,7 +7,6 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
-from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]

@@ -59,7 +59,7 @@ def _get_model_info(
 
 
 @inject
-def load(  
+def load(
     tag: str,
     backend: t.Optional[str] = "onnxruntime",
     providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,

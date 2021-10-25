@@ -1,10 +1,8 @@
-import functools
 import os
 import typing as t
 
 import numpy as np
-from simple_di import Provide, WrappedCallable
-from simple_di import inject as _inject
+from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE
@@ -15,11 +13,11 @@ if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
 
-    from ._internal.models.store import ModelInfo, ModelStore
+    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx  # noqa
 
 try:
     import catboost as cbt
-except ImportError:
+except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """catboost is required in order to use module `bentoml.catboost`, install
         catboost with `pip install catboost`. For more information, refers to
@@ -31,10 +29,6 @@ except ImportError:
 # TODO: support cbt.Pool runner io container
 
 CATBOOST_EXT = "cbm"
-
-inject: t.Callable[[WrappedCallable], WrappedCallable] = functools.partial(
-    _inject, squeeze_none=False
-)
 
 CatBoostModelType = t.TypeVar(
     "CatBoostModelType",
@@ -71,16 +65,20 @@ def _load_helper(
     model_file: str, model_params: t.Optional[t.Dict[str, t.Union[str, int]]]
 ) -> CatBoostModelType:
 
-    model_type = model_params["model_type"]
+    if model_params is not None:
+        model_type = model_params["model_type"]
 
-    if model_type == "classifier":
-        model = cbt.core.CatBoostClassifier()
-    elif model_type == "regressor":
-        model = cbt.core.CatBoostRegressor()
+        if model_type == "classifier":
+            model = cbt.core.CatBoostClassifier()
+        elif model_type == "regressor":
+            model = cbt.core.CatBoostRegressor()
+        else:
+            model = cbt.core.CatBoost()
     else:
         model = cbt.core.CatBoost()
 
-    return model.load_model(model_file)
+    _m = model.load_model(model_file)  # type: CatBoostModelType
+    return _m
 
 
 @inject
@@ -137,10 +135,14 @@ def save(
             Name for given model instance. This should pass Python identifier check.
         model (`t.Union[catboost.core.CatBoost, catboost.core.CatBoostClassifier, catboost.CatBoostRegressor]`):
             Instance of model to be saved
-        model_params (`t.Dict[str, t.Union[str, t.Any]]`):
+        model_params (`t.Dict[str, t.Union[str, t.Any]]`, `optional`, default to `None`):
             Parameters for model. Following parameters can be specified:
                 - model_type: "classifier" or "regressor" Determine if the model is
                   a `CatBoostClassifier` or `CatBoostRegressor`
+        model_export_parameters (`t.Dict[str, t.Union[str, t.Any]]`, `optional`, default to `None`):
+            Export parameters for given model.
+        model_pool (`cbt.core.Pool`, `optional`, default to `None`):
+            CatBoost data pool for given model.
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -178,7 +180,7 @@ def save(
         loaded = bentoml.catboost.load("my_catboost_model:latest") # or
         loaded = bentoml.catboost.load(tag)
 
-    """
+    """  # noqa
     if not model_params:
         model_params = {}
 
@@ -192,7 +194,7 @@ def save(
         options=model_params,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         path = os.path.join(ctx.path, f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
         format_ = CATBOOST_EXT
         model.save_model(
@@ -234,14 +236,16 @@ class _CatBoostRunner(Runner):
         return 1
 
     @property
-    def num_replica(self):
+    def num_replica(self) -> int:
         return int(round(self.resource_quota.cpu))
 
-    def _setup(self) -> None:  # type: ignore
-        self._model = _load_helper(self._model_file, self._model_params)
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    def _setup(self) -> None:  # type: ignore[override]
+        self._model = _load_helper(self._model_file, self._model_params)  # type: ignore[var-annotated] # noqa: E501 # pylint: disable
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    def _run_batch(
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[override]
         self, input_data: t.Union[np.ndarray, "pd.DataFrame", cbt.Pool]
     ) -> np.ndarray:
         # Take a batch type

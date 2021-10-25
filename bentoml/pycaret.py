@@ -18,7 +18,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     import sklearn
     import xgboost
-    from _internal.models.store import ModelInfo, ModelStore
+    from _internal.models.store import ModelInfo, ModelStore, StoreCtx
 
 try:
     from pycaret.internal.tabular import (
@@ -136,10 +136,11 @@ def save(
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         save_model(model, os.path.join(ctx.path, SAVE_NAMESPACE))
         save_config(os.path.join(ctx.path, f"{PYCARET_CONFIG}{PKL_EXT}"))
-        return ctx.tag  # type: ignore[no-any-return]
+        tag = ctx.tag  # type: str
+        return tag
 
 
 class _PycaretRunner(Runner):
@@ -181,7 +182,8 @@ class _PycaretRunner(Runner):
             "PyCaret is not designed to be ran"
             " in parallel. See https://github.com/pycaret/pycaret/issues/758"  # noqa # pylint: disable
         )
-        return predict_model(self._model, input_data)
+        output = predict_model(self._model, input_data)  # type: pd.DataFrame
+        return output
 
 
 @inject

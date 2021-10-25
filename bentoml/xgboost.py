@@ -13,7 +13,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
 
-    from ._internal.models.store import ModelInfo, ModelStore
+    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
 
 try:
     import xgboost as xgb
@@ -111,8 +111,8 @@ def save(
     name: str,
     model: "xgb.core.Booster",
     *,
-    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     """
@@ -161,7 +161,7 @@ def save(
         options=booster_params,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{JSON_EXT}"))
         return ctx.tag
 
@@ -221,22 +221,11 @@ class _XgBoostRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        try:
-            self._model = xgb.core.Booster(
-                params=self._booster_params,
-                model_file=self._model_file,
-            )
-            self._predict_fn = getattr(self._model, self._predict_fn_name)
-        except FileNotFoundError:
-            if self._from_mlflow:
-                # a special flags to determine whether the runner is
-                # loaded from mlflow
-                import bentoml.mlflow
-
-                self._model = bentoml.mlflow.load(
-                    self.name, model_store=self._model_store
-                )
-            self._predict_fn = getattr(self._model, "predict")
+        self._model = xgb.core.Booster(
+            params=self._booster_params,
+            model_file=self._model_file,
+        )
+        self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
@@ -253,9 +242,9 @@ def load_runner(
     tag: str,
     predict_fn_name: str = "predict",
     *,
-    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_XgBoostRunner":
     """

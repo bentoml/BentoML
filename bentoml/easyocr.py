@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 import typing as t
@@ -7,10 +6,13 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import JSON_EXT, PTH_EXT, SAVE_NAMESPACE
+from ._internal.models import PTH_EXT
 from ._internal.runner import Runner
-from ._internal.types import PathType
 from .exceptions import BentoMLException, MissingDependencyException
+
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    from ._internal.models.store import ModelStore, StoreCtx
 
 try:
     import easyocr
@@ -76,12 +78,12 @@ def save(
     name: str,
     model: easyocr.Reader,
     *,
-    lang_list: t.List[str] = ["en"],
-    recog_network: str = "english_g2",
-    detect_model: str = "craft_mlt_25k",
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    lang_list: t.Optional[t.List[str]] = None,
+    recog_network: t.Optional[str] = "english_g2",
+    detect_model: t.Optional[str] = "craft_mlt_25k",
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> None:
+) -> str:
     """
     Save a model instance to BentoML modelstore.
 
@@ -130,9 +132,11 @@ def save(
         loaded = bentoml.easyocr.load("my_easyocr_model:latest") # or
         loaded = bentoml.easyocr.load(tag)
 
-    """
+    """  # noqa
 
     context = {"easyocr": easyocr.__version__}
+    if lang_list is None:
+        lang_list = ["en"]
     options = dict(
         lang_list=lang_list,
         recog_network=recog_network,
@@ -143,13 +147,12 @@ def save(
         options=options,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
 
         src_folder: str = model.model_storage_directory
 
         detect_filename: str = f"{detect_model}{PTH_EXT}"
         path = ctx.path
-        print(ctx.path)
         if not os.path.exists(os.path.join(path, detect_filename)):
             shutil.copyfile(
                 os.path.join(src_folder, detect_filename),

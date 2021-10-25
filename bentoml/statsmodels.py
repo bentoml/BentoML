@@ -15,9 +15,10 @@ _MT = t.TypeVar("_MT")
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from joblib.parallel import Parallel
     import pandas as pd
-    from ._internal.models.store import ModelInfo, ModelStore
+    from joblib.parallel import Parallel
+
+    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
 
 
 try:
@@ -33,11 +34,11 @@ except ImportError:  # pragma: no cover
     )
 
 _exc_msg = """\
-`pandas` is required by `bentoml.statsmodels`, install pandas with 
-`pip install pandas`. For more information, refer to 
-https://pandas.pydata.org/docs/getting_started/install.html
+`pandas` is required by `bentoml.statsmodels`, install pandas with
+ `pip install pandas`. For more information, refer to
+ https://pandas.pydata.org/docs/getting_started/install.html
 """
-pd = LazyLoader('pd', globals(), 'pandas', exc_msg=_exc_msg)
+pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)  # noqa: F811
 
 
 def _get_model_info(
@@ -115,7 +116,7 @@ def save(
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:
+    ) as ctx:  # type: StoreCtx
         model.save(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         return ctx.tag
 
@@ -153,17 +154,7 @@ class _StatsModelsRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        try:
-            self._model = sm.load(self._model_file)
-        except FileNotFoundError:
-            if self._from_mlflow:
-                # a special flags to determine whether the runner is
-                # loaded from mlflow
-                import bentoml.mlflow
-
-                self._model = bentoml.mlflow.load(
-                    self.name, model_store=self._model_store
-                )
+        self._model = sm.load(self._model_file)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ

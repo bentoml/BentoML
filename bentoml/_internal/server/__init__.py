@@ -1,17 +1,3 @@
-# Copyright 2019 Atalaya Tech, Inc.
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-# http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import logging
 import sys
 import tempfile
@@ -20,29 +6,25 @@ from typing import Optional
 
 from simple_di import skip
 
-from bentoml._internal.bento import load_bento
+from bentoml import load
 from bentoml._internal.configuration import CONFIG_ENV_VAR, save_global_config
 from bentoml._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 
-def serve_debug(
+def serve_development(
     bento_path_or_tag: str,
     port: Optional[int] = None,
-    max_batch_size: Optional[int] = None,
-    max_latency_ms: Optional[int] = None,
     run_with_ngrok: Optional[bool] = None,
     timeout: Optional[int] = None,
 ):
-    bento = load_bento(bento_path_or_tag)
+    svc = load(bento_path_or_tag)
 
     bento_server = BentoMLContainer.config.bento_server
     bento_server.port.set(port or skip)
     bento_server.timeout.set(timeout or skip)
     bento_server.microbatch.timeout.set(timeout or skip)
-    bento_server.microbatch.max_batch_size.set(max_batch_size or skip)
-    bento_server.microbatch.max_latency.set(max_latency_ms or skip)
 
     BentoMLContainer.forward_port.get()  # generate port before fork
 
@@ -101,26 +83,18 @@ def serve_debug(
 
 
 def serve(
-    bento_path_or_tag: str,
+    svc_import_path_or_bento_tag: str,
     port: Optional[int] = None,
-    max_batch_size: Optional[int] = None,
-    max_latency_ms: Optional[int] = None,
+    timeout: Optional[int] = None,
 ):
-    bento = load_bento(bento_path_or_tag)
-
-    import psutil
-
-    assert (
-        psutil.POSIX
-    ), "BentoML API Server production mode only supports POSIX platforms"
+    svc = load(svc_import_path_or_bento_tag)
 
     bento_server = BentoMLContainer.config.bento_server
     bento_server.port.set(port or skip)
-    bento_server.microbatch.max_batch_size.set(max_batch_size or skip)
-    bento_server.microbatch.max_latency.set(max_latency_ms or skip)
+    bento_server.timeout.set(timeout or skip)
 
-    config_file, config_path = tempfile.mkstemp(suffix="yml", text=True)
-    save_global_config(config_file)  # save the container state to yml file
+    config_fd, config_pathname = tempfile.mkstemp(suffix="yml", text=True)
+    save_global_config(config_fd)  # save the container state to yml file
 
     from circus.arbiter import Arbiter
     from circus.util import DEFAULT_ENDPOINT_DEALER, DEFAULT_ENDPOINT_SUB
@@ -131,11 +105,11 @@ def serve(
     watchers.append(
         Watcher(
             name="http server",
-            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_server({bento_path_or_tag})"',
+            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_server({svc_import_path_or_bento_tag})"',
             env={
                 "LC_ALL": "en_US.utf-8",
                 "LANG": "en_US.utf-8",
-                CONFIG_ENV_VAR: config_path,
+                CONFIG_ENV_VAR: config_pathname,
             },
             numprocesses=1,
             stop_children=True,
@@ -145,26 +119,26 @@ def serve(
     watchers.append(
         Watcher(
             name="marshal",
-            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_proxy({bento_path_or_tag})"',
+            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_proxy({svc_import_path_or_bento_tag})"',
             env={
                 "LC_ALL": "en_US.utf-8",
                 "LANG": "en_US.utf-8",
-                CONFIG_ENV_VAR: config_path,
+                CONFIG_ENV_VAR: config_pathname,
             },
             numprocesses=1,
             stop_children=True,
         )
     )
 
-    for runner_name, runner in bento._runners.items():
+    for runner_name, runner in svc._runners.items():
         watchers.append(
             Watcher(
                 name="ngrok",
-                cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_proxy({bento_path_or_tag})"',
+                cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_proxy({svc_import_path_or_bento_tag})"',
                 env={
                     "LC_ALL": "en_US.utf-8",
                     "LANG": "en_US.utf-8",
-                    CONFIG_ENV_VAR: config_path,
+                    CONFIG_ENV_VAR: config_pathname,
                 },
                 numprocesses=1,
                 stop_children=True,
@@ -192,7 +166,7 @@ def _start_dev_server():
 
 
 def _start_dev_proxy():
-    BentoMLContainer.proxy_app.get().run()
+    BentoMLContainer.marshal_app.get().run()
 
 
 def _start_prod_server():
@@ -211,7 +185,7 @@ def start_prod_server1(
     max_batch_size: Optional[int] = None,
     max_latency_ms: Optional[int] = None,
 ):
-    bento = load_bento(bento_path_or_tag)
+    svc = load(bento_path_or_tag)
     import psutil
 
     assert (
@@ -241,7 +215,7 @@ def start_prod_server1(
     watchers = []
     sockets_map = {}
 
-    for runner_name, runner in bento._runners.items():
+    for runner_name, runner in svc._runners.items():
         uds_name = f"runner_{runner_name}"
 
         sockets_map[runner_name] = CircusSocket(
@@ -299,11 +273,12 @@ def start_prod_server1(
     arbiter.start()
 
 
-def _start_prod_api_server(
-    bento_path_or_tag: str, instance_id: int, runner_fd_map: str
-):
-    bento = load_bento(bento_path_or_tag)
-    bento._asgi_app()
+def _start_prod_api_server(bento_path_or_tag: str, instance_id: int, runners_map: str):
+    import uvicorn
+
+    svc = load(bento_path_or_tag)
+
+    uvicorn.run(svc._asgi_app, log_level="info")
 
 
 def _start_prod_runner_server(
@@ -313,7 +288,7 @@ def _start_prod_runner_server(
 
     from bentoml._internal.server.runner_app import RunnerApp
 
-    bento = load_bento(bento_path_or_tag)
-    runner = bento._runners.get(name)
+    svc = load(bento_path_or_tag)
+    runner = svc._runners.get(name)
 
     uvicorn.run(RunnerApp(runner), fd=fd, log_level="info")

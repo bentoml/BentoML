@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import cloudpickle
 from simple_di import Provide, inject
 
-from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.configuration.containers import BentoServerContainer
 
 from .utils import TypeRef
 
@@ -98,7 +98,7 @@ class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
     def single_to_payload(
         cls,
         single_data,
-        plasma_db=Provide[BentoMLContainer.plasma_db],
+        plasma_db=Provide[BentoServerContainer.plasma_db],
     ) -> Payload:
         if plasma_db:
             return cls.create_payload(
@@ -114,7 +114,7 @@ class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
     @classmethod
     @inject
     def payload_to_single(
-        cls, payload: Payload, plasma_db=Provide[BentoMLContainer.plasma_db]
+        cls, payload: Payload, plasma_db=Provide[BentoServerContainer.plasma_db]
     ):
         if payload.meta.get("plasma"):
             import pyarrow.plasma as plasma

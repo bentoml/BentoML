@@ -8,7 +8,7 @@ import attr
 import psutil
 from simple_di import Provide, inject
 
-from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.configuration.containers import BentoServerContainer
 from bentoml._internal.runner.container import AutoContainer
 from bentoml._internal.runner.utils import Params
 
@@ -60,20 +60,18 @@ class ResourceQuota:
 class BatchOptions:
     enabled = attr.ib(
         type=bool,
-        default=attr.Factory(
-            BentoMLContainer.config.bento_server.batch_options.enabled.get
-        ),
+        default=attr.Factory(BentoServerContainer.config.batch_options.enabled.get),
     )
     max_batch_size = attr.ib(
         type=int,
         default=attr.Factory(
-            BentoMLContainer.config.bento_server.batch_options.max_batch_size.get
+            BentoServerContainer.config.batch_options.max_batch_size.get
         ),
     )
     max_latency_ms = attr.ib(
         type=int,
         default=attr.Factory(
-            BentoMLContainer.config.bento_server.batch_options.max_latency_ms.get
+            BentoServerContainer.config.batch_options.max_latency_ms.get
         ),
     )
     input_batch_axis = attr.ib(type=int, default=0)
@@ -114,7 +112,7 @@ class _BaseRunner:
     @inject
     def _impl_ref(
         self,
-        remote_runner_mapping=Provide[BentoMLContainer.remote_runner_mapping],
+        remote_runner_mapping=Provide[BentoServerContainer.remote_runner_mapping],
     ):
         # TODO(jiang): cache impl
         if self.name in remote_runner_mapping:
@@ -222,7 +220,7 @@ class RemoteRunner(RunnerImpl):
     @property
     @inject
     def _client(
-        self, remote_runner_mapping=Provide[BentoMLContainer.remote_runner_mapping]
+        self, remote_runner_mapping=Provide[BentoServerContainer.remote_runner_mapping]
     ):
         from .client import RunnerClient
 

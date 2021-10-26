@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Dict
 
 from simple_di import Provide, inject
 
-from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.configuration.containers import BentoServerContainer
 from bentoml._internal.runner.utils import Params
 
 if TYPE_CHECKING:
@@ -70,9 +70,9 @@ class RunnerClient:
 def get_runner_client(
     runner_name: str,
     remote_runner_mapping: Dict[str, int] = Provide[
-        BentoMLContainer.remote_runner_mapping
+        BentoServerContainer.remote_runner_mapping
     ],
-    timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
+    timeout: int = Provide[BentoServerContainer.config.timeout],
 ) -> RunnerClient:
     uds_fd = remote_runner_mapping.get(runner_name)
     return RunnerClient(uds_fd, timeout=timeout)

@@ -65,7 +65,7 @@ def save(
     name: str,
     model: "pl.LightningModule",
     *,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     """

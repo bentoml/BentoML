@@ -6,6 +6,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from bentoml.exceptions import BadInput, InvalidArgument, MissingDependencyException
+
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 

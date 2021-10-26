@@ -2,6 +2,7 @@ import typing as t
 
 import imageio
 import numpy as np
+import pytest
 import torch
 import torch.nn as nn
 from detectron2 import model_zoo
@@ -10,26 +11,19 @@ from detectron2.config import get_cfg
 from detectron2.data import transforms as T
 from detectron2.modeling import build_model
 
-from bentoml.detectron import DetectronModel
+import bentoml.detectron
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
     from detectron2.config import CfgNode  # pylint: disable=unused-import
 
+TEST_MODEL_NAME = __name__.split(".")[-1]
 
-def predict_image(
-    model: nn.Module, original_image: np.ndarray
-) -> t.Dict[str, np.ndarray]:
-    """Mainly to test on COCO dataset"""
-    _aug = T.ResizeShortestEdge([800, 800], 1333)
+IMAGE_URL = "http://images.cocodataset.org/val2017/000000439715.jpg"
 
-    height, width = original_image.shape[:2]
-    image = _aug.get_transform(original_image).apply_image(original_image)
-    image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
 
-    inputs = {"image": image, "height": height, "width": width}
-    pred = model([inputs])[0]
-    pred_instances = pred["instances"]
+def extract_result(raw_result: t.Dict) -> t.Dict:
+    pred_instances = raw_result["instances"]
     boxes = pred_instances.pred_boxes.to("cpu").tensor.detach().numpy()
     scores = pred_instances.scores.to("cpu").detach().numpy()
     pred_classes = pred_instances.pred_classes.to("cpu").detach().numpy()
@@ -42,7 +36,15 @@ def predict_image(
     return result
 
 
-def test_detectron2_save_load(tmpdir):
+def prepare_image(original_image: np.ndarray) -> np.ndarray:
+    """Mainly to test on COCO dataset"""
+    _aug = T.ResizeShortestEdge([800, 800], 1333)
+
+    image = _aug.get_transform(original_image).apply_image(original_image)
+    return image.transpose(2, 0, 1)
+
+
+def detectron_model_and_config() -> t.Tuple[torch.nn.Module, "CfgNode"]:
     model_url: str = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
 
     cfg: "CfgNode" = get_cfg()
@@ -56,18 +58,53 @@ def test_detectron2_save_load(tmpdir):
     model: torch.nn.Module = build_model(cloned)
     model.eval()
 
-    checkpointer = DetectionCheckpointer(model)
-    checkpointer.load(cfg.MODEL.WEIGHTS)
-    # model_zoo.get_config_file(model_url)
-    DetectronModel(model, input_model_yaml=cloned).save(tmpdir)
+    return model, cfg
 
-    assert_have_file_extension(tmpdir, ".yaml")
-    detectron_loaded: torch.nn.Module = DetectronModel.load(tmpdir)
+
+@pytest.fixture(scope="module")
+def image_array():
+    return np.asarray(imageio.imread(IMAGE_URL))
+
+
+@pytest.fixture(scope="module")
+def save_proc(
+    modelstore: "ModelStore",
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
+    def _(metadata) -> "ModelInfo":
+        model, cfg = detectron_model_and_config()
+        tag = bentoml.detectron.save(
+            TEST_MODEL_NAME,
+            model,
+            model_config=cfg,
+            metadata=metadata,
+            model_store=modelstore,
+        )
+        info = modelstore.get(tag)
+        return info
+
+    return _
+
+
+@pytest.mark.parametrize("metadata", [({"acc": 0.876},)])
+def test_detectron2_save_load(metadata, image_array, modelstore, save_proc):
+
+    model, _ = detectron_model_and_config()
+
+    info = save_proc(metadata)
+    assert info.metadata is not None
+
+    detectron_loaded = bentoml.detectron.load(
+        info.tag,
+        device="cpu",
+        model_store=modelstore,
+    )
     assert next(detectron_loaded.parameters()).device.type == "cpu"
     assert repr(detectron_loaded) == repr(model)
 
-    image = imageio.imread("http://images.cocodataset.org/val2017/000000439715.jpg")
-    image = image[:, :, ::-1]
+    image = prepare_image(image_array)
+    image = torch.as_tensor(image)
+    input_data = [{"image": image}]
 
-    responses = predict_image(detectron_loaded, image)
-    assert responses["scores"][0] > 0.9
+    raw_result = detectron_loaded(input_data)[0]
+    result = extract_result(raw_result)
+    assert result["scores"][0] > 0.9

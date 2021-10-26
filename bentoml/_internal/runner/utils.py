@@ -26,13 +26,13 @@ CUDA_SUCCESS = 0
 
 class Params(t.Generic[T]):
     def __init__(self, *args: T, **kwargs: T):
-        self.args = args
-        self.kwargs = kwargs
+        self.args: t.Tuple[T, ...] = args
+        self.kwargs: t.Dict[str, T] = kwargs
 
     def map(self, function: t.Callable[[T], To]) -> "Params[To]":
         args = tuple(function(a) for a in self.args)
         kwargs = {k: function(v) for k, v in self.kwargs.items()}
-        return type(self)[To](*args, **kwargs)
+        return Params[To](*args, **kwargs)
 
     def imap(
         self, function: t.Callable[[T], t.Iterable[To]]
@@ -44,19 +44,15 @@ class Params(t.Generic[T]):
             while True:
                 args = tuple(next(a) for a in args_iter)
                 kwargs = {k: next(v) for k, v in kwargs_iter.items()}
-                yield type(self)[To](*args, **kwargs)
+                yield Params[To](*args, **kwargs)
         except StopIteration:
             pass
 
     def to_http_multipart(self) -> "MultipartWriter":
-        d = self.to_dict()
-        pass
+        raise NotImplementedError()
 
     def to_dict(self) -> t.Dict[t.Union[int, str], T]:
-        d = dict(**self.kwargs)
-        for i, v in enumerate(self.args):
-            d[i] = v
-        return d
+        return dict(enumerate(self.args), **self.kwargs)
 
     @classmethod
     def from_dict(cls, d: t.Dict[t.Union[int, str], To]) -> "Params[To]":
@@ -64,7 +60,7 @@ class Params(t.Generic[T]):
             v for _, v in sorted((k, v) for k, v in d.items() if isinstance(k, int))
         )
         kwargs = {k: v for k, v in d.items() if not isinstance(k, int)}
-        return cls[To](*args, **kwargs)
+        return Params[To](*args, **kwargs)
 
     @property
     def sample(self) -> T:
@@ -98,24 +94,28 @@ class TypeRef:
 
         if hasattr(t, "_eval_type"):  # python3.8 & python 3.9
             _eval_type = getattr(t, "_eval_type")
-            return _eval_type(ref, globals(), localns)
+            return t.cast(t.Type, _eval_type(ref, globals(), localns))
 
         if hasattr(ref, "_eval_type"):  # python3.6
             _eval_type = getattr(ref, "_eval_type")
-            return _eval_type(globals(), localns)
+            return t.cast(t.Type, _eval_type(globals(), localns))
 
         raise SystemError("unsupported Python version")
 
-    def __eq__(self, o: t.Union["TypeRef", type]) -> bool:
+    def __eq__(self, o: object) -> bool:
         """
         TypeRef("numpy", "ndarray") == np.ndarray
         TypeRef("numpy", "ndarray") == TypeRef.from_instance(np.random.randint([2, 3]))
         """
         if isinstance(o, type):
             o = self.from_type(type)
-        return self.module == o.module and self.qualname == o.qualname
 
-    def __hash__(self):
+        if isinstance(o, TypeRef):
+            return self.module == o.module and self.qualname == o.qualname
+
+        return False
+
+    def __hash__(self) -> int:
         return hash(f"{self.module}.{self.qualname}")
 
 
@@ -167,7 +167,7 @@ def _query_cgroup_cpu_count() -> float:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupSubsystem_linux.cpp
     # For cgroup v2, see:
     # https://github.com/openjdk/jdk/blob/master/src/hotspot/os/linux/cgroupV2Subsystem_linux.cpp
-    def _read_integer_file(filename):
+    def _read_integer_file(filename: str) -> int:
         with open(filename, "r") as f:
             return int(f.read().rstrip())
 
@@ -188,9 +188,11 @@ def _query_cgroup_cpu_count() -> float:
     if os.path.isfile(cfs_period_us_file):
         period = _read_integer_file(cfs_period_us_file)
 
-    limit_count = cpu_count = os.cpu_count()
-    quota_count = 0
-    share_count = 0
+    os_cpu_count = float(os.cpu_count() or 1)
+
+    limit_count = math.inf
+    quota_count = 0.0
+    share_count = 0.0
 
     if quota > -1 and period > 0:
         quota_count = float(quota) / float(period)
@@ -204,7 +206,10 @@ def _query_cgroup_cpu_count() -> float:
     if share_count != 0:
         limit_count = share_count
 
-    return float(min(limit_count, cpu_count))
+    return float(min(limit_count, os_cpu_count))
+
+
+import math
 
 
 @lru_cache(maxsize=1)

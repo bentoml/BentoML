@@ -4,7 +4,7 @@ LC_ALL=C
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 
 LOCAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-VALID_BRANCH_REGEX="^(chore|refactor|feat|feature|bugfix|improvement|library|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$"
+VALID_BRANCH_REGEX="^(style|chore|refactor|feat|internal|bugfix|improvement|library|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$"
 
 cd "$GIT_ROOT" || exit
 

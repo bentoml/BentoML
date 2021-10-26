@@ -6,7 +6,7 @@ from ._internal.io_descriptors import (
     Multipart,
     NumpyNdarray,
     PandasDataFrame,
-    Str,
+    Text,
 )
 
 __all__ = [
@@ -17,5 +17,5 @@ __all__ = [
     "Multipart",
     "NumpyNdarray",
     "PandasDataFrame",
-    "Str",
+    "Text",
 ]

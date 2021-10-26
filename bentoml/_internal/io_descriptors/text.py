@@ -4,7 +4,7 @@ from starlette.responses import Response
 from .base import IODescriptor
 
 
-class Str(IODescriptor):
+class Text(IODescriptor):
     def openapi_request_schema(self):
         pass
 

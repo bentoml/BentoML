@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class NumpyNdarray(IODescriptor):
     """
-    NumpyNdarray defines API specification for the inputs/outputs of a Service, where either inputs will be
+    `NumpyNdarray` defines API specification for the inputs/outputs of a Service, where either inputs will be
     converted to or outputs will be converted from type `numpy.ndarray` as specified in your API function signature.
 
     .. Toy implementation of a sklearn service::
@@ -54,7 +54,7 @@ class NumpyNdarray(IODescriptor):
         [INFO] Serving BentoML Service "IrisClassifierService" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown::
+    Users can then send a cURL requests like shown in different terminal session::
         % curl -X POST -H "application/json" --data "[[5, 4, 3, 2]]" http://0.0.0.0:5000/predict
 
         {res: [1]}%
@@ -72,7 +72,8 @@ class NumpyNdarray(IODescriptor):
                 arr = [[1,2,3]]  # shape (1,3)
                 inp = NumpyNdarray.from_sample(arr)
 
-                @svc.api(input=inp(shape=(3,1)), output=NumpyNdarray())
+                ...
+                @svc.api(input=inp(shape=(3,1), enforce_shape=True), output=NumpyNdarray())
                 def predict(input_array: np.ndarray) -> np.ndarray:
                     # input_array will have shape (3,1)
                     result = await runner.run(input_array)
@@ -114,8 +115,8 @@ class NumpyNdarray(IODescriptor):
             request (`starlette.requests.Requests`):
                 Incoming Requests
         Returns:
-            a `numpy.ndarray`. This can then be used inside users defined
-             logics.
+            a `numpy.ndarray` object. This can then be used
+             inside users defined logics.
         """
         json_obj = await request.json()
         res = np.array(json_obj)

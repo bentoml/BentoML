@@ -1,30 +1,36 @@
 import io
 import itertools
 import json
-from typing import Any, Iterable, Iterator, Mapping, Set, Union
+import typing as t
 
-from bentoml.exceptions import BadInput
+from bentoml.exceptions import BadInput, BentoMLException
 
 from . import catch_exceptions
 from .csv import csv_quote, csv_row, csv_split, csv_splitlines, csv_unquote
 from .lazy_loader import LazyLoader
 
-pandas = LazyLoader("pandas", globals(), "pandas")
+if t.TYPE_CHECKING:
+    import pandas as pd
+else:
+    pd = LazyLoader("pd", globals(), "pandas")
 
 
-def check_dataframe_column_contains(required_column_names, df):
+def check_dataframe_column_contains(
+    required_column_names: str, df: "pd.DataFrame"
+) -> None:
     df_columns = set(map(str, df.columns))
     for col in required_column_names:
         if col not in df_columns:
             raise BadInput(
-                "Missing columns: {}, required_column:{}".format(
-                    ",".join(set(required_column_names) - df_columns), df_columns
-                )
+                f"Missing columns: {','.join(set(required_column_names) - df_columns)}, required_column:{df_columns}"
             )
 
 
-@catch_exceptions(Exception, fallback=None)
-def guess_orient(table: Any, strict: bool = False) -> Union[None, str, Set[str]]:
+@catch_exceptions(Exception, BentoMLException, fallback=None)
+def guess_orient(
+    table: t.Union[t.List[t.Mapping[str, t.Any]], t.Dict[str, t.Any]],
+    strict: bool = False,
+) -> t.Optional[t.Union[str, t.Set[str]]]:
     if isinstance(table, list):
         if not table:
             if strict:
@@ -44,33 +50,46 @@ def guess_orient(table: Any, strict: bool = False) -> Union[None, str, Set[str]]
             return {"columns", "index"}
         else:
             return "columns"
+    else:
+        return None
 
 
-class DataFrameState(object):
-    def __init__(self, columns: Mapping[str, int] = None):
+class _DataFrameState(object):
+    @t.overload
+    def __init__(self, columns: t.Optional[t.Dict[str, int]]):
+        ...
+
+    @t.overload
+    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):
+        ...
+
+    def __init__(
+        self,
+        columns: t.Optional[t.Union[t.Mapping[str, int], t.Tuple[str, ...]]] = None,
+    ):
         self.columns = columns
 
 
-def _from_json_records(state: DataFrameState, table: list):
+def _from_json_records(state: _DataFrameState, table: list) -> t.Iterator[str]:
     if state.columns is None:  # make header
         state.columns = {k: i for i, k in enumerate(table[0].keys())}
     for tr in table:
         yield csv_row(tr[c] for c in state.columns)
 
 
-def _from_json_values(_: DataFrameState, table: list):
+def _from_json_values(_: _DataFrameState, table: list) -> t.Iterator[str]:
     for tr in table:
         yield csv_row(tr)
 
 
-def _from_json_columns(state: DataFrameState, table: dict):
+def _from_json_columns(state: _DataFrameState, table: dict) -> t.Iterator[str]:
     if state.columns is None:  # make header
         state.columns = {k: i for i, k in enumerate(table.keys())}
     for row in next(iter(table.values())):
         yield csv_row(table[col][row] for col in state.columns)
 
 
-def _from_json_index(state: DataFrameState, table: dict):
+def _from_json_index(state: _DataFrameState, table: dict) -> t.Iterator[str]:
     if state.columns is None:  # make header
         state.columns = {k: i for i, k in enumerate(next(iter(table.values())).keys())}
         for row in table.keys():
@@ -80,7 +99,7 @@ def _from_json_index(state: DataFrameState, table: dict):
             yield csv_row(table[row][col] for col in state.columns)
 
 
-def _from_json_split(state: DataFrameState, table: dict):
+def _from_json_split(state: _DataFrameState, table: dict) -> t.Iterator[str]:
     table_columns = {k: i for i, k in enumerate(table["columns"])}
 
     if state.columns is None:  # make header
@@ -93,7 +112,9 @@ def _from_json_split(state: DataFrameState, table: dict):
             yield csv_row(row[idx] for idx in idxs)
 
 
-def _from_csv_without_index(state: DataFrameState, table: Iterator[str]):
+def _from_csv_without_index(
+    state: _DataFrameState, table: t.Iterator[str]
+) -> t.Iterator[str]:
     row_str = next(table)  # skip column names
     table_columns = tuple(csv_unquote(s) for s in csv_split(row_str, ","))
 
@@ -109,7 +130,8 @@ def _from_csv_without_index(state: DataFrameState, table: Iterator[str]):
     elif not all(
         c1 == c2 for c1, c2 in itertools.zip_longest(state.columns, table_columns)
     ):
-        idxs = [state.columns[k] for k in table_columns]
+        # TODO: check type hint for this case. Right now nothing breaks so :)
+        idxs = [state.columns[k] for k in table_columns]  # type: ignore[call-overload]
         for row_str in table:
             if not row_str:  # skip blank line
                 continue
@@ -128,7 +150,7 @@ def _from_csv_without_index(state: DataFrameState, table: Iterator[str]):
                 yield row_str
 
 
-_ORIENT_MAP = {
+_ORIENT_MAP: t.Dict[str, t.Callable[..., t.Iterator[str]]] = {
     "records": _from_json_records,
     "columns": _from_json_columns,
     "values": _from_json_values,
@@ -140,71 +162,106 @@ _ORIENT_MAP = {
 PANDAS_DATAFRAME_TO_JSON_ORIENT_OPTIONS = {k for k in _ORIENT_MAP}
 
 
-def _dataframe_csv_from_input(table: str, fmt, orient, state):
+def _dataframe_csv_from_input(
+    table: str,
+    fmt: str,
+    orient: t.Optional[str],
+    state: _DataFrameState,
+) -> t.Optional[t.Tuple[str, ...]]:
     try:
         if not fmt or fmt == "json":
             table = json.loads(table)
             if not orient:
                 orient = guess_orient(table, strict=False)
             else:
-                guessed_orient = guess_orient(table, strict=True)
-                if orient != guessed_orient and orient not in guessed_orient:
-                    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", orient)
+                guessed_orient = guess_orient(table, strict=True)  # type: t.Set[str]
+                if orient not in guessed_orient:
                     return None
             if orient not in _ORIENT_MAP:
                 return None
-            _from_json = _ORIENT_MAP[orient]
+            _from_json = _ORIENT_MAP[
+                orient
+            ]  # type: t.Callable[["_DataFrameState", str], t.Iterator[str]]
             try:
                 return tuple(_from_json(state, table))
             except (TypeError, AttributeError, KeyError, IndexError):
                 return None
         elif fmt == "csv":
-            table = csv_splitlines(table)
-            return tuple(_from_csv_without_index(state, table))
+            _table = csv_splitlines(table)
+            return tuple(_from_csv_without_index(state, _table))
         else:
             return None
-    except (json.JSONDecodeError):
+    except json.JSONDecodeError:
         return None
 
 
-def read_dataframes_from_json_n_csv(
-    datas: Iterable[str],
-    formats: Iterable[str],
-    orient: str = None,
-    columns=None,
-    dtype=None,
-) -> ("pandas.DataFrame", Iterable[slice]):
+def from_json_or_csv(
+    data: t.Iterable[str],
+    formats: t.Iterable[str],
+    orient: t.Optional[str] = None,
+    columns: t.Optional[t.List[str]] = None,
+    dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
+) -> t.Tuple[t.Optional["pd.DataFrame"], t.Tuple[int, ...]]:
     """
-    load dataframes from multiple raw datas in json or csv format, efficiently
+    Load DataFrames from multiple raw data in JSON or CSV format, efficiently
 
-    Background: Each calling of pandas.read_csv or pandas.read_json cost about 100ms,
-    no matter how many lines it contains. Concat ragged_tensor/csvs before read_json/read_csv
-    to improve performance.
-    """
-    state = DataFrameState(
+    Background: Each calling of `pandas.read_csv()` or `pandas.read_json` cost about 100ms,
+     no matter how many lines it contains. Concat ragged_tensor/csv before
+     read_json/read_csv to improve performance.
+
+    Args:
+        data (`Iterable[str]`):
+            Data either in JSON or CSV format
+        formats (`Iterable[str]`):
+            List of formats, including `json` or `csv`
+        orient (`str`, `optional`, default to `records`):
+            Indication of expected JSON string format. Compatible JSON strings can be produced
+             by `pandas.io.json.to_json()` with a corresponding orient value. Possible orients are:
+                - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data -> [values]}
+                - `records` - `List[Any]`: [{column -> value}, ..., {column -> value}]
+                - `index` - `Dict[str, Any]`: {idx -> {column -> value}}
+                - `columns` - `Dict[str, Any]`: {column -> {index -> value}}
+                - `values` - `Dict[str, Any]`: Values arrays
+        columns (`List[str]`, `optional`, default to `None`):
+            List of columns name that users wish to update
+        dtype (`Union[bool, Dict[str, Any]]`, `optional`, default to `None`):
+            Data Type users wish to convert their inputs/outputs to. If it is a boolean,
+             then pandas will infer dtypes. Else if it is a dictionary of column to dtype, then
+             applies those to incoming dataframes. If False, then don't infer dtypes at all (only
+             applies to the data). This is not applicable when `orient='table'`.
+
+    Returns:
+        A tuple containing `pandas.DataFrame` and a tuple containing length of all series
+         in returning DataFrame.
+
+    Raises:
+        pandas.errors.EmptyDataError:
+            When data is not found or emptied
+    """  # noqa
+    state = _DataFrameState(
         columns={k: i for i, k in enumerate(columns)} if columns else None
     )
     trs_list = tuple(
-        _dataframe_csv_from_input(t, fmt, orient, state)
-        for t, fmt in zip(datas, formats)
+        _dataframe_csv_from_input(_t, _fmt, orient, state)
+        for _t, _fmt in zip(data, formats)
     )
     header = ",".join(csv_quote(td) for td in state.columns) if state.columns else None
     lens = tuple(len(trs) if trs else 0 for trs in trs_list)
     table = "\n".join(tr for trs in trs_list if trs is not None for tr in trs)
     try:
         if not header:
-            df = pandas.read_csv(
+            df = pd.read_csv(
                 io.StringIO(table),
                 index_col=None,
                 dtype=dtype,
                 header=None,
             )
         else:
-            df = pandas.read_csv(
+            df = pd.read_csv(
                 io.StringIO("\n".join((header, table))),
                 index_col=None,
                 dtype=dtype,
             )
         return df, lens
-    except pandas.errors.EmptyDataError:
+    except pd.errors.EmptyDataError:
         return None, lens

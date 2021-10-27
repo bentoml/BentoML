@@ -17,6 +17,8 @@ from . import expand_env_var
 if TYPE_CHECKING:
     from pyarrow._plasma import PlasmaClient
 
+    from ..server.metrics.prometheus import PrometheusClient
+
 
 LOGGER = logging.getLogger(__name__)
 SYSTEM_HOME = os.path.expanduser("~")
@@ -244,12 +246,16 @@ class BentoServerContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origins=Provide[config.cors.allow_origins],
-        allow_credentials=Provide[config.cors.access_control_allow_credentials],
-        expose_headers=Provide[config.cors.access_control_expose_headers],
-        allow_methods=Provide[config.cors.access_control_allow_methods],
-        allow_headers=Provide[config.cors.access_control_allow_headers],
-        max_age=Provide[config.cors.access_control_max_age],
+        allow_origins: t.List[str] = Provide[config.cors.access_control_allow_origin],
+        allow_credentials: t.List[str] = Provide[
+            config.cors.access_control_allow_credentials
+        ],
+        expose_headers: t.List[str] = Provide[
+            config.cors.access_control_expose_headers
+        ],
+        allow_methods: t.List[str] = Provide[config.cors.access_control_allow_methods],
+        allow_headers: t.List[str] = Provide[config.cors.access_control_allow_headers],
+        max_age: int = Provide[config.cors.access_control_max_age],
     ) -> t.Dict:
         kwargs = dict(
             allow_origins=allow_origins,
@@ -285,9 +291,9 @@ class BentoServerContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def metrics_client(
-        multiproc_dir=prometheus_multiproc_dir,
-        namespace=config.metrics.namespace,
-    ):
+        multiproc_dir: str = Provide[prometheus_multiproc_dir],
+        namespace: str = Provide[config.metrics.namespace],
+    ) -> "PrometheusClient":
         from ..server.metrics.prometheus import PrometheusClient
 
         return PrometheusClient(
@@ -295,6 +301,7 @@ class BentoServerContainerClass:
             namespace=namespace,
         )
 
+    # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping: Provider[t.Dict[str, int]] = providers.Static(dict())
     plasma_db: "PlasmaClient" = providers.Static(None)
 

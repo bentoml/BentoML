@@ -7,7 +7,6 @@ from typing import Optional
 from simple_di import skip
 
 from bentoml import load
-from bentoml._internal.configuration import CONFIG_ENV_VAR, save_global_config
 from bentoml._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -82,80 +81,8 @@ def serve_development(
     arbiter.start()
 
 
-def serve(
-    svc_import_path_or_bento_tag: str,
-    port: Optional[int] = None,
-    timeout: Optional[int] = None,
-):
-    svc = load(svc_import_path_or_bento_tag)
-
-    bento_server = BentoMLContainer.config.bento_server
-    bento_server.port.set(port or skip)
-    bento_server.timeout.set(timeout or skip)
-
-    config_fd, config_pathname = tempfile.mkstemp(suffix="yml", text=True)
-    save_global_config(config_fd)  # save the container state to yml file
-
-    from circus.arbiter import Arbiter
-    from circus.util import DEFAULT_ENDPOINT_DEALER, DEFAULT_ENDPOINT_SUB
-    from circus.watcher import Watcher
-
-    watchers = []
-
-    watchers.append(
-        Watcher(
-            name="http server",
-            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_server({svc_import_path_or_bento_tag})"',
-            env={
-                "LC_ALL": "en_US.utf-8",
-                "LANG": "en_US.utf-8",
-                CONFIG_ENV_VAR: config_pathname,
-            },
-            numprocesses=1,
-            stop_children=True,
-        )
-    )
-
-    watchers.append(
-        Watcher(
-            name="marshal",
-            cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_proxy({svc_import_path_or_bento_tag})"',
-            env={
-                "LC_ALL": "en_US.utf-8",
-                "LANG": "en_US.utf-8",
-                CONFIG_ENV_VAR: config_pathname,
-            },
-            numprocesses=1,
-            stop_children=True,
-        )
-    )
-
-    for runner_name, runner in svc._runners.items():
-        watchers.append(
-            Watcher(
-                name="ngrok",
-                cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_proxy({svc_import_path_or_bento_tag})"',
-                env={
-                    "LC_ALL": "en_US.utf-8",
-                    "LANG": "en_US.utf-8",
-                    CONFIG_ENV_VAR: config_pathname,
-                },
-                numprocesses=1,
-                stop_children=True,
-            )
-        )
-
-    arbiter = Arbiter(
-        watchers=watchers,
-        endpoint=DEFAULT_ENDPOINT_DEALER,
-        pubsub_endpoint=DEFAULT_ENDPOINT_SUB,
-    )
-
-    arbiter.start()
-
-
 def _start_ngrok_server():
-    from bentoml.utils.flask_ngrok import start_ngrok
+    from bentoml._internal.utils.flask_ngrok import start_ngrok
 
     time.sleep(1)
     start_ngrok(BentoMLContainer.config.bento_server.port.get())
@@ -273,12 +200,20 @@ def start_prod_server1(
     arbiter.start()
 
 
+def _start_dev_api_server(bento_path_or_tag: str, instance_id: int, runners_map: str):
+    import uvicorn
+
+    svc = load(bento_path_or_tag)
+
+    uvicorn.run(svc.asgi_app, log_level="info")
+
+
 def _start_prod_api_server(bento_path_or_tag: str, instance_id: int, runners_map: str):
     import uvicorn
 
     svc = load(bento_path_or_tag)
 
-    uvicorn.run(svc._asgi_app, log_level="info")
+    uvicorn.run(svc.asgi_app, log_level="info")
 
 
 def _start_prod_runner_server(

@@ -6,6 +6,7 @@ from starlette.responses import Response
 
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
+from .json import MIME_TYPE_JSON
 
 if t.TYPE_CHECKING:
     import numpy as np
@@ -64,7 +65,7 @@ class NumpyNdarray(IODescriptor):
         return res
 
     async def to_http_response(self, obj: "np.ndarray") -> Response:
-        return Response(obj.tolist(), media_type="application/json")
+        return Response(obj.tolist(), media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(

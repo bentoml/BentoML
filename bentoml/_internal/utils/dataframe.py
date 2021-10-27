@@ -4,7 +4,6 @@ import json
 import typing as t
 
 from bentoml.exceptions import BadInput, BentoMLException
-
 from . import catch_exceptions
 from .csv import csv_quote, csv_row, csv_split, csv_splitlines, csv_unquote
 from .lazy_loader import LazyLoader
@@ -22,7 +21,7 @@ def check_dataframe_column_contains(
     for col in required_column_names:
         if col not in df_columns:
             raise BadInput(
-                f"Missing columns: {','.join(set(required_column_names) - df_columns)}, required_column:{df_columns}"
+                f"Missing columns: {','.join(set(required_column_names) - df_columns)}, required_column:{df_columns}"  # noqa: E501
             )
 
 
@@ -56,11 +55,11 @@ def guess_orient(
 
 class _DataFrameState(object):
     @t.overload
-    def __init__(self, columns: t.Optional[t.Dict[str, int]]):
+    def __init__(self, columns: t.Optional[t.Dict[str, int]]):  # noqa: F811
         ...
 
     @t.overload
-    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):
+    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):  # noqa: F811
         ...
 
     def __init__(

@@ -1,6 +1,9 @@
 import sys
 import typing as t
 
+from starlette.applications import Starlette
+from starlette.types import ASGIApp
+
 from bentoml._internal.io_descriptors import IODescriptor
 from bentoml._internal.utils.validation import check_is_dns1123_subdomain
 from bentoml.exceptions import BentoMLException
@@ -38,14 +41,18 @@ class Service:
         if runners is not None:
             self._runners = {r.name: r for r in runners}
 
+        self._mount_apps = []
+        self._middlewares = []
+
     def __del__(self):
         # working dir was added to sys.path in the .loader.import_service function
         if self._working_dir:
             sys.path.remove(self._working_dir)
 
+    @property
     def api(
         self,
-        input: IODescriptor,
+        input_: IODescriptor,
         output: IODescriptor,
         api_name: t.Optional[str] = None,
         api_doc: t.Optional[str] = None,
@@ -54,14 +61,14 @@ class Service:
         """Decorator for adding InferenceAPI to this service"""
 
         def decorator(func):
-            self._add_inference_api(func, input, output, api_name, api_doc, route)
+            self._add_inference_api(func, input_, output, api_name, api_doc, route)
 
         return decorator
 
     def _add_inference_api(
         self,
-        func: callable,
-        input: IODescriptor,
+        func: t.Callable,
+        input_: IODescriptor,
         output: IODescriptor,
         api_name: t.Optional[str],
         api_doc: t.Optional[str],
@@ -70,7 +77,7 @@ class Service:
         api = InferenceAPI(
             name=api_name,
             user_defined_callback=func,
-            input_descriptor=input,
+            input_descriptor=input_,
             output_descriptor=output,
             doc=api_doc,
             route=route,
@@ -83,18 +90,18 @@ class Service:
         self._apis[api.name] = api
 
     @property
-    def _asgi_app(self):
-        return self._app
+    def _asgi_app(self) -> "ASGIApp":
+        from bentoml._internal.server.service_app import ServiceApp
 
-    @property
-    def _wsgi_app(self):
-        return self._app
+        return ServiceApp(self).get_app()
 
-    def mount_asgi_app(self, app, path=None):
-        self._app.mount(app, path=path)
+    _wsgi_app = _asgi_app
 
-    def add_middleware(self, middleware, *args, **kwargs):
-        self._app
+    def mount_asgi_app(self, app: "ASGIApp", path: str = "/"):
+        self._mount_apps.append((app, path, self.name))
+
+    def add_middleware(self, middleware, **options) -> None:
+        self._middlewares.append((middleware, options))
 
     def openapi_doc(self):
         from .openapi import get_service_openapi_doc

@@ -173,22 +173,20 @@ class ServiceAppFactory(BaseApp):
         """
         Setup routes for bento model server, including:
 
-        /               Index Page
-        /docs           Swagger UI
-        /healthz        Health check ping
-        /feedback       Submitting feedback
+        /               Index Page, shows readme docs, metadata, and Swagger UI
+        /docs.json      Returns Swagger/OpenAPI definition file in json format
+        /healthz        liveness probe endpoint
+        /readyz         Readiness probe endpoint
         /metrics        Prometheus metrics endpoint
-        /metadata       BentoService Artifact Metadata
 
-        And user defined InferenceAPI list into flask routes, e.g.:
+        And user defined InferenceAPI list into routes, e.g.:
         /classify
         /predict
         """
-        routes = super().routes()
-
         from starlette.routing import Mount, Route
         from starlette.staticfiles import StaticFiles
 
+        routes = super().routes()
         routes.append(Route(path="/", name="home", endpoint=self.index_view_func))
         routes.append(
             Route(

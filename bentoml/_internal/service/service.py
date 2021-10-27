@@ -102,13 +102,15 @@ class Service:
     def asgi_app(self) -> "Starlette":
         from bentoml._internal.server.service_app import ServiceAppFactory
 
-        app_factory = ServiceAppFactory(self)
-        return app_factory()
+        return ServiceAppFactory(self)()
 
-    wsgi_app = asgi_app
+    def mount_asgi_app(self, app: "ASGIApp", path: str = "/", name: str = None) -> None:
+        self._mount_apps.append((app, path, name))
 
-    def mount_asgi_app(self, app: "ASGIApp", path: str = "/") -> None:
-        self._mount_apps.append((app, path, self.name))
+    def mount_wsgi_app(self, app, path: str = "/", name: str = None) -> None:
+        from starlette.middleware.wsgi import WSGIMiddleware
+
+        self._mount_apps.append((WSGIMiddleware(app), path, name))
 
     def add_middleware(
         self, middleware_cls: t.Type["Middleware"], **options: t.Any

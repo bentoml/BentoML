@@ -4,6 +4,7 @@ import json
 import typing as t
 
 from bentoml.exceptions import BadInput, BentoMLException
+
 from . import catch_exceptions
 from .csv import csv_quote, csv_row, csv_split, csv_splitlines, csv_unquote
 from .lazy_loader import LazyLoader
@@ -62,7 +63,7 @@ class _DataFrameState(object):
     def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):
         ...
 
-    def __init__(
+    def __init__(  # noqa: F811
         self,
         columns: t.Optional[t.Union[t.Mapping[str, int], t.Tuple[str, ...]]] = None,
     ):

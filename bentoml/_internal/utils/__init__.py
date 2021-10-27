@@ -76,7 +76,9 @@ class catch_exceptions(t.Generic[_T_co], object):
         ...
 
     # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
-    def __call__(self, func: t.Callable[..., _T_co]) -> t.Callable[..., _T_co]:
+    def __call__(
+        self, func: t.Callable[..., _T_co]
+    ) -> t.Callable[..., _T_co]:  # noqa: F811
         @functools.wraps(func)
         def _(*args: t.Any, **kwargs: t.Any) -> t.Optional[_T_co]:
             try:

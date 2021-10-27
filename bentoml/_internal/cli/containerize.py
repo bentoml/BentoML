@@ -1,6 +1,6 @@
 import click
 
-from ..utils.docker_utils import validate_tag
+from ..utils.docker import validate_tag
 
 
 def add_containerize_command(cli):

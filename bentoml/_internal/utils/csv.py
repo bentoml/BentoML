@@ -1,11 +1,11 @@
 # CSV utils following https://tools.ietf.org/html/rfc4180
-from typing import Iterable, Iterator, Union
+import typing as t
 
 
-def csv_splitlines(string: str) -> Iterator[str]:
+def csv_splitlines(string: str) -> t.Iterator[str]:
     if '"' in string:
 
-        def _iter_line(line: str) -> Iterator[str]:
+        def _iter_line(line: str) -> t.Iterator[str]:
             quoted = False
             last_cur = 0
             for i, c in enumerate(line):
@@ -25,19 +25,19 @@ def csv_splitlines(string: str) -> Iterator[str]:
     return iter(string.splitlines())
 
 
-def csv_split(string: str, delimiter: str) -> Iterator[str]:
+def csv_split(string: str, delimiter: str) -> t.Iterator[str]:
     if '"' in string:
-        dlen = len(delimiter)
+        d_len = len(delimiter)
 
-        def _iter_line(line: str) -> Iterator[str]:
+        def _iter_line(line: str) -> t.Iterator[str]:
             quoted = False
             last_cur = 0
             for i, c in enumerate(line):
                 if c == '"':
                     quoted = not quoted
-                if not quoted and string[i : i + dlen] == delimiter:
+                if not quoted and string[i : i + d_len] == delimiter:
                     yield line[last_cur:i]
-                    last_cur = i + dlen
+                    last_cur = i + d_len
             yield line[last_cur:]
 
         return _iter_line(string)
@@ -45,7 +45,7 @@ def csv_split(string: str, delimiter: str) -> Iterator[str]:
         return iter(string.split(delimiter))
 
 
-def csv_row(tds: Iterable) -> str:
+def csv_row(tds: t.Iterable) -> str:
     return ",".join(csv_quote(td) for td in tds)
 
 
@@ -57,7 +57,7 @@ def csv_unquote(string: str) -> str:
     return string
 
 
-def csv_quote(td: Union[int, str]) -> str:
+def csv_quote(td: t.Union[int, str]) -> str:
     """
     >>> csv_quote(1)
     '1'

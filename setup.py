@@ -30,6 +30,7 @@ install_requires = [
     "packaging>=20.0",
     "importlib_metadata",
     "pathspec",
+    'typing_extensions >= 3.7.4',
 ]
 
 model_server_optional = [

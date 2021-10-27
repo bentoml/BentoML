@@ -6,17 +6,17 @@ from bentoml.exceptions import BentoMLException
 logger = logging.getLogger(__name__)
 
 
-def to_valid_docker_image_name(name):
+def to_valid_docker_image_name(name: str) -> str:
     # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     return name.lower().strip("._-")
 
 
-def to_valid_docker_image_version(version):
+def to_valid_docker_image_version(version: str) -> str:
     # https://docs.docker.com/engine/reference/commandline/tag/#extended-description
     return version.encode("ascii", errors="ignore").decode().lstrip(".-")[:128]
 
 
-def validate_tag(ctx, param, tag):  # pylint: disable=unused-argument
+def validate_tag(ctx, param, tag) -> str:  # noqa # pylint: disable=unused-argument
     if tag is None:
         return tag
 

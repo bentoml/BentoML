@@ -1,26 +1,16 @@
 import contextlib
 import functools
 import socket
+import typing as t
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Iterator,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
 
 from ..types import PathType
 from .lazy_loader import LazyLoader
 
-_T = TypeVar("_T")
-_V = TypeVar("_V")
+_T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
+_V = t.TypeVar("_V")
 
 
 __all__ = [
@@ -62,14 +52,14 @@ def validate_or_create_dir(*path: PathType) -> None:
             path.mkdir(parents=True)
 
 
-class catch_exceptions(Generic[_T], object):
+class catch_exceptions(t.Generic[_T_co], object):
     def __init__(
         self,
-        catch_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
-        throw_exc: Union[Type[BaseException], Tuple[Type[BaseException], ...]],
-        msg: Optional[str] = "",
-        fallback: Optional[_T] = None,
-        raises: Optional[bool] = True,
+        catch_exc: t.Union[t.Type[BaseException], t.Tuple[t.Type[BaseException], ...]],
+        throw_exc: t.Union[t.Type[BaseException], t.Tuple[t.Type[BaseException], ...]],
+        msg: t.Optional[str] = "",
+        fallback: t.Optional[_T_co] = None,
+        raises: t.Optional[bool] = True,
     ) -> None:
         self._catch_exc = catch_exc
         self._throw_exc = throw_exc
@@ -77,10 +67,20 @@ class catch_exceptions(Generic[_T], object):
         self._fallback = fallback
         self._raises = raises
 
+    @t.overload  # noqa: F811
+    def __call__(self, func: t.Any) -> t.Callable[..., _T_co]:
+        ...
+
+    @t.overload  # noqa: F811
+    def __call__(self, func: t.Any) -> t.Any:
+        ...
+
     # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
-    def __call__(self, func: Callable[..., _T]) -> Callable[..., Optional[_T]]:
+    def __call__(  # noqa: F811
+        self, func: t.Callable[..., _T_co]
+    ) -> t.Callable[..., _T_co]:
         @functools.wraps(func)
-        def _(*args: Any, **kwargs: Any) -> Optional[_T]:
+        def _(*args: t.Any, **kwargs: t.Any) -> t.Optional[_T_co]:
             try:
                 return func(*args, **kwargs)
             except self._catch_exc:
@@ -92,7 +92,7 @@ class catch_exceptions(Generic[_T], object):
 
 
 @contextlib.contextmanager
-def reserve_free_port(host: str = "localhost") -> Iterator[int]:
+def reserve_free_port(host: str = "localhost") -> t.Iterator[int]:
     """
     detect free port and reserve until exit the context
     """

@@ -1,8 +1,6 @@
 import sys
 import typing as t
-
-from starlette.applications import Starlette
-from starlette.types import ASGIApp
+from typing import TYPE_CHECKING
 
 from bentoml._internal.io_descriptors import IODescriptor
 from bentoml._internal.utils.validation import check_is_dns1123_subdomain
@@ -10,6 +8,11 @@ from bentoml.exceptions import BentoMLException
 
 from ..runner import Runner
 from .inference_api import InferenceAPI
+
+if TYPE_CHECKING:
+    from starlette.applications import Starlette
+    from starlette.middleware import Middleware
+    from starlette.types import ASGIApp
 
 
 class Service:
@@ -41,15 +44,17 @@ class Service:
         if runners is not None:
             self._runners = {r.name: r for r in runners}
 
-        self._mount_apps = []
-        self._middlewares = []
+        self._mount_apps: t.List[t.Tuple["ASGIApp", str, str]] = []
+        self._middlewares: t.List["Middleware"] = []
 
-    def __del__(self):
+    def on_startup(self) -> None:
+        pass
+
+    def on_shutdown(self) -> None:
         # working dir was added to sys.path in the .loader.import_service function
         if self._working_dir:
             sys.path.remove(self._working_dir)
 
-    @property
     def api(
         self,
         input_: IODescriptor,
@@ -57,11 +62,12 @@ class Service:
         api_name: t.Optional[str] = None,
         api_doc: t.Optional[str] = None,
         route: t.Optional[str] = None,
-    ):
+    ) -> t.Callable[[t.Callable], t.Callable]:
         """Decorator for adding InferenceAPI to this service"""
 
-        def decorator(func):
+        def decorator(func: t.Callable) -> t.Callable:
             self._add_inference_api(func, input_, output, api_name, api_doc, route)
+            return func
 
         return decorator
 
@@ -73,7 +79,7 @@ class Service:
         api_name: t.Optional[str],
         api_doc: t.Optional[str],
         route: t.Optional[str],
-    ):
+    ) -> None:
         api = InferenceAPI(
             name=api_name,
             user_defined_callback=func,
@@ -90,18 +96,21 @@ class Service:
         self._apis[api.name] = api
 
     @property
-    def _asgi_app(self) -> "ASGIApp":
-        from bentoml._internal.server.service_app import ServiceApp
+    def asgi_app(self) -> "Starlette":
+        from bentoml._internal.server.service_app import ServiceAppFactory
 
-        return ServiceApp(self).get_app()
+        app_factory = ServiceAppFactory(self)
+        return app_factory()
 
-    _wsgi_app = _asgi_app
+    wsgi_app = asgi_app
 
-    def mount_asgi_app(self, app: "ASGIApp", path: str = "/"):
+    def mount_asgi_app(self, app: "ASGIApp", path: str = "/") -> None:
         self._mount_apps.append((app, path, self.name))
 
-    def add_middleware(self, middleware, **options) -> None:
-        self._middlewares.append((middleware, options))
+    def add_middleware(
+        self, middleware_cls: t.Type["Middleware"], **options: t.Any
+    ) -> None:
+        self._middlewares.append(middleware_cls(**options))
 
     def openapi_doc(self):
         from .openapi import get_service_openapi_doc

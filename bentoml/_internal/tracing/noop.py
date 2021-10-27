@@ -1,10 +1,12 @@
 import logging
 from contextlib import contextmanager
 
+from bentoml._internal.tracing import Tracer
+
 logger = logging.getLogger(__name__)
 
 
-class NoopTracer:
+class NoopTracer(Tracer):
     def __init__(self):
         logger.debug("Tracing is disabled. Initializing no-op tracer")
 

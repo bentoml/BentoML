@@ -278,7 +278,7 @@ def _start_prod_api_server(bento_path_or_tag: str, instance_id: int, runners_map
 
     svc = load(bento_path_or_tag)
 
-    uvicorn.run(svc._asgi_app, log_level="info")
+    uvicorn.run(svc.asgi_app, log_level="info")
 
 
 def _start_prod_runner_server(

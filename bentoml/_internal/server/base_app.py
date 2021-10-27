@@ -1,5 +1,6 @@
 import abc
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
 from starlette.exceptions import HTTPException
@@ -7,32 +8,20 @@ from starlette.responses import PlainTextResponse
 
 if TYPE_CHECKING:
     from starlette.applications import Starlette
+    from starlette.middleware import Middleware
     from starlette.responses import Response
+    from starlette.routing import Route
 
 logger = logging.getLogger(__name__)
 
 
 class BaseApp(abc.ABC):
-    app: "Starlette"
     name: str
     _is_ready: bool = False
 
     @abc.abstractmethod
     def setup(self) -> None:
         ...
-
-    def on_startup(self) -> None:
-        pass
-
-    def on_shutdown(self) -> None:
-        pass
-
-    def setup(self) -> None:
-        if self._is_ready:
-            return
-
-        self._setup()
-        self._is_ready = True
 
     async def livez(self) -> "Response":
         """
@@ -46,7 +35,19 @@ class BaseApp(abc.ABC):
             return PlainTextResponse("\n", status_code=200)
         raise HTTPException(500)
 
-    def setup_routes(self) -> None:
-        self.app.add_route("/livez", self.livez)
-        self.app.add_route("/healthz", self.livez)
-        self.app.add_route("/readyz", self.readyz)
+    @abc.abstractmethod
+    def __call__(self) -> "Starlette":
+        ...
+
+    def routes(self) -> t.List["Route"]:
+        from starlette.routing import Route
+
+        routes = []
+        routes.append(Route(path="/livez", endpoint=self.livez))
+        routes.append(Route(path="/healthz", endpoint=self.livez))
+        routes.append(Route(path="/readyz", endpoint=self.readyz))
+        return routes
+
+    def middlewares(self) -> t.List["Middleware"]:
+        # return [InstrumentMiddleware()]  #TODO(jiang)
+        return []

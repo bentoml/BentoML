@@ -37,7 +37,7 @@ class PandasDataFrame(IODescriptor):
         # Create API function with pre- and post- processing logic
         @svc.api(input=PandasDataFrame(), output=PandasDataFrame())
         def predict(input_df: pd.DataFrame) -> pd.DataFrame:
-            result = await runner.run(input_array)
+            result = await runner.run(input_df)
             # Define post-processing logic
             return pd.DataFrame(result)
 
@@ -87,15 +87,15 @@ class PandasDataFrame(IODescriptor):
                 inp = PandasDataFrame.from_sample(arr)
 
                 ...
-                @svc.api(input=inp(shape=(51,3), enforce_shape=True), output=PandasDataFrame())
+                @svc.api(input=inp, output=PandasDataFrame())
                 # the given shape above is valid
-                def predict(input_array: np.ndarray) -> np.ndarray:
-                    result = await runner.run(input_array)
+                def predict(input_df: pd.DataFrame) -> pd.DataFrame:
+                    result = await runner.run(input_df)
                     return result
 
-                @svc.api(input=inp(shape=(51,10), enforce_shape=True), output=PandasDataFrame())
-                # the given shape above will throw errors
-                def infer(input_array: np.ndarray) -> np.ndarray:...
+                @svc.api(input=PandasDataFrame(shape=(51,10), enforce_shape=True), output=PandasDataFrame())
+                def infer(input_df: pd.DataFrame) -> pd.DataFrame:...
+                # if input_df have shape (40,9), it will throw out errors
         enforce_shape (`bool`, `optional`, default to `False`):
             Whether to enforce a certain shape. If `enforce_shape=True` then `shape` must
              be specified
@@ -189,8 +189,54 @@ class PandasDataFrame(IODescriptor):
     def from_sample(
         cls,
         sample_input: "pd.DataFrame",
+        orient: str = "records",
         apply_column_names: bool = True,
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
     ) -> "PandasDataFrame":
-        """Create an IO Descriptor from given inputs."""
+        """
+        Create a PandasDataFrame IO Descriptor from given inputs.
+
+        Args:
+            sample_input (`pd.DataFrame`):
+                Given inputs
+            orient (`str`, `optional`, default to `records`):
+                Indication of expected JSON string format. Compatible JSON strings can be produced
+                 by `pandas.io.json.to_json()` with a corresponding orient value. Possible orients are:
+                    - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data -> [values]}
+                    - `records` - `List[Any]`: [{column -> value}, ..., {column -> value}]
+                    - `index` - `Dict[str, Any]`: {idx -> {column -> value}}
+                    - `columns` - `Dict[str, Any]`: {column -> {index -> value}}
+                    - `values` - `Dict[str, Any]`: Values arrays
+            apply_column_names (`bool`, `optional`, default to `True`):
+                Update incoming DataFrame columns. `columns` must be specified at function signature.
+                 If you don't want to enforce a specific columns name then change `apply_column_names=False`.
+            enforce_dtype (`bool`, `optional`, default to `True`):
+                Enforce a certain data type. `dtype` must be specified at function signature.
+                 If you don't want to enforce a specific dtype then change `enforce_dtype=False`.
+            enforce_shape (`bool`, `optional`, default to `False`):
+                Enforce a certain shape. `shape` must be specified at function signature.
+                 If you don't want to enforce a specific shape then change `enforce_shape=False`.
+
+        Returns:
+            `PandasDataFrame` IODescriptor from given users inputs.
+
+        Examples::
+            import pandas as pd
+            from bentoml.io import PandasDataFrame
+            arr = [[1,2,3]]
+            inp = PandasDataFrame.from_sample(pd.DataFrame(arr))
+
+            ...
+            @svc.api(input=inp, output=PandasDataFrame())
+            def predict(inputs: pd.DataFrame) -> pd.DataFrame:...
+        """  # noqa
+        return cls(
+            orient=orient,
+            shape=sample_input.shape,
+            dtype=sample_input.dtypes,
+            columns=sample_input.columns,
+            apply_column_names=apply_column_names,
+            enforce_shape=enforce_shape,
+            enforce_dtype=enforce_dtype,
+        )

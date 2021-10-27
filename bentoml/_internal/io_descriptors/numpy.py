@@ -11,11 +11,16 @@ from .json import MIME_TYPE_JSON
 if t.TYPE_CHECKING:
     import numpy as np
 
-    _major, _minor = list(map(lambda x: int(x), np.__version__.split(".")[:2]))
+    _major, _minor = list(
+        map(lambda x: int(x), np.__version__.split(".")[:2])  # pylint: disable=W0108
+    )
     if (_major, _minor) > (1, 20):
-        from numpy.typing import ArrayLike, DTypeLike
+        from numpy.typing import ArrayLike, DTypeLike  # pylint: disable=W0611
     else:
-        from ..typing_extensions.numpy import ArrayLike, DTypeLike
+        from ..typing_extensions.numpy import (  # pylint: disable=W0611
+            ArrayLike,
+            DTypeLike,
+        )
 else:
     np = LazyLoader("np", globals(), "numpy")
 
@@ -118,18 +123,16 @@ class NumpyNdarray(IODescriptor):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        json_obj = await request.json()
-        res = np.array(json_obj)
+        obj = await request.json()
+        res = np.array(obj)
         if self._enforce_dtype:
             if self._dtype is None:
                 logger.warning("dtype is None or not yet specified.")
-                pass
             else:
                 res = res.astype(self._dtype)
         if self._enforce_shape:
             if self._shape is None:
                 logger.warning("shape is None or not yet specified.")
-                pass
             else:
                 res = res.reshape(self._shape)
         return res
@@ -150,8 +153,39 @@ class NumpyNdarray(IODescriptor):
     @classmethod
     def from_sample(
         cls,
-        sample_input: "ArrayLike",
+        sample_input: "np.ndarray",
         enforce_dtype: t.Optional[bool] = True,
         enforce_shape: t.Optional[bool] = True,
     ) -> "NumpyNdarray":
-        """Create an IO Descriptor from given inputs."""
+        """
+        Create a NumpyNdarray IO Descriptor from given inputs.
+
+        Args:
+            sample_input (`~bentoml._internal.typing_extensions.numpy.ArrayLike`):
+                Given inputs
+            enforce_dtype (`bool`, `optional`, default to `True`):
+                Enforce a certain data type. `dtype` must be specified at function signature.
+                 If you don't want to enforce a specific dtype then change `enforce_dtype=False`.
+            enforce_shape (`bool`, `optional`, default to `False`):
+                Enforce a certain shape. `shape` must be specified at function signature.
+                 If you don't want to enforce a specific shape then change `enforce_shape=False`.
+
+        Returns:
+            `NumpyNdarray` IODescriptor from given users inputs.
+
+        Examples::
+            import numpy as np
+            from bentoml.io import NumpyNdarray
+            arr = [[1,2,3]]
+            inp = NumpyNdarray.from_sample(arr)
+
+            ...
+            @svc.api(input=inp, output=NumpyNdarray())
+            def predict() -> np.ndarray:...
+        """  # noqa
+        return cls(
+            dtype=sample_input.dtype,
+            shape=sample_input.shape,
+            enforce_dtype=enforce_dtype,
+            enforce_shape=enforce_shape,
+        )

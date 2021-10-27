@@ -14,15 +14,16 @@ if t.TYPE_CHECKING:
     import numpy as np
     import pydantic
 
-    _major, _minor = list(map(lambda x: int(x), np.__version__.split(".")[:2]))
+    _major, _minor = list(
+        map(lambda x: int(x), np.__version__.split(".")[:2])  # pylint: disable=W0108
+    )
     if (_major, _minor) > (1, 20):
-        from numpy.typing import ArrayLike
+        from numpy.typing import ArrayLike  # noqa  # pylint: disable=W0611
     else:
-        from ..typing_extensions.numpy import ArrayLike
+        from ..typing_extensions.numpy import ArrayLike  # noqa  # pylint: disable=W0611
 
 else:
     np = LazyLoader("np", globals(), "numpy")
-    ArrayLike = t.Any
 
     try:
         import pydantic
@@ -35,7 +36,7 @@ _SerializableObj = t.TypeVar(
     "_SerializableObj",
     bound=t.Union[
         "np.generic",
-        ArrayLike,
+        "ArrayLike",
         "pydantic.BaseModel",
         t.Any,
     ],

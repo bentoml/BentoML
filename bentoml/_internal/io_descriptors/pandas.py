@@ -66,7 +66,7 @@ class PandasDataFrame(IODescriptor):
             else:
                 assert (
                     self._shape[1] == res.shape[1]
-                ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
+                ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"  # noqa
         return res
 
     async def to_http_response(self, obj: "pd.DataFrame") -> Response:

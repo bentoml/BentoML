@@ -134,7 +134,9 @@ def load_bento(
     return svc
 
 
-def load(svc_import_path_or_bento_tag: str, working_dir: t.Optional[str]) -> "Service":
+def load(
+    svc_import_path_or_bento_tag: str, working_dir: t.Optional[str] = None
+) -> "Service":
     """Load a Service instance from source code or a bento in local bento store."""
     if not isinstance(svc_import_path_or_bento_tag, str):
         raise InvalidArgument("bentoml.load argument must be str type")
@@ -143,7 +145,7 @@ def load(svc_import_path_or_bento_tag: str, working_dir: t.Optional[str]) -> "Se
         return import_service(svc_import_path_or_bento_tag, working_dir)
 
     try:
-        load_bento(svc_import_path_or_bento_tag)
+        return load_bento(svc_import_path_or_bento_tag)
     except (NotFound, ImportServiceError) as e1:
         try:
             return import_service(svc_import_path_or_bento_tag)

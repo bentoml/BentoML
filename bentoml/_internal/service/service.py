@@ -51,13 +51,16 @@ class Service:
         pass
 
     def on_shutdown(self) -> None:
+        pass
+
+    def __del__(self):
         # working dir was added to sys.path in the .loader.import_service function
         if self._working_dir:
             sys.path.remove(self._working_dir)
 
     def api(
         self,
-        input_: IODescriptor,
+        input: IODescriptor,
         output: IODescriptor,
         api_name: t.Optional[str] = None,
         api_doc: t.Optional[str] = None,
@@ -66,7 +69,7 @@ class Service:
         """Decorator for adding InferenceAPI to this service"""
 
         def decorator(func: t.Callable) -> t.Callable:
-            self._add_inference_api(func, input_, output, api_name, api_doc, route)
+            self._add_inference_api(func, input, output, api_name, api_doc, route)
             return func
 
         return decorator

@@ -7,7 +7,6 @@ from typing import Optional
 from simple_di import skip
 
 from bentoml import load
-from bentoml._internal.configuration import CONFIG_ENV_VAR, save_global_config
 from bentoml._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)

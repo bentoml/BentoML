@@ -1,21 +1,23 @@
+import asyncio
 import logging
+import os
 import sys
 import typing as t
-from typing import TYPE_CHECKING, Dict
 
 from simple_di import Provide, inject
 
+from bentoml._internal.server.base_app import BaseApp
 from bentoml._internal.service.service import Service
 from bentoml.exceptions import BentoMLException
 
 from ..configuration.containers import BentoMLContainer, BentoServerContainer
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from starlette.applications import Starlette
     from starlette.middleware import Middleware
     from starlette.requests import Request
     from starlette.responses import Response
-    from starlette.routing import Route
+    from starlette.routing import BaseRoute
 
     from bentoml._internal.server.metrics.prometheus import PrometheusClient
     from bentoml._internal.service.inference_api import InferenceAPI
@@ -78,25 +80,8 @@ DEFAULT_INDEX_HTML = """\
   <script src="static_content/swagger-ui-bundle.js"></script>
   <script>
       SwaggerUIBundle({{
-          url: '{url}',
+          url: '/docs.json',
           dom_id: '#swagger_ui_container'
-      }})
-  </script>
-</body>
-"""
-
-SWAGGER_HTML = """\
-<!DOCTYPE html>
-<head>
-  <link rel="stylesheet" type="text/css" href="static_content/swagger-ui.css">
-</head>
-<body>
-  <div id="swagger-ui-container"></div>
-  <script src="static_content/swagger-ui-bundle.js"></script>
-  <script>
-      SwaggerUIBundle({{
-          url: '{url}',
-          dom_id: '#swagger-ui-container'
       }})
   </script>
 </body>
@@ -115,9 +100,6 @@ def log_exception(request: "Request", exc_info: t.Any) -> None:
     )
 
 
-from bentoml._internal.server.base_app import BaseApp
-
-
 class ServiceAppFactory(BaseApp):
     """
     ServiceApp creates a REST API server based on APIs defined with a BentoService
@@ -131,86 +113,63 @@ class ServiceAppFactory(BaseApp):
     def __init__(
         self,
         bento_service: Service,
-        enable_swagger: bool = Provide[
-            BentoMLContainer.config.bento_server.swagger.enabled
-        ],
-        enable_metrics: bool = Provide[
-            BentoMLContainer.config.bento_server.metrics.enabled
-        ],
+        enable_metrics: bool = Provide[BentoServerContainer.config.metrics.enabled],
         tracer: "Tracer" = Provide[BentoMLContainer.tracer],
+        metrics_client: "PrometheusClient" = Provide[
+            BentoServerContainer.metrics_client
+        ],
+        enable_access_control: bool = Provide[BentoServerContainer.config.cors.enabled],
+        access_control_options: t.Dict = Provide[
+            BentoServerContainer.access_control_options
+        ],
     ) -> None:
         self.bento_service = bento_service
 
         self.app_name = bento_service.name
         self.enable_metrics = enable_metrics
         self.tracer = tracer
-        self.enable_swagger = enable_swagger
-        self.swagger_path = ""
+        self.metrics_client = metrics_client
+        self.enable_access_control = enable_access_control
+        self.access_control_options = access_control_options
 
     def setup(self) -> None:
         self.bento_service.on_startup()
 
-    async def index_view_func(self) -> "Response":
-        """
-        The index route for BentoML API server
-        """
-        from starlette.responses import HTMLResponse
-
-        return HTMLResponse(DEFAULT_INDEX_HTML)
-
-    async def default_index_view_func(self) -> "Response":
+    async def index_view_func(
+        self, request
+    ) -> "Response":  # pylint: disable=unused-argument
         """
         The default index view for BentoML API server. This includes the readme
         generated from docstring and swagger UI
         """
         from starlette.responses import Response
 
-        if not self.enable_swagger:
-            return Response(
-                content="Swagger is disabled", status_code=404, media_type="text/html"
-            )
         return Response(
-            content=DEFAULT_INDEX_HTML.format(
-                url="/docs.json", readme=self.bento_service.__doc__
-            ),
-            status_code=200,
-            media_type="text/html",
-        )
-
-    async def swagger_ui_func(self) -> "Response":
-        """
-        The swagger UI route for BentoML API server
-        """
-        from starlette.responses import Response
-
-        if not self.enable_swagger:
-            return Response(
-                content="Swagger is disabled", status_code=404, media_type="text/html"
-            )
-        return Response(
-            content=SWAGGER_HTML.format(url="/docs.json"),
+            content=DEFAULT_INDEX_HTML.format(readme=self.bento_service.__doc__),
             status_code=200,
             media_type="text/html",
         )
 
     @inject
     async def metrics_view_func(
-        self, client: "PrometheusClient" = Provide[BentoServerContainer.metrics_client]
-    ) -> "Response":
+        self, request
+    ) -> "Response":  # pylint: disable=unused-argument
         from starlette.responses import Response
 
         return Response(
-            client.generate_latest(),
-            media_type=client.CONTENT_TYPE_LATEST,
+            self.metrics_client.generate_latest(),
+            media_type=self.metrics_client.CONTENT_TYPE_LATEST,
         )
 
-    async def docs_view_func(self) -> "Response":
+    async def docs_view_func(
+        self, request
+    ) -> "Response":  # pylint: disable=unused-argument
         from starlette.responses import JSONResponse
 
         docs = self.bento_service.openapi_doc()
         return JSONResponse(docs)
 
-    def routes(self) -> t.List["Route"]:
+    def routes(self) -> t.List["BaseRoute"]:
         """
         Setup routes for bento model server, including:
 
@@ -227,12 +186,10 @@ class ServiceAppFactory(BaseApp):
         """
         routes = super().routes()
 
-        from starlette.routing import Route
+        from starlette.routing import Mount, Route
+        from starlette.staticfiles import StaticFiles
 
         routes.append(Route(path="/", name="home", endpoint=self.index_view_func))
-        routes.append(
-            Route(path="/docs", name="swagger", endpoint=self.swagger_ui_func)
-        )
         routes.append(
             Route(
                 path="/docs.json",
@@ -246,13 +203,24 @@ class ServiceAppFactory(BaseApp):
                 Route(path="/metrics", name="metrics", endpoint=self.metrics_view_func)
             )
 
+        parent_dir_path = os.path.dirname(os.path.realpath(__file__))
+        routes.append(
+            Mount(
+                "/static_content",
+                app=StaticFiles(
+                    directory=os.path.join(parent_dir_path, "static_content")
+                ),
+                name="static_content",
+            )
+        )
+
         for _, api in self.bento_service._apis.items():
-            route_function = self.create_api_endpoint(api)
+            api_route_endpoint = self.create_api_endpoint(api)
             routes.append(
                 Route(
                     path="/{}".format(api.route),
                     name=api.name,
-                    endpoint=route_function,
+                    endpoint=api_route_endpoint,
                     methods=api.input.HTTP_METHODS,
                 )
             )
@@ -264,18 +232,21 @@ class ServiceAppFactory(BaseApp):
 
         for middleware, options in self.bento_service._middlewares:
             middlewares.append(middleware(**options))
+
+        if self.enable_access_control:
+            assert (
+                self.access_control_options.get("access_control_allow_origin")
+                is not None
+            ), "To enable cors, access_control_allow_origin must be set"
+
+            from starlette.middleware.cors import CORSMiddleware
+
+            middlewares.append(CORSMiddleware(**self.access_control_options))
+
         return middlewares
 
     @inject
-    def __call__(
-        self,
-        enable_access_control: bool = Provide[
-            BentoMLContainer.config.bento_server.cors.enabled
-        ],
-        access_control_options: Dict = Provide[
-            BentoServerContainer.access_control_options
-        ],
-    ) -> "Starlette":
+    def __call__(self) -> "Starlette":
         from starlette.applications import Starlette
 
         app = Starlette(
@@ -289,23 +260,6 @@ class ServiceAppFactory(BaseApp):
         for mount_app, path, name in self.bento_service._mount_apps:
             app.mount(app=mount_app, path=path, name=name)
 
-        from starlette.staticfiles import StaticFiles
-
-        app.mount(
-            app=StaticFiles(directory=self.swagger_path),
-            path="/static_content",
-            name="static_content",
-        )
-
-        if enable_access_control:
-            assert (
-                access_control_options.get("access_control_allow_origin") is not None
-            ), "To enable cors, access_control_allow_origin must be set"
-
-            from starlette.middleware.cors import CORSMiddleware
-
-            app.add_middleware(CORSMiddleware, **access_control_options)
-
         return app
 
     def create_api_endpoint(
@@ -315,6 +269,7 @@ class ServiceAppFactory(BaseApp):
         Create api function for flask route, it wraps around user defined API
         callback and adapter class, and adds request logging and instrument metrics
         """
+        from starlette.concurrency import run_in_threadpool
         from starlette.responses import JSONResponse
 
         async def api_func(
@@ -322,8 +277,11 @@ class ServiceAppFactory(BaseApp):
         ) -> "Response":
             # handle_request may raise 4xx or 5xx exception.
             try:
-                input_data = api.input.from_http_request(request)
-                output = api.func(input_data)
+                input_data = await api.input.from_http_request(request)
+                if asyncio.iscoroutinefunction(api.func):
+                    output = await api.func(input_data)
+                else:
+                    output = await run_in_threadpool(api.func, input_data)
                 response = await api.output.to_http_response(output)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())
@@ -341,14 +299,14 @@ class ServiceAppFactory(BaseApp):
                 log_exception(request, sys.exc_info())
 
                 response = JSONResponse(
-                    "An error has occurred in BentoML user code when handling this "
-                    "request, find the error details in server logs",
+                    "An error has occurred in BentoML user code when handling this request, find the error details in server logs",
                     status_code=500,
                 )
 
             return response
 
         """
+        TODO: instrument tracing
         def api_func_with_tracing():
             with self.tracer.span(
                 service_name=f"BentoService.{self.bento_service.name}",

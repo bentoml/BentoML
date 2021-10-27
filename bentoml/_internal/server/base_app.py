@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from starlette.applications import Starlette
     from starlette.middleware import Middleware
     from starlette.responses import Response
-    from starlette.routing import Route
+    from starlette.routing import BaseRoute
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +23,14 @@ class BaseApp(abc.ABC):
     def setup(self) -> None:
         ...
 
-    async def livez(self) -> "Response":
+    async def livez(self, request) -> "Response":  # pylint: disable=unused-argument
         """
         Health check for BentoML API server.
         Make sure it works with Kubernetes liveness probe
         """
         return PlainTextResponse("\n", status_code=200)
 
-    async def readyz(self) -> "Response":
+    async def readyz(self, request) -> "Response":  # pylint: disable=unused-argument
         if self._is_ready:
             return PlainTextResponse("\n", status_code=200)
         raise HTTPException(500)
@@ -39,7 +39,7 @@ class BaseApp(abc.ABC):
     def __call__(self) -> "Starlette":
         ...
 
-    def routes(self) -> t.List["Route"]:
+    def routes(self) -> t.List["BaseRoute"]:
         from starlette.routing import Route
 
         routes = []

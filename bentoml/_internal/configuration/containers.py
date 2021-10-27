@@ -246,7 +246,7 @@ class BentoServerContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origins: t.List[str] = Provide[config.cors.allow_origins],
+        allow_origins: t.List[str] = Provide[config.cors.access_control_allow_origin],
         allow_credentials: t.List[str] = Provide[
             config.cors.access_control_allow_credentials
         ],
@@ -301,6 +301,7 @@ class BentoServerContainerClass:
             namespace=namespace,
         )
 
+    # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping: Provider[t.Dict[str, int]] = providers.Static(dict())
     plasma_db: "PlasmaClient" = providers.Static(None)
 

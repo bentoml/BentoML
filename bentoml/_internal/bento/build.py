@@ -98,7 +98,7 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
 @inject
 def build_bento(
     svc: "Service",
-    models: t.List[str],
+    models: t.Optional[t.List[str]] = None,
     version: t.Optional[str] = None,
     description: t.Optional[str] = None,
     include: t.Optional[t.List[str]] = None,
@@ -248,6 +248,11 @@ def build_bento(
     with bento_store.register_bento(bento_tag) as bento_path:
         # Copy required models from local modelstore, into
         # `models/{model_name}/{model_version}` directory
+        models = [] if models is None else models
+        for runner in svc._runners.values():
+            models += runner.required_models
+
+        # TODO: remove duplicates in the models list
         for model_tag in models:
             try:
                 model_info = model_store.get(model_tag)

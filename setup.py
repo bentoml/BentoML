@@ -31,6 +31,7 @@ install_requires = [
     "importlib_metadata",
     "pathspec",
     'typing_extensions >= 3.7.4',
+    'aiofiles',
 ]
 
 model_server_optional = [

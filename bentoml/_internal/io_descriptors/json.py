@@ -81,6 +81,8 @@ class JSON(IODescriptor):
                     "must be an instance of a pydantic model"
                 )
             self._pydantic_model = pydantic_model
+        else:
+            self._pydantic_model = None
 
         self._validate_json = validate_json
         self._json_encoder = json_encoder

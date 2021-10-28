@@ -13,7 +13,7 @@ from simple_di import Provide, inject
 from bentoml.exceptions import BentoMLException, InvalidArgument
 
 from ..configuration.containers import BentoMLContainer
-from ..types import BentoTag, PathType
+from ..types import PathType, Tag
 from ..utils import generate_new_version_id
 from ..utils.validation import validate_version_str
 
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @attr.define
 class Bento:
-    tag: BentoTag
+    tag: Tag
     fs: FS
 
     @classmethod
@@ -51,7 +51,7 @@ class Bento:
 
         validate_version_str(version)
 
-        tag = BentoTag(svc.name, version)
+        tag = Tag(svc.name, version)
 
         logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")
 
@@ -142,7 +142,7 @@ class Bento:
         # TODO
         with bento_fs.open("bento.yaml", "r") as bento_yaml:  # noqa: F841
             pass
-        return cls(BentoTag("TODO", None), bento_fs)
+        return cls(Tag("TODO", None), bento_fs)
 
     def save(self, bento_store: "Store" = Provide[BentoMLContainer.bento_store]):
         if not self.validate():

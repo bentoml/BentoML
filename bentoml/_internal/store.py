@@ -5,7 +5,7 @@ import fs
 from fs.base import FS
 
 from ..exceptions import BentoMLException
-from .types import BentoTag, PathType
+from .types import PathType, Tag
 
 SUPPORTED_COMPRESSION_TYPE = [".gz"]
 
@@ -27,17 +27,17 @@ class Store:
     def pull(self, tag: str) -> None:
         ...
 
-    def list(self, tag: t.Optional[t.Union[BentoTag, str]] = None) -> t.List[BentoTag]:
+    def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Tag]:
         if not tag:
             return sorted(
                 [ver for _d in self.fs.listdir("/") for ver in self.list(_d)],
                 key=str,
             )
 
-        _tag = BentoTag.from_taglike(tag)
+        _tag = Tag.from_taglike(tag)
         if _tag.version is None:
             return [
-                BentoTag(_tag.name, f.name)
+                Tag(_tag.name, f.name)
                 for f in self.fs.scandir(_tag.name)
                 if not f.islink()
             ]
@@ -48,13 +48,13 @@ class Store:
                 path = fs.path.combine(_tag.name, _tag.version)
             return sorted(list(self.fs.walk(path)), key=str)
 
-    def get(self, tag: t.Union[BentoTag, str]) -> FS:
+    def get(self, tag: t.Union[Tag, str]) -> FS:
         """
         store.get("my_bento")
         store.get("my_bento:v1.0.0")
-        store.get(BentoTag("my_bento", "latest"))
+        store.get(Tag("my_bento", "latest"))
         """
-        _tag = BentoTag.from_taglike(tag)
+        _tag = Tag.from_taglike(tag)
         if _tag.version is None:
             _tag.version = self.fs.readtext(fs.path.combine(_tag.name, "latest"))
         path = _tag.path()
@@ -65,8 +65,8 @@ class Store:
         return self.fs.opendir(path)
 
     @contextmanager
-    def register(self, tag: t.Union[str, BentoTag]):
-        _tag = BentoTag.from_taglike(tag)
+    def register(self, tag: t.Union[str, Tag]):
+        _tag = Tag.from_taglike(tag)
 
         item_path = _tag.path()
         if self.fs.exists(item_path):
@@ -82,13 +82,13 @@ class Store:
             with self.fs.open(latest_path, "w") as latest_file:
                 latest_file.write(_tag.version)
 
-    def delete(self, tag: t.Union[str, BentoTag], skip_confirm: bool = True) -> None:
+    def delete(self, tag: t.Union[str, Tag], skip_confirm: bool = True) -> None:
         if not skip_confirm:
             raise BentoMLException(
                 f"'skip_confirm={skip_confirm}'; not deleting {tag}. If you want to bypass this check change 'skip_confirm=True'"
             )
 
-        _tag = BentoTag.from_taglike(tag)
+        _tag = Tag.from_taglike(tag)
         if _tag.version is None:
             self.fs.removetree()
             return

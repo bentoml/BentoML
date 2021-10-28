@@ -137,6 +137,13 @@ class Bento:
 
         return cls(tag, bento_fs)
 
+    @classmethod
+    def import_from_fs(cls, bento_fs: FS) -> "Bento":
+        # TODO
+        with bento_fs.open("bento.yaml", "r") as bento_yaml:  # noqa: F841
+            pass
+        return cls(BentoTag("TODO", None), bento_fs)
+
     def save(self, bento_store: "Store" = Provide[BentoMLContainer.bento_store]):
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")

@@ -1,5 +1,6 @@
 import os
 import typing as t
+import json
 
 import numpy as np
 from simple_di import Provide, inject
@@ -60,7 +61,11 @@ def _get_model_info(
             f" failed loading with {__name__}."
         )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{JSON_EXT}")
-    _booster_params = dict() if not booster_params else booster_params
+    if not booster_params:
+        with open(os.path.join(model_info.path, f"config{JSON_EXT}"), 'r') as f:
+            _booster_params = json.load(f)
+    else:
+        _booster_params = booster_params
     for key, value in model_info.options.items():
         if key not in _booster_params:
             _booster_params[key] = value  # pragma: no cover
@@ -159,6 +164,8 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:  # type: StoreCtx
+        with open(os.path.join(ctx.path, f"config{JSON_EXT}"), 'w') as f:
+            json.dump(json.loads(model.save_config()), f, indent=4)
         model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{JSON_EXT}"))
         return ctx.tag
 

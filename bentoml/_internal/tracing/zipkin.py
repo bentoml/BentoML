@@ -6,6 +6,8 @@ from contextvars import ContextVar
 
 import requests
 
+from bentoml._internal.tracing import Tracer
+
 logger = logging.getLogger(__name__)
 
 trace_stack_var = ContextVar("trace_stack", default=None)
@@ -120,7 +122,7 @@ def get_zipkin_tracer(server_url):
                 )
             )
 
-    class ZipkinTracer:
+    class ZipkinTracer(Tracer):
         def __init__(self, server_url):
             self.server_url = server_url
             self.async_transport = AsyncHttpTransport(self.server_url)

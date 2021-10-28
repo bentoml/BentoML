@@ -1,4 +1,5 @@
 import re
+import typing as t
 from typing import Optional
 
 from ...exceptions import InvalidArgument
@@ -18,7 +19,7 @@ RESERVED_API_NAMES = [
 class InferenceAPI:
     def __init__(
         self,
-        user_defined_callback: callable,
+        user_defined_callback: t.Callable,
         input_descriptor: IODescriptor,
         output_descriptor: IODescriptor,
         name: Optional[str],

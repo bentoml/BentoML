@@ -1,24 +1,29 @@
-from .bento_management import add_bento_sub_command
-from .bento_service import create_bento_service_cli
-from .deployment import get_deployment_sub_command
+import click
 
-# from .yatai_service import add_yatai_service_sub_command
+from bentoml import __version__
+
+from .bento_management import add_bento_management_commands
+from .bento_server import add_serve_command
+from .click_utils import BentoMLCommandGroup
+from .containerize import add_containerize_command
+from .model_store import models
 
 
 def create_bentoml_cli():
-    # pylint: disable=unused-variable
+    @click.group(cls=BentoMLCommandGroup)
+    @click.version_option(version=__version__)
+    def cli():
+        """BentoML CLI"""
 
-    _cli = create_bento_service_cli()
+    # Add top-level CLI commands
+    add_bento_management_commands(cli)
+    add_serve_command(cli)
+    add_containerize_command(cli)
 
-    # Commands created here aren't mean to be used from generated BentoService CLI when
-    # installed as PyPI package. The are only used as part of BentoML cli command.
+    # Add "models" sub commands
+    cli.add_command(models)
 
-    deployment_sub_command = get_deployment_sub_command()
-    add_bento_sub_command(_cli)
-    # add_yatai_service_sub_command(_cli)
-    _cli.add_command(deployment_sub_command)
-
-    return _cli
+    return cli
 
 
 cli = create_bentoml_cli()

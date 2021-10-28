@@ -34,7 +34,6 @@ if t.TYPE_CHECKING:  # pragma: no cover
         TFPreTrainedModel,
     )
     from transformers.models.auto.auto_factory import _BaseAutoModelClass  # noqa
-    from transformers.pipelines.base import Pipeline
 
     from ._internal.models.store import ModelStore, StoreCtx
 try:

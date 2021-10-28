@@ -1,31 +1,33 @@
+import typing as t
 from abc import ABC, abstractmethod
-from typing import TypeVar
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-IOPyObj = TypeVar("IOPyObj")
+IOPyObj = t.TypeVar("IOPyObj")
 
 
-class IODescriptor(ABC):
+class IODescriptor(ABC, t.Generic[IOPyObj]):
     """IODescriptor describes the input/output data format of an InferenceAPI defined
     in a bentoml.Service
     """
 
+    HTTP_METHODS = ["POST"]
+
     @abstractmethod
-    def openapi_request_schema(self):
+    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         pass
 
     @abstractmethod
-    def openapi_responses_schema(self):
+    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         pass
 
     @abstractmethod
-    async def from_http_request(self, request: Request) -> IOPyObj:
+    async def from_http_request(self, request: Request) -> t.Any:
         pass
 
     @abstractmethod
-    async def to_http_response(self, obj: IOPyObj) -> Response:
+    async def to_http_response(self, obj: t.Any) -> Response:
         pass
 
     # TODO: gRPC support

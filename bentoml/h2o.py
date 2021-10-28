@@ -142,11 +142,11 @@ class _H2ORunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        nthreads = self._init_params.get("nthreads", -1)
+        nthreads = int(self._init_params.get("nthreads", -1))
 
         if nthreads == -1:
             return int(round(self.resource_quota.cpu))
-        return 1
+        return nthreads
 
     @property
     def num_replica(self) -> int:

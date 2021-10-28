@@ -6,7 +6,7 @@ import typing as t
 
 from simple_di import Provide, inject
 
-from bentoml._internal.server.base_app import BaseApp
+from bentoml._internal.server.base_app import BaseAppFactory
 from bentoml._internal.service.service import Service
 from bentoml.exceptions import BentoMLException
 
@@ -100,7 +100,7 @@ def log_exception(request: "Request", exc_info: t.Any) -> None:
     )
 
 
-class ServiceAppFactory(BaseApp):
+class ServiceAppFactory(BaseAppFactory):
     """
     ServiceApp creates a REST API server based on APIs defined with a BentoService
     via BentoService#get_service_apis call. Each InferenceAPI will become one
@@ -173,22 +173,20 @@ class ServiceAppFactory(BaseApp):
         """
         Setup routes for bento model server, including:
 
-        /               Index Page
-        /docs           Swagger UI
-        /healthz        Health check ping
-        /feedback       Submitting feedback
+        /               Index Page, shows readme docs, metadata, and Swagger UI
+        /docs.json      Returns Swagger/OpenAPI definition file in json format
+        /healthz        liveness probe endpoint
+        /readyz         Readiness probe endpoint
         /metrics        Prometheus metrics endpoint
-        /metadata       BentoService Artifact Metadata
 
-        And user defined InferenceAPI list into flask routes, e.g.:
+        And user defined InferenceAPI list into routes, e.g.:
         /classify
         /predict
         """
-        routes = super().routes()
-
         from starlette.routing import Mount, Route
         from starlette.staticfiles import StaticFiles
 
+        routes = super().routes()
         routes.append(Route(path="/", name="home", endpoint=self.index_view_func))
         routes.append(
             Route(
@@ -245,16 +243,15 @@ class ServiceAppFactory(BaseApp):
 
         return middlewares
 
-    @inject
     def __call__(self) -> "Starlette":
         from starlette.applications import Starlette
 
         app = Starlette(
-            debug=False,
+            debug=True,  # TDOO: inject this from `debug=True` or `--production` flag
             routes=self.routes(),
             middleware=self.middlewares(),
-            on_shutdown=[self.bento_service.on_shutdown],
-            on_startup=[self.bento_service.on_startup],
+            on_shutdown=[self.bento_service._on_asgi_app_shutdown],
+            on_startup=[self.bento_service._on_asgi_app_startup],
         )
 
         for mount_app, path, name in self.bento_service._mount_apps:

@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from starlette.middleware import Middleware
     from starlette.types import ASGIApp
 
+_WSGI_APP = t.TypeVar("_WSGI_APP")
+
 
 class Service:
     """The service definition is the manifestation of the Service Oriented Architecture
@@ -44,13 +46,16 @@ class Service:
         if runners is not None:
             self._runners = {r.name: r for r in runners}
 
-        self._mount_apps: t.List[t.Tuple["ASGIApp", str, str]] = []
-        self._middlewares: t.List["Middleware"] = []
+        self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", _WSGI_APP], str, str]] = []
+        self._middlewares: t.List[t.Tuple["Middleware", t.Any]] = []
 
-    def on_startup(self) -> None:
+    def _on_asgi_app_startup(self) -> None:
+        # TODO: initialize Local Runner instances or Runner Clients here
+        # TODO(P1): add `@svc.on_startup` decorator for adding user-defined hook
         pass
 
-    def on_shutdown(self) -> None:
+    def _on_asgi_app_shutdown(self) -> None:
+        # TODO(P1): add `@svc.on_shutdown` decorator for adding user-defined hook
         pass
 
     def __del__(self):
@@ -62,14 +67,14 @@ class Service:
         self,
         input: IODescriptor,
         output: IODescriptor,
-        api_name: t.Optional[str] = None,
-        api_doc: t.Optional[str] = None,
+        name: t.Optional[str] = None,
+        doc: t.Optional[str] = None,
         route: t.Optional[str] = None,
     ) -> t.Callable[[t.Callable], t.Callable]:
         """Decorator for adding InferenceAPI to this service"""
 
         def decorator(func: t.Callable) -> t.Callable:
-            self._add_inference_api(func, input, output, api_name, api_doc, route)
+            self._add_inference_api(func, input, output, name, doc, route)
             return func
 
         return decorator
@@ -77,24 +82,24 @@ class Service:
     def _add_inference_api(
         self,
         func: t.Callable,
-        input_: IODescriptor,
+        input: IODescriptor,
         output: IODescriptor,
-        api_name: t.Optional[str],
-        api_doc: t.Optional[str],
+        name: t.Optional[str],
+        doc: t.Optional[str],
         route: t.Optional[str],
     ) -> None:
         api = InferenceAPI(
-            name=api_name,
+            name=name,
             user_defined_callback=func,
-            input_descriptor=input_,
+            input_descriptor=input,
             output_descriptor=output,
-            doc=api_doc,
+            doc=doc,
             route=route,
         )
 
         if api.name in self._apis:
             raise BentoMLException(
-                f"API {api_name} is already defined in Service {self.name}"
+                f"API {name} is already defined in Service {self.name}"
             )
         self._apis[api.name] = api
 
@@ -102,18 +107,20 @@ class Service:
     def asgi_app(self) -> "Starlette":
         from bentoml._internal.server.service_app import ServiceAppFactory
 
-        app_factory = ServiceAppFactory(self)
-        return app_factory()
+        return ServiceAppFactory(self)()
 
-    wsgi_app = asgi_app
+    def mount_asgi_app(self, app: "ASGIApp", path: str = "/", name: str = None) -> None:
+        self._mount_apps.append((app, path, name))
 
-    def mount_asgi_app(self, app: "ASGIApp", path: str = "/") -> None:
-        self._mount_apps.append((app, path, self.name))
+    def mount_wsgi_app(self, app: _WSGI_APP, path: str = "/", name: str = None) -> None:
+        from starlette.middleware.wsgi import WSGIMiddleware
 
-    def add_middleware(
+        self._mount_apps.append((WSGIMiddleware(app), path, name))
+
+    def add_agsi_middleware(
         self, middleware_cls: t.Type["Middleware"], **options: t.Any
     ) -> None:
-        self._middlewares.append(middleware_cls(**options))
+        self._middlewares.append((middleware_cls, options))
 
     def openapi_doc(self):
         from .openapi import get_service_openapi_doc

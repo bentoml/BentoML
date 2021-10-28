@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
-from bentoml._internal.server.base_app import BaseApp
+from bentoml._internal.server.base_app import BaseAppFactory
 
 from ..configuration.containers import BentoMLContainer
 
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from bentoml._internal.runner import Runner
 
 
-class RunnerApp(BaseApp):
+class RunnerApp(BaseAppFactory):
     @inject
     def __init__(
         self,

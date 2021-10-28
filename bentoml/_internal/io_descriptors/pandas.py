@@ -112,7 +112,6 @@ class PandasDataFrame(IODescriptor):
             "dict", "list", "series", "split", "records", "index"
         ] = "records",
         columns: t.Optional[t.List[str]] = None,
-        apply_column_names: bool = False,
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
@@ -120,7 +119,6 @@ class PandasDataFrame(IODescriptor):
     ):
         self._orient = orient
         self._columns = columns
-        self._apply_column_names = apply_column_names
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
         self._shape = shape
@@ -150,6 +148,7 @@ class PandasDataFrame(IODescriptor):
                 logger.warning(
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
+            # TODO(jiang): check dtype
         res = pd.json_normalize(obj)
         print(res)
         if self._apply_column_names:
@@ -194,12 +193,12 @@ class PandasDataFrame(IODescriptor):
              be accessed via cURL or any external web traffic.
         """
         if isinstance(obj, pd.DataFrame):
-            resp = obj.to_dict(orient=self._orient)
+            resp = obj.to_json(orient=self._orient)
         else:
             resp = dict()
             for k, v in obj.items():
                 resp[k] = (
-                    v.to_dict(orient=self._orient) if isinstance(v, pd.DataFrame) else v
+                    v.to_json(orient=self._orient) if isinstance(v, pd.DataFrame) else v
                 )
         return Response(json.dumps(resp), media_type=MIME_TYPE_JSON)
 
@@ -261,3 +260,74 @@ class PandasDataFrame(IODescriptor):
             enforce_dtype=enforce_dtype,
             dtype=None,  # TODO: not breaking atm
         )
+
+
+class PandasSeries(PandasDataFrame):
+    def __init__(
+        self,
+        orient: t.Literal[
+            "dict", "list", "series", "split", "records", "index"
+        ] = "records",
+        dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
+        enforce_dtype: bool = False,
+        shape: t.Optional[t.Tuple[int, ...]] = None,
+        enforce_shape: bool = False,
+    ):
+        self._orient = orient
+        self._dtype = dtype
+        self._enforce_dtype = enforce_dtype
+        self._shape = shape
+        self._enforce_shape = enforce_shape
+
+    async def from_http_request(self, request: Request) -> "pd.Series":
+        """
+        Process incoming requests and convert incoming
+         objects to `pd.Series`
+
+        Args:
+            request (`starlette.requests.Requests`):
+                Incoming Requests
+        Returns:
+            a `pd.Series` object. This can then be used
+             inside users defined logics.
+        """
+        obj = await request.json()
+        if self._enforce_dtype:
+            if self._dtype is None:
+                logger.warning(
+                    "`dtype` is None or undefined, while `enforce_dtype`=True"
+                )
+        res = pd.read_json(obj, typ="series", orient=self._orient)
+        if self._enforce_shape:
+            if self._shape is None:
+                logger.warning(
+                    "`shape` is None or undefined, while `enforce_shape`=True"
+                )
+            else:
+                assert (
+                    self._shape == res.shape
+                ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
+        return pd.Series(res, dtype=self._dtype)
+
+    async def to_http_response(  # noqa: F811
+        self, obj: t.Union["pd.Series", t.Dict[str, "pd.Series"]]
+    ) -> Response:
+        """
+        Process given objects and convert it to HTTP response.
+
+        Args:
+            obj (`pd.Series`):
+                `pd.Series` that will be serialized to JSON
+        Returns:
+            HTTP Response of type `starlette.responses.Response`. This can
+             be accessed via cURL or any external web traffic.
+        """
+        if isinstance(obj, pd.Series):
+            resp = obj.to_json(orient=self._orient)
+        else:
+            resp = {}
+            for k, v in obj.items():
+                resp[k] = (
+                    v.to_json(orient=self._orient) if isinstance(v, pd.Series) else v
+                )
+        return Response(json.dumps(resp), media_type=MIME_TYPE_JSON)

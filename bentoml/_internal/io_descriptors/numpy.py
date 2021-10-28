@@ -1,3 +1,4 @@
+import json
 import logging
 import typing as t
 
@@ -7,7 +8,6 @@ from starlette.responses import Response
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
-import json
 
 if t.TYPE_CHECKING:
     import numpy as np
@@ -143,16 +143,13 @@ class NumpyNdarray(IODescriptor):
         ...
 
     @t.overload
-    async def to_http_response(self, obj: t.List["np.ndarray"]) -> Response:
+    async def to_http_response(  # noqa: F811
+        self, obj: t.Dict[str, "np.ndarray"]
+    ) -> Response:
         ...
 
-    @t.overload
-    async def to_http_response(self, obj: t.Dict[str, "np.ndarray"]) -> Response:
-        ...
-
-    async def to_http_response(
-        self,
-        obj: t.Union["np.ndarray", t.Dict[str, t.Any], t.List[t.Any]]
+    async def to_http_response(  # noqa: F811
+        self, obj: t.Union["np.ndarray", t.Dict[str, t.Any]]
     ) -> Response:
         """
         Process given objects and convert it to HTTP response.
@@ -165,20 +162,19 @@ class NumpyNdarray(IODescriptor):
              be accessed via cURL or any external web traffic.
         """
         if isinstance(obj, np.ndarray):
-            resp = obj.tolist()  # type: t.List[]
-        elif isinstance(obj, dict):
-            resp = {k: v.tolist() for k, v in obj.items()}
+            resp = obj.tolist()
         else:
-            resp = [v.tolist() for v in obj]  # type: t.List["np.ndarray"]
-        logger.warning(resp)
+            resp = dict()
+            for k, v in obj.items():
+                resp[k] = v.tolist() if isinstance(v, np.ndarray) else v
         return Response(content=json.dumps(resp), media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(
         cls,
         sample_input: "np.ndarray",
-        enforce_dtype: t.Optional[bool] = True,
-        enforce_shape: t.Optional[bool] = True,
+        enforce_dtype: bool = True,
+        enforce_shape: bool = True,
     ) -> "NumpyNdarray":
         """
         Create a NumpyNdarray IO Descriptor from given inputs.
@@ -205,7 +201,7 @@ class NumpyNdarray(IODescriptor):
             ...
             @svc.api(input=inp, output=NumpyNdarray())
             def predict() -> np.ndarray:...
-        """  # noqa
+        """
         return cls(
             dtype=sample_input.dtype,
             shape=sample_input.shape,

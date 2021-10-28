@@ -1,15 +1,15 @@
+import json
 import logging
 import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ..utils.dataframe import from_json_or_csv
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
 else:
     pd = LazyLoader("pd", globals(), "pandas")
@@ -105,7 +105,9 @@ class PandasDataFrame(IODescriptor):
 
     def __init__(
         self,
-        orient: str = "records",
+        orient: t.Literal[
+            "dict", "list", "series", "split", "records", "index"
+        ] = "records",
         columns: t.Optional[t.List[str]] = None,
         apply_column_names: bool = False,
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
@@ -145,14 +147,7 @@ class PandasDataFrame(IODescriptor):
                 logger.warning(
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
-        # TODO: check when inputs type is CSV or AWS Lambda to formats
-        res, _ = from_json_or_csv(
-            obj,
-            formats="json",
-            orient=self._orient,
-            columns=self._columns,
-            dtype=self._dtype,
-        )  # type: pd.DataFrame, t.Tuple[int, ...]
+        res = pd.json_normalize(obj)
         if self._apply_column_names:
             if self._columns is None:
                 logger.warning(
@@ -168,10 +163,22 @@ class PandasDataFrame(IODescriptor):
             else:
                 assert (
                     self._shape[1] == res.shape[1]
-                ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"  # noqa
-        return res
+                ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
+        return pd.DataFrame(res, dtype=self._dtype)
 
+    @t.overload
     async def to_http_response(self, obj: "pd.DataFrame") -> Response:
+        ...
+
+    @t.overload
+    async def to_http_response(  # noqa: F811
+        self, obj: t.Dict[str, "pd.DataFrame"]
+    ) -> Response:
+        ...
+
+    async def to_http_response(  # noqa: F811
+        self, obj: t.Union["pd.DataFrame", t.Dict[str, t.Any]]
+    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -182,17 +189,26 @@ class PandasDataFrame(IODescriptor):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        resp = obj.to_json(orient=self._orient)
-        return Response(resp, media_type=MIME_TYPE_JSON)
+        if isinstance(obj, pd.DataFrame):
+            resp = obj.to_dict(orient=self._orient)
+        else:
+            resp = dict()
+            for k, v in obj.items():
+                resp[k] = (
+                    v.to_dict(orient=self._orient) if isinstance(v, pd.DataFrame) else v
+                )
+        return Response(json.dumps(resp), media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(
         cls,
         sample_input: "pd.DataFrame",
-        orient: str = "records",
+        orient: t.Literal[
+            "dict", "list", "series", "split", "records", "index"
+        ] = "records",
         apply_column_names: bool = True,
-        enforce_dtype: bool = True,
         enforce_shape: bool = True,
+        enforce_dtype: bool = False,
     ) -> "PandasDataFrame":
         """
         Create a PandasDataFrame IO Descriptor from given inputs.
@@ -230,13 +246,14 @@ class PandasDataFrame(IODescriptor):
             ...
             @svc.api(input=inp, output=PandasDataFrame())
             def predict(inputs: pd.DataFrame) -> pd.DataFrame:...
-        """  # noqa
+        """
+        columns = [str(x) for x in list(sample_input.columns)]
         return cls(
             orient=orient,
-            shape=sample_input.shape,
-            dtype=sample_input.dtypes,
-            columns=sample_input.columns,
-            apply_column_names=apply_column_names,
             enforce_shape=enforce_shape,
+            shape=sample_input.shape,
+            apply_column_names=apply_column_names,
+            columns=columns,
             enforce_dtype=enforce_dtype,
+            dtype=None,  # TODO: not breaking atm
         )

@@ -30,37 +30,37 @@ def check_dataframe_column_contains(
 def guess_orient(
     table: t.Union[t.List[t.Mapping[str, t.Any]], t.Dict[str, t.Any]],
     strict: bool = False,
-) -> t.Optional[t.Union[str, t.Set[str]]]:
+) -> t.Optional[t.Set[str]]:
     if isinstance(table, list):
         if not table:
             if strict:
                 return {"records", "values"}
             else:
-                return "records"
+                return {"records"}
         if isinstance(table[0], dict):
-            return "records"
+            return {"records"}
         else:
-            return "values"
+            return {"values"}
     elif isinstance(table, dict):
         if set(table) == {"columns", "index", "data"}:
-            return "split"
+            return {"split"}
         if set(table) == {"schema", "data"} and "primaryKey" in table["schema"]:
-            return "table"
+            return {"table"}
         if strict:
             return {"columns", "index"}
         else:
-            return "columns"
+            return {"columns"}
     else:
         return None
 
 
 class _DataFrameState(object):
-    @t.overload  # noqa: F811
+    @t.overload
     def __init__(self, columns: t.Optional[t.Dict[str, int]]):
         ...
 
-    @t.overload  # noqa: F811
-    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):
+    @t.overload
+    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):  # noqa: F811
         ...
 
     def __init__(  # noqa: F811
@@ -172,16 +172,17 @@ def _dataframe_csv_from_input(
         if not fmt or fmt == "json":
             table = json.loads(table)
             if not orient:
-                orient = guess_orient(table, strict=False)
+                orient = guess_orient(table, strict=False).pop()
             else:
+                # TODO: this can be either a set or a string
                 guessed_orient = guess_orient(table, strict=True)  # type: t.Set[str]
-                if orient not in guessed_orient:
+                if set(orient) != guessed_orient and orient not in guessed_orient:
                     return None
             if orient not in _ORIENT_MAP:
                 return None
-            _from_json = _ORIENT_MAP[
-                orient
-            ]  # type: t.Callable[["_DataFrameState", str], t.Iterator[str]]
+            # fmt: off
+            _from_json = _ORIENT_MAP[orient]  # type: t.Callable[["_DataFrameState", str], t.Iterator[str]]
+            # fmt: on
             try:
                 return tuple(_from_json(state, table))
             except (TypeError, AttributeError, KeyError, IndexError):
@@ -237,7 +238,7 @@ def from_json_or_csv(
     Raises:
         pandas.errors.EmptyDataError:
             When data is not found or emptied
-    """  # noqa
+    """
     state = _DataFrameState(
         columns={k: i for i, k in enumerate(columns)} if columns else None
     )
@@ -252,15 +253,15 @@ def from_json_or_csv(
         if not header:
             df = pd.read_csv(
                 io.StringIO(table),
-                index_col=None,
                 dtype=dtype,
+                index_col=None,
                 header=None,
             )
         else:
             df = pd.read_csv(
                 io.StringIO("\n".join((header, table))),
-                index_col=None,
                 dtype=dtype,
+                index_col=None,
             )
         return df, lens
     except pd.errors.EmptyDataError:

@@ -183,6 +183,7 @@ class _XgBoostRunner(Runner):
         self._model_info = model_info
         self._model_file = model_file
         self._predict_fn_name = predict_fn_name
+        booster_params = dict() if booster_params is None else booster_params
         self._booster_params = self._setup_booster_params(booster_params)
 
     @property
@@ -215,12 +216,16 @@ class _XgBoostRunner(Runner):
             booster_params["nthread"] = 1
         else:
             booster_params["predictor"] = "cpu_predictor"
-            booster_params["nthread"] = self.num_concurrency_per_replica
+            booster_params["nthread"] = -1
 
         return booster_params
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
+        """_setup.
+
+        :rtype: None
+        """
         self._model = xgb.core.Booster(
             params=self._booster_params,
             model_file=self._model_file,

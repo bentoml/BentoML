@@ -3,7 +3,7 @@ import typing as t
 from typing import TYPE_CHECKING
 
 from bentoml._internal.io_descriptors import IODescriptor
-from bentoml._internal.utils.validation import check_is_dns1123_subdomain
+from bentoml._internal.utils.validation import validate_tag_name_str
 from bentoml.exceptions import BentoMLException
 
 from ..runner import Runner
@@ -39,9 +39,14 @@ class Service:
     _working_dir: t.Optional[str] = None
 
     def __init__(self, name: str, runners: t.Optional[t.List[Runner]] = None):
+        lname = name.lower()
+
+        if name != lname:
+            logger.warning(f"converting {name} to lowercase: {lname}")
+
         # Service name must be a valid dns1123 subdomain string
-        check_is_dns1123_subdomain(name)
-        self.name = name
+        validate_tag_name_str(lname)
+        self.name = lname
 
         if runners is not None:
             self._runners = {r.name: r for r in runners}

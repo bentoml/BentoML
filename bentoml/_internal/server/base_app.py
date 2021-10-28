@@ -15,8 +15,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class BaseApp(abc.ABC):
+class BaseAppFactory(abc.ABC):
     name: str
+
+    # TODO: set _is_ready state after initial setup call
     _is_ready: bool = False
 
     @abc.abstractmethod

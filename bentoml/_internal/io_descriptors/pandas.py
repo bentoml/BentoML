@@ -50,7 +50,7 @@ class PandasDataFrame(IODescriptor):
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "application/json" --data "[{'0':5,'1':4,'2':3,'3':2}]" http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data "[{'0':5,'1':4,'2':3,'3':2}]" http://0.0.0.0:5000/predict
 
         {res: [{"0":1}]}%
 
@@ -101,7 +101,7 @@ class PandasDataFrame(IODescriptor):
              be specified
     Returns:
         IO Descriptor that represents `pd.DataFrame`.
-    """  # noqa
+    """
 
     def __init__(
         self,

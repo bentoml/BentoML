@@ -88,6 +88,8 @@ def import_service(
                     f'Attribute "{attrs_str}" not found in module "{module_name}".'
                 )
         else:
+            from bentoml import Service
+
             instances = [v for v in module.__dict__.values() if isinstance(v, Service)]
 
             if len(instances) == 1:

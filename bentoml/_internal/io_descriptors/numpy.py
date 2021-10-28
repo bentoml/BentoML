@@ -7,6 +7,7 @@ from starlette.responses import Response
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
+import json
 
 if t.TYPE_CHECKING:
     import numpy as np
@@ -60,7 +61,7 @@ class NumpyNdarray(IODescriptor):
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "application/json" --data "[[5, 4, 3, 2]]" http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data "[[5, 4, 3, 2]]" http://0.0.0.0:5000/predict
 
         {res: [1]}%
 
@@ -88,7 +89,7 @@ class NumpyNdarray(IODescriptor):
 
     Returns:
         IO Descriptor that represents `np.ndarray`.
-    """  # noqa
+    """
 
     def __init__(
         self,
@@ -137,7 +138,22 @@ class NumpyNdarray(IODescriptor):
                 res = res.reshape(self._shape)
         return res
 
+    @t.overload
     async def to_http_response(self, obj: "np.ndarray") -> Response:
+        ...
+
+    @t.overload
+    async def to_http_response(self, obj: t.List["np.ndarray"]) -> Response:
+        ...
+
+    @t.overload
+    async def to_http_response(self, obj: t.Dict[str, "np.ndarray"]) -> Response:
+        ...
+
+    async def to_http_response(
+        self,
+        obj: t.Union["np.ndarray", t.Dict[str, t.Any], t.List[t.Any]]
+    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -148,7 +164,14 @@ class NumpyNdarray(IODescriptor):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        return Response(obj.tolist(), media_type=MIME_TYPE_JSON)
+        if isinstance(obj, np.ndarray):
+            resp = obj.tolist()  # type: t.List[]
+        elif isinstance(obj, dict):
+            resp = {k: v.tolist() for k, v in obj.items()}
+        else:
+            resp = [v.tolist() for v in obj]  # type: t.List["np.ndarray"]
+        logger.warning(resp)
+        return Response(content=json.dumps(resp), media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(

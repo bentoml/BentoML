@@ -27,11 +27,7 @@ class ResourceQuota:
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus = attr.ib(
-        converter=_gpu_converter,
-        type=t.List[str],
-        default=None,
-    )
+    gpus = attr.ib(converter=_gpu_converter, type=t.List[str], default=None,)
 
     @cpu.default
     def _get_default_cpu(self) -> float:
@@ -111,8 +107,7 @@ class _BaseRunner:
 
     @inject
     def _impl_ref(
-        self,
-        remote_runner_mapping=Provide[BentoServerContainer.remote_runner_mapping],
+        self, remote_runner_mapping=Provide[BentoServerContainer.remote_runner_mapping],
     ):
         # TODO(jiang): cache impl
         if self.name in remote_runner_mapping:
@@ -247,24 +242,7 @@ class LocalRunner(RunnerImpl):
         self._state = RunnerState.SET
 
     async def async_run(self, *args, **kwargs):
-        if self._state is RunnerState.INIT:
-            self._setup()
-        if isinstance(self._runner, Runner):
-            params = Params(*args, **kwargs)
-            params = params.map(
-                partial(
-                    AutoContainer.singles_to_batch,
-                    batch_axis=self._runner.batch_options.input_batch_axis,
-                )
-            )
-            batch_result = self._runner._run_batch(*params.args, **params.kwargs)
-            return AutoContainer.batch_to_singles(
-                batch_result,
-                batch_axis=self._runner.batch_options.output_batch_axis,
-            )[0]
-
-        if isinstance(self._runner, SimpleRunner):
-            return self._runner._run(*args, **kwargs)
+        return self.run(*args, **kwargs)
 
     async def async_run_batch(self, *args, **kwargs):
         if self._state is RunnerState.INIT:
@@ -280,15 +258,13 @@ class LocalRunner(RunnerImpl):
         if isinstance(self._runner, Runner):
             params = Params(*args, **kwargs)
             params = params.map(
-                partial(
-                    AutoContainer.singles_to_batch,
-                    batch_axis=self._runner.batch_options.input_batch_axis,
+                lambda i: AutoContainer.singles_to_batch(
+                    [i], batch_axis=self._runner.batch_options.input_batch_axis
                 )
             )
             batch_result = self._runner._run_batch(*params.args, **params.kwargs)
             return AutoContainer.batch_to_singles(
-                batch_result,
-                batch_axis=self._runner.batch_options.output_batch_axis,
+                batch_result, batch_axis=self._runner.batch_options.output_batch_axis,
             )[0]
 
         if isinstance(self._runner, SimpleRunner):

@@ -14,9 +14,11 @@ from .base import IODescriptor
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import numpy as np
-    import PIL.Image
+    import PIL
+    import PIL.Image as PImage
 else:
     np = LazyLoader("np", globals(), "numpy")
+
     # TODO: use pillow-simd by default instead of pillow for better performance
     _exc = const.IMPORT_ERROR_MSG.format(
         fwr="Pillow",
@@ -24,12 +26,14 @@ else:
         inst="`pip install Pillow`",
     )
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
-    Image = LazyLoader("Image", globals(), "PIL.Image", exc_msg=_exc)
+    PImage = LazyLoader("PImage", globals(), "PIL.Image", exc_msg=_exc)
 
 DEFAULT_PIL_MODE = "RGB"
 
 
 class Image(IODescriptor):
+    """Image."""
+
     def __init__(self, pilmode=DEFAULT_PIL_MODE):
         self._pilmode = pilmode
 
@@ -39,22 +43,20 @@ class Image(IODescriptor):
     def openapi_responses_schema(self):
         pass
 
-    async def from_http_request(self, request: Request) -> "PIL.Image":
+    async def from_http_request(self, request: Request) -> "PImage":
         form = await request.form()
         contents = await form.upload_file.read()
-        return PIL.Image.open(io.BytesIO(contents), mode=self._pilmode)
+        return PImage.open(io.BytesIO(contents), mode=self._pilmode)
 
-    async def to_http_response(
-        self, obj: t.Union["np.ndarray", "PIL.Image"]
-    ) -> Response:
+    async def to_http_response(self, obj: t.Union["np.ndarray", "Image"]) -> Response:
         if isinstance(obj, np.ndarray):
-            image = PIL.Image.fromarray(obj)
-        elif isinstance(PIL.Image):
+            image = PImage.fromarray(obj)
+        elif isinstance(PImage):
             image = obj
         else:
             raise BentoMLException(
                 f"Unsupported Image type received: {obj}, bentoml.io.Image supports "
-                f"only 'np.ndarray' and 'PIL.image'"
+                f"only 'np.ndarray' and 'Image'"
             )
 
         # Support other return types?

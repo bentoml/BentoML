@@ -17,6 +17,9 @@ else:
 logger = logging.getLogger(__name__)
 
 
+Class PandasSeries(IODescriptor):...
+
+
 class PandasDataFrame(IODescriptor):
     """
     `PandasDataFrame` defines API specification for the inputs/outputs of a Service, where either inputs will be
@@ -148,6 +151,7 @@ class PandasDataFrame(IODescriptor):
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
         res = pd.json_normalize(obj)
+        print(res)
         if self._apply_column_names:
             if self._columns is None:
                 logger.warning(

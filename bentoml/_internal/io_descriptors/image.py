@@ -11,7 +11,8 @@ from bentoml.exceptions import BentoMLException
 from ..utils import LazyLoader
 from .base import IODescriptor
 
-if t.TYPE_CHECKING:  # pragma: no cover # pylint: disable=unused-import
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
     import numpy as np
     import PIL.Image
 else:
@@ -23,7 +24,7 @@ else:
         inst="`pip install Pillow`",
     )
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
-    PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
+    Image = LazyLoader("Image", globals(), "PIL.Image", exc_msg=_exc)
 
 DEFAULT_PIL_MODE = "RGB"
 

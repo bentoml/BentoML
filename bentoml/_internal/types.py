@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 import pathlib
 import typing as t
@@ -10,6 +11,8 @@ import attr
 from bentoml.exceptions import BentoMLException
 
 from .utils.dataclasses import json_serializer
+
+logger = logging.getLogger(__name__)
 
 BATCH_HEADER = "Bentoml-Is-Batch-Request"
 

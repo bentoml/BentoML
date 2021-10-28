@@ -5,6 +5,7 @@ import typing as t
 from starlette.requests import Request
 from starlette.responses import Response
 
+from ...exceptions import InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
@@ -15,9 +16,6 @@ else:
     pd = LazyLoader("pd", globals(), "pandas")
 
 logger = logging.getLogger(__name__)
-
-
-Class PandasSeries(IODescriptor):...
 
 
 class PandasDataFrame(IODescriptor):
@@ -42,7 +40,7 @@ class PandasDataFrame(IODescriptor):
         @svc.api(input=input_spec, output=PandasDataFrame())
         def predict(input_arr):
             res = runner.run_batch(input_arr)  # type: np.ndarray
-            return {"results": pd.DataFrame(res)}
+            return pd.DataFrame(res)
 
     Users then can then serve this service with `bentoml serve`::
         % bentoml serve ./sklearn_svc.py:svc --auto-reload
@@ -55,7 +53,7 @@ class PandasDataFrame(IODescriptor):
     Users can then send a cURL requests like shown in different terminal session::
         % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
 
-        {"results": [{"0": 1}]}%
+        [{"0": 1}]%
 
     Args:
         orient (`str`, `optional`, default to `records`):
@@ -111,6 +109,7 @@ class PandasDataFrame(IODescriptor):
         orient: t.Literal[
             "dict", "list", "series", "split", "records", "index"
         ] = "records",
+        apply_column_names: bool = False,
         columns: t.Optional[t.List[str]] = None,
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
         enforce_dtype: bool = False,
@@ -119,6 +118,7 @@ class PandasDataFrame(IODescriptor):
     ):
         self._orient = orient
         self._columns = columns
+        self._apply_column_names = apply_column_names
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
         self._shape = shape
@@ -142,15 +142,14 @@ class PandasDataFrame(IODescriptor):
             a `pd.DataFrame` object. This can then be used
              inside users defined logics.
         """
-        obj = await request.json()
+        obj = await request.body()
         if self._enforce_dtype:
             if self._dtype is None:
                 logger.warning(
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
             # TODO(jiang): check dtype
-        res = pd.json_normalize(obj)
-        print(res)
+        res = pd.read_json(obj, dtype=self._dtype, orient=self._orient)
         if self._apply_column_names:
             if self._columns is None:
                 logger.warning(
@@ -167,21 +166,9 @@ class PandasDataFrame(IODescriptor):
                 assert (
                     self._shape[1] == res.shape[1]
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
-        return pd.DataFrame(res, dtype=self._dtype)
+        return res
 
-    @t.overload
     async def to_http_response(self, obj: "pd.DataFrame") -> Response:
-        ...
-
-    @t.overload
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Dict[str, "pd.DataFrame"]
-    ) -> Response:
-        ...
-
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Union["pd.DataFrame", t.Dict[str, t.Any]]
-    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -192,14 +179,11 @@ class PandasDataFrame(IODescriptor):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if isinstance(obj, pd.DataFrame):
-            resp = obj.to_json(orient=self._orient)
-        else:
-            resp = dict()
-            for k, v in obj.items():
-                resp[k] = (
-                    v.to_json(orient=self._orient) if isinstance(v, pd.DataFrame) else v
-                )
+        if not isinstance(obj, pd.DataFrame):
+            raise InvalidArgument(
+                f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
+            )
+        resp = obj.to_dict(orient=self._orient)
         return Response(json.dumps(resp), media_type=MIME_TYPE_JSON)
 
     @classmethod
@@ -273,11 +257,15 @@ class PandasSeries(PandasDataFrame):
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
     ):
-        self._orient = orient
-        self._dtype = dtype
-        self._enforce_dtype = enforce_dtype
-        self._shape = shape
-        self._enforce_shape = enforce_shape
+        super().__init__(
+            orient=orient,
+            dtype=dtype,
+            enforce_dtype=enforce_dtype,
+            shape=shape,
+            enforce_shape=enforce_shape,
+            apply_column_names=False,
+            columns=None,
+        )
 
     async def from_http_request(self, request: Request) -> "pd.Series":
         """

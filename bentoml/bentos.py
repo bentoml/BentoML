@@ -87,7 +87,7 @@ from simple_di import Provide, inject
 
 from ._internal.bento import Bento
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.types import BentoTag
+from ._internal.types import Tag
 
 if t.TYPE_CHECKING:
     from ._internal.models.store import ModelStore
@@ -99,15 +99,15 @@ from ._internal.service import load
 
 @inject
 def list(
-    tag: t.Optional[t.Union[BentoTag, str]] = None,
+    tag: t.Optional[t.Union[Tag, str]] = None,
     bento_store: "Store" = Provide[BentoMLContainer.bento_store],
-) -> t.List[BentoTag]:
+) -> t.List[Tag]:
     return bento_store.list(tag)
 
 
 @inject
 def get(
-    tag: t.Union[BentoTag, str],
+    tag: t.Union[Tag, str],
     bento_store: "Store" = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
     bento_fs = bento_store.get(tag)
@@ -115,7 +115,7 @@ def get(
 
 
 def delete(
-    tag: t.Union[BentoTag, str],
+    tag: t.Union[Tag, str],
     bento_store: "Store" = Provide[BentoMLContainer.bento_store],
 ):
     bento_store.delete(tag)
@@ -130,7 +130,7 @@ def export_bento(bento: Bento, path: str):
     pass
 
 
-def load_runner(tag: t.Union[BentoTag, str]) -> ...:
+def load_runner(tag: t.Union[Tag, str]) -> ...:
     pass
 
 

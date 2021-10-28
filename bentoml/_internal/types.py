@@ -32,7 +32,7 @@ JSONSerializable = t.Union[
 ]
 
 
-class BentoTag:
+class Tag:
     name: str
     version: t.Optional[str]
 
@@ -53,16 +53,16 @@ class BentoTag:
         return f"{self.name}:{self.version}"
 
     @classmethod
-    def from_taglike(cls, taglike: t.Union["BentoTag", str]) -> "BentoTag":
-        if isinstance(taglike, BentoTag):
+    def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":
+        if isinstance(taglike, Tag):
             return taglike
         if isinstance(taglike, str):
             return cls.from_str(taglike)
 
-        raise TypeError(f"can't make a BentoTag from {type(taglike)}")
+        raise TypeError(f"can't make a Tag from {type(taglike)}")
 
     @classmethod
-    def from_str(cls, tag_str: str) -> "BentoTag":
+    def from_str(cls, tag_str: str) -> "Tag":
         if ":" not in tag_str:
             return cls(tag_str, None)
         try:

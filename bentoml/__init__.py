@@ -15,7 +15,7 @@ load_global_config()
 
 from ._internal.models.store import ModelStore
 from ._internal.service import Service
-from ._internal.types import BentoTag
+from ._internal.types import Tag
 
 # bento APIs are top-level
 from .bentos import build, delete, export_bento, get, import_bento, list, load
@@ -27,7 +27,7 @@ __all__ = [
     "__version__",
     "Service",
     "models",
-    "BentoTag",
+    "Tag",
     # bento APIs
     "list",
     "get",

@@ -6,11 +6,12 @@ import typing as t
 import urllib
 from dataclasses import dataclass
 
-import attr
+import fs
 
 from bentoml.exceptions import BentoMLException
 
 from .utils.dataclasses import json_serializer
+from .utils.validation import validate_tag_name_str, validate_version_str
 
 logger = logging.getLogger(__name__)
 
@@ -29,27 +30,54 @@ JSONSerializable = t.Union[
 ]
 
 
-@attr.s
 class BentoTag:
-    name = attr.ib(type=str)
-    version = attr.ib(type=str)
+    name: str
+    version: t.Optional[str]
+
+    def __init__(self, name: str, version: t.Optional[str]):
+        lname = name.lower()
+        if name != lname:
+            logger.warning(f"converting {name} to lowercase: {lname}")
+
+        validate_tag_name_str(lname)
+
+        if version is not None:
+            validate_version_str(version)
+
+        self.name = lname
+        self.version = version
 
     def __str__(self):
         return f"{self.name}:{self.version}"
 
     @classmethod
+    def from_taglike(cls, taglike: t.Union["BentoTag", str]) -> "BentoTag":
+        if isinstance(taglike, BentoTag):
+            return taglike
+        if isinstance(taglike, str):
+            return cls.from_str(taglike)
+
+        raise TypeError(f"can't make a BentoTag from {type(taglike)}")
+
+    @classmethod
     def from_str(cls, tag_str: str) -> "BentoTag":
+        if ":" not in tag_str:
+            return cls(tag_str, None)
         try:
             name, version = tag_str.split(":")
             if not version:
                 # in case users mistakenly define "bento:"
                 raise BentoMLException(
-                    f"{tag_str} contains leading ':'. Maybe you "
-                    f"meant to use `{tag_str}:latest`?"
+                    f"{tag_str} contains trailing ':'. Maybe you meant to use `{tag_str}:latest`?"
                 )
             return cls(name, version)
         except ValueError:
             raise BentoMLException(f"Invalid {cls.__name__} {tag_str}")
+
+    def path(self) -> str:
+        if self.version is None:
+            return self.name
+        return fs.path.combine(self.name, self.version)
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

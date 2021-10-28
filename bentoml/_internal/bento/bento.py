@@ -2,9 +2,11 @@ import logging
 import os
 import typing as t
 
+import attr
 import fs
 import pathspec
 import yaml
+from fs.base import FS
 from fs.copy import copy_dir, copy_file
 from simple_di import Provide, inject
 
@@ -24,17 +26,22 @@ if t.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@attr.define
 class Bento:
+    tag: BentoTag
+    fs: FS
+
+    @classmethod
     @inject
-    def __init__(
-        self,
+    def create(
+        cls,
         svc: "Service",
         build_ctx: PathType,
-        models: t.List[str],
+        models: t.List[str] = [],
         version: t.Optional[str] = None,
         description: t.Optional[str] = None,
-        include: t.Optional[t.List[str]] = None,
-        exclude: t.Optional[t.List[str]] = None,
+        include: t.List[str] = ["*"],
+        exclude: t.List[str] = [],
         env: t.Optional[t.Dict[str, t.Any]] = None,
         labels: t.Optional[t.Dict[str, str]] = None,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -44,18 +51,15 @@ class Bento:
 
         validate_version_str(version)
 
-        self.tag = BentoTag(svc.name, version)
+        tag = BentoTag(svc.name, version)
 
-        logger.debug(
-            f"Building BentoML service {self.tag} from build context {build_ctx}"
-        )
+        logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")
 
-        self.fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
+        bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
         ctx_fs = fs.open_fs(build_ctx)
 
         # Copy required models from local modelstore, into
         # `models/{model_name}/{model_version}` directory
-        models = [] if models is None else models
         for runner in svc._runners.values():
             models += runner.required_models
 
@@ -70,23 +74,20 @@ class Bento:
 
             model_name, model_version = model_tag.split(":")
             target_path = os.path.join("models", model_name, model_version)
-            copy_dir(fs.open_fs(model_info.path), "/", self.fs, target_path)
+            copy_dir(fs.open_fs(model_info.path), "/", bento_fs, target_path)
 
         # Copy all files base on include and exclude, into `{svc.name}` directory
-        if include is None:
-            include = ["*"]
-        else:
-            relpaths = [s for s in include if s.startswith("../")]
-            if len(relpaths) != 0:
-                raise InvalidArgument(
-                    "Paths outside of the build context directory cannot be included; use a symlink or copy those files into the working directory manually."
-                )
+        relpaths = [s for s in include if s.startswith("../")]
+        if len(relpaths) != 0:
+            raise InvalidArgument(
+                "Paths outside of the build context directory cannot be included; use a symlink or copy those files into the working directory manually."
+            )
 
         spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
         exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
         exclude_specs = []
-        self.fs.makedir(svc.name)
-        target_fs = self.fs.opendir(svc.name)
+        bento_fs.makedir(svc.name)
+        target_fs = bento_fs.opendir(svc.name)
 
         for dir_path, _, files in ctx_fs.walk():
             for ignore_file in [f for f in files if f.name == ".bentomlignore"]:
@@ -121,18 +122,20 @@ class Bento:
 
         # Create `readme.md` file
         description = svc.__doc__ if description is None else description
-        with self.fs.open("readme.md", "w") as f:
+        with bento_fs.open("readme.md", "w") as f:
             f.write(description)
 
         # Create 'apis/openapi.yaml' file
-        self.fs.makedir("apis")
-        with self.fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
+        bento_fs.makedir("apis")
+        with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
             yaml.dump(svc.openapi_doc(), f)
 
         # Create bento.yaml
         # TODO
-        with self.fs.open("bento.yaml", "w") as bento_yaml:
+        with bento_fs.open("bento.yaml", "w") as bento_yaml:  # noqa: F841
             pass
+
+        return cls(tag, bento_fs)
 
     def save(self, bento_store: "Store" = Provide[BentoMLContainer.bento_store]):
         if not self.validate():

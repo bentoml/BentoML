@@ -100,25 +100,25 @@ from ._internal.service import load
 @inject
 def list(
     tag: t.Optional[t.Union[Tag, str]] = None,
-    bento_store: "Store" = Provide[BentoMLContainer.bento_store],
+    _bento_store: "Store" = Provide[BentoMLContainer.bento_store],
 ) -> t.List[Tag]:
-    return bento_store.list(tag)
+    return _bento_store.list(tag)
 
 
 @inject
 def get(
     tag: t.Union[Tag, str],
-    bento_store: "Store" = Provide[BentoMLContainer.bento_store],
+    _bento_store: "Store" = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
-    bento_fs = bento_store.get(tag)
+    bento_fs = _bento_store.get(tag)
     return Bento.import_from_fs(bento_fs)
 
 
 def delete(
     tag: t.Union[Tag, str],
-    bento_store: "Store" = Provide[BentoMLContainer.bento_store],
+    _bento_store: "Store" = Provide[BentoMLContainer.bento_store],
 ):
-    bento_store.delete(tag)
+    _bento_store.delete(tag)
 
 
 def import_bento(path: str) -> Bento:
@@ -144,8 +144,8 @@ def build(
     exclude: t.Optional[t.List[str]] = None,
     env: t.Optional[t.Dict[str, t.Any]] = None,
     labels: t.Optional[t.Dict[str, str]] = None,
-    bento_store: "Store" = Provide[BentoMLContainer.bento_store],
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    _bento_store: "Store" = Provide[BentoMLContainer.bento_store],
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Bento:
     """
     Build a Bento for this Service. A Bento is a file archive containing all the
@@ -298,9 +298,9 @@ def build(
         exclude,
         env,
         labels,
-        model_store,
+        _model_store,
     )
-    res.save(bento_store)
+    res.save(_bento_store)
 
     return res
 

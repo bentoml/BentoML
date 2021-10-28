@@ -4,6 +4,8 @@ import os
 import pathlib
 import typing as t
 import urllib
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass
 
 import fs
@@ -112,7 +114,7 @@ class FileLike:
             if self._stream is not None:
                 self.name = getattr(self._stream, "name", None)
             elif self.uri is not None:
-                p = urllib.parse.urlparse(self.uri)
+                p = urllib.parse.urlparse(self.uri)  # type: ignore
                 if p.scheme and p.scheme != "file":
                     raise NotImplementedError(
                         f"{self.__class__} now supports scheme 'file://' only"
@@ -132,8 +134,8 @@ class FileLike:
         .. note::
             https://stackoverflow.com/a/61922504/3089381
         """
-        parsed = urllib.parse.urlparse(self.uri)
-        raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))
+        parsed = urllib.parse.urlparse(self.uri)  # type: ignore
+        raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))  # type: ignore # noqa: LN001
         host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
         path = os.path.abspath(os.path.join(host, raw_path))
         return path
@@ -165,5 +167,9 @@ class FileLike:
             self._stream.close()
 
     def __del__(self):
-        if getattr(self, "_stream", None) and not self._stream.closed:
+        if (
+            hasattr(self, "_stream")
+            and self._stream is not None
+            and not self._stream.closed
+        ):
             self._stream.close()

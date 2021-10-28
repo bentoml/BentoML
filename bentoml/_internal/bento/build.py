@@ -1,4 +1,5 @@
 import importlib
+import importlib.util
 import logging
 import os
 import shutil
@@ -20,7 +21,7 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
         return
 
     # Find bentoml module path
-    (module_location,) = importlib.util.find_spec("bentoml").submodule_search_locations
+    (module_location,) = importlib.util.find_spec("bentoml").submodule_search_locations  # type: ignore # noqa
 
     bentoml_setup_py = os.path.abspath(os.path.join(module_location, "..", "setup.py"))
 
@@ -29,9 +30,7 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
     # in development mode via "pip install --editable ."
     if os.path.isfile(bentoml_setup_py):
         logger.warning(
-            "BentoML is installed in `editable` model, building BentoML distribution "
-            "with local BentoML code base. The built wheel file will be included in"
-            "target bento directory, under: {bento_path}/env/python/wheels/"
+            "BentoML is installed in `editable` model, building BentoML distribution with local BentoML code base. The built wheel file will be included in target bento directory, under: {bento_path}/env/python/wheels/"
         )
 
         with TempDirectory() as tempdir:

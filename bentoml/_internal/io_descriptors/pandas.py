@@ -105,6 +105,7 @@ class PandasDataFrame(IODescriptor):
 
     def __init__(
         self,
+        typ: t.Literal["frame", "series"]="frame",
         orient: t.Literal[
             "dict", "list", "series", "split", "records", "index"
         ] = "records",

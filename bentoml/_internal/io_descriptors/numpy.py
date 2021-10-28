@@ -35,35 +35,31 @@ class NumpyNdarray(IODescriptor):
 
     .. Toy implementation of a sklearn service::
         # sklearn_svc.py
-        import numpy as np
+        import bentoml
+        from bentoml.io import NumpyNdarray
         import bentoml.sklearn
 
-        from bentoml import Service
-        from bentoml.io import NumpyNdarray
+        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
 
-        my_runner = bentoml.sklearn.load_runner("my_sklearn_model:latest")
+        svc = bentoml.Service("server", runners=[runner])
 
-        svc = Service("IrisClassifierService", runner=[my_runner])
-
-        # Create API function with pre- and post- processing logic
         @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-        def predict(input_array: np.ndarray) -> np.ndarray:
-            result = await runner.run(input_array)
-            # Define post-processing logic
-            return result
+        def predict(input_arr):
+            res = runner.run(input_arr)
+            return {"results": res}
 
     Users then can then serve this service with `bentoml serve`::
         % bentoml serve ./sklearn_svc.py:svc --auto-reload
 
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "IrisClassifierService" defined in "sklearn_svc.py"
+        [INFO] Serving BentoML Service "server" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "Content-Type: application/json" --data "[[5, 4, 3, 2]]" http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:5000/predict
 
-        {res: [1]}%
+        {"results": [1]}%
 
     Args:
         dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`, `optional`, default to `None`):

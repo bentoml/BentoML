@@ -24,35 +24,35 @@ class PandasDataFrame(IODescriptor):
 
     .. Toy implementation of a sklearn service::
         # sklearn_svc.py
+        import bentoml
         import pandas as pd
+        import numpy as np
+        from bentoml.io import PandasDataFrame
         import bentoml.sklearn
 
-        from bentoml import Service
-        from bentoml.io import PandasDataFrame
+        input_spec = PandasDataFrame.from_sample(pd.DataFrame(np.array([[5,4,3,2]])))
 
-        my_runner = bentoml.sklearn.load_runner("my_sklearn_model:latest")
+        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
 
-        svc = Service("IrisClassifierService", runner=[my_runner])
+        svc = bentoml.Service("server", runners=[runner])
 
-        # Create API function with pre- and post- processing logic
-        @svc.api(input=PandasDataFrame(), output=PandasDataFrame())
-        def predict(input_df: pd.DataFrame) -> pd.DataFrame:
-            result = await runner.run(input_df)
-            # Define post-processing logic
-            return pd.DataFrame(result)
+        @svc.api(input=input_spec, output=PandasDataFrame())
+        def predict(input_arr):
+            res = runner.run_batch(input_arr)  # type: np.ndarray
+            return {"results": pd.DataFrame(res)}
 
     Users then can then serve this service with `bentoml serve`::
         % bentoml serve ./sklearn_svc.py:svc --auto-reload
 
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "IrisClassifierService" defined in "sklearn_svc.py"
+        [INFO] Serving BentoML Service "server" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "Content-Type: application/json" --data "[{'0':5,'1':4,'2':3,'3':2}]" http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
 
-        {res: [{"0":1}]}%
+        {"results": [{"0": 1}]}%
 
     Args:
         orient (`str`, `optional`, default to `records`):

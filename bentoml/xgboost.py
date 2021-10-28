@@ -54,14 +54,11 @@ def _get_model_info(
 ) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        if model_info.module == "bentoml.mlflow":
-            pass
-        else:
-            raise BentoMLException(  # pragma: no cover
-                f"Model {tag} was saved with"
-                f" module {model_info.module},"
-                f" failed loading with {__name__}."
-            )
+        raise BentoMLException(  # pragma: no cover
+            f"Model {tag} was saved with"
+            f" module {model_info.module},"
+            f" failed loading with {__name__}."
+        )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{JSON_EXT}")
     _booster_params = dict() if not booster_params else booster_params
     for key, value in model_info.options.items():
@@ -196,7 +193,10 @@ class _XgBoostRunner(Runner):
     def num_concurrency_per_replica(self) -> int:
         if self.resource_quota.on_gpu:
             return 1
-        return int(round(self.resource_quota.cpu))
+        nthreads = self._booster_params.get("nthread", -1)  # type: int
+        if nthreads == -1:
+            return int(round(self.resource_quota.cpu))
+        return nthreads
 
     @property
     def num_replica(self) -> int:

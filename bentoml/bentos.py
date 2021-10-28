@@ -137,11 +137,11 @@ def load_runner(tag: t.Union[Tag, str]) -> ...:
 @inject
 def build(
     svc: t.Union["Service", str],
-    models: t.List[str] = [],
+    models: t.Optional[t.List[str]] = None,
     version: t.Optional[str] = None,
     description: t.Optional[str] = None,
-    include: t.List[str] = ["*"],
-    exclude: t.List[str] = [],
+    include: t.Optional[t.List[str]] = None,
+    exclude: t.Optional[t.List[str]] = None,
     env: t.Optional[t.Dict[str, t.Any]] = None,
     labels: t.Optional[t.Dict[str, str]] = None,
     bento_store: "Store" = Provide[BentoMLContainer.bento_store],
@@ -275,6 +275,14 @@ def build(
             )
         )
     """
+    version = generate_new_version_id() if version is None else version
+    description = svc.__doc__ if description is None else description
+    models = [] if models is None else models
+    include = ["*"] if include is None else include
+    exclude = [] if exclude is None else exclude
+    env = {} if env is None else env
+    labels = {} if labels is None else labels
+
     build_ctx = os.getcwd()
 
     if isinstance(svc, str):

@@ -37,18 +37,15 @@ class Bento:
         cls,
         svc: "Service",
         build_ctx: PathType,
-        models: t.List[str] = [],
-        version: t.Optional[str] = None,
-        description: t.Optional[str] = None,
-        include: t.List[str] = ["*"],
-        exclude: t.List[str] = [],
-        env: t.Optional[t.Dict[str, t.Any]] = None,
-        labels: t.Optional[t.Dict[str, str]] = None,
+        models: t.List[str],
+        version: t.Optional[str],
+        description: t.Optional[str],
+        include: t.List[str],
+        exclude: t.List[str],
+        env: t.Optional[t.Dict[str, t.Any]],
+        labels: t.Optional[t.Dict[str, str]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        if version is None:
-            version = generate_new_version_id()
-
         validate_version_str(version)
 
         tag = Tag(svc.name, version)
@@ -121,7 +118,6 @@ class Bento:
         # TODO
 
         # Create `readme.md` file
-        description = svc.__doc__ if description is None else description
         with bento_fs.open("readme.md", "w") as f:
             f.write(description)
 

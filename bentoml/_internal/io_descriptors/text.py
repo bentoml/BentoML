@@ -1,9 +1,9 @@
-import json
 import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
 
+from ...exceptions import InvalidArgument
 from .base import IODescriptor
 
 
@@ -60,21 +60,11 @@ class Text(IODescriptor):
         obj = await request.body()
         return str(obj.decode("utf-8"))
 
-    @t.overload
     async def to_http_response(self, obj: str) -> Response:
-        ...
-
-    @t.overload
-    async def to_http_response(self, obj: t.Dict[str, str]) -> Response:  # noqa: F811
-        ...
-
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Union[str, t.Dict[str, t.Any]]
-    ) -> Response:
-        if isinstance(obj, str):
-            MIME_TYPE = "text/plain"
-            resp = obj
-        else:
-            MIME_TYPE = "application/json"
-            resp = json.dumps(obj)
+        if not isinstance(obj, str):
+            raise InvalidArgument(
+                f"return object is not of type `str`, got type {type(obj)} instead"
+            )
+        MIME_TYPE = "text/plain"
+        resp = obj
         return Response(resp, media_type=MIME_TYPE)

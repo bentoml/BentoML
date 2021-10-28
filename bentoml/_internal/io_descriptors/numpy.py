@@ -5,6 +5,7 @@ import typing as t
 from starlette.requests import Request
 from starlette.responses import Response
 
+from ...exceptions import InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
@@ -46,7 +47,7 @@ class NumpyNdarray(IODescriptor):
         @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
         def predict(input_arr):
             res = runner.run(input_arr)
-            return {"results": res}
+            return res
 
     Users then can then serve this service with `bentoml serve`::
         % bentoml serve ./sklearn_svc.py:svc --auto-reload
@@ -59,7 +60,7 @@ class NumpyNdarray(IODescriptor):
     Users can then send a cURL requests like shown in different terminal session::
         % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:5000/predict
 
-        {"results": [1]}%
+        [1]%
 
     Args:
         dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`, `optional`, default to `None`):
@@ -134,19 +135,7 @@ class NumpyNdarray(IODescriptor):
                 res = res.reshape(self._shape)
         return res
 
-    @t.overload
     async def to_http_response(self, obj: "np.ndarray") -> Response:
-        ...
-
-    @t.overload
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Dict[str, "np.ndarray"]
-    ) -> Response:
-        ...
-
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Union["np.ndarray", t.Dict[str, t.Any]]
-    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -157,13 +146,11 @@ class NumpyNdarray(IODescriptor):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if isinstance(obj, np.ndarray):
-            resp = obj.tolist()
-        else:
-            resp = dict()
-            for k, v in obj.items():
-                resp[k] = v.tolist() if isinstance(v, np.ndarray) else v
-        return Response(content=json.dumps(resp), media_type=MIME_TYPE_JSON)
+        if not isinstance(obj, np.ndarray):
+            raise InvalidArgument(
+                f"return object is not of type `np.ndarray`, got type {type(obj)} instead"
+            )
+        return Response(content=json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(

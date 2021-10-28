@@ -12,6 +12,7 @@ from .base import IODescriptor
 
 if t.TYPE_CHECKING:
     import numpy as np
+    import pandas as pd
     import pydantic
 
     _major, _minor = list(
@@ -24,6 +25,7 @@ if t.TYPE_CHECKING:
 
 else:
     np = LazyLoader("np", globals(), "numpy")
+    pd = LazyLoader("pd", globals(), "pandas")
 
     try:
         import pydantic
@@ -38,12 +40,18 @@ _SerializableObj = t.TypeVar(
         "np.generic",
         "ArrayLike",
         "pydantic.BaseModel",
+        "pd.DataFrame",
         t.Any,
     ],
 )
 
 
 class DefaultJsonEncoder(json.JSONEncoder):
+
+    _orient: t.Literal[
+        "dict", "list", "series", "split", "records", "index"
+    ] = "records"
+
     def default(self, o: _SerializableObj) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
@@ -53,6 +61,9 @@ class DefaultJsonEncoder(json.JSONEncoder):
 
         if isinstance(o, np.ndarray):
             return o.tolist()
+
+        if any(isinstance(o, i) for i in [pd.DataFrame, pd.Series]):
+            return o.to_json(orient=self._orient)
 
         if pydantic and isinstance(o, pydantic.BaseModel):
             obj_dict = o.dict()
@@ -68,6 +79,9 @@ class JSON(IODescriptor):
         self,
         pydantic_model: t.Optional["pydantic.BaseModel"] = None,
         validate_json: bool = True,
+        orient: t.Literal[
+            "dict", "list", "series", "split", "records", "index"
+        ] = "records",
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
@@ -87,6 +101,7 @@ class JSON(IODescriptor):
 
         self._validate_json = validate_json
         self._json_encoder = json_encoder
+        setattr(self._json_encoder, "_orient", orient)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         pass

@@ -1,4 +1,3 @@
-import json
 import logging
 import typing as t
 
@@ -183,8 +182,8 @@ class PandasDataFrame(IODescriptor):
             raise InvalidArgument(
                 f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
             )
-        resp = obj.to_dict(orient=self._orient)
-        return Response(json.dumps(resp), media_type=MIME_TYPE_JSON)
+        resp = obj.to_json(orient=self._orient)
+        return Response(resp, media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(
@@ -297,9 +296,7 @@ class PandasSeries(PandasDataFrame):
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return pd.Series(res, dtype=self._dtype)
 
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Union["pd.Series", t.Dict[str, "pd.Series"]]
-    ) -> Response:
+    async def to_http_response(self, obj: "pd.Series") -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -310,12 +307,9 @@ class PandasSeries(PandasDataFrame):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if isinstance(obj, pd.Series):
-            resp = obj.to_json(orient=self._orient)
-        else:
-            resp = {}
-            for k, v in obj.items():
-                resp[k] = (
-                    v.to_json(orient=self._orient) if isinstance(v, pd.Series) else v
-                )
-        return Response(json.dumps(resp), media_type=MIME_TYPE_JSON)
+        if not isinstance(obj, pd.Series):
+            raise InvalidArgument(
+                f"return object is not of type `pd.Series`, got type {type(obj)} instead"
+            )
+        resp = obj.to_json(orient=self._orient)
+        return Response(resp, media_type=MIME_TYPE_JSON)

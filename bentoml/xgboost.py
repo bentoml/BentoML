@@ -62,7 +62,7 @@ def _get_model_info(
         )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{JSON_EXT}")
     if not booster_params:
-        with open(os.path.join(model_info.path, f"config{JSON_EXT}"), 'r') as f:
+        with open(os.path.join(model_info.path, f"booster_params{JSON_EXT}"), 'r') as f:
             _booster_params = json.load(f)
     else:
         _booster_params = booster_params
@@ -164,8 +164,8 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:  # type: StoreCtx
-        with open(os.path.join(ctx.path, f"config{JSON_EXT}"), 'w') as f:
-            json.dump(json.loads(model.save_config()), f, indent=4)
+        config_file_name = os.path.join(ctx.path, f"booster_params{JSON_EXT}")
+        open(config_file_name, 'a').write(model.save_config())
         model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{JSON_EXT}"))
         return ctx.tag
 

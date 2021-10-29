@@ -83,7 +83,7 @@ def save(
     model: _MT,
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    model_store: "ModelStore" = BentoMLContainer.model_store.get(),  # TODO(jiang): fix me
 ) -> str:
     """
     Save a model instance to BentoML modelstore.
@@ -121,6 +121,7 @@ class _SklearnRunner(Runner):
     def __init__(
         self,
         tag: str,
+        function_name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -133,6 +134,7 @@ class _SklearnRunner(Runner):
         self._parallel_ctx = parallel_backend(
             "threading", n_jobs=self.num_concurrency_per_replica
         )
+        self._function_name = function_name
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -156,13 +158,15 @@ class _SklearnRunner(Runner):
     def _run_batch(  # type: ignore[override]
         self, input_data: t.Union[np.ndarray, "pd.DataFrame"]
     ) -> "np.ndarray":
+        func = getattr(self._model, self._function_name)
         with self._parallel_ctx:
-            return self._model.predict(input_data)
+            return func(input_data)
 
 
 @inject
 def load_runner(
     tag: str,
+    function_name: str = "predict",
     *,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
@@ -200,6 +204,7 @@ def load_runner(
     """  # noqa
     return _SklearnRunner(
         tag=tag,
+        function_name=function_name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

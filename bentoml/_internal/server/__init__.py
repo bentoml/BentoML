@@ -84,13 +84,14 @@ def _start_ngrok_server() -> None:
 
 def serve_production(
     bento_path_or_tag: str,
+    working_dir: Optional[str] = None,
     port: Optional[int] = None,
     workers: Optional[int] = None,
     timeout: Optional[int] = None,
     max_batch_size: Optional[int] = None,
     max_latency_ms: Optional[int] = None,
 ) -> None:
-    svc = load(bento_path_or_tag)
+    svc = load(bento_path_or_tag, working_dir=working_dir)
     import psutil
 
     assert (

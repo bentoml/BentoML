@@ -23,15 +23,12 @@ METRICS_DESC = "Prometheus metrics endpoint"
 
 def get_service_openapi_doc(svc: "Service"):
     info = OrderedDict(
-        title=svc.name,
-        description="A Prediction Service built with BentoML",
+        title=svc.name, description="A Prediction Service built with BentoML",
     )
     if svc.version:
         info["version"] = svc.version
     docs = OrderedDict(
-        openapi="3.0.0",
-        info=info,
-        tags=[{"name": "infra"}, {"name": "app"}],
+        openapi="3.0.0", info=info, tags=[{"name": "infra"}, {"name": "app"}],
     )
 
     paths = OrderedDict()
@@ -39,30 +36,22 @@ def get_service_openapi_doc(svc: "Service"):
 
     paths["/healthz"] = OrderedDict(
         get=OrderedDict(
-            tags=["infra"],
-            description=HEATHZ_DESC,
-            responses=default_response,
+            tags=["infra"], description=HEATHZ_DESC, responses=default_response,
         )
     )
     paths["/livez"] = OrderedDict(
         get=OrderedDict(
-            tags=["infra"],
-            description=LIVEZ_DESC,
-            responses=default_response,
+            tags=["infra"], description=LIVEZ_DESC, responses=default_response,
         )
     )
     paths["/readyz"] = OrderedDict(
         get=OrderedDict(
-            tags=["infra"],
-            description=READYZ_DESC,
-            responses=default_response,
+            tags=["infra"], description=READYZ_DESC, responses=default_response,
         )
     )
     paths["/metrics"] = OrderedDict(
         get=OrderedDict(
-            tags=["infra"],
-            description=METRICS_DESC,
-            responses=default_response,
+            tags=["infra"], description=METRICS_DESC, responses=default_response,
         )
     )
 
@@ -75,8 +64,13 @@ def get_service_openapi_doc(svc: "Service"):
             summary=f"Inference API '{api}' under service '{svc.name}'",
             description=api.doc,
             operationId=f"{svc.name}__{api.name}",
-            requestBody=api.input.openapi_request_schema(),
-            responses=api.output.openapi_responses_schema(),
+            requestBody=dict(content=api.input.openapi_request_schema()),
+            responses={
+                "200": {
+                    "description": "success",
+                    "content": api.output.openapi_responses_schema(),
+                }
+            },
             # examples=None,
             # headers=None,
         )

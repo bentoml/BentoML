@@ -33,12 +33,7 @@ MIME_TYPE_JSON = "application/json"
 
 _SerializableObj = t.TypeVar(
     "_SerializableObj",
-    bound=t.Union[
-        "np.generic",
-        ArrayLike,
-        "pydantic.BaseModel",
-        t.Any,
-    ],
+    bound=t.Union["np.generic", ArrayLike, "pydantic.BaseModel", t.Any,],
 )
 
 
@@ -88,10 +83,10 @@ class JSON(IODescriptor):
         self._json_encoder = json_encoder
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
-        pass
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
-        pass
+        return self.openapi_schema()
 
     def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
         if self._pydantic_model:

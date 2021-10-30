@@ -9,6 +9,9 @@ from .base import IODescriptor
 
 
 class Bytes(IODescriptor):
+    def __init__(self, return_media_type: str):
+        self._media_type = return_media_type
+
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
 

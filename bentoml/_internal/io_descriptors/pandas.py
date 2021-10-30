@@ -1,4 +1,5 @@
 import logging
+import re
 import typing as t
 
 from starlette.requests import Request
@@ -245,7 +246,13 @@ class PandasDataFrame(IODescriptor):
         )
 
 
+_repl = {"PandasDataFrame": "PandasSeries", "DataFrame": "Series"}
+_rgx = re.compile("|".join(dict((re.escape(k), v) for k, v in _repl.items()).keys()))
+
+
 class PandasSeries(PandasDataFrame):
+    __doc__ = _rgx.sub(lambda m: _repl[re.escape(m.group(0))], PandasDataFrame.__doc__)
+
     def __init__(
         self,
         orient: t.Literal[

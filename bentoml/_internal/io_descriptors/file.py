@@ -18,6 +18,46 @@ FNAME = "bentoml_output_file"
 
 
 class File(IODescriptor):
+    """
+    `File` defines API specification for the inputs/outputs of a Service, where either inputs will be
+    converted to or outputs will be converted from file-like objects as specified in your API function signature.
+
+    .. Toy implementation of a ViT service::
+        # vit_svc.py
+        import bentoml
+        from bentoml.io import File
+
+        svc = bentoml.Service("vit-object-detection")
+
+        @svc.api(input=File(), output=File())
+        def predict(input_img):
+            return input_img
+
+    Users then can then serve this service with `bentoml serve`::
+        % bentoml serve ./vit_svc.py:svc --auto-reload
+
+        (Press CTRL+C to quit)
+        [INFO] Starting BentoML API server in development mode with auto-reload enabled
+        [INFO] Serving BentoML Service "vit-object-detection" defined in "vit_svc.py"
+        [INFO] API Server running on http://0.0.0.0:5000
+
+    Users can then send a cURL requests like shown in different terminal session::
+        % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.jpg;type=image/jpeg' http://0.0.0.0:5000/predict
+
+        Warning: Binary output can mess up your terminal. Use "--output -" to tell
+        Warning: curl to output it to your terminal anyway, or consider "--output
+        Warning: <FILE>" to save to a file.%
+
+    We will then save the given file to your current directory of `vit_svc.py`.
+
+    Args:
+        fname (`str`, `optional`, default to `bentoml_output_file`):
+            Given filename for Response output.
+
+    Returns:
+        IO Descriptor that represents file-like objects.
+    """
+
     def __init__(
         self, fname: t.Optional[str] = None, *, output_dir: t.Optional[PathType] = None
     ):
@@ -29,8 +69,8 @@ class File(IODescriptor):
             )
         if not fname:
             fname = FNAME
+        self._output_dir = output_dir
         self._output_file = Path(output_dir, fname)
-        print(self._output_file)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""

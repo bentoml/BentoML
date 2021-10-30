@@ -31,7 +31,8 @@ def add_bento_management_commands(cli):
     @click.option(
         "-o",
         "--output",
-        type=click.Choice(["tree", "json", "yaml", "path"], default="tree"),
+        type=click.Choice(["tree", "json", "yaml", "path"]),
+        default="tree",
     )
     def get(bento_tag, output):
         """Print Bento details by providing the bento_tag

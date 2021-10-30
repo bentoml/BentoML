@@ -1,13 +1,13 @@
 import os
 
 import bentoml
-from bentoml._internal.bento.store import BentoStore
+from bentoml._internal.store import Store
 
 SYSTEM_HOME = os.path.expanduser("~")
 
 
 def test_create_simplebento(tmpdir, change_test_dir):
-    bento_store = BentoStore(tmpdir)
+    bento_store = Store(tmpdir)
     os.chdir("simplebento")
     from .simplebento.simplebento import svc
 
@@ -53,6 +53,5 @@ def test_create_simplebento(tmpdir, change_test_dir):
         ]
     )
     test_path = os.path.join(test_path, "test.simplebento")
-    assert set(os.listdir(test_path)) == set(["simplebento.py", "subdir", "subdir2"])
+    assert set(os.listdir(test_path)) == set(["simplebento.py", "subdir"])
     assert set(os.listdir(os.path.join(test_path, "subdir"))) == set(["somefile"])
-    assert os.listdir(os.path.join(test_path, "subdir2")) == []

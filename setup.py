@@ -32,6 +32,7 @@ install_requires = [
     "pathspec",
     'typing_extensions >= 3.7.4',
     'aiofiles',
+    "fs",
 ]
 
 model_server_optional = [
@@ -128,7 +129,7 @@ setuptools.setup(
     ],
     python_requires=">=3.6.1",
     package_data={"bentoml": ["py.typed"]},
-    entry_points={"console_scripts": ["bentoml=bentoml:bentoml._internal.cli.cli"]},
+    entry_points={"console_scripts": ["bentoml=bentoml._internal.cli:cli"]},
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",
         "BentoML User Slack Group": "https://bit.ly/2N5IpbB",

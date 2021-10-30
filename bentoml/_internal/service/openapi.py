@@ -75,8 +75,13 @@ def get_service_openapi_doc(svc: "Service"):
             summary=f"Inference API '{api}' under service '{svc.name}'",
             description=api.doc,
             operationId=f"{svc.name}__{api.name}",
-            requestBody=api.input.openapi_request_schema(),
-            responses=api.output.openapi_responses_schema(),
+            requestBody=dict(content=api.input.openapi_request_schema()),
+            responses={
+                "200": {
+                    "description": "success",
+                    "content": api.output.openapi_responses_schema(),
+                }
+            },
             # examples=None,
             # headers=None,
         )

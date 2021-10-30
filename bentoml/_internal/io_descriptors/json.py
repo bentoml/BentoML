@@ -150,10 +150,10 @@ class JSON(IODescriptor):
         setattr(self._json_encoder, "_orient", orient)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
-        pass
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
-        pass
+        return self.openapi_schema()
 
     def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
         if self._pydantic_model:

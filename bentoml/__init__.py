@@ -13,9 +13,12 @@ load_global_config()
 # from bentoml._internal.utils.log import configure_logging
 # configure_logging()
 
-from ._internal.bento.build import build_bento as build
 from ._internal.models.store import ModelStore
-from ._internal.service import Service, load
+from ._internal.service import Service
+from ._internal.types import Tag
+
+# bento APIs are top-level
+from .bentos import build, delete, export_bento, get, import_bento, list, load
 
 # Global default ModelStore instance for direct user access
 models = ModelStore()
@@ -23,7 +26,14 @@ models = ModelStore()
 __all__ = [
     "__version__",
     "Service",
-    "load",
-    "build",
     "models",
+    "Tag",
+    # bento APIs
+    "list",
+    "get",
+    "delete",
+    "import_bento",
+    "export_bento",
+    "build",
+    "load",
 ]

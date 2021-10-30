@@ -737,7 +737,7 @@ class _TransformersRunner(Runner):
         )
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Union[_PV, t.List[_PV]]) -> t.Union[_PV, t.List[_PV]]:  # type: ignore[override]
+    def _run_batch(self, input_data: t.Union[_PV, t.List[_PV]]) -> t.Union[_PV, t.List[_PV]]:  # type: ignore[override]  # noqa
         res = self._pipeline(input_data)  # type: t.Union[_PV, t.List[_PV]]
         return res
 

@@ -383,6 +383,21 @@ def _save(
     _check_flax_supported()  # pragma: no cover
     context = {"transformers": transformers.__version__}
 
+    if isinstance(model_identifier, str):
+        try:
+            info = model_store.get(name)
+            if not keep_download_from_hub:
+                logger.warning(
+                    f"{name} is found under BentoML modelstore.\nFor most usecases of using pretrained model,"
+                    f" you don't have to redownload the model. returning {info.tag}...\nIf you still insist on downloading,"
+                    " then specify `keep_download_from_hub=True` in `import_from_huggingface_hub`"
+                )
+                return info.tag
+            else:
+                pass
+        except FileNotFoundError:
+            pass
+
     with model_store.register(
         name,
         module=__name__,
@@ -413,18 +428,6 @@ def _save(
                 }
                 model_identifier.save_pretrained(ctx.path)
             else:
-                try:
-                    info = model_store.get(name)
-                    if not keep_download_from_hub:
-                        logger.warning(
-                            f"{name} is found under BentoML modelstore.\nFor most usecases of using pretrained model,"
-                            f" you don't have to redownload the model. returning {info.tag}...\nIf you still insist on downloading,"
-                            " then specify `keep_download_from_hub=True` in `import_from_huggingface_hub`"
-                        )
-
-                        return info.tag
-                except FileNotFoundError:
-                    pass
                 from_tf = transformers_options_kwargs.pop("from_tf", False)
                 from_flax = transformers_options_kwargs.pop("from_flax", False)
                 revision = transformers_options_kwargs.pop("revision", None)

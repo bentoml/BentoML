@@ -1,6 +1,5 @@
 from ._internal.io_descriptors import (
     JSON,
-    Bytes,
     File,
     Image,
     IODescriptor,
@@ -12,7 +11,6 @@ from ._internal.io_descriptors import (
 )
 
 __all__ = [
-    "Bytes",
     "File",
     "Image",
     "IODescriptor",

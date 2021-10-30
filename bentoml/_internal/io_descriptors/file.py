@@ -30,8 +30,8 @@ class File(IODescriptor):
         svc = bentoml.Service("vit-object-detection")
 
         @svc.api(input=File(), output=File())
-        def predict(input_img):
-            return input_img
+        def predict(input_pdf):
+            return input_pdf
 
     Users then can then serve this service with `bentoml serve`::
         % bentoml serve ./vit_svc.py:svc --auto-reload
@@ -41,8 +41,8 @@ class File(IODescriptor):
         [INFO] Serving BentoML Service "vit-object-detection" defined in "vit_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session::
-        % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.jpg;type=image/jpeg' http://0.0.0.0:5000/predict
+    Users can then send a cURL requests like shown in different terminal session with an input PDF files::
+        % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:5000/predict
 
         Warning: Binary output can mess up your terminal. Use "--output -" to tell
         Warning: curl to output it to your terminal anyway, or consider "--output
@@ -52,7 +52,12 @@ class File(IODescriptor):
 
     Args:
         fname (`str`, `optional`, default to `bentoml_output_file`):
-            Given filename for Response output.
+            Given filename for Response output. If not specified the the output file will have the same extensions
+             with the inputs file.
+        output_dir (`PathType`, `optional`):
+            Output path to save output files. If not specified, BentoML will use current directory containing your
+             service definition. For example, if path to `vit_svc.py` is `/home/users/services/vit_svc.py` then the output
+             file will be saved under `/home/users/services`
 
     Returns:
         IO Descriptor that represents file-like objects.

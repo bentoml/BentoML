@@ -106,7 +106,10 @@ def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
 
 @pytest.mark.parametrize(
     "kwargs, frameworks, tensors_type",
-    [({"from_tf": False, "keep_download_from_hub": True}, "pt", "pt"), ({"from_tf": True}, "tf", "tf")],
+    [
+        ({"from_tf": False, "keep_download_from_hub": True}, "pt", "pt"),
+        ({"from_tf": True}, "tf", "tf"),
+    ],
 )
 def test_transformers_save_load(modelstore, frameworks, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(

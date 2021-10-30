@@ -376,6 +376,7 @@ def _save(
     model_identifier: t.Union[str, _ModelType, "Pipeline"],
     tokenizer: t.Optional[_TokenizerType],
     metadata: t.Optional[t.Dict[str, t.Any]],
+    keep_download_from_hub: bool,
     model_store: "ModelStore",
     **transformers_options_kwargs: str,
 ) -> str:
@@ -412,6 +413,18 @@ def _save(
                 }
                 model_identifier.save_pretrained(ctx.path)
             else:
+                try:
+                    info = model_store.get(name)
+                    if not keep_download_from_hub:
+                        logger.warning(
+                            f"{name} is found under BentoML modelstore.\nFor most usecases of using pretrained model,"
+                            f" you don't have to redownload the model. returning {info.tag}...\nIf you still insist on downloading,"
+                            " then specify `keep_download_from_hub=True` in `import_from_huggingface_hub`"
+                        )
+
+                        return info.tag
+                except FileNotFoundError:
+                    pass
                 from_tf = transformers_options_kwargs.pop("from_tf", False)
                 from_flax = transformers_options_kwargs.pop("from_flax", False)
                 revision = transformers_options_kwargs.pop("revision", None)
@@ -573,6 +586,7 @@ def save(
         model_identifier=model,
         tokenizer=tokenizer,
         metadata=metadata,
+        keep_download_from_hub=False,
         model_store=model_store,
         **transformers_options_kwargs,
     )
@@ -584,6 +598,7 @@ def import_from_huggingface_hub(
     *,
     save_namespace: t.Union[str, None] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    keep_download_from_hub: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **transformers_options_kwargs: str,
 ) -> str:
@@ -645,6 +660,7 @@ def import_from_huggingface_hub(
         name=save_namespace,
         model_identifier=name,
         tokenizer=None,
+        keep_download_from_hub=keep_download_from_hub,
         metadata=metadata,
         model_store=model_store,
         **transformers_options_kwargs,

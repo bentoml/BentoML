@@ -45,10 +45,15 @@ def add_bento_management_commands(cli):
     @cli.command(name="list", help="List Bentos in local bento store")
     @click.argument("bento_name", type=click.STRING, required=False)
     @click.option(
-        "-o", "--output", type=click.Choice(["json", "yaml", "table"]), default="table",
+        "-o",
+        "--output",
+        type=click.Choice(["json", "yaml", "table"]),
+        default="table",
     )
     @click.option(
-        "--no-trunc", is_flag=False, help="Don't truncate the output",
+        "--no-trunc",
+        is_flag=False,
+        help="Don't truncate the output",
     )
     def list_bentos(bento_name, output, no_trunc):
         """Print list of bentos in local store
@@ -76,7 +81,8 @@ def add_bento_management_commands(cli):
         help="Skip confirmation when deleting a specific bento bundle",
     )
     def delete(
-        delete_targets, yes,
+        delete_targets,
+        yes,
     ):
         """Delete Bento in local bento store.
 
@@ -113,7 +119,9 @@ def add_bento_management_commands(cli):
         """
         pass
 
-    @cli.command(help="Pull Bento from a yatai server",)
+    @cli.command(
+        help="Pull Bento from a yatai server",
+    )
     @click.argument("bento", type=click.STRING)
     @click.option(
         "--yatai",

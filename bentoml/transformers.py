@@ -22,18 +22,19 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
-if t.TYPE_CHECKING:  # pragma: no cover
+if t.TYPE_CHECKING:  # pragma: no cover # noqa
     # pylint: disable=unused-import
-    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager  # noqa
-    from transformers import FlaxPreTrainedModel  # noqa
+    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
     from transformers import (
+        FlaxPreTrainedModel,
         PretrainedConfig,
         PreTrainedModel,
         PreTrainedTokenizer,
         PreTrainedTokenizerFast,
         TFPreTrainedModel,
     )
-    from transformers.models.auto.auto_factory import _BaseAutoModelClass  # noqa
+    from transformers.feature_extraction_utils import PreTrainedFeatureExtractor
+    from transformers.models.auto.auto_factory import _BaseAutoModelClass
 
     from ._internal.models.store import ModelStore, StoreCtx
 try:
@@ -171,7 +172,7 @@ If you are training a model from scratch using transformers, to save into BentoM
 If you want to import directly from a `transformers.pipeline` then do:
     # pipeline = transformers.pipelines('sentiment-analysis')
     `bentoml.transoformers.save("senta-pipe", pipeline)
-"""  # noqa
+"""
 
 
 @inject
@@ -215,14 +216,17 @@ def load(
     Examples::
         import bentoml.transformers
         model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="flax", lm_head="masked")
-    """  # noqa
+    """
     _check_flax_supported()  # pragma: no cover
     model_info = model_store.get(tag)
     _model, _tokenizer = model_info.options["model"], model_info.options["tokenizer"]
 
-    tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
-        model_info.path, from_tf=from_tf, from_flax=from_flax
-    )
+    if _tokenizer != "na":
+        tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
+            model_info.path, from_tf=from_tf, from_flax=from_flax
+        )
+    else:
+        tokenizer = None
     config = AutoConfig.from_pretrained(model_info.path)
 
     try:
@@ -257,7 +261,7 @@ def _download_from_hub(
 ) -> None:
     """
     Modification of https://github.com/huggingface/transformers/blob/master/src/transformers/file_utils.py
-    """  # noqa
+    """
     headers = {"user-agent": http_user_agent(user_agent)}
     if isinstance(use_auth_token, str):
         headers["authorization"] = f"Bearer {use_auth_token}"
@@ -478,9 +482,12 @@ def _save(
                 # NOTE: With Tokenizer there are way too many files
                 #  to be included, per frameworks. Thus we will load
                 #  a Tokenizer instance, then save it to path.
-                _tokenizer_inst = AutoTokenizer.from_pretrained(model_identifier)
-                _tokenizer_inst.save_pretrained(ctx.path)
-                ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
+                try:
+                    _tokenizer_inst = AutoTokenizer.from_pretrained(model_identifier)
+                    _tokenizer_inst.save_pretrained(ctx.path)
+                    ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
+                except ValueError:
+                    ctx.options["tokenizer"] = "na"
         return ctx.tag
 
 
@@ -554,7 +561,7 @@ def save(
         # custom training and modification goes here
 
         tag = bentoml.transformers.save("flax_gpt2", model=model, tokenizer=tokenizer)
-    """  # noqa
+    """
     if isinstance(model, str) and not tokenizer:
         raise EnvironmentError(
             "If you want to import model directly from huggingface hub"
@@ -632,7 +639,7 @@ def import_from_huggingface_hub(
         import bentoml.transformers
 
         tag = bentoml.transformers.import_from_huggingface_hub("gpt2", from_tf=True)
-    """  # noqa
+    """
     save_namespace = _clean_name(name) if save_namespace is None else save_namespace
     return _save(
         name=save_namespace,
@@ -653,9 +660,11 @@ class _TransformersRunner(Runner):
         *,
         framework: str,
         lm_head: str,
+        device: int,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        **pipeline_kwargs: t.Any,
     ):
         super().__init__(tag, resource_quota, batch_options)
         try:
@@ -668,6 +677,22 @@ class _TransformersRunner(Runner):
         self._model_store = model_store
         self._framework = framework
         self._lm_head = lm_head
+        self._device = device
+        self._pipeline_kwargs = pipeline_kwargs
+
+        # pipeline arguments
+        self._feature_extractor = pipeline_kwargs.pop(
+            "feature_extractor", None
+        )  # type: t.Optional[t.Union[str, "PreTrainedFeatureExtractor"]]
+        self._revision = pipeline_kwargs.pop("revision", None)  # type: t.Optional[str]
+        self._use_fast = pipeline_kwargs.pop("use_fast", True)  # type: bool
+        self._use_auth_token = pipeline_kwargs.pop(
+            "use_auth_token", None
+        )  # type: t.Optional[t.Union[str, bool]]
+        self._model_kwargs = pipeline_kwargs.pop(
+            "model_kwargs", {}
+        )  # type: t.Dict[str, t.Any]
+        self._kwargs = pipeline_kwargs
 
     @property
     def required_models(self) -> t.List[str]:
@@ -686,27 +711,33 @@ class _TransformersRunner(Runner):
     def _setup(self) -> None:  # type: ignore[override]
         try:
             _ = self._model_store.get(self.name)
-            from_tf = "tf" in self._framework
-            config, model, tokenizer = load(
+            self._config, self._model, self._tokenizer = load(
                 self.name,
                 model_store=self._model_store,
                 from_flax=False,
-                from_tf=from_tf,
+                from_tf="tf" in self._framework,
                 framework=self._framework,
                 lm_head=self._lm_head,
             )
         except FileNotFoundError:
-            config, model, tokenizer = None, None, None
+            self._config, self._model, self._tokenizer = None, None, None
         self._pipeline: "Pipeline" = transformers.pipeline(
             self._tasks,
-            config=config,
-            model=model,
-            tokenizer=tokenizer,
+            config=self._config,
+            model=self._model,
+            tokenizer=self._tokenizer,
             framework=self._framework,
+            feature_extractor=self._feature_extractor,
+            revision=self._revision,
+            use_fast=self._use_fast,
+            use_auth_token=self._use_auth_token,
+            model_kwargs=self._model_kwargs,
+            device=self._device,
+            **self._kwargs,
         )
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Union[_PV, t.List[_PV]]) -> t.Union[_PV, t.List[_PV]]:  # type: ignore[override] # noqa
+    def _run_batch(self, input_data: t.Union[_PV, t.List[_PV]]) -> t.Union[_PV, t.List[_PV]]:  # type: ignore[override]  # noqa
         res = self._pipeline(input_data)  # type: t.Union[_PV, t.List[_PV]]
         return res
 
@@ -717,9 +748,11 @@ def load_runner(
     tasks: str,
     framework: str = "pt",
     lm_head: str = "casual",
+    device: int = -1,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    **pipeline_kwargs: t.Any,
 ) -> "_TransformersRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
@@ -761,13 +794,15 @@ def load_runner(
         runner = bentoml.transformers.load_runner("gpt2:latest", tasks='zero-shot-classification',
                                                   framework=tf)
         runner.run_batch(["In today news, ...", "The stocks market seems ..."])
-    """  # noqa
+    """
     return _TransformersRunner(
         tag=tag,
         tasks=tasks,
         framework=framework,
         lm_head=lm_head,
+        device=device,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
+        **pipeline_kwargs,
     )

@@ -45,14 +45,20 @@ def add_serve_command(cli) -> None:
         show_default=True,
     )
     def serve(
-        svc_import_path_or_bento_tag, working_dir, port, run_with_ngrok, production,
+        svc_import_path_or_bento_tag,
+        working_dir,
+        port,
+        run_with_ngrok,
+        production,
     ) -> None:
 
         if production:
             from bentoml._internal.server import serve_production
 
             serve_production(
-                svc_import_path_or_bento_tag, working_dir=working_dir, port=port,
+                svc_import_path_or_bento_tag,
+                working_dir=working_dir,
+                port=port,
             )
         else:
             from bentoml._internal.server import serve_development

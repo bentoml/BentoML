@@ -23,7 +23,7 @@ class Text(IODescriptor):
         # tag = bentoml.transformers.import_from_huggingface_hub('gpt2')
         runner = bentoml.transformers.load_runner('gpt2',tasks='text-generation')
 
-        svc = bentoml.Service("server", runners=[runner])
+        svc = bentoml.Service("gpt2-generation", runners=[runner])
 
         @svc.api(input=Text(), output=Text())
         def predict(input_arr):
@@ -35,7 +35,7 @@ class Text(IODescriptor):
 
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "IrisClassifierService" defined in "gpt2_svc.py"
+        [INFO] Serving BentoML Service "gpt2-generation" defined in "gpt2_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::

@@ -42,7 +42,7 @@ class NumpyNdarray(IODescriptor):
 
         runner = bentoml.sklearn.load_runner("sklearn_model_clf")
 
-        svc = bentoml.Service("server", runners=[runner])
+        svc = bentoml.Service("iris-classifier", runners=[runner])
 
         @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
         def predict(input_arr):
@@ -54,7 +54,7 @@ class NumpyNdarray(IODescriptor):
 
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "server" defined in "sklearn_svc.py"
+        [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::

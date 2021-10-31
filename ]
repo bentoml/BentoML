@@ -47,14 +47,9 @@ PADDLE_MODEL_EXTENSION: str = ".pdmodel"
 PADDLE_PARAMS_EXTENSION: str = ".pdiparams"
 
 
-def _clean_name(name: str) -> str:  # pragma: no cover
-    return re.sub(r"\W|^(?=\d)-", "_", name)
-
-
 @inject
 def load(
     tag: str,
-    config: t.Optional["paddle.inference.Config"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ):
     """
@@ -67,20 +62,19 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `paddle.inference.Predictor` from BentoML modelstore.
+        an instance of `xgboost.core.Booster` from BentoML modelstore.
 
     Examples::
     """  # noqa
 
     # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
-    info = model_store.get(tag)
     if config is None:
         config = pi.Config(
-            os.path.join(info.path, f"{SAVE_NAMESPACE}{PADDLE_MODEL_EXTENSION}"),
-            os.path.join(info.path, f"{SAVE_NAMESPACE}{PADDLE_PARAMS_EXTENSION}"),
+            os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_MODEL_EXTENSION}"),
+            os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_PARAMS_EXTENSION}"),
         )
         config.enable_memory_optim()
-    return paddle.inference.create_predictor(config)
+    return pi.create_predictor(config)
 
 
 def _internal_save(
@@ -89,27 +83,12 @@ def _internal_save(
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
-    context = {"paddlepaddle": paddle.__version__}
-    if isinstance(model, str):
-        context["paddlehub"] = hub.__version__
-    with model_store.register(
-        name,
-        module=__name__,
-        framework_context=context,
-        metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        if isinstance(model, str):
-            ...
-        else:
-            paddle.jit.save(model, os.path.join(ctx.path, SAVE_NAMESPACE))
-        return ctx.tag
-
+)
 
 @inject
 def save(
     name: str,
-    model: t.Union["paddle.nn.Layer", "paddle.inference.Predictor"],
+    model: t.Union["paddle.nn.Layer", "paddle.inference.Predictor"]
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -133,10 +112,15 @@ def save(
 
     Examples::
     """  # noqa
-    return _internal_save(
-        name=name, model=model, metadata=metadata, model_store=model_store
-    )
-
+    context = {'paddlepaddle': paddle.__version__}
+    with model_store.register(
+        name,
+        module=__name__,
+        options=None,
+        framework_context=context,
+        metadata=metadata,
+    ) as ctx:
+        paddle.jit.save(model, os.path.join(ctx.path, SAVE_NAMESPACE))
 
 @inject
 def import_from_paddlehub(
@@ -164,12 +148,6 @@ def import_from_paddlehub(
     Examples::
 
     """
-    return _internal_save(
-        name=_clean_name(model_name) if not name else name,
-        model=model_name,
-        metadata=metadata,
-        model_store=model_store,
-    )
 
 
 class _PaddlePaddleRunner(Runner):
@@ -240,39 +218,6 @@ def load_runner(
     )
 
 
-# import os
-# import typing as t
-# from distutils.dir_util import copy_tree
-#
-# import bentoml._internal.constants as _const
-#
-# from ._internal.models.base import MODEL_NAMESPACE, Model
-# from ._internal.types import GenericDictType, PathType
-# from ._internal.utils import LazyLoader
-#
-# _paddle_exc = _const.IMPORT_ERROR_MSG.format(
-#     fwr="paddlepaddle",
-#     module=__name__,
-#     inst="`pip install paddlepaddle` for CPU options"
-#     " or `pip install paddlepaddle-gpu` for GPU options.",
-# )
-#
-# _hub_exc = _const.IMPORT_ERROR_MSG.format(
-#     fwr="paddlehub",
-#     module=__name__,
-#     inst="`pip install paddlepaddle`," " then `pip install paddlehub`",
-# )
-#
-# if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
-#     import paddle
-#     import paddle.inference as pi
-#     import paddlehub as hub
-# else:
-#     paddle = LazyLoader("paddle", globals(), "paddle", exc_msg=_paddle_exc)
-#     pi = LazyLoader("pi", globals(), "paddle.inference", exc_msg=_paddle_exc)
-#     hub = LazyLoader("hub", globals(), "paddlehub", exc_msg=_hub_exc)
-#
-#
 # class PaddlePaddleModel(Model):
 #     """
 #     Model class for saving/loading :obj:`paddlepaddle` models.
@@ -296,30 +241,10 @@ def load_runner(
 #         TODO:
 #     """
 #
-#     PADDLE_MODEL_EXTENSION: str = ".pdmodel"
-#     PADDLE_PARAMS_EXTENSION: str = ".pdiparams"
-#
-#     _model: t.Union["paddle.nn.Layer", "pi.Predictor"]
-#
-#     def __init__(
-#         self,
-#         model: t.Union["paddle.nn.Layer", "pi.Predictor"],
-#         metadata: t.Optional[GenericDictType] = None,
-#     ):
-#         super(PaddlePaddleModel, self).__init__(model, metadata=metadata)
-#
 #     @classmethod
 #     def load(  # pylint: disable=arguments-differ
 #         cls, path: PathType, config: t.Optional["pi.Config"] = None
-#     ) -> "pi.Predictor":
-#         # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
-#         if config is None:
-#             config = pi.Config(
-#                 os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_MODEL_EXTENSION}"),
-#                 os.path.join(path, f"{MODEL_NAMESPACE}{cls.PADDLE_PARAMS_EXTENSION}"),
-#             )
-#             config.enable_memory_optim()
-#         return pi.create_predictor(config)
+#     ) -> "paddle.inference.Predictor":
 #
 #     def save(self, path: PathType) -> None:
 #         # Override the model path if temp dir was set

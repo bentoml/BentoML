@@ -27,11 +27,7 @@ class ResourceQuota:
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus = attr.ib(
-        converter=_gpu_converter,
-        type=t.List[str],
-        default=None,
-    )
+    gpus = attr.ib(converter=_gpu_converter, type=t.List[str], default=None,)
 
     @cpu.default
     def _get_default_cpu(self) -> float:
@@ -106,30 +102,32 @@ class _BaseRunner:
         return []
 
     @abstractmethod
-    def _setup(self, **kwargs) -> None:
+    def _setup(self, **kwargs: t.Any) -> None:
         ...
 
     @inject
     def _impl_ref(
         self,
-        remote_runner_mapping=Provide[BentoServerContainer.remote_runner_mapping],
-    ):
+        remote_runner_mapping: t.Dict[str, int] = Provide[
+            BentoServerContainer.remote_runner_mapping
+        ],
+    ) -> "RunnerImpl":
         # TODO(jiang): cache impl
         if self.name in remote_runner_mapping:
             return RemoteRunner(self)
         else:
             return LocalRunner(self)
 
-    async def async_run(self, *args, **kwargs):
+    async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl_ref().async_run(*args, **kwargs)
 
-    async def async_run_batch(self, *args, **kwargs):
+    async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl_ref().async_run_batch(*args, **kwargs)
 
-    def run(self, *args, **kwargs):
+    def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl_ref().run(*args, **kwargs)
 
-    def run_batch(self, *args, **kwargs):
+    def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl_ref().run_batch(*args, **kwargs)
 
 
@@ -169,7 +167,7 @@ class Runner(_BaseRunner, ABC):
     """
 
     @abstractmethod
-    def _run_batch(self: "_BaseRunner", *args, **kwargs) -> t.Any:
+    def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 
 
@@ -269,8 +267,7 @@ class LocalRunner(RunnerImpl):
             )
             batch_result = self._runner._run_batch(*params.args, **params.kwargs)
             return AutoContainer.batch_to_singles(
-                batch_result,
-                batch_axis=self._runner.batch_options.output_batch_axis,
+                batch_result, batch_axis=self._runner.batch_options.output_batch_axis,
             )[0]
 
         if isinstance(self._runner, SimpleRunner):

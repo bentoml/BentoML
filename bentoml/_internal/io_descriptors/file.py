@@ -50,6 +50,9 @@ class File(IODescriptor):
         IO Descriptor that represents file-like objects.
     """
 
+    def __init__(self, media_type: t.Optional[str] = None):
+        self._media_type = "multipart/form-data" if not media_type else media_type
+
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
 
@@ -78,4 +81,4 @@ class File(IODescriptor):
             resp = obj.bytes_
         else:
             resp = obj
-        return StreamingResponse(io.BytesIO(resp), media_type="multipart/form-data")
+        return StreamingResponse(io.BytesIO(resp), media_type=self._media_type)

@@ -63,7 +63,7 @@ class File(IODescriptor):
                 f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
             )
         form = await request.form()
-        contents = await form[list(form.keys()).pop()].read()
+        contents = await next(iter(form.values())).read()
         return FileLike(bytes_=contents)
 
     async def to_http_response(

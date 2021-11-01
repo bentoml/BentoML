@@ -5,7 +5,7 @@ import pytest
 
 import bentoml.paddle
 
-from .test_paddle_impl import test_df, train_paddle_model
+from .test_paddle_impl import test_df
 
 
 def test_paddlepaddle_load_runner(modelstore, train_paddle_model):

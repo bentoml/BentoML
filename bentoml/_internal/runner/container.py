@@ -30,7 +30,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         data: bytes,
         meta: t.Optional[t.Dict[str, t.Union[bool, int, float, str]]] = None,
     ) -> Payload:
-        return cls.create_payload(data, dict(meta or dict(), container=cls.__name__))
+        return Payload(data, dict(meta or dict(), container=cls.__name__))
 
     @classmethod
     @abc.abstractmethod

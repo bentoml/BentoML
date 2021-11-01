@@ -130,15 +130,18 @@ def load(
     """
     info = model_store.get(tag)
     if "paddlehub" in info.context:
-        server.CacheUpdater(
-            "update_cache", module=info.options["name"], version=info.options["version"]
-        ).start()
-        directory = (
-            info.path
-            if "_module_dir" not in info.options
-            else info.options["_module_dir"]
-        )
-        return hub.Module(directory=directory, **kwargs)
+        if info.options['from_local_dir']:
+            return hub.Module(directory=info.path)
+        else:
+            server.CacheUpdater(
+                "update_cache", module=info.options["name"], version=info.options["version"]
+            ).start()
+            directory = (
+                info.path
+                if "_module_dir" not in info.options
+                else info.options["_module_dir"]
+            )
+            return hub.Module(directory=directory, **kwargs)
     else:
         _config = _load_paddle_bentoml_default_config(info) if not config else config
         return paddle.inference.create_predictor(_config)
@@ -210,6 +213,8 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
             if os.path.isdir(model):
                 directory = model
                 target = str(ctx.path)
+
+                ctx.options['from_local_dir'] = True
             else:
                 _local_manager = manager.LocalModuleManager(home=hub_module_home)
                 user_module_cls = _local_manager.search(
@@ -230,6 +235,7 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
 
                 ctx.options = hub.Module.load_module_info(directory)
                 ctx.options["_module_dir"] = target
+                ctx.options['from_local_dir'] = False
             copy_tree(directory, target)
         else:
             paddle.jit.save(

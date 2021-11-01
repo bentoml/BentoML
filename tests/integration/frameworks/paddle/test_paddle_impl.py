@@ -75,7 +75,7 @@ def test_paddle_save_load(train_paddle_model, input_spec, modelstore):
     info = modelstore.get(tag)
     assert_have_file_extension(info.path, ".pdmodel")
     loaded = bentoml.paddle.load(tag, model_store=modelstore)
-    assert predict_df(loaded, test_df) == np.array([0.90038574], dtype=np.float32)
+    assert predict_df(loaded, test_df) == np.array([[0.9003858]], dtype=np.float32)
 
 
 def test_paddle_load_custom_conf(train_paddle_model, modelstore):
@@ -94,5 +94,5 @@ def test_paddle_load_custom_conf(train_paddle_model, modelstore):
         tag, config=conf, model_store=modelstore
     )
     assert predict_df(loaded_with_customs, test_df) == np.array(
-        [0.90038574], dtype=np.float32
+        [[0.9003858]], dtype=np.float32
     )

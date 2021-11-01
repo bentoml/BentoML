@@ -81,7 +81,7 @@ server = LazyLoader("server", globals(), "paddlehub.server.server", exc_msg=_hub
 np = LazyLoader("np", globals(), "numpy")  # noqa: F811
 
 
-def device_count() -> int:
+def device_count() -> int:  # pragma: no cover
     num_gpus = (
         core.get_cuda_device_count() if hasattr(core, "get_cuda_device_count") else 0
     )
@@ -130,11 +130,13 @@ def load(
     """
     info = model_store.get(tag)
     if "paddlehub" in info.context:
-        if info.options['from_local_dir']:
+        if info.options["from_local_dir"]:
             return hub.Module(directory=info.path)
         else:
             server.CacheUpdater(
-                "update_cache", module=info.options["name"], version=info.options["version"]
+                "update_cache",
+                module=info.options["name"],
+                version=info.options["version"],
             ).start()
             directory = (
                 info.path
@@ -166,7 +168,8 @@ def _internal_save(
     if isinstance(model, str):
         context["paddlehub"] = hub.__version__
         if not os.path.isdir(model):
-            try:
+            try:  # pragma: no cover
+                # NOTE: currently there is no need to test this feature.
                 info = model_store.get(model)
                 if not keep_download_from_hub:
                     logger.warning(
@@ -214,7 +217,7 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
                 directory = model
                 target = str(ctx.path)
 
-                ctx.options['from_local_dir'] = True
+                ctx.options["from_local_dir"] = True
             else:
                 _local_manager = manager.LocalModuleManager(home=hub_module_home)
                 user_module_cls = _local_manager.search(
@@ -235,7 +238,7 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
 
                 ctx.options = hub.Module.load_module_info(directory)
                 ctx.options["_module_dir"] = target
-                ctx.options['from_local_dir'] = False
+                ctx.options["from_local_dir"] = False
             copy_tree(directory, target)
         else:
             paddle.jit.save(

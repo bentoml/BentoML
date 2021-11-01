@@ -20,7 +20,7 @@ def test_paddlepaddle_load_runner(modelstore, train_paddle_model):
     assert runner.num_replica == 1
 
     input_data = test_df.to_numpy().astype(np.float32)
-    assert runner.run_batch(input_data) == [np.array([[0.9003858]], dtype=np.float32)]
+    assert runner.run_batch(input_data) == [np.array([0.90038574], dtype=np.float32)]
     assert isinstance(runner._model, paddle.inference.Predictor)
 
 

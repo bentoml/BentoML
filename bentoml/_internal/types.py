@@ -13,7 +13,7 @@ import fs
 from bentoml.exceptions import BentoMLException
 
 from .utils.dataclasses import json_serializer
-from .utils.validation import validate_tag_name_str, validate_version_str
+from .utils.validation import validate_tag_str
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +39,10 @@ class Tag:
         if name != lname:
             logger.warning(f"converting {name} to lowercase: {lname}")
 
-        validate_tag_name_str(lname)
+        validate_tag_str(lname)
 
         if version is not None:
-            validate_version_str(version)
+            validate_tag_str(version)
 
         self.name = lname
         self.version = version

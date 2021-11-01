@@ -129,7 +129,9 @@ def load(
     """
     info = model_store.get(tag)
     if "paddlehub" in info.context:
-        server.CacheUpdater("update_cache", module=info.path, version=info.options['version']).start()
+        server.CacheUpdater(
+            "update_cache", module=info.path, version=info.options["version"]
+        ).start()
         return hub.Module(directory=info.path)
     else:
         _config = _load_paddle_bentoml_default_config(info) if not config else config
@@ -180,7 +182,9 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
                         """
                     )
                     _tag: str = info.tag
-                    server.CacheUpdater("update_cache", module=model, version=version).start()
+                    server.CacheUpdater(
+                        "update_cache", module=model, version=version
+                    ).start()
                     return _tag
             except FileNotFoundError:
                 pass

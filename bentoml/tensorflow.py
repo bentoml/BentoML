@@ -207,7 +207,11 @@ def load(
             " the functionalities of the given model, set `load_as_wrapper=False`"
             " will return a tf.SavedModel object."
         )
-        assert all(i is not None for i in [hub, resolve, native_module]), MissingDependencyException("`tensorflow_hub` is required to load a tfhub module.")
+        assert all(
+            i is not None for i in [hub, resolve, native_module]
+        ), MissingDependencyException(
+            "`tensorflow_hub` is required to load a tfhub module."
+        )
         module_path = model_info.options["local_path"]
         if load_as_wrapper:
             wrapper_class = hub.KerasLayer if TF2 else hub.Module

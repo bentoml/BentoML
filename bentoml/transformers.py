@@ -616,6 +616,8 @@ def import_from_huggingface_hub(
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
+        keep_download_from_hub (`bool`, `optional`, default to `False`):
+            Whether to re-download pretrained model from hub.
         from_tf (:obj:`bool`, `Optional`, defaults to :obj:`False`):
             Load the model weights from a TensorFlow checkpoint save file
         from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):

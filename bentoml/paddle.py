@@ -132,6 +132,8 @@ def load(
         server.CacheUpdater(
             "update_cache", module=info.path, version=info.options["version"]
         ).start()
+        # NOTE: add the directory of the modelstore to PYTHONPATH with the given package name
+        # then remove it after loading...
         return hub.Module(directory=info.path)
     else:
         _config = _load_paddle_bentoml_default_config(info) if not config else config

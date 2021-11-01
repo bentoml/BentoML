@@ -48,7 +48,10 @@ class Tag:
         self.version = version
 
     def __str__(self):
-        return f"{self.name}:{self.version}"
+        if self.version is None:
+            return self.name
+        else:
+            return f"{self.name}:{self.version}"
 
     @classmethod
     def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":

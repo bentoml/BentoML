@@ -39,7 +39,6 @@ if t.TYPE_CHECKING:  # pragma: no cover # noqa
     from ._internal.models.store import ModelStore, StoreCtx
 try:
     import transformers
-    from huggingface_hub import HfFolder
     from transformers import AutoConfig, AutoTokenizer, Pipeline
     from transformers.file_utils import (
         CONFIG_NAME,
@@ -57,6 +56,16 @@ except ImportError:  # pragma: no cover
         Instruction: Install transformers with `pip install transformers`.
         """
     )
+
+try:
+    from huggingface_hub import HfFolder
+except ImportError:
+    HfFolder = None
+
+_hfhub_exc = """\
+`huggingface_hub` is required to use `bentoml.transformers.import_from_huggingface_hub()`.
+Instruction: `pip install huggingface_hub`
+"""
 
 _PV = t.TypeVar("_PV")
 _ModelType = t.TypeVar(
@@ -262,6 +271,8 @@ def _download_from_hub(
     """
     Modification of https://github.com/huggingface/transformers/blob/master/src/transformers/file_utils.py
     """
+    if HfFolder is None:
+        raise BentoMLException(_hfhub_exc)
     headers = {"user-agent": http_user_agent(user_agent)}
     if isinstance(use_auth_token, str):
         headers["authorization"] = f"Bearer {use_auth_token}"

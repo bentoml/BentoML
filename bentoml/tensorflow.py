@@ -207,6 +207,7 @@ def load(
             " the functionalities of the given model, set `load_as_wrapper=False`"
             " will return a tf.SavedModel object."
         )
+        assert all(i is not None for i in [hub, resolve, native_module]), MissingDependencyException("`tensorflow_hub` is required to load a tfhub module.")
         module_path = model_info.options["local_path"]
         if load_as_wrapper:
             wrapper_class = hub.KerasLayer if TF2 else hub.Module
@@ -251,7 +252,7 @@ def import_from_tfhub(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
-    if hub is None:
+    if not all(i is not None for i in [hub, resolve, native_module]):
         raise MissingDependencyException(
             """\
             `tensorflow_hub` is required in order to use `bentoml.tensorflow.import_from_tensorflow_hub`.

@@ -9,6 +9,7 @@ trap 'error=1' ERR
 GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
+pip install opencv-python==4.5.4.58
 pip install pandas numpy paddlepaddle paddlehub gast==0.3.3
 
 pytest "$GIT_ROOT"/tests/integration/frameworks/paddle --cov=bentoml --cov-config=.coveragerc -vvv

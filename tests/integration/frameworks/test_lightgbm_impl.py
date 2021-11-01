@@ -3,6 +3,7 @@ import typing as t
 
 import lightgbm as lgb
 import numpy as np
+import psutil
 import pytest
 
 import bentoml.lightgbm
@@ -14,11 +15,23 @@ if t.TYPE_CHECKING:
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
+params = {
+    "boosting_type": "gbdt",
+    "objective": "regression",
+    "metric": {"l2", "l1"},
+    "num_leaves": 31,
+    "learning_rate": 0.05,
+}
+
 
 @pytest.fixture()
 def lightgbm_model() -> "lgb.baisc.Booster":
     data = lgb.Dataset(np.array([[0]]), label=np.array([0]))
-    gbm = lgb.train({}, data, 100)
+    gbm = lgb.train(
+        params,
+        data,
+        100,
+    )
 
     return gbm
 
@@ -30,7 +43,11 @@ def save_proc(
 ) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
     def _(metadata) -> "ModelInfo":
         tag = bentoml.lightgbm.save(
-            TEST_MODEL_NAME, lightgbm_model, metadata=metadata, model_store=modelstore
+            TEST_MODEL_NAME,
+            lightgbm_model,
+            booster_params=params,
+            metadata=metadata,
+            model_store=modelstore,
         )
         info = modelstore.get(tag)
         return info
@@ -75,3 +92,15 @@ def test_lightgbm_save_load(metadata, modelstore, save_proc):
 def test_lightgbm_load_exc(wrong_module, exc, modelstore):
     with pytest.raises(exc):
         bentoml.lightgbm.load(wrong_module, model_store=modelstore)
+
+
+def test_lightgbm_runner_setup_run_batch(modelstore, save_proc):
+    info = save_proc(None)
+    runner = bentoml.lightgbm.load_runner(info.tag, model_store=modelstore)
+
+    assert info.tag in runner.required_models
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
+
+    assert runner.run_batch(np.array([[0]])) == np.array([0.0])
+    assert isinstance(runner._model, lgb.basic.Booster)

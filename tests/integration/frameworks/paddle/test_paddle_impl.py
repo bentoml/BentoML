@@ -5,9 +5,10 @@ import paddle
 import paddle.nn as nn
 import pandas as pd
 import pytest
+from paddle.static import InputSpec
 
-from bentoml.paddle import PaddlePaddleModel
-from tests.utils.frameworks.paddle_utils import LinearModel, test_df
+import bentoml.paddle
+from tests.utils.frameworks.paddle_utils import IN_FEATURES, LinearModel, test_df
 from tests.utils.helpers import assert_have_file_extension
 
 BATCH_SIZE = 8
@@ -61,39 +62,37 @@ def train_paddle_model() -> "LinearModel":
     return model
 
 
-@pytest.fixture()
-def create_paddle_predictor(
-    train_paddle_model, tmp_path_factory
-) -> "paddle.inference.Predictor":
-    set_random_seed(SEED)
-    # Predictor init requires the path of saved model
-    tmp_path = str(tmp_path_factory.mktemp("paddle_predictor"))
-    paddle.jit.save(train_paddle_model, tmp_path)
-
-    config = paddle.inference.Config(tmp_path + ".pdmodel", tmp_path + ".pdiparams")
-    config.enable_memory_optim()
-    return paddle.inference.create_predictor(config)
-
-
-def test_paddle_save_load(tmpdir, train_paddle_model, create_paddle_predictor):
-    PaddlePaddleModel(train_paddle_model).save(tmpdir)
-    assert_have_file_extension(tmpdir, ".pdmodel")
-    paddle_loaded: nn.Layer = PaddlePaddleModel.load(tmpdir)
-    compare = predict_df(create_paddle_predictor, test_df) == predict_df(
-        paddle_loaded, test_df
+@pytest.mark.parametrize(
+    "input_spec", [None, [InputSpec(shape=[IN_FEATURES], dtype="float32")]]
+)
+def test_paddle_save_load(train_paddle_model, input_spec, modelstore):
+    tag = bentoml.paddle.save(
+        "linear_model",
+        train_paddle_model,
+        model_store=modelstore,
+        input_spec=input_spec,
     )
-    assert compare.all()
+    info = modelstore.get(tag)
+    assert_have_file_extension(info.path, ".pdmodel")
+    loaded = bentoml.paddle.load(tag, model_store=modelstore)
+    assert predict_df(loaded, test_df) == np.array([[0.9003858]], dtype=np.float32)
 
 
-def test_paddle_load_custom_conf(train_paddle_model, tmp_path_factory):
+def test_paddle_load_custom_conf(train_paddle_model, modelstore):
     set_random_seed(SEED)
-    tmp_path = str(tmp_path_factory.mktemp("predictor"))
-    paddle.jit.save(train_paddle_model, tmp_path)
-    conf = paddle.inference.Config(tmp_path + ".pdmodel", tmp_path + ".pdiparams")
+    tag = bentoml.paddle.save(
+        "linear_model", train_paddle_model, model_store=modelstore
+    )
+    info = modelstore.get(tag)
+    conf = paddle.inference.Config(
+        info.path + "/saved_model.pdmodel", info.path + "/saved_model.pdiparams"
+    )
     conf.enable_memory_optim()
     conf.set_cpu_math_library_num_threads(1)
     paddle.set_device("cpu")
-    loaded_with_customs: nn.Layer = PaddlePaddleModel.load(tmp_path, config=conf)
+    loaded_with_customs: nn.Layer = bentoml.paddle.load(
+        tag, config=conf, model_store=modelstore
+    )
     assert predict_df(loaded_with_customs, test_df) == np.array(
         [[0.9003858]], dtype=np.float32
     )

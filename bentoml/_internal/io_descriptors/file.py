@@ -51,7 +51,7 @@ class File(IODescriptor):
     """
 
     def __init__(self, media_type: t.Optional[str] = None):
-        self._media_type = "multipart/form-data" if not media_type else media_type
+        self._media_type = "application/octet-stream" if not media_type else media_type
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""

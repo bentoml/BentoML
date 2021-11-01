@@ -78,7 +78,7 @@ _hub_exc = (
 hub = LazyLoader("hub", globals(), "paddlehub", exc_msg=_hub_exc)  # noqa: F811
 manager = LazyLoader("manager", globals(), "paddlehub.module.manager", exc_msg=_hub_exc)
 server = LazyLoader("server", globals(), "paddlehub.server.server", exc_msg=_hub_exc)
-np = LazyLoader("np", globals(), "numpy")
+np = LazyLoader("np", globals(), "numpy")  # noqa: F811
 
 
 def device_count() -> int:
@@ -108,6 +108,7 @@ def load(
     tag: str,
     config: t.Optional["paddle.inference.Config"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    **kwargs: str,
 ) -> t.Union[
     "paddle.inference.Predictor", t.Union["module.RunModule", "module.ModuleV1"]
 ]:
@@ -130,14 +131,16 @@ def load(
     info = model_store.get(tag)
     if "paddlehub" in info.context:
         server.CacheUpdater(
-            "update_cache", module=info.path, version=info.options["version"]
+            "update_cache", module=info.options["name"], version=info.options["version"]
         ).start()
-        # NOTE: add the directory of the modelstore to PYTHONPATH with the given package name
-        # then remove it after loading...
-        return hub.Module(directory=info.path)
+        directory = (
+            info.path
+            if "_module_dir" not in info.options
+            else info.options["_module_dir"]
+        )
+        return hub.Module(directory=directory, **kwargs)
     else:
         _config = _load_paddle_bentoml_default_config(info) if not config else config
-        print(_config.model_dir)
         return paddle.inference.create_predictor(_config)
 
 
@@ -206,6 +209,7 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
                 raise BentoMLException("Unable to connect to PaddleHub server.")
             if os.path.isdir(model):
                 directory = model
+                target = str(ctx.path)
             else:
                 _local_manager = manager.LocalModuleManager(home=hub_module_home)
                 user_module_cls = _local_manager.search(
@@ -222,8 +226,11 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
                     )
 
                 directory = _local_manager._get_normalized_path(user_module_cls.name)
+                target = str(os.path.join(ctx.path, user_module_cls.name))
+
                 ctx.options = hub.Module.load_module_info(directory)
-            copy_tree(directory, str(ctx.path))
+                ctx.options["_module_dir"] = target
+            copy_tree(directory, target)
         else:
             paddle.jit.save(
                 model, os.path.join(ctx.path, SAVE_NAMESPACE), input_spec=input_spec

@@ -131,10 +131,6 @@ def export_bento(bento: Bento, path: str):
     pass
 
 
-def load_runner(tag: t.Union[Tag, str]) -> ...:
-    pass
-
-
 @inject
 def build(
     svc: t.Union["Service", str],

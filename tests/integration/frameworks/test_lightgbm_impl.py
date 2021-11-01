@@ -57,8 +57,7 @@ def wrong_module(lightgbm_model, modelstore: "ModelStore"):
         ({"acc": 0.876}),
     ],
 )
-def test_lightgbm_save_load(metadata, modelstore, save_proc):  # noqa # pylint: disable
-    data = lgb.Dataset(np.array([[0]]), label=np.array([0]))
+def test_lightgbm_save_load(metadata, modelstore, save_proc):
     info = save_proc(metadata)
     assert info.metadata is not None
     assert_have_file_extension(info.path, ".txt")

@@ -1,6 +1,7 @@
 import os
 import typing as t
 
+import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -30,21 +31,16 @@ def _get_model_info(
 ) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
     model_info = model_store.get(tag)
     if model_info.module != __name__:
-        if model_info.module == "bentoml.mlflow":
-            pass
-        else:
-            raise BentoMLException(  # pragma: no cover
-                f"Model {tag} was saved with"
-                f" module {model_info.module},"
-                f" failed loading with {__name__}"
-            )
+        raise BentoMLException(  # pragma: no cover
+            f"Model {tag} was saved with"
+            f" module {model_info.module},"
+            f" failed loading with {__name__}"
+        )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{TXT_EXT}")
     _booster_params = dict() if not booster_params else booster_params
     for key, value in model_info.options.items():
         if key not in _booster_params:
-            _booster_params[key] = value  # pragma: no cover
-    if "nthread" not in _booster_params:
-        _booster_params["nthread"] = -1  # apply default nthread parameter
+            _booster_params[key] = value
 
     return model_info, model_file, _booster_params
 
@@ -115,7 +111,7 @@ def save(
         df_train = pd.read_csv("regression.train", header=None, sep="\t")
         df_test = pd.read_csv("regression.test", header=None, sep="\t")
 
-        y_train = df.train[0]
+        y_train = df_train[0]
         y_test = df_test[0]
         X_train = df_train.drop(0, axis=1)
         X_test = df_test.drop(0, axis=1)
@@ -131,18 +127,14 @@ def save(
             "metric": {"l2", "l1"},
             "num_leaves": 31,
             "learning_rate": 0.05,
-            "feature_fraction": 0.9,
-            "bagging_fraction": 0.8,
-            "bagging_freq": 5,
-            "verbose": 0,
         }
 
         # train
         gbm = lgb.train(
-            params, lgb_train, num_boost_round=20, valid_sets=lgb_eval, early_stopping_rounds=5
+            params, lgb_train, num_boost_round=20, valid_sets=lgb_eval
         )
 
-        tag = bentoml.lightgbm.save("my_lightgbm_model", gbm)
+        tag = bentoml.lightgbm.save("my_lightgbm_model", gbm, booster_params=params)
         # example tag: my_lightgbm_model:20211021_80F7DB
 
         # load the booster back:
@@ -165,44 +157,60 @@ class _LightGBMRunner(Runner):
     def __init__(
         self,
         tag: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
+        booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(tag, resource_quota, batch_options)
+        model_info, model_file, booster_params = _get_model_info(
+            tag, booster_params, model_store
+        )
+
+        self._model_store = model_store
+        self._model_info = model_info
+        self._model_file = model_file
+        self._booster_params = booster_params
 
     @property
     def required_models(self) -> t.List[str]:
-        ...
+        return [self._model_info.tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        ...
+        if self.resource_quota.on_gpu:
+            return 1
+        return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        ...
+        if self.resource_quota.on_gpu:
+            return len(self.resource_quota.gpus)
+        return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        ...
+        self._model = lgb.Booster(
+            params=self._booster_params, model_file=self._model_file
+        )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data) -> t.Any:
-        ...
+    def _run_batch(self, input_data: t.Union[np.ndarray]) -> "np.ndarray":
+        return self._model.predict(input_data)
 
 
 @inject
 def load_runner(
     tag: str,
     *,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_LightGBMRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.xgboost.load_runner` implements a Runner class that
+    maximize throughput. `bentoml.lightgbm.load_runner` implements a Runner class that
     wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
 
     Args:
@@ -222,69 +230,8 @@ def load_runner(
     """  # noqa
     return _LightGBMRunner(
         tag=tag,
+        booster_params=booster_params,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
-
-
-# import os
-# import typing as t
-#
-# import bentoml._internal.constants as _const
-#
-# from ._internal.models.base import MODEL_NAMESPACE, TXT_EXTENSION, Model
-# from ._internal.types import GenericDictType, PathType
-# from ._internal.utils import LazyLoader
-#
-# _exc = _const.IMPORT_ERROR_MSG.format(
-#     fwr="lightgbm",
-#     module=__name__,
-#     inst="Either `pip install lightgbm` or"
-#     " https://lightgbm.readthedocs.io/en/latest/Installation-Guide.html#",
-# )
-#
-# if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
-#     import lightgbm
-# else:
-#     lightgbm = LazyLoader("lightgbm", globals(), "lightgbm", exc_msg=_exc)
-#
-#
-# class LightGBMModel(Model):
-#     """
-#     Model class for saving/loading :obj:`lightgbm` models
-#
-#     Args:
-#         model (`lightgbm.Booster`):
-#             LightGBM model instance is of type :class:`lightgbm.Booster`
-#         metadata (`GenericDictType`,  `optional`, default to `None`):
-#             Class metadata
-#
-#     Raises:
-#         MissingDependencyException:
-#             :obj:`lightgbm` is required by LightGBMModel
-#
-#     Example usage under :code:`train.py`::
-#
-#         TODO:
-#
-#     One then can define :code:`bento.py`::
-#
-#         TODO:
-#     """
-#
-#     def __init__(
-#         self,
-#         model: "lightgbm.Booster",
-#         metadata: t.Optional[GenericDictType] = None,
-#     ):
-#         super(LightGBMModel, self).__init__(model, metadata=metadata)
-#
-#     @classmethod
-#     def load(cls, path: PathType) -> "lightgbm.Booster":
-#         return lightgbm.Booster(
-#             model_file=os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}")
-#         )
-#
-#     def save(self, path: PathType) -> None:
-#         self._model.save_model(os.path.join(path, f"{MODEL_NAMESPACE}{TXT_EXTENSION}"))

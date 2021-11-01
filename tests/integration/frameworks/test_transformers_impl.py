@@ -82,8 +82,8 @@ def test_download_from_hub(kwargs, exc):
 @pytest.mark.parametrize(
     "kwargs",
     [
-        ({"from_tf": True}),
-        ({"from_flax": True}),
+        ({"from_tf": True, "keep_download_from_hub":True}),
+        ({"from_flax": True, "keep_download_from_hub":True}),
     ],
 )
 def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
@@ -105,15 +105,15 @@ def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
 
 
 @pytest.mark.parametrize(
-    "kwargs, frameworks, tensors_type",
-    [({"from_tf": False}, "pt", "pt"), ({"from_tf": True}, "tf", "tf")],
+    "kwargs, framework, tensors_type",
+    [({"from_tf": False, "keep_download_from_hub":True}, "pt", "pt"), ({"from_tf": True, "keep_download_from_hub":True}, "tf", "tf")],
 )
-def test_transformers_save_load(modelstore, frameworks, tensors_type, kwargs):
+def test_transformers_save_load(modelstore, framework, tensors_type, kwargs):
     tag = bentoml.transformers.import_from_huggingface_hub(
         "gpt2", model_store=modelstore, **kwargs
     )
     _, model, tokenizer = bentoml.transformers.load(
-        tag, framework=frameworks, model_store=modelstore
+        tag, framework=framework, from_tf='tf' in framework, model_store=modelstore
     )
     assert (
         generate_from_text(model, tokenizer, test_sentence, return_tensors=tensors_type)

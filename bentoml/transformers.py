@@ -187,7 +187,7 @@ def load(
 ) -> t.Tuple[
     "PretrainedConfig",
     t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
-    t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"],
+    t.Optional[t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]],
 ]:
     """
     Load a model from BentoML local modelstore with given name.
@@ -370,7 +370,7 @@ def _download_from_hub(
         json.dump(meta, meta_file)
 
 
-def _save(
+def _internal_save(
     name: str,
     *,
     model_identifier: t.Union[str, _ModelType, "Pipeline"],
@@ -581,7 +581,7 @@ def save(
             " please use `import_from_huggingface_hub` instead. `save` should"
             " only be used for saving custom pretrained model and tokenizer"
         )
-    return _save(
+    return _internal_save(
         name=name,
         model_identifier=model,
         tokenizer=tokenizer,
@@ -658,7 +658,7 @@ def import_from_huggingface_hub(
         tag = bentoml.transformers.import_from_huggingface_hub("gpt2", from_tf=True)
     """
     save_namespace = _clean_name(name) if save_namespace is None else save_namespace
-    return _save(
+    return _internal_save(
         name=save_namespace,
         model_identifier=name,
         tokenizer=None,

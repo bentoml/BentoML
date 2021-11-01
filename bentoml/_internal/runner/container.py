@@ -159,7 +159,6 @@ class PandasDataFrameContainer(
     def batch_to_singles(
         cls, batch: "pd.DataFrame", batch_axis=0
     ) -> t.List["pd.Series"]:
-        import pandas as pd
 
         assert batch_axis == 0, "PandasDataFrameContainer requires batch_axis = 0"
 

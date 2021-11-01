@@ -596,7 +596,7 @@ def save(
 def import_from_huggingface_hub(
     name: str,
     *,
-    save_namespace: t.Union[str, None] = None,
+    save_namespace: t.Optional[str] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     keep_download_from_hub: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

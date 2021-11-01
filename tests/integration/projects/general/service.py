@@ -7,7 +7,7 @@ from bentoml.io import JSON
 
 class PickleModel:
     def predict_dataframe(self, df):
-        return df['col1'] * 2
+        return df["col1"] * 2
 
     def predict_image(self, input_datas):
         return [input_data.shape for input_data in input_datas]
@@ -32,13 +32,14 @@ svc = bentoml.Service(name="general", runners=[sk_model_runner])
 
 
 @svc.api(
-    input=JSON(), output=JSON(),
+    input=JSON(),
+    output=JSON(),
 )
 def predict_json(json_obj: t.Dict) -> t.Dict:
     return sk_model_runner.run(json_obj)
 
 
-'''
+"""
 from typing import Sequence
 
 from packaging import version
@@ -159,4 +160,4 @@ if version.parse(BENTOML_VERSION) > version.parse("0.12.1+0"):
     @svc.api(input=JsonInput(), output=JsonOutput(ensure_ascii=True))
     def echo_json_ensure_ascii(input_data):
         return input_data
-'''
+"""

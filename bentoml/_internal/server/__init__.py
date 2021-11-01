@@ -50,7 +50,10 @@ def serve_development(
             Watcher(
                 name="ngrok",
                 cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_ngrok_server()"',
-                env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+                env={
+                    "LC_ALL": "en_US.utf-8",
+                    "LANG": "en_US.utf-8",
+                },
                 numprocesses=1,
                 stop_children=True,
             )
@@ -60,7 +63,10 @@ def serve_development(
         Watcher(
             name="ngrok",
             cmd=f'{sys.executable} -c "import bentoml._internal.server; bentoml._internal.server._start_dev_api_server(\\"{bento_path_or_tag}\\", \\"{working_dir}\\", instance_id=$(CIRCUS.WID))"',
-            env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+            env={
+                "LC_ALL": "en_US.utf-8",
+                "LANG": "en_US.utf-8",
+            },
             numprocesses=1,
             stop_children=True,
         )
@@ -130,7 +136,10 @@ def serve_production(
             Watcher(
                 name=f"runner_{runner_name}",
                 cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_runner_server({bento_path_or_tag}, {runner_name}, instance_id=$(CIRCUS.WID), fd=$(circus.sockets.{uds_name}))"',
-                env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+                env={
+                    "LC_ALL": "en_US.utf-8",
+                    "LANG": "en_US.utf-8",
+                },
                 numprocesses=runner.num_replica,
                 stop_children=True,
             )
@@ -143,7 +152,10 @@ def serve_production(
         Watcher(
             name="api_server",
             cmd=f'{sys.executable} -c "import bentoml; bentoml.server._start_prod_api_server({bento_path_or_tag}, instance_id=$(CIRCUS.WID), runner_fd_map={cmd_runner_arg})"',
-            env={"LC_ALL": "en_US.utf-8", "LANG": "en_US.utf-8",},
+            env={
+                "LC_ALL": "en_US.utf-8",
+                "LANG": "en_US.utf-8",
+            },
             numprocesses=1,
             stop_children=True,
         )

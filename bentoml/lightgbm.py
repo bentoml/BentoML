@@ -1,7 +1,6 @@
 import os
 import typing as t
 
-import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -11,6 +10,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
+    import numpy as np
     from _internal.models.store import ModelInfo, ModelStore
 
 try:
@@ -38,6 +38,7 @@ def _get_model_info(
         )
     model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{TXT_EXT}")
     _booster_params = dict() if not booster_params else booster_params
+    # given new booster_params, add the saved params from model_details.yaml
     for key, value in model_info.options.items():
         if key not in _booster_params:
             _booster_params[key] = value
@@ -58,7 +59,8 @@ def load(
         tag (`str`):
             Tag of a saved model in BentoML local modelstore.
         booster_params (`t.Dict[str, t.Union[str, int]]`):
-            Params for lgb.basic.Booster initialization
+            Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
+            for more information.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
@@ -92,7 +94,8 @@ def save(
         model (`xgboost.core.Booster`):
             Instance of model to be saved
         booster_params (`t.Dict[str, t.Union[str, int]]`):
-            Params for booster initialization
+            Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
+            for more information.
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -195,7 +198,7 @@ class _LightGBMRunner(Runner):
         )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data: t.Union[np.ndarray]) -> "np.ndarray":
+    def _run_batch(self, input_data: "np.ndarray") -> "np.ndarray":
         return self._model.predict(input_data)
 
 
@@ -211,11 +214,14 @@ def load_runner(
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.lightgbm.load_runner` implements a Runner class that
-    wrap around a Xgboost booster model, which optimize it for the BentoML runtime.
+    wrap around a Lightgbm booster model, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):
             Model tag to retrieve model from modelstore
+        booster_params (`t.Dict[str, t.Union[str, int]]`, default to `None`):
+            Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
+            for more information.
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
@@ -226,7 +232,11 @@ def load_runner(
     Returns:
         Runner instances for `bentoml.xgboost` model
 
-    Examples::
+    Examples:
+        import bentoml.lightgbm
+
+        runner = bentoml.lightgbm.load_runner("my_lightgbm_model:latest")
+        runner.run_batch(X_test, num_iteration=gbm.best_iteration)
     """  # noqa
     return _LightGBMRunner(
         tag=tag,

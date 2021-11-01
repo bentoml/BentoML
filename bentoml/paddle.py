@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import shutil
 import typing as t
 from distutils.dir_util import copy_tree
 
@@ -130,9 +129,10 @@ def load(
     """
     info = model_store.get(tag)
     if "paddlehub" in info.context:
-        _module = hub.Module.init_with_directory(directory=info.path)
-        server.CacheUpdater("update_cache", module=info.path, version="0.0.0").start()
-        return _module
+        server.CacheUpdater(
+            "update_cache", module=info.path, version=info.options["version"]
+        ).start()
+        return hub.Module(directory=info.path)
     else:
         _config = _load_paddle_bentoml_default_config(info) if not config else config
         print(_config.model_dir)
@@ -148,7 +148,6 @@ def _internal_save(
     update: bool,
     ignore_env_mismatch: bool,
     hub_module_home: t.Optional[str],
-    keep_download_from_hub: bool,
     *,
     input_spec: t.Optional[t.Union[t.List["InputSpec"], t.Tuple["InputSpec", ...]]],
     metadata: t.Optional[t.Dict[str, t.Any]],
@@ -159,10 +158,9 @@ def _internal_save(
         context["paddlehub"] = hub.__version__
         try:
             info = model_store.get(name)
-            if not keep_download_from_hub:
-                logger.warning(
-                    f"""\
-`{name}` is found under BentoML modelstore. Returning {info.tag}...
+            logger.warning(
+                f"""\
+`{name}` is found under BentoML modelstore. It is RECOMMENDED to load the model from given tag
 
 Mechanism: `bentoml.paddle.import_from_paddlehub` will initialize an instance of `LocalModuleManager`
  from `paddlehub`. We will check whether the module is already downloaded under `paddlehub` cache, then
@@ -179,9 +177,7 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
  pretrained model, specify `keep_download_from_hub=True`, `version=<your_specific_version>` or any other related
  `kwargs`. Refers to https://paddlehub.readthedocs.io/en/release-v2.1/api/module.html for more information.
                     """
-                )
-                _tag: str = info.tag
-                return _tag
+            )
         except FileNotFoundError:
             pass
     with model_store.register(
@@ -218,9 +214,6 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
                 directory = _local_manager._get_normalized_path(user_module_cls.name)
                 ctx.options = hub.Module.load_module_info(directory)
             copy_tree(directory, str(ctx.path))
-            _pycache_dir = os.path.join(ctx.path, "__pycache__")
-            if os.path.exists(_pycache_dir):
-                shutil.rmtree(_pycache_dir)
         else:
             paddle.jit.save(
                 model, os.path.join(ctx.path, SAVE_NAMESPACE), input_spec=input_spec
@@ -277,7 +270,6 @@ def save(
         update=False,
         hub_module_home=None,
         ignore_env_mismatch=False,
-        keep_download_from_hub=False,
     )
 
 
@@ -324,8 +316,6 @@ def import_from_paddlehub(
         hub_module_home (`str`, `optional`, default is `None`):
             Location to save for your PaddleHub cache. If `None`, then default to use PaddleHub default cache, which
              is under `$HOME/.paddlehub`
-        keep_download_from_hub (`bool`, `optional`, default to `False`):
-            Whether to re-download pretrained model from hub.
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -350,7 +340,6 @@ def import_from_paddlehub(
         update=update,
         ignore_env_mismatch=ignore_env_mismatch,
         hub_module_home=hub_module_home,
-        keep_download_from_hub=keep_download_from_hub,
         metadata=metadata,
         model_store=model_store,
     )

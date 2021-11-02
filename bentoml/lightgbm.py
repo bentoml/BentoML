@@ -1,10 +1,11 @@
 import os
 import typing as t
 
+import joblib
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE, TXT_EXT
+from ._internal.models import SAVE_NAMESPACE, TXT_EXT, PKL_EXT
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -23,6 +24,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
+sklearn_models = (lgb.LGBMModel, lgb.LGBMClassifier, lgb.LGBMRegressor, lgb.LGBMRanker)
+LightGBMModelType = t.TypeVar("LightGBMModelType", bound=t.Union[lgb.LGBMModel, lgb.LGBMClassifier, lgb.LGBMRegressor, lgb.LGBMRanker])
 
 def _get_model_info(
     tag: str,
@@ -36,9 +39,11 @@ def _get_model_info(
             f" module {model_info.module},"
             f" failed loading with {__name__}"
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{TXT_EXT}")
+    if not any(file.endswith(TXT_EXT) for file in os.listdir(model_info.path)):
+        model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PKL_EXT}")
+    else:
+        model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{TXT_EXT}")
     _booster_params = dict() if not booster_params else booster_params
-    # given new booster_params, add the saved params from model_details.yaml
     for key, value in model_info.options.items():
         if key not in _booster_params:
             _booster_params[key] = value
@@ -51,7 +56,7 @@ def load(
     tag: str,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "lgb.basic.Booster":
+) -> LightGBMModelType:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -65,7 +70,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `xgboost.core.Booster` from BentoML modelstore.
+        an instance of `LightGBMModelType` or `lightgbm.basic.Booster` from BentoML modelstore.
 
     Examples:
         import bentoml.lightgbm
@@ -73,16 +78,19 @@ def load(
     """  # noqa
     _, _model_file, _booster_params = _get_model_info(tag, booster_params, model_store)
 
-    return lgb.Booster(params=_booster_params, model_file=_model_file)
+    if os.path.splitext(_model_file)[1] == PKL_EXT:
+        return joblib.load(_model_file)
+    else:
+        return lgb.Booster(params=_booster_params, model_file=_model_file)
 
 
 @inject
 def save(
     name: str,
-    model: "lgb.basic.Booster",
+    model: t.Union[lgb.basic.Booster, LightGBMModelType],
     *,
-    booster_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
-    metadata: t.Union[None, t.Dict[str, t.Any]] = None,
+    booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     """
@@ -91,12 +99,12 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`xgboost.core.Booster`):
+        model (`t.Union[lgb.basic.Booster, LightGBMModelType]`):
             Instance of model to be saved
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
             for more information.
-        metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+        metadata (`t.Union[None, t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
@@ -151,7 +159,10 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:
-        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{TXT_EXT}"))
+        if isinstance(model, sklearn_models):
+            joblib.dump(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
+        else:
+            model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{TXT_EXT}"))
         return ctx.tag
 
 
@@ -193,9 +204,10 @@ class _LightGBMRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        self._model = lgb.Booster(
-            params=self._booster_params, model_file=self._model_file
-        )
+        if os.path.splitext(self._model_file)[1] == PKL_EXT:
+            self._model = joblib.load(self._model_file)
+        else:
+            self._model = lgb.Booster(params=self._booster_params, model_file=self._model_file)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data: "np.ndarray") -> "np.ndarray":
@@ -230,7 +242,7 @@ def load_runner(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        Runner instances for `bentoml.xgboost` model
+        Runner instances for `bentoml.lightgbm` model
 
     Examples:
         import bentoml.lightgbm

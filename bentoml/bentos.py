@@ -88,6 +88,7 @@ from simple_di import Provide, inject
 from ._internal.bento import Bento
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.types import Tag
+from ._internal.utils import generate_new_version_id
 
 if t.TYPE_CHECKING:
     from ._internal.models.store import ModelStore

@@ -71,6 +71,7 @@ class Bento:
 
             model_name, model_version = model_tag.split(":")
             target_path = os.path.join("models", model_name, model_version)
+            bento_fs.makedirs(target_path, recreate=True)
             copy_dir(fs.open_fs(model_info.path), "/", bento_fs, target_path)
 
         # Copy all files base on include and exclude, into `{svc.name}` directory

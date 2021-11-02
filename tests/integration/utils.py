@@ -166,23 +166,31 @@ def run_api_server_docker_container(image, config_file=None, timeout=60):
 
 
 @contextmanager
-def run_api_server(bundle_path, config_file=None, dev_server=False, timeout=20):
+def run_api_server(
+    bundle_path, workdir="./", config_file=None, dev_server=False, timeout=20
+):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
 
-    if dev_server:
-        serve_cmd = "serve"
-    else:
-        serve_cmd = "serve-gunicorn"
+    serve_cmd = "serve"
 
     my_env = os.environ.copy()
 
-    with bentoml.utils.reserve_free_port() as port:
+    with bentoml._internal.utils.reserve_free_port() as port:
         cmd = [sys.executable, "-m", "bentoml", serve_cmd]
+
+        if not dev_server:
+            cmd += ["--production"]
+
         if port:
             cmd += ["--port", f"{port}"]
+
+        cmd += ["--working-dir", workdir]
+
         cmd += [bundle_path]
+
+    print(cmd)
 
     def print_log(p):
         try:
@@ -195,10 +203,7 @@ def run_api_server(bundle_path, config_file=None, dev_server=False, timeout=20):
         my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
     p = subprocess.Popen(
-        cmd,
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        env=my_env,
+        cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=my_env,
     )
     try:
         threading.Thread(target=print_log, args=(p,), daemon=True).start()

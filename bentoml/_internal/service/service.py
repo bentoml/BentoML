@@ -68,7 +68,7 @@ class Service:
 
     def __del__(self):
         # working dir was added to sys.path in the .loader.import_service function
-        if self._working_dir:
+        if self._working_dir and sys.path:
             sys.path.remove(self._working_dir)
 
     def api(

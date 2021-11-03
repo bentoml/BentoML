@@ -1,15 +1,16 @@
 import logging
+import re
 import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ..utils.dataframe import from_json_or_csv
+from ...exceptions import InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
 else:
     pd = LazyLoader("pd", globals(), "pandas")
@@ -24,35 +25,35 @@ class PandasDataFrame(IODescriptor):
 
     .. Toy implementation of a sklearn service::
         # sklearn_svc.py
+        import bentoml
         import pandas as pd
+        import numpy as np
+        from bentoml.io import PandasDataFrame
         import bentoml.sklearn
 
-        from bentoml import Service
-        from bentoml.io import PandasDataFrame
+        input_spec = PandasDataFrame.from_sample(pd.DataFrame(np.array([[5,4,3,2]])))
 
-        my_runner = bentoml.sklearn.load_runner("my_sklearn_model:latest")
+        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
 
-        svc = Service("IrisClassifierService", runner=[my_runner])
+        svc = bentoml.Service("iris-classifier", runners=[runner])
 
-        # Create API function with pre- and post- processing logic
-        @svc.api(input=PandasDataFrame(), output=PandasDataFrame())
-        def predict(input_df: pd.DataFrame) -> pd.DataFrame:
-            result = await runner.run(input_array)
-            # Define post-processing logic
-            return pd.DataFrame(result)
+        @svc.api(input=input_spec, output=PandasDataFrame())
+        def predict(input_arr):
+            res = runner.run_batch(input_arr)  # type: np.ndarray
+            return pd.DataFrame(res)
 
     Users then can then serve this service with `bentoml serve`::
         % bentoml serve ./sklearn_svc.py:svc --auto-reload
 
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "IrisClassifierService" defined in "sklearn_svc.py"
+        [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "application/json" --data "[{'0':5,'1':4,'2':3,'3':2}]" http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
 
-        {res: [{"0":1}]}%
+        [{"0": 1}]%
 
     Args:
         orient (`str`, `optional`, default to `records`):
@@ -87,27 +88,29 @@ class PandasDataFrame(IODescriptor):
                 inp = PandasDataFrame.from_sample(arr)
 
                 ...
-                @svc.api(input=inp(shape=(51,3), enforce_shape=True), output=PandasDataFrame())
+                @svc.api(input=inp, output=PandasDataFrame())
                 # the given shape above is valid
-                def predict(input_array: np.ndarray) -> np.ndarray:
-                    result = await runner.run(input_array)
+                def predict(input_df: pd.DataFrame) -> pd.DataFrame:
+                    result = await runner.run(input_df)
                     return result
 
-                @svc.api(input=inp(shape=(51,10), enforce_shape=True), output=PandasDataFrame())
-                # the given shape above will throw errors
-                def infer(input_array: np.ndarray) -> np.ndarray:...
+                @svc.api(input=PandasDataFrame(shape=(51,10), enforce_shape=True), output=PandasDataFrame())
+                def infer(input_df: pd.DataFrame) -> pd.DataFrame:...
+                # if input_df have shape (40,9), it will throw out errors
         enforce_shape (`bool`, `optional`, default to `False`):
             Whether to enforce a certain shape. If `enforce_shape=True` then `shape` must
              be specified
     Returns:
         IO Descriptor that represents `pd.DataFrame`.
-    """  # noqa
+    """
 
     def __init__(
         self,
-        orient: str = "records",
-        columns: t.Optional[t.List[str]] = None,
+        orient: t.Literal[
+            "dict", "list", "series", "split", "records", "index"
+        ] = "records",
         apply_column_names: bool = False,
+        columns: t.Optional[t.List[str]] = None,
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
@@ -139,20 +142,14 @@ class PandasDataFrame(IODescriptor):
             a `pd.DataFrame` object. This can then be used
              inside users defined logics.
         """
-        obj = await request.json()
+        obj = await request.body()
         if self._enforce_dtype:
             if self._dtype is None:
                 logger.warning(
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
-        # TODO: check when inputs type is CSV or AWS Lambda to formats
-        res, _ = from_json_or_csv(
-            obj,
-            formats="json",
-            orient=self._orient,
-            columns=self._columns,
-            dtype=self._dtype,
-        )  # type: pd.DataFrame, t.Tuple[int, ...]
+            # TODO(jiang): check dtype
+        res = pd.read_json(obj, dtype=self._dtype, orient=self._orient)
         if self._apply_column_names:
             if self._columns is None:
                 logger.warning(
@@ -168,7 +165,7 @@ class PandasDataFrame(IODescriptor):
             else:
                 assert (
                     self._shape[1] == res.shape[1]
-                ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"  # noqa
+                ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
     async def to_http_response(self, obj: "pd.DataFrame") -> Response:
@@ -182,6 +179,10 @@ class PandasDataFrame(IODescriptor):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
+        if not isinstance(obj, pd.DataFrame):
+            raise InvalidArgument(
+                f"return object is not of type `pd.DataFrame`, got type {type(obj)} instead"
+            )
         resp = obj.to_json(orient=self._orient)
         return Response(resp, media_type=MIME_TYPE_JSON)
 
@@ -189,8 +190,133 @@ class PandasDataFrame(IODescriptor):
     def from_sample(
         cls,
         sample_input: "pd.DataFrame",
+        orient: t.Literal[
+            "dict", "list", "series", "split", "records", "index"
+        ] = "records",
         apply_column_names: bool = True,
-        enforce_dtype: bool = True,
         enforce_shape: bool = True,
+        enforce_dtype: bool = False,
     ) -> "PandasDataFrame":
-        """Create an IO Descriptor from given inputs."""
+        """
+        Create a PandasDataFrame IO Descriptor from given inputs.
+
+        Args:
+            sample_input (`pd.DataFrame`):
+                Given inputs
+            orient (`str`, `optional`, default to `records`):
+                Indication of expected JSON string format. Compatible JSON strings can be produced
+                 by `pandas.io.json.to_json()` with a corresponding orient value. Possible orients are:
+                    - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data -> [values]}
+                    - `records` - `List[Any]`: [{column -> value}, ..., {column -> value}]
+                    - `index` - `Dict[str, Any]`: {idx -> {column -> value}}
+                    - `columns` - `Dict[str, Any]`: {column -> {index -> value}}
+                    - `values` - `Dict[str, Any]`: Values arrays
+            apply_column_names (`bool`, `optional`, default to `True`):
+                Update incoming DataFrame columns. `columns` must be specified at function signature.
+                 If you don't want to enforce a specific columns name then change `apply_column_names=False`.
+            enforce_dtype (`bool`, `optional`, default to `True`):
+                Enforce a certain data type. `dtype` must be specified at function signature.
+                 If you don't want to enforce a specific dtype then change `enforce_dtype=False`.
+            enforce_shape (`bool`, `optional`, default to `False`):
+                Enforce a certain shape. `shape` must be specified at function signature.
+                 If you don't want to enforce a specific shape then change `enforce_shape=False`.
+
+        Returns:
+            `PandasDataFrame` IODescriptor from given users inputs.
+
+        Examples::
+            import pandas as pd
+            from bentoml.io import PandasDataFrame
+            arr = [[1,2,3]]
+            inp = PandasDataFrame.from_sample(pd.DataFrame(arr))
+
+            ...
+            @svc.api(input=inp, output=PandasDataFrame())
+            def predict(inputs: pd.DataFrame) -> pd.DataFrame:...
+        """
+        columns = [str(x) for x in list(sample_input.columns)]
+        return cls(
+            orient=orient,
+            enforce_shape=enforce_shape,
+            shape=sample_input.shape,
+            apply_column_names=apply_column_names,
+            columns=columns,
+            enforce_dtype=enforce_dtype,
+            dtype=None,  # TODO: not breaking atm
+        )
+
+
+_repl = {"PandasDataFrame": "PandasSeries", "DataFrame": "Series"}
+_rgx = re.compile("|".join(dict((re.escape(k), v) for k, v in _repl.items()).keys()))
+
+
+class PandasSeries(PandasDataFrame):
+    __doc__ = _rgx.sub(lambda m: _repl[re.escape(m.group(0))], PandasDataFrame.__doc__)
+
+    def __init__(
+        self,
+        orient: t.Literal[
+            "dict", "list", "series", "split", "records", "index"
+        ] = "records",
+        dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
+        enforce_dtype: bool = False,
+        shape: t.Optional[t.Tuple[int, ...]] = None,
+        enforce_shape: bool = False,
+    ):
+        super().__init__(
+            orient=orient,
+            dtype=dtype,
+            enforce_dtype=enforce_dtype,
+            shape=shape,
+            enforce_shape=enforce_shape,
+            apply_column_names=False,
+            columns=None,
+        )
+
+    async def from_http_request(self, request: Request) -> "pd.Series":
+        """
+        Process incoming requests and convert incoming
+         objects to `pd.Series`
+
+        Args:
+            request (`starlette.requests.Requests`):
+                Incoming Requests
+        Returns:
+            a `pd.Series` object. This can then be used
+             inside users defined logics.
+        """
+        obj = await request.json()
+        if self._enforce_dtype:
+            if self._dtype is None:
+                logger.warning(
+                    "`dtype` is None or undefined, while `enforce_dtype`=True"
+                )
+        res = pd.read_json(obj, typ="series", orient=self._orient)
+        if self._enforce_shape:
+            if self._shape is None:
+                logger.warning(
+                    "`shape` is None or undefined, while `enforce_shape`=True"
+                )
+            else:
+                assert (
+                    self._shape == res.shape
+                ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
+        return pd.Series(res, dtype=self._dtype)
+
+    async def to_http_response(self, obj: "pd.Series") -> Response:
+        """
+        Process given objects and convert it to HTTP response.
+
+        Args:
+            obj (`pd.Series`):
+                `pd.Series` that will be serialized to JSON
+        Returns:
+            HTTP Response of type `starlette.responses.Response`. This can
+             be accessed via cURL or any external web traffic.
+        """
+        if not isinstance(obj, pd.Series):
+            raise InvalidArgument(
+                f"return object is not of type `pd.Series`, got type {type(obj)} instead"
+            )
+        resp = obj.to_json(orient=self._orient)
+        return Response(resp, media_type=MIME_TYPE_JSON)

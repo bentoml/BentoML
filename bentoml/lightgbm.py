@@ -6,6 +6,7 @@ from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PKL_EXT, SAVE_NAMESPACE, TXT_EXT
+from ._internal.models.store import StoreCtx
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -25,9 +26,8 @@ except ImportError:  # pragma: no cover
         """
     )
 
-_sklearn_models = (lgb.LGBMModel, lgb.LGBMClassifier, lgb.LGBMRegressor, lgb.LGBMRanker)
 _LightGBMModelType = t.TypeVar(
-    "LightGBMModelType",
+    "_LightGBMModelType",
     bound=t.Union[
         "lgb.LGBMModel", "lgb.LGBMClassifier", "lgb.LGBMRegressor", "lgb.LGBMRanker"
     ],
@@ -46,10 +46,12 @@ def _get_model_info(
             f" module {model_info.module},"
             f" failed loading with {__name__}"
         )
-    if not any(file.endswith(TXT_EXT) for file in os.listdir(model_info.path)):
-        model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PKL_EXT}")
-    else:
-        model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{TXT_EXT}")
+    _fname = (
+        f"{SAVE_NAMESPACE}{TXT_EXT}"
+        if not model_info.options["sklearn_api"]
+        else f"{SAVE_NAMESPACE}{PKL_EXT}"
+    )
+    model_file = os.path.join(model_info.path, _fname)
     _booster_params = dict() if not booster_params else booster_params
     for key, value in model_info.options.items():
         if key not in _booster_params:
@@ -165,9 +167,19 @@ def save(
         options=booster_params,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
-        if isinstance(model, _sklearn_models):
+    ) as ctx:  # type: StoreCtx
+        ctx.options["sklearn_api"] = False
+        if any(
+            isinstance(model, _)
+            for _ in [
+                lgb.LGBMModel,
+                lgb.LGBMClassifier,
+                lgb.LGBMRegressor,
+                lgb.LGBMRanker,
+            ]
+        ):
             joblib.dump(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
+            ctx.options["sklearn_api"] = True
         else:
             model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{TXT_EXT}"))
         return ctx.tag
@@ -178,7 +190,7 @@ class _LightGBMRunner(Runner):
     def __init__(
         self,
         tag: str,
-        predict_fn_name: str,
+        infer_api_callback: str,
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
@@ -193,7 +205,13 @@ class _LightGBMRunner(Runner):
         self._model_info = model_info
         self._model_file = model_file
         self._booster_params = booster_params
-        self._predict_fn = predict_fn_name
+        self._infer_api_callback = infer_api_callback
+
+    def _is_gpu(self):
+        try:
+            return "gpu" in self._booster_params["device"]
+        except KeyError:
+            return False
 
     @property
     def required_models(self) -> t.List[str]:
@@ -201,27 +219,27 @@ class _LightGBMRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        if self.resource_quota.on_gpu:
+        if self._is_gpu() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        if self.resource_quota.on_gpu:
+        if self._is_gpu() and self.resource_quota.on_gpu:
             return len(self.resource_quota.gpus)
         return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:
+    def _setup(self) -> None:  # type: ignore[override]
         self._model = load(
             tag=self.name,
             booster_params=self._booster_params,
             model_store=self._model_store,
         )
-        self._predict_fn = getattr(self._model, self._predict_fn)
+        self._predict_fn = getattr(self._model, self._infer_api_callback)
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data: "np.ndarray") -> "np.ndarray":
+    # pylint: disable=arguments-differ
+    def _run_batch(self, input_data: "np.ndarray") -> "np.ndarray":  # type: ignore[override]
         return self._predict_fn(input_data)
 
 
@@ -244,7 +262,8 @@ def load_runner(
         tag (`str`):
             Model tag to retrieve model from modelstore.
         infer_api_callback (`str`, `optional`, default to `predict`):
-            Inference API callback from given model. If not specified, BentoML will use default `predict`. Users can also choose to use `predict_proba` for supported model.
+            Inference API callback from given model. If not specified, BentoML will use default `predict`.
+             Users can also choose to use `predict_proba` for supported model.
         booster_params (`t.Dict[str, t.Union[str, int]]`, default to `None`):
             Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
             for more information.
@@ -266,7 +285,7 @@ def load_runner(
     """  # noqa
     return _LightGBMRunner(
         tag=tag,
-        predict_fn_name=infer_api_callback,
+        infer_api_callback=infer_api_callback,
         booster_params=booster_params,
         resource_quota=resource_quota,
         batch_options=batch_options,

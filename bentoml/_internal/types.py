@@ -27,9 +27,7 @@ JSON_CHARSET = "utf-8"
 
 PathType = t.Union[str, os.PathLike, pathlib.Path]
 
-JSONSerializable = t.Union[
-    str, int, float, None, t.List["JSONSerializable"], t.Dict[str, "JSONSerializable"]
-]
+JSONSerializable = t.NewType("JSONSerializable", object)
 
 
 class Tag:

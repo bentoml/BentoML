@@ -1,9 +1,11 @@
+import json
 import logging
 import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
 
+from ...exceptions import InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
@@ -11,11 +13,16 @@ from .json import MIME_TYPE_JSON
 if t.TYPE_CHECKING:
     import numpy as np
 
-    _major, _minor = list(map(lambda x: int(x), np.__version__.split(".")[:2]))
+    _major, _minor = list(
+        map(lambda x: int(x), np.__version__.split(".")[:2])  # pylint: disable=W0108
+    )
     if (_major, _minor) > (1, 20):
-        from numpy.typing import ArrayLike, DTypeLike
+        from numpy.typing import ArrayLike, DTypeLike  # pylint: disable=W0611
     else:
-        from ..typing_extensions.numpy import ArrayLike, DTypeLike
+        from ..typing_extensions.numpy import (  # pylint: disable=W0611
+            ArrayLike,
+            DTypeLike,
+        )
 else:
     np = LazyLoader("np", globals(), "numpy")
 
@@ -29,35 +36,31 @@ class NumpyNdarray(IODescriptor):
 
     .. Toy implementation of a sklearn service::
         # sklearn_svc.py
-        import numpy as np
+        import bentoml
+        from bentoml.io import NumpyNdarray
         import bentoml.sklearn
 
-        from bentoml import Service
-        from bentoml.io import NumpyNdarray
+        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
 
-        my_runner = bentoml.sklearn.load_runner("my_sklearn_model:latest")
+        svc = bentoml.Service("iris-classifier", runners=[runner])
 
-        svc = Service("IrisClassifierService", runner=[my_runner])
-
-        # Create API function with pre- and post- processing logic
         @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-        def predict(input_array: np.ndarray) -> np.ndarray:
-            result = await runner.run(input_array)
-            # Define post-processing logic
-            return result
+        def predict(input_arr):
+            res = runner.run(input_arr)
+            return res
 
     Users then can then serve this service with `bentoml serve`::
         % bentoml serve ./sklearn_svc.py:svc --auto-reload
 
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled
-        [INFO] Serving BentoML Service "IrisClassifierService" defined in "sklearn_svc.py"
+        [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "application/json" --data "[[5, 4, 3, 2]]" http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:5000/predict
 
-        {res: [1]}%
+        [1]%
 
     Args:
         dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`, `optional`, default to `None`):
@@ -83,7 +86,7 @@ class NumpyNdarray(IODescriptor):
 
     Returns:
         IO Descriptor that represents `np.ndarray`.
-    """  # noqa
+    """
 
     def __init__(
         self,
@@ -118,18 +121,16 @@ class NumpyNdarray(IODescriptor):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        json_obj = await request.json()
-        res = np.array(json_obj)
+        obj = await request.json()
+        res = np.array(obj)
         if self._enforce_dtype:
             if self._dtype is None:
                 logger.warning("dtype is None or not yet specified.")
-                pass
             else:
                 res = res.astype(self._dtype)
         if self._enforce_shape:
             if self._shape is None:
                 logger.warning("shape is None or not yet specified.")
-                pass
             else:
                 res = res.reshape(self._shape)
         return res
@@ -145,13 +146,48 @@ class NumpyNdarray(IODescriptor):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        return Response(obj.tolist(), media_type=MIME_TYPE_JSON)
+        if not isinstance(obj, np.ndarray):
+            raise InvalidArgument(
+                f"return object is not of type `np.ndarray`, got type {type(obj)} instead"
+            )
+        return Response(content=json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(
         cls,
-        sample_input: "ArrayLike",
-        enforce_dtype: t.Optional[bool] = True,
-        enforce_shape: t.Optional[bool] = True,
+        sample_input: "np.ndarray",
+        enforce_dtype: bool = True,
+        enforce_shape: bool = True,
     ) -> "NumpyNdarray":
-        """Create an IO Descriptor from given inputs."""
+        """
+        Create a NumpyNdarray IO Descriptor from given inputs.
+
+        Args:
+            sample_input (`~bentoml._internal.typing_extensions.numpy.ArrayLike`):
+                Given inputs
+            enforce_dtype (`bool`, `optional`, default to `True`):
+                Enforce a certain data type. `dtype` must be specified at function signature.
+                 If you don't want to enforce a specific dtype then change `enforce_dtype=False`.
+            enforce_shape (`bool`, `optional`, default to `False`):
+                Enforce a certain shape. `shape` must be specified at function signature.
+                 If you don't want to enforce a specific shape then change `enforce_shape=False`.
+
+        Returns:
+            `NumpyNdarray` IODescriptor from given users inputs.
+
+        Examples::
+            import numpy as np
+            from bentoml.io import NumpyNdarray
+            arr = [[1,2,3]]
+            inp = NumpyNdarray.from_sample(arr)
+
+            ...
+            @svc.api(input=inp, output=NumpyNdarray())
+            def predict() -> np.ndarray:...
+        """
+        return cls(
+            dtype=sample_input.dtype,
+            shape=sample_input.shape,
+            enforce_dtype=enforce_dtype,
+            enforce_shape=enforce_shape,
+        )

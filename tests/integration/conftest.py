@@ -24,12 +24,6 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(scope="session")
-def clean_context():
-    with contextlib.ExitStack() as stack:
-        yield stack
-
-
-@pytest.fixture(scope="session")
 def modelstore(tmp_path_factory) -> "ModelStore":
     # we need to get consistent cache folder, thus tmpdir is not usable here
     # NOTE: after using modelstore, also use `delete_cache_model` to remove model after

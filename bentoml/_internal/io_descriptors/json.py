@@ -4,6 +4,7 @@ import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
+from typing_extensions import Literal
 
 from bentoml.exceptions import BadInput, InvalidArgument, MissingDependencyException
 
@@ -12,17 +13,20 @@ from .base import IODescriptor
 
 if t.TYPE_CHECKING:
     import numpy as np
+    import pandas as pd
     import pydantic
 
-    _major, _minor = list(map(lambda x: int(x), np.__version__.split(".")[:2]))
+    _major, _minor = list(
+        map(lambda x: int(x), np.__version__.split(".")[:2])  # pylint: disable=W0108
+    )
     if (_major, _minor) > (1, 20):
-        from numpy.typing import ArrayLike
+        from numpy.typing import ArrayLike  # noqa  # pylint: disable=W0611
     else:
-        from ..typing_extensions.numpy import ArrayLike
+        from ..typing_extensions.numpy import ArrayLike  # noqa  # pylint: disable=W0611
 
 else:
     np = LazyLoader("np", globals(), "numpy")
-    ArrayLike = t.Any
+    pd = LazyLoader("pd", globals(), "pandas")
 
     try:
         import pydantic
@@ -35,14 +39,18 @@ _SerializableObj = t.TypeVar(
     "_SerializableObj",
     bound=t.Union[
         "np.generic",
-        ArrayLike,
+        "ArrayLike",
         "pydantic.BaseModel",
+        "pd.DataFrame",
         t.Any,
     ],
 )
 
 
 class DefaultJsonEncoder(json.JSONEncoder):
+
+    _orient: Literal["dict", "list", "series", "split", "records", "index"] = "records"
+
     def default(self, o: _SerializableObj) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
@@ -52,6 +60,9 @@ class DefaultJsonEncoder(json.JSONEncoder):
 
         if isinstance(o, np.ndarray):
             return o.tolist()
+
+        if any(isinstance(o, i) for i in [pd.DataFrame, pd.Series]):
+            return o.to_json(orient=self._orient)
 
         if pydantic and isinstance(o, pydantic.BaseModel):
             obj_dict = o.dict()
@@ -63,10 +74,59 @@ class DefaultJsonEncoder(json.JSONEncoder):
 
 
 class JSON(IODescriptor):
+    """
+    `JSON` defines API specification for the inputs/outputs of a Service, where either inputs will be
+    converted to or outputs will be converted from a JSON representation as specified in your API function signature.
+
+    .. Toy implementation of a sklearn service::
+        # sklearn_svc.py
+        import pandas as pd
+        import numpy as np
+        from bentoml.io import PandasDataFrame, JSON
+        import bentoml.sklearn
+
+        input_spec = PandasDataFrame.from_sample(pd.DataFrame(np.array([[5,4,3,2]])))
+
+        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
+
+        svc = bentoml.Service("iris-classifier", runners=[runner])
+
+        @svc.api(input=input_spec, output=JSON(orient='records'))
+        def predict(input_arr):
+            res = runner.run_batch(input_arr)
+            return {"res":pd.DataFrame(res)}
+
+    Users then can then serve this service with `bentoml serve`::
+        % bentoml serve ./sklearn_svc.py:svc --auto-reload
+
+        (Press CTRL+C to quit)
+        [INFO] Starting BentoML API server in development mode with auto-reload enabled
+        [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
+        [INFO] API Server running on http://0.0.0.0:5000
+
+    Users can then send a cURL requests like shown in different terminal session::
+        % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
+
+        {"res":"[{\"0\":1}]"}%
+
+    Args:
+        pydantic_model (`pydantic.BaseModel`, `optional`, default to `None`):
+            Pydantic model schema.
+        validate_json (`bool`, `optional`, default to `True`):
+            If True, then use Pydantic model specified above to validate given JSON.
+        json_encoder (`Type[json.JSONEncoder]`, default to `~bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
+            JSON encoder.
+    Returns:
+        IO Descriptor that in JSON format.
+    """
+
     def __init__(
         self,
         pydantic_model: t.Optional["pydantic.BaseModel"] = None,
         validate_json: bool = True,
+        orient: Literal[
+            "dict", "list", "series", "split", "records", "index"
+        ] = "records",
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
@@ -86,6 +146,7 @@ class JSON(IODescriptor):
 
         self._validate_json = validate_json
         self._json_encoder = json_encoder
+        setattr(self._json_encoder, "_orient", orient)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         return self.openapi_schema()

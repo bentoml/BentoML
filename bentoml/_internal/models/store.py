@@ -192,13 +192,13 @@ class ModelStore:
         options: t.Optional[t.Dict[str, t.Any]] = None,
         metadata: t.Optional[t.Dict[str, t.Any]] = None,
         framework_context: t.Optional[t.Dict[str, t.Any]] = None,
-    ) -> t.ContextManager["StoreCtx"]:
+    ) -> t.Generator["StoreCtx", None, None]:
         """
         with bentoml.models.register(name, options, metadata, labels) as ctx:
             # ctx(model_path, version, metadata)
             model.save(ctx.model_path, metadata=ctx.metadata)
         """
-        _exc, _failed = None, False
+        _exc = None
 
         tag = _generate_model_tag(name)
         _, version = tag.split(":")
@@ -221,11 +221,11 @@ class ModelStore:
             Exception,
         ) as e:  # noqa # pylint: disable=broad-except
             # save has failed
-            _exc, _failed = e, True
+            _exc = e
             logger.warning(f"Failed to save {tag}, deleting {model_path}...")
             shutil.rmtree(model_path)
         finally:
-            if not _failed:
+            if _exc is None:
                 latest_path = Path(self._base_dir, name, "latest")
                 dump_model_yaml(
                     model_yaml, ctx, framework_context=framework_context, module=module

@@ -1,42 +1,62 @@
 import typing as t
 
+import numpy as np
+import pandas as pd
+
 import bentoml
 import bentoml.sklearn
+from bentoml._internal.types import FileLike, JSONSerializable
 from bentoml.io import JSON
 
 
 class PickleModel:
+    """
     def predict_dataframe(self, df):
         return df["col1"] * 2
-
-    def predict_image(self, input_datas):
+    def predict_image(self, input_datas: t.List[np.ndarray]) -> t.List[np.ndarray]:
         return [input_data.shape for input_data in input_datas]
 
-    def predict_file(self, input_files):
+    def predict_file(self, input_files: t.List[FileLike]) -> t.List[bytes]:
         return [f.read() for f in input_files]
 
     def predict_multi_images(self, originals, compareds):
-        import numpy as np
-
         eq = np.array(originals) == np.array(compareds)
         return eq.all(axis=tuple(range(1, len(eq.shape))))
 
-    def predict_json(self, input_datas):
+    def predict_dataframe(self, df: "pd.DataFrame") -> "pd.DataFrame":
+        df_out = df.apply(lambda i: i * 2)
+        assert isinstance(df_out, pd.DataFrame)
+        return df_out
+    """
+
+    def echo_json(self, input_datas: JSONSerializable) -> JSONSerializable:
         return input_datas
+
+    def predict_ndarray(self, input_arr: np.ndarray) -> np.ndarray:
+        return input_arr * 2
 
 
 bentoml.sklearn.save("sk_model", PickleModel())
-sk_model_runner = bentoml.sklearn.load_runner("sk_model", function_name="predict_json")
-
-svc = bentoml.Service(name="general", runners=[sk_model_runner])
 
 
-@svc.api(
-    input=JSON(),
-    output=JSON(),
+json_pred_runner = bentoml.sklearn.load_runner("sk_model", function_name="echo_json")
+ndarray_pred_runner = bentoml.sklearn.load_runner(
+    "sk_model", function_name="predict_ndarray"
 )
-def predict_json(json_obj: t.Dict) -> t.Dict:
-    return sk_model_runner.run(json_obj)
+
+svc = bentoml.Service(name="general", runners=[json_pred_runner, ndarray_pred_runner])
+
+
+@svc.api(input=JSON(), output=JSON())
+def echo_json(json_obj: JSONSerializable) -> JSONSerializable:
+    return json_pred_runner.run(json_obj)
+
+
+@svc.api(input=JSON(), output=JSON())
+def predict_array(json_obj: JSONSerializable) -> JSONSerializable:
+    array = np.array(json_obj)
+    array_out = json_pred_runner.run(array)
+    return array_out.tolist()
 
 
 """
@@ -75,8 +95,8 @@ def predict_file(files):
 
 
 @svc.api(input=JsonInput(), batch=True)
-def predict_json(input_datas):
-    return self.artifacts.model.predict_json(input_datas)
+def echo_json(input_datas):
+    return self.artifacts.model.echo_json(input_datas)
 
 
 CUSTOM_ROUTE = "$~!@%^&*()_-+=[]\\|;:,./predict"
@@ -118,7 +138,7 @@ def predict_strict_json(input_datas, tasks: Sequence[InferenceTask] = None):
             t.discard(http_status=400, err_msg="application/json only")
         else:
             filtered_jsons.append(j)
-    return self.artifacts.model.predict_json(filtered_jsons)
+    return self.artifacts.model.echo_json(filtered_jsons)
 
 
 @svc.api(input=JsonInput(), batch=True)
@@ -129,7 +149,7 @@ def predict_direct_json(input_datas, tasks: Sequence[InferenceTask] = None):
             t.discard(http_status=400, err_msg="application/json only")
         else:
             filtered_jsons.append(j)
-    rets = self.artifacts.model.predict_json(filtered_jsons)
+    rets = self.artifacts.model.echo_json(filtered_jsons)
     return [
         InferenceResult(http_status=200, data=json.dumps(result)) for result in rets
     ]

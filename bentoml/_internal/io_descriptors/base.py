@@ -8,27 +8,28 @@ IOPyObj = t.TypeVar("IOPyObj")
 
 
 class IODescriptor(ABC, t.Generic[IOPyObj]):
-    """IODescriptor describes the input/output data format of an InferenceAPI defined
-    in a bentoml.Service
+    """
+    IODescriptor describes the input/output data format of an InferenceAPI defined
+     in a bentoml.Service
     """
 
     HTTP_METHODS = ["POST"]
 
     @abstractmethod
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
-        pass
+        ...
 
     @abstractmethod
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
-        pass
+        ...
 
     @abstractmethod
-    async def from_http_request(self, request: Request) -> t.Any:
-        pass
+    async def from_http_request(self, request: Request) -> IOPyObj:
+        ...
 
     @abstractmethod
-    async def to_http_response(self, obj: t.Any) -> Response:
-        pass
+    async def to_http_response(self, obj: IOPyObj) -> Response:
+        ...
 
     # TODO: gRPC support
     # @abstractmethod

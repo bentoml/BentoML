@@ -193,8 +193,7 @@ class _LightGBMRunner(Runner):
         self._model_info = model_info
         self._model_file = model_file
         self._booster_params = booster_params
-        self._predict_fn_name = predict_fn_name
-        self._tag = tag
+        self._predict_fn = predict_fn_name
 
     @property
     def required_models(self) -> t.List[str]:
@@ -215,21 +214,21 @@ class _LightGBMRunner(Runner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
         self._model = load(
-            tag=self._tag,
+            tag=self.name,
             booster_params=self._booster_params,
             model_store=self._model_store,
         )
-        self._predict_fn_name = getattr(self._model, self._predict_fn_name)
+        self._predict_fn = getattr(self._model, self._predict_fn)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data: "np.ndarray") -> "np.ndarray":
-        return self._model.predict(input_data)
+        return self._predict_fn(input_data)
 
 
 @inject
 def load_runner(
     tag: str,
-    predict_fn_name: str = "predict",
+    infer_api_callback: str = "predict",
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
@@ -244,8 +243,8 @@ def load_runner(
     Args:
         tag (`str`):
             Model tag to retrieve model from modelstore.
-        predict_fn_name (`str`, default to `"predict"`):
-            Options for inference functions. Either model.predict() or model.predict_proba().
+        infer_api_callback (`str`, `optional`, default to `predict`):
+            Inference API callback from given model. If not specified, BentoML will use default `predict`. Users can also choose to use `predict_proba` for supported model.
         booster_params (`t.Dict[str, t.Union[str, int]]`, default to `None`):
             Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
             for more information.
@@ -267,7 +266,7 @@ def load_runner(
     """  # noqa
     return _LightGBMRunner(
         tag=tag,
-        predict_fn_name=predict_fn_name,
+        predict_fn_name=infer_api_callback,
         booster_params=booster_params,
         resource_quota=resource_quota,
         batch_options=batch_options,

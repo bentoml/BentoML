@@ -56,7 +56,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
     ex = None
     while time.time() - start_time < timeout:
         try:
-            if opener.open(f"http://{host_url}/healthz", timeout=1).status == 200:
+            if opener.open(f"http://{host_url}/readyz", timeout=1).status == 200:
                 return
             elif container and container.status != "running":
                 break

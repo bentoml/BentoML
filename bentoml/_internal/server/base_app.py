@@ -17,13 +17,10 @@ logger = logging.getLogger(__name__)
 
 class BaseAppFactory(abc.ABC):
     name: str
-
-    # TODO: set _is_ready state after initial setup call
     _is_ready: bool = False
 
-    @abc.abstractmethod
-    def setup(self) -> None:
-        ...
+    def mark_as_ready(self) -> None:
+        self._is_ready = True
 
     async def livez(self, request) -> "Response":  # pylint: disable=unused-argument
         """

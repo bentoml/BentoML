@@ -132,9 +132,6 @@ class ServiceAppFactory(BaseAppFactory):
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
 
-    def setup(self) -> None:
-        self.bento_service.on_startup()
-
     async def index_view_func(
         self, request
     ) -> "Response":  # pylint: disable=unused-argument
@@ -250,7 +247,7 @@ class ServiceAppFactory(BaseAppFactory):
             routes=self.routes(),
             middleware=self.middlewares(),
             on_shutdown=[self.bento_service._on_asgi_app_shutdown],
-            on_startup=[self.bento_service._on_asgi_app_startup],
+            on_startup=[self.bento_service._on_asgi_app_startup, self.mark_as_ready],
         )
 
         for mount_app, path, name in self.bento_service._mount_apps:

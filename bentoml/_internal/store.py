@@ -1,4 +1,6 @@
+import datetime
 import typing as t
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
 import fs
@@ -7,10 +9,24 @@ from fs.base import FS
 from ..exceptions import BentoMLException
 from .types import PathType, Tag
 
-SUPPORTED_COMPRESSION_TYPE = [".gz"]
+T = t.TypeVar("T")
 
 
-class Store:
+class StoreItem(ABC):
+    @classmethod
+    @abstractmethod
+    def from_fs(CLS: t.Type[T], tag: Tag, fs: FS) -> T:
+        pass
+
+    @abstractmethod
+    def creation_time(self) -> datetime.datetime:
+        pass
+
+
+Item = t.TypeVar("Item", bound=StoreItem)
+
+
+class Store(ABC, t.Generic[Item]):
     """An FsStore manages items under the given base filesystem.
 
     Note that FsStore has no consistency checks; it assumes that no direct modification
@@ -18,51 +34,48 @@ class Store:
 
     """
 
-    def __init__(self, base_path: PathType):
+    fs: FS
+    _item_type: t.Type[StoreItem]
+
+    @abstractmethod
+    def __init__(self, base_path: PathType, item_type: t.Type[StoreItem]):
+        self._item_type = item_type
         self.fs = fs.open_fs(str(base_path))
-
-    def push(self, tag: str) -> None:
-        ...
-
-    def pull(self, tag: str) -> None:
-        ...
 
     def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Tag]:
         if not tag:
-            return sorted(
-                [ver for _d in self.fs.listdir("/") for ver in self.list(_d)],
-                key=str,
-            )
+            return sorted([ver for _d in self.fs.listdir("/") for ver in self.list(_d)])
 
         _tag = Tag.from_taglike(tag)
         if _tag.version is None:
-            return [
-                Tag(_tag.name, f.name)
-                for f in self.fs.scandir(_tag.name)
-                if not f.islink()
+            tags = [
+                Tag(_tag.name, f.name) for f in self.fs.scandir(_tag.name) if f.is_dir
             ]
+            return sorted(tags)
         else:
-            path = fs.path.combine(_tag.name, _tag.version)
-            if _tag.version == "latest":
-                _tag.version = self.fs.readtext(path)
-                path = fs.path.combine(_tag.name, _tag.version)
-            return sorted(list(self.fs.walk(path)), key=str)
+            return [_tag] if self.fs.isdir(_tag.path()) else []
 
-    def get(self, tag: t.Union[Tag, str]) -> FS:
+    def _get_item(self, tag: Tag) -> Item:
+        """
+        Creates a new instance of Item that represents the item with tag `tag`.
+        """
+        return self._item_type.from_fs(tag, self.fs.opendir(tag.path()))  # type: ignore
+
+    def get(self, tag: t.Union[Tag, str]) -> Item:
         """
         store.get("my_bento")
         store.get("my_bento:v1.0.0")
         store.get(Tag("my_bento", "latest"))
         """
         _tag = Tag.from_taglike(tag)
-        if _tag.version is None:
-            _tag.version = self.fs.readtext(fs.path.combine(_tag.name, "latest"))
+        if _tag.version is None or _tag.version == "latest":
+            _tag.version = self.fs.readtext(_tag.latest_path())
         path = _tag.path()
         if not self.fs.exists(path):
             raise FileNotFoundError(
                 f"Item '{tag}' is not found in BentoML store {self.fs}."
             )
-        return self.fs.opendir(path)
+        return self._get_item(_tag)
 
     @contextmanager
     def register(self, tag: t.Union[str, Tag]):
@@ -78,24 +91,21 @@ class Store:
             yield self.fs.getsyspath(item_path)
         finally:
             # item generation is most likely successful, link latest path
-            latest_path = fs.path.combine(_tag.name, "latest")
-            with self.fs.open(latest_path, "w") as latest_file:
+            with self.fs.open(_tag.latest_path(), "w") as latest_file:
                 latest_file.write(_tag.version)
 
-    def delete(self, tag: t.Union[str, Tag], skip_confirm: bool = True) -> None:
-        if not skip_confirm:
-            raise BentoMLException(
-                f"'skip_confirm={skip_confirm}'; not deleting {tag}. If you want to bypass this check change 'skip_confirm=True'"
-            )
-
+    def delete(self, tag: t.Union[str, Tag]) -> None:
         _tag = Tag.from_taglike(tag)
-        if _tag.version is None:
-            self.fs.removetree()
-            return
 
-        path = _tag.path()
-        self.fs.removetree(path)
-        new_latest = sorted(self.fs.scandir(_tag.name), key=lambda f: f.created)[0]
-        latest_path = fs.path.combine(_tag.name, "latest")
-        with self.fs.open(latest_path, "w") as latest_file:
-            latest_file.write(new_latest.name)
+        self.fs.removetree(_tag.path())
+        if self.fs.isdir(_tag.name):
+            versions = self.list(_tag.name)
+            if len(versions) == 0:
+                # if we've removed all versions, remove the directory
+                self.fs.removetree(_tag.name)
+            else:
+                new_latest = sorted(
+                    versions, key=lambda tag: self._get_item(tag).creation_time()
+                )[0]
+                # otherwise, update the latest version
+                self.fs.writetext(_tag.latest_path(), new_latest.name)

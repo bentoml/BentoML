@@ -186,9 +186,9 @@ class BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def bento_store(base_dir=default_bento_store_base_dir):
-        from ..store import Store
+        from ..bento import Bento, BentoStore
 
-        return Store(base_dir)
+        return BentoStore(base_dir)
 
     @providers.SingletonFactory
     @staticmethod

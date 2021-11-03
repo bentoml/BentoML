@@ -25,7 +25,7 @@ class ImportServiceError(BentoMLException):
 @inject
 def import_service(
     svc_import_path: str,
-    base_dir: t.Optional[str] = None,
+    working_dir: t.Optional[str] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "Service":
     """Import a Service instance from source code, by providing the svc_import_path
@@ -33,10 +33,15 @@ def import_service(
     what attribute can be used to access this Service instance in that module
 
     Example usage:
+        # When multiple service defined in the same module
+        import_service("fraud_detector:svc_a")
+        import_service("fraud_detector:svc_b")
+
+        # Find svc by Python module name or file path
         import_service("fraud_detector:svc")
-        import_service("foo.bar.fraud_detector:svc")
-        import_service("fraud_detector:foo.bar.svc")
         import_service("fraud_detector.py:svc")
+        import_service("foo.bar.fraud_detector:svc")
+        import_service("./def/abc/fraud_detector.py:svc")
 
         # When there's only one Service instance in the target module, the attributes
         # part in the svc_import_path can be omitted
@@ -44,37 +49,60 @@ def import_service(
         import_service("fraud_detector")
     """
     try:
-        if base_dir:
-            sys.path.insert(0, base_dir)
+        if working_dir:
+            sys.path.insert(0, working_dir)
             # Set cwd(current working directory) to the Bento's project directory, which
             # allows user code to read files using relative path
             prev_cwd = os.getcwd()
-            os.chdir(base_dir)
+            os.chdir(working_dir)
+        else:
+            working_dir = os.getcwd()
 
-        module_str, _, attrs_str = svc_import_path.partition(":")
-        if not module_str:
+        import_path, _, attrs_str = svc_import_path.partition(":")
+        if not import_path:
             raise ImportServiceError(
                 f'Invalid import target "{svc_import_path}", must format as '
                 '"<module>:<attribute>" or "<module>'
             )
 
-        module_name, ext = os.path.splitext(module_str)
-        if ext and ext != ".py":
-            raise ImportServiceError(
-                f'Invalid module extension "{ext}" found in target "{svc_import_path}",'
-                ' the only extension acceptable here is ".py"'
-            )
+        if os.path.exists(import_path):
+            import_path = os.path.realpath(import_path)
+            # Importing from a module file path:
+            if not import_path.startswith(os.path.realpath(working_dir)):
+                raise ImportServiceError(
+                    f'Module "{import_path}" not found in working directory "{working_dir}"'
+                )
+
+            file_name, ext = os.path.splitext(import_path)
+            if ext != ".py":
+                raise ImportServiceError(
+                    f'Invalid module extension "{ext}" in target "{svc_import_path}",'
+                    ' the only extension acceptable here is ".py"'
+                )
+
+            # move up until no longer in a python package or in the working dir
+            module_name_parts = []
+            path = file_name
+            while True:
+                path, name = os.path.split(path)
+                module_name_parts.append(name)
+                if (
+                    not os.path.exists(os.path.join(path, "__init__.py"))
+                    or path == working_dir
+                ):
+                    break
+            module_name = ".".join(module_name_parts[::-1])
+        else:
+            # Importing by module name:
+            module_name = import_path
 
         default_model_store = BentoMLContainer.model_store
+        # Import the service using the Bento's own model store
+        BentoMLContainer.model_store.set(model_store)
         try:
-            # Import the service using the Bento's own model store
-            BentoMLContainer.model_store.set(model_store)
-
             module = importlib.import_module(module_name)
-        except ImportError as exc:
-            if exc.name != module_str:
-                raise exc from None
-            raise ImportServiceError(f'Failed importing module "{module_name}".')
+        except Exception as e:
+            raise ImportServiceError(f'Could not import module "{module_name}": {e}')
         finally:
             # Reset to default local model store
             BentoMLContainer.model_store.set(default_model_store)
@@ -102,12 +130,12 @@ def import_service(
                     "define only service instance per python module/file"
                 )
 
-        if base_dir:
-            instance._working_dir = base_dir
+        if working_dir:
+            instance._working_dir = working_dir
         return instance
     except ImportServiceError:
-        if base_dir:
-            sys.path.remove(base_dir)
+        if working_dir:
+            sys.path.remove(working_dir)
             # Reset to previous cwd
             os.chdir(prev_cwd)
         raise

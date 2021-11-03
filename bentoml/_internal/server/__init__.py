@@ -143,7 +143,10 @@ serve_production = serve_development  # TODO(jiang): remove me
 
 
 def _start_dev_api_server(
-    bento_path_or_tag: str, port: int, working_dir: str, instance_id: int,
+    bento_path_or_tag: str,
+    port: int,
+    working_dir: str,
+    instance_id: int,
 ):
     import uvicorn
 
@@ -151,7 +154,7 @@ def _start_dev_api_server(
     uvicorn.run(svc.asgi_app, port=port, log_level="info")
 
 
-'''
+"""
 def _start_prod_api_server(bento_path_or_tag: str, instance_id: int, runners_map: str):
     import uvicorn
 
@@ -171,4 +174,4 @@ def _start_prod_runner_server(
     runner = svc._runners.get(name)
 
     uvicorn.run(RunnerApp(runner), fd=fd, log_level="info")
-'''
+"""

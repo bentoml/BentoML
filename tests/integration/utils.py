@@ -199,7 +199,10 @@ def run_api_server(bento, workdir="./", config_file=None, dev_server=False, time
         my_env["BENTOML_CONFIG"] = os.path.abspath(config_file)
 
     p = subprocess.Popen(
-        cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, env=my_env,
+        cmd,
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
+        env=my_env,
     )
     try:
         threading.Thread(target=print_log, args=(p,), daemon=True).start()

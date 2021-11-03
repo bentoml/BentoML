@@ -62,7 +62,7 @@ def assert_request() -> t.Callable:
     return assert_request
 
 
-'''
+"""
 def pytest_configure():
     # async request client
     async def assert_request(
@@ -245,4 +245,4 @@ class TestModel(object):
     def predict_json(self, input_jsons):
         assert input_jsons
         return [{"ok": True}] * len(input_jsons)
-'''
+"""

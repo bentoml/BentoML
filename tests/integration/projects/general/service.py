@@ -10,7 +10,7 @@ from bentoml.io import JSON
 
 
 class PickleModel:
-    '''
+    """
     def predict_dataframe(self, df):
         return df["col1"] * 2
     def predict_image(self, input_datas: t.List[np.ndarray]) -> t.List[np.ndarray]:
@@ -27,7 +27,7 @@ class PickleModel:
         df_out = df.apply(lambda i: i * 2)
         assert isinstance(df_out, pd.DataFrame)
         return df_out
-    '''
+    """
 
     def echo_json(self, input_datas: JSONSerializable) -> JSONSerializable:
         return input_datas

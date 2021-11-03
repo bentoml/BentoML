@@ -27,7 +27,11 @@ class ResourceQuota:
 
     # Example gpus value: "all", 2, "device=1,2"
     # Default to "None", returns all available GPU devices in current environment
-    gpus = attr.ib(converter=_gpu_converter, type=t.List[str], default=None,)
+    gpus = attr.ib(
+        converter=_gpu_converter,
+        type=t.List[str],
+        default=None,
+    )
 
     @cpu.default
     def _get_default_cpu(self) -> float:
@@ -267,7 +271,8 @@ class LocalRunner(RunnerImpl):
             )
             batch_result = self._runner._run_batch(*params.args, **params.kwargs)
             return AutoContainer.batch_to_singles(
-                batch_result, batch_axis=self._runner.batch_options.output_batch_axis,
+                batch_result,
+                batch_axis=self._runner.batch_options.output_batch_axis,
             )[0]
 
         if isinstance(self._runner, SimpleRunner):

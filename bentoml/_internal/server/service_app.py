@@ -186,7 +186,11 @@ class ServiceAppFactory(BaseAppFactory):
         routes = super().routes()
         routes.append(Route(path="/", name="home", endpoint=self.index_view_func))
         routes.append(
-            Route(path="/docs.json", name="docs", endpoint=self.docs_view_func,)
+            Route(
+                path="/docs.json",
+                name="docs",
+                endpoint=self.docs_view_func,
+            )
         )
 
         if self.enable_metrics:
@@ -265,7 +269,9 @@ class ServiceAppFactory(BaseAppFactory):
         from starlette.concurrency import run_in_threadpool
         from starlette.responses import JSONResponse
 
-        async def api_func(request: "Request",) -> "Response":
+        async def api_func(
+            request: "Request",
+        ) -> "Response":
             # handle_request may raise 4xx or 5xx exception.
             try:
                 input_data = await api.input.from_http_request(request)

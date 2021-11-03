@@ -15,7 +15,7 @@ async def test_api_server_meta(host: str, assert_request: t.Callable) -> None:
     await assert_request("GET", f"http://{host}/readyz")
 
 
-'''
+"""
 @pytest.since_bentoml_version("0.11.0+0")
 @pytest.mark.asyncio
 async def test_customized_route(host):
@@ -85,7 +85,7 @@ async def test_api_server_metrics(host, metrics):
         assert_status=200,
         assert_data=lambda d: metrics in d.decode(),
     )
-'''
+"""
 
 
 @pytest.mark.asyncio

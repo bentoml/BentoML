@@ -53,7 +53,10 @@ def host(pytestconfig, clean_context):
         image = clean_context.enter_context(
             build_api_server_docker_image(test_svc_bundle, "example_service")
         )
-        with run_api_server_docker_container(image, config_file=config_file,) as host:
+        with run_api_server_docker_container(
+            image,
+            config_file=config_file,
+        ) as host:
             yield host
     elif pytestconfig.getoption("dev_server"):
         with run_api_server(
@@ -65,7 +68,9 @@ def host(pytestconfig, clean_context):
             yield host
     else:
         with run_api_server(
-            test_svc_bundle, config_file=config_file, workdir=test_workdir,
+            test_svc_bundle,
+            config_file=config_file,
+            workdir=test_workdir,
         ) as host:
             yield host
 

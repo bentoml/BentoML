@@ -189,11 +189,7 @@ class ServiceAppFactory(BaseAppFactory):
         routes = super().routes()
         routes.append(Route(path="/", name="home", endpoint=self.index_view_func))
         routes.append(
-            Route(
-                path="/docs.json",
-                name="docs",
-                endpoint=self.docs_view_func,
-            )
+            Route(path="/docs.json", name="docs", endpoint=self.docs_view_func,)
         )
 
         if self.enable_metrics:
@@ -226,20 +222,23 @@ class ServiceAppFactory(BaseAppFactory):
         return routes
 
     def middlewares(self) -> t.List["Middleware"]:
+        from starlette.middleware import Middleware
+
         middlewares = super().middlewares()
 
-        for middleware, options in self.bento_service._middlewares:
-            middlewares.append(middleware(**options))
+        for middleware_cls, options in self.bento_service._middlewares:
+            middlewares.append(Middleware(middleware_cls, **options))
 
         if self.enable_access_control:
             assert (
-                self.access_control_options.get("access_control_allow_origin")
-                is not None
+                self.access_control_options.get("allow_origins") is not None
             ), "To enable cors, access_control_allow_origin must be set"
 
             from starlette.middleware.cors import CORSMiddleware
 
-            middlewares.append(CORSMiddleware(**self.access_control_options))
+            middlewares.append(
+                Middleware(CORSMiddleware, **self.access_control_options)
+            )
 
         return middlewares
 
@@ -269,9 +268,7 @@ class ServiceAppFactory(BaseAppFactory):
         from starlette.concurrency import run_in_threadpool
         from starlette.responses import JSONResponse
 
-        async def api_func(
-            request: "Request",
-        ) -> "Response":
+        async def api_func(request: "Request",) -> "Response":
             # handle_request may raise 4xx or 5xx exception.
             try:
                 input_data = await api.input.from_http_request(request)

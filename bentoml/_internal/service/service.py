@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from starlette.middleware import Middleware
     from starlette.types import ASGIApp
 
-_WSGI_APP = t.TypeVar("_WSGI_APP")
+WSGI_APP = t.NewType("WSGI_APP", object)
 
 logger = logging.getLogger(__name__)
 
@@ -54,8 +54,8 @@ class Service:
         if runners is not None:
             self._runners = {r.name: r for r in runners}
 
-        self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", _WSGI_APP], str, str]] = []
-        self._middlewares: t.List[t.Tuple["Middleware", t.Any]] = []
+        self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", WSGI_APP], str, str]] = []
+        self._middlewares: t.List[t.Tuple[t.Type["Middleware"], t.Any]] = []
 
     def _on_asgi_app_startup(self) -> None:
         # TODO: initialize Local Runner instances or Runner Clients here
@@ -120,7 +120,7 @@ class Service:
     def mount_asgi_app(self, app: "ASGIApp", path: str = "/", name: str = None) -> None:
         self._mount_apps.append((app, path, name))
 
-    def mount_wsgi_app(self, app: _WSGI_APP, path: str = "/", name: str = None) -> None:
+    def mount_wsgi_app(self, app: WSGI_APP, path: str = "/", name: str = None) -> None:
         from starlette.middleware.wsgi import WSGIMiddleware
 
         self._mount_apps.append((WSGIMiddleware(app), path, name))

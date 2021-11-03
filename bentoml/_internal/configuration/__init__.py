@@ -88,7 +88,7 @@ def load_global_config(bentoml_config_file: t.Optional[str] = None):
                 "BentoML config file specified in ENV VAR does not end with `.yaml`: "
                 f"`BENTOML_CONFIG={bentoml_config_file}`"
             )
-        if os.isfile(bentoml_config_file):
+        if not os.path.isfile(bentoml_config_file):
             raise FileNotFoundError(
                 "BentoML config file specified in ENV VAR not found: "
                 f"`BENTOML_CONFIG={bentoml_config_file}`"

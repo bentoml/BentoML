@@ -166,9 +166,7 @@ def run_api_server_docker_container(image, config_file=None, timeout=60):
 
 
 @contextmanager
-def run_api_server(
-    bundle_path, workdir="./", config_file=None, dev_server=False, timeout=20
-):
+def run_api_server(bento, workdir="./", config_file=None, dev_server=False, timeout=20):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
@@ -185,10 +183,8 @@ def run_api_server(
 
         if port:
             cmd += ["--port", f"{port}"]
-
+        cmd += [bento]
         cmd += ["--working-dir", workdir]
-
-        cmd += [bundle_path]
 
     print(cmd)
 

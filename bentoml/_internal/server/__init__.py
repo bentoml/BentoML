@@ -5,8 +5,6 @@ import tempfile
 import time
 from typing import Optional
 
-from simple_di import skip
-
 from bentoml import load
 from bentoml._internal.configuration.containers import BentoMLContainer
 
@@ -19,12 +17,10 @@ def serve_development(
     port: Optional[int] = None,
     with_ngroxy: bool = False,
 ) -> None:
-    svc = load(bento_path_or_tag, working_dir=working_dir)
-    import psutil
+    if working_dir is not None:
+        working_dir = os.path.abspath(working_dir)
 
-    assert (
-        psutil.POSIX
-    ), "BentoML API Server production mode only supports POSIX platforms"
+    svc = load(bento_path_or_tag, working_dir=working_dir)
 
     from circus.arbiter import Arbiter
     from circus.util import DEFAULT_ENDPOINT_DEALER, DEFAULT_ENDPOINT_SUB
@@ -78,7 +74,11 @@ def serve_production(
     working_dir: Optional[str] = None,
     port: Optional[int] = None,
 ) -> None:
+    if working_dir is not None:
+        working_dir = os.path.abspath(working_dir)
+
     svc = load(bento_path_or_tag, working_dir=working_dir)
+
     import psutil
 
     assert (
@@ -151,6 +151,7 @@ def _start_dev_api_server(
     uvicorn.run(svc.asgi_app, port=port, log_level="info")
 
 
+'''
 def _start_prod_api_server(bento_path_or_tag: str, instance_id: int, runners_map: str):
     import uvicorn
 
@@ -170,3 +171,4 @@ def _start_prod_runner_server(
     runner = svc._runners.get(name)
 
     uvicorn.run(RunnerApp(runner), fd=fd, log_level="info")
+'''

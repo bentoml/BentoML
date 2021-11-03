@@ -106,30 +106,32 @@ class _BaseRunner:
         return []
 
     @abstractmethod
-    def _setup(self, **kwargs) -> None:
+    def _setup(self, **kwargs: t.Any) -> None:
         ...
 
     @inject
     def _impl_ref(
         self,
-        remote_runner_mapping=Provide[BentoServerContainer.remote_runner_mapping],
-    ):
+        remote_runner_mapping: t.Dict[str, int] = Provide[
+            BentoServerContainer.remote_runner_mapping
+        ],
+    ) -> "RunnerImpl":
         # TODO(jiang): cache impl
         if self.name in remote_runner_mapping:
             return RemoteRunner(self)
         else:
             return LocalRunner(self)
 
-    async def async_run(self, *args, **kwargs):
+    async def async_run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl_ref().async_run(*args, **kwargs)
 
-    async def async_run_batch(self, *args, **kwargs):
+    async def async_run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return await self._impl_ref().async_run_batch(*args, **kwargs)
 
-    def run(self, *args, **kwargs):
+    def run(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl_ref().run(*args, **kwargs)
 
-    def run_batch(self, *args, **kwargs):
+    def run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         return self._impl_ref().run_batch(*args, **kwargs)
 
 
@@ -169,7 +171,7 @@ class Runner(_BaseRunner, ABC):
     """
 
     @abstractmethod
-    def _run_batch(self: "_BaseRunner", *args, **kwargs) -> t.Any:
+    def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 
 

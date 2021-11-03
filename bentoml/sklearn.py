@@ -83,7 +83,7 @@ def save(
     model: _MT,
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
-    model_store: "ModelStore" = BentoMLContainer.model_store.get(),  # TODO(jiang): fix me
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> str:
     """
     Save a model instance to BentoML modelstore.
@@ -111,7 +111,7 @@ def save(
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:  # type: StoreCtx
+    ) as ctx:
         joblib.dump(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         return ctx.tag
 

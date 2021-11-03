@@ -7,6 +7,7 @@ from pathlib import Path
 
 import yaml
 from simple_di import Provide, inject
+from typing_extensions import Literal
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.environment.pip_pkg import packages_distributions, split_requirement

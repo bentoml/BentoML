@@ -132,9 +132,6 @@ class ServiceAppFactory(BaseAppFactory):
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
 
-    def setup(self) -> None:
-        self.bento_service.on_startup()
-
     async def index_view_func(
         self, request
     ) -> "Response":  # pylint: disable=unused-argument
@@ -226,20 +223,23 @@ class ServiceAppFactory(BaseAppFactory):
         return routes
 
     def middlewares(self) -> t.List["Middleware"]:
+        from starlette.middleware import Middleware
+
         middlewares = super().middlewares()
 
-        for middleware, options in self.bento_service._middlewares:
-            middlewares.append(middleware(**options))
+        for middleware_cls, options in self.bento_service._middlewares:
+            middlewares.append(Middleware(middleware_cls, **options))
 
         if self.enable_access_control:
             assert (
-                self.access_control_options.get("access_control_allow_origin")
-                is not None
+                self.access_control_options.get("allow_origins") is not None
             ), "To enable cors, access_control_allow_origin must be set"
 
             from starlette.middleware.cors import CORSMiddleware
 
-            middlewares.append(CORSMiddleware(**self.access_control_options))
+            middlewares.append(
+                Middleware(CORSMiddleware, **self.access_control_options)
+            )
 
         return middlewares
 
@@ -251,7 +251,7 @@ class ServiceAppFactory(BaseAppFactory):
             routes=self.routes(),
             middleware=self.middlewares(),
             on_shutdown=[self.bento_service._on_asgi_app_shutdown],
-            on_startup=[self.bento_service._on_asgi_app_startup],
+            on_startup=[self.bento_service._on_asgi_app_startup, self.mark_as_ready],
         )
 
         for mount_app, path, name in self.bento_service._mount_apps:

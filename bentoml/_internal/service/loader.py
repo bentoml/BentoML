@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import typing as t
+from typing import TYPE_CHECKING
 
 import yaml
 from simple_di import Provide, inject
@@ -11,7 +12,7 @@ from bentoml._internal.configuration.containers import BentoMLContainer
 from bentoml._internal.models.store import ModelStore
 from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from .service import Service
 
 logger = logging.getLogger(__name__)
@@ -128,6 +129,8 @@ def load_bento(
 
     # Use Bento's user project path as working directory when importing the service
     working_dir = os.path.join(bento_info.path, bento_config.name)
+    working_dir = os.path.abspath(working_dir)
+
     # Use Bento's local "{base_dir}/models/" directory as its model store
     model_store = ModelStore(os.path.join(bento_info.path, "models"))
 
@@ -144,6 +147,8 @@ def load(
         raise InvalidArgument("bentoml.load argument must be str type")
 
     if working_dir:
+        print(">>> ", working_dir)
+        working_dir = os.path.abspath(working_dir)
         return import_service(svc_import_path_or_bento_tag, working_dir)
 
     try:

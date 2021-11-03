@@ -4,6 +4,7 @@ import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
+from typing_extensions import Literal
 
 from ...exceptions import InvalidArgument
 from ..utils.lazy_loader import LazyLoader
@@ -195,7 +196,7 @@ class PandasDataFrame(IODescriptor):
     def from_sample(
         cls,
         sample_input: "pd.DataFrame",
-        orient: t.Literal[
+        orient: Literal[
             "dict", "list", "series", "split", "records", "index"
         ] = "records",
         apply_column_names: bool = True,

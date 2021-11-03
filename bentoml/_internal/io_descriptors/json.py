@@ -47,11 +47,6 @@ _SerializableObj = t.TypeVar(
 
 
 class DefaultJsonEncoder(json.JSONEncoder):
-
-    _orient: t.Literal[
-        "dict", "list", "series", "split", "records", "index"
-    ] = "records"
-
     def default(self, o: _SerializableObj) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
@@ -63,7 +58,10 @@ class DefaultJsonEncoder(json.JSONEncoder):
             return o.tolist()
 
         if any(isinstance(o, i) for i in [pd.DataFrame, pd.Series]):
-            return o.to_json(orient=self._orient)
+            raise BentoMLException(
+                f"Detected type to be {type(o)}. You should use `PandasDataFrame` instead of `JSON` for IO."
+                " If you still wish to use JSON, convert your DataFrame outputs to json with `df.to_json(orient=...)`"
+            )
 
         if pydantic and isinstance(o, pydantic.BaseModel):
             obj_dict = o.dict()
@@ -92,10 +90,10 @@ class JSON(IODescriptor):
 
         svc = bentoml.Service("iris-classifier", runners=[runner])
 
-        @svc.api(input=input_spec, output=JSON(orient='records'))
-        def predict(input_arr):
-            res = runner.run_batch(input_arr)
-            return {"res":pd.DataFrame(res)}
+        @svc.api(input=input_spec, output=JSON())
+        def predict(input_arr: pd.DataFrame):
+            res = runner.run_batch(input_arr)  # type: np.ndarray
+            return {"res":pd.DataFrame(res).to_json(orient='record')}
 
     Users then can then serve this service with `bentoml serve`::
         % bentoml serve ./sklearn_svc.py:svc --auto-reload

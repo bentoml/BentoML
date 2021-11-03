@@ -11,6 +11,8 @@ from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
+    import lightgbm as lgb
+
     from bentoml._internal.models.store import ModelInfo, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
@@ -37,6 +39,17 @@ def lightgbm_model() -> "lgb.baisc.Booster":
 
 
 @pytest.fixture()
+def lightgbm_sklearn_model() -> "lgb.LGBMClassifier":
+    data_x = np.array([[0] * 10] * 10)
+    data_y = np.array([0] * 10)
+
+    gbm = lgb.LGBMClassifier()
+    gbm.fit(data_x, data_y)
+
+    return gbm
+
+
+@pytest.fixture()
 def save_proc(
     lightgbm_model,
     modelstore: "ModelStore",
@@ -46,6 +59,24 @@ def save_proc(
             TEST_MODEL_NAME,
             lightgbm_model,
             booster_params=params,
+            metadata=metadata,
+            model_store=modelstore,
+        )
+        info = modelstore.get(tag)
+        return info
+
+    return _
+
+
+@pytest.fixture()
+def save_sklearn_proc(
+    lightgbm_sklearn_model,
+    modelstore: "ModelStore",
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
+    def _(metadata) -> "ModelInfo":
+        tag = bentoml.lightgbm.save(
+            TEST_MODEL_NAME,
+            lightgbm_sklearn_model,
             metadata=metadata,
             model_store=modelstore,
         )
@@ -104,3 +135,30 @@ def test_lightgbm_runner_setup_run_batch(modelstore, save_proc):
 
     assert runner.run_batch(np.array([[0]])) == np.array([0.0])
     assert isinstance(runner._model, lgb.basic.Booster)
+
+
+def test_lightgbm_sklearn_save_load(modelstore, save_sklearn_proc):
+    info = save_sklearn_proc(None)
+    assert_have_file_extension(info.path, ".pkl")
+
+    sklearn_loaded = bentoml.lightgbm.load(
+        info.tag,
+        model_store=modelstore,
+    )
+
+    assert isinstance(sklearn_loaded, lgb.LGBMClassifier)
+    assert sklearn_loaded.predict(np.array([[0] * 10] * 10)).any() == np.array([0])
+
+
+def test_lightgbm_sklearn_runner_setup_run_batch(modelstore, save_sklearn_proc):
+    info = save_sklearn_proc(None)
+    runner = bentoml.lightgbm.load_runner(
+        info.tag, infer_api_callback="predict_proba", model_store=modelstore
+    )
+
+    assert info.tag in runner.required_models
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
+    assert runner.num_replica == 1
+
+    assert runner.run_batch(np.array([[0] * 10] * 10))[0][0] == 0.999999999999999
+    assert isinstance(runner._model, lgb.LGBMClassifier)

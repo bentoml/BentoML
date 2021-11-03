@@ -149,7 +149,7 @@ def load(
         return paddle.inference.create_predictor(_config)
 
 
-def _internal_save(
+def _save(
     name: str,
     model: t.Union[str, "paddle.nn.Layer", "paddle.inference.Predictor"],
     version: t.Optional[str],
@@ -284,7 +284,7 @@ def save(
 
     Examples::
     """
-    return _internal_save(
+    return _save(
         name=name,
         model=model,
         input_spec=input_spec,
@@ -359,7 +359,7 @@ def import_from_paddlehub(
     """
     _name = model_name.split("/")[-1] if os.path.isdir(model_name) else model_name
 
-    return _internal_save(
+    return _save(
         name=_clean_name(_name) if not name else name,
         model=model_name,
         input_spec=None,

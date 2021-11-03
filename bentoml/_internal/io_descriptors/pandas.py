@@ -17,6 +17,11 @@ else:
 
 logger = logging.getLogger(__name__)
 
+try:
+    Literal = t.Literal
+except AttributeError:
+    from typing_extensions import Literal
+
 
 class PandasDataFrame(IODescriptor):
     """
@@ -106,7 +111,7 @@ class PandasDataFrame(IODescriptor):
 
     def __init__(
         self,
-        orient: t.Literal[
+        orient: Literal[
             "dict", "list", "series", "split", "records", "index"
         ] = "records",
         apply_column_names: bool = False,
@@ -334,7 +339,7 @@ class PandasSeries(PandasDataFrame):
 
     def __init__(
         self,
-        orient: t.Literal[
+        orient: Literal[
             "dict", "list", "series", "split", "records", "index"
         ] = "records",
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,

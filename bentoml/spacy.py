@@ -22,6 +22,11 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from spacy.tokens.doc import Doc
 
 try:
+    Literal = t.Literal
+except AttributeError:
+    from typing_extensions import Literal
+
+try:
     import spacy
     import spacy.cli
     from spacy.util import SimpleFrozenDict, SimpleFrozenList
@@ -51,12 +56,8 @@ if not _check_compat:  # pragma: no cover
         f" detected spacy to have version {spacy.__version__}"
     )
 
-try:  # pragma: no cover
-    import tensorflow
-    import torch
-except ImportError:  # pragma: no cover
-    torch = LazyLoader("torch", globals(), "torch")
-    tensorflow = LazyLoader("tensorflow", globals(), "tensorflow")
+torch = LazyLoader("torch", globals(), "torch")
+tensorflow = LazyLoader("tensorflow", globals(), "tensorflow")
 
 _TORCH_TF_WARNING = """\
 It is recommended that if you want to run SpaCy with {framework}
@@ -289,7 +290,7 @@ class _SpacyRunner(Runner):
         disable: t.Iterable[str],
         exclude: t.Iterable[str],
         config: t.Union[t.Dict[str, t.Any], "Config"],
-        backend_options: t.Optional[t.Literal["pytorch", "tensorflow"]] = "pytorch",
+        backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = "pytorch",
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         self._vocab = vocab
@@ -404,7 +405,7 @@ def load_runner(
     tag: str,
     *,
     gpu_device_id: t.Optional[int] = None,
-    backend_options: t.Optional[t.Literal["pytorch", "tensorflow"]] = None,
+    backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     vocab: t.Union["Vocab", bool] = True,

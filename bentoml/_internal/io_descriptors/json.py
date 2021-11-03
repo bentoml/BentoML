@@ -38,7 +38,11 @@ MIME_TYPE_JSON = "application/json"
 _SerializableObj = t.TypeVar(
     "_SerializableObj",
     bound=t.Union[
-        "np.generic", "ArrayLike", "pydantic.BaseModel", "pd.DataFrame", t.Any,
+        "np.generic",
+        "ArrayLike",
+        "pydantic.BaseModel",
+        "pd.DataFrame",
+        t.Any,
     ],
 )
 

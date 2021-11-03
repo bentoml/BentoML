@@ -5,12 +5,13 @@ import joblib
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE, TXT_EXT, PKL_EXT
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE, TXT_EXT
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
+    import lightgbm as lgb
     import numpy as np
     from _internal.models.store import ModelInfo, ModelStore
 
@@ -24,8 +25,14 @@ except ImportError:  # pragma: no cover
         """
     )
 
-sklearn_models = (lgb.LGBMModel, lgb.LGBMClassifier, lgb.LGBMRegressor, lgb.LGBMRanker)
-LightGBMModelType = t.TypeVar("LightGBMModelType", bound=t.Union[lgb.LGBMModel, lgb.LGBMClassifier, lgb.LGBMRegressor, lgb.LGBMRanker])
+_sklearn_models = (lgb.LGBMModel, lgb.LGBMClassifier, lgb.LGBMRegressor, lgb.LGBMRanker)
+_LightGBMModelType = t.TypeVar(
+    "LightGBMModelType",
+    bound=t.Union[
+        "lgb.LGBMModel", "lgb.LGBMClassifier", "lgb.LGBMRegressor", "lgb.LGBMRanker"
+    ],
+)
+
 
 def _get_model_info(
     tag: str,
@@ -56,7 +63,7 @@ def load(
     tag: str,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> LightGBMModelType:
+) -> t.Union["lgb.basic.Booster", _LightGBMModelType]:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -70,7 +77,7 @@ def load(
             BentoML modelstore, provided by DI Container.
 
     Returns:
-        an instance of `LightGBMModelType` or `lightgbm.basic.Booster` from BentoML modelstore.
+        an instance of `LightGBMModelType` or `"lgb.basic.Booster"` from BentoML modelstore.
 
     Examples:
         import bentoml.lightgbm
@@ -87,7 +94,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: t.Union[lgb.basic.Booster, LightGBMModelType],
+    model: t.Union["lgb.basic.Booster", _LightGBMModelType],
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
@@ -99,7 +106,7 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`t.Union[lgb.basic.Booster, LightGBMModelType]`):
+        model (`t.Union["lgb.basic.Booster", LightGBMModelType]`):
             Instance of model to be saved
         booster_params (`t.Dict[str, t.Union[str, int]]`):
             Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
@@ -159,7 +166,7 @@ def save(
         framework_context=context,
         metadata=metadata,
     ) as ctx:
-        if isinstance(model, sklearn_models):
+        if isinstance(model, _sklearn_models):
             joblib.dump(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         else:
             model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{TXT_EXT}"))
@@ -171,6 +178,7 @@ class _LightGBMRunner(Runner):
     def __init__(
         self,
         tag: str,
+        predict_fn_name: str,
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
@@ -185,6 +193,8 @@ class _LightGBMRunner(Runner):
         self._model_info = model_info
         self._model_file = model_file
         self._booster_params = booster_params
+        self._predict_fn_name = predict_fn_name
+        self._tag = tag
 
     @property
     def required_models(self) -> t.List[str]:
@@ -204,10 +214,12 @@ class _LightGBMRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        if os.path.splitext(self._model_file)[1] == PKL_EXT:
-            self._model = joblib.load(self._model_file)
-        else:
-            self._model = lgb.Booster(params=self._booster_params, model_file=self._model_file)
+        self._model = load(
+            tag=self._tag,
+            booster_params=self._booster_params,
+            model_store=self._model_store,
+        )
+        self._predict_fn_name = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _run_batch(self, input_data: "np.ndarray") -> "np.ndarray":
@@ -217,6 +229,7 @@ class _LightGBMRunner(Runner):
 @inject
 def load_runner(
     tag: str,
+    predict_fn_name: str = "predict",
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
@@ -230,7 +243,9 @@ def load_runner(
 
     Args:
         tag (`str`):
-            Model tag to retrieve model from modelstore
+            Model tag to retrieve model from modelstore.
+        predict_fn_name (`str`, default to `"predict"`):
+            Options for inference functions. Either model.predict() or model.predict_proba().
         booster_params (`t.Dict[str, t.Union[str, int]]`, default to `None`):
             Parameters for boosters. Refers to https://lightgbm.readthedocs.io/en/latest/Parameters.html
             for more information.
@@ -252,6 +267,7 @@ def load_runner(
     """  # noqa
     return _LightGBMRunner(
         tag=tag,
+        predict_fn_name=predict_fn_name,
         booster_params=booster_params,
         resource_quota=resource_quota,
         batch_options=batch_options,

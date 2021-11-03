@@ -15,7 +15,6 @@ from bentoml.exceptions import BentoMLException, InvalidArgument
 from ..configuration.containers import BentoMLContainer
 from ..types import PathType, Tag
 from ..utils import generate_new_version_id
-from ..utils.validation import validate_version_str
 
 if t.TYPE_CHECKING:
     from bentoml._internal.service import Service
@@ -46,8 +45,6 @@ class Bento:
         labels: t.Optional[t.Dict[str, str]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        validate_version_str(version)
-
         tag = Tag(svc.name, version)
 
         logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")

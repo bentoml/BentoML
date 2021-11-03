@@ -17,7 +17,6 @@ from ..configuration.containers import BentoMLContainer
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
 from ..utils import generate_new_version_id
-from ..utils.validation import validate_version_str
 
 if t.TYPE_CHECKING:
     from bentoml._internal.service import Service
@@ -47,7 +46,6 @@ class Bento(StoreItem):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         validate_version_str(version)
-
         tag = Tag(svc.name, version)
 
         logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")
@@ -71,6 +69,7 @@ class Bento(StoreItem):
 
             model_name, model_version = model_tag.split(":")
             target_path = os.path.join("models", model_name, model_version)
+            bento_fs.makedirs(target_path, recreate=True)
             copy_dir(fs.open_fs(model_info.path), "/", bento_fs, target_path)
 
         # Copy all files base on include and exclude, into `{svc.name}` directory

@@ -119,7 +119,7 @@ def build_api_server_docker_image(saved_bundle_path, image_tag="test_bentoml_ser
 
 
 @cached_contextmanager("{image.id}")
-def run_api_server_docker_container(image, config_file=None, timeout=60):
+def run_api_server_in_docker(image, config_file=None, timeout=60):
     """
     Launch a bentoml service container from a docker image, yields the host URL.
     """
@@ -166,10 +166,17 @@ def run_api_server_docker_container(image, config_file=None, timeout=60):
 
 
 @contextmanager
-def run_api_server(bento, workdir="./", config_file=None, dev_server=False, timeout=20):
+def run_api_server(
+    bento,
+    workdir=None,
+    config_file=None,
+    dev_server=False,
+    timeout=20,
+):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
+    workdir = workdir if workdir is not None else "./"
 
     serve_cmd = "serve"
 

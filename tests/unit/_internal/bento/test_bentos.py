@@ -36,7 +36,7 @@ def test_create_simplebento(tmpdir, change_test_dir):
             "dataset_version": "abc",
             "framework": "pytorch",
         },
-        bento_store=bento_store,
+        _bento_store=bento_store,
     )
 
     test_path = os.path.join(tmpdir)

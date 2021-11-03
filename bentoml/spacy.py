@@ -7,6 +7,7 @@ from pathlib import Path
 
 import yaml
 from simple_di import Provide, inject
+from typing_extensions import Literal
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.environment.pip_pkg import packages_distributions, split_requirement
@@ -289,7 +290,7 @@ class _SpacyRunner(Runner):
         disable: t.Iterable[str],
         exclude: t.Iterable[str],
         config: t.Union[t.Dict[str, t.Any], "Config"],
-        backend_options: t.Optional[t.Literal["pytorch", "tensorflow"]] = "pytorch",
+        backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = "pytorch",
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         self._vocab = vocab
@@ -404,7 +405,7 @@ def load_runner(
     tag: str,
     *,
     gpu_device_id: t.Optional[int] = None,
-    backend_options: t.Optional[t.Literal["pytorch", "tensorflow"]] = None,
+    backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     vocab: t.Union["Vocab", bool] = True,

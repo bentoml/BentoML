@@ -123,9 +123,6 @@ class JSON(IODescriptor):
         self,
         pydantic_model: t.Optional["pydantic.BaseModel"] = None,
         validate_json: bool = True,
-        orient: t.Literal[
-            "dict", "list", "series", "split", "records", "index"
-        ] = "records",
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
@@ -145,7 +142,6 @@ class JSON(IODescriptor):
 
         self._validate_json = validate_json
         self._json_encoder = json_encoder
-        setattr(self._json_encoder, "_orient", orient)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         return self.openapi_schema()

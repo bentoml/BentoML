@@ -17,7 +17,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from _internal.models.store import ModelInfo, ModelStore
 
 try:
-    import lightgbm as lgb
+    import lightgbm as lgb  # noqa: F811
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """lightgbm is required in order to use module `bentoml.lightgbm`, install

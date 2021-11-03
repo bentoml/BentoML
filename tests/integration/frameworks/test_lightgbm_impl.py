@@ -11,7 +11,7 @@ from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
-    import lightgbm as lgb
+    import lightgbm as lgb  # noqa: F81
 
     from bentoml._internal.models.store import ModelInfo, ModelStore
 
@@ -135,7 +135,6 @@ def test_lightgbm_runner_setup_run_batch(modelstore, save_proc):
 
     assert runner.run_batch(np.array([[0]])) == np.array([0.0])
     assert isinstance(runner._model, lgb.basic.Booster)
-
 
 
 def test_lightgbm_sklearn_save_load(modelstore, save_sklearn_proc):

@@ -143,7 +143,7 @@ class Bento(StoreItem):
     def creation_time(self) -> datetime.datetime:
         ...
 
-    def save(self, bento_store: "Store[Bento]" = Provide[BentoMLContainer.bento_store]):
+    def save(self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]):
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid")

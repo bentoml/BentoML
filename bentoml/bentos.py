@@ -101,7 +101,7 @@ from ._internal.service import load
 def list(
     tag: t.Optional[t.Union[Tag, str]] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> t.List[Tag]:
+) -> t.List[Bento]:
     return _bento_store.list(tag)
 
 
@@ -110,8 +110,7 @@ def get(
     tag: t.Union[Tag, str],
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
-    bento_fs = _bento_store.get(tag)
-    return Bento.from_fs(bento_fs)
+    return _bento_store.get(tag)
 
 
 def delete(

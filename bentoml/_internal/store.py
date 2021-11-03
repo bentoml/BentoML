@@ -6,16 +6,21 @@ from contextlib import contextmanager
 import fs
 from fs.base import FS
 
-from ..exceptions import BentoMLException
+from ..exceptions import BentoMLException, NotFound
 from .types import PathType, Tag
 
 T = t.TypeVar("T")
 
 
 class StoreItem(ABC):
+    @property
+    @abstractmethod
+    def tag(self) -> Tag:
+        ...
+
     @classmethod
     @abstractmethod
-    def from_fs(CLS: t.Type[T], tag: Tag, fs: FS) -> T:
+    def from_fs(cls: t.Type[T], tag: Tag, fs: FS) -> T:
         pass
 
     @abstractmethod
@@ -35,31 +40,31 @@ class Store(ABC, t.Generic[Item]):
     """
 
     fs: FS
-    _item_type: t.Type[StoreItem]
+    _item_type: t.Type[Item]
 
     @abstractmethod
-    def __init__(self, base_path: PathType, item_type: t.Type[StoreItem]):
+    def __init__(self, base_path: PathType, item_type: t.Type[Item]):
         self._item_type = item_type
         self.fs = fs.open_fs(str(base_path))
 
-    def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Tag]:
+    def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Item]:
         if not tag:
-            return sorted([ver for _d in self.fs.listdir("/") for ver in self.list(_d)])
+            return [ver for _d in sorted(self.fs.listdir("/")) for ver in self.list(_d)]
 
         _tag = Tag.from_taglike(tag)
         if _tag.version is None:
-            tags = [
-                Tag(_tag.name, f.name) for f in self.fs.scandir(_tag.name) if f.is_dir
-            ]
-            return sorted(tags)
+            tags = sorted(
+                [Tag(_tag.name, f.name) for f in self.fs.scandir(_tag.name) if f.is_dir]
+            )
+            return [self._get_item(t) for t in tags]
         else:
-            return [_tag] if self.fs.isdir(_tag.path()) else []
+            return [self._get_item(_tag)] if self.fs.isdir(_tag.path()) else []
 
     def _get_item(self, tag: Tag) -> Item:
         """
         Creates a new instance of Item that represents the item with tag `tag`.
         """
-        return self._item_type.from_fs(tag, self.fs.opendir(tag.path()))  # type: ignore
+        return self._item_type.from_fs(tag, self.fs.opendir(tag.path()))
 
     def get(self, tag: t.Union[Tag, str]) -> Item:
         """
@@ -72,8 +77,8 @@ class Store(ABC, t.Generic[Item]):
             _tag.version = self.fs.readtext(_tag.latest_path())
         path = _tag.path()
         if not self.fs.exists(path):
-            raise FileNotFoundError(
-                f"Item '{tag}' is not found in BentoML store {self.fs}."
+            raise NotFound(
+                f"{self._item_type.__name__} '{tag}' is not found in BentoML store {self.fs}."
             )
         return self._get_item(_tag)
 
@@ -104,8 +109,6 @@ class Store(ABC, t.Generic[Item]):
                 # if we've removed all versions, remove the directory
                 self.fs.removetree(_tag.name)
             else:
-                new_latest = sorted(
-                    versions, key=lambda tag: self._get_item(tag).creation_time()
-                )[0]
+                new_latest = sorted(versions, key=self._item_type.creation_time)[0]
                 # otherwise, update the latest version
-                self.fs.writetext(_tag.latest_path(), new_latest.name)
+                self.fs.writetext(_tag.latest_path(), new_latest.tag.name)

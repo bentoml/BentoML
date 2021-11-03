@@ -100,9 +100,9 @@ def import_service(
         # Import the service using the Bento's own model store
         BentoMLContainer.model_store.set(model_store)
         try:
-            module = importlib.import_module(module_name)
-        except Exception as e:
-            raise ImportServiceError(f'Could not import module "{module_name}": {e}')
+            module = importlib.import_module(module_name, package=working_dir)
+        except ImportError:
+            raise ImportServiceError(f'Could not import module "{module_name}"')
         finally:
             # Reset to default local model store
             BentoMLContainer.model_store.set(default_model_store)

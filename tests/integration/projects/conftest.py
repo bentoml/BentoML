@@ -8,7 +8,7 @@ import pytest
 from tests.integration.utils import (
     build_api_server_docker_image,
     run_api_server,
-    run_api_server_docker_container,
+    run_api_server_in_docker,
 )
 
 
@@ -53,7 +53,7 @@ def host(pytestconfig, clean_context):
         image = clean_context.enter_context(
             build_api_server_docker_image(test_svc_bundle, "example_service")
         )
-        with run_api_server_docker_container(
+        with run_api_server_in_docker(
             image,
             config_file=config_file,
         ) as host:

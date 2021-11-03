@@ -4,6 +4,7 @@ import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
+from typing_extensions import Literal
 
 from bentoml.exceptions import BadInput, InvalidArgument, MissingDependencyException
 
@@ -37,20 +38,14 @@ MIME_TYPE_JSON = "application/json"
 _SerializableObj = t.TypeVar(
     "_SerializableObj",
     bound=t.Union[
-        "np.generic",
-        "ArrayLike",
-        "pydantic.BaseModel",
-        "pd.DataFrame",
-        t.Any,
+        "np.generic", "ArrayLike", "pydantic.BaseModel", "pd.DataFrame", t.Any,
     ],
 )
 
 
 class DefaultJsonEncoder(json.JSONEncoder):
 
-    _orient: t.Literal[
-        "dict", "list", "series", "split", "records", "index"
-    ] = "records"
+    _orient: Literal["dict", "list", "series", "split", "records", "index"] = "records"
 
     def default(self, o: _SerializableObj) -> t.Any:
         if dataclasses.is_dataclass(o):
@@ -125,7 +120,7 @@ class JSON(IODescriptor):
         self,
         pydantic_model: t.Optional["pydantic.BaseModel"] = None,
         validate_json: bool = True,
-        orient: t.Literal[
+        orient: Literal[
             "dict", "list", "series", "split", "records", "index"
         ] = "records",
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,

@@ -105,7 +105,7 @@ def test_transformers_import_from_huggingface_hub(modelstore, kwargs):
 
 
 @pytest.mark.parametrize(
-    "kwargs, frameworks, tensors_type",
+    "kwargs, framework, tensors_type",
     [
         ({"from_tf": False, "keep_download_from_hub": True}, "pt", "pt"),
         ({"from_tf": True}, "tf", "tf"),

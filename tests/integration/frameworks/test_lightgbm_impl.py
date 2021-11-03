@@ -25,7 +25,7 @@ params = {
 
 
 @pytest.fixture()
-def lightgbm_model() -> "lgb.baisc.Booster":
+def lightgbm_model() -> "lgb.basic.Booster":
     data = lgb.Dataset(np.array([[0]]), label=np.array([0]))
     gbm = lgb.train(
         params,
@@ -96,11 +96,32 @@ def test_lightgbm_load_exc(wrong_module, exc, modelstore):
 
 def test_lightgbm_runner_setup_run_batch(modelstore, save_proc):
     info = save_proc(None)
-    runner = bentoml.lightgbm.load_runner(info.tag, model_store=modelstore)
 
+    runner = bentoml.lightgbm.load_runner(info.tag, model_store=modelstore)
     assert info.tag in runner.required_models
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
     assert runner.run_batch(np.array([[0]])) == np.array([0.0])
     assert isinstance(runner._model, lgb.basic.Booster)
+
+
+@pytest.mark.gpus
+def test_lightgbm_gpu_runner(modelstore, save_proc):
+    booster_params = {
+        "device": "gpu",
+        "gpu_platform_id": 0,
+        "gpu_device_id": 0,
+    }
+    info = save_proc(None)
+    runner = bentoml.lightgbm.load_runner(
+        info.tag,
+        booster_params=booster_params,
+        model_store=modelstore,
+        resource_quota={"gpus": 0},
+    )
+
+    assert runner.num_concurrency_per_replica == 1
+    assert runner.num_replica == 1
+    assert info.tag in runner.required_models
+    assert runner.resource_quota.on_gpu is True

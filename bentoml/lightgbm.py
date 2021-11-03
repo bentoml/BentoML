@@ -207,19 +207,25 @@ class _LightGBMRunner(Runner):
         self._booster_params = booster_params
         self._infer_api_callback = infer_api_callback
 
+    def _is_gpu(self):
+        try:
+            return "gpu" in self._booster_params["device"]
+        except KeyError:
+            return False
+
     @property
     def required_models(self) -> t.List[str]:
         return [self._model_info.tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        if self.resource_quota.on_gpu:
+        if self._is_gpu() and self.resource_quota.on_gpu:
             return 1
         return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        if self.resource_quota.on_gpu:
+        if self._is_gpu() and self.resource_quota.on_gpu:
             return len(self.resource_quota.gpus)
         return 1
 

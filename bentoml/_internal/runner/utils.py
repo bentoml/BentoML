@@ -108,7 +108,7 @@ class TypeRef:
         TypeRef("numpy", "ndarray") == TypeRef.from_instance(np.random.randint([2, 3]))
         """
         if isinstance(o, type):
-            o = self.from_type(type)
+            o = self.from_type(o)
 
         if isinstance(o, TypeRef):
             return self.module == o.module and self.qualname == o.qualname

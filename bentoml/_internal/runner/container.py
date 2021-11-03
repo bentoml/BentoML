@@ -30,7 +30,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         data: bytes,
         meta: t.Optional[t.Dict[str, t.Union[bool, int, float, str]]] = None,
     ) -> Payload:
-        return cls.create_payload(data, dict(meta or dict(), container=cls.__name__))
+        return Payload(data, dict(meta or dict(), container=cls.__name__))
 
     @classmethod
     @abc.abstractmethod
@@ -91,7 +91,8 @@ class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
     def batch_to_singles(cls, batch, batch_axis=0):
         import numpy as np
 
-        return np.split(batch, batch.shape[batch_axis], axis=batch_axis)
+        return [np.squeeze(arr, axis=batch_axis) for arr in
+                np.split(batch, batch.shape[batch_axis], axis=batch_axis)]
 
     @classmethod
     @inject

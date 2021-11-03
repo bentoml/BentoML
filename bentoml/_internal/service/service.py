@@ -1,3 +1,4 @@
+import logging
 import sys
 import typing as t
 from typing import TYPE_CHECKING
@@ -15,6 +16,8 @@ if TYPE_CHECKING:
     from starlette.types import ASGIApp
 
 _WSGI_APP = t.TypeVar("_WSGI_APP")
+
+logger = logging.getLogger(__name__)
 
 
 class Service:
@@ -104,7 +107,7 @@ class Service:
 
         if api.name in self._apis:
             raise BentoMLException(
-                f"API {name} is already defined in Service {self.name}"
+                f"API {api.name} is already defined in Service {self.name}"
             )
         self._apis[api.name] = api
 

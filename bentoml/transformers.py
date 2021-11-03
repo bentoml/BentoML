@@ -39,7 +39,6 @@ if t.TYPE_CHECKING:  # pragma: no cover # noqa
     from ._internal.models.store import ModelStore, StoreCtx
 try:
     import transformers
-    from huggingface_hub import HfFolder
     from transformers import AutoConfig, AutoTokenizer, Pipeline
     from transformers.file_utils import (
         CONFIG_NAME,
@@ -57,6 +56,16 @@ except ImportError:  # pragma: no cover
         Instruction: Install transformers with `pip install transformers`.
         """
     )
+
+try:
+    from huggingface_hub import HfFolder
+except ImportError:
+    HfFolder = None
+
+_hfhub_exc = """\
+`huggingface_hub` is required to use `bentoml.transformers.import_from_huggingface_hub()`.
+Instruction: `pip install huggingface_hub`
+"""
 
 _PV = t.TypeVar("_PV")
 _ModelType = t.TypeVar(
@@ -187,7 +196,7 @@ def load(
 ) -> t.Tuple[
     "PretrainedConfig",
     t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
-    t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"],
+    t.Optional[t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]],
 ]:
     """
     Load a model from BentoML local modelstore with given name.
@@ -262,6 +271,8 @@ def _download_from_hub(
     """
     Modification of https://github.com/huggingface/transformers/blob/master/src/transformers/file_utils.py
     """
+    if HfFolder is None:
+        raise BentoMLException(_hfhub_exc)
     headers = {"user-agent": http_user_agent(user_agent)}
     if isinstance(use_auth_token, str):
         headers["authorization"] = f"Bearer {use_auth_token}"
@@ -370,7 +381,7 @@ def _download_from_hub(
         json.dump(meta, meta_file)
 
 
-def _save(
+def _internal_save(
     name: str,
     *,
     model_identifier: t.Union[str, _ModelType, "Pipeline"],
@@ -584,7 +595,7 @@ def save(
             " please use `import_from_huggingface_hub` instead. `save` should"
             " only be used for saving custom pretrained model and tokenizer"
         )
-    return _save(
+    return _internal_save(
         name=name,
         model_identifier=model,
         tokenizer=tokenizer,
@@ -599,7 +610,7 @@ def save(
 def import_from_huggingface_hub(
     name: str,
     *,
-    save_namespace: t.Union[str, None] = None,
+    save_namespace: t.Optional[str] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     keep_download_from_hub: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -619,6 +630,8 @@ def import_from_huggingface_hub(
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
+        keep_download_from_hub (`bool`, `optional`, default to `False`):
+            Whether to re-download pretrained model from hub.
         from_tf (:obj:`bool`, `Optional`, defaults to :obj:`False`):
             Load the model weights from a TensorFlow checkpoint save file
         from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
@@ -659,7 +672,7 @@ def import_from_huggingface_hub(
         tag = bentoml.transformers.import_from_huggingface_hub("gpt2", from_tf=True)
     """
     save_namespace = _clean_name(name) if save_namespace is None else save_namespace
-    return _save(
+    return _internal_save(
         name=save_namespace,
         model_identifier=name,
         tokenizer=None,

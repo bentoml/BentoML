@@ -15,6 +15,26 @@ async def test_api_server_meta(host: str, assert_request: t.Callable) -> None:
     await assert_request("GET", f"http://{host}/readyz")
 
 
+@pytest.mark.asyncio
+async def test_cors(host, assert_request):
+    ORIGIN = "http://bentoml.ai"
+
+    def has_cors_headers(headers: t.Dict) -> bool:
+        assert headers["Access-Control-Allow-Origin"] in ("*", ORIGIN)
+        assert "Content-Length" in headers.get("Access-Control-Expose-Headers", [])
+        assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
+        return True
+
+    await assert_request(
+        "POST",
+        f"http://{host}/echo_json",
+        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
+        data='"hi"',
+        assert_status=200,
+        assert_headers=has_cors_headers,
+    )
+
+
 """
 @pytest.since_bentoml_version("0.11.0+0")
 @pytest.mark.asyncio
@@ -86,23 +106,3 @@ async def test_api_server_metrics(host, metrics):
         assert_data=lambda d: metrics in d.decode(),
     )
 """
-
-
-@pytest.mark.asyncio
-async def test_cors(host, assert_request):
-    ORIGIN = "http://bentoml.ai"
-
-    def has_cors_headers(headers: t.Dict) -> bool:
-        assert headers["Access-Control-Allow-Origin"] in ("*", ORIGIN)
-        assert "Content-Length" in headers.get("Access-Control-Expose-Headers", [])
-        assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
-        return True
-
-    await assert_request(
-        "POST",
-        f"http://{host}/echo_json",
-        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
-        data='"hi"',
-        assert_status=200,
-        assert_headers=has_cors_headers,
-    )

@@ -21,7 +21,7 @@ def add_serve_command(cli) -> None:
     )
     @click.option(
         "--production",
-        type=click.Path(),
+        type=click.BOOL,
         help="Run the BentoServer in production mode",
         is_flag=True,
         default=False,

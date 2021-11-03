@@ -56,7 +56,7 @@ def _wait_until_api_server_ready(host_url, timeout, container=None, check_interv
     ex = None
     while time.time() - start_time < timeout:
         try:
-            if opener.open(f"http://{host_url}/healthz", timeout=1).status == 200:
+            if opener.open(f"http://{host_url}/readyz", timeout=1).status == 200:
                 return
             elif container and container.status != "running":
                 break
@@ -166,23 +166,27 @@ def run_api_server_docker_container(image, config_file=None, timeout=60):
 
 
 @contextmanager
-def run_api_server(bundle_path, config_file=None, dev_server=False, timeout=20):
+def run_api_server(bento, workdir="./", config_file=None, dev_server=False, timeout=20):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.
     """
 
-    if dev_server:
-        serve_cmd = "serve"
-    else:
-        serve_cmd = "serve-gunicorn"
+    serve_cmd = "serve"
 
     my_env = os.environ.copy()
 
-    with bentoml.utils.reserve_free_port() as port:
+    with bentoml._internal.utils.reserve_free_port() as port:
         cmd = [sys.executable, "-m", "bentoml", serve_cmd]
+
+        if not dev_server:
+            cmd += ["--production"]
+
         if port:
             cmd += ["--port", f"{port}"]
-        cmd += [bundle_path]
+        cmd += [bento]
+        cmd += ["--working-dir", workdir]
+
+    print(cmd)
 
     def print_log(p):
         try:

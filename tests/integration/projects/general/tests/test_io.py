@@ -17,6 +17,24 @@ async def test_json(host, assert_request):
     )
 
 
+@pytest.mark.asyncio
+async def test_pandas(host, assert_request):
+    import pandas as pd
+
+    ORIGIN = "http://bentoml.ai"
+
+    df = pd.DataFrame([[101]], columns=["col1"])
+
+    await assert_request(
+        "POST",
+        f"http://{host}/predict_dataframe",
+        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
+        data=df.to_json(orient="records"),
+        assert_status=200,
+        assert_data=b'[202]',
+    )
+
+
 """
 @pytest.fixture(params=pytest.DF_AUTO_ORIENTS)
 def df_orient(request):

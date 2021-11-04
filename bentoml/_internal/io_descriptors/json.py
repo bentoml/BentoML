@@ -125,7 +125,7 @@ class JSON(IODescriptor):
         pydantic_model: t.Optional["pydantic.BaseModel"] = None,
         validate_json: bool = True,
         orient: Literal[
-            "dict", "list", "series", "split", "records", "index"
+            'split', 'records', 'index', 'columns', 'values', 'table'
         ] = "records",
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):

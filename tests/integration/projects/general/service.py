@@ -35,17 +35,11 @@ class PickleModel:
     def predict_ndarray(self, input_arr: np.ndarray) -> np.ndarray:
         return input_arr * 2
 
-    def predict_dataframe(self, df: np.ndarray) -> np.ndarray:
-        return df[:, 0] * 2
-
-
-'''
-    def predict_dataframe(self, df: pd.DataFrame) -> pd.Series:
+    def predict_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         assert isinstance(df, pd.DataFrame)
-        output = df["col1"] * 2
-        assert isinstance(output, pd.Series)
+        output = df[["col1"]] * 2
+        assert isinstance(output, pd.DataFrame)
         return output
-'''
 
 
 bentoml.sklearn.save("sk_model", PickleModel())
@@ -84,8 +78,9 @@ def predict_array(json_obj: JSONSerializable) -> JSONSerializable:
 )
 def predict_dataframe(df):
     assert df["col1"].dtype == np.int64
-    output = dataframe_pred_runner.run(df.to_numpy())
-    return pd.Series(output)
+    output = dataframe_pred_runner.run(df)
+    assert isinstance(output, pd.Series)
+    return output
 
 
 """

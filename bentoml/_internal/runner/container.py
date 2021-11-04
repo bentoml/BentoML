@@ -16,6 +16,7 @@ IndexType = t.Union[None, int]
 
 if TYPE_CHECKING:
     import numpy as np
+    import pandas as pd
 
 
 class Payload(t.NamedTuple):
@@ -131,6 +132,74 @@ class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
     payload_to_batch = payload_to_single
 
 
+class PandasDataFrameContainer(
+    DataContainer[t.Union["pd.DataFrame", "pd.Series"], "pd.DataFrame"]
+):
+    @classmethod
+    def singles_to_batch(
+        cls, singles: t.Sequence[t.Union["pd.DataFrame", "pd.Series"]], batch_axis=0
+    ) -> "pd.DataFrame":
+        import pandas as pd
+
+        assert batch_axis == 0, "PandasDataFrameContainer requires batch_axis = 0"
+
+        # here we assume each member of singles has the same type/shape
+        head = singles[0]
+        if isinstance(head, pd.DataFrame):
+            # DataFrame single type should only have one row
+            assert (
+                len(head) == 1
+            ), "SingleType of PandasDataFrameContainer should have only one row"
+            return pd.concat(singles)
+
+        # pd.Series
+        return pd.concat(singles, axis=1).T
+
+    @classmethod
+    def batch_to_singles(
+        cls, batch: "pd.DataFrame", batch_axis=0
+    ) -> t.List["pd.Series"]:
+
+        assert batch_axis == 0, "PandasDataFrameContainer requires batch_axis = 0"
+
+        sers = [row for _, row in batch.iterrows()]
+        return sers
+
+    @classmethod
+    @inject
+    def single_to_payload(
+        cls,
+        single_data,
+        plasma_db=Provide[BentoServerContainer.plasma_db],
+    ) -> Payload:
+        if plasma_db:
+            return cls.create_payload(
+                plasma_db.put(single_data).binary(),
+                {"plasma": True},
+            )
+
+        return cls.create_payload(
+            cloudpickle.dumps(single_data),
+            {"plasma": False},
+        )
+
+    @classmethod
+    @inject
+    def payload_to_single(
+        cls, payload: Payload, plasma_db=Provide[BentoServerContainer.plasma_db]
+    ):
+        if payload.meta.get("plasma"):
+            import pyarrow.plasma as plasma
+
+            assert plasma_db
+            return plasma_db.get(plasma.ObjectID(payload.data))
+
+        return cloudpickle.loads(payload.data)
+
+    batch_to_payload = single_to_payload
+    payload_to_batch = payload_to_single
+
+
 class DefaultContainer(DataContainer[t.Any, t.List[t.Any]]):
     @classmethod
     def singles_to_batch(cls, singles, batch_axis=0):
@@ -199,6 +268,18 @@ def register_builtin_containers():
         TypeRef("numpy", "ndarray"), TypeRef("numpy", "ndarray"), NdarrayContainer
     )
     # DataContainerRegistry.register_container(np.ndarray, np.ndarray, NdarrayContainer)
+
+    DataContainerRegistry.register_container(
+        TypeRef("pandas.core.series", "Series"),
+        TypeRef("pandas.core.frame", "DataFrame"),
+        PandasDataFrameContainer,
+    )
+
+    DataContainerRegistry.register_container(
+        TypeRef("pandas.core.frame", "DataFrame"),
+        TypeRef("pandas.core.frame", "DataFrame"),
+        PandasDataFrameContainer,
+    )
 
 
 register_builtin_containers()

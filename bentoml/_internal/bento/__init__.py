@@ -1,3 +1,3 @@
-from .bento import Bento
+from .bento import Bento, BentoStore
 
-__all__ = ["Bento"]
+__all__ = ["Bento", "BentoStore"]

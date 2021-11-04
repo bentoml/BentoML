@@ -1,13 +1,13 @@
 import os
 
 import bentoml
-from bentoml._internal.store import Store
+from bentoml._internal.bento import BentoStore
 
 SYSTEM_HOME = os.path.expanduser("~")
 
 
 def test_create_simplebento(tmpdir, change_test_dir):
-    bento_store = Store(tmpdir)
+    bento_store = BentoStore(tmpdir)
     os.chdir("simplebento")
     from .simplebento.simplebento import svc
 

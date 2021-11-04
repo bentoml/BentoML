@@ -85,7 +85,7 @@ import fs
 from fs.mirror import mirror
 from simple_di import Provide, inject
 
-from ._internal.bento import Bento
+from ._internal.bento import Bento, BentoStore
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.types import Tag
 from ._internal.utils import generate_new_version_id
@@ -93,7 +93,6 @@ from ._internal.utils import generate_new_version_id
 if t.TYPE_CHECKING:
     from ._internal.models.store import ModelStore
     from ._internal.service import Service
-    from ._internal.store import Store
 
 from ._internal.service import load
 
@@ -101,37 +100,32 @@ from ._internal.service import load
 @inject
 def list(
     tag: t.Optional[t.Union[Tag, str]] = None,
-    _bento_store: "Store" = Provide[BentoMLContainer.bento_store],
-) -> t.List[Tag]:
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+) -> t.List[Bento]:
     return _bento_store.list(tag)
 
 
 @inject
 def get(
     tag: t.Union[Tag, str],
-    _bento_store: "Store" = Provide[BentoMLContainer.bento_store],
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> Bento:
-    bento_fs = _bento_store.get(tag)
-    return Bento.import_from_fs(bento_fs)
+    return _bento_store.get(tag)
 
 
 def delete(
     tag: t.Union[Tag, str],
-    _bento_store: "Store" = Provide[BentoMLContainer.bento_store],
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ):
     _bento_store.delete(tag)
 
 
 def import_bento(path: str) -> Bento:
-    return Bento.import_from_fs(fs.open_fs(path))
+    return Bento.from_fs(fs.open_fs(path))
 
 
 def export_bento(bento: Bento, path: str):
     mirror(bento.fs, fs.open_fs(path), copy_if_newer=False)
-    pass
-
-
-def load_runner(tag: t.Union[Tag, str]) -> ...:
     pass
 
 
@@ -145,7 +139,7 @@ def build(
     exclude: t.Optional[t.List[str]] = None,
     env: t.Optional[t.Dict[str, t.Any]] = None,
     labels: t.Optional[t.Dict[str, str]] = None,
-    _bento_store: "Store" = Provide[BentoMLContainer.bento_store],
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Bento:
     """

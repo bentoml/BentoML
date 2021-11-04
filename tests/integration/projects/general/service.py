@@ -5,14 +5,14 @@ import pandas as pd
 
 import bentoml
 import bentoml.sklearn
-from bentoml._internal.types import FileLike, JSONSerializable
+from bentoml._internal.io_descriptors.pandas import PandasDataFrame, PandasSeries
+from bentoml._internal.types import JSONSerializable
 from bentoml.io import JSON
 
 
 class PickleModel:
     """
-    def predict_dataframe(self, df):
-        return df["col1"] * 2
+
     def predict_image(self, input_datas: t.List[np.ndarray]) -> t.List[np.ndarray]:
         return [input_data.shape for input_data in input_datas]
 
@@ -35,6 +35,18 @@ class PickleModel:
     def predict_ndarray(self, input_arr: np.ndarray) -> np.ndarray:
         return input_arr * 2
 
+    def predict_dataframe(self, df: np.ndarray) -> np.ndarray:
+        return df[:, 0] * 2
+
+
+'''
+    def predict_dataframe(self, df: pd.DataFrame) -> pd.Series:
+        assert isinstance(df, pd.DataFrame)
+        output = df["col1"] * 2
+        assert isinstance(output, pd.Series)
+        return output
+'''
+
 
 bentoml.sklearn.save("sk_model", PickleModel())
 
@@ -43,8 +55,15 @@ json_pred_runner = bentoml.sklearn.load_runner("sk_model", function_name="echo_j
 ndarray_pred_runner = bentoml.sklearn.load_runner(
     "sk_model", function_name="predict_ndarray"
 )
+dataframe_pred_runner = bentoml.sklearn.load_runner(
+    "sk_model", function_name="predict_dataframe"
+)
 
-svc = bentoml.Service(name="general", runners=[json_pred_runner, ndarray_pred_runner])
+
+svc = bentoml.Service(
+    name="general",
+    runners=[json_pred_runner, ndarray_pred_runner, dataframe_pred_runner],
+)
 
 
 @svc.api(input=JSON(), output=JSON())
@@ -57,6 +76,16 @@ def predict_array(json_obj: JSONSerializable) -> JSONSerializable:
     array = np.array(json_obj)
     array_out = json_pred_runner.run(array)
     return array_out.tolist()
+
+
+@svc.api(
+    input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
+    output=PandasSeries(),
+)
+def predict_dataframe(df):
+    assert df["col1"].dtype == np.int64
+    output = dataframe_pred_runner.run(df.to_numpy())
+    return pd.Series(output)
 
 
 """

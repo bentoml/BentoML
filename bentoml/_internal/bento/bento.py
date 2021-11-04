@@ -45,7 +45,6 @@ class Bento(StoreItem):
         labels: t.Optional[t.Dict[str, str]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
-        validate_version_str(version)
         tag = Tag(svc.name, version)
 
         logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")

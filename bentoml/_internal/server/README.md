@@ -23,7 +23,12 @@ async def classify(input_json):
 app = svc.asgi_app
 ```
 
-Run the BentoServer with `uvicorn`:
+Run the BentoServer:
+```bash
+bentoml serve hello:app --reload
+```
+
+Alternatively, run the BentoServer directly with `uvicorn`:
 ```bash
 uvicorn hello:app --reload
 ```

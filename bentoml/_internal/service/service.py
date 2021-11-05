@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from starlette.middleware import Middleware
     from starlette.types import ASGIApp
 
-WSGI_APP = t.NewType("WSGI_APP", object)
+WSGI_APP = t.Callable[[t.Callable, t.Mapping[str, t.Any]], t.Iterable[bytes]]
 
 logger = logging.getLogger(__name__)
 

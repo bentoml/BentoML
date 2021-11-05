@@ -23,11 +23,6 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from spacy.tokens.doc import Doc
 
 try:
-    Literal = t.Literal
-except AttributeError:
-    from typing_extensions import Literal
-
-try:
     import spacy
     import spacy.cli
     from spacy.util import SimpleFrozenDict, SimpleFrozenList

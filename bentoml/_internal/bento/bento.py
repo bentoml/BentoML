@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import typing as t
@@ -13,28 +14,26 @@ from simple_di import Provide, inject
 from bentoml.exceptions import BentoMLException, InvalidArgument
 
 from ..configuration.containers import BentoMLContainer
+from ..store import Store, StoreItem
 from ..types import PathType, Tag
 from ..utils import generate_new_version_id
-from ..utils.validation import validate_version_str
 
 if t.TYPE_CHECKING:
     from bentoml._internal.service import Service
 
     from ..models.store import ModelStore
-    from ..store import Store
 
 logger = logging.getLogger(__name__)
 
 
 @attr.define
-class Bento:
+class Bento(StoreItem):
     tag: Tag
     fs: FS
 
-    @classmethod
+    @staticmethod
     @inject
     def create(
-        cls,
         svc: "Service",
         build_ctx: PathType,
         models: t.List[str],
@@ -45,9 +44,7 @@ class Bento:
         env: t.Optional[t.Dict[str, t.Any]],
         labels: t.Optional[t.Dict[str, str]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ):
-        validate_version_str(version)
-
+    ) -> "Bento":
         tag = Tag(svc.name, version)
 
         logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")
@@ -71,6 +68,7 @@ class Bento:
 
             model_name, model_version = model_tag.split(":")
             target_path = os.path.join("models", model_name, model_version)
+            bento_fs.makedirs(target_path, recreate=True)
             copy_dir(fs.open_fs(model_info.path), "/", bento_fs, target_path)
 
         # Copy all files base on include and exclude, into `{svc.name}` directory
@@ -131,16 +129,19 @@ class Bento:
         with bento_fs.open("bento.yaml", "w") as bento_yaml:  # noqa: F841
             pass
 
-        return cls(tag, bento_fs)
+        return Bento(tag, bento_fs)
 
     @classmethod
-    def import_from_fs(cls, bento_fs: FS) -> "Bento":
+    def from_fs(cls, bento_fs: FS) -> "Bento":
         # TODO
         with bento_fs.open("bento.yaml", "r") as bento_yaml:  # noqa: F841
             pass
         return cls(Tag("TODO", None), bento_fs)
 
-    def save(self, bento_store: "Store" = Provide[BentoMLContainer.bento_store]):
+    def creation_time(self) -> datetime.datetime:
+        ...
+
+    def save(self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]):
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid")
@@ -153,3 +154,8 @@ class Bento:
 
     def validate(self):
         return self.fs.isfile("bento.yaml")
+
+
+class BentoStore(Store[Bento]):
+    def __init__(self, base_path: PathType):
+        super().__init__(base_path, Bento)

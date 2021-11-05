@@ -33,6 +33,8 @@ install_requires = [
     'typing_extensions >= 3.7.4',
     'aiofiles',
     "fs",
+    "circus",
+    "uvicorn",
 ]
 
 model_server_optional = [

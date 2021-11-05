@@ -13,7 +13,7 @@ import fs
 from bentoml.exceptions import BentoMLException
 
 from .utils.dataclasses import json_serializer
-from .utils.validation import validate_tag_name_str, validate_version_str
+from .utils.validation import validate_tag_str
 
 logger = logging.getLogger(__name__)
 
@@ -39,16 +39,24 @@ class Tag:
         if name != lname:
             logger.warning(f"converting {name} to lowercase: {lname}")
 
-        validate_tag_name_str(lname)
+        validate_tag_str(lname)
 
         if version is not None:
-            validate_version_str(version)
+            validate_tag_str(version)
 
         self.name = lname
         self.version = version
 
     def __str__(self):
-        return f"{self.name}:{self.version}"
+        if self.version is None:
+            return self.name
+        else:
+            return f"{self.name}:{self.version}"
+
+    def __lt__(self, other):
+        if self.name == other.name:
+            return self.version < other.version
+        return self.name < other.name
 
     @classmethod
     def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":
@@ -78,6 +86,9 @@ class Tag:
         if self.version is None:
             return self.name
         return fs.path.combine(self.name, self.version)
+
+    def latest_path(self) -> str:
+        return fs.path.combine(self.name, "latest")
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

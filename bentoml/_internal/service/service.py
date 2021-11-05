@@ -4,7 +4,7 @@ import typing as t
 from typing import TYPE_CHECKING
 
 from bentoml._internal.io_descriptors import IODescriptor
-from bentoml._internal.utils.validation import validate_tag_name_str
+from bentoml._internal.utils.validation import validate_tag_str
 from bentoml.exceptions import BentoMLException
 
 from ..runner import Runner
@@ -48,7 +48,7 @@ class Service:
             logger.warning(f"converting {name} to lowercase: {lname}")
 
         # Service name must be a valid dns1123 subdomain string
-        validate_tag_name_str(lname)
+        validate_tag_str(lname)
         self.name = lname
 
         if runners is not None:

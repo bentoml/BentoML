@@ -6,7 +6,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from typing_extensions import Literal
 
-from ...exceptions import InvalidArgument
+from ...exceptions import BadInput, InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
@@ -113,7 +113,7 @@ class PandasDataFrame(IODescriptor):
     def __init__(
         self,
         orient: Literal[
-            "dict", "list", "series", "split", "records", "index"
+            'split', 'records', 'index', 'columns', 'values', 'table'
         ] = "records",
         apply_column_names: bool = False,
         columns: t.Optional[t.List[str]] = None,
@@ -156,21 +156,29 @@ class PandasDataFrame(IODescriptor):
                 )
             # TODO(jiang): check dtype
         res = pd.read_json(obj, dtype=self._dtype, orient=self._orient)
+        assert isinstance(res, pd.DataFrame)
+
         if self._apply_column_names:
             if self._columns is None:
                 logger.warning(
                     "`columns` is None or undefined, while `apply_column_names`=True"
                 )
+            elif len(self._columns) == res.shepe[1]:
+                raise BadInput(
+                    "length of `columns` does not match the columns of incoming data"
+                )
             else:
-                res.column = self._columns
+                res.columns = pd.Index(self._columns)
         if self._enforce_shape:
             if self._shape is None:
                 logger.warning(
                     "`shape` is None or undefined, while `enforce_shape`=True"
                 )
             else:
-                assert (
-                    self._shape[1] == res.shape[1]
+                assert all(
+                    l == r
+                    for l, r in zip(self._shape, res.shape)
+                    if l != -1 and r != -1
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
@@ -197,7 +205,7 @@ class PandasDataFrame(IODescriptor):
         cls,
         sample_input: "pd.DataFrame",
         orient: Literal[
-            "dict", "list", "series", "split", "records", "index"
+            'split', 'records', 'index', 'columns', 'values', 'table'
         ] = "records",
         apply_column_names: bool = True,
         enforce_shape: bool = True,
@@ -340,9 +348,7 @@ class PandasSeries(PandasDataFrame):
 
     def __init__(
         self,
-        orient: Literal[
-            "dict", "list", "series", "split", "records", "index"
-        ] = "records",
+        orient: Literal['split', 'records', 'index', 'table'] = "records",
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
@@ -370,23 +376,29 @@ class PandasSeries(PandasDataFrame):
             a `pd.Series` object. This can then be used
              inside users defined logics.
         """
-        obj = await request.json()
+        obj = await request.body()
         if self._enforce_dtype:
             if self._dtype is None:
                 logger.warning(
                     "`dtype` is None or undefined, while `enforce_dtype`=True"
                 )
-        res = pd.read_json(obj, typ="series", orient=self._orient)
+
+        # TODO(jiang): check dtypes when enforce_dtype is set
+        res = pd.read_json(obj, typ="series", orient=self._orient, dtype=self._dtype)
+        assert isinstance(res, pd.Series)
+
         if self._enforce_shape:
             if self._shape is None:
                 logger.warning(
                     "`shape` is None or undefined, while `enforce_shape`=True"
                 )
             else:
-                assert (
-                    self._shape == res.shape
+                assert all(
+                    l == r
+                    for l, r in zip(self._shape, res.shape)
+                    if l != -1 and r != -1
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
-        return pd.Series(res, dtype=self._dtype)
+        return res
 
     async def to_http_response(self, obj: "pd.Series") -> Response:
         """

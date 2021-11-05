@@ -118,6 +118,9 @@ class TypeRef:
     def __hash__(self) -> int:
         return hash(f"{self.module}.{self.qualname}")
 
+    def __repr__(self) -> str:
+        return f'TypeRef("{self.module}", "{self.qualname}")'
+
 
 def _cpu_converter(cpu: t.Union[int, float, str]) -> float:
     if isinstance(cpu, (int, float)):

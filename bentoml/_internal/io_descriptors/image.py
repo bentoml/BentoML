@@ -1,6 +1,7 @@
 import io
 import typing as t
 
+from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import StreamingResponse
 
@@ -89,8 +90,8 @@ class Image(IODescriptor):
         """Returns OpenAPI schema for outcoming responses"""
 
     async def from_http_request(self, request: Request) -> "PIL.Image":
-        content_type = request.headers["content-type"].split(";")[0]
-        if content_type != "multipart/form-data":
+        content_type, _ = parse_options_header(request.headers["content-type"])
+        if content_type.decode("utf-8") != "multipart/form-data":
             raise BentoMLException(
                 f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
             )

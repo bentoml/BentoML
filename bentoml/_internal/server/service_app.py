@@ -276,7 +276,7 @@ class ServiceAppFactory(BaseAppFactory):
             try:
                 input_data = await api.input.from_http_request(request)
                 if asyncio.iscoroutinefunction(api.func):
-                    output = await api.func(input_data)
+                    output = await api.func(*input_data)
                 else:
                     output = await run_in_threadpool(api.func, input_data)
                 response = await api.output.to_http_response(output)

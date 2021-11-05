@@ -255,12 +255,91 @@ class PandasDataFrame(IODescriptor):
         )
 
 
-_repl = {"PandasDataFrame": "PandasSeries", "DataFrame": "Series"}
-_rgx = re.compile("|".join(dict((re.escape(k), v) for k, v in _repl.items()).keys()))
-
-
 class PandasSeries(PandasDataFrame):
-    __doc__ = _rgx.sub(lambda m: _repl[re.escape(m.group(0))], PandasDataFrame.__doc__)
+    """
+    `PandasSeries` defines API specification for the inputs/outputs of a Service, where either inputs will be
+    converted to or outputs will be converted from type `numpy.ndarray` as specified in your API function signature.
+
+    .. Toy implementation of a sklearn service::
+        # sklearn_svc.py
+        import bentoml
+        import pandas as pd
+        import numpy as np
+        from bentoml.io import PandasSeries
+        import bentoml.sklearn
+
+        input_spec = PandasSeries.from_sample(pd.Series(np.array([[5,4,3,2]])))
+
+        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
+
+        svc = bentoml.Service("iris-classifier", runners=[runner])
+
+        @svc.api(input=input_spec, output=PandasSeries())
+        def predict(input_arr):
+            res = runner.run_batch(input_arr)  # type: np.ndarray
+            return pd.Series(res)
+
+    Users then can then serve this service with `bentoml serve`::
+        % bentoml serve ./sklearn_svc.py:svc --auto-reload
+
+        (Press CTRL+C to quit)
+        [INFO] Starting BentoML API server in development mode with auto-reload enabled
+        [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
+        [INFO] API Server running on http://0.0.0.0:5000
+
+    Users can then send a cURL requests like shown in different terminal session::
+        % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
+
+        [{"0": 1}]%
+
+    Args:
+        orient (`str`, `optional`, default to `records`):
+            Indication of expected JSON string format. Compatible JSON strings can be produced
+             by `pandas.io.json.to_json()` with a corresponding orient value. Possible orients are:
+                - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data -> [values]}
+                - `records` - `List[Any]`: [{column -> value}, ..., {column -> value}]
+                - `index` - `Dict[str, Any]`: {idx -> {column -> value}}
+                - `columns` - `Dict[str, Any]`: {column -> {index -> value}}
+                - `values` - `Dict[str, Any]`: Values arrays
+        columns (`List[str]`, `optional`, default to `None`):
+            List of columns name that users wish to update
+        apply_column_names (`bool`, `optional`, default to `False`):
+            Whether to update incoming DataFrame columns. If `apply_column_names`=True, then
+             `columns` must be specified.
+        dtype (`Union[bool, Dict[str, Any]]`, `optional`, default to `None`):
+            Data Type users wish to convert their inputs/outputs to. If it is a boolean,
+             then pandas will infer dtypes. Else if it is a dictionary of column to dtype, then
+             applies those to incoming dataframes. If False, then don't infer dtypes at all (only
+             applies to the data). This is not applicable when `orient='table'`.
+        enforce_dtype (`bool`, `optional`, default to `False`):
+            Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype` must
+             be specified.
+        shape (`Tuple[int, ...]`, `optional`, default to `None`):
+            Optional shape check that users can specify for their incoming HTTP requests. We will
+             only check the number of columns you specified for your given shape.
+            Examples::
+                import pandas as pd
+                from bentoml.io import PandasSeries
+
+                df = pd.DataFrame([[1,2,3]])  # shape (1,3)
+                inp = PandasSeries.from_sample(arr)
+
+                ...
+                @svc.api(input=inp, output=PandasSeries())
+                # the given shape above is valid
+                def predict(input_df: pd.DataFrame) -> pd.DataFrame:
+                    result = await runner.run(input_df)
+                    return result
+
+                @svc.api(input=PandasSeries(shape=(51,10), enforce_shape=True), output=PandasSeries())
+                def infer(input_df: pd.DataFrame) -> pd.DataFrame:...
+                # if input_df have shape (40,9), it will throw out errors
+        enforce_shape (`bool`, `optional`, default to `False`):
+            Whether to enforce a certain shape. If `enforce_shape=True` then `shape` must
+             be specified
+    Returns:
+        IO Descriptor that represents `pd.DataFrame`.
+    """
 
     def __init__(
         self,

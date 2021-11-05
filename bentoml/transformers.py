@@ -381,7 +381,7 @@ def _download_from_hub(
         json.dump(meta, meta_file)
 
 
-def _internal_save(
+def _save(
     name: str,
     *,
     model_identifier: t.Union[str, _ModelType, "Pipeline"],
@@ -595,7 +595,7 @@ def save(
             " please use `import_from_huggingface_hub` instead. `save` should"
             " only be used for saving custom pretrained model and tokenizer"
         )
-    return _internal_save(
+    return _save(
         name=name,
         model_identifier=model,
         tokenizer=tokenizer,
@@ -672,7 +672,7 @@ def import_from_huggingface_hub(
         tag = bentoml.transformers.import_from_huggingface_hub("gpt2", from_tf=True)
     """
     save_namespace = _clean_name(name) if save_namespace is None else save_namespace
-    return _internal_save(
+    return _save(
         name=save_namespace,
         model_identifier=name,
         tokenizer=None,
@@ -781,8 +781,8 @@ def load_runner(
     framework: str = "pt",
     lm_head: str = "casual",
     device: int = -1,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **pipeline_kwargs: t.Any,
 ) -> "_TransformersRunner":

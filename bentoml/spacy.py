@@ -52,12 +52,8 @@ if not _check_compat:  # pragma: no cover
         f" detected spacy to have version {spacy.__version__}"
     )
 
-try:  # pragma: no cover
-    import tensorflow
-    import torch
-except ImportError:  # pragma: no cover
-    torch = LazyLoader("torch", globals(), "torch")
-    tensorflow = LazyLoader("tensorflow", globals(), "tensorflow")
+torch = LazyLoader("torch", globals(), "torch")
+tensorflow = LazyLoader("tensorflow", globals(), "tensorflow")
 
 _TORCH_TF_WARNING = """\
 It is recommended that if you want to run SpaCy with {framework}

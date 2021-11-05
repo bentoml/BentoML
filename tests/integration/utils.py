@@ -171,7 +171,7 @@ def run_api_server(
     workdir=None,
     config_file=None,
     dev_server=False,
-    timeout=20,
+    timeout=30,
 ):
     """
     Launch a bentoml service directly by the bentoml CLI, yields the host URL.

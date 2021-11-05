@@ -19,7 +19,7 @@ async def test_slow_server(host):
     time_start = time.time()
     req_count = 10
     tasks = tuple(
-        pytest.assert_request(
+        pytest.async_request(
             "POST",
             f"http://{host}/echo_with_delay",
             headers=(("Content-Type", "application/json"),),
@@ -43,7 +43,7 @@ async def test_fast_server(host):
 
     req_count = 100
     tasks = tuple(
-        pytest.assert_request(
+        pytest.async_request(
             "POST",
             f"http://{host}/echo_with_delay",
             headers=(("Content-Type", "application/json"),),
@@ -57,7 +57,7 @@ async def test_fast_server(host):
     time_start = time.time()
     req_count = 200
     tasks = tuple(
-        pytest.assert_request(
+        pytest.async_request(
             "POST",
             f"http://{host}/echo_with_delay",
             headers=(("Content-Type", "application/json"),),
@@ -81,7 +81,7 @@ async def test_batch_size_limit(host):
 
     # test for max_batch_size=None
     tasks = tuple(
-        pytest.assert_request(
+        pytest.async_request(
             "POST",
             f"http://{host}/echo_batch_size",
             headers=(("Content-Type", "application/json"),),
@@ -96,7 +96,7 @@ async def test_batch_size_limit(host):
     batch_bucket = []
 
     tasks = tuple(
-        pytest.assert_request(
+        pytest.async_request(
             "POST",
             f"http://{host}/echo_batch_size",
             headers=(("Content-Type", "application/json"),),

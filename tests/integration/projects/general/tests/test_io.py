@@ -4,10 +4,10 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_json(host, assert_request):
+async def test_json(host, async_request):
     ORIGIN = "http://bentoml.ai"
 
-    await assert_request(
+    await async_request(
         "POST",
         f"http://{host}/echo_json",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
@@ -18,14 +18,14 @@ async def test_json(host, assert_request):
 
 
 @pytest.mark.asyncio
-async def test_pandas(host, assert_request):
+async def test_pandas(host, async_request):
     import pandas as pd
 
     ORIGIN = "http://bentoml.ai"
 
     df = pd.DataFrame([[101]], columns=["col1"])
 
-    await assert_request(
+    await async_request(
         "POST",
         f"http://{host}/predict_dataframe",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
@@ -33,6 +33,45 @@ async def test_pandas(host, assert_request):
         assert_status=200,
         assert_data=b'[202]',
     )
+
+
+@pytest.fixture()
+def bin_file(tmpdir):
+    bin_file_ = tmpdir.join("bin_file.bin")
+    with open(bin_file_, "wb") as of:
+        of.write("â".encode('gb18030'))
+    return str(bin_file_)
+
+
+import aiohttp
+
+
+@pytest.mark.asyncio
+async def test_file(host, bin_file, async_request):
+    # Test FileInput as binary
+    with open(str(bin_file), "rb") as f:
+        b = f.read()
+        form = aiohttp.FormData()
+        form.add_field("file", b, content_type='application/octet-stream')
+
+        await async_request(
+            "POST",
+            f"http://{host}/predict_file",
+            data=form,
+            assert_data=b'\x810\x899',
+        )
+
+    '''
+    # Test FileInput as multipart binary
+    with open(str(bin_file), "rb") as f:
+        await async_request(
+            "POST",
+            f"http://{host}/predict_file",
+            headers=(("Content-Type", "multipart/form-data"),),
+            data={"file": f},
+            assert_data=b'{"b64": "gTCJOQ=="}',
+        )
+        '''
 
 
 """
@@ -44,7 +83,7 @@ def df_orient(request):
 @pytest.mark.asyncio
 async def test_api_echo_json(host):
     for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
-        await pytest.assert_request(
+        await async_request(
             "POST",
             f"http://{host}/echo_json",
             headers=(("Content-Type", "application/json"),),
@@ -58,7 +97,7 @@ async def test_api_echo_json(host):
 @pytest.mark.asyncio
 async def test_api_echo_json_ensure_ascii(host):
     for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
-        await pytest.assert_request(
+        await async_request(
             "POST",
             f"http://{host}/echo_json_ensure_ascii",
             headers=(("Content-Type", "application/json"),),
@@ -75,7 +114,7 @@ async def test_api_server_dataframe(host, df_orient):
     df = pd.DataFrame([[10], [20]], columns=["col1"])
     data = df.to_json(orient=df_orient)
 
-    await pytest.assert_request(
+    await async_request(
         "POST",
         f"http://{host}/predict_dataframe",
         headers=(("Content-Type", "application/json"),),
@@ -84,7 +123,7 @@ async def test_api_server_dataframe(host, df_orient):
         assert_data=lambda d: d.decode().strip() == '[{"col1":20},{"col1":40}]',
     )
 
-    await pytest.assert_request(
+    await async_request(
         "POST",
         f"http://{host}/predict_dataframe_v1",
         headers=(("Content-Type", "application/json"),),
@@ -102,13 +141,13 @@ async def test_api_server_image(host, img_file):
     # Test ImageInput as binary
     with open(str(img_file), "rb") as f:
         img = f.read()
-        await pytest.assert_request(
+        await async_request(
             "POST", f"http://{host}/predict_image", data=img, assert_data=b"[10, 10, 3]"
         )
 
     # Test ImageInput as multipart binary
     with open(str(img_file), "rb") as f:
-        await pytest.assert_request(
+        await async_request(
             "POST",
             f"http://{host}/predict_image",
             data={"image": f},
@@ -118,7 +157,7 @@ async def test_api_server_image(host, img_file):
     # Test MultiImageInput.
     with open(str(img_file), "rb") as f1:
         with open(str(img_file), "rb") as f2:
-            await pytest.assert_request(
+            await async_request(
                 "POST",
                 f"http://{host}/predict_multi_images",
                 data={"original": f1, "compared": f2},
@@ -131,7 +170,7 @@ async def test_api_server_file(host, bin_file):
     # Test FileInput as binary
     with open(str(bin_file), "rb") as f:
         b = f.read()
-        await pytest.assert_request(
+        await async_request(
             "POST",
             f"http://{host}/predict_file",
             data=b,
@@ -140,7 +179,7 @@ async def test_api_server_file(host, bin_file):
 
     # Test FileInput as multipart binary
     with open(str(bin_file), "rb") as f:
-        await pytest.assert_request(
+        await async_request(
             "POST",
             f"http://{host}/predict_file",
             data={"file": f},
@@ -152,7 +191,7 @@ async def test_api_server_file(host, bin_file):
 async def test_api_server_json(host):
     req_count = 3
     tasks = tuple(
-        pytest.assert_request(
+        async_request(
             "POST",
             f"http://{host}/predict_json",
             headers=(("Content-Type", "application/json"),),
@@ -168,7 +207,7 @@ async def test_api_server_json(host):
 async def test_api_server_tasks_api(host):
     req_count = 2
     tasks = tuple(
-        pytest.assert_request(
+        async_request(
             "POST",
             f"http://{host}/predict_strict_json",
             headers=(("Content-Type", "application/json"),),
@@ -179,7 +218,7 @@ async def test_api_server_tasks_api(host):
         for i in range(req_count)
     )
     tasks += tuple(
-        pytest.assert_request(
+        async_request(
             "POST",
             f"http://{host}/predict_strict_json",
             data=json.dumps({"in": i}),
@@ -194,7 +233,7 @@ async def test_api_server_tasks_api(host):
 async def test_api_server_inference_result(host):
     req_count = 2
     tasks = tuple(
-        pytest.assert_request(
+        async_request(
             "POST",
             f"http://{host}/predict_direct_json",
             headers=(("Content-Type", "application/json"),),
@@ -205,7 +244,7 @@ async def test_api_server_inference_result(host):
         for i in range(req_count)
     )
     tasks += tuple(
-        pytest.assert_request(
+        async_request(
             "POST",
             f"http://{host}/predict_direct_json",
             data=json.dumps({"in": i}),

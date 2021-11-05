@@ -174,11 +174,3 @@ class FileLike:
     def close(self):
         if self._stream is not None:
             self._stream.close()
-
-    def __del__(self):
-        if (
-            hasattr(self, "_stream")
-            and self._stream is not None
-            and not self._stream.closed
-        ):
-            self._stream.close()

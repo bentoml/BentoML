@@ -20,8 +20,7 @@ else
   echo "Code auto formatting passed"
 fi
 
-# The first line of the tests are  
-# always empty if there are no linting errors
+# The first line of the tests are always empty if there are no linting errors
 
 echo "Running flake8 on bentoml module.."
 output=$( flake8 --config=setup.cfg bentoml )

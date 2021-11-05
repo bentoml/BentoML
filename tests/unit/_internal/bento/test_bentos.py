@@ -1,12 +1,15 @@
 import os
 
+import pytest
+
 import bentoml
 from bentoml._internal.bento import BentoStore
 
 SYSTEM_HOME = os.path.expanduser("~")
 
 
-def test_create_simplebento(tmpdir, change_test_dir):
+@pytest.mark.usefixtures("change_test_dir")
+def test_create_simplebento(tmpdir):
     bento_store = BentoStore(tmpdir)
     os.chdir("simplebento")
     from .simplebento.simplebento import svc

@@ -764,7 +764,7 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
             self._paths.update(_paths)
 
         if FLAGS.dump_metadata:
-            with open("./metadata.json", "w") as ouf:
+            with open("./metadata.json", "w", encoding="utf-8") as ouf:
                 ouf.write(json.dumps(self._tags, indent=2))
             ouf.close()
 

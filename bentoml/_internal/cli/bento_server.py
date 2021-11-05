@@ -46,7 +46,7 @@ def add_serve_command(cli) -> None:
     @click.option(
         "--reload-delay",
         type=click.FLOAT,
-        help="Delay between each check if the Service needs to be reloaded. Default is 0.25s.",
+        help="Delay in seconds between each check if the Service needs to be reloaded. Default is 0.25.",
         show_default=True,
         default=0.25,
     )

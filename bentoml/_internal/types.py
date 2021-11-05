@@ -1,3 +1,4 @@
+import base64
 import io
 import logging
 import os
@@ -6,6 +7,7 @@ import typing as t
 import urllib
 import urllib.parse
 import urllib.request
+import uuid
 from dataclasses import dataclass
 
 import fs
@@ -40,11 +42,16 @@ class Tag:
 
         validate_tag_str(lname)
 
-        if version is not None:
-            validate_tag_str(version)
-
         self.name = lname
-        self.version = version
+
+        if version is not None:
+            lversion = version.lower()
+            if version != lversion:
+                logger.warning(f"converting {version} to lowercase: {lversion}")
+            validate_tag_str(lversion)
+            self.version = lversion
+        else:
+            self.version = None
 
     def __str__(self):
         if self.version is None:
@@ -80,6 +87,19 @@ class Tag:
             return cls(name, version)
         except ValueError:
             raise BentoMLException(f"Invalid {cls.__name__} {tag_str}")
+
+    def make_new_version(self) -> "Tag":
+        if self.version is not None:
+            raise ValueError(
+                "tried to run 'make_new_version' on a Tag that already has a version"
+            )
+        ver_bytes = bytearray(uuid.uuid1().bytes)
+        # replace 3 bits of the version with the end of the uuid
+        ver_bytes[6] = (ver_bytes[6] & 0x1F) | ((ver_bytes[-1] & 0x7) << 5)
+        # last 7 bytes of the base32 encode are padding
+        encoded_ver = base64.b32encode(ver_bytes)[:-7]
+
+        return Tag(self.name, encoded_ver.decode("ascii").lower())
 
     def path(self) -> str:
         if self.version is None:

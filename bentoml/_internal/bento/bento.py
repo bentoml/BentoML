@@ -53,14 +53,16 @@ class Bento(StoreItem):
         build_ctx: PathType,
         models: t.List[str],
         version: t.Optional[str],
-        description: t.Optional[str],
+        description: str,
         include: t.List[str],
         exclude: t.List[str],
-        env: t.Optional[t.Dict[str, t.Any]],
-        labels: t.Optional[t.Dict[str, str]],
+        env: t.Dict[str, t.Any],
+        labels: t.Dict[str, str],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "Bento":
         tag = Tag(svc.name, version)
+        if version is None:
+            tag = tag.make_new_version()
 
         logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")
 

@@ -146,26 +146,30 @@ def _start_dev_api_server(
     reload_delay: t.Optional[float] = None,
     instance_id: t.Optional[int] = None,
 ):
+    import uvicorn
     from uvicorn.config import Config
     from uvicorn.server import Server
     from uvicorn.supervisors import ChangeReload
 
     log_level = "debug" if get_debug_mode() else "info"
     svc = load(bento_path_or_tag, working_dir=working_dir)
-    asgi_app_import_str = f"{svc.import_str}.asgi_app"
+    uvicorn_options = {
+        "port": port,
+        "log_level": log_level,
+        "reload": reload,
+        "reload_delay": reload_delay,
+    }
 
-    config = Config(
-        asgi_app_import_str,
-        port=port,
-        log_level=log_level,
-        reload=reload,
-        reload_delay=reload_delay,
-    )
-    server = Server(config=config)
-    sock = config.bind_socket()
-    # TODO: use svc.build_args.include/exclude as default files to watch
-    # TODO: watch changes in model store when "latest" model tag is used
-    ChangeReload(config, target=server.run, sockets=[sock]).run()
+    if reload:
+        asgi_app_import_str = f"{svc._import_str}.asgi_app"
+        config = Config(asgi_app_import_str, **uvicorn_options)
+        server = Server(config=config)
+        sock = config.bind_socket()
+        # TODO: use svc.build_args.include/exclude as default files to watch
+        # TODO: watch changes in model store when "latest" model tag is used
+        ChangeReload(config, target=server.run, sockets=[sock]).run()
+    else:
+        uvicorn.run(svc.asgi_app, **uvicorn_options)
 
 
 """

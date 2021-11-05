@@ -136,7 +136,7 @@ def import_service(
 
         if working_dir:
             instance._working_dir = working_dir
-        instance.import_str = f"{module_name}:{attrs_str}"
+        instance._import_str = f"{module_name}:{attrs_str}"
         return instance
     except ImportServiceError:
         if working_dir:

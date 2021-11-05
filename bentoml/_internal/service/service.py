@@ -40,6 +40,8 @@ class Service:
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None
+    # Import path set by .loader.import_service method
+    _import_str: t.Optional[str] = None
 
     def __init__(self, name: str, runners: t.Optional[t.List[Runner]] = None):
         lname = name.lower()

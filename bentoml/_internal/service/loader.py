@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 import yaml
 from simple_di import Provide, inject
 
-from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.models.store import ModelStore
-from bentoml.exceptions import BentoMLException, InvalidArgument, NotFound
+from ...exceptions import BentoMLException, InvalidArgument, NotFound
+from ..configuration.containers import BentoMLContainer
+from ..models.store import ModelStore
 
 if TYPE_CHECKING:
     from .service import Service

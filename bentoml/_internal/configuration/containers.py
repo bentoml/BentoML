@@ -9,8 +9,7 @@ from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
-from bentoml.exceptions import BentoMLConfigException
-
+from ...exceptions import BentoMLConfigException
 from ..utils import get_free_port
 from . import expand_env_var
 

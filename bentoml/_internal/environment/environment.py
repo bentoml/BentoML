@@ -8,8 +8,7 @@ from typing import List
 import yaml
 from simple_di import Provide, inject
 
-from bentoml.exceptions import BentoMLException
-
+from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
 from .pip_pkg import (
     EPP_NO_ERROR,

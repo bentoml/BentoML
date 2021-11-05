@@ -3,11 +3,10 @@ import sys
 import typing as t
 from typing import TYPE_CHECKING
 
-from bentoml._internal.io_descriptors import IODescriptor
-from bentoml._internal.utils.validation import validate_tag_str
-from bentoml.exceptions import BentoMLException
-
+from ...exceptions import BentoMLException
+from ..io_descriptors import IODescriptor
 from ..runner import Runner
+from ..utils.validation import validate_tag_str
 from .inference_api import InferenceAPI
 
 if TYPE_CHECKING:

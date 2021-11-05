@@ -10,8 +10,7 @@ from dataclasses import dataclass
 
 import fs
 
-from bentoml.exceptions import BentoMLException
-
+from ..exceptions import BentoMLException
 from .utils.dataclasses import json_serializer
 from .utils.validation import validate_tag_str
 

@@ -6,11 +6,10 @@ import typing as t
 
 from simple_di import Provide, inject
 
-from bentoml._internal.server.base_app import BaseAppFactory
-from bentoml._internal.service.service import Service
-from bentoml.exceptions import BentoMLException
-
+from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer, BentoServerContainer
+from ..server.base_app import BaseAppFactory
+from ..service.service import Service
 
 if t.TYPE_CHECKING:
     from starlette.applications import Starlette

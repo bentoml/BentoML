@@ -108,7 +108,7 @@ class PandasDataFrame(IODescriptor):
     def __init__(
         self,
         orient: Literal[
-            'split', 'records', 'index', 'columns', 'values', 'table'
+            "split", "records", "index", "columns", "values", "table"
         ] = "records",
         apply_column_names: bool = False,
         columns: t.Optional[t.List[str]] = None,
@@ -200,7 +200,7 @@ class PandasDataFrame(IODescriptor):
         cls,
         sample_input: "pd.DataFrame",
         orient: Literal[
-            'split', 'records', 'index', 'columns', 'values', 'table'
+            "split", "records", "index", "columns", "values", "table"
         ] = "records",
         apply_column_names: bool = True,
         enforce_shape: bool = True,
@@ -343,7 +343,7 @@ class PandasSeries(PandasDataFrame):
 
     def __init__(
         self,
-        orient: Literal['split', 'records', 'index', 'table'] = "records",
+        orient: Literal["split", "records", "index", "table"] = "records",
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,

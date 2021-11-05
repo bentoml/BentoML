@@ -29,15 +29,13 @@ Preface
     as well as `histogram and summaries <https://prometheus.io/docs/practices/histograms/>`_.
 
 .. note::
-    Users can also create custom metrics for *BentoService* making use of |prom_client|_, which can be later scraped by Prometheus.
+    Users can also create custom metrics for *BentoService*, which can be later scraped by Prometheus.
 
     .. code-block:: python
 
-        from bentoml.configuratoin.containers import BentoMLContainer
+	from prometheus_client import Summary
 
-	metrics_client = BentoMLContainer.metircs_client.get()
-
-        REQUEST_TIME = metrics_clint.Summary('request_processing_time', 'Time spend processing request')
+        REQUEST_TIME = Summary(name='request_processing_time', documentation='Time spend processing request', namespace='PREFIX')
 
         @artifacts([KerasModelArtifact('model'), PickleArtifact('tokenizer')])
         class TensorflowService(BentoService):

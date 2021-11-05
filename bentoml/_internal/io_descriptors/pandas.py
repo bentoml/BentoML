@@ -18,11 +18,6 @@ else:
 
 logger = logging.getLogger(__name__)
 
-try:
-    Literal = t.Literal
-except AttributeError:
-    from typing_extensions import Literal
-
 
 class PandasDataFrame(IODescriptor):
     """

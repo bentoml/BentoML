@@ -1,6 +1,6 @@
 import re
 
-from bentoml.exceptions import InvalidArgument
+from ...exceptions import InvalidArgument
 
 tag_fmt = "[a-z0-9]([-._a-z0-9]*[a-z0-9])?"
 tag_max_length = 63

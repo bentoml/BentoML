@@ -7,9 +7,9 @@ from starlette.requests import Request
 
 
 class MultiPartParser:
-    '''
+    """
     modified from https://github.com/encode/starlette/blob/6af5c515e0a896cbf3f86ee043b88f6c24200bcf/starlette/formparsers.py#L113
-    '''
+    """
 
     def __init__(
         self, headers: Headers, stream: typing.AsyncGenerator[bytes, None]

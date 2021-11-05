@@ -3,8 +3,7 @@ import itertools
 import json
 import typing as t
 
-from bentoml.exceptions import BadInput, BentoMLException
-
+from ...exceptions import BadInput, BentoMLException
 from . import catch_exceptions
 from .csv import csv_quote, csv_row, csv_split, csv_splitlines, csv_unquote
 from .lazy_loader import LazyLoader

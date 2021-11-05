@@ -18,9 +18,9 @@ def change_test_dir(request):
 
 
 @pytest.fixture(scope="session")
-def assert_request() -> t.Callable:
+def async_request() -> t.Callable:
     # async request client
-    async def assert_request(
+    async def async_request(
         method,
         url,
         headers=None,
@@ -59,13 +59,13 @@ def assert_request() -> t.Callable:
         if assert_headers is not None:
             assert assert_headers(r.headers), r.headers
 
-    return assert_request
+    return async_request
 
 
 """
 def pytest_configure():
     # async request client
-    async def assert_request(
+    async def async_request(
         method,
         url,
         headers=None,
@@ -104,7 +104,7 @@ def pytest_configure():
         if assert_headers is not None:
             assert assert_headers(r.headers), r.headers
 
-    pytest.assert_request = assert_request
+    pytest.async_request = async_request
 
     # dataframe json orients
     pytest.DF_ORIENTS = {

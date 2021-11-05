@@ -7,16 +7,16 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_api_server_meta(host: str, assert_request: t.Callable) -> None:
-    await assert_request("GET", f"http://{host}/")
-    await assert_request("GET", f"http://{host}/healthz")
-    await assert_request("GET", f"http://{host}/livez")
-    await assert_request("GET", f"http://{host}/docs.json")
-    await assert_request("GET", f"http://{host}/readyz")
+async def test_api_server_meta(host: str, async_request: t.Callable) -> None:
+    await async_request("GET", f"http://{host}/")
+    await async_request("GET", f"http://{host}/healthz")
+    await async_request("GET", f"http://{host}/livez")
+    await async_request("GET", f"http://{host}/docs.json")
+    await async_request("GET", f"http://{host}/readyz")
 
 
 @pytest.mark.asyncio
-async def test_cors(host, assert_request):
+async def test_cors(host, async_request):
     ORIGIN = "http://bentoml.ai"
 
     def has_cors_headers(headers: t.Dict) -> bool:
@@ -25,7 +25,7 @@ async def test_cors(host, assert_request):
         assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
         return True
 
-    await assert_request(
+    await async_request(
         "POST",
         f"http://{host}/echo_json",
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
@@ -45,14 +45,14 @@ async def test_customized_route(host):
         d = json.loads(response_body.decode())
         return f"/{CUSTOM_ROUTE}" in d['paths']
 
-    await pytest.assert_request(
+    await async_request(
         "GET",
         f"http://{host}/docs.json",
         headers=(("Content-Type", "application/json"),),
         assert_data=path_in_docs,
     )
 
-    await pytest.assert_request(
+    await async_request(
         "POST",
         f"http://{host}/{CUSTOM_ROUTE}",
         headers=(("Content-Type", "application/json"),),
@@ -67,7 +67,7 @@ async def test_customized_request_schema(host):
         json_str = doc_bytes.decode()
         return "field1" in json_str
 
-    await pytest.assert_request(
+    await async_request(
         "GET",
         f"http://{host}/docs.json",
         headers=(("Content-Type", "application/json"),),
@@ -95,11 +95,11 @@ async def test_customized_request_schema(host):
     ],
 )
 async def test_api_server_metrics(host, metrics):
-    await pytest.assert_request(
+    await async_request(
         "POST", f"http://{host}/echo_json", data='"hi"',
     )
 
-    await pytest.assert_request(
+    await async_request(
         "GET",
         f"http://{host}/metrics",
         assert_status=200,

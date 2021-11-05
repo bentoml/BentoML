@@ -5,8 +5,9 @@ import pandas as pd
 
 import bentoml
 import bentoml.sklearn
+from bentoml._internal.io_descriptors.file import File
 from bentoml._internal.io_descriptors.pandas import PandasDataFrame, PandasSeries
-from bentoml._internal.types import JSONSerializable
+from bentoml._internal.types import FileLike, JSONSerializable
 from bentoml.io import JSON
 
 
@@ -23,11 +24,10 @@ class PickleModel:
         eq = np.array(originals) == np.array(compareds)
         return eq.all(axis=tuple(range(1, len(eq.shape))))
 
-    def predict_dataframe(self, df: "pd.DataFrame") -> "pd.DataFrame":
-        df_out = df.apply(lambda i: i * 2)
-        assert isinstance(df_out, pd.DataFrame)
-        return df_out
     """
+
+    def predict_file(self, input_files: t.List[FileLike]) -> t.List[bytes]:
+        return [f.read() for f in input_files]
 
     def echo_json(self, input_datas: JSONSerializable) -> JSONSerializable:
         return input_datas
@@ -52,11 +52,17 @@ ndarray_pred_runner = bentoml.sklearn.load_runner(
 dataframe_pred_runner = bentoml.sklearn.load_runner(
     "sk_model", function_name="predict_dataframe"
 )
+file_pred_runner = bentoml.sklearn.load_runner("sk_model", function_name="predict_file")
 
 
 svc = bentoml.Service(
     name="general",
-    runners=[json_pred_runner, ndarray_pred_runner, dataframe_pred_runner],
+    runners=[
+        json_pred_runner,
+        ndarray_pred_runner,
+        dataframe_pred_runner,
+        file_pred_runner,
+    ],
 )
 
 
@@ -81,6 +87,11 @@ def predict_dataframe(df):
     output = dataframe_pred_runner.run(df)
     assert isinstance(output, pd.Series)
     return output
+
+
+@svc.api(input=File(), output=File())
+def predict_file(f):
+    return file_pred_runner.run(f)
 
 
 """

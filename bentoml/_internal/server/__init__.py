@@ -46,7 +46,7 @@ def serve_development(
     watchers.append(
         Watcher(
             name="ngrok",
-            cmd=f'{sys.executable} -c "import bentoml._internal.server; bentoml._internal.server._start_dev_api_server(\\"{bento_path_or_tag}\\", {port}, \\"{working_dir}\\", instance_id=$(CIRCUS.WID))"',
+            cmd=f'{sys.executable} -c \'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, "{working_dir}", instance_id=$(CIRCUS.WID))\'',
             env=env,
             numprocesses=1,
             stop_children=True,

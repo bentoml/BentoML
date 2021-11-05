@@ -66,8 +66,9 @@ class File(IODescriptor):
                 f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
             )
         form = await request.form()
-        contents = await next(iter(form.values())).read()
-        return FileLike(bytes_=contents)
+        f = next(iter(form.values()))
+        content = await f.read()
+        return FileLike(bytes_=content, name=f.filename)
 
     async def to_http_response(
         self, obj: t.Union[FileLike, bytes]
@@ -77,8 +78,6 @@ class File(IODescriptor):
                 f"Unsupported Image type received: {type(obj)},"
                 f" `{self.__class__.__name__}` FileLike objects."
             )
-        if isinstance(obj, FileLike):
-            resp = obj.bytes_
-        else:
-            resp = obj
-        return StreamingResponse(io.BytesIO(resp), media_type=self._media_type)
+        if isinstance(obj, bytes):
+            obj = FileLike(bytes_=obj)
+        return StreamingResponse(obj.stream, media_type=self._media_type)

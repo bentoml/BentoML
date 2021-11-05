@@ -21,8 +21,8 @@ _paddle_exc = """\
 Instruction for installing `paddlepaddle`:
 - CPU support only: `pip install paddlepaddle -i https://mirror.baidu.com/pypi/simple`
 - GPU support: (latest version): `python -m pip install paddlepaddle-gpu==2.1.3.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html`.
-    For other version of CUDA or different platforms refers to https://www.paddlepaddle.org.cn/ for more information
-"""
+    For other version of CUDA or different platforms refer to https://www.paddlepaddle.org.cn/ for more information
+"""  # noqa: LN001
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
@@ -48,8 +48,9 @@ _supports_gpu = paddle.is_compiled_with_cuda()
 
 _hub_exc = (
     """\
-`paddlehub` is required to use `bentoml.paddle.import_from_paddlehub()`. Make sure to have `paddlepaddle`
- installed beforehand. Install `paddlehub` with `pip install paddlehub`.
+`paddlehub` is required to use `bentoml.paddle.import_from_paddlehub()`. Make sure
+ have `paddlepaddle` installed beforehand. Install `paddlehub` with
+ `pip install paddlehub`.
 """
     + _paddle_exc
 )
@@ -176,20 +177,22 @@ def _save(
                         f"""\
 `{name}` is found under BentoML modelstore. Returning {info.tag}...
 
-Mechanism: `bentoml.paddle.import_from_paddlehub` will initialize an instance of `LocalModuleManager`
- from `paddlehub`. We will check whether the module is already downloaded under `paddlehub` cache, then
- copy over to BentoML modelstore.
+Mechanism: `bentoml.paddle.import_from_paddlehub` will initialize an instance of
+ `LocalModuleManager` from `paddlehub`. We will check whether the module is already
+ downloaded under `paddlehub` cache, then copy over to BentoML modelstore.
 The reason behind the design is due to internal mechanism of `hub.Module` with regarding
- inference. If we save the module in Paddle inference format, there is no guarantee that users can use
- Module functionality. Refers to https://paddlehub.readthedocs.io/en/release-v2.1/tutorial/custom_module.html
+ inference. If we save the module in Paddle inference format, there is no guarantee that
+ users can use Module functionality. Refers to https://paddlehub.readthedocs.io/en/release-v2.1/tutorial/custom_module.html
  for how a Module is structured.
 
-For most use-case where you are using pretrained model provided by PaddlePaddle (https://www.paddlepaddle.org.cn/hublist),
- since {info.tag} exists, this means you have previously imported the module from paddlehub to BentoML modelstore,
- we will return the existing tag.
-For use-case where you have a custom `hub.Module` or wanting to use different iteration of the aforementioned
- pretrained model, specify `keep_download_from_hub=True`, `version=<your_specific_version>` or any other related
- `kwargs`. Refers to https://paddlehub.readthedocs.io/en/release-v2.1/api/module.html for more information.
+For most use-case where you are using pretrained model provided by PaddlePaddle
+ (https://www.paddlepaddle.org.cn/hublist), since {info.tag} exists, this means you have
+ previously imported the module from paddlehub to BentoML modelstore, we will return the
+ existing tag.
+For use-case where you have a custom `hub.Module` or wanting to use different iteration
+ of the aforementioned pretrained model, specify `keep_download_from_hub=True`,
+ `version=<your_specific_version>` or any other related `kwargs`. Refers to
+ https://paddlehub.readthedocs.io/en/release-v2.1/api/module.html for more information.
                         """
                     )
                     _tag: str = info.tag
@@ -266,13 +269,16 @@ def save(
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
         model (`Union["paddle.nn.Layer", "paddle.inference.Predictor", "StaticFunction"]`):
-            Instance of `paddle.nn.Layer`, decorated functions, or `paddle.inference.Predictor` to be saved.
-        input_spec (`Union[List[InputSpec], Tuple[InputSpec, ...]]`, `optional`, default to `None`):
-            Describes the input of the saved model's forward method, which can be described by InputSpec
-             or example Tensor. Moreover, we support to specify non-tensor type argument, such as `int`,
-             `float`, `string`, or `list`/`dict` of them. If `None`, all input variables of the original
-             Layer's forward method would be the inputs of the saved model. Generally this is NOT RECOMMENDED
-             to use unless you know what you are doing.
+            Instance of `paddle.nn.Layer`, decorated functions, or
+            `paddle.inference.Predictor` to be saved.
+        input_spec (`Union[List[InputSpec], Tuple[InputSpec, ...]]`, `optional`,
+                    default to `None`):
+            Describes the input of the saved model's forward method, which can be
+             described by InputSpec or example Tensor. Moreover, we support to specify
+             non-tensor type argument, such as `int`, `float`, `string`, or
+             `list`/`dict` of them. If `None`, all input variables of the original
+             Layer's forward method would be the inputs of the saved model. Generally
+             this is NOT RECOMMENDED to use unless you know what you are doing.
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -320,29 +326,32 @@ def import_from_paddlehub(
 
     Args:
         model_name (`str`):
-            Name for a PaddleHub model. This can be either path to a Hub module, model name,
-             for both v2 and v1.
+            Name for a PaddleHub model. This can be either path to a Hub module, model
+             name, for both v2 and v1.
         name (`str`, `optional`, default to `None`):
-            Name for given model instance. This should pass Python identifier check. If not
-             specified, then BentoML will save under `model_name`.
+            Name for given model instance. This should pass Python identifier check. If
+             not specified, then BentoML will save under `model_name`.
         version (`str`, `optional`, default to `None`):
-            The version limit of the module, only takes effect when the `name` is specified. When the local
-             Module does not meet the specified version conditions, PaddleHub will re-request the server to download the
-             appropriate Module. Default to None, This means that the local Module will be used. If the Module does not
-             exist, PaddleHub will download the latest version available from the server according to the usage
-             environment.
+            The version limit of the module, only takes effect when the `name` is
+             specified. When the local Module does not meet the specified version
+             conditions, PaddleHub will re-request the server to download the
+             appropriate Module. Default to None, This means that the local Module will
+             be used. If the Module does not exist, PaddleHub will download the latest
+             version available from the server according to the usage environment.
         source (`str`, `optional`, default to `None`):
-            Url of a git repository. If this parameter is specified, PaddleHub will no longer download the
-             specified Module from the default server, but will look for it in the specified repository.
+            Url of a git repository. If this parameter is specified, PaddleHub will no
+             longer download the specified Module from the default server, but will look
+             for it in the specified repository.
         update (`bool`, `optional`, default to `False`):
-            Whether to update the locally cached git repository, only takes effect when the `source` is specified.
+            Whether to update the locally cached git repository, only takes effect when
+            the `source` is specified.
         branch (`str`, `optional`, default to `None`):
             The branch of the specified git repository
         ignore_env_mismatch (`bool`, `optional`, default to `False`):
             Whether to ignore the environment mismatch when installing the Module.
         hub_module_home (`str`, `optional`, default is `None`):
-            Location to save for your PaddleHub cache. If `None`, then default to use PaddleHub default cache, which
-             is under `$HOME/.paddlehub`
+            Location to save for your PaddleHub cache. If `None`, then default to use
+             PaddleHub default cache, which is under `$HOME/.paddlehub`
         keep_download_from_hub (`bool`, `optional`, default to `False`):
             Whether to re-download pretrained model from hub.
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
@@ -461,7 +470,13 @@ class _PaddlePaddleRunner(Runner):
         self._infer_func = getattr(self._model, self._infer_api_callback)
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Optional[t.Any], *args: str, return_argmax: bool = False, **kwargs: str) -> t.Union[t.Any, t.List["np.ndarray"]]:  # type: ignore[override]
+    def _run_batch(
+        self,
+        input_data: t.Optional[t.Any],
+        *args: str,
+        return_argmax: bool = False,
+        **kwargs: str,
+    ) -> t.Union[t.Any, t.List["np.ndarray"]]:  # type: ignore[override]
         if "paddlehub" in self._model_info.context:
             return self._infer_func(*args, **kwargs)
         else:
@@ -531,7 +546,8 @@ def load_runner(
             Config for inference. If None is specified, then use BentoML default.
         device (`str`, `optional`, default to `cpu`):
             Type of device either paddle Predictor or `hub.Module` will be running on.
-             Currently only supports CPU and GPU. Kunlun XPUs is currently NOT SUPPORTED.
+             Currently only supports CPU and GPU. Kunlun XPUs is currently NOT
+             SUPPORTED.
         enable_gpu (`bool`, `optional`, default to `False`):
             Whether to enable GPU.
         gpu_mem_pool_mb (`int`, `optional`, default to 0):

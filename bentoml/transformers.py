@@ -168,8 +168,9 @@ def _check_flax_supported() -> None:  # pragma: no cover
 
 
 _SAVE_CONFLICTS_ERR = """\
-When `tokenizer={tokenizer}`, model should be of type Union[`PreTrainedModel`, `TFPreTrainedModel`, `FlaxPreTrainedModel`].
-Currently `type(model)={model}`
+When `tokenizer={tokenizer}`, model should be of type
+Union[`PreTrainedModel`, `TFPreTrainedModel`, `FlaxPreTrainedModel`]. Currently
+`type(model)={model}`
 
 If you want to save the weight directly from
 `transformers` and save it to BentoML do:
@@ -220,11 +221,13 @@ def load(
             kwargs that can be parsed to transformers Models instance.
 
     Returns:
-        a Tuple containing `model` and `tokenizer` for your given model saved at BentoML modelstore.
+        a Tuple containing `model` and `tokenizer` for your given model saved at BentoML
+         modelstore.
 
     Examples::
         import bentoml.transformers
-        model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="flax", lm_head="masked")
+        model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="flax",
+                                                     lm_head="masked")
     """
     _check_flax_supported()  # pragma: no cover
     model_info = model_store.get(tag)
@@ -534,14 +537,16 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"]`, required):
-            Model instance provided by transformers. This can be retrieved from their `AutoModel`
-             class. You can also use any type of models/automodel provided by transformers. Refers to
-             https://huggingface.co/transformers/main_classes/model.html
+        model (`t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"]`,
+               required):
+            Model instance provided by transformers. This can be retrieved from their
+             `AutoModel` class. You can also use any type of models/automodel provided
+             by transformers. Refers to https://huggingface.co/transformers/main_classes/model.html
         tokenizer (`t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]`):
-            Tokenizer instance provided by transformers. This can be retrieved from their `AutoTokenizer`
-             class. You can also use any type of Tokenizer accordingly to your usecase provided by
-             transformers. Refers to https://huggingface.co/transformers/main_classes/tokenizer.html
+            Tokenizer instance provided by transformers. This can be retrieved from
+             their `AutoTokenizer` class. You can also use any type of Tokenizer
+             accordingly to your usecase provided by transformers. Refers to
+             https://huggingface.co/transformers/main_classes/tokenizer.html
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -551,29 +556,34 @@ def save(
         from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
             Load the model weights from a Flax checkpoint save file
         revision(:obj:`str`, `Optional`, defaults to :obj:`"main"`):
-            The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
-            git-based system for storing models and other artifacts on huggingface.co, so ``revision`` can be any
+            The specific model version to use. It can be a branch name, a tag name, or a
+            commit id, since we use a git-based system for storing models and other
+            artifacts on huggingface.co, so ``revision`` can be any
             identifier allowed by git.
         mirror(:obj:`str`, `Optional`):
-            Mirror source to accelerate downloads in China. If you are from China and have an accessibility
-            problem, you can set this option to resolve it. Note that we do not guarantee the timeliness or safety.
-            Please refer to the mirror site for more information.
+            Mirror source to accelerate downloads in China. If you are from China and
+            have an accessibility problem, you can set this option to resolve it. Note
+            that we do not guarantee the timeliness or safety. Please refer to the
+            mirror site for more information.
         proxies (:obj:`Dict[str, str], `Optional`):
-            A dictionary of proxy servers to use by protocol or endpoint, e.g., :obj:`{'http': 'foo.bar:3128',
-            'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
+            A dictionary of proxy servers to use by protocol or endpoint, e.g.
+            :obj:`{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}`. The
+            proxies are used on each request.
         use_auth_token (:obj:`str` or `bool`, `Optional`):
-            The token to use as HTTP bearer authorization for remote files. If :obj:`True`, will use the token
-            generated when running :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
+            The token to use as HTTP bearer authorization for remote files. If
+            :obj:`True`, will use the token generated when running
+            :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
         force_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
-            Whether or not to force the (re-)download of the model weights and configuration files, overriding the
-            cached versions if they exist.
+            Whether or not to force the (re-)download of the model weights and
+            configuration files, overriding the cached versions if they exist.
         resume_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
-            Whether or not to delete incompletely received files. Will attempt to resume the download if such a
-            file exists.
+            Whether or not to delete incompletely received files. Will attempt to resume
+            the download if such a file exists.
 
         .. note::
-            some parameters are direct port from `from_pretrained()` arguments. This ensures that when doing save
-            operations we don't actually load the model class, which can take a while to do so.
+            some parameters are direct port from `from_pretrained()` arguments. This
+            ensures that when doing save operations we don't actually load the model
+            class, which can take a while to do so.
 
     Returns:
         tag (`str` with a format `name:version`) where `name` is the defined name user
@@ -621,9 +631,9 @@ def import_from_huggingface_hub(
 
     Args:
         name (`str`):
-            Model name retrieved from huggingface hub. This shouldn't be a model instance.
-             If you would like to save a model instance refers to `~bentoml.transformers.save`
-             for more information.
+            Model name retrieved from huggingface hub. This shouldn't be a model
+             instance. If you would like to save a model instance refers to
+             `~bentoml.transformers.save` for more information.
         save_namespace (`str`, default to given `name`):
             Name to save model to BentoML modelstore.
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
@@ -637,29 +647,34 @@ def import_from_huggingface_hub(
         from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
             Load the model weights from a Flax checkpoint save file
         revision(:obj:`str`, `Optional`, defaults to :obj:`"main"`):
-            The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
-            git-based system for storing models and other artifacts on huggingface.co, so ``revision`` can be any
-            identifier allowed by git.
+            The specific model version to use. It can be a branch name, a tag name, or a
+            commit id, since we use a git-based system for storing models and other
+            artifacts on huggingface.co, so ``revision`` can be any identifier allowed
+            by git.
         mirror(:obj:`str`, `Optional`):
-            Mirror source to accelerate downloads in China. If you are from China and have an accessibility
-            problem, you can set this option to resolve it. Note that we do not guarantee the timeliness or safety.
-            Please refer to the mirror site for more information.
+            Mirror source to accelerate downloads in China. If you are from China and
+            have an accessibility problem, you can set this option to resolve it. Note
+            that we do not guarantee the timeliness or safety. Please refer to the
+            mirror site for more information.
         proxies (:obj:`Dict[str, str], `Optional`):
-            A dictionary of proxy servers to use by protocol or endpoint, e.g., :obj:`{'http': 'foo.bar:3128',
-            'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
+            A dictionary of proxy servers to use by protocol or endpoint, e.g.
+            :obj:`{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}`. The
+            proxies are used on each request.
         use_auth_token (:obj:`str` or `bool`, `Optional`):
-            The token to use as HTTP bearer authorization for remote files. If :obj:`True`, will use the token
-            generated when running :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
+            The token to use as HTTP bearer authorization for remote files. If
+            :obj:`True`, will use the token generated when running
+            :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
         force_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
-            Whether or not to force the (re-)download of the model weights and configuration files, overriding the
-            cached versions if they exist.
+            Whether or not to force the (re-)download of the model weights and
+            configuration files, overriding the cached versions if they exist.
         resume_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
-            Whether or not to delete incompletely received files. Will attempt to resume the download if such a
-            file exists.
+            Whether or not to delete incompletely received files. Will attempt to resume
+            the download if such a file exists.
 
         .. note::
-            some parameters are direct port from `from_pretrained()` arguments. This ensures that when doing save
-            operations we don't actually load the model class, which can take up a lot of time and resources.
+            some parameters are direct port from `from_pretrained()` arguments. This
+            ensures that when doing save operations we don't actually load the model
+            class, which can take up a lot of time and resources.
 
     Returns:
         tag (`str` with a format `name:version`) where `name` is the defined name user
@@ -788,13 +803,13 @@ def load_runner(
 ) -> "_TransformersRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.transformers.load_runner` implements a Runner class that
-    wrap around a transformers pipeline, which optimize it for the BentoML runtime.
+    maximize throughput. `bentoml.transformers.load_runner` implements a Runner class
+    that wrap around a transformers pipeline, which optimize it for the BentoML runtime.
 
     .. warning::
-        `load_runner` will try to load the model from given `tag`. If the model does not exists,
-         then BentoML will fallback to initialize pipelines from transformers, thus files will be
-         loaded from huggingface cache.
+        `load_runner` will try to load the model from given `tag`. If the model does not
+         exists, then BentoML will fallback to initialize pipelines from transformers,
+         thus files will be loaded from huggingface cache.
 
 
     Args:

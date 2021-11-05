@@ -9,17 +9,17 @@ import bentoml._internal.runner.container as c
 @pytest.mark.parametrize("wrong_batch_axis", [1, 19])
 def test_default_container(batch_axis_exc, wrong_batch_axis):
 
-    l = [1, 2, 3]
-    assert c.DefaultContainer.singles_to_batch(l) == l
-    assert c.DefaultContainer.batch_to_singles(l) == l
+    _list = [1, 2, 3]
+    assert c.DefaultContainer.singles_to_batch(_list) == _list
+    assert c.DefaultContainer.batch_to_singles(_list) == _list
 
     # DefaultContainer should only allow batch_axis = 0
 
-    with pytest.raises(batch_axis_exc) as e_info:
-        c.DefaultContainer.singles_to_batch(l, batch_axis=wrong_batch_axis)
+    with pytest.raises(batch_axis_exc):
+        c.DefaultContainer.singles_to_batch(_list, batch_axis=wrong_batch_axis)
 
-    with pytest.raises(batch_axis_exc) as e_info:
-        c.DefaultContainer.batch_to_singles(l, batch_axis=wrong_batch_axis)
+    with pytest.raises(batch_axis_exc):
+        c.DefaultContainer.batch_to_singles(_list, batch_axis=wrong_batch_axis)
 
 
 @pytest.mark.parametrize("batch_axis", [0, 1])
@@ -59,12 +59,12 @@ def test_pandas_container(batch_axis_exc, wrong_batch_axis):
 
     # PandasDataFrameContainer should only allow batch_axis = 0
 
-    with pytest.raises(batch_axis_exc) as e_info:
+    with pytest.raises(batch_axis_exc):
         c.PandasDataFrameContainer.singles_to_batch(
             df_singles, batch_axis=wrong_batch_axis
         )
 
-    with pytest.raises(batch_axis_exc) as e_info:
+    with pytest.raises(batch_axis_exc):
         c.PandasDataFrameContainer.batch_to_singles(
             batch_df, batch_axis=wrong_batch_axis
         )

@@ -3,7 +3,6 @@ import typing as t
 
 import joblib
 import numpy as np
-import pandas as pd
 import psutil
 import pytest
 from sklearn.ensemble import RandomForestClassifier

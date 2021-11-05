@@ -1,5 +1,3 @@
-import contextlib
-
 import pytest
 
 from bentoml import ModelStore

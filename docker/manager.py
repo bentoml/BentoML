@@ -712,9 +712,10 @@ class ManagerClient(Session, LogsMixin, GenerateMixin, BuildMixin, PushMixin):
 
         - _push_context (:obj:`Dict`):
 
-            contains mapping for docker.Images object from docker-py with correct releases type
+            contains mapping for docker.Images object from docker-py with correct
+            releases type
 
-    """
+    """  # noqa: LN001
 
     _paths: t.MutableMapping = defaultdict()
     _tags: t.MutableMapping = defaultdict()

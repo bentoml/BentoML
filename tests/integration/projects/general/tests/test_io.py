@@ -31,7 +31,7 @@ async def test_pandas(host, async_request):
         headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
         data=df.to_json(orient="records"),
         assert_status=200,
-        assert_data=b'[202]',
+        assert_data=b"[202]",
     )
 
 
@@ -39,7 +39,7 @@ async def test_pandas(host, async_request):
 def bin_file(tmpdir):
     bin_file_ = tmpdir.join("bin_file.bin")
     with open(bin_file_, "wb") as of:
-        of.write("â".encode('gb18030'))
+        of.write("â".encode("gb18030"))
     return str(bin_file_)
 
 
@@ -52,16 +52,16 @@ async def test_file(host, bin_file, async_request):
     with open(str(bin_file), "rb") as f:
         b = f.read()
         form = aiohttp.FormData()
-        form.add_field("file", b, content_type='application/octet-stream')
+        form.add_field("file", b, content_type="application/octet-stream")
 
         await async_request(
             "POST",
             f"http://{host}/predict_file",
             data=form,
-            assert_data=b'\x810\x899',
+            assert_data=b"\x810\x899",
         )
 
-    '''
+    """
     # Test FileInput as multipart binary
     with open(str(bin_file), "rb") as f:
         await async_request(
@@ -71,7 +71,7 @@ async def test_file(host, bin_file, async_request):
             data={"file": f},
             assert_data=b'{"b64": "gTCJOQ=="}',
         )
-        '''
+        """
 
 
 """

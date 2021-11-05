@@ -1,12 +1,7 @@
 # pylint: disable=redefined-outer-name
-import functools
-import glob
-import inspect
 import os
 import typing as t
 
-import imageio
-import numpy as np
 import pytest
 
 

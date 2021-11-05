@@ -5,7 +5,6 @@ import modulefinder
 import os
 import re
 import sys
-from pathlib import Path
 from shutil import copyfile
 from typing import List, Tuple
 from unittest.mock import patch

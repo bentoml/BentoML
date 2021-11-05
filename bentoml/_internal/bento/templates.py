@@ -20,7 +20,8 @@ WORKDIR $BUNDLE_PATH
 COPY --chown=bentoml:bentoml bentoml-init.sh docker-entrypoint.sh ./
 RUN chmod +x ./bentoml-init.sh
 
-# Copy docker-entrypoint.sh again, because setup.sh might not exist. This prevent COPY command from failing.
+# Copy docker-entrypoint.sh again, because setup.sh might not exist. This prevent COPY
+# command from failing.
 COPY --chown=bentoml:bentoml docker-entrypoint.sh setup.s[h] ./
 RUN ./bentoml-init.sh custom_setup
 

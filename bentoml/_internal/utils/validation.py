@@ -16,7 +16,8 @@ def validate_tag_str(value: str):
     Validate that a tag value (either name or version) is a simple string that:
         * Must be at most 63 characters long,
         * Begin and end with an alphanumeric character (`[a-z0-9A-Z]`), and
-        * May contain dashes (`-`), underscores (`_`) dots (`.`), or alphanumerics between.
+        * May contain dashes (`-`), underscores (`_`) dots (`.`), or alphanumerics
+          between.
     """
     errors = []
     if len(value) > tag_max_length:

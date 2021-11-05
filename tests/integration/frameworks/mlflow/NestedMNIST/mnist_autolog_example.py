@@ -43,7 +43,8 @@ class MNISTDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         """
-        Downloads the data, parse it and split the data into train, test, validation data
+        Downloads the data, parses it, and splits the data into training, test, and
+         validation data
 
         :param stage: Stage - training or testing
         """

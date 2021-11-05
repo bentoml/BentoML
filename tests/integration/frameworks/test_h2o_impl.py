@@ -1,5 +1,4 @@
 import json
-import os
 import typing as t
 
 import h2o

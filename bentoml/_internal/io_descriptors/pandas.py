@@ -1,5 +1,4 @@
 import logging
-import re
 import typing as t
 
 from starlette.requests import Request
@@ -21,8 +20,9 @@ logger = logging.getLogger(__name__)
 
 class PandasDataFrame(IODescriptor):
     """
-    `PandasDataFrame` defines API specification for the inputs/outputs of a Service, where either inputs will be
-    converted to or outputs will be converted from type `numpy.ndarray` as specified in your API function signature.
+    `PandasDataFrame` defines API specification for the inputs/outputs of a Service,
+      where either inputs will be converted to or outputs will be converted from type
+      `numpy.ndarray` as specified in your API function signature.
 
     .. Toy implementation of a sklearn service::
         # sklearn_svc.py
@@ -52,15 +52,18 @@ class PandasDataFrame(IODescriptor):
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data
+         '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
 
         [{"0": 1}]%
 
     Args:
         orient (`str`, `optional`, default to `records`):
-            Indication of expected JSON string format. Compatible JSON strings can be produced
-             by `pandas.io.json.to_json()` with a corresponding orient value. Possible orients are:
-                - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data -> [values]}
+            Indication of expected JSON string format. Compatible JSON strings can be
+             produced by `pandas.io.json.to_json()` with a corresponding orient value.
+             Possible orients are:
+                - `split` - `Dict[str, Any]`:
+                  {idx -> [idx], columns -> [columns], data -> [values]}
                 - `records` - `List[Any]`: [{column -> value}, ..., {column -> value}]
                 - `index` - `Dict[str, Any]`: {idx -> {column -> value}}
                 - `columns` - `Dict[str, Any]`: {column -> {index -> value}}
@@ -68,19 +71,21 @@ class PandasDataFrame(IODescriptor):
         columns (`List[str]`, `optional`, default to `None`):
             List of columns name that users wish to update
         apply_column_names (`bool`, `optional`, default to `False`):
-            Whether to update incoming DataFrame columns. If `apply_column_names`=True, then
-             `columns` must be specified.
+            Whether to update incoming DataFrame columns. If `apply_column_names`=True,
+             then `columns` must be specified.
         dtype (`Union[bool, Dict[str, Any]]`, `optional`, default to `None`):
             Data Type users wish to convert their inputs/outputs to. If it is a boolean,
-             then pandas will infer dtypes. Else if it is a dictionary of column to dtype, then
-             applies those to incoming dataframes. If False, then don't infer dtypes at all (only
-             applies to the data). This is not applicable when `orient='table'`.
+             then pandas will infer dtypes. Else if it is a dictionary of column to
+             dtype, then applies those to incoming dataframes. If False, then don't
+             infer dtypes at all (only applies to the data). This is not applicable when
+             `orient='table'`.
         enforce_dtype (`bool`, `optional`, default to `False`):
-            Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype` must
-             be specified.
+            Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype`
+             must be specified.
         shape (`Tuple[int, ...]`, `optional`, default to `None`):
-            Optional shape check that users can specify for their incoming HTTP requests. We will
-             only check the number of columns you specified for your given shape.
+            Optional shape check that users can specify for their incoming HTTP
+             requests. We will only check the number of columns you specified for your
+             given shape.
             Examples::
                 import pandas as pd
                 from bentoml.io import PandasDataFrame
@@ -95,12 +100,14 @@ class PandasDataFrame(IODescriptor):
                     result = await runner.run(input_df)
                     return result
 
-                @svc.api(input=PandasDataFrame(shape=(51,10), enforce_shape=True), output=PandasDataFrame())
+                @svc.api(input=PandasDataFrame(
+                  shape=(51,10), enforce_shape=True
+                ), output=PandasDataFrame())
                 def infer(input_df: pd.DataFrame) -> pd.DataFrame:...
                 # if input_df have shape (40,9), it will throw out errors
         enforce_shape (`bool`, `optional`, default to `False`):
-            Whether to enforce a certain shape. If `enforce_shape=True` then `shape` must
-             be specified
+            Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
+             must be specified
     Returns:
         IO Descriptor that represents `pd.DataFrame`.
     """
@@ -108,7 +115,7 @@ class PandasDataFrame(IODescriptor):
     def __init__(
         self,
         orient: Literal[
-            'split', 'records', 'index', 'columns', 'values', 'table'
+            "split", "records", "index", "columns", "values", "table"
         ] = "records",
         apply_column_names: bool = False,
         columns: t.Optional[t.List[str]] = None,
@@ -171,9 +178,9 @@ class PandasDataFrame(IODescriptor):
                 )
             else:
                 assert all(
-                    l == r
-                    for l, r in zip(self._shape, res.shape)
-                    if l != -1 and r != -1
+                    left == right
+                    for left, right in zip(self._shape, res.shape)
+                    if left != -1 and right != -1
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
@@ -200,7 +207,7 @@ class PandasDataFrame(IODescriptor):
         cls,
         sample_input: "pd.DataFrame",
         orient: Literal[
-            'split', 'records', 'index', 'columns', 'values', 'table'
+            "split", "records", "index", "columns", "values", "table"
         ] = "records",
         apply_column_names: bool = True,
         enforce_shape: bool = True,
@@ -213,22 +220,28 @@ class PandasDataFrame(IODescriptor):
             sample_input (`pd.DataFrame`):
                 Given inputs
             orient (`str`, `optional`, default to `records`):
-                Indication of expected JSON string format. Compatible JSON strings can be produced
-                 by `pandas.io.json.to_json()` with a corresponding orient value. Possible orients are:
-                    - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data -> [values]}
-                    - `records` - `List[Any]`: [{column -> value}, ..., {column -> value}]
+                Indication of expected JSON string format. Compatible JSON strings can
+                 be produced by `pandas.io.json.to_json()` with a corresponding orient
+                 value. Possible orients are:
+                    - `split` - `Dict[str, Any]`:
+                      {idx -> [idx], columns -> [columns], data -> [values]}
+                    - `records` - `List[Any]`:
+                      [{column -> value}, ..., {column -> value}]
                     - `index` - `Dict[str, Any]`: {idx -> {column -> value}}
                     - `columns` - `Dict[str, Any]`: {column -> {index -> value}}
                     - `values` - `Dict[str, Any]`: Values arrays
             apply_column_names (`bool`, `optional`, default to `True`):
-                Update incoming DataFrame columns. `columns` must be specified at function signature.
-                 If you don't want to enforce a specific columns name then change `apply_column_names=False`.
+                Update incoming DataFrame columns. `columns` must be specified at
+                 function signature. If you don't want to enforce a specific columns
+                 name then change `apply_column_names=False`.
             enforce_dtype (`bool`, `optional`, default to `True`):
-                Enforce a certain data type. `dtype` must be specified at function signature.
-                 If you don't want to enforce a specific dtype then change `enforce_dtype=False`.
+                Enforce a certain data type. `dtype` must be specified at function
+                 signature. If you don't want to enforce a specific dtype then change
+                 `enforce_dtype=False`.
             enforce_shape (`bool`, `optional`, default to `False`):
-                Enforce a certain shape. `shape` must be specified at function signature.
-                 If you don't want to enforce a specific shape then change `enforce_shape=False`.
+                Enforce a certain shape. `shape` must be specified at function
+                 signature. If you don't want to enforce a specific shape then change
+                 `enforce_shape=False`.
 
         Returns:
             `PandasDataFrame` IODescriptor from given users inputs.
@@ -257,8 +270,9 @@ class PandasDataFrame(IODescriptor):
 
 class PandasSeries(PandasDataFrame):
     """
-    `PandasSeries` defines API specification for the inputs/outputs of a Service, where either inputs will be
-    converted to or outputs will be converted from type `numpy.ndarray` as specified in your API function signature.
+    `PandasSeries` defines API specification for the inputs/outputs of a Service, where
+     either inputs will be converted to or outputs will be converted from type
+     `numpy.ndarray` as specified in your API function signature.
 
     .. Toy implementation of a sklearn service::
         # sklearn_svc.py
@@ -294,9 +308,11 @@ class PandasSeries(PandasDataFrame):
 
     Args:
         orient (`str`, `optional`, default to `records`):
-            Indication of expected JSON string format. Compatible JSON strings can be produced
-             by `pandas.io.json.to_json()` with a corresponding orient value. Possible orients are:
-                - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data -> [values]}
+            Indication of expected JSON string format. Compatible JSON strings can be
+             produced by `pandas.io.json.to_json()` with a corresponding orient value.
+             Possible orients are:
+                - `split` - `Dict[str, Any]`:
+                  {idx -> [idx], columns -> [columns], data -> [values]}
                 - `records` - `List[Any]`: [{column -> value}, ..., {column -> value}]
                 - `index` - `Dict[str, Any]`: {idx -> {column -> value}}
                 - `columns` - `Dict[str, Any]`: {column -> {index -> value}}
@@ -304,19 +320,21 @@ class PandasSeries(PandasDataFrame):
         columns (`List[str]`, `optional`, default to `None`):
             List of columns name that users wish to update
         apply_column_names (`bool`, `optional`, default to `False`):
-            Whether to update incoming DataFrame columns. If `apply_column_names`=True, then
-             `columns` must be specified.
+            Whether to update incoming DataFrame columns. If `apply_column_names`=True,
+             then `columns` must be specified.
         dtype (`Union[bool, Dict[str, Any]]`, `optional`, default to `None`):
             Data Type users wish to convert their inputs/outputs to. If it is a boolean,
-             then pandas will infer dtypes. Else if it is a dictionary of column to dtype, then
-             applies those to incoming dataframes. If False, then don't infer dtypes at all (only
-             applies to the data). This is not applicable when `orient='table'`.
+             then pandas will infer dtypes. Else if it is a dictionary of column to
+             dtype, then applies those to incoming dataframes. If False, then don't
+             infer dtypes at all (only applies to the data). This is not applicable when
+             `orient='table'`.
         enforce_dtype (`bool`, `optional`, default to `False`):
-            Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype` must
-             be specified.
+            Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype`
+             must be specified.
         shape (`Tuple[int, ...]`, `optional`, default to `None`):
-            Optional shape check that users can specify for their incoming HTTP requests. We will
-             only check the number of columns you specified for your given shape.
+            Optional shape check that users can specify for their incoming HTTP
+             requests. We will only check the number of columns you specified for your
+             given shape.
             Examples::
                 import pandas as pd
                 from bentoml.io import PandasSeries
@@ -339,11 +357,11 @@ class PandasSeries(PandasDataFrame):
              be specified
     Returns:
         IO Descriptor that represents `pd.DataFrame`.
-    """
+    """  # noqa: LN001
 
     def __init__(
         self,
-        orient: Literal['split', 'records', 'index', 'table'] = "records",
+        orient: Literal["split", "records", "index", "table"] = "records",
         dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
@@ -389,9 +407,9 @@ class PandasSeries(PandasDataFrame):
                 )
             else:
                 assert all(
-                    l == r
-                    for l, r in zip(self._shape, res.shape)
-                    if l != -1 and r != -1
+                    left == right
+                    for left, right in zip(self._shape, res.shape)
+                    if left != -1 and right != -1
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 

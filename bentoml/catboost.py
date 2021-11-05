@@ -241,7 +241,7 @@ class _CatBoostRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        self._model = _load_helper(self._model_file, self._model_params)  # type: ignore[var-annotated] # noqa: E501 # pylint: disable
+        self._model = _load_helper(self._model_file, self._model_params)  # type: ignore[var-annotated] # noqa: LN001 # pylint: disable
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ

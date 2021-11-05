@@ -5,7 +5,6 @@ import re
 import time
 
 import click
-import yaml
 from click import ClickException
 
 from bentoml.exceptions import BentoMLException

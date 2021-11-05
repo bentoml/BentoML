@@ -50,6 +50,7 @@ def import_service(
     """
     try:
         if working_dir:
+            working_dir = os.path.realpath(working_dir)
             sys.path.insert(0, working_dir)
             # Set cwd(current working directory) to the Bento's project directory, which
             # allows user code to read files using relative path
@@ -119,10 +120,13 @@ def import_service(
         else:
             from bentoml import Service
 
-            instances = [v for v in module.__dict__.values() if isinstance(v, Service)]
+            instances = [
+                (k, v) for k, v in module.__dict__.items() if isinstance(v, Service)
+            ]
 
             if len(instances) == 1:
-                instance = instances[0]
+                attrs_str = instances[0][0]
+                instance = instances[0][1]
             else:
                 raise ImportServiceError(
                     f'Multiple Service instances found in module "{module_name}", use'
@@ -132,6 +136,7 @@ def import_service(
 
         if working_dir:
             instance._working_dir = working_dir
+        instance._import_str = f"{module_name}:{attrs_str}"
         return instance
     except ImportServiceError:
         if working_dir:
@@ -175,8 +180,6 @@ def load(
         raise InvalidArgument("bentoml.load argument must be str type")
 
     if working_dir:
-        print(">>> ", working_dir)
-        working_dir = os.path.abspath(working_dir)
         return import_service(svc_import_path_or_bento_tag, working_dir)
 
     try:

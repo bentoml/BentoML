@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from starlette.middleware import Middleware
     from starlette.types import ASGIApp
 
-WSGI_APP = t.NewType("WSGI_APP", object)
+WSGI_APP = t.Callable[[t.Callable, t.Mapping[str, t.Any]], t.Iterable[bytes]]
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,8 @@ class Service:
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None
+    # Import path set by .loader.import_service method
+    _import_str: t.Optional[str] = None
 
     def __init__(self, name: str, runners: t.Optional[t.List[Runner]] = None):
         lname = name.lower()

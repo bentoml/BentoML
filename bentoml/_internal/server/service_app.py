@@ -6,7 +6,11 @@ import typing as t
 
 from simple_di import Provide, inject
 
-from ...exceptions import BentoMLException
+from bentoml._internal.io_descriptors.multipart import Multipart
+from bentoml._internal.server.base_app import BaseAppFactory
+from bentoml._internal.service.service import Service
+from bentoml.exceptions import BentoMLException
+
 from ..configuration.containers import BentoMLContainer, BentoServerContainer
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
@@ -275,9 +279,15 @@ class ServiceAppFactory(BaseAppFactory):
             try:
                 input_data = await api.input.from_http_request(request)
                 if asyncio.iscoroutinefunction(api.func):
-                    output = await api.func(*input_data)
+                    if isinstance(api.input, Multipart):
+                        output = await api.func(**input_data)
+                    else:
+                        output = await api.func(input_data)
                 else:
-                    output = await run_in_threadpool(api.func, input_data)
+                    if isinstance(api.input, Multipart):
+                        output = await run_in_threadpool(api.func, **input_data)
+                    else:
+                        output = await run_in_threadpool(api.func, input_data)
                 response = await api.output.to_http_response(output)
             except BentoMLException as e:
                 log_exception(request, sys.exc_info())

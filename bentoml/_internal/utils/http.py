@@ -6,6 +6,13 @@ from starlette.formparsers import Headers, MultiPartMessage
 from starlette.requests import Request
 
 
+def _user_safe_decode(src: bytes, codec: str) -> str:
+    try:
+        return src.decode(codec)
+    except (UnicodeDecodeError, LookupError):
+        return src.decode("latin-1")
+
+
 class MultiPartParser:
     """
     modified from https://github.com/encode/starlette/blob/6af5c515e0a896cbf3f86ee043b88f6c24200bcf/starlette/formparsers.py#L113
@@ -55,7 +62,7 @@ class MultiPartParser:
 
     async def parse(
         self,
-    ) -> typing.List[typing.Tuple[typing.List[typing.Tuple[bytes, bytes]], bytes]]:
+    ) -> typing.List[typing.Tuple[str, typing.List[typing.Tuple[bytes, bytes]], bytes]]:
         # Parse the Content-Type header to get the multipart boundary.
         _, params = parse_options_header(self.headers["Content-Type"])
         charset = params.get(b"charset", "utf-8")
@@ -79,6 +86,10 @@ class MultiPartParser:
         parser = multipart.MultipartParser(boundary, callbacks)
         header_field = b""
         header_value = b""
+        field_name = ""
+
+        content_disposition = b""
+
         headers: typing.List[typing.Tuple[bytes, bytes]] = list()
         data = b""
 
@@ -93,34 +104,40 @@ class MultiPartParser:
                 if message_type == MultiPartMessage.PART_BEGIN:
                     data = b""
                     headers = list()
+                    content_disposition = b""
+                    field_name = ""
                 elif message_type == MultiPartMessage.HEADER_FIELD:
                     header_field += message_bytes
                 elif message_type == MultiPartMessage.HEADER_VALUE:
                     header_value += message_bytes
                 elif message_type == MultiPartMessage.HEADER_END:
-                    headers.append((header_field.lower(), header_value))
+                    if header_field.lower() == b"content-disposition":
+                        content_disposition = header_value
+                    else:
+                        headers.append((header_field.lower(), header_value))
                     header_field = b""
                     header_value = b""
                 elif message_type == MultiPartMessage.HEADERS_FINISHED:
-                    pass
+                    _, options = parse_options_header(content_disposition)
+                    field_name = _user_safe_decode(options[b"name"], charset)
                 elif message_type == MultiPartMessage.PART_DATA:
                     data += message_bytes
                 elif message_type == MultiPartMessage.PART_END:
-                    items.append((headers, data))
+                    items.append((field_name, headers, data))
 
         parser.finalize()
         return items
 
 
-async def parse_multipart_to_multireq(request: Request) -> typing.List[Request]:
+async def parse_multipart_to_multireq(request: Request) -> typing.Dict[str, Request]:
     content_type_header = request.headers.get("Content-Type")
     content_type, _ = parse_options_header(content_type_header)
     assert content_type == b"multipart/form-data"
     multipart_parser = MultiPartParser(request.headers, request.stream())
     part_infos = await multipart_parser.parse()
 
-    reqs = []
-    for headers, datas in part_infos:
+    reqs = dict()
+    for field_name, headers, datas in part_infos:
         scope = dict(request.scope)
         ori_headers = dict(scope.get("headers", list()))
         ori_headers = typing.cast(typing.Dict[bytes, bytes], ori_headers)
@@ -128,5 +145,5 @@ async def parse_multipart_to_multireq(request: Request) -> typing.List[Request]:
         scope["headers"] = list(ori_headers.items())
         req = Request(scope)
         req._body = datas
-        reqs.append(req)
+        reqs[field_name] = req
     return reqs

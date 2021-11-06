@@ -8,13 +8,15 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import Message
 
+from bentoml._internal.utils.http import parse_multipart_to_multireq
+
 from ...exceptions import BentoMLException, InvalidArgument
 from .base import IODescriptor
 
-MultipartIO = t.NewType("MultipartIO", t.Dict[str, t.Any])
+MultipartIO = t.Dict[str, t.Any]
 
 
-class Multipart(IODescriptor):
+class Multipart(IODescriptor[MultipartIO]):
     """
     Example:
 
@@ -27,7 +29,7 @@ class Multipart(IODescriptor):
     curl -i -F image=@test.jpg -F annotations=@test.json localhost:5000/predict
     """
 
-    def __init__(self, **inputs: t.Dict[str, IODescriptor]):
+    def __init__(self, **inputs: IODescriptor):
         for descriptor in inputs.values():
             if not isinstance(descriptor, IODescriptor):
                 raise InvalidArgument(
@@ -55,44 +57,32 @@ class Multipart(IODescriptor):
         pass
 
     async def from_http_request(self, request: Request) -> MultipartIO:
-        reqs, res = {}, []
-        headers = request.headers
-
-        ctype, _ = parse_options_header(
-            request.headers["content-type"]
-        )  # type: t.Tuple[bytes, t.Dict[bytes, bytes]]
+        ctype, _ = parse_options_header(request.headers["content-type"])
         if ctype != b"multipart/form-data":
             raise BentoMLException(
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
             )
 
-        form_datas = await request.form()
-        for params, obj in form_datas.items():
-            if params not in self._inputs:
-                raise BentoMLException(
-                    f"{params} is not defined under users API function."
-                )
-            data = await obj.read()
-            reqs[params] = partial(self._return_body, data=data)
-        for i, j in itertools.zip_longest(self._inputs.values(), reqs.values()):
-            req = Request(
-                scope={
-                    "type": "http",
-                    "scheme": "http",
-                    "method": "POST",
-                    "headers": headers,
-                },
-                receive=j,
-            )
-            v = await i.from_http_request(req)
-            res.append(v)
-        return {i: res[j] for j in len(res) for i in reqs}
+        res: t.Dict[str, t.Any] = dict()
+        reqs = await parse_multipart_to_multireq(request)
 
-    async def to_http_response(self, *obj: MultipartIO) -> Response:
+        for k, i in self._inputs.items():
+            req = reqs[k]
+            v = await i.from_http_request(req)
+            res[k] = v
+        return res
+
+    async def to_http_response(self, obj: MultipartIO) -> Response:
         """to_http_response.
 
         :param obj:
         :type obj: MultipartIO
         :rtype: Response
         """
-        pass
+        assert False  # TODO(jiang): not tested yet
+        res: t.Dict[str, Response] = dict()
+        for k, i in self._inputs.items():
+            v = obj.get(k)
+            r = await i.to_http_response(v)
+            res[k] = r
+        return multireq_to_multipart(res)

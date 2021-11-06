@@ -11,8 +11,7 @@ from fs.base import FS
 from fs.copy import copy_dir, copy_file
 from simple_di import Provide, inject
 
-from bentoml.exceptions import BentoMLException, InvalidArgument
-
+from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration.containers import BentoMLContainer
 from ..store import Store, StoreItem
 from ..types import PathType, Tag

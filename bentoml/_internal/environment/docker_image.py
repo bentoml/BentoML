@@ -3,8 +3,8 @@ import re
 import sys
 import typing as t
 
-from bentoml._internal.configuration import BENTOML_VERSION, is_pip_installed_bentoml
-from bentoml.exceptions import BentoMLException
+from ...exceptions import BentoMLException
+from ..configuration import BENTOML_VERSION, is_pip_installed_bentoml
 
 logger = logging.getLogger(__name__)
 

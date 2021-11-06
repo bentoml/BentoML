@@ -36,18 +36,34 @@ def add_serve_command(cli) -> None:
         show_default=True,
     )
     @click.option(
+        "--reload",
+        type=click.BOOL,
+        is_flag=True,
+        help="Reload Service when code changes detected, this is only available in development mode.",
+        default=False,
+        show_default=True,
+    )
+    @click.option(
+        "--reload-delay",
+        type=click.FLOAT,
+        help="Delay in seconds between each check if the Service needs to be reloaded. Default is 0.25.",
+        show_default=True,
+        default=0.25,
+    )
+    @click.option(
         "--run-with-ngrok",  # legacy option
         "--ngrok",
         is_flag=True,
         default=False,
-        help="Use ngrok to relay traffic on a public endpoint to the local BentoServer",
-        envvar="BENTOML_ENABLE_NGROK",
+        help="Use ngrok to relay traffic on a public endpoint to the local BentoServer, this is only available in development mode.",
         show_default=True,
     )
     def serve(
         svc_import_path_or_bento_tag,
         working_dir,
         port,
+        reload,
+        reload_delay,
         run_with_ngrok,
         production,
     ) -> None:
@@ -66,6 +82,8 @@ def add_serve_command(cli) -> None:
             serve_development(
                 svc_import_path_or_bento_tag,
                 working_dir=working_dir,
-                with_ngroxy=run_with_ngrok,
+                with_ngrok=run_with_ngrok,
                 port=port,
+                reload=reload,
+                reload_delay=reload_delay,
             )

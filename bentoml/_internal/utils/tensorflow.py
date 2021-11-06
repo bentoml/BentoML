@@ -1,7 +1,7 @@
 import logging
 import typing as t
 
-from bentoml.exceptions import MissingDependencyException
+from ...exceptions import MissingDependencyException
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import

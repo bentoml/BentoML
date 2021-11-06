@@ -3,9 +3,10 @@ import os
 import sys
 import tempfile
 import time
-from typing import Optional
+import typing as t
 
 from bentoml import load
+from bentoml._internal.configuration import get_debug_mode
 from bentoml._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
@@ -13,9 +14,11 @@ logger = logging.getLogger(__name__)
 
 def serve_development(
     bento_path_or_tag: str,
-    working_dir: Optional[str] = None,
-    port: Optional[int] = None,
-    with_ngroxy: bool = False,
+    working_dir: t.Optional[str] = None,
+    port: t.Optional[int] = None,
+    with_ngrok: bool = False,
+    reload: bool = False,
+    reload_delay: float = 0.25,
 ) -> None:
     if working_dir is not None:
         working_dir = os.path.abspath(working_dir)
@@ -32,7 +35,7 @@ def serve_development(
     for _, runner in svc._runners.items():
         runner._setup()
 
-    if with_ngroxy:
+    if with_ngrok:
         watchers.append(
             Watcher(
                 name="ngrok",
@@ -46,7 +49,7 @@ def serve_development(
     watchers.append(
         Watcher(
             name="ngrok",
-            cmd=f'{sys.executable} -c \'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, "{working_dir}", instance_id=$(CIRCUS.WID))\'',
+            cmd=f'{sys.executable} -c \'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, "{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))\'',
             env=env,
             numprocesses=1,
             stop_children=True,
@@ -71,19 +74,12 @@ def _start_ngrok_server() -> None:
 
 def serve_production(
     bento_path_or_tag: str,
-    working_dir: Optional[str] = None,
-    port: Optional[int] = None,
+    working_dir: t.Optional[str] = None,
+    app_workers: t.Optional[int] = None,
+    runner_workers: t.Optional[int] = None,
+    port: t.Optional[int] = None,
 ) -> None:
-    if working_dir is not None:
-        working_dir = os.path.abspath(working_dir)
-
     svc = load(bento_path_or_tag, working_dir=working_dir)
-
-    import psutil
-
-    assert (
-        psutil.POSIX
-    ), "BentoML API Server production mode only supports POSIX platforms"
 
     env = dict(os.environ)
 
@@ -146,12 +142,34 @@ def _start_dev_api_server(
     bento_path_or_tag: str,
     port: int,
     working_dir: str,
-    instance_id: int,
+    reload: bool = False,
+    reload_delay: t.Optional[float] = None,
+    instance_id: t.Optional[int] = None,
 ):
     import uvicorn
+    from uvicorn.config import Config
+    from uvicorn.server import Server
+    from uvicorn.supervisors import ChangeReload
 
+    log_level = "debug" if get_debug_mode() else "info"
     svc = load(bento_path_or_tag, working_dir=working_dir)
-    uvicorn.run(svc.asgi_app, port=port, log_level="info")
+    uvicorn_options = {
+        "port": port,
+        "log_level": log_level,
+        "reload": reload,
+        "reload_delay": reload_delay,
+    }
+
+    if reload:
+        asgi_app_import_str = f"{svc._import_str}.asgi_app"
+        config = Config(asgi_app_import_str, **uvicorn_options)
+        server = Server(config=config)
+        sock = config.bind_socket()
+        # TODO: use svc.build_args.include/exclude as default files to watch
+        # TODO: watch changes in model store when "latest" model tag is used
+        ChangeReload(config, target=server.run, sockets=[sock]).run()
+    else:
+        uvicorn.run(svc.asgi_app, **uvicorn_options)
 
 
 """

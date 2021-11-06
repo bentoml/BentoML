@@ -1,7 +1,7 @@
 import logging
 import re
 
-from bentoml.exceptions import BentoMLException
+from ...exceptions import BentoMLException
 
 logger = logging.getLogger(__name__)
 

@@ -91,13 +91,18 @@ class Image(IODescriptor):
 
     async def from_http_request(self, request: Request) -> "PIL.Image":
         content_type, _ = parse_options_header(request.headers["content-type"])
-        if content_type.decode("utf-8") != "multipart/form-data":
-            raise BentoMLException(
-                f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
-            )
-        form = await request.form()
-        contents = await form[list(form.keys()).pop()].read()
-        return PIL.Image.open(io.BytesIO(contents))
+        if content_type == b"multipart/form-data":
+            form = await request.form()
+            contents = await next(iter(form.values())).read()
+            return PIL.Image.open(io.BytesIO(contents))
+
+        if content_type.decode("utf-8").startswith("image/"):
+            ext = content_type.decode("utf-8").split("/")[-1].upper()
+            return PIL.Image.open(io.BytesIO(await request.body()))
+
+        raise BentoMLException(
+            f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
+        )
 
     async def to_http_response(
         self, obj: t.Union["np.ndarray", "PIL.Image.Image"]

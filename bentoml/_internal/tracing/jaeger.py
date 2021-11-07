@@ -2,7 +2,7 @@ import logging
 from contextlib import contextmanager
 from contextvars import ContextVar
 
-from ..tracing import Tracer
+from . import Tracer
 
 span_context_var = ContextVar("span context", default=None)
 logger = logging.getLogger(__name__)

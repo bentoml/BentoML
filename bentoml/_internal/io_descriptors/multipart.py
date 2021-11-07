@@ -43,7 +43,7 @@ class Multipart(IODescriptor[MultipartIO]):
                 )
 
         self._inputs = inputs
-  
+
     def openapi_request_schema(self):
         pass
 

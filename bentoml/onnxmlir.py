@@ -135,7 +135,7 @@ class _ONNXMLirRunner(Runner):
         self._session = load(self.name, self._model_store)
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: np.ndarray) -> np.ndarray:  # type: ignore[override] # noqa: E501
+    def _run_batch(self, input_data: np.ndarray) -> np.ndarray:  # type: ignore[override] # noqa: LN001
         return self._session.run(input_data)
 
 

@@ -31,8 +31,9 @@ logger = logging.getLogger(__name__)
 
 class NumpyNdarray(IODescriptor):
     """
-    `NumpyNdarray` defines API specification for the inputs/outputs of a Service, where either inputs will be
-    converted to or outputs will be converted from type `numpy.ndarray` as specified in your API function signature.
+    `NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
+     either inputs will be converted to or outputs will be converted from type
+     `numpy.ndarray` as specified in your API function signature.
 
     .. Toy implementation of a sklearn service::
         # sklearn_svc.py
@@ -58,17 +59,20 @@ class NumpyNdarray(IODescriptor):
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]' http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data '[[5,4,3,2]]'
+          http://0.0.0.0:5000/predict
 
         [1]%
 
     Args:
-        dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`, `optional`, default to `None`):
+        dtype (`~bentoml._internal.typing_extensions.numpy.DTypeLike`,
+               `optional`, default to `None`):
             Data Type users wish to convert their inputs/outputs to. Refers to
-             https://numpy.org/doc/stable/reference/arrays.dtypes.html for more information
+             https://numpy.org/doc/stable/reference/arrays.dtypes.html for more
+             information
         enforce_dtype (`bool`, `optional`, default to `False`):
-            Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype` must
-             be specified.
+            Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype`
+             must be specified.
         shape (`Tuple[int, ...]`, `optional`, default to `None`):
             Given shape that an array will be converted to. For example::
                 from bentoml.io import NumpyNdarray
@@ -76,13 +80,14 @@ class NumpyNdarray(IODescriptor):
                 inp = NumpyNdarray.from_sample(arr)
 
                 ...
-                @svc.api(input=inp(shape=(3,1), enforce_shape=True), output=NumpyNdarray())
+                @svc.api(input=inp(shape=(3,1), enforce_shape=True),
+                         output=NumpyNdarray())
                 def predict(input_array: np.ndarray) -> np.ndarray:
                     # input_array will have shape (3,1)
                     result = await runner.run(input_array)
         enforce_shape (`bool`, `optional`, default to `False`):
-            Whether to enforce a certain shape. If `enforce_shape=True` then `shape` must
-             be specified
+            Whether to enforce a certain shape. If `enforce_shape=True` then `shape`
+             must be specified
 
     Returns:
         IO Descriptor that represents `np.ndarray`.
@@ -166,11 +171,13 @@ class NumpyNdarray(IODescriptor):
             sample_input (`~bentoml._internal.typing_extensions.numpy.ArrayLike`):
                 Given inputs
             enforce_dtype (`bool`, `optional`, default to `True`):
-                Enforce a certain data type. `dtype` must be specified at function signature.
-                 If you don't want to enforce a specific dtype then change `enforce_dtype=False`.
+                Enforce a certain data type. `dtype` must be specified at function
+                 signature. If you don't want to enforce a specific dtype then change
+                 `enforce_dtype=False`.
             enforce_shape (`bool`, `optional`, default to `False`):
-                Enforce a certain shape. `shape` must be specified at function signature.
-                 If you don't want to enforce a specific shape then change `enforce_shape=False`.
+                Enforce a certain shape. `shape` must be specified at function
+                 signature. If you don't want to enforce a specific shape then change
+                 `enforce_shape=False`.
 
         Returns:
             `NumpyNdarray` IODescriptor from given users inputs.

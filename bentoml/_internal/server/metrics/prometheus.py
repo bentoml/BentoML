@@ -1,11 +1,8 @@
 import logging
 import os
 import shutil
+import typing as t
 from functools import partial
-from typing import TYPE_CHECKING, Optional
-
-if TYPE_CHECKING:
-    from multiprocessing.synchronize import Lock
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +13,7 @@ class PrometheusClient:
         *,
         namespace: str = "",
         multiproc: bool = True,
-        multiproc_dir: Optional[str] = None,
+        multiproc_dir: t.Optional[str] = None,
     ):
         """
         Set up multiproc_dir for prometheus to work in multiprocess mode,
@@ -35,7 +32,7 @@ class PrometheusClient:
             os.environ["prometheus_multiproc_dir"] = multiproc_dir
 
     @classmethod
-    def clean_multiproc_dir(cls, multiproc_dir: Optional[str]):
+    def clean_multiproc_dir(cls, multiproc_dir: t.Optional[str]):
         assert multiproc_dir is not None, "multiproc_dir must be provided"
         logger.debug("Setting up prometheus_multiproc_dir: %s", multiproc_dir)
         # Wipe prometheus metrics directory between runs
@@ -43,11 +40,6 @@ class PrometheusClient:
         # Ignore errors so it does not fail when directory does not exist
         shutil.rmtree(multiproc_dir, ignore_errors=True)
         os.makedirs(multiproc_dir, exist_ok=True)
-
-    @classmethod
-    def mark_process_dead(cls, pid: int):
-        # TODO(jiang)
-        pass
 
     @property
     def registry(self):
@@ -59,6 +51,12 @@ class PrometheusClient:
                 multiprocess.MultiProcessCollector(registry)
             self._registry = registry
         return self._registry
+
+    # review
+    # @classmethod
+    # def mark_process_dead(cls, pid: int):
+    #     # TODO(jiang)
+    #     pass
 
     @staticmethod
     def mark_process_dead(pid: int) -> None:

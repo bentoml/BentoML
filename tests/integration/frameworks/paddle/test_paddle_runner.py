@@ -5,10 +5,11 @@ import pytest
 
 import bentoml.paddle
 
-from .test_paddle_impl import test_df, train_paddle_model
+# for review: ???
+from .test_paddle_impl import test_df, train_paddle_model  # noqa: F401
 
 
-def test_paddlepaddle_load_runner(modelstore, train_paddle_model):
+def test_paddlepaddle_load_runner(modelstore, train_paddle_model):  # noqa: F811
     tag = bentoml.paddle.save(
         "linear_model", train_paddle_model, model_store=modelstore
     )
@@ -36,7 +37,7 @@ def test_paddlepaddle_runner_from_paddlehub(modelstore):
 
 
 @pytest.mark.gpus
-def test_paddlepaddle_load_runner_gpu(modelstore, train_paddle_model):
+def test_paddlepaddle_load_runner_gpu(modelstore, train_paddle_model):  # noqa: F811
     tag = bentoml.paddle.save(
         "linear_model", train_paddle_model, model_store=modelstore
     )

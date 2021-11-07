@@ -7,11 +7,13 @@ from ...exceptions import InvalidArgument
 from .base import IODescriptor
 
 
+# for review: check output formatting after fixing line breaks
 class Text(IODescriptor):
     """
 
-    `Text` defines API specification for the inputs/outputs of a Service. `Text` represents strings
-      for all incoming requests/outcoming responses as specified in your API function signature.
+    `Text` defines API specification for the inputs/outputs of a Service. `Text`
+      represents strings for all incoming requests/outcoming responses as specified in
+      your API function signature.
 
     .. Toy implementation of a GPT2 service::
         # gpt2_svc.py
@@ -39,9 +41,13 @@ class Text(IODescriptor):
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "Content-Type: text/plain" --data 'Not for nothing did Orin say that people outdoors down here just scuttle in vectors from air conditioning to air conditioning.' http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: text/plain" --data 'Not for nothing did Orin
+         say that people outdoors down here just scuttle in vectors from air
+         conditioning to air conditioning.' http://0.0.0.0:5000/predict
 
-        Not for nothing did Orin say that people outdoors down here just scuttle in vectors from air conditioning to air conditioning. How do you get to such a situation?\n\nWell, you want it to just be one giant monster and that is%
+        Not for nothing did Orin say that people outdoors down here just scuttle in
+         vectors from air conditioning to air conditioning. How do you get to such a
+         situation?\n\nWell, you want it to just be one giant monster and that is%
 
     .. notes::
         `Text` is not designed to take any `args` or `kwargs` during initialization

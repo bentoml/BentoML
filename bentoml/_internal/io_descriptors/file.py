@@ -14,8 +14,9 @@ logger = logging.getLogger(__name__)
 
 class File(IODescriptor):
     """
-    `File` defines API specification for the inputs/outputs of a Service, where either inputs will be
-    converted to or outputs will be converted from file-like objects as specified in your API function signature.
+    `File` defines API specification for the inputs/outputs of a Service, where either
+     inputs will be converted to or outputs will be converted from file-like objects as
+     specified in your API function signature.
 
     .. Toy implementation of a ViT service::
         # vit_svc.py
@@ -36,8 +37,10 @@ class File(IODescriptor):
         [INFO] Serving BentoML Service "vit-object-detection" defined in "vit_svc.py"
         [INFO] API Server running on http://0.0.0.0:5000
 
-    Users can then send a cURL requests like shown in different terminal session with an input PDF files::
-        % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:5000/predict
+    Users can then send a cURL requests like shown in different terminal session with an
+     input PDF files::
+        % curl -H "Content-Type: multipart/form-data" -F
+          'fileobj=@test.pdf;type=application/pdf' http://0.0.0.0:5000/predict
 
         %PDF-1.7
                   zed 1/L 1959874/O 282/E 157204/N 12/T 1959312/H [ 500 221]>>
@@ -48,7 +51,7 @@ class File(IODescriptor):
 
     Returns:
         IO Descriptor that represents file-like objects.
-    """
+    """  # noqa: LN001
 
     def __init__(self, media_type: t.Optional[str] = None):
         self._media_type = "application/octet-stream" if not media_type else media_type

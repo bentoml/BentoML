@@ -1,8 +1,6 @@
 # pylint: disable=redefined-outer-name
-import json
 import typing as t
 
-import psutil
 import pytest
 
 

@@ -4,10 +4,8 @@ import easyocr
 import imageio
 import numpy as np
 import pytest
-from easyocr import Reader
 
 import bentoml.easyocr
-from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
     from bentoml._internal.models.store import ModelInfo, ModelStore

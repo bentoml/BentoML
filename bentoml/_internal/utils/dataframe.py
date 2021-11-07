@@ -149,7 +149,7 @@ def _from_csv_without_index(
                 yield row_str
 
 
-_ORIENT_MAP: t.Dict[str, t.Callable[..., t.Iterator[str]]] = {
+_ORIENT_MAP: t.Dict[str, t.Callable[["_DataFrameState", str], t.Iterator[str]]] = {
     "records": _from_json_records,
     "columns": _from_json_columns,
     "values": _from_json_values,
@@ -179,9 +179,7 @@ def _dataframe_csv_from_input(
                     return None
             if orient not in _ORIENT_MAP:
                 return None
-            # fmt: off
-            _from_json = _ORIENT_MAP[orient]  # type: t.Callable[["_DataFrameState", str], t.Iterator[str]]
-            # fmt: on
+            _from_json = _ORIENT_MAP[orient]
             try:
                 return tuple(_from_json(state, table))
             except (TypeError, AttributeError, KeyError, IndexError):
@@ -203,40 +201,43 @@ def from_json_or_csv(
     dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]] = None,
 ) -> t.Tuple[t.Optional["pd.DataFrame"], t.Tuple[int, ...]]:
     """
-    Load DataFrames from multiple raw data in JSON or CSV format, efficiently
+    Load DataFrames from multiple raw data sources in JSON or CSV format, efficiently
 
-    Background: Each calling of `pandas.read_csv()` or `pandas.read_json` cost about 100ms,
-     no matter how many lines it contains. Concat ragged_tensor/csv before
-     read_json/read_csv to improve performance.
+    Background: Each call of `pandas.read_csv()` or `pandas.read_json` takes about
+     100ms, no matter how many lines the read data contains. This function concats
+     the ragged_tensor/csv before running `read_json`/`read_csv` to improve performance.
 
     Args:
         data (`Iterable[str]`):
-            Data either in JSON or CSV format
+            Data in either JSON or CSV format
         formats (`Iterable[str]`):
-            List of formats, including `json` or `csv`
-        orient (`str`, `optional`, default to `records`):
-            Indication of expected JSON string format. Compatible JSON strings can be produced
-             by `pandas.io.json.to_json()` with a corresponding orient value. Possible orients are:
-                - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data -> [values]}
+            List of formats, which are either `json` or `csv`
+        orient (`str`, `optional`, default `"records"`):
+            Indication of expected JSON string format. Compatible JSON strings can be
+             produced by `pandas.io.json.to_json()` with a corresponding orient value.
+             Possible orients are:
+                - `split` - `Dict[str, Any]`: {idx -> [idx], columns -> [columns], data
+                   -> [values]}
                 - `records` - `List[Any]`: [{column -> value}, ..., {column -> value}]
                 - `index` - `Dict[str, Any]`: {idx -> {column -> value}}
                 - `columns` - `Dict[str, Any]`: {column -> {index -> value}}
                 - `values` - `Dict[str, Any]`: Values arrays
-        columns (`List[str]`, `optional`, default to `None`):
-            List of columns name that users wish to update
-        dtype (`Union[bool, Dict[str, Any]]`, `optional`, default to `None`):
-            Data Type users wish to convert their inputs/outputs to. If it is a boolean,
-             then pandas will infer dtypes. Else if it is a dictionary of column to dtype, then
-             applies those to incoming dataframes. If False, then don't infer dtypes at all (only
-             applies to the data). This is not applicable when `orient='table'`.
+        columns (`List[str]`, `optional`, default `None`):
+            List of column names that users wish to update
+        dtype (`Union[bool, Dict[str, Any]]`, `optional`, default `None`):
+            Data type to inputs/outputs to. If it is a boolean, then pandas will infer
+             data types. Otherwise, if it is a dictionary of column to data type, then
+             applies those to incoming dataframes. If False, then don't infer data types
+             at all (only applies to the data). This is not applicable when
+             `orient='table'`.
 
     Returns:
-        A tuple containing `pandas.DataFrame` and a tuple containing length of all series
-         in returning DataFrame.
+        A tuple containing a `pandas.DataFrame` and a tuple containing the length of all
+         series in the returned DataFrame.
 
     Raises:
         pandas.errors.EmptyDataError:
-            When data is not found or emptied
+            When data is not found or is empty.
     """
     state = _DataFrameState(
         columns={k: i for i, k in enumerate(columns)} if columns else None

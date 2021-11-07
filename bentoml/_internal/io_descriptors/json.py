@@ -80,8 +80,9 @@ class DefaultJsonEncoder(json.JSONEncoder):
 
 class JSON(IODescriptor):
     """
-    `JSON` defines API specification for the inputs/outputs of a Service, where either inputs will be
-    converted to or outputs will be converted from a JSON representation as specified in your API function signature.
+    `JSON` defines API specification for the inputs/outputs of a Service, where either
+     inputs will be converted to or outputs will be converted from a JSON representation
+     as specified in your API function signature.
 
     .. Toy implementation of a sklearn service::
         # sklearn_svc.py
@@ -110,7 +111,8 @@ class JSON(IODescriptor):
         [INFO] API Server running on http://0.0.0.0:5000
 
     Users can then send a cURL requests like shown in different terminal session::
-        % curl -X POST -H "Content-Type: application/json" --data '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
+        % curl -X POST -H "Content-Type: application/json" --data
+          '[{"0":5,"1":4,"2":3,"3":2}]' http://0.0.0.0:5000/predict
 
         {"res":"[{\"0\":1}]"}%
 
@@ -119,7 +121,8 @@ class JSON(IODescriptor):
             Pydantic model schema.
         validate_json (`bool`, `optional`, default to `True`):
             If True, then use Pydantic model specified above to validate given JSON.
-        json_encoder (`Type[json.JSONEncoder]`, default to `~bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
+        json_encoder (`Type[json.JSONEncoder]`, default to
+                      `~bentoml._internal.io_descriptor.json.DefaultJsonEncoder`):
             JSON encoder.
     Returns:
         IO Descriptor that in JSON format.

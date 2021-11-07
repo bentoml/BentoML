@@ -269,7 +269,7 @@ def build(
                 ])
             )
         )
-    """
+    """  # noqa: LN001
     version = generate_new_version_id() if version is None else version
     description = svc.__doc__ if description is None else description
     models = [] if models is None else models

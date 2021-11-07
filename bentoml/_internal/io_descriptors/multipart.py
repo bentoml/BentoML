@@ -43,15 +43,7 @@ class Multipart(IODescriptor[MultipartIO]):
                 )
 
         self._inputs = inputs
-
-    @staticmethod
-    def _return_body(data: bytes) -> Message:
-        return {
-            "type": "http.request",
-            "body": data,
-            "more_body": False,
-        }
-
+  
     def openapi_request_schema(self):
         pass
 

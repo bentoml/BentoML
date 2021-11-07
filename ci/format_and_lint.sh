@@ -20,8 +20,7 @@ else
   echo "Code auto formatting passed"
 fi
 
-# The first line of the tests are  
-# always empty if there are no linting errors
+# The first line of the tests are always empty if there are no linting errors
 
 echo "Running flake8 on bentoml module.."
 output=$( flake8 --config=setup.cfg bentoml )
@@ -39,13 +38,13 @@ if [ -n "$first_line" ]; then
   has_errors=1
 fi
 
-echo "Running pylint on bentoml module.."
-output=$( pylint --rcfile="./pylintrc" bentoml )
-first_line=$(echo "${output}" | head -1)
-echo "$output"
-if [ -n "$first_line" ]; then
-  has_errors=1
-fi
+# echo "Running pylint on bentoml module.."
+# output=$( pylint --rcfile="./pylintrc" bentoml )
+# first_line=$(echo "${output}" | head -1)
+# echo "$output"
+# if [ -n "$first_line" ]; then
+#   has_errors=1
+# fi
 
 echo "Running pylint on tests and docker module.."
 output=$( pylint --rcfile="./pylintrc" --disable=E0401 tests docker )
@@ -55,21 +54,21 @@ if [ -n "$first_line" ]; then
   has_errors=1
 fi
 
-echo "Running mypy on bentoml module.."
-output=$( mypy --config-file "$GIT_ROOT"/mypy.ini bentoml )
-first_line=$(echo "${output}" | head -1)
-echo "$output"
-if [ -n "$first_line" ]; then
-  has_errors=1
-fi
+# echo "Running mypy on bentoml module.."
+# output=$( mypy --config-file "$GIT_ROOT"/mypy.ini bentoml )
+# first_line=$(echo "${output}" | head -1)
+# echo "$output"
+# if [ -n "$first_line" ]; then
+#   # has_errors=1
+# fi
 
-echo "Running mypy on docker module.."
-output=$( mypy --config-file "$GIT_ROOT"/mypy.ini docker )
-first_line=$(echo "${output}" | head -1)
-echo "$output"
-if [ -n "$first_line" ]; then
-  has_errors=1
-fi
+# echo "Running mypy on docker module.."
+# output=$( mypy --config-file "$GIT_ROOT"/mypy.ini docker )
+# first_line=$(echo "${output}" | head -1)
+# echo "$output"
+# if [ -n "$first_line" ]; then
+#   # has_errors=1
+# fi
 
 echo "Done"
 exit $has_errors

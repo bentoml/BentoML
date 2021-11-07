@@ -14,7 +14,7 @@ BatchType = t.TypeVar("BatchType")
 IndexType = t.Union[None, int]
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as tnp  # noqa
     import pandas as pd
 
 
@@ -80,7 +80,7 @@ class DataContainer(t.Generic[SingleType, BatchType]):
         ]
 
 
-class NdarrayContainer(DataContainer["np.ndarray", "np.ndarray"]):
+class NdarrayContainer(DataContainer["tnp.ndarray", "tnp.ndarray"]):
     @classmethod
     def singles_to_batch(cls, singles, batch_axis=0):
         import numpy as np

@@ -173,7 +173,8 @@ class BentoServiceEnv(object):
         self._pip_packages = {}
 
         # add BentoML to pip packages list
-        bentoml_deploy_version = bentoml_deployment_version
+        # bentoml_deploy_version = bentoml_deployment_version # TODO
+        bentoml_deploy_version = "1.0.0"
         self.add_pip_package("bentoml=={}".format(bentoml_deploy_version))
 
         if pip_packages:

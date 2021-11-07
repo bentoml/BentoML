@@ -1,16 +1,15 @@
-import itertools
-import json
 import typing as t
-from functools import partial
 
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import Response, StreamingResponse
 from starlette.types import Message
 
-from bentoml._internal.utils.http import parse_multipart_to_multireq
-
 from ...exceptions import BentoMLException, InvalidArgument
+from ..utils._formparser import (  # noqa
+    concat_multipart_responses,
+    populate_multipart_requests,
+)
 from .base import IODescriptor
 
 MultipartIO = t.Dict[str, t.Any]
@@ -18,15 +17,18 @@ MultipartIO = t.Dict[str, t.Any]
 
 class Multipart(IODescriptor[MultipartIO]):
     """
-    Example:
+    Examples::
 
     from bentoml.io import Image, JSON, Multipart
-    @svc.api(input=Multipart(image=Image(), annotations=JSON()}), output=JSON())
-    def predict(image: "PIL.Image.Image", annotations: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        ...
-        return {'img': img.toarray(), 'annotations': annotation}
 
-    curl -i -F image=@test.jpg -F annotations=@test.json localhost:5000/predict
+    spec = Multipart(img=Image(), annotations=JSON())
+
+    @svc.api(input=spec, output=spec)
+    def predict(img, annotations):
+        ...
+        return img, annotations
+
+    curl -i -F img=@test.jpg -F annotations=@test.json localhost:5000/predict
     """
 
     def __init__(self, **inputs: IODescriptor):
@@ -63,26 +65,20 @@ class Multipart(IODescriptor[MultipartIO]):
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
             )
 
-        res: t.Dict[str, t.Any] = dict()
-        reqs = await parse_multipart_to_multireq(request)
+        res = dict()
+        reqs = await populate_multipart_requests(request)
 
         for k, i in self._inputs.items():
             req = reqs[k]
             v = await i.from_http_request(req)
             res[k] = v
+        print(res)
         return res
 
     async def to_http_response(self, obj: MultipartIO) -> Response:
-        """to_http_response.
-
-        :param obj:
-        :type obj: MultipartIO
-        :rtype: Response
-        """
-        assert False  # TODO(jiang): not tested yet
-        res: t.Dict[str, Response] = dict()
-        for k, i in self._inputs.items():
-            v = obj.get(k)
-            r = await i.to_http_response(v)
-            res[k] = r
-        return multireq_to_multipart(res)
+        res: t.List[t.Tuple[str, t.Union[Response, StreamingResponse]]] = list()
+        for i, io_ in enumerate(self._inputs.items()):
+            io_descriptor = t.cast(IODescriptor, io_[1])
+            r = await io_descriptor.to_http_response(obj[i])  # noqa
+            res.append((io_[0], r))
+        return await concat_multipart_responses(res)

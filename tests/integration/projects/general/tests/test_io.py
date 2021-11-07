@@ -101,7 +101,7 @@ async def test_image(host, img_file, async_request):
                 data=form,
                 assert_data=b"true",
             )
-    '''
+    """
     # Test ImageInput as binary
     with open(str(img_file), "rb") as f:
         img = f.read()
@@ -117,7 +117,7 @@ async def test_image(host, img_file, async_request):
             data={"image": f},
             assert_data=b"[10, 10, 3]",
         )
-    '''
+    """
 
 
 """

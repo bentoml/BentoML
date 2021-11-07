@@ -12,7 +12,8 @@ class CustomLayer(keras.layers.Layer):
         super(CustomLayer, self).__init__(**kwargs)
         self.units = tf.Variable(units, name="units")
 
-    def call(self, inputs, training=False, **kwargs):
+    # for review
+    def call(self, inputs, training=False):
         if training:
             return inputs * self.units
         else:

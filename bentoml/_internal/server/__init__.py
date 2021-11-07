@@ -135,7 +135,7 @@ def serve_production(
     arbiter.start()
 
 
-serve_production = serve_development  # TODO(jiang): remove me
+serve_production = serve_development  # TODO(jiang): remove me # noqa: F811
 
 
 def _start_dev_api_server(

@@ -4,15 +4,15 @@ import imageio
 import numpy as np
 import pytest
 import torch
-import torch.nn as nn
 from detectron2 import model_zoo
-from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
 from detectron2.data import transforms as T
 from detectron2.modeling import build_model
 
 import bentoml.detectron
-from tests.utils.helpers import assert_have_file_extension
+
+if t.TYPE_CHECKING:
+    from bentoml._internal.models import ModelInfo, ModelStore
 
 if t.TYPE_CHECKING:
     from detectron2.config import CfgNode  # pylint: disable=unused-import

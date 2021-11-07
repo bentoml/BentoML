@@ -16,7 +16,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
 
-    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
+    from ._internal.models.store import ModelInfo, ModelStore
 
 try:
     import joblib

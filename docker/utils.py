@@ -551,7 +551,7 @@ def get_nested(obj: t.Dict, keys: t.List[str]) -> t.Any:
 
 
 def load_manifest_yaml(file: str) -> dict:
-    with open(file, "r") as input_file:
+    with open(file, "r", encoding="utf-8") as input_file:
         manifest: t.Dict = yaml.safe_load(input_file)
 
     v: MetadataSpecValidator = MetadataSpecValidator(

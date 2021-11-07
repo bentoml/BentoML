@@ -15,7 +15,6 @@ from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration.containers import BentoMLContainer
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
-from ..utils import generate_new_version_id
 
 if t.TYPE_CHECKING:
     from bentoml._internal.service import Service

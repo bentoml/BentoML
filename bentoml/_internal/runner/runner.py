@@ -2,7 +2,6 @@ import enum
 import os
 import typing as t
 from abc import ABC, abstractmethod
-from functools import partial
 
 import attr
 import psutil

@@ -3,7 +3,6 @@ import pytest
 from mxnet import gluon
 
 import bentoml.gluon
-from tests.utils.helpers import assert_have_file_extension
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 

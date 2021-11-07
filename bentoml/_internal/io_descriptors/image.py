@@ -34,8 +34,9 @@ DEFAULT_PIL_MODE = "RGB"
 
 class Image(IODescriptor):
     """
-    `Image` defines API specification for the inputs/outputs of a Service, where either inputs will be
-    converted to or outputs will be converted from images as specified in your API function signature.
+    `Image` defines API specification for the inputs/outputs of a Service, where either
+     inputs will be converted to or outputs will be converted from images as specified
+     in your API function signature.
 
     .. Toy implementation of a transformers service for object detection::
         #obj_detc.py
@@ -44,7 +45,9 @@ class Image(IODescriptor):
         import bentoml.transformers
 
         tag='google_vit_large_patch16_224:latest'
-        runner = bentoml.transformers.load_runner(tag, tasks='image-classification',device=-1,feature_extractor="google/vit-large-patch16-224")
+        runner = bentoml.transformers.load_runner(tag, tasks='image-classification',
+                                                  device=-1,
+                                                  feature_extractor="google/vit-large-patch16-224")
 
         svc = bentoml.Service("vit-object-detection", runners=[runner])
 
@@ -64,9 +67,14 @@ class Image(IODescriptor):
     Users can then send a cURL requests like shown in different terminal session::
         # we will run on our input image test.png
         # image can get from http://images.cocodataset.org/val2017/000000039769.jpg
-        % curl -H "Content-Type: multipart/form-data" -F 'fileobj=@test.jpg;type=image/jpeg' http://0.0.0.0:8000/predict
+        % curl -H "Content-Type: multipart/form-data" -F
+          'fileobj=@test.jpg;type=image/jpeg' http://0.0.0.0:8000/predict
 
-        [{"score":0.8610631227493286,"label":"Egyptian cat"},{"score":0.08770329505205154,"label":"tabby, tabby cat"},{"score":0.03540956228971481,"label":"tiger cat"},{"score":0.004140055272728205,"label":"lynx, catamount"},{"score":0.0009498853469267488,"label":"Siamese cat, Siamese"}]%
+        [{"score":0.8610631227493286,"label":"Egyptian cat"},
+         {"score":0.08770329505205154,"label":"tabby, tabby cat"},
+         {"score":0.03540956228971481,"label":"tiger cat"},
+         {"score":0.004140055272728205,"label":"lynx, catamount"},
+         {"score":0.0009498853469267488,"label":"Siamese cat, Siamese"}]%
 
     Args:
         pilmode (`str`, `optional`, default to `RGB`):
@@ -104,8 +112,7 @@ class Image(IODescriptor):
     ) -> StreamingResponse:
         if not any(isinstance(obj, i) for i in [np.ndarray, PIL.Image.Image]):
             raise InvalidArgument(
-                f"Unsupported Image type received: {type(obj)},"
-                f" `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
+                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
             )
         image = PIL.Image.fromarray(obj) if isinstance(obj, np.ndarray) else obj
 

@@ -1,5 +1,4 @@
 import itertools
-import json
 import typing as t
 from functools import partial
 
@@ -20,7 +19,9 @@ class Multipart(IODescriptor):
 
     from bentoml.io import Image, JSON, Multipart
     @svc.api(input=Multipart(image=Image(), annotations=JSON()}), output=JSON())
-    def predict(image: "PIL.Image.Image", annotations: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def predict(
+        image: "PIL.Image.Image", annotations: t.Dict[str, t.Any]
+    ) -> t.Dict[str, t.Any]:
         ...
         return {'img': img.toarray(), 'annotations': annotation}
 

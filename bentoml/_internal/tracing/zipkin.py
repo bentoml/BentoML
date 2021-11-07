@@ -6,7 +6,7 @@ from contextvars import ContextVar
 
 import requests
 
-from bentoml._internal.tracing import Tracer
+from ..tracing import Tracer
 
 logger = logging.getLogger(__name__)
 

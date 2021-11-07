@@ -56,7 +56,7 @@ def set_debug_mode(enabled: bool):
     os.environ[DEBUG_ENV_VAR] = str(enabled)
 
     # reconfigure logging
-    from bentoml._internal.utils.log import configure_logging
+    from ..utils.log import configure_logging
 
     configure_logging()
 
@@ -74,10 +74,7 @@ def get_debug_mode():
 def load_global_config(bentoml_config_file: t.Optional[str] = None):
     """Load global configuration of BentoML"""
 
-    from bentoml._internal.configuration.containers import (
-        BentoMLConfiguration,
-        BentoMLContainer,
-    )
+    from ..configuration.containers import BentoMLConfiguration, BentoMLContainer
 
     if not bentoml_config_file:
         bentoml_config_file = get_bentoml_config_file_from_env()
@@ -102,7 +99,7 @@ def load_global_config(bentoml_config_file: t.Optional[str] = None):
 
 
 def save_global_config(config_file_handle: t.TextIO):
-    from bentoml._internal.configuration.containers import BentoMLContainer
+    from ..configuration.containers import BentoMLContainer
 
     content = yaml.safe_dump(BentoMLContainer.config)
     config_file_handle.write(content)

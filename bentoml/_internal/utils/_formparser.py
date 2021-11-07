@@ -1,21 +1,29 @@
 import binascii
+import io
 import os
 import typing as t
-from collections import defaultdict
+from functools import partial
 
+import anyio
 import multipart.multipart as multipart  # noqa
-from starlette.datastructures import MutableHeaders
+from starlette.background import BackgroundTask
+from starlette.concurrency import iterate_in_threadpool
 from starlette.formparsers import _user_safe_decode  # noqa
 from starlette.formparsers import Headers, MultiPartMessage
 from starlette.formparsers import MultiPartParser as _StarletteMultiPartParser
 from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
+from starlette.types import Receive, Scope, Send
 
 from ...exceptions import BentoMLException
 
 _ItemsBody = t.TypeVar(
     "_ItemsBody",
     bound=t.List[t.Tuple[str, t.List[t.Tuple[bytes, bytes]], bytes]],
+)
+
+_ResponseList = t.TypeVar(
+    "_ResponseList", bound=t.List[t.Tuple[str, t.Union[Response, StreamingResponse]]]
 )
 
 
@@ -26,10 +34,6 @@ class MultiPartParser(_StarletteMultiPartParser):
 
     headers: Headers
     stream: t.AsyncGenerator[bytes, None]
-
-    def on_end(self) -> None:
-        message = (MultiPartMessage.END, b"")
-        self.messages.append(message)
 
     async def parse(self) -> _ItemsBody:
         # Parse the Content-Type header to get the multipart boundary.
@@ -60,8 +64,6 @@ class MultiPartParser(_StarletteMultiPartParser):
         content_disposition = None
         field_name = ""
 
-        # content_type = b""
-        # file: t.Optional[UploadFile] = None
         data = b""
 
         items = t.cast(_ItemsBody, list())
@@ -75,7 +77,6 @@ class MultiPartParser(_StarletteMultiPartParser):
             for message_type, message_bytes in messages:
                 if message_type == MultiPartMessage.PART_BEGIN:
                     content_disposition = None
-                    # content_type = b''
                     data = b""
                     headers = list()
                 elif message_type == MultiPartMessage.HEADER_FIELD:
@@ -86,8 +87,6 @@ class MultiPartParser(_StarletteMultiPartParser):
                     field = header_field.lower()
                     if field == b"content-disposition":
                         content_disposition = header_value
-                    # elif field == b"content-type":
-                    #     content_type = header_value
                     else:
                         headers.append((field, header_value))
                     header_field = b""
@@ -96,27 +95,10 @@ class MultiPartParser(_StarletteMultiPartParser):
                     _, options = multipart.parse_options_header(content_disposition)
                     options = t.cast(t.Dict[bytes, bytes], options)
                     field_name = _user_safe_decode(options[b"name"], charset)
-                    # if b"filename" in options:
-                    #     filename = _user_safe_decode(options[b'filename'], charset)
-                    #     file = UploadFile(
-                    #         filename=filename,
-                    #         content_type = content_type.decode('latin-1')
-                    #     )
-                    # else:
-                    #     file = None
                 elif message_type == MultiPartMessage.PART_DATA:
                     data += message_bytes
-                    # if not file:
-                    #     data += message_bytes
-                    # else:
-                    #     await file.write(message_bytes)
                 elif message_type == MultiPartMessage.PART_END:
                     items.append((field_name, headers, data))
-                    # if not file:
-                    #     items.append((field_name, headers, data))
-                    # else:
-                    #     await file.seek(0)
-                    #     items.append((field_name, file, headers))
 
         parser.finalize()
         return items
@@ -148,33 +130,66 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     return reqs
 
 
-async def concat_multipart_responses(
-    responses: t.List[t.Tuple[str, t.Union[Response, StreamingResponse]]]
-) -> Response:
-    boundary = binascii.hexlify(os.urandom(16)).decode("ascii")
+class _MultiResponse(Response):
+    media_type = "multipart/form-data"
 
-    content_type = "multipart/form-data; boundary=%s" % boundary
-    content = b""
-    header = list()
-    for field_name, resp in responses:
-        if isinstance(resp, StreamingResponse):
-            async for chunk in resp.body_iterator:
+    def __init__(
+        self,
+        responses: _ResponseList,
+        status_code: int = 200,
+        headers: t.Optional[t.Dict[str, str]] = None,
+        background: BackgroundTask = None,
+    ):
+        self.status_code = status_code
+        self.background = background
+        self.init_headers(headers)
+        _responses = [req_[1] for req_ in responses]
+        self._body = [
+            _resp.body_iterator
+            if isinstance(_resp, StreamingResponse)
+            else iterate_in_threadpool(io.BytesIO(_resp.body))
+            for _resp in _responses
+        ]
+
+    async def stream_multi_responses(self, send: Send) -> None:
+        await send(
+            {
+                "type": "http.response.start",
+                "status": self.status_code,
+                "headers": self.raw_headers,
+            }
+        )
+        for body_iterator in self._body:
+            async for chunk in body_iterator:
                 if not isinstance(chunk, bytes):
-                    chunk = chunk.encode(resp.charset)
-                content += chunk
-            print(content)
-        else:
-            content += resp.body
-        header.append(resp.headers)
+                    chunk = chunk.encode(self.charset)
+                await send(
+                    {"type": "http.response.body", "body": chunk, "more_body": True}
+                )
+        await send({"type": "http.response.body", "body": b"", "more_body": False})
 
-    # body = (
-    #     "".join("--%s\r\n"
-    #             "Content-Disposition: form-data; name=\"%s\"\r\n"
-    #             "\r\n"
-    #             "%s\r\n" % (boundary, field, value)
-    #             for field, value in fields.items()) +
-    #     "--%s--\r\n" % boundary
-    # )
-    print(header)
-    print(content)
-    return Response(content=content, headers=header, media_type="multipart/form-data")
+    @staticmethod
+    async def listen_for_disconnect(receive: Receive) -> None:
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                break
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        async with anyio.create_task_group() as task_group:
+
+            async def wrap(func: t.Callable[[], t.Coroutine]) -> None:
+                await func()
+                await task_group.cancel_scope.cancel()
+
+            task_group.start_soon(wrap, partial(self.stream_multi_responses, send))
+            await wrap(partial(self.listen_for_disconnect, receive))
+
+            if self.background is not None:
+                await self.background()
+
+
+async def concat_to_multipart_responses(responses: _ResponseList) -> Response:
+    boundary = binascii.hexlify(os.urandom(16)).decode("ascii")
+    headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
+    return _MultiResponse(responses, headers=headers)

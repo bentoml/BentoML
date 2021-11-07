@@ -7,7 +7,7 @@ from starlette.types import Message
 
 from ...exceptions import BentoMLException, InvalidArgument
 from ..utils._formparser import (  # noqa
-    concat_multipart_responses,
+    concat_to_multipart_responses,
     populate_multipart_requests,
 )
 from .base import IODescriptor
@@ -72,7 +72,6 @@ class Multipart(IODescriptor[MultipartIO]):
             req = reqs[k]
             v = await i.from_http_request(req)
             res[k] = v
-        print(res)
         return res
 
     async def to_http_response(self, obj: MultipartIO) -> Response:
@@ -81,4 +80,4 @@ class Multipart(IODescriptor[MultipartIO]):
             io_descriptor = t.cast(IODescriptor, io_[1])
             r = await io_descriptor.to_http_response(obj[i])  # noqa
             res.append((io_[0], r))
-        return await concat_multipart_responses(res)
+        return await concat_to_multipart_responses(res)

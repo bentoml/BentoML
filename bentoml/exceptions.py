@@ -1,6 +1,10 @@
 from http import HTTPStatus
 
 
+class _StopIteration(Exception):
+    ...
+
+
 class BentoMLException(Exception):
     """
     Base class for all BentoML's errors.

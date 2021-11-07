@@ -18,9 +18,8 @@ from ..types import PathType, Tag
 from ..utils import generate_new_version_id
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.service import Service
-
     from ..models.store import ModelStore
+    from ..service import Service
 
 logger = logging.getLogger(__name__)
 

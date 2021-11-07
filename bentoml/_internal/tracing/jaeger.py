@@ -2,7 +2,7 @@ import logging
 from contextlib import contextmanager
 from contextvars import ContextVar
 
-from bentoml._internal.tracing import Tracer
+from ..tracing import Tracer
 
 span_context_var = ContextVar("span context", default=None)
 logger = logging.getLogger(__name__)

@@ -5,8 +5,6 @@ from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import StreamingResponse
 
-import bentoml._internal.constants as const
-
 from ...exceptions import BentoMLException, InvalidArgument
 from ..utils import LazyLoader
 from .base import IODescriptor
@@ -21,11 +19,10 @@ else:
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
-    _exc = const.IMPORT_ERROR_MSG.format(
-        fwr="Pillow",
-        module=f"{__name__}.Image",
-        inst="`pip install Pillow`",
-    )
+    _exc = f"""\
+    `Pillow` is required to use {__name__}
+    Instructions: `pip install -U Pillow`
+    """
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
@@ -96,8 +93,10 @@ class Image(IODescriptor):
             contents = await next(iter(form.values())).read()
             return PIL.Image.open(io.BytesIO(contents))
 
-        if content_type.decode("utf-8").startswith("image/"):
-            ext = content_type.decode("utf-8").split("/")[-1].upper()
+        if (
+            content_type.decode("utf-8").startswith("image/")
+            or content_type == self._mime_type
+        ):
             return PIL.Image.open(io.BytesIO(await request.body()))
 
         raise BentoMLException(

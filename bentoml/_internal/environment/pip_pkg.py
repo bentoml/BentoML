@@ -12,7 +12,7 @@ import importlib_metadata
 from packaging.requirements import Requirement
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.service import Service
+    from ..service import Service
 
 EPP_NO_ERROR = 0
 EPP_PKG_NOT_EXIST = 1

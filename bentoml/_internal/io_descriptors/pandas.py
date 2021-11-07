@@ -1,5 +1,4 @@
 import logging
-import re
 import typing as t
 
 from starlette.requests import Request
@@ -171,9 +170,9 @@ class PandasDataFrame(IODescriptor):
                 )
             else:
                 assert all(
-                    l == r
-                    for l, r in zip(self._shape, res.shape)
-                    if l != -1 and r != -1
+                    l_shape == r_shape
+                    for l_shape, r_shape in zip(self._shape, res.shape)
+                    if l_shape != -1 and r_shape != -1
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
@@ -389,9 +388,9 @@ class PandasSeries(PandasDataFrame):
                 )
             else:
                 assert all(
-                    l == r
-                    for l, r in zip(self._shape, res.shape)
-                    if l != -1 and r != -1
+                    l_shape == r_shape
+                    for l_shape, r_shape in zip(self._shape, res.shape)
+                    if l_shape != -1 and r_shape != -1
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 

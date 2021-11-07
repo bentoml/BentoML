@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING
 import cloudpickle
 from simple_di import Provide, inject
 
-from bentoml._internal.configuration.containers import BentoServerContainer
-
+from ..configuration.containers import BentoServerContainer
 from .utils import TypeRef
 
 SingleType = t.TypeVar("SingleType")

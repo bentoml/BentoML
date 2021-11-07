@@ -6,12 +6,9 @@ import typing as t
 
 from simple_di import Provide, inject
 
-from bentoml._internal.io_descriptors.multipart import Multipart
-from bentoml._internal.server.base_app import BaseAppFactory
-from bentoml._internal.service.service import Service
-from bentoml.exceptions import BentoMLException
-
+from ...exceptions import BentoMLException, _StopIteration
 from ..configuration.containers import BentoMLContainer, BentoServerContainer
+from ..io_descriptors.multipart import Multipart
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 
@@ -22,9 +19,9 @@ if t.TYPE_CHECKING:
     from starlette.responses import Response
     from starlette.routing import BaseRoute
 
-    from bentoml._internal.server.metrics.prometheus import PrometheusClient
-    from bentoml._internal.service.inference_api import InferenceAPI
-    from bentoml._internal.tracing import Tracer
+    from ..server.metrics.prometheus import PrometheusClient
+    from ..service.inference_api import InferenceAPI
+    from ..tracing import Tracer
 
 
 feedback_logger = logging.getLogger("bentoml.feedback")
@@ -262,8 +259,9 @@ class ServiceAppFactory(BaseAppFactory):
 
         return app
 
+    @staticmethod
     def create_api_endpoint(
-        self, api: "InferenceAPI"
+        api: "InferenceAPI",
     ) -> t.Callable[["Request"], t.Coroutine[t.Any, t.Any, "Response"]]:
         """
         Create api function for flask route, it wraps around user defined API
@@ -299,7 +297,7 @@ class ServiceAppFactory(BaseAppFactory):
                     )
                 else:
                     response = JSONResponse("", status_code=e.error_code)
-            except Exception:  # pylint: disable=broad-except
+            except _StopIteration:
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
                 log_exception(request, sys.exc_info())

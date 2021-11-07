@@ -38,7 +38,6 @@ def get_pycaret_data():
 def pycaret_model(get_pycaret_data) -> t.Any:
     # note: silent must be set to True to avoid the confirmation input of data types
     train_data, _ = get_pycaret_data
-    # for review
     pycaret_setup(data=train_data, target="default", session_id=123, silent=True)
     dt = create_model("dt")
     tuned_dt = tune_model(dt)

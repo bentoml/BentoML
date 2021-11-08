@@ -1,26 +1,76 @@
+import os
+import shutil
 import typing as t
 
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner import Runner
-from .exceptions import MissingDependencyException
+from .exceptions import BentoMLException, MissingDependencyException
+
+SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
+ONNX_EXT: str = ".onnx"
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelStore
+    import numpy as np
+    import pandas as pd
+    import tensorflow as tf
+    import torch
+    from _internal.models.store import ModelInfo, ModelStore
 
 try:
-    ...
+    import numpy as np
+    import onnx
+    import onnxruntime as ort
 except ImportError:  # pragma: no cover
-    raise MissingDependencyException("")
+    raise MissingDependencyException(
+        """\
+`onnx` is required in order to use the module `bentoml.onnx`, do `pip install onnx`.
+For more information, refers to https://onnx.ai/get-started.html
+`onnxruntime` is also required by `bentoml.onnx`. Refers to https://onnxruntime.ai/ for more information.
+        """
+    )
+
+
+# helper methods
+def _yield_first_val(iterable: t.Sequence[t.Any]):
+    if isinstance(iterable, tuple):
+        yield iterable[0]
+    elif isinstance(iterable, str):
+        yield iterable
+    else:
+        yield from iterable
+
+
+def flatten_list(lst) -> t.List[str]:
+    if not isinstance(lst, list):
+        raise AttributeError
+    return [k for i in lst for k in _yield_first_val(i)]
+
+
+def _get_model_info(
+    tag: str,
+    model_store: "ModelStore",
+) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
+    model_info = model_store.get(tag)
+    if model_info.module != __name__:
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model_info.module}, failed loading "
+            f"with {__name__}."
+        )
+    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+    return model_info, model_file
 
 
 @inject
 def load(
     tag: str,
+    backend: t.Optional[str] = "onnxruntime",
+    providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
+    session_options: t.Optional["ort.SessionOptions"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-):
+) -> "ort.InferenceSession":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -35,6 +85,31 @@ def load(
 
     Examples::
     """  # noqa
+    _, model_file = _get_model_info(tag, model_store)
+
+    if backend not in SUPPORTED_ONNX_BACKEND:
+        raise BentoMLException(
+            f"'{backend}' runtime is currently not supported for ONNXModel"
+        )
+    if providers:
+        if not all(
+            i in onnxruntime.get_all_providers() for i in flatten_list(providers)
+        ):
+            raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
+    else:
+        providers = onnxruntime.get_available_providers()
+
+    if isinstance(model_file, onnx.ModelProto):
+        return onnxruntime.InferenceSession(
+            model_file.SerializeToString(),
+            sess_options=session_options,
+            providers=providers,
+        )
+    else:
+        _get_path = os.path.join(model_file, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+        return onnxruntime.InferenceSession(
+            _get_path, sess_options=session_options, providers=providers
+        )
 
 
 @inject
@@ -64,6 +139,22 @@ def save(
 
     Examples::
     """  # noqa
+    context = {"onnx": onnx.__version__, "onnxruntime": onnxruntime.__version__}
+    with model_store.register(
+        name,
+        module=__name__,
+        metadata=metadata,
+        framework_context=context,
+    ) as ctx:
+        if isinstance(model, onnx.ModelProto):
+            onnx.save_model(
+                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+            )
+        else:
+            shutil.copyfile(
+                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+            )
+        return ctx.tag
 
 
 class _ONNXRunner(Runner):
@@ -71,45 +162,104 @@ class _ONNXRunner(Runner):
     def __init__(
         self,
         tag: str,
-        resource_quota: t.Dict[str, t.Any],
-        batch_options: t.Dict[str, t.Any],
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        backend: str,
+        providers: t.Optional[t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]],
+        session_options: t.Optional["onnxruntime.SessionOptions"],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
+        model_store: "ModelStore",
     ):
         super().__init__(tag, resource_quota, batch_options)
+        model_info, model_file = _get_model_info(tag, model_store)
+
+        if backend not in SUPPORTED_ONNX_BACKEND:
+            raise BentoMLException(
+                f"'{backend}' runtime is currently not supported for ONNXModel"
+            )
+        if providers:
+            if not all(i in ort.get_all_providers() for i in flatten_list(providers)):
+                raise BentoMLException(
+                    f"'{providers}' cannot be parsed by `onnxruntime`"
+                )
+        else:
+            providers = ort.get_available_providers()
+
+        self._model_info = model_info
+        self._model_file = model_file
+        self._backend = backend
+        self._providers = providers
+        if not session_options:
+            self._get_default_session_options()
+        else:
+            self._session_options = session_options
+
+    def _get_default_session_options(self):
+        self._session_options = ort.SessionOptions()
+        self._session_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
+        self._session_options.intra_op_num_threads = self.num_concurrency_per_replica
+        self._session_options.inter_op_num_threads = self.num_concurrency_per_replica
+        self._session_options.graph_optimization_level = (
+            ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+        )
 
     @property
     def required_models(self) -> t.List[str]:
-        ...
+        return [self._model_info.tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        ...
+        if self.resource_quota.on_gpu:
+            return 1
+        return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        ...
+        if self.resource_quota.on_gpu:
+            return len(self.resource_quota.gpus)
+        return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
-        ...
+        if isinstance(self._model_file, onnx.ModelProto):
+            self._model = ort.InferenceSession(
+                self._model_file.SerializeToString(),
+                sess_options=self._session_options,
+                providers=self._providers,
+            )
+        else:
+            _path = os.path.join(self._model_file, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+            self._model = ort.InferenceSession(
+                _path, sess_options=self._session_options, providers=self._providers
+            )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data) -> t.Any:
-        ...
+    def _run_batch(
+        self,
+        input_data: t.Union["np.ndarray", "pd.DataFrame", "torch.Tensor", "tf.Tensor"],
+    ) -> t.Any:
+        input_data = np.array.astype(np.float32)
+        input_name = self._model.get_inputs()[0].name
+        output_name = self._model.get_outputs()[0].name
+        return self.model.run([output_name], {input_name: input_data})[0]
 
 
 @inject
 def load_runner(
     tag: str,
     *,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    backend: str = "onnxruntime",
+    providers: t.Optional[
+        t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
+    ] = None,
+    session_options: t.Optional["onnxruntime.SessionOptions"] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_ONNXRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.onnx.load_runner` implements a Runner class that
-    wrap around an Onnx model, which optimize it for the BentoML runtime.
+    wrap around an ONNX model, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):
@@ -126,143 +276,14 @@ def load_runner(
 
     Examples::
     """  # noqa
+    if not providers:
+        providers = ["CPUExecutionProvider"]
     return _ONNXRunner(
         tag=tag,
+        backend=backend,
+        providers=providers,
+        session_options=session_options,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
     )
-
-
-# import os
-# import shutil
-# import typing as t
-#
-# import bentoml._internal.constants as _const
-#
-# from ._internal.models.base import MODEL_NAMESPACE, Model
-# from ._internal.types import GenericDictType, PathType
-# from ._internal.utils import LazyLoader
-# from .exceptions import BentoMLException
-#
-# _exc = _const.IMPORT_ERROR_MSG.format(
-#     fwr="onnxruntime & onnx",
-#     module=__name__,
-#     inst="Refers to https://onnxruntime.ai/"
-#     " to correctly install backends options"
-#     " and platform suitable for your application usecase.",
-# )
-#
-# if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
-#     import onnx
-#     import onnxruntime
-# else:
-#     onnx = LazyLoader("onnx", globals(), "onnx", exc_msg=_exc)
-#     onnxruntime = LazyLoader("onnxruntime", globals(), "onnxruntime", exc_msg=_exc)
-#
-#
-# def _yield_first_val(iterable):
-#     if isinstance(iterable, tuple):
-#         yield iterable[0]
-#     elif isinstance(iterable, str):
-#         yield iterable
-#     else:
-#         yield from iterable
-#
-#
-# def flatten_list(lst) -> t.List[str]:
-#     if not isinstance(lst, list):
-#         raise AttributeError
-#     return [k for i in lst for k in _yield_first_val(i)]
-#
-#
-# class ONNXModel(Model):
-#     """
-#     Model class for saving/loading :obj:`onnx` models.
-#
-#     Args:
-#         model (`str`):
-#             Given filepath or protobuf of converted model.
-#             Make sure to use corresponding library to convert
-#             model from different frameworks to ONNX format.
-#         backend (`str`, `optional`, default to `onnxruntime`):
-#             Name of ONNX inference runtime. ["onnxruntime", "onnxruntime-gpu"]
-#         metadata (`GenericDictType`,  `optional`, default to `None`):
-#             Class metadata.
-#
-#     Raises:
-#         MissingDependencyException:
-#             :obj:`onnx` is required by ONNXModel
-#         NotImplementedError:
-#             :obj:`backend` as onnx runtime is not supported by ONNX
-#         BentoMLException:
-#             :obj:`backend` as onnx runtime is not supported by ONNXModel
-#         InvalidArgument:
-#             :obj:`path` passed in :meth:`~save` is not either
-#              a :obj:`onnx.ModelProto` or filepath
-#
-#     Example usage under :code:`train.py`::
-#
-#         TODO:
-#
-#     One then can define :code:`bento.py`::
-#
-#         TODO:
-#     """
-#
-#     SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
-#     ONNX_EXTENSION: str = ".onnx"
-#
-#     def __init__(
-#         self,
-#         model: t.Union[PathType, "onnx.ModelProto"],
-#         backend: t.Optional[str] = "onnxruntime",
-#         metadata: t.Optional[GenericDictType] = None,
-#     ):
-#         super(ONNXModel, self).__init__(model, metadata=metadata)
-#         if backend not in self.SUPPORTED_ONNX_BACKEND:
-#             raise BentoMLException(
-#                 f'"{backend}" runtime is currently not supported for ONNXModel'
-#             )
-#         self._backend = backend
-#
-#     @classmethod
-#     def __get_model_fpath(cls, path: PathType) -> PathType:
-#         return os.path.join(path, f"{MODEL_NAMESPACE}{cls.ONNX_EXTENSION}")
-#
-#     @classmethod
-#     def load(  # pylint: disable=arguments-differ
-#         cls,
-#         path: t.Union[PathType, "onnx.ModelProto"],
-#         backend: t.Optional[str] = "onnxruntime",
-#         providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
-#         sess_opts: t.Optional["onnxruntime.SessionOptions"] = None,
-#     ) -> "onnxruntime.InferenceSession":
-#         if backend not in cls.SUPPORTED_ONNX_BACKEND:
-#             raise BentoMLException(
-#                 f'"{backend}" runtime is currently not supported for ONNXModel'
-#             )
-#         if providers is not None:
-#             if not all(
-#                 i in onnxruntime.get_all_providers() for i in flatten_list(providers)
-#             ):
-#                 raise BentoMLException(
-#                     f"'{providers}' can't be parsed by `onnxruntime`"
-#                 )
-#         else:
-#             providers = onnxruntime.get_available_providers()
-#         if isinstance(path, onnx.ModelProto):
-#             return onnxruntime.InferenceSession(
-#                 path.SerializeToString(), sess_options=sess_opts, providers=providers
-#             )
-#         else:
-#             _get_path = str(cls.__get_model_fpath(path))
-#             return onnxruntime.InferenceSession(
-#                 _get_path, sess_options=sess_opts, providers=providers
-#             )
-#
-#     def save(self, path: t.Union[PathType, "onnx.ModelProto"]) -> None:
-#         if isinstance(self._model, onnx.ModelProto):
-#             onnx.save_model(self._model, self.__get_model_fpath(path))
-#         else:
-#             shutil.copyfile(self._model, str(self.__get_model_fpath(path)))

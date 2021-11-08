@@ -5,7 +5,7 @@ from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
 
 from ...exceptions import BentoMLException, InvalidArgument
-from ..utils._formparser import (  # noqa
+from ..utils.formparser import (  # noqa
     concat_to_multipart_responses,
     populate_multipart_requests,
 )

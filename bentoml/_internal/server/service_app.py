@@ -6,7 +6,7 @@ import typing as t
 
 from simple_di import Provide, inject
 
-from ...exceptions import BentoMLException, _StopIteration
+from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer, BentoServerContainer
 from ..io_descriptors.multipart import Multipart
 from ..server.base_app import BaseAppFactory
@@ -297,7 +297,7 @@ class ServiceAppFactory(BaseAppFactory):
                     )
                 else:
                     response = JSONResponse("", status_code=e.error_code)
-            except _StopIteration:
+            except Exception:  # pylint: disable=broad-except
                 # For all unexpected error, return 500 by default. For example,
                 # if users' model raises an error of division by zero.
                 log_exception(request, sys.exc_info())

@@ -10,7 +10,6 @@ from starlette.background import BackgroundTask
 from starlette.concurrency import iterate_in_threadpool
 from starlette.formparsers import _user_safe_decode  # noqa
 from starlette.formparsers import Headers, MultiPartMessage
-from starlette.formparsers import MultiPartParser as _StarletteMultiPartParser
 from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
 from starlette.types import Receive, Scope, Send
@@ -167,10 +166,10 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     return reqs
 
 
-class _MultiResponse(Response):
+class MultipartResponse(Response):
     media_type = "multipart/form-data"
 
-    def __init__(
+    def __init__(  # noqa
         self,
         responses: _ResponseList,
         status_code: int = 200,
@@ -229,4 +228,4 @@ class _MultiResponse(Response):
 async def concat_to_multipart_responses(responses: _ResponseList) -> Response:
     boundary = binascii.hexlify(os.urandom(16)).decode("ascii")
     headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
-    return _MultiResponse(responses, headers=headers)
+    return MultipartResponse(responses, headers=headers)

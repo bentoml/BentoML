@@ -67,7 +67,9 @@ class Multipart(IODescriptor[MultipartIO]):
 
     async def to_http_response(self, obj: MultipartIO) -> Response:
         res: t.List[t.Tuple[str, Response]] = list()
-        for i, io_ in enumerate(self._inputs.items()):  # type: t.Tuple[int, t.Tuple[str, IODescriptor]]
+        for i, io_ in enumerate(
+            self._inputs.items()
+        ):  # type: t.Tuple[int, t.Tuple[str, IODescriptor]]
             r: Response = await io_[1].to_http_response(obj[i])  # type: ignore[index]
             res.append((io_[0], r))
         return await concat_to_multipart_responses(res)

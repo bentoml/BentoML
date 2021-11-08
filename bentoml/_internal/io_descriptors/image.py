@@ -85,7 +85,7 @@ class Image(IODescriptor):
         IO Descriptor that represents either a `np.ndarray` or a `PIL.Image.Image`.
     """
 
-    def __init__(self, pilmode: str=DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
+    def __init__(self, pilmode: str = DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
         self._pilmode = pilmode
         self._mime_type = mime_type
         self._ext = mimetypes.guess_extension(mime_type)  # type: t.Optional[str]

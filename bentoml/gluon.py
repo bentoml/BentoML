@@ -164,8 +164,8 @@ class _GluonRunner(Runner):
             params = params.map(lambda i: i.as_in_context(self._ctx))
         else:
             raise TypeError(
-                '`_run_batch` of {self.__class__.__name__} only takes '
-                'mxnet.nd.array or numpt.ndarray as input parameters'
+                "`_run_batch` of {self.__class__.__name__} only takes "
+                "mxnet.nd.array or numpt.ndarray as input parameters"
             )
         res = self._predict_fn(*params.args, **params.kwargs)
         return res.asnumpy()

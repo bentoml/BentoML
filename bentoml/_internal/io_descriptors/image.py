@@ -1,4 +1,5 @@
 import io
+import mimetypes
 import typing as t
 
 import imageio
@@ -28,9 +29,6 @@ else:
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
 DEFAULT_PIL_MODE = "RGB"
-
-
-import mimetypes
 
 
 class Image(IODescriptor):

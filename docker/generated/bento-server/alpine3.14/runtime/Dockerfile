@@ -18,10 +18,8 @@ RUN conda install -y python=$PYTHON_VERSION pip \
     && conda clean -afy \
     && apk add --no-cache bash git build-base
 
-RUN pip install bentoml[bento_server]==${BENTOML_VERSION} --no-cache-dir
+RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir
 
 COPY tools/bento-server/entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT [ "entrypoint.sh" ]
-
-CMD ["bentoml", "serve-gunicorn", "/bento"]

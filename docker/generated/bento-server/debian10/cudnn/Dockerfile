@@ -41,11 +41,9 @@ FROM build_image as release_image
 
 ENV BENTOML_VERSION=1.0.0
 
-RUN pip install bentoml[bento_server]==${BENTOML_VERSION} --no-cache-dir && \
+RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir && \
     rm -rf /var/lib/apt/lists/*
 
 COPY tools/bento-server/entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT [ "entrypoint.sh" ]
-
-CMD ["bentoml", "serve-gunicorn", "/bento"]

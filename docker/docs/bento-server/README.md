@@ -19,11 +19,24 @@ BentoML bridges the gap between Data Science and DevOps. By providing a standard
 
 ## Announcement
 
-The `latest` tag for bento-server is still available with regarding the current changes to our Docker management. Please report any [issues](https://github.com/bentoml/BentoML/issues) if occurs.
+The `latest` tag for `bento-server` has been deprecated on Docker Hub.
+
+Tags also have new formats, therefore current format will also be deprecated.
+
+With the removal of `latest` tags, the following usecase is **NOT A BUG**:
+
+```shell
+» docker pull bentoml/bento-server
+Using default tag: latest
+Error response from daemon: manifest for bentoml/bento-server:latest
+not found: manifest unknown: manifest unknown
+```
 
 ## Overview of Images Types
 
 - `runtime`: Includes BentoML latest PyPI releases for `bento-server`.
+- `devel`: Nightly releases from `master` branch.
+- `cudnn`: Builds on top of `runtime` with the addition of [CUDA](https://developer.nvidia.com/gpu-accelerated-libraries) and [CUDNN](https://developer.nvidia.com/cudnn) libraries.
 
 ## Notes
 

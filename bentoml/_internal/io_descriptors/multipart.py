@@ -3,7 +3,6 @@ import typing as t
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
-from starlette.types import Message
 
 from ...exceptions import BentoMLException, InvalidArgument
 from ..utils._formparser import (  # noqa

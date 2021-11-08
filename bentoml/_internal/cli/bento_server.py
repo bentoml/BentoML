@@ -69,7 +69,7 @@ def add_serve_command(cli) -> None:
     ) -> None:
 
         if production:
-            from bentoml._internal.server import serve_production
+            from ..server import serve_production
 
             serve_production(
                 svc_import_path_or_bento_tag,
@@ -77,7 +77,7 @@ def add_serve_command(cli) -> None:
                 port=port,
             )
         else:
-            from bentoml._internal.server import serve_development
+            from ..server import serve_development
 
             serve_development(
                 svc_import_path_or_bento_tag,

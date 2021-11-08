@@ -2,13 +2,13 @@ import typing as t
 
 import numpy as np
 import pandas as pd
+from PIL import Image as PILImage
 
 import bentoml
 import bentoml.sklearn
-from bentoml._internal.io_descriptors.file import File
 from bentoml._internal.io_descriptors.pandas import PandasDataFrame, PandasSeries
 from bentoml._internal.types import FileLike, JSONSerializable
-from bentoml.io import JSON
+from bentoml.io import JSON, File, Image, Multipart
 
 
 class PickleModel:
@@ -35,6 +35,9 @@ class PickleModel:
     def predict_ndarray(self, input_arr: np.ndarray) -> np.ndarray:
         return input_arr * 2
 
+    def predict_multi_ndarray(self, arr1: np.ndarray, arr2: np.ndarray) -> np.ndarray:
+        return (arr1 + arr2) // 2
+
     def predict_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         assert isinstance(df, pd.DataFrame)
         output = df[["col1"]] * 2
@@ -53,6 +56,10 @@ dataframe_pred_runner = bentoml.sklearn.load_runner(
     "sk_model", function_name="predict_dataframe"
 )
 file_pred_runner = bentoml.sklearn.load_runner("sk_model", function_name="predict_file")
+
+multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
+    "sk_model", function_name="predict_multi_ndarray"
+)
 
 
 svc = bentoml.Service(
@@ -92,6 +99,14 @@ def predict_dataframe(df):
 @svc.api(input=File(), output=File())
 def predict_file(f):
     return file_pred_runner.run(f)
+
+
+@svc.api(input=Multipart(original=Image(), compared=Image()), output=Image())
+def predict_multi_images(original, compared):
+    output_array = multi_ndarray_pred_runner.run_batch(
+        np.array(original), np.array(compared)
+    )
+    return PILImage.fromarray(output_array)
 
 
 """

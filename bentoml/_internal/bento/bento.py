@@ -17,9 +17,8 @@ from ..store import Store, StoreItem
 from ..types import PathType, Tag
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.service import Service
-
     from ..models.store import ModelStore
+    from ..service import Service
 
 logger = logging.getLogger(__name__)
 

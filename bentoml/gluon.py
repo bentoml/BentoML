@@ -4,6 +4,8 @@ import typing as t
 import numpy as np
 from simple_di import Provide, inject
 
+from bentoml._internal.runner.utils import Params
+
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import JSON_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
@@ -150,15 +152,22 @@ class _GluonRunner(Runner):
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
+    def _run_batch(
         self,
-        input_data: t.Union[np.ndarray, mxnet.ndarray.NDArray],
+        *args: t.Union[np.ndarray, mxnet.ndarray.NDArray],
+        **kwargs: t.Union[np.ndarray, mxnet.ndarray.NDArray],
     ) -> np.ndarray:
-
-        if not isinstance(input_data, mxnet.ndarray.NDArray):
-            input_data = mxnet.nd.array(input_data)
-        print(input_data)
-        res = self._predict_fn(input_data.as_in_context(self._ctx))
+        params = Params[t.Union[np.ndarray, mxnet.ndarray.NDArray]](*args, **kwargs)
+        if isinstance(params.sample, np.ndarray):
+            params = params.map(lambda i: mxnet.nd.array(i, ctx=self._ctx))
+        elif isinstance(params.sample, mxnet.ndarray.NDArray):
+            params = params.map(lambda i: i.as_in_context(self._ctx))
+        else:
+            raise TypeError(
+                "`_run_batch` of {self.__class__.__name__} only takes "
+                "mxnet.nd.array or numpt.ndarray as input parameters"
+            )
+        res = self._predict_fn(*params.args, **params.kwargs)
         return res.asnumpy()
 
 

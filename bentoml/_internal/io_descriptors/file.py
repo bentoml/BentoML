@@ -3,7 +3,7 @@ import typing as t
 
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
-from starlette.responses import StreamingResponse
+from starlette.responses import Response
 
 from ...exceptions import BentoMLException, InvalidArgument
 from ..types import FileLike
@@ -64,18 +64,21 @@ class File(IODescriptor):
 
     async def from_http_request(self, request: Request) -> FileLike:
         content_type, _ = parse_options_header(request.headers["content-type"])
-        if content_type.decode("utf-8") != "multipart/form-data":
-            raise BentoMLException(
-                f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
-            )
-        form = await request.form()
-        f = next(iter(form.values()))
-        content = await f.read()
-        return FileLike(bytes_=content, name=f.filename)
+        if content_type.decode("utf-8") == "multipart/form-data":
+            form = await request.form()
+            f = next(iter(form.values()))
+            content = await f.read()
+            return FileLike(bytes_=content, name=f.filename)
+        if content_type.decode("utf-8") == "application/octet-stream":
+            body = await request.body()
+            return FileLike(bytes_=body)
+        raise BentoMLException(
+            f"{self.__class__.__name__} should be "
+            f"`Content-Type: application/octet-stream` or "
+            f"`Content-Type: multipart/form-data`, got {content_type} instead"
+        )
 
-    async def to_http_response(
-        self, obj: t.Union[FileLike, bytes]
-    ) -> StreamingResponse:
+    async def to_http_response(self, obj: t.Union[FileLike, bytes]) -> Response:
         if not any(isinstance(obj, i) for i in [FileLike, bytes]):
             raise InvalidArgument(
                 f"Unsupported Image type received: {type(obj)},"
@@ -83,4 +86,4 @@ class File(IODescriptor):
             )
         if isinstance(obj, bytes):
             obj = FileLike(bytes_=obj)
-        return StreamingResponse(obj.stream, media_type=self._media_type)
+        return Response(obj.stream.getvalue(), media_type=self._media_type)

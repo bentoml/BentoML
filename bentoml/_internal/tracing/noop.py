@@ -1,7 +1,7 @@
 import logging
 from contextlib import contextmanager
 
-from bentoml._internal.tracing import Tracer
+from ..tracing import Tracer
 
 logger = logging.getLogger(__name__)
 

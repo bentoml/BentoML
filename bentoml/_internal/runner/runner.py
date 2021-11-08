@@ -7,10 +7,9 @@ import attr
 import psutil
 from simple_di import Provide, inject
 
-from bentoml._internal.configuration.containers import BentoServerContainer
-from bentoml._internal.runner.container import AutoContainer
-from bentoml._internal.runner.utils import Params
-
+from ..configuration.containers import BentoServerContainer
+from ..runner.container import AutoContainer
+from ..runner.utils import Params
 from .utils import (
     _cpu_converter,
     _gpu_converter,
@@ -169,7 +168,6 @@ class Runner(_BaseRunner, ABC):
     Note: for pandas.DataFrame and List, the batch_axis must be 0
     """
 
-    @abstractmethod
     def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 

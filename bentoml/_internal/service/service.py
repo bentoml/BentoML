@@ -114,7 +114,7 @@ class Service:
 
     @property
     def asgi_app(self) -> "Starlette":
-        from bentoml._internal.server.service_app import ServiceAppFactory
+        from ..server.service_app import ServiceAppFactory
 
         return ServiceAppFactory(self)()
 

@@ -17,9 +17,9 @@ if t.TYPE_CHECKING:
         map(lambda x: int(x), np.__version__.split(".")[:2])  # pylint: disable=W0108
     )
     if (_major, _minor) > (1, 20):
-        from numpy.typing import ArrayLike, DTypeLike  # pylint: disable=W0611
+        from numpy.typing import ArrayLike, DTypeLike  # pylint: disable=E0611,W0611
     else:
-        from ..typing_extensions.numpy import (  # pylint: disable=W0611
+        from ..typing_extensions.numpy import (  # pylint: disable=E0611,W0611
             ArrayLike,
             DTypeLike,
         )

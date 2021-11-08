@@ -1,11 +1,11 @@
 import io
+import mimetypes
 import typing as t
 
+import imageio
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
-from starlette.responses import StreamingResponse
-
-import bentoml._internal.constants as const
+from starlette.responses import Response
 
 from ...exceptions import BentoMLException, InvalidArgument
 from ..utils import LazyLoader
@@ -21,11 +21,10 @@ else:
 
     # NOTE: pillow-simd only benefits users who want to do preprocessing
     # TODO: add options for users to choose between simd and native mode
-    _exc = const.IMPORT_ERROR_MSG.format(
-        fwr="Pillow",
-        module=f"{__name__}.Image",
-        inst="`pip install Pillow`",
-    )
+    _exc = f"""\
+    `Pillow` is required to use {__name__}
+    Instructions: `pip install -U Pillow`
+    """
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
@@ -80,16 +79,16 @@ class Image(IODescriptor):
         pilmode (`str`, `optional`, default to `RGB`):
             Color mode for PIL.
         mime_type (`str`, `optional`, default to `image/jpeg`):
-            Return MIME type for `starlette.response.StreamingResponse`
+            Return MIME type for `starlette.response.Response`
 
     Returns:
         IO Descriptor that represents either a `np.ndarray` or a `PIL.Image.Image`.
     """
 
-    def __init__(self, pilmode=DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
+    def __init__(self, pilmode: str = DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
         self._pilmode = pilmode
         self._mime_type = mime_type
-        self._ext = mime_type.split("/")[-1].upper()
+        self._ext = mimetypes.guess_extension(mime_type)  # type: t.Optional[str]
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -99,24 +98,34 @@ class Image(IODescriptor):
 
     async def from_http_request(self, request: Request) -> "PIL.Image":
         content_type, _ = parse_options_header(request.headers["content-type"])
-        if content_type.decode("utf-8") != "multipart/form-data":
-            raise BentoMLException(
-                f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
-            )
-        form = await request.form()
-        contents = await form[list(form.keys()).pop()].read()
-        return PIL.Image.open(io.BytesIO(contents))
+        if content_type == b"multipart/form-data":
+            form = await request.form()
+            contents = await next(iter(form.values())).read()
+            return PIL.Image.open(io.BytesIO(contents))
+
+        if (
+            content_type.decode("utf-8").startswith("image/")
+            or content_type == self._mime_type
+        ):
+            return PIL.Image.open(io.BytesIO(await request.body()))
+
+        raise BentoMLException(
+            f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
+        )
 
     async def to_http_response(
         self, obj: t.Union["np.ndarray", "PIL.Image.Image"]
-    ) -> StreamingResponse:
-        if not any(isinstance(obj, i) for i in [np.ndarray, PIL.Image.Image]):
+    ) -> Response:
+        if isinstance(obj, np.ndarray):
+            pass
+        elif isinstance(obj, PIL.Image.Image):
+            obj = np.array(obj)
+        else:
             raise InvalidArgument(
-                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
+                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
+                " supports only `np.ndarray` and `PIL.Image`"
             )
-        image = PIL.Image.fromarray(obj) if isinstance(obj, np.ndarray) else obj
 
-        # TODO: Support other return types?
         ret = io.BytesIO()
-        image.save(ret, self._ext)
-        return StreamingResponse(ret, media_type=self._mime_type)
+        imageio.imsave(ret, im=t.cast(t.Type["np.ndarray"], obj), format=self._ext)
+        return Response(ret.getvalue(), media_type=self._mime_type)

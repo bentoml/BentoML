@@ -1,5 +1,5 @@
 # pylint: disable=redefined-outer-name
-
+import numpy as np
 import pytest
 
 
@@ -51,27 +51,76 @@ async def test_file(host, bin_file, async_request):
     # Test FileInput as binary
     with open(str(bin_file), "rb") as f:
         b = f.read()
-        form = aiohttp.FormData()
-        form.add_field("file", b, content_type="application/octet-stream")
 
-        await async_request(
-            "POST",
-            f"http://{host}/predict_file",
-            data=form,
-            assert_data=b"\x810\x899",
-        )
+    await async_request(
+        "POST",
+        f"http://{host}/predict_file",
+        data=b,
+        headers={"Content-Type": "application/octet-stream"},
+        assert_data=b"\x810\x899",
+    )
 
-    """
     # Test FileInput as multipart binary
-    with open(str(bin_file), "rb") as f:
+    form = aiohttp.FormData()
+    form.add_field("file", b, content_type="application/octet-stream")
+
+    await async_request(
+        "POST",
+        f"http://{host}/predict_file",
+        data=form,
+        assert_data=b"\x810\x899",
+    )
+
+
+import aiohttp
+import imageio
+
+
+@pytest.fixture()
+def img_file(tmpdir):
+    img_file_ = tmpdir.join("test_img.jpg")
+    imageio.imwrite(str(img_file_), np.random.randint(2, size=(10, 10, 3)))
+    return str(img_file_)
+
+
+@pytest.mark.asyncio
+async def test_image(host, img_file, async_request):
+    import imageio  # noqa # pylint: disable=unused-import
+    import numpy as np  # noqa # pylint: disable=unused-import
+
+    def _verify_image(img_bytes):
+        return imageio.imread(img_bytes).shape == (10, 10, 3)
+
+    # Test MultiImageInput.
+    with open(str(img_file), "rb") as f1:
+        with open(str(img_file), "rb") as f2:
+            form = aiohttp.FormData()
+            form.add_field("original", f1.read(), content_type="image/jpeg")
+            form.add_field("compared", f2.read(), content_type="image/jpeg")
+
+            await async_request(
+                "POST",
+                f"http://{host}/predict_multi_images",
+                data=form,
+                assert_data=_verify_image,
+            )
+    """
+    # Test ImageInput as binary
+    with open(str(img_file), "rb") as f:
+        img = f.read()
+        await async_request(
+            "POST", f"http://{host}/predict_image", data=img, assert_data=b"[10, 10, 3]"
+        )
+
+    # Test ImageInput as multipart binary
+    with open(str(img_file), "rb") as f:
         await async_request(
             "POST",
-            f"http://{host}/predict_file",
-            headers=(("Content-Type", "multipart/form-data"),),
-            data={"file": f},
-            assert_data=b'{"b64": "gTCJOQ=="}',
+            f"http://{host}/predict_image",
+            data={"image": f},
+            assert_data=b"[10, 10, 3]",
         )
-        """
+    """
 
 
 """

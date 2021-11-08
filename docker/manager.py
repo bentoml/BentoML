@@ -87,7 +87,7 @@ class LogsMixin(object):
                 blocking generator from docker.api.build
             image_tag (:obj:`str`):
                 given model server tags.
-                Ex: model-server:0.13.0-python3.8-slim-runtime
+                Ex: bento-server:0.13.0-python3.8-slim-runtime
 
         Raises:
             docker.errors.BuildErrors:
@@ -298,7 +298,7 @@ class GenerateMixin(object):
         """
         Generate template context for each distro releases.
         Args:
-            pkg: release bentoml packages, either model-server or yatai-service
+            pkg: release bentoml packages: bento-server
             distro: linux distro. eg: centos
             pyv: python version
         Returns:
@@ -417,7 +417,6 @@ class GenerateMixin(object):
                 t.Dictionary of release tags and target dockerfile.
         """
 
-        # this will include both yatai-service and models-server path.
         _release_context: t.MutableMapping = defaultdict(list)
 
         # check if given distro is supported per package.

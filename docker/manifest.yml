@@ -7,8 +7,7 @@ specs:
       api: https://hub.docker.com/v2/users/login/
       repos: https://hub.docker.com/v2/repositories
     registry:
-      model-server: docker.io/bentoml/model-server
-      yatai-service: docker.io/bentoml/yatai-service
+      bento-server: docker.io/bentoml/bento-server
 
   dependencies:
     cuda: &cuda_spec
@@ -66,7 +65,7 @@ cuda:
     libcusolver: 11.1.2.109-1
 
 packages:
-  model-server:
+  bento-server:
     devel: &default_specs
       - debian10
       - centos8
@@ -76,9 +75,6 @@ packages:
       - amazonlinux2
       - alpine3.14
     cudnn:
-      - *default_specs
-  yatai-service:
-    runtime:
       - *default_specs
 
 releases:
@@ -104,7 +100,7 @@ releases:
     <<: *tmpl_spec
     templates_dir: templates/rhel
     base_image: amazonlinux:2
-    add_to_tags: "ami2"
+    add_to_tags: "amazonlinux2"
     cuda_prefix_url:
     cuda_requires:
     cuda:

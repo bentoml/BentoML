@@ -1,21 +1,23 @@
 from ._internal.io_descriptors import (
-    Bytes,
+    JSON,
     File,
     Image,
     IODescriptor,
     Multipart,
     NumpyNdarray,
     PandasDataFrame,
-    Str,
+    PandasSeries,
+    Text,
 )
 
 __all__ = [
-    "IODescriptor",
-    "Bytes",
     "File",
     "Image",
+    "IODescriptor",
+    "JSON",
     "Multipart",
     "NumpyNdarray",
     "PandasDataFrame",
-    "Str",
+    "PandasSeries",
+    "Text",
 ]

@@ -14,7 +14,7 @@ from tests.utils.helpers import assert_have_file_extension
 
 # fmt: off
 test_df = pd.DataFrame([[0, 0, 1, 1]])
-test_df2 = np.array([0,0,1,1])
+test_df2 = np.array([0, 0, 1, 1])
 
 # fmt: on
 if t.TYPE_CHECKING:

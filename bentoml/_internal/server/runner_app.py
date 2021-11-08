@@ -3,9 +3,8 @@ from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
-from bentoml._internal.server.base_app import BaseApp
-
 from ..configuration.containers import BentoMLContainer
+from ..server.base_app import BaseAppFactory
 
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
@@ -15,10 +14,10 @@ if TYPE_CHECKING:
     from starlette.requests import Request
     from starlette.responses import Response
 
-    from bentoml._internal.runner import Runner
+    from ..runner import Runner
 
 
-class RunnerApp(BaseApp):
+class RunnerApp(BaseAppFactory):
     @inject
     def __init__(
         self,
@@ -53,6 +52,7 @@ class RunnerApp(BaseApp):
 
     async def run(self, request: "Request") -> "Response":
         form = await request.form()
+        form
         # TODO(jiang)
 
     async def run_batch(self, request: "Request") -> "Response":

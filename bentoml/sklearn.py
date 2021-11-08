@@ -16,7 +16,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     import pandas as pd
 
-    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
+    from ._internal.models.store import ModelInfo, ModelStore
 
 try:
     import joblib
@@ -111,7 +111,7 @@ def save(
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:  # type: StoreCtx
+    ) as ctx:
         joblib.dump(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
         return ctx.tag
 
@@ -121,6 +121,7 @@ class _SklearnRunner(Runner):
     def __init__(
         self,
         tag: str,
+        function_name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -133,6 +134,7 @@ class _SklearnRunner(Runner):
         self._parallel_ctx = parallel_backend(
             "threading", n_jobs=self.num_concurrency_per_replica
         )
+        self._function_name = function_name
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -154,15 +156,19 @@ class _SklearnRunner(Runner):
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[np.ndarray, "pd.DataFrame"]
+        self,
+        *args: t.Union[np.ndarray, "pd.DataFrame"],
+        **kwargs: t.Union[np.ndarray, "pd.DataFrame"],
     ) -> "np.ndarray":
+        func = getattr(self._model, self._function_name)
         with self._parallel_ctx:
-            return self._model.predict(input_data)
+            return func(*args, **kwargs)
 
 
 @inject
 def load_runner(
     tag: str,
+    function_name: str = "predict",
     *,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
@@ -200,6 +206,7 @@ def load_runner(
     """  # noqa
     return _SklearnRunner(
         tag=tag,
+        function_name=function_name,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

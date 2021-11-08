@@ -1,6 +1,6 @@
 import logging
 import os
-from functools import lru_cache
+import typing as t
 
 import yaml
 
@@ -45,7 +45,7 @@ def is_pip_installed_bentoml():
     return is_installed_package and is_tagged and is_clean and is_modified
 
 
-def get_local_bentoml_config_file():
+def get_bentoml_config_file_from_env():
     if CONFIG_ENV_VAR in os.environ:
         # User local config file for customizing bentoml
         return expand_env_var(os.environ.get(CONFIG_ENV_VAR))
@@ -56,7 +56,7 @@ def set_debug_mode(enabled: bool):
     os.environ[DEBUG_ENV_VAR] = str(enabled)
 
     # reconfigure logging
-    from bentoml._internal.utils.log import configure_logging
+    from ..utils.log import configure_logging
 
     configure_logging()
 
@@ -71,22 +71,21 @@ def get_debug_mode():
     return False
 
 
-def load_global_config():
+def load_global_config(bentoml_config_file: t.Optional[str] = None):
     """Load global configuration of BentoML"""
 
-    from bentoml._internal.configuration.containers import (
-        BentoMLConfiguration,
-        BentoMLContainer,
-    )
+    from ..configuration.containers import BentoMLConfiguration, BentoMLContainer
 
-    bentoml_config_file = get_local_bentoml_config_file()
+    if not bentoml_config_file:
+        bentoml_config_file = get_bentoml_config_file_from_env()
+
     if bentoml_config_file:
         if not bentoml_config_file.endswith((".yml", ".yaml")):
             raise Exception(
                 "BentoML config file specified in ENV VAR does not end with `.yaml`: "
                 f"`BENTOML_CONFIG={bentoml_config_file}`"
             )
-        if os.isfile(bentoml_config_file):
+        if not os.path.isfile(bentoml_config_file):
             raise FileNotFoundError(
                 "BentoML config file specified in ENV VAR not found: "
                 f"`BENTOML_CONFIG={bentoml_config_file}`"
@@ -99,8 +98,8 @@ def load_global_config():
     BentoMLContainer.config.set(bentoml_configuration.as_dict())
 
 
-def save_global_config(config_file):
-    from bentoml._internal.configuration.containers import BentoMLContainer
+def save_global_config(config_file_handle: t.TextIO):
+    from ..configuration.containers import BentoMLContainer
 
     content = yaml.safe_dump(BentoMLContainer.config)
-    config_file.write(content)
+    config_file_handle.write(content)

@@ -22,24 +22,23 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
-if t.TYPE_CHECKING:  # pragma: no cover
+if t.TYPE_CHECKING:  # pragma: no cover # noqa
     # pylint: disable=unused-import
-    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager  # noqa
-    from transformers import FlaxPreTrainedModel  # noqa
+    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
     from transformers import (
+        FlaxPreTrainedModel,
         PretrainedConfig,
         PreTrainedModel,
         PreTrainedTokenizer,
         PreTrainedTokenizerFast,
         TFPreTrainedModel,
     )
-    from transformers.models.auto.auto_factory import _BaseAutoModelClass  # noqa
-    from transformers.pipelines.base import Pipeline
+    from transformers.feature_extraction_utils import PreTrainedFeatureExtractor
+    from transformers.models.auto.auto_factory import _BaseAutoModelClass
 
     from ._internal.models.store import ModelStore, StoreCtx
 try:
     import transformers
-    from huggingface_hub import HfFolder
     from transformers import AutoConfig, AutoTokenizer, Pipeline
     from transformers.file_utils import (
         CONFIG_NAME,
@@ -57,6 +56,16 @@ except ImportError:  # pragma: no cover
         Instruction: Install transformers with `pip install transformers`.
         """
     )
+
+try:
+    from huggingface_hub import HfFolder
+except ImportError:
+    HfFolder = None
+
+_hfhub_exc = """\
+`huggingface_hub` is required to use `bentoml.transformers.import_from_huggingface_hub()`.
+Instruction: `pip install huggingface_hub`
+"""
 
 _PV = t.TypeVar("_PV")
 _ModelType = t.TypeVar(
@@ -159,8 +168,9 @@ def _check_flax_supported() -> None:  # pragma: no cover
 
 
 _SAVE_CONFLICTS_ERR = """\
-When `tokenizer={tokenizer}`, model should be of type Union[`PreTrainedModel`, `TFPreTrainedModel`, `FlaxPreTrainedModel`].
-Currently `type(model)={model}`
+When `tokenizer={tokenizer}`, model should be of type
+Union[`PreTrainedModel`, `TFPreTrainedModel`, `FlaxPreTrainedModel`]. Currently
+`type(model)={model}`
 
 If you want to save the weight directly from
 `transformers` and save it to BentoML do:
@@ -172,7 +182,7 @@ If you are training a model from scratch using transformers, to save into BentoM
 If you want to import directly from a `transformers.pipeline` then do:
     # pipeline = transformers.pipelines('sentiment-analysis')
     `bentoml.transoformers.save("senta-pipe", pipeline)
-"""  # noqa
+"""
 
 
 @inject
@@ -187,7 +197,7 @@ def load(
 ) -> t.Tuple[
     "PretrainedConfig",
     t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
-    t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"],
+    t.Optional[t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]],
 ]:
     """
     Load a model from BentoML local modelstore with given name.
@@ -211,19 +221,24 @@ def load(
             kwargs that can be parsed to transformers Models instance.
 
     Returns:
-        a Tuple containing `model` and `tokenizer` for your given model saved at BentoML modelstore.
+        a Tuple containing `model` and `tokenizer` for your given model saved at BentoML
+         modelstore.
 
     Examples::
         import bentoml.transformers
-        model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="flax", lm_head="masked")
-    """  # noqa
+        model, tokenizer = bentoml.transformers.load('custom_gpt2', framework="flax",
+                                                     lm_head="masked")
+    """
     _check_flax_supported()  # pragma: no cover
     model_info = model_store.get(tag)
     _model, _tokenizer = model_info.options["model"], model_info.options["tokenizer"]
 
-    tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
-        model_info.path, from_tf=from_tf, from_flax=from_flax
-    )
+    if _tokenizer != "na":
+        tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
+            model_info.path, from_tf=from_tf, from_flax=from_flax
+        )
+    else:
+        tokenizer = None
     config = AutoConfig.from_pretrained(model_info.path)
 
     try:
@@ -258,7 +273,9 @@ def _download_from_hub(
 ) -> None:
     """
     Modification of https://github.com/huggingface/transformers/blob/master/src/transformers/file_utils.py
-    """  # noqa
+    """
+    if HfFolder is None:
+        raise BentoMLException(_hfhub_exc)
     headers = {"user-agent": http_user_agent(user_agent)}
     if isinstance(use_auth_token, str):
         headers["authorization"] = f"Bearer {use_auth_token}"
@@ -373,11 +390,27 @@ def _save(
     model_identifier: t.Union[str, _ModelType, "Pipeline"],
     tokenizer: t.Optional[_TokenizerType],
     metadata: t.Optional[t.Dict[str, t.Any]],
+    keep_download_from_hub: bool,
     model_store: "ModelStore",
     **transformers_options_kwargs: str,
 ) -> str:
     _check_flax_supported()  # pragma: no cover
     context = {"transformers": transformers.__version__}
+
+    if isinstance(model_identifier, str):
+        try:
+            info = model_store.get(name)
+            if not keep_download_from_hub:
+                logger.warning(
+                    f"{name} is found under BentoML modelstore.\nFor most usecases of using pretrained model,"
+                    f" you don't have to redownload the model. returning {info.tag}...\nIf you still insist on downloading,"
+                    " then specify `keep_download_from_hub=True` in `import_from_huggingface_hub`"
+                )
+                return info.tag
+            else:
+                pass
+        except FileNotFoundError:
+            pass
 
     with model_store.register(
         name,
@@ -479,9 +512,12 @@ def _save(
                 # NOTE: With Tokenizer there are way too many files
                 #  to be included, per frameworks. Thus we will load
                 #  a Tokenizer instance, then save it to path.
-                _tokenizer_inst = AutoTokenizer.from_pretrained(model_identifier)
-                _tokenizer_inst.save_pretrained(ctx.path)
-                ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
+                try:
+                    _tokenizer_inst = AutoTokenizer.from_pretrained(model_identifier)
+                    _tokenizer_inst.save_pretrained(ctx.path)
+                    ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
+                except ValueError:
+                    ctx.options["tokenizer"] = "na"
         return ctx.tag
 
 
@@ -501,14 +537,16 @@ def save(
     Args:
         name (`str`):
             Name for given model instance. This should pass Python identifier check.
-        model (`t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"]`, required):
-            Model instance provided by transformers. This can be retrieved from their `AutoModel`
-             class. You can also use any type of models/automodel provided by transformers. Refers to
-             https://huggingface.co/transformers/main_classes/model.html
+        model (`t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"]`,
+               required):
+            Model instance provided by transformers. This can be retrieved from their
+             `AutoModel` class. You can also use any type of models/automodel provided
+             by transformers. Refers to https://huggingface.co/transformers/main_classes/model.html
         tokenizer (`t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]`):
-            Tokenizer instance provided by transformers. This can be retrieved from their `AutoTokenizer`
-             class. You can also use any type of Tokenizer accordingly to your usecase provided by
-             transformers. Refers to https://huggingface.co/transformers/main_classes/tokenizer.html
+            Tokenizer instance provided by transformers. This can be retrieved from
+             their `AutoTokenizer` class. You can also use any type of Tokenizer
+             accordingly to your usecase provided by transformers. Refers to
+             https://huggingface.co/transformers/main_classes/tokenizer.html
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
@@ -518,29 +556,34 @@ def save(
         from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
             Load the model weights from a Flax checkpoint save file
         revision(:obj:`str`, `Optional`, defaults to :obj:`"main"`):
-            The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
-            git-based system for storing models and other artifacts on huggingface.co, so ``revision`` can be any
+            The specific model version to use. It can be a branch name, a tag name, or a
+            commit id, since we use a git-based system for storing models and other
+            artifacts on huggingface.co, so ``revision`` can be any
             identifier allowed by git.
         mirror(:obj:`str`, `Optional`):
-            Mirror source to accelerate downloads in China. If you are from China and have an accessibility
-            problem, you can set this option to resolve it. Note that we do not guarantee the timeliness or safety.
-            Please refer to the mirror site for more information.
+            Mirror source to accelerate downloads in China. If you are from China and
+            have an accessibility problem, you can set this option to resolve it. Note
+            that we do not guarantee the timeliness or safety. Please refer to the
+            mirror site for more information.
         proxies (:obj:`Dict[str, str], `Optional`):
-            A dictionary of proxy servers to use by protocol or endpoint, e.g., :obj:`{'http': 'foo.bar:3128',
-            'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
+            A dictionary of proxy servers to use by protocol or endpoint, e.g.
+            :obj:`{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}`. The
+            proxies are used on each request.
         use_auth_token (:obj:`str` or `bool`, `Optional`):
-            The token to use as HTTP bearer authorization for remote files. If :obj:`True`, will use the token
-            generated when running :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
+            The token to use as HTTP bearer authorization for remote files. If
+            :obj:`True`, will use the token generated when running
+            :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
         force_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
-            Whether or not to force the (re-)download of the model weights and configuration files, overriding the
-            cached versions if they exist.
+            Whether or not to force the (re-)download of the model weights and
+            configuration files, overriding the cached versions if they exist.
         resume_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
-            Whether or not to delete incompletely received files. Will attempt to resume the download if such a
-            file exists.
+            Whether or not to delete incompletely received files. Will attempt to resume
+            the download if such a file exists.
 
         .. note::
-            some parameters are direct port from `from_pretrained()` arguments. This ensures that when doing save
-            operations we don't actually load the model class, which can take a while to do so.
+            some parameters are direct port from `from_pretrained()` arguments. This
+            ensures that when doing save operations we don't actually load the model
+            class, which can take a while to do so.
 
     Returns:
         tag (`str` with a format `name:version`) where `name` is the defined name user
@@ -555,7 +598,7 @@ def save(
         # custom training and modification goes here
 
         tag = bentoml.transformers.save("flax_gpt2", model=model, tokenizer=tokenizer)
-    """  # noqa
+    """
     if isinstance(model, str) and not tokenizer:
         raise EnvironmentError(
             "If you want to import model directly from huggingface hub"
@@ -567,6 +610,7 @@ def save(
         model_identifier=model,
         tokenizer=tokenizer,
         metadata=metadata,
+        keep_download_from_hub=False,
         model_store=model_store,
         **transformers_options_kwargs,
     )
@@ -576,8 +620,9 @@ def save(
 def import_from_huggingface_hub(
     name: str,
     *,
-    save_namespace: t.Union[str, None] = None,
+    save_namespace: t.Optional[str] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    keep_download_from_hub: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **transformers_options_kwargs: str,
 ) -> str:
@@ -586,43 +631,50 @@ def import_from_huggingface_hub(
 
     Args:
         name (`str`):
-            Model name retrieved from huggingface hub. This shouldn't be a model instance.
-             If you would like to save a model instance refers to `~bentoml.transformers.save`
-             for more information.
+            Model name retrieved from huggingface hub. This shouldn't be a model
+             instance. If you would like to save a model instance refers to
+             `~bentoml.transformers.save` for more information.
         save_namespace (`str`, default to given `name`):
             Name to save model to BentoML modelstore.
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
         model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
+        keep_download_from_hub (`bool`, `optional`, default to `False`):
+            Whether to re-download pretrained model from hub.
         from_tf (:obj:`bool`, `Optional`, defaults to :obj:`False`):
             Load the model weights from a TensorFlow checkpoint save file
         from_flax (:obj:`bool`, `Optional`, defaults to :obj:`False`):
             Load the model weights from a Flax checkpoint save file
         revision(:obj:`str`, `Optional`, defaults to :obj:`"main"`):
-            The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
-            git-based system for storing models and other artifacts on huggingface.co, so ``revision`` can be any
-            identifier allowed by git.
+            The specific model version to use. It can be a branch name, a tag name, or a
+            commit id, since we use a git-based system for storing models and other
+            artifacts on huggingface.co, so ``revision`` can be any identifier allowed
+            by git.
         mirror(:obj:`str`, `Optional`):
-            Mirror source to accelerate downloads in China. If you are from China and have an accessibility
-            problem, you can set this option to resolve it. Note that we do not guarantee the timeliness or safety.
-            Please refer to the mirror site for more information.
+            Mirror source to accelerate downloads in China. If you are from China and
+            have an accessibility problem, you can set this option to resolve it. Note
+            that we do not guarantee the timeliness or safety. Please refer to the
+            mirror site for more information.
         proxies (:obj:`Dict[str, str], `Optional`):
-            A dictionary of proxy servers to use by protocol or endpoint, e.g., :obj:`{'http': 'foo.bar:3128',
-            'http://hostname': 'foo.bar:4012'}`. The proxies are used on each request.
+            A dictionary of proxy servers to use by protocol or endpoint, e.g.
+            :obj:`{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}`. The
+            proxies are used on each request.
         use_auth_token (:obj:`str` or `bool`, `Optional`):
-            The token to use as HTTP bearer authorization for remote files. If :obj:`True`, will use the token
-            generated when running :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
+            The token to use as HTTP bearer authorization for remote files. If
+            :obj:`True`, will use the token generated when running
+            :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
         force_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
-            Whether or not to force the (re-)download of the model weights and configuration files, overriding the
-            cached versions if they exist.
+            Whether or not to force the (re-)download of the model weights and
+            configuration files, overriding the cached versions if they exist.
         resume_download (:obj:`bool`, `Optional`, defaults to :obj:`False`):
-            Whether or not to delete incompletely received files. Will attempt to resume the download if such a
-            file exists.
+            Whether or not to delete incompletely received files. Will attempt to resume
+            the download if such a file exists.
 
         .. note::
-            some parameters are direct port from `from_pretrained()` arguments. This ensures that when doing save
-            operations we don't actually load the model class, which can take up a lot of time and resources.
+            some parameters are direct port from `from_pretrained()` arguments. This
+            ensures that when doing save operations we don't actually load the model
+            class, which can take up a lot of time and resources.
 
     Returns:
         tag (`str` with a format `name:version`) where `name` is the defined name user
@@ -633,12 +685,13 @@ def import_from_huggingface_hub(
         import bentoml.transformers
 
         tag = bentoml.transformers.import_from_huggingface_hub("gpt2", from_tf=True)
-    """  # noqa
+    """
     save_namespace = _clean_name(name) if save_namespace is None else save_namespace
     return _save(
         name=save_namespace,
         model_identifier=name,
         tokenizer=None,
+        keep_download_from_hub=keep_download_from_hub,
         metadata=metadata,
         model_store=model_store,
         **transformers_options_kwargs,
@@ -654,9 +707,11 @@ class _TransformersRunner(Runner):
         *,
         framework: str,
         lm_head: str,
+        device: int,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        **pipeline_kwargs: t.Any,
     ):
         super().__init__(tag, resource_quota, batch_options)
         try:
@@ -669,6 +724,22 @@ class _TransformersRunner(Runner):
         self._model_store = model_store
         self._framework = framework
         self._lm_head = lm_head
+        self._device = device
+        self._pipeline_kwargs = pipeline_kwargs
+
+        # pipeline arguments
+        self._feature_extractor = pipeline_kwargs.pop(
+            "feature_extractor", None
+        )  # type: t.Optional[t.Union[str, "PreTrainedFeatureExtractor"]]
+        self._revision = pipeline_kwargs.pop("revision", None)  # type: t.Optional[str]
+        self._use_fast = pipeline_kwargs.pop("use_fast", True)  # type: bool
+        self._use_auth_token = pipeline_kwargs.pop(
+            "use_auth_token", None
+        )  # type: t.Optional[t.Union[str, bool]]
+        self._model_kwargs = pipeline_kwargs.pop(
+            "model_kwargs", {}
+        )  # type: t.Dict[str, t.Any]
+        self._kwargs = pipeline_kwargs
 
     @property
     def required_models(self) -> t.List[str]:
@@ -687,27 +758,33 @@ class _TransformersRunner(Runner):
     def _setup(self) -> None:  # type: ignore[override]
         try:
             _ = self._model_store.get(self.name)
-            from_tf = "tf" in self._framework
-            config, model, tokenizer = load(
+            self._config, self._model, self._tokenizer = load(
                 self.name,
                 model_store=self._model_store,
                 from_flax=False,
-                from_tf=from_tf,
+                from_tf="tf" in self._framework,
                 framework=self._framework,
                 lm_head=self._lm_head,
             )
         except FileNotFoundError:
-            config, model, tokenizer = None, None, None
+            self._config, self._model, self._tokenizer = None, None, None
         self._pipeline: "Pipeline" = transformers.pipeline(
             self._tasks,
-            config=config,
-            model=model,
-            tokenizer=tokenizer,
+            config=self._config,
+            model=self._model,
+            tokenizer=self._tokenizer,
             framework=self._framework,
+            feature_extractor=self._feature_extractor,
+            revision=self._revision,
+            use_fast=self._use_fast,
+            use_auth_token=self._use_auth_token,
+            model_kwargs=self._model_kwargs,
+            device=self._device,
+            **self._kwargs,
         )
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Union[_PV, t.List[_PV]]) -> t.Union[_PV, t.List[_PV]]:  # type: ignore[override] # noqa
+    def _run_batch(self, input_data: t.Union[_PV, t.List[_PV]]) -> t.Union[_PV, t.List[_PV]]:  # type: ignore[override]  # noqa
         res = self._pipeline(input_data)  # type: t.Union[_PV, t.List[_PV]]
         return res
 
@@ -718,19 +795,21 @@ def load_runner(
     tasks: str,
     framework: str = "pt",
     lm_head: str = "casual",
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    device: int = -1,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+    **pipeline_kwargs: t.Any,
 ) -> "_TransformersRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
-    maximize throughput. `bentoml.transformers.load_runner` implements a Runner class that
-    wrap around a transformers pipeline, which optimize it for the BentoML runtime.
+    maximize throughput. `bentoml.transformers.load_runner` implements a Runner class
+    that wrap around a transformers pipeline, which optimize it for the BentoML runtime.
 
     .. warning::
-        `load_runner` will try to load the model from given `tag`. If the model does not exists,
-         then BentoML will fallback to initialize pipelines from transformers, thus files will be
-         loaded from huggingface cache.
+        `load_runner` will try to load the model from given `tag`. If the model does not
+         exists, then BentoML will fallback to initialize pipelines from transformers,
+         thus files will be loaded from huggingface cache.
 
 
     Args:
@@ -762,13 +841,15 @@ def load_runner(
         runner = bentoml.transformers.load_runner("gpt2:latest", tasks='zero-shot-classification',
                                                   framework=tf)
         runner.run_batch(["In today news, ...", "The stocks market seems ..."])
-    """  # noqa
+    """
     return _TransformersRunner(
         tag=tag,
         tasks=tasks,
         framework=framework,
         lm_head=lm_head,
+        device=device,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,
+        **pipeline_kwargs,
     )

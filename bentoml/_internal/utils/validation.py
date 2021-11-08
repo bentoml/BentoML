@@ -1,28 +1,29 @@
 import re
 
-from bentoml.exceptions import InvalidArgument
+from ...exceptions import InvalidArgument
 
-dns1123_label_fmt = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
-dns1123_subdomain_max_length = 253
-dns1123_subdomain_max_length_error_msg = (
-    "a valid DNS1123 subbdomain name must be less than "
-    f"{dns1123_subdomain_max_length} characters in length"
+tag_fmt = "[a-z0-9]([-._a-z0-9]*[a-z0-9])?"
+tag_max_length = 63
+tag_max_length_error_msg = (
+    "a tag's name or version must be at most {tag_max_length} characters in length"
 )
-dns1123_subdomain_fmt = dns1123_label_fmt + "(\\." + dns1123_label_fmt + ")*"
-dns1123_subdomain_error_msg = (
-    "a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters"
-    ", '-' or '.', and must start and end with an alphanumeric character"
-)
-dns1123_subdomain_regex = re.compile(f"^{dns1123_subdomain_fmt}$")
+tag_invalid_error_msg = "a tag's name or version must consist of alphanumeric characters, '_', '-', or '.', and must start and end with an alphanumeric character"
+tag_regex = re.compile(f"^{tag_fmt}$")
 
 
-def check_is_dns1123_subdomain(value: str):
-    """tests if a string conforms to the definition of a subdomain in DNS (RFC 1123)"""
+def validate_tag_str(value: str):
+    """
+    Validate that a tag value (either name or version) is a simple string that:
+        * Must be at most 63 characters long,
+        * Begin and end with an alphanumeric character (`[a-z0-9A-Z]`), and
+        * May contain dashes (`-`), underscores (`_`) dots (`.`), or alphanumerics
+          between.
+    """
     errors = []
-    if len(value) > dns1123_subdomain_max_length:
-        errors.append(dns1123_subdomain_max_length_error_msg)
-    if dns1123_subdomain_regex.match(value) is None:
-        errors.append(dns1123_subdomain_error_msg)
+    if len(value) > tag_max_length:
+        errors.append(tag_max_length_error_msg)
+    if tag_regex.match(value) is None:
+        errors.append(tag_invalid_error_msg)
 
     if errors:
-        raise InvalidArgument(",".join(errors))
+        raise InvalidArgument(", and ".join(errors))

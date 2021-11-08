@@ -2,6 +2,8 @@ import logging
 from contextlib import contextmanager
 from contextvars import ContextVar
 
+from . import Tracer
+
 span_context_var = ContextVar("span context", default=None)
 logger = logging.getLogger(__name__)
 
@@ -41,7 +43,7 @@ def initialize_tracer(
     return config.new_tracer()
 
 
-class JaegerTracer:
+class JaegerTracer(Tracer):
     def __init__(self, address, port):
         self.address = address
         self.port = port

@@ -9,15 +9,15 @@ from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
-from bentoml.exceptions import BentoMLConfigException
-
+from ...exceptions import BentoMLConfigException
 from ..utils import get_free_port
 from . import expand_env_var
 
 if TYPE_CHECKING:
     from pyarrow._plasma import PlasmaClient
 
-    from ..marshal.marshal import MarshalApp
+    from ..server.metrics.prometheus import PrometheusClient
+
 
 LOGGER = logging.getLogger(__name__)
 SYSTEM_HOME = os.path.expanduser("~")
@@ -175,6 +175,7 @@ class BentoMLContainerClass:
         bentoml_home,
         "bentos",
     )
+
     default_model_store_base_dir: Provider[str] = providers.Factory(
         os.path.join,
         bentoml_home,
@@ -184,7 +185,7 @@ class BentoMLContainerClass:
     @providers.SingletonFactory
     @staticmethod
     def bento_store(base_dir=default_bento_store_base_dir):
-        from ..bento.store import BentoStore
+        from ..bento import BentoStore
 
         return BentoStore(base_dir)
 
@@ -221,15 +222,39 @@ class BentoMLContainerClass:
 
             return NoopTracer()
 
+    logging_file_directory = providers.Factory(
+        lambda default, customized: customized or default,
+        providers.Factory(
+            os.path.join,
+            bentoml_home,
+            "logs",
+        ),
+        config.logging.file.directory,
+    )
+
+
+BentoMLContainer = BentoMLContainerClass()
+
+
+@container
+class BentoServerContainerClass:
+
+    bentoml_container = BentoMLContainer
+    config = bentoml_container.config.bento_server
+
     @providers.SingletonFactory
     @staticmethod
     def access_control_options(
-        allow_origins=config.bento_server.cors.allow_origins,
-        allow_credentials=config.bento_server.cors.access_control_allow_credentials,
-        expose_headers=config.bento_server.cors.access_control_expose_headers,
-        allow_methods=config.bento_server.cors.access_control_allow_methods,
-        allow_headers=config.bento_server.cors.access_control_allow_headers,
-        max_age=config.bento_server.cors.access_control_max_age,
+        allow_origins: t.List[str] = Provide[config.cors.access_control_allow_origin],
+        allow_credentials: t.List[str] = Provide[
+            config.cors.access_control_allow_credentials
+        ],
+        expose_headers: t.List[str] = Provide[
+            config.cors.access_control_expose_headers
+        ],
+        allow_methods: t.List[str] = Provide[config.cors.access_control_allow_methods],
+        allow_headers: t.List[str] = Provide[config.cors.access_control_allow_headers],
+        max_age: int = Provide[config.cors.access_control_max_age],
     ) -> t.Dict:
         kwargs = dict(
             allow_origins=allow_origins,
@@ -245,59 +270,29 @@ class BentoMLContainerClass:
 
     api_server_workers = providers.Factory(
         lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
-        config.bento_server.workers,
+        config.workers,
     )
 
-    deployment_type: Provider[str] = providers.Static("local")
-
     service_host: Provider[str] = providers.Static("0.0.0.0")
-    service_port: Provider[int] = config.bento_server.port
+    service_port: Provider[int] = config.port
 
     forward_host: Provider[str] = providers.Static("localhost")
     forward_port: Provider[int] = providers.SingletonFactory(get_free_port)
-
-    @providers.Factory
-    @staticmethod
-    def model_server():
-        from ..server._gunicorn_model_server import GunicornModelServer
-
-        return GunicornModelServer()
-
-    @providers.Factory
-    @staticmethod
-    def proxy_server():
-        from ..server._gunicorn_marshal_server import GunicornMarshalServer
-
-        return GunicornMarshalServer()
-
-    @providers.Factory
-    @staticmethod
-    def proxy_app() -> "MarshalApp":
-        from ..marshal.marshal import MarshalApp
-
-        return MarshalApp()
-
-    @providers.Factory
-    @staticmethod
-    def service_app():
-        from ..server.service_app import ServiceApp
-
-        return ServiceApp()
 
     prometheus_lock = providers.SingletonFactory(multiprocessing.Lock)
 
     prometheus_multiproc_dir = providers.Factory(
         os.path.join,
-        bentoml_home,
+        bentoml_container.bentoml_home,
         "prometheus_multiproc_dir",
     )
 
     @providers.SingletonFactory
     @staticmethod
     def metrics_client(
-        multiproc_dir=prometheus_multiproc_dir,
-        namespace=config.bento_server.metrics.namespace,
-    ):
+        multiproc_dir: str = Provide[prometheus_multiproc_dir],
+        namespace: str = Provide[config.metrics.namespace],
+    ) -> "PrometheusClient":
         from ..server.metrics.prometheus import PrometheusClient
 
         return PrometheusClient(
@@ -305,18 +300,9 @@ class BentoMLContainerClass:
             namespace=namespace,
         )
 
-    logging_file_directory = providers.Factory(
-        lambda default, customized: customized or default,
-        providers.Factory(
-            os.path.join,
-            bentoml_home,
-            "logs",
-        ),
-        config.logging.file.directory,
-    )
-
+    # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping: Provider[t.Dict[str, int]] = providers.Static(dict())
     plasma_db: "PlasmaClient" = providers.Static(None)
 
 
-BentoMLContainer = BentoMLContainerClass()
+BentoServerContainer = BentoServerContainerClass()

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Optional
 import psutil
 from simple_di import Provide, inject
 
-from bentoml.exceptions import RemoteException
+from ...exceptions import RemoteException
 
 # from ..bundle import load_bento_service_metadata
 from ..bundle.config import DEFAULT_MAX_BATCH_SIZE, DEFAULT_MAX_LATENCY
@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from aiohttp import BaseConnector, ClientSession
     from aiohttp.web import Application, Request
-    from aiohttp_cors import ResourceOptions
 
 
 def metrics_patch(cls):
@@ -155,7 +154,7 @@ class MarshalApp:
         self.max_request_size = max_request_size
         self.tracer = tracer
 
-        # self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)  # noqa: E501
+        # self.bento_service_metadata_pb = load_bento_service_metadata(bento_bundle_path)
 
         self.setup_routes_from_pb(self.bento_service_metadata_pb)
         self.timeout = timeout

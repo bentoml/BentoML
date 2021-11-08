@@ -30,6 +30,11 @@ install_requires = [
     "packaging>=20.0",
     "importlib_metadata",
     "pathspec",
+    'typing_extensions >= 3.7.4',
+    'aiofiles',
+    "fs",
+    "circus",
+    "uvicorn",
 ]
 
 model_server_optional = [
@@ -47,6 +52,7 @@ test_requires = [
     "codecov",
     "coverage>=4.4",
     "flake8>=3.8.2",
+    "flake8-length>=0.2.0",
     "imageio>=2.5.0",
     "mock>=2.0.0",
     "moto==1.3.14",
@@ -62,6 +68,7 @@ test_requires = [
 
 dev_requires = [
     "flake8>=3.8.2",
+    "flake8-length==0.2.0",
     "gitpython>=2.0.2",
     "pylint>=2.5.2",
     "setuptools",
@@ -124,7 +131,7 @@ setuptools.setup(
     ],
     python_requires=">=3.6.1",
     package_data={"bentoml": ["py.typed"]},
-    entry_points={"console_scripts": ["bentoml=bentoml:bentoml._internal.cli.cli"]},
+    entry_points={"console_scripts": ["bentoml=bentoml._internal.cli:cli"]},
     project_urls={
         "Bug Reports": "https://github.com/bentoml/BentoML/issues",
         "BentoML User Slack Group": "https://bit.ly/2N5IpbB",

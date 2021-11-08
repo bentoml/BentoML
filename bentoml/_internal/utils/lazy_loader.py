@@ -4,7 +4,7 @@ import sys
 import types
 import typing as t
 
-from bentoml.exceptions import MissingDependencyException
+from ...exceptions import MissingDependencyException
 
 logger = logging.getLogger(__name__)
 

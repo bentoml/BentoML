@@ -5,13 +5,11 @@ import modulefinder
 import os
 import re
 import sys
-from pathlib import Path
 from shutil import copyfile
 from typing import List, Tuple
 from unittest.mock import patch
 
-from bentoml.exceptions import BentoMLException
-
+from ...exceptions import BentoMLException
 from ..types import PathType
 from .pip_pkg import get_all_pip_installed_modules
 

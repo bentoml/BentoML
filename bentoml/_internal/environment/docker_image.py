@@ -3,8 +3,8 @@ import re
 import sys
 import typing as t
 
-from bentoml._internal.configuration import BENTOML_VERSION, is_pip_installed_bentoml
-from bentoml.exceptions import BentoMLException
+from ...exceptions import BentoMLException
+from ..configuration import BENTOML_VERSION, is_pip_installed_bentoml
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ if you need older version of bentoml. Using default devel image instead...
 """  # noqa: E501
 
 RELEASE_FORMAT = (
-    "bentoml/model-server:{release_type}-python{python_version}-{distro}{suffix}"
+    "bentoml/bento-server:{release_type}-python{python_version}-{distro}{suffix}"
 )
 
 
@@ -51,7 +51,7 @@ class ImageProvider(object):
 
         .. code-block:: shell
 
-            bentoml/model-server:<release_type>-<python_version>-<distro>-<suffix>
+            bentoml/bento-server:<release_type>-<python_version>-<distro>-<suffix>
 
             # suffix: runtime or cudnn
             # distro: formatted <distro><version> (ami2, centos8, centos7)
@@ -60,9 +60,9 @@ class ImageProvider(object):
 
         Example results:
 
-        * bentoml/model-server:`devel-python3.7-slim`
-        * bentoml/model-server:`0.14.0-python3.8-centos8-cudnn`
-        * bentoml/model-server:`0.14.0-python3.7-ami2-runtime`
+        * bentoml/bento-server:`devel-python3.7-slim`
+        * bentoml/bento-server:`0.14.0-python3.8-centos8-cudnn`
+        * bentoml/bento-server:`0.14.0-python3.7-ami2-runtime`
 
 
     Example::

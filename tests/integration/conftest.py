@@ -1,5 +1,3 @@
-import contextlib
-
 import pytest
 
 from bentoml import ModelStore
@@ -21,12 +19,6 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "gpus" in item.keywords:
             item.add_marker(skip_gpus)
-
-
-@pytest.fixture(scope="session")
-def clean_context():
-    with contextlib.ExitStack() as stack:
-        yield stack
 
 
 @pytest.fixture(scope="session")

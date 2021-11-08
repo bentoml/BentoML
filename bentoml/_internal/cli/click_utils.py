@@ -5,13 +5,12 @@ import re
 import time
 
 import click
-import yaml
 from click import ClickException
 
-from bentoml.exceptions import BentoMLException
+from ...exceptions import BentoMLException
 
 # from bentoml import configure_logging
-from ..configuration import set_debug_mode
+from ..configuration import CONFIG_ENV_VAR, load_global_config, set_debug_mode
 from ..utils.usage_stats import track
 
 # Available CLI colors for _echo:
@@ -76,11 +75,21 @@ class BentoMLCommandGroup(click.Group):
             is_flag=True,
             default=False,
             envvar="BENTOML_DO_NOT_TRACK",
-            help="Specify the option to not track usage.",
+            help="Do not track usage when running this command",
+        )
+        @click.option(
+            "--config",
+            type=click.Path(exists=True),
+            envvar=CONFIG_ENV_VAR,
+            help="BentoML configuration YAML file to apply",
         )
         @functools.wraps(func)
-        def wrapper(quiet, verbose, *args, **kwargs):
+        def wrapper(quiet, verbose, config, *args, **kwargs):
+            if config:
+                load_global_config(config)
+
             if quiet:
+                # TODO: fix configure logging
                 # configure_logging(logging_level=logging.ERROR)
                 if verbose:
                     logger.warning(
@@ -162,19 +171,6 @@ class BentoMLCommandGroup(click.Group):
         return wrapper
 
 
-def conditional_argument(condition, *param_decls, **attrs):
-    """
-    Attaches an argument to the command only when condition is True
-    """
-
-    def decorator(f):
-        if condition:
-            f = click.argument(*param_decls, **attrs)(f)
-        return f
-
-    return decorator
-
-
 def _is_valid_bento_tag(value):
     return re.match(r"^[A-Za-z_][A-Za-z_0-9]*:[A-Za-z0-9.+-_]*$", value) is not None
 
@@ -190,47 +186,3 @@ def parse_bento_tag_callback(ctx, param, value):  # pylint: disable=unused-argum
             "iris_classifier:v1.2.0"
         )
     return value
-
-
-def parse_labels_callback(ctx, param, value):  # pylint: disable=unused-argument
-    if not value:
-        return value
-
-    parsed_labels = {}
-    label_list = value.split(",")
-    for label in label_list:
-        if ":" not in label:
-            raise click.BadParameter(
-                f"Bad formatting for label {label}. "
-                f"Please present label in key:value format"
-            )
-        label_key, label_value = label.split(":")
-        parsed_labels[label_key] = label_value
-
-    return parsed_labels
-
-
-def validate_labels_query_callback(
-    ctx, param, value
-):  # pylint: disable=unused-argument
-    if not value:
-        return value
-
-    labels = value.split(",")
-    for label in labels:
-        if "=" not in label:
-            raise click.BadParameter(
-                f"Bad formatting for label {label}. "
-                f"Please present labels query in key=value format"
-            )
-    return value
-
-
-def parse_yaml_file_callback(ctx, param, value):  # pylint: disable=unused-argument
-    yml_content = value.read()
-    try:
-        return yaml.safe_load(yml_content)
-    except Exception:
-        raise click.BadParameter(
-            "Input value is not recognizable yaml file or yaml content"
-        )

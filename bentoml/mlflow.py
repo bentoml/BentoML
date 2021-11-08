@@ -221,7 +221,7 @@ def load_runner(
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "Runner":
+) -> "_PyFuncRunner":
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.mlflow.load_runner` implements a Runner class that

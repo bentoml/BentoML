@@ -1,12 +1,15 @@
 import os
 
+import pytest
+
 import bentoml
-from bentoml._internal.bento.store import BentoStore
+from bentoml._internal.bento import BentoStore
 
 SYSTEM_HOME = os.path.expanduser("~")
 
 
-def test_create_simplebento(tmpdir, change_test_dir):
+@pytest.mark.usefixtures("change_test_dir")
+def test_create_simplebento(tmpdir):
     bento_store = BentoStore(tmpdir)
     os.chdir("simplebento")
     from .simplebento.simplebento import svc
@@ -36,7 +39,7 @@ def test_create_simplebento(tmpdir, change_test_dir):
             "dataset_version": "abc",
             "framework": "pytorch",
         },
-        bento_store=bento_store,
+        _bento_store=bento_store,
     )
 
     test_path = os.path.join(tmpdir)
@@ -53,6 +56,5 @@ def test_create_simplebento(tmpdir, change_test_dir):
         ]
     )
     test_path = os.path.join(test_path, "test.simplebento")
-    assert set(os.listdir(test_path)) == set(["simplebento.py", "subdir", "subdir2"])
+    assert set(os.listdir(test_path)) == set(["simplebento.py", "subdir"])
     assert set(os.listdir(os.path.join(test_path, "subdir"))) == set(["somefile"])
-    assert os.listdir(os.path.join(test_path, "subdir2")) == []

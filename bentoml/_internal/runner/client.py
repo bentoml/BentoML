@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Dict
 
 from simple_di import Provide, inject
 
-from bentoml._internal.configuration.containers import BentoMLContainer
-from bentoml._internal.runner.utils import Params
+from ..configuration.containers import BentoServerContainer
+from ..runner.utils import Params
 
 if TYPE_CHECKING:
     from aiohttp import BaseConnector
@@ -44,7 +44,7 @@ class RunnerClient:
         return self._client
 
     async def async_run(self, *args, **kwargs):
-        from bentoml._internal.runner.container import AutoContainer
+        from ..runner.container import AutoContainer
 
         URL = "http://127.0.0.1:8000/run"
         param = Params(*args, **kwargs).map(AutoContainer.single_to_payload)
@@ -55,7 +55,7 @@ class RunnerClient:
         return AutoContainer.payload_to_single(text)  # TODO
 
     async def async_run_batch(self, *args, **kwargs):
-        from bentoml._internal.runner.container import AutoContainer
+        from ..runner.container import AutoContainer
 
         URL = "http://127.0.0.1:8000/run_batch"
         param = Params(*args, **kwargs).map(AutoContainer.batch_to_payload)
@@ -70,9 +70,9 @@ class RunnerClient:
 def get_runner_client(
     runner_name: str,
     remote_runner_mapping: Dict[str, int] = Provide[
-        BentoMLContainer.remote_runner_mapping
+        BentoServerContainer.remote_runner_mapping
     ],
-    timeout: int = Provide[BentoMLContainer.config.bento_server.timeout],
+    timeout: int = Provide[BentoServerContainer.config.timeout],
 ) -> RunnerClient:
     uds_fd = remote_runner_mapping.get(runner_name)
     return RunnerClient(uds_fd, timeout=timeout)

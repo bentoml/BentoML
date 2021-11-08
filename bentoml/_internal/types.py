@@ -1,15 +1,20 @@
 import io
+import logging
 import os
 import pathlib
 import typing as t
 import urllib
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass
 
-import attr
+import fs
 
-from bentoml.exceptions import BentoMLException
-
+from ..exceptions import BentoMLException
 from .utils.dataclasses import json_serializer
+from .utils.validation import validate_tag_str
+
+logger = logging.getLogger(__name__)
 
 BATCH_HEADER = "Bentoml-Is-Batch-Request"
 
@@ -21,32 +26,68 @@ JSON_CHARSET = "utf-8"
 
 PathType = t.Union[str, os.PathLike, pathlib.Path]
 
-JSONSerializable = t.Union[
-    str, int, float, None, t.List["JSONSerializable"], t.Dict[str, "JSONSerializable"]
-]
+JSONSerializable = t.NewType("JSONSerializable", object)
 
 
-@attr.s
-class BentoTag:
-    name = attr.ib(type=str)
-    version = attr.ib(type=str)
+class Tag:
+    name: str
+    version: t.Optional[str]
+
+    def __init__(self, name: str, version: t.Optional[str]):
+        lname = name.lower()
+        if name != lname:
+            logger.warning(f"converting {name} to lowercase: {lname}")
+
+        validate_tag_str(lname)
+
+        if version is not None:
+            validate_tag_str(version)
+
+        self.name = lname
+        self.version = version
 
     def __str__(self):
-        return f"{self.name}:{self.version}"
+        if self.version is None:
+            return self.name
+        else:
+            return f"{self.name}:{self.version}"
+
+    def __lt__(self, other):
+        if self.name == other.name:
+            return self.version < other.version
+        return self.name < other.name
 
     @classmethod
-    def from_str(cls, tag_str: str) -> "BentoTag":
+    def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":
+        if isinstance(taglike, Tag):
+            return taglike
+        if isinstance(taglike, str):
+            return cls.from_str(taglike)
+
+        raise TypeError(f"can't make a Tag from {type(taglike)}")
+
+    @classmethod
+    def from_str(cls, tag_str: str) -> "Tag":
+        if ":" not in tag_str:
+            return cls(tag_str, None)
         try:
             name, version = tag_str.split(":")
             if not version:
                 # in case users mistakenly define "bento:"
                 raise BentoMLException(
-                    f"{tag_str} contains leading ':'. Maybe you "
-                    f"meant to use `{tag_str}:latest`?"
+                    f"{tag_str} contains trailing ':'. Maybe you meant to use `{tag_str}:latest`?"
                 )
             return cls(name, version)
         except ValueError:
             raise BentoMLException(f"Invalid {cls.__name__} {tag_str}")
+
+    def path(self) -> str:
+        if self.version is None:
+            return self.name
+        return fs.path.combine(self.name, self.version)
+
+    def latest_path(self) -> str:
+        return fs.path.combine(self.name, "latest")
 
 
 @json_serializer(fields=["uri", "name"], compat=True)
@@ -81,7 +122,7 @@ class FileLike:
             if self._stream is not None:
                 self.name = getattr(self._stream, "name", None)
             elif self.uri is not None:
-                p = urllib.parse.urlparse(self.uri)
+                p = urllib.parse.urlparse(self.uri)  # type: ignore
                 if p.scheme and p.scheme != "file":
                     raise NotImplementedError(
                         f"{self.__class__} now supports scheme 'file://' only"
@@ -101,8 +142,8 @@ class FileLike:
         .. note::
             https://stackoverflow.com/a/61922504/3089381
         """
-        parsed = urllib.parse.urlparse(self.uri)
-        raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))
+        parsed = urllib.parse.urlparse(self.uri)  # type: ignore
+        raw_path = urllib.request.url2pathname(urllib.parse.unquote(parsed.path))  # type: ignore # noqa: LN001
         host = "{0}{0}{mnt}{0}".format(os.path.sep, mnt=parsed.netloc)
         path = os.path.abspath(os.path.join(host, raw_path))
         return path
@@ -131,8 +172,4 @@ class FileLike:
 
     def close(self):
         if self._stream is not None:
-            self._stream.close()
-
-    def __del__(self):
-        if getattr(self, "_stream", None) and not self._stream.closed:
             self._stream.close()

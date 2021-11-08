@@ -69,13 +69,21 @@ def get_service_openapi_doc(svc: "Service"):
     for api in svc._apis.values():
         api_path = api.route if api.route.startswith("/") else f"/{api.route}"
 
-        paths[api_path] = OrderedDict(
+        paths[api_path] = {}
+        paths[api_path]["post"] = OrderedDict(
             tags=["app"],
             summary=f"Inference API '{api}' under service '{svc.name}'",
             description=api.doc,
             operationId=f"{svc.name}__{api.name}",
-            requestBody=api.input.openapi_request_schema(),
-            responses=api.output.openapi_responses_schema(),
+            requestBody=dict(content=api.input.openapi_request_schema()),
+            responses={
+                "200": {
+                    "description": "success",
+                    "content": api.output.openapi_responses_schema(),
+                }
+            },
+            # examples=None,
+            # headers=None,
         )
 
     docs["paths"] = paths

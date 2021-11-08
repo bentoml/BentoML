@@ -8,8 +8,7 @@ from typing import List
 import yaml
 from simple_di import Provide, inject
 
-from bentoml.exceptions import BentoMLException
-
+from ...exceptions import BentoMLException
 from ..configuration.containers import BentoMLContainer
 from .pip_pkg import (
     EPP_NO_ERROR,
@@ -174,7 +173,8 @@ class BentoServiceEnv(object):
         self._pip_packages = {}
 
         # add BentoML to pip packages list
-        bentoml_deploy_version = bentoml_deployment_version
+        # bentoml_deploy_version = bentoml_deployment_version # TODO
+        bentoml_deploy_version = "1.0.0"
         self.add_pip_package("bentoml=={}".format(bentoml_deploy_version))
 
         if pip_packages:
@@ -213,7 +213,7 @@ class BentoServiceEnv(object):
                     f"versions are: f{', '.join(PYTHON_SUPPORTED_VERSIONS)}"
                 )
             else:
-                # e.g. bentoml/model-server:0.8.6-py37
+                # e.g. bentoml/bento-server:0.8.6-py37
                 self._docker_base_image = (
                     f"bentoml/model-server:"
                     f"{bentoml_deploy_version}-"

@@ -6,7 +6,7 @@ import pytest
 from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
 
 import bentoml.catboost
-from bentoml.exceptions import BentoMLException, InvalidArgument
+from bentoml.exceptions import BentoMLException
 from tests.utils.frameworks.sklearn_utils import test_df
 from tests.utils.helpers import assert_have_file_extension
 

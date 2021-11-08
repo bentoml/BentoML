@@ -1,5 +1,4 @@
 import json
-import os
 import typing as t
 
 import h2o
@@ -8,9 +7,13 @@ import h2o.model
 import pandas as pd
 import pytest
 
-from bentoml.h2o import H2OModel
+import bentoml.h2o
 
-test_data = {
+H2O_PORT = 54323
+
+TEST_MODEL_NAME = __name__.split(".")[-1]
+
+TEST_DATA = {
     "TemperatureCelcius": {"0": 21.6},
     "ExhaustVacuumHg": {"0": 62.52},
     "AmbientPressureMillibar": {"0": 1017.23},
@@ -29,7 +32,7 @@ def predict_dataframe(
 @pytest.fixture(scope="module")
 def train_h2o_aml() -> h2o.automl.H2OAutoML:
 
-    h2o.init()
+    h2o.init(port=H2O_PORT)
     h2o.no_progress()
 
     df = h2o.import_file(
@@ -48,12 +51,20 @@ def train_h2o_aml() -> h2o.automl.H2OAutoML:
     return aml
 
 
-def test_h2o_save_load(train_h2o_aml, tmpdir):
-    test_df: pd.DataFrame = pd.read_json(json.dumps(test_data))
-    H2OModel(train_h2o_aml.leader).save(tmpdir)
-    assert os.path.exists(os.path.join(tmpdir, os.listdir(tmpdir)[0]))
+@pytest.mark.parametrize("metadata", [({"acc": 0.876},)])
+def test_h2o_save_load(train_h2o_aml, metadata, modelstore):
+    test_df: pd.DataFrame = pd.read_json(json.dumps(TEST_DATA))
+    model = train_h2o_aml.leader
 
-    h2o_loaded: h2o.model.model_base.ModelBase = H2OModel.load(tmpdir)
+    tag = bentoml.h2o.save(
+        TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
+    )
+
+    h2o_loaded: h2o.model.model_base.ModelBase = bentoml.h2o.load(
+        tag,
+        model_store=modelstore,
+        init_params=dict(port=H2O_PORT),
+    )
     # fmt: off
     assert predict_dataframe(train_h2o_aml.leader, test_df) == predict_dataframe(h2o_loaded, test_df)  # noqa
     # fmt: on

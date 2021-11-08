@@ -1,21 +1,28 @@
 import mxnet
 import pytest
+from mxnet import gluon
 
-from bentoml.gluon import GluonModel
-from tests.utils.helpers import assert_have_file_extension
+import bentoml.gluon
+
+TEST_MODEL_NAME = __name__.split(".")[-1]
 
 
 @pytest.fixture()
-def train_gluon_classifier() -> "mxnet.gluon.nn.HybridSequential":
+def train_gluon_classifier() -> gluon.nn.HybridSequential:
     net = mxnet.gluon.nn.HybridSequential()
     net.hybridize()
     net.forward(mxnet.nd.array(0))
     return net
 
 
-def test_gluon_save_pack(tmpdir, train_gluon_classifier):
-    GluonModel(train_gluon_classifier).save(tmpdir)
-    assert_have_file_extension(tmpdir, "-symbol.json")
+@pytest.mark.parametrize("metadata", [({"acc": 0.876},)])
+def test_gluon_save_load(train_gluon_classifier, metadata, modelstore):
 
-    gluon_loaded: "mxnet.gluon.Block" = GluonModel.load(tmpdir)
+    model = train_gluon_classifier
+
+    tag = bentoml.gluon.save(
+        TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
+    )
+
+    gluon_loaded: gluon.Block = bentoml.gluon.load(tag, model_store=modelstore)
     assert gluon_loaded(mxnet.nd.array([0])).asnumpy() == [0]

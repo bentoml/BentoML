@@ -1,12 +1,22 @@
+import logging
 import sys
 import typing as t
+from typing import TYPE_CHECKING
 
-from bentoml._internal.io_descriptors import IODescriptor
-from bentoml._internal.utils.validation import check_is_dns1123_subdomain
-from bentoml.exceptions import BentoMLException
-
+from ...exceptions import BentoMLException
+from ..io_descriptors import IODescriptor
 from ..runner import Runner
+from ..utils.validation import validate_tag_str
 from .inference_api import InferenceAPI
+
+if TYPE_CHECKING:
+    from starlette.applications import Starlette
+    from starlette.middleware import Middleware
+    from starlette.types import ASGIApp
+
+WSGI_APP = t.Callable[[t.Callable, t.Mapping[str, t.Any]], t.Iterable[bytes]]
+
+logger = logging.getLogger(__name__)
 
 
 class Service:
@@ -29,72 +39,97 @@ class Service:
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None
+    # Import path set by .loader.import_service method
+    _import_str: t.Optional[str] = None
 
     def __init__(self, name: str, runners: t.Optional[t.List[Runner]] = None):
+        lname = name.lower()
+
+        if name != lname:
+            logger.warning(f"converting {name} to lowercase: {lname}")
+
         # Service name must be a valid dns1123 subdomain string
-        check_is_dns1123_subdomain(name)
-        self.name = name
+        validate_tag_str(lname)
+        self.name = lname
 
         if runners is not None:
             self._runners = {r.name: r for r in runners}
 
+        self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", WSGI_APP], str, str]] = []
+        self._middlewares: t.List[t.Tuple[t.Type["Middleware"], t.Any]] = []
+
+    def _on_asgi_app_startup(self) -> None:
+        # TODO: initialize Local Runner instances or Runner Clients here
+        # TODO(P1): add `@svc.on_startup` decorator for adding user-defined hook
+        pass
+
+    def _on_asgi_app_shutdown(self) -> None:
+        # TODO(P1): add `@svc.on_shutdown` decorator for adding user-defined hook
+        pass
+
     def __del__(self):
         # working dir was added to sys.path in the .loader.import_service function
-        if self._working_dir:
+        if self._working_dir and sys.path:
             sys.path.remove(self._working_dir)
 
     def api(
         self,
         input: IODescriptor,
         output: IODescriptor,
-        api_name: t.Optional[str] = None,
-        api_doc: t.Optional[str] = None,
+        name: t.Optional[str] = None,
+        doc: t.Optional[str] = None,
         route: t.Optional[str] = None,
-    ):
+    ) -> t.Callable[[t.Callable], t.Callable]:
         """Decorator for adding InferenceAPI to this service"""
 
-        def decorator(func):
-            self._add_inference_api(func, input, output, api_name, api_doc, route)
+        def decorator(func: t.Callable) -> t.Callable:
+            self._add_inference_api(func, input, output, name, doc, route)
+            return func
 
         return decorator
 
     def _add_inference_api(
         self,
-        func: callable,
+        func: t.Callable,
         input: IODescriptor,
         output: IODescriptor,
-        api_name: t.Optional[str],
-        api_doc: t.Optional[str],
+        name: t.Optional[str],
+        doc: t.Optional[str],
         route: t.Optional[str],
-    ):
+    ) -> None:
         api = InferenceAPI(
-            name=api_name,
+            name=name,
             user_defined_callback=func,
             input_descriptor=input,
             output_descriptor=output,
-            doc=api_doc,
+            doc=doc,
             route=route,
         )
 
         if api.name in self._apis:
             raise BentoMLException(
-                f"API {api_name} is already defined in Service {self.name}"
+                f"API {api.name} is already defined in Service {self.name}"
             )
         self._apis[api.name] = api
 
     @property
-    def _asgi_app(self):
-        return self._app
+    def asgi_app(self) -> "Starlette":
+        from ..server.service_app import ServiceAppFactory
 
-    @property
-    def _wsgi_app(self):
-        return self._app
+        return ServiceAppFactory(self)()
 
-    def mount_asgi_app(self, app, path=None):
-        self._app.mount(app, path=path)
+    def mount_asgi_app(self, app: "ASGIApp", path: str = "/", name: str = None) -> None:
+        self._mount_apps.append((app, path, name))
 
-    def add_middleware(self, middleware, *args, **kwargs):
-        self._app
+    def mount_wsgi_app(self, app: WSGI_APP, path: str = "/", name: str = None) -> None:
+        from starlette.middleware.wsgi import WSGIMiddleware
+
+        self._mount_apps.append((WSGIMiddleware(app), path, name))
+
+    def add_agsi_middleware(
+        self, middleware_cls: t.Type["Middleware"], **options: t.Any
+    ) -> None:
+        self._middlewares.append((middleware_cls, options))
 
     def openapi_doc(self):
         from .openapi import get_service_openapi_doc

@@ -279,7 +279,6 @@ class LocalRunner(RunnerImpl):
         if self._state is RunnerState.INIT:
             self._setup()
         if isinstance(self._runner, Runner):
-            print(len(args), len(kwargs))
             return self._runner._run_batch(*args, **kwargs)
         if isinstance(self._runner, SimpleRunner):
             raise RuntimeError("shall not call run_batch on a simple runner")

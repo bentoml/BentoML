@@ -79,7 +79,7 @@ import imageio
 @pytest.fixture()
 def img_file(tmpdir):
     img_file_ = tmpdir.join("test_img.jpg")
-    imageio.imwrite(str(img_file_), np.zeros((10, 10)))
+    imageio.imwrite(str(img_file_), np.random.randint(2, size=(10, 10, 3)))
     return str(img_file_)
 
 
@@ -87,6 +87,9 @@ def img_file(tmpdir):
 async def test_image(host, img_file, async_request):
     import imageio  # noqa # pylint: disable=unused-import
     import numpy as np  # noqa # pylint: disable=unused-import
+
+    def _verify_image(img_bytes):
+        return imageio.imread(img_bytes).shape == (10, 10, 3)
 
     # Test MultiImageInput.
     with open(str(img_file), "rb") as f1:
@@ -99,7 +102,7 @@ async def test_image(host, img_file, async_request):
                 "POST",
                 f"http://{host}/predict_multi_images",
                 data=form,
-                assert_data=b"true",
+                assert_data=_verify_image,
             )
     """
     # Test ImageInput as binary

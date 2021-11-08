@@ -156,11 +156,13 @@ class _SklearnRunner(Runner):
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[np.ndarray, "pd.DataFrame"]
+        self,
+        *args: t.Union[np.ndarray, "pd.DataFrame"],
+        **kwargs: t.Union[np.ndarray, "pd.DataFrame"],
     ) -> "np.ndarray":
         func = getattr(self._model, self._function_name)
         with self._parallel_ctx:
-            return func(input_data)
+            return func(*args, **kwargs)
 
 
 @inject

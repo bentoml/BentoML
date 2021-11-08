@@ -191,7 +191,11 @@ class _ONNXRunner(Runner):
             self._session_options = session_options
 
     def _get_default_session_options(self):
-        ...
+        self._session_options = onnxruntime.SessionOptions()
+        self._session_options.execution_mode = onnxruntime.ExecutionMode.ORT_PARALLEL
+        self._session_options.intra_op_num_threads = self.num_concurrency_per_replica
+        self._session_options.inter_op_num_threads = self.num_concurrency_per_replica
+        self._session_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
 
     @property
     def required_models(self) -> t.List[str]:

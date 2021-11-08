@@ -46,7 +46,7 @@ DOCKERFILE_TEMPLATE_SUFFIX: str = ".Dockerfile.j2"
 DOCKERFILE_BUILD_HIERARCHY: t.List[str] = ["base", "runtime", "cudnn", "devel"]
 DOCKERFILE_NVIDIA_REGEX: re.Pattern = re.compile(r"(?:nvidia|cuda|cudnn)+")
 
-SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.6", "3.7", "3.8"]
+SUPPORTED_PYTHON_VERSION: t.List[str] = ["3.7", "3.8", "3.9", "3.10"]
 
 NVIDIA_REPO_URL: str = (
     "https://developer.download.nvidia.com/compute/cuda/repos/{}/x86_64"
@@ -336,7 +336,7 @@ class GenerateMixin(object):
             _ctx.pop("cuda_requires")
         else:
             log.debug(f"CUDA is disabled for {distro}. Skipping...")
-            for key in _ctx.keys():
+            for key in _ctx.copy():
                 if DOCKERFILE_NVIDIA_REGEX.match(key):
                     _ctx.pop(key)
 
@@ -479,7 +479,7 @@ class GenerateMixin(object):
             shutil.rmtree(FLAGS.dockerfile_dir, ignore_errors=True)
             mkdir_p(FLAGS.dockerfile_dir)
 
-        for tags_ctx in self._tags.keys():
+        for tags_ctx in self._tags.values():
             for inp in tags_ctx["input_paths"]:
                 build_tag = ""
                 if "build_tags" in tags_ctx.keys():
@@ -602,12 +602,6 @@ class PushMixin(object):
                 #   run docker from shell commands.
                 self.background_upload(image, tag, registry)
 
-                # separate release latest tags for yatai-service
-                if all(map(image_tag.__contains__, ["yatai-service", "3.8", "slim"])):
-                    log.info(f"Uploading {image_tag} as latest to {registry}")
-                    tag = "latest"
-                    self.background_upload(image, tag, registry)
-
     def push_readmes(
         self,
         api_url: str,
@@ -652,7 +646,7 @@ class PushMixin(object):
                 cookies=logins.cookies,
             )
 
-    def background_upload(self, image: Image, tag: str, registry: str) -> None:
+    def background_upload(self, image: "Image", tag: str, registry: str) -> None:
         """Upload a docker image."""
         image.tag(registry, tag=tag)
         log.debug(f"Pushing {repr(image)} to {registry}...")

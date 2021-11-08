@@ -213,7 +213,7 @@ class BentoServiceEnv(object):
                     f"versions are: f{', '.join(PYTHON_SUPPORTED_VERSIONS)}"
                 )
             else:
-                # e.g. bentoml/model-server:0.8.6-py37
+                # e.g. bentoml/bento-server:0.8.6-py37
                 self._docker_base_image = (
                     f"bentoml/model-server:"
                     f"{bentoml_deploy_version}-"

@@ -8,16 +8,13 @@
 
 ## Announcement
 
-The `latest` tag for `model-server` and `yatai-service` has been deprecated on Docker Hub.
-
-Current tag format will also be deprecated. Make sure to update `@env(docker_base_image)` if you are
-using BentoML's `model-server` images.
+The `latest` tag for `bento-server` will not be available on Docker Hub.
 
 With the removal of `latest` tags, the following usecase is **NOT A BUG**:
 
 ```shell
-» docker pull bentoml/model-server
-Error response from daemon: manifest for bentoml/model-server:latest 
+» docker pull bentoml/bento-server
+Error response from daemon: manifest for bentoml/bento-server:latest 
 not found: manifest unknown: manifest unknown
 ```
 
@@ -43,13 +40,13 @@ Image tags will have the following format:
    │             │                │        └─> additional suffix, differentiate runtime and cudnn releases
    │             │                └─> formatted <dist><dist_version>, e.g: ami2, slim, centos7
    │             └─> Supported Python version: python3.6 | python3.7 | python3.8
-   └─>  Release type: devel or official BentoML release (e.g: 0.13.0)                                           
+   └─>  Release type: devel or official BentoML release (e.g: 1.0.0)                                           
 ```
 
-_example of available [tags](https://hub.docker.com/repository/docker/bentoml/model-server/tags?page=1&ordering=last_updated)_:
-- `model-server:devel-python3.7-slim`
-- `model-server:0.13.0-python3.8-centos8-cudnn`
-- `model-server:0.13.0-python3.7-ami2-runtime`
+_example of available [tags](https://hub.docker.com/repository/docker/bentoml/bento-server/tags?page=1&ordering=last_updated)_:
+- `bento-server:devel-python3.7-slim`
+- `bento-server:1.0.0-python3.8-centos8-cudnn`
+- `bento-server:1.0.0-python3.7-ami2-runtime`
 
 ## Run Locally Built Images
 
@@ -60,15 +57,15 @@ BentoML before building specific distros images:
 » export PYTHON_VERSION=3.8
 
 # with tags for base images, replace the python version to your corresponding python version.
-» docker build -f ./generated/model-server/amazonlinux2/Dockerfile \
-          --build-args PYTHON_VERSION=${PYTHON_VERSION} -t model-server:base-python3.8-ami2 .
+» docker build -f ./generated/bento-server/amazonlinux2/Dockerfile \
+          --build-args PYTHON_VERSION=${PYTHON_VERSION} -t bento-server:base-python3.8-ami2 .
 ```
 
 An example to generate BentoML's AMI base image with `python3.8` that can be used to install `BentoService` and run on AWS Sagemaker:
 
 ```shell
 # DOCKER_BUILDKIT=1 is optional
-» DOCKER_BUILDKIT=1 docker build -f ./generated/model-server/amazonlinux2/runtime/Dockerfile \
+» DOCKER_BUILDKIT=1 docker build -f ./generated/bento-server/amazonlinux2/runtime/Dockerfile \
                             --build-args PYTHON_VERSION=${PYTHON_VERSION} -t bentoml-ami2 . 
 ```
 
@@ -126,20 +123,20 @@ You can use the provided [`Dockerfile`](https://github.com/bentoml/BentoML/blob/
 » manager_dockerfiles --helpfull
 
 # To validate generation schema.
-» manager_dockerfiles --bentoml_version 0.13.0 --validate
+» manager_dockerfiles --bentoml_version 1.0.0 --validate
 
 # Generate all dockerfiles from templates, and dump all build metadata to metadata.json
-» manager_dockerfiles --bentoml_version 0.13.0 --generate dockerfiles --dump_metadata
+» manager_dockerfiles --bentoml_version 1.0.0 --generate dockerfiles --dump_metadata --overwrite
 
 # Build all images
-» manager_images --bentoml_version 0.13.0 --generate images
+» manager_images --bentoml_version 1.0.0 --generate images
 
 # Build images for specific releases
-» manager_images --bentoml_version 0.13.0 --generate images --releases runtime
+» manager_images --bentoml_version 1.0.0 --generate images --releases runtime
 
 # Push all images to defined registries under manifest.yml.
-» manager_images --bentoml_version 0.13.0 --push images --releases cudnn
+» manager_images --bentoml_version 1.0.0 --push images --releases cudnn
 
 # Or bring generation and pushing together
-» manager_images --bentoml_version 0.13.0 --generate images --push images --releases cudnn
+» manager_images --bentoml_version 1.0.0 --generate images --push images --releases cudnn
 ```

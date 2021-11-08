@@ -47,7 +47,7 @@ repository: &repository_spec
     api: https://hub.docker.com/v2/users/login/
     repos: https://hub.docker.com/v2/repositories
   registry:
-    model-server: docker.io/bentoml/model-server
+    model-server: docker.io/bentoml/bento-server
     yatai-service: docker.io/bentoml/yatai-service
 ```
 

@@ -46,15 +46,9 @@ FROM build_image as release_image
 
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
-RUN pip install bentoml[{{ metadata.package | replace("-","_") }}]==${BENTOML_VERSION} --no-cache-dir && \
+RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir && \
     rm -rf /var/lib/apt/lists/*
 
 COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT [ "entrypoint.sh" ]
-
-{% if metadata.package == "model-server" %}
-CMD ["bentoml", "serve-gunicorn", "/bento"]
-{% else %}
-CMD ["bentoml", "yatai-service-start"]
-{% endif %}

@@ -9,6 +9,7 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PT_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
+from ._internal.runner.utils import Params
 from .exceptions import MissingDependencyException
 
 _RV = t.TypeVar("_RV")
@@ -229,22 +230,28 @@ class _PyTorchRunner(Runner):
     @torch.no_grad()
     def _run_batch(  # type: ignore[override]
         self,
-        inputs: t.Union[np.ndarray, "torch.Tensor"],
+        *args: t.Union[np.ndarray, "torch.Tensor"],
         **kwargs: str,
     ) -> "torch.Tensor":
-        if isinstance(inputs, np.ndarray):
-            input_tensor = torch.from_numpy(inputs)
-        else:
-            input_tensor = inputs
+
+        # We assume *args are input data. They share the same type
+        # (tensor or ndarray) while **kwargs are configuration
+        # parameters, which may have type str, int, float etc.
+
+        params = Params[t.Union[np.ndarray, "torch.Tensor"]](*args)
+        sample = params.sample
+
+        if isinstance(sample, np.ndarray):
+            params = params.map(lambda i: torch.from_numpy(i))
         if self.resource_quota.on_gpu:
-            input_tensor = input_tensor.cuda()
+            params = params.map(lambda i: i.cuda())
 
         res: "torch.Tensor"
         if infer_mode_compat:
             with torch.inference_mode():
-                res = self._predict_fn(input_tensor, **kwargs)
+                res = self._predict_fn(*params.args, **kwargs)
         else:
-            res = self._predict_fn(input_tensor, **kwargs)
+            res = self._predict_fn(*params.args, **kwargs)
         return res
 
 

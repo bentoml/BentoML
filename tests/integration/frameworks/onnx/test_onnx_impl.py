@@ -5,8 +5,8 @@ import onnxruntime
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 
-from bentoml.exceptions import BentoMLException
 import bentoml.onnx
+from bentoml.exceptions import BentoMLException
 from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 from tests.utils.helpers import assert_have_file_extension
 

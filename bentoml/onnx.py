@@ -13,16 +13,16 @@ ONNX_EXT: str = ".onnx"
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from _internal.models.store import ModelInfo, ModelStore
-    import torch
-    import tensorflow as tf
     import numpy as np
     import pandas as pd
+    import tensorflow as tf
+    import torch
+    from _internal.models.store import ModelInfo, ModelStore
 
 try:
+    import numpy as np
     import onnx
     import onnxruntime as ort
-    import numpy as np
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -177,9 +177,7 @@ class _ONNXRunner(Runner):
                 f"'{backend}' runtime is currently not supported for ONNXModel"
             )
         if providers:
-            if not all(
-                i in ort.get_all_providers() for i in flatten_list(providers)
-            ):
+            if not all(i in ort.get_all_providers() for i in flatten_list(providers)):
                 raise BentoMLException(
                     f"'{providers}' cannot be parsed by `onnxruntime`"
                 )
@@ -200,7 +198,9 @@ class _ONNXRunner(Runner):
         self._session_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
         self._session_options.intra_op_num_threads = self.num_concurrency_per_replica
         self._session_options.inter_op_num_threads = self.num_concurrency_per_replica
-        self._session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+        self._session_options.graph_optimization_level = (
+            ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+        )
 
     @property
     def required_models(self) -> t.List[str]:
@@ -233,11 +233,15 @@ class _ONNXRunner(Runner):
             )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data: t.Union["np.ndarray", "pd.DataFrame", "torch.Tensor", "tf.Tensor"]) -> t.Any:
+    def _run_batch(
+        self,
+        input_data: t.Union["np.ndarray", "pd.DataFrame", "torch.Tensor", "tf.Tensor"],
+    ) -> t.Any:
         input_data = np.array.astype(np.float32)
         input_name = self._model.get_inputs()[0].name
         output_name = self._model.get_outputs()[0].name
         return self.model.run([output_name], {input_name: input_data})[0]
+
 
 @inject
 def load_runner(

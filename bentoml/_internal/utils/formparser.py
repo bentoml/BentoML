@@ -161,8 +161,7 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
 
 async def concat_to_multipart_responses(responses: _ResponseList) -> StreamingResponse:
     resp = io.BytesIO()
-    _responses = [req_[1] for req_ in responses]
-    for _resp in _responses:
+    for _resp in [req_[1] for req_ in responses]:
         resp.write(_resp.body)
     boundary = binascii.hexlify(os.urandom(16)).decode("ascii")
     headers = {"content-type": f"multipart/form-data; boundary={boundary}"}

@@ -63,7 +63,7 @@ def load(
     tag: str,
     backend: t.Optional[str] = "onnxruntime",
     providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
-    sess_opts: t.Options["onnxruntime.SessionOptions"] = None,
+    session_options: t.Options["onnxruntime.SessionOptions"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "onnxruntime.InferenceSession":
     """
@@ -96,12 +96,14 @@ def load(
 
     if isinstance(model_file, onnx.ModelProto):
         return onnxruntime.InferenceSession(
-            model_file.SerializeToString(), sess_options=sess_opts, providers=providers
+            model_file.SerializeToString(),
+            sess_options=session_options,
+            providers=providers,
         )
     else:
         _get_path = os.path.join(model_file, f"{SAVE_NAMESPACE}{ONNX_EXT}")
         return onnxruntime.InferenceSession(
-            _get_path, sess_options=sess_opts, providers=providers
+            _get_path, sess_options=session_options, providers=providers
         )
 
 
@@ -155,12 +157,12 @@ class _ONNXRunner(Runner):
     def __init__(
         self,
         tag: str,
-        backend: t.Optional[str] = "onnxruntime",
-        providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
-        sess_opts: t.Options["onnxruntime.SessionOptions"] = None,
-        resource_quota: t.Dict[str, t.Any] = None,
-        batch_options: t.Dict[str, t.Any] = None,
-        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+        backend: str,
+        providers: t.Optional[t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]],
+        session_options: t.Optional["onnxruntime.SessionOptions"],
+        resource_quota: t.Optional[t.Dict[str, t.Any]],
+        batch_options: t.Optional[t.Dict[str, t.Any]],
+        model_store: "ModelStore",
     ):
         super().__init__(tag, resource_quota, batch_options)
         model_info, model_file = _get_model_info(tag, model_store)
@@ -183,7 +185,13 @@ class _ONNXRunner(Runner):
         self._model_file = model_file
         self._backend = backend
         self._providers = providers
-        self._sess_opts = sess_opts
+        if not session_options:
+            self._get_default_session_options()
+        else:
+            self._session_options = session_options
+
+    def _get_default_session_options(self):
+        ...
 
     @property
     def required_models(self) -> t.List[str]:
@@ -206,13 +214,13 @@ class _ONNXRunner(Runner):
         if isinstance(self._model_file, onnx.ModelProto):
             self._model = onnxruntime.InferenceSession(
                 self._model_file.SerializeToString(),
-                sess_options=self._sess_opts,
+                sess_options=self._session_options,
                 providers=self._providers,
             )
         else:
             _path = os.path.join(self._model_file, f"{SAVE_NAMESPACE}{ONNX_EXT}")
             self._model = onnxruntime.InferenceSession(
-                _path, sess_options=self._sess_opts, providers=self._providers
+                _path, sess_options=self._session_options, providers=self._providers
             )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
@@ -224,11 +232,13 @@ class _ONNXRunner(Runner):
 def load_runner(
     tag: str,
     *,
-    backend: t.Optional[str] = "onnxruntime",
-    providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
-    sess_opts: t.Options["onnxruntime.SessionOptions"] = None,
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    backend: str = "onnxruntime",
+    providers: t.Optional[
+        t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
+    ] = None,
+    session_options: t.Optional["onnxruntime.SessionOptions"] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_ONNXRunner":
     """
@@ -251,11 +261,13 @@ def load_runner(
 
     Examples::
     """  # noqa
+    if not providers:
+        providers = ["CPUExecutionProvider"]
     return _ONNXRunner(
         tag=tag,
         backend=backend,
         providers=providers,
-        sess_opts=sess_opts,
+        session_options=session_options,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

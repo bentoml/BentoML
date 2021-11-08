@@ -6,7 +6,7 @@ import pytest
 from sklearn.ensemble import RandomForestClassifier
 
 from bentoml.exceptions import BentoMLException
-from bentoml.onnx import ONNXModel
+import bentoml.onnx
 from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 from tests.utils.helpers import assert_have_file_extension
 
@@ -21,7 +21,6 @@ def predict_arr(
     return model.run([output_name], {input_name: input_data})[0]
 
 
-@pytest.fixture()
 def sklearn_onnx_model():
     from skl2onnx import convert_sklearn
     from skl2onnx.common.data_types import FloatTensorType

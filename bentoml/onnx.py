@@ -14,21 +14,27 @@ ONNX_EXT: str = ".onnx"
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
     from _internal.models.store import ModelInfo, ModelStore
+    import torch
+    import tensorflow as tf
+    import numpy as np
+    import pandas as pd
 
 try:
     import onnx
-    import onnxruntime
+    import onnxruntime as ort
+    import numpy as np
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
-        """onnx is required in order to use the module `bentoml.onnx`, install
-        onnx with `pip install sklearn`. For more information, refer to
-        https://onnx.ai/get-started.html
+        """\
+`onnx` is required in order to use the module `bentoml.onnx`, do `pip install onnx`.
+For more information, refers to https://onnx.ai/get-started.html
+`onnxruntime` is also required by `bentoml.onnx`. Refers to https://onnxruntime.ai/ for more information.
         """
     )
 
 
 # helper methods
-def _yield_first_val(iterable):
+def _yield_first_val(iterable: t.Sequence[t.Any]):
     if isinstance(iterable, tuple):
         yield iterable[0]
     elif isinstance(iterable, str):
@@ -62,9 +68,9 @@ def load(
     tag: str,
     backend: t.Optional[str] = "onnxruntime",
     providers: t.List[t.Union[str, t.Tuple[str, dict]]] = None,
-    session_options: t.Options["onnxruntime.SessionOptions"] = None,
+    session_options: t.Optional["ort.SessionOptions"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "onnxruntime.InferenceSession":
+) -> "ort.InferenceSession":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -172,13 +178,13 @@ class _ONNXRunner(Runner):
             )
         if providers:
             if not all(
-                i in onnxruntime.get_all_providers() for i in flatten_list(providers)
+                i in ort.get_all_providers() for i in flatten_list(providers)
             ):
                 raise BentoMLException(
                     f"'{providers}' cannot be parsed by `onnxruntime`"
                 )
         else:
-            providers = onnxruntime.get_available_providers()
+            providers = ort.get_available_providers()
 
         self._model_info = model_info
         self._model_file = model_file
@@ -190,11 +196,11 @@ class _ONNXRunner(Runner):
             self._session_options = session_options
 
     def _get_default_session_options(self):
-        self._session_options = onnxruntime.SessionOptions()
-        self._session_options.execution_mode = onnxruntime.ExecutionMode.ORT_PARALLEL
+        self._session_options = ort.SessionOptions()
+        self._session_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
         self._session_options.intra_op_num_threads = self.num_concurrency_per_replica
         self._session_options.inter_op_num_threads = self.num_concurrency_per_replica
-        self._session_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+        self._session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_EXTENDED
 
     @property
     def required_models(self) -> t.List[str]:
@@ -215,21 +221,23 @@ class _ONNXRunner(Runner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:
         if isinstance(self._model_file, onnx.ModelProto):
-            self._model = onnxruntime.InferenceSession(
+            self._model = ort.InferenceSession(
                 self._model_file.SerializeToString(),
                 sess_options=self._session_options,
                 providers=self._providers,
             )
         else:
             _path = os.path.join(self._model_file, f"{SAVE_NAMESPACE}{ONNX_EXT}")
-            self._model = onnxruntime.InferenceSession(
+            self._model = ort.InferenceSession(
                 _path, sess_options=self._session_options, providers=self._providers
             )
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _run_batch(self, input_data) -> t.Any:
-        pass
-
+    def _run_batch(self, input_data: t.Union["np.ndarray", "pd.DataFrame", "torch.Tensor", "tf.Tensor"]) -> t.Any:
+        input_data = np.array.astype(np.float32)
+        input_name = self._model.get_inputs()[0].name
+        output_name = self._model.get_outputs()[0].name
+        return self.model.run([output_name], {input_name: input_data})[0]
 
 @inject
 def load_runner(
@@ -247,7 +255,7 @@ def load_runner(
     """
     Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.onnx.load_runner` implements a Runner class that
-    wrap around an Onnx model, which optimize it for the BentoML runtime.
+    wrap around an ONNX model, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):

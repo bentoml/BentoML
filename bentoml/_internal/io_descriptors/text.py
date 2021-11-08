@@ -7,7 +7,6 @@ from ...exceptions import InvalidArgument
 from .base import IODescriptor
 
 
-# for review: check output formatting after fixing line breaks
 class Text(IODescriptor):
     """
 

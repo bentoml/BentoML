@@ -5,7 +5,6 @@ import pytest
 
 import bentoml.paddle
 
-# for review: ???
 from .test_paddle_impl import test_df, train_paddle_model  # noqa: F401
 
 

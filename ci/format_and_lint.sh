@@ -47,7 +47,7 @@ fi
 # fi
 
 echo "Running pylint on tests and docker module.."
-output=$( pylint --rcfile="./pylintrc" --disable=E0401 tests docker )
+output=$( pylint --rcfile="./pylintrc" --disable=E0401,F0010 tests docker )
 first_line=$(echo "${output}" | head -1)
 echo "$output"
 if [ -n "$first_line" ]; then

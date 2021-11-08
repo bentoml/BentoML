@@ -17,7 +17,7 @@ log "Running pylint on bentoml directory..."
 pylint --rcfile="./pylintrc" bentoml
 
 log "Running pylint on test, docker directory..."
-pylint --rcfile="./pylintrc" --disable=E0401 tests docker
+pylint --rcfile="./pylintrc" --disable=E0401,F0010 tests docker
 
 log "Running mypy on bentoml directory..."
 mypy --config-file "$GIT_ROOT"/mypy.ini bentoml

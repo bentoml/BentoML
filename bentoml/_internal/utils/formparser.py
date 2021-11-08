@@ -2,17 +2,12 @@ import binascii
 import io
 import os
 import typing as t
-from functools import partial
 
-import anyio
-import multipart.multipart as multipart  # noqa
-from starlette.background import BackgroundTask
-from starlette.concurrency import iterate_in_threadpool
+import multipart.multipart as multipart
 from starlette.formparsers import _user_safe_decode  # noqa
 from starlette.formparsers import Headers, MultiPartMessage
 from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
-from starlette.types import Receive, Scope, Send
 
 from ...exceptions import BentoMLException
 
@@ -21,9 +16,7 @@ _ItemsBody = t.TypeVar(
     bound=t.List[t.Tuple[str, t.List[t.Tuple[bytes, bytes]], bytes]],
 )
 
-_ResponseList = t.TypeVar(
-    "_ResponseList", bound=t.List[t.Tuple[str, t.Union[Response, StreamingResponse]]]
-)
+_ResponseList = t.TypeVar("_ResponseList", bound=t.List[t.Tuple[str, Response]])
 
 
 class MultiPartParser:
@@ -166,66 +159,11 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     return reqs
 
 
-class MultipartResponse(Response):
-    media_type = "multipart/form-data"
-
-    def __init__(  # noqa
-        self,
-        responses: _ResponseList,
-        status_code: int = 200,
-        headers: t.Optional[t.Dict[str, str]] = None,
-        background: BackgroundTask = None,
-    ):
-        self.status_code = status_code
-        self.background = background
-        self.init_headers(headers)
-        _responses = [req_[1] for req_ in responses]
-        self._body = [
-            _resp.body_iterator
-            if isinstance(_resp, StreamingResponse)
-            else iterate_in_threadpool(io.BytesIO(_resp.body))
-            for _resp in _responses
-        ]
-
-    async def stream_multi_responses(self, send: Send) -> None:
-        await send(
-            {
-                "type": "http.response.start",
-                "status": self.status_code,
-                "headers": self.raw_headers,
-            }
-        )
-        for body_iterator in self._body:
-            async for chunk in body_iterator:
-                if not isinstance(chunk, bytes):
-                    chunk = chunk.encode(self.charset)
-                await send(
-                    {"type": "http.response.body", "body": chunk, "more_body": True}
-                )
-        await send({"type": "http.response.body", "body": b"", "more_body": False})
-
-    @staticmethod
-    async def listen_for_disconnect(receive: Receive) -> None:
-        while True:
-            message = await receive()
-            if message["type"] == "http.disconnect":
-                break
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        async with anyio.create_task_group() as task_group:
-
-            async def wrap(func: t.Callable[[], t.Coroutine]) -> None:
-                await func()
-                await task_group.cancel_scope.cancel()
-
-            task_group.start_soon(wrap, partial(self.stream_multi_responses, send))
-            await wrap(partial(self.listen_for_disconnect, receive))
-
-            if self.background is not None:
-                await self.background()
-
-
-async def concat_to_multipart_responses(responses: _ResponseList) -> Response:
+async def concat_to_multipart_responses(responses: _ResponseList) -> StreamingResponse:
+    resp = io.BytesIO()
+    _responses = [req_[1] for req_ in responses]
+    for _resp in _responses:
+        resp.write(_resp.body)
     boundary = binascii.hexlify(os.urandom(16)).decode("ascii")
     headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
-    return MultipartResponse(responses, headers=headers)
+    return StreamingResponse(resp, headers=headers)

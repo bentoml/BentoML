@@ -124,9 +124,10 @@ class Image(IODescriptor):
             obj = np.array(obj)
         else:
             raise InvalidArgument(
-                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
+                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
+                " supports only `np.ndarray` and `PIL.Image`"
             )
 
         ret = io.BytesIO()
-        imageio.imsave(ret, im=obj, format=self._ext)
+        imageio.imsave(ret, im=t.cast(t.Type["np.ndarray"], obj), format=self._ext)
         return Response(ret.getvalue(), media_type=self._mime_type)

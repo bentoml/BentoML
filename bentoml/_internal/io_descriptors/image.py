@@ -1,9 +1,10 @@
 import io
 import typing as t
 
+import imageio
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
-from starlette.responses import StreamingResponse
+from starlette.responses import Response
 
 from ...exceptions import BentoMLException, InvalidArgument
 from ..utils import LazyLoader
@@ -27,6 +28,9 @@ else:
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
 DEFAULT_PIL_MODE = "RGB"
+
+
+import mimetypes
 
 
 class Image(IODescriptor):
@@ -77,7 +81,7 @@ class Image(IODescriptor):
         pilmode (`str`, `optional`, default to `RGB`):
             Color mode for PIL.
         mime_type (`str`, `optional`, default to `image/jpeg`):
-            Return MIME type for `starlette.response.StreamingResponse`
+            Return MIME type for `starlette.response.Response`
 
     Returns:
         IO Descriptor that represents either a `np.ndarray` or a `PIL.Image.Image`.
@@ -86,7 +90,7 @@ class Image(IODescriptor):
     def __init__(self, pilmode=DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
         self._pilmode = pilmode
         self._mime_type = mime_type
-        self._ext = mime_type.split("/")[-1].upper()
+        self._ext = mimetypes.guess_extension(mime_type)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -113,14 +117,16 @@ class Image(IODescriptor):
 
     async def to_http_response(
         self, obj: t.Union["np.ndarray", "PIL.Image.Image"]
-    ) -> StreamingResponse:
-        if not any(isinstance(obj, i) for i in [np.ndarray, PIL.Image.Image]):
+    ) -> Response:
+        if isinstance(obj, np.ndarray):
+            pass
+        elif isinstance(obj, PIL.Image.Image):
+            obj = np.array(obj)
+        else:
             raise InvalidArgument(
                 f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
             )
-        image = PIL.Image.fromarray(obj) if isinstance(obj, np.ndarray) else obj
 
-        # TODO: Support other return types?
         ret = io.BytesIO()
-        image.save(ret, self._ext)
-        return StreamingResponse(ret, media_type=self._mime_type)
+        imageio.imsave(ret, im=obj, format=self._ext)
+        return Response(ret.getvalue(), media_type=self._mime_type)

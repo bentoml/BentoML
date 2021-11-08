@@ -36,7 +36,7 @@ class PickleModel:
         return input_arr * 2
 
     def predict_multi_ndarray(self, arr1: np.ndarray, arr2: np.ndarray) -> np.ndarray:
-        return arr1 + arr2
+        return (arr1 + arr2) // 2
 
     def predict_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         assert isinstance(df, pd.DataFrame)

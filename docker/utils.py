@@ -263,7 +263,7 @@ class MetadataSpecValidator(Validator):
     - releases should be defined under SUPPORTED_OS
 
     Args:
-        packages: bentoml release packages, bento-server, yatai-service, etc
+        packages: bentoml release packages, bento-server
     """
 
     CUDNN_THRESHOLD: int = 1

@@ -12,7 +12,3 @@ RUN conda install -y python=$PYTHON_VERSION pip \
     && apk add --no-cache bash git build-base
 
 RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir
-
-COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
-
-ENTRYPOINT [ "entrypoint.sh" ]

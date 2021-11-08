@@ -17,7 +17,3 @@ RUN git clone https://github.com/bentoml/BentoML.git && \
     pip install --editable . && \
     yum clean all && \
     rm -rf /var/cache/yum
-
-COPY tools/bento-server/entrypoint.sh /usr/local/bin/
-
-ENTRYPOINT [ "entrypoint.sh" ]

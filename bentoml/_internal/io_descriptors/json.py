@@ -146,8 +146,6 @@ class JSON(IODescriptor):
                     "must be an instance of a pydantic model"
                 )
             self._pydantic_model = pydantic_model
-        else:
-            self._pydantic_model = None
 
         self._validate_json = validate_json
         self._json_encoder = json_encoder
@@ -159,7 +157,7 @@ class JSON(IODescriptor):
         return self.openapi_schema()
 
     def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
-        if self._pydantic_model:
+        if hasattr(self, "_pydantic_model"):
             schema = self._pydantic_model.schema()
         else:
             schema = {"type": "object"}
@@ -167,7 +165,7 @@ class JSON(IODescriptor):
 
     async def from_http_request(self, request: Request) -> t.Any:
         json_obj = await request.json()
-        if self._pydantic_model and self._validate_json:
+        if hasattr(self, "_pydantic_model") and self._validate_json:
             try:
                 return self._pydantic_model.parse_obj(json_obj)
             except pydantic.ValidationError:

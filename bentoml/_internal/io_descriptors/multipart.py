@@ -43,11 +43,11 @@ class Multipart(IODescriptor[MultipartIO]):
 
         self._inputs = inputs
 
-    def openapi_request_schema(self):
-        pass
+    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for incoming requests"""
 
-    def openapi_responses_schema(self):
-        pass
+    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for outcoming responses"""
 
     async def from_http_request(self, request: Request) -> MultipartIO:
         ctype, _ = parse_options_header(request.headers["content-type"])
@@ -66,9 +66,8 @@ class Multipart(IODescriptor[MultipartIO]):
         return res
 
     async def to_http_response(self, obj: MultipartIO) -> Response:
-        res: t.List[t.Tuple[str, t.Union[Response, StreamingResponse]]] = list()
-        for i, io_ in enumerate(self._inputs.items()):
-            io_descriptor = t.cast(IODescriptor, io_[1])
-            r = await io_descriptor.to_http_response(obj[i])  # noqa
+        res: t.List[t.Tuple[str, Response]] = list()
+        for i, io_ in enumerate(self._inputs.items()):  # type: t.Tuple[int, t.Tuple[str, IODescriptor]]
+            r: Response = await io_[1].to_http_response(obj[i])  # type: ignore[index]
             res.append((io_[0], r))
         return await concat_to_multipart_responses(res)

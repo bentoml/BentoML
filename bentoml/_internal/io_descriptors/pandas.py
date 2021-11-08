@@ -377,7 +377,7 @@ class PandasSeries(PandasDataFrame):
             columns=None,
         )
 
-    async def from_http_request(self, request: Request) -> "pd.Series":
+    async def from_http_request(self, request: Request) -> "pd.Series":  # type: ignore[override]
         """
         Process incoming requests and convert incoming
          objects to `pd.Series`
@@ -413,7 +413,7 @@ class PandasSeries(PandasDataFrame):
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
-    async def to_http_response(self, obj: "pd.Series") -> Response:
+    async def to_http_response(self, obj: "pd.Series") -> Response:  # type: ignore[override]
         """
         Process given objects and convert it to HTTP response.
 

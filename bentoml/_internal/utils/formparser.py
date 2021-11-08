@@ -139,7 +139,7 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     assert content_type == b"multipart/form-data"
     multipart_parser = MultiPartParser(request.headers, request.stream())
     try:
-        form = await multipart_parser.parse()
+        form = await multipart_parser.parse()  # type: ignore[var-annotated]
     except multipart.MultipartParseError:
         raise BentoMLException("Invalid multipart requests")
 

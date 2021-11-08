@@ -27,13 +27,50 @@ _ResponseList = t.TypeVar(
 )
 
 
-class MultiPartParser(_StarletteMultiPartParser):
+class MultiPartParser:
     """
     An modified version of starlette MultiPartParser.
     """
 
-    headers: Headers
-    stream: t.AsyncGenerator[bytes, None]
+    def __init__(self, headers: Headers, stream: t.AsyncGenerator[bytes, None]) -> None:
+        assert (
+            multipart is not None
+        ), "The `python-multipart` library must be installed to use form parsing."
+        self.headers = headers
+        self.stream = stream
+        self.messages: t.List[t.Tuple[MultiPartMessage, bytes]] = []
+
+    def on_part_begin(self) -> None:
+        message = (MultiPartMessage.PART_BEGIN, b"")
+        self.messages.append(message)
+
+    def on_part_data(self, data: bytes, start: int, end: int) -> None:
+        message = (MultiPartMessage.PART_DATA, data[start:end])
+        self.messages.append(message)
+
+    def on_part_end(self) -> None:
+        message = (MultiPartMessage.PART_END, b"")
+        self.messages.append(message)
+
+    def on_header_field(self, data: bytes, start: int, end: int) -> None:
+        message = (MultiPartMessage.HEADER_FIELD, data[start:end])
+        self.messages.append(message)
+
+    def on_header_value(self, data: bytes, start: int, end: int) -> None:
+        message = (MultiPartMessage.HEADER_VALUE, data[start:end])
+        self.messages.append(message)
+
+    def on_header_end(self) -> None:
+        message = (MultiPartMessage.HEADER_END, b"")
+        self.messages.append(message)
+
+    def on_headers_finished(self) -> None:
+        message = (MultiPartMessage.HEADERS_FINISHED, b"")
+        self.messages.append(message)
+
+    def on_end(self) -> None:
+        message = (MultiPartMessage.END, b"")
+        self.messages.append(message)
 
     async def parse(self) -> _ItemsBody:
         # Parse the Content-Type header to get the multipart boundary.

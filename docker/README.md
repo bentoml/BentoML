@@ -1,4 +1,4 @@
-![bentoml-docker](tools/img/bentoml-docker.png)
+![bentoml-docker](tools/bentoml-docker.png)
 
 ## Table of Content
 - [Annoucement](#announcement)

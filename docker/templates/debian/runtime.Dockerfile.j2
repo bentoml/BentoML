@@ -8,7 +8,3 @@ FROM {{ metadata.package }}:{{ build_tag }} as build_image
 ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
 RUN pip install bentoml[model_server]==${BENTOML_VERSION} {{ pip_options|join(' ') }}
-
-COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
-
-ENTRYPOINT [ "entrypoint.sh" ]

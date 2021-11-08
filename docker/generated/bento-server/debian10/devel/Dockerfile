@@ -17,7 +17,3 @@ RUN git clone https://github.com/bentoml/BentoML.git && \
     pip install --editable . && \
     apt-get purge --auto-remove -y curl && \
     rm -rf /var/lib/apt/lists/*
-
-COPY tools/bento-server/entrypoint.sh /usr/local/bin/
-
-ENTRYPOINT [ "entrypoint.sh" ]

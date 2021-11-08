@@ -48,7 +48,3 @@ ENV BENTOML_VERSION={{ metadata.envars['BENTOML_VERSION'] }}
 
 RUN pip install bentoml[model_server]==${BENTOML_VERSION} --no-cache-dir && \
     rm -rf /var/lib/apt/lists/*
-
-COPY tools/{{ metadata.package }}/entrypoint.sh /usr/local/bin/
-
-ENTRYPOINT [ "entrypoint.sh" ]

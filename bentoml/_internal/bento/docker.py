@@ -85,7 +85,7 @@ class ImageProvider(object):
 
     def __init__(
         self,
-        distro: t.Optional[
+        distro: Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"] = 'slim'
             Literal["slim", "ami2", "alpine", "centos7", "centos8"]
         ] = None,
         python_version: t.Optional[str] = None,

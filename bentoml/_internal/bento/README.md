@@ -86,8 +86,8 @@ User may customize build options for a service:
 		version=generate_new_versionba,
 		description=open("readme.md").read(),
 		models=["iris_model:latest"]
-		include=['*'],  # 
-		exclude=[], # .bentomlignore
+		include=['*'],
+		exclude=[], # files to exclude can also be specified with a .bentomlignore file
 		labels={
 		}
 		env={

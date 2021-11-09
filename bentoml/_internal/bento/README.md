@@ -10,10 +10,10 @@ Here's an example file structure of a Bento
     /example_bento
      - readme.md
      - bento.yml
-     - /apis/
+     - /apis
          - openapi.yaml # openapi spec
          - proto.pb # Note: gRPC proto is not currently available
-     - /env/
+     - /env
          - /python
              - version.txt
              - requirements.txt

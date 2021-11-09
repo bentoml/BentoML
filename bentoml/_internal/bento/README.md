@@ -101,7 +101,7 @@ User may customize build options for a service:
 				"pip_install": None, # do not install any python packages automatically
 			}
 			"docker": {
-				"base_image": "mycompan.com/regsitry/name/tag" #bentoml.utils.image_provider("amazonlinxue2", gpu=True)
+				"base_image": "mycompany.com/registry/name/tag" # bentoml.utils.image_provider("amazonlinux2", gpu=True)
 				"setup_script": "sh setup_docker_container.sh",
 			},
 			"conda": "./environment.yml",

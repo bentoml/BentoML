@@ -55,7 +55,7 @@ class DockerOptions:
                 )
             if gpu is not None:
                 logger.warning(
-                    "docker base_image %s is used, 'python=$s' option is ignored",
+                    "docker base_image %s is used, 'gpu=$s' option is ignored",
                     base_image,
                     gpu,
                 )

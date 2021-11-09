@@ -143,21 +143,21 @@ class Bento(StoreItem):
             yaml.dump(svc.openapi_doc(), f)
 
         # Create bento.yaml
-        with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:  # noqa: F841
+        with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             BentoMetadata.from_build_args(tag, svc, labels, models).dump(bento_yaml)
 
         return Bento(tag, bento_fs)
 
     @classmethod
     def from_fs(cls, tag: Tag, bento_fs: FS) -> "Bento":
-        with bento_fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:  # noqa: F841
+        with bento_fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             bento_metadata = BentoMetadata.from_yaml_file(bento_yaml)
 
         return cls(bento_metadata.tag, bento_fs)
 
     @cached_property
     def metadata(self):
-        with self.fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:  # noqa: F841
+        with self.fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             return BentoMetadata.from_yaml_file(bento_yaml)
 
     def creation_time(self) -> datetime.datetime:

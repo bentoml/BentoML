@@ -10,7 +10,8 @@ from contextlib import contextmanager
 
 import bentoml
 import docker
-from bentoml._internal.utils import cached_contextmanager
+
+from .._internal.utils import cached_contextmanager, reserve_free_port
 
 logger = logging.getLogger("bentoml.tests")
 
@@ -182,7 +183,7 @@ def run_api_server(
 
     my_env = os.environ.copy()
 
-    with bentoml._internal.utils.reserve_free_port() as port:
+    with reserve_free_port() as port:
         cmd = [sys.executable, "-m", "bentoml", serve_cmd]
 
         if not dev_server:

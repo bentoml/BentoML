@@ -1,4 +1,6 @@
 # pylint: disable=redefined-outer-name
+import aiohttp
+import imageio
 import numpy as np
 import pytest
 
@@ -43,9 +45,6 @@ def bin_file(tmpdir):
     return str(bin_file_)
 
 
-import aiohttp
-
-
 @pytest.mark.asyncio
 async def test_file(host, bin_file, async_request):
     # Test FileInput as binary
@@ -72,9 +71,6 @@ async def test_file(host, bin_file, async_request):
     )
 
 
-import imageio
-
-
 @pytest.fixture()
 def img_file(tmpdir):
     img_file_ = tmpdir.join("test_img.jpg")
@@ -90,7 +86,6 @@ async def test_image(host, img_file, async_request):
     def _verify_image(img_bytes):
         return imageio.imread(img_bytes).shape == (10, 10, 3)
 
-    # Test MultiImageInput.
     with open(str(img_file), "rb") as f1:
         with open(str(img_file), "rb") as f2:
             form = aiohttp.FormData()
@@ -103,23 +98,27 @@ async def test_image(host, img_file, async_request):
                 data=form,
                 assert_data=_verify_image,
             )
-    """
-    # Test ImageInput as binary
-    with open(str(img_file), "rb") as f:
-        img = f.read()
-        await async_request(
-            "POST", f"http://{host}/predict_image", data=img, assert_data=b"[10, 10, 3]"
-        )
 
-    # Test ImageInput as multipart binary
-    with open(str(img_file), "rb") as f:
-        await async_request(
-            "POST",
-            f"http://{host}/predict_image",
-            data={"image": f},
-            assert_data=b"[10, 10, 3]",
-        )
-    """
+
+@pytest.mark.asyncio
+async def test_multipart(host, img_file, async_request):
+    import numpy as np  # noqa # pylint: disable=unused-import
+
+    def _verify_image(rfc):
+        return b"\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF" in rfc
+
+    with open(str(img_file), "rb") as f1:
+        with open(str(img_file), "rb") as f2:
+            form = aiohttp.FormData()
+            form.add_field("original", f1.read(), content_type="image/jpeg")
+            form.add_field("compared", f2.read(), content_type="image/jpeg")
+
+            await async_request(
+                "POST",
+                f"http://{host}/echo_return_multipart",
+                data=form,
+                assert_data=_verify_image,
+            )
 
 
 """

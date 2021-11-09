@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from PIL import Image as PILImage
 
-import bentoml
 import bentoml.sklearn
 from bentoml._internal.io_descriptors.pandas import PandasDataFrame, PandasSeries
 from bentoml._internal.types import FileLike, JSONSerializable
@@ -12,33 +11,28 @@ from bentoml.io import JSON, File, Image, Multipart
 
 
 class PickleModel:
-    """
-
-    def predict_image(self, input_datas: t.List[np.ndarray]) -> t.List[np.ndarray]:
-        return [input_data.shape for input_data in input_datas]
-
-    def predict_file(self, input_files: t.List[FileLike]) -> t.List[bytes]:
+    @staticmethod
+    def predict_file(input_files: t.List[FileLike]) -> t.List[bytes]:
         return [f.read() for f in input_files]
 
-    def predict_multi_images(self, originals, compareds):
-        eq = np.array(originals) == np.array(compareds)
-        return eq.all(axis=tuple(range(1, len(eq.shape))))
-
-    """
-
-    def predict_file(self, input_files: t.List[FileLike]) -> t.List[bytes]:
-        return [f.read() for f in input_files]
-
-    def echo_json(self, input_datas: JSONSerializable) -> JSONSerializable:
+    @staticmethod
+    def echo_json(input_datas: JSONSerializable) -> JSONSerializable:
         return input_datas
 
-    def predict_ndarray(self, input_arr: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def echo_multi_ndarray(*input_arr: np.ndarray) -> t.Tuple[np.ndarray, ...]:
+        return input_arr
+
+    @staticmethod
+    def predict_ndarray(input_arr: np.ndarray) -> np.ndarray:
         return input_arr * 2
 
-    def predict_multi_ndarray(self, arr1: np.ndarray, arr2: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def predict_multi_ndarray(arr1: np.ndarray, arr2: np.ndarray) -> np.ndarray:
         return (arr1 + arr2) // 2
 
-    def predict_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def predict_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         assert isinstance(df, pd.DataFrame)
         output = df[["col1"]] * 2
         assert isinstance(output, pd.DataFrame)
@@ -60,6 +54,9 @@ file_pred_runner = bentoml.sklearn.load_runner("sk_model", function_name="predic
 multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
     "sk_model", function_name="predict_multi_ndarray"
 )
+echo_multi_ndarray_pred_runner = bentoml.sklearn.load_runner(
+    "sk_model", function_name="echo_multi_ndarray"
+)
 
 
 svc = bentoml.Service(
@@ -69,6 +66,8 @@ svc = bentoml.Service(
         ndarray_pred_runner,
         dataframe_pred_runner,
         file_pred_runner,
+        multi_ndarray_pred_runner,
+        echo_multi_ndarray_pred_runner,
     ],
 )
 
@@ -107,6 +106,17 @@ def predict_multi_images(original, compared):
         np.array(original), np.array(compared)
     )
     return PILImage.fromarray(output_array)
+
+
+@svc.api(
+    input=Multipart(original=Image(), compared=Image()),
+    output=Multipart(original=Image(), compared=Image()),
+)
+def echo_return_multipart(original, compared):
+    res = echo_multi_ndarray_pred_runner.run_batch(
+        np.array(original), np.array(compared)
+    )
+    return dict(original=res[0], compared=res[1])
 
 
 """

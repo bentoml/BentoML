@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from tests.integration.utils import (
+from bentoml.testing.utils import (
     build_api_server_docker_image,
     run_api_server,
     run_api_server_in_docker,
@@ -34,9 +34,6 @@ def clean_context():
 
 @pytest.fixture(scope="session")
 def host(pytestconfig, clean_context):
-    """
-    Launch host from a
-    """
     test_workdir = pytestconfig.getoption("project_root")
     test_svc_bundle = pytestconfig.getoption("bento")
 

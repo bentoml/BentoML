@@ -85,6 +85,7 @@ class Image(IODescriptor):
     """
 
     def __init__(self, pilmode: str = DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
+        PIL.Image.init()
         self._pilmode = pilmode
         self._mime_type = mime_type
         self._ext = mimetypes.guess_extension(mime_type).strip(
@@ -121,8 +122,12 @@ class Image(IODescriptor):
             raise InvalidArgument(
                 f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
             )
-        image = PIL.Image.fromarray(obj) if isinstance(obj, np.ndarray) else obj
+        image = (
+            PIL.Image.fromarray(obj, mode=self._pilmode)
+            if isinstance(obj, np.ndarray)
+            else obj
+        )
 
         ret = io.BytesIO()
-        image.save(ret, self._ext)
-        return Response(ret.getvalue(), media_type=self._mime_type)
+        image.save(ret, format=PIL.Image.EXTENSION[self._ext])
+        return Response(ret.getvalue(), media_type=image.get_format_mimetype())

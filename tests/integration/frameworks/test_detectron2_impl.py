@@ -107,4 +107,4 @@ def test_detectron2_save_load(metadata, image_array, modelstore, save_proc):
 
     raw_result = detectron_loaded(input_data)[0]
     result = extract_result(raw_result)
-    assert result["scores"][0] > 0.9
+    assert result["scores"] > 0.9

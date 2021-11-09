@@ -5,7 +5,6 @@ import sys
 import typing as t
 from typing import TYPE_CHECKING
 
-import yaml
 from simple_di import Provide, inject
 
 from ...exceptions import BentoMLException, InvalidArgument, NotFound
@@ -57,6 +56,7 @@ def import_service(
             prev_cwd = os.getcwd()
             os.chdir(working_dir)
         else:
+            prev_cwd = None
             working_dir = os.getcwd()
 
         import_path, _, attrs_str = svc_import_path.partition(":")
@@ -69,7 +69,7 @@ def import_service(
         if os.path.exists(import_path):
             import_path = os.path.realpath(import_path)
             # Importing from a module file path:
-            if not import_path.startswith(os.path.realpath(working_dir)):
+            if not import_path.startswith(working_dir):
                 raise ImportServiceError(
                     f'Module "{import_path}" not found in working directory "{working_dir}"'
                 )
@@ -139,7 +139,7 @@ def import_service(
         instance._import_str = f"{module_name}:{attrs_str}"
         return instance
     except ImportServiceError:
-        if working_dir:
+        if prev_cwd:
             sys.path.remove(working_dir)
             # Reset to previous cwd
             os.chdir(prev_cwd)
@@ -156,19 +156,17 @@ def load_bento(
         load_bento("FraudDetector:latest")
         load_bento("FraudDetector:20210709_DE14C9")
     """
-    bento_info = bento_store.get(bento_tag)
-    bento_config = yaml.load(os.path.join(bento_info.path, "bento.yml"))
-    # TODO: verify bento_config.bentoml_version, bentoml_version
+    bento = bento_store.get(bento_tag)
 
     # Use Bento's user project path as working directory when importing the service
-    working_dir = os.path.join(bento_info.path, bento_config.name)
-    working_dir = os.path.abspath(working_dir)
+    working_dir = bento.fs.getsyspath(bento.metadata["name"])
 
     # Use Bento's local "{base_dir}/models/" directory as its model store
-    model_store = ModelStore(os.path.join(bento_info.path, "models"))
+    model_store = ModelStore(bento.fs.getsyspath("models"))
 
-    svc = import_service(bento_config.svc_import_path, working_dir, model_store)
-    svc.version = bento_config.version
+    svc = import_service(bento.metadata["service"], working_dir, model_store)
+    svc.version = bento.metadata["version"]
+    svc.tag = bento.metadata.tag
     return svc
 
 
@@ -181,16 +179,17 @@ def load(
 
     if working_dir:
         return import_service(svc_import_path_or_bento_tag, working_dir)
-
-    try:
-        return load_bento(svc_import_path_or_bento_tag)
-    except (NotFound, ImportServiceError) as e1:
+    else:
         try:
-            return import_service(svc_import_path_or_bento_tag)
-        except ImportServiceError as e2:
-            raise BentoMLException(
-                f"Failed to load bento or import service "
-                f"'{svc_import_path_or_bento_tag}', make sure Bento exist in local "
-                f'store with the `bentoml.get("my_svc:20211023_CB341A")` or make '
-                f'sure the import path is correct, e.g. "./bento.py:svc". {e1}, {e2}'
-            )
+            return load_bento(svc_import_path_or_bento_tag)
+        except (NotFound, ImportServiceError) as e1:
+            try:
+                return import_service(svc_import_path_or_bento_tag)
+            except ImportServiceError as e2:
+                raise BentoMLException(
+                    f"Failed to load bento or import service "
+                    f"'{svc_import_path_or_bento_tag}', make sure Bento exist in local "
+                    f'store with the `bentoml.get("my_svc:20211023_CB341A")` or make '
+                    f'sure the import path is correct, e.g. "./bento.py:svc". '
+                    f"{e1}, {e2}"
+                )

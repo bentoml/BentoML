@@ -15,12 +15,13 @@ load_global_config()
 
 from ._internal.models.store import ModelStore
 from ._internal.service import Service
+from ._internal.service.loader import load
 from ._internal.types import Tag
 
 # bento APIs are top-level
-from .bentos import build, delete, export_bento, get, import_bento, list, load
+from .bentos import build, delete, export_bento, get, import_bento, list
 
-# Global default ModelStore instance for direct user access
+# TODO: change to Store based API
 models = ModelStore()
 
 __all__ = [

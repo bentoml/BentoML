@@ -85,11 +85,24 @@ class Image(IODescriptor):
     """
 
     def __init__(self, pilmode: str = DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
+        PIL.Image.init()
+
+        if mime_type.lower() not in PIL.Image.MIME.values():
+            raise InvalidArgument(
+                f"Invalid Image mime_type '{mime_type}', "
+                f"Supported mime types are {', '.join(PIL.Image.MIME.values())} "
+            )
+        if pilmode not in PIL.Image.MODES:
+            raise InvalidArgument(
+                f"Invalid Image pilmode '{pilmode}', "
+                f"Supported PIL modes are {', '.join(PIL.Image.MODES)} "
+            )
+
+        self._mime_type = mime_type.lower()
         self._pilmode = pilmode
-        self._mime_type = mime_type
-        self._ext = mimetypes.guess_extension(mime_type).strip(
-            "."
-        )  # type: t.Optional[str]
+
+        ext = mimetypes.guess_extension(self._mime_type)
+        self._format = PIL.Image.EXTENSION[ext]
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -117,12 +130,16 @@ class Image(IODescriptor):
     async def to_http_response(
         self, obj: t.Union["np.ndarray", "PIL.Image.Image"]
     ) -> Response:
-        if not isinstance(obj, [np.ndarray, PIL.Image.Image]):
+        if not isinstance(obj, (np.ndarray, PIL.Image.Image)):
             raise InvalidArgument(
                 f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
             )
-        image = PIL.Image.fromarray(obj) if isinstance(obj, np.ndarray) else obj
+        image = (
+            PIL.Image.fromarray(obj, mode=self._pilmode)
+            if isinstance(obj, np.ndarray)
+            else obj
+        )
 
         ret = io.BytesIO()
-        image.save(ret, self._ext)
+        image.save(ret, self._format)
         return Response(ret.getvalue(), media_type=self._mime_type)

@@ -33,7 +33,7 @@ class Tag:
     name: str
     version: t.Optional[str]
 
-    def __init__(self, name: str, version: t.Optional[str]):
+    def __init__(self, name: str, version: t.Optional[str] = None):
         lname = name.lower()
         if name != lname:
             logger.warning(f"converting {name} to lowercase: {lname}")

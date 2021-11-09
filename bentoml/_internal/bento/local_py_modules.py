@@ -5,7 +5,6 @@ import modulefinder
 import os
 import re
 import sys
-from shutil import copyfile
 from typing import List, Tuple
 from unittest.mock import patch
 
@@ -149,11 +148,6 @@ def find_local_py_modules_used(target_module_file: PathType) -> List[Tuple[str, 
         relative_path = _get_module_relative_file_path(module_name, module_file)
         file_list.append((module_file, relative_path))
 
-    # for root, _, files in os.walk(destination):
-    #     if "__init__.py" not in files:
-    #         logger.debug("Creating empty __init__.py under folder:'%s'", root)
-    #         Path(os.path.join(root, "__init__.py")).touch()
-
     return file_list
 
 
@@ -280,21 +274,3 @@ def copy_local_py_modules(target_module, destination):
     # logger.debug("Done copying local python dependant modules")
     #
     # return target_module_name, target_module_relative_path
-
-
-def copy_zip_import_archives(
-    target_path: str,
-    target_module: str,
-    inferred_zipimports: List[str],
-    zipimports: List[str],
-):
-    target_module = _get_module(target_module)
-    os.makedirs(target_path, exist_ok=True)
-    target_module_dir = os.path.dirname(_get_module_src_file(target_module))
-    all_zipimports = set(
-        [os.path.join(target_module_dir, z) for z in zipimports] + inferred_zipimports
-    )
-    for zippath in all_zipimports:
-        logger.debug("Copying zipmodule %s", zippath)
-        basename = os.path.basename(zippath)
-        copyfile(zippath, os.path.join(target_path, basename))

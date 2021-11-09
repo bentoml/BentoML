@@ -27,6 +27,9 @@ class StoreItem(ABC):
     def creation_time(self) -> datetime.datetime:
         pass
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.tag})"
+
 
 Item = t.TypeVar("Item", bound=StoreItem)
 

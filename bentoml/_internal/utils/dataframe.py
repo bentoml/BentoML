@@ -58,8 +58,8 @@ class _DataFrameState(object):
     def __init__(self, columns: t.Optional[t.Dict[str, int]]):
         ...
 
-    @t.overload
-    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):  # noqa: F811
+    @t.overload  # noqa: F811
+    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):
         ...
 
     def __init__(  # noqa: F811

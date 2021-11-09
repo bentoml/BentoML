@@ -3,6 +3,8 @@ import re
 import sys
 import typing as t
 
+from typing_extensions import Literal
+
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION, is_pip_installed_bentoml
 
@@ -68,78 +70,78 @@ class ImageProvider(object):
     Example::
 
     from bento import svc
-    from bentoml.utils import builtin_docker_image
 
     svc.build(
         ...
         env=dict(
-            docker_options={
-                'base_image': builtin_docker_image('debian', '3.8', gpu=True)
-            }
+            docker=dict(
+                distro='debian',
+                python='3.8',
+                gpu=True
+            )
         )
     )
     """
 
     def __init__(
         self,
-        distro: str,
+        distro: t.Optional[
+            Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"]
+        ] = None,
         python_version: t.Optional[str] = None,
-        gpu: bool = False,
+        gpu: t.Optional[bool] = None,
     ) -> None:
+        if distro is None:
+            distro = "slim"
+        if gpu is None:
+            gpu = False
+
         if is_pip_installed_bentoml():
             self._release_type = BENTOML_VERSION
-            self._suffix = "runtime" if not gpu else "cudnn"
+            self._suffix = "cudnn" if gpu else "runtime"
         else:
             self._release_type: str = "devel"
             self._suffix = ""
 
         if python_version:
-            _py_ver: str = python_version
-        else:
-            _py_ver = ".".join(map(str, sys.version_info[:2]))
-            logger.debug(
-                f"No python_version is specified, using {_py_ver}. "
-                f"List of supported python version: {SUPPORTED_PYTHON_VERSION}. "
-                "If your python_version isn't supported make sure to specify, e.g: "
-                "bentoml.docker.ImageProvider('centos7', python_version='3.6')"
+            assert re.match(r"^[2,3]\.[0-9]{1,2}$", python_version), (
+                f"python_version '{python_version}' should be in format "
+                "'{major}.{minor}', e.g. 'python_version=\"3.7\"'"
             )
-        if _py_ver not in SUPPORTED_PYTHON_VERSION:
+        else:
+            logger.debug(f"No python_version is specified, using {python_version}.")
+            python_version = ".".join(map(str, sys.version_info[:2]))
+
+        if python_version not in SUPPORTED_PYTHON_VERSION:
             raise BentoMLException(
-                f"Python {python_version} is not supported. "
-                f"Supported Python versions include: {SUPPORTED_PYTHON_VERSION}"
+                f"BentoML does not provide docker image for Python {python_version}."
+                f"Supported Python versions are {SUPPORTED_PYTHON_VERSION}. "
+                f"You may specify a different python version for BentoML to use"
+                "e.g: \"env=dict(distro='centos7', python_version='3.7')\""
             )
 
-        self._python_version: str = _py_ver
+        self._python_version: str = python_version
 
-        if "ubuntu" in distro or "debian" in distro:
-            logger.debug("Using slim tags for debian based distros")
-            _distro = "slim"
-        elif "amazon" in distro:
-            logger.debug("Convert amazonlinux tags to ami2")
-            _distro = "ami2"
-        else:
-            _distro = distro
-
-        if gpu and _distro not in SUPPORTED_GPU_DISTROS:
+        if gpu and distro not in SUPPORTED_GPU_DISTROS:
             raise BentoMLException(
-                f"{_distro} with GPU={gpu} is forbidden. "
-                f"GPU-supported distros: {SUPPORTED_GPU_DISTROS} "
+                f"distro '{distro}' with GPU={gpu} is not supported. "
+                f"GPU-supported distros are: {SUPPORTED_GPU_DISTROS} "
             )
 
         if (
-            _distro not in SUPPORTED_RELEASES_COMBINATION["devel"]
+            distro not in SUPPORTED_RELEASES_COMBINATION["devel"]
             and self._release_type == "devel"
         ):
             raise BentoMLException(f"{distro} doesn't support devel tags.")
 
-        if self._suffix and _distro not in SUPPORTED_RELEASES_COMBINATION[self._suffix]:
+        if self._suffix and distro not in SUPPORTED_RELEASES_COMBINATION[self._suffix]:
             raise BentoMLException(
                 f"{distro} is not yet supported. "
                 "Supported distros: "
                 f"{SUPPORTED_RELEASES_COMBINATION[self._suffix]}"
             )
 
-        self._distro: str = _distro
+        self._distro: str = distro
 
     def __repr__(self):
         actual_suffix = "-" + self._suffix if self._suffix else ""
@@ -149,7 +151,3 @@ class ImageProvider(object):
             distro=self._distro,
             suffix=actual_suffix,
         )
-
-
-def builtin_docker_image(*args, **kwargs):
-    return repr(ImageProvider(*args, **kwargs))

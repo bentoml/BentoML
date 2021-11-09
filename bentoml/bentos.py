@@ -128,6 +128,15 @@ def export_bento(tag: t.Union[Tag, str], path: str):
     bento.export(path)
 
 
+def push(tag: t.Union[Tag, str]):
+    bento = get(tag)
+    bento.push()
+
+
+def pull(tag: t.Union[Tag, str]):
+    pass
+
+
 @inject
 def build(
     svc: t.Union["Service", str],
@@ -305,6 +314,8 @@ __all__ = [
     "delete",
     "import_bento",
     "export_bento",
+    "push",
+    "pull",
     "build",
     "load",
 ]

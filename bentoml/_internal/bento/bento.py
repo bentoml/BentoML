@@ -155,6 +155,9 @@ class Bento(StoreItem):
             self.fs, fs.open_fs(path, create=True, writeable=True), copy_if_newer=False
         )
 
+    def push(self):
+        pass
+
     def validate(self):
         return self.fs.isfile("bento.yaml")
 

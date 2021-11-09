@@ -32,6 +32,15 @@ logger = logging.getLogger(__name__)
 BENTO_YAML_FILENAME = "bento.yaml"
 
 
+# Add representer to allow dumping OrderedDict as a regular map
+yaml.add_representer(
+    OrderedDict,
+    lambda dumper, data: dumper.represent_mapping(
+        "tag:yaml.org,2002:map", data.items()
+    ),
+)
+
+
 @attr.define(repr=False)
 class Bento(StoreItem):
     tag: Tag
@@ -58,7 +67,7 @@ class Bento(StoreItem):
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
         ctx_fs = fs.open_fs(build_ctx)
 
-        # Add Runner required models if models is not specified
+        # Add Runner required models to models list
         for runner in svc._runners.values():
             models += runner.required_models
 
@@ -133,13 +142,6 @@ class Bento(StoreItem):
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
         with bento_fs.open(fs.path.combine("apis", "openapi.yaml"), "w") as f:
-            # Add representer to allow dumping OrderedDict as a regular map
-            yaml.add_representer(
-                OrderedDict,
-                lambda dumper, data: dumper.represent_mapping(
-                    "tag:yaml.org,2002:map", data.items()
-                ),
-            )
             yaml.dump(svc.openapi_doc(), f)
 
         # Create bento.yaml
@@ -153,6 +155,7 @@ class Bento(StoreItem):
         with bento_fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             bento_metadata = BentoMetadata.from_yaml_file(bento_yaml)
 
+        # TODO: Check bento_metadata['bentoml_version'] and show user warning if needed
         return cls(bento_metadata.tag, bento_fs)
 
     @cached_property
@@ -225,7 +228,8 @@ class BentoMetadata(UserDict):
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
-            print(exc)
+            logger.error(exc)
+            raise
 
         bento_metadata = cls()
         bento_metadata.update(yaml_content)

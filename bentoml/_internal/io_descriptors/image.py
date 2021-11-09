@@ -86,8 +86,23 @@ class Image(IODescriptor):
 
     def __init__(self, pilmode: str = DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
         PIL.Image.init()
+
+        if mime_type.lower() not in PIL.Image.MIME.values():
+            raise InvalidArgument(
+                f"Invalid Image mime_type '{mime_type}', "
+                f"Supported mime types are {', '.join(PIL.Image.MIME.values())} "
+            )
+        if pilmode not in PIL.Image.MODES:
+            raise InvalidArgument(
+                f"Invalid Image pilmode '{pilmode}', "
+                f"Supported PIL modes are {', '.join(PIL.Image.MODES)} "
+            )
+
+        self._mime_type = mime_type.lower()
         self._pilmode = pilmode
-        self._mime_type = mime_type
+
+        ext = mimetypes.guess_extension(self._mime_type)
+        self._format = PIL.Image.EXTENSION[ext]
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -126,7 +141,5 @@ class Image(IODescriptor):
         )
 
         ret = io.BytesIO()
-        ext = mimetypes.guess_extension(self._mime_type)
-        _format = PIL.Image.EXTENSION[ext]
-        image.save(ret, _format)
-        return Response(ret.getvalue(), media_type=PIL.Image.MIME.get(_format))
+        image.save(ret, self._format)
+        return Response(ret.getvalue(), media_type=self._mime_type)

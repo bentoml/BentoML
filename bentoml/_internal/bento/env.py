@@ -71,14 +71,14 @@ class DockerOptions:
     def save(self, bento_fs: FS):
         docker_folder = fs.path.join("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
-        dockerfile = os.path.join(docker_folder, "Dockerfile")
+        dockerfile = fs.path.join(docker_folder, "Dockerfile")
         with bento_fs.open(dockerfile, "w") as dockerfile:
             dockerfile.write(BENTO_SERVER_DOCKERFILE.format(base_image=self.base_image))
 
         current_dir = fs.open_fs(os.path.dirname(__file__))
         for filename in ["bentoml-init.sh", "docker-entrypoint.sh"]:
             fs.copy.copy_file(
-                current_dir, filename, bento_fs, os.path.join(docker_folder, filename)
+                current_dir, filename, bento_fs, fs.path.join(docker_folder, filename)
             )
 
         # TODO: copy over self.setup_script

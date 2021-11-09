@@ -159,10 +159,14 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     return reqs
 
 
-async def concat_to_multipart_responses(responses: _ResponseList) -> StreamingResponse:
-    resp = io.BytesIO()
-    for _resp in [req_[1] for req_ in responses]:
-        resp.write(_resp.body)
+async def concat_to_multipart_responses(responses: _ResponseList) -> Response:
     boundary = binascii.hexlify(os.urandom(16)).decode("ascii")
     headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
-    return StreamingResponse(resp, headers=headers)
+    body = (
+        "".join(
+            f'--{boundary}\r\nContent-Disposition: form-data; name="{item[0]}"\r\n\r\n{item[1].body}\r\n'
+            for item in responses
+        )
+        + f"--{boundary}--\r\n"
+    )
+    return Response(body, headers=headers)

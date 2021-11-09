@@ -72,7 +72,6 @@ async def test_file(host, bin_file, async_request):
     )
 
 
-import aiohttp
 import imageio
 
 

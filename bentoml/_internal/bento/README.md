@@ -8,7 +8,7 @@ and dependencies.
 Here's an example file structure of a Bento
 
     /example_bento
-     - readme.md
+     - README.md
      - bento.yml
      - /apis
          - openapi.yaml # openapi spec

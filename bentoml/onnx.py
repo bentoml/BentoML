@@ -156,9 +156,13 @@ def save(
         framework_context=context,
     ) as ctx:  # type: StoreCtx
         if isinstance(model, onnx.ModelProto):
-            onnx.save_model(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+            onnx.save_model(
+                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+            )
         else:
-            shutil.copyfile(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+            shutil.copyfile(
+                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
+            )
         _tag = ctx.tag  # type: str
         return _tag
 
@@ -193,7 +197,9 @@ class _ONNXRunner(Runner):
             )
         if providers is not None:
             if not all(i in ort.get_all_providers() for i in flatten_list(providers)):
-                raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
+                raise BentoMLException(
+                    f"'{providers}' cannot be parsed by `onnxruntime`"
+                )
         else:
             providers = self._get_default_providers(
                 gpu_device_id, disable_copy_in_default_stream

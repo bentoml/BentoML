@@ -89,7 +89,7 @@ class ImageProvider(object):
             Literal["slim", "ami2", "alpine", "centos7", "centos8"]
         ] = None,
         python_version: t.Optional[str] = None,
-        gpu: t.Optional[bool] = None,
+        gpu: bool = False
     ) -> None:
         if distro is None:
             distro = "slim"

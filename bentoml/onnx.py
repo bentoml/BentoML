@@ -18,7 +18,6 @@ ONNX_EXT: str = ".onnx"
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    import numpy as np
     import pandas as pd
     from _internal.models.store import ModelInfo, ModelStore, StoreCtx
 
@@ -31,7 +30,8 @@ except ImportError:  # pragma: no cover
         """\
 `onnx` is required in order to use the module `bentoml.onnx`, do `pip install onnx`.
 For more information, refers to https://onnx.ai/get-started.html
-`onnxruntime` is also required by `bentoml.onnx`. Refers to https://onnxruntime.ai/ for more information.
+`onnxruntime` is also required by `bentoml.onnx`. Refer to https://onnxruntime.ai/ for
+more information.
         """
     )
 
@@ -156,13 +156,9 @@ def save(
         framework_context=context,
     ) as ctx:  # type: StoreCtx
         if isinstance(model, onnx.ModelProto):
-            onnx.save_model(
-                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
-            )
+            onnx.save_model(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}"))
         else:
-            shutil.copyfile(
-                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
-            )
+            shutil.copyfile(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}"))
         _tag = ctx.tag  # type: str
         return _tag
 
@@ -197,9 +193,7 @@ class _ONNXRunner(Runner):
             )
         if providers is not None:
             if not all(i in ort.get_all_providers() for i in flatten_list(providers)):
-                raise BentoMLException(
-                    f"'{providers}' cannot be parsed by `onnxruntime`"
-                )
+                raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
         else:
             providers = self._get_default_providers(
                 gpu_device_id, disable_copy_in_default_stream

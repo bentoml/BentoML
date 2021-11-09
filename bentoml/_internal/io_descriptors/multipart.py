@@ -2,10 +2,10 @@ import typing as t
 
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
-from starlette.responses import Response, StreamingResponse
+from starlette.responses import Response
 
 from ...exceptions import BentoMLException, InvalidArgument
-from ..utils.formparser import (  # noqa
+from ..utils.formparser import (
     concat_to_multipart_responses,
     populate_multipart_requests,
 )
@@ -21,11 +21,12 @@ class Multipart(IODescriptor[MultipartIO]):
     from bentoml.io import Image, JSON, Multipart
 
     spec = Multipart(img=Image(), annotations=JSON())
+    output = Multipart(img_output=Image(), annotations_output=JSON())
 
-    @svc.api(input=spec, output=spec)
+    @svc.api(input=spec, output=output)
     def predict(img, annotations):
         ...
-        return img, annotations
+        return dict(img_output=img, annotations_output=annotations)
 
     curl -i -F img=@test.jpg -F annotations=@test.json localhost:5000/predict
     """
@@ -67,9 +68,7 @@ class Multipart(IODescriptor[MultipartIO]):
 
     async def to_http_response(self, obj: MultipartIO) -> Response:
         res: t.List[t.Tuple[str, Response]] = list()
-        for i, io_ in enumerate(
-            self._inputs.items()
-        ):  # type: t.Tuple[int, t.Tuple[str, IODescriptor]]
-            r: Response = await io_[1].to_http_response(obj[i])  # type: ignore[index]
-            res.append((io_[0], r))
+        for io_, (output_name, output_data) in zip(self._inputs.values(), obj.items()):
+            r: Response = await io_.to_http_response(output_data)
+            res.append((output_name, r))
         return await concat_to_multipart_responses(res)

@@ -2,7 +2,6 @@ import io
 import mimetypes
 import typing as t
 
-import imageio
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
@@ -88,7 +87,9 @@ class Image(IODescriptor):
     def __init__(self, pilmode: str = DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
         self._pilmode = pilmode
         self._mime_type = mime_type
-        self._ext = mimetypes.guess_extension(mime_type)  # type: t.Optional[str]
+        self._ext = mimetypes.guess_extension(mime_type).strip(
+            "."
+        )  # type: t.Optional[str]
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -116,16 +117,12 @@ class Image(IODescriptor):
     async def to_http_response(
         self, obj: t.Union["np.ndarray", "PIL.Image.Image"]
     ) -> Response:
-        if isinstance(obj, np.ndarray):
-            pass
-        elif isinstance(obj, PIL.Image.Image):
-            obj = np.array(obj)
-        else:
+        if not isinstance(obj, [np.ndarray, PIL.Image.Image]):
             raise InvalidArgument(
-                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
-                " supports only `np.ndarray` and `PIL.Image`"
+                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
             )
+        image = PIL.Image.fromarray(obj) if isinstance(obj, np.ndarray) else obj
 
         ret = io.BytesIO()
-        imageio.imsave(ret, im=t.cast(t.Type["np.ndarray"], obj), format=self._ext)
+        image.save(ret, self._ext)
         return Response(ret.getvalue(), media_type=self._mime_type)

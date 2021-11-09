@@ -9,6 +9,7 @@ import pathspec
 import yaml
 from fs.base import FS
 from fs.copy import copy_dir, copy_file
+from fs.mirror import mirror
 from simple_di import Provide, inject
 
 from ...exceptions import BentoMLException, InvalidArgument
@@ -148,6 +149,11 @@ class Bento(StoreItem):
             os.rmdir(bento_path)
             os.rename(self.fs.getsyspath("/"), bento_path)
             self.fs.close()
+
+    def export(self, path: str):
+        mirror(
+            self.fs, fs.open_fs(path, create=True, writeable=True), copy_if_newer=False
+        )
 
     def validate(self):
         return self.fs.isfile("bento.yaml")

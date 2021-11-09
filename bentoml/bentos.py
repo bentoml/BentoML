@@ -82,7 +82,6 @@ import os
 import typing as t
 
 import fs
-from fs.mirror import mirror
 from simple_di import Provide, inject
 
 from ._internal.bento import Bento, BentoStore
@@ -124,9 +123,9 @@ def import_bento(path: str) -> Bento:
     return Bento.from_fs(fs.open_fs(path))
 
 
-def export_bento(bento: Bento, path: str):
-    mirror(bento.fs, fs.open_fs(path), copy_if_newer=False)
-    pass
+def export_bento(tag: t.Union[Tag, str], path: str):
+    bento = get(tag)
+    bento.export(path)
 
 
 @inject

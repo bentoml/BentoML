@@ -88,9 +88,6 @@ class Image(IODescriptor):
         PIL.Image.init()
         self._pilmode = pilmode
         self._mime_type = mime_type
-        self._ext = mimetypes.guess_extension(mime_type).strip(
-            "."
-        )  # type: t.Optional[str]
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -129,5 +126,6 @@ class Image(IODescriptor):
         )
 
         ret = io.BytesIO()
-        image.save(ret, format=PIL.Image.EXTENSION[self._ext])
+        ext = mimetypes.guess_extension(self._mime_type)
+        image.save(ret, format=PIL.Image.EXTENSION[ext])
         return Response(ret.getvalue(), media_type=image.get_format_mimetype())

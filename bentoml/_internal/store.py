@@ -76,11 +76,27 @@ class Store(ABC, t.Generic[Item]):
         if _tag.version is None or _tag.version == "latest":
             _tag.version = self.fs.readtext(_tag.latest_path())
         path = _tag.path()
-        if not self.fs.exists(path):
+        if self.fs.exists(path):
+            return self._get_item(_tag)
+
+        matches = self.fs.glob(f"{path}*")
+        counts = matches.count().directories
+        if counts == 0:
             raise NotFound(
                 f"{self._item_type.__name__} '{tag}' is not found in BentoML store {self.fs}."
             )
-        return self._get_item(_tag)
+        elif counts == 1:
+            for match in matches:
+                if match.is_dir:
+                    return self._get_item(Tag(_tag.name, match.name))
+        else:
+            vers = []
+            for match in matches:
+                if match.is_dir:
+                    vers += match.name
+            raise BentoMLException(
+                f"multiple versions matched by {_tag.version}: {vers}"
+            )
 
     @contextmanager
     def register(self, tag: t.Union[str, Tag]):

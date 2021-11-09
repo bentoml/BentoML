@@ -1,3 +1,4 @@
+import psutil
 import numpy as np
 import pandas as pd
 import pytest
@@ -55,7 +56,7 @@ def test_pytorch_runner_setup_run_batch(modelstore, input_data):
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
-    assert torch.get_num_threads() == runner.num_concurrency_per_replica
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
 
     res = runner.run_batch(input_data)
     assert res.unsqueeze(dim=0).item() == 5.0

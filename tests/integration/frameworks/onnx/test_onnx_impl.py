@@ -2,8 +2,8 @@ import os
 import typing as t
 
 import numpy as np
-import pytest
 import onnx
+import pytest
 
 import bentoml.onnx
 from bentoml.Exceptions import BentoMLException

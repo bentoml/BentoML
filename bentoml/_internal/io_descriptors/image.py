@@ -117,7 +117,7 @@ class Image(IODescriptor):
     async def to_http_response(
         self, obj: t.Union["np.ndarray", "PIL.Image.Image"]
     ) -> Response:
-        if not isinstance(obj, [np.ndarray, PIL.Image.Image]):
+        if not isinstance(obj, (np.ndarray, PIL.Image.Image)):
             raise InvalidArgument(
                 f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
             )

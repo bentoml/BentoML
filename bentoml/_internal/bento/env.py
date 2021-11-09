@@ -30,7 +30,7 @@ class DockerOptions:
         self,
         # Options for choosing a BentoML built-in docker images
         distro: t.Optional[
-            Literal["slim", "ami2", "alpine", "centos7", "centos8"]
+            Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"]
         ] = None,
         python_version: t.Optional[str] = None,
         gpu: t.Optional[bool] = None,
@@ -69,7 +69,7 @@ class DockerOptions:
         self.setup_script = setup_script
 
     def save(self, bento_fs: FS):
-        docker_folder = os.path.join("env", "docker")
+        docker_folder = fs.path.join("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
         dockerfile = os.path.join(docker_folder, "Dockerfile")
         with bento_fs.open(dockerfile, "w") as dockerfile:

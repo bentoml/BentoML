@@ -1,6 +1,5 @@
 import logging
 import re
-import sys
 import typing as t
 
 from typing_extensions import Literal
@@ -85,11 +84,11 @@ class ImageProvider(object):
 
     def __init__(
         self,
-        distro: Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"] = 'slim'
-            Literal["slim", "ami2", "alpine", "centos7", "centos8"]
+        distro: t.Optional[
+            Literal["slim", "amazonlinux2", "alpine", "centos7", "centos8"]
         ] = None,
         python_version: t.Optional[str] = None,
-        gpu: bool = False
+        gpu: t.Optional[bool] = None,
     ) -> None:
         if distro is None:
             distro = "slim"

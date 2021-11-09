@@ -96,115 +96,96 @@ def build(
         return iris_model_runner.predict(request_data)
 
     # For simple use cases, only models list is required:
-    svc.bento_options.models = []
-    svc.bento_files.include = ["*"]
-    svc.bento_env.pip_install = "./requirements.txt"
+    svc.set_build_options(
+        include=["*.py"],
+        env=dict(
+            pip_install = "./requirements.txt"
+        )
+    )
 
     # For advanced build use cases, here's all the common build options:
-    @svc.build
-    def build(bento_ctx):
-        opts, files, env = bento_ctx
-
-        opts.version = "custom_version_str"
-        opts.description = open("readme.md").read()
-        opts.models = ['iris_classifier:v123']
-
-        files.include = ["**.py", "config.json"]
-        files.exclude = ["*.pyc"]  # + anything specified in .bentoml_ignore
-
-        env.pip_install=bentoml.utils.find_required_pypi_packages(svc)
-        env.conda_environment="./environment.yaml"
-        env.docker_options=dict(
-            base_image=bentoml.utils.builtin_docker_image("slim", gpu=True),
-            entrypoint="bentoml serve module_file:svc_name --production",
-            setup_script="./setup_docker_container.sh",
-        )
-
-    # From CLI:
-    bentoml build bento.py
-    bentoml build bento.py:svc
-
-
-    # build.py
-    import bentoml
-
-    if __name__ == "__main__":
-        from bento import svc
-
-        bentoml.build(
-            svc,
-            version="custom_version_str",
-            description=open("readme.md").read(),
-            models=['iris_classifier:v123'],
-            include=["*"],
-            exclude=["*.storage", "credentials.yaml"],
-            # + anything specified in .bentoml_ignore file
-            env=dict(
-                pip_install=bentoml.utils.find_required_pypi_packages(svc),
-                conda="./environment.yaml",
-                docker={
-                    "base_image": bentoml.build_utils.builtin_docker_image("slim"),
-                    "setup_script": "./setup_docker_container.sh",
-                },
-            ),
-            labels={
-                "team": "foo",
-                "dataset_version": "abc",
-                "framework": "pytorch",
-            }
-        )
-
-    # additional env utility functions:
-    from bentoml.build_utils import lock_pypi_versions
-    lock_pypi_versions(["pytorch", "numpy"]) => ["pytorch==1.0", "numpy==1.23"]
-
-    from bentoml.utils import with_pip_install_options
-    with_pip_install_options(
-          ["pytorch", "numpy"],
-          index_url="https://mirror.baidu.com/pypi/simple",
-          extra_index_url="https://mirror.baidu.com/pypi/simple",
-          find_links="https://download.pytorch.org/whl/torch_stable.html"
-     )
-    > [
-        "pytorch --index-url=https://mirror.baidu.com/pypi/simple --extra-index-url=https://mirror.baidu.com/pypi/simple --find-links=https://download.pytorch.org/whl/torch_stable.html",
-        "numpy --index-url=https://mirror.baidu.com/pypi/simple --extra-index-url=https://mirror.baidu.com/pypi/simple --find-links=https://download.pytorch.org/whl/torch_stable.html"
-    ]
-
-    # Configuring a different docker base image:
-    env = dict(
-        docker={
-            distro=
-        }
-    )
-
-    # conda dependencies:
-    svc.build(
-        ...
+    svc.set_build_options(
+        version="any_version_label",
+        description=open("README.md").read(),
+        models=["iris_model:latest"],
+        include=['*'],
+        exclude=[], # files to exclude can also be specified with a .bentomlignore file
+        labels={
+            "foo": "bar",
+        },
         env={
-            "conda": dict(
-                channels=[...],
-                dependencies=[...],
-            )
-        }
+            "python": {
+                "version": '3.7.11',
+                "wheels": ["./wheels/*"],
+                "pip_install": "auto",
+                # "pip_install": "./requirements.txt",
+                # "pip_install": ["tensorflow", "numpy"],
+                # "pip_install": bentoml.build_utils.lock_pypi_version(["tensorflow", "numpy"]),
+                # "pip_install": None, # do not install any python packages automatically
+            },
+            "docker": {
+                # "base_image": "mycompany.com/registry/name/tag",
+                "distro": "amazonlinux2",
+                "gpu": True,
+                "setup_script": "sh setup_docker_container.sh",
+            },
+            # "conda": "./environment.yml",
+            "conda": {
+                "channels": [],
+                "dependencies": []
+            }
+        },
     )
 
-    # example:
+    From CLI:
 
-    # build.py
-    from bento import svc
-    from bentoml.build_utils import lock_pypi_versions
+        bentoml build bento.py:svc
 
-    if __name__ == "__main__":
-        svc.build(
-            models=['iris_classifier:latest'],
-            include=['*'],
-            env=dict(
-                pip_install=lock_pypi_versions([
-                    "pytorch",
-                    "numpy",
-                ])
+    Alternatively, write a python script to build new Bento with `bentoml.build` API:
+
+        import bentoml
+
+        if __name__ == "__main__":
+            from bento import svc
+
+            bentoml.build(
+                svc,
+                version="custom_version_str",
+                description=open("readme.md").read(),
+                models=['iris_classifier:v123'],
+                include=["*"],
+                exclude=["*.storage", "credentials.yaml"], # + anything specified in .bentoml_ignore file
+                env=dict(
+                    pip_install=bentoml.utils.find_required_pypi_packages(svc),
+                    conda="./environment.yaml",
+                    docker={
+                        "base_image": "mycompany.com/registry/name/tag",
+                        "setup_script": "./setup_docker_container.sh",
+                    },
+                ),
+                labels={
+                    "team": "foo",
+                    "dataset_version": "abc",
+                    "framework": "pytorch",
+                }
             )
-        )
+
+    Additional build utility functions:
+
+        from bentoml.build_utils import lock_pypi_versions
+        lock_pypi_versions(["pytorch", "numpy"]) => ["pytorch==1.0", "numpy==1.23"]
+
+        from bentoml.build_utils import with_pip_install_options
+        with_pip_install_options(
+              ["pytorch", "numpy"],
+              index_url="https://mirror.baidu.com/pypi/simple",
+              extra_index_url="https://mirror.baidu.com/pypi/simple",
+              find_links="https://download.pytorch.org/whl/torch_stable.html"
+         )
+        > [
+            "pytorch --index-url=https://mirror.baidu.com/pypi/simple --extra-index-url=https://mirror.baidu.com/pypi/simple --find-links=https://download.pytorch.org/whl/torch_stable.html",
+            "numpy --index-url=https://mirror.baidu.com/pypi/simple --extra-index-url=https://mirror.baidu.com/pypi/simple --find-links=https://download.pytorch.org/whl/torch_stable.html"
+        ]
     """  # noqa: LN001
     version = generate_new_version_id() if version is None else version
     description = svc.__doc__ if description is None else description

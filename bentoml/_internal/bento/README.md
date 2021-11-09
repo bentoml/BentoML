@@ -84,7 +84,7 @@ User may customize build options for a service:
 
     svc.set_build_options(
 		version=generate_new_versionba,
-		description=open("readme.md").read(),
+		description=open("README.md").read(),
 		models=["iris_model:latest"]
 		include=['*'],
 		exclude=[], # files to exclude can also be specified with a .bentomlignore file

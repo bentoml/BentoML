@@ -1,4 +1,4 @@
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name # pragma: no cover
 import logging
 import os
 import subprocess

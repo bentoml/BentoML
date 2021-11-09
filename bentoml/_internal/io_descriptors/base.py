@@ -15,31 +15,27 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
 
     HTTP_METHODS = ["POST"]
 
+    # fmt: off
     @abstractmethod
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
-        ...
+    def openapi_request_schema(self) -> t.Dict[str, t.Any]: ...  # noqa: E704
 
     @abstractmethod
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
-        ...
+    def openapi_responses_schema(self) -> t.Dict[str, t.Any]: ...  # noqa: E704
 
     @abstractmethod
-    async def from_http_request(self, request: Request) -> IOPyObj:
-        ...
+    async def from_http_request(self, request: Request) -> IOPyObj: ...  # noqa: E704
 
     @abstractmethod
-    async def to_http_response(self, obj: IOPyObj) -> Response:
-        ...
+    async def to_http_response(self, obj: IOPyObj) -> Response: ...  # noqa: E704
 
     # TODO: gRPC support
     # @abstractmethod
-    # def generate_protobuf(self):
-    #     pass
-    #
+    # def generate_protobuf(self): ...  # noqa: E704
+
     # @abstractmethod
-    # async def from_grpc_request(self, request: GRPCRequest) -> IOPyObj:
-    #     pass
-    #
+    # async def from_grpc_request(self, request: GRPCRequest) -> IOPyObj: ...  # noqa: E704
+
     # @abstractmethod
-    # async def to_grpc_response(self, obj: IOPyObj) -> GRPCResponse:
-    #     pass
+    # async def to_grpc_response(self, obj: IOPyObj) -> GRPCResponse: ...  # noqa: E704
+
+    # fmt: on

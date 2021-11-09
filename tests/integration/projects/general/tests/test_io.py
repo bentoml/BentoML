@@ -1,8 +1,49 @@
 # pylint: disable=redefined-outer-name
+import dataclasses
+import json
+import typing as t
+
 import aiohttp
 import imageio
 import numpy as np
+import pydantic
 import pytest
+
+
+@dataclasses.dataclass
+class _ExampleSchema:
+    name: str
+    endpoints: t.List[str]
+
+
+class _Schema(pydantic.BaseModel):
+    name: str
+    endpoints: t.List[str]
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [
+        _ExampleSchema(name="test", endpoints=["predict", "health"]),
+        _Schema(name="test", endpoints=["predict", "health"]),
+        np.array([[1]]),
+    ],
+)
+def test_json_encoder(obj):
+    from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
+
+    dumped = json.dumps(
+        obj,
+        cls=DefaultJsonEncoder,
+        ensure_ascii=False,
+        allow_nan=False,
+        indent=None,
+        separators=(",", ":"),
+    )
+    assert (
+        dumped == '{"name":"test","endpoints":["predict","health"]}'
+        or dumped == "[[1]]"
+    )
 
 
 @pytest.mark.asyncio
@@ -16,6 +57,15 @@ async def test_json(host, async_request):
         data='["hi"]',
         assert_status=200,
         assert_data=b'["hi"]',
+    )
+
+    await async_request(
+        "POST",
+        f"http://{host}/pydantic_json",
+        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
+        data='{"name":"test","endpoints":["predict","health"]}',
+        assert_status=200,
+        assert_data=b'{"name":"test","endpoints":["predict","health"]}',
     )
 
 
@@ -47,7 +97,7 @@ def bin_file(tmpdir):
 
 @pytest.mark.asyncio
 async def test_file(host, bin_file, async_request):
-    # Test FileInput as binary
+    # Test File as binary
     with open(str(bin_file), "rb") as f:
         b = f.read()
 
@@ -59,7 +109,7 @@ async def test_file(host, bin_file, async_request):
         assert_data=b"\x810\x899",
     )
 
-    # Test FileInput as multipart binary
+    # Test File as multipart binary
     form = aiohttp.FormData()
     form.add_field("file", b, content_type="application/octet-stream")
 
@@ -70,11 +120,28 @@ async def test_file(host, bin_file, async_request):
         assert_data=b"\x810\x899",
     )
 
+    # Test Exception
+    await async_request(
+        "POST",
+        f"http://{host}/predict_file",
+        data=b,
+        headers={"Content-Type": "application/pdf"},
+        assert_status=500,
+    )
+
+    await async_request(
+        "POST",
+        f"http://{host}/predict_invalid_filetype",
+        data=b,
+        headers={"Content-Type": "application/octet-stream"},
+        assert_status=400,
+    )
+
 
 @pytest.fixture()
 def img_file(tmpdir):
     img_file_ = tmpdir.join("test_img.jpg")
-    imageio.imwrite(str(img_file_), np.random.randint(2, size=(10, 10, 3)))
+    imageio.imwrite(str(img_file_), np.random.randint(2, size=(10, 10, 3)))  # noqa
     return str(img_file_)
 
 
@@ -99,12 +166,39 @@ async def test_image(host, img_file, async_request):
                 assert_data=_verify_image,
             )
 
+    with open(str(img_file), "rb") as f1:
+        form = aiohttp.FormData()
+        form.add_field("original", f1.read(), content_type="image/jpeg")
+        await async_request(
+            "POST",
+            f"http://{host}/echo_image",
+            data=form,
+            assert_status=200,
+        )
+        await async_request(
+            "POST",
+            f"http://{host}/predict_invalid_imgtype",
+            data=form,
+            assert_status=400,
+        )
+
+    # Test Exception
+    with open(str(img_file), "rb") as f1:
+        b = f1.read()
+    await async_request(
+        "POST",
+        f"http://{host}/echo_image",
+        data=b,
+        headers={"Content-Type": "application/pdf"},
+        assert_status=500,
+    )
+
 
 @pytest.mark.asyncio
 async def test_multipart(host, img_file, async_request):
     import numpy as np  # noqa # pylint: disable=unused-import
 
-    def _verify_image(rfc):
+    def _verify_multipart_response(rfc):
         return b"\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF" in rfc
 
     with open(str(img_file), "rb") as f1:
@@ -117,187 +211,5 @@ async def test_multipart(host, img_file, async_request):
                 "POST",
                 f"http://{host}/echo_return_multipart",
                 data=form,
-                assert_data=_verify_image,
+                assert_data=_verify_multipart_response,
             )
-
-
-"""
-@pytest.fixture(params=pytest.DF_AUTO_ORIENTS)
-def df_orient(request):
-    return request.param
-
-
-@pytest.mark.asyncio
-async def test_api_echo_json(host):
-    for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
-        await async_request(
-            "POST",
-            f"http://{host}/echo_json",
-            headers=(("Content-Type", "application/json"),),
-            data=data,
-            assert_status=200,
-            assert_data=data.encode(),
-        )
-
-
-@pytest.since_bentoml_version("0.12.1+0", skip_by_default=True)
-@pytest.mark.asyncio
-async def test_api_echo_json_ensure_ascii(host):
-    for data in ('"hello"', '"🙂"', '"CJK汉语日本語한국어"'):
-        await async_request(
-            "POST",
-            f"http://{host}/echo_json_ensure_ascii",
-            headers=(("Content-Type", "application/json"),),
-            data=data,
-            assert_status=200,
-            assert_data=json.dumps(json.loads(data)).encode(),
-        )
-
-
-@pytest.mark.asyncio
-async def test_api_server_dataframe(host, df_orient):
-    import pandas as pd  # noqa # pylint: disable=unused-import
-
-    df = pd.DataFrame([[10], [20]], columns=["col1"])
-    data = df.to_json(orient=df_orient)
-
-    await async_request(
-        "POST",
-        f"http://{host}/predict_dataframe",
-        headers=(("Content-Type", "application/json"),),
-        data=data,
-        assert_status=200,
-        assert_data=lambda d: d.decode().strip() == '[{"col1":20},{"col1":40}]',
-    )
-
-    await async_request(
-        "POST",
-        f"http://{host}/predict_dataframe_v1",
-        headers=(("Content-Type", "application/json"),),
-        data=data,
-        assert_status=200,
-        assert_data=lambda d: d.decode().strip() == '[{"col1":20},{"col1":40}]',
-    )
-
-
-@pytest.mark.asyncio
-async def test_api_server_image(host, img_file):
-    import imageio  # noqa # pylint: disable=unused-import
-    import numpy as np  # noqa # pylint: disable=unused-import
-
-    # Test ImageInput as binary
-    with open(str(img_file), "rb") as f:
-        img = f.read()
-        await async_request(
-            "POST", f"http://{host}/predict_image", data=img, assert_data=b"[10, 10, 3]"
-        )
-
-    # Test ImageInput as multipart binary
-    with open(str(img_file), "rb") as f:
-        await async_request(
-            "POST",
-            f"http://{host}/predict_image",
-            data={"image": f},
-            assert_data=b"[10, 10, 3]",
-        )
-
-    # Test MultiImageInput.
-    with open(str(img_file), "rb") as f1:
-        with open(str(img_file), "rb") as f2:
-            await async_request(
-                "POST",
-                f"http://{host}/predict_multi_images",
-                data={"original": f1, "compared": f2},
-                assert_data=b"true",
-            )
-
-
-@pytest.mark.asyncio
-async def test_api_server_file(host, bin_file):
-    # Test FileInput as binary
-    with open(str(bin_file), "rb") as f:
-        b = f.read()
-        await async_request(
-            "POST",
-            f"http://{host}/predict_file",
-            data=b,
-            assert_data=b'{"b64": "gTCJOQ=="}',
-        )
-
-    # Test FileInput as multipart binary
-    with open(str(bin_file), "rb") as f:
-        await async_request(
-            "POST",
-            f"http://{host}/predict_file",
-            data={"file": f},
-            assert_data=b'{"b64": "gTCJOQ=="}',
-        )
-
-
-@pytest.mark.asyncio
-async def test_api_server_json(host):
-    req_count = 3
-    tasks = tuple(
-        async_request(
-            "POST",
-            f"http://{host}/predict_json",
-            headers=(("Content-Type", "application/json"),),
-            data=json.dumps({"in": i}),
-            assert_data=bytes('{"in": %s}' % i, "ascii"),
-        )
-        for i in range(req_count)
-    )
-    await asyncio.gather(*tasks)
-
-
-@pytest.mark.asyncio
-async def test_api_server_tasks_api(host):
-    req_count = 2
-    tasks = tuple(
-        async_request(
-            "POST",
-            f"http://{host}/predict_strict_json",
-            headers=(("Content-Type", "application/json"),),
-            data=json.dumps({"in": i}),
-            assert_status=200,
-            assert_data=bytes('{"in": %s}' % i, "ascii"),
-        )
-        for i in range(req_count)
-    )
-    tasks += tuple(
-        async_request(
-            "POST",
-            f"http://{host}/predict_strict_json",
-            data=json.dumps({"in": i}),
-            assert_status=400,
-        )
-        for i in range(req_count)
-    )
-    await asyncio.gather(*tasks)
-
-
-@pytest.mark.asyncio
-async def test_api_server_inference_result(host):
-    req_count = 2
-    tasks = tuple(
-        async_request(
-            "POST",
-            f"http://{host}/predict_direct_json",
-            headers=(("Content-Type", "application/json"),),
-            data=json.dumps({"in": i}),
-            assert_status=200,
-            assert_data=bytes('{"in": %s}' % i, "ascii"),
-        )
-        for i in range(req_count)
-    )
-    tasks += tuple(
-        async_request(
-            "POST",
-            f"http://{host}/predict_direct_json",
-            data=json.dumps({"in": i}),
-            assert_status=400,
-        )
-        for i in range(req_count)
-    )
-    await asyncio.gather(*tasks)
-"""

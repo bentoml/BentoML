@@ -1,10 +1,11 @@
 [run]
 omit=
+	bentoml/_internal/types.py
+	bentoml/_internal/typing_extensions/numpy.py
+	bentoml/testing/utils.py
 	bentoml/_version.py
 	bentoml/__main__.py
 	bentoml/io.py
-	bentoml/utils.py
-	bentoml/_internal/types.py
 
 [report]
 show_missing = true

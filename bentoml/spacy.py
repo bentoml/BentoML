@@ -9,8 +9,8 @@ import yaml
 from simple_di import Provide, inject
 from typing_extensions import Literal
 
+from ._internal.bento.pip_pkg import packages_distributions, split_requirement
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.environment.pip_pkg import packages_distributions, split_requirement
 from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.utils import LazyLoader

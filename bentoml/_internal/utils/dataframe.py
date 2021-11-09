@@ -54,13 +54,13 @@ def guess_orient(
 
 
 class _DataFrameState(object):
+    # fmt: off
     @t.overload
-    def __init__(self, columns: t.Optional[t.Dict[str, int]]):
-        ...
+    def __init__(self, columns: t.Optional[t.Dict[str, int]]): ...  # noqa: F811,E704
 
-    @t.overload  # noqa: F811
-    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):
-        ...
+    @t.overload
+    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]): ...  # noqa: F811,E704
+    # fmt: on
 
     def __init__(  # noqa: F811
         self,

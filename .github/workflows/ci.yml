@@ -75,8 +75,8 @@ jobs:
           name: codecov-${{ matrix.os}}-python${{ matrix.python-version }}
           fail_ci_if_error: true
 
-  general_integration_tests:
-    name: Integration Tests for general features on (${{ matrix.os }})
+  bento_server_integration_tests:
+    name: bento_server_integration_tests_(${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
@@ -94,7 +94,7 @@ jobs:
       - name: Install test dependencies
         run: ./ci/install_dependencies.sh.cmd
       - name: Run tests
-        run: pytest tests/integration/projects/general/tests --project-root tests/integration/projects/general -s
+        run: pytest tests/integration/projects/general/tests --project-root tests/integration/projects/general -v
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

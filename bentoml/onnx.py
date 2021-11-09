@@ -35,7 +35,7 @@ For more information, refers to https://onnx.ai/get-started.html
         """
     )
 
-pd = LazyLoader("pd", globals(), "pandas")
+pd = LazyLoader("pd", globals(), "pandas")  # noqa: F811
 
 _ProviderType = t.TypeVar(
     "_ProviderType", bound=t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
@@ -226,11 +226,13 @@ class _ONNXRunner(Runner):
                     " There are race conditions and possibly better performance."
                 )
                 gpu_["do_copy_in_default_stream"] = False
-            return [
+            providers = [
                 ("CUDAExecutionProvider", gpu_),
                 "CPUExecutionProvider",
             ]
-        return ort.get_available_providers()
+        else:
+            providers = ort.get_available_providers()
+        return providers  # type: ignore[return-value]
 
     def _get_default_session_options(
         self, session_options: t.Optional["ort.SessionOptions"]
@@ -264,7 +266,7 @@ class _ONNXRunner(Runner):
         return 1
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:
+    def _setup(self) -> None:  # type: ignore[override]
         self._model = load(
             self._model_info.tag,
             backend=self._backend,

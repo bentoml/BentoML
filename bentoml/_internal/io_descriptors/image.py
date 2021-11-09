@@ -127,5 +127,6 @@ class Image(IODescriptor):
 
         ret = io.BytesIO()
         ext = mimetypes.guess_extension(self._mime_type)
-        image.save(ret, format=PIL.Image.EXTENSION[ext])
-        return Response(ret.getvalue(), media_type=image.get_format_mimetype())
+        _format = PIL.Image.EXTENSION[ext]
+        image.save(ret, _format)
+        return Response(ret.getvalue(), media_type=PIL.Image.MIME.get(_format))

@@ -40,9 +40,8 @@ class Tag:
 
         validate_tag_str(lname)
 
-        # TODO: fix version validation - allow version str to start with numbers?
-        # if version is not None:
-        #     validate_tag_str(version)
+        if version is not None:
+            validate_tag_str(version)
 
         self.name = lname
         self.version = version

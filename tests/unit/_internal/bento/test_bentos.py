@@ -5,18 +5,15 @@ import pytest
 import bentoml
 from bentoml._internal.bento import BentoStore
 
-SYSTEM_HOME = os.path.expanduser("~")
-
 
 @pytest.mark.usefixtures("change_test_dir")
 def test_create_simplebento(tmpdir):
     bento_store = BentoStore(tmpdir)
-    os.chdir("simplebento")
-    from .simplebento.simplebento import svc
 
     bentoml.build(
-        svc,
+        "simplebento.py:svc",
         version="1.0",
+        build_ctx="./simplebento",
         description="simple bento",
         models=[],
         # models=['iris_classifier:v123'],
@@ -27,10 +24,9 @@ def test_create_simplebento(tmpdir):
         ],  # + anything specified in .bentoml_ignore file
         env=dict(
             # pip_install=bentoml.utils.find_required_pypi_packages(svc),
-            conda_environment="./environment.yaml",
-            docker_options={
+            conda="./environment.yaml",
+            docker={
                 # "base_image": bentoml.utils.builtin_docker_image("slim", gpu=True),
-                "entrypoint": "bentoml serve module_file:svc_name --production",
                 "setup_script": "./setup_docker_container.sh",
             },
         ),
@@ -51,8 +47,9 @@ def test_create_simplebento(tmpdir):
         [
             "bento.yaml",
             "apis",
-            "readme.md",
+            "README.md",
             "test.simplebento",
+            "env",
         ]
     )
     test_path = os.path.join(test_path, "test.simplebento")

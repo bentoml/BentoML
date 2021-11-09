@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from ...exceptions import BentoMLException
 from ..io_descriptors import IODescriptor
 from ..runner import Runner
+from ..types import Tag
 from ..utils.validation import validate_tag_str
 from .inference_api import InferenceAPI
 
@@ -35,7 +36,8 @@ class Service:
 
     # Name of the service, it is a required parameter for __init__
     name: str
-    # Version of the service, only applicable if the service was load from a bento
+    # Tag/Version of the service, only applicable if the service was load from a bento
+    tag: t.Optional[Tag] = None
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None

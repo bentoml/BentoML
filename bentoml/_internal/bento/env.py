@@ -129,7 +129,12 @@ class BentoEnv:
         self.python_options = (
             PythonOptions() if python is None else PythonOptions(**python)
         )
-        self.conda_options = CondaOptions() if conda is None else CondaOptions(**conda)
+        if conda is None:
+            self.conda_options = CondaOptions()
+        elif isinstance(conda, str):
+            self.conda_options = CondaOptions(environment_yml_file=conda)
+        else:
+            self.conda_options = CondaOptions(**conda)
 
     def save(self, bento_fs: FS):
         # Save all Bento env configs to target Bento directory

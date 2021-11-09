@@ -60,7 +60,7 @@ def pull(tag: t.Union[Tag, str]):
 
 @inject
 def build(
-    svc: t.Union["Service", str],
+    svc_import_str: str,
     models: t.Optional[t.List[str]] = None,
     version: t.Optional[str] = None,
     description: t.Optional[str] = None,
@@ -146,10 +146,8 @@ def build(
         import bentoml
 
         if __name__ == "__main__":
-            from bento import svc
-
             bentoml.build(
-                svc,
+                'fraud_detector.py:svc',
                 version="custom_version_str",
                 description=open("readme.md").read(),
                 models=['iris_classifier:v123'],
@@ -187,6 +185,9 @@ def build(
             "numpy --index-url=https://mirror.baidu.com/pypi/simple --extra-index-url=https://mirror.baidu.com/pypi/simple --find-links=https://download.pytorch.org/whl/torch_stable.html"
         ]
     """  # noqa: LN001
+    build_ctx = os.getcwd() if build_ctx is None else os.path.realpath(build_ctx)
+    svc = load(svc_import_str, working_dir=build_ctx)
+
     version = generate_new_version_id() if version is None else version
     description = svc.__doc__ if description is None else description
     models = [] if models is None else models
@@ -194,14 +195,6 @@ def build(
     exclude = [] if exclude is None else exclude
     env = {} if env is None else env
     labels = {} if labels is None else labels
-    build_ctx = os.getcwd() if build_ctx is None else build_ctx
-
-    if isinstance(svc, str):
-        svc = load(svc)
-
-    if isinstance(svc, Service):
-        # TODO: figure out import module when Service object was imported
-        assert svc._import_str is not None, "TODO - support build on imported service"
 
     res = Bento.create(
         svc,

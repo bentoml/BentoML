@@ -226,7 +226,8 @@ def _cuda_lib() -> "ctypes.CDLL":
         raise OSError(f"could not load any of: {' '.join(libs)}")
 
 
-# TODO(aarnphm): refactor converter and get GPU memory to retrieve information from a dict.
+# TODO(aarnphm): refactor converter and get GPU memory to retrieve information from a
+#  dict.
 def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
     global _drv
     # https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html
@@ -337,7 +338,8 @@ def _get_gpu_memory(dev: int) -> t.Tuple[int, int]:
                 if res != CUDA_SUCCESS:
                     _drv.cuGetErrorString(res, ctypes.byref(err))
                     logger.error(
-                        f"cuMemGetInfo failed with error code {res}: {err.value.decode()}"
+                        f"cuMemGetInfo failed with error code {res}: "
+                        f"{err.value.decode()}"
                     )
                 _total_mem = total_mem.value
                 _free_mem = free_mem.value

@@ -1,5 +1,4 @@
 import binascii
-import io
 import os
 import typing as t
 
@@ -7,7 +6,7 @@ import multipart.multipart as multipart
 from starlette.formparsers import _user_safe_decode  # noqa
 from starlette.formparsers import Headers, MultiPartMessage
 from starlette.requests import Request
-from starlette.responses import Response, StreamingResponse
+from starlette.responses import Response
 
 from ...exceptions import BentoMLException
 

@@ -5,6 +5,7 @@ import typing as t
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -13,7 +14,6 @@ ONNX_EXT: str = ".onnx"
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    import numpy as np
     import pandas as pd
     import tensorflow as tf
     import torch
@@ -28,7 +28,8 @@ except ImportError:  # pragma: no cover
         """\
 `onnx` is required in order to use the module `bentoml.onnx`, do `pip install onnx`.
 For more information, refers to https://onnx.ai/get-started.html
-`onnxruntime` is also required by `bentoml.onnx`. Refers to https://onnxruntime.ai/ for more information.
+`onnxruntime` is also required by `bentoml.onnx`. Refer to https://onnxruntime.ai/ for
+more information.
         """
     )
 
@@ -92,22 +93,20 @@ def load(
             f"'{backend}' runtime is currently not supported for ONNXModel"
         )
     if providers:
-        if not all(
-            i in onnxruntime.get_all_providers() for i in flatten_list(providers)
-        ):
+        if not all(i in ort.get_all_providers() for i in flatten_list(providers)):
             raise BentoMLException(f"'{providers}' cannot be parsed by `onnxruntime`")
     else:
-        providers = onnxruntime.get_available_providers()
+        providers = ort.get_available_providers()
 
     if isinstance(model_file, onnx.ModelProto):
-        return onnxruntime.InferenceSession(
+        return ort.InferenceSession(
             model_file.SerializeToString(),
             sess_options=session_options,
             providers=providers,
         )
     else:
         _get_path = os.path.join(model_file, f"{SAVE_NAMESPACE}{ONNX_EXT}")
-        return onnxruntime.InferenceSession(
+        return ort.InferenceSession(
             _get_path, sess_options=session_options, providers=providers
         )
 
@@ -139,7 +138,7 @@ def save(
 
     Examples::
     """  # noqa
-    context = {"onnx": onnx.__version__, "onnxruntime": onnxruntime.__version__}
+    context = {"onnx": onnx.__version__, "onnxruntime": ort.__version__}
     with model_store.register(
         name,
         module=__name__,
@@ -164,7 +163,7 @@ class _ONNXRunner(Runner):
         tag: str,
         backend: str,
         providers: t.Optional[t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]],
-        session_options: t.Optional["onnxruntime.SessionOptions"],
+        session_options: t.Optional["ort.SessionOptions"],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore",
@@ -251,7 +250,7 @@ def load_runner(
     providers: t.Optional[
         t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
     ] = None,
-    session_options: t.Optional["onnxruntime.SessionOptions"] = None,
+    session_options: t.Optional["ort.SessionOptions"] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

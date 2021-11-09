@@ -1,5 +1,5 @@
-MODEL_SERVER_DOCKERFILE_CPU = """\
-FROM {docker_base_image}
+BENTO_SERVER_DOCKERFILE = """\
+FROM {base_image}
 
 # Configure PIP install arguments, e.g. --index-url, --trusted-url, --extra-index-url
 ARG EXTRA_PIP_INSTALL_ARGS=

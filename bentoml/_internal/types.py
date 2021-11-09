@@ -33,15 +33,16 @@ class Tag:
     name: str
     version: t.Optional[str]
 
-    def __init__(self, name: str, version: t.Optional[str]):
+    def __init__(self, name: str, version: t.Optional[str] = None):
         lname = name.lower()
         if name != lname:
             logger.warning(f"converting {name} to lowercase: {lname}")
 
         validate_tag_str(lname)
 
-        if version is not None:
-            validate_tag_str(version)
+        # TODO: fix version validation - allow version str to start with numbers?
+        # if version is not None:
+        #     validate_tag_str(version)
 
         self.name = lname
         self.version = version

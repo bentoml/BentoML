@@ -135,3 +135,6 @@ class Service:
         from .openapi import get_service_openapi_doc
 
         return get_service_openapi_doc(self)
+
+    def set_build_options(self, **build_options):
+        ...

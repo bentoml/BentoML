@@ -1,82 +1,5 @@
 """
-Bento is a standardized file archive format in BentoML, which describes how to setup
-and run a `bentoml.Service` defined by a user. It includes user code which instantiates
-the `bentoml.Service` instance, as well as related configurations, data/model files,
-and dependencies.
-
-Here's an example file structure of a Bento
-
-    /example_bento
-     - readme.md
-     - bento.yml
-     - /apis/
-         - openapi.yaml # openapi spec
-         - proto.pb # Note: gRPC proto is not currently available
-     - /env/
-         - /python
-             - python_version.txt
-             - requirements.txt
-             - /wheels
-         - /docker
-             - Dockerfile
-             - Dockerfile-gpu  # optional
-             - Dockerfile-foo  # optional
-             - docker-entrypoint.sh
-           - bentoml-init.sh
-           - setup-script  # optional
-         - /conda
-             - environment.yml
-
-     - /FraudDetector  # this folder is mostly identical to user's development directory
-        - bento.py
-        - /common
-           - my_lib.py
-        - my_config.json
-
-     - /models
-        - /my_nlp_model
-           - bentoml_model.yml
-           - model.pkl
-
-
-An example `bento.yml` file in a Bento directory:
-
-    service: bento:svc
-    name: FraudDetector
-    version: 20210709_DE14C9
-    bentoml_version: 1.1.0
-
-    created_at: ...
-
-    labels:
-        foo: bar
-        abc: def
-        author: parano
-        team: bentoml
-
-    apis:
-    - predict:  # api_name is the key
-        route: ...
-        docs: ...
-        input:
-            type: bentoml.io.PandasDataFrame
-            options:
-                orient: "column"
-        output:
-            type: bentoml.io.JSON
-            options:
-                schema:
-                    # pydantic model .schema() here
-
-    models:
-    - my_nlp_model:20210709_C154BA
-
-
-
-Build docker image from a Bento directory:
-
-    cd bento_path
-    docker build -f ./env/docker/Dockerfile .
+User facing python APIs for managing local bentos and build new bentos
 """
 import os
 import typing as t
@@ -86,14 +9,12 @@ from simple_di import Provide, inject
 
 from ._internal.bento import Bento, BentoStore
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.service import Service, load
 from ._internal.types import Tag
 from ._internal.utils import generate_new_version_id
 
 if t.TYPE_CHECKING:
     from ._internal.models.store import ModelStore
-    from ._internal.service import Service
-
-from ._internal.service import load
 
 
 @inject
@@ -147,6 +68,7 @@ def build(
     exclude: t.Optional[t.List[str]] = None,
     env: t.Optional[t.Dict[str, t.Any]] = None,
     labels: t.Optional[t.Dict[str, str]] = None,
+    build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Bento:
@@ -219,10 +141,9 @@ def build(
             # + anything specified in .bentoml_ignore file
             env=dict(
                 pip_install=bentoml.utils.find_required_pypi_packages(svc),
-                conda_environment="./environment.yaml",
-                 docker_options={
-                    "base_image": bentoml.utils.builtin_docker_image("slim", gpu=True),
-                    "entrypoint": "bentoml serve module_file:svc_name --production",
+                conda="./environment.yaml",
+                docker={
+                    "base_image": bentoml.build_utils.builtin_docker_image("slim"),
                     "setup_script": "./setup_docker_container.sh",
                 },
             ),
@@ -234,7 +155,7 @@ def build(
         )
 
     # additional env utility functions:
-    from bentoml.utils import lock_pypi_versions
+    from bentoml.build_utils import lock_pypi_versions
     lock_pypi_versions(["pytorch", "numpy"]) => ["pytorch==1.0", "numpy==1.23"]
 
     from bentoml.utils import with_pip_install_options
@@ -249,11 +170,18 @@ def build(
         "numpy --index-url=https://mirror.baidu.com/pypi/simple --extra-index-url=https://mirror.baidu.com/pypi/simple --find-links=https://download.pytorch.org/whl/torch_stable.html"
     ]
 
+    # Configuring a different docker base image:
+    env = dict(
+        docker={
+            distro=
+        }
+    )
+
     # conda dependencies:
     svc.build(
         ...
         env={
-            "conda_environment": dict(
+            "conda": dict(
                 channels=[...],
                 dependencies=[...],
             )
@@ -264,7 +192,7 @@ def build(
 
     # build.py
     from bento import svc
-    from bentoml.utils import lock_pypi_versions
+    from bentoml.build_utils import lock_pypi_versions
 
     if __name__ == "__main__":
         svc.build(
@@ -285,11 +213,14 @@ def build(
     exclude = [] if exclude is None else exclude
     env = {} if env is None else env
     labels = {} if labels is None else labels
-
-    build_ctx = os.getcwd()
+    build_ctx = os.getcwd() if build_ctx is None else build_ctx
 
     if isinstance(svc, str):
         svc = load(svc)
+
+    if isinstance(svc, Service):
+        # TODO: figure out import module when Service object was imported
+        assert svc._import_str is not None, "TODO - support build on imported service"
 
     res = Bento.create(
         svc,
@@ -317,5 +248,4 @@ __all__ = [
     "push",
     "pull",
     "build",
-    "load",
 ]

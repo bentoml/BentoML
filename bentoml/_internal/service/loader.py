@@ -156,19 +156,16 @@ def load_bento(
         load_bento("FraudDetector:latest")
         load_bento("FraudDetector:20210709_DE14C9")
     """
-    bento_info = bento_store.get(bento_tag)
-    bento_config = yaml.load(os.path.join(bento_info.path, "bento.yml"))
-    # TODO: verify bento_config.bentoml_version, bentoml_version
+    bento = bento_store.get(bento_tag)
 
     # Use Bento's user project path as working directory when importing the service
-    working_dir = os.path.join(bento_info.path, bento_config.name)
-    working_dir = os.path.abspath(working_dir)
+    working_dir = bento.fs.getsyspath(bento.metadata["name"])
 
     # Use Bento's local "{base_dir}/models/" directory as its model store
-    model_store = ModelStore(os.path.join(bento_info.path, "models"))
+    model_store = ModelStore(bento.fs.getsyspath("models"))
 
-    svc = import_service(bento_config.svc_import_path, working_dir, model_store)
-    svc.version = bento_config.version
+    svc = import_service(bento.metadata["service"], working_dir, model_store)
+    svc.version = bento.metadata["version"]
     return svc
 
 

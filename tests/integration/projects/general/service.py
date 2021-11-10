@@ -100,7 +100,7 @@ def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
 
 @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
 def predict_np_array(inp: "np.ndarray"):
-    return inp*2
+    return inp * 2
 
 
 @svc.api(input=JSON(), output=JSON())

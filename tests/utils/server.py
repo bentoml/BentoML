@@ -10,7 +10,6 @@ from contextlib import contextmanager
 
 import bentoml
 import docker
-
 from bentoml._internal.utils import cached_contextmanager, reserve_free_port
 
 logger = logging.getLogger("bentoml.tests")

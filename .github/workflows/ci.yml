@@ -96,7 +96,7 @@ jobs:
       - name: install optional dependencies
         run: python -m pip install pydantic
       - name: Run tests
-        run: pytest tests/integration/projects/general/tests --project-root tests/integration/projects/general -v
+        run: pytest tests/integration/projects/general --project-root tests/integration/projects/general -vvv
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
 

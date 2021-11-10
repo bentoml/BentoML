@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from bentoml.testing.utils import (
+from tests.utils.server import (
     build_api_server_docker_image,
     run_api_server,
     run_api_server_in_docker,

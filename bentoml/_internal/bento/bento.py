@@ -2,7 +2,7 @@ import datetime
 import logging
 import os
 import typing as t
-from collections import OrderedDict, UserDict
+from collections import UserDict
 
 import attr
 import fs
@@ -30,15 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 BENTO_YAML_FILENAME = "bento.yaml"
-
-
-# Add representer to allow dumping OrderedDict as a regular map
-yaml.add_representer(
-    OrderedDict,
-    lambda dumper, data: dumper.represent_mapping(
-        "tag:yaml.org,2002:map", data.items()
-    ),
-)
 
 
 @attr.define(repr=False)

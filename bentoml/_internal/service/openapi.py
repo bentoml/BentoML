@@ -1,5 +1,4 @@
 import typing
-from collections import OrderedDict
 
 if typing.TYPE_CHECKING:
     from . import Service
@@ -22,61 +21,61 @@ METRICS_DESC = "Prometheus metrics endpoint"
 
 
 def get_service_openapi_doc(svc: "Service"):
-    info = OrderedDict(
-        title=svc.name,
-        description="A Prediction Service built with BentoML",
-    )
+    info = {
+        title: svc.name,
+        description: "A Prediction Service built with BentoML",
+    }
     if svc.version:
         info["version"] = svc.version
-    docs = OrderedDict(
-        openapi="3.0.0",
-        info=info,
-        tags=[{"name": "infra"}, {"name": "app"}],
-    )
+    docs = {
+        openapi: "3.0.0",
+        info: info,
+        tags: [{"name": "infra"}, {"name": "app"}],
+    }
 
-    paths = OrderedDict()
+    paths = {}
     default_response = {"200": {"description": "success"}}
 
-    paths["/healthz"] = OrderedDict(
-        get=OrderedDict(
-            tags=["infra"],
-            description=HEATHZ_DESC,
-            responses=default_response,
-        )
-    )
-    paths["/livez"] = OrderedDict(
-        get=OrderedDict(
-            tags=["infra"],
-            description=LIVEZ_DESC,
-            responses=default_response,
-        )
-    )
-    paths["/readyz"] = OrderedDict(
-        get=OrderedDict(
-            tags=["infra"],
-            description=READYZ_DESC,
-            responses=default_response,
-        )
-    )
-    paths["/metrics"] = OrderedDict(
-        get=OrderedDict(
-            tags=["infra"],
-            description=METRICS_DESC,
-            responses=default_response,
-        )
-    )
+    paths["/healthz"] = {
+        get: {
+            tags: ["infra"],
+            description: HEATHZ_DESC,
+            responses: default_response,
+        }
+    }
+    paths["/livez"] = {
+        get: {
+            tags: ["infra"],
+            description: LIVEZ_DESC,
+            responses: default_response,
+        }
+    }
+    paths["/readyz"] = {
+        get: {
+            tags: ["infra"],
+            description: READYZ_DESC,
+            responses: default_response,
+        }
+    }
+    paths["/metrics"] = {
+        get: {
+            tags: ["infra"],
+            description: METRICS_DESC,
+            responses: default_response,
+        }
+    }
 
     for api in svc._apis.values():
         api_path = api.route if api.route.startswith("/") else f"/{api.route}"
 
         paths[api_path] = {}
-        paths[api_path]["post"] = OrderedDict(
-            tags=["app"],
-            summary=f"Inference API '{api}' under service '{svc.name}'",
-            description=api.doc,
-            operationId=f"{svc.name}__{api.name}",
-            requestBody=dict(content=api.input.openapi_request_schema()),
-            responses={
+        paths[api_path]["post"] = {
+            tags: ["app"],
+            summary: f"Inference API '{api}' under service '{svc.name}'",
+            description: api.doc,
+            operationId: f"{svc.name}__{api.name}",
+            requestBody: {content: api.input.openapi_request_schema()},
+            responses: {
                 "200": {
                     "description": "success",
                     "content": api.output.openapi_responses_schema(),
@@ -84,7 +83,7 @@ def get_service_openapi_doc(svc: "Service"):
             },
             # examples=None,
             # headers=None,
-        )
+        }
 
     docs["paths"] = paths
     return docs

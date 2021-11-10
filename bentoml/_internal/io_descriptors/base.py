@@ -33,9 +33,9 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
     # def generate_protobuf(self): ...  # noqa: E704
 
     # @abstractmethod
-    # async def from_grpc_request(self, request: GRPCRequest) -> IOPyObj: ...  # noqa: E704
+    # async def from_grpc_request(self, request: GRPCRequest) -> IOPyObj: ...
 
     # @abstractmethod
-    # async def to_grpc_response(self, obj: IOPyObj) -> GRPCResponse: ...  # noqa: E704
+    # async def to_grpc_response(self, obj: IOPyObj) -> GRPCResponse: ...
 
     # fmt: on

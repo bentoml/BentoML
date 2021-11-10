@@ -76,7 +76,7 @@ jobs:
           fail_ci_if_error: true
 
   bento_server_integration_tests:
-    name: bento_server_integration_tests_(${{ matrix.os }})
+    name: bento_server_integration_tests(${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:

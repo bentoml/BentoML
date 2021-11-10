@@ -163,6 +163,7 @@ class _PyTorchRunner(Runner):
         tag: str,
         predict_fn_name: str,
         device_id: str,
+        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -179,6 +180,7 @@ class _PyTorchRunner(Runner):
                     str(i) for i in range(torch.cuda.device_count())
                 ]
         self._device_id = device_id
+        self._partial_kwargs = partial_kwargs or dict()
 
     @property
     def required_models(self) -> t.List[str]:
@@ -230,28 +232,37 @@ class _PyTorchRunner(Runner):
     @torch.no_grad()
     def _run_batch(  # type: ignore[override]
         self,
-        *args: t.Union[np.ndarray, "torch.Tensor"],
+        *args: t.Union[np.ndarray, torch.Tensor],
         **kwargs: str,
-    ) -> "torch.Tensor":
+    ) -> torch.Tensor:
 
         # We assume *args are input data. They share the same type
         # (tensor or ndarray) while **kwargs are configuration
         # parameters, which may have type str, int, float etc.
 
-        params = Params[t.Union[np.ndarray, "torch.Tensor"]](*args)
-        sample = params.sample
+        params = Params[t.Union[np.ndarray, torch.Tensor]](*args, **kwargs)
 
-        if isinstance(sample, np.ndarray):
-            params = params.map(lambda i: torch.from_numpy(i))
-        if self.resource_quota.on_gpu:
-            params = params.map(lambda i: i.cuda())
+        def _mapping(item) -> t.Any:
+            if isinstance(item, np.ndarray):
+                item = torch.from_numpy(item)
 
-        res: "torch.Tensor"
+            if self.resource_quota.on_gpu:
+                if isinstance(item, (np.ndarray, torch.Tensor)):
+                    item = item.cuda()
+
+            return item
+
+        params = params.map(_mapping)
+
+        # merge kwargs with partial_kwargs
+        merged_kwargs = {**self._partial_kwargs, **kwargs}
+
+        res: torch.Tensor
         if infer_mode_compat:
             with torch.inference_mode():
-                res = self._predict_fn(*params.args, **kwargs)
+                res = self._predict_fn(*params.args, **merged_kwargs)
         else:
-            res = self._predict_fn(*params.args, **kwargs)
+            res = self._predict_fn(*params.args, **merged_kwargs)
         return res
 
 
@@ -261,8 +272,9 @@ def load_runner(
     *,
     predict_fn_name: str = "__call__",
     device_id: str = "cpu:0",
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PyTorchRunner":
     """
@@ -296,6 +308,7 @@ def load_runner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
+        partial_kwargs=partial_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

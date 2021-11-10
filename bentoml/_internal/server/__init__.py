@@ -147,9 +147,6 @@ def _start_dev_api_server(
     instance_id: t.Optional[int] = None,
 ):
     import uvicorn
-    from uvicorn.config import Config
-    from uvicorn.server import Server
-    from uvicorn.supervisors import ChangeReload
 
     log_level = "debug" if get_debug_mode() else "info"
     svc = load(bento_path_or_tag, working_dir=working_dir)
@@ -161,13 +158,11 @@ def _start_dev_api_server(
     }
 
     if reload:
+        # When reload=True, the app parameter in uvicorn.run(app) must be the import str
         asgi_app_import_str = f"{svc._import_str}.asgi_app"
-        config = Config(asgi_app_import_str, **uvicorn_options)
-        server = Server(config=config)
-        sock = config.bind_socket()
         # TODO: use svc.build_args.include/exclude as default files to watch
         # TODO: watch changes in model store when "latest" model tag is used
-        ChangeReload(config, target=server.run, sockets=[sock]).run()
+        uvicorn.run(asgi_app_import_str, **uvicorn_options)
     else:
         uvicorn.run(svc.asgi_app, **uvicorn_options)
 

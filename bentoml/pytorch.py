@@ -236,10 +236,6 @@ class _PyTorchRunner(Runner):
         **kwargs: str,
     ) -> torch.Tensor:
 
-        # We assume *args are input data. They share the same type
-        # (tensor or ndarray) while **kwargs are configuration
-        # parameters, which may have type str, int, float etc.
-
         params = Params[t.Union[np.ndarray, torch.Tensor]](*args, **kwargs)
 
         def _mapping(item) -> t.Any:

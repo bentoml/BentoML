@@ -243,7 +243,7 @@ class _PyTorchRunner(Runner):
                 item = torch.from_numpy(item)
 
             if self.resource_quota.on_gpu:
-                if isinstance(item, (np.ndarray, torch.Tensor)):
+                if isinstance(item, torch.Tensor):
                     item = item.cuda()
 
             return item

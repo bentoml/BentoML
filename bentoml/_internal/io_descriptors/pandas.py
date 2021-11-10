@@ -165,7 +165,7 @@ class PandasDataFrame(IODescriptor):
                 logger.warning(
                     "`columns` is None or undefined, while `apply_column_names`=True"
                 )
-            elif len(self._columns) == res.shepe[1]:
+            elif len(self._columns) == res.shape[1]:
                 raise BadInput(
                     "length of `columns` does not match the columns of incoming data"
                 )
@@ -349,7 +349,8 @@ class PandasSeries(PandasDataFrame):
                     result = await runner.run(input_df)
                     return result
 
-                @svc.api(input=PandasSeries(shape=(51,10), enforce_shape=True), output=PandasSeries())
+                @svc.api(input=PandasSeries(shape=(51,10), enforce_shape=True),
+                         output=PandasSeries())
                 def infer(input_df: pd.DataFrame) -> pd.DataFrame:...
                 # if input_df have shape (40,9), it will throw out errors
         enforce_shape (`bool`, `optional`, default to `False`):

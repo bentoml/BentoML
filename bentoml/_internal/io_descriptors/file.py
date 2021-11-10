@@ -73,9 +73,9 @@ class File(IODescriptor):
             body = await request.body()
             return FileLike(bytes_=body)
         raise BentoMLException(
-            f"{self.__class__.__name__} should be "
-            f"`Content-Type: application/octet-stream` or "
-            f"`Content-Type: multipart/form-data`, got {content_type} instead"
+            f"{self.__class__.__name__} should have Content-Type"
+            f" b'application/octet-stream' or b'multipart/form-data',"
+            f" got {content_type} instead"
         )
 
     async def to_http_response(self, obj: t.Union[FileLike, bytes]) -> Response:

@@ -10,7 +10,7 @@ from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     import numpy as np
 
     _major, _minor = list(
@@ -69,7 +69,7 @@ class NumpyNdarray(IODescriptor):
                `optional`, default to `None`):
             Data Type users wish to convert their inputs/outputs to. Refers to
              https://numpy.org/doc/stable/reference/arrays.dtypes.html for more
-             information
+              information
         enforce_dtype (`bool`, `optional`, default to `False`):
             Whether to enforce a certain data type. if `enforce_dtype=True` then `dtype`
              must be specified.

@@ -182,7 +182,9 @@ def load_runner(
 
     Args:
         tag (`str`):
-            Model tag to retrieve model from modelstore
+            Model tag to retrieve model from modelstore.
+        function_name (`str`, `optional`, default to `predict`):
+            Predict function used by a given sklearn model.
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):

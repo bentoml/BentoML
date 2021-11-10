@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 _drv = None
 
 if TYPE_CHECKING:
+    from _ctypes import _SimpleCData
     from aiohttp import MultipartWriter
 
 T = t.TypeVar("T")
@@ -226,125 +227,112 @@ def _cuda_lib() -> "ctypes.CDLL":
         raise OSError(f"could not load any of: {' '.join(libs)}")
 
 
-# TODO(aarnphm): refactor converter and get GPU memory to retrieve information from a
-#  dict.
-def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
-    global _drv
+@lru_cache(maxsize=1)
+def _init_var() -> t.Tuple["ctypes.CDLL", t.Dict[str, "_SimpleCData[t.Any]"]]:
     # https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html
-    if gpus is not None:
-        err = ctypes.c_char_p()
-        device = ctypes.c_int()
-        num_gpus = ctypes.c_int()
-
-        try:
-            if _drv is None:
-                _drv = _cuda_lib()
-        except OSError as e:
-            raise BentoMLException(
-                f"{e}\nMake sure to have CUDA "
-                f"installed you are intending "
-                f"to use GPUs with BentoML."
-            )
-        finally:
-            res = _drv.cuInit(0)
-            if res != CUDA_SUCCESS:
-                _drv.cuGetErrorString(res, ctypes.byref(err))
-                logger.error(
-                    f"cuInit failed with error code {res}: {err.value.decode()}"
-                )
-
-            res = _drv.cuDeviceGetCount(ctypes.byref(num_gpus))
-            if res != CUDA_SUCCESS:
-                _drv.cuGetErrorString(res, ctypes.byref(err))
-                logger.error(
-                    "cuDeviceGetCount failed "
-                    f"with error code {res}: {err.value.decode()}"
-                )
-
-            def _validate_dev(dev_id: t.Union[int, str]) -> bool:
-                _res = _drv.cuDeviceGet(ctypes.byref(device), int(dev_id))
-                if _res != CUDA_SUCCESS:
-                    _drv.cuGetErrorString(res, ctypes.byref(err))
-                    logger.warning(
-                        "cuDeviceGet failed "
-                        f"with error code {res}: {err.value.decode()}"
-                    )
-                    return False
-                return True
-
-            if any([isinstance(gpus, i) for i in [str, int]]):
-                if gpus == "all":
-                    return [str(dev) for dev in range(num_gpus.value)]
-                else:
-                    if _validate_dev(gpus):
-                        return [str(gpus)]
-                    raise BentoMLException(
-                        f"Unknown GPU devices. Available devices: {num_gpus.value}"
-                    )
-            else:
-                return list(
-                    itertools.chain.from_iterable([_gpu_converter(gpu) for gpu in gpus])
-                )
-    return list()
-
-
-def _get_gpu_memory(dev: int) -> t.Tuple[int, int]:
-    """Return Total Memory and Free Memory in given GPU device. in MiB"""
+    # TODO: add threads_per_core, cores, Compute Capability
     global _drv
-    err = ctypes.c_char_p()
-    device = ctypes.c_int()
-
-    context = ctypes.c_void_p()
-    free_mem = ctypes.c_size_t()
-    total_mem = ctypes.c_size_t()
+    err: "_SimpleCData[bytes]" = ctypes.c_char_p()  # noqa
+    plc = {
+        "err": err,
+        "device": ctypes.c_int(),
+        "num_gpus": ctypes.c_int(),
+        "context": ctypes.c_void_p(),
+        "free_mem": ctypes.c_size_t(),
+        "total_mem": ctypes.c_size_t(),
+    }
 
     try:
         if _drv is None:
             _drv = _cuda_lib()
+        res = _drv.cuInit(0)
+        if res != CUDA_SUCCESS:
+            _drv.cuGetErrorString(res, ctypes.byref(err))
+            logger.error(f"cuInit failed with error code {res}: {err.value.decode()}")
+        return _drv, plc
     except OSError as e:
         raise BentoMLException(
             f"{e}\nMake sure to have CUDA "
             f"installed you are intending "
             f"to use GPUs with BentoML."
         )
-    finally:
-        res = _drv.cuInit(0)
+
+
+def _gpu_converter(gpus: t.Optional[t.Union[int, str, t.List[str]]]) -> t.List[str]:
+    if gpus is not None:
+        drv, plc = _init_var()
+
+        res = drv.cuDeviceGetCount(ctypes.byref(plc["num_gpus"]))
         if res != CUDA_SUCCESS:
-            _drv.cuGetErrorString(res, ctypes.byref(err))
-            logger.error(f"cuInit failed with error code {res}: {err.value.decode()}")
-        res = _drv.cuDeviceGet(ctypes.byref(device), dev)
-        if res != CUDA_SUCCESS:
-            _drv.cuGetErrorString(res, ctypes.byref(err))
+            drv.cuGetErrorString(res, ctypes.byref(plc["err"]))
             logger.error(
-                "cuDeviceGet failed " f"with error code {res}: {err.value.decode()}"
+                "cuDeviceGetCount failed "
+                f"with error code {res}: {plc['err'].value.decode()}"
             )
-        try:
-            res = _drv.cuCtxCreate_v2(ctypes.byref(context), 0, device)
-        except AttributeError:
-            res = _drv.cuCtxCreate(ctypes.byref(context), 0, device)
-        if res != CUDA_SUCCESS:
-            _drv.cuGetErrorString(res, ctypes.byref(err))
-            logger.error(
-                f"cuCtxCreate failed with error code {res}: {err.value.decode()}"
-            )
+
+        def _validate_dev(dev_id: t.Union[int, str]) -> bool:
+            _res = drv.cuDeviceGet(ctypes.byref(plc["device"]), int(dev_id))
+            if _res != CUDA_SUCCESS:
+                drv.cuGetErrorString(_res, ctypes.byref(plc["err"]))
+                logger.warning(
+                    "cuDeviceGet failed "
+                    f"with error code {_res}: {plc['err'].value.decode()}"
+                )
+                return False
+            return True
+
+        if isinstance(gpus, (int, str)):
+            if gpus == "all":
+                return [str(dev) for dev in range(plc["num_gpus"].value)]
+            else:
+                if _validate_dev(gpus):
+                    return [str(gpus)]
+                raise BentoMLException(
+                    f"Unknown GPU devices. Available devices: {plc['num_gpus'].value}"
+                )
         else:
-            try:
-                res = _drv.cuMemGetInfo_v2(
-                    ctypes.byref(free_mem), ctypes.byref(total_mem)
-                )
-            except AttributeError:
-                res = _drv.cuMemGetInfo(ctypes.byref(free_mem), ctypes.byref(total_mem))
-            finally:
-                if res != CUDA_SUCCESS:
-                    _drv.cuGetErrorString(res, ctypes.byref(err))
-                    logger.error(
-                        f"cuMemGetInfo failed with error code {res}: "
-                        f"{err.value.decode()}"
-                    )
-                _total_mem = total_mem.value
-                _free_mem = free_mem.value
-                logger.debug(
-                    f"Total Memory: {_total_mem} MiB\nFree Memory: {_free_mem} MiB"
-                )
-                _drv.cuCtxDetach(context)
-                return _total_mem, _free_mem
+            return list(
+                itertools.chain.from_iterable([_gpu_converter(gpu) for gpu in gpus])
+            )
+    return list()
+
+
+def _get_gpu_memory(dev: int) -> t.Tuple[int, int]:
+    """Return Total Memory and Free Memory in given GPU device. in MiB"""
+    drv, plc = _init_var()
+
+    res = drv.cuDeviceGet(ctypes.byref(plc["device"]), dev)
+    if res != CUDA_SUCCESS:
+        drv.cuGetErrorString(res, ctypes.byref(plc["err"]))
+        logger.error(
+            "cuDeviceGet failed " f"with error code {res}: {plc['err'].value.decode()}"
+        )
+    try:
+        res = drv.cuCtxCreate_v2(ctypes.byref(plc["context"]), 0, plc["device"])
+    except AttributeError:
+        res = drv.cuCtxCreate(ctypes.byref(plc["context"]), 0, plc["device"])
+    if res != CUDA_SUCCESS:
+        drv.cuGetErrorString(res, ctypes.byref(plc["err"]))
+        logger.error(
+            f"cuCtxCreate failed with error code {res}: {plc['err'].value.decode()}"
+        )
+
+    try:
+        res = drv.cuMemGetInfo_v2(
+            ctypes.byref(plc["free_mem"]), ctypes.byref(plc["total_mem"])
+        )
+    except AttributeError:
+        res = drv.cuMemGetInfo(
+            ctypes.byref(plc["free_mem"]), ctypes.byref(plc["total_mem"])
+        )
+    if res != CUDA_SUCCESS:
+        drv.cuGetErrorString(res, ctypes.byref(plc["err"]))
+        logger.error(
+            f"cuMemGetInfo failed with error code {res}: "
+            f"{plc['err'].value.decode()}"
+        )
+    _total_mem = plc["total_mem"].value
+    _free_mem = plc["free_mem"].value
+    logger.debug(f"Total Memory: {_total_mem} MiB\nFree Memory: {_free_mem} MiB")
+    drv.cuCtxDetach(plc["context"])
+    return _total_mem, _free_mem

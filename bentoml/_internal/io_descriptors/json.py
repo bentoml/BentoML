@@ -14,7 +14,7 @@ from ...exceptions import (
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
-if t.TYPE_CHECKING:
+if t.TYPE_CHECKING:  # pragma: no cover
     import numpy as np
     import pandas as pd
     import pydantic
@@ -29,7 +29,7 @@ if t.TYPE_CHECKING:
             ArrayLike,
         )
 
-else:
+else:  # pragma: no cover
     np = LazyLoader("np", globals(), "numpy")
     pd = LazyLoader("pd", globals(), "pandas")
 
@@ -52,7 +52,7 @@ _SerializableObj = t.TypeVar(
 )
 
 
-class DefaultJsonEncoder(json.JSONEncoder):
+class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
     def default(self, o: _SerializableObj) -> t.Any:
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
@@ -135,12 +135,12 @@ class JSON(IODescriptor):
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
-            if pydantic is None:
+            if pydantic is None:  # pragma: no cover
                 raise MissingDependencyException(
                     "`pydantic` must be installed to use `pydantic_model`"
                 )
 
-            if not isinstance(pydantic_model, pydantic.BaseModel):
+            if not isinstance(pydantic_model, pydantic.BaseModel):  # pragma: no cover
                 raise InvalidArgument(
                     "Invalid argument type 'pydantic_model' for JSON io descriptor,"
                     "must be an instance of a pydantic model"

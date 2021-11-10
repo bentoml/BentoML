@@ -105,6 +105,6 @@ def test_detectron2_save_load(metadata, image_array, modelstore, save_proc):
     image = torch.as_tensor(image)
     input_data = [{"image": image}]
 
-    raw_result = detectron_loaded(input_data)[0]
-    result = extract_result(raw_result)
-    assert result["scores"][0] > 0.9
+    raw_result = detectron_loaded(input_data)
+    result = extract_result(raw_result[0])
+    assert all(i > 0.9 for i in result["scores"])

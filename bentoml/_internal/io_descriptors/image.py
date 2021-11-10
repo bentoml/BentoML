@@ -87,12 +87,13 @@ class Image(IODescriptor):
     def __init__(self, pilmode: str = DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
         PIL.Image.init()
 
-        if mime_type.lower() not in PIL.Image.MIME.values():
+        # NOTE: Currently no tests are provided.
+        if mime_type.lower() not in PIL.Image.MIME.values():  # pragma: no cover
             raise InvalidArgument(
                 f"Invalid Image mime_type '{mime_type}', "
                 f"Supported mime types are {', '.join(PIL.Image.MIME.values())} "
             )
-        if pilmode not in PIL.Image.MODES:
+        if pilmode not in PIL.Image.MODES:  # pragma: no cover
             raise InvalidArgument(
                 f"Invalid Image pilmode '{pilmode}', "
                 f"Supported PIL modes are {', '.join(PIL.Image.MODES)} "
@@ -132,7 +133,8 @@ class Image(IODescriptor):
     ) -> Response:
         if not isinstance(obj, (np.ndarray, PIL.Image.Image)):
             raise InvalidArgument(
-                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}` supports only `np.ndarray` and `PIL.Image`"
+                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
+                " only supports `np.ndarray` and `PIL.Image`"
             )
         image = (
             PIL.Image.fromarray(obj, mode=self._pilmode)

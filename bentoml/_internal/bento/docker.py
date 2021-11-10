@@ -10,7 +10,7 @@ from ..configuration import BENTOML_VERSION, is_pip_installed_bentoml
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_PYTHON_VERSION: t.List = ["3.6", "3.7", "3.8"]
+SUPPORTED_PYTHON_VERSION: t.List = ["3.7", "3.8", "3.9"]
 SUPPORTED_BASE_DISTROS: t.List = ["slim", "centos7", "centos8"]
 SUPPORTED_GPU_DISTROS: t.List = SUPPORTED_BASE_DISTROS
 

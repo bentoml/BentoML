@@ -358,7 +358,7 @@ class PandasSeries(PandasDataFrame):
              be specified
     Returns:
         IO Descriptor that represents `pd.DataFrame`.
-    """
+    """  # noqa: LN001
 
     def __init__(
         self,

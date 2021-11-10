@@ -236,7 +236,7 @@ class _PyTorchRunner(Runner):
         **kwargs: str,
     ) -> torch.Tensor:
 
-        params = Params[t.Union[np.ndarray, torch.Tensor]](*args, **kwargs)
+        params = Params[t.Any](*args, **kwargs)
 
         def _mapping(item) -> t.Any:
             if isinstance(item, np.ndarray):

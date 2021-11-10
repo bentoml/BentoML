@@ -93,6 +93,8 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./ci/install_dependencies.sh.cmd
+      - name: install optional dependencies
+        run: python -m pip install pydantic
       - name: Run tests
         run: pytest tests/integration/projects/general/tests --project-root tests/integration/projects/general -v
       - name: Upload test coverage to Codecov

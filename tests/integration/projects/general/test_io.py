@@ -47,6 +47,33 @@ def test_json_encoder(obj):
 
 
 @pytest.mark.asyncio
+async def test_numpy(host, async_request):
+    await async_request(
+        "POST",
+        f"http://{host}/predict_np_array",
+        headers={"Content-Type": "application/json"},
+        data="[[1,2,3,4]]",
+        assert_status=200,
+        assert_data=b"[[2, 4, 6, 8]]",
+    )
+    await async_request(
+        "POST",
+        f"http://{host}/predict_reshape_np",
+        headers={"Content-Type": "application/json"},
+        data="[[2,1],[4,3]]",
+        assert_status=200,
+        assert_data=b"[4, 2, 8, 6]",
+    )
+    await async_request(
+        "POST",
+        f"http://{host}/predict_invalid_type",
+        headers={"Content-Type": "application/json"},
+        data="[[2,1],[4,3]]",
+        assert_status=400,
+    )
+
+
+@pytest.mark.asyncio
 async def test_json(host, async_request):
     ORIGIN = "http://bentoml.ai"
 

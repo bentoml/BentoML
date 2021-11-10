@@ -98,9 +98,19 @@ def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
     return json_pred_runner.run(json_obj)
 
 
-@svc.api(input=NumpyNdarray(), output=NumpyNdarray())
+@svc.api(input=NumpyNdarray(dtype="uint8", enforce_dtype=True), output=NumpyNdarray())
 def predict_np_array(inp: "np.ndarray"):
-    return inp * 2
+    return ndarray_pred_runner.run(inp)
+
+
+@svc.api(input=NumpyNdarray(shape=(4,), enforce_shape=True), output=NumpyNdarray())
+def predict_reshape_np(inp: "np.ndarray"):
+    return ndarray_pred_runner.run(inp)
+
+
+@svc.api(input=NumpyNdarray(shape=(4,), enforce_shape=True), output=NumpyNdarray())
+def predict_invalid_type(inp: "np.ndarray"):
+    return 1
 
 
 @svc.api(input=JSON(), output=JSON())

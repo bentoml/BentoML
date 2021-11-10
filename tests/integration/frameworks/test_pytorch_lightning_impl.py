@@ -1,4 +1,5 @@
 import pandas as pd
+import psutil
 import pytest
 import pytorch_lightning as pl
 import torch
@@ -43,7 +44,7 @@ def test_pytorch_lightning_runner_setup_run_batch(modelstore):
 
     assert tag in runner.required_models
     assert runner.num_replica == 1
-    assert torch.get_num_threads() == runner.num_concurrency_per_replica
+    assert runner.num_concurrency_per_replica == psutil.cpu_count()
 
     res = runner.run_batch(torch.from_numpy(test_df.to_numpy()))
     assert res.numpy().tolist() == [[6, 5, 4, 3]]

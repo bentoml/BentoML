@@ -38,7 +38,7 @@ jobs:
         run: ./ci/docs_spell_check.sh
 
   unit_tests:
-    name: python${{ matrix.python-version }}_unit_tests(${{ matrix.os }})
+    name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -67,7 +67,7 @@ jobs:
           fail_ci_if_error: true
 
   bento_server_integration_tests:
-    name: bento_server_integration_tests(${{ matrix.os }})
+    name: bento_server_integration_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:

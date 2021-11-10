@@ -66,8 +66,13 @@ def gunicorn_marshal_server(
             self.bento_service_bundle_path = bundle_path
 
             self.port = port
+
+            # 1. We need to increase the 'keepalive' setting for stable serving because
+            #    our Gunicorn is running behind a load balancer. (default : 2 sec)
+            #    - Ref. : https://docs.gunicorn.org/en/stable/settings.html#keepalive
             self.options = {
                 "bind": "%s:%s" % ("0.0.0.0", self.port),
+                "keepalive": 60,  # sec
                 "timeout": timeout,
                 "limit_request_line": max_request_size,
                 "loglevel": loglevel.upper(),

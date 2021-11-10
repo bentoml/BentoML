@@ -11,7 +11,6 @@ from ._internal.bento import Bento, BentoStore
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import load
 from ._internal.types import Tag
-from ._internal.utils import generate_new_version_id
 
 if t.TYPE_CHECKING:
     from ._internal.models.store import ModelStore
@@ -188,7 +187,6 @@ def build(
     build_ctx = os.getcwd() if build_ctx is None else os.path.realpath(build_ctx)
     svc = load(svc_import_str, working_dir=build_ctx)
 
-    version = generate_new_version_id() if version is None else version
     description = svc.__doc__ if description is None else description
     models = [] if models is None else models
     include = ["*"] if include is None else include

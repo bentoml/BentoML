@@ -3,7 +3,6 @@ import functools
 import socket
 import typing as t
 import uuid
-from datetime import datetime
 from pathlib import Path
 
 from ..types import PathType
@@ -18,7 +17,6 @@ __all__ = [
     "cached_contextmanager",
     "reserve_free_port",
     "get_free_port",
-    "generate_new_version_id",
     "catch_exceptions",
     "LazyLoader",
     "validate_or_create_dir",
@@ -27,18 +25,6 @@ __all__ = [
 
 def randomize_runner_name(module_name: str):
     return f"{module_name.split('.')[-1]}_{uuid.uuid4().hex[:6].lower()}"
-
-
-def generate_new_version_id():
-    """
-    The default function for generating a new unique version string when saving a new
-    bento or a new model
-    """
-    date_string = datetime.now().strftime("%Y%m%d")
-    random_hash = uuid.uuid4().hex[:6].upper()
-
-    # Example output: '20210910_D246ED'
-    return f"{date_string}_{random_hash}"
 
 
 def validate_or_create_dir(*path: PathType) -> None:

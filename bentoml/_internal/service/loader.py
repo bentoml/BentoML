@@ -58,6 +58,11 @@ def import_service(
             prev_cwd = None
             working_dir = os.getcwd()
 
+        sys_path_modified = False
+        if working_dir not in sys.path:
+            sys.path.insert(0, working_dir)
+            sys_path_modified = True
+
         logger.debug(
             'Importing service "%s" from working dir: "%s"',
             svc_import_path,
@@ -146,6 +151,9 @@ def import_service(
         if prev_cwd:
             # Reset to previous cwd
             os.chdir(prev_cwd)
+        if sys_path_modified:
+            # Undo changes to sys.path
+            sys.path.remove(working_dir)
         raise
 
 
@@ -172,11 +180,7 @@ def load_bento(
     # Use Bento's local "{base_dir}/models/" directory as its model store
     model_store = ModelStore(bento.fs.getsyspath("models"))
 
-    sys.path.insert(0, working_dir)
-    try:
-        svc = import_service(bento.metadata["service"], working_dir, model_store)
-    except ImportServiceError:
-        sys.path.remove(working_dir)
+    svc = import_service(bento.metadata["service"], working_dir, model_store)
 
     svc.version = bento.metadata["version"]
     svc.tag = bento.metadata.tag

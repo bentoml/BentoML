@@ -1,6 +1,7 @@
 """
 User facing python APIs for managing local bentos and build new bentos
 """
+import logging
 import os
 import typing as t
 
@@ -14,6 +15,9 @@ from ._internal.types import Tag
 
 if t.TYPE_CHECKING:
     from ._internal.models.store import ModelStore
+
+
+logger = logging.getLogger(__name__)
 
 
 @inject
@@ -207,6 +211,8 @@ def build(
         _model_store,
     )
     res.save(_bento_store)
+
+    logger.info("%s created", res)
 
     return res
 

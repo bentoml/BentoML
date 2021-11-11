@@ -7,17 +7,24 @@ cd "$GIT_ROOT" || exit
 has_errors=0
 
 # Code auto formatting check with black & isort
-./dev/format.sh
-GIT_STATUS="$(git status --porcelain)"
-if [ "$GIT_STATUS" ];
-then
-  echo "Source code changes are not formatted (./dev/format.sh script)"
-  echo "Files changed:"
-  echo "--------------------------------------------------------------"
-  echo "$GIT_STATUS"
+echo "Running black on bentoml module..."
+if ! (black --check --config "$GIT_ROOT/pyproject.toml" bentoml); then
   has_errors=1
-else
-  echo "Code auto formatting passed"
+fi
+
+echo "Running black on tests and docker modules..."
+if ! (black --check --config "$GIT_ROOT/pyproject.toml" tests docker); then
+  has_errors=1
+fi
+
+echo "Running isort on bentoml module..."
+if ! (isort --check bentoml); then
+  has_errors=1
+fi
+
+echo "Running isort on tests and docker modules..."
+if ! (isort --check tests docker); then
+  has_errors=1
 fi
 
 # The first line of the tests are always empty if there are no linting errors

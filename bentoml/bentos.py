@@ -198,7 +198,7 @@ def build(
     env = {} if env is None else env
     labels = {} if labels is None else labels
 
-    res = Bento.create(
+    bento = Bento.create(
         svc,
         build_ctx,
         models,
@@ -209,12 +209,11 @@ def build(
         env,
         labels,
         _model_store,
-    )
-    res.save(_bento_store)
+    ).save(_bento_store)
 
-    logger.info("%s created", res)
+    logger.info("%s created at: %s", bento, bento.fs.getsyspath("/"))
 
-    return res
+    return bento
 
 
 __all__ = [

@@ -159,7 +159,9 @@ class Bento(StoreItem):
     def creation_time(self) -> datetime.datetime:
         return self.metadata["creation_time"]
 
-    def save(self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]):
+    def save(
+        self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
+    ) -> "Bento":
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid")
@@ -169,6 +171,8 @@ class Bento(StoreItem):
             os.rmdir(bento_path)
             os.rename(self.fs.getsyspath("/"), bento_path)
             self.fs.close()
+
+        return bento_store.get(self.tag)
 
     def export(self, path: str):
         mirror(

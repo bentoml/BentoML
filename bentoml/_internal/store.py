@@ -29,7 +29,7 @@ class StoreItem(ABC):
         pass
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.tag})"
+        return f'{self.__class__.__name__}(tag="{self.tag}")'
 
 
 Item = t.TypeVar("Item", bound=StoreItem)

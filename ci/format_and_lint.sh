@@ -70,5 +70,13 @@ fi
 #   # has_errors=1
 # fi
 
+if [[ -n $GITHUB_BASE_REF ]]; then
+  echo "Running pyright on changed files..."
+  git fetch origin "$GITHUB_BASE_REF"
+  if ! (git diff --name-only --diff-filter=d "origin/$GITHUB_BASE_REF" -z -- '*.py' | xargs -0 --no-run-if-empty pyright); then
+    has_errors=1
+  fi
+fi
+
 echo "Done"
 exit $has_errors

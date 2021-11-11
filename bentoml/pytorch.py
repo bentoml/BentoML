@@ -276,7 +276,7 @@ def load_runner(
     """
         Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.pytorch.load_runner` implements a Runner class that
-    wrap around a statsmodels instance, which optimize it for the BentoML runtime.
+    wrap around a pytorch instance, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):
@@ -285,6 +285,8 @@ def load_runner(
             inference function to be used.
         device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `cpu`):
             Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
+        partial_kwargs (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+            Common kwargs passed to model for this runner
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):

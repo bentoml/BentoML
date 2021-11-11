@@ -224,8 +224,9 @@ class _PyTorchRunner(Runner):
                 model_store=self._model_store,
                 device_id=self._device_id,
             )
-        self._predict_fn: t.Callable[..., _RV] = getattr(
-            self._model, self._predict_fn_name
+        raw_predict_fn = getattr(self._model, self._predict_fn_name)
+        self._predict_fn: t.Callable[..., _RV] = functools.partial(
+            raw_predict_fn, **self._partial_kwargs
         )
 
     # pylint: disable=arguments-differ
@@ -250,15 +251,12 @@ class _PyTorchRunner(Runner):
 
         params = params.map(_mapping)
 
-        # merge kwargs with partial_kwargs
-        merged_kwargs = {**self._partial_kwargs, **kwargs}
-
         res: torch.Tensor
         if infer_mode_compat:
             with torch.inference_mode():
-                res = self._predict_fn(*params.args, **merged_kwargs)
+                res = self._predict_fn(*params.args, **kwargs)
         else:
-            res = self._predict_fn(*params.args, **merged_kwargs)
+            res = self._predict_fn(*params.args, **kwargs)
         return res
 
 

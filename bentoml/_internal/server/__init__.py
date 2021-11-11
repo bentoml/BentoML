@@ -17,15 +17,13 @@ logger = logging.getLogger(__name__)
 @inject
 def serve_development(
     bento_path_or_tag: str,
-    working_dir: t.Optional[str] = None,
+    working_dir: str,
     port: int = Provide[BentoServerContainer.config.port],
     with_ngrok: bool = False,
     reload: bool = False,
     reload_delay: float = 0.25,
 ) -> None:
-    if working_dir is not None:
-        working_dir = os.path.abspath(working_dir)
-
+    working_dir = os.path.realpath(working_dir)
     svc = load(bento_path_or_tag, working_dir=working_dir)
 
     from circus.arbiter import Arbiter
@@ -49,8 +47,7 @@ def serve_development(
             )
         )
 
-    working_dir_arg = f'"{working_dir}", ' if working_dir else ""
-    dev_server_cmd = f'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, {working_dir_arg} reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))'
+    dev_server_cmd = f'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, working_dir="{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))'
     watchers.append(
         Watcher(
             name="ngrok",
@@ -79,7 +76,7 @@ def _start_ngrok_server() -> None:
 
 def serve_production(
     bento_path_or_tag: str,
-    working_dir: t.Optional[str] = None,
+    working_dir: str,
     app_workers: t.Optional[int] = None,
     runner_workers: t.Optional[int] = None,
     port: t.Optional[int] = None,
@@ -146,7 +143,7 @@ serve_production = serve_development  # TODO(jiang): remove me # noqa: F811
 def _start_dev_api_server(
     bento_path_or_tag: str,
     port: int,
-    working_dir: t.Optional[str] = None,
+    working_dir: str = None,
     reload: bool = False,
     reload_delay: t.Optional[float] = None,
     instance_id: t.Optional[int] = None,

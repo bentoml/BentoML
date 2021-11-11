@@ -4,6 +4,7 @@ import typing as t
 from typing import TYPE_CHECKING
 
 from ...exceptions import BentoMLException
+from ..bento.bento import Bento
 from ..io_descriptors import IODescriptor
 from ..runner import Runner
 from ..types import Tag
@@ -36,8 +37,9 @@ class Service:
 
     # Name of the service, it is a required parameter for __init__
     name: str
-    # Tag/Version of the service, only applicable if the service was load from a bento
+    # Tag/Bento/Version are only applicable if the service was load from a bento
     tag: t.Optional[Tag] = None
+    bento: t.Optional[Bento] = None
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None
@@ -55,6 +57,9 @@ class Service:
         self.name = lname
 
         if runners is not None:
+            assert all(
+                isinstance(r, Runner) for r in runners
+            ), "Service runners list must only contain runner instances"
             self._runners = {r.name: r for r in runners}
 
         self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", WSGI_APP], str, str]] = []
@@ -116,7 +121,7 @@ class Service:
 
     @property
     def asgi_app(self) -> "Starlette":
-        logger.info("Initializing HTTP server for BentoService '%s'", self)
+        logger.info("Initializing HTTP server for %s", self)
         from ..server.service_app import ServiceAppFactory
 
         return ServiceAppFactory(self)()
@@ -143,12 +148,22 @@ class Service:
         ...
 
     def __str__(self):
-        if self.tag:
-            return f'bentoml.Service(tag="{str(self.tag)}")'
+        if self.bento:
+            return (
+                f'bentoml.Service(tag="{self.tag}", '
+                f'path="{self.bento.fs.getsyspath("/")}")'
+            )
         elif self._import_str and self._working_dir:
             return (
-                f'bentoml.Service("{self._import_str}", '
-                f'working_dir="{self._working_dir}"'
+                f'bentoml.Service(name="{self.name}", '
+                f'import_str="{self._import_str}", '
+                f'working_dir="{self._working_dir}")'
             )
         else:
-            return f'bentoml.Service(name="{self.name}")'
+            return (
+                f'bentoml.Service(name="{self.name}", '
+                f'runners=[{",".join(self._runners.keys())}])'
+            )
+
+    def __repr__(self):
+        return self.__str__()

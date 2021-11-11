@@ -50,7 +50,6 @@ def import_service(
     try:
         if working_dir:
             working_dir = os.path.realpath(working_dir)
-            sys.path.insert(0, working_dir)
             # Set cwd(current working directory) to the Bento's project directory, which
             # allows user code to read files using relative path
             prev_cwd = os.getcwd()
@@ -142,16 +141,9 @@ def import_service(
 
         instance._working_dir = working_dir
         instance._import_str = f"{module_name}:{attrs_str}"
-
-        logger.debug(
-            "bentoml.Service '%s' successfully imported, from working directory %s",
-            instance._import_str,
-            instance._working_dir,
-        )
         return instance
     except ImportServiceError:
         if prev_cwd:
-            sys.path.remove(working_dir)
             # Reset to previous cwd
             os.chdir(prev_cwd)
         raise
@@ -180,9 +172,15 @@ def load_bento(
     # Use Bento's local "{base_dir}/models/" directory as its model store
     model_store = ModelStore(bento.fs.getsyspath("models"))
 
-    svc = import_service(bento.metadata["service"], working_dir, model_store)
+    sys.path.insert(0, working_dir)
+    try:
+        svc = import_service(bento.metadata["service"], working_dir, model_store)
+    except ImportServiceError:
+        sys.path.remove(working_dir)
+
     svc.version = bento.metadata["version"]
     svc.tag = bento.metadata.tag
+    svc.bento = bento
     return svc
 
 
@@ -193,18 +191,18 @@ def load(
     if not isinstance(svc_import_path_or_bento_tag, str):
         raise InvalidArgument("bentoml.load argument must be str type")
 
-    if working_dir:
-        return import_service(svc_import_path_or_bento_tag, working_dir)
-    else:
+    try:
+        svc = import_service(svc_import_path_or_bento_tag, working_dir)
+        logger.info("Imported from source: %s", svc)
+    except ImportServiceError as e1:
         try:
-            return load_bento(svc_import_path_or_bento_tag)
-        except (NotFound, ImportServiceError) as e1:
-            try:
-                return import_service(svc_import_path_or_bento_tag)
-            except ImportServiceError as e2:
-                raise BentoMLException(
-                    f"Failed to load bento or import service "
-                    f"'{svc_import_path_or_bento_tag}'. If you are attempting to "
-                    f"import bento in local store: `{e1}`, or if you are importing by "
-                    f"python module path: `{e2}`"
-                )
+            svc = load_bento(svc_import_path_or_bento_tag)
+            logger.info("Loaded from Bento: %s", svc)
+        except (NotFound, ImportServiceError) as e2:
+            raise BentoMLException(
+                f"Failed to load bento or import service "
+                f"'{svc_import_path_or_bento_tag}'. If you are attempting to "
+                f"import bento in local store: `{e1}`, or if you are importing by "
+                f"python module path: `{e2}`"
+            )
+    return svc

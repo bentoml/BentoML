@@ -17,7 +17,7 @@ def add_serve_command(cli) -> None:
         "--working-dir",
         type=click.Path(),
         help="Look for Service in the specified directory",
-        default="./",
+        default=None,
     )
     @click.option(
         "--production",

@@ -116,6 +116,7 @@ class Service:
 
     @property
     def asgi_app(self) -> "Starlette":
+        logger.info("Initializing HTTP server for BentoService '%s'", self)
         from ..server.service_app import ServiceAppFactory
 
         return ServiceAppFactory(self)()
@@ -140,3 +141,14 @@ class Service:
 
     def set_build_options(self, **build_options):
         ...
+
+    def __str__(self):
+        if self.tag:
+            return f'bentoml.Service(tag="{str(self.tag)}")'
+        elif self._import_str and self._working_dir:
+            return (
+                f'bentoml.Service("{self._import_str}", '
+                f'working_dir="{self._working_dir}"'
+            )
+        else:
+            return f'bentoml.Service(name="{self.name}")'

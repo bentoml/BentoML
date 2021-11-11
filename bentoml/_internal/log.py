@@ -1,12 +1,11 @@
 import logging.config
 import os
-import sys
 from pathlib import Path
 
 from simple_di import Provide, inject
 
-from ..configuration import get_debug_mode
-from ..configuration.containers import BentoMLContainer
+from .configuration import get_debug_mode
+from .configuration.containers import BentoMLContainer
 
 
 def get_logging_config_dict(
@@ -27,8 +26,9 @@ def get_logging_config_dict(
                 "console": {
                     "level": logging_level,
                     "formatter": "console",
-                    "class": "logging.StreamHandler",
-                    "stream": sys.stdout,
+                    "class": "rich.logging.RichHandler",
+                    "rich_tracebacks": True,
+                    "show_path": get_debug_mode(),  # show log line # in debug mode
                 }
             }
         )
@@ -40,7 +40,6 @@ def get_logging_config_dict(
             {
                 "local": {
                     "level": logging_level,
-                    "formatter": "dev",
                     "class": "logging.handlers.RotatingFileHandler",
                     "filename": os.path.join(base_log_directory, "active.log"),
                     "maxBytes": 100 * MEGABYTES,
@@ -48,7 +47,6 @@ def get_logging_config_dict(
                 },
                 "prediction": {
                     "class": "logging.handlers.RotatingFileHandler",
-                    "formatter": "prediction",
                     "level": "INFO",
                     "filename": os.path.join(base_log_directory, "prediction.log"),
                     "maxBytes": 100 * MEGABYTES,
@@ -56,7 +54,6 @@ def get_logging_config_dict(
                 },
                 "feedback": {
                     "class": "logging.handlers.RotatingFileHandler",
-                    "formatter": "feedback",
                     "level": "INFO",
                     "filename": os.path.join(base_log_directory, "feedback.log"),
                     "maxBytes": 100 * MEGABYTES,
@@ -72,13 +69,15 @@ def get_logging_config_dict(
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "console": {"format": "[%(asctime)s] %(levelname)s - %(message)s"},
-            "dev": {
-                "format": "[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s"
-                " - %(message)s"
+            "console": {"format": "%(message)s"},
+            "prediction": {
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                "format": "%(request_id)s %(request)s %(response)s",
             },
-            "prediction": {"()": "pythonjsonlogger.jsonlogger.JsonFormatter"},
-            "feedback": {"()": "pythonjsonlogger.jsonlogger.JsonFormatter"},
+            "feedback": {
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                "format": "%(request_id)s %(data)s",
+            },
         },
         "handlers": handlers,
         "loggers": {
@@ -120,6 +119,7 @@ def configure_logging(
         )
     else:
         if get_debug_mode():
+            # Override logging level in config when debug mode is on
             logging_level = logging.getLevelName(logging.DEBUG)
 
         logging_config = get_logging_config_dict(

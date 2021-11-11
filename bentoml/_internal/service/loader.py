@@ -59,6 +59,12 @@ def import_service(
             prev_cwd = None
             working_dir = os.getcwd()
 
+        logger.debug(
+            'Importing service "%s" from working dir: "%s"',
+            svc_import_path,
+            working_dir,
+        )
+
         import_path, _, attrs_str = svc_import_path.partition(":")
         if not import_path:
             raise ImportServiceError(
@@ -134,9 +140,14 @@ def import_service(
                     "define only service instance per python module/file"
                 )
 
-        if working_dir:
-            instance._working_dir = working_dir
+        instance._working_dir = working_dir
         instance._import_str = f"{module_name}:{attrs_str}"
+
+        logger.debug(
+            "bentoml.Service '%s' successfully imported, from working directory %s",
+            instance._import_str,
+            instance._working_dir,
+        )
         return instance
     except ImportServiceError:
         if prev_cwd:
@@ -157,6 +168,11 @@ def load_bento(
         load_bento("FraudDetector:20210709_DE14C9")
     """
     bento = bento_store.get(bento_tag)
+    logger.debug(
+        'Loading bento "%s" found in local store: %s',
+        bento.tag,
+        bento.fs.getsyspath("/"),
+    )
 
     # Use Bento's user project path as working directory when importing the service
     working_dir = bento.fs.getsyspath(bento.metadata["name"])
@@ -188,8 +204,7 @@ def load(
             except ImportServiceError as e2:
                 raise BentoMLException(
                     f"Failed to load bento or import service "
-                    f"'{svc_import_path_or_bento_tag}', make sure Bento exist in local "
-                    f'store with the `bentoml.get("my_svc:20211023_CB341A")` or make '
-                    f'sure the import path is correct, e.g. "./bento.py:svc". '
-                    f"{e1}, {e2}"
+                    f"'{svc_import_path_or_bento_tag}'. If you are attempting to "
+                    f"import bento in local store: `{e1}`, or if you are importing by "
+                    f"python module path: `{e2}`"
                 )

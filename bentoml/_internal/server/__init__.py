@@ -5,17 +5,20 @@ import tempfile
 import time
 import typing as t
 
+from simple_di import Provide, inject
+
 from bentoml import load
 from bentoml._internal.configuration import get_debug_mode
-from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.configuration.containers import BentoServerContainer
 
 logger = logging.getLogger(__name__)
 
 
+@inject
 def serve_development(
     bento_path_or_tag: str,
     working_dir: t.Optional[str] = None,
-    port: t.Optional[int] = None,
+    port: int = Provide[BentoServerContainer.config.port],
     with_ngrok: bool = False,
     reload: bool = False,
     reload_delay: float = 0.25,
@@ -46,10 +49,12 @@ def serve_development(
             )
         )
 
+    working_dir_arg = f'"{working_dir}", ' if working_dir else ""
+    dev_server_cmd = f'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, {working_dir_arg} reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))'
     watchers.append(
         Watcher(
             name="ngrok",
-            cmd=f'{sys.executable} -c \'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, "{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))\'',
+            cmd=f"{sys.executable} -c '{dev_server_cmd}'",
             env=env,
             numprocesses=1,
             stop_children=True,
@@ -69,7 +74,7 @@ def _start_ngrok_server() -> None:
     from bentoml._internal.utils.flask_ngrok import start_ngrok
 
     time.sleep(1)
-    start_ngrok(BentoMLContainer.config.bento_server.port.get())
+    start_ngrok(BentoServerContainer.port.get())
 
 
 def serve_production(
@@ -141,7 +146,7 @@ serve_production = serve_development  # TODO(jiang): remove me # noqa: F811
 def _start_dev_api_server(
     bento_path_or_tag: str,
     port: int,
-    working_dir: str,
+    working_dir: t.Optional[str] = None,
     reload: bool = False,
     reload_delay: t.Optional[float] = None,
     instance_id: t.Optional[int] = None,

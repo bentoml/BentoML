@@ -167,6 +167,7 @@ class Bento(StoreItem):
         with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             return BentoInfo.from_yaml_file(bento_yaml)
 
+    @property
     def creation_time(self) -> datetime.datetime:
         return self.info["creation_time"]
 

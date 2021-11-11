@@ -18,8 +18,8 @@ from bentoml import __version__ as BENTOML_VERSION
 
 from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration.containers import BentoMLContainer
-from ..types import PathType
-from ..utils import generate_new_version_id, validate_or_create_dir
+from ..types import PathType, Tag
+from ..utils import validate_or_create_dir
 from . import MODEL_YAML_NAMESPACE, YAML_EXT
 
 logger = logging.getLogger(__name__)
@@ -44,12 +44,6 @@ def validate_name(name: str) -> None:
             "may only contain letters, numbers, underscores "
             "and not starting with a number."
         )
-
-
-def _generate_model_tag(name: str) -> str:
-    validate_name(name)
-    version = generate_new_version_id()
-    return f"{name}:{version}"
 
 
 def _process_model_tag(tag: str) -> t.Tuple[str, str]:
@@ -200,7 +194,7 @@ class ModelStore:
         """
         _exc = None
 
-        tag = _generate_model_tag(name)
+        tag = str(Tag(name).make_new_version())
         _, version = tag.split(":")
         model_path = self._create_path(tag)
         model_yaml = Path(model_path, f"{MODEL_YAML_NAMESPACE}{YAML_EXT}")

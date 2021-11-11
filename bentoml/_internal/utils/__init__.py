@@ -29,21 +29,21 @@ def randomize_runner_name(module_name: str):
 
 def validate_or_create_dir(*path: PathType) -> None:
     for p in path:
-        path = Path(p)
+        _path = Path(p)
 
-        if path.exists():
-            if not path.is_dir():
-                raise OSError(20, f"{path} is not a directory")
+        if _path.exists():
+            if not _path.is_dir():
+                raise OSError(20, f"{_path} is not a directory")
         else:
-            path.mkdir(parents=True)
+            _path.mkdir(parents=True)
 
 
 class catch_exceptions(t.Generic[_T_co], object):
     def __init__(
         self,
         catch_exc: t.Union[t.Type[BaseException], t.Tuple[t.Type[BaseException], ...]],
-        throw_exc: t.Union[t.Type[BaseException], t.Tuple[t.Type[BaseException], ...]],
-        msg: t.Optional[str] = "",
+        throw_exc: t.Callable[[str], BaseException],
+        msg: str = "",
         fallback: t.Optional[_T_co] = None,
         raises: t.Optional[bool] = True,
     ) -> None:
@@ -64,7 +64,7 @@ class catch_exceptions(t.Generic[_T_co], object):
     # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
     def __call__(  # noqa: F811
         self, func: t.Callable[..., _T_co]
-    ) -> t.Callable[..., _T_co]:
+    ) -> t.Callable[..., t.Optional[_T_co]]:
         @functools.wraps(func)
         def _(*args: t.Any, **kwargs: t.Any) -> t.Optional[_T_co]:
             try:
@@ -100,23 +100,30 @@ def get_free_port(host: str = "localhost") -> int:
     return port
 
 
-class cached_property(object):
+C = t.TypeVar("C")
+T = t.TypeVar("T")
+
+
+class cached_property(t.Generic[C, T]):
     """A property that is only computed once per instance and then replaces
     itself with an ordinary attribute. Deleting the attribute resets the
     property.
     """
 
-    def __init__(self, func):
+    def __init__(self, func: t.Callable[[C], T]):
         try:
             functools.update_wrapper(self, func)
         except AttributeError:
             pass
         self.func = func
 
-    def __get__(self, obj, cls):
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __get__(self, obj: C, cls: t.Type[C]) -> T:
         if obj is None:
-            return self
-        value = obj.__dict__[self.func.__name__] = self.func(obj)
+            raise AttributeError(f"'{cls}' has no member '{self.name}'")
+        value = obj.__dict__[self.name] = self.func(obj)
         return value
 
 

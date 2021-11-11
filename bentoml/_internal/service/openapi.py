@@ -22,46 +22,46 @@ METRICS_DESC = "Prometheus metrics endpoint"
 
 def get_service_openapi_doc(svc: "Service"):
     info = {
-        title: svc.name,
-        description: "A Prediction Service built with BentoML",
+        "title": svc.name,
+        "description": "A Prediction Service built with BentoML",
     }
     if svc.version:
         info["version"] = svc.version
     docs = {
-        openapi: "3.0.0",
-        info: info,
-        tags: [{"name": "infra"}, {"name": "app"}],
+        "openapi": "3.0.0",
+        "info": info,
+        "tags": [{"name": "infra"}, {"name": "app"}],
     }
 
     paths = {}
     default_response = {"200": {"description": "success"}}
 
     paths["/healthz"] = {
-        get: {
-            tags: ["infra"],
-            description: HEATHZ_DESC,
-            responses: default_response,
+        "get": {
+            "tags": ["infra"],
+            "description": HEATHZ_DESC,
+            "responses": default_response,
         }
     }
     paths["/livez"] = {
-        get: {
-            tags: ["infra"],
-            description: LIVEZ_DESC,
-            responses: default_response,
+        "get": {
+            "tags": ["infra"],
+            "description": LIVEZ_DESC,
+            "responses": default_response,
         }
     }
     paths["/readyz"] = {
-        get: {
-            tags: ["infra"],
-            description: READYZ_DESC,
-            responses: default_response,
+        "get": {
+            "tags": ["infra"],
+            "description": READYZ_DESC,
+            "responses": default_response,
         }
     }
     paths["/metrics"] = {
-        get: {
-            tags: ["infra"],
-            description: METRICS_DESC,
-            responses: default_response,
+        "get": {
+            "tags": ["infra"],
+            "description": METRICS_DESC,
+            "responses": default_response,
         }
     }
 
@@ -70,12 +70,12 @@ def get_service_openapi_doc(svc: "Service"):
 
         paths[api_path] = {}
         paths[api_path]["post"] = {
-            tags: ["app"],
-            summary: f"Inference API '{api}' under service '{svc.name}'",
-            description: api.doc,
-            operationId: f"{svc.name}__{api.name}",
-            requestBody: {content: api.input.openapi_request_schema()},
-            responses: {
+            "tags": ["app"],
+            "summary": f"Inference API '{api}' under service '{svc.name}'",
+            "description": api.doc,
+            "operationId": f"{svc.name}__{api.name}",
+            "requestBody": {"content": api.input.openapi_request_schema()},
+            "responses": {
                 "200": {
                     "description": "success",
                     "content": api.output.openapi_responses_schema(),

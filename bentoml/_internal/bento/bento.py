@@ -152,12 +152,12 @@ class Bento(StoreItem):
         return cls(bento_metadata.tag, bento_fs)
 
     @cached_property
-    def metadata(self):
+    def metadata(self) -> "BentoMetadata":
         with self.fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             return BentoMetadata.from_yaml_file(bento_yaml)
 
     def creation_time(self) -> datetime.datetime:
-        return self.metadata.creation_time
+        return self.metadata["creation_time"]
 
     def save(self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]):
         if not self.validate():
@@ -188,7 +188,7 @@ class BentoStore(Store[Bento]):
 
 
 class BentoMetadata(UserDict):
-    def dump(self, stream: t.TextIO):
+    def dump(self, stream: t.IO):
         return yaml.dump(self.data, stream, sort_keys=False)
 
     @classmethod
@@ -217,7 +217,7 @@ class BentoMetadata(UserDict):
         return bento_metadata
 
     @classmethod
-    def from_yaml_file(cls, stream: t.TextIO):
+    def from_yaml_file(cls, stream: t.IO):
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

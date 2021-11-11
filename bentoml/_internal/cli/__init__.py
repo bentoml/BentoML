@@ -1,3 +1,5 @@
+import sys
+
 import click
 
 from bentoml import __version__
@@ -12,7 +14,7 @@ from .model_store import models
 def create_bentoml_cli():
     @click.group(cls=BentoMLCommandGroup)
     @click.version_option(version=__version__)
-    def cli():
+    def _cli():
         """BentoML CLI"""
 
     # Add top-level CLI commands
@@ -23,10 +25,14 @@ def create_bentoml_cli():
     # Add "models" sub commands
     cli.add_command(models)
 
-    return cli
+    return _cli
 
 
-cli = create_bentoml_cli()
+def cli():
+    if "" not in sys.path:
+        sys.path.insert(0, "")
+    create_bentoml_cli()()
+
 
 if __name__ == "__main__":
     cli()

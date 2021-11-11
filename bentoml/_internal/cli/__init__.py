@@ -1,5 +1,3 @@
-import sys
-
 import click
 
 from bentoml import __version__

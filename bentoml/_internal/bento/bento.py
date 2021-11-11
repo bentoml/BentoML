@@ -146,29 +146,29 @@ class Bento(StoreItem):
 
         # Create bento.yaml
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
-            BentoMetadata.from_build_args(tag, svc, labels, models).dump(bento_yaml)
+            BentoInfo.from_build_args(tag, svc, labels, models).dump(bento_yaml)
 
         return Bento(tag, bento_fs)
 
     @classmethod
     def from_fs(cls, tag: Tag, fs: FS) -> "Bento":
-        with fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
-            bento_metadata = BentoMetadata.from_yaml_file(bento_yaml)
+        res = cls(Tag("", ""), fs)
+        res._tag = res.info.tag
 
         # TODO: Check bento_metadata['bentoml_version'] and show user warning if needed
-        return cls(bento_metadata.tag, fs)
-
-    @cached_property
-    def metadata(self) -> "BentoMetadata":
-        with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
-            return BentoMetadata.from_yaml_file(bento_yaml)
+        return res
 
     @property
     def path(self) -> str:
         return self._fs.getsyspath("/")
 
+    @cached_property
+    def info(self) -> "BentoInfo":
+        with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
+            return BentoInfo.from_yaml_file(bento_yaml)
+
     def creation_time(self) -> datetime.datetime:
-        return self.metadata["creation_time"]
+        return self.info["creation_time"]
 
     def save(
         self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
@@ -206,12 +206,12 @@ class BentoStore(Store[Bento]):
 
 
 if t.TYPE_CHECKING:
-    BentoMetadataBase = UserDict[str, t.Any]
+    BentoInfoBase = UserDict[str, t.Any]
 else:
-    BentoMetadataBase = UserDict
+    BentoInfoBase = UserDict
 
 
-class BentoMetadata(BentoMetadataBase):
+class BentoInfo(BentoInfoBase):
     def dump(self, stream: t.IO[str]):
         return yaml.dump(self.data, stream, sort_keys=False)
 
@@ -219,13 +219,13 @@ class BentoMetadata(BentoMetadataBase):
     def from_build_args(
         cls, tag: Tag, svc: "Service", labels: t.Dict[str, t.Any], models: t.List[str]
     ):
-        bento_metadata = cls()
-        bento_metadata["service"] = svc._import_str  # type: ignore[reportPrivateUsage]
-        bento_metadata["name"] = tag.name
-        bento_metadata["version"] = tag.version
-        bento_metadata["bentoml_version"] = __version__
-        bento_metadata["created_at"] = datetime.datetime.now().isoformat()
-        bento_metadata["labels"] = labels  # TODO: validate user provided labels
+        bento_info = cls()
+        bento_info["service"] = svc._import_str  # type: ignore[reportPrivateUsage]
+        bento_info["name"] = tag.name
+        bento_info["version"] = tag.version
+        bento_info["bentoml_version"] = __version__
+        bento_info["created_at"] = datetime.datetime.now().isoformat()
+        bento_info["labels"] = labels  # TODO: validate user provided labels
         apis = {}
         for api in svc._apis.values():  # type: ignore[reportPrivateUsage]
             apis[api.name] = dict(
@@ -234,11 +234,11 @@ class BentoMetadata(BentoMetadataBase):
                 input=api.input.__class__.__name__,
                 output=api.output.__class__.__name__,
             )
-        bento_metadata["apis"] = apis
-        bento_metadata["models"] = models  # TODO: populate with model & framework info
+        bento_info["apis"] = apis
+        bento_info["models"] = models  # TODO: populate with model & framework info
 
-        bento_metadata.validate()
-        return bento_metadata
+        bento_info.validate()
+        return bento_info
 
     @classmethod
     def from_yaml_file(cls, stream: t.IO[t.Any]):
@@ -248,10 +248,10 @@ class BentoMetadata(BentoMetadataBase):
             logger.error(exc)
             raise
 
-        bento_metadata = cls()
-        bento_metadata.update(yaml_content)
-        bento_metadata.validate()
-        return bento_metadata
+        bento_info = cls()
+        bento_info.update(yaml_content)
+        bento_info.validate()
+        return bento_info
 
     def validate(self):
         # Validate bento.yml file schema, content, bentoml version, etc

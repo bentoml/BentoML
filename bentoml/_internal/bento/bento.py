@@ -97,7 +97,7 @@ class Bento(StoreItem):
         target_fs = bento_fs.opendir(svc.name)
 
         for dir_path, _, files in ctx_fs.walk():
-            for ignore_file in [f for f in files if f.name == ".bentomlignore"]:
+            for ignore_file in [f for f in files if f.name == ".bentoignore"]:
                 exclude_specs.append(
                     (
                         dir_path,

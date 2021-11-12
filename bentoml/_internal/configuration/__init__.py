@@ -56,7 +56,7 @@ def set_debug_mode(enabled: bool):
     os.environ[DEBUG_ENV_VAR] = str(enabled)
 
     # reconfigure logging
-    from ..utils.log import configure_logging
+    from ..log import configure_logging
 
     configure_logging()
 

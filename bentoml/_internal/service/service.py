@@ -4,6 +4,7 @@ import typing as t
 from typing import TYPE_CHECKING
 
 from ...exceptions import BentoMLException
+from ..bento.bento import Bento
 from ..io_descriptors import IODescriptor
 from ..runner import Runner
 from ..types import Tag
@@ -36,8 +37,9 @@ class Service:
 
     # Name of the service, it is a required parameter for __init__
     name: str
-    # Tag/Version of the service, only applicable if the service was load from a bento
+    # Tag/Bento/Version are only applicable if the service was load from a bento
     tag: t.Optional[Tag] = None
+    bento: t.Optional[Bento] = None
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None
@@ -55,6 +57,9 @@ class Service:
         self.name = lname
 
         if runners is not None:
+            assert all(
+                isinstance(r, Runner) for r in runners
+            ), "Service runners list must only contain runner instances"
             self._runners = {r.name: r for r in runners}
 
         self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", WSGI_APP], str, str]] = []
@@ -116,17 +121,18 @@ class Service:
 
     @property
     def asgi_app(self) -> "Starlette":
+        logger.info("Initializing HTTP server for %s", self)
         from ..server.service_app import ServiceAppFactory
 
         return ServiceAppFactory(self)()
 
     def mount_asgi_app(self, app: "ASGIApp", path: str = "/", name: str = None) -> None:
-        self._mount_apps.append((app, path, name))
+        self._mount_apps.append((app, path, name))  # type: ignore
 
     def mount_wsgi_app(self, app: WSGI_APP, path: str = "/", name: str = None) -> None:
         from starlette.middleware.wsgi import WSGIMiddleware
 
-        self._mount_apps.append((WSGIMiddleware(app), path, name))
+        self._mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
     def add_agsi_middleware(
         self, middleware_cls: t.Type["Middleware"], **options: t.Any
@@ -140,3 +146,24 @@ class Service:
 
     def set_build_options(self, **build_options):
         ...
+
+    def __str__(self):
+        if self.bento:
+            return (
+                f'bentoml.Service(tag="{self.tag}", '
+                f'path="{self.bento.fs.getsyspath("/")}")'
+            )
+        elif self._import_str and self._working_dir:
+            return (
+                f'bentoml.Service(name="{self.name}", '
+                f'import_str="{self._import_str}", '
+                f'working_dir="{self._working_dir}")'
+            )
+        else:
+            return (
+                f'bentoml.Service(name="{self.name}", '
+                f'runners=[{",".join(self._runners.keys())}])'
+            )
+
+    def __repr__(self):
+        return self.__str__()

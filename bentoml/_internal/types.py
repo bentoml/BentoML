@@ -9,6 +9,7 @@ import urllib.parse
 import urllib.request
 import uuid
 from dataclasses import dataclass
+from functools import total_ordering
 
 import fs
 
@@ -31,6 +32,7 @@ PathType = t.Union[str, os.PathLike, pathlib.Path]
 JSONSerializable = t.NewType("JSONSerializable", object)
 
 
+@total_ordering
 class Tag:
     name: str
     version: t.Optional[str]
@@ -59,10 +61,19 @@ class Tag:
         else:
             return f"{self.name}:{self.version}"
 
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        return self.name == other.name and self.version == other.version
+
     def __lt__(self, other):
         if self.name == other.name:
             return self.version < other.version
         return self.name < other.name
+
+    def __hash__(self) -> int:
+        return hash((self.name, self.version))
 
     @classmethod
     def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":

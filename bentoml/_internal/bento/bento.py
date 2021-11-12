@@ -2,7 +2,7 @@ import datetime
 import logging
 import os
 import typing as t
-from collections import OrderedDict, UserDict
+from collections import UserDict
 
 import attr
 import fs
@@ -32,15 +32,6 @@ logger = logging.getLogger(__name__)
 BENTO_YAML_FILENAME = "bento.yaml"
 
 
-# Add representer to allow dumping OrderedDict as a regular map
-yaml.add_representer(
-    OrderedDict,
-    lambda dumper, data: dumper.represent_mapping(
-        "tag:yaml.org,2002:map", data.items()
-    ),
-)
-
-
 @attr.define(repr=False)
 class Bento(StoreItem):
     tag: Tag
@@ -53,7 +44,7 @@ class Bento(StoreItem):
         build_ctx: PathType,
         models: t.List[str],
         version: t.Optional[str],
-        description: str,
+        description: t.Optional[str],
         include: t.List[str],
         exclude: t.List[str],
         env: t.Dict[str, t.Any],
@@ -106,7 +97,7 @@ class Bento(StoreItem):
         target_fs = bento_fs.opendir(svc.name)
 
         for dir_path, _, files in ctx_fs.walk():
-            for ignore_file in [f for f in files if f.name == ".bentomlignore"]:
+            for ignore_file in [f for f in files if f.name == ".bentoignore"]:
                 exclude_specs.append(
                     (
                         dir_path,
@@ -139,6 +130,7 @@ class Bento(StoreItem):
 
         # Create `readme.md` file
         with bento_fs.open("README.md", "w") as f:
+            description = description if description else svc.__doc__
             f.write(description)
 
         # Create 'apis/openapi.yaml' file
@@ -161,14 +153,16 @@ class Bento(StoreItem):
         return cls(bento_metadata.tag, bento_fs)
 
     @cached_property
-    def metadata(self):
+    def metadata(self) -> "BentoMetadata":
         with self.fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             return BentoMetadata.from_yaml_file(bento_yaml)
 
     def creation_time(self) -> datetime.datetime:
-        return self.metadata.creation_time
+        return self.metadata["creation_time"]
 
-    def save(self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]):
+    def save(
+        self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
+    ) -> "Bento":
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid")
@@ -178,6 +172,8 @@ class Bento(StoreItem):
             os.rmdir(bento_path)
             os.rename(self.fs.getsyspath("/"), bento_path)
             self.fs.close()
+
+        return bento_store.get(self.tag)
 
     def export(self, path: str):
         mirror(
@@ -197,7 +193,7 @@ class BentoStore(Store[Bento]):
 
 
 class BentoMetadata(UserDict):
-    def dump(self, stream: t.TextIO):
+    def dump(self, stream: t.IO):
         return yaml.dump(self.data, stream, sort_keys=False)
 
     @classmethod
@@ -226,7 +222,7 @@ class BentoMetadata(UserDict):
         return bento_metadata
 
     @classmethod
-    def from_yaml_file(cls, stream: t.TextIO):
+    def from_yaml_file(cls, stream: t.IO):
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

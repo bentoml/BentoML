@@ -198,6 +198,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.catboost == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   detectron2_integration_tests:
     needs: changes
@@ -218,6 +220,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.detectron2 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   easyocr_integration_tests:
     needs: changes
@@ -238,6 +242,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.easyocr == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
 #  TODO: fix me
 #  evalml_integration_tests:
@@ -259,6 +265,8 @@ jobs:
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.evalml == 'true' }}
 #        uses: codecov/codecov-action@v1.0.12
+#        with:
+#          flags: frameworks
 
 #  TODO: fix me
 #  fastai_integration_tests:
@@ -280,6 +288,8 @@ jobs:
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.fastai == 'true' }}
 #        uses: codecov/codecov-action@v1.0.12
+#        with:
+#          flags: frameworks
 
 #  TODO: fix me
 #  fasttext_integration_tests:
@@ -301,6 +311,8 @@ jobs:
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.fasttext == 'true' }}
 #        uses: codecov/codecov-action@v1.0.12
+#        with:
+#          flags: frameworks
 
   # TODO(aarnphm): add Trax/Flax support
 
@@ -323,6 +335,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.gluon == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   h2o_integration_tests:
     needs: changes
@@ -343,6 +357,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.h2o == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   keras_with_tf1_integration_tests:
     needs: changes
@@ -363,6 +379,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.keras_tf1 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   keras_with_tf2_integration_tests:
     needs: changes
@@ -383,6 +401,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.keras_tf2 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   lightgbm_integration_tests:
     needs: changes
@@ -403,6 +423,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.lightgbm == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   mlflow_integration_tests:
     needs: changes
@@ -423,6 +445,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.mlflow == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   onnx_integration_tests:
     needs: changes
@@ -443,6 +467,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.onnx == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   onnxmlir_integration_tests:
     needs: changes
@@ -465,6 +491,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.onnxmlir == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   paddle_integration_tests:
     needs: changes
@@ -485,6 +513,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.paddle == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   pycaret_integration_tests:
     needs: changes
@@ -505,6 +535,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.pycaret == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
 #  TODO: fix me
 #  pyspark_mllib_integration_tests:
@@ -526,6 +558,8 @@ jobs:
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.pyspark_mllib == 'true' }}
 #        uses: codecov/codecov-action@v1.0.12
+#         with:
+#           flags: frameworks
 
   pytorch_integration_tests:
     needs: changes
@@ -546,6 +580,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.pytorch == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   pytorch_lightning_integration_tests:
     needs: changes
@@ -570,6 +606,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.pytorch_lightning == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   sklearn_integration_tests:
     needs: changes
@@ -590,6 +628,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.sklearn == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   spacy_integration_tests:
     needs: changes
@@ -610,6 +650,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.spacy == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   statsmodels_integration_tests:
     needs: changes
@@ -630,6 +672,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.statsmodels == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   tensorflow_v1_integration_tests:
     needs: changes
@@ -650,6 +694,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.tf1 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   tensorflow_v2_integration_tests:
     needs: changes
@@ -670,6 +716,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.tf2 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   transformers_integration_tests:
     needs: changes
@@ -690,6 +738,8 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.transformers == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
 
   xgboost_integration_tests:
     needs: changes
@@ -710,6 +760,10 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.xgboost == 'true' }}
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: frameworks
+        with:
+          flags: frameworks
 
 concurrency:
   group: frameworks${{ github.event.pull_request.number || github.sha }}

@@ -1,0 +1,61 @@
+# Setting coverage targets per flag
+coverage:
+  status:
+    project:
+      default:
+        target: 90%
+      bento-server:
+        target: 90%
+        flags:
+          - bento-server
+      frameworks:
+        target: 91%
+        flags:
+          - frameworks
+
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+  branches:
+    - main
+    - bentoml-1.0
+
+flags:
+  bento-server:
+    paths:
+      - "bentoml/_internal/**"
+    carryforward: true
+  frameworks:
+    paths:
+      - bentoml/catboost.py
+      - bentoml/detectron.py
+      - bentoml/easyocr.py
+      - bentoml/evalml.py
+      - bentoml/fastai.py
+      - bentoml/fasttext.py
+      - bentoml/flax.py
+      - bentoml/gluon.py
+      - bentoml/h2o.py
+      - bentoml/keras.py
+      - bentoml/lightgbm.py
+      - bentoml/mlflow.py
+      - bentoml/onnx.py
+      - bentoml/onnxmlir.py
+      - bentoml/paddle.py
+      - bentoml/pycaret.py
+      - bentoml/pyspark.py
+      - bentoml/pytorch.py
+      - bentoml/pytorch_lightning.py
+      - bentoml/sklearn.py
+      - bentoml/spacy.py
+      - bentoml/statsmodels.py
+      - bentoml/spacy.py
+      - bentoml/statsmodels.py
+      - bentoml/tensorflow.py
+      - bentoml/transformers.py
+      - bentoml/xgboost.py
+    carryforward: true

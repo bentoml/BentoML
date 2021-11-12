@@ -97,7 +97,7 @@ svc.set_build_options(
     description=open("README.md").read(),
     models=["iris_model:latest"],
     include=['*'],
-    exclude=[], # files to exclude can also be specified with a .bentomlignore file
+    exclude=[], # files to exclude can also be specified with a .bentoignore file
     labels={
         "foo": "bar",
     },

@@ -35,8 +35,8 @@ Name your Pull Request with one of the following prefixes, e.g. "feat: add suppo
 <!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 <!--- If you plan to update documentation or tests in follow-up, please note -->
-- [ ] My code follows the bentoml code style, both `./dev/format.sh` and
-  `./dev/lint.sh` script have passed
+- [ ] My code follows the bentoml code style, both `make format` and
+  `make lint` script have passed
   ([instructions](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md#style-check-and-auto-formatting-your-code)).
 - [ ] My change reduces project test coverage and requires unit tests to be added
 - [ ] I have added unit tests covering my code change

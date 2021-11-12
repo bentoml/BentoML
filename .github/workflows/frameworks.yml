@@ -4,7 +4,7 @@ on:
   push:
     branches: [master, bentoml-1.0]
   pull_request:
-    branches: [master, bentoml-1.0]
+    branches: [master, bentoml-1.0, main]
   schedule:
     - cron: '0 0 * * 1/2'
 

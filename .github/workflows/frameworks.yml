@@ -44,7 +44,10 @@ jobs:
         id: filter
         with:
           filters: |
+            related: &related
+              - .github/workflows/frameworks.yml
             runner: &runner
+              - *related
               - bentoml/_internal/runner/**
               - bentoml/_internal/models/**
             catboost:
@@ -760,8 +763,6 @@ jobs:
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.xgboost == 'true' }}
         uses: codecov/codecov-action@v1.0.12
-        with:
-          flags: frameworks
         with:
           flags: frameworks
 

@@ -24,22 +24,37 @@ lint: pull-checker-img ## Lint code
 type: pull-checker-img ## Running type checker, mypy and pyright
 	$(CMD) ./scripts/tools/type_checker.sh
 
+ci-black: pull-checker-img ## Running black in CI
+	$(CMD) ./scripts/ci/style/black_check.sh
+ci-isort: pull-checker-img ## Running isort in CI
+	$(CMD) ./scripts/ci/style/isort_check.sh
+ci-format: ci-black ci-isort ## Running format check in CI
+
+ci-flake8: pull-checker-img ## Running flake8 in CI
+	$(CMD) ./scripts/ci/style/flake8_check.sh
+ci-pylint: pull-checker-img ## Running pylint in CI
+	$(CMD) ./scripts/ci/style/pylint_check.sh
+ci-lint: ci-flake8 ci-pylint ## Running lint check in CI
+
+ci-mypy: pull-checker-img ## Running mypy in CI
+	$(CMD) ./scripts/ci/style/mypy_check.sh
+ci-pyright: pull-checker-img ## Running pyright in CI
+	$(CMD) ./scripts/ci/style/pyright_check.sh
+ci-type: ci-mypy ci-pyright ## Running type check in CI
+
+
 install-local: ## Install BentoML from current directory in editable mode
 	pip install --editable .
-install-test-deps: ## Install all test dependencies
-	@echo Ensuring test dependencies...
-	@pip install -e ".[test]"
-install-dev-deps: ## Install all dev dependencies
+install-dev-deps: ## Install all dev and tests dependencies
 	@echo Ensuring dev dependencies...
 	@pip install -e ".[dev]"
-
+install-docs-deps:  ## Install documentation dependencies
+	@echo Installing docs dependencies...
+	@pip install -e ".[doc_builder]"
 
 # Docs
 watch-docs: ## Build and watch documentation
 	@./docs/watch.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
-install-docs-deps:  ## Install documentation dependencies
-	@echo Installing docs dependencies...
-	@pip install -e ".[doc_builder]"
 spellcheck-doc: ## Spell check documentation
 	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 
@@ -56,8 +71,11 @@ install-watch-deps: ## Install Debian-based OS dependencies for watching docs
 install-spellchecker-deps: ## Install Debian-based dependencies for spellchecker
 	sudo apt install libenchant-dev
 else
-install-watch-deps:  ## Inform users to install inotify-tools depending on their distros
+install-watch-deps: ## Inform users to install inotify-tools depending on their distros
 	@echo Make sure to install inotify-tools from your distros package manager
 install-spellchecker-deps: ## Inform users to install enchant depending on their distros
 	@echo Make sure to install enchant from your distros package manager
 endif
+
+hooks: ## Install pre-defined hooks
+	@./scripts/install_hooks.sh

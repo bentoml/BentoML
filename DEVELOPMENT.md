@@ -123,11 +123,9 @@ pip install -e ".[dev]"
 
 Run linter/format script:
 ```bash
-# if you have GNU make available you can do `make format`
-./scripts/format.sh
+make format
 
-# if you have GNU make available you can do `make lint`
-./scripts/lint.sh
+make lint
 ```
 
 ### Optional: Running `mypy` for better type annotation

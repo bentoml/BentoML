@@ -13,25 +13,54 @@ on:
     - cron: '0 0 * * 1/2'
 
 jobs:
-  lint_and_format:
+
+  diff:
     runs-on: ubuntu-latest
+    outputs:
+      bentoml: ${{ steps.filter.outputs.bentoml }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          base: 'main'
+          filters: |
+            bentoml:
+              - "bentoml/**"
+              - "tests/**"
+              - "docker/**"
+            docs:
+              - "docs/**"
+
+  codestyle_check:
+    runs-on: ubuntu-latest
+    needs:
+      - diff
+
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+
     steps:
       - uses: actions/checkout@v2
       - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
-      - name: Setup node
-        uses: actions/setup-node@v2
-        with:
-          node-version: '17'
-      - name: Install test dependencies
-        run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run linting script
-        run: ./scripts/ci/format_and_lint.sh
+      - name: Format check
+        run: make ci-format
+      - name: Lint check
+        # TODO: after fix all pylint errors under bentoml uses `make ci-lint` instead
+        run: make ci-flake8
+      - name: Type check
+        # TODO: after fix all types errors uses `make ci-types` instead
+        run: make ci-pyright
 
   documentation_spelling_check:
     runs-on: ubuntu-latest
+    needs:
+      - diff
+
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.docs == 'true') || github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup python
@@ -39,7 +68,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Run spellcheck script
-        run: ./scripts/ci/docs_spell_check.sh
+        run: ./scripts/ci/style/docs_spell_check.sh
 
   unit_tests:
     name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})

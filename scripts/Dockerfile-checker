@@ -21,6 +21,7 @@ RUN apk add libstdc++ gcc build-base bash git
 RUN npm i -g npm@^7 yarn pyright
 
 RUN pip install -U pip setuptools
+# TODO: Should we sync this with setup.py and add documentations dependencies?
 RUN pip install "mypy>=0.910" "pylint>=2.9.3" "black==21.4b2" "flake8>=3.8.2" "isort>=5.0.0"
 
 WORKDIR "/bentoml"

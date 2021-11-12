@@ -20,6 +20,7 @@ else
     FAIL "pyright failed."
     cat /tmp/"$name"_full
     exit 1
+  fi
 fi
 
 PASS "pyright passed!"

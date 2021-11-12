@@ -6,7 +6,7 @@ echo "Running black format check..."
 
 set_on_failed_callback "FAIL black errors"
 
-if ! (black --check --config "./pyproject.toml" bentoml tests docker); then
+if ! (black --check --config "./pyproject.toml" bentoml tests docker typings); then
   FAIL "black format check failed"
   echo "Make sure to run \`make format\`"
   exit 1

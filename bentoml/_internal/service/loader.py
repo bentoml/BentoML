@@ -175,14 +175,14 @@ def load_bento(
     logger.debug(
         'Loading bento "%s" found in local store: %s',
         bento.tag,
-        bento.fs.getsyspath("/"),
+        bento._fs.getsyspath("/"),
     )
 
     # Use Bento's user project path as working directory when importing the service
-    working_dir = bento.fs.getsyspath(bento.metadata["name"])
+    working_dir = bento._fs.getsyspath(bento.metadata["name"])
 
     # Use Bento's local "{base_dir}/models/" directory as its model store
-    model_store = ModelStore(bento.fs.getsyspath("models"))
+    model_store = ModelStore(bento._fs.getsyspath("models"))
 
     svc = import_service(bento.metadata["service"], working_dir, model_store)
 

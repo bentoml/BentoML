@@ -5,24 +5,25 @@ import tempfile
 import time
 import typing as t
 
+from simple_di import Provide, inject
+
 from bentoml import load
 from bentoml._internal.configuration import get_debug_mode
-from bentoml._internal.configuration.containers import BentoMLContainer
+from bentoml._internal.configuration.containers import BentoServerContainer
 
 logger = logging.getLogger(__name__)
 
 
+@inject
 def serve_development(
     bento_path_or_tag: str,
-    working_dir: t.Optional[str] = None,
-    port: t.Optional[int] = None,
+    working_dir: str,
+    port: int = Provide[BentoServerContainer.config.port],
     with_ngrok: bool = False,
     reload: bool = False,
     reload_delay: float = 0.25,
 ) -> None:
-    if working_dir is not None:
-        working_dir = os.path.abspath(working_dir)
-
+    working_dir = os.path.realpath(working_dir)
     svc = load(bento_path_or_tag, working_dir=working_dir)
 
     from circus.arbiter import Arbiter
@@ -46,10 +47,11 @@ def serve_development(
             )
         )
 
+    dev_server_cmd = f'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, working_dir="{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))'
     watchers.append(
         Watcher(
             name="ngrok",
-            cmd=f'{sys.executable} -c \'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, "{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))\'',
+            cmd=f"{sys.executable} -c '{dev_server_cmd}'",
             env=env,
             numprocesses=1,
             stop_children=True,
@@ -69,16 +71,21 @@ def _start_ngrok_server() -> None:
     from bentoml._internal.utils.flask_ngrok import start_ngrok
 
     time.sleep(1)
-    start_ngrok(BentoMLContainer.config.bento_server.port.get())
+    start_ngrok(BentoServerContainer.config.port.get())
 
 
+@inject
 def serve_production(
     bento_path_or_tag: str,
-    working_dir: t.Optional[str] = None,
+    working_dir: str,
+    port: int = Provide[BentoServerContainer.config.port],
     app_workers: t.Optional[int] = None,
     runner_workers: t.Optional[int] = None,
-    port: t.Optional[int] = None,
 ) -> None:
+    return serve_development(
+        bento_path_or_tag, working_dir, port=port
+    )  # TODO(jiang): remove me # noqa: F811
+
     svc = load(bento_path_or_tag, working_dir=working_dir)
 
     env = dict(os.environ)
@@ -135,13 +142,10 @@ def serve_production(
     arbiter.start()
 
 
-serve_production = serve_development  # TODO(jiang): remove me # noqa: F811
-
-
 def _start_dev_api_server(
     bento_path_or_tag: str,
     port: int,
-    working_dir: str,
+    working_dir: str = None,
     reload: bool = False,
     reload_delay: t.Optional[float] = None,
     instance_id: t.Optional[int] = None,
@@ -164,7 +168,7 @@ def _start_dev_api_server(
         # TODO: watch changes in model store when "latest" model tag is used
         uvicorn.run(asgi_app_import_str, **uvicorn_options)
     else:
-        uvicorn.run(svc.asgi_app, **uvicorn_options)
+        uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
 
 
 """

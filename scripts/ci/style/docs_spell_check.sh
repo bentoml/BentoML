@@ -15,4 +15,4 @@ pip install --upgrade .[doc_builder]
 make install-spellchecker-deps
 make spellcheck-doc
 
-test $error = 0 # Return non-zero if spellchecker failed
+test $error = 0

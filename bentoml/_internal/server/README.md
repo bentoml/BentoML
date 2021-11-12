@@ -25,7 +25,7 @@ app = svc.asgi_app
 
 Run the BentoServer:
 ```bash
-bentoml serve hello:app --reload
+bentoml serve hello:svc --reload
 ```
 
 Alternatively, run the BentoServer directly with `uvicorn`:

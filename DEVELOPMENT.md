@@ -65,7 +65,7 @@ pip install -e ".[test]"
 
 2. Run all unit tests with current python version and environment
 ```bash
-./ci/unit_tests.sh
+./scripts/ci/unit_tests.sh
 ```
 
 ## How to run integration tests
@@ -123,11 +123,9 @@ pip install -e ".[dev]"
 
 Run linter/format script:
 ```bash
-# if you have GNU make available you can do `make format`
-./dev/format.sh
+make format
 
-# if you have GNU make available you can do `make lint`
-./dev/lint.sh
+make lint
 ```
 
 ### Optional: Running `mypy` for better type annotation

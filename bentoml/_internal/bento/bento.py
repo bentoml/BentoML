@@ -44,7 +44,7 @@ class Bento(StoreItem):
         build_ctx: PathType,
         models: t.List[str],
         version: t.Optional[str],
-        description: str,
+        description: t.Optional[str],
         include: t.List[str],
         exclude: t.List[str],
         env: t.Dict[str, t.Any],
@@ -130,6 +130,7 @@ class Bento(StoreItem):
 
         # Create `readme.md` file
         with bento_fs.open("README.md", "w") as f:
+            description = description if description else svc.__doc__
             f.write(description)
 
         # Create 'apis/openapi.yaml' file

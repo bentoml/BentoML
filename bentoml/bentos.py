@@ -192,7 +192,6 @@ def build(
     build_ctx = os.getcwd() if build_ctx is None else os.path.realpath(build_ctx)
     svc = load(svc_import_str, working_dir=build_ctx)
 
-    description = svc.__doc__ if description is None else description
     models = [] if models is None else models
     include = ["*"] if include is None else include
     exclude = [] if exclude is None else exclude

@@ -1,20 +1,22 @@
 # Setting coverage targets per flag
 coverage:
-  status:
-    project:
-      default:
-        target: 83%
+  precision: 2
+  round: down
+  range: "70...100"
 
+codecov:
+  require_ci_to_pass: yes
 
 comment:
   layout: "reach, diff, flags, files"
   behavior: default
   require_changes: false
-  require_base: no
+  require_base: yes
   require_head: yes
   branches:
     - main
     - bentoml-1.0
+  show_carryforward_flags: false
 
 flag_management:
   default_rules:
@@ -29,7 +31,6 @@ flag_management:
       type: "project"
       target: 83%
       include_changes: auto
-    statuses:
   frameworks:
     name: frameworks
     ignore:

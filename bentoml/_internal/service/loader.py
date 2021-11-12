@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
-from bentoml import Service
-
 from ...exceptions import BentoMLException, InvalidArgument, NotFound
 from ..configuration.containers import BentoMLContainer
 from ..models.store import ModelStore
@@ -49,11 +47,13 @@ def import_service(
         import_service("fraud_detector.py")
         import_service("fraud_detector")
     """
+    from bentoml import Service
+
     prev_cwd = None
     sys_path_modified = False
 
     try:
-        if working_dir:
+        if working_dir is not None:
             working_dir = os.path.realpath(working_dir)
             # Set cwd(current working directory) to the Bento's project directory, which
             # allows user code to read files using relative path
@@ -148,15 +148,14 @@ def import_service(
         assert isinstance(
             instance, Service
         ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
-        instance: Service = instance  # type: ignore
-        instance._working_dir = working_dir
-        instance._import_str = f"{module_name}:{attrs_str}"
+        instance._working_dir = working_dir  # type: ignore
+        instance._import_str = f"{module_name}:{attrs_str}"  # type: ignore
         return instance
     except ImportServiceError:
         if prev_cwd:
             # Reset to previous cwd
             os.chdir(prev_cwd)
-        if sys_path_modified:
+        if sys_path_modified and working_dir:
             # Undo changes to sys.path
             sys.path.remove(working_dir)
         raise

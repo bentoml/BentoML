@@ -95,6 +95,7 @@ jobs:
         with:
           name: codecov-${{ matrix.os}}-python${{ matrix.python-version }}
           fail_ci_if_error: true
+          flags: bento-server
 
   bento_server_integration_tests:
     name: bento_server_integration_tests (${{ matrix.os }})
@@ -121,6 +122,8 @@ jobs:
         run: pytest tests/integration/projects/general --project-root tests/integration/projects/general -vvv --capture=tee-sys
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
+        with:
+          flags: bento-server
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}

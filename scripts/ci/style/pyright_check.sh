@@ -15,10 +15,8 @@ if [[ -n $GITHUB_BASE_REF ]]; then
   fi
 else
   echo "Running pyright..."
-  pyright . | tee /tmp/"$name"_full
-  if [ -s /tmp/"$name"_full ]; then
+  if ! (pyright .); then
     FAIL "pyright failed."
-    cat /tmp/"$name"_full
     exit 1
   fi
 fi

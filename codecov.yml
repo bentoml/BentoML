@@ -3,15 +3,7 @@ coverage:
   status:
     project:
       default:
-        target: 90%
-      bento-server:
-        target: 90%
-        flags:
-          - bento-server
-      frameworks:
-        target: 91%
-        flags:
-          - frameworks
+        target: 83%
 
 
 comment:
@@ -24,12 +16,25 @@ comment:
     - main
     - bentoml-1.0
 
-flags:
-  bento-server:
-    paths:
-      - "bentoml/_internal/**"
+flag_management:
+  default_rules:
     carryforward: true
+    ignore:
+      - bentoml/__main__.py
+      - bentoml/_version.py
+    paths:
+      - "bentoml/**"
+    statuses:
+      name_prefix: "internal/" 
+      type: "project"
+      target: 83%
+      include_changes: auto
+    statuses:
   frameworks:
+    name: frameworks
+    ignore:
+      - bentoml/_internal
+      - bentoml/testing
     paths:
       - bentoml/catboost.py
       - bentoml/detectron.py
@@ -58,4 +63,11 @@ flags:
       - bentoml/tensorflow.py
       - bentoml/transformers.py
       - bentoml/xgboost.py
-    carryforward: true
+    statuses:
+      target: 90%
+  bento-server:
+    name: bento-server
+    ignore:
+      - bentoml/testing
+    paths:
+      - "bentoml/_internal/**"

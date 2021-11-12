@@ -24,7 +24,7 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          base: 'main'
+          base: 'bentoml-1.0'
           filters: |
             bentoml:
               - "bentoml/**"

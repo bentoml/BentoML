@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import click
 
@@ -17,7 +18,7 @@ def add_serve_command(cli) -> None:
         "--working-dir",
         type=click.Path(),
         help="Look for Service in the specified directory",
-        default="./",
+        default=".",
     )
     @click.option(
         "--production",
@@ -67,6 +68,8 @@ def add_serve_command(cli) -> None:
         run_with_ngrok,
         production,
     ) -> None:
+        if sys.path[0] != working_dir:
+            sys.path.insert(0, working_dir)
 
         if production:
             from ..server import serve_production

@@ -35,6 +35,7 @@ install_requires = [
     "fs",
     "circus",
     "uvicorn",
+    "python-json-logger",
 ]
 
 model_server_optional = [
@@ -42,7 +43,6 @@ model_server_optional = [
     "py_zipkin",
     "jaeger_client",
     "prometheus_client",
-    "python-json-logger",
 ]
 
 test_requires = [

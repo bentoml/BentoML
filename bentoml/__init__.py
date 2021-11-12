@@ -8,9 +8,9 @@ from ._internal.configuration import load_global_config  # noqa: E402
 # Inject dependencies and configurations
 load_global_config()
 
-# TODO: fix configure_logging
-# from bentoml._internal.utils.log import configure_logging
-# configure_logging()
+from ._internal.log import configure_logging
+
+configure_logging()
 
 from ._internal.models.store import ModelStore  # noqa: E402
 from ._internal.service import Service  # noqa: E402

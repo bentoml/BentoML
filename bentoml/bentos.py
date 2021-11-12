@@ -1,6 +1,7 @@
 """
 User facing python APIs for managing local bentos and build new bentos
 """
+import logging
 import os
 import typing as t
 
@@ -14,6 +15,9 @@ from ._internal.types import Tag
 
 if t.TYPE_CHECKING:
     from ._internal.models.store import ModelStore
+
+
+logger = logging.getLogger(__name__)
 
 
 @inject
@@ -40,7 +44,8 @@ def delete(
 
 
 def import_bento(path: str) -> Bento:
-    return Bento.from_fs(fs.open_fs(path))
+    # FIXME: find bento tag from path
+    return Bento.from_fs(Tag("TODO"), fs.open_fs(path))
 
 
 def export_bento(tag: t.Union[Tag, str], path: str):
@@ -187,14 +192,13 @@ def build(
     build_ctx = os.getcwd() if build_ctx is None else os.path.realpath(build_ctx)
     svc = load(svc_import_str, working_dir=build_ctx)
 
-    description = svc.__doc__ if description is None else description
     models = [] if models is None else models
     include = ["*"] if include is None else include
     exclude = [] if exclude is None else exclude
     env = {} if env is None else env
     labels = {} if labels is None else labels
 
-    res = Bento.create(
+    bento = Bento.create(
         svc,
         build_ctx,
         models,
@@ -205,10 +209,11 @@ def build(
         env,
         labels,
         _model_store,
-    )
-    res.save(_bento_store)
+    ).save(_bento_store)
 
-    return res
+    logger.info("%s created at: %s", bento, bento.fs.getsyspath("/"))
+
+    return bento
 
 
 __all__ = [

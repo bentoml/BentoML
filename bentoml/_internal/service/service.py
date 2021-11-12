@@ -127,12 +127,12 @@ class Service:
         return ServiceAppFactory(self)()
 
     def mount_asgi_app(self, app: "ASGIApp", path: str = "/", name: str = None) -> None:
-        self._mount_apps.append((app, path, name))
+        self._mount_apps.append((app, path, name))  # type: ignore
 
     def mount_wsgi_app(self, app: WSGI_APP, path: str = "/", name: str = None) -> None:
         from starlette.middleware.wsgi import WSGIMiddleware
 
-        self._mount_apps.append((WSGIMiddleware(app), path, name))
+        self._mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
     def add_agsi_middleware(
         self, middleware_cls: t.Type["Middleware"], **options: t.Any

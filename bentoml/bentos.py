@@ -44,7 +44,8 @@ def delete(
 
 
 def import_bento(path: str) -> Bento:
-    return Bento.from_fs(fs.open_fs(path))
+    # FIXME: find bento tag from path
+    return Bento.from_fs("TODO", fs.open_fs(path))
 
 
 def export_bento(tag: t.Union[Tag, str], path: str):

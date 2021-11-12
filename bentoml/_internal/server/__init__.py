@@ -71,16 +71,21 @@ def _start_ngrok_server() -> None:
     from bentoml._internal.utils.flask_ngrok import start_ngrok
 
     time.sleep(1)
-    start_ngrok(BentoServerContainer.port.get())
+    start_ngrok(BentoServerContainer.config.port.get())
 
 
+@inject
 def serve_production(
     bento_path_or_tag: str,
     working_dir: str,
+    port: int = Provide[BentoServerContainer.config.port],
     app_workers: t.Optional[int] = None,
     runner_workers: t.Optional[int] = None,
-    port: t.Optional[int] = None,
 ) -> None:
+    return serve_development(
+        bento_path_or_tag, working_dir, port=port
+    )  # TODO(jiang): remove me # noqa: F811
+
     svc = load(bento_path_or_tag, working_dir=working_dir)
 
     env = dict(os.environ)
@@ -137,9 +142,6 @@ def serve_production(
     arbiter.start()
 
 
-serve_production = serve_development  # TODO(jiang): remove me # noqa: F811
-
-
 def _start_dev_api_server(
     bento_path_or_tag: str,
     port: int,
@@ -166,7 +168,7 @@ def _start_dev_api_server(
         # TODO: watch changes in model store when "latest" model tag is used
         uvicorn.run(asgi_app_import_str, **uvicorn_options)
     else:
-        uvicorn.run(svc.asgi_app, **uvicorn_options)
+        uvicorn.run(svc.asgi_app, **uvicorn_options)  # type: ignore
 
 
 """

@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
+from bentoml import Service
+
 from ...exceptions import BentoMLException, InvalidArgument, NotFound
 from ..configuration.containers import BentoMLContainer
 from ..models.store import ModelStore
@@ -47,6 +49,9 @@ def import_service(
         import_service("fraud_detector.py")
         import_service("fraud_detector")
     """
+    prev_cwd = None
+    sys_path_modified = False
+
     try:
         if working_dir:
             working_dir = os.path.realpath(working_dir)
@@ -55,10 +60,8 @@ def import_service(
             prev_cwd = os.getcwd()
             os.chdir(working_dir)
         else:
-            prev_cwd = None
             working_dir = os.getcwd()
 
-        sys_path_modified = False
         if working_dir not in sys.path:
             sys.path.insert(0, working_dir)
             sys_path_modified = True
@@ -128,8 +131,6 @@ def import_service(
                     f'Attribute "{attrs_str}" not found in module "{module_name}".'
                 )
         else:
-            from bentoml import Service
-
             instances = [
                 (k, v) for k, v in module.__dict__.items() if isinstance(v, Service)
             ]
@@ -144,6 +145,10 @@ def import_service(
                     "define only service instance per python module/file"
                 )
 
+        assert isinstance(
+            instance, Service
+        ), f'import target "{module_name}:{attrs_str}" is not a bentoml.Service instance'
+        instance: Service = instance  # type: ignore
         instance._working_dir = working_dir
         instance._import_str = f"{module_name}:{attrs_str}"
         return instance

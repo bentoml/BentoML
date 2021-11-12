@@ -26,9 +26,9 @@ jobs:
         with:
           node-version: '17'
       - name: Install test dependencies
-        run: ./ci/install_dependencies.sh.cmd
+        run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run linting script
-        run: ./ci/format_and_lint.sh
+        run: ./scripts/ci/format_and_lint.sh
 
   documentation_spelling_check:
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
         with:
           python-version: 3.7
       - name: Run spellcheck script
-        run: ./ci/docs_spell_check.sh
+        run: ./scripts/ci/docs_spell_check.sh
 
   unit_tests:
     name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
@@ -59,10 +59,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
       - name: Install test dependencies
-        run: ./ci/install_dependencies.sh.cmd
+        run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run Unit Tests
-        run: ./ci/unit_tests.sh
+        run: ./scripts/ci/unit_tests.sh
         shell: bash
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v1.0.12
@@ -88,7 +88,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Install test dependencies
-        run: ./ci/install_dependencies.sh.cmd
+        run: ./scripts/ci/install_dependencies.sh.cmd
       - name: install optional dependencies
         run: python -m pip install pydantic
       - name: Run tests

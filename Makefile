@@ -1,18 +1,31 @@
 .DEFAULT_GOAL := help
 
+CHECKER_IMG := bentoml/checker:1.0
+BASE_ARGS := -u root -v $(PWD):/bentoml
+
+CNTR_ARGS := $(BASE_ARGS) $(CHECKER_IMG)
+CMD := docker run $(CNTR_ARGS)
+TTY := docker run -it $(CNTR_ARGS)
+
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-# General Development
-test: ## Run all unit tests with current Python version and env
-	@./ci/unit_tests.sh || (echo "Error running tests... You may need to run 'make install-test-deps'"; exit 1)
-format: ## Format code to adhere to BentoML style
-	./dev/format.sh
-lint: format ## Lint code
-	./dev/lint.sh
+build-checker-img: ## Build checker images
+	@docker build -f ./scripts/Dockerfile-checker -t $(CHECKER_IMG) . || exit 1
+	@docker push $(CHECKER_IMG)
+
+pull-checker-img: ## Pull checker images
+	@docker pull $(CHECKER_IMG) || true
+
+format: pull-checker-img ## Format code
+	$(CMD) ./scripts/tools/formatter.sh
+lint: pull-checker-img ## Lint code
+	$(CMD) ./scripts/tools/linter.sh
+type: pull-checker-img ## Running type checker, mypy and pyright
+	$(CMD) ./scripts/tools/type_checker.sh
+
 install-local: ## Install BentoML from current directory in editable mode
 	pip install --editable .
-
 install-test-deps: ## Install all test dependencies
 	@echo Ensuring test dependencies...
 	@pip install -e ".[test]"
@@ -20,9 +33,6 @@ install-dev-deps: ## Install all dev dependencies
 	@echo Ensuring dev dependencies...
 	@pip install -e ".[dev]"
 
-# Protos
-gen-protos: ## Build protobuf for Python and Node
-	@./dev/gen_protos_docker.sh
 
 # Docs
 watch-docs: ## Build and watch documentation

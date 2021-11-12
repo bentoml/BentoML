@@ -8,7 +8,7 @@ VALID_BRANCH_REGEX="^(style|chore|refactor|feat|internal|bugfix|improvement|libr
 
 cd "$GIT_ROOT" || exit
 
-./dev/format.sh || exit
+make format || exit
 
 if [ "$LOCAL_BRANCH" != "bentoml-1.0" ]; then
     if [[ ! "$LOCAL_BRANCH" =~ $VALID_BRANCH_REGEX ]]

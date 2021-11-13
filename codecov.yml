@@ -1,12 +1,11 @@
 comment:
   layout: "reach, diff, files"
   behavior: default
-  require_changes: no
   require_base: no
-  require_head: no
+  require_head: yes
   branches:
-    - main
-    - bentoml-1.0
+    - "main"
+    - "bentoml-1.0"
   show_carryforward_flags: false
 
 ignore:

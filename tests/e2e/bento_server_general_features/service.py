@@ -118,13 +118,6 @@ def predict_ndarray_enforce_dtype(inp: "np.ndarray") -> "np.ndarray":
     return ndarray_pred_runner.run(inp)
 
 
-@svc.api(input=JSON(), output=JSON())
-def predict_array(json_obj: JSONSerializable) -> JSONSerializable:
-    array = np.array(json_obj)
-    array_out = json_pred_runner.run(array)
-    return array_out.tolist()
-
-
 @svc.api(
     input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
     output=PandasSeries(),

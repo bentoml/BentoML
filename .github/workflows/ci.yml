@@ -92,7 +92,7 @@ jobs:
         run: ./scripts/ci/unit_tests.sh
         shell: bash
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           name: codecov-${{ matrix.os}}-python${{ matrix.python-version }}
           fail_ci_if_error: true
@@ -122,7 +122,7 @@ jobs:
       - name: Run tests and generate coverage report
         run: pytest tests/integration/projects/general --project-root tests/integration/projects/general -vvv --capture=tee-sys
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           flags: bento-server
 

@@ -208,7 +208,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.catboost == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./catboost.xml
@@ -234,7 +234,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.detectron2 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./detectron2.xml
@@ -260,7 +260,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.easyocr == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./easyocr.xml
@@ -287,7 +287,7 @@ jobs:
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.evalml == 'true' }}
-#        uses: codecov/codecov-action@v1.0.12
+#        uses: codecov/codecov-action@v2
 #        with:
 #           directory: ./
 #           files: ./evalml.xml
@@ -314,7 +314,7 @@ jobs:
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.fastai == 'true' }}
-#        uses: codecov/codecov-action@v1.0.12
+#        uses: codecov/codecov-action@v2
 #        with:
 #          directory: ./
 #          files: ./fastai.xml
@@ -341,7 +341,7 @@ jobs:
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.fasttext == 'true' }}
-#        uses: codecov/codecov-action@v1.0.12
+#        uses: codecov/codecov-action@v2
 #        with:
 #          directory: ./
 #          files: ./fasttext.xml
@@ -369,7 +369,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.gluon == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./gluon.xml
@@ -395,7 +395,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.h2o == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./h2o.xml
@@ -421,7 +421,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.keras_tf1 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./keras_tf1.xml
@@ -447,7 +447,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.keras_tf2 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./keras_tf2.xml
@@ -472,7 +472,7 @@ jobs:
         run: ./scripts/ci/framework_integration_tests.sh lightgbm
         shell: bash
         if: ${{ needs.changes.outputs.lightgbm == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./lightgbm.xml
@@ -498,7 +498,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.mlflow == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./mlflow.xml
@@ -524,7 +524,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.onnx == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./onnx.xml
@@ -552,7 +552,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.onnxmlir == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./onnxmlir.xml
@@ -578,7 +578,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.paddle == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./paddle.xml
@@ -604,7 +604,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.pycaret == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./pycaret.xml
@@ -631,7 +631,7 @@ jobs:
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.pyspark_mllib == 'true' }}
-#        uses: codecov/codecov-action@v1.0.12
+#        uses: codecov/codecov-action@v2
 #        with:
 #          directory: ./
 #          files: ./pyspark.xml
@@ -657,7 +657,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.pytorch == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./pytorch.xml
@@ -687,7 +687,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.pytorch_lightning == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./pytorch_lightning.xml
@@ -713,7 +713,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.sklearn == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./sklearn.xml
@@ -739,7 +739,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.spacy == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./sklearn.xml
@@ -765,7 +765,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.statsmodels == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./statsmodels.xml
@@ -791,7 +791,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.tf1 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./tf1.xml
@@ -817,7 +817,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.tf2 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./tf2.xml
@@ -843,7 +843,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.transformers == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./transformers.xml
@@ -869,7 +869,7 @@ jobs:
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.xgboost == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           directory: ./
           files: ./xgboost.xml

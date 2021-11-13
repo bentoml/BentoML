@@ -6,6 +6,8 @@ from starlette.responses import Response
 from ...exceptions import InvalidArgument
 from .base import IODescriptor
 
+MIME_TYPE = "text/plain"
+
 
 class Text(IODescriptor):
     """
@@ -60,6 +62,7 @@ class Text(IODescriptor):
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return {MIME_TYPE: {"schema": {"type": "string"}}}
 
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()
@@ -70,6 +73,4 @@ class Text(IODescriptor):
             raise InvalidArgument(
                 f"return object is not of type `str`, got type {type(obj)} instead"
             )
-        MIME_TYPE = "text/plain"
-        resp = obj
-        return Response(resp, media_type=MIME_TYPE)
+        return Response(obj, media_type=MIME_TYPE)

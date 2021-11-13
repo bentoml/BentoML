@@ -151,9 +151,11 @@ class JSON(IODescriptor):
         self._json_encoder = json_encoder
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for incoming requests"""
         return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for outcoming responses"""
         return self.openapi_schema()
 
     def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:

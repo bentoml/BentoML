@@ -1,4 +1,14 @@
-# Setting coverage targets per flag
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: no
+  branches:
+    - main
+    - bentoml-1.0
+  show_carryforward_flags: false
+
 coverage:
   precision: 2
   round: down

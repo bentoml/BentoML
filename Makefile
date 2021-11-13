@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
 CHECKER_IMG := bentoml/checker:1.0
-BASE_ARGS := -u root -v $(PWD):/bentoml
+BASE_ARGS := -u root -v $(PWD):/bentoml --rm
 
 CNTR_ARGS := $(BASE_ARGS) $(CHECKER_IMG)
 CMD := docker run $(CNTR_ARGS)

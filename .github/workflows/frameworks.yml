@@ -428,82 +428,82 @@ jobs:
           flags: frameworks
           verbose: true
 
-#   lightgbm_integration_tests:
-#     needs: changes
-#     if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.lightgbm == 'true') || github.event_name == 'push' }}
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           fetch-depth: 0 # fetch all tags and branches
-#       - name: Setup python
-#         uses: actions/setup-python@v2
-#         with:
-#           python-version: 3.8
-#       - name: Install test dependencies
-#         run: ./scripts/ci/install_dependencies.sh.cmd
-#       - name: Run tests and generate coverage report
-#         run: ./scripts/ci/framework_integration_tests.sh lightgbm
-#         shell: bash
-#         if: ${{ needs.changes.outputs.lightgbm == 'true' }}
-#         uses: codecov/codecov-action@v2
-#         with:
-#           directory: ./
-#           files: ./lightgbm.xml
-#           flags: frameworks
-#           verbose: true
+  lightgbm_integration_tests:
+    needs: changes
+    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.lightgbm == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install test dependencies
+        run: ./scripts/ci/install_dependencies.sh.cmd
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh lightgbm
+        shell: bash
+        if: ${{ needs.changes.outputs.lightgbm == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./lightgbm.xml
+          flags: frameworks
+          verbose: true
 
-#   mlflow_integration_tests:
-#     needs: changes
-#     if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.mlflow == 'true') || github.event_name == 'push' }}
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           fetch-depth: 0 # fetch all tags and branches
-#       - name: Setup python
-#         uses: actions/setup-python@v2
-#         with:
-#           python-version: 3.8
-#       - name: Install test dependencies
-#         run: ./scripts/ci/install_dependencies.sh.cmd
-#       - name: Run tests and generate coverage report
-#         run: ./scripts/ci/framework_integration_tests.sh mlflow
-#         shell: bash
-#       - name: Upload test coverage to Codecov
-#         if: ${{ needs.changes.outputs.mlflow == 'true' }}
-#         uses: codecov/codecov-action@v2
-#         with:
-#           directory: ./
-#           files: ./mlflow.xml
-#           flags: frameworks
-#           verbose: true
+  mlflow_integration_tests:
+    needs: changes
+    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.mlflow == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install test dependencies
+        run: ./scripts/ci/install_dependencies.sh.cmd
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh mlflow
+        shell: bash
+      - name: Upload test coverage to Codecov
+        if: ${{ needs.changes.outputs.mlflow == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./mlflow.xml
+          flags: frameworks
+          verbose: true
 
-#   onnx_integration_tests:
-#     needs: changes
-#     if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.onnx == 'true') || github.event_name == 'push' }}
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           fetch-depth: 0 # fetch all tags and branches
-#       - name: Setup python
-#         uses: actions/setup-python@v2
-#         with:
-#           python-version: 3.8
-#       - name: Install test dependencies
-#         run: ./scripts/ci/install_dependencies.sh.cmd
-#       - name: Run tests and generate coverage report
-#         run: ./scripts/ci/framework_integration_tests.sh onnx
-#         shell: bash
-#       - name: Upload test coverage to Codecov
-#         if: ${{ needs.changes.outputs.onnx == 'true' }}
-#         uses: codecov/codecov-action@v2
-#         with:
-#           directory: ./
-#           files: ./onnx.xml
-#           flags: frameworks
-#           verbose: true
+  onnx_integration_tests:
+    needs: changes
+    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.onnx == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install test dependencies
+        run: ./scripts/ci/install_dependencies.sh.cmd
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh onnx
+        shell: bash
+      - name: Upload test coverage to Codecov
+        if: ${{ needs.changes.outputs.onnx == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./onnx.xml
+          flags: frameworks
+          verbose: true
 
 #   onnxmlir_integration_tests:
 #     needs: changes

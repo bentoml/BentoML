@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - bentoml-1.0
+      - main
   pull_request:
     branches:
       - master
@@ -204,6 +205,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh catboost
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.catboost == 'true' }}
         uses: codecov/codecov-action@v1.0.12

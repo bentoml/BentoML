@@ -9,8 +9,8 @@ comment:
   show_carryforward_flags: false
 
 ignore:
-  - "bentoml/testing"
-  - "bentoml/_internal/typing_extensions"
+  - "bentoml/testing/**/*"
+  - "bentoml/_internal/typing_extensions/**/*"
   - "bentoml/_internal/types.py"
   - "bentoml/__main__.py"
   - "bentoml/_version.py"
@@ -60,7 +60,6 @@ flag_management:
       - bentoml/pytorch_lightning.py
       - bentoml/sklearn.py
       - bentoml/spacy.py
-      - bentoml/statsmodels.py
       - bentoml/statsmodels.py
       - bentoml/tensorflow.py
       - bentoml/transformers.py

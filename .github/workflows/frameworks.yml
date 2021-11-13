@@ -141,7 +141,7 @@ jobs:
             spacy:
               - *runner
               - bentoml/spacy.py
-              - tests/integration/frameworks/test_spacy_impl.py
+              - tests/integration/frameworks/spacy
             statsmodels:
               - *runner
               - bentoml/statsmodels.py

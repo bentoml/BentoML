@@ -8,7 +8,7 @@ codecov:
   require_ci_to_pass: yes
 
 comment:
-  layout: "reach, diff, flags, files"
+  layout: "reach, diff, files"
   behavior: default
   require_changes: false
   require_base: yes
@@ -29,7 +29,6 @@ flag_management:
     statuses:
       name_prefix: "internal/" 
       type: "project"
-      target: 83%
       include_changes: auto
   frameworks:
     name: frameworks

@@ -7,9 +7,7 @@ from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
 
-from bentoml._internal.types import FileLike
-
-from ...exceptions import BadInput, BentoMLException, InvalidArgument
+from ...exceptions import BadInput, InternalServerError, InvalidArgument
 from ..utils import LazyLoader
 from .base import IODescriptor
 
@@ -136,7 +134,7 @@ class Image(IODescriptor):
         elif isinstance(obj, PIL.Image.Image):
             image = obj
         else:
-            raise InvalidArgument(
+            raise InternalServerError(
                 f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
                 " only supports `np.ndarray` and `PIL.Image`"
             )

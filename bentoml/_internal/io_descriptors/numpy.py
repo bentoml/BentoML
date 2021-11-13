@@ -40,10 +40,10 @@ def _is_matched_shape(
     if len(left) != len(right):
         return False
 
-    for l, r in zip(left, right):
-        if l == -1 or r == -1:
+    for i, j in zip(left, right):
+        if i == -1 or j == -1:
             continue
-        if l == r:
+        if i == j:
             continue
         return False
     return True

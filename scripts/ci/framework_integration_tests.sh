@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 
-fname=$(basename $0)
+set -x
 
-source ./scripts/ci/helpers.sh
+fname=$(basename "$0")
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
+
+source "./scripts/ci/helpers.sh"
 
 err=0
 set_on_failed_callback "err=1"
 
 CONFIG_FILE="./scripts/ci/config.yml"
-GIT_ROOT=$(git rev-parse --show-toplevel)
 
 num_args=${#@}
 if [[ "$num_args" -ne 1 ]]; then
@@ -27,7 +30,7 @@ yq_docker() {
   if [[ $(docker images --filter=reference='bentoml/checker' -q) == "" ]]; then
       docker pull bentoml/checker:1.0 || true
   fi
-  docker run -i --rm -v "${PWD}":/bentoml bentoml/checker:1.0 yq "$@"
+  docker run -i --rm -v "$GIT_ROOT":/bentoml bentoml/checker:1.0 yq "$@"
 }
 
 getval(){

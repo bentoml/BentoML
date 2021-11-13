@@ -5,10 +5,12 @@ on:
     branches:
       - master
       - bentoml-1.0
+      - main
   pull_request:
     branches:
       - master
       - bentoml-1.0
+      - main
   schedule:
     - cron: '0 0 * * 1/2'
 
@@ -47,9 +49,9 @@ jobs:
       - name: Lint check
         # TODO: after fix all pylint errors under bentoml uses `make ci-lint` instead
         run: make ci-flake8
-      - name: Type check
-        # TODO: after fix all types errors uses `make ci-types` instead
-        run: make ci-pyright
+#      - name: Type check
+#        # TODO: after fix all types errors uses `make ci-types` instead
+#        run: make ci-pyright
 
   documentation_spelling_check:
     runs-on: ubuntu-latest
@@ -90,10 +92,14 @@ jobs:
         run: ./scripts/ci/unit_tests.sh
         shell: bash
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
         with:
           name: codecov-${{ matrix.os}}-python${{ matrix.python-version }}
           fail_ci_if_error: true
+          flags: bento-server
+          directory: ./
+          files: ./unittest.xml
+          verbose: true
 
   bento_server_integration_tests:
     name: bento_server_integration_tests (${{ matrix.os }})
@@ -116,10 +122,15 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: install optional dependencies
         run: python -m pip install pydantic
-      - name: Run tests
-        run: pytest tests/integration/projects/general --project-root tests/integration/projects/general -vvv --capture=tee-sys
+      - name: Run tests and generate coverage report
+        run: pytest tests/integration/projects/general --project-root tests/integration/projects/general -vvv --capture=tee-sys --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"internal.xml"
       - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v1.0.12
+        uses: codecov/codecov-action@v2
+        with:
+          flags: bento-server
+          directory: ./
+          files: ./internal.xml
+          verbose: true
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}

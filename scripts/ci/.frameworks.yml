@@ -1,0 +1,198 @@
+template: &tmpl
+  root_test_dir: "tests/integration/frameworks"
+  is_dir: false
+  override_fname:
+  dependencies: []
+  external_scripts:
+
+catboost:
+  <<: *tmpl
+  dependencies:
+    - "catboost"
+    - "pandas"
+
+detectron2:
+  <<: *tmpl
+  dependencies:
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.9.0+cpu"
+    - "torchvision==0.10.0+cpu"
+    - "-f https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch1.9/index.html"
+    - "detectron2"
+
+easyocr:
+  <<: *tmpl
+  dependencies:
+    - "easyocr"
+
+evalml:
+  <<: *tmpl
+  dependencies:
+    - "evalml>=0.25.0"
+
+fastai:
+  <<: *tmpl
+  dependencies:
+    - "fastai"
+
+fasttext:
+  <<: *tmpl
+  dependencies:
+    - "fasttext"
+
+gluon:
+  <<: *tmpl
+  dependencies:
+    - "mxnet"
+
+h2o:
+  <<: *tmpl
+  dependencies:
+    - "h2o"
+
+keras_tf1:
+  <<: *tmpl
+  override_fname: test_keras_impl.py
+  dependencies:
+    - "tensorflow==1.15"
+    - "h5py==2.10.0"
+
+keras_tf2:
+  <<: *tmpl
+  override_fname: test_keras_impl.py
+  dependencies:
+    - "tensorflow==2.2.0"
+
+lightgbm:
+  <<: *tmpl
+  dependencies:
+    - "lightgbm"
+    - "pandas"
+
+mlflow:
+  <<: *tmpl
+  is_dir: true
+  dependencies:
+    - "mlflow"
+    - "sklearn"
+
+onnx:
+  <<: *tmpl
+  dependencies:
+    - "onnx"
+    - "onnxruntime"
+    - "skl2onnx"
+
+onnxmlir:
+  <<: *tmpl
+  dependencies:
+    - "pandas"
+    - "tensorflow==2.2.0"
+    - "tf2onnx"
+  external_scripts: |
+    export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
+    export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
+    apt-get update && apt-get install curl -y
+
+paddle:
+  <<: *tmpl
+  is_dir: true
+  dependencies:
+    - "opencv-python==4.5.4.58"
+    - "pandas"
+    - "numpy"
+    - "paddlepaddle"
+    - "paddlehub"
+    - "gast==0.3.3"
+
+pycaret:
+  <<: *tmpl
+  dependencies:
+    - "numba==0.53.1"
+    - "pycaret==2.3.3"
+
+pyspark:
+  <<: *tmpl
+  dependencies:
+    - "pyspark"
+    - "pandas"
+
+pytorch_lightning:
+  <<: *tmpl
+  dependencies:
+    - "pytorch-lightning"
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.9.0+cpu"
+    - "torchvision==0.10.0+cpu"
+
+pytorch:
+  <<: *tmpl
+  dependencies:
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.9.0+cpu"
+    - "torchvision==0.10.0+cpu"
+    - "psutil"
+
+sklearn:
+  <<: *tmpl
+  dependencies:
+    - "sklearn"
+    - "pandas"
+
+spacy:
+  <<: *tmpl
+  is_dir: true
+  dependencies:
+    - "spacy==3.1.2"
+    - "pyyaml"
+    - "pandas"
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.9.0+cpu"
+    - "torchvision==0.10.0+cpu"
+    - "tensorflow==2.6.0"
+  external_scripts: |
+    python -m spacy download en_core_web_sm
+
+statsmodels:
+  <<: *tmpl
+  dependencies:
+    - "statsmodels==0.12.2"
+    - "joblib"
+    - "numpy"
+    - "pandas"
+
+tf1:
+  <<: *tmpl
+  override_fname: test_tensorflow_impl.py
+  dependencies:
+    - "tensorflow==1.15"
+    - "tensorflow_hub"
+
+tf2:
+  <<: *tmpl
+  override_fname: test_tensorflow_impl.py
+  dependencies:
+    - "tensorflow_text"
+    - "tensorflow_hub"
+    - "tensorflow"
+
+transformers:
+  <<: *tmpl
+  dependencies:
+    - "transformers==4.9.2"
+    - "tensorflow_hub"
+    - "tensorflow"
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.9.0+cpu"
+    - "torchvision==0.10.0+cpu"
+    - "jax==0.2.19"
+    - "jaxlib==0.1.70"
+    - "flax==0.3.4"
+    - "tensorflow==2.5.0"
+    - "importlib_metadata"
+    - "Pillow==8.4.0"
+
+xgboost:
+  <<: *tmpl
+  dependencies:
+    - "xgboost"

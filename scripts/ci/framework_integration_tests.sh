@@ -7,7 +7,7 @@ source ./scripts/ci/helpers.sh
 err=0
 set_on_failed_callback "err=1"
 
-CONFIG_FILE="./scripts/.config/frameworks.yml"
+CONFIG_FILE="./scripts/ci/.frameworks.yml"
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
 num_args=${#@}
@@ -42,13 +42,17 @@ main() {
   fi
 
   local framework=$1
-  local test_dir is_dir
+  local test_dir is_dir override_fname extras
 
   test_dir=$(getval ".$framework.root_test_dir")
   is_dir=$(getval ".$framework.is_dir")
+  override_fname=$(getval ".$framework.override_fname")
+  extras=$(getval ".$framework.external_scripts")
 
   # processing file name
-  if [[ "$is_dir" == "false" ]]; then
+  if [[ "$override_fname" != "" ]]; then
+    fname="$override_fname"
+  elif [[ "$is_dir" == "false" ]]; then
     fname="test_""$framework""_impl.py"
   else
     fname="$framework"
@@ -58,6 +62,8 @@ main() {
   yq_docker eval '.'"$framework"'.dependencies[]' "$CONFIG_FILE" >/tmp/rq.txt || exit
 
   cd "$GIT_ROOT" || exit
+  eval "$extras" || exit
+
   pip install -r /tmp/rq.txt && rm /tmp/rq.txt
   pytest "$GIT_ROOT"/"$test_dir"/"$fname" --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"$framework.xml"
   test $err = 0 # Return non-zero if pytest failed

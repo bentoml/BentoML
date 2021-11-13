@@ -229,8 +229,8 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/framework_integration_tests.sh catboost
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh detectron2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.detectron2 == 'true' }}
@@ -255,13 +255,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_easyocr_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh easyocr
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.easyocr == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./easyocr.xml
           flags: frameworks
+          verbose: true
 
 #  TODO: fix me
 #  evalml_integration_tests:
@@ -278,13 +282,17 @@ jobs:
 #          python-version: 3.8
 #      - name: Install test dependencies
 #        run: ./scripts/ci/install_dependencies.sh.cmd
-#      - name: Run tests
-#        run: ./scripts/ci/integration/frameworks/run_evalml_tests.sh
+#      - name: Run tests and generate coverage report
+#        run: ./scripts/ci/framework_integration_tests.sh evalml
+#        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.evalml == 'true' }}
 #        uses: codecov/codecov-action@v1.0.12
 #        with:
-#          flags: frameworks
+#           directory: ./
+#           files: ./evalml.xml
+#           flags: frameworks
+#           verbose: true
 
 #  TODO: fix me
 #  fastai_integration_tests:
@@ -301,13 +309,17 @@ jobs:
 #          python-version: 3.8
 #      - name: Install test dependencies
 #        run: ./scripts/ci/install_dependencies.sh.cmd
-#      - name: Run tests
-#        run: ./scripts/ci/integration/frameworks/run_fastai_tests.sh
+#      - name: Run tests and generate coverage report
+#        run: ./scripts/ci/framework_integration_tests.sh fastai
+#        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.fastai == 'true' }}
 #        uses: codecov/codecov-action@v1.0.12
 #        with:
+#          directory: ./
+#          files: ./fastai.xml
 #          flags: frameworks
+#          verbose: true
 
 #  TODO: fix me
 #  fasttext_integration_tests:
@@ -324,13 +336,17 @@ jobs:
 #          python-version: 3.8
 #      - name: Install test dependencies
 #        run: ./scripts/ci/install_dependencies.sh.cmd
-#      - name: Run tests
-#        run: ./scripts/ci/integration/frameworks/run_fasttext_tests.sh
+#      - name: Run tests and generate coverage report
+#        run: ./scripts/ci/framework_integration_tests.sh fasttext
+#        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.fasttext == 'true' }}
 #        uses: codecov/codecov-action@v1.0.12
 #        with:
+#          directory: ./
+#          files: ./fasttext.xml
 #          flags: frameworks
+#          verbose: true
 
   # TODO(aarnphm): add Trax/Flax support
 
@@ -348,13 +364,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_gluon_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh gluon
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.gluon == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./gluon.xml
           flags: frameworks
+          verbose: true
 
   h2o_integration_tests:
     needs: changes
@@ -370,13 +390,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_h2o_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh h2o
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.h2o == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./h2o.xml
           flags: frameworks
+          verbose: true
 
   keras_with_tf1_integration_tests:
     needs: changes
@@ -392,13 +416,17 @@ jobs:
           python-version: 3.7.10
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_keras_tf1_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh keras_tf1
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.keras_tf1 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./keras_tf1.xml
           flags: frameworks
+          verbose: true
 
   keras_with_tf2_integration_tests:
     needs: changes
@@ -414,13 +442,17 @@ jobs:
           python-version: 3.7.10
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_keras_tf2_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh keras_tf2
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.keras_tf2 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./keras_tf2.xml
           flags: frameworks
+          verbose: true
 
   lightgbm_integration_tests:
     needs: changes
@@ -436,13 +468,16 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_lightgbm_tests.sh
-      - name: Upload test coverage to Codecov
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh lightgbm
+        shell: bash
         if: ${{ needs.changes.outputs.lightgbm == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./lightgbm.xml
           flags: frameworks
+          verbose: true
 
   mlflow_integration_tests:
     needs: changes
@@ -458,13 +493,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_mlflow_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh mlflow
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.mlflow == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./mlflow.xml
           flags: frameworks
+          verbose: true
 
   onnx_integration_tests:
     needs: changes
@@ -480,13 +519,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_onnx_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh onnx
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.onnx == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./onnx.xml
           flags: frameworks
+          verbose: true
 
   onnxmlir_integration_tests:
     needs: changes
@@ -504,13 +547,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_onnxmlir_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh onnxmlir
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.onnxmlir == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./onnxmlir.xml
           flags: frameworks
+          verbose: true
 
   paddle_integration_tests:
     needs: changes
@@ -526,13 +573,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_paddle_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh paddle
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.paddle == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./paddle.xml
           flags: frameworks
+          verbose: true
 
   pycaret_integration_tests:
     needs: changes
@@ -548,13 +599,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_pycaret_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh pycaret
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.pycaret == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./pycaret.xml
           flags: frameworks
+          verbose: true
 
 #  TODO: fix me
 #  pyspark_mllib_integration_tests:
@@ -571,13 +626,17 @@ jobs:
 #          python-version: 3.7
 #      - name: Install test dependencies
 #        run: ./scripts/ci/install_dependencies.sh.cmd
-#      - name: Run tests
-#        run: ./scripts/ci/integration/frameworks/run_pyspark_tests.sh
+#      - name: Run tests and generate coverage report
+#        run: ./scripts/ci/framework_integration_tests.sh pyspark
+#        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.changes.outputs.pyspark_mllib == 'true' }}
 #        uses: codecov/codecov-action@v1.0.12
-#         with:
-#           flags: frameworks
+#        with:
+#          directory: ./
+#          files: ./pyspark.xml
+#          flags: frameworks
+#          verbose: true
 
   pytorch_integration_tests:
     needs: changes
@@ -593,13 +652,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_pytorch_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh pytorch
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.pytorch == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./pytorch.xml
           flags: frameworks
+          verbose: true
 
   pytorch_lightning_integration_tests:
     needs: changes
@@ -619,13 +682,17 @@ jobs:
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_pytorch_lightning_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh pytorch_lightning
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.pytorch_lightning == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./pytorch_lightning.xml
           flags: frameworks
+          verbose: true
 
   sklearn_integration_tests:
     needs: changes
@@ -641,13 +708,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_sklearn_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh sklearn
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.sklearn == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./sklearn.xml
           flags: frameworks
+          verbose: true
 
   spacy_integration_tests:
     needs: changes
@@ -663,13 +734,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_spacy_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh spacy
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.spacy == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./sklearn.xml
           flags: frameworks
+          verbose: true
 
   statsmodels_integration_tests:
     needs: changes
@@ -685,13 +760,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_statsmodels_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh statsmodels
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.statsmodels == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./statsmodels.xml
           flags: frameworks
+          verbose: true
 
   tensorflow_v1_integration_tests:
     needs: changes
@@ -707,13 +786,17 @@ jobs:
           python-version: 3.7
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_tf1_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh tf1
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.tf1 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./tf1.xml
           flags: frameworks
+          verbose: true
 
   tensorflow_v2_integration_tests:
     needs: changes
@@ -729,13 +812,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_tf2_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh tf2
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.tf2 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./tf2.xml
           flags: frameworks
+          verbose: true
 
   transformers_integration_tests:
     needs: changes
@@ -751,13 +838,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_transformers_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh transformers
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.transformers == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./transformers.xml
           flags: frameworks
+          verbose: true
 
   xgboost_integration_tests:
     needs: changes
@@ -773,13 +864,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_xgboost_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh xgboost
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.xgboost == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./xgboost.xml
           flags: frameworks
+          verbose: true
 
 concurrency:
   group: frameworks${{ github.event.pull_request.number || github.sha }}

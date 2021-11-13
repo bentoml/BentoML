@@ -1,0 +1,3 @@
+!!merge <<: *torch_deps
+-f https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch1.9/index.html
+detectron2

@@ -2,7 +2,7 @@
 omit=
 	bentoml/_internal/types.py
 	bentoml/_internal/typing_extensions/numpy.py
-	bentoml/testing/utils.py
+	bentoml/testing/server.py
 	bentoml/build_utils.py
 	bentoml/_version.py
 	bentoml/__main__.py

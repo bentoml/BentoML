@@ -4,14 +4,6 @@ coverage:
   round: down
   range: "70...100"
 
-comment:
-  layout: "reach, diff, flags, files"
-  behavior: default
-  require_changes: false
-  require_base: no
-  require_head: yes
-  show_carryforward_flags: false
-
 flag_management:
   default_rules:
     carryforward: true

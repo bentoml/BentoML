@@ -49,9 +49,9 @@ jobs:
       - name: Lint check
         # TODO: after fix all pylint errors under bentoml uses `make ci-lint` instead
         run: make ci-flake8
-      - name: Type check
-        # TODO: after fix all types errors uses `make ci-types` instead
-        run: make ci-pyright
+#      - name: Type check
+#        # TODO: after fix all types errors uses `make ci-types` instead
+#        run: make ci-pyright
 
   documentation_spelling_check:
     runs-on: ubuntu-latest

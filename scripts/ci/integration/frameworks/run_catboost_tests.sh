@@ -11,6 +11,6 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT" || exit
 
 pip install catboost pandas
-pytest "$GIT_ROOT"/tests/integration/frameworks/test_catboost_impl.py --cov=bentoml --cov-config=.coveragerc
+pytest "$GIT_ROOT"/tests/integration/frameworks/test_catboost_impl.py --cov=bentoml --cov-config=.coveragerc --cov-report=xml
 
 test $error = 0 # Return non-zero if pytest failed

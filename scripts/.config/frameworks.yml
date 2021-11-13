@@ -1,0 +1,13 @@
+template: &tmpl
+  root_test_dir: "tests/integration/frameworks"
+  is_dir: false
+  dependencies: []
+
+catboost:
+  <<: *tmpl
+  dependencies:
+    - "catboost"
+    - "pandas"
+onnx:
+  <<: *tmpl
+  is_dir: true

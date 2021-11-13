@@ -51,6 +51,7 @@ jobs:
           filters: |
             related: &related
               - .github/workflows/frameworks.yml
+              - scripts/ci/framework_integration_tests.sh
             runner: &runner
               - *related
               - bentoml/_internal/runner/**
@@ -201,12 +202,14 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_catboost_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh catboost
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.catboost == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./catboost.xml
           flags: frameworks
 
   detectron2_integration_tests:

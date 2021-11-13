@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 
-set -x
-
 fname=$(basename "$0")
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
 source "./scripts/ci/helpers.sh"
-
-tree "${PWD}"
 
 err=0
 set_on_failed_callback "err=1"

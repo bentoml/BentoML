@@ -376,57 +376,57 @@ jobs:
           flags: frameworks
           verbose: true
 
-#   keras_with_tf1_integration_tests:
-#     needs: changes
-#     if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.keras_tf1 == 'true') || github.event_name == 'push' }}
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           fetch-depth: 0 # fetch all tags and branches
-#       - name: Setup python
-#         uses: actions/setup-python@v2
-#         with:
-#           python-version: 3.7.10
-#       - name: Install test dependencies
-#         run: ./scripts/ci/install_dependencies.sh.cmd
-#       - name: Run tests and generate coverage report
-#         run: ./scripts/ci/framework_integration_tests.sh keras_tf1
-#         shell: bash
-#       - name: Upload test coverage to Codecov
-#         if: ${{ needs.changes.outputs.keras_tf1 == 'true' }}
-#         uses: codecov/codecov-action@v2
-#         with:
-#           directory: ./
-#           files: ./keras_tf1.xml
-#           flags: frameworks
-#           verbose: true
+  keras_with_tf1_integration_tests:
+    needs: changes
+    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.keras_tf1 == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7.10
+      - name: Install test dependencies
+        run: ./scripts/ci/install_dependencies.sh.cmd
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh keras_tf1
+        shell: bash
+      - name: Upload test coverage to Codecov
+        if: ${{ needs.changes.outputs.keras_tf1 == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./keras_tf1.xml
+          flags: frameworks
+          verbose: true
 
-#   keras_with_tf2_integration_tests:
-#     needs: changes
-#     if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.keras_tf2 == 'true') || github.event_name == 'push' }}
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           fetch-depth: 0 # fetch all tags and branches
-#       - name: Setup python
-#         uses: actions/setup-python@v2
-#         with:
-#           python-version: 3.7.10
-#       - name: Install test dependencies
-#         run: ./scripts/ci/install_dependencies.sh.cmd
-#       - name: Run tests and generate coverage report
-#         run: ./scripts/ci/framework_integration_tests.sh keras_tf2
-#         shell: bash
-#       - name: Upload test coverage to Codecov
-#         if: ${{ needs.changes.outputs.keras_tf2 == 'true' }}
-#         uses: codecov/codecov-action@v2
-#         with:
-#           directory: ./
-#           files: ./keras_tf2.xml
-#           flags: frameworks
-#           verbose: true
+  keras_with_tf2_integration_tests:
+    needs: changes
+    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.keras_tf2 == 'true') || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7.10
+      - name: Install test dependencies
+        run: ./scripts/ci/install_dependencies.sh.cmd
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh keras_tf2
+        shell: bash
+      - name: Upload test coverage to Codecov
+        if: ${{ needs.changes.outputs.keras_tf2 == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./keras_tf2.xml
+          flags: frameworks
+          verbose: true
 
 #   lightgbm_integration_tests:
 #     needs: changes

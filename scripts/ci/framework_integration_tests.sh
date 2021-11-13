@@ -61,6 +61,7 @@ main() {
   pip install -r /tmp/rq.txt && rm /tmp/rq.txt
   pytest "$GIT_ROOT"/"$test_dir"/"$fname" --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"$framework.xml"
   test $err = 0 # Return non-zero if pytest failed
+  PASS "$framework integration tests passed!"
 }
 
 main "$@"

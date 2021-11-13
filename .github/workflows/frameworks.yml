@@ -213,6 +213,7 @@ jobs:
           directory: ./
           files: ./catboost.xml
           flags: frameworks
+          verbose: true
 
   detectron2_integration_tests:
     needs: changes
@@ -229,12 +230,16 @@ jobs:
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_detectron2_tests.sh
+        run: ./scripts/ci/framework_integration_tests.sh catboost
+        shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.detectron2 == 'true' }}
         uses: codecov/codecov-action@v1.0.12
         with:
+          directory: ./
+          files: ./detectron2.xml
           flags: frameworks
+          verbose: true
 
   easyocr_integration_tests:
     needs: changes

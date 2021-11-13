@@ -522,7 +522,14 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - uses: docker-practice/actions-setup-docker@master
+      - name: Install docker
+        run: |
+          apt-get update && apt-get install -y ca-certificates curl gnupg lsb-release
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+            $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh onnxmlir
         shell: bash

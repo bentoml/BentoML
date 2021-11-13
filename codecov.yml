@@ -4,18 +4,12 @@ coverage:
   round: down
   range: "70...100"
 
-codecov:
-  require_ci_to_pass: yes
-
 comment:
-  layout: "reach, diff, files"
+  layout: "reach, diff, flags, files"
   behavior: default
   require_changes: false
   require_base: no
   require_head: yes
-  branches:
-    - main
-    - bentoml-1.0
   show_carryforward_flags: false
 
 flag_management:

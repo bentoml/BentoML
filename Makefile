@@ -1,46 +1,53 @@
 .DEFAULT_GOAL := help
 
+GIT_ROOT=$(shell git rev-parse --show-toplevel)
+
 CHECKER_IMG := bentoml/checker:1.0
-BASE_ARGS := -u root -v $(PWD):/bentoml --rm
+BASE_ARGS := -i --rm --user root --volume $(GIT_ROOT):/bentoml
 
 CNTR_ARGS := $(BASE_ARGS) $(CHECKER_IMG)
 CMD := docker run $(CNTR_ARGS)
-TTY := docker run -it $(CNTR_ARGS)
+TTY := docker run -t $(CNTR_ARGS)
 
 help: ## Show all Makefile targets
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
 build-checker-img: ## Build checker images
-	@docker build -f ./scripts/Dockerfile-checker -t $(CHECKER_IMG) . || exit 1
-	@docker push $(CHECKER_IMG)
+	@if [[ `git diff $(GIT_ROOT)/docker/Dockerfile` != "" ]]; then \
+		docker build -f ./scripts/Dockerfile-checker -t $(CHECKER_IMG) . ;\
+		docker push $(CHECKER_IMG); \
+	fi
 
 pull-checker-img: ## Pull checker images
-	@docker pull $(CHECKER_IMG) || true
+	@if [[ `docker images --filter=reference='bentoml/checker' -q` == "" ]]; then \
+		echo "Pulling bentoml/checker:1.0..."; \
+	    docker pull bentoml/checker:1.0; \
+	fi \
 
-format: pull-checker-img ## Format code
+format: pull-checker-img ## Running code formatter: black and isort
 	$(CMD) ./scripts/tools/formatter.sh
-lint: pull-checker-img ## Lint code
+lint: pull-checker-img ## Running lint checker: flake8 and pylint
 	$(CMD) ./scripts/tools/linter.sh
-type: pull-checker-img ## Running type checker, mypy and pyright
+type: pull-checker-img ## Running type checker: mypy and pyright
 	$(CMD) ./scripts/tools/type_checker.sh
 
-ci-black: pull-checker-img ## Running black in CI
-	$(CMD) ./scripts/ci/style/black_check.sh
-ci-isort: pull-checker-img ## Running isort in CI
-	$(CMD) ./scripts/ci/style/isort_check.sh
-ci-format: ci-black ci-isort ## Running format check in CI
+__style_src := $(wildcard ./scripts/ci/style/*.sh)
+__style_name := ${__style_src:_check.sh=}
+__cmd :=$(foreach t, $(__style_name), ci-$(shell basename $(t)))
+__filters=ci-docs_spell
+tools := $(filter-out $(__filters),$(__cmd))
 
-ci-flake8: pull-checker-img ## Running flake8 in CI
-	$(CMD) ./scripts/ci/style/flake8_check.sh
-ci-pylint: pull-checker-img ## Running pylint in CI
-	$(CMD) ./scripts/ci/style/pylint_check.sh
-ci-lint: ci-flake8 ci-pylint ## Running lint check in CI
+ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, mypy, pyright
 
-ci-mypy: pull-checker-img ## Running mypy in CI
-	$(CMD) ./scripts/ci/style/mypy_check.sh
-ci-pyright: pull-checker-img ## Running pyright in CI
-	$(CMD) ./scripts/ci/style/pyright_check.sh
-ci-type: ci-mypy ci-pyright ## Running type check in CI
+ci-%: build-checker-img pull-checker-img
+	$(eval style := $(subst ci-, ,$@))
+	$(CMD) ./scripts/ci/style/$(style)_check.sh
+
+ci-format: ci-black ci-isort ## Running format check in CI: black, isort
+
+ci-lint: ci-flake8 ci-pylint ## Running lint check in CI: flake8, pylint
+
+ci-type: ci-mypy ci-pyright ## Running type check in CI: mypy, pyright
 
 
 install-local: ## Install BentoML from current directory in editable mode

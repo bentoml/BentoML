@@ -16,18 +16,23 @@ ignore:
 coverage:
   precision: 2
   round: down
-  range: "70...100"
+  range: "70...100" 
+  status:
+    project:
+      default:
+        target: 83%
+        threshold: 10%
+        base: auto 
+    patch:
+      default:
+        target: 83%
+        threshold: 10%
+        if_ci_failed: failure
+        only_pulls: true
 
 flag_management:
   default_rules:
     carryforward: true
-    ignore:
-    paths:
-      - "bentoml/**"
-    statuses:
-      name_prefix: "internal/" 
-      type: "project"
-      include_changes: auto
   frameworks:
     name: frameworks
     paths:

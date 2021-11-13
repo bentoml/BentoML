@@ -74,7 +74,7 @@ mlflow:
   is_dir: true
   dependencies:
     - "mlflow"
-    - "sklearn"
+    - "scikit-learn"
 
 onnx:
   <<: *tmpl
@@ -136,7 +136,7 @@ pytorch:
 sklearn:
   <<: *tmpl
   dependencies:
-    - "sklearn"
+    - "scikit-learn"
     - "pandas"
 
 spacy:

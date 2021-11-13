@@ -7,7 +7,7 @@ source ./scripts/ci/helpers.sh
 err=0
 set_on_failed_callback "err=1"
 
-CONFIG_FILE="./scripts/ci/.frameworks.yml"
+CONFIG_FILE="./scripts/ci/config.yml"
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
 num_args=${#@}
@@ -36,9 +36,14 @@ getval(){
 
 main() {
   # validate YAML file
+  if ! [ -f "$CONFIG_FILE" ]; then
+    FAIL "$CONFIG_FILE does not exists"
+    exit 1
+  fi
+
   if ! (yq_docker e --exit-status 'tag == "!!map" or tag== "!!seq"' "$CONFIG_FILE"> /dev/null); then
     FAIL "Invalid YAML file"
-  exit 1
+    exit 1
   fi
 
   local framework=$1
@@ -65,10 +70,14 @@ main() {
 
   # setup tests environment
   pip install -r /tmp/rq.txt && rm /tmp/rq.txt
-  eval "$extras" || exit
+
+  if [[ "$extras" != "" ]]; then
+    eval "$extras" || exit
+  fi
 
   pytest "$GIT_ROOT"/"$test_dir"/"$fname" --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"$framework.xml"
   test $err = 0 # Return non-zero if pytest failed
+
   PASS "$framework integration tests passed!"
 }
 

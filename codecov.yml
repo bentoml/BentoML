@@ -9,9 +9,12 @@ comment:
   show_carryforward_flags: false
 
 ignore:
-  - bentoml/__main__.py
-  - bentoml/_version.py
-  - bentoml/testing/*
+  - "bentoml/testing"
+  - "bentoml/_internal/typing_extensions"
+  - "bentoml/_internal/types.py"
+  - "bentoml/__main__.py"
+  - "bentoml/_version.py"
+  - "bentoml/build_utils.py"
 
 coverage:
   precision: 2
@@ -58,7 +61,6 @@ flag_management:
       - bentoml/sklearn.py
       - bentoml/spacy.py
       - bentoml/statsmodels.py
-      - bentoml/spacy.py
       - bentoml/statsmodels.py
       - bentoml/tensorflow.py
       - bentoml/transformers.py
@@ -68,4 +70,4 @@ flag_management:
   bento-server:
     name: bento-server
     paths:
-      - "bentoml/_internal/**"
+      - "bentoml/_internal/**/*"

@@ -8,6 +8,8 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 
 source "./scripts/ci/helpers.sh"
 
+tree "${PWD}"
+
 err=0
 set_on_failed_callback "err=1"
 
@@ -28,7 +30,7 @@ fi
 
 yq_docker() {
   if [[ $(docker images --filter=reference='bentoml/checker' -q) == "" ]]; then
-      docker pull bentoml/checker:1.0 || true
+      docker pull bentoml/checker:1.0 || exit
   fi
   docker run -i --rm -v "$GIT_ROOT":/bentoml bentoml/checker:1.0 yq "$@"
 }

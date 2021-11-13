@@ -83,6 +83,7 @@ onnx:
     - "onnxruntime"
     - "skl2onnx"
 
+# TODO: fix docker in docker problems
 onnxmlir:
   <<: *tmpl
   dependencies:

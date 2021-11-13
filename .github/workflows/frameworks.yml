@@ -520,19 +520,16 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install docker
-        run: |
-          apt-get update && apt-get install -y ca-certificates curl gnupg lsb-release
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-          echo \
-            "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-            $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-          apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
+      - name: Install additional dependencies
+        run: |
+          python3 -m pip install tensorflow==2.2.0 pandas tf2onnx
+          export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
+          export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
+          apt-get update && apt-get install curl -y
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh onnxmlir
-        shell: bash
+        run: pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"onnxmlir.xml"
       - name: Upload test coverage to Codecov
         if: ${{ needs.changes.outputs.onnxmlir == 'true' }}
         uses: codecov/codecov-action@v2

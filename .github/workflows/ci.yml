@@ -278,6 +278,87 @@ jobs:
           files: ./internal.xml
           verbose: true
 
+  bento_server_e2e_tests:
+    name: bento_server_e2e_tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # TODO(bojiang): Fixes windows path problem
+        os: [ubuntu-latest, macos-latest]
+        python-version: [ '3.7', '3.8', '3.9' ]
+    defaults:
+      run:
+        shell: bash
+
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+    name: python${{ matrix.python-version }}_e2e_tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # fetch all tags and branches
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+
+      - name: Update PATH
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Update Path for Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Install yq (fix Docker licensing in MacOS)
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          brew install yq
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        id: cache-pip
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/run_tests.sh internal --project-root tests/e2e/bento_server_general_features -vvv --capture=tee-sys
+
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          flags: bento-server
+          directory: ./
+          files: ./internal.xml
+          verbose: true
+
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

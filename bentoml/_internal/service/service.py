@@ -134,6 +134,16 @@ class Service:
         D = t.TypeVar("D", bound=t.Callable)
 
         def decorator(func: D) -> D:
+            from ..io_descriptors import Multipart
+
+            if isinstance(output, Multipart):
+                logger.warning(
+                    f"Found Multipart as the output of API `{name or func.__name__}`. "
+                    "Multipart response is rarely used in the real world,"
+                    " less clients/browsers support it. "
+                    "Make sure you know what you are doing."
+                )
+
             self._add_inference_api(func, input, output, name, doc, route)
             return func
 

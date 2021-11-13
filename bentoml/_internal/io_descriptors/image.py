@@ -1,12 +1,15 @@
 import io
 import mimetypes
 import typing as t
+from urllib.parse import quote
 
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BentoMLException, InvalidArgument
+from bentoml._internal.types import FileLike
+
+from ...exceptions import BadInput, BentoMLException, InvalidArgument
 from ..utils import LazyLoader
 from .base import IODescriptor
 
@@ -101,9 +104,10 @@ class Image(IODescriptor):
 
         self._mime_type = mime_type.lower()
         self._pilmode = pilmode
-
-        ext = mimetypes.guess_extension(self._mime_type)
-        self._format = PIL.Image.EXTENSION[ext]
+        self._mime_type = mime_type
+        self._ext = mimetypes.guess_extension(mime_type)
+        if not self._ext:
+            raise ValueError(f"{mime_type} is not supported by the Image IO")
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -111,37 +115,45 @@ class Image(IODescriptor):
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
 
-    async def from_http_request(self, request: Request) -> "PIL.Image":
+    async def from_http_request(self, request: Request) -> "PIL.Image.Image":
         content_type, _ = parse_options_header(request.headers["content-type"])
-        if content_type == b"multipart/form-data":
-            form = await request.form()
-            contents = await next(iter(form.values())).read()
-            return PIL.Image.open(io.BytesIO(contents))
+        mime_type = content_type.decode()
+        ext = mimetypes.guess_extension(mime_type)
+        if (mime_type.startswith("image/") or content_type == self._mime_type) and ext:
+            bio = io.BytesIO(await request.body())
+            bio.name = f"img{ext}"
+            return PIL.Image.open(bio)
 
-        if (
-            content_type.decode("utf-8").startswith("image/")
-            or content_type == self._mime_type
-        ):
-            return PIL.Image.open(io.BytesIO(await request.body()))
-
-        raise BentoMLException(
-            f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
+        raise BadInput(
+            f"{self.__class__.__name__} should get `{self._mime_type}` or `image/*`, got {content_type} instead"
         )
 
     async def to_http_response(
         self, obj: t.Union["np.ndarray", "PIL.Image.Image"]
     ) -> Response:
-        if not isinstance(obj, (np.ndarray, PIL.Image.Image)):
+        if isinstance(obj, np.ndarray):
+            image = PIL.Image.fromarray(obj)
+        elif isinstance(obj, PIL.Image.Image):
+            image = obj
+        else:
             raise InvalidArgument(
                 f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
                 " only supports `np.ndarray` and `PIL.Image`"
             )
-        image = (
-            PIL.Image.fromarray(obj, mode=self._pilmode)
-            if isinstance(obj, np.ndarray)
-            else obj
-        )
+        filename = f"img{self._ext}"
 
         ret = io.BytesIO()
-        image.save(ret, self._format)
-        return Response(ret.getvalue(), media_type=self._mime_type)
+        ret.name = filename
+        image.save(ret)
+
+        # rfc2183
+        content_disposition_filename = quote(filename)
+        if content_disposition_filename != filename:
+            content_disposition = "attachment; filename*=utf-8''{}".format(
+                content_disposition_filename
+            )
+        else:
+            content_disposition = f'attachment; filename="{filename}"'
+        headers = {"content-disposition": content_disposition}
+
+        return Response(ret.getvalue(), media_type=self._mime_type, headers=headers)

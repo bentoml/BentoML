@@ -27,7 +27,7 @@ yq_docker() {
   if [[ $(docker images --filter=reference='bentoml/checker' -q) == "" ]]; then
       docker pull bentoml/checker:1.0 || true
   fi
-  docker run -it --rm -v "${PWD}":/bentoml bentoml/checker:1.0 yq "$@"
+  docker run -i --rm -v "${PWD}":/bentoml bentoml/checker:1.0 yq "$@"
 }
 
 getval(){

@@ -26,6 +26,14 @@ coverage:
         target: 83%
         threshold: 10%
         base: auto 
+      frameworks:
+        target: 91%
+        flags:
+          - frameworks
+      bento-server:
+        target: 81%
+        flags:
+          - bento-server
     patch:
       default:
         target: 83%
@@ -36,37 +44,46 @@ coverage:
 flag_management:
   default_rules:
     carryforward: true
+    paths:
+      - "bentoml/_internal/**/*"
+      - "bentoml/*.py"
+    statuses:
+      type: "project"
+      target: "auto"
+      threshold: 10%
   frameworks:
+    carryforward: true
     name: frameworks
     paths:
-      - bentoml/catboost.py
-      - bentoml/detectron.py
-      - bentoml/easyocr.py
-      - bentoml/evalml.py
-      - bentoml/fastai.py
-      - bentoml/fasttext.py
-      - bentoml/flax.py
-      - bentoml/gluon.py
-      - bentoml/h2o.py
-      - bentoml/keras.py
-      - bentoml/lightgbm.py
-      - bentoml/mlflow.py
-      - bentoml/onnx.py
-      - bentoml/onnxmlir.py
-      - bentoml/paddle.py
-      - bentoml/pycaret.py
-      - bentoml/pyspark.py
-      - bentoml/pytorch.py
-      - bentoml/pytorch_lightning.py
-      - bentoml/sklearn.py
-      - bentoml/spacy.py
-      - bentoml/statsmodels.py
-      - bentoml/tensorflow.py
-      - bentoml/transformers.py
-      - bentoml/xgboost.py
+      - "bentoml/catboost.py"
+      - "bentoml/detectron.py"
+      - "bentoml/easyocr.py"
+      - "bentoml/evalml.py"
+      - "bentoml/fastai.py"
+      - "bentoml/fasttext.py"
+      - "bentoml/flax.py"
+      - "bentoml/gluon.py"
+      - "bentoml/h2o.py"
+      - "bentoml/keras.py"
+      - "bentoml/lightgbm.py"
+      - "bentoml/mlflow.py"
+      - "bentoml/onnx.py"
+      - "bentoml/onnxmlir.py"
+      - "bentoml/paddle.py"
+      - "bentoml/pycaret.py"
+      - "bentoml/pyspark.py"
+      - "bentoml/pytorch.py"
+      - "bentoml/pytorch_lightning.py"
+      - "bentoml/sklearn.py"
+      - "bentoml/spacy.py"
+      - "bentoml/statsmodels.py"
+      - "bentoml/tensorflow.py"
+      - "bentoml/transformers.py"
+      - "bentoml/xgboost.py"
     statuses:
       target: 90%
   bento-server:
+    carryforward: true
     name: bento-server
     paths:
       - "bentoml/_internal/**/*"

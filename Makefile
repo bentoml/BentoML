@@ -43,10 +43,13 @@ ci-%: build-checker-img pull-checker-img
 	$(eval style := $(subst ci-, ,$@))
 	$(CMD) ./scripts/ci/style/$(style)_check.sh
 
+.PHONY: ci-format
 ci-format: ci-black ci-isort ## Running format check in CI: black, isort
 
+.PHONY: ci-lint
 ci-lint: ci-flake8 ci-pylint ## Running lint check in CI: flake8, pylint
 
+.PHONY: ci-type
 ci-type: ci-mypy ci-pyright ## Running type check in CI: mypy, pyright
 
 

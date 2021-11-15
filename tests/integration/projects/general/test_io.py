@@ -69,7 +69,7 @@ async def test_numpy(host, async_request):
         f"http://{host}/predict_invalid_type",
         headers={"Content-Type": "application/json"},
         data="[[2,1],[4,3]]",
-        assert_status=400,
+        assert_status=500,
     )
 
 

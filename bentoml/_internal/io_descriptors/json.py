@@ -5,7 +5,7 @@ import typing as t
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BadInput, BentoMLException
+from ...exceptions import BadInput, BentoMLException, MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
@@ -16,12 +16,10 @@ if t.TYPE_CHECKING:  # pragma: no cover
 else:  # pragma: no cover
     np = LazyLoader("np", globals(), "numpy")
     pd = LazyLoader("pd", globals(), "pandas")
-    pydantic = LazyLoader(
-        "pydantic",
-        globals(),
-        "pydantic",
-        exc_msg="`pydantic` is required in order to use `pydantic_model`",
-    )
+    try:
+        import pydantic
+    except ImportError:
+        pydantic = None
 
 MIME_TYPE_JSON = "application/json"
 
@@ -113,6 +111,10 @@ class JSON(IODescriptor):
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
         if pydantic_model is not None:
+            if pydantic is None:
+                raise MissingDependencyException(
+                    "`pydantic` must be installed to use `pydantic_model`"
+                )
             self._pydantic_model = pydantic_model
 
         self._validate_json = validate_json

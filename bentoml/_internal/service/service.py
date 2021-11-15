@@ -4,7 +4,6 @@ import typing as t
 from typing import TYPE_CHECKING
 
 from ...exceptions import BentoMLException
-from ..bento.bento import Bento
 from ..io_descriptors import IODescriptor
 from ..runner import Runner
 from ..types import Tag
@@ -16,7 +15,11 @@ if TYPE_CHECKING:
     from starlette.middleware import Middleware
     from starlette.types import ASGIApp
 
-WSGI_APP = t.Callable[[t.Callable, t.Mapping[str, t.Any]], t.Iterable[bytes]]
+    from ..bento.bento import Bento
+
+WSGI_APP = t.Callable[
+    [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
+]
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +42,7 @@ class Service:
     name: str
     # Tag/Bento/Version are only applicable if the service was load from a bento
     tag: t.Optional[Tag] = None
-    bento: t.Optional[Bento] = None
+    bento: "t.Optional[Bento]" = None
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None
@@ -79,17 +82,21 @@ class Service:
         if self._working_dir and sys.path:
             sys.path.remove(self._working_dir)
 
+    C = t.TypeVar("C", bound=t.Callable)
+
     def api(
         self,
-        input: IODescriptor,
-        output: IODescriptor,
+        input: IODescriptor[t.Any],
+        output: IODescriptor[t.Any],
         name: t.Optional[str] = None,
         doc: t.Optional[str] = None,
         route: t.Optional[str] = None,
-    ) -> t.Callable[[t.Callable], t.Callable]:
+    ) -> t.Callable[[C], C]:
         """Decorator for adding InferenceAPI to this service"""
 
-        def decorator(func: t.Callable) -> t.Callable:
+        D = t.TypeVar("D", bound=t.Callable)
+
+        def decorator(func: D) -> D:
             self._add_inference_api(func, input, output, name, doc, route)
             return func
 
@@ -97,9 +104,9 @@ class Service:
 
     def _add_inference_api(
         self,
-        func: t.Callable,
-        input: IODescriptor,
-        output: IODescriptor,
+        func: t.Callable[..., t.Any],
+        input: IODescriptor[t.Any],
+        output: IODescriptor[t.Any],
         name: t.Optional[str],
         doc: t.Optional[str],
         route: t.Optional[str],
@@ -126,10 +133,14 @@ class Service:
 
         return ServiceAppFactory(self)()
 
-    def mount_asgi_app(self, app: "ASGIApp", path: str = "/", name: str = None) -> None:
+    def mount_asgi_app(
+        self, app: "ASGIApp", path: str = "/", name: t.Optional[str] = None
+    ) -> None:
         self._mount_apps.append((app, path, name))  # type: ignore
 
-    def mount_wsgi_app(self, app: WSGI_APP, path: str = "/", name: str = None) -> None:
+    def mount_wsgi_app(
+        self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
+    ) -> None:
         from starlette.middleware.wsgi import WSGIMiddleware
 
         self._mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
@@ -144,15 +155,12 @@ class Service:
 
         return get_service_openapi_doc(self)
 
-    def set_build_options(self, **build_options):
+    def set_build_options(self, **build_options):  # type: ignore
         ...
 
     def __str__(self):
         if self.bento:
-            return (
-                f'bentoml.Service(tag="{self.tag}", '
-                f'path="{self.bento.fs.getsyspath("/")}")'
-            )
+            return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
         elif self._import_str and self._working_dir:
             return (
                 f'bentoml.Service(name="{self.name}", '

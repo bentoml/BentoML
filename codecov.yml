@@ -1,0 +1,73 @@
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_base: no
+  require_head: no
+  branches:
+    - "main"
+    - "bentoml-1.0"
+  show_carryforward_flags: true
+
+ignore:
+  - "bentoml/testing/**/*"
+  - "bentoml/_internal/types.py"
+  - "bentoml/__main__.py"
+  - "bentoml/_version.py"
+  - "bentoml/build_utils.py"
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100" 
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 10%
+      frameworks:
+        target: auto
+        threshold: 10%
+        flags:
+          - frameworks
+      bento-server:
+        target: auto
+        threshold: 10%
+        flags:
+          - bento-server
+    patch:
+      default:
+        threshold: 10%
+
+flags:
+  frameworks:
+    carryforward: true
+    paths:
+      - bentoml/catboost.py
+      - bentoml/detectron.py
+      - bentoml/easyocr.py
+      - bentoml/evalml.py
+      - bentoml/fastai.py
+      - bentoml/fasttext.py
+      - bentoml/flax.py
+      - bentoml/gluon.py
+      - bentoml/h2o.py
+      - bentoml/keras.py
+      - bentoml/lightgbm.py
+      - bentoml/mlflow.py
+      - bentoml/onnx.py
+      - bentoml/onnxmlir.py
+      - bentoml/paddle.py
+      - bentoml/pycaret.py
+      - bentoml/pyspark.py
+      - bentoml/pytorch.py
+      - bentoml/pytorch_lightning.py
+      - bentoml/sklearn.py
+      - bentoml/spacy.py
+      - bentoml/statsmodels.py
+      - bentoml/tensorflow.py
+      - bentoml/transformers.py
+      - bentoml/xgboost.py
+  bento-server:
+    carryforward: true
+    paths:
+      - "bentoml/_internal/**/*"

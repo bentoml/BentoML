@@ -15,7 +15,7 @@ def test_create_simplebento(tmpdir):
         version="1.0",
         build_ctx="./simplebento",
         description="simple bento",
-        models=[],
+        additional_models=[],
         # models=['iris_classifier:v123'],
         include=["*.py", "config.json", "somefile", "*dir*"],
         exclude=[

@@ -42,7 +42,7 @@ class Bento(StoreItem):
     def create(
         svc: "Service",
         build_ctx: PathType,
-        models: t.List[str],
+        additional_models: t.List[str],
         version: t.Optional[str],
         description: t.Optional[str],
         include: t.List[str],
@@ -60,6 +60,7 @@ class Bento(StoreItem):
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
         ctx_fs = fs.open_fs(build_ctx)
 
+        models = additional_models
         # Add Runner required models to models list
         for runner in svc._runners.values():
             models += runner.required_models

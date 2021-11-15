@@ -203,7 +203,13 @@ class BentoStore(Store[Bento]):
         super().__init__(base_path, Bento)
 
 
-class BentoMetadata(UserDict[str, t.Any]):
+if t.TYPE_CHECKING:
+    BentoMetadataBase = UserDict[str, t.Any]
+else:
+    BentoMetadataBase = UserDict
+
+
+class BentoMetadata(BentoMetadataBase):
     def dump(self, stream: t.IO[str]):
         return yaml.dump(self.data, stream, sort_keys=False)
 

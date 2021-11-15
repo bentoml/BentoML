@@ -2,7 +2,6 @@ import base64
 import io
 import logging
 import os
-import sys
 import typing as t
 import urllib
 import urllib.parse
@@ -27,10 +26,10 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
-if sys.version_info < (3, 9):
-    PathType = t.Union[str, os.PathLike]
-else:
+if t.TYPE_CHECKING:
     PathType = t.Union[str, os.PathLike[str]]
+else:
+    PathType = t.Union[str, os.PathLike]
 
 JSONSerializable = t.NewType("JSONSerializable", object)
 

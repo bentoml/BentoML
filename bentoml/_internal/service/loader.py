@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
-from ...exceptions import BentoMLException, InvalidArgument, NotFound
+from ...exceptions import BentoMLException, NotFound
 from ..configuration.containers import BentoMLContainer
 from ..models.store import ModelStore
 
 if TYPE_CHECKING:
+    from ..bento import BentoStore
     from .service import Service
 
 logger = logging.getLogger(__name__)
@@ -163,7 +164,7 @@ def import_service(
 
 @inject
 def load_bento(
-    bento_tag: str, bento_store=Provide[BentoMLContainer.bento_store]
+    bento_tag: str, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
 ) -> "Service":
     """Load a Service instance from a bento found in local bento store:
 
@@ -196,8 +197,6 @@ def load(
     svc_import_path_or_bento_tag: str, working_dir: t.Optional[str] = None
 ) -> "Service":
     """Load a Service instance from source code or a bento in local bento store."""
-    if not isinstance(svc_import_path_or_bento_tag, str):
-        raise InvalidArgument("bentoml.load argument must be str type")
 
     try:
         svc = import_service(svc_import_path_or_bento_tag, working_dir)

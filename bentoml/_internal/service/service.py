@@ -16,7 +16,9 @@ if TYPE_CHECKING:
     from starlette.middleware import Middleware
     from starlette.types import ASGIApp
 
-WSGI_APP = t.Callable[[t.Callable, t.Mapping[str, t.Any]], t.Iterable[bytes]]
+WSGI_APP = t.Callable[
+    [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
+]
 
 logger = logging.getLogger(__name__)
 
@@ -47,14 +49,14 @@ class Service:
     _import_str: t.Optional[str] = None
 
     def __init__(self, name: str, runners: t.Optional[t.List[Runner]] = None):
-        lname = name.lower()
+        lower_name = name.lower()
 
-        if name != lname:
-            logger.warning(f"converting {name} to lowercase: {lname}")
+        if name != lower_name:
+            logger.warning(f"converting {name} to lowercase: {lower_name}")
 
         # Service name must be a valid dns1123 subdomain string
-        validate_tag_str(lname)
-        self.name = lname
+        validate_tag_str(lower_name)
+        self.name = lower_name
 
         if runners is not None:
             assert all(
@@ -81,15 +83,15 @@ class Service:
 
     def api(
         self,
-        input: IODescriptor,
-        output: IODescriptor,
+        input: IODescriptor[t.Any],  # noqa
+        output: IODescriptor[t.Any],
         name: t.Optional[str] = None,
         doc: t.Optional[str] = None,
         route: t.Optional[str] = None,
-    ) -> t.Callable[[t.Callable], t.Callable]:
+    ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         """Decorator for adding InferenceAPI to this service"""
 
-        def decorator(func: t.Callable) -> t.Callable:
+        def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             self._add_inference_api(func, input, output, name, doc, route)
             return func
 
@@ -97,9 +99,9 @@ class Service:
 
     def _add_inference_api(
         self,
-        func: t.Callable,
-        input: IODescriptor,
-        output: IODescriptor,
+        func: t.Callable[..., t.Any],
+        input: IODescriptor[t.Any],  # noqa
+        output: IODescriptor[t.Any],
         name: t.Optional[str],
         doc: t.Optional[str],
         route: t.Optional[str],
@@ -126,15 +128,19 @@ class Service:
 
         return ServiceAppFactory(self)()
 
-    def mount_asgi_app(self, app: "ASGIApp", path: str = "/", name: str = None) -> None:
+    def mount_asgi_app(
+        self, app: "ASGIApp", path: str = "/", name: t.Optional[str] = None
+    ) -> None:
         self._mount_apps.append((app, path, name))  # type: ignore
 
-    def mount_wsgi_app(self, app: WSGI_APP, path: str = "/", name: str = None) -> None:
+    def mount_wsgi_app(
+        self, app: WSGI_APP, path: str = "/", name: t.Optional[str] = None
+    ) -> None:
         from starlette.middleware.wsgi import WSGIMiddleware
 
         self._mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
-    def add_agsi_middleware(
+    def add_asgi_middleware(
         self, middleware_cls: t.Type["Middleware"], **options: t.Any
     ) -> None:
         self._middlewares.append((middleware_cls, options))
@@ -144,7 +150,7 @@ class Service:
 
         return get_service_openapi_doc(self)
 
-    def set_build_options(self, **build_options):
+    def set_build_options(self, **build_options: str):
         ...
 
     def __str__(self):

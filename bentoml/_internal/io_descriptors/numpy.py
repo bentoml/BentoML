@@ -1,35 +1,28 @@
 import json
-import logging
+import sys
 import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 
 if t.TYPE_CHECKING:  # pragma: no cover
     import numpy as np
-
-    _major, _minor = list(
-        map(lambda x: int(x), np.__version__.split(".")[:2])  # pylint: disable=W0108
-    )
-    if (_major, _minor) > (1, 20):
-        from numpy.typing import ArrayLike, DTypeLike  # pylint: disable=E0611,W0611
-    else:
-        from ..typing_extensions.numpy import (  # pylint: disable=E0611,W0611
-            ArrayLike,
-            DTypeLike,
-        )
 else:
     np = LazyLoader("np", globals(), "numpy")
 
-logger = logging.getLogger(__name__)
+if sys.version_info >= (3, 8):
+    from typing import SupportsIndex
+else:
+    from typing_extensions import SupportsIndex
+
+_ShapeLike = t.Union[SupportsIndex, t.Sequence[SupportsIndex]]
 
 
-class NumpyNdarray(IODescriptor):
+class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
     """
     `NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
      either inputs will be converted to or outputs will be converted from type
@@ -95,26 +88,42 @@ class NumpyNdarray(IODescriptor):
 
     def __init__(
         self,
-        dtype: t.Optional["DTypeLike"] = None,
+        dtype: t.Optional[t.Union[str, "np.dtype[t.Any]"]] = None,
         enforce_dtype: bool = False,
-        shape: t.Optional[t.Tuple[int, ...]] = None,
+        shape: t.Optional[_ShapeLike] = None,
         enforce_shape: bool = False,
     ):
-        if isinstance(dtype, str):
-            dtype = np.dtype(dtype)
+        if dtype is not None:
+            self._dtype = np.dtype(dtype)
+        if shape is not None:
+            self._shape = shape
+        self._enforce_dtype = enforce_dtype or dtype is not None
+        self._enforce_shape = enforce_shape or shape is not None
 
-        self._dtype = dtype
-        self._enforce_dtype = enforce_dtype
-        self._shape = shape
-        self._enforce_shape = enforce_shape
+    @staticmethod
+    def openapi_schema() -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
+        return {
+            MIME_TYPE_JSON: {
+                "schema": dict(
+                    type="array",
+                    items=dict(
+                        oneOf={"type": "integer"}.update(dict(type="array", items={}))
+                    ),
+                )
+            }
+        }
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return self.openapi_schema()
 
-    async def from_http_request(self, request: Request) -> "ArrayLike":
+    async def from_http_request(
+        self, request: Request
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         """
         Process incoming requests and convert incoming
          objects to `numpy.ndarray`
@@ -126,21 +135,16 @@ class NumpyNdarray(IODescriptor):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        obj = await request.json()
-        res = np.array(obj)
-        if self._enforce_dtype:
-            if self._dtype is None:
-                logger.warning("dtype is None or not yet specified.")
-            else:
-                res = res.astype(self._dtype)
-        if self._enforce_shape:
-            if self._shape is None:
-                logger.warning("shape is None or not yet specified.")
-            else:
-                res = res.reshape(self._shape)
+        res: "np.ndarray[t.Any, np.dtype[t.Any]]" = np.asarray(await request.json())
+        if self._enforce_dtype and hasattr(self, "_dtype"):
+            res = res.astype(self._dtype)
+        if self._enforce_shape and hasattr(self, "_shape"):
+            res = res.reshape(self._shape)
         return res
 
-    async def to_http_response(self, obj: "np.ndarray") -> Response:
+    async def to_http_response(
+        self, obj: "np.ndarray[t.Any, np.dtype[t.Any]]"
+    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 
@@ -151,16 +155,12 @@ class NumpyNdarray(IODescriptor):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
-        if not isinstance(obj, np.ndarray):
-            raise InvalidArgument(
-                f"return object is not of type `np.ndarray`, got type {type(obj)} instead"
-            )
         return Response(content=json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
     @classmethod
     def from_sample(
         cls,
-        sample_input: "np.ndarray",
+        sample_input: "np.ndarray[t.Any, np.dtype[t.Any]]",
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
     ) -> "NumpyNdarray":
@@ -168,8 +168,8 @@ class NumpyNdarray(IODescriptor):
         Create a NumpyNdarray IO Descriptor from given inputs.
 
         Args:
-            sample_input (`~bentoml._internal.typing_extensions.numpy.ArrayLike`):
-                Given inputs
+            sample_input (`np.ndarray[Any, np.dtype[Any]]`):
+                Sample inputs for IO descriptors.
             enforce_dtype (`bool`, `optional`, default to `True`):
                 Enforce a certain data type. `dtype` must be specified at function
                  signature. If you don't want to enforce a specific dtype then change

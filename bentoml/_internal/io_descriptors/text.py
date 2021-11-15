@@ -3,13 +3,12 @@ import typing as t
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import InvalidArgument
 from .base import IODescriptor
 
 MIME_TYPE = "text/plain"
 
 
-class Text(IODescriptor):
+class Text(IODescriptor[str]):
     """
 
     `Text` defines API specification for the inputs/outputs of a Service. `Text`
@@ -57,20 +56,21 @@ class Text(IODescriptor):
         IO Descriptor that represents strings type.
     """
 
+    @staticmethod
+    def openapi_schema() -> t.Dict[str, t.Dict[str, t.Any]]:
+        return {MIME_TYPE: {"schema": {"type": "string"}}}
+
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {MIME_TYPE: {"schema": {"type": "string"}}}
+        return self.openapi_schema()
 
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()
         return str(obj.decode("utf-8"))
 
     async def to_http_response(self, obj: str) -> Response:
-        if not isinstance(obj, str):
-            raise InvalidArgument(
-                f"return object is not of type `str`, got type {type(obj)} instead"
-            )
         return Response(obj, media_type=MIME_TYPE)

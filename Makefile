@@ -3,7 +3,7 @@
 GIT_ROOT=$(shell git rev-parse --show-toplevel)
 
 CHECKER_IMG := bentoml/checker:1.0
-BASE_ARGS := -i --rm --user root --volume $(GIT_ROOT):/bentoml
+BASE_ARGS := -i --rm -u $(shell id -u):$(shell id -g) -v $(GIT_ROOT):/bentoml
 
 CNTR_ARGS := $(BASE_ARGS) $(CHECKER_IMG)
 CMD := docker run $(CNTR_ARGS)
@@ -31,7 +31,7 @@ lint: pull-checker-img ## Running lint checker: flake8 and pylint
 type: pull-checker-img ## Running type checker: mypy and pyright
 	$(CMD) ./scripts/tools/type_checker.sh
 
-__style_src := $(wildcard ./scripts/ci/style/*.sh)
+__style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
 __style_name := ${__style_src:_check.sh=}
 __cmd :=$(foreach t, $(__style_name), ci-$(shell basename $(t)))
 __filters=ci-docs_spell
@@ -51,7 +51,6 @@ ci-lint: ci-flake8 ci-pylint ## Running lint check in CI: flake8, pylint
 
 .PHONY: ci-type
 ci-type: ci-mypy ci-pyright ## Running type check in CI: mypy, pyright
-
 
 install-local: ## Install BentoML from current directory in editable mode
 	pip install --editable .

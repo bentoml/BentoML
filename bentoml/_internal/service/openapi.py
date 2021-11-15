@@ -1,62 +1,66 @@
 import typing as t
 
-import attr
-
 if t.TYPE_CHECKING:
+    from ..io_descriptors import IODescriptor
     from . import Service
-    from .inference_api import InferenceAPI
 
 
 HEALTHZ_DESC = (
-    "Health check endpoint. Expecting an empty response with status code "
-    "200 when the service is in health state. The /healthz endpoint is "
-    "deprecated (since Kubernetes v1.16)"
+    "Health check endpoint. Expecting an empty response with status code"
+    " <code>200</code> when the service is in health state. The <code>/healthz</code>"
+    " endpoint is <b>deprecated</b> (since Kubernetes v1.16)"
 )
+
 LIVEZ_DESC = (
-    "Health check endpoint for Kubernetes. Healthy endpoint responses with "
-    "a 200 OK status."
+    "Health check endpoint for Kubernetes. Healthy endpoint responses with a"
+    " <code>200</code> OK status."
 )
+
 READYZ_DESC = (
-    "A 200 OK status from /readyz endpoint indicated the service is ready "
-    "to accept traffic. From that point and onward Kubernetes will use "
-    "/livez endpoint to perform periodic health checks"
+    "A <code>200</code> OK status from <code>/readyz</code> endpoint indicated"
+    " the service is ready to accept traffic. From that point and onward, Kubernetes"
+    " will use <code>/livez</code> endpoint to perform periodic health checks."
 )
+
 METRICS_DESC = "Prometheus metrics endpoint"
 
 
-@attr.s
-class Responses:
-    description = attr.ib()
-    content = attr.ib()
-
-
-def _mapval(func: t.Callable[..., t.Any], dict_: t.Dict[str, t.Any], factory=dict):
-    seq = factory()
-    seq.update(zip(dict_.keys(), map(func, dict_.values())))
-    return seq
-
-
-def _responses(api: "InferenceAPI") -> t.Dict[str, Responses]:
+def _generate_responses_schema(
+    output: "IODescriptor[t.Any]",
+) -> t.Dict[str, t.Dict[str, t.Any]]:
     resp = {
-        "200": Responses(
-            description="success", content=api.output.openapi_responses_schema()
+        "200": dict(
+            description="success",
+            content=output.openapi_responses_schema(),
         ),
-        "400": Responses(description="error", content="Bad Request"),
-        "500": Responses(description="error", content="Internal Server Error"),
+        "400": dict(description="Bad Request"),
+        "404": dict(description="Not Found"),
+        "500": dict(description="Internal Server Error"),
     }
-    return _mapval(lambda x: attr.asdict(x), resp)
+    return resp
 
 
 def get_service_openapi_doc(svc: "Service"):
+    # TODO: add licensing options for service swagger?
     info = {
         "title": svc.name,
         "description": "A Prediction Service built with BentoML",
-        "version": svc.version if svc.version else "0.0.0",
+        "contact": {"email": "contact@bentoml.ai"},
+        "version": svc.version or "0.0.0",
     }
-    docs = {
+    docs: t.Dict[str, t.Any] = {
         "openapi": "3.0.0",
         "info": info,
-        "tags": [{"name": "infra"}, {"name": "app"}],
+        "tags": [
+            {
+                "name": "infra",
+                "description": "Infrastructure endpoints",
+            },
+            {
+                "name": "app",
+                "description": "Inference endpoints",
+            },
+        ],
     }
 
     paths = {}
@@ -97,11 +101,11 @@ def get_service_openapi_doc(svc: "Service"):
         paths[api_path] = {
             "post": dict(
                 tags=["app"],
-                summary=f"Inference API endpoints '{repr(api)}' under service '{svc.name}'",
+                summary=f"InferenceAPI endpoints {repr(api)}",
                 description=api.doc or "",
                 operationId=f"{svc.name}__{api.name}",
                 requestBody=dict(content=api.input.openapi_request_schema()),
-                responses=_responses(api),
+                responses=_generate_responses_schema(api.output),
                 # examples=None,
                 # headers=None,
             )

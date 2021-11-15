@@ -83,14 +83,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-        - os: ubuntu-latest
-          path: ~/.cache/pip
-        - os: macos-latest
-          path: ~/Library/Caches/pip
-        - os: windows-latest
-          path: ~\AppData\Local\pip\Cache
         python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+        include:
+          - os: ubuntu-latest
+            path: ~/.cache/pip
+          - os: macos-latest
+            path: ~/Library/Caches/pip
+          - os: windows-latest
+            path: ~\AppData\Local\pip\Cache
     steps:
       - uses: actions/checkout@v2
         with:
@@ -106,6 +106,8 @@ jobs:
         with:
           path: ${{ matrix.path }}
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install test dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
@@ -137,10 +139,10 @@ jobs:
         # TODO(bojiang): Fixes windows path problem
         os: [ubuntu-latest, macos-latest]
         include:
-        - os: ubuntu-latest
-          path: ~/.cache/pip
-        - os: macos-latest
-          path: ~/Library/Caches/pip
+          - os: ubuntu-latest
+            path: ~/.cache/pip
+          - os: macos-latest
+            path: ~/Library/Caches/pip
     steps:
       - uses: actions/checkout@v2
         with:
@@ -155,6 +157,8 @@ jobs:
         with:
           path: ${{ matrix.path }}
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install test dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd

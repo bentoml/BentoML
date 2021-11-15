@@ -24,6 +24,7 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+poetry.lock
 
 # IDE
 .idea

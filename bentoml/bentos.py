@@ -76,8 +76,7 @@ def build(
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Bento:
-    """build a bento
-
+    """
     Build a Bento for this Service. A Bento is a file archive containing all the
     specifications, source code, and model files required to run and operate this
     service in production.

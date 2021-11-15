@@ -1,3 +1,4 @@
+import functools
 import logging
 import os
 import shutil
@@ -177,6 +178,7 @@ class _ONNXRunner(Runner):
         disable_copy_in_default_stream: bool,
         providers: t.Optional[_ProviderType],
         session_options: t.Optional["ort.SessionOptions"],
+        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore",
@@ -190,6 +192,7 @@ class _ONNXRunner(Runner):
         self._model_info, self._model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
         self._backend = backend
+        self._partial_kwargs = partial_kwargs or dict()
 
         if backend not in SUPPORTED_ONNX_BACKEND:
             raise BentoMLException(
@@ -274,28 +277,34 @@ class _ONNXRunner(Runner):
             session_options=self._session_options,
             model_store=self._model_store,
         )
-        self._infer_func = getattr(self._model, "run")
+        raw_infer_func = getattr(self._model, "run")
+        self._infer_func = functools.partial(raw_infer_func, **self._partial_kwargs)
 
     def _run_batch(
         self,
-        *args: t.Union["np.ndarray", "pd.DataFrame"],
-        **kwargs: t.Any,
+        *args: t.Union[np.ndarray, "pd.DataFrame"],
     ) -> t.Any:
-        params = Params[t.Union["np.ndarray", "pd.DataFrame"]](*args, **kwargs)
-        if isinstance(params.sample, np.ndarray):
-            params = params.map(lambda i: i.astype(np.float32))
-        elif isinstance(params.sample, pd.DataFrame):
-            params = params.map(lambda i: i.to_numpy())
-        else:
-            raise TypeError(
-                f"`_run_batch` of {self.__class__.__name__} only takes "
-                "`numpy.ndarray` or `pd.DataFrame` as input parameters"
-            )
+        params = Params[t.Union[np.ndarray, "pd.DataFrame"]](*args)
+
+        def _mapping(item) -> t.Any:
+            if isinstance(item, np.ndarray):
+                item = item.astype(np.float32)
+            elif isinstance(item, pd.DataFrame):
+                item = item.to_numpy()
+            else:
+                raise TypeError(
+                    f"`_run_batch` of {self.__class__.__name__} only takes "
+                    "`numpy.ndarray` or `pd.DataFrame` as input parameters"
+                )
+            return item
+
+        params = params.map(_mapping)
+
         input_names = {
             i.name: val for i, val in zip(self._model.get_inputs(), params.args)
         }
         output_names = [_.name for _ in self._model.get_outputs()]
-        return self._infer_func(output_names, input_names, **params.kwargs)
+        return self._infer_func(output_names, input_names)
 
 
 @inject
@@ -307,6 +316,7 @@ def load_runner(
     disable_copy_in_default_stream: bool = False,
     providers: t.Optional[_ProviderType] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
+    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -351,6 +361,7 @@ def load_runner(
         disable_copy_in_default_stream=disable_copy_in_default_stream,
         providers=providers,
         session_options=session_options,
+        partial_kwargs=partial_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

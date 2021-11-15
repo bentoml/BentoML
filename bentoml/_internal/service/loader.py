@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from simple_di import Provide, inject
 
 from ...exceptions import BentoMLException, InvalidArgument, NotFound
+from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..configuration.containers import BentoMLContainer
 from ..models.store import ModelStore
 
@@ -179,7 +180,7 @@ def load_bento(
     )
 
     # Use Bento's user project path as working directory when importing the service
-    working_dir = bento.fs.getsyspath(bento.metadata["name"])
+    working_dir = bento.fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 
     # Use Bento's local "{base_dir}/models/" directory as its model store
     model_store = ModelStore(bento.fs.getsyspath("models"))

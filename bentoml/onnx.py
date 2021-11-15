@@ -37,6 +37,8 @@ more information.
     )
 
 pd = LazyLoader("pd", globals(), "pandas")  # noqa: F811
+torch = LazyLoader("torch", globals(), "torch")  # noqa: F811
+tf = LazyLoader("tf", globals(), "tensorflow")  # noqa: F811
 
 _ProviderType = t.TypeVar(
     "_ProviderType", bound=t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
@@ -291,6 +293,8 @@ class _ONNXRunner(Runner):
                 item = item.astype(np.float32)
             elif isinstance(item, pd.DataFrame):
                 item = item.to_numpy()
+            elif isinstance(item, (tf.Tensor, torch.Tensor)):
+                item = item.numpy()
             else:
                 raise TypeError(
                     f"`_run_batch` of {self.__class__.__name__} only takes "

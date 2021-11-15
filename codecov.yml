@@ -1,7 +1,7 @@
 comment:
   layout: "reach, diff, flags, files"
   behavior: default
-  require_base: no
+  require_base: yes
   require_head: yes
   branches:
     - "main"
@@ -22,23 +22,21 @@ coverage:
   status:
     project:
       default:
-        target: 83%
+        target: auto
         threshold: 10%
-        base: auto
       frameworks:
-        target: 91%
+        target: auto
+        threshold: 10%
         flags:
           - frameworks
       bento-server:
-        target: 81%
+        target: auto
+        threshold: 10%
         flags:
           - bento-server
     patch:
       default:
-        target: auto
         threshold: 10%
-        if_ci_failed: error
-        only_pulls: true
 
 flags:
   frameworks:
@@ -73,3 +71,6 @@ flags:
     carryforward: true
     paths:
       - "bentoml/_internal/**/*"
+
+github_checks:
+  annotations: false

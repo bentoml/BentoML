@@ -4,10 +4,10 @@ fi
 
 set -x
 python -m pip install --upgrade pip
-python -m pip install --upgrade --editable ".[test]"
+python -m pip install --upgrade --upgrade-strategy eager --editable ".[test]"
 exit
 
 :: cmd script
 :WINDOWS
 python -m pip install --upgrade pip
-python -m pip install --upgrade --editable ".[test]"
+python -m pip install --upgrade --upgrade-strategy eager --editable ".[test]"

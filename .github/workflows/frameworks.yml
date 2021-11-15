@@ -175,6 +175,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -201,6 +206,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -227,6 +237,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -254,6 +269,11 @@ jobs:
   #        uses: actions/setup-python@v2
   #        with:
   #          python-version: 3.8
+  #      - name: Cache pip dependencies
+  #        uses: actions/cache@v2
+  #        with:
+  #          path: ~/.cache/pip
+  #          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
   #      - name: Install test dependencies
   #        run: ./scripts/ci/install_dependencies.sh.cmd
   #      - name: Run tests and generate coverage report
@@ -281,6 +301,11 @@ jobs:
   #        uses: actions/setup-python@v2
   #        with:
   #          python-version: 3.8
+  #      - name: Cache pip dependencies
+  #        uses: actions/cache@v2
+  #        with:
+  #          path: ~/.cache/pip
+  #          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
   #      - name: Install test dependencies
   #        run: ./scripts/ci/install_dependencies.sh.cmd
   #      - name: Run tests and generate coverage report
@@ -308,6 +333,11 @@ jobs:
   #        uses: actions/setup-python@v2
   #        with:
   #          python-version: 3.8
+  #      - name: Cache pip dependencies
+  #        uses: actions/cache@v2
+  #        with:
+  #          path: ~/.cache/pip
+  #          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
   #      - name: Install test dependencies
   #        run: ./scripts/ci/install_dependencies.sh.cmd
   #      - name: Run tests and generate coverage report
@@ -336,6 +366,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -362,6 +397,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -388,6 +428,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7.10
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -414,6 +459,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7.10
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -440,6 +490,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -466,6 +521,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -492,6 +552,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -520,6 +585,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -550,6 +620,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -576,6 +651,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -603,6 +683,11 @@ jobs:
 #        uses: actions/setup-python@v2
 #        with:
 #          python-version: 3.7
+#      - name: Cache pip dependencies
+#        uses: actions/cache@v2
+#        with:
+#          path: ~/.cache/pip
+#          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
 #      - name: Install test dependencies
 #        run: ./scripts/ci/install_dependencies.sh.cmd
 #      - name: Run tests and generate coverage report
@@ -629,6 +714,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -655,6 +745,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Set up QEMU
@@ -685,6 +780,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -711,6 +811,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -737,6 +842,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -763,6 +873,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -789,6 +904,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -815,6 +935,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report
@@ -841,6 +966,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: Run tests and generate coverage report

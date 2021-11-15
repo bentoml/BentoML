@@ -1,16 +1,15 @@
 comment:
-  layout: "reach, diff, files"
+  layout: "reach, diff, flags, files"
   behavior: default
   require_base: no
   require_head: yes
   branches:
     - "main"
     - "bentoml-1.0"
-  show_carryforward_flags: false
+  show_carryforward_flags: true
 
 ignore:
   - "bentoml/testing/**/*"
-  - "bentoml/_internal/typing_extensions/**/*"
   - "bentoml/_internal/types.py"
   - "bentoml/__main__.py"
   - "bentoml/_version.py"
@@ -25,19 +24,28 @@ coverage:
       default:
         target: 83%
         threshold: 10%
-        base: auto 
+        base: auto
+        flags:
+          - frameworks
+          - bento-server
+      frameworks:
+        target: 91%
+        flags:
+          - frameworks
+      bento-server:
+        target: 81%
+        flags:
+          - bento-server
     patch:
       default:
-        target: 83%
+        target: auto
         threshold: 10%
-        if_ci_failed: failure
+        if_ci_failed: error
         only_pulls: true
 
-flag_management:
-  default_rules:
-    carryforward: true
+flags:
   frameworks:
-    name: frameworks
+    carryforward: true
     paths:
       - bentoml/catboost.py
       - bentoml/detectron.py
@@ -67,6 +75,6 @@ flag_management:
     statuses:
       target: 90%
   bento-server:
-    name: bento-server
+    carryforward: true
     paths:
       - "bentoml/_internal/**/*"

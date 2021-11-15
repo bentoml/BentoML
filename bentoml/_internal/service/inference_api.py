@@ -19,9 +19,9 @@ RESERVED_API_NAMES = [
 class InferenceAPI:
     def __init__(
         self,
-        user_defined_callback: t.Callable,
-        input_descriptor: IODescriptor,
-        output_descriptor: IODescriptor,
+        user_defined_callback: t.Callable[..., t.Any],
+        input_descriptor: IODescriptor[t.Any],
+        output_descriptor: IODescriptor[t.Any],
         name: Optional[str],
         doc: Optional[str] = None,
         route: Optional[str] = None,

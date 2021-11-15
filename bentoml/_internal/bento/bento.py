@@ -3,8 +3,8 @@ import logging
 import os
 import typing as t
 from collections import UserDict
+from dataclasses import dataclass
 
-import attr
 import fs
 import pathspec
 import yaml
@@ -23,7 +23,7 @@ from ..utils import cached_property
 from .env import BentoEnv
 
 if t.TYPE_CHECKING:
-    from ..models.store import ModelStore
+    from ..models.store import ModelInfo, ModelStore
     from ..service import Service
 
 logger = logging.getLogger(__name__)
@@ -33,10 +33,14 @@ BENTO_YAML_FILENAME = "bento.yaml"
 BENTO_PROJECT_DIR_NAME = "src"
 
 
-@attr.define(repr=False)
+@dataclass
 class Bento(StoreItem):
-    tag: Tag
-    fs: FS
+    _tag: Tag
+    _fs: FS
+
+    @property
+    def tag(self) -> Tag:
+        return self._tag
 
     @staticmethod
     @inject
@@ -59,13 +63,15 @@ class Bento(StoreItem):
         logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")
 
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
+        if isinstance(build_ctx, os.PathLike):
+            build_ctx = build_ctx.__fspath__()
         ctx_fs = fs.open_fs(build_ctx)
 
         # Add Runner required models to models list
-        for runner in svc._runners.values():
+        for runner in svc._runners.values():  # type: ignore[reportPrivateUsage]
             models += runner.required_models
 
-        models_list = []
+        models_list: "list[ModelInfo]" = []
         seen_model_tags = []
         for model_tag in models:
             try:
@@ -93,7 +99,7 @@ class Bento(StoreItem):
 
         spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
         exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
-        exclude_specs = []
+        exclude_specs: "list[t.Tuple[str, pathspec.PathSpec]]" = []
         bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
         target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
 
@@ -108,7 +114,7 @@ class Bento(StoreItem):
                     )
                 )
 
-            cur_exclude_specs = []
+            cur_exclude_specs: list[t.Tuple[str, pathspec.PathSpec]] = []
             for ignore_path, _spec in exclude_specs:
                 if fs.path.isparent(ignore_path, dir_path):
                     cur_exclude_specs.append((ignore_path, _spec))
@@ -132,7 +138,8 @@ class Bento(StoreItem):
         # Create `readme.md` file
         with bento_fs.open("README.md", "w") as f:
             description = description if description else svc.__doc__
-            f.write(description)
+            if description is not None:
+                f.write(description)
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
@@ -146,17 +153,21 @@ class Bento(StoreItem):
         return Bento(tag, bento_fs)
 
     @classmethod
-    def from_fs(cls, tag: Tag, bento_fs: FS) -> "Bento":
-        with bento_fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
+    def from_fs(cls, tag: Tag, fs: FS) -> "Bento":
+        with fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             bento_metadata = BentoMetadata.from_yaml_file(bento_yaml)
 
         # TODO: Check bento_metadata['bentoml_version'] and show user warning if needed
-        return cls(bento_metadata.tag, bento_fs)
+        return cls(bento_metadata.tag, fs)
 
     @cached_property
     def metadata(self) -> "BentoMetadata":
-        with self.fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
+        with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             return BentoMetadata.from_yaml_file(bento_yaml)
+
+    @property
+    def path(self) -> str:
+        return self._fs.getsyspath("/")
 
     def creation_time(self) -> datetime.datetime:
         return self.metadata["creation_time"]
@@ -171,21 +182,21 @@ class Bento(StoreItem):
         with bento_store.register(self.tag) as bento_path:
             # TODO: handle non-OSFS store types
             os.rmdir(bento_path)
-            os.rename(self.fs.getsyspath("/"), bento_path)
-            self.fs.close()
+            os.rename(self._fs.getsyspath("/"), bento_path)
+            self._fs.close()
 
         return bento_store.get(self.tag)
 
     def export(self, path: str):
         mirror(
-            self.fs, fs.open_fs(path, create=True, writeable=True), copy_if_newer=False
+            self._fs, fs.open_fs(path, create=True, writeable=True), copy_if_newer=False
         )
 
     def push(self):
         pass
 
     def validate(self):
-        return self.fs.isfile(BENTO_YAML_FILENAME)
+        return self._fs.isfile(BENTO_YAML_FILENAME)
 
 
 class BentoStore(Store[Bento]):
@@ -193,8 +204,14 @@ class BentoStore(Store[Bento]):
         super().__init__(base_path, Bento)
 
 
-class BentoMetadata(UserDict):
-    def dump(self, stream: t.IO):
+if t.TYPE_CHECKING:
+    BentoMetadataBase = UserDict[str, t.Any]
+else:
+    BentoMetadataBase = UserDict
+
+
+class BentoMetadata(BentoMetadataBase):
+    def dump(self, stream: t.IO[str]):
         return yaml.dump(self.data, stream, sort_keys=False)
 
     @classmethod
@@ -202,14 +219,14 @@ class BentoMetadata(UserDict):
         cls, tag: Tag, svc: "Service", labels: t.Dict[str, t.Any], models: t.List[str]
     ):
         bento_metadata = cls()
-        bento_metadata["service"] = svc._import_str
+        bento_metadata["service"] = svc._import_str  # type: ignore[reportPrivateUsage]
         bento_metadata["name"] = tag.name
         bento_metadata["version"] = tag.version
         bento_metadata["bentoml_version"] = __version__
         bento_metadata["created_at"] = datetime.datetime.now().isoformat()
         bento_metadata["labels"] = labels  # TODO: validate user provided labels
         apis = {}
-        for api in svc._apis.values():
+        for api in svc._apis.values():  # type: ignore[reportPrivateUsage]
             apis[api.name] = dict(
                 route=api.route,
                 doc=api.doc,
@@ -223,7 +240,7 @@ class BentoMetadata(UserDict):
         return bento_metadata
 
     @classmethod
-    def from_yaml_file(cls, stream: t.IO):
+    def from_yaml_file(cls, stream: t.IO[t.Any]):
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

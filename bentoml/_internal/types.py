@@ -2,7 +2,6 @@ import base64
 import io
 import logging
 import os
-import pathlib
 import typing as t
 import urllib
 import urllib.parse
@@ -27,7 +26,10 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
-PathType = t.Union[str, os.PathLike, pathlib.Path]
+if t.TYPE_CHECKING:
+    PathType = t.Union[str, os.PathLike[str]]
+else:
+    PathType = t.Union[str, os.PathLike]
 
 JSONSerializable = t.NewType("JSONSerializable", object)
 
@@ -64,11 +66,15 @@ class Tag:
     def __repr__(self):
         return str(self)
 
-    def __eq__(self, other):
+    def __eq__(self, other: "Tag") -> bool:
         return self.name == other.name and self.version == other.version
 
-    def __lt__(self, other):
+    def __lt__(self, other: "Tag") -> bool:
         if self.name == other.name:
+            if other.version is None:
+                return False
+            if self.version is None:
+                return True
             return self.version < other.version
         return self.name < other.name
 
@@ -79,8 +85,7 @@ class Tag:
     def from_taglike(cls, taglike: t.Union["Tag", str]) -> "Tag":
         if isinstance(taglike, Tag):
             return taglike
-        if isinstance(taglike, str):
-            return cls.from_str(taglike)
+        return cls.from_str(taglike)
 
         raise TypeError(f"can't make a Tag from {type(taglike)}")
 
@@ -191,11 +196,11 @@ class FileLike:
             return io.BytesIO()
         return self._stream
 
-    def read(self, size=-1):
+    def read(self, size: int = -1):
         # TODO: also write to log
         return self.stream.read(size)
 
-    def seek(self, pos):
+    def seek(self, pos: int):
         return self.stream.seek(pos)
 
     def tell(self):

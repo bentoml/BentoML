@@ -163,6 +163,7 @@ class _PyTorchRunner(Runner):
         tag: str,
         predict_fn_name: str,
         device_id: str,
+        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -179,6 +180,7 @@ class _PyTorchRunner(Runner):
                     str(i) for i in range(torch.cuda.device_count())
                 ]
         self._device_id = device_id
+        self._partial_kwargs = partial_kwargs or dict()
 
     @property
     def required_models(self) -> t.List[str]:
@@ -222,31 +224,34 @@ class _PyTorchRunner(Runner):
                 model_store=self._model_store,
                 device_id=self._device_id,
             )
-        self._predict_fn: t.Callable[..., _RV] = getattr(
-            self._model, self._predict_fn_name
+        raw_predict_fn = getattr(self._model, self._predict_fn_name)
+        self._predict_fn: t.Callable[..., _RV] = functools.partial(
+            raw_predict_fn, **self._partial_kwargs
         )
 
     # pylint: disable=arguments-differ
     @torch.no_grad()
     def _run_batch(  # type: ignore[override]
         self,
-        *args: t.Union[np.ndarray, "torch.Tensor"],
+        *args: t.Union[np.ndarray, torch.Tensor],
         **kwargs: str,
-    ) -> "torch.Tensor":
+    ) -> torch.Tensor:
 
-        # We assume *args are input data. They share the same type
-        # (tensor or ndarray) while **kwargs are configuration
-        # parameters, which may have type str, int, float etc.
+        params = Params[t.Any](*args, **kwargs)
 
-        params = Params[t.Union[np.ndarray, "torch.Tensor"]](*args)
-        sample = params.sample
+        def _mapping(item) -> t.Any:
+            if isinstance(item, np.ndarray):
+                item = torch.from_numpy(item)
 
-        if isinstance(sample, np.ndarray):
-            params = params.map(lambda i: torch.from_numpy(i))
-        if self.resource_quota.on_gpu:
-            params = params.map(lambda i: i.cuda())
+            if self.resource_quota.on_gpu:
+                if isinstance(item, torch.Tensor):
+                    item = item.cuda()
 
-        res: "torch.Tensor"
+            return item
+
+        params = params.map(_mapping)
+
+        res: torch.Tensor
         if infer_mode_compat:
             with torch.inference_mode():
                 res = self._predict_fn(*params.args, **kwargs)
@@ -261,14 +266,15 @@ def load_runner(
     *,
     predict_fn_name: str = "__call__",
     device_id: str = "cpu:0",
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_PyTorchRunner":
     """
         Runner represents a unit of serving logic that can be scaled horizontally to
     maximize throughput. `bentoml.pytorch.load_runner` implements a Runner class that
-    wrap around a statsmodels instance, which optimize it for the BentoML runtime.
+    wrap around a pytorch instance, which optimize it for the BentoML runtime.
 
     Args:
         tag (`str`):
@@ -277,6 +283,8 @@ def load_runner(
             inference function to be used.
         device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `cpu`):
             Optional devices to put the given model on. Refers to https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device
+        partial_kwargs (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
+            Common kwargs passed to model for this runner
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
@@ -296,6 +304,7 @@ def load_runner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
+        partial_kwargs=partial_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

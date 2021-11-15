@@ -1,3 +1,102 @@
+[tool.poetry]
+name = "bentoml"
+version = "1.0.0"
+description = "A framework for machine learning model serving"
+readme = "README.md"
+homepage = "https://bentoml.ai/"
+repository = "https://github.com/bentoml/BentoML"
+documentation = "https://docs.bentoml.org/en/latest/"
+keywords = ["MLOps", "AI", "Bento"]
+classifiers = [
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+authors = ["BentoML Team <contact@bentoml.ai>"]
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+click = "^7.0"
+simple-di = "0.1.2"
+aiohttp = "*"
+deepmerge = "*"
+docker = "*"
+humanfriendly = "*"
+numpy = "*"
+packaging = "^20"
+psutil = "*"
+requests = "*"
+schema = "*"
+chardet = "*"
+cloudpickle = "*"
+starlette = "*"
+python-multipart = "*"
+rich = "*"
+pyyaml = "*"
+attrs = "^20"
+cattrs = "*"
+importlib_metadata = "*"
+pathspec = "*"
+typing-extensions = "^3.7.4"
+aiofiles = "*"
+fs = "*"
+circus = "*"
+uvicorn = "*"
+python-json-logger = "*"
+opentracing = {version = "*", optional = true}
+py-zipkin = {version = "*", optional = true}
+jaeger-client = {version = "*", optional = true}
+prometheus-client = {version = "*", optional = true}
+
+[tool.poetry.dev-dependencies]
+idna = "<=2.8"
+ecdsa = "0.14"
+black = "21.4b2"
+codecov = "*"
+coverage = "^4.4"
+flake8 = "^3.8"
+flake8-length = "^0.2"
+imageio = "^2.5"
+mock = "^2.0"
+moto = "1.3.14"
+pandas = "*"
+pylint = "^2.5"
+pytest-cov = "^2.7"
+pytest = "^5.4"
+pytest-asyncio = "*"
+parameterized = "*"
+scikit-learn = "*"
+isort = "^5"
+GitPython = "^2"
+setuptools = "*"
+mypy = "*"
+autoflake = "*"
+twine = "*"
+wheel = "*"
+recommonmark = "*"
+Sphinx = "<=3.5.4"
+sphinx-click = "*"
+sphinx-rtd-theme = "*"
+sphinxcontrib-fulltoc = "*"
+sphinxcontrib-spelling = "*"
+sphinx-copybutton = "*"
+pyenchant = "*"
+types-click = "*"
+types-chardet = "*"
+types-setuptools = "*"
+types-PyYAML = "*"
+pyspark-stubs = "*"
+types-filelock = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.black]
 line-length = 88
 exclude = '''
@@ -28,8 +127,64 @@ profile = "black"
 skip_glob = ["third_party", "stubs"]
 
 [tool.pyright]
-include=['bentoml/**']
-exclude=['bentoml/_version.py', 'bentoml/__main__.py']
-strict=['bentoml/_internal']
-strictParameterNoneValue=true
-reportMissingImports=false
+include = ['bentoml/**']
+exclude = ['setup.py', 'bentoml/_version.py', 'bentoml/__main__.py']
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+strictParameterNoneValue = true
+enableTypeIgnoreComments = true
+reportGeneralTypeIssues = "error"
+reportPropertyTypeMismatch = "error"
+reportFunctionMemberAccess = "error"
+reportMissingImports = "warning"
+reportMissingModuleSource = "warning"
+reportMissingTypeStubs = "error"
+reportImportCycles = "error"
+reportUnusedImport = "error"
+reportUnusedClass = "error"
+reportUnusedFunction = "error"
+reportUnusedVariable = "error"
+reportDuplicateImport = "error"
+reportWildcardImportFromLibrary = "error"
+reportOptionalSubscript = "error"
+reportOptionalMemberAccess = "error"
+reportOptionalCall = "error"
+reportOptionalIterable = "error"
+reportOptionalContextManager = "error"
+reportOptionalOperand = "error"
+reportTypedDictNotRequiredAccess = "error"
+reportUntypedFunctionDecorator = "error"
+reportUntypedClassDecorator = "error"
+reportUntypedBaseClass = "error"
+reportUntypedNamedTuple = "error"
+reportPrivateUsage = "error"
+reportPrivateImportUsage = "error"
+reportConstantRedefinition = "error"
+reportIncompatibleMethodOverride = "error"
+reportIncompatibleVariableOverride = "error"
+reportOverlappingOverload = "error"
+reportUninitializedInstanceVariable = "none"
+reportInvalidStringEscapeSequence = "error"
+reportUnknownParameterType = "error"
+reportUnknownArgumentType = "error"
+reportUnknownLambdaType = "error"
+reportUnknownVariableType = "error"
+reportUnknownMemberType = "warning"
+reportMissingParameterType = "error"
+reportMissingTypeArgument = "error"
+reportInvalidTypeVarUse = "error"
+reportCallInDefaultInitializer = "none"
+reportUnnecessaryIsInstance = "error"
+reportUnnecessaryCast = "error"
+reportUnnecessaryComparison = "error"
+reportAssertAlwaysTrue = "error"
+reportSelfClsParameterName = "error"
+reportImplicitStringConcatenation = "none"
+reportUndefinedVariable = "error"
+reportUnboundVariable = "error"
+reportInvalidStubStatement = "error"
+reportIncompleteStub = "error"
+reportUnsupportedDunderAll = "error"
+reportUnusedCallResult = "none"
+reportUnusedCoroutine = "error"

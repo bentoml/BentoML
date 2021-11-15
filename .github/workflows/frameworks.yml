@@ -2,14 +2,20 @@ name: Frameworks
 
 on:
   push:
-    branches: [master, bentoml-1.0]
+    branches:
+      - master
+      - bentoml-1.0
+      - main
   pull_request:
-    branches: [master, bentoml-1.0]
+    branches:
+      - master
+      - bentoml-1.0
+      - main
   schedule:
-    - cron: '0 0 * * 1/2'
+    - cron: "0 0 * * 1/2"
 
 jobs:
-  changes:
+  diff:
     runs-on: ubuntu-latest
     outputs:
       catboost: ${{ steps.filter.outputs.catboost }}
@@ -44,144 +50,122 @@ jobs:
         id: filter
         with:
           filters: |
+            related: &related
+              - .github/workflows/frameworks.yml
+              - scripts/ci/framework_integration_tests.sh
             runner: &runner
+              - *related
               - bentoml/_internal/runner/**
               - bentoml/_internal/models/**
             catboost:
               - *runner
               - bentoml/catboost.py
-              - scripts/ci/integration/frameworks/run_catboost_tests.sh
               - tests/integration/frameworks/test_catboost_impl.py
             detectron2:
               - *runner
               - bentoml/detectron.py
-              - scripts/ci/integration/frameworks/run_detectron2_tests.sh
               - tests/integration/frameworks/test_detectron2_impl.py
             easyocr:
               - *runner
               - bentoml/easyocr.py
-              - scripts/ci/integration/frameworks/run_easyocr_tests.sh
               - tests/integration/frameworks/test_easyocr_impl.py
             evalml:
               - *runner
               - bentoml/evalml.py
-              - scripts/ci/integration/frameworks/run_evalml_tests.sh
               - tests/integration/frameworks/test_evalml_impl.py
             fastai:
               - *runner
               - bentoml/fastai.py
-              - scripts/ci/integration/frameworks/run_fastai_tests.sh
               - tests/integration/frameworks/test_fastai_impl.py
             fasttext:
               - *runner
               - bentoml/fasttext.py
-              - scripts/ci/integration/frameworks/run_fasttext_tests.sh
               - tests/integration/frameworks/test_fasttext_impl.py
             gluon:
               - *runner
               - bentoml/gluon.py
-              - scripts/ci/integration/frameworks/run_gluon_tests.sh
               - tests/integration/frameworks/test_gluon_impl.py
             h2o:
               - *runner
               - bentoml/h2o.py
-              - scripts/ci/integration/frameworks/run_h2o_tests.sh
               - tests/integration/frameworks/test_h2o_impl.py
             keras_tf1:
               - *runner
               - bentoml/keras.py
-              - scripts/ci/integration/frameworks/run_keras_tf1_tests.sh
               - tests/integration/frameworks/test_keras_impl.py
             keras_tf2:
               - *runner
               - bentoml/keras.py
-              - scripts/ci/integration/frameworks/run_keras_tf2_tests.sh
               - tests/integration/frameworks/test_keras_impl.py
             lightgbm:
               - *runner
               - bentoml/lightgbm.py
-              - scripts/ci/integration/frameworks/run_lightgbm_tests.sh
               - tests/integration/frameworks/test_lightgbm_impl.py
             mlflow:
               - *runner
               - bentoml/mlflow.py
               - tests/integration/frameworks/mlflow
-              - scripts/ci/integration/frameworks/run_mlflow_tests.sh
             onnx:
               - *runner
               - bentoml/onnx.py
-              - scripts/ci/integration/frameworks/run_onnx_tests.sh
               - tests/integration/frameworks/test_onnx_impl.py
             onnxmlir:
               - *runner
               - bentoml/onnxmlir.py
-              - scripts/ci/integration/frameworks/run_onnxmlir_tests.sh
               - tests/integration/frameworks/test_onnxmlir_impl.py
             paddle:
               - *runner
               - bentoml/paddle.py
-              - scripts/ci/integration/frameworks/run_paddle_tests.sh
               - tests/integration/frameworks/paddle
             pycaret:
               - *runner
               - bentoml/pycaret.py
-              - scripts/ci/integration/frameworks/run_pycaret_tests.sh
               - tests/integration/frameworks/test_pycaret_impl.py
             pyspark_mllib:
               - *runner
               - bentoml/pyspark.py
-              - scripts/ci/integration/frameworks/run_pyspark_tests.sh
               - tests/integration/frameworks/test_pyspark_impl.py
             pytorch:
               - *runner
               - bentoml/pytorch.py
-              - scripts/ci/integration/frameworks/run_pytorch_tests.sh
               - tests/integration/frameworks/test_pytorch_impl.py
             pytorch_lightning:
               - *runner
               - bentoml/pytorch.py
               - bentoml/pytorch_lightning.py
-              - scripts/ci/integration/frameworks/run_pytorch_lightning_tests.sh
               - tests/integration/frameworks/test_pytorch_lightning_impl.py
             sklearn:
               - *runner
               - bentoml/sklearn.py
-              - scripts/ci/integration/frameworks/run_sklearn_tests.sh
               - tests/integration/frameworks/test_sklearn_impl.py
             spacy:
               - *runner
               - bentoml/spacy.py
-              - scripts/ci/integration/frameworks/run_spacy_tests.sh
-              - tests/integration/frameworks/test_spacy_impl.py
+              - tests/integration/frameworks/spacy
             statsmodels:
               - *runner
               - bentoml/statsmodels.py
-              - scripts/ci/integration/frameworks/run_statsmodels_tests.sh
               - tests/integration/frameworks/test_statsmodels_impl.py
             tf1:
               - *runner
               - bentoml/tensorflow.py
-              - scripts/ci/integration/frameworks/run_tf1_tests.sh
               - tests/integration/frameworks/test_tensorflow_impl.py
             tf2:
               - *runner
               - bentoml/tensorflow.py
-              - scripts/ci/integration/frameworks/run_tf2_tests.sh
               - tests/integration/frameworks/test_tensorflow_impl.py
             transformers:
               - *runner
               - bentoml/transformers.py
-              - scripts/ci/integration/frameworks/run_transformers_tests.sh
               - tests/integration/frameworks/test_transformers_impl.py
             xgboost:
               - *runner
               - bentoml/xgboost.py
-              - scripts/ci/integration/frameworks/run_xgboost_tests.sh
               - tests/integration/frameworks/test_xgboost_impl.py
 
   catboost_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.catboost == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -193,15 +177,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_catboost_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh catboost
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.catboost == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.catboost == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./catboost.xml
+          flags: frameworks
+          verbose: true
 
   detectron2_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.detectron2 == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.detectron2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -213,15 +203,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_detectron2_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh detectron2
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.detectron2 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.detectron2 == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./detectron2.xml
+          flags: frameworks
+          verbose: true
 
   easyocr_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.easyocr == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.easyocr == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -233,80 +229,104 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_easyocr_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh easyocr
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.easyocr == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.easyocr == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./easyocr.xml
+          flags: frameworks
+          verbose: true
 
-#  TODO: fix me
-#  evalml_integration_tests:
-#    needs: changes
-#    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.evalml == 'true') || github.event_name == 'push' }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 0 # fetch all tags and branches
-#      - name: Setup python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: 3.8
-#      - name: Install test dependencies
-#        run: ./scripts/ci/install_dependencies.sh.cmd
-#      - name: Run tests
-#        run: ./scripts/ci/integration/frameworks/run_evalml_tests.sh
-#      - name: Upload test coverage to Codecov
-#        if: ${{ needs.changes.outputs.evalml == 'true' }}
-#        uses: codecov/codecov-action@v1.0.12
+  #  TODO: fix me
+  #  evalml_integration_tests:
+  #    needs: diff
+  #    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.evalml == 'true') || github.event_name == 'push' }}
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - uses: actions/checkout@v2
+  #        with:
+  #          fetch-depth: 0 # fetch all tags and branches
+  #      - name: Setup python
+  #        uses: actions/setup-python@v2
+  #        with:
+  #          python-version: 3.8
+  #      - name: Install test dependencies
+  #        run: ./scripts/ci/install_dependencies.sh.cmd
+  #      - name: Run tests and generate coverage report
+  #        run: ./scripts/ci/framework_integration_tests.sh evalml
+  #        shell: bash
+  #      - name: Upload test coverage to Codecov
+  #        if: ${{ needs.diff.outputs.evalml == 'true' }}
+  #        uses: codecov/codecov-action@v2
+  #        with:
+  #           directory: ./
+  #           files: ./evalml.xml
+  #           flags: frameworks
+  #           verbose: true
 
-#  TODO: fix me
-#  fastai_integration_tests:
-#    needs: changes
-#    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.fastai == 'true') || github.event_name == 'push' }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 0 # fetch all tags and branches
-#      - name: Setup python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: 3.8
-#      - name: Install test dependencies
-#        run: ./scripts/ci/install_dependencies.sh.cmd
-#      - name: Run tests
-#        run: ./scripts/ci/integration/frameworks/run_fastai_tests.sh
-#      - name: Upload test coverage to Codecov
-#        if: ${{ needs.changes.outputs.fastai == 'true' }}
-#        uses: codecov/codecov-action@v1.0.12
+  #  TODO: fix me
+  #  fastai_integration_tests:
+  #    needs: diff
+  #    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fastai == 'true') || github.event_name == 'push' }}
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - uses: actions/checkout@v2
+  #        with:
+  #          fetch-depth: 0 # fetch all tags and branches
+  #      - name: Setup python
+  #        uses: actions/setup-python@v2
+  #        with:
+  #          python-version: 3.8
+  #      - name: Install test dependencies
+  #        run: ./scripts/ci/install_dependencies.sh.cmd
+  #      - name: Run tests and generate coverage report
+  #        run: ./scripts/ci/framework_integration_tests.sh fastai
+  #        shell: bash
+  #      - name: Upload test coverage to Codecov
+  #        if: ${{ needs.diff.outputs.fastai == 'true' }}
+  #        uses: codecov/codecov-action@v2
+  #        with:
+  #          directory: ./
+  #          files: ./fastai.xml
+  #          flags: frameworks
+  #          verbose: true
 
-#  TODO: fix me
-#  fasttext_integration_tests:
-#    needs: changes
-#    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.fasttext == 'true') || github.event_name == 'push' }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 0 # fetch all tags and branches
-#      - name: Setup python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: 3.8
-#      - name: Install test dependencies
-#        run: ./scripts/ci/install_dependencies.sh.cmd
-#      - name: Run tests
-#        run: ./scripts/ci/integration/frameworks/run_fasttext_tests.sh
-#      - name: Upload test coverage to Codecov
-#        if: ${{ needs.changes.outputs.fasttext == 'true' }}
-#        uses: codecov/codecov-action@v1.0.12
+  #  TODO: fix me
+  #  fasttext_integration_tests:
+  #    needs: diff
+  #    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fasttext == 'true') || github.event_name == 'push' }}
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - uses: actions/checkout@v2
+  #        with:
+  #          fetch-depth: 0 # fetch all tags and branches
+  #      - name: Setup python
+  #        uses: actions/setup-python@v2
+  #        with:
+  #          python-version: 3.8
+  #      - name: Install test dependencies
+  #        run: ./scripts/ci/install_dependencies.sh.cmd
+  #      - name: Run tests and generate coverage report
+  #        run: ./scripts/ci/framework_integration_tests.sh fasttext
+  #        shell: bash
+  #      - name: Upload test coverage to Codecov
+  #        if: ${{ needs.diff.outputs.fasttext == 'true' }}
+  #        uses: codecov/codecov-action@v2
+  #        with:
+  #          directory: ./
+  #          files: ./fasttext.xml
+  #          flags: frameworks
+  #          verbose: true
 
   # TODO(aarnphm): add Trax/Flax support
 
   gluon_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.gluon == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.gluon == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -318,15 +338,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_gluon_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh gluon
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.gluon == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.gluon == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./gluon.xml
+          flags: frameworks
+          verbose: true
 
   h2o_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.h2o == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.h2o == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -338,15 +364,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_h2o_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh h2o
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.h2o == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.h2o == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./h2o.xml
+          flags: frameworks
+          verbose: true
 
   keras_with_tf1_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.keras_tf1 == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.keras_tf1 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -358,15 +390,21 @@ jobs:
           python-version: 3.7.10
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_keras_tf1_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh keras_tf1
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.keras_tf1 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.keras_tf1 == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./keras_tf1.xml
+          flags: frameworks
+          verbose: true
 
   keras_with_tf2_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.keras_tf2 == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.keras_tf2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -378,15 +416,21 @@ jobs:
           python-version: 3.7.10
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_keras_tf2_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh keras_tf2
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.keras_tf2 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.keras_tf2 == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./keras_tf2.xml
+          flags: frameworks
+          verbose: true
 
   lightgbm_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.lightgbm == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.lightgbm == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -398,15 +442,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_lightgbm_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh lightgbm
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.lightgbm == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.lightgbm == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./lightgbm.xml
+          flags: frameworks
+          verbose: true
 
   mlflow_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.mlflow == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.mlflow == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -418,15 +468,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_mlflow_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh mlflow
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.mlflow == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.mlflow == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./mlflow.xml
+          flags: frameworks
+          verbose: true
 
   onnx_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.onnx == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnx == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -438,15 +494,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_onnx_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh onnx
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.onnx == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.onnx == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./onnx.xml
+          flags: frameworks
+          verbose: true
 
   onnxmlir_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.onnxmlir == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.onnxmlir == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     container:
       image: onnxmlirczar/onnx-mlir-dev:latest
@@ -460,15 +522,25 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_onnxmlir_tests.sh
+      - name: Run tests and generate coverage report
+        run: |
+          python3 -m pip install tensorflow==2.2.0 pandas tf2onnx
+          export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
+          export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
+          apt-get update && apt-get install curl -y
+          pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"onnxmlir.xml"
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.onnxmlir == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.onnxmlir == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./onnxmlir.xml
+          flags: frameworks
+          verbose: true
 
   paddle_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.paddle == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.paddle == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -480,15 +552,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_paddle_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh paddle
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.paddle == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.paddle == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./paddle.xml
+          flags: frameworks
+          verbose: true
 
   pycaret_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.pycaret == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pycaret == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -500,16 +578,22 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_pycaret_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh pycaret
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.pycaret == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.pycaret == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./pycaret.xml
+          flags: frameworks
+          verbose: true
 
 #  TODO: fix me
 #  pyspark_mllib_integration_tests:
-#    needs: changes
-#    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.pyspark_mllib == 'true') || github.event_name == 'push' }}
+#    needs: diff
+#    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pyspark_mllib == 'true') || github.event_name == 'push' }}
 #    runs-on: ubuntu-latest
 #    steps:
 #      - uses: actions/checkout@v2
@@ -521,15 +605,21 @@ jobs:
 #          python-version: 3.7
 #      - name: Install test dependencies
 #        run: ./scripts/ci/install_dependencies.sh.cmd
-#      - name: Run tests
-#        run: ./scripts/ci/integration/frameworks/run_pyspark_tests.sh
+#      - name: Run tests and generate coverage report
+#        run: ./scripts/ci/framework_integration_tests.sh pyspark
+#        shell: bash
 #      - name: Upload test coverage to Codecov
-#        if: ${{ needs.changes.outputs.pyspark_mllib == 'true' }}
-#        uses: codecov/codecov-action@v1.0.12
+#        if: ${{ needs.diff.outputs.pyspark_mllib == 'true' }}
+#        uses: codecov/codecov-action@v2
+#        with:
+#          directory: ./
+#          files: ./pyspark.xml
+#          flags: frameworks
+#          verbose: true
 
   pytorch_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.pytorch == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -541,15 +631,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_pytorch_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh pytorch
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.pytorch == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.pytorch == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./pytorch.xml
+          flags: frameworks
+          verbose: true
 
   pytorch_lightning_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.pytorch_lightning == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pytorch_lightning == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -565,15 +661,21 @@ jobs:
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_pytorch_lightning_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh pytorch_lightning
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.pytorch_lightning == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.pytorch_lightning == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./pytorch_lightning.xml
+          flags: frameworks
+          verbose: true
 
   sklearn_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.sklearn == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.sklearn == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -585,15 +687,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_sklearn_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh sklearn
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.sklearn == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.sklearn == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./sklearn.xml
+          flags: frameworks
+          verbose: true
 
   spacy_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.spacy == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.spacy == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -605,15 +713,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_spacy_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh spacy
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.spacy == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.spacy == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./spacy.xml
+          flags: frameworks
+          verbose: true
 
   statsmodels_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.statsmodels == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.statsmodels == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -625,15 +739,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_statsmodels_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh statsmodels
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.statsmodels == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.statsmodels == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./statsmodels.xml
+          flags: frameworks
+          verbose: true
 
   tensorflow_v1_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.tf1 == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.tf1 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -645,15 +765,21 @@ jobs:
           python-version: 3.7
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_tf1_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh tf1
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.tf1 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.tf1 == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./tf1.xml
+          flags: frameworks
+          verbose: true
 
   tensorflow_v2_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.tf2 == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.tf2 == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -665,15 +791,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_tf2_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh tf2
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.tf2 == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.tf2 == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./tf2.xml
+          flags: frameworks
+          verbose: true
 
   transformers_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.transformers == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.transformers == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -685,15 +817,21 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_transformers_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh transformers
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.transformers == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.transformers == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./transformers.xml
+          flags: frameworks
+          verbose: true
 
   xgboost_integration_tests:
-    needs: changes
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.xgboost == 'true') || github.event_name == 'push' }}
+    needs: diff
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.xgboost == 'true') || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -705,11 +843,17 @@ jobs:
           python-version: 3.8
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
-      - name: Run tests
-        run: ./scripts/ci/integration/frameworks/run_xgboost_tests.sh
+      - name: Run tests and generate coverage report
+        run: ./scripts/ci/framework_integration_tests.sh xgboost
+        shell: bash
       - name: Upload test coverage to Codecov
-        if: ${{ needs.changes.outputs.xgboost == 'true' }}
-        uses: codecov/codecov-action@v1.0.12
+        if: ${{ needs.diff.outputs.xgboost == 'true' }}
+        uses: codecov/codecov-action@v2
+        with:
+          directory: ./
+          files: ./xgboost.xml
+          flags: frameworks
+          verbose: true
 
 concurrency:
   group: frameworks${{ github.event.pull_request.number || github.sha }}

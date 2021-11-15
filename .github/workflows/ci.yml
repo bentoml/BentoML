@@ -76,21 +76,19 @@ jobs:
     needs:
       - diff
 
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
-    name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [ '3.7', '3.8', '3.9', '3.10' ]
-        include:
-          - os: ubuntu-latest
-            path: ~/.cache/pip
-          - os: macos-latest
-            path: ~/Library/Caches/pip
-          - os: windows-latest
-            path: ~\AppData\Local\pip\Cache
+    defaults:
+      run:
+        shell: bash
+
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+    name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v2
         with:
@@ -100,21 +98,45 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        if: ${{ matrix.os != 'Windows' }}
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Update Path for Windows
+        if: ${{ matrix.os == 'Windows' }}
+        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: ${{ matrix.path }}
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        run: poetry install
+
       - name: Run Unit Tests
         run: ./scripts/ci/unit_tests.sh
-        shell: bash
+
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
@@ -129,20 +151,21 @@ jobs:
     needs:
       - diff
 
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
-    name: bento_server_integration_tests (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         # TODO(bojiang): Fixes windows path problem
         os: [ubuntu-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            path: ~/.cache/pip
-          - os: macos-latest
-            path: ~/Library/Caches/pip
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+    defaults:
+      run:
+        shell: bash
+
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+    name: bento_server_integration_tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
     steps:
       - uses: actions/checkout@v2
         with:
@@ -150,23 +173,49 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        if: ${{ matrix.os != 'Windows' }}
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Update Path for Windows
+        if: ${{ matrix.os == 'Windows' }}
+        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ${{ matrix.path }}
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        run: poetry install
+
       - name: install optional dependencies
-        run: python -m pip install pydantic
+        run: poetry run python -m pip install pydantic
       - name: Run tests and generate coverage report
-        run: pytest tests/integration/projects/general --project-root tests/integration/projects/general -vvv --capture=tee-sys --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"internal.xml"
+        run: poetry run python -m pytest tests/integration/projects/general --project-root tests/integration/projects/general -vvv --capture=tee-sys --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"internal.xml"
+
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2
         with:

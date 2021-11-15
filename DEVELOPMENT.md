@@ -18,6 +18,12 @@ Clone the source code from BentoML's GitHub repository:
 git clone https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
+If you want to use [`poetry`](https://python-poetry.org/) then do:
+
+```bash
+poetry install
+```
+
 Install BentoML with pip in `editable` mode:
 ```bash
 make install-local

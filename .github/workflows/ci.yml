@@ -100,7 +100,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ matrix.path }}
-          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
@@ -147,7 +147,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ matrix.path }}
-          key: ${{ runner.os }}-pip-${{ hasFiles('setup.py') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
         run: ./scripts/ci/install_dependencies.sh.cmd
       - name: install optional dependencies

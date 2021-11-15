@@ -69,6 +69,10 @@ jobs:
         run: ./scripts/ci/style/docs_spell_check.sh
 
   unit_tests:
+    needs:
+      - diff
+
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -102,6 +106,10 @@ jobs:
           verbose: true
 
   bento_server_integration_tests:
+    needs:
+      - diff
+
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
     name: bento_server_integration_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20

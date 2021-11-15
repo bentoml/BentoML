@@ -1,8 +1,8 @@
 comment:
   layout: "reach, diff, flags, files"
   behavior: default
-  require_base: yes
-  require_head: yes
+  require_base: no
+  require_head: no
   branches:
     - "main"
     - "bentoml-1.0"

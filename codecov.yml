@@ -71,6 +71,3 @@ flags:
     carryforward: true
     paths:
       - "bentoml/_internal/**/*"
-
-github_checks:
-  annotations: false

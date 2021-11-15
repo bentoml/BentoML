@@ -1,9 +1,8 @@
 comment:
   layout: "reach, diff, flags, files"
   behavior: default
-  require_changes: false
-  require_base: true
-  require_head: true
+  require_base: no
+  require_head: no
   branches:
     - "main"
     - "bentoml-1.0"
@@ -11,7 +10,6 @@ comment:
 
 ignore:
   - "bentoml/testing/**/*"
-  - "bentoml/_internal/typing_extensions/**/*"
   - "bentoml/_internal/types.py"
   - "bentoml/__main__.py"
   - "bentoml/_version.py"
@@ -24,71 +22,52 @@ coverage:
   status:
     project:
       default:
-        target: 83%
+        target: auto
         threshold: 10%
-        base: auto
-        flags:
-          - frameworks
-          - bento-server
       frameworks:
-        target: 91%
+        target: auto
+        threshold: 10%
         flags:
           - frameworks
       bento-server:
-        target: 81%
+        target: auto
+        threshold: 10%
         flags:
           - bento-server
     patch:
       default:
-        target: auto
         threshold: 10%
-        if_ci_failed: error
-        only_pulls: true
 
-flag_management:
-  default_rules:
-    carryforward: true
-    ignore:
-      - "bentoml/build_utils.py"
-      - "bentoml/io.py"
-    statuses:
-      type: "project"
-      target: "auto"
-      threshold: 10%
+flags:
   frameworks:
-    name: frameworks
+    carryforward: true
     paths:
-      - "bentoml/catboost.py"
-      - "bentoml/detectron.py"
-      - "bentoml/easyocr.py"
-      - "bentoml/evalml.py"
-      - "bentoml/fastai.py"
-      - "bentoml/fasttext.py"
-      - "bentoml/flax.py"
-      - "bentoml/gluon.py"
-      - "bentoml/h2o.py"
-      - "bentoml/keras.py"
-      - "bentoml/lightgbm.py"
-      - "bentoml/mlflow.py"
-      - "bentoml/onnx.py"
-      - "bentoml/onnxmlir.py"
-      - "bentoml/paddle.py"
-      - "bentoml/pycaret.py"
-      - "bentoml/pyspark.py"
-      - "bentoml/pytorch.py"
-      - "bentoml/pytorch_lightning.py"
-      - "bentoml/sklearn.py"
-      - "bentoml/spacy.py"
-      - "bentoml/statsmodels.py"
-      - "bentoml/tensorflow.py"
-      - "bentoml/transformers.py"
-      - "bentoml/xgboost.py"
-    statuses:
-      type: "project"
-      target: 90%
-      threshold: 10%
+      - bentoml/catboost.py
+      - bentoml/detectron.py
+      - bentoml/easyocr.py
+      - bentoml/evalml.py
+      - bentoml/fastai.py
+      - bentoml/fasttext.py
+      - bentoml/flax.py
+      - bentoml/gluon.py
+      - bentoml/h2o.py
+      - bentoml/keras.py
+      - bentoml/lightgbm.py
+      - bentoml/mlflow.py
+      - bentoml/onnx.py
+      - bentoml/onnxmlir.py
+      - bentoml/paddle.py
+      - bentoml/pycaret.py
+      - bentoml/pyspark.py
+      - bentoml/pytorch.py
+      - bentoml/pytorch_lightning.py
+      - bentoml/sklearn.py
+      - bentoml/spacy.py
+      - bentoml/statsmodels.py
+      - bentoml/tensorflow.py
+      - bentoml/transformers.py
+      - bentoml/xgboost.py
   bento-server:
     carryforward: true
-    name: bento-server
     paths:
       - "bentoml/_internal/**/*"

@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import os
 import typing as t
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
@@ -21,6 +22,21 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 SYSTEM_HOME = os.path.expanduser("~")
+
+
+def _create_dir_if_not_exist(path: str):
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+
+BENTOML_HOME = expand_env_var(
+    os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml"))
+)
+DEFAULT_BENTOS_PATH = os.path.join(BENTOML_HOME, "bentos")
+DEFAULT_MODELS_PATH = os.path.join(BENTOML_HOME, "models")
+
+_create_dir_if_not_exist(BENTOML_HOME)
+_create_dir_if_not_exist(DEFAULT_BENTOS_PATH)
+_create_dir_if_not_exist(DEFAULT_MODELS_PATH)
 
 
 SCHEMA = Schema(
@@ -164,23 +180,9 @@ class BentoMLContainerClass:
 
     config = providers.Configuration()
 
-    bentoml_home = providers.Static(
-        expand_env_var(
-            os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml"))
-        )
-    )
-
-    default_bento_store_base_dir: Provider[str] = providers.Factory(
-        os.path.join,
-        bentoml_home,
-        "bentos",
-    )
-
-    default_model_store_base_dir: Provider[str] = providers.Factory(
-        os.path.join,
-        bentoml_home,
-        "models",
-    )
+    bentoml_home = BENTOML_HOME
+    default_bento_store_base_dir = DEFAULT_BENTOS_PATH
+    default_model_store_base_dir = DEFAULT_MODELS_PATH
 
     @providers.SingletonFactory
     @staticmethod

@@ -52,6 +52,11 @@ install-docs-deps:  ## Install documentation dependencies
 	@echo Installing docs dependencies...
 	@pip install -e ".[doc_builder]"
 
+
+integration-tests-%:
+	$(eval framework :=$(subst integration-tests-, , $@))
+	./scripts/ci/framework_integration_tests.sh $(framework)
+
 # Docs
 watch-docs: ## Build and watch documentation
 	@./docs/watch.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)

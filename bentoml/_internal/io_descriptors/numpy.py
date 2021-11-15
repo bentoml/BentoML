@@ -100,15 +100,17 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
         self._enforce_dtype = enforce_dtype or dtype is not None
         self._enforce_shape = enforce_shape or shape is not None
 
-    @staticmethod
-    def openapi_schema() -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
+    def _get_dtypes(self):
+        if hasattr(self, "_shape"):
+            return dict(type="array", items=dict(type="number"))
+        return dict()
+
+    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
         return {
             MIME_TYPE_JSON: {
                 "schema": dict(
                     type="array",
-                    items=dict(
-                        oneOf={"type": "integer"}.update(dict(type="array", items={}))
-                    ),
+                    items=self._get_dtypes(),
                 )
             }
         }

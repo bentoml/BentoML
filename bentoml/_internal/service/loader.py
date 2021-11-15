@@ -11,7 +11,7 @@ from ...exceptions import BentoMLException, NotFound
 from ..configuration.containers import BentoMLContainer
 from ..models.store import ModelStore
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ..bento import BentoStore
     from .service import Service
 

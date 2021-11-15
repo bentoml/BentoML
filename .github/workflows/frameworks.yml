@@ -176,12 +176,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh catboost
         shell: bash
@@ -207,12 +210,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh detectron2
         shell: bash
@@ -238,12 +244,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh easyocr
         shell: bash
@@ -256,101 +265,110 @@ jobs:
           flags: frameworks
           verbose: true
 
-  #  TODO: fix me
-  #  evalml_integration_tests:
-  #    needs: diff
-  #    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.evalml == 'true') || github.event_name == 'push' }}
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #      - uses: actions/checkout@v2
-  #        with:
-  #          fetch-depth: 0 # fetch all tags and branches
-  #      - name: Setup python
-  #        uses: actions/setup-python@v2
-  #        with:
-  #          python-version: 3.8
-  #      - name: Cache pip dependencies
-  #        uses: actions/cache@v2
-  #        with:
-  #          path: ~/.cache/pip
-  #          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-  #      - name: Install test dependencies
-  #        run: ./scripts/ci/install_dependencies.sh.cmd
-  #      - name: Run tests and generate coverage report
-  #        run: ./scripts/ci/framework_integration_tests.sh evalml
-  #        shell: bash
-  #      - name: Upload test coverage to Codecov
-  #        if: ${{ needs.diff.outputs.evalml == 'true' }}
-  #        uses: codecov/codecov-action@v2
-  #        with:
-  #           directory: ./
-  #           files: ./evalml.xml
-  #           flags: frameworks
-  #           verbose: true
+#  TODO: fix me
+#  evalml_integration_tests:
+#    needs: diff
+#    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.evalml == 'true') || github.event_name == 'push' }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0 # fetch all tags and branches
+#      - name: Setup python
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.8
+#      - name: Cache pip dependencies
+#        id: cache-pip
+#        uses: actions/cache@v2
+#        with:
+#          path: ~/.cache/pip
+#          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
+#      - name: Install test dependencies
+#        if: steps.cache-pip.outputs.cache-hit != 'true'
+#        run: ./scripts/ci/install_dependencies.sh.cmd
+#        shell: bash
+#      - name: Run tests and generate coverage report
+#        run: ./scripts/ci/framework_integration_tests.sh evalml
+#        shell: bash
+#      - name: Upload test coverage to Codecov
+#        if: ${{ needs.diff.outputs.evalml == 'true' }}
+#        uses: codecov/codecov-action@v2
+#        with:
+#           directory: ./
+#           files: ./evalml.xml
+#           flags: frameworks
+#           verbose: true
 
-  #  TODO: fix me
-  #  fastai_integration_tests:
-  #    needs: diff
-  #    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fastai == 'true') || github.event_name == 'push' }}
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #      - uses: actions/checkout@v2
-  #        with:
-  #          fetch-depth: 0 # fetch all tags and branches
-  #      - name: Setup python
-  #        uses: actions/setup-python@v2
-  #        with:
-  #          python-version: 3.8
-  #      - name: Cache pip dependencies
-  #        uses: actions/cache@v2
-  #        with:
-  #          path: ~/.cache/pip
-  #          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-  #      - name: Install test dependencies
-  #        run: ./scripts/ci/install_dependencies.sh.cmd
-  #      - name: Run tests and generate coverage report
-  #        run: ./scripts/ci/framework_integration_tests.sh fastai
-  #        shell: bash
-  #      - name: Upload test coverage to Codecov
-  #        if: ${{ needs.diff.outputs.fastai == 'true' }}
-  #        uses: codecov/codecov-action@v2
-  #        with:
-  #          directory: ./
-  #          files: ./fastai.xml
-  #          flags: frameworks
-  #          verbose: true
+#  TODO: fix me
+#  fastai_integration_tests:
+#    needs: diff
+#    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fastai == 'true') || github.event_name == 'push' }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0 # fetch all tags and branches
+#      - name: Setup python
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.8
+#      - name: Cache pip dependencies
+#        id: cache-pip
+#        uses: actions/cache@v2
+#        with:
+#          path: ~/.cache/pip
+#          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
+#      - name: Install test dependencies
+#        if: steps.cache-pip.outputs.cache-hit != 'true'
+#        run: ./scripts/ci/install_dependencies.sh.cmd
+#        shell: bash
+#      - name: Run tests and generate coverage report
+#        run: ./scripts/ci/framework_integration_tests.sh fastai
+#        shell: bash
+#      - name: Upload test coverage to Codecov
+#        if: ${{ needs.diff.outputs.fastai == 'true' }}
+#        uses: codecov/codecov-action@v2
+#        with:
+#          directory: ./
+#          files: ./fastai.xml
+#          flags: frameworks
+#          verbose: true
 
-  #  TODO: fix me
-  #  fasttext_integration_tests:
-  #    needs: diff
-  #    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fasttext == 'true') || github.event_name == 'push' }}
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #      - uses: actions/checkout@v2
-  #        with:
-  #          fetch-depth: 0 # fetch all tags and branches
-  #      - name: Setup python
-  #        uses: actions/setup-python@v2
-  #        with:
-  #          python-version: 3.8
-  #      - name: Cache pip dependencies
-  #        uses: actions/cache@v2
-  #        with:
-  #          path: ~/.cache/pip
-  #          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-  #      - name: Install test dependencies
-  #        run: ./scripts/ci/install_dependencies.sh.cmd
-  #      - name: Run tests and generate coverage report
-  #        run: ./scripts/ci/framework_integration_tests.sh fasttext
-  #        shell: bash
-  #      - name: Upload test coverage to Codecov
-  #        if: ${{ needs.diff.outputs.fasttext == 'true' }}
-  #        uses: codecov/codecov-action@v2
-  #        with:
-  #          directory: ./
-  #          files: ./fasttext.xml
-  #          flags: frameworks
-  #          verbose: true
+#  TODO: fix me
+#  fasttext_integration_tests:
+#    needs: diff
+#    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fasttext == 'true') || github.event_name == 'push' }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0 # fetch all tags and branches
+#      - name: Setup python
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.8
+#      - name: Cache pip dependencies
+#        id: cache-pip
+#        uses: actions/cache@v2
+#        with:
+#          path: ~/.cache/pip
+#          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
+#      - name: Install test dependencies
+#        if: steps.cache-pip.outputs.cache-hit != 'true'
+#        run: ./scripts/ci/install_dependencies.sh.cmd
+#        shell: bash
+#      - name: Run tests and generate coverage report
+#        run: ./scripts/ci/framework_integration_tests.sh fasttext
+#        shell: bash
+#      - name: Upload test coverage to Codecov
+#        if: ${{ needs.diff.outputs.fasttext == 'true' }}
+#        uses: codecov/codecov-action@v2
+#        with:
+#          directory: ./
+#          files: ./fasttext.xml
+#          flags: frameworks
+#          verbose: true
 
   # TODO(aarnphm): add Trax/Flax support
 
@@ -367,12 +385,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh gluon
         shell: bash
@@ -398,12 +419,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh h2o
         shell: bash
@@ -429,12 +453,15 @@ jobs:
         with:
           python-version: 3.7.10
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh keras_tf1
         shell: bash
@@ -460,12 +487,15 @@ jobs:
         with:
           python-version: 3.7.10
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh keras_tf2
         shell: bash
@@ -491,12 +521,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh lightgbm
         shell: bash
@@ -522,12 +555,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh mlflow
         shell: bash
@@ -553,12 +589,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh onnx
         shell: bash
@@ -586,12 +625,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: |
           python3 -m pip install tensorflow==2.2.0 pandas tf2onnx
@@ -621,12 +663,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh paddle
         shell: bash
@@ -652,12 +697,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh pycaret
         shell: bash
@@ -684,12 +732,15 @@ jobs:
 #        with:
 #          python-version: 3.7
 #      - name: Cache pip dependencies
+#        id: cache-pip
 #        uses: actions/cache@v2
 #        with:
 #          path: ~/.cache/pip
 #          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
 #      - name: Install test dependencies
+#        if: steps.cache-pip.outputs.cache-hit != 'true'
 #        run: ./scripts/ci/install_dependencies.sh.cmd
+#        shell: bash
 #      - name: Run tests and generate coverage report
 #        run: ./scripts/ci/framework_integration_tests.sh pyspark
 #        shell: bash
@@ -715,12 +766,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh pytorch
         shell: bash
@@ -746,12 +800,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -781,12 +838,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh sklearn
         shell: bash
@@ -812,12 +872,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh spacy
         shell: bash
@@ -843,12 +906,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh statsmodels
         shell: bash
@@ -874,12 +940,15 @@ jobs:
         with:
           python-version: 3.7
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh tf1
         shell: bash
@@ -905,12 +974,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh tf2
         shell: bash
@@ -936,12 +1008,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh transformers
         shell: bash
@@ -967,12 +1042,15 @@ jobs:
         with:
           python-version: 3.8
       - name: Cache pip dependencies
+        id: cache-pip
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
       - name: Install test dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: ./scripts/ci/install_dependencies.sh.cmd
+        shell: bash
       - name: Run tests and generate coverage report
         run: ./scripts/ci/framework_integration_tests.sh xgboost
         shell: bash

@@ -95,6 +95,7 @@ types_requires = [
     "types-setuptools",
     "pyspark-stubs",
     "types-filelock",
+    "types-PyYAML",
 ]
 
 dev_all = install_requires + dev_requires + docs_requires + types_requires

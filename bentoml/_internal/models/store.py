@@ -61,7 +61,7 @@ def _process_model_tag(tag: str) -> t.Tuple[str, str]:
 class StoreCtx(object):
     name = attr.ib(type=str)
     version = attr.ib(type=str)
-    path = attr.ib(type=PathType)
+    path = attr.ib(type=str)
     tag = attr.ib(type=str)
     labels = attr.ib(
         factory=list,

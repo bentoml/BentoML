@@ -25,9 +25,6 @@ coverage:
         target: 83%
         threshold: 10%
         base: auto
-        flags:
-          - frameworks
-          - bento-server
       frameworks:
         target: 91%
         flags:
@@ -72,8 +69,6 @@ flags:
       - bentoml/tensorflow.py
       - bentoml/transformers.py
       - bentoml/xgboost.py
-    statuses:
-      target: 90%
   bento-server:
     carryforward: true
     paths:

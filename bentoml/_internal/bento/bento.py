@@ -2,9 +2,9 @@ import logging
 import os
 import typing as t
 from collections import UserDict
-from dataclasses import dataclass
 from datetime import datetime
 
+import attr
 import fs
 import pathspec
 import yaml
@@ -28,12 +28,11 @@ if t.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-
 BENTO_YAML_FILENAME = "bento.yaml"
 BENTO_PROJECT_DIR_NAME = "src"
 
 
-@dataclass
+@attr.define(repr=False)
 class Bento(StoreItem):
     _tag: Tag
     _fs: FS

@@ -152,11 +152,11 @@ main() {
     poetry run python -m pip install -r "$REQ_FILE" || exit 1
   fi
 
-  if [[ -z "$external_scripts" ]]; then
-    eval "$external_scripts" || exit 1
-  fi
+  eval "$external_scripts" || exit 1
 
-  poetry run pytest "$GIT_ROOT"/"$test_dir"/"$fname" "${OPTS[@]}"
+  if ! (poetry run pytest "$GIT_ROOT"/"$test_dir"/"$fname" "${OPTS[@]}"); then
+    err=1
+  fi
 
   # Return non-zero if pytest failed
   if ! test $err = 0; then

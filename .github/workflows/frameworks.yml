@@ -163,6 +163,7 @@ jobs:
               - bentoml/xgboost.py
               - tests/integration/frameworks/test_xgboost_impl.py
 
+
   catboost_integration_tests:
     needs: diff
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.catboost == 'true') || github.event_name == 'push' }}
@@ -175,16 +176,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh catboost
         shell: bash
@@ -209,16 +232,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh detectron2
         shell: bash
@@ -243,16 +288,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh easyocr
         shell: bash
@@ -278,16 +345,38 @@ jobs:
 #        uses: actions/setup-python@v2
 #        with:
 #          python-version: 3.8
+#
+#      - name: Get full Python version
+#        id: full-python-version
+#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+#
+#      - name: Bootstrap poetry
+#        run: |
+#          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+#
+#      - name: Update PATH
+#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+#
+#      - name: Configure poetry
+#        run: poetry config virtualenvs.in-project true
+#
 #      - name: Cache pip dependencies
-#        id: cache-pip
 #        uses: actions/cache@v2
+#        id: cache-pip
 #        with:
-#          path: ~/.cache/pip
-#          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-#      - name: Install test dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true'
-#        run: ./scripts/ci/install_dependencies.sh.cmd
-#        shell: bash
+#          path: .venv
+#          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+#          restore-keys: |
+#            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+#
+#      - name: Ensure cache is healthy
+#        if: steps.cache.outputs.cache-hit == 'true'
+#        run: timeout 10s poetry run pip --version || rm -rf .venv
+#
+#      - name: Install dependencies
+#        if: steps.cache.outputs.cache-hit != 'true'
+#        run: poetry install
+#
 #      - name: Run tests and generate coverage report
 #        run: ./scripts/ci/run_tests.sh evalml
 #        shell: bash
@@ -313,16 +402,38 @@ jobs:
 #        uses: actions/setup-python@v2
 #        with:
 #          python-version: 3.8
+#
+#      - name: Get full Python version
+#        id: full-python-version
+#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+#
+#      - name: Bootstrap poetry
+#        run: |
+#          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+#
+#      - name: Update PATH
+#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+#
+#      - name: Configure poetry
+#        run: poetry config virtualenvs.in-project true
+#
 #      - name: Cache pip dependencies
-#        id: cache-pip
 #        uses: actions/cache@v2
+#        id: cache-pip
 #        with:
-#          path: ~/.cache/pip
-#          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-#      - name: Install test dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true'
-#        run: ./scripts/ci/install_dependencies.sh.cmd
-#        shell: bash
+#          path: .venv
+#          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+#          restore-keys: |
+#            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+#
+#      - name: Ensure cache is healthy
+#        if: steps.cache.outputs.cache-hit == 'true'
+#        run: timeout 10s poetry run pip --version || rm -rf .venv
+#
+#      - name: Install dependencies
+#        if: steps.cache.outputs.cache-hit != 'true'
+#        run: poetry install
+#
 #      - name: Run tests and generate coverage report
 #        run: ./scripts/ci/run_tests.sh fastai
 #        shell: bash
@@ -348,16 +459,38 @@ jobs:
 #        uses: actions/setup-python@v2
 #        with:
 #          python-version: 3.8
+#
+#      - name: Get full Python version
+#        id: full-python-version
+#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+#
+#      - name: Bootstrap poetry
+#        run: |
+#          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+#
+#      - name: Update PATH
+#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+#
+#      - name: Configure poetry
+#        run: poetry config virtualenvs.in-project true
+#
 #      - name: Cache pip dependencies
-#        id: cache-pip
 #        uses: actions/cache@v2
+#        id: cache-pip
 #        with:
-#          path: ~/.cache/pip
-#          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-#      - name: Install test dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true'
-#        run: ./scripts/ci/install_dependencies.sh.cmd
-#        shell: bash
+#          path: .venv
+#          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+#          restore-keys: |
+#            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+#
+#      - name: Ensure cache is healthy
+#        if: steps.cache.outputs.cache-hit == 'true'
+#        run: timeout 10s poetry run pip --version || rm -rf .venv
+#
+#      - name: Install dependencies
+#        if: steps.cache.outputs.cache-hit != 'true'
+#        run: poetry install
+#
 #      - name: Run tests and generate coverage report
 #        run: ./scripts/ci/run_tests.sh fasttext
 #        shell: bash
@@ -384,16 +517,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh gluon
         shell: bash
@@ -418,16 +573,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh h2o
         shell: bash
@@ -452,16 +629,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7.10
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh keras_tf1
         shell: bash
@@ -486,16 +685,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7.10
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh keras_tf2
         shell: bash
@@ -520,16 +741,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh lightgbm
         shell: bash
@@ -554,16 +797,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh mlflow
         shell: bash
@@ -588,16 +853,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh onnx
         shell: bash
@@ -624,23 +911,45 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: |
-          python3 -m pip install tensorflow==2.2.0 pandas tf2onnx
+          poetry run python -m pip install tensorflow==2.2.0 pandas tf2onnx
           export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
           export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
           apt-get update && apt-get install curl -y
-          pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"onnxmlir.xml"
+          poetry run pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"onnxmlir.xml"
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnxmlir == 'true' }}
         uses: codecov/codecov-action@v2
@@ -662,16 +971,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh paddle
         shell: bash
@@ -696,16 +1027,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh pycaret
         shell: bash
@@ -731,16 +1084,38 @@ jobs:
 #        uses: actions/setup-python@v2
 #        with:
 #          python-version: 3.7
+#
+#      - name: Get full Python version
+#        id: full-python-version
+#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+#
+#      - name: Bootstrap poetry
+#        run: |
+#          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+#
+#      - name: Update PATH
+#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+#
+#      - name: Configure poetry
+#        run: poetry config virtualenvs.in-project true
+#
 #      - name: Cache pip dependencies
-#        id: cache-pip
 #        uses: actions/cache@v2
+#        id: cache-pip
 #        with:
-#          path: ~/.cache/pip
-#          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-#      - name: Install test dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true'
-#        run: ./scripts/ci/install_dependencies.sh.cmd
-#        shell: bash
+#          path: .venv
+#          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+#          restore-keys: |
+#            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+#
+#      - name: Ensure cache is healthy
+#        if: steps.cache.outputs.cache-hit == 'true'
+#        run: timeout 10s poetry run pip --version || rm -rf .venv
+#
+#      - name: Install dependencies
+#        if: steps.cache.outputs.cache-hit != 'true'
+#        run: poetry install
+#
 #      - name: Run tests and generate coverage report
 #        run: ./scripts/ci/run_tests.sh pyspark
 #        shell: bash
@@ -765,16 +1140,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh pytorch
         shell: bash
@@ -799,16 +1196,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -837,16 +1256,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh sklearn
         shell: bash
@@ -871,16 +1312,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh spacy
         shell: bash
@@ -905,16 +1368,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh statsmodels
         shell: bash
@@ -939,16 +1424,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh tf1
         shell: bash
@@ -973,16 +1480,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh tf2
         shell: bash
@@ -1007,16 +1536,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh transformers
         shell: bash
@@ -1041,16 +1592,38 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
+
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache pip dependencies
-        id: cache-pip
         uses: actions/cache@v2
+        id: cache-pip
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('setup.py') }}
-      - name: Install test dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: ./scripts/ci/install_dependencies.sh.cmd
-        shell: bash
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: poetry install
+
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh xgboost
         shell: bash

@@ -29,4 +29,3 @@ need_cmd() {
 }
 
 set -eo pipefail
-IFS=$'\n\t'

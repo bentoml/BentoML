@@ -167,6 +167,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
         run: poetry install
 
       - name: Run Unit Tests
@@ -250,10 +251,8 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
         run: poetry install
-
-      - name: install optional dependencies
-        run: poetry run python -m pip install pydantic
 
       - name: Run tests and generate coverage report
         run: ./scripts/ci/run_tests.sh internal --project-root tests/integration/projects/general -vvv --capture=tee-sys

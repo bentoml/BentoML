@@ -1,5 +1,5 @@
-from ._internal.configuration import load_global_config  # noqa: E402
 from ._internal.configuration import BENTOML_VERSION as __version__
+from ._internal.configuration import load_global_config  # noqa: E402
 
 # Inject dependencies and configurations
 load_global_config()

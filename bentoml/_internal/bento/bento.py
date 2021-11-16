@@ -1,16 +1,17 @@
-import datetime
 import logging
 import os
 import typing as t
-from collections import UserDict
-from dataclasses import dataclass
+from datetime import datetime, timezone
 
+import attr
 import fs
+import fs.errors
+import fs.mirror
+import fs.osfs
 import pathspec
 import yaml
 from fs.base import FS
 from fs.copy import copy_dir, copy_file
-from fs.mirror import mirror
 from simple_di import Provide, inject
 
 from ...exceptions import BentoMLException, InvalidArgument
@@ -24,14 +25,15 @@ from .env import BentoEnv
 if t.TYPE_CHECKING:
     from ..models.store import ModelInfo, ModelStore
     from ..service import Service
+    from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
 
-
 BENTO_YAML_FILENAME = "bento.yaml"
+BENTO_PROJECT_DIR_NAME = "src"
 
 
-@dataclass
+@attr.define(repr=False)
 class Bento(StoreItem):
     _tag: Tag
     _fs: FS
@@ -45,15 +47,14 @@ class Bento(StoreItem):
     def create(
         svc: "Service",
         build_ctx: PathType,
-        models: t.List[str],
+        additional_models: t.List[str],
         version: t.Optional[str],
-        description: t.Optional[str],
         include: t.List[str],
         exclude: t.List[str],
         env: t.Dict[str, t.Any],
         labels: t.Dict[str, str],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ) -> "Bento":
+    ) -> "OSBento":
         tag = Tag(svc.name, version)
         if version is None:
             tag = tag.make_new_version()
@@ -65,6 +66,7 @@ class Bento(StoreItem):
             build_ctx = build_ctx.__fspath__()
         ctx_fs = fs.open_fs(build_ctx)
 
+        models = additional_models
         # Add Runner required models to models list
         for runner in svc._runners.values():  # type: ignore[reportPrivateUsage]
             models += runner.required_models
@@ -98,8 +100,8 @@ class Bento(StoreItem):
         spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
         exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
         exclude_specs: "list[t.Tuple[str, pathspec.PathSpec]]" = []
-        bento_fs.makedir(svc.name)
-        target_fs = bento_fs.opendir(svc.name)
+        bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
+        target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
 
         for dir_path, _, files in ctx_fs.walk():
             for ignore_file in [f for f in files if f.name == ".bentoignore"]:
@@ -135,9 +137,7 @@ class Bento(StoreItem):
 
         # Create `readme.md` file
         with bento_fs.open("README.md", "w") as f:
-            description = description if description else svc.__doc__
-            if description is not None:
-                f.write(description)
+            f.write(svc.doc)
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
@@ -146,49 +146,57 @@ class Bento(StoreItem):
 
         # Create bento.yaml
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
-            BentoMetadata.from_build_args(tag, svc, labels, models).dump(bento_yaml)
+            BentoInfo.from_build_args(tag, svc, labels, models).dump(bento_yaml)
 
-        return Bento(tag, bento_fs)
+        return OSBento(tag, bento_fs)
 
     @classmethod
     def from_fs(cls, tag: Tag, fs: FS) -> "Bento":
-        with fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
-            bento_metadata = BentoMetadata.from_yaml_file(bento_yaml)
+        res = cls(Tag("", ""), fs)
+        res._tag = res.info.tag
 
         # TODO: Check bento_metadata['bentoml_version'] and show user warning if needed
-        return cls(bento_metadata.tag, fs)
-
-    @cached_property
-    def metadata(self) -> "BentoMetadata":
-        with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
-            return BentoMetadata.from_yaml_file(bento_yaml)
+        return res
 
     @property
-    def path(self) -> str:
-        return self._fs.getsyspath("/")
+    def path(self) -> t.Optional[str]:
+        try:
+            return OSBento.from_Bento(self).path
+        except fs.errors.NoSysPath:
+            return None
 
-    def creation_time(self) -> datetime.datetime:
-        return self.metadata["creation_time"]
+    @cached_property
+    def info(self) -> "BentoInfo":
+        with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
+            return BentoInfo.from_yaml_file(bento_yaml)
+
+    @property
+    def creation_time(self) -> datetime:
+        return self.info.creation_time
 
     def save(
         self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
-    ) -> "Bento":
+    ) -> "OSBento":
+        try:
+            OSBento.from_Bento(self).save(bento_store)
+        except TypeError:
+            pass
+
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid")
 
         with bento_store.register(self.tag) as bento_path:
-            # TODO: handle non-OSFS store types
-            os.rmdir(bento_path)
-            os.rename(self._fs.getsyspath("/"), bento_path)
+            out_fs = fs.open_fs(bento_path, create=True, writeable=True)
+            fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
+            self._fs = out_fs
 
-        return bento_store.get(self.tag)
+        return OSBento.from_Bento(self)
 
     def export(self, path: str):
-        mirror(
-            self._fs, fs.open_fs(path, create=True, writeable=True), copy_if_newer=False
-        )
+        out_fs = fs.open_fs(path, create=True, writeable=True)
+        fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
 
     def push(self):
         pass
@@ -196,46 +204,72 @@ class Bento(StoreItem):
     def validate(self):
         return self._fs.isfile(BENTO_YAML_FILENAME)
 
+    def __str__(self):
+        return f'Bento(tag="{self.tag}", path="{self.path}")'
 
-class BentoStore(Store[Bento]):
+
+class OSBento(Bento):
+    @staticmethod
+    def from_Bento(bento: Bento) -> "OSBento":
+        if not isinstance(bento._fs, fs.osfs.OSFS):
+            raise TypeError(f"this Bento ('{bento._tag}') is not in the OS filesystem")
+        bento.__class__ = OSBento
+        return bento  # type: ignore
+
+    @property
+    def path(self) -> str:
+        return self._fs.getsyspath("/")
+
+    def save(
+        self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
+    ) -> "OSBento":
+        if not self.validate():
+            logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
+            raise BentoMLException("Failed to save Bento because it was invalid")
+
+        with bento_store.register(self.tag) as bento_path:
+            os.rmdir(bento_path)
+            os.rename(self._fs.getsyspath("/"), bento_path)
+            self._fs.close()
+            self._fs = fs.open_fs(bento_path)
+
+        return self
+
+
+class BentoStore(Store[OSBento]):
     def __init__(self, base_path: PathType):
-        super().__init__(base_path, Bento)
+        super().__init__(base_path, OSBento)
 
 
-if t.TYPE_CHECKING:
-    BentoMetadataBase = UserDict[str, t.Any]
-else:
-    BentoMetadataBase = UserDict
+@attr.define(repr=False)
+class BentoInfo:
+    service: str
+    tag: Tag
+    bentoml_version: str
+    creation_time: datetime
+    labels: t.Dict[str, t.Any]
+    apis: t.Dict[str, InferenceAPI]
+    models: t.List[str]
 
-
-class BentoMetadata(BentoMetadataBase):
-    def dump(self, stream: t.IO[str]):
-        return yaml.dump(self.data, stream, sort_keys=False)
+    def dump(self, stream: t.IO[t.Any]):
+        return yaml.dump(self, stream, sort_keys=False)
 
     @classmethod
     def from_build_args(
         cls, tag: Tag, svc: "Service", labels: t.Dict[str, t.Any], models: t.List[str]
     ):
-        bento_metadata = cls()
-        bento_metadata["service"] = svc._import_str  # type: ignore[reportPrivateUsage]
-        bento_metadata["name"] = tag.name
-        bento_metadata["version"] = tag.version
-        bento_metadata["bentoml_version"] = BENTOML_VERSION
-        bento_metadata["created_at"] = datetime.datetime.now().isoformat()
-        bento_metadata["labels"] = labels  # TODO: validate user provided labels
-        apis = {}
-        for api in svc._apis.values():  # type: ignore[reportPrivateUsage]
-            apis[api.name] = dict(
-                route=api.route,
-                doc=api.doc,
-                input=api.input.__class__.__name__,
-                output=api.output.__class__.__name__,
-            )
-        bento_metadata["apis"] = apis
-        bento_metadata["models"] = models  # TODO: populate with model & framework info
+        bento_info = cls(
+            service=svc._import_str,  # type: ignore[reportPrivateUsage]
+            tag=tag,
+            bentoml_version=BENTOML_VERSION,
+            creation_time=datetime.now(timezone.utc),
+            labels=labels,  # TODO: validate user provided labels
+            apis=svc._apis,  # type: ignore[reportPrivateUsage]
+            models=models,  # TODO: populate with model & framework info
+        )
 
-        bento_metadata.validate()
-        return bento_metadata
+        bento_info.validate()
+        return bento_info
 
     @classmethod
     def from_yaml_file(cls, stream: t.IO[t.Any]):
@@ -245,19 +279,21 @@ class BentoMetadata(BentoMetadataBase):
             logger.error(exc)
             raise
 
-        bento_metadata = cls()
-        bento_metadata.update(yaml_content)
-        bento_metadata.validate()
-        return bento_metadata
+        bento_info = cls(**yaml_content)
+        bento_info.validate()
+        return bento_info
 
     def validate(self):
         # Validate bento.yml file schema, content, bentoml version, etc
         ...
 
-    @property
-    def creation_time(self):
-        return datetime.datetime.fromisoformat(self["created_at"])
 
-    @property
-    def tag(self):
-        return Tag(self["name"], self["version"])
+def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
+    to_dump = attr.asdict(info)
+    to_dump["name"] = info.tag.name
+    to_dump["version"] = info.tag.version
+    del to_dump["tag"]
+    return dumper.represent_dict(to_dump)
+
+
+yaml.add_representer(BentoInfo, _BentoInfo_dumper)

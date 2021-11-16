@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 BENTO_YAML_FILENAME = "bento.yaml"
+BENTO_PROJECT_DIR_NAME = "src"
 
 
 @dataclass
@@ -100,8 +101,8 @@ class Bento(StoreItem):
         spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
         exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
         exclude_specs: "list[t.Tuple[str, pathspec.PathSpec]]" = []
-        bento_fs.makedir(svc.name)
-        target_fs = bento_fs.opendir(svc.name)
+        bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
+        target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
 
         for dir_path, _, files in ctx_fs.walk():
             for ignore_file in [f for f in files if f.name == ".bentoignore"]:

@@ -21,7 +21,7 @@ class StoreItem(ABC):
 
     @classmethod
     @abstractmethod
-    def from_fs(cls: t.Type[T], tag: Tag, fs: FS) -> T:
+    def from_fs(cls: t.Type[T], tag: Tag, item_fs: FS) -> T:
         pass
 
     @property

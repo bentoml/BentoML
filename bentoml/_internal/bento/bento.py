@@ -150,8 +150,8 @@ class Bento(StoreItem):
         return OSBento(tag, bento_fs)
 
     @classmethod
-    def from_fs(cls, tag: Tag, fs: FS) -> "Bento":
-        res = cls(Tag("", ""), fs)
+    def from_fs(cls, tag: Tag, item_fs: FS) -> "Bento":
+        res = cls(Tag("", ""), item_fs)
         res._tag = res.info.tag
 
         # TODO: Check bento_metadata['bentoml_version'] and show user warning if needed

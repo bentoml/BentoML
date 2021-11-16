@@ -6,11 +6,13 @@ from datetime import datetime
 
 import attr
 import fs
+import fs.errors
+import fs.mirror
+import fs.osfs
 import pathspec
 import yaml
 from fs.base import FS
 from fs.copy import copy_dir, copy_file
-from fs.mirror import mirror
 from simple_di import Provide, inject
 
 from bentoml import __version__
@@ -53,7 +55,7 @@ class Bento(StoreItem):
         env: t.Dict[str, t.Any],
         labels: t.Dict[str, str],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ) -> "Bento":
+    ) -> "OSBento":
         tag = Tag(svc.name, version)
         if version is None:
             tag = tag.make_new_version()
@@ -147,7 +149,7 @@ class Bento(StoreItem):
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             BentoInfo.from_build_args(tag, svc, labels, models).dump(bento_yaml)
 
-        return Bento(tag, bento_fs)
+        return OSBento(tag, bento_fs)
 
     @classmethod
     def from_fs(cls, tag: Tag, fs: FS) -> "Bento":
@@ -158,8 +160,11 @@ class Bento(StoreItem):
         return res
 
     @property
-    def path(self) -> str:
-        return self._fs.getsyspath("/")
+    def path(self) -> t.Optional[str]:
+        try:
+            return OSBento.from_Bento(self).path
+        except fs.errors.NoSysPath:
+            return None
 
     @cached_property
     def info(self) -> "BentoInfo":
@@ -172,23 +177,26 @@ class Bento(StoreItem):
 
     def save(
         self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
-    ) -> "Bento":
+    ) -> "OSBento":
+        try:
+            OSBento.from_Bento(self).save(bento_store)
+        except TypeError:
+            pass
+
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid")
 
         with bento_store.register(self.tag) as bento_path:
-            # TODO: handle non-OSFS store types
-            os.rmdir(bento_path)
-            os.rename(self._fs.getsyspath("/"), bento_path)
+            out_fs = fs.open_fs(bento_path, create=True, writeable=True)
+            fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
 
         return bento_store.get(self.tag)
 
     def export(self, path: str):
-        mirror(
-            self._fs, fs.open_fs(path, create=True, writeable=True), copy_if_newer=False
-        )
+        out_fs = fs.open_fs(path, create=True, writeable=True)
+        fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
 
     def push(self):
         pass
@@ -200,9 +208,37 @@ class Bento(StoreItem):
         return f'Bento(tag="{self.tag}", path="{self.path}")'
 
 
-class BentoStore(Store[Bento]):
+class OSBento(Bento):
+    @staticmethod
+    def from_Bento(bento: Bento) -> "OSBento":
+        if not isinstance(bento._fs, fs.osfs.OSFS):
+            raise TypeError(f"this Bento ('{bento._tag}') is not in the OS filesystem")
+        bento.__class__ = OSBento
+        return bento  # type: ignore
+
+    @property
+    def path(self) -> str:
+        return self._fs.getsyspath("/")
+
+    def save(
+        self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
+    ) -> "OSBento":
+        if not self.validate():
+            logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
+            raise BentoMLException("Failed to save Bento because it was invalid")
+
+        with bento_store.register(self.tag) as bento_path:
+            os.rmdir(bento_path)
+            os.rename(self._fs.getsyspath("/"), bento_path)
+            self._fs.close()
+            self._fs = fs.open_fs(bento_path)
+
+        return bento_store.get(self.tag)
+
+
+class BentoStore(Store[OSBento]):
     def __init__(self, base_path: PathType):
-        super().__init__(base_path, Bento)
+        super().__init__(base_path, OSBento)
 
 
 if t.TYPE_CHECKING:

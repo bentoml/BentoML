@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import fs
 from simple_di import Provide, inject
 
-from ._internal.bento import Bento
+from ._internal.bento import Bento, SysPathBento
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import load
 from ._internal.types import Tag
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def list(
     tag: t.Optional[t.Union[Tag, str]] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> t.List[Bento]:
+) -> t.List[SysPathBento]:
     return _bento_store.list(tag)
 
 

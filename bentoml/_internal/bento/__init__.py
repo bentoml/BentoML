@@ -1,3 +1,3 @@
-from .bento import Bento, BentoStore
+from .bento import Bento, BentoStore, SysPathBento
 
-__all__ = ["Bento", "BentoStore"]
+__all__ = ["Bento", "BentoStore", "SysPathBento"]

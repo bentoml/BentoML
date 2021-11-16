@@ -55,7 +55,7 @@ class Bento(StoreItem):
         env: t.Dict[str, t.Any],
         labels: t.Dict[str, str],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    ) -> "OSBento":
+    ) -> "SysPathBento":
         tag = Tag(svc.name, version)
         if version is None:
             tag = tag.make_new_version()
@@ -147,7 +147,7 @@ class Bento(StoreItem):
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             BentoInfo.from_build_args(tag, svc, labels, models).dump(bento_yaml)
 
-        return OSBento(tag, bento_fs)
+        return SysPathBento(tag, bento_fs)
 
     @classmethod
     def from_fs(cls, tag: Tag, item_fs: FS) -> "Bento":
@@ -160,8 +160,8 @@ class Bento(StoreItem):
     @property
     def path(self) -> t.Optional[str]:
         try:
-            return OSBento.from_Bento(self).path
-        except fs.errors.NoSysPath:
+            return SysPathBento.from_Bento(self).path
+        except TypeError:
             return None
 
     @cached_property
@@ -175,9 +175,9 @@ class Bento(StoreItem):
 
     def save(
         self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
-    ) -> "OSBento":
+    ) -> "SysPathBento":
         try:
-            OSBento.from_Bento(self).save(bento_store)
+            SysPathBento.from_Bento(self).save(bento_store)
         except TypeError:
             pass
 
@@ -191,7 +191,7 @@ class Bento(StoreItem):
             self._fs.close()
             self._fs = out_fs
 
-        return OSBento.from_Bento(self)
+        return SysPathBento.from_Bento(self)
 
     def export(self, path: str):
         out_fs = fs.open_fs(path, create=True, writeable=True)
@@ -207,12 +207,14 @@ class Bento(StoreItem):
         return f'Bento(tag="{self.tag}", path="{self.path}")'
 
 
-class OSBento(Bento):
+class SysPathBento(Bento):
     @staticmethod
-    def from_Bento(bento: Bento) -> "OSBento":
-        if not isinstance(bento._fs, fs.osfs.OSFS):
+    def from_Bento(bento: Bento) -> "SysPathBento":
+        try:
+            bento._fs.getsyspath("/")
+        except fs.errors.NoSysPath:
             raise TypeError(f"this Bento ('{bento._tag}') is not in the OS filesystem")
-        bento.__class__ = OSBento
+        bento.__class__ = SysPathBento
         return bento  # type: ignore
 
     @property
@@ -221,7 +223,7 @@ class OSBento(Bento):
 
     def save(
         self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
-    ) -> "OSBento":
+    ) -> "SysPathBento":
         if not self.validate():
             logger.warning(f"Failed to create Bento for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Bento because it was invalid")
@@ -235,9 +237,9 @@ class OSBento(Bento):
         return self
 
 
-class BentoStore(Store[OSBento]):
+class BentoStore(Store[SysPathBento]):
     def __init__(self, base_path: PathType):
-        super().__init__(base_path, OSBento)
+        super().__init__(base_path, SysPathBento)
 
 
 @attr.define(repr=False)

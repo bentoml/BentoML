@@ -26,7 +26,6 @@ from .env import BentoEnv
 if TYPE_CHECKING:  # pragma: no cover
     from ..models.store import ModelInfo, ModelStore
     from ..service import Service
-    from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +144,7 @@ class Bento(StoreItem):
 
         # Create bento.yaml
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
-            BentoInfo.from_build_args(tag, svc, labels, models).dump(bento_yaml)
+            BentoInfo(tag, svc, labels, models).dump(bento_yaml)
 
         return SysPathBento(tag, bento_fs)
 
@@ -242,35 +241,20 @@ class BentoStore(Store[SysPathBento]):
         super().__init__(base_path, SysPathBento)
 
 
-@attr.define(repr=False)
+@attr.define(repr=False, frozen=True)
 class BentoInfo:
-    service: str
     tag: Tag
-    bentoml_version: str
-    creation_time: datetime
-    labels: t.Dict[str, t.Any]
-    apis: t.Dict[str, "InferenceAPI"]
-    models: t.List[str]
+    service: "Service"
+    labels: t.Dict[str, t.Any]  # TODO: validate user-provide labels
+    models: t.List[str]  # TODO: populate with model & framework info
+    bentoml_version: str = BENTOML_VERSION
+    creation_time: datetime = attr.field(factory=lambda: datetime.now(timezone.utc))
+
+    def __attrs_post_init__(self):
+        self.validate()
 
     def dump(self, stream: t.IO[t.Any]):
         return yaml.dump(self, stream, sort_keys=False)
-
-    @classmethod
-    def from_build_args(
-        cls, tag: Tag, svc: "Service", labels: t.Dict[str, t.Any], models: t.List[str]
-    ):
-        bento_info = cls(
-            service=svc._import_str,  # type: ignore[reportPrivateUsage]
-            tag=tag,
-            bentoml_version=BENTOML_VERSION,
-            creation_time=datetime.now(timezone.utc),
-            labels=labels,  # TODO: validate user provided labels
-            apis=svc._apis,  # type: ignore[reportPrivateUsage]
-            models=models,  # TODO: populate with model & framework info
-        )
-
-        bento_info.validate()
-        return bento_info
 
     @classmethod
     def from_yaml_file(cls, stream: t.IO[t.Any]):
@@ -281,7 +265,6 @@ class BentoInfo:
             raise
 
         bento_info = cls(**yaml_content)
-        bento_info.validate()
         return bento_info
 
     def validate(self):
@@ -290,11 +273,18 @@ class BentoInfo:
 
 
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
-    to_dump = attr.asdict(info)
-    to_dump["name"] = info.tag.name
-    to_dump["version"] = info.tag.version
-    del to_dump["tag"]
-    return dumper.represent_dict(to_dump)
+    return dumper.represent_dict(
+        {
+            "service": info.service._import_str,  # type: ignore[reportPrivateUsage]
+            "name": info.tag.name,
+            "version": info.tag.version,
+            "bentoml_version": info.bentoml_version,
+            "creation_time": info.creation_time,
+            "labels": info.labels,
+            "apis": info.service._apis,  # type: ignore[reportPrivateUsage]
+            "models": info.models,
+        }
+    )
 
 
 yaml.add_representer(BentoInfo, _BentoInfo_dumper)

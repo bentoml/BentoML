@@ -1,9 +1,9 @@
-import datetime
 import logging
 import os
 import typing as t
 from collections import UserDict
 from dataclasses import dataclass
+from datetime import datetime
 
 import fs
 import pathspec
@@ -168,7 +168,7 @@ class Bento(StoreItem):
             return BentoInfo.from_yaml_file(bento_yaml)
 
     @property
-    def creation_time(self) -> datetime.datetime:
+    def creation_time(self) -> datetime:
         return self.info["creation_time"]
 
     def save(
@@ -225,7 +225,7 @@ class BentoInfo(BentoInfoBase):
         bento_info["name"] = tag.name
         bento_info["version"] = tag.version
         bento_info["bentoml_version"] = __version__
-        bento_info["created_at"] = datetime.datetime.now().isoformat()
+        bento_info["created_at"] = datetime.now().isoformat()
         bento_info["labels"] = labels  # TODO: validate user provided labels
         apis = {}
         for api in svc._apis.values():  # type: ignore[reportPrivateUsage]
@@ -260,7 +260,7 @@ class BentoInfo(BentoInfoBase):
 
     @property
     def creation_time(self):
-        return datetime.datetime.fromisoformat(self["created_at"])
+        return datetime.fromisoformat(self["created_at"])
 
     @property
     def tag(self):

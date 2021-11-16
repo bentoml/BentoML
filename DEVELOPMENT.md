@@ -216,7 +216,7 @@ brew install fswatch
 
 Run the `watch.sh` script to start watching docs changes:
 ```bash
-./docs/watch_docs.sh
+./scripts/watch_docs.sh
 ```
 
 #### Debian-based distros
@@ -227,7 +227,7 @@ sudo apt install inotify-tools
 
 Run the `watch.sh` script to start watching docs changes:
 ```bash
-./docs/watch_docs.sh
+./scripts/watch_docs.sh
 ```
 
 ## Benchmark

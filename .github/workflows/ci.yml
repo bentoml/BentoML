@@ -149,7 +149,7 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
-          & $Env:ProgramFiles\Docker\Docker\DockerCli.exe -SwitchDaemon
+          $Env:ProgramFiles\Docker\Docker\DockerCli.exe -SwitchDaemon
 
       - name: Configure poetry
         run: poetry config virtualenvs.in-project true

@@ -11,7 +11,7 @@ from schema import And, Optional, Or, Schema, SchemaError, Use
 from simple_di import Provide, Provider, container, providers
 
 from ...exceptions import BentoMLConfigException
-from ..utils import get_free_port
+from ..utils import get_free_port, validate_or_create_dir
 from . import expand_env_var
 
 if TYPE_CHECKING:
@@ -24,19 +24,15 @@ LOGGER = logging.getLogger(__name__)
 SYSTEM_HOME = os.path.expanduser("~")
 
 
-def _create_dir_if_not_exist(path: str):
-    Path(path).mkdir(parents=True, exist_ok=True)
-
-
 BENTOML_HOME = expand_env_var(
     os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml"))
 )
 DEFAULT_BENTOS_PATH = os.path.join(BENTOML_HOME, "bentos")
 DEFAULT_MODELS_PATH = os.path.join(BENTOML_HOME, "models")
 
-_create_dir_if_not_exist(BENTOML_HOME)
-_create_dir_if_not_exist(DEFAULT_BENTOS_PATH)
-_create_dir_if_not_exist(DEFAULT_MODELS_PATH)
+validate_or_create_dir(BENTOML_HOME)
+validate_or_create_dir(DEFAULT_BENTOS_PATH)
+validate_or_create_dir(DEFAULT_MODELS_PATH)
 
 
 SCHEMA = Schema(

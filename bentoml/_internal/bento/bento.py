@@ -17,6 +17,7 @@ from simple_di import Provide, inject
 from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..service.inference_api import InferenceAPI
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
 from ..utils import cached_property
@@ -25,7 +26,6 @@ from .env import BentoEnv
 if t.TYPE_CHECKING:
     from ..models.store import ModelInfo, ModelStore
     from ..service import Service
-    from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
 

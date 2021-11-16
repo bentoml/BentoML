@@ -191,8 +191,9 @@ class Bento(StoreItem):
             out_fs = fs.open_fs(bento_path, create=True, writeable=True)
             fs.mirror.mirror(self._fs, out_fs, copy_if_newer=False)
             self._fs.close()
+            self._fs = out_fs
 
-        return bento_store.get(self.tag)
+        return OSBento.from_Bento(self)
 
     def export(self, path: str):
         out_fs = fs.open_fs(path, create=True, writeable=True)
@@ -233,7 +234,7 @@ class OSBento(Bento):
             self._fs.close()
             self._fs = fs.open_fs(bento_path)
 
-        return bento_store.get(self.tag)
+        return self
 
 
 class BentoStore(Store[OSBento]):

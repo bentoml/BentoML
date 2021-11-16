@@ -14,8 +14,7 @@ def test_create_simplebento(tmpdir):
         "simplebento.py:svc",
         version="1.0",
         build_ctx="./simplebento",
-        models=[],
-        # models=['iris_classifier:v123'],
+        additional_models=[],
         include=["*.py", "config.json", "somefile", "*dir*"],
         exclude=[
             "*.storage",

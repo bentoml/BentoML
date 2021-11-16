@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 BENTO_YAML_FILENAME = "bento.yaml"
+BENTO_PROJECT_DIR_NAME = "src"
 
 
 @dataclass
@@ -46,7 +47,7 @@ class Bento(StoreItem):
     def create(
         svc: "Service",
         build_ctx: PathType,
-        models: t.List[str],
+        additional_models: t.List[str],
         version: t.Optional[str],
         include: t.List[str],
         exclude: t.List[str],
@@ -65,6 +66,7 @@ class Bento(StoreItem):
             build_ctx = build_ctx.__fspath__()
         ctx_fs = fs.open_fs(build_ctx)
 
+        models = additional_models
         # Add Runner required models to models list
         for runner in svc._runners.values():  # type: ignore[reportPrivateUsage]
             models += runner.required_models
@@ -98,8 +100,8 @@ class Bento(StoreItem):
         spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
         exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
         exclude_specs: "list[t.Tuple[str, pathspec.PathSpec]]" = []
-        bento_fs.makedir(svc.name)
-        target_fs = bento_fs.opendir(svc.name)
+        bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
+        target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
 
         for dir_path, _, files in ctx_fs.walk():
             for ignore_file in [f for f in files if f.name == ".bentoignore"]:

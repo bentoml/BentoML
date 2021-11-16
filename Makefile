@@ -32,9 +32,7 @@ type: pull-checker-img ## Running type checker: mypy and pyright
 
 __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
 __style_name := ${__style_src:_check.sh=}
-__cmd :=$(foreach t, $(__style_name), ci-$(shell basename $(t)))
-__filters=ci-docs_spell
-tools := $(filter-out $(__filters),$(__cmd))
+tools :=$(foreach t, $(__style_name), ci-$(shell basename $(t)))
 
 ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, mypy, pyright
 
@@ -68,8 +66,8 @@ install-docs-deps:  ## Install documentation dependencies
 
 # Docs
 watch-docs: ## Build and watch documentation
-	@./docs/watch.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
-spellcheck-doc: ## Spell check documentation
+	@./scripts/watch_docs.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
+spellcheck-docs: ## Spell check documentation
 	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 
 OS := $(shell uname)
@@ -87,8 +85,10 @@ install-spellchecker-deps: ## Install Debian-based dependencies for spellchecker
 else
 install-watch-deps: ## Inform users to install inotify-tools depending on their distros
 	@echo Make sure to install inotify-tools from your distros package manager
+	exit 1
 install-spellchecker-deps: ## Inform users to install enchant depending on their distros
 	@echo Make sure to install enchant from your distros package manager
+	exit 1
 endif
 
 hooks: ## Install pre-defined hooks

@@ -60,6 +60,9 @@ jobs:
         run: make ci-pyright
 
   documentation_spelling_check:
+    defaults:
+      run:
+        shell: bash
     runs-on: ubuntu-latest
     needs:
       - diff
@@ -70,9 +73,37 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
+      - name: Bootstrap poetry
+        run: |
+          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        id: cache-pip
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Install dependencies
+        run: |
+          apt install -y libenchant-dev
       - name: Run spellcheck script
-        run: ./scripts/ci/style/docs_spell_check.sh
+        run: make spellcheck-docs
 
   unit_tests:
     needs:
@@ -113,6 +144,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      # https://github.community/t/github-actions-windows-runtime-linux-container-mode-docker/135874/2
       - name: Update Path for Windows and switch to Linux daemon
         if: ${{ matrix.os == 'windows-latest' }}
         run: |

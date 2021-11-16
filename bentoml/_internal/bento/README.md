@@ -95,7 +95,7 @@ svc = bentoml.Service(__name__)
 svc.set_build_options(
     version="any_version_label",
     description=open("README.md").read(),
-    models=["iris_model:latest"],
+    additional_models=["iris_model:latest"], # models to pack in Bento, in addition to the models required by service's runners 
     include=['*'],
     exclude=[], # files to exclude can also be specified with a .bentoignore file
     labels={

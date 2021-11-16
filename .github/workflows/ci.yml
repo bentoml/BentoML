@@ -99,9 +99,10 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Install dependencies
+      - name: Install libenchant
         run: |
           apt install -y libenchant-dev
+
       - name: Run spellcheck script
         run: make spellcheck-docs
 

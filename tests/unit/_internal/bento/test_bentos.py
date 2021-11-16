@@ -45,9 +45,9 @@ def test_create_simplebento(tmpdir):
         "bento.yaml",
         "apis",
         "README.md",
-        "test.simplebento",
+        "src",
         "env",
     }
-    test_path = os.path.join(test_path, "test.simplebento")
+    test_path = os.path.join(test_path, "src")
     assert set(os.listdir(test_path)) == {"simplebento.py", "subdir", ".bentomlignore"}
     assert set(os.listdir(os.path.join(test_path, "subdir"))) == {"somefile"}

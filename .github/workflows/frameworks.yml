@@ -186,7 +186,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh catboost
+        run: ./scripts/ci/run_tests.sh catboost
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.catboost == 'true' }}
@@ -220,7 +220,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh detectron2
+        run: ./scripts/ci/run_tests.sh detectron2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.detectron2 == 'true' }}
@@ -254,7 +254,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh easyocr
+        run: ./scripts/ci/run_tests.sh easyocr
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.easyocr == 'true' }}
@@ -289,7 +289,7 @@ jobs:
 #        run: ./scripts/ci/install_dependencies.sh.cmd
 #        shell: bash
 #      - name: Run tests and generate coverage report
-#        run: ./scripts/ci/framework_integration_tests.sh evalml
+#        run: ./scripts/ci/run_tests.sh evalml
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.evalml == 'true' }}
@@ -324,7 +324,7 @@ jobs:
 #        run: ./scripts/ci/install_dependencies.sh.cmd
 #        shell: bash
 #      - name: Run tests and generate coverage report
-#        run: ./scripts/ci/framework_integration_tests.sh fastai
+#        run: ./scripts/ci/run_tests.sh fastai
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.fastai == 'true' }}
@@ -359,7 +359,7 @@ jobs:
 #        run: ./scripts/ci/install_dependencies.sh.cmd
 #        shell: bash
 #      - name: Run tests and generate coverage report
-#        run: ./scripts/ci/framework_integration_tests.sh fasttext
+#        run: ./scripts/ci/run_tests.sh fasttext
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.fasttext == 'true' }}
@@ -395,7 +395,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh gluon
+        run: ./scripts/ci/run_tests.sh gluon
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.gluon == 'true' }}
@@ -429,7 +429,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh h2o
+        run: ./scripts/ci/run_tests.sh h2o
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.h2o == 'true' }}
@@ -463,7 +463,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh keras_tf1
+        run: ./scripts/ci/run_tests.sh keras_tf1
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf1 == 'true' }}
@@ -497,7 +497,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh keras_tf2
+        run: ./scripts/ci/run_tests.sh keras_tf2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf2 == 'true' }}
@@ -531,7 +531,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh lightgbm
+        run: ./scripts/ci/run_tests.sh lightgbm
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.lightgbm == 'true' }}
@@ -565,7 +565,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh mlflow
+        run: ./scripts/ci/run_tests.sh mlflow
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.mlflow == 'true' }}
@@ -599,7 +599,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh onnx
+        run: ./scripts/ci/run_tests.sh onnx
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnx == 'true' }}
@@ -673,7 +673,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh paddle
+        run: ./scripts/ci/run_tests.sh paddle
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.paddle == 'true' }}
@@ -707,7 +707,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh pycaret
+        run: ./scripts/ci/run_tests.sh pycaret
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pycaret == 'true' }}
@@ -742,7 +742,7 @@ jobs:
 #        run: ./scripts/ci/install_dependencies.sh.cmd
 #        shell: bash
 #      - name: Run tests and generate coverage report
-#        run: ./scripts/ci/framework_integration_tests.sh pyspark
+#        run: ./scripts/ci/run_tests.sh pyspark
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.pyspark_mllib == 'true' }}
@@ -776,7 +776,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh pytorch
+        run: ./scripts/ci/run_tests.sh pytorch
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch == 'true' }}
@@ -814,7 +814,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh pytorch_lightning
+        run: ./scripts/ci/run_tests.sh pytorch_lightning
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch_lightning == 'true' }}
@@ -848,7 +848,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh sklearn
+        run: ./scripts/ci/run_tests.sh sklearn
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.sklearn == 'true' }}
@@ -882,7 +882,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh spacy
+        run: ./scripts/ci/run_tests.sh spacy
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.spacy == 'true' }}
@@ -916,7 +916,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh statsmodels
+        run: ./scripts/ci/run_tests.sh statsmodels
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.statsmodels == 'true' }}
@@ -950,7 +950,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh tf1
+        run: ./scripts/ci/run_tests.sh tf1
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf1 == 'true' }}
@@ -984,7 +984,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh tf2
+        run: ./scripts/ci/run_tests.sh tf2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf2 == 'true' }}
@@ -1018,7 +1018,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh transformers
+        run: ./scripts/ci/run_tests.sh transformers
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.transformers == 'true' }}
@@ -1052,7 +1052,7 @@ jobs:
         run: ./scripts/ci/install_dependencies.sh.cmd
         shell: bash
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/framework_integration_tests.sh xgboost
+        run: ./scripts/ci/run_tests.sh xgboost
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.xgboost == 'true' }}

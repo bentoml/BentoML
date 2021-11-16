@@ -4,6 +4,19 @@ template: &tmpl
   override_fname:
   dependencies: []
   external_scripts:
+  type: "integration"
+
+unit:
+  <<: *tmpl
+  root_test_dir: "tests/unit"
+  is_dir: true
+  type: "unit"
+
+internal:
+  <<: *tmpl
+  root_test_dir: "tests/integration/projects/general"
+  is_dir: true
+  type: "e2e"
 
 catboost:
   <<: *tmpl

@@ -53,9 +53,11 @@ jobs:
       - name: Lint check
         # TODO: after fix all pylint errors under bentoml uses `make ci-lint` instead
         run: make ci-flake8
-#      - name: Type check
-#        # TODO: after fix all types errors uses `make ci-types` instead
-#        run: make ci-pyright
+      - name: Type check
+        # TODO: after fix all types errors uses `make ci-types` instead
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: make ci-pyright
 
   documentation_spelling_check:
     runs-on: ubuntu-latest
@@ -86,7 +88,7 @@ jobs:
         shell: bash
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
-    name: python${{ matrix.python-version }}_unit_tests (${{ matrix.os }})
+    name: python${{ matrix.python-version }}__unit_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -135,7 +137,7 @@ jobs:
         run: poetry install
 
       - name: Run Unit Tests
-        run: ./scripts/ci/unit_tests.sh
+        run: make tests-unit
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2
@@ -144,7 +146,7 @@ jobs:
           fail_ci_if_error: true
           flags: bento-server
           directory: ./
-          files: ./unittest.xml
+          files: ./unit.xml
           verbose: true
 
   bento_server_integration_tests:
@@ -162,7 +164,7 @@ jobs:
         shell: bash
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
-    name: python${{ matrix.python-version }}_bento_server_e2e_tests (${{ matrix.os }})
+    name: python${{ matrix.python-version }}__e2e_tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
 
@@ -213,8 +215,9 @@ jobs:
 
       - name: install optional dependencies
         run: poetry run python -m pip install pydantic
+
       - name: Run tests and generate coverage report
-        run: poetry run python -m pytest tests/integration/projects/general --project-root tests/integration/projects/general -vvv --capture=tee-sys --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"internal.xml"
+        run: ./scripts/ci/run_tests.sh internal --project-root tests/integration/projects/general -vvv --capture=tee-sys
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2

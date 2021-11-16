@@ -13,9 +13,8 @@ from fs.copy import copy_dir, copy_file
 from fs.mirror import mirror
 from simple_di import Provide, inject
 
-from bentoml import __version__
-
 from ...exceptions import BentoMLException, InvalidArgument
+from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
@@ -221,7 +220,7 @@ class BentoMetadata(BentoMetadataBase):
         bento_metadata["service"] = svc._import_str  # type: ignore[reportPrivateUsage]
         bento_metadata["name"] = tag.name
         bento_metadata["version"] = tag.version
-        bento_metadata["bentoml_version"] = __version__
+        bento_metadata["bentoml_version"] = BENTOML_VERSION
         bento_metadata["created_at"] = datetime.datetime.now().isoformat()
         bento_metadata["labels"] = labels  # TODO: validate user provided labels
         apis = {}

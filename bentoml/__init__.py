@@ -1,11 +1,5 @@
-try:
-    import importlib.metadata as importlib_metadata
-except ModuleNotFoundError:
-    import importlib_metadata
-__version__: str = importlib_metadata.version(__name__)
-del importlib_metadata
-
 from ._internal.configuration import load_global_config  # noqa: E402
+from ._internal.configuration import BENTOML_VERSION as __version__
 
 # Inject dependencies and configurations
 load_global_config()

@@ -80,7 +80,16 @@ parse_args() {
         ;;
     esac
   done
-  PYTESTARGS=( "${@:2}" )
+  exists=0
+  for mb in "${@:2}"; do
+    if [ -n "$mb" ]; then
+      exists=1
+    fi
+  done
+  if [ "$exists" -eq 1 ]; then
+    PYTESTARGS=( "${@:2}" )
+  fi
+  echo "${PYTESTARGS[@]}"
   shift $(( OPTIND - 1 ))
 }
 
@@ -125,6 +134,8 @@ main() {
   need_cmd poetry
   need_cmd make
 
+  poetry run python -m pip install -U pip setuptools
+
   make -f "$GIT_ROOT"/Makefile pull-checker-img
 
 #  validate_yaml
@@ -140,22 +151,20 @@ main() {
 
   OPTS=(--cov=bentoml --cov-config=.coveragerc --cov-report=xml:"$target.xml")
 
-  if [ -n "$PYTESTARGS" ]; then
+  if [ "$exists" -eq 1 ]; then
     OPTS=( "${OPTS[@]}" "${PYTESTARGS[@]}" )
   fi
 
-  echo "${OPTS[@]}"
-
   # setup tests environment
-  [ -z "$REQ_FILE" ] && pip install -r "$REQ_FILE"
-
-  if [[ "$external_scripts" != "" ]]; then
-    eval "$external_scripts" || exit
+  if [ -f "$REQ_FILE" ]; then
+    poetry run python -m pip install -r "$REQ_FILE" || exit 1
   fi
 
-  if ! (poetry run pytest "$GIT_ROOT"/"$test_dir"/"$fname" "${OPTS[@]}"); then
-    err=1
+  if [[ -z "$external_scripts" ]]; then
+    eval "$external_scripts" || exit 1
   fi
+
+  poetry run pytest "$GIT_ROOT"/"$test_dir"/"$fname" "${OPTS[@]}"
 
   # Return non-zero if pytest failed
   if ! test $err = 0; then

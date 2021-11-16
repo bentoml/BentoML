@@ -51,6 +51,11 @@ ci-lint: ci-flake8 ci-pylint ## Running lint check in CI: flake8, pylint
 .PHONY: ci-type
 ci-type: ci-mypy ci-pyright ## Running type check in CI: mypy, pyright
 
+tests-%:
+	$(eval type :=$(subst tests-, , $@))
+	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
+	$(eval __positional:=$(foreach t, $(RUN_ARGS), --$(t)))
+	./scripts/ci/run_tests.sh $(type) $(__positional)
 
 install-local: ## Install BentoML from current directory in editable mode
 	pip install --editable .
@@ -60,11 +65,6 @@ install-dev-deps: ## Install all dev and tests dependencies
 install-docs-deps:  ## Install documentation dependencies
 	@echo Installing docs dependencies...
 	@pip install -e ".[doc_builder]"
-
-
-tests-%:
-	$(eval type :=$(subst tests-, , $@))
-	./scripts/ci/run_tests.sh $(type)
 
 # Docs
 watch-docs: ## Build and watch documentation

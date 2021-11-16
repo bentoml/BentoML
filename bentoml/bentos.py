@@ -68,7 +68,6 @@ def build(
     svc_import_str: str,
     models: t.Optional[t.List[str]] = None,
     version: t.Optional[str] = None,
-    description: t.Optional[str] = None,
     include: t.Optional[t.List[str]] = None,
     exclude: t.Optional[t.List[str]] = None,
     env: t.Optional[t.Dict[str, t.Any]] = None,
@@ -111,7 +110,6 @@ def build(
     # For advanced build use cases, here's all the common build options:
     svc.set_build_options(
         version="any_version_label",
-        description=open("README.md").read(),
         models=["iris_model:latest"],
         include=['*'],
         exclude=[], # files to exclude can also be specified with a .bentoignore file
@@ -154,7 +152,6 @@ def build(
             bentoml.build(
                 'fraud_detector.py:svc',
                 version="custom_version_str",
-                description=open("readme.md").read(),
                 models=['iris_classifier:v123'],
                 include=["*"],
                 exclude=["*.storage", "credentials.yaml"], # + anything specified in .bentoml_ignore file
@@ -204,7 +201,6 @@ def build(
         build_ctx,
         models,
         version,
-        description,
         include,
         exclude,
         env,
@@ -212,7 +208,7 @@ def build(
         _model_store,
     ).save(_bento_store)
 
-    logger.info("%s created at: %s", bento, bento.path)
+    logger.info("Bento build success, %s created", bento)
 
     return bento
 

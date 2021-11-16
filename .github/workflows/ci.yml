@@ -101,7 +101,7 @@ jobs:
 
       - name: Install libenchant
         run: |
-          apt install -y libenchant-dev
+          sudo apt-get update && sudo apt-get install -y libenchant-dev
 
       - name: Run spellcheck script
         run: make spellcheck-docs
@@ -173,7 +173,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit == 'true'
         run: poetry install
 
       - name: Run Unit Tests
@@ -262,7 +262,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache.outputs.cache-hit == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report

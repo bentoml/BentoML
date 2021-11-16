@@ -170,7 +170,7 @@ spacy:
     - "torchvision==0.10.0+cpu"
     - "tensorflow==2.6.0"
   external_scripts: |
-    python -m spacy download en_core_web_sm
+    poetry run python -m spacy download en_core_web_sm
 
 statsmodels:
   <<: *tmpl

@@ -1,7 +1,6 @@
 import logging
 import os
 import typing as t
-from collections import UserDict
 from datetime import datetime, timezone
 
 import attr
@@ -27,6 +26,7 @@ from .env import BentoEnv
 if t.TYPE_CHECKING:
     from ..models.store import ModelInfo, ModelStore
     from ..service import Service
+    from ..service.inference_api import InferenceAPI
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +173,7 @@ class Bento(StoreItem):
 
     @property
     def creation_time(self) -> datetime:
-        return self.info["creation_time"]
+        return self.info.creation_time
 
     def save(
         self, bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store]
@@ -242,37 +242,32 @@ class BentoStore(Store[OSBento]):
         super().__init__(base_path, OSBento)
 
 
-if t.TYPE_CHECKING:
-    BentoInfoBase = UserDict[str, t.Any]
-else:
-    BentoInfoBase = UserDict
+@attr.define(repr=False)
+class BentoInfo:
+    service: str
+    tag: Tag
+    bentoml_version: str
+    creation_time: datetime
+    labels: t.Dict[str, t.Any]
+    apis: t.Dict[str, InferenceAPI]
+    models: t.List[str]
 
-
-class BentoInfo(BentoInfoBase):
-    def dump(self, stream: t.IO[str]):
-        return yaml.dump(self.data, stream, sort_keys=False)
+    def dump(self, stream: t.IO[t.Any]):
+        return yaml.dump(self, stream, sort_keys=False)
 
     @classmethod
     def from_build_args(
         cls, tag: Tag, svc: "Service", labels: t.Dict[str, t.Any], models: t.List[str]
     ):
-        bento_info = cls()
-        bento_info["service"] = svc._import_str  # type: ignore[reportPrivateUsage]
-        bento_info["name"] = tag.name
-        bento_info["version"] = tag.version
-        bento_info["bentoml_version"] = __version__
-        bento_info["created_at"] = datetime.now(timezone.utc).isoformat()
-        bento_info["labels"] = labels  # TODO: validate user provided labels
-        apis = {}
-        for api in svc._apis.values():  # type: ignore[reportPrivateUsage]
-            apis[api.name] = dict(
-                route=api.route,
-                doc=api.doc,
-                input=api.input.__class__.__name__,
-                output=api.output.__class__.__name__,
-            )
-        bento_info["apis"] = apis
-        bento_info["models"] = models  # TODO: populate with model & framework info
+        bento_info = cls(
+            service=svc._import_str,  # type: ignore[reportPrivateUsage]
+            tag=tag,
+            bentoml_version=__version__,
+            creation_time=datetime.now(timezone.utc),
+            labels=labels,  # TODO: validate user provided labels
+            apis=svc._apis,  # type: ignore[reportPrivateUsage]
+            models=models,  # TODO: populate with model & framework info
+        )
 
         bento_info.validate()
         return bento_info
@@ -285,8 +280,7 @@ class BentoInfo(BentoInfoBase):
             logger.error(exc)
             raise
 
-        bento_info = cls()
-        bento_info.update(yaml_content)
+        bento_info = cls(**yaml_content)
         bento_info.validate()
         return bento_info
 
@@ -294,10 +288,13 @@ class BentoInfo(BentoInfoBase):
         # Validate bento.yml file schema, content, bentoml version, etc
         ...
 
-    @property
-    def creation_time(self):
-        return datetime.fromisoformat(self["created_at"])
 
-    @property
-    def tag(self):
-        return Tag(self["name"], self["version"])
+def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
+    to_dump = attr.asdict(info)
+    to_dump["name"] = info.tag.name
+    to_dump["version"] = info.tag.version
+    del to_dump["tag"]
+    return dumper.represent_dict(to_dump)
+
+
+yaml.add_representer(BentoInfo, _BentoInfo_dumper)

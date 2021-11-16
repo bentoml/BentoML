@@ -2,6 +2,8 @@ import re
 import typing as t
 from typing import Optional
 
+import yaml
+
 from ...exceptions import InvalidArgument
 from ..io_descriptors import IODescriptor
 
@@ -71,3 +73,17 @@ class InferenceAPI:
             raise InvalidArgument(
                 "Reserved API route: '{}' is reserved for infra endpoints".format(route)
             )
+
+
+def _InferenceAPI_dumper(dumper: yaml.Dumper, api: InferenceAPI) -> yaml.Node:
+    return dumper.represent_dict(
+        {
+            "route": api.route,
+            "doc": api.doc,
+            "input": api.input.__class__.__name__,
+            "output": api.output.__class__.__name__,
+        }
+    )
+
+
+yaml.add_representer(InferenceAPI, _InferenceAPI_dumper)

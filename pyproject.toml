@@ -120,11 +120,11 @@ addopts = "-ra -p no:warnings"
 
 [tool.isort]
 profile = "black"
-skip_glob = ["third_party", "stubs"]
+skip_glob = ["third_party", "stubs", "typings"]
 
 [tool.pyright]
 include = ['bentoml/**']
-exclude = ['setup.py', 'bentoml/_version.py', 'bentoml/__main__.py']
+exclude = ['setup.py', 'bentoml/_version.py', 'bentoml/__main__.py', 'bentoml/testing/**/*', 'tests/**/*','typings/**/*', 'versioneer.py', 'docker/**/*']
 strictListInference = true
 strictDictionaryInference = true
 strictSetInference = true

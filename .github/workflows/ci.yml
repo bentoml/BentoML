@@ -113,9 +113,11 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Update Path for Windows
+      - name: Update Path for Windows and switch to Linux daemon
         if: ${{ matrix.os == 'windows-latest' }}
-        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+        run: |
+          echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+          & $Env:ProgramFiles\Docker\Docker\DockerCli.exe -SwitchDaemon
 
       - name: Configure poetry
         run: poetry config virtualenvs.in-project true
@@ -126,6 +128,8 @@ jobs:
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
         if: steps.cache.outputs.cache-hit == 'true'
@@ -201,6 +205,8 @@ jobs:
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
         if: steps.cache.outputs.cache-hit == 'true'

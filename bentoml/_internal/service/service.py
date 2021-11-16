@@ -39,14 +39,14 @@ def _get_default_svc_doc(svc: "Service"):
     doc += f"""
 ## Customize This Message
 
-This is the default generated `bentoml.Service` doc. You may customize it by setting 
-the `doc` attribute in the Service instance to any string in Markdown format before 
+This is the default generated `bentoml.Service` doc. You may customize it by setting
+the `doc` attribute in the Service instance to any string in Markdown format before
 building the Service Bento. e.g.:
 
 ```python
 import bentoml
 
-svc = bentoml.Service('my_svc')
+svc = bentoml.Service('{svc.name}')
 svc.doc = \"\"\"
 ADD YOUR DOCS ABOUT THE SERVICE HERE
 \"\"\"

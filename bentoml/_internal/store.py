@@ -140,6 +140,6 @@ class Store(ABC, t.Generic[Item]):
                 # if we've removed all versions, remove the directory
                 self._fs.removetree(_tag.name)
             else:
-                new_latest = sorted(versions, key=self._item_type.creation_time)[0]
+                new_latest = sorted(versions, key=lambda x: x.creation_time)[0]
                 # otherwise, update the latest version
                 self._fs.writetext(_tag.latest_path(), new_latest.tag.name)

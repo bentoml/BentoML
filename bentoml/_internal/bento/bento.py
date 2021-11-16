@@ -2,7 +2,7 @@ import logging
 import os
 import typing as t
 from collections import UserDict
-from datetime import datetime
+from datetime import datetime, timezone
 
 import attr
 import fs
@@ -261,7 +261,7 @@ class BentoInfo(BentoInfoBase):
         bento_info["name"] = tag.name
         bento_info["version"] = tag.version
         bento_info["bentoml_version"] = __version__
-        bento_info["created_at"] = datetime.now().isoformat()
+        bento_info["created_at"] = datetime.now(timezone.utc).isoformat()
         bento_info["labels"] = labels  # TODO: validate user provided labels
         apis = {}
         for api in svc._apis.values():  # type: ignore[reportPrivateUsage]

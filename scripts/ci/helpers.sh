@@ -28,4 +28,5 @@ need_cmd() {
     fi
 }
 
-set -euo pipefail
+set -eo pipefail
+IFS=$'\n\t'

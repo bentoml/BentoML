@@ -81,15 +81,7 @@ parse_args() {
     esac
   done
   exists=0
-  for mb in "${@:2}"; do
-    if [ -n "$mb" ]; then
-      exists=1
-    fi
-  done
-  if [ "$exists" -eq 1 ]; then
-    PYTESTARGS=( "${@:2}" )
-  fi
-  echo "${PYTESTARGS[@]}"
+  PYTESTARGS=( "${@:2}" )
   shift $(( OPTIND - 1 ))
 }
 
@@ -151,7 +143,7 @@ main() {
 
   OPTS=(--cov=bentoml --cov-config=.coveragerc --cov-report=xml:"$target.xml")
 
-  if [ "$exists" -eq 1 ]; then
+  if [ -n "$PYTESTARGS" ]; then
     OPTS=( "${OPTS[@]}" "${PYTESTARGS[@]}" )
   fi
 

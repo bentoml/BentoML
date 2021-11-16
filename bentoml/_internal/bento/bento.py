@@ -14,9 +14,8 @@ from fs.base import FS
 from fs.copy import copy_dir, copy_file
 from simple_di import Provide, inject
 
-from bentoml import __version__
-
 from ...exceptions import BentoMLException, InvalidArgument
+from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
@@ -262,7 +261,7 @@ class BentoInfo:
         bento_info = cls(
             service=svc._import_str,  # type: ignore[reportPrivateUsage]
             tag=tag,
-            bentoml_version=__version__,
+            bentoml_version=BENTOML_VERSION,
             creation_time=datetime.now(timezone.utc),
             labels=labels,  # TODO: validate user provided labels
             apis=svc._apis,  # type: ignore[reportPrivateUsage]

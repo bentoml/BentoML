@@ -48,6 +48,7 @@ fs = "*"
 circus = "*"
 uvicorn = "*"
 python-json-logger = "*"
+importlib-metadata = {version = "*", python = "<3.8"}
 opentracing = {version = "*", optional = true}
 py-zipkin = {version = "*", optional = true}
 jaeger-client = {version = "*", optional = true}

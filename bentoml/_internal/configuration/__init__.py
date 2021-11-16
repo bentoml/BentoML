@@ -2,10 +2,14 @@ import logging
 import os
 import typing as t
 
+try:
+    import importlib.metadata as importlib_metadata
+except ModuleNotFoundError:
+    import importlib_metadata
+
 import yaml
 
-from bentoml import __version__
-from bentoml import _version as version_mod
+import bentoml._version as version_mod
 
 # Note this file is loaded prior to logging being configured, thus logger is only
 # used within functions in this file
@@ -34,14 +38,14 @@ def expand_env_var(env_var):
 # the BentoML module to be used when loading and using a saved BentoService bundle.
 # This is useful when using customized BentoML fork/branch or when working with
 # development branches of BentoML
-BENTOML_VERSION = __version__
+BENTOML_VERSION: str = importlib_metadata.version(__name__)
 
 
 def is_pip_installed_bentoml():
     is_installed_package = hasattr(version_mod, "version_json")
-    is_tagged = not __version__.startswith("0+untagged")
+    is_tagged = not BENTOML_VERSION.startswith("0+untagged")
     is_clean = not version_mod.get_versions()["dirty"]
-    is_modified = __version__ != __version__.split("+")[0]
+    is_modified = BENTOML_VERSION != BENTOML_VERSION.split("+")[0]
     return is_installed_package and is_tagged and is_clean and is_modified
 
 

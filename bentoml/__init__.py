@@ -1,9 +1,4 @@
-from ._version import get_versions
-
-__version__: str = get_versions()["version"]  # type: ignore
-
-del get_versions
-
+from ._internal.configuration import BENTOML_VERSION as __version__
 from ._internal.configuration import load_global_config  # noqa: E402
 
 # Inject dependencies and configurations

@@ -49,7 +49,6 @@ class Bento(StoreItem):
         build_ctx: PathType,
         additional_models: t.List[str],
         version: t.Optional[str],
-        description: t.Optional[str],
         include: t.List[str],
         exclude: t.List[str],
         env: t.Dict[str, t.Any],
@@ -138,9 +137,7 @@ class Bento(StoreItem):
 
         # Create `readme.md` file
         with bento_fs.open("README.md", "w") as f:
-            description = description if description else svc.__doc__
-            if description is not None:
-                f.write(description)
+            f.write(svc.doc)
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
@@ -198,6 +195,9 @@ class Bento(StoreItem):
 
     def validate(self):
         return self._fs.isfile(BENTO_YAML_FILENAME)
+
+    def __str__(self):
+        return f'Bento(tag="{self.tag}", path="{self.path}")'
 
 
 class BentoStore(Store[Bento]):

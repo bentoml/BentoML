@@ -142,7 +142,7 @@ class ServiceAppFactory(BaseAppFactory):
         from starlette.responses import Response
 
         return Response(
-            content=DEFAULT_INDEX_HTML.format(readme=self.bento_service.__doc__),
+            content=DEFAULT_INDEX_HTML.format(readme=self.bento_service.doc),
             status_code=200,
             media_type="text/html",
         )

@@ -1,7 +1,7 @@
 template: &tmpl
   root_test_dir: "tests/integration/frameworks"
   is_dir: false
-  override_fname:
+  override_name_or_path:
   dependencies: []
   external_scripts:
   type: "integration"
@@ -67,14 +67,14 @@ h2o:
 
 keras_tf1:
   <<: *tmpl
-  override_fname: test_keras_impl.py
+  override_name_or_path: test_keras_impl.py
   dependencies:
     - "tensorflow==1.15"
     - "h5py==2.10.0"
 
 keras_tf2:
   <<: *tmpl
-  override_fname: test_keras_impl.py
+  override_name_or_path: test_keras_impl.py
   dependencies:
     - "tensorflow==2.2.0"
 
@@ -87,6 +87,7 @@ lightgbm:
 mlflow:
   <<: *tmpl
   is_dir: true
+  override_name_or_path: mlflow
   dependencies:
     - "mlflow"
     - "scikit-learn"
@@ -113,6 +114,7 @@ onnxmlir:
 paddle:
   <<: *tmpl
   is_dir: true
+  override_name_or_path: paddle
   dependencies:
     - "opencv-python==4.5.4.58"
     - "pandas"
@@ -158,6 +160,7 @@ sklearn:
 spacy:
   <<: *tmpl
   is_dir: true
+  override_name_or_path: spacy
   dependencies:
     - "spacy==3.1.2"
     - "pyyaml"
@@ -179,14 +182,14 @@ statsmodels:
 
 tf1:
   <<: *tmpl
-  override_fname: test_tensorflow_impl.py
+  override_name_or_path: test_tensorflow_impl.py
   dependencies:
     - "tensorflow==1.15"
     - "tensorflow_hub"
 
 tf2:
   <<: *tmpl
-  override_fname: test_tensorflow_impl.py
+  override_name_or_path: test_tensorflow_impl.py
   dependencies:
     - "tensorflow_text"
     - "tensorflow_hub"

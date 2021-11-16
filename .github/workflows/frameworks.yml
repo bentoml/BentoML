@@ -183,7 +183,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -239,7 +239,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -295,7 +295,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -352,7 +352,7 @@ jobs:
 #
 #      - name: Bootstrap poetry
 #        run: |
-#          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+#          curl -sSL https://install.python-poetry.org | python -
 #
 #      - name: Update PATH
 #        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -409,7 +409,7 @@ jobs:
 #
 #      - name: Bootstrap poetry
 #        run: |
-#          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+#          curl -sSL https://install.python-poetry.org | python -
 #
 #      - name: Update PATH
 #        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -466,7 +466,7 @@ jobs:
 #
 #      - name: Bootstrap poetry
 #        run: |
-#          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+#          curl -sSL https://install.python-poetry.org | python -
 #
 #      - name: Update PATH
 #        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -524,7 +524,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -580,7 +580,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -636,7 +636,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -692,7 +692,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -748,7 +748,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -804,7 +804,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -860,7 +860,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -918,13 +918,15 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+        run: |
+          export PATH="/root/.local/bin:${PATH}"
+          poetry config virtualenvs.in-project true
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
@@ -978,7 +980,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1034,7 +1036,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1091,7 +1093,7 @@ jobs:
 #
 #      - name: Bootstrap poetry
 #        run: |
-#          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+#          curl -sSL https://install.python-poetry.org | python -
 #
 #      - name: Update PATH
 #        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1147,7 +1149,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1203,7 +1205,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1263,7 +1265,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1319,7 +1321,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1375,7 +1377,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1431,7 +1433,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1487,7 +1489,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1543,7 +1545,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -1599,7 +1601,7 @@ jobs:
 
       - name: Bootstrap poetry
         run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+          curl -sSL https://install.python-poetry.org | python -
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH

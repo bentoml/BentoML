@@ -87,22 +87,22 @@ parse_args() {
 
 
 parse_config() {
-  target=$1
+  target=$@
   test_dir=
   is_dir=
-  override_fname=
+  override_name_or_path=
   external_scripts=
   type=
 
   test_dir=$(getval ".$target.root_test_dir")
   is_dir=$(getval ".$target.is_dir")
-  override_fname=$(getval ".$target.override_fname")
+  override_name_or_path=$(getval ".$target.override_name_or_path")
   external_scripts=$(getval ".$target.external_scripts")
   type=$(getval ".$target.type")
 
   # processing file name
-  if [[ "$override_fname" != "" ]]; then
-    fname="$override_fname"
+  if [[ "$override_name_or_path" != "" ]]; then
+    fname="$override_name_or_path"
   elif [[ "$is_dir" == "false" ]]; then
     fname="test_""$target""_impl.py"
   elif [[ "$is_dir" == "true" ]]; then
@@ -134,8 +134,11 @@ main() {
 
   if [ ${#@} -eq 1 ]; then
     argv=$1
-  else
+  elif [[ $1 == "-"* ]]; then
     shift
+    argv=$1
+  else
+    shift $(( OPTIND -1 ))
     argv=$1
   fi
 
@@ -146,7 +149,6 @@ main() {
   if [ -n "$PYTESTARGS" ]; then
     OPTS=( "${OPTS[@]}" "${PYTESTARGS[@]}" )
   fi
-
   # setup tests environment
   if [ -f "$REQ_FILE" ]; then
     poetry run python -m pip install -r "$REQ_FILE" || exit 1

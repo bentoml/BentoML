@@ -1,7 +1,9 @@
-from ._version import get_versions
-
-__version__ = get_versions()["version"]
-del get_versions
+try:
+    import importlib.metadata as importlib_metadata
+except ModuleNotFoundError:
+    import importlib_metadata
+__version__: str = importlib_metadata.version(__name__)
+del importlib_metadata
 
 from ._internal.configuration import load_global_config  # noqa: E402
 

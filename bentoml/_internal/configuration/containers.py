@@ -2,7 +2,6 @@ import logging
 import multiprocessing
 import os
 import typing as t
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml

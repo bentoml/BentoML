@@ -28,7 +28,7 @@ deepmerge = "*"
 docker = "*"
 humanfriendly = "*"
 numpy = "*"
-packaging = "^20"
+packaging = "*"
 psutil = "*"
 requests = "*"
 schema = "*"
@@ -38,7 +38,7 @@ starlette = "*"
 python-multipart = "*"
 rich = "*"
 pyyaml = "*"
-attrs = "^20"
+attrs = ">=20"
 cattrs = "*"
 importlib_metadata = "*"
 pathspec = "*"
@@ -48,6 +48,7 @@ fs = "*"
 circus = "*"
 uvicorn = "*"
 python-json-logger = "*"
+importlib-metadata = {version = "*", python = "<3.8"}
 opentracing = {version = "*", optional = true}
 py-zipkin = {version = "*", optional = true}
 jaeger-client = {version = "*", optional = true}
@@ -88,6 +89,7 @@ types-chardet = "*"
 types-setuptools = "*"
 types-PyYAML = "*"
 types-filelock = "*"
+attrs = ">=21.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

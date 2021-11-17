@@ -1,36 +1,40 @@
 # pylint: disable=redefined-outer-name
-import typing as t
+# type: ignore[no-untyped-def]
 
 import pytest
 
-
-@pytest.mark.asyncio
-async def test_api_server_meta(host: str, async_request: t.Callable) -> None:
-    await async_request("GET", f"http://{host}/")
-    await async_request("GET", f"http://{host}/healthz")
-    await async_request("GET", f"http://{host}/livez")
-    await async_request("GET", f"http://{host}/docs.json")
-    await async_request("GET", f"http://{host}/readyz")
+from bentoml.testing.utils import async_request
 
 
 @pytest.mark.asyncio
-async def test_cors(host, async_request):
+async def test_api_server_meta(host: str) -> None:
+    status, _, _ = await async_request("GET", f"http://{host}/")
+    assert status == 200
+    status, _, _ = await async_request("GET", f"http://{host}/healthz")
+    assert status == 200
+    status, _, _ = await async_request("GET", f"http://{host}/livez")
+    assert status == 200
+    status, _, _ = await async_request("GET", f"http://{host}/docs.json")
+    assert status == 200
+    status, _, _ = await async_request("GET", f"http://{host}/readyz")
+    assert status == 200
+
+
+@pytest.mark.asyncio
+async def test_cors(host: str) -> None:
     ORIGIN = "http://bentoml.ai"
 
-    def has_cors_headers(headers: t.Dict) -> bool:
-        assert headers["Access-Control-Allow-Origin"] in ("*", ORIGIN)
-        assert "Content-Length" in headers.get("Access-Control-Expose-Headers", [])
-        assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
-        return True
-
-    await async_request(
+    status, headers, body = await async_request(
         "POST",
         f"http://{host}/echo_json",
-        headers=(("Content-Type", "application/json"), ("Origin", ORIGIN)),
+        headers={"Content-Type": "application/json", "Origin": ORIGIN},
         data='"hi"',
-        assert_status=200,
-        assert_headers=has_cors_headers,
     )
+    assert status == 200
+    assert body == b'"hi"'
+    assert headers["Access-Control-Allow-Origin"] in ("*", ORIGIN)
+    assert "Content-Length" in headers.get("Access-Control-Expose-Headers", [])
+    assert "Server" not in headers.get("Access-Control-Expect-Headers", [])
 
 
 """

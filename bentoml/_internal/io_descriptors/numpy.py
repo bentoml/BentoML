@@ -1,10 +1,12 @@
 import json
+import logging
 import sys
 import typing as t
 
 from starlette.requests import Request
 from starlette.responses import Response
 
+from ...exceptions import BadInput, InternalServerError
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
@@ -22,6 +24,27 @@ else:
 _ShapeLike = t.Union[SupportsIndex, t.Sequence[SupportsIndex]]
 
 NumpyType = Literal["np.ndarray[t.Any, np.dtype[t.Any]]"]
+
+logger = logging.getLogger(__name__)
+
+
+def _is_matched_shape(
+    left: t.Optional[t.Tuple[int, ...]],
+    right: t.Optional[t.Tuple[int, ...]],
+) -> bool:
+    if (left is None) or (right is None):
+        return False
+
+    if len(left) != len(right):
+        return False
+
+    for i, j in zip(left, right):
+        if i == -1 or j == -1:
+            continue
+        if i == j:
+            continue
+        return False
+    return True
 
 
 class NumpyNdarray(IODescriptor[NumpyType]):
@@ -125,6 +148,30 @@ class NumpyNdarray(IODescriptor[NumpyType]):
         """Returns OpenAPI schema for outcoming responses"""
         return self.openapi_schema()
 
+    def _verify_ndarray(
+        self, obj: "np.ndarray", exception_cls: t.Type[Exception] = BadInput
+    ) -> "np.ndarray":
+        if self._dtype is not None and self._dtype != obj.dtype:
+            if self._enforce_dtype:
+                raise exception_cls(
+                    f"{self.__class__.__name__}: enforced dtype mismatch"
+                )
+            try:
+                obj = obj.astype(self._dtype)
+            except ValueError as e:
+                logger.warning(f"{self.__class__.__name__}: {e}")
+
+        if self._shape is not None and not _is_matched_shape(self._shape, obj.shape):
+            if self._enforce_shape:
+                raise exception_cls(
+                    f"{self.__class__.__name__}: enforced shape mismatch"
+                )
+            try:
+                obj = obj.reshape(self._shape)
+            except ValueError as e:
+                logger.warning(f"{self.__class__.__name__}: {e}")
+        return obj
+
     async def from_http_request(self, request: Request) -> NumpyType:
         """
         Process incoming requests and convert incoming
@@ -137,11 +184,12 @@ class NumpyNdarray(IODescriptor[NumpyType]):
             a `numpy.ndarray` object. This can then be used
              inside users defined logics.
         """
-        res: "np.ndarray[t.Any, np.dtype[t.Any]]" = np.asarray(await request.json())
-        if self._enforce_dtype and hasattr(self, "_dtype"):
-            res = res.astype(self._dtype)
-        if self._enforce_shape and hasattr(self, "_shape"):
-            res = res.reshape(self._shape)
+        obj = await request.json()
+        try:
+            res = np.array(obj, dtype=self._dtype)
+        except ValueError:
+            res = np.array(obj)
+        res = self._verify_ndarray(res, BadInput)
         return res
 
     async def to_http_response(self, obj: NumpyType) -> Response:
@@ -155,6 +203,7 @@ class NumpyNdarray(IODescriptor[NumpyType]):
             HTTP Response of type `starlette.responses.Response`. This can
              be accessed via cURL or any external web traffic.
         """
+        obj = self._verify_ndarray(obj, InternalServerError)
         return Response(content=json.dumps(obj.tolist()), media_type=MIME_TYPE_JSON)
 
     @classmethod

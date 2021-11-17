@@ -1,6 +1,6 @@
-import binascii
-import os
+import io
 import typing as t
+import uuid
 
 import multipart.multipart as multipart
 from starlette.formparsers import _user_safe_decode  # noqa
@@ -10,12 +10,7 @@ from starlette.responses import Response
 
 from ...exceptions import BentoMLException
 
-_ItemsBody = t.TypeVar(
-    "_ItemsBody",
-    bound=t.List[t.Tuple[str, t.List[t.Tuple[bytes, bytes]], bytes]],
-)
-
-_ResponseList = t.TypeVar("_ResponseList", bound=t.List[t.Tuple[str, Response]])
+_ItemsBody = t.List[t.Tuple[str, t.List[t.Tuple[bytes, bytes]], bytes]]
 
 
 class MultiPartParser:
@@ -65,9 +60,7 @@ class MultiPartParser:
 
     async def parse(self) -> _ItemsBody:
         # Parse the Content-Type header to get the multipart boundary.
-        content_type, params = multipart.parse_options_header(
-            self.headers["Content-Type"]
-        )
+        _, params = multipart.parse_options_header(self.headers["Content-Type"])
         params = t.cast(t.Dict[bytes, bytes], params)
         charset = params.get(b"charset", b"utf-8")
         charset = charset.decode("latin-1")
@@ -94,8 +87,8 @@ class MultiPartParser:
 
         data = b""
 
-        items = t.cast(_ItemsBody, list())
-        headers: t.List[t.Tuple[bytes, bytes]] = list()
+        items: _ItemsBody = []
+        headers: t.List[t.Tuple[bytes, bytes]] = []
 
         # Feed the parser with data from the request.
         async for chunk in self.stream:
@@ -138,12 +131,9 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     assert content_type == b"multipart/form-data"
     multipart_parser = MultiPartParser(request.headers, request.stream())
     try:
-        form = await multipart_parser.parse()  # type: ignore[var-annotated]
+        form = await multipart_parser.parse()
     except multipart.MultipartParseError:
         raise BentoMLException("Invalid multipart requests")
-
-    # NOTE: This is the equivalent of form = await request.form()
-    request._form = form  # noqa
 
     reqs = dict()
     for field_name, headers, data in form:
@@ -158,14 +148,49 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     return reqs
 
 
-async def concat_to_multipart_responses(responses: _ResponseList) -> Response:
-    boundary = binascii.hexlify(os.urandom(16)).decode("ascii")
+def _get_disp_filename(headers) -> t.Optional[bytes]:
+    if headers["content-disposition"]:
+        _, options = multipart.parse_options_header(headers["content-disposition"])
+        if b"filename" in options:
+            return t.cast(bytes, options[b"filename"])
+    return None
+
+
+async def concat_to_multipart_responses(
+    responses: t.Mapping[str, Response]
+) -> Response:
+    boundary = uuid.uuid4().hex
     headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
-    body = (
-        "".join(
-            f'--{boundary}\r\nContent-Disposition: form-data; name="{item[0]}"\r\n\r\n{item[1].body}\r\n'
-            for item in responses
-        )
-        + f"--{boundary}--\r\n"
-    )
-    return Response(body, headers=headers)
+
+    boundary_bytes = boundary.encode("latin1")
+
+    writer = io.BytesIO()
+    for field_name, resp in responses.items():
+        writer.write(b"--%b\r\n" % boundary_bytes)
+
+        # headers
+        filename = _get_disp_filename(resp.headers)
+        if filename:
+            writer.write(
+                b'Content-Disposition: form-data; name="%b"; filename="%b"\r\n'
+                % (field_name.encode("latin1"), filename)
+            )
+        else:
+            writer.write(
+                b'Content-Disposition: form-data; name="%b"\r\n'
+                % field_name.encode("latin1")
+            )
+
+        for header_key, header_value in resp.raw_headers:
+            if header_key == b"content-disposition":
+                continue
+            writer.write(b"%b: %b\r\n" % (header_key, header_value))
+        writer.write(b"\r\n")
+
+        # body
+        writer.write(resp.body)
+        writer.write(b"\r\n")
+
+    writer.write(b"--%b--\r\n" % boundary_bytes)
+
+    return Response(writer.getvalue(), headers=headers)

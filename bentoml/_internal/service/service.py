@@ -129,7 +129,18 @@ class Service:
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         """Decorator for adding InferenceAPI to this service"""
 
-        def decorator(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+        D = t.TypeVar("D", bound=t.Callable[..., t.Any])
+
+        def decorator(func: D) -> D:
+            from ..io_descriptors import Multipart
+
+            if isinstance(output, Multipart):
+                logger.warning(
+                    f"Found Multipart as the output of API `{name or func.__name__}`. "
+                    "Multipart response is rarely used in the real world,"
+                    " less clients/browsers support it. "
+                    "Make sure you know what you are doing."
+                )
             self._add_inference_api(func, input, output, name, doc, route)
             return func
 

@@ -3,8 +3,10 @@ import typing as t
 import numpy as np
 import pandas as pd
 import pydantic
-from PIL import Image as PILImage
+from PIL.Image import Image as PILImage
+from PIL.Image import fromarray
 
+import bentoml
 import bentoml.sklearn
 from bentoml._internal.types import FileLike, JSONSerializable
 from bentoml.io import (
@@ -98,26 +100,22 @@ def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
     return json_pred_runner.run(json_obj)
 
 
-@svc.api(input=NumpyNdarray(dtype="uint8", enforce_dtype=True), output=NumpyNdarray())
-def predict_np_array(inp: "np.ndarray"):
+@svc.api(
+    input=NumpyNdarray(shape=(2, 2), enforce_shape=True),
+    output=NumpyNdarray(shape=(1, 4)),
+)
+def predict_ndarray_enforce_shape(inp: "np.ndarray") -> "np.ndarray":
+    assert inp.shape == (2, 2)
     return ndarray_pred_runner.run(inp)
 
 
-@svc.api(input=NumpyNdarray(shape=(4,), enforce_shape=True), output=NumpyNdarray())
-def predict_reshape_np(inp: "np.ndarray"):
+@svc.api(
+    input=NumpyNdarray(dtype="uint8", enforce_dtype=True),
+    output=NumpyNdarray(dtype="str"),
+)
+def predict_ndarray_enforce_dtype(inp: "np.ndarray") -> "np.ndarray":
+    assert inp.dtype == np.dtype("uint8")
     return ndarray_pred_runner.run(inp)
-
-
-@svc.api(input=NumpyNdarray(shape=(4,), enforce_shape=True), output=NumpyNdarray())
-def predict_invalid_type(inp: "np.ndarray"):
-    return 1
-
-
-@svc.api(input=JSON(), output=JSON())
-def predict_array(json_obj: JSONSerializable) -> JSONSerializable:
-    array = np.array(json_obj)
-    array_out = json_pred_runner.run(array)
-    return array_out.tolist()
 
 
 @svc.api(
@@ -125,7 +123,7 @@ def predict_array(json_obj: JSONSerializable) -> JSONSerializable:
     output=PandasSeries(),
 )
 def predict_dataframe(df):
-    assert df["col1"].dtype == np.int64
+    assert df["col1"].dtype == "int64"
     output = dataframe_pred_runner.run(df)
     assert isinstance(output, pd.Series)
     return output
@@ -136,35 +134,19 @@ def predict_file(f):
     return file_pred_runner.run(f)
 
 
-@svc.api(input=Image(), output=Image())
-def echo_image(f):
+@svc.api(input=Image(), output=Image(mime_type="image/bmp"))
+def echo_image(f: PILImage) -> np.ndarray:
+    assert isinstance(f, PILImage)
     return np.array(f)
-
-
-@svc.api(input=File(), output=File())
-def predict_invalid_filetype(f):
-    return 1
-
-
-@svc.api(input=Image(), output=Image())
-def predict_invalid_imgtype(f):
-    return 1
-
-
-@svc.api(input=Multipart(original=Image(), compared=Image()), output=Image())
-def predict_multi_images(original, compared):
-    output_array = multi_ndarray_pred_runner.run_batch(
-        np.array(original), np.array(compared)
-    )
-    return PILImage.fromarray(output_array)
 
 
 @svc.api(
     input=Multipart(original=Image(), compared=Image()),
-    output=Multipart(original=Image(), compared=Image()),
+    output=Multipart(img1=Image(), img2=Image()),
 )
-def echo_return_multipart(original, compared):
-    res = echo_multi_ndarray_pred_runner.run_batch(
+def predict_multi_images(original, compared):
+    output_array = multi_ndarray_pred_runner.run_batch(
         np.array(original), np.array(compared)
     )
-    return dict(original=res[0], compared=res[1])
+    img = fromarray(output_array)
+    return dict(img1=img, img2=img)

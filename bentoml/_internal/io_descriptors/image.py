@@ -1,13 +1,13 @@
 import io
-import mimetypes
 import sys
 import typing as t
+from urllib.parse import quote
 
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BentoMLException, InvalidArgument
+from ...exceptions import BadInput, InternalServerError, InvalidArgument
 from ..utils import LazyLoader
 from .base import IODescriptor
 
@@ -17,7 +17,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import PIL
     import PIL.Image
 
-    from .numpy import NumpyType
+    from .numpy import NumpyType  # noqa
 else:
     np = LazyLoader("np", globals(), "numpy")
 
@@ -99,20 +99,22 @@ class Image(IODescriptor[ImageType]):
         IO Descriptor that represents either a `np.ndarray` or a `PIL.Image.Image`.
     """
 
+    MIME_EXT_MAPPING: t.Dict[str, str] = {}
+
     def __init__(
         self,
         pilmode: t.Optional["_Mode"] = DEFAULT_PIL_MODE,
         mime_type: str = "image/jpeg",
     ):
         PIL.Image.init()
+        self.MIME_EXT_MAPPING.update({v: k for k, v in PIL.Image.MIME.items()})
 
-        # NOTE: Currently no tests are provided.
-        if mime_type.lower() not in PIL.Image.MIME.values():  # pragma: no cover
+        if mime_type.lower() not in self.MIME_EXT_MAPPING:  # pragma: no cover
             raise InvalidArgument(
                 f"Invalid Image mime_type '{mime_type}', "
                 f"Supported mime types are {', '.join(PIL.Image.MIME.values())} "
             )
-        if pilmode not in PIL.Image.MODES:  # pragma: no cover
+        if pilmode is not None and pilmode not in PIL.Image.MODES:  # pragma: no cover
             raise InvalidArgument(
                 f"Invalid Image pilmode '{pilmode}', "
                 f"Supported PIL modes are {', '.join(PIL.Image.MODES)} "
@@ -120,11 +122,7 @@ class Image(IODescriptor[ImageType]):
 
         self._mime_type = mime_type.lower()
         self._pilmode: t.Optional[_Mode] = pilmode
-
-        ext = mimetypes.guess_extension(self._mime_type)
-        if not ext:
-            raise BentoMLException("Cannot guess extensions from give mime_type")
-        self._format = PIL.Image.EXTENSION[ext]
+        self._format = self.MIME_EXT_MAPPING[mime_type]
 
     def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
         return {self._mime_type: dict(schema=dict(type="string", format="binary"))}
@@ -139,28 +137,42 @@ class Image(IODescriptor[ImageType]):
 
     async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])
-        if content_type == b"multipart/form-data":
+        mime_type = content_type.decode().lower()
+        if mime_type == "multipart/form-data":
             form = await request.form()
-            contents: bytes = await next(iter(form.values())).read()
-            return PIL.Image.open(io.BytesIO(contents))
-
-        if (
-            content_type.decode("utf-8").startswith("image/")
-            or content_type == self._mime_type
-        ):
-            return PIL.Image.open(io.BytesIO(await request.body()))
-
-        raise BentoMLException(
-            f"{self.__class__.__name__} should have `Content-Type: multipart/form-data` or `image/*`, got {content_type} instead"
-        )
+            bytes_ = await next(iter(form.values())).read()
+        elif mime_type.startswith("image/") or content_type == self._mime_type:
+            bytes_ = await request.body()
+        else:
+            raise BadInput(
+                f"{self.__class__.__name__} should get `multipart/form-data`, "
+                f"`{self._mime_type}` or `image/*`, got {content_type} instead"
+            )
+        return PIL.Image.open(io.BytesIO(bytes_))
 
     async def to_http_response(self, obj: ImageType) -> Response:
-        image = (
-            PIL.Image.fromarray(obj, mode=self._pilmode)
-            if isinstance(obj, np.ndarray)
-            else obj
-        )
+        if isinstance(obj, np.ndarray):
+            image = PIL.Image.fromarray(obj, mode=self._pilmode)  # type: ignore
+        elif isinstance(obj, PIL.Image.Image):
+            image = obj
+        else:
+            raise InternalServerError(
+                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
+                " only supports `np.ndarray` and `PIL.Image`"
+            )
+        filename = f"output.{self._format.lower()}"
 
         ret = io.BytesIO()
-        image.save(ret, self._format)
-        return Response(ret.getvalue(), media_type=self._mime_type)
+        image.save(ret, format=self._format)
+
+        # rfc2183
+        content_disposition_filename = quote(filename)
+        if content_disposition_filename != filename:
+            content_disposition = "attachment; filename*=utf-8''{}".format(
+                content_disposition_filename
+            )
+        else:
+            content_disposition = f'attachment; filename="{filename}"'
+        headers = {"content-disposition": content_disposition}
+
+        return Response(ret.getvalue(), media_type=self._mime_type, headers=headers)

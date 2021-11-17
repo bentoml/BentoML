@@ -19,7 +19,7 @@ class RemoteException(BentoMLException):
     Raise when known exceptions happened in remote process
     """
 
-    def __init__(self, message: str, payload=None):
+    def __init__(self, message: str, payload: BentoMLException = None):
         self.payload = payload
         super().__init__(message)
 
@@ -31,6 +31,16 @@ class InvalidArgument(BentoMLException):
     """
 
     error_code = HTTPStatus.BAD_REQUEST
+
+
+class InternalServerError(BentoMLException):
+    """
+    Raise when BentoML received valid arguments from CLI arguments, HTTP
+    Request, or python API function parameters, but got internal issues while
+    processing.
+    * Note to BentoML org developers: raise this exception only when exceptions happend
+    in the users' code (runner or service) and want to surface it to the user.
+    """
 
 
 class APIDeprecated(BentoMLException):

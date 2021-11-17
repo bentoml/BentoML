@@ -9,7 +9,6 @@ from ..types import PathType
 from .lazy_loader import LazyLoader
 
 _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
-_V = t.TypeVar("_V")
 
 
 __all__ = [
@@ -29,13 +28,13 @@ def randomize_runner_name(module_name: str):
 
 def validate_or_create_dir(*path: PathType) -> None:
     for p in path:
-        _path = Path(p)
+        path_obj = Path(p)
 
-        if _path.exists():
-            if not _path.is_dir():
-                raise OSError(20, f"{_path} is not a directory")
+        if path_obj.exists():
+            if not path_obj.is_dir():
+                raise OSError(20, f"{path_obj} is not a directory")
         else:
-            _path.mkdir(parents=True)
+            path_obj.mkdir(parents=True)
 
 
 class catch_exceptions(t.Generic[_T_co], object):
@@ -127,6 +126,9 @@ class cached_property(t.Generic[C, T]):
         return value
 
 
+VT = t.TypeVar("VT")
+
+
 class cached_contextmanager:
     """
     Just like contextlib.contextmanager, but will cache the yield value for the same
@@ -141,16 +143,20 @@ class cached_contextmanager:
     >>>     container.stop()
     """
 
-    def __init__(self, cache_key_template=None):
+    def __init__(self, cache_key_template: t.Optional[str] = None):
         self._cache_key_template = cache_key_template
-        self._cache = {}
+        self._cache: t.Dict[t.Any, t.Any] = {}
 
-    def __call__(self, func):
+    def __call__(
+        self,
+        func: t.Callable[..., t.Generator[VT, None, None]],
+    ) -> t.Callable[..., t.ContextManager[VT]]:
+
         func_m = contextlib.contextmanager(func)
 
         @contextlib.contextmanager
         @functools.wraps(func)
-        def _func(*args, **kwargs):
+        def _func(*args: t.Any, **kwargs: t.Any) -> t.Any:
             import inspect
 
             bound_args = inspect.signature(func).bind(*args, **kwargs)
@@ -158,7 +164,7 @@ class cached_contextmanager:
             if self._cache_key_template:
                 cache_key = self._cache_key_template.format(**bound_args.arguments)
             else:
-                cache_key = tuple(bound_args.arguments.values())
+                cache_key = repr(tuple(bound_args.arguments.values()))
             if cache_key in self._cache:
                 yield self._cache[cache_key]
             else:

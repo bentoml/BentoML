@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
 import os
-import typing as t
 
 import pytest
 
@@ -10,51 +9,6 @@ def change_test_dir(request):
     os.chdir(request.fspath.dirname)
     yield
     os.chdir(request.config.invocation_dir)
-
-
-@pytest.fixture(scope="session")
-def async_request() -> t.Callable:
-    # async request client
-    async def async_request(
-        method,
-        url,
-        headers=None,
-        data=None,
-        timeout=None,
-        assert_status=None,
-        assert_data=None,
-        assert_headers=None,
-    ) -> None:
-        if assert_status is None:
-            assert_status = 200
-
-        import aiohttp
-
-        try:
-            async with aiohttp.ClientSession() as sess:
-                async with sess.request(
-                    method, url, data=data, headers=headers, timeout=timeout
-                ) as r:
-                    r_body = await r.read()
-        except RuntimeError:
-            # the event loop has been closed due to previous task failed, ignore
-            return
-
-        if callable(assert_status):
-            assert assert_status(r.status), f"{r.status} {r_body}"
-        else:
-            assert r.status == assert_status, f"{r.status} {r_body}"
-
-        if assert_data is not None:
-            if callable(assert_data):
-                assert assert_data(r_body), r_body
-            else:
-                assert r_body == assert_data
-
-        if assert_headers is not None:
-            assert assert_headers(r.headers), r.headers
-
-    return async_request
 
 
 # def pytest_configure():

@@ -14,7 +14,7 @@ unit:
 
 internal:
   <<: *tmpl
-  root_test_dir: "tests/integration/projects/general"
+  root_test_dir: "tests/e2e/bento_server_general_features"
   is_dir: true
   type: "e2e"
   external_scripts: |

@@ -5,10 +5,10 @@ GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 CHECKER_IMG ?= bentoml/checker:1.0
 BASE_ARGS := -i --rm -u $(shell id -u):$(shell id -g) -v $(GIT_ROOT):/bentoml
 GPU_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
-GPU ?= false
-USE_POETRY=false
+GPU ?=false
+USE_POETRY ?=true
 
-ifeq ($(GPU), "true")
+ifeq ($(GPU),true)
 CNTR_ARGS := $(BASE_ARGS) $(GPU_ARGS) $(CHECKER_IMG)
 else
 CNTR_ARGS := $(BASE_ARGS) $(CHECKER_IMG)
@@ -81,17 +81,19 @@ tests-%:
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), --$(t)))
 	./scripts/ci/run_tests.sh $(type) $(__positional)
 
-ifeq ($(USE_POETRY), "true")
+ifeq ($(USE_POETRY),true)
 install-local: ## Install BentoML with poetry
 	@./scripts/init.sh
 install-dev-deps: ## Install BentoML with tests dependencies via poetry
-	@poetry install -E "types docs"
-	@echo "Activating virtualenv shell..."
-	@poetry shell
+	poetry install -vv -E "types docs"
+	@if [[ "$(VIRTUAL_ENV)" == "" ]]; then \
+		echo "Activating virtualenv shell..."; \
+		poetry shell; \
+	fi
 install-docs-deps: install-dev-deps ## Install BentoML with docs dependencies via poetry
 else
 install-local: ## Install BentoML in editable mode
-	pip install --editable .
+	@pip install --editable .
 install-dev-deps: ## Install all dev and tests dependencies
 	@echo Ensuring dev dependencies...
 	@pip install -e ".[dev]"

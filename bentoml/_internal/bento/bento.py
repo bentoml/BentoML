@@ -248,7 +248,7 @@ class BentoInfo:
     bentoml_version: str
     creation_time: datetime
     labels: t.Dict[str, t.Any]
-    apis: t.Dict[str, InferenceAPI]
+    apis: t.Dict[str, "InferenceAPI"]
     models: t.List[str]
 
     def dump(self, stream: t.IO[t.Any]):

@@ -8,8 +8,8 @@ echo "Running mypy..."
 
 set_on_failed_callback "FAIL mypy errors"
 
-mypy --config-file ./mypy.ini bentoml | tee /tmp/"$name"_bentoml
-mypy --config-file ./mypy.ini docker | tee /tmp/"$name"_docker
+mypy --config-file ./pyproject.toml bentoml/**/*.py | tee /tmp/"$name"_bentoml
+mypy --config-file ./pyproject.toml docker/**/*.py | tee /tmp/"$name"_docker
 
 if [ -s /tmp/"$name"_docker ] || [ -s /tmp/"$name"_bentoml ]; then
   FAIL "mypy failed"

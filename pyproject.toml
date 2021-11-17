@@ -63,14 +63,11 @@ coverage = "^4.4"
 flake8 = "^3.8"
 flake8-length = "^0.2"
 imageio = "^2.5"
-mock = "^2.0"
-moto = "1.3.14"
 pandas = "*"
 pylint = "^2.5"
 pytest-cov = "^2.7"
 pytest = "^5.4"
 pytest-asyncio = "*"
-parameterized = "*"
 scikit-learn = "*"
 isort = "^5"
 GitPython = "^2"
@@ -91,7 +88,6 @@ types-click = "*"
 types-chardet = "*"
 types-setuptools = "*"
 types-PyYAML = "*"
-pyspark-stubs = "*"
 types-filelock = "*"
 attrs = ">=21.1"
 
@@ -126,11 +122,11 @@ addopts = "-ra -p no:warnings"
 
 [tool.isort]
 profile = "black"
-skip_glob = ["third_party", "stubs"]
+skip_glob = ["third_party", "stubs", "typings"]
 
 [tool.pyright]
 include = ['bentoml/**']
-exclude = ['setup.py', 'bentoml/_version.py', 'bentoml/__main__.py']
+exclude = ['setup.py', 'bentoml/_version.py', 'bentoml/__main__.py', 'bentoml/testing/**/*', 'tests/**/*','typings/**/*', 'versioneer.py', 'docker/**/*']
 strictListInference = true
 strictDictionaryInference = true
 strictSetInference = true
@@ -190,3 +186,28 @@ reportIncompleteStub = "error"
 reportUnsupportedDunderAll = "error"
 reportUnusedCallResult = "none"
 reportUnusedCoroutine = "error"
+
+[tool.mypy]
+show_error_codes = true
+disable_error_code = "attr-defined"
+exclude = "|venv|"
+ignore_missing_imports = true
+
+# mypy --strict
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+implicit_reexport = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = '*._version.*'
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = '*.exceptions.*'
+ignore_errors = true

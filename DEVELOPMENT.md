@@ -1,87 +1,84 @@
 ## Install BentoML from source
 
-Ensure you have git, python and pip installed, BentoML supports Python 3.7+
+Make sure to have [Git](https://git-scm.com/) and [Python3.7+](https://www.python.org/downloads/) installed.
+
+Optionally, make sure to have [GNU Make](https://www.gnu.org/software/make/) available on your system if you aren't using UNIX-based system for better developer experience.
+If you don't want to use `make` then refers to [Makefile](./Makefile) for specific commands on given make target.
+
+We are also using [docker](https://www.docker.com/) for our code style scripts that will be mentioned below for better devex.
 
 ```bash
 python --version
-```
 
-```bash
 pip --version
 ```
 
-
 Clone the source code from BentoML's GitHub repository:
 ```bash
-git clone https://github.com/bentoml/BentoML.git
-cd BentoML
+git clone https://github.com/bentoml/BentoML.git && cd BentoML
+```
+
+If you want to use [`poetry`](https://python-poetry.org/) then do:
+
+```bash
+poetry install
 ```
 
 Install BentoML with pip in `editable` mode:
 ```bash
-pip install --editable .
+make install-local
 ```
 
 This will make `bentoml` available on your system which links to the sources of
 your local clone and pick up changes you made locally.
 
-Test the BentoML installation:
+Test the BentoML installation either with `bash` or in an IPython session:
 ```bash
 bentoml --version
 ```
+
 ```python
-import bentoml
 print(bentoml.__version__)
 ```
 
 ### Install BentoML from other forks or branches
 
-The `pip` command support installing directly from remote git repository. This makes it
-easy to try out new BentoML feature that has not been released, test changes in a pull 
+`pip` also supports installing directly from remote git repository. This makes it
+easy to try out new BentoML feature that has not been released, test changes in a pull
 request. For example, to install BentoML from its master branch:
 
-```
+```bash
 pip install git+https://github.com/bentoml/BentoML.git
 ```
 
 Or to install from your own fork of BentoML:
-```
+```bash
 pip install git+https://github.com/{your_github_username}/BentoML.git
 ```
 
 You can also specify what branch to install from:
-```
+```bash
 pip install git+https://github.com/{your_github_username}/BentoML.git@{branch_name}
 ```
 
 
+## Testing
 
-## How to run unit tests
-
-1. Install all test dependencies:
+Make sure to install all test dependencies:
+```bash
+make install-dev-deps
 ```
-pip install -e ".[test]"
-```
 
-2. Run all unit tests with current python version and environment
+### Unit tests
+
+Run all unit tests with current python version and environment
 ```bash
 ./scripts/ci/unit_tests.sh
 ```
 
-## How to run integration tests
+#### Optional: Run unit test with all supported python versions
 
-After isntall all test dependencies, to run a specific integration tests suite after adding testcases do:
-```bash
-# for example you added tests for mlflow
-pytest tests/integration/frameworks/mlflow --cov=bentoml --cov-config=.coveragerc
-```
-
-### Optional: Run unit test with all supported python versions
-
-Make sure you [have conda installed](https://docs.conda.io/projects/conda/en/latest/user-guide/install/):
-```bash
-conda --version
-```
+Make sure you have [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) installed:
 
 Bentoml tox file is configured to run in muiltple python versions:
 ```bash
@@ -94,6 +91,22 @@ tox -e py37
 // or
 tox -e py36
 ```
+
+### Integration tests
+
+After install all test dependencies, to run a specific integration tests suite after adding testcases do:
+
+```bash
+# `make integration-tests-<frameworks>` will trigger integration tests for that specific frameworks.
+#  Make sure that your frameworks is defined under ./scripts/ci/config.yml
+
+make integration-tests-mlflow
+```
+
+If you are adding new frameworks it is recommended that you also added tests for our CI. Currently we are using GitHub Actions to manage our CI/CD workflow.
+
+We recommended you to use [`nektos/act`](https://github.com/nektos/act) to run and tests Actions locally.
+
 
 ## Run BentoML with verbose/debug logging
 
@@ -114,12 +127,15 @@ And/or use the `--verbose` option when running `bentoml` CLI command, e.g.:
 bentoml get IrisClassifier --verbose
 ```
 
-## Style check and auto-formatting your code
+## Style check, auto-formatting, type-checking
 
-Make sure to install all dev dependencies:
-```bash
-pip install -e ".[dev]"
-```
+formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyCQA/isort)
+
+linter: [flake8](https://flake8.pycqa.org/en/latest/), [pylint](https://pylint.org/)
+
+type checker: [mypy](https://mypy.readthedocs.io/en/stable/), [pyright](https://github.com/microsoft/pyright)
+
+### [Required]: Docker
 
 Run linter/format script:
 ```bash
@@ -128,21 +144,33 @@ make format
 make lint
 ```
 
-### Optional: Running `mypy` for better type annotation
-
-Make sure to install [mypy](https://mypy.readthedocs.io/en/stable/getting_started.html)
-
-You might have to install stubs before running:
+Run type checker:
 ```bash
-mypy --install-types
+make type
 ```
 
-After updating/modifying codebase (e.g: `bentoml/pytorch.py`), run `mypy`:
+### Without Docker
+
+Make sure to install all dev dependencies:
 ```bash
-mypy bentoml/pytorch.py
+make install-dev-deps
 ```
 
-## How to edit, run, build documentation site
+Run linter/format script:
+```bash
+./scripts/tools/formatter.sh
+
+./scripts/tools/linter.sh
+```
+
+Run type checker:
+```bash
+./scripts/tools/type_checker.sh
+```
+
+## Documentations
+
+Refers to [BentoML Documentation](./docs/README.md) for more information
 
 Install all dev dependencies:
 ```bash
@@ -157,22 +185,17 @@ To build documentation for locally:
 Modify `*.rst` files inside the `docs` folder to update content, and to
 view your changes, run the following command:
 
-```
+```bash
 python -m http.server --directory ./docs/build/html
 ```
 
-And go to your browser at `http://localhost:8000`
+Docs can then be accessed at [localhost:8000](http://localhost:8000)
 
 If you are developing under macOS or linux, we also made a script that watches docs
 file changes, automatically rebuild the docs, and refreshes the browser
 tab to show the change (macOS only):
 
-## How to run spell check for documentation site
-
-Install all dev dependencies:
-```bash
-pip install -e ".[dev]"
-```
+### Running spellcheck for documentation site.
 
 Install spellchecker dependencies:
 ```bash
@@ -184,7 +207,7 @@ To run spellchecker locally:
 make spellcheck-doc
 ```
 
-### macOS
+#### macOS
 
 Make sure you have fswatch command installed:
 ```
@@ -193,10 +216,10 @@ brew install fswatch
 
 Run the `watch.sh` script to start watching docs changes:
 ```bash
-./docs/watch.sh
+./scripts/watch_docs.sh
 ```
 
-### Linux
+#### Debian-based distros
 Make sure you have `inotifywait` installed
 ```shell script
 sudo apt install inotify-tools
@@ -204,69 +227,63 @@ sudo apt install inotify-tools
 
 Run the `watch.sh` script to start watching docs changes:
 ```bash
-./docs/watch.sh
+./scripts/watch_docs.sh
 ```
 
-## Running BentoML Benchmark
+## Benchmark
 BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).
 
-## How to test GitHub Actions locally
+## Optional: git hooks
 
-If you are developing new artifacts or modify GitHub Actions CI (adding integration test, unit tests, etc), use [`nektos/act`](https://github.com/nektos/act) to run Actions locally.
-
+BentoML also provides git hooks that developers can install with:
+```bash
+make hooks
+```
 
 ## Creating Pull Request on GitHub
 
-
-<details>
-    <summary>Optional: Install Git hooks</summary>
-
-    ./dev/install_git_hooks.sh
-</details>
-
-
-1. [Fork BentoML project](https://github.com/bentoml/BentoML/fork) on GitHub and
+[Fork BentoML project](https://github.com/bentoml/BentoML/fork) on GitHub and
 add upstream remotes to local BentoML clone:
 
-    ```bash
-    git remote add upstream git@github.com:bentoml/BentoML.git
-    ```
+```bash
+git remote add upstream git@github.com:bentoml/BentoML.git
+```
 
-2. Make the changes either to fix a known issue or adding new feature
+Make the changes either to fix a known issue or adding new feature
 
-3. In order for us to manage PR and Issues systematically, we encourage developers to use hierarchical branch folders to manage branch naming.
-   Run `./dev/install_git_hooks.sh` to install `pre-commit` hooks. We will check if your branch naming
-   follows the given regex : `^(feature|bugfix|improv|lib|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$`. This
-   is partially based on how [Azure DevOps](https://docs.microsoft.com/en-us/azure/devops/repos/git/require-branch-folders?view=azure-devops&tabs=browser)
-   manages its repos and conventional commits spec (see below for more information):
-   - feature: new features/proposals users want to integrate into the library, not a new feature for a build script
-   - bugfix: bugfix of a feature, not a fix to a build script
-   - improv: improvements/refactor/cleanup production code, eg. reformat, pylint, etc.
-   - lib: related to internal libraries, features required by the production code
-   - prerelease: alpha/beta features that might should be included in the prerelease of the library. This would help testing new features/integrations for the library
-   - release: included all features that is production ready
-   - hotifx: patch of current bugs in production code
+In order for us to manage PR and Issues systematically, we encourage developers to use hierarchical branch folders to manage branch naming.
+Run `./dev/install_git_hooks.sh` to install `pre-commit` hooks. We will check if your branch naming
+follows the given regex : `^(feature|bugfix|improv|lib|prerelease|release|hotfix)\/[a-zA-Z0-9._-]+$`. This
+is partially based on how [Azure DevOps](https://docs.microsoft.com/en-us/azure/devops/repos/git/require-branch-folders?view=azure-devops&tabs=browser)
+manages its repos and conventional commits spec (see below for more information):
+- feature: new features/proposals users want to integrate into the library, not a new feature for a build script
+- bugfix: bugfix of a feature, not a fix to a build script
+- improv: improvements/refactor/cleanup production code, eg. reformat, pylint, etc.
+- lib: related to internal libraries, features required by the production code
+- prerelease: alpha/beta features that might should be included in the prerelease of the library. This would help testing new features/integrations for the library
+- release: included all features that is production ready
+- hotifx: patch of current bugs in production code
 
-4. Push changes to your fork and follow [this
-   article](https://help.github.com/en/articles/creating-a-pull-request)
-   on how to create a pull request on github. Name your pull request
-   with one of the following prefixes, e.g. "feat: add support for
-   PyTorch". This is based on the [Conventional Commits
-   specification](https://www.conventionalcommits.org/en/v1.0.0/#summary)
-   - feat: (new feature for the user, not a new feature for build script)
-   - fix: (bug fix for the user, not a fix to a build script)
-   - docs: (changes to the documentation)
-   - style: (formatting, missing semicolons, etc; no production code change)
-   - refactor: (refactoring production code, eg. renaming a variable)
-   - perf: (code changes that improve performance)
-   - test: (adding missing tests, refactoring tests; no production code change)
-   - chore: (updating grunt tasks etc; no production code change)
-   - build: (changes that affect the build system or external dependencies)
-   - ci: (changes to configuration files and scripts)
-   - revert: (reverts a previous commit)
+Push changes to your fork and follow [this
+article](https://help.github.com/en/articles/creating-a-pull-request)
+on how to create a pull request on github. Name your pull request
+with one of the following prefixes, e.g. "feat: add support for
+PyTorch". This is based on the [Conventional Commits
+specification](https://www.conventionalcommits.org/en/v1.0.0/#summary)
+- feat: (new feature for the user, not a new feature for build script)
+- fix: (bug fix for the user, not a fix to a build script)
+- docs: (changes to the documentation)
+- style: (formatting, missing semicolons, etc; no production code change)
+- refactor: (refactoring production code, eg. renaming a variable)
+- perf: (code changes that improve performance)
+- test: (adding missing tests, refactoring tests; no production code change)
+- chore: (updating grunt tasks etc; no production code change)
+- build: (changes that affect the build system or external dependencies)
+- ci: (changes to configuration files and scripts)
+- revert: (reverts a previous commit)
 
-5. Once your pull request created, an automated test run will be triggered on
-   your branch and the BentoML authors will be notified to review your code
-   changes. Once tests are passed and reviewer has signed off, we will merge
-   your pull request.
+Once your pull request created, an automated test run will be triggered on
+your branch and the BentoML authors will be notified to review your code
+changes. Once tests are passed and reviewer has signed off, we will merge
+your pull request.
 

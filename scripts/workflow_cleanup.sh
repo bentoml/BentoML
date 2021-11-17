@@ -27,7 +27,7 @@ else
   echo "...done!"
 fi
 
-echo "Retreiving runs..."
+echo "Retrieving runs..."
 WORKFLOW_RUNS=$(gh api "repos/$ORG_NAME/$REPO_NAME/actions/workflows/$WORKFLOW_ID/runs?per_page=100")
 echo "done!"
 

@@ -33,6 +33,7 @@ jobs:
               - .github/workflows/ci.yml
               - setup.cfg
               - pyproject.toml
+              - scripts/ci/config.yml
             bentoml:
               - *related
               - "bentoml/**"

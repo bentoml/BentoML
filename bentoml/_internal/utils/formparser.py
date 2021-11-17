@@ -96,7 +96,8 @@ class MultiPartParser:
             parser.write(chunk)
             messages = list(self.messages)
             self.messages.clear()
-            # TODO: for some reason pyright doesn't recognize message_types value to be equal to other enums.
+            # TODO: for some reason pyright doesn't recognize
+            # message_types value to be equal to other enums.
             for message_type, message_bytes in messages:
                 if message_type == MultiPartMessage.PART_BEGIN:
                     content_disposition = None

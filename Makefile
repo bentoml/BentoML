@@ -64,6 +64,7 @@ ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, mypy,
 
 ci-%: chore
 	$(eval style := $(subst ci-, ,$@))
+	$(eval SHELL :=/bin/bash)
 	$(CMD) ./scripts/ci/style/$(style)_check.sh
 
 .PHONY: ci-format

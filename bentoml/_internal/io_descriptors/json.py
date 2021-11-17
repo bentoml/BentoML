@@ -27,6 +27,8 @@ _SerializableObj = t.Union[
     "np.ndarray[t.Any, np.dtype[t.Any]]", "pydantic.BaseModel", "pd.DataFrame", t.Any
 ]
 
+_JSONLike = t.Union[str, t.Dict[str, t.Any], t.Type["pydantic.BaseModel"]]
+
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
     def default(self, o: _SerializableObj) -> t.Any:
@@ -54,7 +56,7 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         return super().default(o)
 
 
-class JSON(IODescriptor):
+class JSON(IODescriptor[_JSONLike]):
     """
     `JSON` defines API specification for the inputs/outputs of a Service, where either
      inputs will be converted to or outputs will be converted from a JSON representation
@@ -120,6 +122,13 @@ class JSON(IODescriptor):
         self._validate_json = validate_json
         self._json_encoder = json_encoder
 
+    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
+        if hasattr(self, "_pydantic_model"):
+            schema = self._pydantic_model.schema()
+        else:
+            schema = {"type": "object"}
+        return {MIME_TYPE_JSON: {"schema": schema}}
+
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
         return self.openapi_schema()
@@ -128,14 +137,7 @@ class JSON(IODescriptor):
         """Returns OpenAPI schema for outcoming responses"""
         return self.openapi_schema()
 
-    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
-        if hasattr(self, "_pydantic_model"):
-            schema = self._pydantic_model.schema()
-        else:
-            schema = {"type": "object"}
-        return {MIME_TYPE_JSON: {"schema": schema}}
-
-    async def from_http_request(self, request: Request) -> t.Any:
+    async def from_http_request(self, request: Request) -> _JSONLike:
         json_obj = await request.json()
         if hasattr(self, "_pydantic_model") and self._validate_json:
             try:
@@ -145,7 +147,7 @@ class JSON(IODescriptor):
         else:
             return json_obj
 
-    async def to_http_response(self, obj: t.Any) -> Response:
+    async def to_http_response(self, obj: _JSONLike) -> Response:
         json_str = json.dumps(
             obj,
             cls=self._json_encoder,

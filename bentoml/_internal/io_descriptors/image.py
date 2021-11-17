@@ -1,5 +1,6 @@
 import io
 import mimetypes
+import sys
 import typing as t
 
 from multipart.multipart import parse_options_header
@@ -26,9 +27,15 @@ else:
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
+if sys.version_info >= (3, 8):
+    Literal = t.Literal
+else:
+    from typing_extensions import Literal
+
+
 DEFAULT_PIL_MODE = "RGB"
 
-_Mode = t.Literal[
+_Mode = Literal[
     "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
 ]
 
@@ -116,11 +123,16 @@ class Image(
             raise BentoMLException("Cannot guess extensions from give mime_type")
         self._format = PIL.Image.EXTENSION[ext]
 
+    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
+        return {self._mime_type: dict(schema=dict(type="string", format="binary"))}
+
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return self.openapi_schema()
 
     async def from_http_request(self, request: Request) -> "PIL.Image.Image":
         content_type, _ = parse_options_header(request.headers["content-type"])
@@ -136,7 +148,7 @@ class Image(
             return PIL.Image.open(io.BytesIO(await request.body()))
 
         raise BentoMLException(
-            f"{self.__class__.__name__} should have `Content-Type: multipart/form-data`, got {content_type} instead"
+            f"{self.__class__.__name__} should have `Content-Type: multipart/form-data` or `image/*`, got {content_type} instead"
         )
 
     async def to_http_response(

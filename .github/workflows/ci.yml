@@ -186,7 +186,7 @@ jobs:
       - name: Run unit tests for Windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          poetry run pytest tests/unit --cov=bentoml --cov-config=.coveragerc --capture=tee-sys --cov-report=xml:"unit.xml"
+          poetry run pytest tests/unit --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"unit.xml"
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2
@@ -200,6 +200,9 @@ jobs:
   
 
   bento_server_e2e_tests:
+    needs:
+      - diff
+
     strategy:
       fail-fast: false
       matrix:
@@ -267,7 +270,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh general_features -vvv
+        run: make tests-general_features
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2

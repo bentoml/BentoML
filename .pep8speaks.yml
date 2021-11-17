@@ -12,7 +12,6 @@ flake8:
     exclude:
       - bentoml/_version.py
       - guides
-      - bentoml/_internal/typing_extensions
 
 
 only_mention_files_with_errors: True

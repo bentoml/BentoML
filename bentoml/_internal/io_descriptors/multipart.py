@@ -13,13 +13,16 @@ from .base import IODescriptor
 
 if t.TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from ..types import FileLike
-    from .image import ImageType
-    from .json import JSONType
-    from .numpy import NumpyType
+    import numpy as np  # noqa
+
+    from ..types import FileLike  # noqa
+    from .image import ImageType  # noqa
+    from .json import JSONType  # noqa
 
 
-_DescriptorType = t.Union[str, "JSONType", "FileLike", "ImageType", "NumpyType"]
+_DescriptorType = t.Union[
+    str, "JSONType", "FileLike", "ImageType", "np.ndarray[t.Any, np.dtype[t.Any]]"
+]
 
 MultipartIO = t.Dict[str, _DescriptorType]
 

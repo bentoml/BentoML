@@ -16,8 +16,6 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import numpy as np
     import PIL
     import PIL.Image
-
-    from .numpy import NumpyType  # noqa
 else:
     np = LazyLoader("np", globals(), "numpy")
 
@@ -42,7 +40,7 @@ _Mode = Literal[
     "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
 ]
 
-ImageType = t.Union["PIL.Image.Image", "NumpyType"]
+ImageType = t.Union["PIL.Image.Image", "np.ndarray[t.Any, np.dtype[t.Any]]"]
 
 
 class Image(IODescriptor[ImageType]):
@@ -152,8 +150,8 @@ class Image(IODescriptor[ImageType]):
 
     async def to_http_response(self, obj: ImageType) -> Response:
         if isinstance(obj, np.ndarray):
-            image = PIL.Image.fromarray(obj, mode=self._pilmode)  # type: ignore
-        elif isinstance(obj, PIL.Image.Image):
+            image = PIL.Image.fromarray(obj, mode=self._pilmode)
+        elif isinstance(obj, PIL.Image.Image):  # type: ignore
             image = obj
         else:
             raise InternalServerError(

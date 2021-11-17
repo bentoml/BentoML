@@ -80,7 +80,6 @@ parse_args() {
         ;;
     esac
   done
-  exists=0
   PYTESTARGS=( "${@:2}" )
   shift $(( OPTIND - 1 ))
 }
@@ -125,10 +124,26 @@ main() {
 
   need_cmd poetry
   need_cmd make
+  need_cmd curl
 
   poetry run python -m pip install -U pip setuptools
 
-  make -f "$GIT_ROOT"/Makefile pull-checker-img
+  if ! check_cmd docker; then
+    if ! check_cmd yq && [[ $(uname) == "Linux" ]]; then
+      curl -fsSLO https://github.com/mikefarah/yq/releases/download/v4.14.1/yq_linux_amd64.tar.gz
+      echo "[Requires SUDO] tar yq_linux_amd64.tar.gz and move to /usr/bin/yq..."
+      tar -zvxf "yq_linux_amd64.tar.gz" yq_linux_amd64 && sudo mv yq_linux_amd64 /usr/bin/yq
+      /usr/bin/rm -f ./yq_linux_amd64.tar.gz
+    else
+      cat <<ERROR
+Docker is not currently available in current system. Make sure to install yq to your system in order to use the scripts.
+Refers to https://github.com/mikefarah/yq for more information.
+ERROR
+      exit 1
+    fi
+  else
+    make -f "$GIT_ROOT"/Makefile pull-checker-img
+  fi
 
 #  validate_yaml
 
@@ -158,7 +173,14 @@ main() {
     eval "$external_scripts" || exit 1
   fi
 
-  if ! (poetry run pytest "$GIT_ROOT"/"$test_dir"/"$fname" "${OPTS[@]}"); then
+  if [ "$type" == 'e2e' ]; then
+    cd "$GIT_ROOT"/"$test_dir"/"$fname" || exit 1
+    path="."
+  else
+    path="$GIT_ROOT"/"$test_dir"/"$fname"
+  fi
+
+  if ! (poetry run pytest "$path" "${OPTS[@]}"); then
     err=1
   fi
 

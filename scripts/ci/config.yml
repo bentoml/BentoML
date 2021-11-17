@@ -12,7 +12,7 @@ unit:
   is_dir: true
   type: "unit"
 
-internal:
+general_features:
   <<: *tmpl
   root_test_dir: "tests/e2e/bento_server_general_features"
   is_dir: true

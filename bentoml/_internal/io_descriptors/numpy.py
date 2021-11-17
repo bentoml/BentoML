@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 import typing as t
 
 from starlette.requests import Request
@@ -15,15 +14,6 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import numpy as np
 else:
     np = LazyLoader("np", globals(), "numpy")
-
-if sys.version_info >= (3, 8):
-    from typing import Literal, SupportsIndex
-else:
-    from typing_extensions import Literal, SupportsIndex
-
-_ShapeLike = t.Union[SupportsIndex, t.Sequence[SupportsIndex]]
-
-NumpyType = Literal["np.ndarray[t.Any, np.dtype[t.Any]]"]
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +37,7 @@ def _is_matched_shape(
     return True
 
 
-class NumpyNdarray(IODescriptor[NumpyType]):
+class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
     """
     `NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
      either inputs will be converted to or outputs will be converted from type
@@ -115,18 +105,19 @@ class NumpyNdarray(IODescriptor[NumpyType]):
         self,
         dtype: t.Optional[t.Union[str, "np.dtype[t.Any]"]] = None,
         enforce_dtype: bool = False,
-        shape: t.Optional[_ShapeLike] = None,
+        shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
     ):
-        if dtype is not None:
-            self._dtype = np.dtype(dtype)
-        if shape is not None:
-            self._shape = shape
-        self._enforce_dtype = enforce_dtype or dtype is not None
-        self._enforce_shape = enforce_shape or shape is not None
+        if isinstance(dtype, str):
+            dtype = np.dtype(dtype)
+
+        self._dtype = dtype
+        self._shape = shape
+        self._enforce_dtype = enforce_dtype
+        self._enforce_shape = enforce_shape
 
     def _get_dtypes(self) -> t.Dict[str, t.Any]:
-        if hasattr(self, "_shape"):
+        if self._shape is not None:
             return dict(type="array", items=dict(type="number"))
         return dict()
 
@@ -149,15 +140,17 @@ class NumpyNdarray(IODescriptor[NumpyType]):
         return self.openapi_schema()
 
     def _verify_ndarray(
-        self, obj: "np.ndarray", exception_cls: t.Type[Exception] = BadInput
-    ) -> "np.ndarray":
+        self,
+        obj: "np.ndarray[t.Any, np.dtype[t.Any]]",
+        exception_cls: t.Type[Exception] = BadInput,
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         if self._dtype is not None and self._dtype != obj.dtype:
             if self._enforce_dtype:
                 raise exception_cls(
                     f"{self.__class__.__name__}: enforced dtype mismatch"
                 )
             try:
-                obj = obj.astype(self._dtype)
+                obj = obj.astype(self._dtype)  # type: ignore
             except ValueError as e:
                 logger.warning(f"{self.__class__.__name__}: {e}")
 
@@ -172,7 +165,9 @@ class NumpyNdarray(IODescriptor[NumpyType]):
                 logger.warning(f"{self.__class__.__name__}: {e}")
         return obj
 
-    async def from_http_request(self, request: Request) -> NumpyType:
+    async def from_http_request(
+        self, request: Request
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         """
         Process incoming requests and convert incoming
          objects to `numpy.ndarray`
@@ -185,14 +180,17 @@ class NumpyNdarray(IODescriptor[NumpyType]):
              inside users defined logics.
         """
         obj = await request.json()
+        res: "np.ndarray[t.Any, np.dtype[t.Any]]"
         try:
-            res = np.array(obj, dtype=self._dtype)
+            res = np.array(obj, dtype=self._dtype)  # type: ignore
         except ValueError:
-            res = np.array(obj)
+            res = np.array(obj)  # type: ignore
         res = self._verify_ndarray(res, BadInput)
         return res
 
-    async def to_http_response(self, obj: NumpyType) -> Response:
+    async def to_http_response(
+        self, obj: "np.ndarray[t.Any, np.dtype[t.Any]]"
+    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 

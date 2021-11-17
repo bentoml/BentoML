@@ -3,8 +3,9 @@ import typing as t
 import uuid
 
 import multipart.multipart as multipart
-from starlette.formparsers import _user_safe_decode  # noqa
-from starlette.formparsers import Headers, MultiPartMessage
+from starlette.datastructures import Headers, MutableHeaders
+from starlette.formparsers import _user_safe_decode  # type: ignore
+from starlette.formparsers import MultiPartMessage
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -22,9 +23,9 @@ class MultiPartParser:
         assert (
             multipart is not None
         ), "The `python-multipart` library must be installed to use form parsing."
-        self.headers = headers
+        self.headers: Headers = headers
         self.stream = stream
-        self.messages: t.List[t.Tuple[MultiPartMessage, bytes]] = []
+        self.messages: t.List[t.Tuple[MultiPartMessage, bytes]] = list()
 
     def on_part_begin(self) -> None:
         message = (MultiPartMessage.PART_BEGIN, b"")
@@ -95,16 +96,17 @@ class MultiPartParser:
             parser.write(chunk)
             messages = list(self.messages)
             self.messages.clear()
+            # TODO: for some reason pyright doesn't recognize message_types value to be equal to other enums.
             for message_type, message_bytes in messages:
                 if message_type == MultiPartMessage.PART_BEGIN:
                     content_disposition = None
                     data = b""
                     headers = list()
-                elif message_type == MultiPartMessage.HEADER_FIELD:
+                elif message_type == MultiPartMessage.HEADER_FIELD:  # type: ignore
                     header_field += message_bytes
-                elif message_type == MultiPartMessage.HEADER_VALUE:
+                elif message_type == MultiPartMessage.HEADER_VALUE:  # type: ignore
                     header_value += message_bytes
-                elif message_type == MultiPartMessage.HEADER_END:
+                elif message_type == MultiPartMessage.HEADER_END:  # type: ignore
                     field = header_field.lower()
                     if field == b"content-disposition":
                         content_disposition = header_value
@@ -112,13 +114,16 @@ class MultiPartParser:
                         headers.append((field, header_value))
                     header_field = b""
                     header_value = b""
-                elif message_type == MultiPartMessage.HEADERS_FINISHED:
+                elif message_type == MultiPartMessage.HEADERS_FINISHED:  # type: ignore
+                    assert (
+                        content_disposition is not None
+                    ), "`Content-Disposition` is not available in headers"
                     _, options = multipart.parse_options_header(content_disposition)
                     options = t.cast(t.Dict[bytes, bytes], options)
                     field_name = _user_safe_decode(options[b"name"], charset)
-                elif message_type == MultiPartMessage.PART_DATA:
+                elif message_type == MultiPartMessage.PART_DATA:  # type: ignore
                     data += message_bytes
-                elif message_type == MultiPartMessage.PART_END:
+                elif message_type == MultiPartMessage.PART_END:  # type: ignore
                     items.append((field_name, headers, data))
 
         parser.finalize()
@@ -129,13 +134,14 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     content_type_header = request.headers.get("Content-Type")
     content_type, _ = multipart.parse_options_header(content_type_header)
     assert content_type == b"multipart/form-data"
-    multipart_parser = MultiPartParser(request.headers, request.stream())
+    stream = t.cast(t.AsyncGenerator[bytes, None], request.stream())
+    multipart_parser = MultiPartParser(request.headers, stream)
     try:
         form = await multipart_parser.parse()
     except multipart.MultipartParseError:
         raise BentoMLException("Invalid multipart requests")
 
-    reqs = dict()
+    reqs = dict()  # type: t.Dict[str, Request]
     for field_name, headers, data in form:
         scope = dict(request.scope)
         ori_headers = dict(scope.get("headers", list()))
@@ -148,8 +154,8 @@ async def populate_multipart_requests(request: Request) -> t.Dict[str, Request]:
     return reqs
 
 
-def _get_disp_filename(headers) -> t.Optional[bytes]:
-    if headers["content-disposition"]:
+def _get_disp_filename(headers: MutableHeaders) -> t.Optional[bytes]:
+    if "content-disposition" in headers:
         _, options = multipart.parse_options_header(headers["content-disposition"])
         if b"filename" in options:
             return t.cast(bytes, options[b"filename"])

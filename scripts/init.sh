@@ -21,6 +21,6 @@ NOTE: If you already installed BentoMl from main with 'pip install -e .', uninst
  in order to remove egg link within your Python installation. then proceed with installation using poetry.
 HEREDOC
 
-poetry install -vv -E "model-server"
+poetry install -vv -E "model-server types docs"
 
 [[ "$VIRTUAL_ENV" == "" ]] && poetry shell

@@ -85,11 +85,7 @@ ifeq ($(USE_POETRY),true)
 install-local: ## Install BentoML with poetry
 	@./scripts/init.sh
 install-dev-deps: ## Install BentoML with tests dependencies via poetry
-	poetry install -vv -E "types docs"
-	@if [[ "$(VIRTUAL_ENV)" == "" ]]; then \
-		echo "Activating virtualenv shell..."; \
-		poetry shell; \
-	fi
+	poetry install -vv -E "model-server types docs"
 install-docs-deps: install-dev-deps ## Install BentoML with docs dependencies via poetry
 else
 install-local: ## Install BentoML in editable mode

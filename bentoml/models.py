@@ -55,7 +55,7 @@ def pull() -> Model:
     raise NotImplementedError
 
 
-def load_runner(tag: t.Union[Tag, str]) -> Runner:
+def load_runner(tag: t.Union[Tag, str]) -> "Runner":
     model = get(tag)
     return model.load_runner()
 

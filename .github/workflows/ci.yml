@@ -94,11 +94,11 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: poetry install
 
       - name: Install libenchant
@@ -172,11 +172,11 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: poetry install
 
       - name: Run unit tests
@@ -262,11 +262,11 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report

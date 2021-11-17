@@ -42,7 +42,7 @@ _Mode = Literal[
     "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
 ]
 
-ImageType = t.Union["PIL.Image.Image", NumpyType]
+ImageType = t.Union["PIL.Image.Image", "NumpyType"]
 
 
 class Image(IODescriptor[ImageType]):

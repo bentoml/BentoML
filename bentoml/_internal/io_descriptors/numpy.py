@@ -102,7 +102,7 @@ class NumpyNdarray(IODescriptor[NumpyType]):
         self._enforce_dtype = enforce_dtype or dtype is not None
         self._enforce_shape = enforce_shape or shape is not None
 
-    def _get_dtypes(self):
+    def _get_dtypes(self) -> t.Dict[str, t.Any]:
         if hasattr(self, "_shape"):
             return dict(type="array", items=dict(type="number"))
         return dict()
@@ -125,9 +125,7 @@ class NumpyNdarray(IODescriptor[NumpyType]):
         """Returns OpenAPI schema for outcoming responses"""
         return self.openapi_schema()
 
-    async def from_http_request(
-        self, request: Request
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+    async def from_http_request(self, request: Request) -> NumpyType:
         """
         Process incoming requests and convert incoming
          objects to `numpy.ndarray`
@@ -146,9 +144,7 @@ class NumpyNdarray(IODescriptor[NumpyType]):
             res = res.reshape(self._shape)
         return res
 
-    async def to_http_response(
-        self, obj: "np.ndarray[t.Any, np.dtype[t.Any]]"
-    ) -> Response:
+    async def to_http_response(self, obj: NumpyType) -> Response:
         """
         Process given objects and convert it to HTTP response.
 

@@ -198,6 +198,7 @@ show_error_codes = true
 disable_error_code = "attr-defined"
 exclude = "|venv|"
 ignore_missing_imports = true
+mypy_path = "|typings|"
 
 # mypy --strict
 disallow_untyped_defs = true

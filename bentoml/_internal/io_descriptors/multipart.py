@@ -58,9 +58,11 @@ class Multipart(IODescriptor[MultipartIO]):
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return self.openapi_schema()
 
     async def from_http_request(self, request: Request) -> MultipartIO:
         ctype, _ = parse_options_header(request.headers["content-type"])

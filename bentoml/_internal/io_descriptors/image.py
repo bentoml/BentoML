@@ -10,8 +10,7 @@ from ...exceptions import BentoMLException, InvalidArgument
 from ..utils import LazyLoader
 from .base import IODescriptor
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if t.TYPE_CHECKING:  # pragma: no cover # pylint: disable=unused-import
     import numpy as np
     import PIL
     import PIL.Image
@@ -28,6 +27,10 @@ else:
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
 DEFAULT_PIL_MODE = "RGB"
+
+_Mode = t.Literal[
+    "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
+]
 
 
 class Image(
@@ -86,7 +89,11 @@ class Image(
         IO Descriptor that represents either a `np.ndarray` or a `PIL.Image.Image`.
     """
 
-    def __init__(self, pilmode: str = DEFAULT_PIL_MODE, mime_type: str = "image/jpeg"):
+    def __init__(
+        self,
+        pilmode: t.Optional["_Mode"] = DEFAULT_PIL_MODE,
+        mime_type: str = "image/jpeg",
+    ):
         PIL.Image.init()
 
         # NOTE: Currently no tests are provided.
@@ -102,9 +109,11 @@ class Image(
             )
 
         self._mime_type = mime_type.lower()
-        self._pilmode = pilmode
+        self._pilmode: t.Optional[_Mode] = pilmode
 
         ext = mimetypes.guess_extension(self._mime_type)
+        if not ext:
+            raise BentoMLException("Cannot guess extensions from give mime_type")
         self._format = PIL.Image.EXTENSION[ext]
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
@@ -131,13 +140,8 @@ class Image(
         )
 
     async def to_http_response(
-        self, obj: t.Union["np.ndarray", "PIL.Image.Image"]
+        self, obj: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "PIL.Image.Image"]
     ) -> Response:
-        if not isinstance(obj, (np.ndarray, PIL.Image.Image)):
-            raise InvalidArgument(
-                f"Unsupported Image type received: {type(obj)}, `{self.__class__.__name__}`"
-                " only supports `np.ndarray` and `PIL.Image`"
-            )
         image = (
             PIL.Image.fromarray(obj, mode=self._pilmode)
             if isinstance(obj, np.ndarray)

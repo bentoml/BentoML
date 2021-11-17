@@ -137,7 +137,7 @@ main() {
       YQ_BINARY=yq_"$__shell"_amd64
       curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
       echo "[Requires SUDO] tar yq_linux_amd64.tar.gz and move to /usr/bin/yq..."
-      tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && sudo mv "$YQ_BINARY" /usr/bin/yq
+      tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && sudo mv "$YQ_BINARY" $HOME/.local/bin/yq
       rm -f ./"$YQ_BINARY".tar.gz
     else
       echo "Using yq via $(which yq)..."

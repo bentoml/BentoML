@@ -112,7 +112,7 @@ class JSON(IODescriptor[JSONType]):
         validate_json: bool = True,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
-        if pydantic_model is not None:
+        if pydantic_model is not None:  # pragma: no cover
             if pydantic is None:
                 raise MissingDependencyException(
                     "`pydantic` must be installed to use `pydantic_model`"

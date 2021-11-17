@@ -68,7 +68,11 @@ install-docs-deps:  ## Install documentation dependencies
 watch-docs: ## Build and watch documentation
 	@./scripts/watch_docs.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
 spellcheck-docs: ## Spell check documentation
-	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
+	@if [[ `command -v poetry >/dev/null 2>&1` ]]; then \
+		poetry run sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1); \
+	else; \
+		sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1); \
+	fi
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)

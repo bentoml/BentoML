@@ -168,11 +168,11 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true' && ${{ matrix.os != 'macos-latest' }}
+        if: ${{ matrix.os != 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Ensure cache is healthy (MacOS)
-        if: steps.cache-pip.outputs.cache-hit == 'true' && ${{ matrix.os == 'macos-latest' }}
+        if: ${{ matrix.os == 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
         run: |
           brew install coreutils
           timeout 10s poetry run pip --version || rm -rf .venv
@@ -260,11 +260,11 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true' && ${{ matrix.os != 'macos-latest' }}
+        if: ${{ matrix.os != 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Ensure cache is healthy (MacOS)
-        if: steps.cache-pip.outputs.cache-hit == 'true' && ${{ matrix.os == 'macos-latest' }}
+        if: ${{ matrix.os == 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
         run: |
           brew install coreutils
           timeout 10s poetry run pip --version || rm -rf .venv

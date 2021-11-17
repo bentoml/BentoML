@@ -79,7 +79,9 @@ tests-%:
 	$(eval type :=$(subst tests-, , $@))
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), --$(t)))
+	$(eval SHELL :=/bin/bash)
 	./scripts/ci/run_tests.sh $(type) $(__positional)
+
 
 ifeq ($(USE_POETRY),true)
 install-local: ## Install BentoML with poetry

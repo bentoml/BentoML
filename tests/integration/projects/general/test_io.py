@@ -161,7 +161,7 @@ async def test_file(host, bin_file, async_request):
         f"http://{host}/predict_invalid_filetype",
         data=b,
         headers={"Content-Type": "application/octet-stream"},
-        assert_status=400,
+        assert_status=500,
     )
 
 
@@ -206,7 +206,7 @@ async def test_image(host, img_file, async_request):
             "POST",
             f"http://{host}/predict_invalid_imgtype",
             data=form,
-            assert_status=400,
+            assert_status=500,
         )
 
     # Test Exception

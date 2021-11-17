@@ -11,7 +11,17 @@ from ..utils.formparser import (
 )
 from .base import IODescriptor
 
-MultipartIO = t.Dict[str, t.Any]
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    from ..types import FileLike
+    from .image import ImageType
+    from .json import JSONType
+    from .numpy import NumpyType
+
+
+_DescriptorType = t.Union[str, "JSONType", "FileLike", "ImageType", "NumpyType"]
+
+MultipartIO = t.Dict[str, _DescriptorType]
 
 
 class Multipart(IODescriptor[MultipartIO]):
@@ -31,18 +41,20 @@ class Multipart(IODescriptor[MultipartIO]):
     curl -i -F img=@test.jpg -F annotations=@test.json localhost:5000/predict
     """
 
-    def __init__(self, **inputs: IODescriptor):
+    def __init__(self, **inputs: IODescriptor[_DescriptorType]):
         for descriptor in inputs.values():
-            if not isinstance(descriptor, IODescriptor):
-                raise InvalidArgument(
-                    "Multipart IO item must be instance of another IODescriptor type"
-                )
             if isinstance(descriptor, Multipart):
                 raise InvalidArgument(
                     "Multipart IO can not contain nested Multipart item"
                 )
 
         self._inputs = inputs
+
+    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
+        schema: t.Dict[str, t.Dict[str, t.Any]] = {
+            "multipart/form-data": {"schema": {"type": "object", "properties": {}}}
+        }
+        return schema
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -57,7 +69,7 @@ class Multipart(IODescriptor[MultipartIO]):
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
             )
 
-        res = dict()
+        res = dict()  # type: MultipartIO
         reqs = await populate_multipart_requests(request)
 
         for k, i in self._inputs.items():
@@ -67,7 +79,7 @@ class Multipart(IODescriptor[MultipartIO]):
         return res
 
     async def to_http_response(self, obj: MultipartIO) -> Response:
-        res: t.List[t.Tuple[str, Response]] = list()
+        res = list()  # type: t.List[t.Tuple[str, Response]]
         for io_, (output_name, output_data) in zip(self._inputs.values(), obj.items()):
             r: Response = await io_.to_http_response(output_data)
             res.append((output_name, r))

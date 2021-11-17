@@ -9,7 +9,8 @@ from ...exceptions import BentoMLException
 from ..types import FileLike
 from .base import IODescriptor
 
-if t.TYPE_CHECKING:  # pragma: no cover # pylint: disable=unused-import
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
     from io import BytesIO
 
 logger = logging.getLogger(__name__)

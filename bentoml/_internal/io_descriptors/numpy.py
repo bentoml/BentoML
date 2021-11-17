@@ -15,14 +15,16 @@ else:
     np = LazyLoader("np", globals(), "numpy")
 
 if sys.version_info >= (3, 8):
-    from typing import SupportsIndex
+    from typing import Literal, SupportsIndex
 else:
-    from typing_extensions import SupportsIndex
+    from typing_extensions import Literal, SupportsIndex
 
 _ShapeLike = t.Union[SupportsIndex, t.Sequence[SupportsIndex]]
 
+NumpyType = Literal["np.ndarray[t.Any, np.dtype[t.Any]]"]
 
-class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
+
+class NumpyNdarray(IODescriptor[NumpyType]):
     """
     `NumpyNdarray` defines API specification for the inputs/outputs of a Service, where
      either inputs will be converted to or outputs will be converted from type

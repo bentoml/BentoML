@@ -11,10 +11,13 @@ from ...exceptions import BentoMLException, InvalidArgument
 from ..utils import LazyLoader
 from .base import IODescriptor
 
-if t.TYPE_CHECKING:  # pragma: no cover # pylint: disable=unused-import
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
     import numpy as np
     import PIL
     import PIL.Image
+
+    from .numpy import NumpyType
 else:
     np = LazyLoader("np", globals(), "numpy")
 
@@ -39,10 +42,10 @@ _Mode = Literal[
     "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
 ]
 
+ImageType = t.Union["PIL.Image.Image", NumpyType]
 
-class Image(
-    IODescriptor[t.Union["PIL.Image.Image", "np.ndarray[t.Any, np.dtype[t.Any]]"]]
-):
+
+class Image(IODescriptor[ImageType]):
     """
     `Image` defines API specification for the inputs/outputs of a Service, where either
      inputs will be converted to or outputs will be converted from images as specified
@@ -134,7 +137,7 @@ class Image(
         """Returns OpenAPI schema for outcoming responses"""
         return self.openapi_schema()
 
-    async def from_http_request(self, request: Request) -> "PIL.Image.Image":
+    async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])
         if content_type == b"multipart/form-data":
             form = await request.form()
@@ -151,9 +154,7 @@ class Image(
             f"{self.__class__.__name__} should have `Content-Type: multipart/form-data` or `image/*`, got {content_type} instead"
         )
 
-    async def to_http_response(
-        self, obj: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "PIL.Image.Image"]
-    ) -> Response:
+    async def to_http_response(self, obj: ImageType) -> Response:
         image = (
             PIL.Image.fromarray(obj, mode=self._pilmode)
             if isinstance(obj, np.ndarray)

@@ -27,7 +27,7 @@ _SerializableObj = t.Union[
     "np.ndarray[t.Any, np.dtype[t.Any]]", "pydantic.BaseModel", "pd.DataFrame", t.Any
 ]
 
-_JSONLike = t.Union[str, t.Dict[str, t.Any], t.Type["pydantic.BaseModel"]]
+JSONType = t.Union[str, t.Dict[str, t.Any], t.Type["pydantic.BaseModel"]]
 
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
@@ -56,7 +56,7 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         return super().default(o)
 
 
-class JSON(IODescriptor[_JSONLike]):
+class JSON(IODescriptor[JSONType]):
     """
     `JSON` defines API specification for the inputs/outputs of a Service, where either
      inputs will be converted to or outputs will be converted from a JSON representation
@@ -137,7 +137,7 @@ class JSON(IODescriptor[_JSONLike]):
         """Returns OpenAPI schema for outcoming responses"""
         return self.openapi_schema()
 
-    async def from_http_request(self, request: Request) -> _JSONLike:
+    async def from_http_request(self, request: Request) -> JSONType:
         json_obj = await request.json()
         if hasattr(self, "_pydantic_model") and self._validate_json:
             try:
@@ -147,7 +147,7 @@ class JSON(IODescriptor[_JSONLike]):
         else:
             return json_obj
 
-    async def to_http_response(self, obj: _JSONLike) -> Response:
+    async def to_http_response(self, obj: JSONType) -> Response:
         json_str = json.dumps(
             obj,
             cls=self._json_encoder,

@@ -154,13 +154,6 @@ jobs:
         run: |
           echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
 
-      - name: Install yq (fix Docker licensing in MacOS)
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: |
-          curl -fsSLO https://github.com/mikefarah/yq/releases/download/v4.14.1/yq_linux_amd64.tar.gz
-          tar -zvxf "./yq_linux_amd64.tar.gz" yq_linux_amd64 && mv ./yq_linux_amd64 /root/.local/bin/yq
-          export PATH="${PATH}:/root/.local/bin"
-
       - name: Configure poetry
         run: poetry config virtualenvs.in-project true
 
@@ -249,13 +242,6 @@ jobs:
 
       - name: Configure poetry
         run: poetry config virtualenvs.in-project true
-
-      - name: Install yq (fix Docker licensing in MacOS)
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: |
-          curl -fsSLO https://github.com/mikefarah/yq/releases/download/v4.14.1/yq_linux_amd64.tar.gz
-          tar -zvxf "./yq_linux_amd64.tar.gz" yq_linux_amd64 && mv ./yq_linux_amd64 /root/.local/bin/yq
-          export PATH="${PATH}:/root/.local/bin"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2

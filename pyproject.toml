@@ -100,6 +100,7 @@ mypy = "*"
 autoflake = "*"
 twine = "*"
 wheel = "*"
+pydantic = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "setuptools", "wheel"]

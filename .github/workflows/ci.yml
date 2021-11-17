@@ -196,11 +196,9 @@ jobs:
           directory: ./
           files: ./unit.xml
           verbose: true
+  
 
-  bento_server_integration_tests:
-    needs:
-      - diff
-
+  bento_server_e2e_tests:
     strategy:
       fail-fast: false
       matrix:
@@ -268,7 +266,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh internal --project-root tests/integration/projects/general -vvv --capture=tee-sys
+        run: ./scripts/ci/run_tests.sh internal --project-root tests/e2e/bento_server_general_features -vvv --capture=tee-sys
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2

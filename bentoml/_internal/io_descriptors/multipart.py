@@ -67,8 +67,8 @@ class Multipart(IODescriptor[MultipartIO]):
         return res
 
     async def to_http_response(self, obj: MultipartIO) -> Response:
-        res: t.List[t.Tuple[str, Response]] = list()
-        for io_, (output_name, output_data) in zip(self._inputs.values(), obj.items()):
-            r: Response = await io_.to_http_response(output_data)
-            res.append((output_name, r))
-        return await concat_to_multipart_responses(res)
+        res_mapping: t.Dict[str, Response] = {}
+        for k, io_ in self._inputs.items():
+            data = obj[k]
+            res_mapping[k] = await io_.to_http_response(data)
+        return await concat_to_multipart_responses(res_mapping)

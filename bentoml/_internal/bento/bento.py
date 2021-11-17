@@ -144,7 +144,8 @@ class Bento(StoreItem):
 
         # Create bento.yaml
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
-            BentoInfo(tag, svc, labels, models).dump(bento_yaml)
+            # pyright doesn't know about attrs converters
+            BentoInfo(tag, svc, labels, models).dump(bento_yaml)  # type: ignore
 
         return SysPathBento(tag, bento_fs)
 
@@ -244,7 +245,7 @@ class BentoStore(Store[SysPathBento]):
 @attr.define(repr=False, frozen=True)
 class BentoInfo:
     tag: Tag
-    service: "Service"
+    service: str = attr.field(converter=lambda svc: svc._import_str)  # type: ignore[reportPrivateUsage]
     labels: t.Dict[str, t.Any]  # TODO: validate user-provide labels
     models: t.List[str]  # TODO: populate with model & framework info
     bentoml_version: str = BENTOML_VERSION
@@ -264,6 +265,12 @@ class BentoInfo:
             logger.error(exc)
             raise
 
+        yaml_content["tag"] = Tag(yaml_content["name"], yaml_content["version"])
+        del yaml_content["name"]
+        del yaml_content["version"]
+        yaml_content["creation_time"] = datetime.fromisoformat(
+            yaml_content["creation_time"]
+        )
         bento_info = cls(**yaml_content)
         return bento_info
 
@@ -275,13 +282,12 @@ class BentoInfo:
 def _BentoInfo_dumper(dumper: yaml.Dumper, info: BentoInfo) -> yaml.Node:
     return dumper.represent_dict(
         {
-            "service": info.service._import_str,  # type: ignore[reportPrivateUsage]
+            "service": info.service,
             "name": info.tag.name,
             "version": info.tag.version,
             "bentoml_version": info.bentoml_version,
             "creation_time": info.creation_time,
             "labels": info.labels,
-            "apis": info.service._apis,  # type: ignore[reportPrivateUsage]
             "models": info.models,
         }
     )

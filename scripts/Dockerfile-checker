@@ -50,7 +50,7 @@ RUN poetry config virtualenvs.create false
 
 COPY pyproject.toml .
 
-RUN poetry install -vvv
+RUN poetry install -vvv -E "model-server docs"
 
 WORKDIR "/bentoml"
 

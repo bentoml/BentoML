@@ -11,6 +11,8 @@ unit:
   root_test_dir: "tests/unit"
   is_dir: true
   type: "unit"
+  external_scripts: |
+     poetry run python -m pip install pydantic
 
 general_features:
   <<: *tmpl

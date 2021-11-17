@@ -125,6 +125,7 @@ main() {
   need_cmd poetry
   need_cmd make
   need_cmd curl
+  need_cmd tr
 
   poetry run python -m pip install -U pip setuptools
 
@@ -132,8 +133,8 @@ main() {
     YQ_VERSION=4.14.2
     echo "Docker is not detected. Trying to install yq..."
     if ! check_cmd yq; then
-      __shell=$(uname)
-      YQ_BINARY=yq_"${__shell,,}"_amd64
+      __shell=$(uname | tr '[:upper:]' '[:lower:]')
+      YQ_BINARY=yq_"$__shell"_amd64
       curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
       echo "[Requires SUDO] tar yq_linux_amd64.tar.gz and move to /usr/bin/yq..."
       tar -zvxf "yq_linux_amd64.tar.gz" yq_linux_amd64 && sudo mv yq_linux_amd64 /usr/bin/yq

@@ -18,6 +18,14 @@ classifiers = [
 ]
 authors = ["BentoML Team <contact@bentoml.ai>"]
 license = "Apache-2.0"
+include = ["bentoml/py.typed"]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/bentoml/BentoML/issues"
+"BentoML User Slack Group" = "https://bit.ly/2N5IpbB"
+
+[tool.poetry.scripts]
+bentoml = 'bentoml._internal.cli:cli'
 
 [tool.poetry.dependencies]
 python = "^3.7"
@@ -38,9 +46,8 @@ starlette = "*"
 python-multipart = "*"
 rich = "*"
 pyyaml = "*"
-attrs = ">=20"
 cattrs = "*"
-importlib_metadata = "*"
+attrs = ">=21"
 pathspec = "*"
 typing-extensions = "^3.7.4"
 aiofiles = "*"
@@ -53,10 +60,27 @@ opentracing = {version = "*", optional = true}
 py-zipkin = {version = "*", optional = true}
 jaeger-client = {version = "*", optional = true}
 prometheus-client = {version = "*", optional = true}
+recommonmark = {version = "*", optional = true}
+Sphinx = {version = "<=3.5.4", optional = true}
+sphinx-click = {version = "*", optional = true}
+sphinx-rtd-theme = {version = "*", optional = true}
+sphinxcontrib-fulltoc = {version = "*", optional = true}
+sphinxcontrib-spelling = {version = "*", optional = true}
+sphinx-copybutton = {version = "*", optional = true}
+pyenchant = {version = "*", optional = true}
+types-click = {version = "*", optional = true}
+types-chardet = {version = "*", optional = true}
+types-setuptools = {version = "*", optional = true}
+types-PyYAML = {version = "*", optional = true}
+pyspark-stubs = {version = "*", optional = true}
+types-filelock = {version = "*", optional = true}
+
+[tool.poetry.extras]
+model-server = ["prometheus-client", "jaeger-client", "py-zipkin", "opentracing"]
+docs = ["recommonmark", "sphinx", "sphinx-click", "sphinx_rtd_theme", "sphinxcontrib-fulltoc", "sphinxcontrib-spelling", "sphinx_copybutton", "pyenchant"]
+types = ["types-click", "types-chardet", "types-setuptools", "pyspark-stubs", "types-filelock", "types-PyYAML"]
 
 [tool.poetry.dev-dependencies]
-idna = "<=2.8"
-ecdsa = "0.14"
 black = "21.4b2"
 codecov = "*"
 coverage = "^4.4"
@@ -64,7 +88,7 @@ flake8 = "^3.8"
 flake8-length = "^0.2"
 imageio = "^2.5"
 pandas = "*"
-pylint = "^2.5"
+pylint = "^2.9"
 pytest-cov = "^2.7"
 pytest = "^5.4"
 pytest-asyncio = "*"
@@ -76,20 +100,6 @@ mypy = "*"
 autoflake = "*"
 twine = "*"
 wheel = "*"
-recommonmark = "*"
-Sphinx = "<=3.5.4"
-sphinx-click = "*"
-sphinx-rtd-theme = "*"
-sphinxcontrib-fulltoc = "*"
-sphinxcontrib-spelling = "*"
-sphinx-copybutton = "*"
-pyenchant = "*"
-types-click = "*"
-types-chardet = "*"
-types-setuptools = "*"
-types-PyYAML = "*"
-types-filelock = "*"
-attrs = ">=21.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -107,10 +117,6 @@ exclude = '''
     | _build
     | build
     | dist
-    | examples
-    | guides
-    | stubs
-    | third_party
   )/
   | bentoml/_version.py
   | versioneer.py

@@ -12,7 +12,7 @@ from .base import IODescriptor
 logger = logging.getLogger(__name__)
 
 
-class File(IODescriptor):
+class File(IODescriptor[FileLike]):
     """
     `File` defines API specification for the inputs/outputs of a Service, where either
      inputs will be converted to or outputs will be converted from file-like objects as
@@ -54,16 +54,23 @@ class File(IODescriptor):
     """  # noqa: LN001
 
     def __init__(self, media_type: t.Optional[str] = None):
-        self._media_type = "application/octet-stream" if not media_type else media_type
+        self._media_type = media_type or "application/octet-stream"
+
+    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
+        # TODO: supports multipart OpenAPI
+        return {self._media_type: dict(schema=dict(type="string", format="binary"))}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return self.openapi_schema()
 
     async def from_http_request(self, request: Request) -> FileLike:
-        content_type, _ = parse_options_header(request.headers["content-type"])
+        content_type, options = parse_options_header(request.headers["content-type"])
+        print(content_type, options)
         if content_type.decode("utf-8") == "multipart/form-data":
             form = await request.form()
             f = next(iter(form.values()))

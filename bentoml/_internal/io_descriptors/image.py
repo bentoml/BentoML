@@ -30,7 +30,9 @@ else:
 DEFAULT_PIL_MODE = "RGB"
 
 
-class Image(IODescriptor):
+class Image(
+    IODescriptor[t.Union["PIL.Image.Image", "np.ndarray[t.Any, np.dtype[t.Any]]"]]
+):
     """
     `Image` defines API specification for the inputs/outputs of a Service, where either
      inputs will be converted to or outputs will be converted from images as specified
@@ -111,11 +113,11 @@ class Image(IODescriptor):
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
 
-    async def from_http_request(self, request: Request) -> "PIL.Image":
+    async def from_http_request(self, request: Request) -> "PIL.Image.Image":
         content_type, _ = parse_options_header(request.headers["content-type"])
         if content_type == b"multipart/form-data":
             form = await request.form()
-            contents = await next(iter(form.values())).read()
+            contents: bytes = await next(iter(form.values())).read()
             return PIL.Image.open(io.BytesIO(contents))
 
         if (

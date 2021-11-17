@@ -204,15 +204,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh catboost
+        run: make tests-catboost
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.catboost == 'true' }}
@@ -260,15 +260,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh detectron2
+        run: make tests-detectron2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.detectron2 == 'true' }}
@@ -316,15 +316,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh easyocr
+        run: make tests-easyocr
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.easyocr == 'true' }}
@@ -373,15 +373,15 @@ jobs:
 #            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 #
 #      - name: Ensure cache is healthy
-#        if: steps.cache.outputs.cache-hit == 'true'
+#        if: steps.cache-pip.outputs.cache-hit == 'true'
 #        run: timeout 10s poetry run pip --version || rm -rf .venv
 #
 #      - name: Install dependencies
-#        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
-#        run: ./scripts/ci/run_tests.sh evalml
+#        run: make tests-evalml
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.evalml == 'true' }}
@@ -430,15 +430,15 @@ jobs:
 #            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 #
 #      - name: Ensure cache is healthy
-#        if: steps.cache.outputs.cache-hit == 'true'
+#        if: steps.cache-pip.outputs.cache-hit == 'true'
 #        run: timeout 10s poetry run pip --version || rm -rf .venv
 #
 #      - name: Install dependencies
-#        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
-#        run: ./scripts/ci/run_tests.sh fastai
+#        run: make tests-fastai
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.fastai == 'true' }}
@@ -487,15 +487,15 @@ jobs:
 #            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 #
 #      - name: Ensure cache is healthy
-#        if: steps.cache.outputs.cache-hit == 'true'
+#        if: steps.cache-pip.outputs.cache-hit == 'true'
 #        run: timeout 10s poetry run pip --version || rm -rf .venv
 #
 #      - name: Install dependencies
-#        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
-#        run: ./scripts/ci/run_tests.sh fasttext
+#        run: make tests-fasttext
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.fasttext == 'true' }}
@@ -545,15 +545,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh gluon
+        run: make tests-gluon
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.gluon == 'true' }}
@@ -601,15 +601,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh h2o
+        run: make tests-h2o
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.h2o == 'true' }}
@@ -657,15 +657,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh keras_tf1
+        run: make tests-keras_tf1
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf1 == 'true' }}
@@ -713,15 +713,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh keras_tf2
+        run: make tests-keras_tf2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf2 == 'true' }}
@@ -769,15 +769,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh lightgbm
+        run: make tests-lightgbm
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.lightgbm == 'true' }}
@@ -825,15 +825,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh mlflow
+        run: make tests-mlflow
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.mlflow == 'true' }}
@@ -881,15 +881,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh onnx
+        run: make tests-onnx
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnx == 'true' }}
@@ -942,11 +942,11 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1002,15 +1002,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh paddle
+        run: make tests-paddle
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.paddle == 'true' }}
@@ -1058,15 +1058,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh pycaret
+        run: make tests-pycaret
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pycaret == 'true' }}
@@ -1115,15 +1115,15 @@ jobs:
 #            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 #
 #      - name: Ensure cache is healthy
-#        if: steps.cache.outputs.cache-hit == 'true'
+#        if: steps.cache-pip.outputs.cache-hit == 'true'
 #        run: timeout 10s poetry run pip --version || rm -rf .venv
 #
 #      - name: Install dependencies
-#        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
-#        run: ./scripts/ci/run_tests.sh pyspark
+#        run: make tests-pyspark
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.pyspark_mllib == 'true' }}
@@ -1171,15 +1171,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh pytorch
+        run: make tests-pytorch
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch == 'true' }}
@@ -1227,11 +1227,11 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Set up QEMU
@@ -1239,7 +1239,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh pytorch_lightning
+        run: make tests-pytorch_lightning
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch_lightning == 'true' }}
@@ -1287,15 +1287,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh sklearn
+        run: make tests-sklearn
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.sklearn == 'true' }}
@@ -1343,15 +1343,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh spacy
+        run: make tests-spacy
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.spacy == 'true' }}
@@ -1399,15 +1399,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh statsmodels
+        run: make tests-statsmodels
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.statsmodels == 'true' }}
@@ -1455,15 +1455,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh tf1
+        run: make tests-tf1
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf1 == 'true' }}
@@ -1511,15 +1511,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh tf2
+        run: make tests-tf2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf2 == 'true' }}
@@ -1567,15 +1567,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh transformers
+        run: make tests-transformers
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.transformers == 'true' }}
@@ -1623,15 +1623,15 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh xgboost
+        run: make tests-xgboost
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.xgboost == 'true' }}

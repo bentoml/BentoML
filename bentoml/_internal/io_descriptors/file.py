@@ -1,18 +1,19 @@
 import logging
 import typing as t
+from io import BytesIO
 
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BentoMLException, InvalidArgument
+from ...exceptions import BentoMLException
 from ..types import FileLike
 from .base import IODescriptor
 
 logger = logging.getLogger(__name__)
 
 
-class File(IODescriptor):
+class File(IODescriptor[FileLike]):
     """
     `File` defines API specification for the inputs/outputs of a Service, where either
      inputs will be converted to or outputs will be converted from file-like objects as
@@ -54,13 +55,19 @@ class File(IODescriptor):
     """  # noqa: LN001
 
     def __init__(self, media_type: t.Optional[str] = None):
-        self._media_type = "application/octet-stream" if not media_type else media_type
+        self._media_type = media_type or "application/octet-stream"
+
+    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
+        # TODO: supports multipart OpenAPI
+        return {self._media_type: dict(schema=dict(type="string", format="binary"))}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return self.openapi_schema()
 
     async def from_http_request(self, request: Request) -> FileLike:
         content_type, _ = parse_options_header(request.headers["content-type"])
@@ -79,11 +86,8 @@ class File(IODescriptor):
         )
 
     async def to_http_response(self, obj: t.Union[FileLike, bytes]) -> Response:
-        if not any(isinstance(obj, i) for i in [FileLike, bytes]):
-            raise InvalidArgument(
-                f"Unsupported Image type received: {type(obj)},"
-                f" `{self.__class__.__name__}` FileLike objects."
-            )
         if isinstance(obj, bytes):
             obj = FileLike(bytes_=obj)
-        return Response(obj.stream.getvalue(), media_type=self._media_type)
+        return Response(
+            t.cast(BytesIO, obj.stream).getvalue(), media_type=self._media_type
+        )

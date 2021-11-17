@@ -87,14 +87,14 @@ class Service:
     _doc: t.Optional[str] = None
 
     def __init__(self, name: str, runners: t.Optional[t.List[Runner]] = None):
-        lname = name.lower()
+        lower_name = name.lower()
 
-        if name != lname:
-            logger.warning(f"converting {name} to lowercase: {lname}")
+        if name != lower_name:
+            logger.warning(f"converting {name} to lowercase: {lower_name}")
 
         # Service name must be a valid dns1123 subdomain string
-        validate_tag_str(lname)
-        self.name = lname
+        validate_tag_str(lower_name)
+        self.name = lower_name
 
         if runners is not None:
             assert all(
@@ -119,19 +119,17 @@ class Service:
         if self._working_dir and sys.path:
             sys.path.remove(self._working_dir)
 
-    C = t.TypeVar("C", bound=t.Callable)
-
     def api(
         self,
-        input: IODescriptor[t.Any],
+        input: IODescriptor[t.Any],  # noqa
         output: IODescriptor[t.Any],
         name: t.Optional[str] = None,
         doc: t.Optional[str] = None,
         route: t.Optional[str] = None,
-    ) -> t.Callable[[C], C]:
+    ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         """Decorator for adding InferenceAPI to this service"""
 
-        D = t.TypeVar("D", bound=t.Callable)
+        D = t.TypeVar("D", bound=t.Callable[..., t.Any])
 
         def decorator(func: D) -> D:
             from ..io_descriptors import Multipart
@@ -143,7 +141,6 @@ class Service:
                     " less clients/browsers support it. "
                     "Make sure you know what you are doing."
                 )
-
             self._add_inference_api(func, input, output, name, doc, route)
             return func
 
@@ -152,7 +149,7 @@ class Service:
     def _add_inference_api(
         self,
         func: t.Callable[..., t.Any],
-        input: IODescriptor[t.Any],
+        input: IODescriptor[t.Any],  # noqa
         output: IODescriptor[t.Any],
         name: t.Optional[str],
         doc: t.Optional[str],
@@ -192,7 +189,7 @@ class Service:
 
         self._mount_apps.append((WSGIMiddleware(app), path, name))  # type: ignore
 
-    def add_agsi_middleware(
+    def add_asgi_middleware(
         self, middleware_cls: t.Type["Middleware"], **options: t.Any
     ) -> None:
         self._middlewares.append((middleware_cls, options))

@@ -11,7 +11,20 @@ from ..utils.formparser import (
 )
 from .base import IODescriptor
 
-MultipartIO = t.Dict[str, t.Any]
+if t.TYPE_CHECKING:  # pragma: no cover
+    # pylint: disable=unused-import
+    import numpy as np  # noqa
+
+    from ..types import FileLike  # noqa
+    from .image import ImageType  # noqa
+    from .json import JSONType  # noqa
+
+
+_DescriptorType = t.Union[
+    str, "JSONType", "FileLike", "ImageType", "np.ndarray[t.Any, np.dtype[t.Any]]"
+]
+
+MultipartIO = t.Dict[str, _DescriptorType]
 
 
 class Multipart(IODescriptor[MultipartIO]):
@@ -31,12 +44,8 @@ class Multipart(IODescriptor[MultipartIO]):
     curl -i -F img=@test.jpg -F annotations=@test.json localhost:5000/predict
     """
 
-    def __init__(self, **inputs: IODescriptor):
+    def __init__(self, **inputs: IODescriptor[_DescriptorType]):
         for descriptor in inputs.values():
-            if not isinstance(descriptor, IODescriptor):
-                raise InvalidArgument(
-                    "Multipart IO item must be instance of another IODescriptor type"
-                )
             if isinstance(descriptor, Multipart):
                 raise InvalidArgument(
                     "Multipart IO can not contain nested Multipart item"
@@ -44,11 +53,19 @@ class Multipart(IODescriptor[MultipartIO]):
 
         self._inputs = inputs
 
+    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
+        schema: t.Dict[str, t.Dict[str, t.Any]] = {
+            "multipart/form-data": {"schema": {"type": "object", "properties": {}}}
+        }
+        return schema
+
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return self.openapi_schema()
 
     async def from_http_request(self, request: Request) -> MultipartIO:
         ctype, _ = parse_options_header(request.headers["content-type"])
@@ -57,7 +74,7 @@ class Multipart(IODescriptor[MultipartIO]):
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
             )
 
-        res = dict()
+        res = dict()  # type: MultipartIO
         reqs = await populate_multipart_requests(request)
 
         for k, i in self._inputs.items():

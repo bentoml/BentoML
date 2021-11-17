@@ -1,4 +1,5 @@
 import io
+import sys
 import typing as t
 from urllib.parse import quote
 
@@ -27,8 +28,22 @@ else:
     PIL = LazyLoader("PIL", globals(), "PIL", exc_msg=_exc)
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
+if sys.version_info >= (3, 8):
+    Literal = t.Literal
+else:
+    from typing_extensions import Literal
 
-class Image(IODescriptor):
+
+DEFAULT_PIL_MODE = "RGB"
+
+_Mode = Literal[
+    "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
+]
+
+ImageType = t.Union["PIL.Image.Image", "np.ndarray[t.Any, np.dtype[t.Any]]"]
+
+
+class Image(IODescriptor[ImageType]):
     """
     `Image` defines API specification for the inputs/outputs of a Service, where either
      inputs will be converted to or outputs will be converted from images as specified
@@ -84,7 +99,11 @@ class Image(IODescriptor):
 
     MIME_EXT_MAPPING: t.Dict[str, str] = {}
 
-    def __init__(self, pilmode: t.Optional[str] = None, mime_type: str = "image/jpeg"):
+    def __init__(
+        self,
+        pilmode: t.Optional["_Mode"] = DEFAULT_PIL_MODE,
+        mime_type: str = "image/jpeg",
+    ):
         PIL.Image.init()
         self.MIME_EXT_MAPPING.update({v: k for k, v in PIL.Image.MIME.items()})
 
@@ -100,16 +119,21 @@ class Image(IODescriptor):
             )
 
         self._mime_type = mime_type.lower()
-        self._pilmode = pilmode
+        self._pilmode: t.Optional[_Mode] = pilmode
         self._format = self.MIME_EXT_MAPPING[mime_type]
+
+    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
+        return {self._mime_type: dict(schema=dict(type="string", format="binary"))}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return self.openapi_schema()
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return self.openapi_schema()
 
-    async def from_http_request(self, request: Request) -> "PIL.Image.Image":
+    async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])
         mime_type = content_type.decode().lower()
         if mime_type == "multipart/form-data":
@@ -124,12 +148,10 @@ class Image(IODescriptor):
             )
         return PIL.Image.open(io.BytesIO(bytes_))
 
-    async def to_http_response(
-        self, obj: t.Union["np.ndarray", "PIL.Image.Image"]
-    ) -> Response:
+    async def to_http_response(self, obj: ImageType) -> Response:
         if isinstance(obj, np.ndarray):
-            image = PIL.Image.fromarray(obj, mode=self._pilmode)  # type: ignore
-        elif isinstance(obj, PIL.Image.Image):
+            image = PIL.Image.fromarray(obj, mode=self._pilmode)
+        elif isinstance(obj, PIL.Image.Image):  # type: ignore
             image = obj
         else:
             raise InternalServerError(

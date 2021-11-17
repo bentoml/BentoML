@@ -45,6 +45,11 @@ class InferenceAPI:
         self.doc = doc
         self.route = route
 
+    def __repr__(self):
+        return "<{}({} -> {})>".format(
+            self.__class__.__name__, repr(self.input), repr(self.output)
+        )
+
     @staticmethod
     def _validate_name(api_name: str):
         if not api_name.isidentifier():

@@ -80,7 +80,6 @@ parse_args() {
         ;;
     esac
   done
-  exists=0
   PYTESTARGS=( "${@:2}" )
   shift $(( OPTIND - 1 ))
 }
@@ -125,13 +124,29 @@ main() {
 
   need_cmd poetry
   need_cmd make
+  need_cmd curl
+  need_cmd tr
 
   poetry run python -m pip install -U pip setuptools
 
-  make -f "$GIT_ROOT"/Makefile pull-checker-img
+  if ! check_cmd docker; then
+    YQ_VERSION=4.14.2
+    echo "Docker is not detected. Trying to install yq..."
+    if ! check_cmd yq; then
+      __shell=$(uname | tr '[:upper:]' '[:lower:]')
+      YQ_BINARY=yq_"$__shell"_amd64
+      curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
+      echo "[Requires SUDO] tar yq_linux_amd64.tar.gz and move to /usr/bin/yq..."
+      tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && sudo mv "$YQ_BINARY" $HOME/.local/bin/yq
+      rm -f ./"$YQ_BINARY".tar.gz
+    else
+      echo "Using yq via $(which yq)..."
+    fi
+  else
+    make -f "$GIT_ROOT"/Makefile pull-checker-img
+  fi
 
-#  validate_yaml
-
+  #  validate_yaml
   if [ ${#@} -eq 1 ]; then
     argv=$1
   elif [[ $1 == "-"* ]]; then
@@ -158,7 +173,14 @@ main() {
     eval "$external_scripts" || exit 1
   fi
 
-  if ! (poetry run pytest "$GIT_ROOT"/"$test_dir"/"$fname" "${OPTS[@]}"); then
+  if [ "$type" == 'e2e' ]; then
+    cd "$GIT_ROOT"/"$test_dir"/"$fname" || exit 1
+    path="."
+  else
+    path="$GIT_ROOT"/"$test_dir"/"$fname"
+  fi
+
+  if ! (poetry run pytest "$path" "${OPTS[@]}"); then
     err=1
   fi
 

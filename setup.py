@@ -8,8 +8,6 @@ with open("README.md", "r", encoding="utf8") as f:
 install_requires = [
     "click>=7.0",
     "simple-di>=0.1.2",
-    'contextvars;python_version < "3.7"',
-    'dataclasses;python_version < "3.7"',
     "aiohttp",
     "deepmerge",
     "docker",
@@ -25,7 +23,7 @@ install_requires = [
     "python-multipart",
     "rich",
     "pyyaml",
-    "attrs>=20",
+    "attrs>=21",
     "cattrs",
     "packaging>=20.0",
     "importlib_metadata",
@@ -46,31 +44,23 @@ model_server_optional = [
 ]
 
 test_requires = [
-    "idna<=2.8",  # for moto
-    "ecdsa==0.14",  # for moto
     "black==21.4b2",
     "codecov",
     "coverage>=4.4",
     "flake8>=3.8.2",
     "flake8-length>=0.2.0",
     "imageio>=2.5.0",
-    "mock>=2.0.0",
-    "moto==1.3.14",
     "pandas",
     "pylint>=2.9.3",
     "pytest-cov>=2.7.1",
     "pytest>=5.4.0",
     "pytest-asyncio",
-    "parameterized",
     "scikit-learn",
     "isort>=5.0.0",
 ]
 
 dev_requires = [
-    "flake8>=3.8.2",
-    "flake8-length==0.2.0",
     "gitpython>=2.0.2",
-    "pylint>=2.5.2",
     "setuptools",
     "mypy",
     "autoflake",

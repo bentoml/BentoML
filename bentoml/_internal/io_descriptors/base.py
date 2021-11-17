@@ -15,6 +15,9 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
 
     HTTP_METHODS = ["POST"]
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}"
+
     # fmt: off
     @abstractmethod
     def openapi_request_schema(self) -> t.Dict[str, t.Any]: ...  # noqa: E704

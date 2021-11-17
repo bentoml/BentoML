@@ -19,6 +19,7 @@ jobs:
   diff:
     runs-on: ubuntu-latest
     outputs:
+      related: ${{ steps.filter.outputs.related }}
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
     steps:
@@ -30,6 +31,8 @@ jobs:
           filters: |
             related: &related
               - .github/workflows/ci.yml
+              - setup.cfg
+              - pyproject.toml
             bentoml:
               - *related
               - "bentoml/**"
@@ -44,7 +47,7 @@ jobs:
     needs:
       - diff
 
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.related == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -55,8 +58,6 @@ jobs:
         run: make ci-flake8
       - name: Type check
         # TODO: after fix all types errors uses `make ci-types` instead
-        env:
-          GITHUB_BASE_REF: ${{ github.base_ref }}
         run: make ci-pyright
 
   documentation_spelling_check:
@@ -93,11 +94,11 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: poetry install
 
       - name: Install libenchant
@@ -105,7 +106,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y libenchant-dev
 
       - name: Run spellcheck script
-        run: poetry run sphinx-build -b spelling ./docs/source ./docs/build
+        run: poetry run sphinx-build -b spelling ./docs/source ./docs/build || exit 1
         shell: bash
 
   unit_tests:
@@ -153,11 +154,6 @@ jobs:
         run: |
           echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
 
-      - name: Install yq (fix Docker licensing in MacOS)
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: |
-          brew install yq
-
       - name: Configure poetry
         run: poetry config virtualenvs.in-project true
 
@@ -171,11 +167,11 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: poetry install
 
       - name: Run unit tests
@@ -185,7 +181,8 @@ jobs:
       - name: Run unit tests for Windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          poetry run pytest tests/unit --cov=bentoml --cov-config=.coveragerc --capture=tee-sys --cov-report=xml:"unit.xml"
+          poetry run python -m pip install pydantic
+          poetry run pytest tests/unit --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"unit.xml"
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2
@@ -199,6 +196,9 @@ jobs:
   
 
   bento_server_e2e_tests:
+    needs:
+      - diff
+
     strategy:
       fail-fast: false
       matrix:
@@ -243,11 +243,6 @@ jobs:
       - name: Configure poetry
         run: poetry config virtualenvs.in-project true
 
-      - name: Install yq (fix Docker licensing in MacOS)
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: |
-          brew install yq
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -258,22 +253,22 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache.outputs.cache-hit == 'true'
+        if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache-pip.outputs.cache-hit != 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh internal --project-root tests/e2e/bento_server_general_features -vvv --capture=tee-sys
+        run: make tests-general_features
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
           flags: bento-server
           directory: ./
-          files: ./internal.xml
+          files: ./tests/e2e/bento_server_general_features/general_features.xml
           verbose: true
 
 concurrency:

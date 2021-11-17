@@ -5,12 +5,7 @@ import typing as t
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import (
-    BadInput,
-    BentoMLException,
-    InvalidArgument,
-    MissingDependencyException,
-)
+from ...exceptions import BadInput, BentoMLException, MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
@@ -18,38 +13,21 @@ if t.TYPE_CHECKING:  # pragma: no cover
     import numpy as np
     import pandas as pd
     import pydantic
-
-    _major, _minor = list(
-        map(lambda x: int(x), np.__version__.split(".")[:2])  # pylint: disable=W0108
-    )
-    if (_major, _minor) > (1, 20):
-        from numpy.typing import ArrayLike  # noqa  # pylint: disable=E0611,W0611
-    else:
-        from ..typing_extensions.numpy import (  # noqa  # pylint: disable=E0611,W0611
-            ArrayLike,
-        )
-
 else:  # pragma: no cover
     np = LazyLoader("np", globals(), "numpy")
     pd = LazyLoader("pd", globals(), "pandas")
-
     try:
         import pydantic
-    except ModuleNotFoundError:
+    except ImportError:
         pydantic = None
 
 MIME_TYPE_JSON = "application/json"
 
-_SerializableObj = t.TypeVar(
-    "_SerializableObj",
-    bound=t.Union[
-        "np.generic",
-        "ArrayLike",
-        "pydantic.BaseModel",
-        "pd.DataFrame",
-        t.Any,
-    ],
-)
+_SerializableObj = t.Union[
+    "np.ndarray[t.Any, np.dtype[t.Any]]", "pydantic.BaseModel", "pd.DataFrame", t.Any
+]
+
+JSONType = t.Union[str, t.Dict[str, t.Any], t.Type["pydantic.BaseModel"]]
 
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
@@ -78,7 +56,7 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         return super().default(o)
 
 
-class JSON(IODescriptor):
+class JSON(IODescriptor[JSONType]):
     """
     `JSON` defines API specification for the inputs/outputs of a Service, where either
      inputs will be converted to or outputs will be converted from a JSON representation
@@ -134,27 +112,15 @@ class JSON(IODescriptor):
         validate_json: bool = True,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
-        if pydantic_model is not None:
-            if pydantic is None:  # pragma: no cover
+        if pydantic_model is not None:  # pragma: no cover
+            if pydantic is None:
                 raise MissingDependencyException(
                     "`pydantic` must be installed to use `pydantic_model`"
-                )
-
-            if not isinstance(pydantic_model, pydantic.BaseModel):  # pragma: no cover
-                raise InvalidArgument(
-                    "Invalid argument type 'pydantic_model' for JSON io descriptor,"
-                    "must be an instance of a pydantic model"
                 )
             self._pydantic_model = pydantic_model
 
         self._validate_json = validate_json
         self._json_encoder = json_encoder
-
-    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
-        return self.openapi_schema()
-
-    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
-        return self.openapi_schema()
 
     def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
         if hasattr(self, "_pydantic_model"):
@@ -163,7 +129,15 @@ class JSON(IODescriptor):
             schema = {"type": "object"}
         return {MIME_TYPE_JSON: {"schema": schema}}
 
-    async def from_http_request(self, request: Request) -> t.Any:
+    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for incoming requests"""
+        return self.openapi_schema()
+
+    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for outcoming responses"""
+        return self.openapi_schema()
+
+    async def from_http_request(self, request: Request) -> JSONType:
         json_obj = await request.json()
         if hasattr(self, "_pydantic_model") and self._validate_json:
             try:
@@ -173,7 +147,7 @@ class JSON(IODescriptor):
         else:
             return json_obj
 
-    async def to_http_response(self, obj: t.Any) -> Response:
+    async def to_http_response(self, obj: JSONType) -> Response:
         json_str = json.dumps(
             obj,
             cls=self._json_encoder,

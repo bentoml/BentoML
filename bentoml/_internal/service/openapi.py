@@ -1,36 +1,66 @@
-import typing
+import typing as t
 
-if typing.TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from ..io_descriptors import IODescriptor
     from . import Service
 
-HEATHZ_DESC = (
-    "Health check endpoint. Expecting an empty response with status code "
-    "200 when the service is in health state. The /healthz endpoint is "
-    "deprecated (since Kubernetes v1.16)"
+
+HEALTHZ_DESC = (
+    "Health check endpoint. Expecting an empty response with status code"
+    " <code>200</code> when the service is in health state. The <code>/healthz</code>"
+    " endpoint is <b>deprecated</b> (since Kubernetes v1.16)"
 )
+
 LIVEZ_DESC = (
-    "Health check endpoint for Kubernetes. Healthy endpoint responses with "
-    "a 200 OK status."
+    "Health check endpoint for Kubernetes. Healthy endpoint responses with a"
+    " <code>200</code> OK status."
 )
+
 READYZ_DESC = (
-    "A 200 OK status from /readyz endpoint indicated the service is ready "
-    "to accept traffic. From that point and onward Kubernetes will use "
-    "/livez endpoint to perform periodic health checks"
+    "A <code>200</code> OK status from <code>/readyz</code> endpoint indicated"
+    " the service is ready to accept traffic. From that point and onward, Kubernetes"
+    " will use <code>/livez</code> endpoint to perform periodic health checks."
 )
+
 METRICS_DESC = "Prometheus metrics endpoint"
 
 
+def _generate_responses_schema(
+    output: "IODescriptor[t.Any]",
+) -> t.Dict[str, t.Dict[str, t.Any]]:
+    resp = {
+        "200": dict(
+            description="success",
+            content=output.openapi_responses_schema(),
+        ),
+        "400": dict(description="Bad Request"),
+        "404": dict(description="Not Found"),
+        "500": dict(description="Internal Server Error"),
+    }
+    return resp
+
+
 def get_service_openapi_doc(svc: "Service"):
+    # TODO: add licensing options for service swagger?
     info = {
         "title": svc.name,
         "description": "A Prediction Service built with BentoML",
+        "contact": {"email": "contact@bentoml.ai"},
+        "version": svc.version or "0.0.0",
     }
-    if svc.version:
-        info["version"] = svc.version
-    docs = {
+    docs: t.Dict[str, t.Any] = {
         "openapi": "3.0.0",
         "info": info,
-        "tags": [{"name": "infra"}, {"name": "app"}],
+        "tags": [
+            {
+                "name": "infra",
+                "description": "Infrastructure endpoints",
+            },
+            {
+                "name": "app",
+                "description": "Inference endpoints",
+            },
+        ],
     }
 
     paths = {}
@@ -39,7 +69,7 @@ def get_service_openapi_doc(svc: "Service"):
     paths["/healthz"] = {
         "get": {
             "tags": ["infra"],
-            "description": HEATHZ_DESC,
+            "description": HEALTHZ_DESC,
             "responses": default_response,
         }
     }
@@ -68,21 +98,17 @@ def get_service_openapi_doc(svc: "Service"):
     for api in svc._apis.values():
         api_path = api.route if api.route.startswith("/") else f"/{api.route}"
 
-        paths[api_path] = {}
-        paths[api_path]["post"] = {
-            "tags": ["app"],
-            "summary": f"Inference API '{api}' under service '{svc.name}'",
-            "description": api.doc,
-            "operationId": f"{svc.name}__{api.name}",
-            "requestBody": {"content": api.input.openapi_request_schema()},
-            "responses": {
-                "200": {
-                    "description": "success",
-                    "content": api.output.openapi_responses_schema(),
-                }
-            },
-            # examples=None,
-            # headers=None,
+        paths[api_path] = {
+            "post": dict(
+                tags=["app"],
+                summary=f"InferenceAPI endpoints {repr(api)}",
+                description=api.doc or "",
+                operationId=f"{svc.name}__{api.name}",
+                requestBody=dict(content=api.input.openapi_request_schema()),
+                responses=_generate_responses_schema(api.output),
+                # examples=None,
+                # headers=None,
+            )
         }
 
     docs["paths"] = paths

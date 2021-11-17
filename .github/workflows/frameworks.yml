@@ -208,7 +208,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -264,7 +264,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -320,7 +320,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -377,7 +377,7 @@ jobs:
 #        run: timeout 10s poetry run pip --version || rm -rf .venv
 #
 #      - name: Install dependencies
-#        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+#        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
@@ -434,7 +434,7 @@ jobs:
 #        run: timeout 10s poetry run pip --version || rm -rf .venv
 #
 #      - name: Install dependencies
-#        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+#        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
@@ -491,7 +491,7 @@ jobs:
 #        run: timeout 10s poetry run pip --version || rm -rf .venv
 #
 #      - name: Install dependencies
-#        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+#        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
@@ -549,7 +549,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -605,7 +605,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -661,7 +661,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -717,7 +717,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -773,7 +773,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -829,7 +829,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -885,7 +885,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -946,7 +946,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1006,7 +1006,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1062,7 +1062,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1119,7 +1119,7 @@ jobs:
 #        run: timeout 10s poetry run pip --version || rm -rf .venv
 #
 #      - name: Install dependencies
-#        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+#        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
@@ -1175,7 +1175,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1231,7 +1231,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Set up QEMU
@@ -1291,7 +1291,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1347,7 +1347,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1403,7 +1403,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1459,7 +1459,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1515,7 +1515,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1571,7 +1571,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report
@@ -1627,7 +1627,7 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit == 'true' || needs.diff.outputs.dependencies == 'true'
+        if: steps.cache.outputs.cache-hit == 'true' && needs.diff.outputs.dependencies == 'true'
         run: poetry install
 
       - name: Run tests and generate coverage report

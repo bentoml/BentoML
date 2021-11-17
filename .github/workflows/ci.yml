@@ -105,7 +105,8 @@ jobs:
           sudo apt-get update && sudo apt-get install -y libenchant-dev
 
       - name: Run spellcheck script
-        run: make spellcheck-docs
+        run: poetry run sphinx-build -b spelling ./docs/source ./docs/build
+        shell: bash
 
   unit_tests:
     needs:

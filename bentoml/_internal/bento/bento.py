@@ -238,7 +238,7 @@ class SysPathBento(Bento):
 
 
 class BentoStore(Store[SysPathBento]):
-    def __init__(self, base_path: PathType):
+    def __init__(self, base_path: t.Union[PathType, FS]):
         super().__init__(base_path, SysPathBento)
 
 

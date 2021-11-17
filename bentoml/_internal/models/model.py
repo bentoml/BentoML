@@ -63,9 +63,14 @@ class Model(StoreItem):
         model_fs = fs.open_fs("temp://bentoml_model_{name}")
 
         with model_fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
-            ModelInfo(tag, module, labels, options, metadata, framework_context).dump(
-                model_yaml
-            )
+            ModelInfo(
+                tag=tag,
+                module=module,
+                labels=labels,
+                options=options,
+                metadata=metadata,
+                context=framework_context,
+            ).dump(model_yaml)
 
         return SysPathModel(tag, model_fs)
 
@@ -106,7 +111,7 @@ class Model(StoreItem):
 
     def path_of(self, item: str) -> t.Optional[str]:
         try:
-            return SysPathModel.from_Model(self).path
+            return SysPathModel.from_Model(self).path_of(item)
         except TypeError:
             return None
 
@@ -170,7 +175,7 @@ class SysPathModel(Model):
 
 
 class ModelStore(Store[SysPathModel]):
-    def __init__(self, base_path: PathType):
+    def __init__(self, base_path: t.Union[PathType, FS]):
         super().__init__(base_path, SysPathModel)
 
 

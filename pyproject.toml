@@ -47,7 +47,7 @@ python-multipart = "*"
 rich = "*"
 pyyaml = "*"
 cattrs = "*"
-attrs = ">=21"
+attrs = ">=20"
 pathspec = "*"
 typing-extensions = "^3.7.4"
 aiofiles = "*"
@@ -81,6 +81,7 @@ docs = ["recommonmark", "sphinx", "sphinx-click", "sphinx_rtd_theme", "sphinxcon
 types = ["types-click", "types-chardet", "types-setuptools", "pyspark-stubs", "types-filelock", "types-PyYAML"]
 
 [tool.poetry.dev-dependencies]
+attrs = ">=21.1"
 black = "21.4b2"
 codecov = "*"
 coverage = "^4.4"

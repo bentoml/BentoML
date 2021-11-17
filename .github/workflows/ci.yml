@@ -267,13 +267,13 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: ./scripts/ci/run_tests.sh general_features -vvv --capture=tee-sys
+        run: ./scripts/ci/run_tests.sh general_features -vvv
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
           flags: bento-server
-          directory: ./
+          directory: ./tests/e2e/bento_server_general_features
           files: ./general_features.xml
           verbose: true
 

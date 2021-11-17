@@ -1,5 +1,6 @@
 import logging
 import typing as t
+from io import BytesIO
 
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
@@ -8,10 +9,6 @@ from starlette.responses import Response
 from ...exceptions import BentoMLException
 from ..types import FileLike
 from .base import IODescriptor
-
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
-    from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
@@ -92,5 +89,5 @@ class File(IODescriptor[FileLike]):
         if isinstance(obj, bytes):
             obj = FileLike(bytes_=obj)
         return Response(
-            t.cast("BytesIO", obj.stream).getvalue(), media_type=self._media_type
+            t.cast(BytesIO, obj.stream).getvalue(), media_type=self._media_type
         )

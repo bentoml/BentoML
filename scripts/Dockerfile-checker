@@ -16,16 +16,42 @@ RUN curl -fsSLO https://github.com/mikefarah/yq/releases/download/v4.14.1/yq_lin
 
 FROM python:3.8-alpine
 
-ENV NODE_VERSION="17.1.0"
+ENV NODE_VERSION="17.1.0" \
+  PYTHONFAULTHANDLER=1 \
+  PYTHONUNBUFFERED=1 \
+  PYTHONHASHSEED=random \
+  PIP_NO_CACHE_DIR=off \
+  PIP_DISABLE_PIP_VERSION_CHECK=on \
+  PIP_DEFAULT_TIMEOUT=100
 
 COPY --from=node_builder /node-v"$NODE_VERSION"-linux-x64-musl /usr/local
 COPY --from=node_builder /yq_linux_amd64 /usr/bin/yq
 
-RUN apk add libstdc++ gcc build-base bash git
+RUN apk add --no-cache libstdc++ bash git curl
+
 RUN npm i -g npm@^7 yarn pyright
 
-RUN pip install -U pip setuptools
-# TODO: uses poetry instead :)
-RUN pip install "mypy>=0.910" "pylint>=2.9.3" "black==21.4b2" "flake8>=3.8.2" "isort>=5.0.0"
+RUN echo "http://dl-8.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+
+RUN apk add --update-cache --no-cache gcc build-base \
+            python3-dev musl-dev openssl-dev libffi-dev \
+            libressl-dev cargo gfortran freetype-dev libpng-dev \
+            openblas-dev postgresql-dev postgresql jpeg-dev zlib-dev libjpeg
+
+RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
+
+ENV PATH="/root/.local/bin:$PATH"
+
+RUN curl -sSL https://install.python-poetry.org | python -
+
+RUN python -m pip install -U pip setuptools
+
+RUN poetry config virtualenvs.create false
+
+COPY pyproject.toml .
+
+RUN poetry install -vvv
 
 WORKDIR "/bentoml"
+
+VOLUME ["/bentoml"]

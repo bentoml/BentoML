@@ -66,13 +66,12 @@ def pull(tag: t.Union[Tag, str]):
 @inject
 def build(
     svc_import_str: str,
-    models: t.Optional[t.List[str]] = None,
     version: t.Optional[str] = None,
-    description: t.Optional[str] = None,
     include: t.Optional[t.List[str]] = None,
     exclude: t.Optional[t.List[str]] = None,
     env: t.Optional[t.Dict[str, t.Any]] = None,
     labels: t.Optional[t.Dict[str, str]] = None,
+    additional_models: t.Optional[t.List[str]] = None,
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -111,7 +110,6 @@ def build(
     # For advanced build use cases, here's all the common build options:
     svc.set_build_options(
         version="any_version_label",
-        description=open("README.md").read(),
         models=["iris_model:latest"],
         include=['*'],
         exclude=[], # files to exclude can also be specified with a .bentoignore file
@@ -154,8 +152,7 @@ def build(
             bentoml.build(
                 'fraud_detector.py:svc',
                 version="custom_version_str",
-                description=open("readme.md").read(),
-                models=['iris_classifier:v123'],
+                additional_models=['iris_classifier:v123'],
                 include=["*"],
                 exclude=["*.storage", "credentials.yaml"], # + anything specified in .bentoml_ignore file
                 env=dict(
@@ -193,7 +190,7 @@ def build(
     build_ctx = os.getcwd() if build_ctx is None else os.path.realpath(build_ctx)
     svc = load(svc_import_str, working_dir=build_ctx)
 
-    models = [] if models is None else models
+    additional_models = [] if additional_models is None else additional_models
     include = ["*"] if include is None else include
     exclude = [] if exclude is None else exclude
     env = {} if env is None else env
@@ -202,9 +199,8 @@ def build(
     bento = Bento.create(
         svc,
         build_ctx,
-        models,
+        additional_models,
         version,
-        description,
         include,
         exclude,
         env,
@@ -212,7 +208,7 @@ def build(
         _model_store,
     ).save(_bento_store)
 
-    logger.info("%s created at: %s", bento, bento.path)
+    logger.info("Bento build success, %s created", bento)
 
     return bento
 

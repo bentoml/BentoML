@@ -14,9 +14,8 @@ import attr
 import yaml
 from simple_di import Provide, inject
 
-from bentoml import __version__ as BENTOML_VERSION
-
 from ...exceptions import BentoMLException, InvalidArgument
+from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..types import PathType, Tag
 from ..utils import validate_or_create_dir

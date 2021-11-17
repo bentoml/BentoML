@@ -24,6 +24,7 @@ class StoreItem(ABC):
     def from_fs(cls: t.Type[T], tag: Tag, fs: FS) -> T:
         pass
 
+    @property
     @abstractmethod
     def creation_time(self) -> datetime.datetime:
         pass

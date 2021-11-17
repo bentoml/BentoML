@@ -15,7 +15,7 @@ pip --version
 
 Clone the source code from BentoML's GitHub repository:
 ```bash
-git clone https://github.com/bentoml/BentoML.git && cd BentoML
+git clone --recurse-submodules https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
 If you want to use [`poetry`](https://python-poetry.org/) then do:

@@ -19,6 +19,7 @@ jobs:
   diff:
     runs-on: ubuntu-latest
     outputs:
+      related: ${{ steps.filter.outputs.related }}
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
     steps:
@@ -30,6 +31,8 @@ jobs:
           filters: |
             related: &related
               - .github/workflows/ci.yml
+              - setup.cfg
+              - pyproject.toml
             bentoml:
               - *related
               - "bentoml/**"
@@ -44,7 +47,7 @@ jobs:
     needs:
       - diff
 
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.related == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -55,8 +58,6 @@ jobs:
         run: make ci-flake8
       - name: Type check
         # TODO: after fix all types errors uses `make ci-types` instead
-        env:
-          GITHUB_BASE_REF: ${{ github.base_ref }}
         run: make ci-pyright
 
   documentation_spelling_check:

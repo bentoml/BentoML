@@ -49,10 +49,8 @@ OPTION_RE: t.ByteString = ...
 QUOTE: t.ByteString = ...
 
 def parse_options_header(
-    value,
-) -> t.Tuple[t.ByteString, t.Dict[t.ByteString, t.ByteString]] | tuple[
-    bytes | Unknown, dict[Unknown, Unknown]
-]:
+    value: t.AnyStr,
+) -> t.Tuple[bytes, t.Dict[t.ByteString, t.ByteString]]:
     """
     Parses a Content-Type header into a value in the following format:
         (content_type, {parameters})
@@ -75,9 +73,9 @@ class Field:
     :param name: the name of the form field
     """
 
-    def __init__(self, name) -> None: ...
+    def __init__(self, name: str) -> None: ...
     @classmethod
-    def from_value(klass, name, value):  # -> Self@Field:
+    def from_value(klass: "Field", name: str, value: t.Any) -> "Field":
         """Create an instance of a :class:`Field`, and set the corresponding
         value - either None or an actual value.  This method will also
         finalize the Field itself.
@@ -87,7 +85,7 @@ class Field:
                       None
         """
         ...
-    def write(self, data):  # -> int:
+    def write(self, data: bytes) -> int:
         """Write some data into the form field.
 
         :param data: a bytestring

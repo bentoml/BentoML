@@ -185,7 +185,7 @@ class FileLike:
         return path
 
     @property
-    def stream(self):
+    def stream(self) -> t.BinaryIO:
         if self._stream is not None:
             pass
         elif self.bytes_ is not None:

@@ -5,7 +5,7 @@ from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BentoMLException, InvalidArgument
+from ...exceptions import BentoMLException
 from ..types import FileLike
 from .base import IODescriptor
 
@@ -69,8 +69,7 @@ class File(IODescriptor[FileLike]):
         return self.openapi_schema()
 
     async def from_http_request(self, request: Request) -> FileLike:
-        content_type, options = parse_options_header(request.headers["content-type"])
-        print(content_type, options)
+        content_type, _ = parse_options_header(request.headers["content-type"])
         if content_type.decode("utf-8") == "multipart/form-data":
             form = await request.form()
             f = next(iter(form.values()))
@@ -86,11 +85,6 @@ class File(IODescriptor[FileLike]):
         )
 
     async def to_http_response(self, obj: t.Union[FileLike, bytes]) -> Response:
-        if not any(isinstance(obj, i) for i in [FileLike, bytes]):
-            raise InvalidArgument(
-                f"Unsupported Image type received: {type(obj)},"
-                f" `{self.__class__.__name__}` FileLike objects."
-            )
         if isinstance(obj, bytes):
             obj = FileLike(bytes_=obj)
         return Response(obj.stream.getvalue(), media_type=self._media_type)

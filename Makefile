@@ -6,7 +6,7 @@ CHECKER_IMG ?= bentoml/checker:1.0
 BASE_ARGS := -i --rm -u $(shell id -u):$(shell id -g) -v $(GIT_ROOT):/bentoml
 GPU_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
 GPU ?=false
-USE_POETRY ?=true
+USE_POETRY ?=false
 
 ifeq ($(GPU),true)
 CNTR_ARGS := $(BASE_ARGS) $(GPU_ARGS) $(CHECKER_IMG)

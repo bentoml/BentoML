@@ -70,7 +70,7 @@ watch-docs: ## Build and watch documentation
 spellcheck-docs: ## Spell check documentation
 	@if [[ `command -v poetry >/dev/null 2>&1` ]]; then \
 		poetry run sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1); \
-	else; \
+	else \
 		sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1); \
 	fi
 

@@ -154,7 +154,7 @@ main() {
     poetry run python -m pip install -r "$REQ_FILE" || exit 1
   fi
 
-  if [ -z "$external_scripts" ]; then
+  if [ -n "$external_scripts" ]; then
     eval "$external_scripts" || exit 1
   fi
 

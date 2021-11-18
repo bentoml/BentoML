@@ -15,8 +15,8 @@ from ._internal.service import load
 from ._internal.types import Tag
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ._internal.bento import BentoStore
-    from ._internal.models.store import ModelStore
+    from ._internal.bento import BentoStore, SysPathBento
+    from ._internal.models import ModelStore
 
 
 logger = logging.getLogger(__name__)

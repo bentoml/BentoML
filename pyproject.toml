@@ -68,17 +68,10 @@ sphinxcontrib-fulltoc = {version = "*", optional = true}
 sphinxcontrib-spelling = {version = "*", optional = true}
 sphinx-copybutton = {version = "*", optional = true}
 pyenchant = {version = "*", optional = true}
-types-click = {version = "*", optional = true}
-types-chardet = {version = "*", optional = true}
-types-setuptools = {version = "*", optional = true}
-types-PyYAML = {version = "*", optional = true}
-pyspark-stubs = {version = "*", optional = true}
-types-filelock = {version = "*", optional = true}
 
 [tool.poetry.extras]
 model-server = ["prometheus-client", "jaeger-client", "py-zipkin", "opentracing"]
 docs = ["recommonmark", "sphinx", "sphinx-click", "sphinx_rtd_theme", "sphinxcontrib-fulltoc", "sphinxcontrib-spelling", "sphinx_copybutton", "pyenchant"]
-types = ["types-click", "types-chardet", "types-setuptools", "pyspark-stubs", "types-filelock", "types-PyYAML"]
 
 [tool.poetry.dev-dependencies]
 attrs = ">=21.1"
@@ -102,6 +95,12 @@ autoflake = "*"
 twine = "*"
 wheel = "*"
 pydantic = "*"
+types-click = "*"
+types-chardet = "*"
+types-setuptools = "*"
+types-PyYAML = "*"
+pyspark-stubs = "*"
+types-filelock = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "setuptools", "wheel"]

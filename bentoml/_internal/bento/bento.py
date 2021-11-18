@@ -123,10 +123,8 @@ class Bento(StoreItem):
                 _path = fs.path.combine(dir_path, f.name)
                 if spec.match_file(_path) and not exclude_spec.match_file(_path):
                     if not any(
-                        [
-                            _spec.match_file(fs.path.relativefrom(ignore_path, _path))
-                            for ignore_path, _spec in cur_exclude_specs
-                        ]
+                        _spec.match_file(fs.path.relativefrom(ignore_path, _path))
+                        for ignore_path, _spec in cur_exclude_specs
                     ):
                         target_fs.makedirs(dir_path, recreate=True)
                         copy_file(ctx_fs, _path, target_fs, _path)

@@ -21,7 +21,7 @@ class StoreItem(ABC):
 
     @classmethod
     @abstractmethod
-    def from_fs(cls: t.Type[T], tag: Tag, item_fs: FS) -> T:
+    def from_fs(cls: t.Type[T], item_fs: FS) -> T:
         pass
 
     @property
@@ -75,7 +75,7 @@ class Store(ABC, t.Generic[Item]):
         """
         Creates a new instance of Item that represents the item with tag `tag`.
         """
-        return self._item_type.from_fs(tag, self._fs.opendir(tag.path()))
+        return self._item_type.from_fs(self._fs.opendir(tag.path()))
 
     def get(self, tag: t.Union[Tag, str]) -> Item:
         """

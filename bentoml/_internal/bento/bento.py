@@ -150,8 +150,8 @@ class Bento(StoreItem):
         return SysPathBento(tag, bento_fs)
 
     @classmethod
-    def from_fs(cls, tag: Tag, item_fs: FS) -> "Bento":
-        res = cls(tag, item_fs)
+    def from_fs(cls, item_fs: FS) -> "Bento":
+        res = cls(None, item_fs)  # type: ignore
         res._tag = res.info.tag
 
         # TODO: Check bento_metadata['bentoml_version'] and show user warning if needed

@@ -4,6 +4,7 @@ import numpy as np
 import psutil
 import pytest
 import tensorflow as tf
+import tensorflow_hub as hub
 
 import bentoml.tensorflow
 from tests.utils.frameworks.tensorflow_utils import (
@@ -15,8 +16,6 @@ from tests.utils.helpers import assert_have_file_extension
 
 MODEL_NAME = __name__.split(".")[-1]
 TF2 = tf.__version__.startswith("2")
-
-import tensorflow_hub as hub
 
 test_data = [[1.1, 2.2]]
 test_tensor = tf.constant(test_data)

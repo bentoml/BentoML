@@ -33,6 +33,7 @@ jobs:
               - .github/workflows/ci.yml
               - setup.cfg
               - pyproject.toml
+              - scripts/ci/config.yml
             bentoml:
               - *related
               - "bentoml/**"
@@ -47,7 +48,7 @@ jobs:
     needs:
       - diff
 
-    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.related == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v2
@@ -98,8 +99,8 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
+        run: poetry install -E "model-server docs"
 
       - name: Install libenchant
         run: |
@@ -167,12 +168,18 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
+        if: ${{ matrix.os != 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
+      - name: Ensure cache is healthy (MacOS)
+        if: ${{ matrix.os == 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
+        run: |
+          brew install coreutils
+          timeout 10s poetry run pip --version || rm -rf .venv
+
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
+        run: poetry install -E "model-server docs"
 
       - name: Run unit tests
         if: ${{ matrix.os != 'windows-latest' }}
@@ -193,7 +200,7 @@ jobs:
           directory: ./
           files: ./unit.xml
           verbose: true
-  
+
 
   bento_server_e2e_tests:
     needs:
@@ -253,12 +260,18 @@ jobs:
             venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
 
       - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
+        if: ${{ matrix.os != 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
+      - name: Ensure cache is healthy (MacOS)
+        if: ${{ matrix.os == 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
+        run: |
+          brew install coreutils
+          timeout 10s poetry run pip --version || rm -rf .venv
+
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
+        run: poetry install -E "model-server docs"
 
       - name: Run tests and generate coverage report
         run: make tests-general_features

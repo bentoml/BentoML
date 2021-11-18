@@ -64,6 +64,7 @@ ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, mypy,
 
 ci-%: chore
 	$(eval style := $(subst ci-, ,$@))
+	$(eval SHELL :=/bin/bash)
 	$(CMD) ./scripts/ci/style/$(style)_check.sh
 
 .PHONY: ci-format
@@ -80,7 +81,7 @@ tests-%:
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), --$(t)))
 	$(eval SHELL :=/bin/bash)
-	./scripts/ci/run_tests.sh $(type) $(__positional)
+	./scripts/ci/run_tests.sh -v $(type) $(__positional)
 
 
 ifeq ($(USE_POETRY),true)

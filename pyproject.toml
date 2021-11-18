@@ -100,6 +100,7 @@ mypy = "*"
 autoflake = "*"
 twine = "*"
 wheel = "*"
+pydantic = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "setuptools", "wheel"]
@@ -145,7 +146,6 @@ reportFunctionMemberAccess = "error"
 reportMissingImports = "warning"
 reportMissingModuleSource = "warning"
 reportMissingTypeStubs = "error"
-reportImportCycles = "error"
 reportUnusedImport = "error"
 reportUnusedClass = "error"
 reportUnusedFunction = "error"

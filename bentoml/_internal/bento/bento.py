@@ -268,10 +268,20 @@ class BentoInfo:
         yaml_content["tag"] = Tag(yaml_content["name"], yaml_content["version"])
         del yaml_content["name"]
         del yaml_content["version"]
-        yaml_content["creation_time"] = datetime.fromisoformat(
-            yaml_content["creation_time"]
-        )
-        bento_info = cls(**yaml_content)
+        try:
+            yaml_content["creation_time"] = datetime.fromisoformat(
+                yaml_content["creation_time"]
+            )
+        except ValueError:
+            raise BentoMLException(
+                f"bad date {yaml_content['creation_time']} in {BENTO_YAML_FILENAME}"
+            )
+
+        try:
+            bento_info = cls(**yaml_content)
+        except TypeError:
+            raise BentoMLException(f"unexpected field in {BENTO_YAML_FILENAME}")
+
         return bento_info
 
     def validate(self):

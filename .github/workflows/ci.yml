@@ -235,21 +235,6 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Update Path for Windows
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
@@ -261,28 +246,23 @@ jobs:
 
       - name: Ensure cache is healthy
         if: ${{ matrix.os != 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf .venv
 
       - name: Ensure cache is healthy (MacOS)
         if: ${{ matrix.os == 'macos-latest' && steps.cache-pip.outputs.cache-hit == 'true' }}
         run: |
           brew install coreutils
-          timeout 10s poetry run pip --version || rm -rf .venv
+          timeout 10s pip --version || rm -rf .venv
 
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
-        run: poetry install -E "model-server docs"
+        run: pip install "." pytest pytest-asyncio pandas
 
-      - name: Run tests and generate coverage report
-        run: make tests-general_features
+      - name: Change to project directory
+        run: cd ./tests/e2e/bento_server_general_features
 
-      - name: Upload test coverage to Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          flags: bento-server
-          directory: ./
-          files: ./tests/e2e/bento_server_general_features/general_features.xml
-          verbose: true
+      - name: Run tests
+        run: pytest -s -vvv
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}

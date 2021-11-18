@@ -11,6 +11,7 @@ set_on_failed_callback "err=1"
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
 err=0
+use_poetry=0
 
 PYTESTARGS=()
 CONFIG_FILE="$dname/config.yml"
@@ -28,6 +29,15 @@ getval(){
     yq eval "$@" "$CONFIG_FILE"
   else
     yq_docker eval "$@" "$CONFIG_FILE"
+  fi
+}
+
+run_python(){
+  if [ "$use_poetry" -eq 1 ]; then
+    need_cmd poetry
+    poetry run python -m "$@"
+  else
+    python -m "$@"
   fi
 }
 
@@ -52,11 +62,12 @@ usage() {
 Running unit/integration tests with pytest and generate coverage reports. Make sure that given testcases is defined under $CONFIG_FILE.
 
 Usage:
-  $dname/$fname [-h|--help] [-v|--verbose] <target> <pytest_additional_arguments>
+  $dname/$fname [-h|--help] [-v|--verbose] [--use-poetry] <target> <pytest_additional_arguments>
 
 Flags:
   -h, --help            show this message
   -v, --verbose         set verbose scripts
+  --use-poetry          use poetry to run scripts
 
 
 If pytest_additional_arguments is given, this will be appended to given tests run.
@@ -75,6 +86,10 @@ parse_args() {
         usage;;
       -v | --verbose)
         set -x;
+        shift;;
+      --use-poetry)
+        need_cmd poetry;
+        use_poetry=1;
         shift;;
       *)
         ;;
@@ -122,12 +137,11 @@ parse_config() {
 main() {
   parse_args "$@"
 
-  need_cmd poetry
   need_cmd make
   need_cmd curl
   need_cmd tr
 
-  poetry run python -m pip install -U pip setuptools
+  run_python pip install -U pip setuptools
 
   if ! check_cmd docker; then
     YQ_VERSION=4.14.2
@@ -146,17 +160,15 @@ main() {
     make -f "$GIT_ROOT"/Makefile pull-checker-img
   fi
 
-  #  validate_yaml
-  if [ ${#@} -eq 1 ]; then
-    argv=$1
-  elif [[ $1 == "-"* ]]; then
-    shift
-    argv=$1
-  else
-    shift $(( OPTIND -1 ))
-    argv=$1
-  fi
+  for args in "$@"; do
+    if [[ "$args" == "-"* ]]; then
+      shift
+    else
+      argv="$args"
+    fi
+  done
 
+  #  validate_yaml
   parse_config "$argv"
 
   OPTS=(--cov=bentoml --cov-config=.coveragerc --cov-report=xml:"$target.xml")
@@ -166,7 +178,7 @@ main() {
   fi
   # setup tests environment
   if [ -f "$REQ_FILE" ]; then
-    poetry run python -m pip install -r "$REQ_FILE" || exit 1
+    run_python pip install -r "$REQ_FILE" || exit 1
   fi
 
   if [ -n "$external_scripts" ]; then
@@ -180,7 +192,7 @@ main() {
     path="$GIT_ROOT"/"$test_dir"/"$fname"
   fi
 
-  if ! (poetry run pytest "$path" "${OPTS[@]}"); then
+  if ! (run_python pytest "$path" "${OPTS[@]}"); then
     err=1
   fi
 

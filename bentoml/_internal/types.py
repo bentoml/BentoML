@@ -64,7 +64,7 @@ class Tag:
             return f"{self.name}:{self.version}"
 
     def __repr__(self):
-        return str(self)
+        return f'{self.__class__.__name__}(name={repr(self.name)}, version={repr(self.version)})'
 
     def __eq__(self, other: "Tag") -> bool:
         return self.name == other.name and self.version == other.version

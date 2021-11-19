@@ -1,31 +1,35 @@
 # type: ignore[reportMissingTypeStubs]
-import functools
 import typing as t
-from pathlib import Path
+import functools
 from typing import TYPE_CHECKING
+from pathlib import Path
 
-import cloudpickle
 import numpy as np
-from simple_di import Provide, inject
+import cloudpickle
+from simple_di import inject
+from simple_di import Provide
 
-from ...exceptions import MissingDependencyException
-from ..configuration.containers import BentoMLContainer
-from ..models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE, Model
-from ..types import Tag
-from ..utils.tensorflow import get_tf_version
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.models import Model
+from ._internal.models import H5_EXT
+from ._internal.models import PKL_EXT
+from ._internal.models import HDF5_EXT
+from ._internal.models import JSON_EXT
+from ._internal.models import SAVE_NAMESPACE
+from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
-    from tensorflow.python.client.session import BaseSession
+if TYPE_CHECKING:
+    from _internal.models import ModelStore
     from tensorflow.python.framework.ops import Graph
-
-    from ..models import ModelStore
+    from tensorflow.python.client.session import BaseSession
 
 try:
     import tensorflow as tf
 
-    # TODO: separation of Keras and Tensorflow
+    # TODO(aarnphm): separation of Keras and Tensorflow
     # https://twitter.com/fchollet/status/1404967230048149506?lang=en
-    import tensorflow.keras as keras
+    import tensorflow.keras as tfk
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -36,16 +40,29 @@ except ImportError:  # pragma: no cover
         """
     )
 
-from .tensorflow import _TensorflowRunner  # type: ignore[reportPrivateUsage]
+from .tensorflow import _TensorflowRunner
 
-_tf_version = get_tf_version()
-TF2 = _tf_version.startswith("2")
+_F = t.TypeVar("_F", bound=t.Callable[..., t.Any])
+_T_co = t.TypeVar("_T_co", covariant=True)
 
+
+class _GeneratorContextManager(t.ContextManager[_T_co]):
+    def __call__(self, func: _F) -> _F:
+        ...
+
+
+TF2 = tf.__version__.startswith("2")
 
 # Global instance of tf.Session()
 _graph: "Graph" = tf.compat.v1.get_default_graph()
 _sess: "BaseSession" = tf.compat.v1.Session(graph=_graph)
 
+# make sess.as_default() type safe
+_default_sess: t.Callable[
+    [], "_GeneratorContextManager[BaseSession]"
+] = functools.partial(_sess.as_default)
+
+_load: t.Callable[[t.BinaryIO], "tfk.Model"] = functools.partial(cloudpickle.load)
 
 _CUSTOM_OBJ_FNAME = f"{SAVE_NAMESPACE}_custom_objects{PKL_EXT}"
 _SAVED_MODEL_FNAME = f"{SAVE_NAMESPACE}{H5_EXT}"
@@ -53,25 +70,11 @@ _MODEL_WEIGHT_FNAME = f"{SAVE_NAMESPACE}_weights{HDF5_EXT}"
 _MODEL_JSON_FNAME = f"{SAVE_NAMESPACE}_json{JSON_EXT}"
 
 
-def get_session() -> "BaseSession":
-    """
-    Return TF1 sessions for bentoml.keras. Users should
-     use this for TF1 in order to run prediction.
-    Example::
-        session = bentoml.keras.get_session()
-        # Initialize variables in the graph/model
-        session.run(tf.global_variables_initializer())
-        with session.as_default():
-            loaded = bentoml.keras.load(tag, model_store=modelstore)
-    """  # noqa: LN001
-    return _sess
-
-
 @inject
 def load(
     tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "keras.Model":
+) -> "tfk.Model":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -92,18 +95,18 @@ def load(
     if model.info.options["custom_objects"]:
         assert Path(model.path_of(_CUSTOM_OBJ_FNAME)).is_file()
         with Path(model.path_of(_CUSTOM_OBJ_FNAME)).open("rb") as dcof:
-            default_custom_objects = cloudpickle.load(dcof)
+            default_custom_objects = _load(dcof)
 
-    with get_session().as_default():
+    with _default_sess():
         if model.info.options["store_as_json"]:
             assert Path(model.path_of(_MODEL_JSON_FNAME)).is_file()
             with Path(model.path_of(_MODEL_JSON_FNAME)).open("r") as jsonf:
                 model_json = jsonf.read()
-            model = keras.models.model_from_json(
+            model = tfk.models.model_from_json(
                 model_json, custom_objects=default_custom_objects
             )
         else:
-            model = keras.models.load_model(
+            model = tfk.models.load_model(
                 model.path_of(_SAVED_MODEL_FNAME),
                 custom_objects=default_custom_objects,
             )
@@ -117,7 +120,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: "keras.Model",
+    model: "tfk.Model",
     *,
     store_as_json: t.Optional[bool] = False,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
@@ -148,7 +151,7 @@ def save(
     Examples::
     """  # noqa
     tf.compat.v1.keras.backend.get_session()
-    context: t.Dict[str, t.Any] = {"tensorflow": _tf_version}
+    context: t.Dict[str, t.Any] = {"tensorflow": tf.__version__}
     options = {
         "store_as_json": store_as_json,
         "custom_objects": True if custom_objects is not None else False,
@@ -188,8 +191,9 @@ class _KerasRunner(_TensorflowRunner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
+        in_store_tag = model_store.get(tag).tag
         super().__init__(
-            tag=tag,
+            tag=str(in_store_tag),
             predict_fn_name=predict_fn_name,
             device_id=device_id,
             partial_kwargs=predict_kwargs,
@@ -197,26 +201,20 @@ class _KerasRunner(_TensorflowRunner):
             batch_options=batch_options,
             model_store=model_store,
         )
-        self._session = get_session()
+        self._session = _sess
+        self._tag = in_store_tag
 
-    @property
-    def session(self) -> "BaseSession":
-        return self._session
-
-    # pylint: disable=attribute-defined-outside-init
-    def _setup(self) -> None:
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    def _setup(self) -> None:  # type: ignore[override] # noqa
         self._session.config = self._config_proto
-        self._model = load(self.name, model_store=self._model_store)
+        self._model = load(self._tag, model_store=self._model_store)
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
-        self,
-        input_data: t.Union[
-            t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
-        ],
-    ) -> t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor]:
+        self, input_data: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]
+    ) -> t.Union[np.ndarray, tf.Tensor]:
         if not isinstance(input_data, (np.ndarray, tf.Tensor)):
             input_data = np.array(input_data)
         with tf.device(self._device_id):
@@ -224,7 +222,7 @@ class _KerasRunner(_TensorflowRunner):
                 tf.compat.v1.global_variables_initializer()
             else:
                 self._session.run(tf.compat.v1.global_variables_initializer())
-                with get_session().as_default():
+                with _default_sess():
                     self._predict_fn(input_data)
             return self._predict_fn(input_data)
 
@@ -250,8 +248,6 @@ def load_runner(
             Model tag to retrieve model from modelstore
         predict_fn_name (`str`, default to `predict`):
             inference function to be used.
-        predict_kwargs (`t.Dict[str, t.Any]`, `optional`, default to `None`):
-            Dictionary of `predict()` kwargs that can be shared across different model.
         device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `CPU:0`):
             Optional devices to put the given model on. Refers to https://www.tensorflow.org/api_docs/python/tf/config
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
@@ -265,7 +261,7 @@ def load_runner(
         Runner instances for `bentoml.keras` model
 
     Examples::
-    """  # noqa: LN001
+    """  # noqa
     return _KerasRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,

@@ -37,7 +37,6 @@ class Service:
     """
 
     _apis: t.Dict[str, InferenceAPI] = {}
-    _runners: t.Dict[str, Runner] = {}
 
     # Name of the service, it is a required parameter for __init__
     name: str
@@ -66,7 +65,9 @@ class Service:
             assert all(
                 isinstance(r, Runner) for r in runners
             ), "Service runners list must only contain runner instances"
-            self._runners = {r.name: r for r in runners}
+            self.runners = {r.name: r for r in runners}
+        else:
+            self.runners: t.Dict[str, Runner] = {}
 
         self._mount_apps: t.List[t.Tuple[t.Union["ASGIApp", WSGI_APP], str, str]] = []
         self._middlewares: t.List[t.Tuple[t.Type["Middleware"], t.Any]] = []
@@ -177,7 +178,7 @@ class Service:
         else:
             return (
                 f'bentoml.Service(name="{self.name}", '
-                f'runners=[{",".join(self._runners.keys())}])'
+                f'runners=[{",".join(self.runners.keys())}])'
             )
 
     def __repr__(self):

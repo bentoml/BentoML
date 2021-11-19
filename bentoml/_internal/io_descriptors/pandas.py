@@ -188,6 +188,9 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
         Returns:
             a `pd.DataFrame` object. This can then be used
              inside users defined logics.
+        Raises:
+            BadInput:
+                Raised when the incoming requests are bad formatted.
         """
         obj = await request.body()
         if self._enforce_dtype:

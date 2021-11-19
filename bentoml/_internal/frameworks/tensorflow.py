@@ -1,33 +1,32 @@
 # type: ignore[reportMissingTypeStubs]
-import functools
-import logging
 import os
-import pathlib
 import re
-import typing as t
 import uuid
-from distutils.dir_util import copy_tree
+import typing as t
+import logging
+import pathlib
+import functools
 from typing import TYPE_CHECKING
+from distutils.dir_util import copy_tree
 
 import numpy as np
-from simple_di import Provide, inject
+from simple_di import inject
+from simple_di import Provide
 
-from ...exceptions import MissingDependencyException
-from ..configuration.containers import BentoMLContainer
-from ..models import Model
-from ..runner import Runner
-from ..runner.utils import Params
-from ..types import PathType, Tag
-from ..utils.tensorflow import (
-    cast_tensor_by_spec,
-    get_arg_names,
-    get_input_signatures,
-    get_restored_functions,
-    get_tf_version,
-    pretty_format_restored_model,
-)
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.types import PathType
+from ._internal.models import Model
+from ._internal.runner import Runner
+from ._internal.runner.utils import Params
+from ._internal.utils.tensorflow import get_arg_names
+from ._internal.utils.tensorflow import cast_tensor_by_spec
+from ._internal.utils.tensorflow import get_input_signatures
+from ._internal.utils.tensorflow import get_restored_functions
+from ._internal.utils.tensorflow import pretty_format_restored_model
+from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from _internal.models import ModelStore
 
 try:
@@ -47,12 +46,12 @@ except ImportError:  # pragma: no cover
     import tensorflow_core.python.training.tracking.tracking as tracking
 
 logger = logging.getLogger(__name__)
-_tf_version = get_tf_version()
-TF2 = _tf_version.startswith("2")
+TF2 = tf.__version__.startswith("2")
 
 try:
     import tensorflow_hub as hub
-    from tensorflow_hub import native_module, resolve
+    from tensorflow_hub import resolve
+    from tensorflow_hub import native_module
 except ImportError:  # pragma: no cover
     logger.warning(
         """\
@@ -238,7 +237,7 @@ def load(
             if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
                 raise NotImplementedError(
                     "options are not supported for TF < 2.3.x,"
-                    f" Current version: {_tf_version}"
+                    f" Current version: {tf.__version__}"
                 )
             # tf.compat.v1.saved_model.load_v2() is TF2 tf.saved_model.load() before TF2
             obj = tf.compat.v1.saved_model.load_v2(
@@ -274,7 +273,7 @@ def import_from_tfhub(
             """  # noqa
         )
     context: t.Dict[str, t.Any] = {
-        "tensorflow": _tf_version,
+        "tensorflow": tf.__version__,
         "tensorflow_hub": hub.__version__,
     }
     if name is None:
@@ -356,7 +355,7 @@ def save(
         tag = bentoml.transformers.save("my_tensorflow_model", model)
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"tensorflow": _tf_version}
+    context: t.Dict[str, t.Any] = {"tensorflow": tf.__version__}
     _model = Model.create(
         name,
         module=__name__,
@@ -377,7 +376,7 @@ def save(
             if options:
                 logger.warning(
                     f"Parameter 'options: {str(options)}' is ignored when "
-                    f"using tensorflow {_tf_version}"
+                    f"using tensorflow {tf.__version__}"
                 )
             tf.saved_model.save(model, _model.path, signatures=signatures)
 
@@ -397,12 +396,17 @@ class _TensorflowRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(str(tag), resource_quota, batch_options)
+        super().__init__(
+            display_name=str(tag),
+            resource_quota=resource_quota,
+            batch_options=batch_options,
+        )
         self._device_id = device_id
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
         self._partial_kwargs = partial_kwargs if partial_kwargs is not None else dict()
+        self._tag = model_store.get(tag).tag
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
@@ -417,7 +421,7 @@ class _TensorflowRunner(Runner):
 
     @property
     def required_models(self) -> t.List[Tag]:
-        return [self._model_store.get(self.name).tag]
+        return [self._tag]
 
     @property
     def num_concurrency_per_replica(self) -> int:
@@ -437,7 +441,7 @@ class _TensorflowRunner(Runner):
         self._session = tf.compat.v1.Session(
             config=tf.compat.v1.ConfigProto(**self._config_proto)
         )
-        self._model = load(self.name, model_store=self._model_store)
+        self._model = load(self._tag, model_store=self._model_store)
         if not TF2:
             raw_predict_fn = self._model.signatures["serving_default"]
         else:

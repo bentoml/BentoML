@@ -81,7 +81,12 @@ tests-%:
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), --$(t)))
 	$(eval SHELL :=/bin/bash)
+ifeq ($(USE_POETRY),true)
+	./scripts/ci/run_tests.sh -v --use-poetry $(type) $(__positional)
+else
 	./scripts/ci/run_tests.sh -v $(type) $(__positional)
+endif
+
 
 
 ifeq ($(USE_POETRY),true)

@@ -212,7 +212,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-catboost
+        run: USE_POETRY=true make tests-catboost
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.catboost == 'true' }}
@@ -268,7 +268,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-detectron2
+        run: USE_POETRY=true make tests-detectron2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.detectron2 == 'true' }}
@@ -324,7 +324,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-easyocr
+        run: USE_POETRY=true make tests-easyocr
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.easyocr == 'true' }}
@@ -381,7 +381,7 @@ jobs:
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
-#        run: make tests-evalml
+#        run: USE_POETRY=true make tests-evalml
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.evalml == 'true' }}
@@ -438,7 +438,7 @@ jobs:
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
-#        run: make tests-fastai
+#        run: USE_POETRY=true make tests-fastai
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.fastai == 'true' }}
@@ -495,7 +495,7 @@ jobs:
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
-#        run: make tests-fasttext
+#        run: USE_POETRY=true make tests-fasttext
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.fasttext == 'true' }}
@@ -553,7 +553,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-gluon
+        run: USE_POETRY=true make tests-gluon
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.gluon == 'true' }}
@@ -609,7 +609,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-h2o
+        run: USE_POETRY=true make tests-h2o
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.h2o == 'true' }}
@@ -665,7 +665,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-keras_tf1
+        run: USE_POETRY=true make tests-keras_tf1
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf1 == 'true' }}
@@ -721,7 +721,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-keras_tf2
+        run: USE_POETRY=true make tests-keras_tf2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf2 == 'true' }}
@@ -777,7 +777,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-lightgbm
+        run: USE_POETRY=true make tests-lightgbm
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.lightgbm == 'true' }}
@@ -833,7 +833,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-mlflow
+        run: USE_POETRY=true make tests-mlflow
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.mlflow == 'true' }}
@@ -889,7 +889,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-onnx
+        run: USE_POETRY=true make tests-onnx
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnx == 'true' }}
@@ -1010,7 +1010,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-paddle
+        run: USE_POETRY=true make tests-paddle
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.paddle == 'true' }}
@@ -1066,7 +1066,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-pycaret
+        run: USE_POETRY=true make tests-pycaret
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pycaret == 'true' }}
@@ -1123,7 +1123,7 @@ jobs:
 #        run: poetry install
 #
 #      - name: Run tests and generate coverage report
-#        run: make tests-pyspark
+#        run: USE_POETRY=true make tests-pyspark
 #        shell: bash
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.pyspark_mllib == 'true' }}
@@ -1179,7 +1179,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-pytorch
+        run: USE_POETRY=true make tests-pytorch
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch == 'true' }}
@@ -1239,7 +1239,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Run tests and generate coverage report
-        run: make tests-pytorch_lightning
+        run: USE_POETRY=true make tests-pytorch_lightning
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch_lightning == 'true' }}
@@ -1295,7 +1295,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-sklearn
+        run: USE_POETRY=true make tests-sklearn
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.sklearn == 'true' }}
@@ -1351,7 +1351,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-spacy
+        run: USE_POETRY=true make tests-spacy
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.spacy == 'true' }}
@@ -1407,7 +1407,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-statsmodels
+        run: USE_POETRY=true make tests-statsmodels
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.statsmodels == 'true' }}
@@ -1463,7 +1463,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-tf1
+        run: USE_POETRY=true make tests-tf1
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf1 == 'true' }}
@@ -1519,7 +1519,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-tf2
+        run: USE_POETRY=true make tests-tf2
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf2 == 'true' }}
@@ -1575,7 +1575,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-transformers
+        run: USE_POETRY=true make tests-transformers
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.transformers == 'true' }}
@@ -1631,7 +1631,7 @@ jobs:
         run: poetry install
 
       - name: Run tests and generate coverage report
-        run: make tests-xgboost
+        run: USE_POETRY=true make tests-xgboost
         shell: bash
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.xgboost == 'true' }}

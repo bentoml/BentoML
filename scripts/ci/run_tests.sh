@@ -144,14 +144,20 @@ main() {
   run_python pip install -U pip setuptools
 
   if ! check_cmd docker; then
+    target_dir="$HOME/.local/bin"
+    if [[ -d "$target_dir" ]]; then
+      mkdir "$target_dir"
+      echo "$target_dir" >> "$PATH"
+    fi
     YQ_VERSION=4.14.2
     echo "Docker is not detected. Trying to install yq..."
     if ! check_cmd yq; then
       __shell=$(uname | tr '[:upper:]' '[:lower:]')
       YQ_BINARY=yq_"$__shell"_amd64
       curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
-      echo "[Requires SUDO] tar yq_linux_amd64.tar.gz and move to /usr/bin/yq..."
-      tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && sudo mv "$YQ_BINARY" $HOME/.local/bin/yq
+      echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."
+      tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && mv "$YQ_BINARY" "$target_dir"
+      mv "$target_dir/$YQ_BINARY" "$target_dir/yq"
       rm -f ./"$YQ_BINARY".tar.gz
     else
       echo "Using yq via $(which yq)..."

@@ -1,6 +1,8 @@
+import typing as t
 from datetime import datetime
 
 import attr
+import fs
 import pytest
 from fs.base import FS
 
@@ -14,10 +16,16 @@ class DummyItem(StoreItem):
     tag: Tag
     fs: FS
     creation_time: datetime = attr.field(factory=datetime.now)
+    store: "DummyStore" = None
+
+    @staticmethod
+    def create(tag: t.Union[str, Tag]):
+        with DummyItem.store.register(tag) as path:
+            fs.open_fs(path).writetext("tag", str(tag))
 
     @classmethod
-    def from_fs(cls, tag, fs):
-        return DummyItem(tag, fs)
+    def from_fs(cls, dummy_fs):
+        return DummyItem(Tag.from_str(dummy_fs.readtext("tag")), dummy_fs)
 
 
 class DummyStore(Store[DummyItem]):
@@ -28,17 +36,13 @@ class DummyStore(Store[DummyItem]):
 def test_store(tmpdir):
     store = DummyStore(tmpdir)
 
-    with store.register("test:version1"):
-        pass
-    with store.register("test:otherprefix"):
-        pass
-    with store.register("test:version2"):
-        pass
-    with store.register("test1:version1"):
-        pass
+    DummyItem.store = store
+    DummyItem.create("test:version1")
+    DummyItem.create("test:otherprefix")
+    DummyItem.create(Tag("test", "version2"))
+    DummyItem.create("test1:version1")
     with pytest.raises(BentoMLException):
-        with store.register("test:version2"):
-            pass
+        DummyItem.create("test:version2")
 
     item = store.get("test:version1")
     assert item.tag == Tag("test", "version1")

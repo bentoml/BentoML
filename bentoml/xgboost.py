@@ -1,4 +1,3 @@
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -6,14 +5,15 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import JSON_EXT, SAVE_NAMESPACE
+from ._internal.models import JSON_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
 
-    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
+    from ._internal.models import ModelStore
 
 try:
     import xgboost as xgb
@@ -48,31 +48,31 @@ except ImportError:  # pragma: no cover
 
 
 def _get_model_info(
-    tag: str,
+    tag: t.Union[str, Tag],
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
     model_store: "ModelStore",
-) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
+) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
         raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with"
-            f" module {model_info.module},"
+            f" module {model.info.module},"
             f" failed loading with {__name__}."
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{JSON_EXT}")
+    model_file = model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}")
     _booster_params = dict() if not booster_params else booster_params
-    for key, value in model_info.options.items():
+    for key, value in model.info.options.items():
         if key not in _booster_params:
             _booster_params[key] = value  # pragma: no cover
     if "nthread" not in _booster_params:
         _booster_params["nthread"] = -1  # apply default nthread parameter
 
-    return model_info, model_file, _booster_params
+    return model, model_file, _booster_params
 
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "xgb.core.Booster":
@@ -111,7 +111,7 @@ def save(
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -151,30 +151,34 @@ def save(
         bst = bentoml.xgboost.load("my_xgboost_model:latest") # or
         bst = bentoml.xgboost.load(tag)
     """  # noqa
-    context = {"xgboost": xgb.__version__}
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {"xgboost": xgb.__version__}
+
+    _model = Model.create(
         name,
         module=__name__,
         options=booster_params,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{JSON_EXT}"))
-        return ctx.tag
+    )
+
+    model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}"))
+    _model.save(model_store)
+
+    return _model.tag
 
 
 class _XgBoostRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         model_info, model_file, booster_params = _get_model_info(
             tag, booster_params, model_store
         )
@@ -187,7 +191,7 @@ class _XgBoostRunner(Runner):
         self._booster_params = self._setup_booster_params(booster_params)
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
     @property
@@ -240,7 +244,7 @@ class _XgBoostRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     predict_fn_name: str = "predict",
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,

@@ -8,7 +8,7 @@ import pytest
 import bentoml.easyocr
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelInfo, ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 TEST_RESULT: t.List[str] = ["西", "愚园路", "东", "315", "309", "W", "Yuyuan Rd。", "E"]
@@ -45,8 +45,8 @@ def image_array():
 @pytest.fixture(scope="module")
 def save_proc(
     modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
-    def _(lang_list, recog_network, detect_model, metadata) -> "ModelInfo":
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+    def _(lang_list, recog_network, detect_model, metadata) -> "Model":
         model = easyocr_model()
         tag = bentoml.easyocr.save(
             TEST_MODEL_NAME,
@@ -57,8 +57,8 @@ def save_proc(
             metadata=metadata,
             model_store=modelstore,
         )
-        info = modelstore.get(tag)
-        return info
+        model = modelstore.get(tag)
+        return model
 
     return _
 

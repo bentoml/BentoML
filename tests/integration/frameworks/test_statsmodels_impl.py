@@ -18,7 +18,7 @@ test_df2 = np.array([0, 0, 1, 1])
 
 # fmt: on
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelInfo, ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -31,13 +31,13 @@ def predict_df(model: t.Any, df: pd.DataFrame):
 def save_proc(
     modelstore: "ModelStore",
     holt_model,
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
-    def _(metadata, holt_model) -> "ModelInfo":
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+    def _(metadata, holt_model) -> "Model":
         tag = bentoml.statsmodels.save(
             TEST_MODEL_NAME, holt_model, metadata=metadata, model_store=modelstore
         )
-        info = modelstore.get(tag)
-        return info
+        model = modelstore.get(tag)
+        return model
 
     return _
 

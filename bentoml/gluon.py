@@ -1,4 +1,3 @@
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -8,13 +7,14 @@ from simple_di import Provide, inject
 from bentoml._internal.runner.utils import Params
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import JSON_EXT, SAVE_NAMESPACE
+from ._internal.models import JSON_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
     # pylint: disable=unused-import
-    from ._internal.models.store import ModelStore, StoreCtx
+    from ._internal.models import ModelStore
 
 try:
     import mxnet
@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     mxnet_ctx: t.Optional[mxnet.context.Context] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> gluon.Block:
@@ -53,16 +53,16 @@ def load(
         TODO
     """  # noqa
 
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
         raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with"
-            f" module {model_info.module},"
+            f" module {model.info.module},"
             f" failed loading with {__name__}."
         )
 
-    json_path: str = os.path.join(model_info.path, f"{SAVE_NAMESPACE}-symbol{JSON_EXT}")
-    params_path: str = os.path.join(model_info.path, f"{SAVE_NAMESPACE}-0000.params")
+    json_path: str = model.path_of(f"{SAVE_NAMESPACE}-symbol{JSON_EXT}")
+    params_path: str = model.path_of(f"{SAVE_NAMESPACE}-0000.params")
 
     return gluon.SymbolBlock.imports(json_path, ["data"], params_path, ctx=mxnet_ctx)
 
@@ -74,7 +74,7 @@ def save(
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -97,39 +97,41 @@ def save(
 
     """  # noqa
 
-    context = {"gluon": mxnet.__version__}
-    options = dict()
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {"gluon": mxnet.__version__}
+    options: t.Dict[str, t.Any] = dict()
+    _model = Model.create(
         name,
         module=__name__,
         options=options,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
+    )
 
-        model.export(os.path.join(ctx.path, SAVE_NAMESPACE))
+    model.export(_model.path_of(SAVE_NAMESPACE))
 
-        return ctx.tag
+    _model.save(model_store)
+
+    return _model.tag
 
 
 class _GluonRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
-        self._tag = tag
+        super().__init__(str(tag), resource_quota, batch_options)
+        self._tag = Tag.from_taglike(tag)
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
         self._ctx = None
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._tag]
 
     @property
@@ -174,7 +176,7 @@ class _GluonRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     predict_fn_name: str = "__call__",
     *,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,

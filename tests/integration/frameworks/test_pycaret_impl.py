@@ -18,7 +18,7 @@ from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelInfo, ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -50,13 +50,13 @@ def pycaret_model(get_pycaret_data) -> t.Any:
 def save_proc(
     pycaret_model,
     modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
-    def _(metadata) -> "ModelInfo":
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+    def _(metadata) -> "Model":
         tag = bentoml.pycaret.save(
             TEST_MODEL_NAME, pycaret_model, metadata=metadata, model_store=modelstore
         )
-        info = modelstore.get(tag)
-        return info
+        model = modelstore.get(tag)
+        return model
 
     return _
 

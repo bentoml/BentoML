@@ -1,4 +1,3 @@
-import os
 import shutil
 import typing as t
 from typing import TYPE_CHECKING
@@ -7,12 +6,13 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    from _internal.models.store import ModelStore, StoreCtx
+    from _internal.models import ModelStore
 
 try:
     from PyRuntime import ExecutionSession
@@ -31,7 +31,7 @@ ONNXMLIR_EXTENSION: str = ".so"
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "ExecutionSession":
     """
@@ -55,8 +55,8 @@ def load(
 
     Examples::
     """  # noqa
-    model_info = model_store.get(tag)
-    model_path = model_info.options["compiled_path"]
+    model = model_store.get(tag)
+    model_path = model.info.options["compiled_path"]
     return ExecutionSession(model_path, "run_main_graph")
 
 
@@ -67,7 +67,7 @@ def save(
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -87,39 +87,40 @@ def save(
 
     Examples::
     """  # noqa
-    context = {"onnxmlir": _spec.origin}
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {"onnxmlir": _spec.origin}
+    _model = Model.create(
         name,
         module=__name__,
         options=None,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:  # type: StoreCtx
-        fpath = os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNXMLIR_EXTENSION}")
-        ctx.options["compiled_path"] = fpath
-        shutil.copyfile(
-            model,
-            fpath,
-        )
-        tag: str = ctx.tag
-        return tag
+    )
+    fpath = _model.path_of(f"{SAVE_NAMESPACE}{ONNXMLIR_EXTENSION}")
+    _model.info.options["compiled_path"] = fpath
+    shutil.copyfile(
+        model,
+        fpath,
+    )
+
+    _model.save(model_store)
+    return _model.tag
 
 
 class _ONNXMLirRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         self._model_store = model_store
         self._model_info = model_store.get(tag)
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
     @property
@@ -141,7 +142,7 @@ class _ONNXMLirRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,

@@ -25,7 +25,7 @@ res_arr = np.array(
 
 # fmt: on
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelInfo, ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -33,14 +33,14 @@ TEST_MODEL_NAME = __name__.split(".")[-1]
 @pytest.fixture(scope="module")
 def save_proc(
     modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
-    def _(metadata) -> "ModelInfo":
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+    def _(metadata) -> "Model":
         model, _ = sklearn_model_data(clf=RandomForestClassifier)
         tag = bentoml.sklearn.save(
             TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
         )
-        info = modelstore.get(tag)
-        return info
+        model = modelstore.get(tag)
+        return model
 
     return _
 

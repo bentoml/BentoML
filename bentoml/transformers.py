@@ -17,8 +17,9 @@ from filelock import FileLock
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import JSON_EXT
+from ._internal.models import JSON_EXT, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from transformers.feature_extraction_utils import PreTrainedFeatureExtractor
     from transformers.models.auto.auto_factory import _BaseAutoModelClass
 
-    from ._internal.models.store import ModelStore, StoreCtx
+    from ._internal.models import ModelStore
 
 try:
     import transformers
@@ -190,7 +191,7 @@ If you want to import directly from a `transformers.pipeline` then do:
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     from_tf: bool = False,
     from_flax: bool = False,
     framework: str = "pt",
@@ -233,35 +234,35 @@ def load(
                                                      lm_head="masked")
     """
     _check_flax_supported()  # pragma: no cover
-    model_info = model_store.get(tag)
-    _model, _tokenizer = model_info.options["model"], model_info.options["tokenizer"]
+    model = model_store.get(tag)
+    _model, _tokenizer = model.info.options["model"], model.info.options["tokenizer"]
 
     if _tokenizer != "na":
         tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
-            model_info.path, from_tf=from_tf, from_flax=from_flax
+            model.path, from_tf=from_tf, from_flax=from_flax
         )
     else:
         tokenizer = None
-    config = AutoConfig.from_pretrained(model_info.path)
+    config = AutoConfig.from_pretrained(model.path)
 
     try:
         # Cover cases where some model repo doesn't include a model
         #  name under their config.json. An example is
         #  google/bert_uncased-L-2-H-128-A-2
-        model = _load_autoclass(framework, lm_head).from_pretrained(
-            model_info.path,
+        t_model = _load_autoclass(framework, lm_head).from_pretrained(
+            model.path,
             config=config,
             **kwargs,
         )
     except (AttributeError, BentoMLException):  # noqa
-        model = getattr(import_module("transformers"), _model).from_pretrained(
-            model_info.path,
+        t_model = getattr(import_module("transformers"), _model).from_pretrained(
+            model.path,
             config=config,
             from_tf=from_tf,
             from_flax=from_flax,
             **kwargs,
         )
-    return config, model, tokenizer
+    return config, t_model, tokenizer
 
 
 def _download_from_hub(
@@ -396,9 +397,9 @@ def _save(
     keep_download_from_hub: bool,
     model_store: "ModelStore",
     **transformers_options_kwargs: str,
-) -> str:
+) -> Tag:
     _check_flax_supported()  # pragma: no cover
-    context = {"transformers": transformers.__version__}
+    context: t.Dict[str, t.Any] = {"transformers": transformers.__version__}
 
     if isinstance(model_identifier, str):
         try:
@@ -415,113 +416,114 @@ def _save(
         except FileNotFoundError:
             pass
 
-    with model_store.register(
+    _model = Model.create(
         name,
         module=__name__,
         framework_context=context,
         options=None,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        if tokenizer is not None:
-            assert not isinstance(model_identifier, str) or isinstance(
-                model_identifier, Pipeline
-            ), _SAVE_CONFLICTS_ERR.format(
-                tokenizer=tokenizer, model=type(model_identifier)
-            )
-            ctx.options = {
-                "model": model_identifier.__class__.__name__,
-                "tokenizer": tokenizer.__class__.__name__,
-                "pipeline": False,
+    )
+
+    if tokenizer is not None:
+        assert not isinstance(model_identifier, str) or isinstance(
+            model_identifier, Pipeline
+        ), _SAVE_CONFLICTS_ERR.format(tokenizer=tokenizer, model=type(model_identifier))
+        _model.info.options = {
+            "model": model_identifier.__class__.__name__,
+            "tokenizer": tokenizer.__class__.__name__,
+            "pipeline": False,
+        }
+        model_identifier.save_pretrained(_model.path)
+        tokenizer.save_pretrained(_model.path)
+    else:
+        if isinstance(model_identifier, Pipeline):
+            # model_identifier is a Pipeline
+            _model.info.options = {
+                "model": model_identifier.model.__class__.__name__,
+                "tokenizer": model_identifier.tokenizer.__class__.__name__,
+                "pipeline": True,
             }
-            model_identifier.save_pretrained(ctx.path)
-            tokenizer.save_pretrained(ctx.path)
+            model_identifier.save_pretrained(_model.path)
         else:
-            if isinstance(model_identifier, Pipeline):
-                # model_identifier is a Pipeline
-                ctx.options = {
-                    "model": model_identifier.model.__class__.__name__,
-                    "tokenizer": model_identifier.tokenizer.__class__.__name__,
-                    "pipeline": True,
-                }
-                model_identifier.save_pretrained(ctx.path)
+            from_tf = transformers_options_kwargs.pop("from_tf", False)
+            from_flax = transformers_options_kwargs.pop("from_flax", False)
+            revision = transformers_options_kwargs.pop("revision", None)
+            mirror = transformers_options_kwargs.pop("mirror", None)
+            proxies = transformers_options_kwargs.pop("proxies", None)
+            use_auth_token = transformers_options_kwargs.pop("use_auth_token", None)
+            force_download = bool(
+                transformers_options_kwargs.pop("force_download", False)
+            )
+            resume_download = bool(
+                transformers_options_kwargs.pop("resume_download", True)
+            )
+
+            # download config file
+            config_file_url = hf_bucket_url(
+                model_identifier,
+                filename=CONFIG_NAME,
+                revision=revision,
+                mirror=mirror,
+            )
+            _download_from_hub(
+                config_file_url,
+                output_dir=_model.path,
+                proxies=proxies,
+                use_auth_token=use_auth_token,
+                force_download=force_download,
+                resume_download=resume_download,
+            )
+
+            # download weight file set correct filename
+            if from_tf:
+                weight_filename = TF2_WEIGHTS_NAME
+            elif from_flax:
+                weight_filename = FLAX_WEIGHTS_NAME
             else:
-                from_tf = transformers_options_kwargs.pop("from_tf", False)
-                from_flax = transformers_options_kwargs.pop("from_flax", False)
-                revision = transformers_options_kwargs.pop("revision", None)
-                mirror = transformers_options_kwargs.pop("mirror", None)
-                proxies = transformers_options_kwargs.pop("proxies", None)
-                use_auth_token = transformers_options_kwargs.pop("use_auth_token", None)
-                force_download = bool(
-                    transformers_options_kwargs.pop("force_download", False)
-                )
-                resume_download = bool(
-                    transformers_options_kwargs.pop("resume_download", True)
-                )
+                weight_filename = WEIGHTS_NAME
 
-                # download config file
-                config_file_url = hf_bucket_url(
-                    model_identifier,
-                    filename=CONFIG_NAME,
-                    revision=revision,
-                    mirror=mirror,
-                )
-                _download_from_hub(
-                    config_file_url,
-                    output_dir=str(ctx.path),
-                    proxies=proxies,
-                    use_auth_token=use_auth_token,
-                    force_download=force_download,
-                    resume_download=resume_download,
-                )
+            weight_file_url = hf_bucket_url(
+                model_identifier,
+                filename=weight_filename,
+                revision=revision,
+                mirror=mirror,
+            )
+            _download_from_hub(
+                weight_file_url,
+                output_dir=_model.path,
+                proxies=proxies,
+                use_auth_token=use_auth_token,
+                force_download=force_download,
+                resume_download=resume_download,
+            )
 
-                # download weight file set correct filename
-                if from_tf:
-                    weight_filename = TF2_WEIGHTS_NAME
-                elif from_flax:
-                    weight_filename = FLAX_WEIGHTS_NAME
-                else:
-                    weight_filename = WEIGHTS_NAME
-
-                weight_file_url = hf_bucket_url(
-                    model_identifier,
-                    filename=weight_filename,
-                    revision=revision,
-                    mirror=mirror,
-                )
-                _download_from_hub(
-                    weight_file_url,
-                    output_dir=str(ctx.path),
-                    proxies=proxies,
-                    use_auth_token=use_auth_token,
-                    force_download=force_download,
-                    resume_download=resume_download,
-                )
-
-                # ctx.options will be None here
-                with Path(ctx.path, CONFIG_NAME).open("r", encoding="utf-8") as of:
-                    _config = json.loads(of.read())
-                    try:
-                        arch = "".join(_config["architectures"])
-                        if from_tf:
-                            ctx.options["model"] = f"TF{arch}"
-                        elif from_flax:
-                            ctx.options["model"] = f"Flax{arch}"
-                        else:
-                            ctx.options["model"] = arch
-                    except KeyError:
-                        ctx.options["model"] = ""
-                ctx.options["pipeline"] = False
-
-                # NOTE: With Tokenizer there are way too many files
-                #  to be included, per frameworks. Thus we will load
-                #  a Tokenizer instance, then save it to path.
+            # _model.info.options will be None here
+            with open(_model.path_of(CONFIG_NAME), "r", encoding="utf-8") as of:
+                _config = json.loads(of.read())
                 try:
-                    _tokenizer_inst = AutoTokenizer.from_pretrained(model_identifier)
-                    _tokenizer_inst.save_pretrained(ctx.path)
-                    ctx.options["tokenizer"] = type(_tokenizer_inst).__name__
-                except ValueError:
-                    ctx.options["tokenizer"] = "na"
-        return ctx.tag
+                    arch = "".join(_config["architectures"])
+                    if from_tf:
+                        _model.info.options["model"] = f"TF{arch}"
+                    elif from_flax:
+                        _model.info.options["model"] = f"Flax{arch}"
+                    else:
+                        _model.info.options["model"] = arch
+                except KeyError:
+                    _model.info.options["model"] = ""
+            _model.info.options["pipeline"] = False
+
+            # NOTE: With Tokenizer there are way too many files
+            #  to be included, per frameworks. Thus we will load
+            #  a Tokenizer instance, then save it to path.
+            try:
+                _tokenizer_inst = AutoTokenizer.from_pretrained(model_identifier)
+                _tokenizer_inst.save_pretrained(_model.path)
+                _model.info.options["tokenizer"] = type(_tokenizer_inst).__name__
+            except ValueError:
+                _model.info.options["tokenizer"] = "na"
+
+    _model.save(model_store)
+    return _model.tag
 
 
 @inject
@@ -533,7 +535,7 @@ def save(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **transformers_options_kwargs: str,
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -628,7 +630,7 @@ def import_from_huggingface_hub(
     keep_download_from_hub: bool = False,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **transformers_options_kwargs: str,
-) -> str:
+) -> Tag:
     """
     Import a model from hugging face hub and save it to bentoml modelstore.
 
@@ -705,7 +707,7 @@ class _TransformersRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         tasks: str,
         *,
         framework: str,
@@ -716,7 +718,7 @@ class _TransformersRunner(Runner):
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
         **pipeline_kwargs: t.Any,
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         try:
             transformers.pipelines.check_task(tasks)
         except KeyError as e:
@@ -745,7 +747,7 @@ class _TransformersRunner(Runner):
         self._kwargs = pipeline_kwargs
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_store.get(self.name).tag]
 
     @property
@@ -793,7 +795,7 @@ class _TransformersRunner(Runner):
 
 
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     tasks: str,
     framework: str = "pt",

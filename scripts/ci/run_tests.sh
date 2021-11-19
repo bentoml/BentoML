@@ -145,8 +145,8 @@ main() {
 
   if ! check_cmd docker; then
     target_dir="$HOME/.local/bin"
-    if [[ -d "$target_dir" ]]; then
-      mkdir "$target_dir"
+    if [ -d "$target_dir" ]; then
+      mkdir -p "$target_dir"
       echo "$target_dir" >> "$PATH"
     fi
     YQ_VERSION=4.14.2
@@ -156,8 +156,7 @@ main() {
       YQ_BINARY=yq_"$__shell"_amd64
       curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
       echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."
-      tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && mv "$YQ_BINARY" "$target_dir"
-      mv "$target_dir/$YQ_BINARY" "$target_dir/yq"
+      tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && mv "$YQ_BINARY" "$target_dir"/yq
       rm -f ./"$YQ_BINARY".tar.gz
     else
       echo "Using yq via $(which yq)..."

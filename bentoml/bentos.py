@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @inject
-def list(
+def list(  # pylint: disable=redefined-builtin
     tag: t.Optional[t.Union[Tag, str]] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
 ) -> t.List[SysPathBento]:
@@ -60,7 +60,7 @@ def push(tag: t.Union[Tag, str]):
 
 
 def pull(tag: t.Union[Tag, str]):
-    pass
+    raise NotImplementedError
 
 
 @inject

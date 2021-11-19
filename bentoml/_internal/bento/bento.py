@@ -71,7 +71,7 @@ class Bento(StoreItem):
         for runner in svc._runners.values():  # type: ignore[reportPrivateUsage]
             models += runner.required_models
 
-        models_list: t.List[ModelInfo] = []
+        models_list: "t.List[ModelInfo]" = []
         seen_model_tags = []
         for model_tag in models:
             try:

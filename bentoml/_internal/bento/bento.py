@@ -71,7 +71,7 @@ class Bento(StoreItem):
         for runner in svc._runners.values():  # type: ignore[reportPrivateUsage]
             models += runner.required_models
 
-        models_list: "list[ModelInfo]" = []
+        models_list: t.List[ModelInfo] = []
         seen_model_tags = []
         for model_tag in models:
             try:
@@ -99,7 +99,7 @@ class Bento(StoreItem):
 
         spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
         exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
-        exclude_specs: "list[t.Tuple[str, pathspec.PathSpec]]" = []
+        exclude_specs: t.List[t.Tuple[str, pathspec.PathSpec]] = []
         bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
         target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
 
@@ -114,7 +114,7 @@ class Bento(StoreItem):
                     )
                 )
 
-            cur_exclude_specs: list[t.Tuple[str, pathspec.PathSpec]] = []
+            cur_exclude_specs: t.List[t.Tuple[str, pathspec.PathSpec]] = []
             for ignore_path, _spec in exclude_specs:
                 if fs.path.isparent(ignore_path, dir_path):
                     cur_exclude_specs.append((ignore_path, _spec))

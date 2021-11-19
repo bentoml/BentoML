@@ -256,7 +256,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
-        run: pip install . pytest pytest-cov pytest-asyncio pandas pydantic
+        run: pip install . pytest pytest-cov pytest-asyncio
 
       - name: Run tests and generate coverage report
         run: make tests-general_features

@@ -21,6 +21,7 @@ general_features:
     - "pandas"
     - "pydantic"
     - "scikit-learn"
+    - "pillow"
 
 catboost:
   <<: *tmpl

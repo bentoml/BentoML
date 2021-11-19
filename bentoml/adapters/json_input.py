@@ -83,7 +83,8 @@ class JsonInput(StringInput):
             except json.JSONDecodeError:
                 task.discard(http_status=400, err_msg="Not a valid JSON format")
             except TypeError:
-                err_msg = f"JSON does not contain the correct format {self._dataclass.__annotations__}"
+                annotations = self._dataclass.__annotations__
+                err_msg = f"JSON does not contain the correct format {annotations}"
                 task.discard(http_status=400, err_msg=err_msg)
             except Exception:  # pylint: disable=broad-except
                 err = traceback.format_exc()

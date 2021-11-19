@@ -4,9 +4,9 @@ import sys
 import typing as t
 import click
 import yaml
-from simple_di import Provide, inject
 from rich.console import Console
 from rich.table import Table
+from simple_di import Provide, inject
 
 from bentoml._internal.configuration.containers import BentoMLContainer
 from .click_utils import _is_valid_bento_name, _is_valid_bento_tag
@@ -14,7 +14,7 @@ from ..utils import calc_dir_size, human_readable_size
 from ..yatai_client import yatai_client
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.bento import BentoStore
+    from bentoml._internal.models import ModelStore
 
 
 def parse_delete_targets_argument_callback(
@@ -38,28 +38,32 @@ def parse_delete_targets_argument_callback(
 
 
 @inject
-def add_bento_management_commands(
+def add_model_management_commands(
         cli,
-        bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+        model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ):
-    @cli.command(help="Get Bento information")
-    @click.argument("bento_tag", type=click.STRING)
+    @cli.group(name='model')
+    def model_cli():
+        """Model Management"""
+
+    @model_cli.command(help="Get Model information")
+    @click.argument("model_tag", type=click.STRING)
     @click.option(
         "-o",
         "--output",
         type=click.Choice(["tree", "json", "yaml", "path"]),
         default="tree",
     )
-    def get(bento_tag, output):
-        """Print Bento details by providing the bento_tag
+    def get(model_tag, output):
+        """Print Model details by providing the model_tag
 
-        bentoml get FraudDetector:latest
-        bentoml get FraudDetector:20210709_DE14C9
+        bentoml model get FraudDetector:latest
+        bentoml model get FraudDetector:20210709_DE14C9
         """
         pass
 
-    @cli.command(name="list", help="List Bentos in local bento store")
-    @click.argument("bento_name", type=click.STRING, required=False)
+    @model_cli.command(name="list", help="List Models in local model store")
+    @click.argument("model_name", type=click.STRING, required=False)
     @click.option(
         "-o",
         "--output",
@@ -71,23 +75,23 @@ def add_bento_management_commands(
         is_flag=False,
         help="Don't truncate the output",
     )
-    def list_bentos(bento_name, output, no_trunc):
-        """Print list of bentos in local store
+    def list_models(model_name, output, no_trunc):
+        """Print list of models in local store
 
-        # show all bentos saved
-        > bentoml list
+        # show all models saved
+        > bentoml model list
 
         # show all verions of bento with the name FraudDetector
-        > bentoml list FraudDetector
+        > bentoml model list FraudDetector
         """
-        bentos = bento_store.list(bento_name)
+        models = model_store.list(model_name)
         res = [{
-            "tag": str(bento.tag),
-            "service": bento.info.service,
-            "path": bento.path,
-            "size": human_readable_size(calc_dir_size(bento.path)),
-            "creation_time": bento.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
-        } for bento in sorted(bentos, key=lambda x: x.info.creation_time, reverse=True)]
+            "tag": str(model.tag),
+            "module": model.info.module,
+            "path": model.path,
+            "size": human_readable_size(calc_dir_size(model.path)),
+            "creation_time": model.info.creation_time.strftime("%Y-%m-%d %H:%M:%S"),
+        } for model in sorted(models, key=lambda x: x.info.creation_time, reverse=True)]
         if output == "json":
             info = json.dumps(res, indent=2)
             print(info)
@@ -97,14 +101,14 @@ def add_bento_management_commands(
         else:
             table = Table(box=None)
             table.add_column("Tag")
-            table.add_column("Service")
+            table.add_column("Module")
             table.add_column("Path")
             table.add_column("Size")
             table.add_column("Creation Time")
             for bento in res:
                 table.add_row(
                     bento["tag"],
-                    bento["service"],
+                    bento["module"],
                     bento["path"],
                     bento["size"],
                     bento["creation_time"],
@@ -112,7 +116,7 @@ def add_bento_management_commands(
             console = Console()
             console.print(table)
 
-    @cli.command()
+    @model_cli.command()
     @click.argument(
         "delete_targets",
         type=click.STRING,
@@ -124,51 +128,51 @@ def add_bento_management_commands(
         "--yes",
         "--assume-yes",
         is_flag=True,
-        help="Skip confirmation when deleting a specific bento bundle",
+        help="Skip confirmation when deleting a specific model",
     )
     def delete(
         delete_targets,
         yes,
     ):
-        """Delete Bento in local bento store.
+        """Delete Model in local model store.
 
-        Specify target Bentos to remove:
+        Specify target Models to remove:
 
-        * Delete single bento bundle by "name:version", e.g: `bentoml delete IrisClassifier:v1`
-        * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
-        * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
+        * Delete single model by "name:version", e.g: `bentoml model delete IrisClassifier:v1`
+        * Bulk delete all models with a specific name, e.g.: `bentoml model delete IrisClassifier`
+        * Bulk delete multiple models by name and version, separated by ",", e.g.: `benotml model delete Irisclassifier:v1,MyPredictService:v2`
         """  # noqa
         pass
 
-    @cli.command(help="Export Bento to a tar file")
-    @click.argument("bento_tag", type=click.STRING)
+    @model_cli.command(help="Export Model to a tar file")
+    @click.argument("model_tag", type=click.STRING)
     @click.argument(
         "out_file", type=click.File("wb"), default=sys.stdout, required=False
     )
-    def export(bento_tag, out_file):
-        """Export Bento files to a tar file
+    def export(model_tag, out_file):
+        """Export Model files to a tar file
 
-        bentoml export FraudDetector:latest > my_bento.tar
-        bentoml export FraudDetector:20210709_DE14C9 ./my_bento.tar
+        bentoml model export FraudDetector:latest > my_model.tar
+        bentoml model export FraudDetector:20210709_DE14C9 ./my_model.tar
         """
         pass
 
-    @cli.command(name="import", help="Import a previously exported Bento tar file")
+    @model_cli.command(name="import", help="Import a previously exported Model tar file")
     @click.argument(
-        "bento_path", type=click.File("rb"), default=sys.stdin, required=False
+        "model_path", type=click.File("rb"), default=sys.stdin, required=False
     )
-    def import_bento(bento_path):
-        """Export Bento files to a tar file
+    def import_model(model_path):
+        """Export Model files to a tar file
 
-        bentoml import < ./my_bento.tar
-        bentoml import ./my_bento.tar
+        bentoml model import < ./my_model.tar
+        bentoml model import ./my_model.tar
         """
         pass
 
-    @cli.command(
-        help="Pull Bento from a yatai server",
+    @model_cli.command(
+        help="Pull Model from a yatai server",
     )
-    @click.argument("bento_tag", type=click.STRING)
+    @click.argument("model_tag", type=click.STRING)
     @click.option(
         "-f",
         "--force",
@@ -176,11 +180,11 @@ def add_bento_management_commands(
         default=False,
         help="Force pull from yatai to local and overwrite even if it already exists in local",
     )
-    def pull(bento_tag: str, force: bool):
-        yatai_client.pull_bento(bento_tag, force=force)
+    def pull(model_tag: str, force: bool):
+        yatai_client.pull_model(model_tag, force=force)
 
-    @cli.command(help="Push Bento to a yatai server")
-    @click.argument("bento_tag", type=click.STRING)
+    @model_cli.command(help="Push Model to a yatai server")
+    @click.argument("model_tag", type=click.STRING)
     @click.option(
         "-f",
         "--force",
@@ -188,10 +192,10 @@ def add_bento_management_commands(
         default=False,
         help="Forced push to yatai even if it exists in yatai",
     )
-    def push(bento_tag: str, force: bool):
-        bento_obj = bento_store.get(bento_tag)
-        if not bento_obj:
+    def push(model_tag: str, force: bool):
+        model_obj = model_store.get(model_tag)
+        if not model_obj:
             raise click.ClickException(
-                f"Bento {bento_tag} not found in local store"
+                f"Model {model_tag} not found in local store"
             )
-        yatai_client.push_bento(bento_obj, force=force)
+        yatai_client.push_model(model_obj, force=force)

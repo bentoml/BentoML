@@ -158,6 +158,7 @@ def _start_dev_api_server(
     log_level = "debug" if get_debug_mode() else "info"
     svc = load(bento_path_or_tag, working_dir=working_dir)
     uvicorn_options = {
+        "host": "0.0.0.0",
         "port": port,
         "log_level": log_level,
         "reload": reload,

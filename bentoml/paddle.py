@@ -8,8 +8,9 @@ from typing import TYPE_CHECKING
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -32,7 +33,7 @@ if TYPE_CHECKING:  # pragma: no cover
     import paddle.nn
     import paddlehub as hub
     import paddlehub.module.module as module
-    from _internal.models.store import ModelInfo, ModelStore, StoreCtx
+    from _internal.models import ModelStore
     from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
     from paddle.static import InputSpec
 
@@ -93,11 +94,11 @@ def _clean_name(name: str) -> str:  # pragma: no cover
     return re.sub(r"\W|^(?=\d)-", "_", name)
 
 
-def _load_paddle_bentoml_default_config(info: "ModelInfo") -> "paddle.inference.Config":
+def _load_paddle_bentoml_default_config(model: "Model") -> "paddle.inference.Config":
     # https://github.com/PaddlePaddle/Paddle/blob/develop/paddle/fluid/inference/api/analysis_config.cc
     config = paddle.inference.Config(
-        os.path.join(info.path, f"{SAVE_NAMESPACE}{PADDLE_MODEL_EXTENSION}"),
-        os.path.join(info.path, f"{SAVE_NAMESPACE}{PADDLE_PARAMS_EXTENSION}"),
+        model.path_of(f"{SAVE_NAMESPACE}{PADDLE_MODEL_EXTENSION}"),
+        model.path_of(f"{SAVE_NAMESPACE}{PADDLE_PARAMS_EXTENSION}"),
     )
     config.enable_memory_optim()
     config.switch_ir_optim(True)
@@ -106,7 +107,7 @@ def _load_paddle_bentoml_default_config(info: "ModelInfo") -> "paddle.inference.
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     config: t.Optional["paddle.inference.Config"] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     **kwargs: str,
@@ -129,24 +130,24 @@ def load(
 
     Examples::
     """
-    info = model_store.get(tag)
-    if "paddlehub" in info.context:
-        if info.options["from_local_dir"]:
-            return hub.Module(directory=info.path)
+    model = model_store.get(tag)
+    if "paddlehub" in model.info.context:
+        if model.info.options["from_local_dir"]:
+            return hub.Module(directory=model.path)
         else:
             server.CacheUpdater(
                 "update_cache",
-                module=info.options["name"],
-                version=info.options["version"],
+                module=model.info.options["name"],
+                version=model.info.options["version"],
             ).start()
             directory = (
-                info.path
-                if "_module_dir" not in info.options
-                else info.options["_module_dir"]
+                model.path
+                if "_module_dir" not in model.info.options
+                else model.info.options["_module_dir"]
             )
             return hub.Module(directory=directory, **kwargs)
     else:
-        _config = _load_paddle_bentoml_default_config(info) if not config else config
+        _config = _load_paddle_bentoml_default_config(model) if not config else config
         return paddle.inference.create_predictor(_config)
 
 
@@ -164,18 +165,18 @@ def _save(
     input_spec: t.Optional[t.Union[t.List["InputSpec"], t.Tuple["InputSpec", ...]]],
     metadata: t.Optional[t.Dict[str, t.Any]],
     model_store: "ModelStore",
-) -> str:
-    context = {"paddlepaddle": paddle.__version__}
+) -> Tag:
+    context: t.Dict[str, t.Any] = {"paddlepaddle": paddle.__version__}
     if isinstance(model, str):
         context["paddlehub"] = hub.__version__
         if not os.path.isdir(model):
             try:  # pragma: no cover
                 # NOTE: currently there is no need to test this feature.
-                info = model_store.get(model)
+                _model = model_store.get(model)
                 if not keep_download_from_hub:
                     logger.warning(
                         f"""\
-`{name}` is found under BentoML modelstore. Returning {info.tag}...
+`{name}` is found under BentoML modelstore. Returning {_model.tag}...
 
 Mechanism: `bentoml.paddle.import_from_paddlehub` will initialize an instance of
  `LocalModuleManager` from `paddlehub`. We will check whether the module is already
@@ -186,69 +187,66 @@ The reason behind the design is due to internal mechanism of `hub.Module` with r
  for how a Module is structured.
 
 For most use-case where you are using pretrained model provided by PaddlePaddle
- (https://www.paddlepaddle.org.cn/hublist), since {info.tag} exists, this means you have
- previously imported the module from paddlehub to BentoML modelstore, we will return the
- existing tag.
+ (https://www.paddlepaddle.org.cn/hublist), since {_model.tag} exists, this means you
+ have previously imported the module from paddlehub to BentoML modelstore, we will
+ return the existing tag.
 For use-case where you have a custom `hub.Module` or wanting to use different iteration
  of the aforementioned pretrained model, specify `keep_download_from_hub=True`,
  `version=<your_specific_version>` or any other related `kwargs`. Refers to
  https://paddlehub.readthedocs.io/en/release-v2.1/api/module.html for more information.
                         """
                     )
-                    _tag: str = info.tag
+                    _tag = _model.tag
                     server.CacheUpdater(
                         "update_cache", module=model, version=version
                     ).start()
                     return _tag
             except FileNotFoundError:
                 pass
-    with model_store.register(
+    _model = Model.create(
         name,
         module=__name__,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        if isinstance(model, str):
-            # NOTE: for paddlehub there is no way to skip Module initialization,
-            #  since `paddlehub` will always initialize a `hub.Module` regardless
-            #  of any situation. Therefore, the bottleneck will only happen one time
-            #  when users haven't saved the pretrained model under paddlehub cache
-            #  directory.
-            if not hub.server_check():
-                raise BentoMLException("Unable to connect to PaddleHub server.")
-            if os.path.isdir(model):
-                directory = model
-                target = str(ctx.path)
+    )
+    if isinstance(model, str):
+        # NOTE: for paddlehub there is no way to skip Module initialization,
+        #  since `paddlehub` will always initialize a `hub.Module` regardless
+        #  of any situation. Therefore, the bottleneck will only happen one time
+        #  when users haven't saved the pretrained model under paddlehub cache
+        #  directory.
+        if not hub.server_check():
+            raise BentoMLException("Unable to connect to PaddleHub server.")
+        if os.path.isdir(model):
+            directory = model
+            target = _model.path
 
-                ctx.options["from_local_dir"] = True
-            else:
-                _local_manager = manager.LocalModuleManager(home=hub_module_home)
-                user_module_cls = _local_manager.search(
-                    name, source=source, branch=branch
-                )
-                if not user_module_cls or not user_module_cls.version.match(version):
-                    user_module_cls = _local_manager.install(
-                        name=name,
-                        version=version,
-                        source=source,
-                        update=update,
-                        branch=branch,
-                        ignore_env_mismatch=ignore_env_mismatch,
-                    )
-
-                directory = _local_manager._get_normalized_path(user_module_cls.name)
-                target = str(os.path.join(ctx.path, user_module_cls.name))
-
-                ctx.options = hub.Module.load_module_info(directory)
-                ctx.options["_module_dir"] = target
-                ctx.options["from_local_dir"] = False
-            copy_tree(directory, target)
+            _model.info.options["from_local_dir"] = True
         else:
-            paddle.jit.save(
-                model, os.path.join(ctx.path, SAVE_NAMESPACE), input_spec=input_spec
-            )
-        _tag = ctx.tag
-        return _tag
+            _local_manager = manager.LocalModuleManager(home=hub_module_home)
+            user_module_cls = _local_manager.search(name, source=source, branch=branch)
+            if not user_module_cls or not user_module_cls.version.match(version):
+                user_module_cls = _local_manager.install(
+                    name=name,
+                    version=version,
+                    source=source,
+                    update=update,
+                    branch=branch,
+                    ignore_env_mismatch=ignore_env_mismatch,
+                )
+
+            directory = _local_manager._get_normalized_path(user_module_cls.name)
+            target = _model.path_of(user_module_cls.name)
+
+            _model.info.options = hub.Module.load_module_info(directory)
+            _model.info.options["_module_dir"] = target
+            _model.info.options["from_local_dir"] = False
+        copy_tree(directory, target)
+    else:
+        paddle.jit.save(model, _model.path_of(SAVE_NAMESPACE), input_spec=input_spec)
+
+    _model.save(model_store)
+    return _model.tag
 
 
 @inject
@@ -261,7 +259,7 @@ def save(
     ] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -320,7 +318,7 @@ def import_from_paddlehub(
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Import models from PaddleHub and save it under BentoML modelstore.
 
@@ -388,7 +386,7 @@ class _PaddlePaddleRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         infer_api_callback: str,
         *,
         device: str,
@@ -404,7 +402,7 @@ class _PaddlePaddleRunner(Runner):
                 "`enable_gpu=True` while CUDA is not currently supported by existing paddlepaddle."
                 " Make sure to install `paddlepaddle-gpu` and try again."
             )
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         self._infer_api_callback = infer_api_callback
         self._model_store = model_store
         self._enable_gpu = enable_gpu
@@ -446,7 +444,7 @@ class _PaddlePaddleRunner(Runner):
         self._runner_config = _config
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
     @property
@@ -518,7 +516,7 @@ class _PaddlePaddleRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     infer_api_callback: str = "run",
     device: str = "cpu",

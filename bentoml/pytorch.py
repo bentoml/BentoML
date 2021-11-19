@@ -8,9 +8,10 @@ import cloudpickle
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PT_EXT, SAVE_NAMESPACE
+from ._internal.models import PT_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params
+from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
 _RV = t.TypeVar("_RV")
@@ -19,7 +20,7 @@ _ModelType = t.TypeVar(
 )
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ._internal.models.store import ModelStore, StoreCtx
+    from ._internal.models import ModelStore
 
 try:
     import numpy as np
@@ -43,7 +44,7 @@ def _is_gpu_available() -> bool:  # pragma: no cover
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     device_id: t.Optional[str] = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _ModelType:
@@ -66,16 +67,16 @@ def load(
         booster = bentoml.pytorch.load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa
-    model_info = model_store.get(tag)
-    weight_file = Path(model_info.path, f"{SAVE_NAMESPACE}{PT_EXT}")
+    model = model_store.get(tag)
+    weight_file = model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     # TorchScript Models are saved as zip files
-    if zipfile.is_zipfile(str(weight_file)):
+    if zipfile.is_zipfile(weight_file):
         _load: t.Callable[[str], _ModelType] = functools.partial(
             torch.jit.load, map_location=device_id
         )
-        return _load(str(weight_file))
+        return _load(weight_file)
     else:
-        with weight_file.open("rb") as file:
+        with Path(weight_file).open("rb") as file:
             __load: t.Callable[[t.BinaryIO], _ModelType] = functools.partial(
                 cloudpickle.load
             )
@@ -89,7 +90,7 @@ def save(
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -139,28 +140,30 @@ def save(
 
         tag = bentoml.pytorch.save("resnet50", resnet50)
     """  # noqa
-    context = dict(torch=torch.__version__)
-    with model_store.register(
+    context: t.Dict[str, t.Any] = dict(torch=torch.__version__)
+    _model = Model.create(
         name,
         module=__name__,
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{PT_EXT}")
-        if isinstance(model, torch.jit.ScriptModule):
-            torch.jit.save(model, str(weight_file))
-        else:
-            with weight_file.open("wb") as file:
-                cloudpickle.dump(model, file)
-        return ctx.tag
+    )
+    weight_file = _model.path_of("{SAVE_NAMESPACE}{PT_EXT}")
+    if isinstance(model, torch.jit.ScriptModule):
+        torch.jit.save(model, weight_file)
+    else:
+        with open(weight_file, "wb") as file:
+            cloudpickle.dump(model, file)
+
+    _model.save(model_store)
+    return _model.tag
 
 
 class _PyTorchRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         device_id: str,
         partial_kwargs: t.Optional[t.Dict[str, t.Any]],
@@ -168,7 +171,7 @@ class _PyTorchRunner(Runner):
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         self._predict_fn_name = predict_fn_name
         self._model_store = model_store
         if "cuda" in device_id:
@@ -183,7 +186,7 @@ class _PyTorchRunner(Runner):
         self._partial_kwargs = partial_kwargs or dict()
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_store.get(self.name).tag]
 
     @property
@@ -262,7 +265,7 @@ class _PyTorchRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "__call__",
     device_id: str = "cpu:0",

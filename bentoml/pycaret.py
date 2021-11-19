@@ -1,14 +1,13 @@
 import logging
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PKL_EXT, SAVE_NAMESPACE
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
-from ._internal.types import PathType
+from ._internal.types import PathType, Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 PYCARET_CONFIG = "pycaret_config"
@@ -18,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     import sklearn
     import xgboost
-    from _internal.models.store import ModelInfo, ModelStore, StoreCtx
+    from _internal.models import ModelStore
 
 try:
     from pycaret.internal.tabular import (
@@ -43,23 +42,23 @@ logger = logging.getLogger(__name__)
 
 
 def _get_model_info(
-    tag: str, model_store: "ModelStore"
-) -> t.Tuple["ModelInfo", PathType, PathType]:
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
+    tag: t.Union[str, Tag], model_store: "ModelStore"
+) -> t.Tuple["Model", PathType, PathType]:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
         raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with module {model_info.module}, failed loading "
+            f"Model {tag} was saved with module {model.info.module}, failed loading "
             f"with {__name__}."
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}")
-    pycaret_config = os.path.join(model_info.path, f"{PYCARET_CONFIG}{PKL_EXT}")
+    model_file = model.path_of(f"{SAVE_NAMESPACE}")
+    pycaret_config = model.path_of(f"{PYCARET_CONFIG}{PKL_EXT}")
 
-    return model_info, model_file, pycaret_config
+    return model, model_file, pycaret_config
 
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Any:
     """
@@ -93,7 +92,7 @@ def save(
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -130,29 +129,30 @@ def save(
         # NOTE: pycaret setup config will be saved with the model
         bentoml.pycaret.save("my_model", final_model)
     """  # noqa
-    context = {"pycaret": version()}
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {"pycaret": version()}
+    _model = Model.create(
         name,
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:  # type: StoreCtx
-        save_model(model, os.path.join(ctx.path, SAVE_NAMESPACE))
-        save_config(os.path.join(ctx.path, f"{PYCARET_CONFIG}{PKL_EXT}"))
-        tag = ctx.tag  # type: str
-        return tag
+    )
+    save_model(model, _model.path_of(SAVE_NAMESPACE))
+    save_config(_model.path_of(f"{PYCARET_CONFIG}{PKL_EXT}"))
+
+    _model.save(model_store)
+    return _model.tag
 
 
 class _PycaretRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         model_info, model_file, pycaret_config = _get_model_info(tag, model_store)
 
         self._model_info = model_info
@@ -160,7 +160,7 @@ class _PycaretRunner(Runner):
         self._pycaret_config = pycaret_config
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
     @property
@@ -188,7 +188,7 @@ class _PycaretRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,

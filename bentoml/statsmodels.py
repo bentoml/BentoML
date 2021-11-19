@@ -1,4 +1,3 @@
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -6,9 +5,9 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PKL_EXT, SAVE_NAMESPACE
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
-from ._internal.types import PathType
+from ._internal.types import PathType, Tag
 from ._internal.utils.lazy_loader import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -18,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from joblib.parallel import Parallel
 
-    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx
+    from ._internal.models import ModelStore
 
 
 try:
@@ -42,26 +41,26 @@ pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)  # noqa: F811
 
 
 def _get_model_info(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore",
-) -> t.Tuple["ModelInfo", PathType]:
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
-        if model_info.module == "bentoml.mlflow":
+) -> t.Tuple["Model", PathType]:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
+        if model.info.module == "bentoml.mlflow":
             pass  # pragma: no cover
         else:
             raise BentoMLException(  # pragma: no cover
-                f"Model {tag} was saved with module {model_info.module}, failed loading"
+                f"Model {tag} was saved with module {model.info.module}, failed loading"
                 f"with {__name__}"
             )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PKL_EXT}")
+    model_file = model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
 
-    return model_info, model_file
+    return model, model_file
 
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> _MT:
     """
@@ -110,28 +109,31 @@ def save(
 
     Examples::
     """  # noqa
-    context = {"statsmodels": statsmodels.__version__}
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {"statsmodels": statsmodels.__version__}
+    _model = Model.create(
         name,
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:  # type: StoreCtx
-        model.save(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
-        return ctx.tag
+    )
+
+    model.save(_model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
+
+    _model.save(model_store)
+    return _model.tag
 
 
 class _StatsModelsRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         model_info, model_file = _get_model_info(tag, model_store)
         self._predict_fn_name = predict_fn_name
         self._model_info = model_info
@@ -139,7 +141,7 @@ class _StatsModelsRunner(Runner):
         self._model_store = model_store
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
     @property
@@ -170,7 +172,7 @@ class _StatsModelsRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "predict",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,

@@ -6,12 +6,13 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PTH_EXT, SAVE_NAMESPACE, YAML_EXT
+from ._internal.models import PTH_EXT, SAVE_NAMESPACE, YAML_EXT, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ._internal.models.store import ModelStore, StoreCtx
+    from ._internal.models import ModelStore
 try:
     import detectron2
     import detectron2.checkpoint as checkpoint
@@ -46,7 +47,7 @@ def load(
             Device type to cast model. Default behaviour similar
              to :obj:`torch.device("cuda")` Options: "cuda" or "cpu".
              If None is specified then return default config.MODEL.DEVICE
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
@@ -58,18 +59,18 @@ def load(
             "my_detectron_model:20201012_DE43A2")
     """  # noqa
 
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
         raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with"
-            f" module {model_info.module},"
+            f" module {model.info.module},"
             f" failed loading with {__name__}."
         )
 
     cfg: config.CfgNode = config.get_cfg()
 
-    weight_path = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{PTH_EXT}")
-    yaml_path = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{YAML_EXT}")
+    weight_path = model.path_of(f"{SAVE_NAMESPACE}{PTH_EXT}")
+    yaml_path = model.path_of(f"{SAVE_NAMESPACE}{YAML_EXT}")
 
     if os.path.isfile(yaml_path):
         cfg.merge_from_file(yaml_path)
@@ -99,7 +100,7 @@ def save(
     model_config: t.Optional[config.CfgNode] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -112,7 +113,7 @@ def save(
             model config from :meth:`detectron2.model_zoo.get_config_file`
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
@@ -152,27 +153,30 @@ def save(
 
     """  # noqa
 
-    context = {"detectron": detectron2.__version__}
-    options = dict()
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {"detectron": detectron2.__version__}
+    options: t.Dict[str, t.Any] = dict()
+
+    _model = Model.create(
         name,
         module=__name__,
         options=options,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
+    )
 
-        checkpointer = checkpoint.DetectionCheckpointer(model, save_dir=ctx.path)
-        checkpointer.save(SAVE_NAMESPACE)
-        if model_config:
-            with open(
-                os.path.join(ctx.path, f"{SAVE_NAMESPACE}{YAML_EXT}"),
-                "w",
-                encoding="utf-8",
-            ) as ouf:
-                ouf.write(model_config.dump())
+    checkpointer = checkpoint.DetectionCheckpointer(model, save_dir=_model.path)
+    checkpointer.save(SAVE_NAMESPACE)
+    if model_config:
+        with open(
+            _model.path_of(f"{SAVE_NAMESPACE}{YAML_EXT}"),
+            "w",
+            encoding="utf-8",
+        ) as ouf:
+            ouf.write(model_config.dump())
 
-        return ctx.tag
+    _model.save(model_store)
+
+    return _model.tag
 
 
 class _DetectronRunner(Runner):
@@ -251,7 +255,7 @@ def load_runner(
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure batch options for runner in a service context.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:

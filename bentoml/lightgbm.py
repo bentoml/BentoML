@@ -6,15 +6,15 @@ import joblib
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PKL_EXT, SAVE_NAMESPACE, TXT_EXT
-from ._internal.models.store import StoreCtx
+from ._internal.models import PKL_EXT, SAVE_NAMESPACE, TXT_EXT, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
     import lightgbm as lgb
     import numpy as np
-    from _internal.models.store import ModelInfo, ModelStore
+    from _internal.models import ModelStore
 
 try:
     import lightgbm as lgb  # noqa: F811
@@ -35,29 +35,31 @@ _LightGBMModelType = t.TypeVar(
 
 
 def _get_model_info(
-    tag: str,
+    tag: t.Union[str, Tag],
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
     model_store: "ModelStore",
-) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
+) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
         raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with"
-            f" module {model_info.module},"
+            f" module {model.info.module},"
             f" failed loading with {__name__}"
         )
     _fname = (
         f"{SAVE_NAMESPACE}{TXT_EXT}"
-        if not model_info.options["sklearn_api"]
+        if not model.info.options["sklearn_api"]
         else f"{SAVE_NAMESPACE}{PKL_EXT}"
     )
-    model_file = os.path.join(model_info.path, _fname)
-    _booster_params = dict() if not booster_params else booster_params
-    for key, value in model_info.options.items():
+    model_file = model.path_of(_fname)
+    _booster_params: t.Dict[str, t.Union[str, int]] = (
+        dict() if not booster_params else booster_params
+    )
+    for key, value in model.info.options.items():
         if key not in _booster_params:
             _booster_params[key] = value
 
-    return model_info, model_file, _booster_params
+    return model, model_file, _booster_params
 
 
 @inject
@@ -101,7 +103,7 @@ def save(
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -160,43 +162,48 @@ def save(
         # load the booster back:
         gbm = bentoml.lightgbm.load("my_lightgbm_model:latest")
     """  # noqa
-    context = {"lightgbm": lgb.__version__}
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {"lightgbm": lgb.__version__}
+
+    _model = Model.create(
         name,
         module=__name__,
         options=booster_params,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        ctx.options["sklearn_api"] = False
-        if any(
-            isinstance(model, _)
-            for _ in [
-                lgb.LGBMModel,
-                lgb.LGBMClassifier,
-                lgb.LGBMRegressor,
-                lgb.LGBMRanker,
-            ]
-        ):
-            joblib.dump(model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{PKL_EXT}"))
-            ctx.options["sklearn_api"] = True
-        else:
-            model.save_model(os.path.join(ctx.path, f"{SAVE_NAMESPACE}{TXT_EXT}"))
-        return ctx.tag
+    )
+
+    _model.info.options["sklearn_api"] = False
+    if any(
+        isinstance(model, _)
+        for _ in [
+            lgb.LGBMModel,
+            lgb.LGBMClassifier,
+            lgb.LGBMRegressor,
+            lgb.LGBMRanker,
+        ]
+    ):
+        joblib.dump(model, _model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}"))
+        _model.info.options["sklearn_api"] = True
+    else:
+        model.save_model(_model.path_of(f"{SAVE_NAMESPACE}{TXT_EXT}"))
+
+    _model.save(model_store)
+
+    return _model.tag
 
 
 class _LightGBMRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         infer_api_callback: str,
         booster_params: t.Optional[t.Dict[str, t.Union[str, int]]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         model_info, model_file, booster_params = _get_model_info(
             tag, booster_params, model_store
         )
@@ -214,7 +221,7 @@ class _LightGBMRunner(Runner):
             return False
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
     @property
@@ -245,7 +252,7 @@ class _LightGBMRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     infer_api_callback: str = "predict",
     *,
     booster_params: t.Optional[t.Dict[str, t.Union[str, int]]] = None,

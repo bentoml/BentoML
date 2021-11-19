@@ -11,6 +11,10 @@ unit:
   root_test_dir: "tests/unit"
   is_dir: true
   type: "unit"
+  dependencies:
+    - "pandas"
+    - "pydantic"
+    - "scikit-learn"
 
 general_features:
   <<: *tmpl

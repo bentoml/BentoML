@@ -26,7 +26,7 @@ yq_docker() {
 
 getval(){
   if check_cmd yq; then
-    yq eval "$@" "$CONFIG_FILE"
+    yq eval "$@" "$CONFIG_FILE";
   else
     yq_docker eval "$@" "$CONFIG_FILE"
   fi
@@ -143,11 +143,12 @@ main() {
 
   run_python pip install -U pip setuptools
 
-  if ! check_cmd docker; then
+  if ! docker info; then
+    target_dir="$HOME/.local/bin"
+
     mkdir -p "$target_dir"
     echo "$target_dir" >> "$PATH"
 
-    target_dir="$HOME/.local/bin"
     YQ_VERSION=4.14.2
     echo "Docker is not detected. Trying to install yq..."
     if ! check_cmd yq; then

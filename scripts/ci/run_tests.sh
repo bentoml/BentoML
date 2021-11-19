@@ -147,7 +147,7 @@ main() {
     target_dir="$HOME/.local/bin"
 
     mkdir -p "$target_dir"
-    echo "$target_dir" >> "$PATH"
+    export PATH=$target_dir:$PATH
 
     YQ_VERSION=4.14.2
     echo "Docker is not detected. Trying to install yq..."

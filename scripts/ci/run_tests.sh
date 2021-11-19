@@ -144,11 +144,10 @@ main() {
   run_python pip install -U pip setuptools
 
   if ! check_cmd docker; then
+    mkdir -p "$target_dir"
+    echo "$target_dir" >> "$PATH"
+
     target_dir="$HOME/.local/bin"
-    if [ -d "$target_dir" ]; then
-      mkdir -p "$target_dir"
-      echo "$target_dir" >> "$PATH"
-    fi
     YQ_VERSION=4.14.2
     echo "Docker is not detected. Trying to install yq..."
     if ! check_cmd yq; then

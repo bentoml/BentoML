@@ -117,9 +117,9 @@ def import_service(
         BentoMLContainer.model_store.set(model_store)
         try:
             module = importlib.import_module(module_name, package=working_dir)
-        except ImportError:
+        except ImportError as e:
             raise ImportServiceError(
-                f'Could not import module "{module_name}" in '
+                f'{e} happens when importing "{module_name}" in '
                 f'current path: {repr(sys.path)}. working dir: "{working_dir}", '
                 f'current dir: "{os.getcwd()}"'
             )

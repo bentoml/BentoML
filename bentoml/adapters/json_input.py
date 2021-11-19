@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from dataclasses import dataclass
 import json
 import traceback
 from typing import Iterable, Sequence, Tuple
@@ -27,7 +28,11 @@ ApiFuncArgs = Tuple[
 class JsonInput(StringInput):
     """JsonInput parses REST API request or CLI command into parsed_jsons(a list of
     json serializable object in python) and pass down to user defined API function
-
+    
+    Parameters
+    ----------
+    dataclass: dataclass - a Python dataclass to review json input.
+    
     Examples
     ----------
     Example services:
@@ -62,6 +67,9 @@ class JsonInput(StringInput):
           --data '{"text": "best movie ever"}' \\
           localhost:5000/predict
     """
+    def __init__(self, dataclass=None, http_input_example=None, **base_config):
+        super().__init__(http_input_example=http_input_example, **base_config)
+        self._dataclass = dataclass
 
     def extract_user_func_args(
         self, tasks: Iterable[InferenceTask[str]]
@@ -70,9 +78,13 @@ class JsonInput(StringInput):
         for task in tasks:
             try:
                 parsed_json = json.loads(task.data)
+                if self._dataclass:
+                    self._dataclass(**parsed_json)
                 json_inputs.append(parsed_json)
             except json.JSONDecodeError:
                 task.discard(http_status=400, err_msg="Not a valid JSON format")
+            except TypeError:
+                task.discard(http_status=400, err_msg=f"JSON does not contain the correct format {self._dataclass.__annotations__}")
             except Exception:  # pylint: disable=broad-except
                 err = traceback.format_exc()
                 task.discard(http_status=500, err_msg=f"Internal Server Error: {err}")

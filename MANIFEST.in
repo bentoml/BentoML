@@ -1,6 +1,3 @@
-include README.md
-include LICENSE
-
 # Patterns to exclude from any directory
 global-exclude *~
 global-exclude *.pyc
@@ -8,16 +5,15 @@ global-exclude *.pyo
 global-exclude .git
 global-exclude .ipynb_checkpoints
 global-exclude __pycache__
+global-exclude .*_cache
 
-# special files to include with PyPI distribution
-include versioneer.py
-include bentoml/_version.py
-include bentoml/saved_bundle/bentoml-init.sh
-include bentoml/saved_bundle/docker-entrypoint.sh
-graft bentoml/server/static_content
-graft bentoml/configuration
+# Included in PyPI distribution
+graft bentoml/_internal
+global-include bentoml/*.py
 
-prune e2e_tests
+# Prune directory not to be included in PyPI package
 prune tests
-prune benchmark
-prune yatai
+prune typings
+prune scripts
+prune hooks
+prune docs

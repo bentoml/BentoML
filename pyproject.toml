@@ -1,135 +1,42 @@
-[tool.poetry]
-name = "bentoml"
-version = "1.0.0"
-description = "A framework for machine learning model serving"
-readme = "README.md"
-homepage = "https://bentoml.ai/"
-repository = "https://github.com/bentoml/BentoML"
-documentation = "https://docs.bentoml.org/en/latest/"
-keywords = ["MLOps", "AI", "Bento"]
-classifiers = [
-        "License :: OSI Approved :: Apache Software License",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence",
-]
-authors = ["BentoML Team <contact@bentoml.ai>"]
-license = "Apache-2.0"
-include = ["bentoml/py.typed"]
-
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/bentoml/BentoML/issues"
-"BentoML User Slack Group" = "https://bit.ly/2N5IpbB"
-
-[tool.poetry.scripts]
-bentoml = 'bentoml._internal.cli:cli'
-
-[tool.poetry.dependencies]
-python = "^3.7"
-click = "^7.0"
-simple-di = "0.1.2"
-aiohttp = "*"
-deepmerge = "*"
-docker = "*"
-humanfriendly = "*"
-numpy = "*"
-packaging = "*"
-psutil = "*"
-requests = "*"
-schema = "*"
-chardet = "*"
-cloudpickle = "*"
-starlette = "*"
-python-multipart = "*"
-rich = "*"
-pyyaml = "*"
-cattrs = "*"
-attrs = ">=20"
-pathspec = "*"
-typing-extensions = "^3.7.4"
-aiofiles = "*"
-fs = "*"
-circus = "*"
-uvicorn = "*"
-python-json-logger = "*"
-Pillow = "^8.4.0"
-importlib-metadata = {version = "*", python = "<3.8"}
-opentracing = {version = "*", optional = true}
-py-zipkin = {version = "*", optional = true}
-jaeger-client = {version = "*", optional = true}
-prometheus-client = {version = "*", optional = true}
-recommonmark = {version = "*", optional = true}
-Sphinx = {version = "<=3.5.4", optional = true}
-sphinx-click = {version = "*", optional = true}
-sphinx-rtd-theme = {version = "*", optional = true}
-sphinxcontrib-fulltoc = {version = "*", optional = true}
-sphinxcontrib-spelling = {version = "*", optional = true}
-sphinx-copybutton = {version = "*", optional = true}
-pyenchant = {version = "*", optional = true}
-
-[tool.poetry.extras]
-model-server = ["prometheus-client", "jaeger-client", "py-zipkin", "opentracing"]
-docs = ["recommonmark", "sphinx", "sphinx-click", "sphinx_rtd_theme", "sphinxcontrib-fulltoc", "sphinxcontrib-spelling", "sphinx_copybutton", "pyenchant"]
-
-[tool.poetry.dev-dependencies]
-attrs = ">=21.1"
-black = "21.4b2"
-codecov = "*"
-coverage = "^4.4"
-flake8 = "^3.8"
-flake8-length = "^0.2"
-imageio = "^2.5"
-pandas = "*"
-pylint = "^2.9"
-pytest-cov = "^2.7"
-pytest = "^5.4"
-pytest-asyncio = "*"
-scikit-learn = "*"
-isort = "^5"
-GitPython = "^2"
-setuptools = "*"
-autoflake = "*"
-twine = "*"
-wheel = "*"
-pydantic = "*"
-types-click = "*"
-types-chardet = "*"
-types-setuptools = "*"
-types-PyYAML = "*"
-pyspark-stubs = "*"
-types-filelock = "*"
-
 [build-system]
-requires = ["poetry-core>=1.0.0", "setuptools", "wheel"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+  # sync with setup.py until we discard non-pep-517/518
+  "setuptools>=59.0",
+  "setuptools-scm[toml]>=6.2.3",
+  "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "bentoml/_version.py"
 
 [tool.black]
 line-length = 88
 exclude = '''
 (
   /(
-      \.eggs         # exclude a few common directories in the
-    | \.git          # root of the project
+      \.eggs
+    | \.git
     | \.tox
     | \.venv
     | _build
     | build
     | dist
+    | typings
   )/
   | bentoml/_version.py
-  | versioneer.py
 )
 '''
 
 [tool.pytest.ini_options]
-addopts = "-ra -p no:warnings"
+addopts = "-rfEX -a -p pytester no:warnings"
+python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests"]
+markers = ["gpus"]
 
 [tool.isort]
 profile = "black"
-skip_glob = ["third_party", "stubs", "typings"]
+skip_glob = ["typings"]
 
 [tool.pyright]
 include = ['bentoml/**/*']

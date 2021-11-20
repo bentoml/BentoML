@@ -6,7 +6,7 @@ global-exclude .ipynb_checkpoints
 global-exclude .*_cache
 global-exclude tests
 
-recursive-exclude __pycache__
+recursive-exclude bentoml __pycache__
 
 # Included in PyPI distribution
 graft bentoml/_internal

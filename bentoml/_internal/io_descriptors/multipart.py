@@ -1,4 +1,5 @@
 import typing as t
+from typing import TYPE_CHECKING
 
 from multipart.multipart import parse_options_header
 from starlette.requests import Request
@@ -11,8 +12,7 @@ from ..utils.formparser import (
 )
 from .base import IODescriptor
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     import numpy as np  # noqa
 
     from ..types import FileLike  # noqa

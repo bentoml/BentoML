@@ -2,6 +2,7 @@ import logging
 import os
 import typing as t
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 import attr
 import fs
@@ -22,7 +23,7 @@ from ..types import PathType, Tag
 from ..utils import cached_property
 from .env import BentoEnv
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ..models.store import ModelInfo, ModelStore
     from ..service import Service
     from ..service.inference_api import InferenceAPI

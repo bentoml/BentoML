@@ -1,6 +1,7 @@
 import logging
 import os
 import typing as t
+from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
@@ -12,8 +13,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 PYCARET_CONFIG = "pycaret_config"
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     import lightgbm
     import pandas as pd
     import sklearn

@@ -2,6 +2,7 @@ import functools
 import typing as t
 import zipfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import cloudpickle
 from simple_di import Provide, inject
@@ -17,8 +18,7 @@ _ModelType = t.TypeVar(
     "_ModelType", bound=t.Union["torch.nn.Module", "torch.jit.ScriptModule"]
 )
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     from ._internal.models.store import ModelStore, StoreCtx
 
 try:

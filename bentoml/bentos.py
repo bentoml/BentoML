@@ -4,6 +4,7 @@ User facing python APIs for managing local bentos and build new bentos
 import logging
 import os
 import typing as t
+from typing import TYPE_CHECKING
 
 import fs
 from simple_di import Provide, inject
@@ -13,7 +14,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import load
 from ._internal.types import Tag
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ._internal.bento import BentoStore
     from ._internal.models.store import ModelStore
 

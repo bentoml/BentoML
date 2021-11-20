@@ -1,5 +1,6 @@
 import logging
 import typing as t
+from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -10,7 +11,7 @@ from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 
-if t.TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
 else:
     pd = LazyLoader("pd", globals(), "pandas")

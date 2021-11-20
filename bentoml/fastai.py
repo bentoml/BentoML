@@ -1,5 +1,6 @@
 import os
 import typing as t
+from typing import TYPE_CHECKING
 
 import bentoml._internal.constants as _const
 
@@ -15,8 +16,7 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     " then `pip install fastai`. Refers to"
     " https://github.com/fastai/fastai#installing",
 )
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     import fastai
     import fastai.basics as basics
     import fastai.learner as learner

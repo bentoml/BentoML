@@ -7,11 +7,12 @@ import typing as t
 import zipfile
 import zipimport
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 import importlib_metadata
 from packaging.requirements import Requirement
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ..service import Service
 
 EPP_NO_ERROR = 0

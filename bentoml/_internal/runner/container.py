@@ -13,7 +13,7 @@ BatchType = t.TypeVar("BatchType")
 
 IndexType = t.Union[None, int]
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import numpy as tnp  # noqa
     import pandas as pd
 

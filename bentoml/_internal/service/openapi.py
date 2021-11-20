@@ -1,6 +1,7 @@
 import typing as t
+from typing import TYPE_CHECKING
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ..io_descriptors import IODescriptor
     from . import Service
 

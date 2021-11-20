@@ -5,6 +5,7 @@ import re
 import typing as t
 import uuid
 from distutils.dir_util import copy_tree
+from typing import TYPE_CHECKING
 
 import numpy as np
 from simple_di import Provide, inject
@@ -21,8 +22,7 @@ from ._internal.utils.tensorflow import (
 )
 from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     from _internal.models.store import ModelStore, StoreCtx
 
 try:

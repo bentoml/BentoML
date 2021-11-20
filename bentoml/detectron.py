@@ -1,5 +1,6 @@
 import os
 import typing as t
+from typing import TYPE_CHECKING
 
 import numpy as np
 from simple_di import Provide, inject
@@ -9,7 +10,7 @@ from ._internal.models import PTH_EXT, SAVE_NAMESPACE, YAML_EXT
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ._internal.models.store import ModelStore, StoreCtx
 try:
     import detectron2

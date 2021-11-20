@@ -9,6 +9,7 @@ import typing as t
 from contextlib import contextmanager
 from importlib import import_module
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import importlib_metadata
 import requests
@@ -22,9 +23,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 logger = logging.getLogger(__name__)
 
-if t.TYPE_CHECKING:  # pragma: no cover # noqa
-    # pylint: disable=unused-import
-    from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager
+if TYPE_CHECKING:  # pragma: no cover
     from transformers import (
         FlaxPreTrainedModel,
         PretrainedConfig,
@@ -37,6 +36,7 @@ if t.TYPE_CHECKING:  # pragma: no cover # noqa
     from transformers.models.auto.auto_factory import _BaseAutoModelClass
 
     from ._internal.models.store import ModelStore, StoreCtx
+
 try:
     import transformers
     from transformers import AutoConfig, AutoTokenizer, Pipeline
@@ -67,14 +67,12 @@ _hfhub_exc = """\
 Instruction: `pip install huggingface_hub`
 """
 
-_PV = t.TypeVar("_PV")
-_ModelType = t.TypeVar(
-    "_ModelType",
-    bound=t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
-)
-_TokenizerType = t.TypeVar(
-    "_TokenizerType", bound=t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]
-)
+_T = t.TypeVar("_T")
+_F = t.TypeVar("_F", bound=t.Callable[..., t.Any])
+_T_co = t.TypeVar("_T_co", covariant=True)
+
+_ModelType = t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"]
+_TokenizerType = t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]
 
 _FRAMEWORK_ALIASES: t.Dict[str, str] = {"pt": "pytorch", "tf": "tensorflow"}
 
@@ -99,6 +97,11 @@ _AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
     "speech-seq2seq": "ForSpeechSeq2Seq",
     "object-detection": "ForObjectDetection",
 }
+
+
+class _GeneratorContextManager(t.ContextManager[_T_co]):
+    def __call__(self, func: _F) -> _F:
+        ...
 
 
 def _load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
@@ -338,7 +341,7 @@ def _download_from_hub(
             return
 
         _tmp_file_manager: t.Union[
-            t.Callable[[], "_GeneratorContextManager[t.BinaryIO]"],
+            t.Callable[[], _GeneratorContextManager[t.BinaryIO]],
             t.Callable[[t.Any, t.Any], t.IO[str]],
         ]
 
@@ -730,7 +733,7 @@ class _TransformersRunner(Runner):
         # pipeline arguments
         self._feature_extractor = pipeline_kwargs.pop(
             "feature_extractor", None
-        )  # type: t.Optional[t.Union[str, "PreTrainedFeatureExtractor"]]
+        )  # type: t.Optional[t.Union[str, PreTrainedFeatureExtractor]]
         self._revision = pipeline_kwargs.pop("revision", None)  # type: t.Optional[str]
         self._use_fast = pipeline_kwargs.pop("use_fast", True)  # type: bool
         self._use_auth_token = pipeline_kwargs.pop(
@@ -784,8 +787,8 @@ class _TransformersRunner(Runner):
         )
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Union[_PV, t.List[_PV]]) -> t.Union[_PV, t.List[_PV]]:  # type: ignore[override]  # noqa
-        res = self._pipeline(input_data)  # type: t.Union[_PV, t.List[_PV]]
+    def _run_batch(self, input_data: t.Union[_T, t.List[_T]]) -> t.Union[_T, t.List[_T]]:  # type: ignore[override]  # noqa
+        res = self._pipeline(input_data)  # type: t.Union[_T, t.List[_T]]
         return res
 
 
@@ -820,6 +823,8 @@ def load_runner(
              for more information.
         framework (`str`, default to `pt`):
             Given frameworks supported by transformers: PyTorch, Tensorflow
+        device (`int`, `optional`, default to `-1`):
+            Default GPU devices to be used by runner.
         lm_head (`str`, default to `causal`):
             Language model head for your model. For most usecase causal are applied.
              Refers to huggingface.co/transformers for more details on which type of

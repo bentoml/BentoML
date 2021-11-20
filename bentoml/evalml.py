@@ -1,5 +1,6 @@
 import os
 import typing as t
+from typing import TYPE_CHECKING
 
 import bentoml._internal.constants as _const
 
@@ -13,8 +14,7 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     inst="`pip install evalml --no-dependencies`",
 )
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     import evalml
     import evalml.pipelines as pipelines
 else:

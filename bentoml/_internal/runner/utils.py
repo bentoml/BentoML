@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 _drv = None
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from _ctypes import _SimpleCData
     from aiohttp import MultipartWriter
 

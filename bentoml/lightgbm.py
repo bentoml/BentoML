@@ -1,5 +1,6 @@
 import os
 import typing as t
+from typing import TYPE_CHECKING
 
 import joblib
 from simple_di import Provide, inject
@@ -10,8 +11,7 @@ from ._internal.models.store import StoreCtx
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     import lightgbm as lgb
     import numpy as np
     from _internal.models.store import ModelInfo, ModelStore

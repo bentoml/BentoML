@@ -13,7 +13,7 @@ from ...exceptions import BentoMLConfigException
 from ..utils import get_free_port, validate_or_create_dir
 from . import expand_env_var
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from pyarrow._plasma import PlasmaClient
 
     from ..server.metrics.prometheus import PrometheusClient

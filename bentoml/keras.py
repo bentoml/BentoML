@@ -1,6 +1,7 @@
 import functools
 import typing as t
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import cloudpickle
 import numpy as np
@@ -10,8 +11,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE
 from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     from _internal.models.store import ModelStore, StoreCtx
     from mypy.typeshed.stdlib.contextlib import _GeneratorContextManager  # noqa
     from tensorflow.python.client.session import BaseSession

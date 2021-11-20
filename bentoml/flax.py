@@ -1,4 +1,5 @@
 import typing as t
+from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
@@ -6,8 +7,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner import Runner
 from .exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     from _internal.models.store import ModelStore
 
 try:

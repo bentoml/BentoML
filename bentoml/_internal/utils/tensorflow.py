@@ -1,10 +1,10 @@
 import logging
 import typing as t
+from typing import TYPE_CHECKING
 
 from ...exceptions import MissingDependencyException
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     from tensorflow.python.framework.type_spec import TypeSpec
 
 logger = logging.getLogger(__name__)

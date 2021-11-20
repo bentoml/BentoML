@@ -1,6 +1,7 @@
 import functools
 import typing as t
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
@@ -16,8 +17,7 @@ Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
 Then run `pip install pytorch_lightning`
 """
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     from ._internal.models.store import ModelStore, StoreCtx
 
 try:

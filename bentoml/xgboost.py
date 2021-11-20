@@ -1,5 +1,6 @@
 import os
 import typing as t
+from typing import TYPE_CHECKING
 
 import numpy as np
 from simple_di import Provide, inject
@@ -9,8 +10,7 @@ from ._internal.models import JSON_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
 
     from ._internal.models.store import ModelInfo, ModelStore, StoreCtx

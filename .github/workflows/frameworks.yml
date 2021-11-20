@@ -885,22 +885,18 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Get pip cache dir
-        id: cache-dir
-        run: echo ::set-output name=dir::$(pip cache dir)
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: ${{ steps.cache-dir.outputs.dir }}
+          path: ~/.cache/pip
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
         run: timeout 10s pip --version || rm -rf $CACHE_DIR
         env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
+          CACHE_DIR: ~/.cache/pip
 
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
@@ -912,7 +908,7 @@ jobs:
           python -m pip install tensorflow==2.2.0 pandas tf2onnx pyyaml
           export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
           export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
-          pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=setup.cfg --cov-report=xml:"onnxmlir.xml"
+          python -m pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=setup.cfg --cov-report=xml:"onnxmlir.xml"
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnxmlir == 'true' }}

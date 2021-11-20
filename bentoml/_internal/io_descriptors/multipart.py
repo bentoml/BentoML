@@ -6,10 +6,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from ...exceptions import BentoMLException, InvalidArgument
-from ..utils.formparser import (
-    concat_to_multipart_responses,
-    populate_multipart_requests,
-)
+from ..utils.formparser import (concat_to_multipart_responses,
+                                populate_multipart_requests)
 from .base import IODescriptor
 
 if TYPE_CHECKING:  # pragma: no cover

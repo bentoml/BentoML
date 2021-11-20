@@ -2,7 +2,8 @@ import psutil
 import pytest
 
 import bentoml.spacy
-from tests.integration.frameworks.spacy.test_spacy_impl import spacy_model  # noqa
+from tests.integration.frameworks.spacy.test_spacy_impl import \
+    spacy_model  # noqa
 from tests.integration.frameworks.spacy.test_spacy_impl import test_json
 
 MODEL_NAME = __name__.split(".")[-1]

@@ -12,9 +12,8 @@ def initialize_tracer(
     service_name, async_transport=False, host=None, port=0, sample_rate=1.0
 ):
     from jaeger_client.config import Config  # pylint: disable=E0401
-    from opentracing.scope_managers.asyncio import (  # pylint: disable=E0401
-        AsyncioScopeManager,
-    )
+    from opentracing.scope_managers.asyncio import \
+        AsyncioScopeManager  # pylint: disable=E0401
 
     if sample_rate == 1.0:
         # sample all traces
@@ -62,7 +61,8 @@ class JaegerTracer(Tracer):
         """
         Opentracing jaeger_tracer function
         """
-        from jaeger_client.constants import TRACE_ID_HEADER  # pylint: disable=E0401
+        from jaeger_client.constants import \
+            TRACE_ID_HEADER  # pylint: disable=E0401
         from opentracing import Format  # pylint: disable=E0401
 
         jaeger_tracer = initialize_tracer(

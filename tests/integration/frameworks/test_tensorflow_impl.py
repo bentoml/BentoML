@@ -7,11 +7,9 @@ import tensorflow as tf
 import tensorflow_hub as hub
 
 import bentoml.tensorflow
-from tests.utils.frameworks.tensorflow_utils import (
-    KerasSequentialModel,
-    NativeModel,
-    NativeRaggedModel,
-)
+from tests.utils.frameworks.tensorflow_utils import (KerasSequentialModel,
+                                                     NativeModel,
+                                                     NativeRaggedModel)
 from tests.utils.helpers import assert_have_file_extension
 
 MODEL_NAME = __name__.split(".")[-1]

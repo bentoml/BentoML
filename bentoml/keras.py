@@ -8,7 +8,8 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE
+from ._internal.models import (H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT,
+                               SAVE_NAMESPACE)
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -18,7 +19,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 try:
     import tensorflow as tf
-
     # TODO(aarnphm): separation of Keras and Tensorflow
     # https://twitter.com/fchollet/status/1404967230048149506?lang=en
     import tensorflow.keras as tfk

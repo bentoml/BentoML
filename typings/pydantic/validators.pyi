@@ -6,30 +6,11 @@ from collections import OrderedDict
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum, IntEnum
-from ipaddress import (
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-)
+from ipaddress import (IPv4Address, IPv4Interface, IPv4Network, IPv6Address,
+                       IPv6Interface, IPv6Network)
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Deque,
-    Dict,
-    FrozenSet,
-    Generator,
-    List,
-    Pattern,
-    Set,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import (TYPE_CHECKING, Any, Callable, Deque, Dict, FrozenSet,
+                    Generator, List, Pattern, Set, Tuple, Type, Union)
 from uuid import UUID
 
 from typing_extensions import Literal

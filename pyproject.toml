@@ -34,6 +34,14 @@ python_files = ["test_*.py", "*_test.py"]
 testpaths = ["tests"]
 markers = ["gpus"]
 
+[tool.pylint.master]
+ignore =".ipynb_checkpoints","typings"
+unsafe-load-any-extension="no"
+extension-pkg-whitelist="numpy,tensorflow,torch,paddle,keras"
+
+[tool.pylint.messages_control]
+disable = "C0103,C0200,C0301,C0302,C0303,C0330,R0801,R0902,R0903,R0904,R0911,R0912,R0913,R0914,W0621,W0622,W0702,W0703,W1116,W9012,W9016"
+
 [tool.isort]
 profile = "black"
 skip_glob = ["typings"]

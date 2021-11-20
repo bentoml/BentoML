@@ -26,15 +26,10 @@ try:
     import spacy
     import spacy.cli
     from spacy.util import SimpleFrozenDict, SimpleFrozenList
-    from thinc.api import (
-        prefer_gpu,
-        require_cpu,
-        require_gpu,
-        set_active_gpu,
-        set_gpu_allocator,
-        use_pytorch_for_gpu_memory,
-        use_tensorflow_for_gpu_memory,
-    )
+    from thinc.api import (prefer_gpu, require_cpu, require_gpu,
+                           set_active_gpu, set_gpu_allocator,
+                           use_pytorch_for_gpu_memory,
+                           use_tensorflow_for_gpu_memory)
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

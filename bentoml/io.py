@@ -1,14 +1,6 @@
-from ._internal.io_descriptors import (
-    JSON,
-    File,
-    Image,
-    IODescriptor,
-    Multipart,
-    NumpyNdarray,
-    PandasDataFrame,
-    PandasSeries,
-    Text,
-)
+from ._internal.io_descriptors import (JSON, File, Image, IODescriptor,
+                                       Multipart, NumpyNdarray,
+                                       PandasDataFrame, PandasSeries, Text)
 
 __all__ = [
     "File",

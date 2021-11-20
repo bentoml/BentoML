@@ -44,7 +44,8 @@ def _set_http_headers(attrs, headers):
 
 
 def _make_child_attrs(attrs):
-    from py_zipkin.util import generate_random_64bit_string  # pylint: disable=E0401
+    from py_zipkin.util import \
+        generate_random_64bit_string  # pylint: disable=E0401
     from py_zipkin.zipkin import ZipkinAttrs  # pylint: disable=E0401
 
     return ZipkinAttrs(
@@ -57,7 +58,8 @@ def _make_child_attrs(attrs):
 
 
 def _make_new_attrs(sample_rate=1.0):
-    from py_zipkin.util import generate_random_64bit_string  # pylint: disable=E0401
+    from py_zipkin.util import \
+        generate_random_64bit_string  # pylint: disable=E0401
     from py_zipkin.zipkin import ZipkinAttrs  # pylint: disable=E0401
 
     return ZipkinAttrs(
@@ -73,7 +75,8 @@ def get_zipkin_tracer(server_url):
     logger.debug(
         f"Initializing global zipkin tracer for collector endpoint: {server_url}"
     )
-    from py_zipkin.transport import BaseTransportHandler  # pylint: disable=E0401
+    from py_zipkin.transport import \
+        BaseTransportHandler  # pylint: disable=E0401
 
     class HttpTransport(BaseTransportHandler):
         def __init__(self, server_url):

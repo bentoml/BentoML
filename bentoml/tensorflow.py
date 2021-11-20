@@ -13,13 +13,10 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner import Runner
 from ._internal.types import PathType
-from ._internal.utils.tensorflow import (
-    cast_tensor_by_spec,
-    get_arg_names,
-    get_input_signatures,
-    get_restored_functions,
-    pretty_format_restored_model,
-)
+from ._internal.utils.tensorflow import (cast_tensor_by_spec, get_arg_names,
+                                         get_input_signatures,
+                                         get_restored_functions,
+                                         pretty_format_restored_model)
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover

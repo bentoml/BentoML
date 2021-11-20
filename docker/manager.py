@@ -15,22 +15,9 @@ from absl import app, logging
 from dotenv import load_dotenv
 from jinja2 import Environment
 from requests import Session
-from utils import (
-    FLAGS,
-    ColoredFormatter,
-    cached_property,
-    flatten,
-    get_data,
-    get_nested,
-    load_manifest_yaml,
-    mapfunc,
-    maxkeys,
-    mkdir_p,
-    pprint,
-    set_data,
-    sprint,
-    walk,
-)
+from utils import (FLAGS, ColoredFormatter, cached_property, flatten, get_data,
+                   get_nested, load_manifest_yaml, mapfunc, maxkeys, mkdir_p,
+                   pprint, set_data, sprint, walk)
 
 from docker import DockerClient
 from docker.errors import APIError, BuildError, ImageNotFound

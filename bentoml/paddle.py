@@ -33,7 +33,8 @@ if TYPE_CHECKING:  # pragma: no cover
     import paddlehub as hub
     import paddlehub.module.module as module
     from _internal.models.store import ModelInfo, ModelStore, StoreCtx
-    from paddle.fluid.dygraph.dygraph_to_static.program_translator import StaticFunction
+    from paddle.fluid.dygraph.dygraph_to_static.program_translator import \
+        StaticFunction
     from paddle.static import InputSpec
 
 try:

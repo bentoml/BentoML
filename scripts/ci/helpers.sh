@@ -14,7 +14,6 @@ FAIL() {
 
 set_on_failed_callback() {
     set -E
-    # shellcheck disable=SC2064
     trap "$*" ERR
 }
 
@@ -24,7 +23,8 @@ check_cmd() {
 
 need_cmd() {
     if ! check_cmd "$1"; then
-        FAIL "need '$1' (command not found)"
+        FAIL "need $1 (command not found)"
+        exit 1
     fi
 }
 

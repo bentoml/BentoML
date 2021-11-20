@@ -4,13 +4,13 @@ template: &tmpl
   override_name_or_path:
   dependencies: []
   external_scripts:
-  type: "integration"
+  type_tests: "integration"
 
 unit:
   <<: *tmpl
   root_test_dir: "tests/unit"
   is_dir: true
-  type: "unit"
+  type_tests: "unit"
   dependencies:
     - "pandas"
     - "pydantic"
@@ -20,7 +20,7 @@ general_features:
   <<: *tmpl
   root_test_dir: "tests/e2e/bento_server_general_features"
   is_dir: true
-  type: "e2e"
+  type_tests: "e2e"
   dependencies:
     - "pandas"
     - "pydantic"

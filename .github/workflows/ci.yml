@@ -45,6 +45,9 @@ jobs:
 
   codestyle_check:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     needs:
       - diff
 
@@ -75,14 +78,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Bootstrap poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python -
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
 
       - name: Cache pip dependencies
         uses: actions/cache@v2

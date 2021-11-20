@@ -6,26 +6,12 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from typing import Type as TypingType
 from typing import Union
 
-from mypy.nodes import (
-    Argument,
-    AssignmentStmt,
-    ClassDef,
-    Context,
-    FuncBase,
-    JsonDict,
-    NameExpr,
-    SymbolNode,
-    TypeInfo,
-    Var,
-)
+from mypy.nodes import (Argument, AssignmentStmt, ClassDef, Context, FuncBase,
+                        JsonDict, NameExpr, SymbolNode, TypeInfo, Var)
 from mypy.options import Options
-from mypy.plugin import (
-    CheckerPluginInterface,
-    ClassDefContext,
-    MethodContext,
-    Plugin,
-    SemanticAnalyzerPluginInterface,
-)
+from mypy.plugin import (CheckerPluginInterface, ClassDefContext,
+                         MethodContext, Plugin,
+                         SemanticAnalyzerPluginInterface)
 from mypy.types import Type, TypeVarDef
 
 CONFIGFILE_KEY = ...

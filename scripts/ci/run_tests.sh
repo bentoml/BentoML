@@ -6,38 +6,38 @@ dname=$(dirname "$0")
 
 source "$dname/helpers.sh"
 
-set_on_failed_callback "err=1"
+set_on_failed_callback "ERR=1"
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
-err=0
-use_poetry=0
+ERR=0
+USE_POETRY=0
 
 PYTESTARGS=()
 CONFIG_FILE="$dname/config.yml"
-REQ_FILE="/tmp/rq.txt"
+REQ_FILE="/tmp/additional-requirements.txt"
 
 cd "$GIT_ROOT" || exit
 
-yq_docker() {
-  need_cmd docker
-  docker run --rm -u "$(id -u)":"$(id -g)" -v "$GIT_ROOT":/bentoml bentoml/checker:1.0 yq "$@"
-}
-
-getval(){
+run_yq() {
   if check_cmd yq; then
-    yq eval "$@" "$CONFIG_FILE";
+    yq "$@";
   else
-    yq_docker eval "$@" "$CONFIG_FILE"
+    need_cmd docker;
+    docker run --rm -u "$(id -u)":"$(id -g)" -v "$GIT_ROOT":/bentoml bentoml/checker:1.0 yq "$@";
   fi
 }
 
+getval(){
+  run_yq eval "$@" "$CONFIG_FILE";
+}
+
 run_python(){
-  if [ "$use_poetry" -eq 1 ]; then
-    need_cmd poetry
-    poetry run python -m "$@"
+  if [ "$USE_POETRY" -eq 1 ]; then
+    need_cmd poetry;
+    poetry run python -m "$@";
   else
-    python -m "$@"
+    python -m "$@";
   fi
 }
 
@@ -48,7 +48,7 @@ validate_yaml() {
     exit 1
   fi
 
-  if ! (yq_docker e --exit-status 'tag == "!!map" or tag== "!!seq"' "$CONFIG_FILE"> /dev/null); then
+  if ! (run_yq e --exit-status 'tag == "!!map" or tag== "!!seq"' "$CONFIG_FILE"> /dev/null); then
     FAIL "Invalid YAML file"
     exit 1
   fi
@@ -89,7 +89,7 @@ parse_args() {
         shift;;
       --use-poetry)
         need_cmd poetry;
-        use_poetry=1;
+        USE_POETRY=1;
         shift;;
       *)
         ;;
@@ -106,13 +106,13 @@ parse_config() {
   is_dir=
   override_name_or_path=
   external_scripts=
-  type=
+  type_tests=
 
   test_dir=$(getval ".$target.root_test_dir")
   is_dir=$(getval ".$target.is_dir")
   override_name_or_path=$(getval ".$target.override_name_or_path")
   external_scripts=$(getval ".$target.external_scripts")
-  type=$(getval ".$target.type")
+  type_tests=$(getval ".$target.type_tests")
 
   # processing file name
   if [[ "$override_name_or_path" != "" ]]; then
@@ -126,11 +126,7 @@ parse_config() {
   fi
 
   # processing dependencies
-  if check_cmd yq; then
-    yq eval '.'"$target"'.dependencies[]' "$CONFIG_FILE" >"$REQ_FILE" || exit
-  else
-    yq_docker eval '.'"$target"'.dependencies[]' "$CONFIG_FILE" >"$REQ_FILE" || exit
-  fi
+  run_yq eval '.'"$target"'.dependencies[]' "$CONFIG_FILE" >"$REQ_FILE" || exit
 }
 
 
@@ -190,7 +186,7 @@ main() {
     eval "$external_scripts" || exit 1
   fi
 
-  if [ "$type" == 'e2e' ]; then
+  if [ "$type_tests" == 'e2e' ]; then
     cd "$GIT_ROOT"/"$test_dir"/"$fname" || exit 1
     path="."
   else
@@ -198,16 +194,16 @@ main() {
   fi
 
   if ! (run_python pytest "$path" "${OPTS[@]}"); then
-    err=1
+    ERR=1
   fi
 
   # Return non-zero if pytest failed
-  if ! test $err = 0; then
-    FAIL "$type tests failed!"
+  if ! test $ERR = 0; then
+    FAIL "$type_tests tests failed!"
     exit 1
   fi
 
-  PASS "$type tests passed!"
+  PASS "$type_tests tests passed!"
 }
 
 main "$@" || exit 1

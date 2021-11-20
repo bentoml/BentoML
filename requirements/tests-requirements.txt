@@ -1,5 +1,4 @@
 # Tests dependencies
-autoflake
 black==21.4b2
 codecov
 coverage>=4.4

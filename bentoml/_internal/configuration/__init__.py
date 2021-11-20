@@ -44,7 +44,7 @@ BENTOML_VERSION: str = importlib_metadata.version("bentoml")
 def is_pip_installed_bentoml():
     is_installed_package = hasattr(version_mod, "version_json")
     is_tagged = not BENTOML_VERSION.startswith("0+untagged")
-    is_clean = not version_mod.get_versions()["dirty"]
+    is_clean = not version_mod.version_tuple[-1].split(".")[-1].startswith("d")
     is_modified = BENTOML_VERSION != BENTOML_VERSION.split("+")[0]
     return is_installed_package and is_tagged and is_clean and is_modified
 

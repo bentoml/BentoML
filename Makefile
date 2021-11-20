@@ -7,6 +7,7 @@ CHECKER_IMG ?= bentoml/checker:1.0
 BASE_ARGS := -i --rm -u $(shell id -u):$(shell id -g) -v $(GIT_ROOT):/bentoml
 GPU_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
 USE_GPU ?=false
+USE_VERBOSE ?=false
 
 ifeq ($(USE_GPU),true)
 CNTR_ARGS := $(BASE_ARGS) $(GPU_ARGS) $(CHECKER_IMG)
@@ -65,7 +66,11 @@ tests-%:
 	$(eval type :=$(subst tests-, , $@))
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), --$(t)))
+ifeq ($(USE_VERBOSE),true)
 	./scripts/ci/run_tests.sh -v $(type) $(__positional)
+else
+	./scripts/ci/run_tests.sh $(type) $(__positional)
+endif
 
 
 install-local: ## Install BentoML in editable mode

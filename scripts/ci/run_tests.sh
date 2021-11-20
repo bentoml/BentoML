@@ -172,7 +172,7 @@ main() {
   #  validate_yaml
   parse_config "$argv"
 
-  OPTS=(--cov=bentoml --cov-config=.coveragerc --cov-report=xml:"$target.xml")
+  OPTS=(--cov=bentoml --cov-config=setup.cfg --cov-report=xml:"$target.xml")
 
   if [ -n "$PYTESTARGS" ]; then
     OPTS=( "${OPTS[@]}" "${PYTESTARGS[@]}" )

@@ -4,7 +4,7 @@ from ._internal.configuration import load_global_config  # noqa: E402
 # Inject dependencies and configurations
 load_global_config()
 
-from ._internal.log import configure_logging
+from ._internal.log import configure_logging  # noqa: E402
 
 configure_logging()
 

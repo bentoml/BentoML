@@ -36,11 +36,13 @@ jobs:
               - scripts/ci/config.yml
             bentoml:
               - *related
+              - requirements/tests-requirements.txt
               - "bentoml/**"
               - "tests/**"
               - "docker/**"
             docs:
               - *related
+              - requirements/docs-requirements.txt
               - "docs/**"
 
   codestyle_check:
@@ -103,8 +105,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install .
-          pip install -r requirements/docs-requirements.txt
+          pip install . -r requirements/docs-requirements.txt
 
       - name: Install libenchant
         run: |
@@ -170,8 +171,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install .
-          pip install -r requirements/tests-requirements.txt
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run unit tests
         run: make tests-unit
@@ -245,8 +245,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install .
-          pip install -r requirements/tests-requirements.txt
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-general_features

@@ -52,7 +52,10 @@ jobs:
         with:
           filters: |
             dependencies:
+              - setup.cfg
               - pyproject.toml
+              - scripts/ci/config.yml
+              - requirements/tests-requirements.txt
             related: &related
               - .github/workflows/frameworks.yml
               - scripts/ci/framework_integration_tests.sh
@@ -184,36 +187,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-catboost
+        run: make tests-catboost
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.catboost == 'true' }}
         uses: codecov/codecov-action@v2
@@ -240,36 +240,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-detectron2
+        run: make tests-detectron2
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.detectron2 == 'true' }}
         uses: codecov/codecov-action@v2
@@ -296,36 +293,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-easyocr
+        run: make tests-easyocr
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.easyocr == 'true' }}
         uses: codecov/codecov-action@v2
@@ -353,36 +347,33 @@ jobs:
 #        id: full-python-version
 #        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 #
-#      - name: Bootstrap poetry
+#      - name: Get pip cache dir
+#        id: cache-dir
 #        run: |
-#          curl -sSL https://install.python-poetry.org | python -
-#
-#      - name: Update PATH
-#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-#
-#      - name: Configure poetry
-#        run: poetry config virtualenvs.in-project true
+#          echo "::set-output name=dir::$(pip cache dir)"
 #
 #      - name: Cache pip dependencies
 #        uses: actions/cache@v2
 #        id: cache-pip
 #        with:
-#          path: .venv
-#          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-#          restore-keys: |
-#            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+#          path: ${{ steps.cache-dir.outputs.dir }}
+#          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 #
 #      - name: Ensure cache is healthy
 #        if: steps.cache-pip.outputs.cache-hit == 'true'
-#        run: timeout 10s poetry run pip --version || rm -rf .venv
+#        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+#        env:
+#          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 #
 #      - name: Install dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-#        run: poetry install
+#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+#        run: |
+#          pip install . -r requirements/tests-requirements.txt
 #
 #      - name: Run tests and generate coverage report
-#        run: USE_POETRY=true make tests-evalml
+#        run: make tests-evalml
 #        shell: bash
+#
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.evalml == 'true' }}
 #        uses: codecov/codecov-action@v2
@@ -410,36 +401,33 @@ jobs:
 #        id: full-python-version
 #        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 #
-#      - name: Bootstrap poetry
+#      - name: Get pip cache dir
+#        id: cache-dir
 #        run: |
-#          curl -sSL https://install.python-poetry.org | python -
-#
-#      - name: Update PATH
-#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-#
-#      - name: Configure poetry
-#        run: poetry config virtualenvs.in-project true
+#          echo "::set-output name=dir::$(pip cache dir)"
 #
 #      - name: Cache pip dependencies
 #        uses: actions/cache@v2
 #        id: cache-pip
 #        with:
-#          path: .venv
-#          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-#          restore-keys: |
-#            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+#          path: ${{ steps.cache-dir.outputs.dir }}
+#          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 #
 #      - name: Ensure cache is healthy
 #        if: steps.cache-pip.outputs.cache-hit == 'true'
-#        run: timeout 10s poetry run pip --version || rm -rf .venv
+#        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+#        env:
+#          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 #
 #      - name: Install dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-#        run: poetry install
+#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+#        run: |
+#          pip install . -r requirements/tests-requirements.txt
 #
 #      - name: Run tests and generate coverage report
-#        run: USE_POETRY=true make tests-fastai
+#        run: make tests-fastai
 #        shell: bash
+#
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.fastai == 'true' }}
 #        uses: codecov/codecov-action@v2
@@ -467,36 +455,33 @@ jobs:
 #        id: full-python-version
 #        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 #
-#      - name: Bootstrap poetry
+#      - name: Get pip cache dir
+#        id: cache-dir
 #        run: |
-#          curl -sSL https://install.python-poetry.org | python -
-#
-#      - name: Update PATH
-#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-#
-#      - name: Configure poetry
-#        run: poetry config virtualenvs.in-project true
+#          echo "::set-output name=dir::$(pip cache dir)"
 #
 #      - name: Cache pip dependencies
 #        uses: actions/cache@v2
 #        id: cache-pip
 #        with:
-#          path: .venv
-#          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-#          restore-keys: |
-#            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+#          path: ${{ steps.cache-dir.outputs.dir }}
+#          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 #
 #      - name: Ensure cache is healthy
 #        if: steps.cache-pip.outputs.cache-hit == 'true'
-#        run: timeout 10s poetry run pip --version || rm -rf .venv
+#        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+#        env:
+#          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 #
 #      - name: Install dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-#        run: poetry install
+#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+#        run: |
+#          pip install . -r requirements/tests-requirements.txt
 #
 #      - name: Run tests and generate coverage report
-#        run: USE_POETRY=true make tests-fasttext
+#        run: make tests-fasttext
 #        shell: bash
+#
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.fasttext == 'true' }}
 #        uses: codecov/codecov-action@v2
@@ -525,36 +510,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-gluon
+        run: make tests-gluon
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.gluon == 'true' }}
         uses: codecov/codecov-action@v2
@@ -581,36 +563,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-h2o
+        run: make tests-h2o
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.h2o == 'true' }}
         uses: codecov/codecov-action@v2
@@ -637,36 +616,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-keras_tf1
+        run: make tests-keras_tf1
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf1 == 'true' }}
         uses: codecov/codecov-action@v2
@@ -693,36 +669,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-keras_tf2
+        run: make tests-keras_tf2
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.keras_tf2 == 'true' }}
         uses: codecov/codecov-action@v2
@@ -749,36 +722,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-lightgbm
+        run: make tests-lightgbm
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.lightgbm == 'true' }}
         uses: codecov/codecov-action@v2
@@ -805,36 +775,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-mlflow
+        run: make tests-mlflow
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.mlflow == 'true' }}
         uses: codecov/codecov-action@v2
@@ -861,36 +828,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-onnx
+        run: make tests-onnx
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnx == 'true' }}
         uses: codecov/codecov-action@v2
@@ -919,42 +883,35 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          apt-get update && apt-get install curl -y
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: |
-          export PATH="/root/.local/bin:${PATH}"
-          poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: |
-          poetry run python -m pip install tensorflow==2.2.0 pandas tf2onnx pyyaml
+          python -m pip install tensorflow==2.2.0 pandas tf2onnx pyyaml
           export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
           export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
-          poetry run pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=.coveragerc --cov-report=xml:"onnxmlir.xml"
+          pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=setup.cfg --cov-report=xml:"onnxmlir.xml"
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnxmlir == 'true' }}
@@ -982,36 +939,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-paddle
+        run: make tests-paddle
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.paddle == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1038,36 +992,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-pycaret
+        run: make tests-pycaret
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pycaret == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1095,36 +1046,33 @@ jobs:
 #        id: full-python-version
 #        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 #
-#      - name: Bootstrap poetry
+#      - name: Get pip cache dir
+#        id: cache-dir
 #        run: |
-#          curl -sSL https://install.python-poetry.org | python -
-#
-#      - name: Update PATH
-#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-#
-#      - name: Configure poetry
-#        run: poetry config virtualenvs.in-project true
+#          echo "::set-output name=dir::$(pip cache dir)"
 #
 #      - name: Cache pip dependencies
 #        uses: actions/cache@v2
 #        id: cache-pip
 #        with:
-#          path: .venv
-#          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-#          restore-keys: |
-#            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+#          path: ${{ steps.cache-dir.outputs.dir }}
+#          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 #
 #      - name: Ensure cache is healthy
 #        if: steps.cache-pip.outputs.cache-hit == 'true'
-#        run: timeout 10s poetry run pip --version || rm -rf .venv
+#        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+#        env:
+#          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 #
 #      - name: Install dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-#        run: poetry install
+#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+#        run: |
+#          pip install . -r requirements/tests-requirements.txt
 #
 #      - name: Run tests and generate coverage report
-#        run: USE_POETRY=true make tests-pyspark
+#        run: make tests-pyspark
 #        shell: bash
+#
 #      - name: Upload test coverage to Codecov
 #        if: ${{ needs.diff.outputs.pyspark_mllib == 'true' }}
 #        uses: codecov/codecov-action@v2
@@ -1151,36 +1099,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-pytorch
+        run: make tests-pytorch
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1207,40 +1152,37 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-pytorch_lightning
+        run: make tests-pytorch_lightning
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.pytorch_lightning == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1267,36 +1209,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-sklearn
+        run: make tests-sklearn
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.sklearn == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1323,36 +1262,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-spacy
+        run: make tests-spacy
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.spacy == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1379,36 +1315,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-statsmodels
+        run: make tests-statsmodels
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.statsmodels == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1435,36 +1368,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-tf1
+        run: make tests-tf1
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf1 == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1491,36 +1421,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-tf2
+        run: make tests-tf2
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.tf2 == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1547,36 +1474,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-transformers
+        run: make tests-transformers
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.transformers == 'true' }}
         uses: codecov/codecov-action@v2
@@ -1603,36 +1527,33 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-      - name: Bootstrap poetry
+      - name: Get pip cache dir
+        id: cache-dir
         run: |
-          curl -sSL https://install.python-poetry.org | python -
-
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Configure poetry
-        run: poetry config virtualenvs.in-project true
+          echo "::set-output name=dir::$(pip cache dir)"
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+        run: timeout 10s pip --version || rm -rf $CACHE_DIR
+        env:
+          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true'
-        run: poetry install
+        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
+        run: |
+          pip install . -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
-        run: USE_POETRY=true make tests-xgboost
+        run: make tests-xgboost
         shell: bash
+
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.xgboost == 'true' }}
         uses: codecov/codecov-action@v2

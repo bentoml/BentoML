@@ -7,9 +7,24 @@ import typing
 from datetime import datetime
 from threading import RLock
 from types import TracebackType
-from typing import (IO, Any, AnyStr, BinaryIO, Callable, Collection, Dict,
-                    Iterable, Iterator, List, Mapping, Optional, Text, Tuple,
-                    Type, Union)
+from typing import (
+    IO,
+    Any,
+    AnyStr,
+    BinaryIO,
+    Callable,
+    Collection,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Text,
+    Tuple,
+    Type,
+    Union,
+)
 
 import six
 

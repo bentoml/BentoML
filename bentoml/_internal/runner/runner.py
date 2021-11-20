@@ -10,8 +10,12 @@ from simple_di import Provide, inject
 from ..configuration.containers import BentoServerContainer
 from ..runner.container import AutoContainer
 from ..runner.utils import Params
-from .utils import (_cpu_converter, _gpu_converter, _mem_converter,
-                    _query_cgroup_cpu_count)
+from .utils import (
+    _cpu_converter,
+    _gpu_converter,
+    _mem_converter,
+    _query_cgroup_cpu_count,
+)
 
 
 @attr.s

@@ -9,8 +9,15 @@ from PIL.Image import fromarray
 import bentoml
 import bentoml.sklearn
 from bentoml._internal.types import FileLike, JSONSerializable
-from bentoml.io import (JSON, File, Image, Multipart, NumpyNdarray,
-                        PandasDataFrame, PandasSeries)
+from bentoml.io import (
+    JSON,
+    File,
+    Image,
+    Multipart,
+    NumpyNdarray,
+    PandasDataFrame,
+    PandasSeries,
+)
 
 
 class _Schema(pydantic.BaseModel):

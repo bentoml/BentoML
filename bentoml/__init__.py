@@ -12,10 +12,10 @@ from ._internal.models.store import ModelStore  # noqa: E402
 from ._internal.service import Service  # noqa: E402
 from ._internal.service.loader import load  # noqa: E402
 from ._internal.types import Tag  # noqa: E402
+
 # bento APIs are top-level
 from .bentos import list  # pylint: disable=W0622  # noqa: E402
-from .bentos import (build, delete, export_bento, get,  # noqa: E402
-                     import_bento)
+from .bentos import build, delete, export_bento, get, import_bento  # noqa: E402
 
 # TODO: change to Store based API
 models = ModelStore()

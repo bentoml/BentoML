@@ -6,8 +6,20 @@ import array
 import io
 import mmap
 import typing
-from typing import (Any, BinaryIO, Collection, Dict, Iterable, Iterator, List,
-                    Optional, SupportsInt, Text, Tuple, Union)
+from typing import (
+    Any,
+    BinaryIO,
+    Collection,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    SupportsInt,
+    Text,
+    Tuple,
+    Union,
+)
 
 import six
 

@@ -8,6 +8,7 @@ import click
 from click import ClickException
 
 from ...exceptions import BentoMLException
+
 # from bentoml import configure_logging
 from ..configuration import CONFIG_ENV_VAR, load_global_config, set_debug_mode
 from ..utils.usage_stats import track

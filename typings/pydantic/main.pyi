@@ -6,8 +6,19 @@ from abc import ABCMeta
 from enum import Enum
 from inspect import Signature
 from pathlib import Path
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple,
-                    Type, Union, no_type_check, overload)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    no_type_check,
+    overload,
+)
 
 import typing_extensions
 
@@ -15,9 +26,17 @@ from .error_wrappers import ValidationError
 from .fields import ModelField
 from .parse import Protocol
 from .types import ModelOrDc, StrBytes
-from .typing import (AbstractSetIntStr, AnyCallable, CallableGenerator,
-                     DictAny, DictStrAny, MappingIntStrAny, ReprArgs, SetStr,
-                     TupleGenerator)
+from .typing import (
+    AbstractSetIntStr,
+    AnyCallable,
+    CallableGenerator,
+    DictAny,
+    DictStrAny,
+    MappingIntStrAny,
+    ReprArgs,
+    SetStr,
+    TupleGenerator,
+)
 from .utils import GetterDict, Representation
 
 if TYPE_CHECKING:

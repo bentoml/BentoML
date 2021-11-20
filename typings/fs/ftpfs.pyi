@@ -9,8 +9,21 @@ import socket
 import typing
 from contextlib import contextmanager
 from ftplib import FTP
-from typing import (Any, BinaryIO, ByteString, Container, Dict, Iterable,
-                    Iterator, List, Optional, SupportsInt, Text, Tuple, Union)
+from typing import (
+    Any,
+    BinaryIO,
+    ByteString,
+    Container,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    SupportsInt,
+    Text,
+    Tuple,
+    Union,
+)
 
 from six import PY2
 

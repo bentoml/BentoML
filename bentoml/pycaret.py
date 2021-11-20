@@ -21,9 +21,13 @@ if TYPE_CHECKING:  # pragma: no cover
     from _internal.models.store import ModelInfo, ModelStore, StoreCtx
 
 try:
-    from pycaret.internal.tabular import (load_config, load_model,
-                                          predict_model, save_config,
-                                          save_model)
+    from pycaret.internal.tabular import (
+        load_config,
+        load_model,
+        predict_model,
+        save_config,
+        save_model,
+    )
     from pycaret.utils import version
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(

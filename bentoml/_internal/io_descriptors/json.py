@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import (BadInput, BentoMLException,
-                           MissingDependencyException)
+from ...exceptions import BadInput, BentoMLException, MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 

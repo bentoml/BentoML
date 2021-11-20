@@ -24,11 +24,15 @@ from .exceptions import BentoMLException, MissingDependencyException
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover
-    from transformers import (FlaxPreTrainedModel, PretrainedConfig,
-                              PreTrainedModel, PreTrainedTokenizer,
-                              PreTrainedTokenizerFast, TFPreTrainedModel)
-    from transformers.feature_extraction_utils import \
-        PreTrainedFeatureExtractor
+    from transformers import (
+        FlaxPreTrainedModel,
+        PretrainedConfig,
+        PreTrainedModel,
+        PreTrainedTokenizer,
+        PreTrainedTokenizerFast,
+        TFPreTrainedModel,
+    )
+    from transformers.feature_extraction_utils import PreTrainedFeatureExtractor
     from transformers.models.auto.auto_factory import _BaseAutoModelClass
 
     from ._internal.models.store import ModelStore, StoreCtx
@@ -36,10 +40,15 @@ if TYPE_CHECKING:  # pragma: no cover
 try:
     import transformers
     from transformers import AutoConfig, AutoTokenizer, Pipeline
-    from transformers.file_utils import (CONFIG_NAME, FLAX_WEIGHTS_NAME,
-                                         TF2_WEIGHTS_NAME, WEIGHTS_NAME,
-                                         hf_bucket_url, http_get,
-                                         http_user_agent)
+    from transformers.file_utils import (
+        CONFIG_NAME,
+        FLAX_WEIGHTS_NAME,
+        TF2_WEIGHTS_NAME,
+        WEIGHTS_NAME,
+        hf_bucket_url,
+        http_get,
+        http_user_agent,
+    )
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

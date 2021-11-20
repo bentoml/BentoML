@@ -6,8 +6,7 @@ import pandas as pd
 import psutil
 import pytest
 import statsmodels
-from statsmodels.tsa.holtwinters import (ExponentialSmoothing,
-                                         HoltWintersResults)
+from statsmodels.tsa.holtwinters import ExponentialSmoothing, HoltWintersResults
 
 import bentoml.statsmodels
 from bentoml.exceptions import BentoMLException

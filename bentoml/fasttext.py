@@ -1,5 +1,6 @@
 import os
 import typing as t
+from typing import TYPE_CHECKING
 
 import bentoml._internal.constants as _const
 
@@ -12,7 +13,7 @@ _exc = _const.IMPORT_ERROR_MSG.format(
     module=__name__,
     inst="`pip install fasttext`",
 )
-if t.TYPE_CHECKING:  # pylint: disable=unused-import # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     import fasttext
 else:
     fasttext = LazyLoader("fasttext", globals(), "fasttext", exc_msg=_exc)

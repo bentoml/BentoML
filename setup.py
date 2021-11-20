@@ -62,7 +62,6 @@ test_requires = [
 dev_requires = [
     "gitpython>=2.0.2",
     "setuptools",
-    "mypy",
     "autoflake",
     "twine",
     "wheel",
@@ -120,7 +119,7 @@ setuptools.setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-    python_requires=">=3.6.1",
+    python_requires=">=3.7",
     package_data={"bentoml": ["py.typed"]},
     entry_points={"console_scripts": ["bentoml=bentoml._internal.cli:cli"]},
     project_urls={

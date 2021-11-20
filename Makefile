@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
@@ -17,24 +18,9 @@ endif
 CMD := docker run $(CNTR_ARGS)
 TTY := docker run -t $(CNTR_ARGS)
 
-check_defined = \
-    $(strip $(foreach 1,$1, \
-        $(call __check_defined,$1,$(strip $(value 2)))))
-__check_defined = \
-    $(if $(value $1),, \
-        $(error Undefined $1$(if $2, ($2))$(if $(value @), \
-                required by target `$@`)))
-
 __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
 __style_name := ${__style_src:_check.sh=}
 tools := $(foreach t, $(__style_name), ci-$(shell basename $(t)))
-
-check-defined-% : __check_defined_FORCE
-	$(eval $@_target := $(subst check-defined-, ,$@))
-	@:$(call check_defined, $*, $@_target)
-
-.PHONY : __check_defined_FORCE
-__check_defined_FORCE:
 
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
@@ -57,14 +43,13 @@ format: pull-checker-img ## Running code formatter: black and isort
 	$(CMD) ./scripts/tools/formatter.sh
 lint: pull-checker-img ## Running lint checker: flake8 and pylint
 	$(CMD) ./scripts/tools/linter.sh
-type: pull-checker-img ## Running type checker: mypy and pyright
+type: pull-checker-img ## Running type checker: pyright
 	$(CMD) ./scripts/tools/type_checker.sh
 
-ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, mypy, pyright
+ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, pyright
 
 ci-%: chore
 	$(eval style := $(subst ci-, ,$@))
-	$(eval SHELL :=/bin/bash)
 	$(CMD) ./scripts/ci/style/$(style)_check.sh
 
 .PHONY: ci-format
@@ -74,19 +59,17 @@ ci-format: ci-black ci-isort ## Running format check in CI: black, isort
 ci-lint: ci-flake8 ci-pylint ## Running lint check in CI: flake8, pylint
 
 .PHONY: ci-type
-ci-type: ci-mypy ci-pyright ## Running type check in CI: mypy, pyright
+ci-type: ci-pyright ## Running type check in CI: pyright
 
 tests-%:
 	$(eval type :=$(subst tests-, , $@))
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), --$(t)))
-	$(eval SHELL :=/bin/bash)
 ifeq ($(USE_POETRY),true)
 	./scripts/ci/run_tests.sh -v --use-poetry $(type) $(__positional)
 else
 	./scripts/ci/run_tests.sh -v $(type) $(__positional)
 endif
-
 
 
 ifeq ($(USE_POETRY),true)
@@ -139,3 +122,17 @@ endif
 
 hooks: ## Install pre-defined hooks
 	@./scripts/install_hooks.sh
+
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+        $(error Undefined $1$(if $2, ($2))$(if $(value @), \
+                required by target `$@`)))
+check-defined-% : __check_defined_FORCE
+	$(eval $@_target := $(subst check-defined-, ,$@))
+	@:$(call check_defined, $*, $@_target)
+
+.PHONY : __check_defined_FORCE
+__check_defined_FORCE:

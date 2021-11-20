@@ -4,6 +4,7 @@ import os
 import typing as t
 from hashlib import sha256
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
 from simple_di import Provide, inject
@@ -16,8 +17,7 @@ from ._internal.runner import Runner
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     from _internal.models.store import ModelStore, StoreCtx
     from spacy import Config, Vocab
     from spacy.tokens.doc import Doc

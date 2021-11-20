@@ -1,4 +1,5 @@
 import typing as t
+from typing import TYPE_CHECKING
 
 import fs
 import fs.mirror
@@ -10,7 +11,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.model import Model
 from ._internal.types import Tag
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ._internal.model import ModelStore
 
 

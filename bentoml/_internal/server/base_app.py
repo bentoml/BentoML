@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from starlette.exceptions import HTTPException
 from starlette.responses import PlainTextResponse
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from starlette.applications import Starlette
     from starlette.middleware import Middleware
     from starlette.responses import Response

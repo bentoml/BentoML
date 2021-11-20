@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import typing as t
+from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
@@ -16,8 +17,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from _internal.models.store import ModelInfo, ModelStore, StoreCtx
 

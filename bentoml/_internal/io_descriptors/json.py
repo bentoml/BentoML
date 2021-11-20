@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import typing as t
+from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -9,7 +10,7 @@ from ...exceptions import BadInput, BentoMLException, MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 
-if t.TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     import numpy as np
     import pandas as pd
     import pydantic

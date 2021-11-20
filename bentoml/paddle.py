@@ -3,6 +3,7 @@ import os
 import re
 import typing as t
 from distutils.dir_util import copy_tree
+from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
@@ -24,8 +25,7 @@ Instruction for installing `paddlepaddle`:
     For other version of CUDA or different platforms refer to https://www.paddlepaddle.org.cn/ for more information
 """  # noqa: LN001
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
     import numpy as np
     import paddle
     import paddle.inference

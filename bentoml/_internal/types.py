@@ -9,6 +9,7 @@ import urllib.request
 import uuid
 from dataclasses import dataclass
 from functools import total_ordering
+from typing import TYPE_CHECKING
 
 import fs
 
@@ -26,7 +27,7 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     PathType = t.Union[str, os.PathLike[str]]
 else:
     PathType = t.Union[str, os.PathLike]

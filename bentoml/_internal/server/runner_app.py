@@ -9,7 +9,7 @@ from ..server.base_app import BaseAppFactory
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from starlette.applications import Starlette
     from starlette.requests import Request
     from starlette.responses import Response

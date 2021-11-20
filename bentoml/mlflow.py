@@ -3,6 +3,7 @@ import importlib.util
 import os
 import typing as t
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
 from simple_di import Provide, inject
@@ -11,8 +12,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
-if t.TYPE_CHECKING:  # pragma: no cover
-    # pylint: disable=unused-import
+if TYPE_CHECKING:  # pragma: no cover
 
     import mlflow.pyfunc
     from _internal.models.store import ModelStore, StoreCtx

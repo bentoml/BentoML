@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import typing as t
+from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
@@ -12,7 +13,7 @@ from ..io_descriptors.multipart import Multipart
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from starlette.applications import Starlette
     from starlette.middleware import Middleware
     from starlette.requests import Request

@@ -887,8 +887,7 @@ jobs:
 
       - name: Get pip cache dir
         id: cache-dir
-        run: |
-          echo "::set-output name=dir::$(pip cache dir)"
+        run: echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
         uses: actions/cache@v2

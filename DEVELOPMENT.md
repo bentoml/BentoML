@@ -294,6 +294,13 @@ Make sure you have `inotifywait` installed
 sudo apt install inotify-tools
 ``` 
 
+## Python tools ecosystem
+
+Currently BentoML are [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible via `setup.cfg` and `pyproject.toml`.
+ We also define most of our config for Python tools where:
+ - `pyproject.toml` contains config for `setuptools`, `black`, `pytest`, `pylint`, `isort`, `pyright`
+ - `setup.cfg` contains metadata for `bentoml` library, `flake8`, and `coverage`
+
 ## Benchmark
 BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).
 

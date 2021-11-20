@@ -80,6 +80,11 @@ HEREDOC
 
 
 parse_args() {
+  if [ "${#@}" -eq 0 ]; then
+    FAIL "$0 doesn't run without any arguments";
+    exit 1;
+  fi
+
   for arg in "$@"; do
     case "$arg" in
       -h | --help)

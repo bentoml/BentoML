@@ -87,7 +87,7 @@ jobs:
       - name: Get pip cache dir
         id: cache-dir
         run: |
-          echo "::set-output name=dir::$(pip cache dir)"
+          echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
@@ -105,7 +105,8 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install . -r requirements/docs-requirements.txt
+          pip install ".[bento-server]"
+          pip install -r requirements/docs-requirements.txt
 
       - name: Install libenchant
         run: |
@@ -142,14 +143,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
-          echo "::set-output name=dir::$(pip cache dir)"
+          echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
@@ -171,7 +168,8 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install . -r requirements/tests-requirements.txt
+          pip install ".[bento-server]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run unit tests
         if: ${{ matrix.os != 'windows-latest' }}
@@ -223,14 +221,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Get pip cache dir
         id: cache-dir
         run: |
-          echo "::set-output name=dir::$(pip cache dir)"
+          echo ::set-output name=dir::$(pip cache dir)
 
       - name: Cache pip dependencies
         uses: actions/cache@v2
@@ -252,7 +246,8 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install . -r requirements/tests-requirements.txt
+          pip install ".[bento-server]"
+          pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
         run: make tests-general_features

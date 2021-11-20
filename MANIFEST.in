@@ -1,19 +1,31 @@
+include README.md
+include LICENSE
+
 # Patterns to exclude from any directory
 global-exclude *~
-global-exclude *.py[cod]
-global-exclude .git*
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .git
+global-exclude .github
 global-exclude .ipynb_checkpoints
-global-exclude .*_cache
+global-exclude __pycache__
 global-exclude tests
 
-recursive-exclude bentoml __pycache__
-
 # Included in PyPI distribution
+include bentoml/*.py
 graft bentoml/_internal
-graft bentoml/*.py
+
+exclude .readthedocs.yml
+exclude .pep8speaks.yml
+exclude codecov.yml
+exclude CONTRIBUTING.md
+exclude GOVERNANCE.md
+exclude Makefile
 
 # Prune directory not to be included in PyPI package
+prune requirements
 prune tests
+prune docker
 prune typings
 prune scripts
 prune hooks

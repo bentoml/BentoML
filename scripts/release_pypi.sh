@@ -17,7 +17,7 @@ else
 fi
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
-cd "$GIT_ROOT"
+cd "$GIT_ROOT" || exit 1
 
 # Currently only BentoML maintainer has permission to create new pypi
 # releases
@@ -38,19 +38,7 @@ fi
 tag_name="v$VERSION_STR"
 
 echo "Installing dev dependencies..."
-pip install .[dev]
-
-#echo "Installing YataiServer node server dependencies.."
-#cd "$GIT_ROOT"/web_server
-#yarn
-#
-#echo "Installing YataiServer Web UI dependencies.."
-#cd "$GIT_ROOT"/yatai/ui
-#yarn
-#
-#echo "Build YataiServer node server and web UI..."
-#cd "$GIT_ROOT"/web_server
-#yarn build
+pip install -r requirements/dev-requirements.txt
 
 if git rev-parse "$tag_name" >/dev/null 2>&1; then
   echo "git tag '$tag_name' exist, using existing tag."

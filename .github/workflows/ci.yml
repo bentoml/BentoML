@@ -174,7 +174,14 @@ jobs:
           pip install . -r requirements/tests-requirements.txt
 
       - name: Run unit tests
+        if: ${{ matrix.os != 'windows-latest' }}
         run: make tests-unit
+
+      - name: Run unit tests (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          pip install -U pydantic
+          pytest tests/unit --cov=bentoml --cov-config=setup.cfg --cov-report=xml:"unit.xml"
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2

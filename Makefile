@@ -8,11 +8,12 @@ BASE_ARGS := -i --rm -u $(shell id -u):$(shell id -g) -v $(GIT_ROOT):/bentoml
 GPU_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
 USE_GPU ?=false
 USE_VERBOSE ?=false
+GITHUB_ENV_ARGS := --env-file <(env | grep GITHUB)
 
 ifeq ($(USE_GPU),true)
-CNTR_ARGS := $(BASE_ARGS) $(GPU_ARGS) $(CHECKER_IMG)
+CNTR_ARGS := $(BASE_ARGS) $(GITHUB_ENV_ARGS) $(GPU_ARGS) $(CHECKER_IMG)
 else
-CNTR_ARGS := $(BASE_ARGS) $(CHECKER_IMG)
+CNTR_ARGS := $(BASE_ARGS) $(GITHUB_ENV_ARGS) $(CHECKER_IMG)
 endif
 
 CMD := docker run $(CNTR_ARGS)

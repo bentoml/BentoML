@@ -6,10 +6,10 @@ GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 CHECKER_IMG ?= bentoml/checker:1.0
 BASE_ARGS := -i --rm -u $(shell id -u):$(shell id -g) -v $(GIT_ROOT):/bentoml
 GPU_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
-GPU ?=false
-USE_POETRY ?=false
+USE_GPU ?=false
+USE_VERBOSE ?=false
 
-ifeq ($(GPU),true)
+ifeq ($(USE_GPU),true)
 CNTR_ARGS := $(BASE_ARGS) $(GPU_ARGS) $(CHECKER_IMG)
 else
 CNTR_ARGS := $(BASE_ARGS) $(CHECKER_IMG)
@@ -17,10 +17,6 @@ endif
 
 CMD := docker run $(CNTR_ARGS)
 TTY := docker run -t $(CNTR_ARGS)
-
-__style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
-__style_name := ${__style_src:_check.sh=}
-tools := $(foreach t, $(__style_name), ci-$(shell basename $(t)))
 
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
@@ -46,6 +42,11 @@ lint: pull-checker-img ## Running lint checker: flake8 and pylint
 type: pull-checker-img ## Running type checker: pyright
 	$(CMD) ./scripts/tools/type_checker.sh
 
+
+__style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
+__style_name := ${__style_src:_check.sh=}
+tools := $(foreach t, $(__style_name), ci-$(shell basename $(t)))
+
 ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, pyright
 
 ci-%: chore
@@ -65,39 +66,30 @@ tests-%:
 	$(eval type :=$(subst tests-, , $@))
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
 	$(eval __positional:=$(foreach t, $(RUN_ARGS), --$(t)))
-ifeq ($(USE_POETRY),true)
-	./scripts/ci/run_tests.sh -v --use-poetry $(type) $(__positional)
-else
+ifeq ($(USE_VERBOSE),true)
 	./scripts/ci/run_tests.sh -v $(type) $(__positional)
+else
+	./scripts/ci/run_tests.sh $(type) $(__positional)
 endif
 
 
-ifeq ($(USE_POETRY),true)
-install-local: ## Install BentoML with poetry
-	@./scripts/init.sh
-install-dev-deps: ## Install BentoML with tests dependencies via poetry
-	poetry install -vv -E "model-server types docs"
-install-docs-deps: install-dev-deps ## Install BentoML with docs dependencies via poetry
-else
 install-local: ## Install BentoML in editable mode
-	@pip install --editable .
-install-dev-deps: ## Install all dev and tests dependencies
-	@echo Ensuring dev dependencies...
-	@pip install -e ".[dev]"
+	@pip install --editable ".[bento-server]"
+install-dev-deps: ## Install all dev dependencies
+	@echo Installing dev dependencies...
+	@pip install -r requirements/dev-requirements.txt 
+install-tests-deps: ## Install all tests dependencies
+	@echo Installing tests dependencies...
+	@pip install -r requirements/tests-requirements.txt
 install-docs-deps: ## Install documentation dependencies
 	@echo Installing docs dependencies...
-	@pip install -e ".[doc_builder]"
-endif
+	@pip install -r requirements/docs-requirements.txt
 
 # Docs
 watch-docs: install-docs-deps ## Build and watch documentation
 	@./scripts/watch_docs.sh || (echo "Error building... You may need to run 'make install-watch-deps'"; exit 1)
 spellcheck-docs: ## Spell check documentation
-	@if [[ `command -v poetry >/dev/null 2>&1` ]]; then \
-		poetry run sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1); \
-	else \
-		sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1); \
-	fi
+	sphinx-build -b spelling ./docs/source ./docs/build || (echo "Error running spellchecker.. You may need to run 'make install-spellchecker-deps'"; exit 1)
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)

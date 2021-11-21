@@ -1,0 +1,9 @@
+# Docs dependencies
+sphinx==3.5.4
+recommonmark
+sphinx-click
+sphinx_rtd_theme
+sphinxcontrib-fulltoc
+sphinxcontrib-spelling
+sphinx_copybutton
+pyenchant

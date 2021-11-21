@@ -143,4 +143,4 @@ tests/integration/data
 # Emacs buffers
 *~
 **/*.ipynb
-stubs
+bentoml/_version.py

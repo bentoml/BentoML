@@ -8,8 +8,8 @@ echo "Running pylint..."
 
 set_on_failed_callback "FAIL pylint errors"
 
-pylint --rcfile="./pylintrc" bentoml | tee /tmp/"$name"_bentoml
-pylint --rcfile="./pylintrc" --disable=E0401,F0010 tests docker | tee /tmp/"$name"_tests_docker
+pylint --rcfile="./pyproject.toml" bentoml | tee /tmp/"$name"_bentoml
+pylint --rcfile="./pyproject.toml" --disable=E0401,F0010 tests docker | tee /tmp/"$name"_tests_docker
 
 if [ -s /tmp/"$name"_tests_docker ] || [ -s /tmp/"$name"_bentoml ]; then
   FAIL "pylint failed"

@@ -9,18 +9,13 @@ version: 2
 sphinx:
   configuration: docs/source/conf.py
 
-# Build documentation with MkDocs
-#mkdocs:
-#  configuration: mkdocs.yml
-
-# Optionally build your docs in additional formats such as PDF and ePub
-formats: []
-
 # Optionally set the version of Python and requirements required to build your docs
 python:
-  version: 3.7
+  version: 3.8
   install:
-    - method: pip
+    - requirements: requirements/docs-requirements.txt
+    - method: setuptools
       path: .
-      extra_requirements:
-        - doc_builder
+  system_packages: true
+
+formats: []

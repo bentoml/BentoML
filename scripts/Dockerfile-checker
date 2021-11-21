@@ -31,26 +31,18 @@ RUN apk add --no-cache libstdc++ bash git curl
 
 RUN npm i -g npm@^7 yarn pyright
 
-RUN echo "http://dl-8.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
-
-RUN apk add --update-cache --no-cache gcc build-base \
+RUN apk add --no-cache --virtual .build-deps gcc build-base \
             python3-dev musl-dev openssl-dev libffi-dev \
             libressl-dev cargo gfortran freetype-dev libpng-dev \
             openblas-dev postgresql-dev postgresql jpeg-dev zlib-dev libjpeg
 
-RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
-
-ENV PATH="/root/.local/bin:$PATH"
-
-RUN curl -sSL https://install.python-poetry.org | python -
-
 RUN python -m pip install -U pip setuptools
 
-RUN poetry config virtualenvs.create false
+COPY requirements/dev-requirements.txt .
 
-COPY pyproject.toml .
+RUN pip install -r ./dev-requirements.txt
 
-RUN poetry install -vvv -E "model-server docs"
+RUN apk del .build-deps
 
 WORKDIR "/bentoml"
 

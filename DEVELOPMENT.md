@@ -18,15 +18,14 @@ Clone the source code from BentoML's GitHub repository:
 git clone --recurse-submodules https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
-If you want to use [`poetry`](https://python-poetry.org/) then do:
-
-```bash
-poetry install
-```
-
 Install BentoML with pip in `editable` mode:
 ```bash
-make install-local
+pip install -e .
+```
+
+Additionally install `bento-server` dependencies with:
+```bash
+pip install -e ".[bento-server]"
 ```
 
 This will make `bentoml` available on your system which links to the sources of
@@ -61,51 +60,121 @@ You can also specify what branch to install from:
 pip install git+https://github.com/{your_github_username}/BentoML.git@{branch_name}
 ```
 
-
 ## Testing
 
 Make sure to install all test dependencies:
 ```bash
-make install-dev-deps
-```
-
-### Unit tests
-
-Run all unit tests with current python version and environment
-```bash
-./scripts/ci/unit_tests.sh
-```
-
-#### Optional: Run unit test with all supported python versions
-
-Make sure you have [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) installed:
-
-Bentoml tox file is configured to run in muiltple python versions:
-```bash
-tox
-```
-
-If you want to run tests under conda for specific version, use `-e` option:
-```bash
-tox -e py37
-// or
-tox -e py36
-```
-
-### Integration tests
-
-After install all test dependencies, to run a specific integration tests suite after adding testcases do:
-
-```bash
-# `make integration-tests-<frameworks>` will trigger integration tests for that specific frameworks.
-#  Make sure that your frameworks is defined under ./scripts/ci/config.yml
-
-make integration-tests-mlflow
+pip install -r requirements/tests-requirements.txt
 ```
 
 If you are adding new frameworks it is recommended that you also added tests for our CI. Currently we are using GitHub Actions to manage our CI/CD workflow.
 
 We recommended you to use [`nektos/act`](https://github.com/nektos/act) to run and tests Actions locally.
+
+
+We introduce a tests script [run_tests.sh](./scripts/ci/run_tests.sh) that can be used to run tests locally and on CI.
+```bash
+./scripts/ci/run_tests.sh -h
+Running unit/integration tests with pytest and generate coverage reports. Make sure that given testcases is defined under ./scripts/ci/config.yml.
+
+Usage:
+  ./scripts/ci/run_tests.sh [-h|--help] [-v|--verbose] <target> <pytest_additional_arguments>
+
+Flags:
+  -h, --help            show this message
+  -v, --verbose         set verbose scripts
+
+
+If pytest_additional_arguments is given, this will be appended to given tests run.
+
+Example:
+  $ ./scripts/ci/run_tests.sh pytorch --gpus --capture=tee-sys
+```
+
+All tests are then defined under [config.yml](./scripts/ci/config.yml) where each fields follow the following format:
+```yaml
+<target>: &tmpl
+  root_test_dir: "tests/integration/frameworks"
+  is_dir: false
+  override_name_or_path:
+  dependencies: []
+  external_scripts:
+  type_tests: "integration"
+```
+
+By default, each of our frameworks tests file with have the format: `test_<frameworks>_impl.py`. If `is_dir` set to `true` we will try to match the given `<target>` under `root_test_dir` to run tests from.
+
+| Keys | Type | Defintions |
+|------|------|------------|
+|`root_test_dir`| `<str>`| root directory to run a given tests |
+|`is_dir`| `<bool>`| whether `target` is a directory instead of a file |
+|`override_name_or_path`| `<str>`| optional way to override a tests file name if doesn't match our convention |
+|`dependencies`| `<List[str]>`| define required dependencies to run the tests, accepts `requirements.txt` format |
+|`external_scripts`| `<str>`| optional shell scripts that can be run on top of `./scripts/ci/run_tests.sh` for given testsuite |
+|`type_tests`| `<Literal["e2e","unit","integration"]>`| define type of tests for given `target` |
+
+When `type_tests` is set to `e2e`, `./scripts/ci/run_tests.sh` will change current directory into given `root_test_dir` and will run testsuite from there.
+
+The reason why we encourage developers to use the scripts in CI is that under the hood when we uses pytest, we will create a custom reports for given tests. This report then 
+ can be used as carryforward flags on codecov for consistent reporting.
+
+Example:
+```yaml
+# e2e tests
+general_features:
+  root_test_dir: "tests/e2e/bento_server_general_features"
+  is_dir: true
+  type_tests: "e2e"
+  dependencies:
+    - "pandas"
+    - "pydantic"
+    - "scikit-learn"
+    - "Pillow"
+
+# framework
+pytorch_lightning:
+  <<: *tmpl
+  dependencies:
+    - "pytorch-lightning"
+    - "-f https://download.pytorch.org/whl/torch_stable.html"
+    - "torch==1.9.0+cpu"
+    - "torchvision==0.10.0+cpu"
+```
+
+Refers to [config.yml](./scripts/ci/config.yml) for more examples.
+
+### Unit tests
+
+You can do this in two ways:
+
+Run all unit tests directly with pytest:
+```bash
+# GIT_ROOT=$(git rev-parse --show-toplevel)
+pytest tests/unit --cov=bentoml --cov-config="$GIT_ROOT"/setup.cfg
+```
+
+Run all unit tests via `./scripts/ci/run_tests.sh`:
+```bash
+./scripts/ci/run_tests.sh unit
+
+# on UNIX-based system
+make tests-unit
+```
+
+### Integration tests
+
+Run given tests after defining target under `scripts/ci/config.yml` with `run_tests.sh`:
+```bash
+# example: run Keras TF1 integration tests
+./scripts/ci/run_tests.sh keras_tf1
+```
+
+### E2E tests
+
+```bash
+# example: run e2e tests to check for general features
+./scripts/ci/run_tests.sh general_features
+```
 
 
 ## Run BentoML with verbose/debug logging
@@ -133,7 +202,7 @@ formatter: [black](https://github.com/psf/black), [isort](https://github.com/PyC
 
 linter: [flake8](https://flake8.pycqa.org/en/latest/), [pylint](https://pylint.org/)
 
-type checker: [mypy](https://mypy.readthedocs.io/en/stable/), [pyright](https://github.com/microsoft/pyright)
+type checker: [pyright](https://github.com/microsoft/pyright)
 
 ### [Required]: Docker
 
@@ -153,7 +222,7 @@ make type
 
 Make sure to install all dev dependencies:
 ```bash
-make install-dev-deps
+pip install -r requirements/dev-requirements.txt
 ```
 
 Run linter/format script:
@@ -172,15 +241,17 @@ Run type checker:
 
 Refers to [BentoML Documentation](./docs/README.md) for more information
 
-Install all dev dependencies:
+Install all docs dependencies:
 ```bash
-pip install -e ".[dev]"
+pip install -r requirements/docs-requirements.txt
 ```
 
 To build documentation for locally:
 ```bash
-./docs/build.sh
+cd docs/
+make clean && make html
 ```
+
 
 Modify `*.rst` files inside the `docs` folder to update content, and to
 view your changes, run the following command:
@@ -191,9 +262,12 @@ python -m http.server --directory ./docs/build/html
 
 Docs can then be accessed at [localhost:8000](http://localhost:8000)
 
-If you are developing under macOS or linux, we also made a script that watches docs
+If you are developing under macOS or Linux, we also made a script that watches docs
 file changes, automatically rebuild the docs, and refreshes the browser
-tab to show the change (macOS only):
+tab to show the change (UNIX-based system only):
+```bash
+./scripts/watch_docs.sh
+```
 
 ### Running spellcheck for documentation site.
 
@@ -214,21 +288,18 @@ Make sure you have fswatch command installed:
 brew install fswatch
 ```
 
-Run the `watch.sh` script to start watching docs changes:
-```bash
-./scripts/watch_docs.sh
-```
-
 #### Debian-based distros
 Make sure you have `inotifywait` installed
 ```shell script
 sudo apt install inotify-tools
 ``` 
 
-Run the `watch.sh` script to start watching docs changes:
-```bash
-./scripts/watch_docs.sh
-```
+## Python tools ecosystem
+
+Currently BentoML are [PEP518](https://www.python.org/dev/peps/pep-0518/) compatible via `setup.cfg` and `pyproject.toml`.
+ We also define most of our config for Python tools where:
+ - `pyproject.toml` contains config for `setuptools`, `black`, `pytest`, `pylint`, `isort`, `pyright`
+ - `setup.cfg` contains metadata for `bentoml` library, `flake8`, and `coverage`
 
 ## Benchmark
 BentoML has moved its benchmark to [`bentoml/benchmark`](https://github.com/bentoml/benchmark).

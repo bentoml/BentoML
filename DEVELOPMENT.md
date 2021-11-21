@@ -15,17 +15,12 @@ pip --version
 
 Clone the source code from BentoML's GitHub repository:
 ```bash
-git clone --recurse-submodules https://github.com/bentoml/BentoML.git && cd BentoML
+git clone https://github.com/bentoml/BentoML.git && cd BentoML
 ```
 
 Install BentoML with pip in `editable` mode:
 ```bash
 pip install -e .
-```
-
-Additionally install `bento-server` dependencies with:
-```bash
-pip install -e ".[bento-server]"
 ```
 
 This will make `bentoml` available on your system which links to the sources of
@@ -109,7 +104,7 @@ By default, each of our frameworks tests file with have the format: `test_<frame
 |`root_test_dir`| `<str>`| root directory to run a given tests |
 |`is_dir`| `<bool>`| whether `target` is a directory instead of a file |
 |`override_name_or_path`| `<str>`| optional way to override a tests file name if doesn't match our convention |
-|`dependencies`| `<List[str]>`| define required dependencies to run the tests, accepts `requirements.txt` format |
+|`dependencies`| `<List[str]>`| define additional dependencies required to run the tests, accepts `requirements.txt` format |
 |`external_scripts`| `<str>`| optional shell scripts that can be run on top of `./scripts/ci/run_tests.sh` for given testsuite |
 |`type_tests`| `<Literal["e2e","unit","integration"]>`| define type of tests for given `target` |
 
@@ -126,9 +121,6 @@ general_features:
   is_dir: true
   type_tests: "e2e"
   dependencies:
-    - "pandas"
-    - "pydantic"
-    - "scikit-learn"
     - "Pillow"
 
 # framework

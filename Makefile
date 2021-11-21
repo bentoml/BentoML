@@ -74,7 +74,7 @@ endif
 
 
 install-local: ## Install BentoML in editable mode
-	@pip install --editable ".[bento-server]"
+	@pip install --editable .
 install-dev-deps: ## Install all dev dependencies
 	@echo Installing dev dependencies...
 	@pip install -r requirements/dev-requirements.txt 

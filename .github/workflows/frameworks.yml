@@ -204,7 +204,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -254,7 +254,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -304,7 +304,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -359,7 +359,7 @@ jobs:
 #      - name: Install dependencies
 #        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
 #        run: |
-#          pip install ".[bento-server]"
+#          pip install .
 #          pip install -r requirements/tests-requirements.txt
 #
 #      - name: Run tests and generate coverage report
@@ -414,7 +414,7 @@ jobs:
 #      - name: Install dependencies
 #        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
 #        run: |
-#          pip install ".[bento-server]"
+#          pip install .
 #          pip install -r requirements/tests-requirements.txt
 #
 #      - name: Run tests and generate coverage report
@@ -469,7 +469,7 @@ jobs:
 #      - name: Install dependencies
 #        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
 #        run: |
-#          pip install ".[bento-server]"
+#          pip install .
 #          pip install -r requirements/tests-requirements.txt
 #
 #      - name: Run tests and generate coverage report
@@ -521,7 +521,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -571,7 +571,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -621,7 +621,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -671,7 +671,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -721,7 +721,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -771,7 +771,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -821,7 +821,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -907,7 +907,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -957,7 +957,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -1012,7 +1012,7 @@ jobs:
 #      - name: Install dependencies
 #        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
 #        run: |
-#          pip install ".[bento-server]"
+#          pip install .
 #          pip install -r requirements/tests-requirements.txt
 #
 #      - name: Run tests and generate coverage report
@@ -1062,7 +1062,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -1112,7 +1112,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Set up QEMU
@@ -1166,7 +1166,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -1216,7 +1216,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -1266,7 +1266,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -1316,7 +1316,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -1366,7 +1366,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -1416,7 +1416,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -1466,7 +1466,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report

@@ -31,11 +31,16 @@ coverage:
         threshold: 10%
         flags:
           - frameworks
-      bento-server:
+      e2e:
         target: auto
         threshold: 10%
         flags:
-          - bento-server
+          - e2e-tests
+      unit:
+        target: auto
+        threshold: 10%
+        flags:
+          - unit-tests
     patch:
       default:
         threshold: 10%
@@ -69,7 +74,11 @@ flags:
       - bentoml/tensorflow.py
       - bentoml/transformers.py
       - bentoml/xgboost.py
-  bento-server:
+  e2e:
     carryforward: true
     paths:
-      - "bentoml/_internal/**/*"
+      - ".*"
+  unit:
+    carryforward: true
+    paths:
+      - ".*"

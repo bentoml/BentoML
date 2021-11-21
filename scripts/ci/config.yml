@@ -11,10 +11,6 @@ unit:
   root_test_dir: "tests/unit"
   is_dir: true
   type_tests: "unit"
-  dependencies:
-    - "pandas"
-    - "pydantic"
-    - "scikit-learn"
 
 general_features:
   <<: *tmpl
@@ -22,16 +18,12 @@ general_features:
   is_dir: true
   type_tests: "e2e"
   dependencies:
-    - "pandas"
-    - "pydantic"
-    - "scikit-learn"
     - "Pillow"
 
 catboost:
   <<: *tmpl
   dependencies:
     - "catboost"
-    - "pandas"
 
 detectron2:
   <<: *tmpl
@@ -89,7 +81,6 @@ lightgbm:
   <<: *tmpl
   dependencies:
     - "lightgbm"
-    - "pandas"
 
 mlflow:
   <<: *tmpl
@@ -110,7 +101,6 @@ onnx:
 onnxmlir:
   <<: *tmpl
   dependencies:
-    - "pandas"
     - "tensorflow==2.2.0"
     - "tf2onnx"
   external_scripts: |
@@ -124,8 +114,6 @@ paddle:
   override_name_or_path: paddle
   dependencies:
     - "opencv-python==4.5.4.58"
-    - "pandas"
-    - "numpy"
     - "paddlepaddle"
     - "paddlehub"
     - "gast==0.3.3"
@@ -140,7 +128,6 @@ pyspark:
   <<: *tmpl
   dependencies:
     - "pyspark"
-    - "pandas"
 
 pytorch_lightning:
   <<: *tmpl
@@ -160,9 +147,6 @@ pytorch:
 
 sklearn:
   <<: *tmpl
-  dependencies:
-    - "scikit-learn"
-    - "pandas"
 
 spacy:
   <<: *tmpl
@@ -171,7 +155,6 @@ spacy:
   dependencies:
     - "spacy==3.1.2"
     - "pyyaml"
-    - "pandas"
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.9.0+cpu"
     - "torchvision==0.10.0+cpu"
@@ -184,8 +167,6 @@ statsmodels:
   dependencies:
     - "statsmodels==0.12.2"
     - "joblib"
-    - "numpy"
-    - "pandas"
 
 tf1:
   <<: *tmpl

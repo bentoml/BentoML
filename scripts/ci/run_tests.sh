@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Prerequisite:
+# This scripts assumes BentoML and all its test dependencies are already installed:
+#  
+#  pip install -e .
+#  pip install requirements/tests-requirements.txt
+
 
 fname=$(basename "$0")
 dname=$(dirname "$0")

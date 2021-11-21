@@ -105,7 +105,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/docs-requirements.txt
 
       - name: Install libenchant
@@ -168,7 +168,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run unit tests
@@ -178,7 +178,6 @@ jobs:
       - name: Run unit tests (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          pip install -U pydantic
           pytest tests/unit --cov=bentoml --cov-config=setup.cfg --cov-report=xml:"unit.xml"
 
       - name: Upload test coverage to Codecov
@@ -186,7 +185,7 @@ jobs:
         with:
           name: codecov-${{ matrix.os }}-python${{ matrix.python-version }}
           fail_ci_if_error: true
-          flags: bento-server
+          flags: unit-tests
           directory: ./
           files: ./unit.xml
           verbose: true
@@ -246,7 +245,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
-          pip install ".[bento-server]"
+          pip install .
           pip install -r requirements/tests-requirements.txt
 
       - name: Run tests and generate coverage report
@@ -255,7 +254,7 @@ jobs:
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
-          flags: bento-server
+          flags: e2e-tests
           directory: ./
           files: ./tests/e2e/bento_server_general_features/general_features.xml
           verbose: true

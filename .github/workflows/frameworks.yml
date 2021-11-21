@@ -851,14 +851,10 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # fetch all tags and branches
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
 
       - name: Run tests and generate coverage report
         run: |
-          python setup.py install
+          python setup.py develop
           pip install -r requirements/tests-requirements.txt tensorflow==2.2.0 pandas tf2onnx
           export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
           export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"

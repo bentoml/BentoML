@@ -58,12 +58,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Format check
-        run: make ci-format
+        run: USE_DOCKER=true make ci-format
       - name: Lint check
-        # TODO: after fix all pylint errors under bentoml uses `make ci-lint` instead
-        run: make ci-flake8
+        # TODO: add `make ci-lint` after fixing all pylint errors.
+        run: USE_DOCKER=true make ci-flake8
       - name: Type check
-        run: make ci-pyright
+        run: USE_DOCKER=true make ci-pyright
 
   documentation_spelling_check:
     defaults:

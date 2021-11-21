@@ -8,6 +8,7 @@ BASE_ARGS := -i --rm -u $(shell id -u):$(shell id -g) -v $(GIT_ROOT):/bentoml
 GPU_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
 USE_GPU ?=false
 USE_VERBOSE ?=false
+USE_DOCKER ?=false
 GITHUB_ENV_ARGS := --env-file <(env | grep GITHUB)
 
 ifeq ($(USE_GPU),true)
@@ -37,11 +38,11 @@ pull-checker-img: ## Pull checker images
 chore: build-checker-img pull-checker-img ## Chore work
 
 format: pull-checker-img ## Running code formatter: black and isort
-	$(CMD) ./scripts/tools/formatter.sh
+	@$(CMD) ./scripts/tools/formatter.sh
 lint: pull-checker-img ## Running lint checker: flake8 and pylint
-	$(CMD) ./scripts/tools/linter.sh
+	@$(CMD) ./scripts/tools/linter.sh
 type: pull-checker-img ## Running type checker: pyright
-	$(CMD) ./scripts/tools/type_checker.sh
+	@$(CMD) ./scripts/tools/type_checker.sh
 
 
 __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
@@ -52,7 +53,11 @@ ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, pyrig
 
 ci-%: chore
 	$(eval style := $(subst ci-, ,$@))
-	$(CMD) ./scripts/ci/style/$(style)_check.sh
+ifeq ($(USE_DOCKER),true)
+	@$(CMD) ./scripts/ci/style/$(style)_check.sh
+else
+	@./scripts/ci/style/$(style)_check.sh
+endif
 
 .PHONY: ci-format
 ci-format: ci-black ci-isort ## Running format check in CI: black, isort
@@ -116,9 +121,7 @@ endif
 hooks: ## Install pre-defined hooks
 	@./scripts/install_hooks.sh
 
-check_defined = \
-    $(strip $(foreach 1,$1, \
-        $(call __check_defined,$1,$(strip $(value 2)))))
+check_defined = $(strip $(foreach 1,$1, $(call __check_defined,$1,$(strip $(value 2)))))
 __check_defined = \
     $(if $(value $1),, \
         $(error Undefined $1$(if $2, ($2))$(if $(value @), \

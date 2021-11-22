@@ -58,7 +58,6 @@ tools := $(foreach t, $(__style_name), ci-$(shell basename $(t)))
 ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, pyright
 
 ci-%: chore
-	# We need to fix permission for pyright when using checker images,
 	$(eval style := $(subst ci-, ,$@))
 ifeq ($(USE_DOCKER),true)
 	@$(CMD) ./scripts/ci/style/$(style)_check.sh

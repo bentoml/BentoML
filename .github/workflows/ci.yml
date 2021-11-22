@@ -19,6 +19,7 @@ jobs:
   diff:
     runs-on: ubuntu-latest
     outputs:
+      checker: ${{ steps.filter.outputs.checker }}
       related: ${{ steps.filter.outputs.related }}
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
@@ -29,6 +30,8 @@ jobs:
         with:
           base: 'bentoml-1.0'
           filters: |
+            checker:
+              - scripts/Dockerfile-checker
             related: &related
               - .github/workflows/ci.yml
               - setup.cfg
@@ -70,7 +73,7 @@ jobs:
           key: ${{ runner.os }}-docker-${{ hashFiles('scripts/Dockerfile-checker') }}
 
       - name: Pull checker images
-        if: steps.checker-cache.outputs.cache-hit != 'true'
+        if: steps.checker-cache.outputs.cache-hit != 'true' || needs.diff.outputs.checker == 'true'
         run: |
           docker pull ${{ env.CHECKER_IMG }}
           docker save -o ~/bentoml-checker/checker.tar ${{ env.CHECKER_IMG }}

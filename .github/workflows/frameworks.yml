@@ -188,16 +188,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -242,16 +238,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -296,16 +288,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -332,182 +320,9 @@ jobs:
           flags: frameworks
           verbose: true
 
-#  TODO: fix me
-#  evalml_integration_tests:
-#    needs: diff
-#    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.evalml == 'true') || github.event_name == 'push' }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 0 # fetch all tags and branches
-#      - name: Setup python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: 3.8
-#
-#      - name: Get full Python version
-#        id: full-python-version
-#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-#
-#      - name: Get pip cache dir
-#        id: cache-dir
-#        run: |
-#          echo ::set-output name=dir::$(pip cache dir)
-#
-#      - name: Get full Python version
-#        id: full-python-version
-#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-#
-#      - name: Cache pip dependencies
-#        uses: actions/cache@v2
-#        id: cache-pip
-#        with:
-#          path: ${{ steps.cache-dir.outputs.dir }}
-#          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-#
-#      - name: Ensure cache is healthy
-#        if: steps.cache-pip.outputs.cache-hit == 'true'
-#        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-#        env:
-#          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
-#
-#      - name: Install dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
-#        run: |
-#          pip install .
-#          pip install -r requirements/tests-requirements.txt
-#
-#      - name: Run tests and generate coverage report
-#        run: make tests-evalml
-#        shell: bash
-#
-#      - name: Upload test coverage to Codecov
-#        if: ${{ needs.diff.outputs.evalml == 'true' }}
-#        uses: codecov/codecov-action@v2
-#        with:
-#           directory: ./
-#           files: ./evalml.xml
-#           flags: frameworks
-#           verbose: true
-#
-#  TODO: fix me
-#  fastai_integration_tests:
-#    needs: diff
-#    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fastai == 'true') || github.event_name == 'push' }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 0 # fetch all tags and branches
-#      - name: Setup python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: 3.8
-#
-#      - name: Get full Python version
-#        id: full-python-version
-#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-#
-#      - name: Get pip cache dir
-#        id: cache-dir
-#        run: |
-#          echo ::set-output name=dir::$(pip cache dir)
-#
-#      - name: Get full Python version
-#        id: full-python-version
-#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-#
-#      - name: Cache pip dependencies
-#        uses: actions/cache@v2
-#        id: cache-pip
-#        with:
-#          path: ${{ steps.cache-dir.outputs.dir }}
-#          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-#
-#      - name: Ensure cache is healthy
-#        if: steps.cache-pip.outputs.cache-hit == 'true'
-#        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-#        env:
-#          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
-#
-#      - name: Install dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
-#        run: |
-#          pip install .
-#          pip install -r requirements/tests-requirements.txt
-#
-#      - name: Run tests and generate coverage report
-#        run: make tests-fastai
-#        shell: bash
-#
-#      - name: Upload test coverage to Codecov
-#        if: ${{ needs.diff.outputs.fastai == 'true' }}
-#        uses: codecov/codecov-action@v2
-#        with:
-#          directory: ./
-#          files: ./fastai.xml
-#          flags: frameworks
-#          verbose: true
-#
-#  TODO: fix me
-#  fasttext_integration_tests:
-#    needs: diff
-#    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.fasttext == 'true') || github.event_name == 'push' }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 0 # fetch all tags and branches
-#      - name: Setup python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: 3.8
-#
-#      - name: Get full Python version
-#        id: full-python-version
-#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-#
-#      - name: Get pip cache dir
-#        id: cache-dir
-#        run: |
-#          echo ::set-output name=dir::$(pip cache dir)
-#
-#      - name: Get full Python version
-#        id: full-python-version
-#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-#
-#      - name: Cache pip dependencies
-#        uses: actions/cache@v2
-#        id: cache-pip
-#        with:
-#          path: ${{ steps.cache-dir.outputs.dir }}
-#          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-#
-#      - name: Ensure cache is healthy
-#        if: steps.cache-pip.outputs.cache-hit == 'true'
-#        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-#        env:
-#          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
-#
-#      - name: Install dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
-#        run: |
-#          pip install .
-#          pip install -r requirements/tests-requirements.txt
-#
-#      - name: Run tests and generate coverage report
-#        run: make tests-fasttext
-#        shell: bash
-#
-#      - name: Upload test coverage to Codecov
-#        if: ${{ needs.diff.outputs.fasttext == 'true' }}
-#        uses: codecov/codecov-action@v2
-#        with:
-#          directory: ./
-#          files: ./fasttext.xml
-#          flags: frameworks
-#          verbose: true
+  # TODO: evalml_integration_tests:
+  # TODO: fastai_integration_tests
+  # TODO: fasttext_integration_tests
 
   # TODO(aarnphm): add Trax/Flax support
 
@@ -529,16 +344,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -583,16 +394,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -637,16 +444,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -691,16 +494,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -745,16 +544,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -799,16 +594,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -853,16 +644,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -939,16 +726,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -993,16 +776,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -1029,64 +808,7 @@ jobs:
           flags: frameworks
           verbose: true
 
-#  TODO: fix me
-#  pyspark_mllib_integration_tests:
-#    needs: diff
-#    if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.pyspark_mllib == 'true') || github.event_name == 'push' }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 0 # fetch all tags and branches
-#      - name: Setup python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: 3.7
-#
-#      - name: Get full Python version
-#        id: full-python-version
-#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-#
-#      - name: Get pip cache dir
-#        id: cache-dir
-#        run: |
-#          echo ::set-output name=dir::$(pip cache dir)
-#
-#      - name: Get full Python version
-#        id: full-python-version
-#        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-#
-#      - name: Cache pip dependencies
-#        uses: actions/cache@v2
-#        id: cache-pip
-#        with:
-#          path: ${{ steps.cache-dir.outputs.dir }}
-#          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
-#
-#      - name: Ensure cache is healthy
-#        if: steps.cache-pip.outputs.cache-hit == 'true'
-#        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-#        env:
-#          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
-#
-#      - name: Install dependencies
-#        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
-#        run: |
-#          pip install .
-#          pip install -r requirements/tests-requirements.txt
-#
-#      - name: Run tests and generate coverage report
-#        run: make tests-pyspark
-#        shell: bash
-#
-#      - name: Upload test coverage to Codecov
-#        if: ${{ needs.diff.outputs.pyspark_mllib == 'true' }}
-#        uses: codecov/codecov-action@v2
-#        with:
-#          directory: ./
-#          files: ./pyspark.xml
-#          flags: frameworks
-#          verbose: true
+  # TODO: pyspark_mllib_integration_tests
 
   pytorch_integration_tests:
     needs: diff
@@ -1106,16 +828,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -1160,16 +878,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -1218,16 +932,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -1272,16 +982,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -1326,16 +1032,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -1380,16 +1082,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -1434,16 +1132,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -1488,16 +1182,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'
@@ -1542,16 +1232,12 @@ jobs:
         run: |
           echo ::set-output name=dir::$(pip cache dir)
 
-      - name: Get full Python version
-        id: full-python-version
-        run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
-
       - name: Cache pip dependencies
         uses: actions/cache@v2
         id: cache-pip
         with:
           path: ${{ steps.cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
+          key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
       - name: Ensure cache is healthy
         if: steps.cache-pip.outputs.cache-hit == 'true'

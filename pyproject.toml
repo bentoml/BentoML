@@ -3,27 +3,13 @@ requires = [
   # sync with setup.py until we discard non-pep-517/518
   "wheel",
   "setuptools>=59.0",
-  "versioningit ~= 0.3.0",
+  "setuptools-scm[toml]>=6.2.3",
 ]
 build-backend = "setuptools.build_meta"
 
-[tool.versioningit.vcs]
-method = "git"
-
-# Parameters to pass to the method:
-match = ["v*"]
-default-tag = "1.0.0"
-
-[tool.versioningit.format]
-distance = "{version}+{distance}.{vcs}{rev}"
-dirty = "{version}+{distance}.{vcs}{rev}.dirty"
-distance-dirty = "{version}+{distance}.{vcs}{rev}.dirty"
-
-[tool.versioningit.write]
-file = "bentoml/_version.py"
-template = '''
-__version__ = "{version}"
-'''
+[tool.setuptools_scm]
+write_to = "bentoml/_version.py"
+git_describe_command = "git describe --dirty --tags --long --first-parent"
 
 [tool.black]
 line-length = 88

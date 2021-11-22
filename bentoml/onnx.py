@@ -17,7 +17,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import pandas as pd
     from _internal.models.store import ModelInfo, ModelStore, StoreCtx
 

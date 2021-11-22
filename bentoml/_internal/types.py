@@ -27,7 +27,7 @@ HEADER_CHARSET = "latin1"
 
 JSON_CHARSET = "utf-8"
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     PathType = t.Union[str, os.PathLike[str]]
 else:
     PathType = t.Union[str, os.PathLike]

@@ -12,7 +12,7 @@ from ._internal.models import JSON_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     # pylint: disable=unused-import
     from ._internal.models.store import ModelStore, StoreCtx
 

@@ -11,7 +11,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE
 from .exceptions import MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from _internal.models.store import ModelStore, StoreCtx
     from tensorflow.python.client.session import BaseSession
     from tensorflow.python.framework.ops import Graph

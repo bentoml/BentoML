@@ -17,7 +17,7 @@ from ._internal.runner import Runner
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from _internal.models.store import ModelStore, StoreCtx
     from spacy import Config, Vocab
     from spacy.tokens.doc import Doc

@@ -10,7 +10,7 @@ from ._internal.models import JSON_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import pandas as pd
 
     from ._internal.models.store import ModelInfo, ModelStore, StoreCtx

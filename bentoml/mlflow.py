@@ -12,7 +12,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner import Runner
 from .exceptions import BentoMLException, MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
 
     import mlflow.pyfunc
     from _internal.models.store import ModelStore, StoreCtx

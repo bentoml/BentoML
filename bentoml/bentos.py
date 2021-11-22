@@ -14,7 +14,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import load
 from ._internal.types import Tag
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._internal.bento import BentoStore
     from ._internal.models.store import ModelStore
 

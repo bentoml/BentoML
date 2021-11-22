@@ -23,7 +23,7 @@ from ..types import PathType, Tag
 from ..utils import cached_property
 from .env import BentoEnv
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ..models.store import ModelInfo, ModelStore
     from ..service import Service
     from ..service.inference_api import InferenceAPI

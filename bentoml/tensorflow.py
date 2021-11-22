@@ -22,7 +22,7 @@ from ._internal.utils.tensorflow import (
 )
 from .exceptions import MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from _internal.models.store import ModelStore, StoreCtx
 
 try:

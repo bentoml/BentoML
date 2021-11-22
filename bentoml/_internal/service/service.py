@@ -10,7 +10,7 @@ from ..types import Tag
 from ..utils.validation import validate_tag_str
 from .inference_api import InferenceAPI
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from starlette.applications import Starlette
     from starlette.middleware import Middleware
     from starlette.types import ASGIApp

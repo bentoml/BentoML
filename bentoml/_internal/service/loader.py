@@ -12,7 +12,7 @@ from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..configuration.containers import BentoMLContainer
 from ..models.store import ModelStore
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ..bento import BentoStore
     from .service import Service
 

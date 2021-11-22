@@ -13,7 +13,7 @@ from ..io_descriptors.multipart import Multipart
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from starlette.applications import Starlette
     from starlette.middleware import Middleware
     from starlette.requests import Request

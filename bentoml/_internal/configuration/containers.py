@@ -16,7 +16,9 @@ from . import expand_env_var
 if TYPE_CHECKING:  # pragma: no cover
     from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
 
-    from pyarrow._plasma import PlasmaClient  # pylint: disable=no-name-in-module
+    from pyarrow._plasma import (  # pylint: disable=no-name-in-module # type: ignore[reportMissingImports]
+        PlasmaClient,
+    )
 
     from ..server.metrics.prometheus import PrometheusClient
 

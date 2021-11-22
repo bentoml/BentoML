@@ -28,7 +28,7 @@ SYSTEM_HOME = os.path.expanduser("~")
 
 
 BENTOML_HOME = expand_env_var(
-    os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml"))
+    str(os.environ.get("BENTOML_HOME", os.path.join(SYSTEM_HOME, "bentoml")))
 )
 DEFAULT_BENTOS_PATH = os.path.join(BENTOML_HOME, "bentos")
 DEFAULT_MODELS_PATH = os.path.join(BENTOML_HOME, "models")

@@ -120,14 +120,7 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-docs-${{ hashFiles('requirements/docs-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
-
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/docs-requirements.txt
@@ -179,18 +172,7 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Install coreutils on MacOS
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: brew install coreutils
-
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
-
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -256,18 +238,7 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Install coreutils on MacOS
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: brew install coreutils
-
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
-
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt

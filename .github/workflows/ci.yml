@@ -88,17 +88,11 @@ jobs:
 
       - name: Format check
         run: USE_DOCKER=true make ci-format
-        with:
-          image: ${{ env.CHECKER_IMG }}
       - name: Lint check
         # TODO: add `make ci-lint` after fixing all pylint errors.
         run: USE_DOCKER=true make ci-flake8
-        with:
-          image: ${{ env.CHECKER_IMG }}
       - name: Type check
         run: USE_DOCKER=true make ci-pyright
-        with:
-          image: ${{ env.CHECKER_IMG }}
 
   documentation_spelling_check:
     defaults:

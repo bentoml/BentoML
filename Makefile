@@ -65,8 +65,11 @@ ci-format: ci-black ci-isort ## Running format check in CI: black, isort
 .PHONY: ci-lint
 ci-lint: ci-flake8 ci-pylint ## Running lint check in CI: flake8, pylint
 
-.PHONY: ci-type
-ci-type: ci-pyright ## Running type check in CI: pyright
+.PHONY: ci-pyright
+ci-pyright: ## Running type check in CI: pyright
+	# We need to fix permission for pyright when using checker images
+	@docker run -i --rm -u root:root -v $(GIT_ROOT):/bentoml $(GITHUB_ENV_ARGS) $(CHECKER_IMG) ./scripts/ci/style/pyright_check.sh
+
 
 tests-%:
 	$(eval type :=$(subst tests-, , $@))

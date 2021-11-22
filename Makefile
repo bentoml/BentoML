@@ -2,13 +2,19 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
-
-CHECKER_IMG ?= bentoml/checker:1.0
-BASE_ARGS := -i --rm -u $(shell id -u):$(shell id -g) -v $(GIT_ROOT):/bentoml
-GPU_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
 USE_GPU ?=false
 USE_VERBOSE ?=false
 USE_DOCKER ?=false
+AS_ROOT ?= false
+
+CHECKER_IMG ?= bentoml/checker:1.0
+ifeq ($(AS_ROOT),true)
+USER_ARGS := -u root:root
+else
+USER_ARGS := -u $(shell id -u):$(shell id -g)
+endif
+BASE_ARGS := -i --rm $(USER_ARGS) -v $(GIT_ROOT):/bentoml
+GPU_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
 GITHUB_ENV_ARGS := --env-file <(env | grep GITHUB)
 
 ifeq ($(USE_GPU),true)
@@ -52,6 +58,7 @@ tools := $(foreach t, $(__style_name), ci-$(shell basename $(t)))
 ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, pyright
 
 ci-%: chore
+	# We need to fix permission for pyright when using checker images,
 	$(eval style := $(subst ci-, ,$@))
 ifeq ($(USE_DOCKER),true)
 	@$(CMD) ./scripts/ci/style/$(style)_check.sh
@@ -64,11 +71,6 @@ ci-format: ci-black ci-isort ## Running format check in CI: black, isort
 
 .PHONY: ci-lint
 ci-lint: ci-flake8 ci-pylint ## Running lint check in CI: flake8, pylint
-
-.PHONY: ci-pyright
-ci-pyright: ## Running type check in CI: pyright
-	# We need to fix permission for pyright when using checker images
-	@docker run -i --rm -u root:root -v $(GIT_ROOT):/bentoml $(GITHUB_ENV_ARGS) $(CHECKER_IMG) ./scripts/ci/style/pyright_check.sh
 
 
 tests-%:
@@ -86,7 +88,7 @@ install-local: ## Install BentoML in editable mode
 	@pip install --editable .
 install-dev-deps: ## Install all dev dependencies
 	@echo Installing dev dependencies...
-	@pip install -r requirements/dev-requirements.txt 
+	@pip install -r requirements/dev-requirements.txt
 install-tests-deps: ## Install all tests dependencies
 	@echo Installing tests dependencies...
 	@pip install -r requirements/tests-requirements.txt

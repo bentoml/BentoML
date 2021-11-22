@@ -82,10 +82,9 @@ jobs:
       - name: Format check
         run: USE_DOCKER=true make ci-format
       - name: Lint check
-        # TODO: add `make ci-lint` after fixing all pylint errors.
-        run: USE_DOCKER=true make ci-flake8
+        run: USE_DOCKER=true AS_ROOT=true make ci-lint
       - name: Type check
-        run: USE_DOCKER=true make ci-pyright
+        run: USE_DOCKER=true AS_ROOT=true make ci-pyright
 
   documentation_spelling_check:
     defaults:

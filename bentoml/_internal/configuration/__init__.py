@@ -2,8 +2,6 @@ import logging
 import os
 import typing as t
 
-from ...exceptions import BentoMLException
-
 try:
     import importlib.metadata as importlib_metadata
 except ModuleNotFoundError:
@@ -28,14 +26,29 @@ DEBUG_ENV_VAR = "BENTOML_DEBUG"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
 
 
-def expand_env_var(env_var: t.Union[str, bytes]) -> str:
+@t.overload
+def expand_env_var(env_var: None) -> None:
+    ...
+
+
+@t.overload
+def expand_env_var(env_var: str) -> str:
+    ...
+
+
+@t.overload
+def expand_env_var(env_var: t.Union[str, bytes]) -> t.Union[str, bytes]:
+    ...
+
+
+def expand_env_var(
+    env_var: t.Optional[t.Union[str, bytes]]
+) -> t.Optional[t.Union[str, bytes]]:
     """Expands potentially nested env var by repeatedly applying `expandvars` and
     `expanduser` until interpolation stops having any effect.
     """
     if not env_var:
-        raise BentoMLException(
-            f"env_var is expected to be either `str` or `bytes`, not {type(env_var)}"
-        )
+        return env_var
     while True:
         interpolated = os.path.expanduser(os.path.expandvars(str(env_var)))
         if interpolated == env_var:
@@ -64,7 +77,7 @@ def is_pip_installed_bentoml() -> bool:
 def get_bentoml_config_file_from_env() -> t.Optional[str]:
     if CONFIG_ENV_VAR in os.environ:
         # User local config file for customizing bentoml
-        return expand_env_var(os.environ[CONFIG_ENV_VAR])
+        return expand_env_var(os.environ.get(CONFIG_ENV_VAR))
     return None
 
 

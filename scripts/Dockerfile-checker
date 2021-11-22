@@ -31,18 +31,18 @@ RUN apk add --no-cache libstdc++ bash git curl
 
 RUN npm i -g npm@^7 yarn pyright
 
-RUN apk add --no-cache --virtual .build-deps gcc build-base \
-            python3-dev musl-dev openssl-dev libffi-dev \
-            libressl-dev cargo gfortran freetype-dev libpng-dev \
-            openblas-dev postgresql-dev postgresql jpeg-dev zlib-dev libjpeg
-
 RUN python -m pip install -U pip setuptools
 
 COPY requirements/dev-requirements.txt .
 
-RUN pip install -r ./dev-requirements.txt
+COPY requirements/tests-requirements.txt .
 
-RUN apk del .build-deps
+RUN apk add --no-cache --virtual .build-deps gcc build-base \
+            python3-dev musl-dev openssl-dev libffi-dev \
+            libressl-dev cargo gfortran freetype-dev libpng-dev \
+            openblas-dev postgresql-dev postgresql jpeg-dev zlib-dev libjpeg \
+    && pip install -r ./dev-requirements.txt \
+    && apk del .build-deps
 
 WORKDIR "/bentoml"
 

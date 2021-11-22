@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import fs
 from simple_di import Provide, inject
 
-from ._internal.bento import Bento
+from ._internal.bento import Bento, SysPathBento
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import load
 from ._internal.types import Tag
@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 @inject
-def list(
+def list(  # pylint: disable=redefined-builtin
     tag: t.Optional[t.Union[Tag, str]] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> t.List[Bento]:
+) -> t.List[SysPathBento]:
     return _bento_store.list(tag)
 
 
@@ -46,8 +46,7 @@ def delete(
 
 
 def import_bento(path: str) -> Bento:
-    # FIXME: find bento tag from path
-    return Bento.from_fs(Tag("TODO"), fs.open_fs(path))
+    return Bento.from_fs(fs.open_fs(path))
 
 
 def export_bento(tag: t.Union[Tag, str], path: str):
@@ -61,7 +60,7 @@ def push(tag: t.Union[Tag, str]):
 
 
 def pull(tag: t.Union[Tag, str]):
-    pass
+    raise NotImplementedError
 
 
 @inject

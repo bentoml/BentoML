@@ -21,7 +21,7 @@ class StoreItem(ABC):
 
     @classmethod
     @abstractmethod
-    def from_fs(cls: t.Type[T], tag: Tag, fs: FS) -> T:
+    def from_fs(cls: t.Type[T], item_fs: FS) -> T:
         pass
 
     @property
@@ -75,7 +75,7 @@ class Store(ABC, t.Generic[Item]):
         """
         Creates a new instance of Item that represents the item with tag `tag`.
         """
-        return self._item_type.from_fs(tag, self._fs.opendir(tag.path()))
+        return self._item_type.from_fs(self._fs.opendir(tag.path()))
 
     def get(self, tag: t.Union[Tag, str]) -> Item:
         """
@@ -106,7 +106,7 @@ class Store(ABC, t.Generic[Item]):
             match = next(iter(matches))
             return self._get_item(Tag(_tag.name, match.info.name))
         else:
-            vers = []
+            vers: t.List[str] = []
             for match in matches:
                 vers += match.info.name
             raise BentoMLException(
@@ -140,6 +140,6 @@ class Store(ABC, t.Generic[Item]):
                 # if we've removed all versions, remove the directory
                 self._fs.removetree(_tag.name)
             else:
-                new_latest = sorted(versions, key=self._item_type.creation_time)[0]
+                new_latest = sorted(versions, key=lambda x: x.creation_time)[0]
                 # otherwise, update the latest version
                 self._fs.writetext(_tag.latest_path(), new_latest.tag.name)

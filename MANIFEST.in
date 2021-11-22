@@ -1,9 +1,6 @@
-include README.md
-include LICENSE
+# All files tracked by Git are included in PyPI distribution
 
-# Included in PyPI distribution
-graft bentoml
-
+# Files to exclude in PyPI distribution
 exclude .gitignore
 exclude .readthedocs.yml
 exclude .pep8speaks.yml
@@ -16,7 +13,7 @@ exclude SECURITY.md
 exclude Makefile
 exclude MANIFEST.in
 
-# Prune directory not to be included in PyPI package
+# Directories to exclude in PyPI package
 prune requirements
 prune tests
 prune docker

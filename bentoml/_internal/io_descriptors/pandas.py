@@ -2,9 +2,9 @@ import logging
 import typing as t
 from typing import TYPE_CHECKING
 
+from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
-from typing_extensions import Literal
 
 from ...exceptions import BadInput, InvalidArgument
 from ..utils.lazy_loader import LazyLoader
@@ -15,6 +15,11 @@ if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
 else:
     pd = LazyLoader("pd", globals(), "pandas")
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +129,9 @@ class PandasDataFrame(IODescriptor):
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
+        mime_type: t.Union[
+            Literal["text/csv"], Literal["application/json"]
+        ] = "application/json",
     ):
         self._orient = orient
         self._columns = columns
@@ -132,12 +140,43 @@ class PandasDataFrame(IODescriptor):
         self._enforce_dtype = enforce_dtype
         self._shape = shape
         self._enforce_shape = enforce_shape
+        self._mime_type = mime_type
+
+    @staticmethod
+    def _infer_type(item: str):
+        if item.startswith("int"):
+            return "integer"
+        elif item.startswith("float") or item.startswith("double"):
+            return "number"
+        elif item.startswith("str") or item.startswith("date"):
+            return "string"
+        elif item.startswith("bool"):
+            return "boolean"
+        else:
+            return "object"
+
+    def schema_type(self) -> t.Dict[str, t.Any]:
+        if self._mime_type == "text/csv":
+            return {"type": "string", "format": "binary"}
+        else:
+            if isinstance(self._dtype, dict):
+                return {
+                    "type": "object",
+                    "properties": {
+                        k: {"type": "array", "items": {"type": self._infer_type(v)}}
+                        for k, v in self._dtype.items()
+                    },
+                }
+            else:
+                return {"type": "object"}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return {self._mime_type: {"schema": self.schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return {self._mime_type: {"schema": self.schema_type()}}
 
     async def from_http_request(self, request: Request) -> "pd.DataFrame":
         """
@@ -151,6 +190,12 @@ class PandasDataFrame(IODescriptor):
             a `pd.DataFrame` object. This can then be used
              inside users defined logics.
         """
+
+        content_type, _ = parse_options_header(request.headers["content-type"])
+        mime_type = content_type.decode().lower()
+        if mime_type not in ["application/json", "text/csv"]:
+            logger.warning()
+
         obj = await request.body()
         if self._enforce_dtype:
             if self._dtype is None:

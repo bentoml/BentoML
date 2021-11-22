@@ -19,6 +19,9 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         return f"{self.__class__.__name__}"
 
     # fmt: off
+    @staticmethod
+    def schema_type(): ...
+
     @abstractmethod
     def openapi_request_schema(self) -> t.Dict[str, t.Any]: ...  # noqa: E704
 

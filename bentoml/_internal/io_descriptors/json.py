@@ -13,7 +13,7 @@ from .base import IODescriptor
 if TYPE_CHECKING:  # pragma: no cover
     import numpy as np
     import pandas as pd
-    import pydantic
+    from pydantic import BaseModel
 else:  # pragma: no cover
     np = LazyLoader("np", globals(), "numpy")
     pd = LazyLoader("pd", globals(), "pandas")
@@ -25,10 +25,10 @@ else:  # pragma: no cover
 MIME_TYPE_JSON = "application/json"
 
 _SerializableObj = t.Union[
-    "np.ndarray[t.Any, np.dtype[t.Any]]", "pydantic.BaseModel", "pd.DataFrame", t.Any
+    "np.ndarray[t.Any, np.dtype[t.Any]]", "BaseModel", "pd.DataFrame", t.Any
 ]
 
-JSONType = t.Union[str, t.Dict[str, t.Any], t.Type["pydantic.BaseModel"]]
+JSONType = t.Union[str, t.Dict[str, t.Any], "BaseModel"]
 
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
@@ -109,7 +109,7 @@ class JSON(IODescriptor[JSONType]):
 
     def __init__(
         self,
-        pydantic_model: t.Optional["pydantic.BaseModel"] = None,
+        pydantic_model: t.Optional["BaseModel"] = None,
         validate_json: bool = True,
         json_encoder: t.Type[json.JSONEncoder] = DefaultJsonEncoder,
     ):
@@ -123,20 +123,18 @@ class JSON(IODescriptor[JSONType]):
         self._validate_json = validate_json
         self._json_encoder = json_encoder
 
-    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
+    def schema_type(self) -> t.Dict[str, t.Any]:
         if hasattr(self, "_pydantic_model"):
-            schema = self._pydantic_model.schema()
-        else:
-            schema = {"type": "object"}
-        return {MIME_TYPE_JSON: {"schema": schema}}
+            return self._pydantic_model.schema()
+        return {"type": "object"}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return self.openapi_schema()
+        return {MIME_TYPE_JSON: {"schema": self.schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return self.openapi_schema()
+        return {MIME_TYPE_JSON: {"schema": self.schema_type()}}
 
     async def from_http_request(self, request: Request) -> JSONType:
         json_obj = await request.json()

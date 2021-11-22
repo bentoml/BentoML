@@ -122,23 +122,16 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
             return dict(type="array", items=dict(type="number"))
         return dict()
 
-    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
-        return {
-            MIME_TYPE_JSON: {
-                "schema": dict(
-                    type="array",
-                    items=self._get_dtypes(),
-                )
-            }
-        }
+    def schema_type(self) -> t.Dict[str, t.Any]:
+        return dict(type="array", items=self._get_dtypes())
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return self.openapi_schema()
+        return {MIME_TYPE_JSON: {"schema": self.schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return self.openapi_schema()
+        return {MIME_TYPE_JSON: {"schema": self.schema_type()}}
 
     def _verify_ndarray(
         self,

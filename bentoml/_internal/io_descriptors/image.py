@@ -122,16 +122,17 @@ class Image(IODescriptor[ImageType]):
         self._pilmode: t.Optional[_Mode] = pilmode
         self._format = self.MIME_EXT_MAPPING[mime_type]
 
-    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
-        return {self._mime_type: dict(schema=dict(type="string", format="binary"))}
+    @staticmethod
+    def schema_type() -> t.Dict[str, t.Any]:
+        return dict(type="string", format="binary")
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return self.openapi_schema()
+        return {self._mime_type: {"schema": self.schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return self.openapi_schema()
+        return {self._mime_type: {"schema": self.schema_type()}}
 
     async def from_http_request(self, request: Request) -> ImageType:
         content_type, _ = parse_options_header(request.headers["content-type"])

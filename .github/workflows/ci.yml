@@ -53,18 +53,52 @@ jobs:
         shell: bash
     needs:
       - diff
+    env:
+      CHECKER_IMG: bentoml/checker:1.0
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v2
+      - name: Create cache docker directory
+        id: cache-dir
+        run: |
+          mkdir -p $HOME/bentoml-checker
+          echo "::set-output name=dir::'$HOME/bentoml-checker'"
+      - name: Cache docker dir
+        id: checker-cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-docker-${{ hashFiles('scripts/Dockerfile-checker') }}
+
+      - name: Pull checker images
+        if: steps.checker-cache.outputs.cache-hit != 'true'
+        run: |
+          docker pull ${{ env.CHECKER_IMG }}
+          docker save -o $CACHE_PATH ${{ env.CHECKER_IMG }}
+        env:
+          CACHE_PATH: ${{ steps.cache-dir.outputs.dir }}/checker.tar
+
+      - name: Load checker image from cache
+        if: steps.checker-cache.outputs.cache-hit == 'true'
+        run: docker load -i $CACHE_PATH
+        env:
+          CACHE_PATH: ${{ steps.cache-dir.outputs.dir }}/checker.tar
+
       - name: Format check
         run: USE_DOCKER=true make ci-format
+        with:
+          image: ${{ env.CHECKER_IMG }}
       - name: Lint check
         # TODO: add `make ci-lint` after fixing all pylint errors.
         run: USE_DOCKER=true make ci-flake8
+        with:
+          image: ${{ env.CHECKER_IMG }}
       - name: Type check
         run: USE_DOCKER=true make ci-pyright
+        with:
+          image: ${{ env.CHECKER_IMG }}
 
   documentation_spelling_check:
     defaults:

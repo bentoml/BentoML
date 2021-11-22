@@ -54,7 +54,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 .test_bundle/
-.xml
+*.xml
 
 # Sphinx documentation
 docs/build/

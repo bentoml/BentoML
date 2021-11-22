@@ -13,7 +13,6 @@ global-exclude tests
 
 # Included in PyPI distribution
 include bentoml/*.py
-include versioneer.py
 include bentoml/_version.py
 include bentoml/_internal/bento/docker-entrypoint.sh
 graft bentoml/_internal

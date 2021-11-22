@@ -1,6 +1,4 @@
-import versioneer
-from setuptools import setup
+import setuptools
 
 if __name__ == "__main__":
-    setup(version=versioneer.get_version(),
-          cmdclass=versioneer.get_cmdclass())
+    setuptools.setup()

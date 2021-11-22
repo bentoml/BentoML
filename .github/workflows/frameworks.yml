@@ -195,14 +195,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -245,14 +239,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -295,14 +283,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -351,14 +333,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -401,14 +377,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -451,14 +421,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -501,14 +465,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -551,14 +509,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -601,14 +553,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -651,14 +597,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -733,14 +673,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -783,14 +717,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -835,14 +763,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -885,14 +807,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -939,14 +855,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -989,14 +899,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -1039,14 +943,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -1089,14 +987,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -1139,14 +1031,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -1189,14 +1075,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt
@@ -1239,14 +1119,8 @@ jobs:
           path: ${{ steps.cache-dir.outputs.dir }}
           key: ${{ runner.os }}-tests-${{ hashFiles('requirements/tests-requirements.txt') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cache-pip.outputs.cache-hit == 'true'
-        run: timeout 10s pip --version || rm -rf $CACHE_DIR
-        env:
-          CACHE_DIR: ${{ steps.cache-dir.outputs.dir }}
 
       - name: Install dependencies
-        if: steps.cache-pip.outputs.cache-hit != 'true' || needs.diff.outputs.dependencies == 'true' || needs.diff.outputs.related == 'true'
         run: |
           pip install .
           pip install -r requirements/tests-requirements.txt

@@ -55,34 +55,29 @@ jobs:
       - diff
     env:
       CHECKER_IMG: bentoml/checker:1.0
-      CACHE_DIR: ~/bentoml-checker
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v2
       - name: Create cache docker directory
-        run: mkdir -p ${{ env.CACHE_DIR }}
+        run: mkdir -p ~/bentoml-checker
       - name: Cache docker dir
         id: checker-cache
         uses: actions/cache@v2
         with:
-          path: ${{ env.CACHE_DIR }}
+          path: ~/bentoml-checker
           key: ${{ runner.os }}-docker-${{ hashFiles('scripts/Dockerfile-checker') }}
 
       - name: Pull checker images
         if: steps.checker-cache.outputs.cache-hit != 'true'
         run: |
           docker pull ${{ env.CHECKER_IMG }}
-          docker save -o $CACHE_PATH ${{ env.CHECKER_IMG }}
-        env:
-          CACHE_PATH: ${{ env.CACHE_DIR }}/checker.tar
+          docker save -o ~/bentoml-checker/checker.tar ${{ env.CHECKER_IMG }}
 
       - name: Load checker image from cache
         if: steps.checker-cache.outputs.cache-hit == 'true'
-        run: docker load -i $CACHE_PATH
-        env:
-          CACHE_PATH: ${{ env.CACHE_DIR }}/checker.tar
+        run: docker load -i ~/bentoml-checker/checker.tar
 
       - name: Format check
         run: USE_DOCKER=true make ci-format

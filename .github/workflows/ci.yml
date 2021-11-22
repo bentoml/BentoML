@@ -19,6 +19,7 @@ jobs:
   diff:
     runs-on: ubuntu-latest
     outputs:
+      checker: ${{ steps.filter.outputs.checker }}
       related: ${{ steps.filter.outputs.related }}
       bentoml: ${{ steps.filter.outputs.bentoml }}
       docs: ${{ steps.filter.outputs.docs }}
@@ -29,14 +30,17 @@ jobs:
         with:
           base: 'bentoml-1.0'
           filters: |
+            checker:
+              - scripts/Dockerfile-checker
             related: &related
               - .github/workflows/ci.yml
               - setup.cfg
               - pyproject.toml
               - scripts/ci/config.yml
+              - scripts/ci/run_tests.sh
+              - requirements/tests-requirements.txt
             bentoml:
               - *related
-              - requirements/tests-requirements.txt
               - "bentoml/**"
               - "tests/**"
               - "docker/**"
@@ -52,18 +56,38 @@ jobs:
         shell: bash
     needs:
       - diff
+    env:
+      CHECKER_IMG: bentoml/checker:1.0
 
     if: ${{ (github.event_name == 'pull_request' && needs.diff.outputs.bentoml == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v2
+      - name: Create cache docker directory
+        run: mkdir -p ~/bentoml-checker
+      - name: Cache docker dir
+        id: checker-cache
+        uses: actions/cache@v2
+        with:
+          path: ~/bentoml-checker
+          key: ${{ runner.os }}-docker-${{ hashFiles('scripts/Dockerfile-checker') }}
+
+      - name: Pull checker images
+        if: steps.checker-cache.outputs.cache-hit != 'true' || needs.diff.outputs.checker == 'true'
+        run: |
+          docker pull ${{ env.CHECKER_IMG }}
+          docker save -o ~/bentoml-checker/checker.tar ${{ env.CHECKER_IMG }}
+
+      - name: Load checker image from cache
+        if: steps.checker-cache.outputs.cache-hit == 'true'
+        run: docker load -i ~/bentoml-checker/checker.tar
+
       - name: Format check
         run: USE_DOCKER=true make ci-format
       - name: Lint check
-        # TODO: add `make ci-lint` after fixing all pylint errors.
-        run: USE_DOCKER=true make ci-flake8
+        run: USE_DOCKER=true AS_ROOT=true make ci-lint
       - name: Type check
-        run: USE_DOCKER=true make ci-pyright
+        run: USE_DOCKER=true AS_ROOT=true make ci-pyright
 
   documentation_spelling_check:
     defaults:

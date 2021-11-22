@@ -14,8 +14,10 @@ ignore:
   - "bentoml/testing/**/*"
   - "bentoml/_internal/types.py"
   - "bentoml/__main__.py"
-  - "bentoml/_version.py"
   - "bentoml/build_utils.py"
+  - "tests/**/*"
+  - "docker/**/*"
+  - "typings/**/*"
 
 coverage:
   precision: 2
@@ -77,8 +79,8 @@ flags:
   e2e:
     carryforward: true
     paths:
-      - ".*"
+      - "bentoml/**/*"
   unit:
     carryforward: true
     paths:
-      - ".*"
+      - "bentoml/**/*"

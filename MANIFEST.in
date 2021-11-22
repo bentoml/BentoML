@@ -2,6 +2,10 @@ include README.md
 include LICENSE
 
 # Included in PyPI distribution
+include bentoml/*.py
+include bentoml/_version.py
+include bentoml/_internal/bento/docker-entrypoint.sh
+graft bentoml/_internal
 graft bentoml
 
 exclude .gitignore

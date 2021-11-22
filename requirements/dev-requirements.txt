@@ -2,7 +2,6 @@
 -r tests-requirements.txt
 GitPython>=2.0
 setuptools
-autoflake
 twine
 wheel
 pydantic
@@ -10,7 +9,5 @@ types-click
 types-chardet
 types-setuptools
 types-PyYAML
-pyspark-stubs
 types-filelock
-autoflake
 attrs>=21.1

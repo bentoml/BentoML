@@ -1,4 +1,5 @@
 # Docs dependencies
+-r tests-requirements.txt
 sphinx==3.5.4
 recommonmark
 sphinx-click

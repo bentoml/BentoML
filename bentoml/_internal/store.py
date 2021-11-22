@@ -106,7 +106,7 @@ class Store(ABC, t.Generic[Item]):
             match = next(iter(matches))
             return self._get_item(Tag(_tag.name, match.info.name))
         else:
-            vers = []
+            vers: t.List[str] = []
             for match in matches:
                 vers += match.info.name
             raise BentoMLException(

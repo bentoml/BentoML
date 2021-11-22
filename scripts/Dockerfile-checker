@@ -1,33 +1,36 @@
 # syntax = docker/dockerfile:1.2
+FROM python:3.8-slim
 
-FROM python:3.8-alpine as node_builder
-
-RUN apk add curl gcc musl-dev libffi-dev
-
-ENV NODE_VERSION="17.1.0"
-
-RUN curl -fsSLO --compressed "https://unofficial-builds.nodejs.org/download/release/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64-musl.tar.xz"
-RUN curl -fsSLO --compressed "https://unofficial-builds.nodejs.org/download/release/v$NODE_VERSION/SHASUMS256.txt"
-RUN grep " node-v$NODE_VERSION-linux-x64-musl.tar.xz\$" SHASUMS256.txt | sha256sum -c -
-RUN tar -xf "node-v$NODE_VERSION-linux-x64-musl.tar.xz"
-
-RUN curl -fsSLO https://github.com/mikefarah/yq/releases/download/v4.14.1/yq_linux_amd64.tar.gz \
-    && tar -xf "yq_linux_amd64.tar.gz"
-
-FROM python:3.8-alpine
-
-ENV NODE_VERSION="17.1.0" \
-  PYTHONFAULTHANDLER=1 \
+ENV PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
   PYTHONHASHSEED=random \
   PIP_NO_CACHE_DIR=off \
   PIP_DISABLE_PIP_VERSION_CHECK=on \
   PIP_DEFAULT_TIMEOUT=100
 
-COPY --from=node_builder /node-v"$NODE_VERSION"-linux-x64-musl /usr/local
-COPY --from=node_builder /yq_linux_amd64 /usr/bin/yq
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONDONTWRITEBYTECODE=1
 
-RUN apk add --no-cache libstdc++ bash git curl
+ENV NODE_VERSION=16.13.0
+
+RUN apt-get update \
+    && apt-get install -q -y --no-install-recommends \
+        ca-certificates curl git gnupg build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+ENV NVM_DIR=/root/.nvm
+RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
+ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
+
+RUN curl -fsSLO https://github.com/mikefarah/yq/releases/download/v4.14.1/yq_linux_amd64.tar.gz \
+    && tar -zvxf ./yq_linux_amd64.tar.gz  \
+    && mv ./yq_linux_amd64 /usr/local/bin/yq \
+    && rm -f ./yq_linux_amd64.tar.gz ./yq.1 ./install-man-page.sh
 
 RUN npm i -g npm@^7 yarn pyright
 
@@ -37,12 +40,7 @@ COPY requirements/dev-requirements.txt .
 
 COPY requirements/tests-requirements.txt .
 
-RUN apk add --no-cache --virtual .build-deps gcc build-base \
-            python3-dev musl-dev openssl-dev libffi-dev \
-            libressl-dev cargo gfortran freetype-dev libpng-dev \
-            openblas-dev postgresql-dev postgresql jpeg-dev zlib-dev libjpeg \
-    && pip install -r ./dev-requirements.txt \
-    && apk del .build-deps
+RUN pip install -r ./dev-requirements.txt
 
 WORKDIR "/bentoml"
 

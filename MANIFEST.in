@@ -1,10 +1,8 @@
 include README.md
 include LICENSE
-include MANIFEST.in
 
 # Included in PyPI distribution
-include bentoml/*.py
-graft bentoml/_internal
+graft bentoml
 
 exclude .gitignore
 exclude .readthedocs.yml
@@ -16,6 +14,7 @@ exclude CODE_OF_CONDUCT.md
 exclude DEVELOPMENT.md
 exclude SECURITY.md
 exclude Makefile
+exclude MANIFEST.in
 
 # Prune directory not to be included in PyPI package
 prune requirements
@@ -26,14 +25,11 @@ prune scripts
 prune hooks
 prune docs
 prune .github
-prune bentoml/testing
 
 # Patterns to exclude from any directory
 global-exclude *~
 global-exclude *.pyc
 global-exclude *.pyo
-global-exclude .git
-global-exclude .github
 global-exclude .ipynb_checkpoints
 global-exclude __pycache__
 global-exclude .DS_Store

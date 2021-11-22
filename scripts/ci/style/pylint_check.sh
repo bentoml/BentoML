@@ -15,16 +15,6 @@ if [[ -n "$GITHUB_BASE_REF" ]]; then
     FAIL "pylint failed."
     exit 1
   fi
-else
-  echo "Running pylint for the whole library..."
-  pylint --rcfile="$GIT_ROOT/pyproject.toml" bentoml | tee /tmp/"$name"_bentoml
-  pylint --rcfile="$GIT_ROOT/pyproject.toml" --disable=E0401,F0010 tests docker | tee /tmp/"$name"_tests_docker
-
-  if [ -s /tmp/"$name"_tests_docker ] || [ -s /tmp/"$name"_bentoml ]; then
-    FAIL "pylint failed"
-    cat /tmp/"$name"_tests_docker || cat /tmp/"$name"_bentoml
-    exit 1
-  fi
 fi
 
 PASS "pylint check passed!"

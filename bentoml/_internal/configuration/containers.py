@@ -14,7 +14,7 @@ from ..utils import get_free_port, validate_or_create_dir
 from . import expand_env_var
 
 if TYPE_CHECKING:  # pragma: no cover
-    from multiprocessing.synchronize import Lock as SyncLock
+    from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
 
     from pyarrow._plasma import PlasmaClient  # pylint: disable=no-name-in-module
 

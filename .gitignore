@@ -54,22 +54,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 .test_bundle/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
+*.xml
 
 # Sphinx documentation
 docs/build/
@@ -106,41 +91,20 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
-/site
-
 # mypy
 .mypy_cache/
-
-
-# NodeJS / Javascript
-node_modules/
-yarn-error.log
 
 # MacOS X
 .DS_Store
 
-# sqlite
-storage.db
-
-# benchmark
-benchmark/*/*.csv
-*.xml
-
-# bundle local bentoml source when installed in editor mode
-__bentoml_tmp_sdist_build
-
 # vscode config
 .vscode/
-
-# Helm Dependencies
-helm/YataiService/charts
-**/*.values
 
 # Integration test data
 tests/integration/data
 
 # Emacs buffers
 *~
-**/*.ipynb
+
+# setuptools_scm generated version file
 bentoml/_version.py

@@ -14,7 +14,9 @@ from ..utils import get_free_port, validate_or_create_dir
 from . import expand_env_var
 
 if TYPE_CHECKING:  # pragma: no cover
-    from pyarrow._plasma import PlasmaClient
+    from multiprocessing.synchronize import Lock as SyncLock
+
+    from pyarrow._plasma import PlasmaClient  # pylint: disable=no-name-in-module
 
     from ..server.metrics.prometheus import PrometheusClient
 
@@ -33,18 +35,20 @@ validate_or_create_dir(BENTOML_HOME)
 validate_or_create_dir(DEFAULT_BENTOS_PATH)
 validate_or_create_dir(DEFAULT_MODELS_PATH)
 
-
+_larger_than_zero: t.Callable[[int], bool] = lambda val: val > 0
+_is_upper: t.Callable[[str], bool] = lambda string: string.isupper()
+_check_tracing_type: t.Callable[[str], bool] = lambda s: s in ("zipkin", "jaeger")
 SCHEMA = Schema(
     {
         "bento_server": {
-            "port": And(int, lambda port: port > 0),
-            "workers": Or(And(int, lambda workers: workers > 0), None),
-            "timeout": And(int, lambda timeout: timeout > 0),
-            "max_request_size": And(int, lambda size: size > 0),
+            "port": And(int, _larger_than_zero),
+            "workers": Or(And(int, _larger_than_zero), None),
+            "timeout": And(int, _larger_than_zero),
+            "max_request_size": And(int, _larger_than_zero),
             "batch_options": {
                 Optional("enabled", default=True): bool,
-                "max_batch_size": Or(And(int, lambda size: size > 0), None),
-                "max_latency_ms": Or(And(int, lambda latency: latency > 0), None),
+                "max_batch_size": Or(And(int, _larger_than_zero), None),
+                "max_latency_ms": Or(And(int, _larger_than_zero), None),
             },
             "ngrok": {"enabled": bool},
             "metrics": {"enabled": bool, "namespace": str},
@@ -62,7 +66,7 @@ SCHEMA = Schema(
         "logging": {
             "level": And(
                 str,
-                lambda level: level.isupper(),
+                _is_upper,
                 error="logging.level must be all upper case letters",
             ),
             "console": {"enabled": bool},
@@ -70,9 +74,7 @@ SCHEMA = Schema(
             "advanced": {"enabled": bool, "config": Or(dict, None)},
         },
         "tracing": {
-            "type": Or(
-                And(str, Use(str.lower), lambda s: s in ("zipkin", "jaeger")), None
-            ),
+            "type": Or(And(str, Use(str.lower), _check_tracing_type), None),
             Optional("zipkin"): {"url": Or(str, None)},
             Optional("jaeger"): {"address": Or(str, None), "port": Or(int, None)},
         },
@@ -107,7 +109,7 @@ class BentoMLConfiguration:
             os.path.dirname(__file__), "default_configuration.yaml"
         )
         with open(default_config_file, "rb") as f:
-            self.config = yaml.safe_load(f)
+            self.config: t.Dict[str, t.Any] = yaml.safe_load(f)
 
         if validate_schema:
             try:
@@ -141,7 +143,7 @@ class BentoMLConfiguration:
         # TODO:
         # Find local yatai configurations and merge with it
 
-    def override(self, keys: list, value):
+    def override(self, keys: t.List[str], value: t.Any):
         if keys is None:
             raise BentoMLConfigException("Configuration override key is None.")
         if len(keys) == 0:
@@ -166,7 +168,7 @@ class BentoMLConfiguration:
                 " to the required schema, key=%s, value=%s." % (keys, value)
             ) from e
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> t.Dict[str, t.Any]:
         return self.config
 
 
@@ -176,19 +178,19 @@ class BentoMLContainerClass:
     config = providers.Configuration()
 
     bentoml_home = BENTOML_HOME
-    default_bento_store_base_dir = DEFAULT_BENTOS_PATH
-    default_model_store_base_dir = DEFAULT_MODELS_PATH
+    default_bento_store_base_dir: str = DEFAULT_BENTOS_PATH
+    default_model_store_base_dir: str = DEFAULT_MODELS_PATH
 
     @providers.SingletonFactory
     @staticmethod
-    def bento_store(base_dir=default_bento_store_base_dir):
+    def bento_store(base_dir: str = default_bento_store_base_dir):
         from ..bento import BentoStore
 
         return BentoStore(base_dir)
 
     @providers.SingletonFactory
     @staticmethod
-    def model_store(base_dir=default_model_store_base_dir):
+    def model_store(base_dir: str = default_model_store_base_dir):
         from ..models.store import ModelStore
 
         return ModelStore(base_dir)
@@ -219,14 +221,17 @@ class BentoMLContainerClass:
 
             return NoopTracer()
 
-    logging_file_directory = providers.Factory(
-        lambda default, customized: customized or default,
+    logging_file_directory = t.cast(
+        Provider[t.Callable[[], str]],
         providers.Factory(
-            os.path.join,
-            bentoml_home,
-            "logs",
+            lambda default, customized: customized or default,
+            providers.Factory(
+                os.path.join,
+                bentoml_home,
+                "logs",
+            ),
+            config.logging.file.directory,
         ),
-        config.logging.file.directory,
     )
 
 
@@ -252,7 +257,7 @@ class BentoServerContainerClass:
         allow_methods: t.List[str] = Provide[config.cors.access_control_allow_methods],
         allow_headers: t.List[str] = Provide[config.cors.access_control_allow_headers],
         max_age: int = Provide[config.cors.access_control_max_age],
-    ) -> t.Dict:
+    ) -> t.Dict[str, t.Union[t.List[str], int]]:
         kwargs = dict(
             allow_origins=allow_origins,
             allow_credentials=allow_credentials,
@@ -265,23 +270,33 @@ class BentoServerContainerClass:
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return filtered_kwargs
 
-    api_server_workers = providers.Factory(
-        lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
-        config.workers,
+    api_server_workers = t.cast(
+        Provider[int],
+        providers.Factory(
+            lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
+            config.workers,
+        ),
+    )
+    service_port: Provider[int] = config.port
+    service_host = t.cast(Provider[str], providers.Static("0.0.0.0"))
+
+    forward_host = t.cast(Provider[str], providers.Static("localhost"))
+    forward_port = t.cast(
+        Provider[t.Callable[[str], int]], providers.SingletonFactory(get_free_port)
     )
 
-    service_host: Provider[str] = providers.Static("0.0.0.0")
-    service_port: Provider[int] = config.port
+    prometheus_lock = t.cast(
+        Provider[t.Callable[[], "SyncLock"]],
+        providers.SingletonFactory(multiprocessing.Lock),
+    )
 
-    forward_host: Provider[str] = providers.Static("localhost")
-    forward_port: Provider[int] = providers.SingletonFactory(get_free_port)
-
-    prometheus_lock = providers.SingletonFactory(multiprocessing.Lock)
-
-    prometheus_multiproc_dir = providers.Factory(
-        os.path.join,
-        bentoml_container.bentoml_home,
-        "prometheus_multiproc_dir",
+    prometheus_multiproc_dir = t.cast(
+        Provider[str],
+        providers.Factory(
+            os.path.join,
+            bentoml_container.bentoml_home,
+            "prometheus_multiproc_dir",
+        ),
     )
 
     @providers.SingletonFactory
@@ -298,8 +313,8 @@ class BentoServerContainerClass:
         )
 
     # Mapping from runner name to RunnerApp file descriptor
-    remote_runner_mapping: Provider[t.Dict[str, int]] = providers.Static(dict())
-    plasma_db: "PlasmaClient" = providers.Static(None)
+    remote_runner_mapping = t.cast(Provider[t.Dict[str, int]], providers.Static(dict()))
+    plasma_db: "PlasmaClient" = providers.Static(None)  # type: ignore[reportUnknownVariableType]
 
 
 BentoServerContainer = BentoServerContainerClass()

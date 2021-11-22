@@ -693,8 +693,8 @@ jobs:
 
       - name: Run tests and generate coverage report
         run: |
-          python setup.py develop
-          pip install -r requirements/tests-requirements.txt tensorflow==2.2.0 pandas tf2onnx
+          pip install -e .
+          pip install -r requirements/tests-requirements.txt tensorflow==2.2.0 pandas tf2onnx protobuf
           export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
           export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
           pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=setup.cfg --cov-report=xml:"onnxmlir.xml"

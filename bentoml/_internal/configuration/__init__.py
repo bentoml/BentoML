@@ -19,7 +19,7 @@ DEBUG_ENV_VAR = "BENTOML_DEBUG"
 CONFIG_ENV_VAR = "BENTOML_CONFIG"
 
 
-def expand_env_var(env_var):
+def expand_env_var(env_var: t.Optional[str]) -> t.Any:
     """Expands potentially nested env var by repeatedly applying `expandvars` and
     `expanduser` until interpolation stops having any effect.
     """
@@ -41,7 +41,8 @@ def expand_env_var(env_var):
 BENTOML_VERSION: str = importlib_metadata.version("bentoml")
 
 
-def is_pip_installed_bentoml():
+def is_pip_installed_bentoml() -> bool:
+    """is_pip_installed_bentoml."""
     is_installed_package = len(version_mod.version_tuple) == 3
     is_tagged = not BENTOML_VERSION.startswith("0+untagged")
     is_clean = not version_mod.version_tuple[-1].split(".")[-1].startswith("d")
@@ -49,14 +50,14 @@ def is_pip_installed_bentoml():
     return is_installed_package and is_tagged and is_clean and is_modified
 
 
-def get_bentoml_config_file_from_env():
+def get_bentoml_config_file_from_env() -> t.Any:
     if CONFIG_ENV_VAR in os.environ:
         # User local config file for customizing bentoml
         return expand_env_var(os.environ.get(CONFIG_ENV_VAR))
     return None
 
 
-def set_debug_mode(enabled: bool):
+def set_debug_mode(enabled: bool) -> None:
     os.environ[DEBUG_ENV_VAR] = str(enabled)
 
     # reconfigure logging
@@ -69,7 +70,7 @@ def set_debug_mode(enabled: bool):
     )
 
 
-def get_debug_mode():
+def get_debug_mode() -> bool:
     if DEBUG_ENV_VAR in os.environ:
         return os.environ[DEBUG_ENV_VAR].lower() == "true"
     return False
@@ -102,7 +103,7 @@ def load_global_config(bentoml_config_file: t.Optional[str] = None):
     BentoMLContainer.config.set(bentoml_configuration.as_dict())
 
 
-def save_global_config(config_file_handle: t.TextIO):
+def save_global_config(config_file_handle: t.IO[t.Any]):
     from ..configuration.containers import BentoMLContainer
 
     content = yaml.safe_dump(BentoMLContainer.config)

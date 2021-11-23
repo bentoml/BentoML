@@ -20,7 +20,7 @@ Before starting this guide, make sure you have the following:
 
 * SSMS installed and connected to server: https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms
 
-* Python 3.6 or above and required PyPi packages: `bentoml` and `scikit-learn`
+* Python 3.7 or above and required PyPi packages: `bentoml` and `scikit-learn`
 
   * .. code-block: bash
 

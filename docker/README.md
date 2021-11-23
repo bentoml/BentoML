@@ -39,7 +39,7 @@ Image tags will have the following format:
    │             │                │        │
    │             │                │        └─> additional suffix, differentiate runtime and cudnn releases
    │             │                └─> formatted <dist><dist_version>, e.g: ami2, slim, centos7
-   │             └─> Supported Python version: python3.6 | python3.7 | python3.8
+   │             └─> Supported Python version: python3.7 | python3.8 | python3.9
    └─>  Release type: devel or official BentoML release (e.g: 1.0.0)                                           
 ```
 

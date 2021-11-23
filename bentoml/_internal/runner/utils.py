@@ -95,13 +95,9 @@ class TypeRef:
         ref = t.ForwardRef(f"m.{self.qualname}")
         localns = {"m": m}
 
-        if hasattr(t, "_eval_type"):  # python3.8 & python 3.9
+        if hasattr(t, "_eval_type"):  # python3.7, 3.8 & 3.9
             _eval_type = getattr(t, "_eval_type")
             return t.cast(t.Type, _eval_type(ref, globals(), localns))
-
-        if hasattr(ref, "_eval_type"):  # python3.6
-            _eval_type = getattr(ref, "_eval_type")
-            return t.cast(t.Type, _eval_type(globals(), localns))
 
         raise SystemError("unsupported Python version")
 

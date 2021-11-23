@@ -21,7 +21,7 @@ Prerequisites
 
     * Install instruction: https://docs.docker.com/install
 
-* Python 3.6 or above and required packages `bentoml` and `scikit-learn`:
+* Python 3.7 or above and required packages `bentoml` and `scikit-learn`:
 
     * .. code-block:: bash
 

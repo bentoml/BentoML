@@ -137,7 +137,7 @@ suffixes:
 |------|------|------------|
 |`fmt`| `<str>`|specific python3 string format| 
 |`release_type`| `<str>`|devel - runtime - cudnn| 
-|`python_version`| `<str>`|3.6 -3.7 - 3.8| 
+|`python_version`| `<str>`|3.7 -3.8 - 3.9| 
 |`suffixes`| `<str>`|addtional suffix needed to add| 
 
 **NOTES**: The reason why we named our GPU releases `cudnn` instead of `gpu` is due to clarification. With most deep learning framework

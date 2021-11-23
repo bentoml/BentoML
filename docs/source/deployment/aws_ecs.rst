@@ -28,7 +28,7 @@ Prerequisites
 
   * Install instruction: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
 
-* Python 3.6 or above with `scikit-learn` and `bentoml` installed
+* Python 3.7 or above with `scikit-learn` and `bentoml` installed
 
   *  .. code-block:: bash
 

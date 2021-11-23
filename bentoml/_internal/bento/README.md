@@ -45,9 +45,9 @@ bentoml.build(
         packages=["tensorflow", "numpy"],
         # requirements_txt="./requirements.txt",
         index_url="http://<api token>:@mycompany.com/pypi/simple",
-        trusted_host="mycompany.com",
+        trusted_host=["mycompany.com"],
         find_links=['thirdparty..'],
-        extra_index_url="...",
+        extra_index_url=["..."],
         pip_args="ANY ADDITIONAL PIP INSTALL ARGS",
         wheels=["./wheels/*"],
     ),
@@ -56,6 +56,7 @@ bentoml.build(
         distro="amazonlinux2",
         gpu=True,
         setup_script="setup_docker_container.sh",
+        python_version="3.8",
     ),
     conda={
         "environment_yml": "./environment.yml",
@@ -66,7 +67,7 @@ bentoml.build(
 ```
 
 
-Alternatively, user may put all build options in a `bentobuild.yaml` in the same directory
+Alternatively, user may put all build options in a `bentofile.yaml` in the same directory
 ```yaml
 service: "iris_classifier:svc"
 description: "./readme.md"
@@ -83,6 +84,7 @@ additional_models:
 docker:
   distro: slim
   gpu: True
+  python_version: "3.8"
   setup_script: "./setup_env.sh"
 python:
   packages:
@@ -104,7 +106,7 @@ python:
     - ./build/my_lib.whl
 ```
 
-Another build file example:
+Another bentofile example:
 ```yaml
 service: "foo.bar.another_svc:my_svc"
 include:
@@ -121,11 +123,11 @@ conda:
 
 
 When running the CLI command `bentoml build` without any parameter, it will look for
-a `bentobuild.yaml` file in current directory and use it as build target. User may also
+a `bentofile.yaml` file in current directory and use it as build target. User may also
 specify which build file to use with the `-f` option, e.g.:
 
 ```bash
-bentoml build -f ./bentobuild_project_2.yaml
+bentoml build -f ./bentofile-proj2.yaml
 ```
 
 Note that `version` can not be set via the build yaml file, although user can pass in
@@ -136,7 +138,7 @@ bentoml build --version="dataset_1023_run_3021"
 ```
 
 The default `build_ctx` will be current directory, it can be changed via CLI arg. In 
-this case, BentoML will look for `bentobuild.yaml` file in the build context directory
+this case, BentoML will look for `bentofile.yaml` file in the build context directory
 if a build file is not provided.
 
 ```bash

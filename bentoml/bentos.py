@@ -6,13 +6,15 @@ import os
 import typing as t
 from typing import TYPE_CHECKING
 
-import attr
 import fs
 from simple_di import Provide, inject
 
 from ._internal.bento import Bento, SysPathBento
+from ._internal.bento.bento import chdir_build_context
+from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.types import Tag
+from .exceptions import InvalidArgument
 
 if TYPE_CHECKING:  # pragma: no cover
     from ._internal.bento import BentoStore
@@ -66,49 +68,114 @@ def pull(tag: t.Union[Tag, str]):
 @inject
 def build(
     svc_import_str: str,
-    version: t.Optional[str] = None,
+    *,
+    labels: t.Optional[t.Dict[str, str]] = None,
     description: t.Optional[str] = None,
     include: t.Optional[t.List[str]] = None,
     exclude: t.Optional[t.List[str]] = None,
-    labels: t.Optional[t.Dict[str, str]] = None,
     additional_models: t.Optional[t.List[str]] = None,
     docker: t.Optional[t.Dict[str, t.Any]] = None,
     python: t.Optional[t.Dict[str, t.Any]] = None,
     conda: t.Optional[t.Dict[str, t.Any]] = None,
+    version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> Bento:
+) -> SysPathBento:
     """
-    Build a Bento for this Service. A Bento is a file archive containing all the
-    specifications, source code, and model files required to run and operate this
-    service in production.
+    User-facing API for building a Bento, the available build options are symmetrical to
+    the content of a valid bentofile.yaml file, for building Bento from CLI.
+
+    This API will not respect bentofile.yaml file in current environment, build options
+    can only be provided via function call parameters.
+
+    Args:
+        svc_import_str: import str for finding the bentoml.Service instance build target
+        labels: optional immutable labels for carrying contextual info
+        description: optional description string in markdown format
+        include: list of file paths and patterns specifying files to include in Bento,
+            default is all files under build_ctx, beside the ones excluded from the
+            exclude parameter or a .bentoignore file for a given directory
+        exclude: list of file paths and patterns to exclude from the final Bento archive
+        additional_models: list of model tags to pack in Bento, in addition to the
+            models that are required by service's runners. These models must be
+            found in the given _model_store
+        docker: dictionary for configuring Bento's containerization process, see details
+            in `._internal.bento.build_config.DockerOptions`
+        python: dictionary for configuring Bento's python dependencies, see details in
+            `._internal.bento.build_config.PythonOptions`
+        conda: dictionary for configuring Bento's conda dependencies, see details in
+            `._internal.bento.build_config.CondaOptions`
+        version: Override the default auto generated version str
+        build_ctx: Build context directory, when used as
+        _bento_store: save Bento created to this BentoStore
+        _model_store: pull Models required from this ModelStore
+
+    Returns:
+        Bento: a Bento instance representing the materialized Bento saved in BentoStore
+
     """  # noqa: LN001
-    bento = Bento.create(
-        svc_import_str,
-        build_ctx,
-        additional_models,
-        version,
-        description,
-        include,
-        exclude,
-        docker,
-        python,
-        conda,
-        labels,
-        _model_store,
+    build_config = BentoBuildConfig(
+        service=svc_import_str,
+        description=description,
+        labels=labels,
+        include=include,
+        exclude=exclude,
+        additional_models=additional_models,
+        docker=docker,
+        python=python,
+        conda=conda,
     )
-    bento.save(_bento_store)
+
+    bento = Bento.create(
+        build_config=build_config,
+        version=version,
+        build_ctx=build_ctx,
+        model_store=_model_store,
+    ).save(_bento_store)
     logger.info("Bento build success, %s created", bento)
     return bento
 
 
-def build_from_bentofile(
-    bentofile: t.Optional,
+@inject
+def build_from_bentofile_yaml(
+    bentofile: str = "bentofile.yaml",
+    *,
     version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
-):
-    pass
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> SysPathBento:
+    """
+    Build a Bento base on options specified in a bentofile.yaml file.
+
+    By default, this function will look for a `bentofile.yaml` file in current working
+    directory.
+
+    Args:
+        bentofile: The file path to build config yaml file
+        version: Override the default auto generated version str
+        build_ctx: Build context directory, when used as
+        _bento_store: save Bento created to this BentoStore
+        _model_store: pull Models required from this ModelStore
+    """
+    # Change working dir to build_ctx is required here, in case build file is provided
+    # as a relative path base on the build_ctx path
+    with chdir_build_context(build_ctx):
+        if not os.path.exists(bentofile):
+            raise InvalidArgument(f'Build file not found: "{bentofile}"')
+
+        with open(bentofile, "r") as f:
+            build_config = BentoBuildConfig.from_yaml(f)
+
+        bento = Bento.create(
+            build_config=build_config,
+            version=version,
+            build_ctx=build_ctx,
+            model_store=_model_store,
+        ).save(_bento_store)
+        logger.info("Bento build success, %s created", bento)
+        return bento
 
 
 __all__ = [

@@ -17,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover
 def list(
     tag: t.Optional[t.Union[Tag, str]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.List[SysPathModel]:
+) -> t.List["SysPathModel"]:
     return _model_store.list(tag)
 
 
@@ -25,7 +25,7 @@ def list(
 def get(
     tag: t.Union[Tag, str],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> SysPathModel:
+) -> "SysPathModel":
     return _model_store.get(tag)
 
 

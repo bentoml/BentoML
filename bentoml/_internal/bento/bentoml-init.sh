@@ -24,7 +24,7 @@ if [ $# -eq 0 ] || [ $1 == "ensure_python" ] ; then
     # remove PATCH version - since most patch version only contains backwards compatible
     # bug fixes and the BentoML defautl docker base image will include the latest
     # patch version of each Python minor release
-    DESIRED_PY_VERSION=${PY_VERSION_SAVED:0:3} # returns 3.6, 3.7 or 3.8
+    DESIRED_PY_VERSION=${PY_VERSION_SAVED:0:3} # returns 3.7, 3.8 or 3.9
     CURRENT_PY_VERSION=$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 
     if [[ "$DESIRED_PY_VERSION" == "$CURRENT_PY_VERSION" ]]; then

@@ -6,7 +6,7 @@ from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BadInput, InvalidArgument
+from ...exceptions import BadInput, BentoMLException, InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
@@ -194,8 +194,15 @@ class PandasDataFrame(IODescriptor):
         content_type, _ = parse_options_header(request.headers["content-type"])
         mime_type = content_type.decode().lower()
         if mime_type not in ["application/json", "text/csv"]:
-            logger.warning()
-
+            raise BentoMLException(
+                f"mimetype {mime_type} is not supported, BentoML will only"
+                " supports `application/json` or `text/csv`"
+            )
+        if mime_type != self._mime_type:
+            logger.warning(
+                f"Current mimetype is {self._mime_type}, while receiving mimetype"
+                f" to be {mime_type}. This will lead to mismatch OpenAPI specification."
+            )
         obj = await request.body()
         if self._enforce_dtype:
             if self._dtype is None:

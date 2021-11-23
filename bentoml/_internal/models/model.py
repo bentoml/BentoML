@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import typing as t
 from collections import UserDict
 from datetime import datetime, timezone
@@ -177,7 +178,7 @@ class SysPathModel(Model):
 
         with model_store.register(self.tag) as model_path:
             os.rmdir(model_path)
-            os.rename(self._fs.getsyspath("/"), model_path)
+            shutil.move(self._fs.getsyspath("/"), model_path)
             self._fs.close()
             self._fs = fs.open_fs(model_path)
 

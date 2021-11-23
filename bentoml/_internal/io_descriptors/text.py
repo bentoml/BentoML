@@ -57,16 +57,16 @@ class Text(IODescriptor[str]):
     """
 
     @staticmethod
-    def openapi_schema() -> t.Dict[str, t.Dict[str, t.Any]]:
-        return {MIME_TYPE: {"schema": {"type": "string"}}}
+    def schema_type() -> t.Dict[str, t.Any]:
+        return {"type": "string"}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return self.openapi_schema()
+        return {MIME_TYPE: {"schema": self.schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return self.openapi_schema()
+        return {MIME_TYPE: {"schema": self.schema_type()}}
 
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()

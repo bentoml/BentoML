@@ -53,19 +53,16 @@ class Multipart(IODescriptor[MultipartIO]):
 
         self._inputs = inputs
 
-    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Any]]:
-        schema: t.Dict[str, t.Dict[str, t.Any]] = {
-            "multipart/form-data": {"schema": {"type": "object", "properties": {}}}
-        }
-        return schema
+    def schema_type() -> t.Dict[str, t.Any]:
+        return {"type": "object", "properties": {}}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return self.openapi_schema()
+        return {"multipart/form-data": {"schema": self.schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return self.openapi_schema()
+        return {"multipart/form-data": {"schema": self.schema_type()}}
 
     async def from_http_request(self, request: Request) -> MultipartIO:
         ctype, _ = parse_options_header(request.headers["content-type"])

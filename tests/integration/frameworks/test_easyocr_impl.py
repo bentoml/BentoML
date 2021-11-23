@@ -63,18 +63,18 @@ def save_proc(
     return _
 
 
-@pytest.mark.parametrize("metadata", [({"acc": 0.876},)])
+@pytest.mark.parametrize("metadata", [{"acc": 0.876}])
 def test_easyocr_save_load(metadata, image_array, modelstore, save_proc):
 
     model = easyocr_model()
     raw_res = model.readtext(IMAGE_PATH)
     assert extract_result(raw_res) == TEST_RESULT
 
-    info = save_proc(LANG_LIST, RECOG_NETWORK, DETECT_MODEL, metadata)
-    assert info.metadata is not None
+    _model = save_proc(LANG_LIST, RECOG_NETWORK, DETECT_MODEL, metadata)
+    assert _model.info.metadata is not None
 
     easyocr_loaded = bentoml.easyocr.load(
-        info.tag,
+        _model.tag,
         gpu=False,
         model_store=modelstore,
     )

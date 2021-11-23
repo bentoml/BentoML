@@ -51,7 +51,7 @@ def train_h2o_aml() -> h2o.automl.H2OAutoML:
     return aml
 
 
-@pytest.mark.parametrize("metadata", [({"acc": 0.876},)])
+@pytest.mark.parametrize("metadata", [{"acc": 0.876}])
 def test_h2o_save_load(train_h2o_aml, metadata, modelstore):
     test_df: pd.DataFrame = pd.read_json(json.dumps(TEST_DATA))
     model = train_h2o_aml.leader

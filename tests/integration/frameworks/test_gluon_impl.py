@@ -15,7 +15,7 @@ def train_gluon_classifier() -> gluon.nn.HybridSequential:
     return net
 
 
-@pytest.mark.parametrize("metadata", [({"acc": 0.876},)])
+@pytest.mark.parametrize("metadata", [{"acc": 0.876}])
 def test_gluon_save_load(train_gluon_classifier, metadata, modelstore):
 
     model = train_gluon_classifier

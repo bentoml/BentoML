@@ -1,6 +1,6 @@
 import pytest
 
-from bentoml import ModelStore
+from bentoml._internal.models import ModelStore
 
 
 def pytest_addoption(parser):
@@ -27,4 +27,4 @@ def modelstore(tmp_path_factory) -> "ModelStore":
     # NOTE: after using modelstore, also use `delete_cache_model` to remove model after
     #  load tests.
     path = tmp_path_factory.mktemp("bentoml")
-    return ModelStore(base_dir=path)
+    return ModelStore(path)

@@ -13,6 +13,7 @@ from pycaret.classification import setup as pycaret_setup
 from pycaret.classification import tune_model
 from pycaret.datasets import get_data
 
+import bentoml.models
 import bentoml.pycaret
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
@@ -63,15 +64,15 @@ def save_proc(
 
 @pytest.fixture()
 def wrong_module(pycaret_model, modelstore: "ModelStore"):
-    with modelstore.register(
+    with bentoml.models.create(
         "wrong_module",
         module=__name__,
         options=None,
         framework_context=None,
         metadata=None,
-    ) as ctx:
-        save_model(pycaret_model, os.path.join(ctx.path, "saved_model.pkl"))
-        return str(ctx.path)
+    ) as _model:
+        save_model(pycaret_model, _model.path_of("saved_model.pkl"))
+        return _model.path
 
 
 @pytest.mark.parametrize(
@@ -84,12 +85,12 @@ def test_pycaret_save_load(
     get_pycaret_data, metadata, modelstore, save_proc
 ):  # noqa # pylint: disable
     _, test_data = get_pycaret_data
-    info = save_proc(metadata)
-    assert info.metadata is not None
-    assert_have_file_extension(info.path, ".pkl")
+    _model = save_proc(metadata)
+    assert _model.info.metadata is not None
+    assert_have_file_extension(_model.path, ".pkl")
 
     pycaret_loaded = bentoml.pycaret.load(
-        info.tag,
+        _model.tag,
         model_store=modelstore,
     )
     assert isinstance(pycaret_loaded, sklearn.pipeline.Pipeline)

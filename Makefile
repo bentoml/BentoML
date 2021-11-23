@@ -2,53 +2,18 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
-USE_GPU ?=false
 USE_VERBOSE ?=false
-USE_DOCKER ?=false
 AS_ROOT ?= false
-
-CHECKER_IMG ?= bentoml/checker:1.0
-ifeq ($(AS_ROOT),true)
-USER_ARGS := -u root:root
-else
-USER_ARGS := -u $(shell id -u):$(shell id -g)
-endif
-BASE_ARGS := -i --rm $(USER_ARGS) -v $(GIT_ROOT):/bentoml
-GPU_ARGS := --device /dev/nvidia0 --device /dev/nvidiactl --device /dev/nvidia-modeset --device /dev/nvidia-uvm --device /dev/nvidia-uvm-tools
-GITHUB_ENV_ARGS := --env-file <(env | grep GITHUB)
-
-ifeq ($(USE_GPU),true)
-CNTR_ARGS := $(BASE_ARGS) $(GITHUB_ENV_ARGS) $(GPU_ARGS) $(CHECKER_IMG)
-else
-CNTR_ARGS := $(BASE_ARGS) $(GITHUB_ENV_ARGS) $(CHECKER_IMG)
-endif
-
-CMD := docker run $(CNTR_ARGS)
-TTY := docker run -t $(CNTR_ARGS)
 
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
 
-build-checker-img: check-defined-GIT_ROOT check-defined-CHECKER_IMG ## Build checker images
-	@if [[ `git diff $(GIT_ROOT)/scripts/Dockerfile-checker` != "" ]]; then \
-		docker build -f ./scripts/Dockerfile-checker -t $(CHECKER_IMG) . ;\
-		docker push $(CHECKER_IMG); \
-	fi
-
-pull-checker-img: ## Pull checker images
-	@if [[ `docker images --filter=reference='bentoml/checker' -q` == "" ]]; then \
-		echo "Pulling bentoml/checker:1.0..."; \
-	    docker pull bentoml/checker:1.0; \
-	fi \
-
-chore: build-checker-img pull-checker-img ## Chore work
-
-format: pull-checker-img ## Running code formatter: black and isort
-	@$(CMD) ./scripts/tools/formatter.sh
-lint: pull-checker-img ## Running lint checker: flake8 and pylint
-	@$(CMD) ./scripts/tools/linter.sh
-type: pull-checker-img ## Running type checker: pyright
-	@$(CMD) ./scripts/tools/type_checker.sh
+format: ## Running code formatter: black and isort
+	./scripts/tools/formatter.sh
+lint: ## Running lint checker: flake8 and pylint
+	./scripts/tools/linter.sh
+type: ## Running type checker: pyright
+	./scripts/tools/type_checker.sh
 
 
 __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
@@ -57,13 +22,9 @@ tools := $(foreach t, $(__style_name), ci-$(shell basename $(t)))
 
 ci-all: $(tools) ## Running codestyle in CI: black, isort, flake8, pylint, pyright
 
-ci-%: chore
+ci-%:
 	$(eval style := $(subst ci-, ,$@))
-ifeq ($(USE_DOCKER),true)
-	@$(CMD) ./scripts/ci/style/$(style)_check.sh
-else
 	@./scripts/ci/style/$(style)_check.sh
-endif
 
 .PHONY: ci-format
 ci-format: ci-black ci-isort ## Running format check in CI: black, isort

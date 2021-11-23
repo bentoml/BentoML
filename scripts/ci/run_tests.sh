@@ -158,11 +158,12 @@ main() {
     YQ_BINARY=yq_"$__shell"_amd64
     curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
     echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."
-    tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && mv "$YQ_BINARY" "$target_dir"/yq
+    tar -zvxf "$YQ_BINARY.tar.gz" "./$YQ_BINARY" && mv "./$YQ_BINARY" "$target_dir"/yq
     rm -f ./"$YQ_BINARY".tar.gz
   else
     echo "Using yq via $(which yq)..."
   fi
+  need_cmd yq
 
   for args in "$@"; do
     if [[ "$args" == "-"* ]]; then
@@ -188,8 +189,6 @@ main() {
   if [ -n "$external_scripts" ]; then
     eval "$external_scripts" || exit 1
   fi
-
-  pip install -e "$GIT_ROOT/requirements/tests-requirements.txt"
 
   if [ "$type_tests" == 'e2e' ]; then
     cd "$GIT_ROOT"/"$test_dir"/"$fname" || exit 1

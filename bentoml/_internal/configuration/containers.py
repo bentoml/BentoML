@@ -2,9 +2,9 @@ import logging
 import multiprocessing
 import os
 import typing as t
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+import attr
 import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
@@ -14,10 +14,10 @@ from ...exceptions import BentoMLConfigException
 from ..utils import get_free_port, validate_or_create_dir
 from . import expand_env_var
 
-if TYPE_CHECKING:  # pragma: no cover # pylint: disable=no-name-in-module
+if TYPE_CHECKING:  # pragma: no cover
     from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
 
-    from pyarrow._plasma import (  # noqa: F401 # type: ignore[reportMissingImports]
+    from pyarrow._plasma import (  # pylint: disable=E0611 # noqa: F401,LN001 # type: ignore[reportMissingImports]
         PlasmaClient,
     )
 
@@ -175,7 +175,7 @@ class BentoMLConfiguration:
         return t.cast(providers.ConfigDictType, self.config)
 
 
-@dataclass()
+@attr.s
 class BentoMLContainerClass:
 
     config = providers.Configuration()
@@ -238,7 +238,7 @@ class BentoMLContainerClass:
 BentoMLContainer = BentoMLContainerClass()
 
 
-@dataclass()
+@attr.s
 class BentoServerContainerClass:
 
     bentoml_container = BentoMLContainer

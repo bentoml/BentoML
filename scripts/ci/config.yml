@@ -97,16 +97,13 @@ onnx:
     - "onnxruntime"
     - "skl2onnx"
 
-# TODO: fix docker in docker problems
 onnxmlir:
   <<: *tmpl
   dependencies:
-    - "tensorflow==2.2.0"
+    - "tensorflow"
     - "tf2onnx"
-  external_scripts: |
-    export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
-    export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
-    apt-get update && apt-get install curl -y
+    - "pandas"
+    - "protobuf"
 
 paddle:
   <<: *tmpl

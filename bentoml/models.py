@@ -1,4 +1,5 @@
 import typing as t
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 import fs
@@ -53,6 +54,32 @@ def push(tag: t.Union[Tag, str]):
 
 def pull() -> Model:
     raise NotImplementedError
+
+
+@inject
+@contextmanager
+def create(
+    name: str,
+    *,
+    module: str = "",
+    labels: t.Optional[t.Dict[str, t.Any]] = None,
+    options: t.Optional[t.Dict[str, t.Any]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    framework_context: t.Optional[t.Dict[str, t.Any]] = None,
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> Model:
+    res = Model.create(
+        name,
+        module=module,
+        labels=labels,
+        options=options,
+        metadata=metadata,
+        framework_context=framework_context,
+    )
+    try:
+        yield res
+    finally:
+        res.save(_model_store)
 
 
 def load_runner(tag: t.Union[Tag, str]) -> "Runner":

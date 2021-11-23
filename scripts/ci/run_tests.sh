@@ -26,12 +26,8 @@ REQ_FILE="/tmp/additional-requirements.txt"
 cd "$GIT_ROOT" || exit
 
 run_yq() {
-  if check_cmd yq; then
-    yq "$@";
-  else
-    need_cmd docker;
-    docker run --rm -u "$(id -u)":"$(id -g)" -v "$GIT_ROOT":/bentoml bentoml/checker:1.0 yq "$@";
-  fi
+  need_cmd yq
+  yq "$@";
 }
 
 getval(){
@@ -41,9 +37,9 @@ getval(){
 run_python(){
   if [ "$USE_POETRY" -eq 1 ]; then
     need_cmd poetry;
-    poetry run python -m "$@";
+    poetry run python -m "$@"
   else
-    python -m "$@";
+    python -m "$@"
   fi
 }
 
@@ -150,26 +146,22 @@ main() {
 
   run_python pip install -U pip setuptools
 
-  if ! docker info; then
+  if ! check_cmd yq; then
     target_dir="$HOME/.local/bin"
 
     mkdir -p "$target_dir"
     export PATH=$target_dir:$PATH
 
     YQ_VERSION=4.14.2
-    echo "Docker is not detected. Trying to install yq..."
-    if ! check_cmd yq; then
-      __shell=$(uname | tr '[:upper:]' '[:lower:]')
-      YQ_BINARY=yq_"$__shell"_amd64
-      curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
-      echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."
-      tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && mv "$YQ_BINARY" "$target_dir"/yq
-      rm -f ./"$YQ_BINARY".tar.gz
-    else
-      echo "Using yq via $(which yq)..."
-    fi
+    echo "Trying to install yq..."
+    __shell=$(uname | tr '[:upper:]' '[:lower:]')
+    YQ_BINARY=yq_"$__shell"_amd64
+    curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
+    echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."
+    tar -zvxf "$YQ_BINARY.tar.gz" "$YQ_BINARY" && mv "$YQ_BINARY" "$target_dir"/yq
+    rm -f ./"$YQ_BINARY".tar.gz
   else
-    make -f "$GIT_ROOT"/Makefile pull-checker-img
+    echo "Using yq via $(which yq)..."
   fi
 
   for args in "$@"; do
@@ -196,6 +188,8 @@ main() {
   if [ -n "$external_scripts" ]; then
     eval "$external_scripts" || exit 1
   fi
+
+  pip install -e "$GIT_ROOT/requirements/tests-requirements.txt"
 
   if [ "$type_tests" == 'e2e' ]; then
     cd "$GIT_ROOT"/"$test_dir"/"$fname" || exit 1

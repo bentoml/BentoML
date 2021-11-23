@@ -8,16 +8,16 @@ from typing import TYPE_CHECKING
 import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
-from simple_di import Provide, Provider, providers
+from simple_di import Provide, providers
 
 from ...exceptions import BentoMLConfigException
 from ..utils import get_free_port, validate_or_create_dir
 from . import expand_env_var
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover # pylint: disable=no-name-in-module
     from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
 
-    from pyarrow._plasma import (  # pylint: disable=no-name-in-module # type: ignore[reportMissingImports] # noqa: LN001
+    from pyarrow._plasma import (  # noqa: F401 # type: ignore[reportMissingImports]
         PlasmaClient,
     )
 
@@ -171,11 +171,11 @@ class BentoMLConfiguration:
                 " to the required schema, key=%s, value=%s." % (keys, value)
             ) from e
 
-    def as_dict(self) -> t.Dict[str, t.Any]:
-        return self.config
+    def as_dict(self) -> providers.ConfigDictType:
+        return t.cast(providers.ConfigDictType, self.config)
 
 
-@dataclass
+@dataclass()
 class BentoMLContainerClass:
 
     config = providers.Configuration()
@@ -238,7 +238,7 @@ class BentoMLContainerClass:
 BentoMLContainer = BentoMLContainerClass()
 
 
-@dataclass
+@dataclass()
 class BentoServerContainerClass:
 
     bentoml_container = BentoMLContainer
@@ -301,9 +301,7 @@ class BentoServerContainerClass:
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, int]](dict())
-    plasma_db: Provider["PlasmaClient"] = providers.Placeholder[  # type: ignore
-        "PlasmaClient"
-    ]()
+    plasma_db = providers.Placeholder["PlasmaClient"]()  # type: ignore
 
 
 BentoServerContainer = BentoServerContainerClass()

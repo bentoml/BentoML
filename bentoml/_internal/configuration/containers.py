@@ -175,7 +175,7 @@ class BentoMLConfiguration:
         return t.cast(providers.ConfigDictType, self.config)
 
 
-@attr.s
+@attr.define
 class BentoMLContainerClass:
 
     config = providers.Configuration()
@@ -238,7 +238,7 @@ class BentoMLContainerClass:
 BentoMLContainer = BentoMLContainerClass()
 
 
-@attr.s
+@attr.define
 class BentoServerContainerClass:
 
     bentoml_container = BentoMLContainer

@@ -11,3 +11,4 @@ types-setuptools
 types-PyYAML
 types-filelock
 attrs>=21.1
+pyright

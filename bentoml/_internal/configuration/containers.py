@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
-from simple_di import Provide, providers
+from simple_di import Provide, Provider, providers
 
 from ...exceptions import BentoMLConfigException
 from ..utils import get_free_port, validate_or_create_dir
@@ -301,7 +301,9 @@ class BentoServerContainerClass:
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, int]](dict())
-    plasma_db = providers.Placeholder["PlasmaClient"]()  # type: ignore TODO: Placeholder
+    plasma_db: Provider["PlasmaClient"] = providers.Placeholder[  # type: ignore
+        "PlasmaClient"
+    ]()
 
 
 BentoServerContainer = BentoServerContainerClass()

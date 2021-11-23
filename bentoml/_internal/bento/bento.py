@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import typing as t
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
@@ -248,7 +249,7 @@ class SysPathBento(Bento):
 
         with bento_store.register(self.tag) as bento_path:
             os.rmdir(bento_path)
-            os.rename(self._fs.getsyspath("/"), bento_path)
+            shutil.move(self._fs.getsyspath("/"), bento_path)
             self._fs.close()
             self._fs = fs.open_fs(bento_path)
 

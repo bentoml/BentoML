@@ -7,6 +7,7 @@ import psutil
 import pytest
 
 import bentoml.lightgbm
+import bentoml.models
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
@@ -88,15 +89,16 @@ def save_sklearn_proc(
 
 @pytest.fixture()
 def wrong_module(lightgbm_model, modelstore: "ModelStore"):
-    with modelstore.register(
+    with bentoml.models.create(
         "wrong_module",
         module=__name__,
+        labels=None,
         options=None,
         framework_context=None,
         metadata=None,
-    ) as ctx:
-        lightgbm_model.save_model(os.path.join(ctx.path, "saved_model.txt"))
-        return str(ctx.path)
+    ) as _model:
+        lightgbm_model.save_model(_model.path_of("saved_model.txt"))
+        return _model.path
 
 
 @pytest.mark.parametrize(
@@ -106,12 +108,12 @@ def wrong_module(lightgbm_model, modelstore: "ModelStore"):
     ],
 )
 def test_lightgbm_save_load(metadata, modelstore, save_proc):
-    info = save_proc(metadata)
-    assert info.metadata is not None
-    assert_have_file_extension(info.path, ".txt")
+    model = save_proc(metadata)
+    assert model.info.metadata is not None
+    assert_have_file_extension(model.path, ".txt")
 
     lgb_loaded = bentoml.lightgbm.load(
-        info.tag,
+        model.tag,
         model_store=modelstore,
     )
 

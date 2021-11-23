@@ -85,16 +85,16 @@ def save_proc(
     return _
 
 
-@pytest.mark.parametrize("metadata", [({"acc": 0.876},)])
+@pytest.mark.parametrize("metadata", [{"acc": 0.876}])
 def test_detectron2_save_load(metadata, image_array, modelstore, save_proc):
 
     model, _ = detectron_model_and_config()
 
-    info = save_proc(metadata)
-    assert info.metadata is not None
+    _model = save_proc(metadata)
+    assert _model.info.metadata is not None
 
     detectron_loaded = bentoml.detectron.load(
-        info.tag,
+        _model.tag,
         device="cpu",
         model_store=modelstore,
     )

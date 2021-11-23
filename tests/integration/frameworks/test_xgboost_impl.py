@@ -8,6 +8,7 @@ import psutil
 import pytest
 import xgboost as xgb
 
+import bentoml.models
 import bentoml.xgboost
 from bentoml.exceptions import BentoMLException
 from tests.utils.frameworks.sklearn_utils import test_df
@@ -64,7 +65,7 @@ def save_proc(
 
 def wrong_module(modelstore: "ModelStore"):
     model = xgboost_model()
-    with modelstore.register(
+    with bentoml.models.create(
         "wrong_module",
         module=__name__,
         options=None,
@@ -88,12 +89,12 @@ def wrong_module(modelstore: "ModelStore"):
 def test_xgboost_save_load(
     booster_params, metadata, modelstore, save_proc
 ):  # noqa # pylint: disable
-    info = save_proc(booster_params, metadata)
-    assert info.metadata is not None
-    assert_have_file_extension(info.path, ".json")
+    _model = save_proc(booster_params, metadata)
+    assert _model.info.metadata is not None
+    assert_have_file_extension(_model.path, ".json")
 
     xgb_loaded = bentoml.xgboost.load(
-        info.tag, model_store=modelstore, booster_params=booster_params
+        _model.tag, model_store=modelstore, booster_params=booster_params
     )
     config = json.loads(xgb_loaded.save_config())
     if not booster_params:

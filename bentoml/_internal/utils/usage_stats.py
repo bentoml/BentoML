@@ -8,7 +8,7 @@ from functools import lru_cache
 
 from bentoml import __version__ as BENTOML_VERSION
 
-from ..configuration import is_pip_installed_bentoml
+from ..configuration import is_pypi_installed_bentoml
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ def _session_id():
 
 @lru_cache(maxsize=1)
 def _api_key():
-    if is_pip_installed_bentoml():
+    if is_pypi_installed_bentoml():
         # Use prod amplitude key
         return "1ad6ee0e81b9666761aebd55955bbd3a"
     else:

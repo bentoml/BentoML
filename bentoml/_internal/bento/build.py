@@ -4,7 +4,7 @@ import logging
 import os
 import shutil
 
-from ..configuration import is_pip_installed_bentoml
+from ..configuration import is_pypi_installed_bentoml
 from ..utils.tempdir import TempDirectory
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
     distribution with the local bentoml source and add it to saved bento directory
     under {bento_path}/env/python/wheels/
     """
-    if is_pip_installed_bentoml():
+    if is_pypi_installed_bentoml():
         # skip this entirely if BentoML is installed from PyPI
         return
 

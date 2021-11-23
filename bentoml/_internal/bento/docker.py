@@ -6,7 +6,7 @@ import typing as t
 from typing_extensions import Literal
 
 from ...exceptions import BentoMLException
-from ..configuration import BENTOML_VERSION, is_pip_installed_bentoml
+from ..configuration import BENTOML_VERSION, is_pypi_installed_bentoml
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ class ImageProvider(object):
         if gpu is None:
             gpu = False
 
-        if is_pip_installed_bentoml():
+        if is_pypi_installed_bentoml():
             self._release_type = BENTOML_VERSION
             self._suffix = "cudnn" if gpu else "runtime"
         else:

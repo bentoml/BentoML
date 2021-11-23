@@ -21,7 +21,7 @@ from ..configuration.containers import BentoMLContainer
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
 from ..utils import cached_property
-from .env import BentoEnv
+from .env import CondaOptions, DockerOptions, PythonOptions
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..models.store import ModelInfo, ModelStore
@@ -31,6 +31,67 @@ logger = logging.getLogger(__name__)
 
 BENTO_YAML_FILENAME = "bento.yaml"
 BENTO_PROJECT_DIR_NAME = "src"
+
+
+def _get_default_bento_readme(svc: "Service"):
+    doc = f'# BentoML Service "{svc.name}"\n\n'
+    doc += "This is a Machine Learning Service created with BentoML. \n\n"
+
+    if svc._apis:
+        doc += "## Inference APIs:\n\nIt contains the following inference APIs:\n\n"
+
+        for api in svc._apis.values():
+            doc += f"### /{api.name}\n\n"
+            doc += f"* Input: {api.input.__class__.__name__}\n"
+            doc += f"* Output: {api.output.__class__.__name__}\n\n"
+
+    doc += f"""
+## Customize This Message
+
+This is the default generated `bentoml.Service` doc. You may customize it in your Bento
+build file:
+
+```yaml
+service: "image_classifier.py:svc"
+description: "./readme.md"
+labels:
+  foo: bar
+  team: abc
+docker:
+  distro: slim
+  gpu: True
+python:
+  packages:
+    - tensorflow
+    - numpy
+```
+"""
+    # TODO: add links to documentation that may help with API client development
+    return doc
+
+
+@attr.define(frozen=True)
+class BentoBuildOptions:
+    service: str  # Import Str of target service to build
+    description: t.Optional[str] = None
+    labels: t.Dict[str, t.Any] = attr.ib(factory=dict)
+    include: t.List[str] = attr.ib()
+    exclude: t.List[str] = attr.ib(factory=list)
+    additional_models: t.List[Tag] = attr.field(
+        converter=lambda x: list(map(Tag.from_taglike, x)),
+        factory=list
+    )
+    docker: DockerOptions = attr.ib(default=attr.Factory(DockerOptions))
+    python: PythonOptions = attr.ib(default=attr.Factory(PythonOptions))
+    conda: CondaOptions = attr.ib(default=attr.Factory(CondaOptions))
+
+    @include.default
+    def default_include(self):
+        return ["*"]
+
+    @classmethod
+    def from_yaml(cls, stream: t.IO[t.Any]):
+        pass
 
 
 @attr.define(repr=False)
@@ -45,16 +106,33 @@ class Bento(StoreItem):
     @staticmethod
     @inject
     def create(
-        svc: "Service",
-        build_ctx: PathType,
-        additional_models: t.List[str],
-        version: t.Optional[str],
-        include: t.List[str],
-        exclude: t.List[str],
-        env: t.Dict[str, t.Any],
-        labels: t.Dict[str, str],
+        svc_import_str: str,
+        version: t.Optional[str] = None,
+        description: t.Optional[str] = None,
+        include: t.Optional[t.List[str]] = None,
+        exclude: t.Optional[t.List[str]] = None,
+        labels: t.Optional[t.Dict[str, str]] = None,
+        additional_models: t.Optional[t.List[str]] = None,
+        docker: t.Optional[t.Dict[str, t.Any]] = None,
+        python: t.Optional[t.Dict[str, t.Any]] = None,
+        conda: t.Optional[t.Dict[str, t.Any]] = None,
+        build_ctx: t.Optional[str] = None,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "SysPathBento":
+        from ..service import load
+
+        # Set default arg values
+        build_ctx = os.getcwd() if build_ctx is None else os.path.realpath(build_ctx)
+        additional_models = [] if additional_models is None else additional_models
+        include = ["*"] if include is None else include
+        exclude = [] if exclude is None else exclude
+        docker = {} if docker is None else docker
+        python = {} if python is None else python
+        conda = {} if conda is None else conda
+        labels = {} if labels is None else labels
+
+        svc = load(svc_import_str, working_dir=build_ctx)
+
         tag = Tag(svc.name, version)
         if version is None:
             tag = tag.make_new_version()
@@ -130,12 +208,17 @@ class Bento(StoreItem):
                         copy_file(ctx_fs, _path, target_fs, _path)
 
         # Create env, docker, bentoml dev whl files
-        bento_env = BentoEnv(build_ctx=build_ctx, **env)
-        bento_env.save(bento_fs)
+        # bento_env = BentoEnv(
+        #     build_ctx=build_ctx, docker=docker, python=python, conda=conda
+        # )
+        # bento_env.save(bento_fs)
 
         # Create `readme.md` file
         with bento_fs.open("README.md", "w") as f:
-            f.write(svc.doc)
+            if description:
+                f.write(description)
+            else:
+                f.write(_get_default_bento_readme(svc))
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")

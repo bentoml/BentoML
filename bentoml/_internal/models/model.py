@@ -17,7 +17,6 @@ from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
-from ..utils import cached_property
 
 if t.TYPE_CHECKING:
     from ..runner import Runner
@@ -33,6 +32,8 @@ PathRes = t.TypeVar("PathRes", bound=t.Union[t.Optional[str], str])
 class Model(StoreItem):
     _tag: Tag
     _fs: FS
+
+    _info: t.Optional["ModelInfo"] = None
 
     @property
     def tag(self) -> Tag:
@@ -62,17 +63,17 @@ class Model(StoreItem):
 
         model_fs = fs.open_fs("temp://bentoml_model_{name}")
 
-        with model_fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
-            ModelInfo(
-                tag=tag,
-                module=module,
-                labels=labels,
-                options=options,
-                metadata=metadata,
-                context=framework_context,
-            ).dump(model_yaml)
+        res = SysPathModel(tag, model_fs)
+        res._info = ModelInfo(
+            tag=tag,
+            module=module,
+            labels=labels,
+            options=options,
+            metadata=metadata,
+            context=framework_context,
+        )
 
-        return SysPathModel(tag, model_fs)
+        return res
 
     @inject
     def save(
@@ -83,8 +84,9 @@ class Model(StoreItem):
         except TypeError:
             pass
 
-        with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
-            self.info.dump(model_yaml)
+        if self._info is not None:
+            with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
+                self._info.dump(model_yaml)
 
         if not self.validate():
             logger.warning(f"Failed to create Model for {self.tag}, not saving.")
@@ -115,10 +117,14 @@ class Model(StoreItem):
         except TypeError:
             return None
 
-    @cached_property
-    def info(self):
+    @property
+    def info(self) -> "ModelInfo":
+        if self._info is not None:
+            return self._info
+
         with self._fs.open(MODEL_YAML_FILENAME, "r") as model_yaml:
-            return ModelInfo.from_yaml_file(model_yaml)
+            self._info = ModelInfo.from_yaml_file(model_yaml)
+            return self._info
 
     @property
     def creation_time(self) -> datetime:
@@ -161,6 +167,10 @@ class SysPathModel(Model):
     def save(
         self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ) -> "SysPathModel":
+        if self._info is not None:
+            with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
+                self._info.dump(model_yaml)
+
         if not self.validate():
             logger.warning(f"Failed to create Model for {self.tag}, not saving.")
             raise BentoMLException("Failed to save Model because it was invalid")

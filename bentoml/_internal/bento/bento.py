@@ -20,7 +20,6 @@ from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
-from ..utils import cached_property
 from .env import BentoEnv
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -46,6 +45,8 @@ class Bento(StoreItem):
     _tag: Tag
     _fs: "FS" = attr.field(on_setattr=_Bento_set_fs)
     _model_store: ModelStore
+
+    _info: t.Optional["BentoInfo"] = None
 
     def __init__(self, tag: Tag, bento_fs: "FS"):
         self._tag = tag
@@ -177,10 +178,14 @@ class Bento(StoreItem):
         except TypeError:
             return None
 
-    @cached_property
+    @property
     def info(self) -> "BentoInfo":
+        if self._info is not None:
+            return self._info
+
         with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
-            return BentoInfo.from_yaml_file(bento_yaml)
+            self._info = BentoInfo.from_yaml_file(bento_yaml)
+            return self._info
 
     @property
     def creation_time(self) -> datetime:

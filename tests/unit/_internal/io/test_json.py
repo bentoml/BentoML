@@ -1,13 +1,13 @@
-import dataclasses
 import json
 import typing as t
+from dataclasses import dataclass
 
 import numpy as np
 import pydantic
 import pytest
 
 
-@dataclasses.dataclass
+@dataclass
 class _ExampleSchema:
     name: str
     endpoints: t.List[str]

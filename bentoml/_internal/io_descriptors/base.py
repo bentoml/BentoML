@@ -1,3 +1,4 @@
+import inspect
 import typing as t
 from abc import ABC, abstractmethod
 
@@ -5,6 +6,16 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 IOPyObj = t.TypeVar("IOPyObj")
+
+
+def _mk_repr(obj: t.Any) -> str:
+    # monkeypatch repr to make __repr__ more readable by humans.
+    if callable(obj):
+        return obj.__name__
+    elif inspect.isclass(obj):
+        return obj.__class__.__name__
+    else:
+        return repr(obj)
 
 
 class IODescriptor(ABC, t.Generic[IOPyObj]):
@@ -16,7 +27,7 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
     HTTP_METHODS = ["POST"]
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}"
+        return f"{self.__class__.__name__}({','.join([f'{k}={_mk_repr(v)}' for k,v in self.__dict__.items()])})"
 
     # fmt: off
     @staticmethod

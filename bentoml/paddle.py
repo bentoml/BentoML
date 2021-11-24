@@ -5,6 +5,7 @@ import typing as t
 from distutils.dir_util import copy_tree
 from typing import TYPE_CHECKING
 
+import yaml
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -12,7 +13,7 @@ from ._internal.models import SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
 from ._internal.types import Tag
 from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, MissingDependencyException
+from .exceptions import BentoMLException, MissingDependencyException, NotFound
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,7 @@ def load(
             directory = (
                 model.path
                 if "_module_dir" not in model.info.options
-                else model.info.options["_module_dir"]
+                else model.path_of(model.info.options["_module_dir"])
             )
             return hub.Module(directory=directory, **kwargs)
     else:
@@ -201,7 +202,7 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
                         "update_cache", module=model, version=version
                     ).start()
                     return _tag
-            except FileNotFoundError:
+            except (FileNotFoundError, NotFound):
                 pass
     _model = Model.create(
         name,
@@ -237,10 +238,13 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
 
             directory = _local_manager._get_normalized_path(user_module_cls.name)
             target = _model.path_of(user_module_cls.name)
+            print(target)
 
-            _model.info.options = hub.Module.load_module_info(directory)
-            _model.info.options["_module_dir"] = target
+            _model.info.options = {}
+            _model.info.options.update(hub.Module.load_module_info(directory))
+            _model.info.options["_module_dir"] = os.path.relpath(target, _model.path)
             _model.info.options["from_local_dir"] = False
+            print(_model.info.options)
         copy_tree(directory, target)
     else:
         paddle.jit.save(model, _model.path_of(SAVE_NAMESPACE), input_spec=input_spec)

@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import fs
 import numpy as np
 import psutil
 import pytest

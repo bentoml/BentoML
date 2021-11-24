@@ -245,7 +245,9 @@ class BentoStore(Store[SysPathBento]):
 @attr.define(repr=False, frozen=True)
 class BentoInfo:
     tag: Tag
-    service: str = attr.field(converter=lambda svc: svc._import_str)  # type: ignore[reportPrivateUsage]
+    service: str = attr.field(
+        converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
+    )  # type: ignore[reportPrivateUsage]
     labels: t.Dict[str, t.Any]  # TODO: validate user-provide labels
     models: t.List[str]  # TODO: populate with model & framework info
     bentoml_version: str = BENTOML_VERSION
@@ -268,14 +270,6 @@ class BentoInfo:
         yaml_content["tag"] = Tag(yaml_content["name"], yaml_content["version"])
         del yaml_content["name"]
         del yaml_content["version"]
-        try:
-            yaml_content["creation_time"] = datetime.fromisoformat(
-                yaml_content["creation_time"]
-            )
-        except ValueError:
-            raise BentoMLException(
-                f"bad date {yaml_content['creation_time']} in {BENTO_YAML_FILENAME}"
-            )
 
         try:
             bento_info = cls(**yaml_content)

@@ -8,7 +8,7 @@ import attr
 import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
-from simple_di import Provide, Provider, providers
+from simple_di import Provide, providers
 
 from ...exceptions import BentoMLConfigException
 from ..utils import get_free_port, validate_or_create_dir

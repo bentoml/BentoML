@@ -122,7 +122,7 @@ def test_text_openapi_schema():
         ),
     ],
 )
-def test_pandas_openapi_schema(exp, kwargs):
+def test_pandas_openapi_schema(exp: t.Dict[str, t.Any], kwargs: t.Dict[str, t.Any]):
     assert PandasDataFrame(**kwargs).openapi_request_schema() == exp
     assert PandasDataFrame(**kwargs).openapi_responses_schema() == exp
 
@@ -168,7 +168,7 @@ def test_pandas_openapi_schema(exp, kwargs):
         ),
     ],
 )
-def test_numpy_openapi_schema(exp, kwargs):
+def test_numpy_openapi_schema(exp: t.Dict[str, t.Any], kwargs: t.Dict[str, t.Any]):
     assert NumpyNdarray(**kwargs).openapi_request_schema() == exp
     assert NumpyNdarray(**kwargs).openapi_responses_schema() == exp
 

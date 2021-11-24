@@ -26,8 +26,6 @@ logger = logging.getLogger(__name__)
 
 MODEL_YAML_FILENAME = "model.yaml"
 
-PathRes = t.TypeVar("PathRes", bound=t.Union[t.Optional[str], str])
-
 
 @attr.define(repr=False)
 class Model(StoreItem):
@@ -62,7 +60,7 @@ class Model(StoreItem):
         metadata = {} if metadata is None else metadata
         framework_context = {} if framework_context is None else framework_context
 
-        model_fs = fs.open_fs("temp://bentoml_model_{name}")
+        model_fs = fs.open_fs(f"temp://bentoml_model_{name}")
 
         res = SysPathModel(tag, model_fs)
         res._info = ModelInfo(

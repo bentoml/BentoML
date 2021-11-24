@@ -164,7 +164,9 @@ Inside a Bento archive, you will find the following file structure:
      - /python
          - version.txt
          - requirements.txt
+         - requirements.lock.txt
          - /wheels
+         - pip_args.txt
      - /docker
          - Dockerfile
          - Dockerfile-gpu  # optional

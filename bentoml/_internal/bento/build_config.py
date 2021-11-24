@@ -170,6 +170,15 @@ def _copy_file_to_fs_folder(
     copy_file(src_fs, file_name, dst_fs, dst_path)
 
 
+def _str_to_list_converter(
+    value: t.Optional[t.Union[str, t.List[str]]]
+) -> t.Optional[t.List[str]]:
+    if isinstance(value, str):
+        return [str]
+    else:
+        return value
+
+
 @attr.frozen
 class PythonOptions:
     requirements_txt: t.Optional[str] = None
@@ -189,12 +198,25 @@ class PythonOptions:
             logger.warning(
                 f'Build option python: requirements_txt="{self.requirements_txt}" found, this will ignore the option: packages="{self.packages}"'
             )
+        if self.no_index and (self.index_url or self.extra_index_url):
+            logger.warning(
+                f"Bulid option python.no_index=True found, this will ignore index_url and extra_index_url option when installing PyPI packages"
+            )
+        if self.check_hashes and not self.lock_packages:
+            logger.warning(
+                f"Build option python.check_hashes=True is only applicable when the option python.lock_packages=True"
+            )
 
     def write_to_bento(self, bento_fs: FS):
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
         bento_fs.makedirs(py_folder, recreate=True)
 
+        # Save the python version of current build environment
+        with bento_fs.open(fs.path.join(py_folder, "version.txt"), "w") as f:
+            f.write(PYTHON_VERSION)
+
+        # TODO: in editable mode, build bentoml whl file and insert here
         # Move over required wheel files
         # Note: although wheel files outside of build_ctx will also work, we should
         # discourage users from doing that
@@ -203,16 +225,41 @@ class PythonOptions:
                 _copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
         # Prepare py_folder content in temp_fs
-        temp_fs = fs.open_fs("temp://build_python_options")
         if self.requirements_txt is not None:
             _copy_file_to_fs_folder(
-                self.requirements_txt, temp_fs, dst_filename="requirements.in"
+                self.requirements_txt, bento_fs, py_folder, dst_filename="requirements.txt"
             )
         elif self.packages is not None:
-            with temp_fs.open("requirements.in", "w") as f:
+            with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
                 f.write("\n".join(self.packages))
         else:
             return
+
+        pip_args = []
+        if self.no_index:
+            pip_args.append("--no-index")
+        if self.index_url:
+            pip_args.append(f"--index-url={self.index_url}")
+
+        if self.trusted_host:
+            for item in self.trusted_host:
+                pip_args.append(f"--trusted-host={item}")
+        if self.find_links:
+            for item in self.extra_index_url:
+                pip_args.append(f"--find-links={item}")
+        if self.extra_index_url:
+            for item in self.extra_index_url:
+                pip_args.append(f"--extra-index-url={item}")
+        with bento_fs.open(fs.path.join(py_folder, "pip_args.txt"), "w") as f:
+            f.write(" ".join(pip_args))
+
+        if self.lock_packages:
+            pip_compile_args = pip_args + ["--allow-unsafe", "--no-header"]
+            if self.check_hashes:
+                pip_compile_args.append("--generate-hashes")
+
+            # TODO: run pip-compile and copy over requirements.lock.txt file
+
 
     def with_defaults(self):
         # Convert from user provided options to actual build options with default values
@@ -225,6 +272,18 @@ class PythonOptions:
                 update_defaults["check_hashes"] = True
 
         return attr.evolve(self, **update_defaults)
+
+
+def _python_options_structure_hook(d, t):
+    # Allow bentofile yaml to have either a str or list of str for these options
+    for field in ["trusted_host", "find_links", "extra_index_url"]:
+        if field in d and isinstance(d[field], str):
+            d[field] = [d[field]]
+
+    return PythonOptions(**d)
+
+
+cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
 @attr.frozen

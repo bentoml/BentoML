@@ -5,7 +5,6 @@ import typing as t
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import fs
 import yaml
 from simple_di import Provide, inject
 

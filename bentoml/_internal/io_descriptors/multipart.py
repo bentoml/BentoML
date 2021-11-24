@@ -91,7 +91,7 @@ class Multipart(IODescriptor[MultipartIO]):
                 f"{self.__class__.__name__} only accepts `multipart/form-data` as Content-Type header, got {ctype} instead."
             )
 
-        res = dict()  # type: MultipartIO
+        res: MultipartIO = dict()
         reqs = await populate_multipart_requests(request)
 
         for k, i in self._inputs.items():
@@ -101,34 +101,40 @@ class Multipart(IODescriptor[MultipartIO]):
         return res
 
     @t.overload
-    async def to_http_response(self, obj: t.Dict[str, str]) -> Response:
+    async def to_http_response(self, obj: t.Dict[str, str]) -> Response:  # noqa: F811
         ...
 
     @t.overload
-    async def to_http_response(self, obj: t.Dict[str, "JSONType"]) -> Response:
+    async def to_http_response(  # noqa: F811
+        self, obj: t.Dict[str, "JSONType"]
+    ) -> Response:
         ...
 
     @t.overload
-    async def to_http_response(self, obj: t.Dict[str, "ImageType"]) -> Response:
+    async def to_http_response(  # noqa: F811
+        self, obj: t.Dict[str, "ImageType"]
+    ) -> Response:
         ...
 
     @t.overload
-    async def to_http_response(
+    async def to_http_response(  # noqa: F811
         self, obj: t.Dict[str, "np.ndarray[t.Any, np.dtype[t.Any]]"]
     ) -> Response:
         ...
 
     @t.overload
-    async def to_http_response(self, obj: t.Dict[str, "FileLike"]) -> Response:
+    async def to_http_response(  # noqa: F811
+        self, obj: t.Dict[str, "FileLike"]
+    ) -> Response:
         ...
 
     @t.overload
-    async def to_http_response(
+    async def to_http_response(  # noqa: F811
         self, obj: t.Dict[str, t.Union["pd.DataFrame", "pd.Series"]]
     ) -> Response:
         ...
 
-    async def to_http_response(self, obj: MultipartIO) -> Response:
+    async def to_http_response(self, obj: t.Any) -> Response:  # noqa: F811
         res_mapping: t.Dict[str, Response] = {}
         for k, io_ in self._inputs.items():
             data = obj[k]

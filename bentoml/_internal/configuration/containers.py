@@ -225,8 +225,8 @@ class BentoMLContainerClass:
             return NoopTracer()
 
     logging_file_directory = providers.Factory[str](
-        lambda default, customized: customized or default,
-        providers.Factory(
+        lambda default, customized: customized if customized is not None else default,
+        providers.Factory[str](
             os.path.join,
             bentoml_home,
             "logs",

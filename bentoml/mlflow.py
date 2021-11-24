@@ -1,5 +1,6 @@
 import importlib
 import importlib.util
+import os
 import typing as t
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -169,7 +170,7 @@ def import_from_uri(
 
     _model.info.options = {"uri": uri}
     mlflow_obj_path = _download_artifact_from_uri(uri, output_path=_model.path)
-    _model.info.options["mlflow_folder"] = mlflow_obj_path
+    _model.info.options["mlflow_folder"] = os.path.relpath(mlflow_obj_path, _model.path)
     exists, _ = _validate_file_exists("MLproject", mlflow_obj_path)
     if exists:
         raise BentoMLException("BentoML doesn't accept MLflow Projects.")
@@ -214,9 +215,8 @@ class _PyFuncRunner(Runner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
         path = self._model_info.info.options["mlflow_folder"]
-        self._model = mlflow.pyfunc.load_model(
-            fs.open_fs(path), suppress_warnings=False
-        )
+        artifact_path = self._model_info.path_of(path)
+        self._model = mlflow.pyfunc.load_model(artifact_path, suppress_warnings=False)
 
     # pylint: disable=arguments-differ
     def _run_batch(self, input_data: t.Any) -> t.Any:  # type: ignore[override]

@@ -105,7 +105,7 @@ class _BaseRunner:
         return []
 
     @abstractmethod
-    def _setup(self, **kwargs: t.Any) -> None:
+    def _setup(self) -> None:
         ...
 
     @inject

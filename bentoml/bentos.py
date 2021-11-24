@@ -72,7 +72,7 @@ def build(
     description: t.Optional[str] = None,
     include: t.Optional[t.List[str]] = None,
     exclude: t.Optional[t.List[str]] = None,
-    additional_models: t.Optional[t.List[str]] = None,
+    additional_models: t.Optional[t.List[t.Union[str, Tag]]] = None,
     docker: t.Optional[t.Dict[str, t.Any]] = None,
     python: t.Optional[t.Dict[str, t.Any]] = None,
     conda: t.Optional[t.Dict[str, t.Any]] = None,
@@ -160,7 +160,7 @@ def build_from_bentofile_yaml(
     """
     try:
         bentofile = resolve_user_filepath(bentofile, build_ctx)
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         raise InvalidArgument(f'bentofile "{bentofile}" not found')
 
     with open(bentofile, "r") as f:

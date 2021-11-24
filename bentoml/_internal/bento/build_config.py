@@ -11,7 +11,7 @@ import fs.copy
 import yaml
 from fs.base import FS
 from fs.copy import copy_file
-from piptools.scripts.compile import cli as pip_compile_cli
+from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 
 from ...exceptions import InvalidArgument
 from ..types import Tag
@@ -36,8 +36,7 @@ DOCKER_DEFAULT_DISTRO = "slim"
 
 if PYTHON_MINOR_VERSION not in PYTHON_SUPPORTED_VERSIONS:
     logger.warning(
-        "BentoML may not work well with current python version %, "
-        "supported python versions are: %",
+        "BentoML may not work well with current python version %s, supported python versions are: %s",
         PYTHON_MINOR_VERSION,
         ",".join(PYTHON_SUPPORTED_VERSIONS),
     )
@@ -73,7 +72,7 @@ class DockerOptions:
             attr.validators.in_(PYTHON_SUPPORTED_VERSIONS)
         ),
     )
-    gpu: t.Optional = None
+    gpu: t.Optional[bool] = None
 
     # A python or shell script that executes during docker build time
     setup_script: t.Optional[str] = None
@@ -102,7 +101,7 @@ class DockerOptions:
                     self.gpu,
                 )
 
-    def with_defaults(self):
+    def with_defaults(self) -> "DockerOptions":
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
 
@@ -198,15 +197,6 @@ def _copy_file_to_fs_folder(
     copy_file(src_fs, file_name, dst_fs, dst_path)
 
 
-def _str_to_list_converter(
-    value: t.Optional[t.Union[str, t.List[str]]]
-) -> t.Optional[t.List[str]]:
-    if isinstance(value, str):
-        return [str]
-    else:
-        return value
-
-
 @attr.frozen
 class PythonOptions:
     requirements_txt: t.Optional[str] = None
@@ -227,7 +217,7 @@ class PythonOptions:
             )
         if self.no_index and (self.index_url or self.extra_index_url):
             logger.warning(
-                f"Bulid option python.no_index=True found, this will ignore index_url and extra_index_url option when installing PyPI packages"
+                "Bulid option python.no_index=True found, this will ignore index_url and extra_index_url option when installing PyPI packages"
             )
 
     def write_to_bento(self, bento_fs: FS, build_ctx: str):
@@ -269,7 +259,7 @@ class PythonOptions:
             # Return early if no python packages were specified
             return
 
-        pip_args = []
+        pip_args: t.List[str] = []
         if self.no_index:
             pip_args.append("--no-index")
         if self.index_url:
@@ -278,7 +268,7 @@ class PythonOptions:
             for item in self.trusted_host:
                 pip_args.append(f"--trusted-host={item}")
         if self.find_links:
-            for item in self.extra_index_url:
+            for item in self.find_links:
                 pip_args.append(f"--find-links={item}")
         if self.extra_index_url:
             for item in self.extra_index_url:
@@ -319,7 +309,7 @@ class PythonOptions:
             click_ctx = pip_compile_cli.make_context("pip-compile", pip_compile_args)
             pip_compile_cli.invoke(click_ctx)
 
-    def with_defaults(self):
+    def with_defaults(self) -> "PythonOptions":
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
 
@@ -330,7 +320,7 @@ class PythonOptions:
         return attr.evolve(self, **update_defaults)
 
 
-def _python_options_structure_hook(d, t):
+def _python_options_structure_hook(d: t.Any, t: t.Type[PythonOptions]):
     # Allow bentofile yaml to have either a str or list of str for these options
     for field in ["trusted_host", "find_links", "extra_index_url"]:
         if field in d and isinstance(d[field], str):
@@ -342,17 +332,28 @@ def _python_options_structure_hook(d, t):
 cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
 
 
-def _dict_arg_converter(
+def _dict_arg_converter(  # type: ignore
     options_type: t.Type[t.Union[DockerOptions, CondaOptions, PythonOptions]]
 ):
     def _converter(
-        value: t.Optional[t.Union[options_type, dict]]
+        value: t.Optional[
+            t.Union[DockerOptions, CondaOptions, PythonOptions, t.Dict[str, t.Any]]
+        ]
     ) -> t.Optional[options_type]:
         if isinstance(value, dict):
             return options_type(**value)
         return value
 
-    return _converter
+    return _converter  # type: ignore
+
+
+def _additional_models_converter(
+    tags: t.Optional[t.List[t.Union[str, Tag]]]
+) -> t.Optional[t.List[Tag]]:
+    if tags is None:
+        return tags
+
+    return list(map(Tag.from_taglike, tags))
 
 
 @attr.frozen
@@ -370,23 +371,24 @@ class BentoBuildConfig:
     labels: t.Optional[t.Dict[str, t.Any]] = None
     include: t.Optional[t.List[str]] = None
     exclude: t.Optional[t.List[str]] = None
-    additional_models: t.Optional[t.List[Tag]] = attr.ib(
-        converter=(
-            lambda tags: None if tags is None else list(map(Tag.from_taglike, tags))
-        ),
+    additional_models: t.Optional[t.List[t.Union[Tag, str]]] = attr.ib(
+        converter=_additional_models_converter,
         default=None,
     )
-    docker: t.Optional[DockerOptions] = attr.ib(
-        default=None, converter=_dict_arg_converter(DockerOptions)
+    docker: t.Optional[t.Union[DockerOptions, t.Dict[str, t.Any]]] = attr.ib(
+        default=None,
+        converter=_dict_arg_converter(DockerOptions),
     )
-    python: t.Optional[PythonOptions] = attr.ib(
-        default=None, converter=_dict_arg_converter(PythonOptions)
+    python: t.Optional[t.Union[PythonOptions, t.Dict[str, t.Any]]] = attr.ib(
+        default=None,
+        converter=_dict_arg_converter(PythonOptions),
     )
-    conda: t.Optional[CondaOptions] = attr.ib(
-        default=None, converter=_dict_arg_converter(CondaOptions)
+    conda: t.Optional[t.Union[CondaOptions, t.Dict[str, t.Any]]] = attr.ib(
+        default=None,
+        converter=_dict_arg_converter(CondaOptions),
     )
 
-    def with_defaults(self):
+    def with_defaults(self) -> "BentoBuildConfig":
         """Convert from user provided options to actual build options will defaults
         values filled in
 
@@ -394,7 +396,7 @@ class BentoBuildConfig:
             BentoBuildConfig: a new copy of self, with default values filled
         """
 
-        update_defaults = {}
+        update_defaults: t.Dict[str, t.Any] = {}
         if self.labels is None:
             update_defaults["labels"] = {}
         if self.include is None:
@@ -416,7 +418,7 @@ class BentoBuildConfig:
         return attr.evolve(self, **update_defaults)
 
     @classmethod
-    def from_yaml(cls, stream: t.TextIO):
+    def from_yaml(cls, stream: t.TextIO) -> "BentoBuildConfig":
         try:
             yaml_content = yaml.safe_load(stream)
         except yaml.YAMLError as exc:

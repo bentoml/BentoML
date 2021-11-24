@@ -18,13 +18,44 @@ else:
 
 try:
     from typing import Literal
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import Literal
 
 logger = logging.getLogger(__name__)
 
 
-class PandasDataFrame(IODescriptor):
+def _infer_type(item: str) -> str:  # pragma: no cover
+    if item.startswith("int"):
+        return "integer"
+    elif item.startswith("float") or item.startswith("double"):
+        return "number"
+    elif item.startswith("str") or item.startswith("date"):
+        return "string"
+    elif item.startswith("bool"):
+        return "boolean"
+    else:
+        return "object"
+
+
+def _schema_type(
+    mime_type: str, dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]]
+) -> t.Dict[str, t.Any]:  # pragma: no cover
+    if mime_type == "text/csv":
+        return {"type": "string", "format": "binary"}
+    else:
+        if isinstance(dtype, dict):
+            return {
+                "type": "object",
+                "properties": {
+                    k: {"type": "array", "items": {"type": _infer_type(v)}}
+                    for k, v in dtype.items()
+                },
+            }
+        else:
+            return {"type": "object"}
+
+
+class PandasDataFrame(IODescriptor["pd.DataFrame"]):
     """
     `PandasDataFrame` defines API specification for the inputs/outputs of a Service,
       where either inputs will be converted to or outputs will be converted from type
@@ -142,41 +173,16 @@ class PandasDataFrame(IODescriptor):
         self._enforce_shape = enforce_shape
         self._mime_type = mime_type
 
-    @staticmethod
-    def _infer_type(item: str):
-        if item.startswith("int"):
-            return "integer"
-        elif item.startswith("float") or item.startswith("double"):
-            return "number"
-        elif item.startswith("str") or item.startswith("date"):
-            return "string"
-        elif item.startswith("bool"):
-            return "boolean"
-        else:
-            return "object"
-
-    def schema_type(self) -> t.Dict[str, t.Any]:
-        if self._mime_type == "text/csv":
-            return {"type": "string", "format": "binary"}
-        else:
-            if isinstance(self._dtype, dict):
-                return {
-                    "type": "object",
-                    "properties": {
-                        k: {"type": "array", "items": {"type": self._infer_type(v)}}
-                        for k, v in self._dtype.items()
-                    },
-                }
-            else:
-                return {"type": "object"}
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+        return _schema_type(self._mime_type, self._dtype)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {self._mime_type: {"schema": self.schema_type()}}
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {self._mime_type: {"schema": self.schema_type()}}
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> "pd.DataFrame":
         """
@@ -190,7 +196,6 @@ class PandasDataFrame(IODescriptor):
             a `pd.DataFrame` object. This can then be used
              inside users defined logics.
         """
-
         content_type, _ = parse_options_header(request.headers["content-type"])
         mime_type = content_type.decode().lower()
         if mime_type not in ["application/json", "text/csv"]:
@@ -321,7 +326,7 @@ class PandasDataFrame(IODescriptor):
         )
 
 
-class PandasSeries(PandasDataFrame):
+class PandasSeries(IODescriptor["pd.Series"]):
     """
     `PandasSeries` defines API specification for the inputs/outputs of a Service, where
      either inputs will be converted to or outputs will be converted from type
@@ -420,16 +425,27 @@ class PandasSeries(PandasDataFrame):
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
+        mime_type: t.Union[
+            Literal["text/csv"], Literal["application/json"]
+        ] = "application/json",
     ):
-        super().__init__(
-            orient=orient,
-            dtype=dtype,
-            enforce_dtype=enforce_dtype,
-            shape=shape,
-            enforce_shape=enforce_shape,
-            apply_column_names=False,
-            columns=None,
-        )
+        self._orient = orient
+        self._dtype = dtype
+        self._enforce_dtype = enforce_dtype
+        self._shape = shape
+        self._enforce_shape = enforce_shape
+        self._mime_type = mime_type
+
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+        return _schema_type(self._mime_type, self._dtype)
+
+    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for incoming requests"""
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+
+    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for outcoming responses"""
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> "pd.Series":
         """

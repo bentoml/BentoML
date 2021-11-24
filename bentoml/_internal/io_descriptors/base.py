@@ -30,8 +30,8 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
         return f"{self.__class__.__name__}({','.join([f'{k}={_mk_repr(v)}' for k,v in self.__dict__.items()])})"
 
     # fmt: off
-    @staticmethod
-    def schema_type(): ...
+    @abstractmethod
+    def openapi_schema_type(self) -> t.Dict[str, str]: ...  # noqa: E704
 
     @abstractmethod
     def openapi_request_schema(self) -> t.Dict[str, t.Any]: ...  # noqa: E704

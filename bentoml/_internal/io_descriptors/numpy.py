@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def _is_matched_shape(
     left: t.Optional[t.Tuple[int, ...]],
     right: t.Optional[t.Tuple[int, ...]],
-) -> bool:
+) -> bool:  # pragma: no cover
     if (left is None) or (right is None):
         return False
 
@@ -117,21 +117,36 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
 
-    def _get_dtypes(self) -> t.Dict[str, t.Any]:
+    def _infer_types(self) -> str:  # pragma: no cover
+        if self._dtype is not None:
+            name = self._dtype.name
+            if name.startswith("int") or name.startswith("uint"):
+                var_type = "integer"
+            elif name.startswith("float") or name.startswith("complex"):
+                var_type = "number"
+            else:
+                var_type = "object"
+        else:
+            var_type = "object"
+        return var_type
+
+    def _items_schema(self) -> t.Dict[str, t.Any]:
         if self._shape is not None:
-            return dict(type="array", items=dict(type="number"))
+            if len(self._shape) > 1:
+                return dict(type="array", items={"type": self._infer_types()})
+            return {"type": self._infer_types()}
         return dict()
 
-    def schema_type(self) -> t.Dict[str, t.Any]:
-        return dict(type="array", items=self._get_dtypes())
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+        return dict(type="array", items=self._items_schema())
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {MIME_TYPE_JSON: {"schema": self.schema_type()}}
+        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {MIME_TYPE_JSON: {"schema": self.schema_type()}}
+        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
 
     def _verify_ndarray(
         self,

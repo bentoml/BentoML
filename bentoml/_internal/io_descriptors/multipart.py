@@ -14,17 +14,32 @@ from .base import IODescriptor
 
 if TYPE_CHECKING:  # pragma: no cover
     import numpy as np  # noqa
+    import pandas as pd  # noqa
 
-    from ..types import FileLike  # noqa
-    from .image import ImageType  # noqa
-    from .json import JSONType  # noqa
-
+    from ..types import FileLike
+    from .file import File  # noqa
+    from .image import Image, ImageType  # noqa
+    from .json import JSON, JSONType  # noqa
+    from .numpy import NumpyNdarray  # noqa
+    from .pandas import PandasDataFrame, PandasSeries  # noqa
+    from .text import Text  # noqa
 
 _DescriptorType = t.Union[
-    str, "JSONType", "FileLike", "ImageType", "np.ndarray[t.Any, np.dtype[t.Any]]"
+    "Image", "JSON", "Text", "NumpyNdarray", "PandasDataFrame", "PandasSeries", "File"
 ]
 
-MultipartIO = t.Dict[str, _DescriptorType]
+MultipartIO = t.Dict[
+    str,
+    t.Union[
+        str,
+        "JSONType",
+        "FileLike",
+        "ImageType",
+        "np.ndarray[t.Any, np.dtype[t.Any]]",
+        "pd.DataFrame",
+        "pd.Series",
+    ],
+]
 
 
 class Multipart(IODescriptor[MultipartIO]):
@@ -44,25 +59,30 @@ class Multipart(IODescriptor[MultipartIO]):
     curl -i -F img=@test.jpg -F annotations=@test.json localhost:5000/predict
     """
 
-    def __init__(self, **inputs: IODescriptor[_DescriptorType]):
+    def __init__(self, **inputs: _DescriptorType):
         for descriptor in inputs.values():
-            if isinstance(descriptor, Multipart):
+            if isinstance(descriptor, Multipart):  # pragma: no cover
                 raise InvalidArgument(
                     "Multipart IO can not contain nested Multipart item"
                 )
 
-        self._inputs = inputs
+        self._inputs = inputs  # type: t.Dict[str, _DescriptorType]
 
-    def schema_type() -> t.Dict[str, t.Any]:
-        return {"type": "object", "properties": {}}
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+        return {
+            "type": "object",
+            "properties": {
+                k: io.openapi_schema_type() for k, io in self._inputs.items()
+            },
+        }
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {"multipart/form-data": {"schema": self.schema_type()}}
+        return {"multipart/form-data": {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {"multipart/form-data": {"schema": self.schema_type()}}
+        return {"multipart/form-data": {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> MultipartIO:
         ctype, _ = parse_options_header(request.headers["content-type"])
@@ -79,6 +99,34 @@ class Multipart(IODescriptor[MultipartIO]):
             v = await i.from_http_request(req)
             res[k] = v
         return res
+
+    @t.overload
+    async def to_http_response(self, obj: t.Dict[str, str]) -> Response:
+        ...
+
+    @t.overload
+    async def to_http_response(self, obj: t.Dict[str, "JSONType"]) -> Response:
+        ...
+
+    @t.overload
+    async def to_http_response(self, obj: t.Dict[str, "ImageType"]) -> Response:
+        ...
+
+    @t.overload
+    async def to_http_response(
+        self, obj: t.Dict[str, "np.ndarray[t.Any, np.dtype[t.Any]]"]
+    ) -> Response:
+        ...
+
+    @t.overload
+    async def to_http_response(self, obj: t.Dict[str, "FileLike"]) -> Response:
+        ...
+
+    @t.overload
+    async def to_http_response(
+        self, obj: t.Dict[str, t.Union["pd.DataFrame", "pd.Series"]]
+    ) -> Response:
+        ...
 
     async def to_http_response(self, obj: MultipartIO) -> Response:
         res_mapping: t.Dict[str, Response] = {}

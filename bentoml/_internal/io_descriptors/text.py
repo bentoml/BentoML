@@ -56,17 +56,16 @@ class Text(IODescriptor[str]):
         IO Descriptor that represents strings type.
     """
 
-    @staticmethod
-    def schema_type() -> t.Dict[str, t.Any]:
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {"type": "string"}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {MIME_TYPE: {"schema": self.schema_type()}}
+        return {MIME_TYPE: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {MIME_TYPE: {"schema": self.schema_type()}}
+        return {MIME_TYPE: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> str:
         obj = await request.body()

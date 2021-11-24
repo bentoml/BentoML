@@ -123,18 +123,18 @@ class JSON(IODescriptor[JSONType]):
         self._validate_json = validate_json
         self._json_encoder = json_encoder
 
-    def schema_type(self) -> t.Dict[str, t.Any]:
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         if hasattr(self, "_pydantic_model"):
             return self._pydantic_model.schema()
         return {"type": "object"}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return {MIME_TYPE_JSON: {"schema": self.schema_type()}}
+        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return {MIME_TYPE_JSON: {"schema": self.schema_type()}}
+        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> JSONType:
         json_obj = await request.json()

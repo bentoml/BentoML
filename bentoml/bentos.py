@@ -168,14 +168,14 @@ def build_from_bentofile_yaml(
         with open(bentofile, "r") as f:
             build_config = BentoBuildConfig.from_yaml(f)
 
-        bento = Bento.create(
-            build_config=build_config,
-            version=version,
-            build_ctx=build_ctx,
-            model_store=_model_store,
-        ).save(_bento_store)
-        logger.info("Bento build success, %s created", bento)
-        return bento
+    bento = Bento.create(
+        build_config=build_config,
+        version=version,
+        build_ctx=build_ctx,
+        model_store=_model_store,
+    ).save(_bento_store)
+    logger.info("Bento build success, %s created", bento)
+    return bento
 
 
 __all__ = [

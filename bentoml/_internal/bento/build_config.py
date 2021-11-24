@@ -10,6 +10,7 @@ import fs
 import fs.copy
 import yaml
 from fs.base import FS
+from fs.copy import copy_file
 
 from ...exceptions import InvalidArgument
 from ..types import Tag
@@ -151,11 +152,30 @@ class CondaOptions:
         ...
 
 
+def _copy_file_to_fs_folder(
+    src_path: str,
+    dst_fs: FS,
+    dst_folder_path: str = ".",
+    dst_filename: t.Optional[str] = None,
+):
+    """Copy the given file at src_path to dst_fs filesystem, under its dst_folder_path
+    folder with dst_filename as file name. When dst_filename is None, keep the original
+    file name.
+    """
+    src_path = os.path.realpath(src_path)
+    dir_name, file_name = os.path.split(src_path)
+    src_fs = fs.open_fs(dir_name)
+    dst_filename = file_name if dst_filename is None else dst_filename
+    dst_path = fs.path.join(dst_folder_path, dst_filename)
+    copy_file(src_fs, file_name, dst_fs, dst_path)
+
+
 @attr.frozen
 class PythonOptions:
     requirements_txt: t.Optional[str] = None
     packages: t.Optional[t.List[str]] = None
     lock_packages: t.Optional[bool] = None
+    check_hashes: t.Optional[bool] = None
     index_url: t.Optional[str] = None
     no_index: t.Optional[bool] = None
     trusted_host: t.Optional[t.List[str]] = None
@@ -164,24 +184,45 @@ class PythonOptions:
     pip_args: t.Optional[str] = None
     wheels: t.Optional[t.List[str]] = None
 
-    def write_to_bento(self, bento_fs: FS, ctx_fs: FS):
+    def __attrs_post_init__(self):
+        if self.requirements_txt and self.packages:
+            logger.warning(
+                f'Build option python: requirements_txt="{self.requirements_txt}" found, this will ignore the option: packages="{self.packages}"'
+            )
+
+    def write_to_bento(self, bento_fs: FS):
         py_folder = fs.path.join("env", "python")
+        wheels_folder = fs.path.join(py_folder, "wheels")
         bento_fs.makedirs(py_folder, recreate=True)
 
-        if self.requirements_txt:
-            if self.packages:
-                logger.warning(
-                    f'Build python option requirements_txt="{self.requirements_txt}" found, this will ignore the option packages="{self.packages}"'
-                )
-            # copy requirements txt directly
+        # Move over required wheel files
+        # Note: although wheel files outside of build_ctx will also work, we should
+        # discourage users from doing that
+        if self.wheels is not None:
+            for whl_file in self.wheels:
+                _copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
+        # Prepare py_folder content in temp_fs
+        temp_fs = fs.open_fs("temp://build_python_options")
+        if self.requirements_txt is not None:
+            _copy_file_to_fs_folder(
+                self.requirements_txt, temp_fs, dst_filename="requirements.in"
+            )
+        elif self.packages is not None:
+            with temp_fs.open("requirements.in", "w") as f:
+                f.write("\n".join(self.packages))
+        else:
+            return
 
     def with_defaults(self):
         # Convert from user provided options to actual build options with default values
         update_defaults = {}
 
-        if self.requirements_txt is None and self.lock_packages is None:
-            update_defaults["lock_packages"] = True
+        if self.requirements_txt is None:
+            if self.lock_packages is None:
+                update_defaults["lock_packages"] = True
+            if self.check_hashes is None:
+                update_defaults["check_hashes"] = True
 
         return attr.evolve(self, **update_defaults)
 

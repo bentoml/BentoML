@@ -189,10 +189,13 @@ class Bento(StoreItem):
                         target_fs.makedirs(dir_path, recreate=True)
                         copy_file(ctx_fs, _path, target_fs, _path)
 
-        # Add env & dependency related config files to Bento
-        build_config.docker.write_to_bento(bento_fs)
-        build_config.python.write_to_bento(bento_fs, ctx_fs)
-        build_config.conda.write_to_bento(bento_fs)
+        # Setting CWD to build_ctx so that relative file path will work as expected
+        # For python wheels, requirements_txt or conda.environment_yml option, user may
+        # specify a file outside of build_ctx, although it is not recommended.
+        with chdir_build_context(build_ctx):
+            build_config.docker.write_to_bento(bento_fs)
+            build_config.python.write_to_bento(bento_fs)
+            build_config.conda.write_to_bento(bento_fs)
 
         # Create `readme.md` file
         with bento_fs.open("README.md", "w") as f:

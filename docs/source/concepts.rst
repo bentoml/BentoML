@@ -313,7 +313,7 @@ However, as with using any alternative Docker base image, there are a few things
 in mind. Firstly, you should manually select the right slim image for your bundle. For
 example, if you used BentoML version 0.11.0 and Python 3.7 to create your BentoML
 bundle, you would use `bentoml/model-server:0.11.0-slim-py37`. Currently, BentoML support
-Python 3.6, 3.7, and 3.8.
+Python 3.7, 3.8, and 3.9.
 
 Additionally, unlike the default docker base image, the slim image does not come with
 :code:`conda` pre-installed. This means that BentoML will ignore the conda dependencies

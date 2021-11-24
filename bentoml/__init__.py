@@ -9,8 +9,7 @@ from ._internal.log import configure_logging  # noqa: E402
 
 configure_logging()
 
-import bentoml.models as models
-
+from . import models
 from ._internal.service import Service
 from ._internal.service.loader import load
 from ._internal.types import Tag

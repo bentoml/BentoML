@@ -4,6 +4,7 @@ import typing as t
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import fs
 import yaml
 from simple_di import Provide, inject
 
@@ -213,7 +214,9 @@ class _PyFuncRunner(Runner):
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
         path = self._model_info.info.options["mlflow_folder"]
-        self._model = mlflow.pyfunc.load_model(path, suppress_warnings=False)
+        self._model = mlflow.pyfunc.load_model(
+            fs.open_fs(path), suppress_warnings=False
+        )
 
     # pylint: disable=arguments-differ
     def _run_batch(self, input_data: t.Any) -> t.Any:  # type: ignore[override]

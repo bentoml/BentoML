@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import fs
 import numpy as np
 import psutil
 import pytest
@@ -65,6 +66,7 @@ def test_invalid_load(modelstore, invalid_save_with_no_mlmodel):
 def test_mlflow_load_runner(modelstore):
     (_, data) = sklearn_model_data()
     uri = Path(current_file, "sklearn_clf").resolve()
+    print(uri)
     tag = bentoml.mlflow.import_from_uri(MODEL_NAME, str(uri), model_store=modelstore)
     runner = bentoml.mlflow.load_runner(tag, model_store=modelstore)
     assert isinstance(runner, bentoml.mlflow._PyFuncRunner)

@@ -22,7 +22,7 @@ Before starting this guide, make sure you have the following:
 
   * Docker install instruction: https://docs.docker.com/get-docker/
 
-* Python 3.6 or above and required PyPi packages: `bentoml` and `scikit-learn`
+* Python 3.7 or above and required PyPi packages: `bentoml` and `scikit-learn`
 
   * .. code-block: bash
 

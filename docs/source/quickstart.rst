@@ -16,7 +16,7 @@ Note that Docker containerization does not work in the Colab environment.
 Run Notebook Locally
 --------------------
 
-Install `BentoML <https://github.com/bentoml/BentoML>`_. This requires python 3.6 or
+Install `BentoML <https://github.com/bentoml/BentoML>`_. This requires python 3.7 or
 above, install with :code:`pip` command:
 
 .. code-block:: bash

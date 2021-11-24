@@ -17,7 +17,6 @@ set_on_failed_callback "ERR=1"
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
 ERR=0
-USE_POETRY=0
 
 PYTESTARGS=()
 CONFIG_FILE="$dname/config.yml"
@@ -35,12 +34,7 @@ getval(){
 }
 
 run_python(){
-  if [ "$USE_POETRY" -eq 1 ]; then
-    need_cmd poetry;
-    poetry run python -m "$@"
-  else
-    python -m "$@"
-  fi
+  python -m "$@"
 }
 
 validate_yaml() {
@@ -64,12 +58,11 @@ usage() {
 Running unit/integration tests with pytest and generate coverage reports. Make sure that given testcases is defined under $CONFIG_FILE.
 
 Usage:
-  $dname/$fname [-h|--help] [-v|--verbose] [--use-poetry] <target> <pytest_additional_arguments>
+  $dname/$fname [-h|--help] [-v|--verbose] <target> <pytest_additional_arguments>
 
 Flags:
   -h, --help            show this message
   -v, --verbose         set verbose scripts
-  --use-poetry          use poetry to run scripts
 
 
 If pytest_additional_arguments is given, this will be appended to given tests run.
@@ -93,10 +86,6 @@ parse_args() {
         usage;;
       -v | --verbose)
         set -x;
-        shift;;
-      --use-poetry)
-        need_cmd poetry;
-        USE_POETRY=1;
         shift;;
       *)
         ;;

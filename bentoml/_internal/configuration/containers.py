@@ -8,7 +8,7 @@ import attr
 import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
-from simple_di import Provide, providers
+from simple_di import Provide, Provider, providers
 
 from ...exceptions import BentoMLConfigException
 from ..utils import get_free_port, validate_or_create_dir
@@ -175,7 +175,7 @@ class BentoMLConfiguration:
         return t.cast(providers.ConfigDictType, self.config)
 
 
-@attr.define
+@attr.s
 class BentoMLContainerClass:
 
     config = providers.Configuration()
@@ -238,7 +238,7 @@ class BentoMLContainerClass:
 BentoMLContainer = BentoMLContainerClass()
 
 
-@attr.define
+@attr.s
 class BentoServerContainerClass:
 
     bentoml_container = BentoMLContainer

@@ -45,7 +45,7 @@ def _get_default_bento_readme(svc: "Service"):
             doc += f"* Input: {api.input.__class__.__name__}\n"
             doc += f"* Output: {api.output.__class__.__name__}\n\n"
 
-    doc += f"""
+    doc += """
 ## Customize This Message
 
 This is the default generated `bentoml.Service` doc. You may customize it in your Bento
@@ -132,7 +132,7 @@ class Bento(StoreItem):
                 )
 
         logger.info(
-            f"Packing required models: %s",
+            "Packing required models: %s",
             ", ".join(map(lambda m: f'"{m.tag}"', models_list)),
         )
         for model in models_list:

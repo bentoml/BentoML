@@ -51,12 +51,13 @@ jobs:
         id: filter
         with:
           filters: |
-            dependencies:
+            dependencies: &dependencies
               - setup.cfg
               - pyproject.toml
               - scripts/ci/config.yml
               - requirements/tests-requirements.txt
             related: &related
+              - *dependencies
               - .github/workflows/frameworks.yml
               - scripts/ci/run_tests.sh
             runner: &runner
@@ -632,12 +633,17 @@ jobs:
           fetch-depth: 0 # fetch all tags and branches
 
       - name: Run tests and generate coverage report
+        shell: bash
         run: |
-          pip install -e .
-          pip install -r requirements/tests-requirements.txt tensorflow==2.2.0 pandas tf2onnx protobuf
-          export PATH="/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
+          set -x
+          apt-get update && apt-get install -y curl python3.8-venv
+          python3 -m venv /opt/venv
+          source /opt/venv/bin/activate
+          export PATH="/opt/venv/bin:/workdir/onnx-mlir/build/Debug/lib/:/workdir/onnx-mlir/build/Debug/bin/:${PATH}"
           export PYTHONPATH="${PYTHONPATH}:/workdir/onnx-mlir/build/Debug/lib/"
-          pytest tests/integration/frameworks/test_onnxmlir_impl.py --cov=bentoml --cov-config=setup.cfg --cov-report=xml:"onnxmlir.xml"
+          pip install -e .
+          pip install -r requirements/tests-requirements.txt
+          make tests-onnxmlir
 
       - name: Upload test coverage to Codecov
         if: ${{ needs.diff.outputs.onnxmlir == 'true' }}

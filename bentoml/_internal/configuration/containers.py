@@ -2,12 +2,13 @@ import logging
 import multiprocessing
 import os
 import typing as t
+from dataclasses import dataclass  # TODO: simple-di required this. remove it
 from typing import TYPE_CHECKING
 
 import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
-from simple_di import Provide, Provider, container, providers
+from simple_di import Provide, providers
 
 from ...exceptions import BentoMLConfigException
 from ..utils import get_free_port, validate_or_create_dir
@@ -16,7 +17,7 @@ from . import expand_env_var
 if TYPE_CHECKING:  # pragma: no cover
     from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
 
-    from pyarrow._plasma import (  # pylint: disable=no-name-in-module # type: ignore[reportMissingImports] # noqa: LN001
+    from pyarrow._plasma import (  # pylint: disable=E0611 # noqa: F401,LN001 # type: ignore[reportMissingImports]
         PlasmaClient,
     )
 
@@ -170,11 +171,11 @@ class BentoMLConfiguration:
                 " to the required schema, key=%s, value=%s." % (keys, value)
             ) from e
 
-    def as_dict(self) -> t.Dict[str, t.Any]:
-        return self.config
+    def as_dict(self) -> providers.ConfigDictType:
+        return t.cast(providers.ConfigDictType, self.config)
 
 
-@container
+@dataclass
 class BentoMLContainerClass:
 
     config = providers.Configuration()
@@ -223,24 +224,21 @@ class BentoMLContainerClass:
 
             return NoopTracer()
 
-    logging_file_directory = t.cast(
-        Provider[t.Callable[[], str]],
-        providers.Factory(
-            lambda default, customized: customized or default,
-            providers.Factory(
-                os.path.join,
-                bentoml_home,
-                "logs",
-            ),
-            config.logging.file.directory,
+    logging_file_directory = providers.Factory[str](
+        lambda default, customized: customized if customized is not None else default,
+        providers.Factory[str](
+            os.path.join,
+            bentoml_home,
+            "logs",
         ),
+        config.logging.file.directory,
     )
 
 
 BentoMLContainer = BentoMLContainerClass()
 
 
-@container
+@dataclass
 class BentoServerContainerClass:
 
     bentoml_container = BentoMLContainer
@@ -272,33 +270,20 @@ class BentoServerContainerClass:
         filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return filtered_kwargs
 
-    api_server_workers = t.cast(
-        Provider[int],
-        providers.Factory(
-            lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
-            config.workers,
-        ),
+    api_server_workers = providers.Factory[int](
+        lambda workers: workers or (multiprocessing.cpu_count() // 2) + 1,
+        config.workers,
     )
-    service_port: Provider[int] = config.port
-    service_host = t.cast(Provider[str], providers.Static("0.0.0.0"))
+    service_port = config.port
+    service_host = providers.Static[str]("0.0.0.0")
+    forward_host = providers.Static[str]("localhost")
+    forward_port = providers.SingletonFactory[int](get_free_port)
+    prometheus_lock = providers.SingletonFactory["SyncLock"](multiprocessing.Lock)
 
-    forward_host = t.cast(Provider[str], providers.Static("localhost"))
-    forward_port = t.cast(
-        Provider[t.Callable[[str], int]], providers.SingletonFactory(get_free_port)
-    )
-
-    prometheus_lock = t.cast(
-        Provider[t.Callable[[], "SyncLock"]],
-        providers.SingletonFactory(multiprocessing.Lock),
-    )
-
-    prometheus_multiproc_dir = t.cast(
-        Provider[str],
-        providers.Factory(
-            os.path.join,
-            bentoml_container.bentoml_home,
-            "prometheus_multiproc_dir",
-        ),
+    prometheus_multiproc_dir = providers.Factory[str](
+        os.path.join,
+        bentoml_container.bentoml_home,
+        "prometheus_multiproc_dir",
     )
 
     @providers.SingletonFactory
@@ -315,8 +300,8 @@ class BentoServerContainerClass:
         )
 
     # Mapping from runner name to RunnerApp file descriptor
-    remote_runner_mapping = t.cast(Provider[t.Dict[str, int]], providers.Static(dict()))
-    plasma_db: "PlasmaClient" = providers.Static(None)  # type: ignore[reportUnknownVariableType]
+    remote_runner_mapping = providers.Static[t.Dict[str, int]](dict())
+    plasma_db = providers.Static[t.Optional["PlasmaClient"]](None)  # type: ignore
 
 
 BentoServerContainer = BentoServerContainerClass()

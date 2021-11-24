@@ -475,7 +475,7 @@ class _PaddlePaddleRunner(Runner):
         return_argmax: bool = False,
         **kwargs: str,
     ) -> t.Union[t.Any, t.List["np.ndarray"]]:  # type: ignore[override]
-        if "paddlehub" in self._model_info.context:
+        if "paddlehub" in self._model_info.info.context:
             return self._infer_func(*args, **kwargs)
         else:
             assert input_data is not None

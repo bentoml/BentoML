@@ -140,11 +140,10 @@ class JSON(IODescriptor[JSONType]):
         json_obj = await request.json()
         if hasattr(self, "_pydantic_model") and self._validate_json:
             try:
-                return self._pydantic_model.parse_obj(json_obj)
+                self._pydantic_model.parse_obj(json_obj)
             except pydantic.ValidationError:
                 raise BadInput("Invalid JSON Request received")
-        else:
-            return json_obj
+        return json_obj
 
     async def to_http_response(self, obj: JSONType) -> Response:
         json_str = json.dumps(

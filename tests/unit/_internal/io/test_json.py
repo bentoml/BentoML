@@ -18,15 +18,20 @@ class _Schema(pydantic.BaseModel):
     endpoints: t.List[str]
 
 
+test_arr = t.cast(np.ndarray[t.Any, np.dtype[np.int32]], np.array([[1]]))  # type: ignore[reportUnknownMemberType]
+
+
 @pytest.mark.parametrize(
     "obj",
     [
         _ExampleSchema(name="test", endpoints=["predict", "health"]),
         _Schema(name="test", endpoints=["predict", "health"]),
-        np.array([[1]]),
+        test_arr,
     ],
 )
-def test_json_encoder(obj: t.Any) -> None:
+def test_json_encoder(
+    obj: t.Union[_ExampleSchema, pydantic.BaseModel, np.ndarray[t.Any, np.dtype[t.Any]]]
+) -> None:
     from bentoml._internal.io_descriptors.json import DefaultJsonEncoder
 
     dumped = json.dumps(

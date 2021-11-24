@@ -29,17 +29,18 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
     # branches of BentoML library, it is True only when BentoML module is installed
     # in development mode via "pip install --editable ."
     if os.path.isfile(bentoml_setup_py):
-        logger.warning(
+        logger.info(
             "BentoML is installed in `editable` model, building BentoML distribution with local BentoML code base. The built wheel file will be included in target bento directory, under: {bento_path}/env/python/wheels/"
         )
 
         with TempDirectory() as tempdir:
+            # Assuming developer has setuptools installed from dev-requirements.txt
             from setuptools import sandbox
 
             # build BentoML wheel distribution under tempdir
             sandbox.run_setup(
                 bentoml_setup_py,
-                ["-q", "bdist_wheel", "--dist-dir", tempdir],
+                ["--quiet", "bdist_wheel", "--dist-dir", tempdir],
             )
 
             # copy the built wheel file to target directory

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# TODO: make this work with 1.0 bento content
 # Bash Script that installs the dependencies specified in the Bento
 #
 # Usage:

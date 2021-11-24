@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import stat
 import typing as t
 from sys import version_info as pyver
 
@@ -16,6 +15,7 @@ from piptools.scripts.compile import cli as pip_compile_cli
 
 from ...exceptions import InvalidArgument
 from ..types import Tag
+from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 from .docker import ImageProvider
 from .templates import BENTO_SERVER_DOCKERFILE
 from .utils import resolve_user_filepath
@@ -239,7 +239,6 @@ class PythonOptions:
         with bento_fs.open(fs.path.join(py_folder, "version.txt"), "w") as f:
             f.write(PYTHON_VERSION)
 
-        # TODO: in editable mode, build bentoml whl file and insert here
         # Move over required wheel files
         # Note: although wheel files outside of build_ctx will also work, we should
         # discourage users from doing that
@@ -247,6 +246,11 @@ class PythonOptions:
             for whl_file in self.wheels:
                 whl_file = resolve_user_filepath(whl_file, build_ctx)
                 _copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
+
+        # If BentoML is installed in editable mode, build bentoml whl and save to Bento
+        build_bentoml_whl_to_target_if_in_editable_mode(
+            bento_fs.getsyspath(wheels_folder)
+        )
 
         if self.requirements_txt is not None:
             requirements_txt_file = resolve_user_filepath(

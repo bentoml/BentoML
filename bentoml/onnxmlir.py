@@ -1,3 +1,4 @@
+import os
 import shutil
 import typing as t
 from typing import TYPE_CHECKING
@@ -56,8 +57,8 @@ def load(
     Examples::
     """  # noqa
     model = model_store.get(tag)
-    model_path = model.info.options["compiled_path"]
-    return ExecutionSession(model_path, "run_main_graph")
+    compiled_path = model.path_of(model.info.options["compiled_path"])
+    return ExecutionSession(compiled_path, "run_main_graph")
 
 
 @inject
@@ -96,11 +97,8 @@ def save(
         framework_context=context,
     )
     fpath = _model.path_of(f"{SAVE_NAMESPACE}{ONNXMLIR_EXTENSION}")
-    _model.info.options["compiled_path"] = fpath
-    shutil.copyfile(
-        model,
-        fpath,
-    )
+    _model.info.options["compiled_path"] = os.path.relpath(fpath, _model.path)
+    shutil.copyfile(model, fpath)
 
     _model.save(model_store)
     return _model.tag

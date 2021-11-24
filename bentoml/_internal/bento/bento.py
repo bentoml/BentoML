@@ -245,7 +245,9 @@ class BentoStore(Store[SysPathBento]):
 @attr.define(repr=False, frozen=True)
 class BentoInfo:
     tag: Tag
-    service: str = attr.field(converter=lambda svc: svc._import_str)  # type: ignore[reportPrivateUsage]
+    service: str = attr.field(
+        converter=lambda svc: svc if isinstance(svc, str) else svc._import_str
+    )  # type: ignore[reportPrivateUsage]
     labels: t.Dict[str, t.Any]  # TODO: validate user-provide labels
     models: t.List[str]  # TODO: populate with model & framework info
     bentoml_version: str = BENTOML_VERSION

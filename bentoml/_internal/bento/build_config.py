@@ -227,7 +227,10 @@ class PythonOptions:
         # Prepare py_folder content in temp_fs
         if self.requirements_txt is not None:
             _copy_file_to_fs_folder(
-                self.requirements_txt, bento_fs, py_folder, dst_filename="requirements.txt"
+                self.requirements_txt,
+                bento_fs,
+                py_folder,
+                dst_filename="requirements.txt",
             )
         elif self.packages is not None:
             with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
@@ -240,7 +243,6 @@ class PythonOptions:
             pip_args.append("--no-index")
         if self.index_url:
             pip_args.append(f"--index-url={self.index_url}")
-
         if self.trusted_host:
             for item in self.trusted_host:
                 pip_args.append(f"--trusted-host={item}")
@@ -250,16 +252,24 @@ class PythonOptions:
         if self.extra_index_url:
             for item in self.extra_index_url:
                 pip_args.append(f"--extra-index-url={item}")
+        if self.pip_args:
+            # Additional user provided pip_args
+            pip_args.append(self.pip_args)
+
+        # write pip install args to a text file
         with bento_fs.open(fs.path.join(py_folder, "pip_args.txt"), "w") as f:
             f.write(" ".join(pip_args))
 
         if self.lock_packages:
-            pip_compile_args = pip_args + ["--allow-unsafe", "--no-header"]
+            pip_compile_args = pip_args + [
+                "--allow-unsafe",
+                "--no-header",
+                "--output-file=requirements.lock.txt",
+            ]
             if self.check_hashes:
                 pip_compile_args.append("--generate-hashes")
 
             # TODO: run pip-compile and copy over requirements.lock.txt file
-
 
     def with_defaults(self):
         # Convert from user provided options to actual build options with default values

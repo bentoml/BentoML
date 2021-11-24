@@ -371,19 +371,19 @@ class BentoBuildConfig:
     labels: t.Optional[t.Dict[str, t.Any]] = None
     include: t.Optional[t.List[str]] = None
     exclude: t.Optional[t.List[str]] = None
-    additional_models: t.Optional[t.List[t.Union[Tag, str]]] = attr.ib(
+    additional_models: t.Optional[t.List[Tag]] = attr.ib(
         converter=_additional_models_converter,
         default=None,
     )
-    docker: t.Optional[t.Union[DockerOptions, t.Dict[str, t.Any]]] = attr.ib(
+    docker: t.Optional[DockerOptions] = attr.ib(
         default=None,
         converter=_dict_arg_converter(DockerOptions),
     )
-    python: t.Optional[t.Union[PythonOptions, t.Dict[str, t.Any]]] = attr.ib(
+    python: t.Optional[PythonOptions] = attr.ib(
         default=None,
         converter=_dict_arg_converter(PythonOptions),
     )
-    conda: t.Optional[t.Union[CondaOptions, t.Dict[str, t.Any]]] = attr.ib(
+    conda: t.Optional[CondaOptions] = attr.ib(
         default=None,
         converter=_dict_arg_converter(CondaOptions),
     )

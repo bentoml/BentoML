@@ -5,6 +5,7 @@ setuptools
 twine
 wheel
 pydantic
+attrs>=21.1
 types-click
 types-chardet
 types-setuptools

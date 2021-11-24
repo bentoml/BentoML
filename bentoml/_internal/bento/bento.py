@@ -1,7 +1,6 @@
 import logging
 import os
 import typing as t
-from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
@@ -71,25 +70,6 @@ python:
     return doc
 
 
-@contextmanager
-def chdir_build_context(build_ctx: t.Optional[str]):
-    if build_ctx is None:
-        yield
-        return
-
-    # chdir to build_ctx if exist
-    build_ctx = os.path.realpath(build_ctx)
-    if not os.path.isdir(build_ctx):
-        raise InvalidArgument(f'Build context directory "{build_ctx}" not found')
-
-    oldpwd = os.getcwd()
-    os.chdir(build_ctx)
-    try:
-        yield
-    finally:
-        os.chdir(oldpwd)
-
-
 @attr.define(repr=False)
 class Bento(StoreItem):
     _tag: Tag
@@ -109,7 +89,14 @@ class Bento(StoreItem):
     ) -> "SysPathBento":
         from ..service.loader import import_service
 
-        build_ctx = os.getcwd() if build_ctx is None else os.path.realpath(build_ctx)
+        build_ctx = (
+            os.getcwd()
+            if build_ctx is None
+            else os.path.realpath(os.path.expanduser(build_ctx))
+        )
+        assert os.path.isdir(build_ctx), f"build ctx {build_ctx} does not exist"
+
+        # This also verifies that svc can be imported correctly
         svc = import_service(build_config.service, working_dir=build_ctx)
 
         # Apply default build options
@@ -119,7 +106,9 @@ class Bento(StoreItem):
         if version is None:
             tag = tag.make_new_version()
 
-        logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")
+        logger.info(
+            f'Building BentoML service "{tag}" from build context "{build_ctx}"'
+        )
 
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
         ctx_fs = fs.open_fs(build_ctx)
@@ -142,6 +131,10 @@ class Bento(StoreItem):
                     f"Model {model_tag} not found in local model store"
                 )
 
+        logger.info(
+            f"Packing required models: %s",
+            ", ".join(map(lambda m: f'"{m.tag}"', models_list)),
+        )
         for model in models_list:
             model_name, model_version = model.tag.split(":")
             target_path = os.path.join("models", model_name, model_version)
@@ -189,13 +182,12 @@ class Bento(StoreItem):
                         target_fs.makedirs(dir_path, recreate=True)
                         copy_file(ctx_fs, _path, target_fs, _path)
 
-        # Setting CWD to build_ctx so that relative file path will work as expected
-        # For python wheels, requirements_txt or conda.environment_yml option, user may
-        # specify a file outside of build_ctx, although it is not recommended.
-        with chdir_build_context(build_ctx):
-            build_config.docker.write_to_bento(bento_fs)
-            build_config.python.write_to_bento(bento_fs)
-            build_config.conda.write_to_bento(bento_fs)
+        if build_config.docker:
+            build_config.docker.write_to_bento(bento_fs, build_ctx)
+        if build_config.python:
+            build_config.python.write_to_bento(bento_fs, build_ctx)
+        if build_config.conda:
+            build_config.conda.write_to_bento(bento_fs, build_ctx)
 
         # Create `readme.md` file
         with bento_fs.open("README.md", "w") as f:

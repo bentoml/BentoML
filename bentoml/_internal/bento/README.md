@@ -172,7 +172,7 @@ Inside a Bento archive, you will find the following file structure:
          - Dockerfile-gpu  # optional
          - docker-entrypoint.sh
          - bentoml-init.sh
-         - setup-script.sh  # optional
+         - setup.sh  # optional
      - /conda
          - environment.yml
 

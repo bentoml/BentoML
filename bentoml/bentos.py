@@ -2,7 +2,6 @@
 User facing python APIs for managing local bentos and build new bentos
 """
 import logging
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -10,8 +9,8 @@ import fs
 from simple_di import Provide, inject
 
 from ._internal.bento import Bento, SysPathBento
-from ._internal.bento.bento import chdir_build_context
 from ._internal.bento.build_config import BentoBuildConfig
+from ._internal.bento.utils import resolve_user_filepath
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.types import Tag
 from .exceptions import InvalidArgument
@@ -67,7 +66,7 @@ def pull(tag: t.Union[Tag, str]):
 
 @inject
 def build(
-    svc_import_str: str,
+    service: str,
     *,
     labels: t.Optional[t.Dict[str, str]] = None,
     description: t.Optional[str] = None,
@@ -90,7 +89,7 @@ def build(
     can only be provided via function call parameters.
 
     Args:
-        svc_import_str: import str for finding the bentoml.Service instance build target
+        service: import str for finding the bentoml.Service instance build target
         labels: optional immutable labels for carrying contextual info
         description: optional description string in markdown format
         include: list of file paths and patterns specifying files to include in Bento,
@@ -116,7 +115,7 @@ def build(
 
     """  # noqa: LN001
     build_config = BentoBuildConfig(
-        service=svc_import_str,
+        service=service,
         description=description,
         labels=labels,
         include=include,
@@ -159,14 +158,13 @@ def build_from_bentofile_yaml(
         _bento_store: save Bento created to this BentoStore
         _model_store: pull Models required from this ModelStore
     """
-    # Change working dir to build_ctx is required here, in case build file is provided
-    # as a relative path base on the build_ctx path
-    with chdir_build_context(build_ctx):
-        if not os.path.exists(bentofile):
-            raise InvalidArgument(f'Build file not found: "{bentofile}"')
+    try:
+        bentofile = resolve_user_filepath(bentofile, build_ctx)
+    except FileNotFoundError as e:
+        raise InvalidArgument(f'bentofile "{bentofile}" not found')
 
-        with open(bentofile, "r") as f:
-            build_config = BentoBuildConfig.from_yaml(f)
+    with open(bentofile, "r") as f:
+        build_config = BentoBuildConfig.from_yaml(f)
 
     bento = Bento.create(
         build_config=build_config,

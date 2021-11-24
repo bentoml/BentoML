@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import stat
 import typing as t
 from sys import version_info as pyver
 
@@ -11,11 +12,13 @@ import fs.copy
 import yaml
 from fs.base import FS
 from fs.copy import copy_file
+from piptools.scripts.compile import cli as pip_compile_cli
 
 from ...exceptions import InvalidArgument
 from ..types import Tag
 from .docker import ImageProvider
 from .templates import BENTO_SERVER_DOCKERFILE
+from .utils import resolve_user_filepath
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +126,7 @@ class DockerOptions:
         else:
             return self.base_image
 
-    def write_to_bento(self, bento_fs: FS):
+    def write_to_bento(self, bento_fs: FS, build_ctx: str):
         docker_folder = fs.path.join("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
         dockerfile = fs.path.join(docker_folder, "Dockerfile")
@@ -134,11 +137,15 @@ class DockerOptions:
 
         current_dir = fs.open_fs(os.path.dirname(__file__))
         for filename in ["bentoml-init.sh", "docker-entrypoint.sh"]:
-            fs.copy.copy_file(
-                current_dir, filename, bento_fs, fs.path.join(docker_folder, filename)
-            )
+            file_path = fs.path.join(docker_folder, filename)
+            fs.copy.copy_file(current_dir, filename, bento_fs, file_path)
 
-        # TODO: copy over self.setup_script
+        if self.setup_script:
+            try:
+                setup_script = resolve_user_filepath(self.setup_script, build_ctx)
+            except FileNotFoundError as e:
+                raise InvalidArgument(f"Invalid setup_script file: {e}")
+            _copy_file_to_fs_folder(setup_script, bento_fs, docker_folder, "setup.sh")
 
 
 @attr.frozen
@@ -148,7 +155,28 @@ class CondaOptions:
     dependencies: t.Optional[t.List[str]] = None
     pip: t.Optional[t.List[str]] = None  # list of pip packages to install via conda
 
-    def write_to_bento(self, bento_fs: FS):
+    def __attrs_post_init__(self):
+        if self.environment_yml is not None:
+            if self.channels is not None:
+                logger.warning(
+                    "conda environment_yml %s is used, 'channels=%s' option is ignored",
+                    self.environment_yml,
+                    self.channels,
+                )
+            if self.dependencies is not None:
+                logger.warning(
+                    "conda environment_yml %s is used, 'dependencies=%s' option is ignored",
+                    self.environment_yml,
+                    self.dependencies,
+                )
+            if self.channels is not None:
+                logger.warning(
+                    "conda environment_yml %s is used, 'pip=%s' option is ignored",
+                    self.environment_yml,
+                    self.pip,
+                )
+
+    def write_to_bento(self, bento_fs: FS, build_ctx: str):
         ...
 
 
@@ -162,7 +190,7 @@ def _copy_file_to_fs_folder(
     folder with dst_filename as file name. When dst_filename is None, keep the original
     file name.
     """
-    src_path = os.path.realpath(src_path)
+    src_path = os.path.realpath(os.path.expanduser(src_path))
     dir_name, file_name = os.path.split(src_path)
     src_fs = fs.open_fs(dir_name)
     dst_filename = file_name if dst_filename is None else dst_filename
@@ -184,7 +212,6 @@ class PythonOptions:
     requirements_txt: t.Optional[str] = None
     packages: t.Optional[t.List[str]] = None
     lock_packages: t.Optional[bool] = None
-    check_hashes: t.Optional[bool] = None
     index_url: t.Optional[str] = None
     no_index: t.Optional[bool] = None
     trusted_host: t.Optional[t.List[str]] = None
@@ -202,12 +229,8 @@ class PythonOptions:
             logger.warning(
                 f"Bulid option python.no_index=True found, this will ignore index_url and extra_index_url option when installing PyPI packages"
             )
-        if self.check_hashes and not self.lock_packages:
-            logger.warning(
-                f"Build option python.check_hashes=True is only applicable when the option python.lock_packages=True"
-            )
 
-    def write_to_bento(self, bento_fs: FS):
+    def write_to_bento(self, bento_fs: FS, build_ctx: str):
         py_folder = fs.path.join("env", "python")
         wheels_folder = fs.path.join(py_folder, "wheels")
         bento_fs.makedirs(py_folder, recreate=True)
@@ -222,12 +245,15 @@ class PythonOptions:
         # discourage users from doing that
         if self.wheels is not None:
             for whl_file in self.wheels:
+                whl_file = resolve_user_filepath(whl_file, build_ctx)
                 _copy_file_to_fs_folder(whl_file, bento_fs, wheels_folder)
 
-        # Prepare py_folder content in temp_fs
         if self.requirements_txt is not None:
+            requirements_txt_file = resolve_user_filepath(
+                self.requirements_txt, build_ctx
+            )
             _copy_file_to_fs_folder(
-                self.requirements_txt,
+                requirements_txt_file,
                 bento_fs,
                 py_folder,
                 dst_filename="requirements.txt",
@@ -236,6 +262,7 @@ class PythonOptions:
             with bento_fs.open(fs.path.join(py_folder, "requirements.txt"), "w") as f:
                 f.write("\n".join(self.packages))
         else:
+            # Return early if no python packages were specified
             return
 
         pip_args = []
@@ -261,15 +288,32 @@ class PythonOptions:
             f.write(" ".join(pip_args))
 
         if self.lock_packages:
-            pip_compile_args = pip_args + [
-                "--allow-unsafe",
-                "--no-header",
-                "--output-file=requirements.lock.txt",
-            ]
-            if self.check_hashes:
-                pip_compile_args.append("--generate-hashes")
+            # Note: "--allow-unsafe" is required for including setuptools in the
+            # generated requirements.lock.txt file, and setuptool is required by
+            # pyfilesystem2. Once pyfilesystem2 drop setuptools as dependency, we can
+            # remove the "--allow-unsafe" flag here.
 
-            # TODO: run pip-compile and copy over requirements.lock.txt file
+            # Note: "--generate-hashes" is purposefully not used here because it will
+            # break if user includes PyPI package from version control system
+            pip_compile_in = bento_fs.getsyspath(
+                fs.path.join(py_folder, "requirements.txt")
+            )
+            pip_compile_out = bento_fs.getsyspath(
+                fs.path.join(py_folder, "requirements.lock.txt")
+            )
+            pip_compile_args = (
+                [pip_compile_in]
+                + pip_args
+                + [
+                    "--quiet",
+                    "--allow-unsafe",
+                    "--no-header",
+                    f"--output-file={pip_compile_out}",
+                ]
+            )
+            logger.info("Locking PyPI package versions..")
+            click_ctx = pip_compile_cli.make_context("pip-compile", pip_compile_args)
+            pip_compile_cli.invoke(click_ctx)
 
     def with_defaults(self):
         # Convert from user provided options to actual build options with default values
@@ -278,8 +322,6 @@ class PythonOptions:
         if self.requirements_txt is None:
             if self.lock_packages is None:
                 update_defaults["lock_packages"] = True
-            if self.check_hashes is None:
-                update_defaults["check_hashes"] = True
 
         return attr.evolve(self, **update_defaults)
 
@@ -294,6 +336,19 @@ def _python_options_structure_hook(d, t):
 
 
 cattr.register_structure_hook(PythonOptions, _python_options_structure_hook)
+
+
+def _dict_arg_converter(
+    options_type: t.Type[t.Union[DockerOptions, CondaOptions, PythonOptions]]
+):
+    def _converter(
+        value: t.Optional[t.Union[options_type, dict]]
+    ) -> t.Optional[options_type]:
+        if isinstance(value, dict):
+            return options_type(**value)
+        return value
+
+    return _converter
 
 
 @attr.frozen
@@ -317,9 +372,15 @@ class BentoBuildConfig:
         ),
         default=None,
     )
-    docker: t.Optional[DockerOptions] = attr.ib(default=None)
-    python: t.Optional[PythonOptions] = attr.ib(default=None)
-    conda: t.Optional[CondaOptions] = attr.ib(default=None)
+    docker: t.Optional[DockerOptions] = attr.ib(
+        default=None, converter=_dict_arg_converter(DockerOptions)
+    )
+    python: t.Optional[PythonOptions] = attr.ib(
+        default=None, converter=_dict_arg_converter(PythonOptions)
+    )
+    conda: t.Optional[CondaOptions] = attr.ib(
+        default=None, converter=_dict_arg_converter(CondaOptions)
+    )
 
     def with_defaults(self):
         """Convert from user provided options to actual build options will defaults
@@ -342,8 +403,8 @@ class BentoBuildConfig:
         docker_options = DockerOptions() if self.docker is None else self.docker
         update_defaults["docker"] = docker_options.with_defaults()
 
-        if self.python is None:
-            update_defaults["python"] = PythonOptions()
+        python_options = PythonOptions() if self.python is None else self.python
+        update_defaults["python"] = python_options.with_defaults()
 
         if self.conda is None:
             update_defaults["conda"] = CondaOptions()

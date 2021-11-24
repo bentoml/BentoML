@@ -104,31 +104,31 @@ class Multipart(IODescriptor[MultipartIO]):
     async def to_http_response(self, obj: t.Dict[str, str]) -> Response:  # noqa: F811
         ...
 
-    @t.overload
+    @t.overload  # noqa: F811
     async def to_http_response(  # noqa: F811
         self, obj: t.Dict[str, "JSONType"]
     ) -> Response:
         ...
 
-    @t.overload
+    @t.overload  # noqa: F811
     async def to_http_response(  # noqa: F811
         self, obj: t.Dict[str, "ImageType"]
     ) -> Response:
         ...
 
-    @t.overload
+    @t.overload  # noqa: F811
     async def to_http_response(  # noqa: F811
         self, obj: t.Dict[str, "np.ndarray[t.Any, np.dtype[t.Any]]"]
     ) -> Response:
         ...
 
-    @t.overload
+    @t.overload  # noqa: F811
     async def to_http_response(  # noqa: F811
         self, obj: t.Dict[str, "FileLike"]
     ) -> Response:
         ...
 
-    @t.overload
+    @t.overload  # noqa: F811
     async def to_http_response(  # noqa: F811
         self, obj: t.Dict[str, t.Union["pd.DataFrame", "pd.Series"]]
     ) -> Response:

@@ -2,9 +2,9 @@ import logging
 import multiprocessing
 import os
 import typing as t
+from dataclasses import dataclass  # TODO: simple-di required this. remove it
 from typing import TYPE_CHECKING
 
-import attr
 import yaml
 from deepmerge import always_merger
 from schema import And, Optional, Or, Schema, SchemaError, Use
@@ -175,7 +175,7 @@ class BentoMLConfiguration:
         return t.cast(providers.ConfigDictType, self.config)
 
 
-@attr.s
+@dataclass
 class BentoMLContainerClass:
 
     config = providers.Configuration()
@@ -238,7 +238,7 @@ class BentoMLContainerClass:
 BentoMLContainer = BentoMLContainerClass()
 
 
-@attr.s
+@dataclass
 class BentoServerContainerClass:
 
     bentoml_container = BentoMLContainer
@@ -301,7 +301,7 @@ class BentoServerContainerClass:
 
     # Mapping from runner name to RunnerApp file descriptor
     remote_runner_mapping = providers.Static[t.Dict[str, int]](dict())
-    plasma_db = providers.Placeholder["PlasmaClient"]()  # type: ignore
+    plasma_db = providers.Static[t.Optional["PlasmaClient"]](None)  # type: ignore
 
 
 BentoServerContainer = BentoServerContainerClass()

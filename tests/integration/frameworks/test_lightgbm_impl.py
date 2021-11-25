@@ -1,4 +1,3 @@
-import os
 import typing as t
 
 import lightgbm as lgb

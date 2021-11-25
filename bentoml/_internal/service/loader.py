@@ -10,7 +10,7 @@ from simple_di import Provide, inject
 from ...exceptions import BentoMLException, NotFound
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..configuration.containers import BentoMLContainer
-from ..models.store import ModelStore
+from ..models import ModelStore
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..bento import BentoStore

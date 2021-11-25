@@ -11,8 +11,9 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import Model
 from ._internal.runner import Runner
-from ._internal.types import PathType
+from ._internal.types import PathType, Tag
 from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
     get_arg_names,
@@ -23,7 +24,7 @@ from ._internal.utils.tensorflow import (
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    from _internal.models.store import ModelStore, StoreCtx
+    from _internal.models import ModelStore
 
 try:
     import tensorflow as tf
@@ -168,9 +169,9 @@ def _load_tf_saved_model(path: str) -> t.Union["tracking.AutoTrackable", t.Any]:
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     tfhub_tags: t.Optional[t.List[str]] = None,
-    tfhub_options: t.Optional["tf.saved_model.SaveOptions"] = None,
+    tfhub_options: t.Optional[t.Any] = None,
     load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Any:  # returns tf.sessions or keras models
@@ -196,8 +197,8 @@ def load(
 
     Examples::
     """  # noqa
-    model_info = model_store.get(tag)
-    if "tensorflow_hub" in model_info.context:
+    model = model_store.get(tag)
+    if "tensorflow_hub" in model.info.context:
         assert load_as_wrapper is not None, (
             "You have to specified `load_as_wrapper=True | False`"
             " to load a `tensorflow_hub` module. If True is chosen,"
@@ -212,7 +213,7 @@ def load(
         ), MissingDependencyException(
             "`tensorflow_hub` is required to load a tfhub module."
         )
-        module_path = model_info.options["local_path"]
+        module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
             wrapper_class = hub.KerasLayer if TF2 else hub.Module
             return wrapper_class(module_path)
@@ -224,7 +225,11 @@ def load(
         if tfhub_tags is None and is_hub_module_v1:
             tfhub_tags = []
 
-        if tfhub_options:
+        if tfhub_options is not None:
+            if not isinstance(tfhub_options, tf.saved_model.SaveOptions):
+                raise EnvironmentError(
+                    f"`tfhub_options` has to be of type `tf.saved_model.SaveOptions`, got {type(tfhub_options)} instead."
+                )
             if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
                 raise NotImplementedError(
                     "options are not supported for TF < 2.3.x,"
@@ -239,14 +244,14 @@ def load(
         obj._is_hub_module_v1 = is_hub_module_v1  # pylint: disable=protected-access
         return obj
     else:
-        model = _load_tf_saved_model(str(model_info.path))
-        _tf_function_wrapper.hook_loaded_model(model)
+        tf_model = _load_tf_saved_model(model.path)
+        _tf_function_wrapper.hook_loaded_model(tf_model)
         logger.warning(TF_FUNCTION_WARNING)
         # pretty format loaded model
-        logger.info(pretty_format_restored_model(model))
-        if hasattr(model, "keras_api"):
+        logger.info(pretty_format_restored_model(tf_model))
+        if hasattr(tf_model, "keras_api"):
             logger.warning(KERAS_MODEL_WARNING.format(name=__name__))
-        return model
+        return tf_model
 
 
 @inject
@@ -255,7 +260,7 @@ def import_from_tfhub(
     name: t.Optional[str] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     if not all(i is not None for i in [hub, resolve, native_module]):
         raise MissingDependencyException(
             """\
@@ -263,7 +268,7 @@ def import_from_tfhub(
             Instruction: `pip install --upgrade tensorflow_hub`
             """  # noqa
         )
-    context = {
+    context: t.Dict[str, t.Any] = {
         "tensorflow": tf.__version__,
         "tensorflow_hub": hub.__version__,
     }
@@ -275,33 +280,33 @@ def import_from_tfhub(
                 name = _clean_name(identifier.split("/")[-1])
         else:
             name = f"{identifier.__class__.__name__}_{uuid.uuid4().hex[:5].upper()}"
-    with model_store.register(
+    _model = Model.create(
         name,
         module=__name__,
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        if isinstance(identifier, str):
-            os.environ["TFHUB_CACHE_DIR"] = str(ctx.path)
-            fpath = resolve(identifier)
-            ctx.options = {"model": identifier, "local_path": fpath}
+    )
+    if isinstance(identifier, str):
+        os.environ["TFHUB_CACHE_DIR"] = _model.path
+        fpath = resolve(identifier)
+        folder = fpath.split("/")[-1]
+        _model.info.options = {"model": identifier, "local_path": folder}
+    else:
+        if hasattr(identifier, "export"):
+            # hub.Module.export()
+            with tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph()) as sess:
+                sess.run(tf.compat.v1.global_variables_initializer())
+                identifier.export(_model.path, sess)
         else:
-            if hasattr(identifier, "export"):
-                # hub.Module.export()
-                with tf.compat.v1.Session(
-                    graph=tf.compat.v1.get_default_graph()
-                ) as sess:
-                    sess.run(tf.compat.v1.global_variables_initializer())
-                    identifier.export(str(ctx.path), sess)
-            else:
-                tf.saved_model.save(identifier, str(ctx.path))
-            ctx.options = {
-                "model": identifier.__class__.__name__,
-                "local_path": resolve(str(ctx.path)),
-            }
-        tag = ctx.tag  # type: str
-        return tag
+            tf.saved_model.save(identifier, _model.path)
+        _model.info.options = {
+            "model": identifier.__class__.__name__,
+            "local_path": ".",
+        }
+
+    _model.save(model_store)
+    return _model.tag
 
 
 @inject
@@ -313,7 +318,7 @@ def save(
     options: t.Optional["tf.saved_model.SaveOptions"] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -346,44 +351,47 @@ def save(
         tag = bentoml.transformers.save("my_tensorflow_model", model)
     """  # noqa
 
-    context = {"tensorflow": tf.__version__}
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {"tensorflow": tf.__version__}
+    _model = Model.create(
         name,
         module=__name__,
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
-        if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):
-            assert os.path.isdir(model)
-            copy_tree(str(model), str(ctx.path))
+    )
+
+    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):
+        assert os.path.isdir(model)
+        copy_tree(str(model), _model.path)
+    else:
+        if TF2:
+            tf.saved_model.save(
+                model, _model.path, signatures=signatures, options=options
+            )
         else:
-            if TF2:
-                tf.saved_model.save(
-                    model, str(ctx.path), signatures=signatures, options=options
+            if options:
+                logger.warning(
+                    f"Parameter 'options: {str(options)}' is ignored when "
+                    f"using tensorflow {tf.__version__}"
                 )
-            else:
-                if options:
-                    logger.warning(
-                        f"Parameter 'options: {str(options)}' is ignored when "
-                        f"using tensorflow {tf.__version__}"
-                    )
-                tf.saved_model.save(model, str(ctx.path), signatures=signatures)
-        return ctx.tag  # type: ignore[no-any-return]
+            tf.saved_model.save(model, _model.path, signatures=signatures)
+
+    _model.save(model_store)
+    return _model.tag
 
 
 class _TensorflowRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         device_id: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
@@ -402,7 +410,7 @@ class _TensorflowRunner(Runner):
         )
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_store.get(self.name).tag]
 
     @property
@@ -446,7 +454,7 @@ class _TensorflowRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "__call__",
     device_id: str = "CPU:0",

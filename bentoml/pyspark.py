@@ -5,10 +5,11 @@ from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    from _internal.models.store import ModelStore
+    from _internal.models import ModelStore
 
 try:
     ...
@@ -27,7 +28,7 @@ def load(
     Args:
         tag (`str`):
             Tag of a saved model in BentoML local modelstore.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
@@ -55,7 +56,7 @@ def save(
             Instance of model to be saved
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
@@ -70,15 +71,15 @@ class _PySparkMLlibRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         resource_quota: t.Dict[str, t.Any],
         batch_options: t.Dict[str, t.Any],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         ...
 
     @property
@@ -100,7 +101,7 @@ class _PySparkMLlibRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
@@ -118,7 +119,7 @@ def load_runner(
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure batch options for runner in a service context.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:

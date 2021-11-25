@@ -2,7 +2,7 @@ import importlib
 import logging
 import os
 import typing as t
-from hashlib import sha256
+from distutils.dir_util import copy_tree
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -12,15 +12,18 @@ from typing_extensions import Literal
 
 from ._internal.bento.pip_pkg import packages_distributions, split_requirement
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    from _internal.models.store import ModelStore, StoreCtx
-    from spacy import Config, Vocab
+    from spacy import Vocab
     from spacy.tokens.doc import Doc
+    from thinc.config import Config
+
+    from ._internal.models import ModelStore
 
 try:
     import spacy
@@ -43,7 +46,7 @@ except ImportError:  # pragma: no cover
         """
     )
 
-_check_compat = spacy.__version__.startswith("3")
+_check_compat: bool = spacy.__version__.startswith("3")
 if not _check_compat:  # pragma: no cover
     # TODO: supports spacy 2.x?
     raise EnvironmentError(
@@ -73,37 +76,47 @@ PROJECTS_CMD_NOT_SUPPORTED = [
     "run",
 ]
 
-DEFAULT_SPACY_PROJECTS_REPO = spacy.about.__projects__
+DEFAULT_SPACY_PROJECTS_REPO: str = spacy.about.__projects__
 DEFAULT_SPACY_PROJECTS_BRANCH = "v3"
 
 logger = logging.getLogger(__name__)
 
 
-def _uri_to_filename(uri: t.Optional[str]) -> str:  # pragma: no cover
-    if uri is None:
-        uri = DEFAULT_SPACY_PROJECTS_REPO
-    return f"spc{sha256(uri.encode('utf-8')).hexdigest()}"
+@inject
+def load_project(
+    tag: t.Union[str, Tag],
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> str:
+    model = model_store.get(tag)
+    if "projects_uri" in model.info.options:
+        logger.warning(
+            "We will only returns the path of projects saved under BentoML modelstore"
+            " and leave projects interaction for users to decide what they want to do."
+            " Refers to https://spacy.io/api/cli#project for more information."
+        )
+        return os.path.join(model.path, model.info.options["target_path"])
+    raise EnvironmentError(
+        "Cannot use `bentoml.spacy.load_project()` to load non Spacy Projects. If your"
+        " model is not a Spacy projects use `bentoml.spacy.load()` instead."
+    )
 
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     vocab: t.Union["Vocab", bool] = True,
     disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
     exclude: t.Iterable[str] = SimpleFrozenList(),  # noqa
     config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),  # noqa
 ) -> "spacy.language.Language":
-    model_info = model_store.get(tag)
-    if "projects_uri" in model_info.options:
+    model = model_store.get(tag)
+    if "projects_uri" in model.info.options:
         raise EnvironmentError(
-            """\
-        `bentoml.spacy.load()` is not designed to load or run a projects.
-        We will leave projects interaction for users to decide what they want to do.
-        Refers to https://spacy.io/api/cli#project for more information.
-        """
+            "Cannot use `bentoml.spacy.load()` to load Spacy Projects. Use"
+            " `bentoml.spacy.load_project()` instead."
         )
-    required = model_info.options["pip_package"]
+    required = model.info.options["pip_package"]
     try:
         _ = importlib.import_module(required)
     except ModuleNotFoundError:
@@ -121,7 +134,7 @@ def load(
     try:
         # check if pipeline has additional requirements then all related
         # pip package has been installed correctly.
-        additional = model_info.options["additional_requirements"]
+        additional = model.info.options["additional_requirements"]
         not_existed = list()
         dists = packages_distributions()
         for module_name in additional:
@@ -135,7 +148,7 @@ def load(
     except KeyError:
         pass
     return spacy.util.load_model(
-        model_info.path, vocab=vocab, disable=disable, exclude=exclude, config=config
+        model.path, vocab=vocab, disable=disable, exclude=exclude, config=config
     )
 
 
@@ -146,7 +159,7 @@ def save(
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -173,23 +186,25 @@ def save(
 
         bentoml.spacy.save("spacy_roberta", nlp)
     """  # noqa
-    context = {"spacy": spacy.__version__}
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {"spacy": spacy.__version__}
+    _model = Model.create(
         name,
         module=__name__,
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        meta = model.meta  # type: t.Dict[str, t.Any]
-        ctx.options = {
-            "pip_package": f"{meta['lang']}_{meta['name']}",
-        }
-        if "requirements" in meta:
-            ctx.options["additional_requirements"] = meta["requirements"]
-        model.to_disk(ctx.path)
-        tag = ctx.tag  # type: str
-        return tag
+    )
+
+    meta = model.meta
+    _model.info.options = {
+        "pip_package": f"{meta['lang']}_{meta['name']}",
+    }
+    if "requirements" in meta:
+        _model.info.options["additional_requirements"] = meta["requirements"]
+    model.to_disk(_model.path)
+
+    _model.save(model_store)
+    return _model.tag
 
 
 # TODO: save local projects
@@ -207,7 +222,7 @@ def projects(
     verbose: bool = True,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Tuple[str, "Path"]:
+) -> Tag:
     if tasks in PROJECTS_CMD_NOT_SUPPORTED:
         raise BentoMLException(
             """\
@@ -218,67 +233,68 @@ def projects(
          information on SpaCy Projects.
         """
         )
-    context = {
+    context: t.Dict[str, t.Any] = {
         "spacy": spacy.__version__,
         "tasks": tasks,
     }
-    with model_store.register(
+    _model = Model.create(
         save_name,
         module=__name__,
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:
-        output_path = Path(ctx.path, SAVE_NAMESPACE)
-        ctx.options = {"projects_uri": repo_or_store}
-        if tasks == "clone":
-            # TODO: update check for master or main branch
-            assert (
-                name is not None
-            ), "`name` of the template is required to clone a project."
-            ctx.options["name"] = name
-            spacy.cli.project_clone(
-                name,
-                output_path,
-                repo=repo_or_store,
-                branch=branch,
-                sparse_checkout=sparse_checkout,
-            )
-        else:
-            # works with S3 bucket, haven't failed yet
-            os.makedirs(output_path, exist_ok=True)
-            assert (
-                remotes_config is not None
-            ), """\
-                `remotes_config` is required in order to pull projects into
-                 BentoML modelstore. Refers to
-                 https://spacy.io/usage/projects#remote
-                 for more information. We will accept remotes
-                 as shown:
-                 {
-                    'remotes':
-                    {
-                        'default':'s3://spacy-bucket',
-                    }
+    )
+    output_path = _model.path_of(SAVE_NAMESPACE)
+    _model.info.options = {"projects_uri": repo_or_store, "target_path": SAVE_NAMESPACE}
+    if tasks == "clone":
+        # TODO: update check for master or main branch
+        assert (
+            name is not None
+        ), "`name` of the template is required to clone a project."
+        _model.info.options["name"] = name
+        spacy.cli.project_clone(
+            name,
+            Path(output_path),
+            repo=repo_or_store,
+            branch=branch,
+            sparse_checkout=sparse_checkout,
+        )
+        copy_tree(_model.path, output_path)
+    else:
+        # works with S3 bucket, haven't failed yet
+        assert (
+            remotes_config is not None
+        ), """\
+            `remotes_config` is required in order to pull projects into
+             BentoML modelstore. Refers to
+             https://spacy.io/usage/projects#remote
+             for more information. We will accept remotes
+             as shown:
+             {
+                'remotes':
+                {
+                    'default':'s3://spacy-bucket',
                 }
-                 """
-            with Path(output_path, "project.yml").open("w") as inf:
-                yaml.safe_dump(remotes_config, inf)
-            for remote in remotes_config["remotes"]:
-                for url, output_path in spacy.cli.project_pull(
-                    output_path, remote=remote, verbose=verbose
-                ):
-                    if url is not None:
-                        logger.info(f"Pulled {output_path} from {repo_or_store}")
-
-        return ctx.tag, output_path
+            }
+             """
+        os.makedirs(output_path, exist_ok=True)
+        with Path(output_path, "project.yml").open("w") as inf:
+            yaml.safe_dump(remotes_config, inf)
+        for remote in remotes_config.get("remotes", {}):
+            for url, res_path in spacy.cli.project_pull(
+                Path(output_path), remote=remote, verbose=verbose
+            ):
+                if url is not None:  # pragma: no cover
+                    logger.info(f"Pulled {res_path} from {repo_or_store}")
+    _model.save(model_store)
+    return _model.tag
 
 
 class _SpacyRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         gpu_device_id: t.Optional[int],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
@@ -304,7 +320,7 @@ class _SpacyRunner(Runner):
             else:
                 resource_quota["gpus"] = self._gpu_device_id
         self._configure(backend_options)
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
 
     def _configure(self, backend_options: t.Optional[str]) -> None:
         if self._gpu_device_id is not None and prefer_gpu(self._gpu_device_id):
@@ -320,7 +336,7 @@ class _SpacyRunner(Runner):
             require_cpu()
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_store.get(self.name).tag]
 
     @property
@@ -398,7 +414,7 @@ class _SpacyRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     gpu_device_id: t.Optional[int] = None,
     backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = None,

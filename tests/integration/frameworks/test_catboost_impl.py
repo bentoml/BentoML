@@ -1,4 +1,3 @@
-import os
 import typing as t
 
 import catboost as cbt
@@ -6,12 +5,14 @@ import pytest
 from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
 
 import bentoml.catboost
+import bentoml.models
+from bentoml._internal.models import Model
 from bentoml.exceptions import BentoMLException
 from tests.utils.frameworks.sklearn_utils import test_df
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelInfo, ModelStore
+    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -41,8 +42,8 @@ def catboost_model() -> cbt.core.CatBoostClassifier:
 @pytest.fixture(scope="module")
 def save_proc(
     modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
-    def _(model_params, metadata) -> "ModelInfo":
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+    def _(model_params, metadata) -> "Model":
         model = catboost_model()
         tag = bentoml.catboost.save(
             TEST_MODEL_NAME,
@@ -51,23 +52,25 @@ def save_proc(
             metadata=metadata,
             model_store=modelstore,
         )
-        info = modelstore.get(tag)
-        return info
+        model = modelstore.get(tag)
+        return model
 
     return _
 
 
 def wrong_module(modelstore: "ModelStore"):
     model = catboost_model()
-    with modelstore.register(
+    with bentoml.models.create(
         "wrong_module",
         module=__name__,
+        labels=None,
         options=None,
         framework_context=None,
         metadata=None,
-    ) as ctx:
-        model.save_model(os.path.join(ctx.path, "saved_model.model"))
-        return str(ctx.path)
+    ) as _model:
+        model.save_model(_model.path_of("saved_model.model"))
+
+        return str(_model.path)
 
 
 @pytest.mark.parametrize(
@@ -76,12 +79,12 @@ def wrong_module(modelstore: "ModelStore"):
 def test_catboost_save_load(model_params, metadata, modelstore, save_proc):
 
     model = catboost_model()
-    info = save_proc(model_params, metadata)
-    assert info.metadata is not None
-    assert_have_file_extension(info.path, ".cbm")
+    _model = save_proc(model_params, metadata)
+    assert _model.info.metadata is not None
+    assert_have_file_extension(_model.path, ".cbm")
 
     cbt_loaded = bentoml.catboost.load(
-        info.tag, model_params=model_params, model_store=modelstore
+        _model.tag, model_params=model_params, model_store=modelstore
     )
     assert isinstance(cbt_loaded, CatBoostClassifier)
     assert cbt_loaded.predict(test_df) == model.predict(test_df)

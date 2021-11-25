@@ -1,4 +1,3 @@
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -6,14 +5,15 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
 
-    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx  # noqa
+    from ._internal.models import ModelStore
 
 try:
     import catboost as cbt
@@ -44,21 +44,23 @@ def _get_model_info(
     tag: str,
     model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
     model_store: "ModelStore",
-) -> t.Tuple["ModelInfo", str, t.Dict[str, t.Any]]:
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
+) -> t.Tuple["Model", str, t.Dict[str, t.Any]]:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
         raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with module {model_info.module}, failed loading "
+            f"Model {tag} was saved with module {model.info.module}, failed loading "
             f"with {__name__}."
         )
 
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
-    _model_params = dict() if not model_params else model_params
-    for key, value in model_info.options.items():
+    model_file = model.path_of(f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
+    _model_params: t.Dict[str, t.Union[str, int]] = (
+        dict() if not model_params else model_params
+    )
+    for key, value in model.info.options.items():
         if key not in _model_params:
             _model_params[key] = value  # pragma: no cover
 
-    return model_info, model_file, _model_params
+    return model, model_file, _model_params
 
 
 def _load_helper(
@@ -126,7 +128,7 @@ def save(
     model_pool: t.Optional["cbt.core.Pool"] = None,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -188,22 +190,25 @@ def save(
         model_params["model_type"] = "classifier"
 
     context = {"catboost": cbt.__version__}
-    with model_store.register(
+    _model = Model.create(
         name,
         module=__name__,
         options=model_params,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:  # type: StoreCtx
-        path = os.path.join(ctx.path, f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
-        format_ = CATBOOST_EXT
-        model.save_model(
-            path,
-            format=format_,
-            export_parameters=model_export_parameters,
-            pool=model_pool,
-        )
-        return ctx.tag
+    )
+
+    path = _model.path_of(f"{SAVE_NAMESPACE}.{CATBOOST_EXT}")
+    format_ = CATBOOST_EXT
+    model.save_model(
+        path,
+        format=format_,
+        export_parameters=model_export_parameters,
+        pool=model_pool,
+    )
+
+    _model.save(model_store)
+    return _model.tag
 
 
 class _CatBoostRunner(Runner):
@@ -228,7 +233,7 @@ class _CatBoostRunner(Runner):
         self._model_params = _model_params
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
     @property

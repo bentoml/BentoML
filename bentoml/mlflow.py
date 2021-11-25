@@ -9,13 +9,15 @@ import yaml
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import Model as BentoModel
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
 
     import mlflow.pyfunc
-    from _internal.models.store import ModelStore, StoreCtx
+    from _internal.models import ModelStore
     from mlflow.pyfunc import PyFuncModel
 
 try:
@@ -47,7 +49,7 @@ def _validate_file_exists(fname: str, parent: str) -> t.Tuple[bool, str]:
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "PyFuncModel":
     """
@@ -64,8 +66,8 @@ def load(
 
     Examples::
     """  # noqa
-    model_info = model_store.get(tag)
-    mlflow_folder = os.path.join(model_info.path, model_info.options["mlflow_folder"])
+    model = model_store.get(tag)
+    mlflow_folder = model.path_of(model.info.options["mlflow_folder"])
     mlmodel_fpath = Path(mlflow_folder, MLMODEL_FILE_NAME)
     if not mlmodel_fpath.exists():
         raise BentoMLException(f"{MLMODEL_FILE_NAME} cannot be found.")
@@ -86,7 +88,7 @@ If you currently working with `mlflow.<flavor>.save_model`, we kindly suggest yo
 
     - {_strike('import mlflow.pytorch')}
     + import bentoml.pytorch
-    
+
     # PyTorch model logics
     ...
     model = EmbeddingBag()
@@ -98,7 +100,7 @@ If you want to import MLflow models from local directory or a given file path, y
 
     import mlflow.pytorch
     + import bentoml.mlflow
-    
+
     path = "./my_pytorch_model"
     mlflow.pytorch.save_model(model, path)
     + tag = bentoml.mlflow.import_from_uri("mlflow_pytorch_model", path)
@@ -111,9 +113,9 @@ An example showing how to integrate your current `log_model` with `mlflow.sklear
     import mlflow.sklearn
     + import mlflow
     + import bentoml.mlflow
-    
+
     # Log sklearn model `sk_learn_rfr` and register as version 1
-    ... 
+    ...
     reg_name = "sk-learn-random-forest-reg-model"
     artifact_path = "sklearn_model"
     mlflow.sklearn.log_model(
@@ -130,15 +132,15 @@ An example showing how to integrate your current `log_model` with `mlflow.sklear
 An example showing how to import from MLflow models registry to BentoML modelstore. With this usecase, we
  recommend you to load the model into memory first with `mlflow.<flavor>.load_model` then save the model using
  BentoML `save` API::
- 
+
     import mlflow.sklearn
     + import bentoml.sklearn
-    
+
     reg_model_name = "sk-learn-random-forest-reg-model"
     model_uri = "models:/%s/1" % reg_model_name
     + loaded = mlflow.sklearn.load_model(model_uri, *args, **kwargs)
     + tag = bentoml.sklearn.save("my_model", loaded, *args, **kwargs)
-    
+
     # you can also use `bentoml.mlflow.import_from_uri` to import the model directly after
     #  defining `model_uri`
     + import bentoml.mlflow
@@ -154,47 +156,51 @@ def import_from_uri(
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
-    context = {"mlflow": mlflow.__version__}
-    with model_store.register(
+) -> Tag:
+    context: t.Dict[str, t.Any] = {"mlflow": mlflow.__version__}
+
+    _model = BentoModel.create(
         name,
         module=__name__,
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        ctx.options = {"uri": uri}
-        mlflow_obj_path = _download_artifact_from_uri(uri, output_path=ctx.path)
-        ctx.options["mlflow_folder"] = mlflow_obj_path
-        exists, _ = _validate_file_exists("MLproject", mlflow_obj_path)
-        if exists:
-            raise BentoMLException("BentoML doesn't accept MLflow Projects.")
-        exists, fpath = _validate_file_exists("MLmodel", mlflow_obj_path)
-        if not exists:
-            raise BentoMLException("Downloaded path is not a valid MLflow Model.")
-        with Path(fpath).open("r") as mf:
-            conf = yaml.safe_load(mf.read())
-            flavor = conf["flavors"]["python_function"]
-            ctx.options["flavor"] = flavor["loader_module"]
-        tag = ctx.tag  # type: str
-        return tag
+    )
+
+    _model.info.options = {"uri": uri}
+    mlflow_obj_path = _download_artifact_from_uri(uri, output_path=_model.path)
+    _model.info.options["mlflow_folder"] = os.path.relpath(mlflow_obj_path, _model.path)
+    exists, _ = _validate_file_exists("MLproject", mlflow_obj_path)
+    if exists:
+        raise BentoMLException("BentoML doesn't accept MLflow Projects.")
+    exists, fpath = _validate_file_exists("MLmodel", mlflow_obj_path)
+    if not exists:
+        raise BentoMLException("Downloaded path is not a valid MLflow Model.")
+    with Path(fpath).open("r") as mf:
+        conf = yaml.safe_load(mf.read())
+        flavor = conf["flavors"]["python_function"]
+        _model.info.options["flavor"] = flavor["loader_module"]
+
+    _model.save(model_store)
+
+    return _model.tag
 
 
 class _PyFuncRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         self._model_store = model_store
         self._model_info = self._model_store.get(tag)
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
     @property
@@ -207,8 +213,9 @@ class _PyFuncRunner(Runner):
 
     # pylint: disable=arguments-differ,attribute-defined-outside-init
     def _setup(self) -> None:  # type: ignore[override]
-        path = self._model_info.options["mlflow_folder"]
-        self._model = mlflow.pyfunc.load_model(path, suppress_warnings=False)
+        path = self._model_info.info.options["mlflow_folder"]
+        artifact_path = self._model_info.path_of(path)
+        self._model = mlflow.pyfunc.load_model(artifact_path, suppress_warnings=False)
 
     # pylint: disable=arguments-differ
     def _run_batch(self, input_data: t.Any) -> t.Any:  # type: ignore[override]
@@ -217,7 +224,7 @@ class _PyFuncRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],

@@ -1,4 +1,3 @@
-import os
 import typing as t
 
 import joblib
@@ -7,6 +6,7 @@ import psutil
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 
+import bentoml.models
 import bentoml.sklearn
 from bentoml.exceptions import BentoMLException
 from tests.utils.frameworks.sklearn_utils import sklearn_model_data
@@ -25,7 +25,7 @@ res_arr = np.array(
 
 # fmt: on
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelInfo, ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -33,29 +33,29 @@ TEST_MODEL_NAME = __name__.split(".")[-1]
 @pytest.fixture(scope="module")
 def save_proc(
     modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
-    def _(metadata) -> "ModelInfo":
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+    def _(metadata) -> "Model":
         model, _ = sklearn_model_data(clf=RandomForestClassifier)
         tag = bentoml.sklearn.save(
             TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
         )
-        info = modelstore.get(tag)
-        return info
+        model = modelstore.get(tag)
+        return model
 
     return _
 
 
 def wrong_module(modelstore: "ModelStore"):
     model, data = sklearn_model_data(clf=RandomForestClassifier)
-    with modelstore.register(
+    with bentoml.models.create(
         "wrong_module",
         module=__name__,
         options=None,
         metadata=None,
         framework_context=None,
-    ) as ctx:
-        joblib.dump(model, os.path.join(ctx.path, "saved_model.pkl"))
-        return str(ctx.path)
+    ) as _model:
+        joblib.dump(model, _model.path_of("saved_model.pkl"))
+        return _model.path
 
 
 @pytest.mark.parametrize(
@@ -70,9 +70,9 @@ def test_sklearn_save_load(metadata, modelstore):  # noqa # pylint: disable
     tag = bentoml.sklearn.save(
         TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
     )
-    info = modelstore.get(tag)
-    assert info.metadata is not None
-    assert_have_file_extension(info.path, ".pkl")
+    _model = modelstore.get(tag)
+    assert _model.info.metadata is not None
+    assert_have_file_extension(_model.path, ".pkl")
 
     sklearn_loaded = bentoml.sklearn.load(tag, model_store=modelstore)
 

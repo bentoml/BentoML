@@ -10,6 +10,7 @@ from simple_di import Provide, inject
 from ..configuration.containers import BentoServerContainer
 from ..runner.container import AutoContainer
 from ..runner.utils import Params
+from ..types import Tag
 from .utils import (
     _cpu_converter,
     _gpu_converter,
@@ -100,7 +101,7 @@ class _BaseRunner:
         return 1
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return []
 
     @abstractmethod

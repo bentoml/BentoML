@@ -77,12 +77,11 @@ def compile_model(convert_to_onnx, tmpdir):
 def test_onnxmlir_save_load(compile_model, tmpdir, modelstore):  # noqa
     model = os.path.join(tmpdir, "model.so")
     tag = bentoml.onnxmlir.save("onnx_model_tests", model, model_store=modelstore)
-    info = modelstore.get(tag)
-    assert "compiled_path" in info.options
-    assert_have_file_extension(str(info.path), ".so")
+    _model = modelstore.get(tag)
+    assert "compiled_path" in _model.info.options
+    assert_have_file_extension(str(_model.path), ".so")
 
     session = bentoml.onnxmlir.load(tag, model_store=modelstore)
-    print(type(predict_df(session, test_df)))
     assert predict_df(session, test_df)[0] == np.array([[15.0]])
 
 

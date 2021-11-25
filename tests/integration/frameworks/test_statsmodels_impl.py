@@ -1,4 +1,3 @@
-import os
 import typing as t
 
 import numpy as np
@@ -8,6 +7,7 @@ import pytest
 import statsmodels
 from statsmodels.tsa.holtwinters import ExponentialSmoothing, HoltWintersResults
 
+import bentoml.models
 import bentoml.statsmodels
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
@@ -18,7 +18,7 @@ test_df2 = np.array([0, 0, 1, 1])
 
 # fmt: on
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelInfo, ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -31,27 +31,27 @@ def predict_df(model: t.Any, df: pd.DataFrame):
 def save_proc(
     modelstore: "ModelStore",
     holt_model,
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
-    def _(metadata, holt_model) -> "ModelInfo":
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+    def _(metadata, holt_model) -> "Model":
         tag = bentoml.statsmodels.save(
             TEST_MODEL_NAME, holt_model, metadata=metadata, model_store=modelstore
         )
-        info = modelstore.get(tag)
-        return info
+        model = modelstore.get(tag)
+        return model
 
     return _
 
 
 def wrong_module(modelstore: "ModelStore", holt_model):
-    with modelstore.register(
+    with bentoml.models.create(
         "wrong_module",
         module=__name__,
         options=None,
         framework_context=None,
         metadata=None,
-    ) as ctx:
-        holt_model.save(os.path.join(ctx.path, "saved_model.pkl"))
-        return ctx.tag
+    ) as _model:
+        holt_model.save(_model.path_of("saved_model.pkl"))
+        return _model.tag
 
 
 # exported from
@@ -94,9 +94,9 @@ def test_statsmodels_save_load(
     tag = bentoml.statsmodels.save(
         TEST_MODEL_NAME, holt_model, metadata=metadata, model_store=modelstore
     )
-    info = modelstore.get(tag)
-    assert info.metadata is not None
-    assert_have_file_extension(info.path, ".pkl")
+    _model = modelstore.get(tag)
+    assert _model.info.metadata is not None
+    assert_have_file_extension(_model.path, ".pkl")
 
     statsmodels_loaded = bentoml.statsmodels.load(tag, model_store=modelstore)
 

@@ -1,6 +1,5 @@
 import functools
 import typing as t
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
@@ -8,7 +7,8 @@ from simple_di import Provide, inject
 from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PT_EXT, SAVE_NAMESPACE
+from ._internal.models import PT_EXT, SAVE_NAMESPACE, Model
+from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
 _PL_IMPORT_ERROR = f"""\
@@ -18,7 +18,7 @@ Then run `pip install pytorch_lightning`
 """
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ._internal.models.store import ModelStore, StoreCtx
+    from ._internal.models import ModelStore
 
 try:
     import pytorch_lightning as pl
@@ -52,12 +52,12 @@ def load(
         booster = bentoml.pytorch_lightning.load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa
-    model_info = model_store.get(tag)
-    weight_file = Path(model_info.path, f"{SAVE_NAMESPACE}{PT_EXT}")
+    model = model_store.get(tag)
+    weight_file = model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     _load: t.Callable[[str], "pl.LightningModule"] = functools.partial(
         torch.jit.load, map_location=device_id
     )
-    return _load(str(weight_file))
+    return _load(weight_file)
 
 
 @inject
@@ -67,7 +67,7 @@ def save(
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -129,22 +129,28 @@ def save(
         tag = bentoml.pytorch_lightning.save("lit_classifier", LitClassifier())
         # example tag: lit_classifier:20201012_DE43A2
     """  # noqa
-    context = {"torch": torch.__version__, "pytorch_lightning": pl.__version__}
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {
+        "torch": torch.__version__,
+        "pytorch_lightning": pl.__version__,
+    }
+    _model = Model.create(
         name,
         module=__name__,
         options=None,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        weight_file = Path(ctx.path, f"{SAVE_NAMESPACE}{PT_EXT}")
-        torch.jit.save(model.to_torchscript(), str(weight_file))
-        return ctx.tag
+    )
+
+    weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+    torch.jit.save(model.to_torchscript(), weight_file)
+
+    _model.save(model_store)
+    return _model.tag
 
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "__call__",
     device_id: str = "cpu:0",

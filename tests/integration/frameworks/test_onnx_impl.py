@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 from sklearn.ensemble import RandomForestClassifier
 
+import bentoml.models
 import bentoml.onnx
 from bentoml.exceptions import BentoMLException
 from tests.integration.frameworks.test_sklearn_impl import res_arr
@@ -74,15 +75,16 @@ def save_proc(modelstore, sklearn_onnx_model):
 @pytest.fixture()
 def wrong_module(modelstore, sklearn_onnx_model):
     model, _ = sklearn_onnx_model
-    with modelstore.register(
+    with bentoml.models.create(
         "wrong_module",
         module=__name__,
+        labels=None,
         options=None,
         metadata=None,
         framework_context=None,
-    ) as ctx:
-        onnx.save(model, os.path.join(ctx.path, "saved_model.onnx"))
-        return str(ctx.path)
+    ) as _model:
+        onnx.save(model, _model.path_of("saved_model.onnx"))
+        return _model.path
 
 
 @pytest.mark.parametrize(
@@ -94,14 +96,14 @@ def wrong_module(modelstore, sklearn_onnx_model):
 )
 def test_onnx_save_load(metadata, save_proc, modelstore, sklearn_onnx_model):
     model, data = sklearn_onnx_model
-    info = save_proc(metadata)
-    assert info.metadata is not None
-    assert_have_file_extension(info.path, ".onnx")
+    model = save_proc(metadata)
+    assert model.info.metadata is not None
+    assert_have_file_extension(model.path, ".onnx")
 
     opts = ort.SessionOptions()
     opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
     opts.log_verbosity_level = 1
-    loaded = bentoml.onnx.load(info.tag, model_store=modelstore, session_options=opts)
+    loaded = bentoml.onnx.load(model.tag, model_store=modelstore, session_options=opts)
     assert predict_arr(loaded, data)[0] == 0
 
 

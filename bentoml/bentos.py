@@ -9,14 +9,14 @@ from typing import TYPE_CHECKING
 import fs
 from simple_di import Provide, inject
 
-from ._internal.bento import Bento, SysPathBento
+from ._internal.bento import Bento
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.service import load
 from ._internal.types import Tag
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ._internal.bento import BentoStore
-    from ._internal.models.store import ModelStore
+    from ._internal.bento import BentoStore, SysPathBento
+    from ._internal.models import ModelStore
 
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def list(  # pylint: disable=redefined-builtin
     tag: t.Optional[t.Union[Tag, str]] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> t.List[SysPathBento]:
+) -> "t.List[SysPathBento]":
     return _bento_store.list(tag)
 
 

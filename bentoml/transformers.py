@@ -25,22 +25,21 @@ from .exceptions import BentoMLException, MissingDependencyException, NotFound
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover
-    from transformers import (
-        FlaxPreTrainedModel,
-        PretrainedConfig,
-        PreTrainedModel,
-        PreTrainedTokenizer,
-        PreTrainedTokenizerFast,
-        TFPreTrainedModel,
-    )
+    from transformers.configuration_utils import PretrainedConfig
     from transformers.feature_extraction_utils import PreTrainedFeatureExtractor
-    from transformers.models.auto.auto_factory import _BaseAutoModelClass
+    from transformers.modeling_flax_utils import FlaxPreTrainedModel
+    from transformers.modeling_tf_utils import TFPreTrainedModel
+    from transformers.modeling_utils import PreTrainedModel
+    from transformers.models.auto.auto_factory import (
+        _BaseAutoModelClass,  # type: ignore[reportPrivateUsage]
+    )
+    from transformers.tokenization_utils import PreTrainedTokenizer
+    from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
 
     from ._internal.models import ModelStore
 
 try:
     import transformers
-    from transformers import AutoConfig, AutoTokenizer, Pipeline
     from transformers.file_utils import (
         CONFIG_NAME,
         FLAX_WEIGHTS_NAME,
@@ -50,6 +49,9 @@ try:
         http_get,
         http_user_agent,
     )
+    from transformers.models.auto.configuration_auto import AutoConfig
+    from transformers.models.auto.tokenization_auto import AutoTokenizer
+    from transformers.pipelines.base import Pipeline
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -59,7 +61,7 @@ except ImportError:  # pragma: no cover
     )
 
 try:
-    from huggingface_hub import HfFolder
+    from huggingface_hub.hf_api import HfFolder
 except ImportError:
     HfFolder = None
 
@@ -67,10 +69,6 @@ _hfhub_exc = """\
 `huggingface_hub` is required to use `bentoml.transformers.import_from_huggingface_hub()`.
 Instruction: `pip install huggingface_hub`
 """
-
-_T = t.TypeVar("_T")
-_F = t.TypeVar("_F", bound=t.Callable[..., t.Any])
-_T_co = t.TypeVar("_T_co", covariant=True)
 
 _ModelType = t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"]
 _TokenizerType = t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]
@@ -100,11 +98,6 @@ _AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
 }
 
 
-class _GeneratorContextManager(t.ContextManager[_T_co]):
-    def __call__(self, func: _F) -> _F:
-        ...
-
-
 def _load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
     if (
         framework not in _AUTOMODEL_PREFIX_MAPPING
@@ -126,9 +119,9 @@ def _load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
     framework_prefix = (
         _FRAMEWORK_ALIASES[framework] if framework in _FRAMEWORK_ALIASES else framework
     )
-    class_inst = f"{_AUTOMODEL_PREFIX_MAPPING[framework_prefix]}{_AUTOMODEL_LM_HEAD_MAPPING[lm_head]}"  # noqa
+    cls_ = f"{_AUTOMODEL_PREFIX_MAPPING[framework_prefix]}{_AUTOMODEL_LM_HEAD_MAPPING[lm_head]}"
     try:
-        return getattr(import_module("transformers"), class_inst)
+        return getattr(import_module("transformers"), cls_)
     except AttributeError as e:
         raise BentoMLException(
             f"{e}\n\nPlease refers "
@@ -235,34 +228,31 @@ def load(
     """
     _check_flax_supported()  # pragma: no cover
     model = model_store.get(tag)
-    _model, _tokenizer = model.info.options["model"], model.info.options["tokenizer"]
+    _model_value, _tokenizer_value = (
+        model.info.options["model"],
+        model.info.options["tokenizer"],
+    )
 
-    if _tokenizer != "na":
-        tokenizer = getattr(import_module("transformers"), _tokenizer).from_pretrained(
+    config = AutoConfig.from_pretrained(model.path)
+    tokenizer = None
+    if _tokenizer_value != "na":
+        tokenizer_cls = getattr(import_module("transformers"), _tokenizer_value)
+        tokenizer = tokenizer_cls.from_pretrained(
             model.path, from_tf=from_tf, from_flax=from_flax
         )
-    else:
-        tokenizer = None
-    config = AutoConfig.from_pretrained(model.path)
 
     try:
         # Cover cases where some model repo doesn't include a model
         #  name under their config.json. An example is
         #  google/bert_uncased-L-2-H-128-A-2
-        t_model = _load_autoclass(framework, lm_head).from_pretrained(
-            model.path,
-            config=config,
-            **kwargs,
+        auto_cls = _load_autoclass(framework, lm_head)
+        model_ = auto_cls.from_pretrained(model.path, config=config, **kwargs)
+    except (AttributeError, BentoMLException):
+        model_cls = getattr(import_module("transformers"), _model_value)
+        model_ = model_cls.from_pretrained(
+            model.path, config=config, from_tf=from_tf, from_flax=from_flax, **kwargs
         )
-    except (AttributeError, BentoMLException):  # noqa
-        t_model = getattr(import_module("transformers"), _model).from_pretrained(
-            model.path,
-            config=config,
-            from_tf=from_tf,
-            from_flax=from_flax,
-            **kwargs,
-        )
-    return config, t_model, tokenizer
+    return config, model_, tokenizer
 
 
 def _download_from_hub(
@@ -341,11 +331,6 @@ def _download_from_hub(
             # Even if returning early like here, the lock will be released.
             return
 
-        _tmp_file_manager: t.Union[
-            t.Callable[[], _GeneratorContextManager[t.BinaryIO]],
-            t.Callable[[t.Any, t.Any], t.IO[str]],
-        ]
-
         if resume_download:
             incomplete_path = fpath.with_suffix(".incomplete")
 
@@ -388,10 +373,40 @@ def _download_from_hub(
         json.dump(meta, meta_file)
 
 
+@t.overload
 def _save(
     name: str,
     *,
-    model_identifier: t.Union[str, _ModelType, "Pipeline"],
+    model_identifier: _ModelType,
+    tokenizer: _TokenizerType,
+    metadata: t.Optional[t.Dict[str, t.Any]],
+    keep_download_from_hub: bool,
+    model_store: "ModelStore",
+    **transformers_options_kwargs: str,
+) -> Tag:
+    ...
+
+
+@t.overload
+def _save(
+    name: str,
+    *,
+    model_identifier: t.Union[str, "Pipeline"],
+    tokenizer: None,
+    metadata: t.Optional[t.Dict[str, t.Any]],
+    keep_download_from_hub: bool,
+    model_store: "ModelStore",
+    **transformers_options_kwargs: str,
+) -> Tag:
+    ...
+
+
+def _save(
+    name: str,
+    *,
+    model_identifier: t.Union[
+        str, "FlaxPreTrainedModel", "PreTrainedModel", "TFPreTrainedModel", "Pipeline"
+    ],
     tokenizer: t.Optional[_TokenizerType],
     metadata: t.Optional[t.Dict[str, t.Any]],
     keep_download_from_hub: bool,
@@ -425,9 +440,12 @@ def _save(
     )
 
     if tokenizer is not None:
-        assert not isinstance(model_identifier, str) or isinstance(
-            model_identifier, Pipeline
-        ), _SAVE_CONFLICTS_ERR.format(tokenizer=tokenizer, model=type(model_identifier))
+        err = _SAVE_CONFLICTS_ERR.format(
+            tokenizer=tokenizer, model=type(model_identifier)
+        )
+        assert isinstance(
+            model_identifier, (FlaxPreTrainedModel, PreTrainedModel, TFPreTrainedModel)
+        )
         _model.info.options = {
             "model": model_identifier.__class__.__name__,
             "tokenizer": tokenizer.__class__.__name__,
@@ -438,6 +456,7 @@ def _save(
     else:
         if isinstance(model_identifier, Pipeline):
             # model_identifier is a Pipeline
+            assert not isinstance(model_identifier, str)
             _model.info.options = {
                 "model": model_identifier.model.__class__.__name__,
                 "tokenizer": model_identifier.tokenizer.__class__.__name__,
@@ -445,6 +464,7 @@ def _save(
             }
             model_identifier.save_pretrained(_model.path)
         else:
+            assert isinstance(model_identifier, str)
             from_tf = transformers_options_kwargs.pop("from_tf", False)
             from_flax = transformers_options_kwargs.pop("from_flax", False)
             revision = transformers_options_kwargs.pop("revision", None)
@@ -516,9 +536,9 @@ def _save(
             #  to be included, per frameworks. Thus we will load
             #  a Tokenizer instance, then save it to path.
             try:
-                _tokenizer_inst = AutoTokenizer.from_pretrained(model_identifier)
-                _tokenizer_inst.save_pretrained(_model.path)
-                _model.info.options["tokenizer"] = type(_tokenizer_inst).__name__
+                tokenizer_cls = AutoTokenizer.from_pretrained(model_identifier)
+                tokenizer_cls.save_pretrained(_model.path)
+                _model.info.options["tokenizer"] = type(tokenizer_cls).__name__
             except ValueError:
                 _model.info.options["tokenizer"] = "na"
 
@@ -530,7 +550,7 @@ def _save(
 def save(
     name: str,
     *,
-    model: _ModelType,
+    model: t.Union[_ModelType, "FlaxPreTrainedModel"],
     tokenizer: t.Optional[_TokenizerType] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -789,8 +809,8 @@ class _TransformersRunner(Runner):
         )
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Union[_T, t.List[_T]]) -> t.Union[_T, t.List[_T]]:  # type: ignore[override]  # noqa
-        res = self._pipeline(input_data)  # type: t.Union[_T, t.List[_T]]
+    def _run_batch(self, input_data: t.Any) -> t.Any:  # type: ignore[override]  # noqa
+        res = self._pipeline(input_data)
         return res
 
 

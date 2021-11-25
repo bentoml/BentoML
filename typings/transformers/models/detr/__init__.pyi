@@ -1,0 +1,16 @@
+
+
+from typing import TYPE_CHECKING
+
+from ...file_utils import _LazyModule, is_timm_available, is_vision_available
+from .configuration_detr import DETR_PRETRAINED_CONFIG_ARCHIVE_MAP, DetrConfig
+
+_import_structure = ...
+if is_vision_available():
+    ...
+if is_timm_available():
+    ...
+if TYPE_CHECKING:
+    ...
+else:
+    ...

@@ -67,12 +67,15 @@ def _get_model_info(
             f" failed loading with {__name__}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}")
-    _booster_params = dict() if not booster_params else booster_params
+    _booster_params = (
+        dict() if not booster_params else booster_params
+    )  # type: t.Dict[str, t.Any]
     for key, value in model.info.options.items():
         if key not in _booster_params:
             _booster_params[key] = value  # pragma: no cover
     if "nthread" not in _booster_params:
-        _booster_params["nthread"] = -1  # apply default nthread parameter
+        # apply default nthread parameter
+        _booster_params["nthread"] = -1
 
     return model, model_file, _booster_params
 
@@ -250,7 +253,7 @@ class _XgBoostRunner(Runner):
             lambda x: xgb.DMatrix(x) if not isinstance(x, xgb.DMatrix) else x
         )
         res = self._predict_fn(*params.args, **params.kwargs)
-        return t.cast(AnyNdarray, np.asarray(res))  # type: ignore[reportUnknownMemberType]
+        return t.cast(AnyNdarray, np.asarray(res))
 
 
 @inject

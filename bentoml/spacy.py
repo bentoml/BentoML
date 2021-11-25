@@ -19,8 +19,8 @@ from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    from spacy import Vocab
     from spacy.tokens.doc import Doc
+    from spacy.vocab import Vocab
     from thinc.config import Config
 
     from ._internal.models import ModelStore
@@ -29,15 +29,12 @@ try:
     import spacy
     import spacy.cli
     from spacy.util import SimpleFrozenDict, SimpleFrozenList
-    from thinc.api import (
-        prefer_gpu,
-        require_cpu,
-        require_gpu,
-        set_active_gpu,
+    from thinc.backends import (
         set_gpu_allocator,
         use_pytorch_for_gpu_memory,
         use_tensorflow_for_gpu_memory,
     )
+    from thinc.util import prefer_gpu, require_cpu, require_gpu, set_active_gpu
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -45,14 +42,22 @@ except ImportError:  # pragma: no cover
         Instruction: Refers to https://spacy.io/usage for more information.
         """
     )
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
 
-_check_compat: bool = spacy.__version__.startswith("3")
+try:
+    _spacy_version = importlib_metadata.version("spacy")
+except importlib_metadata.PackageNotFoundError:
+    raise MissingDependencyException("`spacy` is required to use `bentoml.spacy`")
+
+_check_compat = _spacy_version.startswith("3")
 if not _check_compat:  # pragma: no cover
-    # TODO: supports spacy 2.x?
     raise EnvironmentError(
         "BentoML will only provide supports for spacy 3.x and above"
         " as we can provide more supports for Spacy new design. Currently"
-        f" detected spacy to have version {spacy.__version__}"
+        f" detected spacy to have version {_spacy_version}"
     )
 
 torch = LazyLoader("torch", globals(), "torch")
@@ -135,7 +140,7 @@ def load(
         # check if pipeline has additional requirements then all related
         # pip package has been installed correctly.
         additional = model.info.options["additional_requirements"]
-        not_existed = list()
+        not_existed = list()  # type: t.List[str]
         dists = packages_distributions()
         for module_name in additional:
             mod, _ = split_requirement(module_name)
@@ -248,9 +253,7 @@ def projects(
     _model.info.options = {"projects_uri": repo_or_store, "target_path": SAVE_NAMESPACE}
     if tasks == "clone":
         # TODO: update check for master or main branch
-        assert (
-            name is not None
-        ), "`name` of the template is required to clone a project."
+        assert name is not None, "`name` of the template is required to clone a project."
         _model.info.options["name"] = name
         spacy.cli.project_clone(
             name,
@@ -361,7 +364,9 @@ class _SpacyRunner(Runner):
                     )
             else:
                 if tensorflow is not None:
-                    from tensorflow.python.client import device_lib
+                    from tensorflow.python.client import (
+                        device_lib,  # type: ignore[reportMissingTypeStubs]
+                    )
 
                     return len(
                         [

@@ -8,13 +8,14 @@ import psutil
 import pytest
 import xgboost as xgb
 
+import bentoml.models
 import bentoml.xgboost
 from bentoml.exceptions import BentoMLException
 from tests.utils.frameworks.sklearn_utils import test_df
 from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelInfo, ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 
@@ -46,8 +47,8 @@ def xgboost_model() -> "xgb.Booster":
 @pytest.fixture(scope="module")
 def save_proc(
     modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
-    def _(booster_params, metadata) -> "ModelInfo":
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+    def _(booster_params, metadata) -> "Model":
         model = xgboost_model()
         tag = bentoml.xgboost.save(
             TEST_MODEL_NAME,
@@ -56,15 +57,15 @@ def save_proc(
             metadata=metadata,
             model_store=modelstore,
         )
-        info = modelstore.get(tag)
-        return info
+        model = modelstore.get(tag)
+        return model
 
     return _
 
 
 def wrong_module(modelstore: "ModelStore"):
     model = xgboost_model()
-    with modelstore.register(
+    with bentoml.models.create(
         "wrong_module",
         module=__name__,
         options=None,
@@ -88,12 +89,12 @@ def wrong_module(modelstore: "ModelStore"):
 def test_xgboost_save_load(
     booster_params, metadata, modelstore, save_proc
 ):  # noqa # pylint: disable
-    info = save_proc(booster_params, metadata)
-    assert info.metadata is not None
-    assert_have_file_extension(info.path, ".json")
+    _model = save_proc(booster_params, metadata)
+    assert _model.info.metadata is not None
+    assert_have_file_extension(_model.path, ".json")
 
     xgb_loaded = bentoml.xgboost.load(
-        info.tag, model_store=modelstore, booster_params=booster_params
+        _model.tag, model_store=modelstore, booster_params=booster_params
     )
     config = json.loads(xgb_loaded.save_config())
     if not booster_params:

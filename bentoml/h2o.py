@@ -1,4 +1,3 @@
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -6,14 +5,15 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
 
-    from ._internal.models.store import ModelInfo, ModelStore, StoreCtx  # noqa
+    from ._internal.models import ModelStore  # noqa
 
 
 try:
@@ -30,7 +30,7 @@ except ImportError:  # pragma: no cover
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     init_params: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> h2o.model.model_base.ModelBase:
@@ -57,15 +57,15 @@ def load(
 
     h2o.init(**init_params)
 
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
         raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with"
-            f" module {model_info.module},"
+            f" module {model.info.module},"
             f" failed loading with {__name__}."
         )
 
-    path = os.path.join(model_info.path, SAVE_NAMESPACE)
+    path = model.path_of(SAVE_NAMESPACE)
     h2o.no_progress()
     return h2o.load_model(path)
 
@@ -77,7 +77,7 @@ def save(
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -101,43 +101,44 @@ def save(
 
     """  # noqa
 
-    context = {"h2o": h2o.__version__}
-    options = dict()
+    context: t.Dict[str, t.Any] = {"h2o": h2o.__version__}
+    options: t.Dict[str, t.Any] = dict()
 
-    with model_store.register(
+    _model = Model.create(
         name,
         module=__name__,
         options=options,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
+    )
 
-        h2o.save_model(
-            model=model, path=str(ctx.path), force=True, filename=SAVE_NAMESPACE
-        )
-        return ctx.tag
+    h2o.save_model(model=model, path=_model.path, force=True, filename=SAVE_NAMESPACE)
+
+    _model.save(model_store)
+
+    return _model.tag
 
 
 class _H2ORunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
 
-        self._tag = tag
+        self._tag = Tag.from_taglike(tag)
         self._predict_fn_name = predict_fn_name
         self._init_params = init_params
         self._model_store = model_store
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._tag]
 
     @property
@@ -174,7 +175,7 @@ class _H2ORunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     predict_fn_name: str = "predict",
     *,
     init_params: t.Optional[t.Dict[str, t.Union[str, t.Any]]],

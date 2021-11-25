@@ -7,12 +7,13 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PTH_EXT
+from ._internal.models import PTH_EXT, Model
 from ._internal.runner import Runner
+from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ._internal.models.store import ModelStore, StoreCtx
+    from ._internal.models import ModelStore
 
 try:
     import easyocr
@@ -44,7 +45,7 @@ def load(
             Tag of a saved model in BentoML local modelstore.
         gpu (`bool`):
             Enable GPU support, default to True
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
@@ -57,19 +58,19 @@ def load(
             "my_model:20201012_DE43A2", model_params=dict(model_type="classifier"))
     """  # noqa
 
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
         raise BentoMLException(  # pragma: no cover
             f"Model {tag} was saved with"
-            f" module {model_info.module},"
+            f" module {model.info.module},"
             f" failed loading with {__name__}."
         )
 
     return easyocr.Reader(
-        model_storage_directory=model_info.path,
+        model_storage_directory=model.path,
         download_enabled=False,
         gpu=gpu,
-        **model_info.options,
+        **model.info.options,
     )
 
 
@@ -83,7 +84,7 @@ def save(
     detect_model: t.Optional[str] = "craft_mlt_25k",
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -100,7 +101,7 @@ def save(
             TODO:
         metadata (`t.Optional[t.Dict[str, t.Any]]`, default to `None`):
             Custom metadata for given model.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:
@@ -134,56 +135,58 @@ def save(
 
     """  # noqa
 
-    context = {"easyocr": easyocr.__version__}
+    context: t.Dict[str, t.Any] = {"easyocr": easyocr.__version__}
     if lang_list is None:
         lang_list = ["en"]
-    options = dict(
+    options: t.Dict[str, t.Any] = dict(
         lang_list=lang_list,
         recog_network=recog_network,
     )
-    with model_store.register(
+
+    _model = Model.create(
         name,
         module=__name__,
         options=options,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
+    )
 
-        src_folder: str = model.model_storage_directory
+    src_folder: str = model.model_storage_directory
 
-        detect_filename: str = f"{detect_model}{PTH_EXT}"
-        path = ctx.path
-        if not os.path.exists(os.path.join(path, detect_filename)):
-            shutil.copyfile(
-                os.path.join(src_folder, detect_filename),
-                os.path.join(path, detect_filename),
-            )
+    detect_filename: str = f"{detect_model}{PTH_EXT}"
+    if not os.path.exists(_model.path_of(detect_filename)):
+        shutil.copyfile(
+            os.path.join(src_folder, detect_filename),
+            _model.path_of(detect_filename),
+        )
 
         fname: str = f"{recog_network}{PTH_EXT}"
-        shutil.copyfile(os.path.join(src_folder, fname), os.path.join(path, fname))
+        shutil.copyfile(os.path.join(src_folder, fname), _model.path_of(fname))
 
-        return ctx.tag
+    _model.save(model_store)
+
+    return _model.tag
 
 
 class _EasyOCRRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         predict_params: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
-        super().__init__(tag, resource_quota, batch_options)
-        self._tag = tag
+        super().__init__(str(tag), resource_quota, batch_options)
+        self._tag = Tag.from_taglike(tag)
         self._predict_fn_name = predict_fn_name
         self._predict_params = predict_params
         self._model_store = model_store
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._tag]
 
     @property
@@ -211,7 +214,7 @@ class _EasyOCRRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     predict_fn_name: str = "readtext_batched",
     *,
     predict_params: t.Union[None, t.Dict[str, t.Union[str, t.Any]]] = None,
@@ -236,7 +239,7 @@ def load_runner(
             Dictionary to configure resources allocation for runner.
         batch_options (`t.Dict[str, t.Any]`, default to `None`):
             Dictionary to configure batch options for runner in a service context.
-        model_store (`~bentoml._internal.models.store.ModelStore`, default to `BentoMLContainer.model_store`):
+        model_store (`~bentoml._internal.models.ModelStore`, default to `BentoMLContainer.model_store`):
             BentoML modelstore, provided by DI Container.
 
     Returns:

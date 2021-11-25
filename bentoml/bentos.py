@@ -16,8 +16,8 @@ from ._internal.types import Tag
 from .exceptions import InvalidArgument
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ._internal.bento import BentoStore
-    from ._internal.models.store import ModelStore
+    from ._internal.bento import BentoStore, SysPathBento
+    from ._internal.models import ModelStore
 
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 def list(  # pylint: disable=redefined-builtin
     tag: t.Optional[t.Union[Tag, str]] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
-) -> t.List[SysPathBento]:
+) -> "t.List[SysPathBento]":
     return _bento_store.list(tag)
 
 

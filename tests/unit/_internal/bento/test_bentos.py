@@ -44,6 +44,7 @@ def test_create_simplebento(tmpdir):
     assert set(os.listdir(test_path)) == {
         "bento.yaml",
         "apis",
+        "models",
         "README.md",
         "src",
         "env",

@@ -1,25 +1,24 @@
 import typing as t
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 import fs
-import fs.mirror
 from simple_di import Provide, inject
 
-import bentoml
-
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.model import Model
+from ._internal.models import Model
 from ._internal.types import Tag
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ._internal.model import ModelStore
+    from ._internal.models import ModelStore, SysPathModel
+    from ._internal.runner import Runner
 
 
 @inject
 def list(
     tag: t.Optional[t.Union[Tag, str]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.List[Model]:
+) -> t.List["SysPathModel"]:
     return _model_store.list(tag)
 
 
@@ -27,7 +26,7 @@ def list(
 def get(
     tag: t.Union[Tag, str],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> Model:
+) -> "SysPathModel":
     return _model_store.get(tag)
 
 
@@ -45,8 +44,7 @@ def import_model(path: str) -> Model:
 
 def export_model(tag: t.Union[Tag, str], path: str):
     model = get(tag)
-    fs.mirror.mirror(model.fs, fs.open_fs(path), copy_if_newer=False)
-    pass
+    model.export(path)
 
 
 def push(tag: t.Union[Tag, str]):
@@ -55,10 +53,36 @@ def push(tag: t.Union[Tag, str]):
 
 
 def pull() -> Model:
-    pass
+    raise NotImplementedError
 
 
-def load_runner(tag: t.Union[Tag, str]) -> bentoml.Runner:
+@inject
+@contextmanager
+def create(
+    name: str,
+    *,
+    module: str = "",
+    labels: t.Optional[t.Dict[str, t.Any]] = None,
+    options: t.Optional[t.Dict[str, t.Any]] = None,
+    metadata: t.Optional[t.Dict[str, t.Any]] = None,
+    framework_context: t.Optional[t.Dict[str, t.Any]] = None,
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> Model:
+    res = Model.create(
+        name,
+        module=module,
+        labels=labels,
+        options=options,
+        metadata=metadata,
+        framework_context=framework_context,
+    )
+    try:
+        yield res
+    finally:
+        res.save(_model_store)
+
+
+def load_runner(tag: t.Union[Tag, str]) -> "Runner":
     model = get(tag)
     return model.load_runner()
 

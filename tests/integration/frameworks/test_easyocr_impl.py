@@ -8,7 +8,7 @@ import pytest
 import bentoml.easyocr
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models.store import ModelInfo, ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 TEST_RESULT: t.List[str] = ["西", "愚园路", "东", "315", "309", "W", "Yuyuan Rd。", "E"]
@@ -45,8 +45,8 @@ def image_array():
 @pytest.fixture(scope="module")
 def save_proc(
     modelstore: "ModelStore",
-) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
-    def _(lang_list, recog_network, detect_model, metadata) -> "ModelInfo":
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
+    def _(lang_list, recog_network, detect_model, metadata) -> "Model":
         model = easyocr_model()
         tag = bentoml.easyocr.save(
             TEST_MODEL_NAME,
@@ -57,24 +57,24 @@ def save_proc(
             metadata=metadata,
             model_store=modelstore,
         )
-        info = modelstore.get(tag)
-        return info
+        model = modelstore.get(tag)
+        return model
 
     return _
 
 
-@pytest.mark.parametrize("metadata", [({"acc": 0.876},)])
+@pytest.mark.parametrize("metadata", [{"acc": 0.876}])
 def test_easyocr_save_load(metadata, image_array, modelstore, save_proc):
 
     model = easyocr_model()
     raw_res = model.readtext(IMAGE_PATH)
     assert extract_result(raw_res) == TEST_RESULT
 
-    info = save_proc(LANG_LIST, RECOG_NETWORK, DETECT_MODEL, metadata)
-    assert info.metadata is not None
+    _model = save_proc(LANG_LIST, RECOG_NETWORK, DETECT_MODEL, metadata)
+    assert _model.info.metadata is not None
 
     easyocr_loaded = bentoml.easyocr.load(
-        info.tag,
+        _model.tag,
         gpu=False,
         model_store=modelstore,
     )

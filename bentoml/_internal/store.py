@@ -1,4 +1,5 @@
 import datetime
+import os
 import typing as t
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -48,9 +49,11 @@ class Store(ABC, t.Generic[Item]):
     _item_type: t.Type[Item]
 
     @abstractmethod
-    def __init__(self, base_path: PathType, item_type: t.Type[Item]):
+    def __init__(self, base_path: t.Union[PathType, FS], item_type: t.Type[Item]):
         self._item_type = item_type
-        self._fs = fs.open_fs(str(base_path))
+        if isinstance(base_path, os.PathLike):
+            base_path = base_path.__fspath__()
+        self._fs = fs.open_fs(base_path)
 
     def list(self, tag: t.Optional[t.Union[Tag, str]] = None) -> t.List[Item]:
         if not tag:

@@ -108,8 +108,8 @@ def test_tensorflow_v2_save_load(
     model_class, input_type, predict_fn, modelstore, ragged
 ):
     tag = bentoml.tensorflow.save(MODEL_NAME, model_class, model_store=modelstore)
-    model_info = modelstore.get(tag)
-    assert_have_file_extension(model_info.path, ".pb")
+    _model = modelstore.get(tag)
+    assert_have_file_extension(_model.path, ".pb")
     model = bentoml.tensorflow.load(MODEL_NAME, model_store=modelstore)
     output = predict_fn(model, input_type)
     if ragged:
@@ -187,8 +187,8 @@ def test_import_from_tfhub(modelstore, identifier, name, tags, is_module_v1, wra
         import tensorflow_text as text  # noqa # pylint: disable
 
     tag = bentoml.tensorflow.import_from_tfhub(identifier, name, model_store=modelstore)
-    model_info = modelstore.get(tag)
-    assert "tensorflow_hub" in model_info.context
+    model = modelstore.get(tag)
+    assert "tensorflow_hub" in model.info.context
     module = bentoml.tensorflow.load(
         tag, tfhub_tags=tags, load_as_wrapper=wrapped, model_store=modelstore
     )

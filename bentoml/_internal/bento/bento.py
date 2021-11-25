@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import typing as t
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
@@ -11,20 +12,22 @@ import fs.mirror
 import fs.osfs
 import pathspec
 import yaml
-from fs.base import FS
-from fs.copy import copy_dir, copy_file
+from fs.copy import copy_file
 from simple_di import Provide, inject
 
 from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..models import ModelStore
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
-from ..utils import cached_property
 from .build_config import BentoBuildConfig
 
+
 if TYPE_CHECKING:  # pragma: no cover
-    from ..models.store import ModelInfo, ModelStore
+    from fs.base import FS
+
+    from ..models import Model
     from ..service import Service
 
 logger = logging.getLogger(__name__)
@@ -69,11 +72,24 @@ python:
     # TODO: add links to documentation that may help with API client development
     return doc
 
+def _Bento_set_fs(bento: "Bento", _: t.Any, new_fs: "FS") -> "FS":
+    new_fs.makedir("models", recreate=True)
+    bento._model_store = ModelStore(new_fs.opendir("models"))  # type: ignore[reportPrivateUsage]
+    return new_fs
+
 
 @attr.define(repr=False)
 class Bento(StoreItem):
     _tag: Tag
-    _fs: FS
+    _fs: "FS" = attr.field(on_setattr=_Bento_set_fs)
+    _model_store: ModelStore
+
+    _info: t.Optional["BentoInfo"] = None
+
+    def __init__(self, tag: Tag, bento_fs: "FS"):
+        self._tag = tag
+        self._fs = _Bento_set_fs(self, None, bento_fs)
+        self.validate()
 
     @property
     def tag(self) -> Tag:
@@ -113,19 +129,20 @@ class Bento(StoreItem):
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
         ctx_fs = fs.open_fs(build_ctx)
 
-        models = build_config.additional_models
+
+        model_tags = build_config.additional_models
         # Add Runner required models to models list
         for runner in svc._runners.values():  # type: ignore[reportPrivateUsage]
-            models += runner.required_models
+            model_tags += runner.required_models
 
-        models_list: "t.List[ModelInfo]" = []
-        seen_model_tags = []
-        for model_tag in models:
+        models: t.List[Model] = []
+        seen_model_tags: t.Set[Tag] = set()
+        for model_tag in model_tags:
             try:
                 model_info = model_store.get(model_tag)
                 if model_info.tag not in seen_model_tags:
-                    seen_model_tags.append(model_info.tag)
-                    models_list.append(model_info)
+                    seen_model_tags.add(model_info.tag)
+                    models.append(model_info)
             except FileNotFoundError:
                 raise BentoMLException(
                     f"Model {model_tag} not found in local model store"
@@ -133,13 +150,12 @@ class Bento(StoreItem):
 
         logger.info(
             "Packing required models: %s",
-            ", ".join(map(lambda m: f'"{m.tag}"', models_list)),
+            ", ".join(map(lambda m: f'"{m.tag}"', models)),
         )
-        for model in models_list:
-            model_name, model_version = model.tag.split(":")
-            target_path = os.path.join("models", model_name, model_version)
-            bento_fs.makedirs(target_path, recreate=True)
-            copy_dir(fs.open_fs(model.path), "/", bento_fs, target_path)
+        bento_fs.makedir("models", recreate=True)
+        bento_model_store = ModelStore(bento_fs.opendir("models"))
+        for model in models:
+            model.save(bento_model_store)
 
         # Copy all files base on include and exclude, into `{svc.name}` directory
         relpaths = [s for s in build_config.include if s.startswith("../")]
@@ -209,7 +225,7 @@ class Bento(StoreItem):
         return SysPathBento(tag, bento_fs)
 
     @classmethod
-    def from_fs(cls, item_fs: FS) -> "Bento":
+    def from_fs(cls, item_fs: "FS") -> "Bento":
         res = cls(None, item_fs)  # type: ignore
         res._tag = res.info.tag
 
@@ -223,10 +239,14 @@ class Bento(StoreItem):
         except TypeError:
             return None
 
-    @cached_property
+    @property
     def info(self) -> "BentoInfo":
+        if self._info is not None:
+            return self._info
+
         with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
-            return BentoInfo.from_yaml_file(bento_yaml)
+            self._info = BentoInfo.from_yaml_file(bento_yaml)
+            return self._info
 
     @property
     def creation_time(self) -> datetime:
@@ -289,7 +309,7 @@ class SysPathBento(Bento):
 
         with bento_store.register(self.tag) as bento_path:
             os.rmdir(bento_path)
-            os.rename(self._fs.getsyspath("/"), bento_path)
+            shutil.move(self._fs.getsyspath("/"), bento_path)
             self._fs.close()
             self._fs = fs.open_fs(bento_path)
 
@@ -297,7 +317,7 @@ class SysPathBento(Bento):
 
 
 class BentoStore(Store[SysPathBento]):
-    def __init__(self, base_path: PathType):
+    def __init__(self, base_path: t.Union[PathType, "FS"]):
         super().__init__(base_path, SysPathBento)
 
 

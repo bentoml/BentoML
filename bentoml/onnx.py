@@ -1,5 +1,4 @@
 import logging
-import os
 import shutil
 import typing as t
 from typing import TYPE_CHECKING
@@ -7,10 +6,10 @@ from typing import TYPE_CHECKING
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE
+from ._internal.models import SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params, _get_gpu_memory
-from ._internal.types import PathType
+from ._internal.types import PathType, Tag
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -19,7 +18,7 @@ ONNX_EXT: str = ".onnx"
 
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
-    from _internal.models.store import ModelInfo, ModelStore, StoreCtx
+    from _internal.models import ModelStore
 
 try:
     import numpy as np
@@ -36,10 +35,10 @@ more information.
     )
 
 pd = LazyLoader("pd", globals(), "pandas")  # noqa: F811
+torch = LazyLoader("torch", globals(), "torch")  # noqa: F811
+tf = LazyLoader("tf", globals(), "tensorflow")  # noqa: F811
 
-_ProviderType = t.TypeVar(
-    "_ProviderType", bound=t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
-)
+_ProviderType = t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
 
 logger = logging.getLogger(__name__)
 
@@ -61,22 +60,22 @@ def flatten_list(lst: t.List[t.Any]) -> t.List[str]:  # pragma: no cover
 
 
 def _get_model_info(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore",
-) -> t.Tuple["ModelInfo", str]:
-    model_info = model_store.get(tag)
-    if model_info.module != __name__:
+) -> t.Tuple["Model", str]:
+    model = model_store.get(tag)
+    if model.info.module != __name__:
         raise BentoMLException(
-            f"Model {tag} was saved with module {model_info.module}, failed loading "
+            f"Model {tag} was saved with module {model.info.module}, failed loading "
             f"with {__name__}."
         )
-    model_file = os.path.join(model_info.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
-    return model_info, model_file
+    model_file = model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}")
+    return model, model_file
 
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     backend: t.Optional[str] = "onnxruntime",
     providers: t.Optional[_ProviderType] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
@@ -128,7 +127,7 @@ def save(
     *,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -148,30 +147,33 @@ def save(
 
     Examples::
     """  # noqa
-    context = {"onnx": onnx.__version__, "onnxruntime": ort.__version__}
-    with model_store.register(
+    context: t.Dict[str, t.Any] = {
+        "onnx": onnx.__version__,
+        "onnxruntime": ort.__version__,
+    }
+
+    _model = Model.create(
         name,
         module=__name__,
         metadata=metadata,
         framework_context=context,
-    ) as ctx:  # type: StoreCtx
-        if isinstance(model, onnx.ModelProto):
-            onnx.save_model(
-                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
-            )
-        else:
-            shutil.copyfile(
-                model, os.path.join(ctx.path, f"{SAVE_NAMESPACE}{ONNX_EXT}")
-            )
-        _tag = ctx.tag  # type: str
-        return _tag
+    )
+
+    if isinstance(model, onnx.ModelProto):
+        onnx.save_model(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+    else:
+        shutil.copyfile(model, _model.path_of(f"{SAVE_NAMESPACE}{ONNX_EXT}"))
+
+    _model.save(model_store)
+
+    return _model.tag
 
 
 class _ONNXRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         backend: str,
         gpu_device_id: int,
         disable_copy_in_default_stream: bool,
@@ -186,7 +188,7 @@ class _ONNXRunner(Runner):
             if "gpus" not in resource_quota:
                 resource_quota["gpus"] = gpu_device_id
 
-        super().__init__(tag, resource_quota, batch_options)
+        super().__init__(str(tag), resource_quota, batch_options)
         self._model_info, self._model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
         self._backend = backend
@@ -249,7 +251,7 @@ class _ONNXRunner(Runner):
         return _session_options
 
     @property
-    def required_models(self) -> t.List[str]:
+    def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
     @property
@@ -278,29 +280,36 @@ class _ONNXRunner(Runner):
 
     def _run_batch(
         self,
-        *args: t.Union["np.ndarray", "pd.DataFrame"],
-        **kwargs: t.Any,
+        *args: t.Union[np.ndarray, "pd.DataFrame"],
     ) -> t.Any:
-        params = Params[t.Union["np.ndarray", "pd.DataFrame"]](*args, **kwargs)
-        if isinstance(params.sample, np.ndarray):
-            params = params.map(lambda i: i.astype(np.float32))
-        elif isinstance(params.sample, pd.DataFrame):
-            params = params.map(lambda i: i.to_numpy())
-        else:
-            raise TypeError(
-                f"`_run_batch` of {self.__class__.__name__} only takes "
-                "`numpy.ndarray` or `pd.DataFrame` as input parameters"
-            )
+        params = Params[t.Union[np.ndarray, "pd.DataFrame"]](*args)
+
+        def _mapping(item) -> t.Any:
+            if isinstance(item, np.ndarray):
+                item = item.astype(np.float32)
+            elif isinstance(item, pd.DataFrame):
+                item = item.to_numpy()
+            elif isinstance(item, (tf.Tensor, torch.Tensor)):
+                item = item.numpy()
+            else:
+                raise TypeError(
+                    f"`_run_batch` of {self.__class__.__name__} only takes "
+                    "`numpy.ndarray` or `pd.DataFrame` as input parameters"
+                )
+            return item
+
+        params = params.map(_mapping)
+
         input_names = {
             i.name: val for i, val in zip(self._model.get_inputs(), params.args)
         }
         output_names = [_.name for _ in self._model.get_outputs()]
-        return self._infer_func(output_names, input_names, **params.kwargs)
+        return self._infer_func(output_names, input_names)
 
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     backend: str = "onnxruntime",
     gpu_device_id: int = -1,

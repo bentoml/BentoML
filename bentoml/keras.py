@@ -8,11 +8,12 @@ import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE
+from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE, Model
+from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    from _internal.models.store import ModelStore, StoreCtx
+    from _internal.models import ModelStore
     from tensorflow.python.client.session import BaseSession
     from tensorflow.python.framework.ops import Graph
 
@@ -82,24 +83,24 @@ def load(
     Examples::
     """  # noqa
 
-    model_info = model_store.get(tag)
+    model = model_store.get(tag)
     default_custom_objects = None
-    if model_info.options["custom_objects"]:
-        assert Path(model_info.path, _CUSTOM_OBJ_FNAME).is_file()
-        with Path(model_info.path, _CUSTOM_OBJ_FNAME).open("rb") as dcof:
+    if model.info.options["custom_objects"]:
+        assert Path(model.path_of(_CUSTOM_OBJ_FNAME)).is_file()
+        with Path(model.path_of(_CUSTOM_OBJ_FNAME)).open("rb") as dcof:
             default_custom_objects = _load(dcof)
 
     with _default_sess():
-        if model_info.options["store_as_json"]:
-            assert Path(model_info.path, _MODEL_JSON_FNAME).is_file()
-            with Path(model_info.path, _MODEL_JSON_FNAME).open("r") as jsonf:
+        if model.info.options["store_as_json"]:
+            assert Path(model.path_of(_MODEL_JSON_FNAME)).is_file()
+            with Path(model.path_of(_MODEL_JSON_FNAME)).open("r") as jsonf:
                 model_json = jsonf.read()
             model = tfk.models.model_from_json(
                 model_json, custom_objects=default_custom_objects
             )
         else:
             model = tfk.models.load_model(
-                str(Path(model_info.path, _SAVED_MODEL_FNAME)),
+                model.path_of(_SAVED_MODEL_FNAME),
                 custom_objects=default_custom_objects,
             )
         try:
@@ -118,7 +119,7 @@ def save(
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
     metadata: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -143,36 +144,39 @@ def save(
     Examples::
     """  # noqa
     tf.compat.v1.keras.backend.get_session()
-    context = {"tensorflow": tf.__version__}
+    context: t.Dict[str, t.Any] = {"tensorflow": tf.__version__}
     options = {
         "store_as_json": store_as_json,
         "custom_objects": True if custom_objects is not None else False,
     }
-    with model_store.register(
+    _model = Model.create(
         name,
         module=__name__,
         options=options,
         framework_context=context,
         metadata=metadata,
-    ) as ctx:  # type: StoreCtx
-        if custom_objects is not None:
-            with Path(ctx.path, _CUSTOM_OBJ_FNAME).open("wb") as cof:
-                cloudpickle.dump(custom_objects, cof)
-        if store_as_json:
-            with Path(ctx.path, _MODEL_JSON_FNAME).open("w") as jf:
-                jf.write(model.to_json())
-            model.save_weights(str(Path(ctx.path, _MODEL_WEIGHT_FNAME)))
-        else:
-            model.save(str(Path(ctx.path, _SAVED_MODEL_FNAME)))
-        tag = ctx.tag  # type: str
-        return tag
+    )
+
+    if custom_objects is not None:
+        with Path(_model.path_of(_CUSTOM_OBJ_FNAME)).open("wb") as cof:
+            cloudpickle.dump(custom_objects, cof)
+    if store_as_json:
+        with Path(_model.path_of(_MODEL_JSON_FNAME)).open("w") as jf:
+            jf.write(model.to_json())
+        model.save_weights(_model.path_of(_MODEL_WEIGHT_FNAME))
+    else:
+        model.save(_model.path_of(_SAVED_MODEL_FNAME))
+
+    _model.save(model_store)
+
+    return _model.tag
 
 
 class _KerasRunner(_TensorflowRunner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         device_id: str,
         resource_quota: t.Optional[t.Dict[str, t.Any]],
@@ -213,7 +217,7 @@ class _KerasRunner(_TensorflowRunner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "predict",
     device_id: str = "CPU:0",

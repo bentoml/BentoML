@@ -3,7 +3,6 @@ import logging
 import os
 import typing as t
 from distutils.dir_util import copy_tree
-from hashlib import sha256
 from pathlib import Path
 from typing import TYPE_CHECKING
 

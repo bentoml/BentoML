@@ -10,7 +10,7 @@ from ._internal.models import Model
 from ._internal.types import Tag
 
 if TYPE_CHECKING:  # pragma: no cover
-    from ._internal.model import ModelStore, SysPathModel
+    from ._internal.models import ModelStore, SysPathModel
     from ._internal.runner import Runner
 
 
@@ -67,7 +67,7 @@ def create(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     framework_context: t.Optional[t.Dict[str, t.Any]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> Model:
+):
     res = Model.create(
         name,
         module=module,

@@ -5,7 +5,6 @@ import typing as t
 from distutils.dir_util import copy_tree
 from typing import TYPE_CHECKING
 
-import yaml
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer

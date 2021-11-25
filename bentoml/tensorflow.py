@@ -171,7 +171,7 @@ def _load_tf_saved_model(path: str) -> t.Union["tracking.AutoTrackable", t.Any]:
 def load(
     tag: t.Union[str, Tag],
     tfhub_tags: t.Optional[t.List[str]] = None,
-    tfhub_options: t.Optional["tf.saved_model.SaveOptions"] = None,
+    tfhub_options: t.Optional[t.Any] = None,
     load_as_wrapper: t.Optional[bool] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.Any:  # returns tf.sessions or keras models
@@ -213,7 +213,7 @@ def load(
         ), MissingDependencyException(
             "`tensorflow_hub` is required to load a tfhub module."
         )
-        module_path = model.info.options["local_path"]
+        module_path = model.path_of(model.info.options["local_path"])
         if load_as_wrapper:
             wrapper_class = hub.KerasLayer if TF2 else hub.Module
             return wrapper_class(module_path)
@@ -225,7 +225,11 @@ def load(
         if tfhub_tags is None and is_hub_module_v1:
             tfhub_tags = []
 
-        if tfhub_options:
+        if tfhub_options is not None:
+            if not isinstance(tfhub_options, tf.saved_model.SaveOptions):
+                raise EnvironmentError(
+                    f"`tfhub_options` has to be of type `tf.saved_model.SaveOptions`, got {type(tfhub_options)} instead."
+                )
             if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
                 raise NotImplementedError(
                     "options are not supported for TF < 2.3.x,"
@@ -241,10 +245,10 @@ def load(
         return obj
     else:
         tf_model = _load_tf_saved_model(model.path)
-        _tf_function_wrapper.hook_loaded_model(model)
+        _tf_function_wrapper.hook_loaded_model(tf_model)
         logger.warning(TF_FUNCTION_WARNING)
         # pretty format loaded model
-        logger.info(pretty_format_restored_model(model))
+        logger.info(pretty_format_restored_model(tf_model))
         if hasattr(tf_model, "keras_api"):
             logger.warning(KERAS_MODEL_WARNING.format(name=__name__))
         return tf_model
@@ -286,7 +290,8 @@ def import_from_tfhub(
     if isinstance(identifier, str):
         os.environ["TFHUB_CACHE_DIR"] = _model.path
         fpath = resolve(identifier)
-        _model.info.options = {"model": identifier, "local_path": fpath}
+        folder = fpath.split("/")[-1]
+        _model.info.options = {"model": identifier, "local_path": folder}
     else:
         if hasattr(identifier, "export"):
             # hub.Module.export()
@@ -297,7 +302,7 @@ def import_from_tfhub(
             tf.saved_model.save(identifier, _model.path)
         _model.info.options = {
             "model": identifier.__class__.__name__,
-            "local_path": resolve(_model.path),
+            "local_path": ".",
         }
 
     _model.save(model_store)

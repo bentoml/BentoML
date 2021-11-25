@@ -1,6 +1,7 @@
 import typing as t
 from typing import TYPE_CHECKING
 
+import numpy as np
 from simple_di import Provide, inject
 
 from bentoml._internal.runner.utils import Params
@@ -9,16 +10,12 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import JSON_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
 from ._internal.types import Tag
-from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    import numpy as np
     import pandas as pd
 
     from ._internal.models import ModelStore
-else:
-    np = LazyLoader("np", globals(), "numpy")
 
 try:
     import xgboost as xgb
@@ -36,7 +33,7 @@ except ImportError:
 
 _xgboost_version = importlib_metadata.version("xgboost")
 
-AnyNdarray = t.Type["np.ndarray[t.Any, np.dtype[t.Any]]"]
+AnyNdarray = np.ndarray
 
 
 # TODO: support xgb.DMatrix runner io container

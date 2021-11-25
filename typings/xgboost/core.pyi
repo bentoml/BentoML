@@ -134,7 +134,7 @@ class DataIter:
         ...
     
 
-DMatrixDataType = Union[os.PathLike[str],str, AnyNdarray, pd.DataFrame, sparse]
+DMatrixDataType = Union[os.PathLike[str], str, AnyNdarray, pd.DataFrame, sparse.spmatrix]
 
 class DMatrix:
     """Data Matrix used in XGBoost.
@@ -143,7 +143,6 @@ class DMatrix:
     which is optimized for both memory efficiency and training speed.
     You can construct DMatrix from multiple different sources of data.
     """
-    @_deprecate_positional_args
     def __init__(self, data: DMatrixDataType, label=..., *, weight=..., base_margin=..., missing: Optional[float] = ..., silent=..., feature_names=..., feature_types=..., nthread: Optional[int] = ..., group=..., qid=..., label_lower_bound=..., label_upper_bound=..., feature_weights=..., enable_categorical: bool = ...) -> None:
         """Parameters
         ----------
@@ -206,7 +205,6 @@ class DMatrix:
     def __del__(self): # -> None:
         ...
     
-    @_deprecate_positional_args
     def set_info(self, *, label=..., weight=..., base_margin=..., group=..., qid=..., label_lower_bound=..., label_upper_bound=..., feature_names=..., feature_types=..., feature_weights=...) -> None:
         """Set meta info for DMatrix.  See doc string for :py:obj:`xgboost.DMatrix`."""
         ...

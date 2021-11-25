@@ -244,7 +244,6 @@ For use-case where you have a custom `hub.Module` or wanting to use different it
             _model.info.options.update(hub.Module.load_module_info(directory))
             _model.info.options["_module_dir"] = os.path.relpath(target, _model.path)
             _model.info.options["from_local_dir"] = False
-            print(_model.info.options)
         copy_tree(directory, target)
     else:
         paddle.jit.save(model, _model.path_of(SAVE_NAMESPACE), input_spec=input_spec)

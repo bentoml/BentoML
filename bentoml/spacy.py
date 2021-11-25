@@ -2,6 +2,7 @@ import importlib
 import logging
 import os
 import typing as t
+from distutils.dir_util import copy_tree
 from hashlib import sha256
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -19,8 +20,9 @@ from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    from spacy import Config, Vocab
+    from spacy import Vocab
     from spacy.tokens.doc import Doc
+    from thinc.config import Config
 
     from ._internal.models import ModelStore
 
@@ -45,7 +47,7 @@ except ImportError:  # pragma: no cover
         """
     )
 
-_check_compat = spacy.__version__.startswith("3")
+_check_compat: bool = spacy.__version__.startswith("3")
 if not _check_compat:  # pragma: no cover
     # TODO: supports spacy 2.x?
     raise EnvironmentError(
@@ -75,16 +77,29 @@ PROJECTS_CMD_NOT_SUPPORTED = [
     "run",
 ]
 
-DEFAULT_SPACY_PROJECTS_REPO = spacy.about.__projects__
+DEFAULT_SPACY_PROJECTS_REPO: str = spacy.about.__projects__
 DEFAULT_SPACY_PROJECTS_BRANCH = "v3"
 
 logger = logging.getLogger(__name__)
 
 
-def _uri_to_filename(uri: t.Optional[str]) -> str:  # pragma: no cover
-    if uri is None:
-        uri = DEFAULT_SPACY_PROJECTS_REPO
-    return f"spc{sha256(uri.encode('utf-8')).hexdigest()}"
+@inject
+def load_project(
+    tag: t.Union[str, Tag],
+    model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> str:
+    model = model_store.get(tag)
+    if "projects_uri" in model.info.options:
+        logger.warning(
+            "We will only returns the path of projects saved under BentoML modelstore"
+            " and leave projects interaction for users to decide what they want to do."
+            " Refers to https://spacy.io/api/cli#project for more information."
+        )
+        return os.path.join(model.path, model.info.options["target_path"])
+    raise EnvironmentError(
+        "Cannot use `bentoml.spacy.load_project()` to load non Spacy Projects. If your"
+        " model is not a Spacy projects use `bentoml.spacy.load()` instead."
+    )
 
 
 @inject
@@ -99,11 +114,8 @@ def load(
     model = model_store.get(tag)
     if "projects_uri" in model.info.options:
         raise EnvironmentError(
-            """\
-        `bentoml.spacy.load()` is not designed to load or run a projects.
-        We will leave projects interaction for users to decide what they want to do.
-        Refers to https://spacy.io/api/cli#project for more information.
-        """
+            "Cannot use `bentoml.spacy.load()` to load Spacy Projects. Use"
+            " `bentoml.spacy.load_project()` instead."
         )
     required = model.info.options["pip_package"]
     try:
@@ -184,7 +196,7 @@ def save(
         metadata=metadata,
     )
 
-    meta = _model.info.metadata  # type: t.Dict[str, t.Any]
+    meta = model.meta
     _model.info.options = {
         "pip_package": f"{meta['lang']}_{meta['name']}",
     }
@@ -211,7 +223,7 @@ def projects(
     verbose: bool = True,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Tuple[Tag, str]:
+) -> Tag:
     if tasks in PROJECTS_CMD_NOT_SUPPORTED:
         raise BentoMLException(
             """\
@@ -234,7 +246,7 @@ def projects(
         metadata=metadata,
     )
     output_path = _model.path_of(SAVE_NAMESPACE)
-    _model.info.options = {"projects_uri": repo_or_store}
+    _model.info.options = {"projects_uri": repo_or_store, "target_path": SAVE_NAMESPACE}
     if tasks == "clone":
         # TODO: update check for master or main branch
         assert (
@@ -243,14 +255,14 @@ def projects(
         _model.info.options["name"] = name
         spacy.cli.project_clone(
             name,
-            output_path,
+            Path(output_path),
             repo=repo_or_store,
             branch=branch,
             sparse_checkout=sparse_checkout,
         )
+        copy_tree(_model.path, output_path)
     else:
         # works with S3 bucket, haven't failed yet
-        os.makedirs(output_path, exist_ok=True)
         assert (
             remotes_config is not None
         ), """\
@@ -266,17 +278,17 @@ def projects(
                 }
             }
              """
+        os.makedirs(output_path, exist_ok=True)
         with Path(output_path, "project.yml").open("w") as inf:
             yaml.safe_dump(remotes_config, inf)
-        for remote in remotes_config["remotes"]:
-            for url, output_path in spacy.cli.project_pull(
-                output_path, remote=remote, verbose=verbose
+        for remote in remotes_config.get("remotes", {}):
+            for url, res_path in spacy.cli.project_pull(
+                Path(output_path), remote=remote, verbose=verbose
             ):
-                if url is not None:
-                    logger.info(f"Pulled {output_path} from {repo_or_store}")
-
+                if url is not None:  # pragma: no cover
+                    logger.info(f"Pulled {res_path} from {repo_or_store}")
     _model.save(model_store)
-    return _model.tag, output_path
+    return _model.tag
 
 
 class _SpacyRunner(Runner):

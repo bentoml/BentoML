@@ -67,9 +67,7 @@ def _get_model_info(
             f" failed loading with {__name__}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}")
-    _booster_params = (
-        dict() if not booster_params else booster_params
-    )  # type: t.Dict[str, t.Any]
+    _booster_params = dict() if not booster_params else booster_params
     for key, value in model.info.options.items():
         if key not in _booster_params:
             _booster_params[key] = value  # pragma: no cover
@@ -246,9 +244,7 @@ class _XgBoostRunner(Runner):
     def _run_batch(
         self, *args: t.Union[AnyNdarray, "pd.DataFrame", xgb.DMatrix], **kwargs: str
     ) -> AnyNdarray:
-        params = Params[t.Union[AnyNdarray, "pd.DataFrame", xgb.DMatrix]](
-            *args, **kwargs
-        )
+        params = Params[t.Union[AnyNdarray, "pd.DataFrame", xgb.DMatrix]](*args, **kwargs)
         params = params.map(
             lambda x: xgb.DMatrix(x) if not isinstance(x, xgb.DMatrix) else x
         )

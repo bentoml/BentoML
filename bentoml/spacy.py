@@ -140,7 +140,7 @@ def load(
         # check if pipeline has additional requirements then all related
         # pip package has been installed correctly.
         additional = model.info.options["additional_requirements"]
-        not_existed = list()  # type: t.List[str]
+        not_existed = list()
         dists = packages_distributions()
         for module_name in additional:
             mod, _ = split_requirement(module_name)

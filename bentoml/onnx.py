@@ -180,7 +180,6 @@ class _ONNXRunner(Runner):
         disable_copy_in_default_stream: bool,
         providers: t.Optional[_ProviderType],
         session_options: t.Optional["ort.SessionOptions"],
-        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore",
@@ -194,7 +193,6 @@ class _ONNXRunner(Runner):
         self._model_info, self._model_file = _get_model_info(tag, model_store)
         self._model_store = model_store
         self._backend = backend
-        self._partial_kwargs = partial_kwargs or dict()
 
         if backend not in SUPPORTED_ONNX_BACKEND:
             raise BentoMLException(
@@ -279,8 +277,7 @@ class _ONNXRunner(Runner):
             session_options=self._session_options,
             model_store=self._model_store,
         )
-        raw_infer_func = getattr(self._model, "run")
-        self._infer_func = functools.partial(raw_infer_func, **self._partial_kwargs)
+        self._infer_func = getattr(self._model, "run")
 
     def _run_batch(
         self,
@@ -320,7 +317,6 @@ def load_runner(
     disable_copy_in_default_stream: bool = False,
     providers: t.Optional[_ProviderType] = None,
     session_options: t.Optional["ort.SessionOptions"] = None,
-    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -365,7 +361,6 @@ def load_runner(
         disable_copy_in_default_stream=disable_copy_in_default_stream,
         providers=providers,
         session_options=session_options,
-        partial_kwargs=partial_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

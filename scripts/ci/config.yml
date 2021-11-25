@@ -96,6 +96,7 @@ onnx:
     - "onnx"
     - "onnxruntime"
     - "skl2onnx"
+    - "tensorflow"
     - "-f https://download.pytorch.org/whl/torch_stable.html"
     - "torch==1.9.0+cpu"
 

@@ -40,9 +40,7 @@ pd = LazyLoader("pd", globals(), "pandas")  # noqa: F811
 torch = LazyLoader("torch", globals(), "torch")  # noqa: F811
 tf = LazyLoader("tf", globals(), "tensorflow")  # noqa: F811
 
-_ProviderType = t.TypeVar(
-    "_ProviderType", bound=t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
-)
+_ProviderType = t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
 
 logger = logging.getLogger(__name__)
 

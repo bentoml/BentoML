@@ -12,11 +12,8 @@ import bentoml.statsmodels
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 
-# fmt: off
 test_df = pd.DataFrame([[0, 0, 1, 1]])
-test_df2 = np.array([0, 0, 1, 1])
 
-# fmt: on
 if t.TYPE_CHECKING:
     from bentoml._internal.models import Model, ModelStore
 
@@ -125,12 +122,10 @@ def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
-    res_pd = runner.run_batch(test_df)
-    res_np = runner.run_batch(test_df2)
+    res_pd = runner.run_batch(test_df.iat[0, 0])
 
     expected_res = predict_df(holt_model, test_df)
     assert all(res_pd == expected_res)
-    assert all(res_np == expected_res)
 
 
 @pytest.mark.gpus
@@ -143,7 +138,3 @@ def test_statsmodels_runner_setup_on_gpu(modelstore, save_proc):
 
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == 1
-
-
-# runner.run
-# runner.run_batch

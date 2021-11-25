@@ -1,3 +1,4 @@
+# type: ignore[reportMissingStubs]
 import logging
 import os
 import pathlib
@@ -425,8 +426,8 @@ class _TensorflowRunner(Runner):
             return len(tf.config.list_physical_devices("GPU"))
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         # setup a global session for model runner
         self._session = tf.compat.v1.Session(
             config=tf.compat.v1.ConfigProto(**self._config_proto)

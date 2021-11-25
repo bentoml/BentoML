@@ -1,29 +1,36 @@
+# type: ignore[reportMissingStubs]
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PKL_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
+from ._internal.runner.utils import Params
 from ._internal.types import PathType, Tag
 from ._internal.utils.lazy_loader import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
-_MT = t.TypeVar("_MT")
-
 if TYPE_CHECKING:  # pragma: no cover
+    import numpy as np
     import pandas as pd
-    from joblib.parallel import Parallel
 
     from ._internal.models import ModelStore
+else:
+    _exc_msg = """\
+    `pandas` is required by `bentoml.statsmodels`, install pandas with
+     `pip install pandas`. For more information, refer to
+     https://pandas.pydata.org/docs/getting_started/install.html
+    """
+    pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)
+    np = LazyLoader("np", globals(), "numpy")
 
 
 try:
+    import joblib.parallel as jp
     import statsmodels
     import statsmodels.api as sm
-    from statsmodels.tools.parallel import parallel_func
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """statsmodels is required in order to use bentoml.statsmodels, install
@@ -32,27 +39,17 @@ except ImportError:  # pragma: no cover
          """
     )
 
-_exc_msg = """\
-`pandas` is required by `bentoml.statsmodels`, install pandas with
- `pip install pandas`. For more information, refer to
- https://pandas.pydata.org/docs/getting_started/install.html
-"""
-pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)  # noqa: F811
-
 
 def _get_model_info(
     tag: t.Union[str, Tag],
     model_store: "ModelStore",
 ) -> t.Tuple["Model", PathType]:
     model = model_store.get(tag)
-    if model.info.module != __name__:
-        if model.info.module == "bentoml.mlflow":
-            pass  # pragma: no cover
-        else:
-            raise BentoMLException(  # pragma: no cover
-                f"Model {tag} was saved with module {model.info.module}, failed loading"
-                f"with {__name__}"
-            )
+    if model.info.module != __name__:  # pragma: no cover
+        raise BentoMLException(
+            f"Model {tag} was saved with module {model.info.module}, failed loading"
+            f"with {__name__}"
+        )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")
 
     return model, model_file
@@ -62,7 +59,7 @@ def _get_model_info(
 def load(
     tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> _MT:
+) -> t.Any:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -78,18 +75,17 @@ def load(
     Examples::
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
-    _load: t.Callable[[PathType], _MT] = sm.load
-    return _load(model_file)
+    return sm.load(model_file)
 
 
 @inject
 def save(
     name: str,
-    model: _MT,
+    model: t.Any,
     *,
     metadata: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> str:
+) -> Tag:
     """
     Save a model instance to BentoML modelstore.
 
@@ -154,20 +150,32 @@ class _StatsModelsRunner(Runner):
         # NOTE: Statsmodels currently doesn't use GPU, so just return 1.
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
-        self._model = sm.load(self._model_file)
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
+        self._model = load(self._model_info.tag, model_store=self._model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
     # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Union[np.ndarray, "pd.DataFrame"]) -> t.Any:  # type: ignore[override] # noqa
-        # TODO: type hint return type.
-        parallel: "Parallel"
-        p_func: t.Callable[..., t.Any]
-        parallel, p_func, _ = parallel_func(
-            self._predict_fn, n_jobs=self.num_concurrency_per_replica, verbose=0
+    def _run_batch(
+        self,
+        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "pd.DataFrame"],
+        **kwargs: t.Any,
+    ) -> t.Any:
+        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "pd.DataFrame"]](
+            *args, **kwargs
         )
-        return parallel(p_func(i) for i in input_data)[0]
+
+        def _mapping(
+            item: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "pd.DataFrame"]
+        ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+            if isinstance(item, pd.DataFrame):
+                item = item.to_numpy()
+            return item
+
+        params = params.map(_mapping)
+        parallel = jp.Parallel(self.num_concurrency_per_replica, verbose=0)
+        pred_fn = jp.delayed(self._predict_fn)
+        return parallel(pred_fn(args, **params.kwargs) for args in params.args)[0]
 
 
 @inject
@@ -175,8 +183,8 @@ def load_runner(
     tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "predict",
-    resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
-    batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
+    resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
+    batch_options: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_StatsModelsRunner":
     """

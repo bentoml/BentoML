@@ -102,7 +102,7 @@ def get_service_openapi_doc(svc: "Service"):
         paths[api_path] = {
             "post": dict(
                 tags=["app"],
-                summary=f"InferenceAPI endpoints {repr(api)}",
+                summary=f"{api}",
                 description=api.doc or "",
                 operationId=f"{svc.name}__{api.name}",
                 requestBody=dict(content=api.input.openapi_request_schema()),

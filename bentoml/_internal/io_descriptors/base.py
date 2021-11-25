@@ -8,14 +8,18 @@ from starlette.responses import Response
 IOPyObj = t.TypeVar("IOPyObj")
 
 
-def _mk_repr(obj: t.Any) -> str:
-    # monkeypatch repr to make __repr__ more readable by humans.
+def _mk_str(obj: t.Any) -> str:
+    # make str more human readable
     if callable(obj):
         return obj.__name__
     elif inspect.isclass(obj):
         return obj.__class__.__name__
+    elif isinstance(obj, dict):
+        fac = dict()  # type: t.Dict[str, t.Any]
+        fac.update(zip(obj.keys(), map(_mk_str, obj.values())))  # type: ignore
+        return str(fac)
     else:
-        return repr(obj)
+        return str(obj)
 
 
 class IODescriptor(ABC, t.Generic[IOPyObj]):
@@ -26,8 +30,13 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
 
     HTTP_METHODS = ["POST"]
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({','.join([f'{k}={_mk_repr(v)}' for k,v in self.__dict__.items()])})"
+    def __str__(self) -> str:
+        return f"%s(%s)" % (
+            self.__class__.__name__,
+            ", ".join(
+                [f'{k.strip("_")}={_mk_str(v)}' for k, v in self.__dict__.items()]
+            ),
+        )
 
     # fmt: off
     @abstractmethod

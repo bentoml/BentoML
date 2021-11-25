@@ -20,7 +20,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import JSON_EXT, Model
 from ._internal.runner import Runner
 from ._internal.types import Tag
-from .exceptions import BentoMLException, MissingDependencyException
+from .exceptions import BentoMLException, MissingDependencyException, NotFound
 
 logger = logging.getLogger(__name__)
 
@@ -413,7 +413,7 @@ def _save(
                 return info.tag
             else:
                 pass
-        except FileNotFoundError:
+        except (NotFound, FileNotFoundError):
             pass
 
     _model = Model.create(

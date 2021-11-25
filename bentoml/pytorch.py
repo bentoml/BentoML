@@ -148,7 +148,7 @@ def save(
         framework_context=context,
         metadata=metadata,
     )
-    weight_file = _model.path_of("{SAVE_NAMESPACE}{PT_EXT}")
+    weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     if isinstance(model, torch.jit.ScriptModule):
         torch.jit.save(model, weight_file)
     else:

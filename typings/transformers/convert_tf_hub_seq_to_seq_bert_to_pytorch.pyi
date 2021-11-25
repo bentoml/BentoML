@@ -1,9 +1,0 @@
-
-
-
-def convert_tf_checkpoint_to_pytorch(tf_hub_path, pytorch_dump_path, is_encoder_named_decoder, vocab_size, is_encoder):
-    ...
-
-if __name__ == "__main__":
-    parser = ...
-    args = ...

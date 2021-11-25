@@ -6,7 +6,7 @@ import re
 import typing as t
 import uuid
 from distutils.dir_util import copy_tree
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from simple_di import Provide, inject
@@ -14,6 +14,7 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import Model
 from ._internal.runner import Runner
+from ._internal.runner.utils import Params
 from ._internal.types import PathType, Tag
 from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
@@ -136,7 +137,7 @@ class _tf_function_wrapper:  # pragma: no cover
         return getattr(self.origin_func, k)
 
     @classmethod
-    def hook_loaded_model(cls, loaded_model: t.Any) -> None:  # noqa
+    def hook_loaded_model(cls, loaded_model: t.Any) -> None:
         funcs = get_restored_functions(loaded_model)
         for k, func in funcs.items():
             arg_names = get_arg_names(func)
@@ -438,10 +439,20 @@ class _TensorflowRunner(Runner):
         else:
             self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]
-    ) -> np.ndarray:
+    def _run_batch(
+        self,
+        *args: t.Union[
+            t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
+        ],
+        **kwargs: Any,
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+        params = Params[
+            t.Union[
+                t.List[t.Union[int, float]],
+                "np.ndarray[t.Any, np.dtype[t.Any]]",
+                tf.Tensor,
+            ]
+        ](*args, **kwargs)
         with self._device:
             if not isinstance(input_data, tf.Tensor):
                 input_data = tf.convert_to_tensor(input_data, dtype=tf.float32)

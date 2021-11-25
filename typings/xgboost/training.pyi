@@ -1,7 +1,19 @@
-
-
 """Training Library containing training routines."""
-def train(params, dtrain, num_boost_round=..., evals=..., obj=..., feval=..., maximize=..., early_stopping_rounds=..., evals_result=..., verbose_eval=..., xgb_model=..., callbacks=...):
+
+def train(
+    params,
+    dtrain,
+    num_boost_round=...,
+    evals=...,
+    obj=...,
+    feval=...,
+    maximize=...,
+    early_stopping_rounds=...,
+    evals_result=...,
+    verbose_eval=...,
+    xgb_model=...,
+    callbacks=...,
+):
     """Train a booster with given parameters.
 
     Parameters
@@ -32,10 +44,7 @@ def train(params, dtrain, num_boost_round=..., evals=..., obj=..., feval=..., ma
         If there's more than one metric in the **eval_metric** parameter given in
         **params**, the last metric will be used for early stopping.
         If early stopping occurs, the model will have three additional fields:
-        ``bst.best_score``, ``bst.best_iteration`` and ``bst.best_ntree_limit``.  Use
-        ``bst.best_ntree_limit`` to get the correct value if ``num_parallel_tree`` and/or
-        ``num_class`` appears in the parameters.  ``best_ntree_limit`` is the result of
-        ``num_parallel_tree * best_iteration``.
+        ``bst.best_score``, ``bst.best_iteration``.
     evals_result: dict
         This dictionary stores the evaluation results of all the items in watchlist.
 
@@ -77,63 +86,47 @@ def train(params, dtrain, num_boost_round=..., evals=..., obj=..., feval=..., ma
     ...
 
 class CVPack:
-    """"Auxiliary datastruct to hold one fold of CV."""
-    def __init__(self, dtrain, dtest, param) -> None:
-        """"Initialize the CVPack"""
-        ...
-    
-    def __getattr__(self, name): # -> (*args: Unknown, **kwargs: Unknown) -> Any:
-        ...
-    
-    def update(self, iteration, fobj): # -> None:
-        """"Update the boosters for one iteration"""
-        ...
-    
-    def eval(self, iteration, feval): # -> str:
-        """"Evaluate the CVPack for one iteration."""
-        ...
-    
+    """ "Auxiliary datastruct to hold one fold of CV."""
 
+    def __init__(self, dtrain, dtest, param) -> None:
+        """ "Initialize the CVPack"""
+        ...
+    def __getattr__(self, name): ...
+    def update(self, iteration, fobj):  # -> None:
+        """ "Update the boosters for one iteration"""
+        ...
+    def eval(self, iteration, feval):  # -> str:
+        """ "Evaluate the CVPack for one iteration."""
+        ...
 
 class _PackedBooster:
-    def __init__(self, cvfolds) -> None:
+    def __init__(self, cvfolds) -> None: ...
+    def update(self, iteration, obj):  # -> None:
+        """Iterate through folds for update"""
         ...
-    
-    def update(self, iteration, obj): # -> None:
-        '''Iterate through folds for update'''
+    def eval(self, iteration, feval):  # -> list[Unknown]:
+        """Iterate through folds for eval"""
         ...
-    
-    def eval(self, iteration, feval): # -> list[Unknown]:
-        '''Iterate through folds for eval'''
+    def set_attr(self, **kwargs):  # -> None:
+        """Iterate through folds for setting attributes"""
         ...
-    
-    def set_attr(self, **kwargs): # -> None:
-        '''Iterate through folds for setting attributes'''
-        ...
-    
     def attr(self, key):
-        '''Redirect to booster attr.'''
+        """Redirect to booster attr."""
         ...
-    
-    def set_param(self, params, value=...): # -> None:
+    def set_param(self, params, value=...):  # -> None:
         """Iterate through folds for set_param"""
         ...
-    
     def num_boosted_rounds(self):
-        '''Number of boosted rounds.'''
+        """Number of boosted rounds."""
         ...
-    
     @property
-    def best_iteration(self): # -> int:
-        '''Get best_iteration'''
+    def best_iteration(self):  # -> int:
+        """Get best_iteration"""
         ...
-    
     @property
-    def best_score(self): # -> float:
+    def best_score(self):  # -> float:
         """Get best_score."""
         ...
-    
-
 
 def groups_to_rows(groups, boundaries):
     """
@@ -144,20 +137,51 @@ def groups_to_rows(groups, boundaries):
     """
     ...
 
-def mkgroupfold(dall, nfold, param, evals=..., fpreproc=..., shuffle=...): # -> list[Unknown]:
+def mkgroupfold(
+    dall, nfold, param, evals=..., fpreproc=..., shuffle=...
+):  # -> list[Unknown]:
     """
     Make n folds for cross-validation maintaining groups
     :return: cross-validation folds
     """
     ...
 
-def mknfold(dall, nfold, param, seed, evals=..., fpreproc=..., stratified=..., folds=..., shuffle=...):
+def mknfold(
+    dall,
+    nfold,
+    param,
+    seed,
+    evals=...,
+    fpreproc=...,
+    stratified=...,
+    folds=...,
+    shuffle=...,
+):
     """
     Make an n-fold list of CVPack from random indices.
     """
     ...
 
-def cv(params, dtrain, num_boost_round=..., nfold=..., stratified=..., folds=..., metrics=..., obj=..., feval=..., maximize=..., early_stopping_rounds=..., fpreproc=..., as_pandas=..., verbose_eval=..., show_stdv=..., seed=..., callbacks=..., shuffle=...):
+def cv(
+    params,
+    dtrain,
+    num_boost_round=...,
+    nfold=...,
+    stratified=...,
+    folds=...,
+    metrics=...,
+    obj=...,
+    feval=...,
+    maximize=...,
+    early_stopping_rounds=...,
+    fpreproc=...,
+    as_pandas=...,
+    verbose_eval=...,
+    show_stdv=...,
+    seed=...,
+    callbacks=...,
+    shuffle=...,
+):
     """Cross-validation with given parameters.
 
     Parameters
@@ -227,4 +251,3 @@ def cv(params, dtrain, num_boost_round=..., nfold=..., stratified=..., folds=...
     evaluation history : list(string)
     """
     ...
-

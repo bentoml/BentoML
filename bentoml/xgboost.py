@@ -29,6 +29,12 @@ except ImportError:  # pragma: no cover
         https://xgboost.readthedocs.io/en/latest/install.html
         """
     )
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_xgboost_version = importlib_metadata.version("xgboost")
 
 AnyNdarray = t.Type["np.ndarray[t.Any, np.dtype[t.Any]]"]
 
@@ -67,7 +73,9 @@ def _get_model_info(
             f" failed loading with {__name__}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{JSON_EXT}")
-    _booster_params = dict() if not booster_params else booster_params
+    _booster_params: t.Dict[str, t.Union[str, int]] = (
+        dict() if not booster_params else booster_params
+    )
     for key, value in model.info.options.items():
         if key not in _booster_params:
             _booster_params[key] = value  # pragma: no cover
@@ -159,7 +167,7 @@ def save(
         bst = bentoml.xgboost.load("my_xgboost_model:latest") # or
         bst = bentoml.xgboost.load(tag)
     """  # noqa
-    context: t.Dict[str, t.Any] = {"xgboost": xgb.__version__}
+    context: t.Dict[str, t.Any] = {"xgboost": _xgboost_version}
 
     _model = Model.create(
         name,
@@ -244,12 +252,14 @@ class _XgBoostRunner(Runner):
     def _run_batch(
         self, *args: t.Union[AnyNdarray, "pd.DataFrame", xgb.DMatrix], **kwargs: str
     ) -> AnyNdarray:
-        params = Params[t.Union[AnyNdarray, "pd.DataFrame", xgb.DMatrix]](*args, **kwargs)
+        params = Params[t.Union[AnyNdarray, "pd.DataFrame", xgb.DMatrix]](
+            *args, **kwargs
+        )
         params = params.map(
             lambda x: xgb.DMatrix(x) if not isinstance(x, xgb.DMatrix) else x
         )
         res = self._predict_fn(*params.args, **params.kwargs)
-        return t.cast(AnyNdarray, np.asarray(res))
+        return t.cast(AnyNdarray, np.asarray(res))  # type: ignore[reportUnknownMemberType]
 
 
 @inject

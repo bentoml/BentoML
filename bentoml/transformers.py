@@ -60,6 +60,13 @@ except ImportError:  # pragma: no cover
         """
     )
 
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_transformers_version = importlib_metadata.version("transformers")
+
 _TokenizerType = t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]
 
 _FRAMEWORK_ALIASES: t.Dict[str, str] = {"pt": "pytorch", "tf": "tensorflow"}
@@ -88,7 +95,10 @@ _AUTOMODEL_LM_HEAD_MAPPING: t.Dict[str, str] = {
 
 
 def _load_autoclass(framework: str, lm_head: str) -> "_BaseAutoModelClass":
-    if framework not in _AUTOMODEL_PREFIX_MAPPING and framework not in _FRAMEWORK_ALIASES:
+    if (
+        framework not in _AUTOMODEL_PREFIX_MAPPING
+        and framework not in _FRAMEWORK_ALIASES
+    ):
         raise AttributeError(
             f"{framework} is either invalid aliases "
             "or not supported by transformers. "
@@ -120,7 +130,7 @@ def _clean_name(name: str) -> str:
 
 
 def _check_flax_supported() -> None:  # pragma: no cover
-    _supported: bool = transformers.__version__.startswith("4")
+    _supported: bool = _transformers_version.startswith("4")
     _flax_available = (
         importlib.util.find_spec("jax") is not None
         and importlib.util.find_spec("flax") is not None
@@ -128,7 +138,7 @@ def _check_flax_supported() -> None:  # pragma: no cover
     if not _supported:
         logger.warning(
             "Detected transformers version: "
-            f"{transformers.__version__}, which "
+            f"{_transformers_version}, which "
             "doesn't have supports for Flax. "
             "Update `transformers` to 4.x and "
             "above to have Flax supported."
@@ -138,7 +148,8 @@ def _check_flax_supported() -> None:  # pragma: no cover
             _jax_version = importlib_metadata.version("jax")
             _flax_version = importlib_metadata.version("flax")
             logger.info(
-                f"JAX version {_jax_version}, " f"Flax version {_flax_version} available."
+                f"JAX version {_jax_version}, "
+                f"Flax version {_flax_version} available."
             )
         else:
             logger.warning(
@@ -399,7 +410,7 @@ def _save(
     **transformers_options_kwargs: str,
 ) -> Tag:
     _check_flax_supported()  # pragma: no cover
-    context: t.Dict[str, t.Any] = {"transformers": transformers.__version__}
+    context: t.Dict[str, t.Any] = {"transformers": _transformers_version}
 
     if isinstance(model_identifier, str):
         try:
@@ -776,7 +787,7 @@ class _TransformersRunner(Runner):
         self._pipeline = transformers.pipelines.pipeline(
             self._tasks,
             config=self._config,
-            model=self._model,
+            model=self._model,  # type: ignore[reportGeneralTypeIssue]
             tokenizer=self._tokenizer,
             framework=self._framework,
             feature_extractor=self._feature_extractor,

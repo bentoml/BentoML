@@ -1,7 +1,21 @@
-
-
 """Plotting Library."""
-def plot_importance(booster, ax=..., height=..., xlim=..., ylim=..., title=..., xlabel=..., ylabel=..., fmap=..., importance_type=..., max_num_features=..., grid=..., show_values=..., **kwargs):
+
+def plot_importance(
+    booster,
+    ax=...,
+    height=...,
+    xlim=...,
+    ylim=...,
+    title=...,
+    xlabel=...,
+    ylabel=...,
+    fmap=...,
+    importance_type=...,
+    max_num_features=...,
+    grid=...,
+    show_values=...,
+    **kwargs
+):
     """Plot importance based on fitted trees.
 
     Parameters
@@ -45,7 +59,17 @@ def plot_importance(booster, ax=..., height=..., xlim=..., ylim=..., title=..., 
     """
     ...
 
-def to_graphviz(booster, fmap=..., num_trees=..., rankdir=..., yes_color=..., no_color=..., condition_node_params=..., leaf_node_params=..., **kwargs):
+def to_graphviz(
+    booster,
+    fmap=...,
+    num_trees=...,
+    rankdir=...,
+    yes_color=...,
+    no_color=...,
+    condition_node_params=...,
+    leaf_node_params=...,
+    **kwargs
+):
     """Convert specified tree to graphviz instance. IPython can automatically plot
     the returned graphiz instance. Otherwise, you should call .render() method
     of the returned graphiz instance.
@@ -116,4 +140,3 @@ def plot_tree(booster, fmap=..., num_trees=..., rankdir=..., ax=..., **kwargs):
 
     """
     ...
-

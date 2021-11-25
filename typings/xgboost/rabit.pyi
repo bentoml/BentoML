@@ -1,15 +1,18 @@
+from typing import Any, Callable, List, Optional
 
+import numpy as np
 
 """Distributed XGBoost Rabit related API."""
-def init(args=...): # -> None:
+
+def init(args: Optional[List[bytes]] = ...) -> None:
     """Initialize the rabit library with arguments"""
     ...
 
-def finalize(): # -> None:
+def finalize() -> None:
     """Finalize the process, notify tracker everything is done."""
     ...
 
-def get_rank(): # -> Any:
+def get_rank() -> int:
     """Get rank of current process.
 
     Returns
@@ -19,7 +22,7 @@ def get_rank(): # -> Any:
     """
     ...
 
-def get_world_size(): # -> Any:
+def get_world_size() -> int:
     """Get total number workers.
 
     Returns
@@ -29,11 +32,11 @@ def get_world_size(): # -> Any:
     """
     ...
 
-def is_distributed(): # -> Any:
-    '''If rabit is distributed.'''
+def is_distributed() -> int:
+    """If rabit is distributed."""
     ...
 
-def tracker_print(msg): # -> None:
+def tracker_print(msg: Any) -> None:
     """Print message to the tracker.
 
     This function can be used to communicate the information of
@@ -46,7 +49,7 @@ def tracker_print(msg): # -> None:
     """
     ...
 
-def get_processor_name(): # -> Any:
+def get_processor_name() -> bytes:
     """Get the processor name.
 
     Returns
@@ -56,7 +59,9 @@ def get_processor_name(): # -> Any:
     """
     ...
 
-def broadcast(data, root): # -> Any:
+T = ...
+
+def broadcast(data: T, root: int) -> T:
     """Broadcast object from one node to all other nodes.
 
     Parameters
@@ -74,15 +79,18 @@ def broadcast(data, root): # -> Any:
     ...
 
 DTYPE_ENUM__ = ...
+
 class Op:
-    '''Supported operations for rabit.'''
+    """Supported operations for rabit."""
+
     MAX = ...
     MIN = ...
     SUM = ...
     OR = ...
 
-
-def allreduce(data, op, prepare_fun=...): # -> ndarray[Any, Unknown]:
+def allreduce(
+    data: np.ndarray, op: int, prepare_fun: Optional[Callable[[np.ndarray], None]] = ...
+) -> np.ndarray:
     """Perform allreduce, return the result.
 
     Parameters
@@ -108,7 +116,7 @@ def allreduce(data, op, prepare_fun=...): # -> ndarray[Any, Unknown]:
     """
     ...
 
-def version_number(): # -> Any:
+def version_number() -> int:
     """Returns version number of current stored model.
 
     This means how many calls to CheckPoint we made so far.
@@ -119,4 +127,3 @@ def version_number(): # -> Any:
         Version number of currently stored model
     """
     ...
-

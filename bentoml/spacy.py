@@ -253,7 +253,9 @@ def projects(
     _model.info.options = {"projects_uri": repo_or_store, "target_path": SAVE_NAMESPACE}
     if tasks == "clone":
         # TODO: update check for master or main branch
-        assert name is not None, "`name` of the template is required to clone a project."
+        assert (
+            name is not None
+        ), "`name` of the template is required to clone a project."
         _model.info.options["name"] = name
         spacy.cli.project_clone(
             name,

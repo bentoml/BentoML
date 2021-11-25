@@ -36,10 +36,10 @@ more information.
     )
 
 pd = LazyLoader("pd", globals(), "pandas")  # noqa: F811
+torch = LazyLoader("torch", globals(), "torch")  # noqa: F811
+tf = LazyLoader("tf", globals(), "tensorflow")  # noqa: F811
 
-_ProviderType = t.TypeVar(
-    "_ProviderType", bound=t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
-)
+_ProviderType = t.List[t.Union[str, t.Tuple[str, t.Dict[str, t.Any]]]]
 
 logger = logging.getLogger(__name__)
 
@@ -278,24 +278,31 @@ class _ONNXRunner(Runner):
 
     def _run_batch(
         self,
-        *args: t.Union["np.ndarray", "pd.DataFrame"],
-        **kwargs: t.Any,
+        *args: t.Union[np.ndarray, "pd.DataFrame"],
     ) -> t.Any:
-        params = Params[t.Union["np.ndarray", "pd.DataFrame"]](*args, **kwargs)
-        if isinstance(params.sample, np.ndarray):
-            params = params.map(lambda i: i.astype(np.float32))
-        elif isinstance(params.sample, pd.DataFrame):
-            params = params.map(lambda i: i.to_numpy())
-        else:
-            raise TypeError(
-                f"`_run_batch` of {self.__class__.__name__} only takes "
-                "`numpy.ndarray` or `pd.DataFrame` as input parameters"
-            )
+        params = Params[t.Union[np.ndarray, "pd.DataFrame"]](*args)
+
+        def _mapping(item) -> t.Any:
+            if isinstance(item, np.ndarray):
+                item = item.astype(np.float32)
+            elif isinstance(item, pd.DataFrame):
+                item = item.to_numpy()
+            elif isinstance(item, (tf.Tensor, torch.Tensor)):
+                item = item.numpy()
+            else:
+                raise TypeError(
+                    f"`_run_batch` of {self.__class__.__name__} only takes "
+                    "`numpy.ndarray` or `pd.DataFrame` as input parameters"
+                )
+            return item
+
+        params = params.map(_mapping)
+
         input_names = {
             i.name: val for i, val in zip(self._model.get_inputs(), params.args)
         }
         output_names = [_.name for _ in self._model.get_outputs()]
-        return self._infer_func(output_names, input_names, **params.kwargs)
+        return self._infer_func(output_names, input_names)
 
 
 @inject

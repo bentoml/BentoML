@@ -1,3 +1,4 @@
+import math
 import os
 
 import numpy as np
@@ -5,6 +6,8 @@ import onnx
 import onnxruntime as ort
 import psutil
 import pytest
+import torch
+import torch.nn as nn
 from sklearn.ensemble import RandomForestClassifier
 
 import bentoml.onnx
@@ -21,6 +24,25 @@ def predict_arr(model, arr):
     input_name = model.get_inputs()[0].name
     output_name = model.get_outputs()[0].name
     return model.run([output_name], {input_name: input_data})[0]
+
+
+class ExtendedModel(nn.Module):
+    def __init__(self, D_in, H, D_out):
+        """
+        In the constructor we instantiate two nn.Linear modules and assign them as
+        member variables.
+        """
+        super(ExtendedModel, self).__init__()
+        self.linear1 = nn.Linear(D_in, H)
+        self.linear2 = nn.Linear(H, D_out)
+
+    def forward(self, x, bias):
+        """
+        In the forward function we accept a Tensor of input data and an optional bias
+        """
+        h_relu = self.linear1(x).clamp(min=0)
+        y_pred = self.linear2(h_relu)
+        return y_pred + bias
 
 
 @pytest.fixture()
@@ -114,6 +136,47 @@ def test_onnx_runner_setup_run_batch(modelstore, save_proc, sklearn_onnx_model):
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
     assert isinstance(runner._model, ort.InferenceSession)
+
+
+@pytest.mark.parametrize(
+    "bias_pair",
+    [(0.0, 1.0), (-0.212, 1.1392)],
+)
+def test_onnx_runner_with_partial_inputs(tmpdir, modelstore, bias_pair):
+
+    N, D_in, H, D_out = 64, 1000, 100, 1
+    x = torch.randn(N, D_in)
+    model = ExtendedModel(D_in, H, D_out)
+
+    input_names = ["x", "bias"]
+    output_names = ["output1"]
+    model_path = os.path.join(tmpdir, "test_torch.onnx")
+    torch.onnx.export(
+        model,
+        (x, torch.Tensor([1.0])),
+        model_path,
+        input_names=input_names,
+        output_names=output_names,
+    )
+
+    tag = bentoml.onnx.save("onnx_test_partial", model_path, model_store=modelstore)
+    bias1, bias2 = bias_pair
+    runner1 = bentoml.onnx.load_runner(
+        tag,
+        model_store=modelstore,
+    )
+
+    runner2 = bentoml.onnx.load_runner(
+        tag,
+        model_store=modelstore,
+    )
+
+    res1 = runner1.run_batch(x, np.array([bias1]).astype(np.float32))[0][0].item()
+    res2 = runner2.run_batch(x, np.array([bias2]).astype(np.float32))[0][0].item()
+
+    # tensor to float may introduce larger errors, so we bump rel_tol
+    # from 1e-9 to 1e-6 just in case
+    assert math.isclose(res1 - res2, bias1 - bias2, rel_tol=1e-6)
 
 
 @pytest.mark.gpus

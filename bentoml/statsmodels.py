@@ -1,3 +1,4 @@
+# type: ignore[reportMissingTypeStubs]
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -13,7 +14,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
     import numpy as np
-    import pandas as pd
+    from pandas.core.frame import DataFrame
 
     from ._internal.models import ModelStore
 else:
@@ -23,6 +24,9 @@ else:
      https://pandas.pydata.org/docs/getting_started/install.html
     """
     pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)
+    DataFrame = LazyLoader(
+        "DataFrame", globals(), "pandas.core.frame", exc_msg=_exc_msg
+    )
     np = LazyLoader("np", globals(), "numpy")
 
 
@@ -163,19 +167,20 @@ class _StatsModelsRunner(Runner):
 
     def _run_batch(
         self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "pd.DataFrame"],
+        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
         **kwargs: t.Any,
     ) -> t.Any:
-        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "pd.DataFrame"]](
+        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"]](
             *args, **kwargs
         )
 
         def convert_type(
-            inp: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "pd.DataFrame"]
+            inp: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"]
         ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-            if isinstance(inp, pd.DataFrame):
+            if isinstance(inp, DataFrame):
                 return inp.to_numpy()
-            return inp
+            else:
+                return inp
 
         params = params.map(convert_type)
         parallel = jp.Parallel(self.num_concurrency_per_replica, verbose=0)

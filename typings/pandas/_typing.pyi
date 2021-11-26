@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, tzinfo
 from io import BufferedIOBase, RawIOBase, TextIOBase, TextIOWrapper
 from mmap import mmap
+from os import PathLike
 from typing import (
     IO,
-    TYPE_CHECKING,
     Any,
     AnyStr,
     Callable,
@@ -18,11 +18,31 @@ from typing import (
     Tuple,
 )
 from typing import Type as type_t
-from typing import Union
+from typing import TypeVar, Union
 
 import numpy as np
+import numpy.typing as npt
+from pandas._libs import Period, Timedelta, Timestamp
+from pandas.core.arrays.base import ExtensionArray
+from pandas.core.dtypes.dtypes import ExtensionDtype
+from pandas.core.frame import DataFrame
+from pandas.core.groupby.generic import DataFrameGroupBy, GroupBy, SeriesGroupBy
+from pandas.core.indexes.base import Index
+from pandas.core.resample import Resampler
+from pandas.core.series import Series
+from pandas.core.window.rolling import BaseWindow
+from pandas.io.formats.format import EngFormatter
 
-ArrayLike = Union["ExtensionArray", np.ndarray]
+# imports from pandas.core.indexes.interval cannot be inferred as type.
+# TODO: wait til further supports from pandas team
+Interval = Any
+DateOffset = Any
+ArrayManager = Any
+BlockManager = Any
+SingleArrayManager = Any
+SingleBlockManager = Any
+
+ArrayLike = Union["ExtensionArray", np.ndarray[Any, np.dtype[Any]]]
 AnyArrayLike = Union[ArrayLike, "Index", "Series"]
 PythonScalar = Union[str, int, float, bool]
 DatetimeLikeScalar = Union["Period", "Timestamp", "Timedelta"]
@@ -36,29 +56,28 @@ TimedeltaConvertibleTypes = Union[
 ]
 Timezone = Union[str, tzinfo]
 FrameOrSeriesUnion = Union["DataFrame", "Series"]
-FrameOrSeries = ...
 Axis = Union[str, int]
 IndexLabel = Union[Hashable, Sequence[Hashable]]
 Level = Union[Hashable, int]
 Shape = Tuple[int, ...]
 Suffixes = Tuple[str, str]
 Ordered = Optional[bool]
-JSONSerializable = Optional[Union[PythonScalar, List, Dict]]
+JSONSerializable = Optional[Union[PythonScalar, List[str], Dict[str, Union[str, bytes]]]]
 Frequency = Union[str, "DateOffset"]
 Axes = Collection[Any]
-NpDtype = Union[str, np.dtype]
+NpDtype = Union[str, np.dtype[Any]]
 Dtype = Union[
     "ExtensionDtype", NpDtype, type_t[Union[str, float, int, complex, bool, object]]
 ]
 DtypeArg = Union[Dtype, Dict[Hashable, Dtype]]
-DtypeObj = Union[np.dtype, "ExtensionDtype"]
+DtypeObj = Union[np.dtype[Any], "ExtensionDtype"]
 Renamer = Union[Mapping[Hashable, Any], Callable[[Hashable], Hashable]]
-T = ...
+T = TypeVar("T")
 FuncType = Callable[..., Any]
-F = ...
+F = TypeVar("F")
 ValueKeyFunc = Optional[Callable[["Series"], Union["Series", AnyArrayLike]]]
 IndexKeyFunc = Optional[Callable[["Index"], Union["Index", AnyArrayLike]]]
-AggFuncTypeBase = Union[Callable, str]
+AggFuncTypeBase = Union[Callable[..., Any], str]
 AggFuncTypeDict = Dict[Hashable, Union[AggFuncTypeBase, List[AggFuncTypeBase]]]
 AggFuncType = (Union[AggFuncTypeBase, List[AggFuncTypeBase], AggFuncTypeDict],)
 AggObjType = (
@@ -80,22 +99,28 @@ StorageOptions = Optional[Dict[str, Any]]
 CompressionDict = Dict[str, Any]
 CompressionOptions = Optional[Union[str, CompressionDict]]
 FormattersType = Union[
-    List[Callable], Tuple[Callable, ...], Mapping[Union[str, int], Callable]
+    List[Callable[..., Any]],
+    Tuple[Callable[..., Any], ...],
+    Mapping[Union[str, int], Callable[..., Any]],
 ]
 ColspaceType = Mapping[Hashable, Union[str, int]]
-FloatFormatType = Union[str, Callable, "EngFormatter"]
+FloatFormatType = Union[str, Callable[..., Any], "EngFormatter"]
 ColspaceArgType = Union[
     str, int, Sequence[Union[str, int]], Mapping[Hashable, Union[str, int]]
 ]
-if TYPE_CHECKING:
-    FillnaOptions = Literal["backfill", "bfill", "ffill", "pad"]
-else: ...
+FillnaOptions = Literal["backfill", "bfill", "ffill", "pad"]
 Manager = Union[
     "ArrayManager", "SingleArrayManager", "BlockManager", "SingleBlockManager"
 ]
 SingleManager = Union["SingleArrayManager", "SingleBlockManager"]
 Manager2D = Union["ArrayManager", "BlockManager"]
-PositionalIndexer = Union[int, np.integer, slice, Sequence[int], np.ndarray]
+# TODO: fix this when pandas requires numpy > 1.20
+PositionalIndexer = Union[
+    int, np.integer[Any], slice, Sequence[int], np.ndarray[Any, np.dtype[Any]]
+]
 PositionalIndexer2D = Union[
     PositionalIndexer, Tuple[PositionalIndexer, PositionalIndexer]
 ]
+
+# Windowing rank methods
+WindowingRankType = Literal["average", "min", "max"]

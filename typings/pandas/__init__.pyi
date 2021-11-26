@@ -1,7 +1,7 @@
+# type: ignore[reportUnusedImports]
 import pandas.api
 import pandas.arrays
 import pandas.core.config_init
-import pandas.testing
 from pandas.compat import is_numpy_dev as _is_numpy_dev
 from pandas.compat import np_version_under1p18 as _np_version_under1p18
 from pandas.core.api import (
@@ -10,7 +10,6 @@ from pandas.core.api import (
     Categorical,
     CategoricalDtype,
     CategoricalIndex,
-    DataFrame,
     DateOffset,
     DatetimeIndex,
     DatetimeTZDtype,
@@ -66,6 +65,7 @@ from pandas.core.api import (
 )
 from pandas.core.arrays.sparse import SparseDtype
 from pandas.core.computation.api import eval
+from pandas.core.frame import DataFrame
 from pandas.core.reshape.api import (
     concat,
     crosstab,

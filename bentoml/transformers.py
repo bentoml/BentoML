@@ -11,7 +11,6 @@ from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import importlib_metadata
 import requests
 from filelock import FileLock
 from simple_di import Provide, inject
@@ -24,10 +23,13 @@ from .exceptions import BentoMLException, MissingDependencyException, NotFound
 
 logger = logging.getLogger(__name__)
 
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
 if TYPE_CHECKING:  # pragma: no cover
     from transformers.configuration_utils import PretrainedConfig
-    from transformers.hf_api import HfFolder
-    from transformers.modeling_flax_utils import FlaxPreTrainedModel
     from transformers.modeling_tf_utils import TFPreTrainedModel
     from transformers.modeling_utils import PreTrainedModel
     from transformers.models.auto.auto_factory import (
@@ -40,6 +42,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 try:
     import transformers
+    from huggingface_hub.hf_api import HfFolder
     from transformers.file_utils import (
         CONFIG_NAME,
         FLAX_WEIGHTS_NAME,
@@ -49,6 +52,7 @@ try:
         http_get,
         http_user_agent,
     )
+    from transformers.modeling_flax_utils import FlaxPreTrainedModel
     from transformers.models.auto.configuration_auto import AutoConfig
     from transformers.models.auto.tokenization_auto import AutoTokenizer
     from transformers.pipelines.base import Pipeline
@@ -59,11 +63,6 @@ except ImportError:  # pragma: no cover
         Instruction: Install transformers with `pip install transformers`.
         """
     )
-
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
 
 _transformers_version = importlib_metadata.version("transformers")
 
@@ -189,7 +188,7 @@ def load(
     **kwargs: str,
 ) -> t.Tuple[
     "PretrainedConfig",
-    t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
+    t.Union["PreTrainedModel", "TFPreTrainedModel", FlaxPreTrainedModel],
     t.Optional[t.Union["PreTrainedTokenizer", "PreTrainedTokenizerFast"]],
 ]:
     """
@@ -367,41 +366,11 @@ def _download_from_hub(
         json.dump(meta, meta_file)
 
 
-@t.overload
 def _save(
     name: str,
     *,
     model_identifier: t.Union[
-        "PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"
-    ],
-    tokenizer: _TokenizerType,
-    metadata: t.Optional[t.Dict[str, t.Any]],
-    keep_download_from_hub: bool,
-    model_store: "ModelStore",
-    **transformers_options_kwargs: str,
-) -> Tag:
-    ...
-
-
-@t.overload
-def _save(
-    name: str,
-    *,
-    model_identifier: t.Union[str, "Pipeline"],
-    tokenizer: None,
-    metadata: t.Optional[t.Dict[str, t.Any]],
-    keep_download_from_hub: bool,
-    model_store: "ModelStore",
-    **transformers_options_kwargs: str,
-) -> Tag:
-    ...
-
-
-def _save(
-    name: str,
-    *,
-    model_identifier: t.Union[
-        str, "FlaxPreTrainedModel", "PreTrainedModel", "TFPreTrainedModel", "Pipeline"
+        str, FlaxPreTrainedModel, "PreTrainedModel", "TFPreTrainedModel", "Pipeline"
     ],
     tokenizer: t.Optional[_TokenizerType],
     metadata: t.Optional[t.Dict[str, t.Any]],
@@ -547,7 +516,7 @@ def _save(
 def save(
     name: str,
     *,
-    model: t.Union["PreTrainedModel", "TFPreTrainedModel", "FlaxPreTrainedModel"],
+    model: t.Union["PreTrainedModel", "TFPreTrainedModel", FlaxPreTrainedModel],
     tokenizer: t.Optional[_TokenizerType] = None,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -784,10 +753,18 @@ class _TransformersRunner(Runner):
             )
         except FileNotFoundError:
             self._config, self._model, self._tokenizer = None, None, None
-        self._pipeline = transformers.pipelines.pipeline(
+        if isinstance(self._model, FlaxPreTrainedModel):
+            raise EnvironmentError(
+                """\
+                currently pipelines does not supports FlaxPreTrainedModel.
+                """
+            )
+        # TODO: when pipelines supports FlaxPreTrainedModel then remove the
+        #  above check
+        self._pipeline = transformers.pipelines.pipeline(  # type: ignore[reportUnknownMemberType]
             self._tasks,
             config=self._config,
-            model=self._model,  # type: ignore[reportGeneralTypeIssue]
+            model=self._model,
             tokenizer=self._tokenizer,
             framework=self._framework,
             feature_extractor=self._feature_extractor,

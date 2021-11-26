@@ -9,6 +9,7 @@ from typing import (
     Hashable,
     Iterable,
     Literal,
+    Optional,
     Sequence,
     overload,
 )
@@ -73,10 +74,6 @@ Similar to its R counterpart, data.frame, except providing automatic data
 alignment and a host of useful data manipulation methods having to do with the
 labeling information
 """
-if TYPE_CHECKING: ...
-_shared_doc_kwargs = ...
-_numeric_only_doc = ...
-_merge_doc = ...
 
 class DataFrame(NDFrame, OpsMixin):
     """
@@ -591,8 +588,17 @@ class DataFrame(NDFrame, OpsMixin):
         row_2  a  b  c  d
         """
         ...
+    @overload
     def to_numpy(
-        self, dtype: NpDtype | None = ..., copy: bool = ..., na_value: Any=...
+        self, dtype: np.dtype[Any]= ..., copy: bool = ..., na_value: Any = ...
+    ) -> np.ndarray[Any, np.dtype[Any]]:...
+    @overload
+    def to_numpy(
+        self, dtype: None=..., copy: bool = ..., na_value: Any = ...
+    ) -> np.ndarray[Any, np.dtype[Any]]:...
+    @overload
+    def to_numpy(
+        self, dtype: Optional[NpDtype] = ..., copy: bool = ..., na_value: Any = ...
     ) -> np.ndarray[Any, np.dtype[Any]]:
         """
         Convert the DataFrame to a NumPy array.

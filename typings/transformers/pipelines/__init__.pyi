@@ -1,15 +1,11 @@
-
-
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, overload
 
 import tensorflow as tf
-import torch
 from transformers.utils.dummy_flax_objects import FlaxPreTrainedModel
 
 from ..configuration_utils import PretrainedConfig
 from ..feature_extraction_utils import PreTrainedFeatureExtractor
-from ..file_utils import is_tf_available, is_torch_available
 from ..modeling_tf_utils import TFPreTrainedModel
 from ..modeling_utils import PreTrainedModel
 from ..models.auto.configuration_auto import AutoConfig
@@ -93,15 +89,9 @@ from .zero_shot_classification import (
     ZeroShotClassificationPipeline,
 )
 
-if is_tf_available():
-    ...
-if is_torch_available():
-    ...
-if TYPE_CHECKING:
-    ...
-logger = ...
-TASK_ALIASES = ...
-SUPPORTED_TASKS = ...
+TASK_ALIASES: Dict[str, str] = ...
+SUPPORTED_TASKS: Mapping[str, Any] = ...
+
 def check_task(task: str) -> Tuple[Dict[str, Any], Any]:
     """
     Checks an incoming task string, to validate it's correct and return the default Pipeline and Model classes, and
@@ -132,7 +122,21 @@ def check_task(task: str) -> Tuple[Dict[str, Any], Any]:
     """
     ...
 
-def pipeline(task: str, model: Optional[Union[str, FlaxPreTrainedModel, PreTrainedModel, TFPreTrainedModel]] = ..., config: Optional[Union[str, PretrainedConfig]] = ..., tokenizer: Optional[Union[str, PreTrainedTokenizer]] = ..., feature_extractor: Optional[Union[str, PreTrainedFeatureExtractor]] = ..., framework: Optional[str] = ..., revision: Optional[str] = ..., use_fast: bool = ..., use_auth_token: Optional[Union[str, bool]] = ..., model_kwargs: Dict[str, Any] = ..., **kwargs: Any) -> Pipeline:
+def pipeline(
+    task: str,
+    model: Optional[
+        Union[str, FlaxPreTrainedModel, PreTrainedModel, TFPreTrainedModel]
+    ] = ...,
+    config: Optional[Union[str, PretrainedConfig]] = ...,
+    tokenizer: Optional[Union[str, PreTrainedTokenizer]] = ...,
+    feature_extractor: Optional[Union[str, PreTrainedFeatureExtractor]] = ...,
+    framework: Optional[str] = ...,
+    revision: Optional[str] = ...,
+    use_fast: bool = ...,
+    use_auth_token: Optional[Union[str, bool]] = ...,
+    model_kwargs: Dict[str, Any] = ...,
+    **kwargs: Any
+) -> Pipeline:
     """
     Utility factory method to build a :class:`~transformers.Pipeline`.
 
@@ -238,4 +242,3 @@ def pipeline(task: str, model: Optional[Union[str, FlaxPreTrainedModel, PreTrain
         >>> pipeline('ner', model=model, tokenizer=tokenizer)
     """
     ...
-

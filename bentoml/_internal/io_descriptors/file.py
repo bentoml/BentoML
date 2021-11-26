@@ -58,6 +58,7 @@ class File(IODescriptor[FileLike]):
         self._mime_type = (
             mime_type if mime_type is not None else "application/octet-stream"
         )
+        super().__init__()
 
     def openapi_schema_type(self) -> t.Dict[str, str]:
         return {"type": "string", "format": "binary"}

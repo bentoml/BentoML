@@ -119,6 +119,7 @@ class Image(IODescriptor[ImageType]):
         self._mime_type = mime_type.lower()
         self._pilmode: t.Optional[_Mode] = pilmode
         self._format = self.MIME_EXT_MAPPING[mime_type]
+        super().__init__()
 
     def openapi_schema_type(self) -> t.Dict[str, str]:
         return {"type": "string", "format": "binary"}

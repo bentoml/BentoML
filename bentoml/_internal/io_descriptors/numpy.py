@@ -1,6 +1,7 @@
 import json
 import logging
 import typing as t
+from ast import Num
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -116,6 +117,7 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
         self._shape = shape
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
+        super(NumpyNdarray, self).__init__()
 
     def _infer_types(self) -> str:  # pragma: no cover
         if self._dtype is not None:

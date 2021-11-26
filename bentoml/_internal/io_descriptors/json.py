@@ -8,7 +8,7 @@ from starlette.responses import Response
 
 from ...exceptions import BadInput, BentoMLException, MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
-from .base import IODescriptor, JSONType
+from .base import IODescriptor, JSONType, readable_str
 
 if TYPE_CHECKING:  # pragma: no cover
     import numpy as np
@@ -120,6 +120,21 @@ class JSON(IODescriptor[JSONType]):
 
         self._validate_json = validate_json
         self._json_encoder = json_encoder
+        super().__init__()
+
+    def __str__(self) -> str:
+        default_params = getattr(self, "__io_default_params__")
+        filtered: t.List[str] = []
+        for k, v in self.__dict__.items():
+            if k.startswith("__"):
+                continue
+            key = k.strip("_")
+            value = default_params.get(key, "")
+            if key == "pydantic_model":
+                filtered.append(f"{key}={self._pydantic_model}")
+            elif v != value:
+                filtered.append(f"{key}={readable_str(v)}")
+        return f"{self.__class__.__name__}({','.join(filtered)})"
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         if hasattr(self, "_pydantic_model"):

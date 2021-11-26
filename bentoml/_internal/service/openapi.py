@@ -96,7 +96,7 @@ def get_service_openapi_doc(svc: "Service"):
         }
     }
 
-    for api in svc._apis.values():
+    for api in svc._apis.values():  # type: ignore[reportPrivateUsage]
         api_path = api.route if api.route.startswith("/") else f"/{api.route}"
 
         paths[api_path] = {

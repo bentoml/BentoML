@@ -52,14 +52,6 @@ class catch_exceptions(t.Generic[_T_co], object):
         self._fallback = fallback
         self._raises = raises
 
-    @t.overload  # noqa: F811
-    def __call__(self, func: t.Any) -> t.Callable[..., _T_co]:  # noqa: F811
-        ...
-
-    @t.overload  # noqa: F811
-    def __call__(self, func: t.Any) -> t.Any:  # noqa: F811
-        ...
-
     # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
     def __call__(  # noqa: F811
         self, func: t.Callable[..., _T_co]

@@ -1,5 +1,4 @@
 import typing as t
-from operator import length_hint
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -62,6 +61,7 @@ class Text(IODescriptor[str]):
                 f"{self.__class__.__name__} is not designed to take any arguments."
                 " You should only call `Text()` instead."
             )
+        super().__init__()
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {"type": "string"}

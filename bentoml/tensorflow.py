@@ -399,7 +399,7 @@ class _TensorflowRunner(Runner):
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
-        self._partial_kwargs = partial_kwargs or dict()
+        self._partial_kwargs = partial_kwargs if partial_kwargs is not None or dict()
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:

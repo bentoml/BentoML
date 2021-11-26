@@ -399,7 +399,7 @@ class _TensorflowRunner(Runner):
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
-        self._partial_kwargs = partial_kwargs if partial_kwargs is not None or dict()
+        self._partial_kwargs = partial_kwargs if partial_kwargs is not None else dict()
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
@@ -454,7 +454,13 @@ class _TensorflowRunner(Runner):
 
         with tf.device(self._device_id):
 
-            def _mapping(item: t.Union[t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor) -> tf.Tensor:
+            def _mapping(
+                item: t.Union[
+                    t.List[t.Union[int, float]],
+                    "np.ndarray[t.Any, np.dtype[t.Any]]",
+                    tf.Tensor,
+                ]
+            ) -> tf.Tensor:
                 if not isinstance(item, tf.Tensor):
                     return tf.convert_to_tensor(item, dtype=tf.float32)
                 else:
@@ -464,11 +470,9 @@ class _TensorflowRunner(Runner):
 
             if TF2:
                 tf.compat.v1.global_variables_initializer()
-            else:
-                self._session.run(tf.compat.v1.global_variables_initializer())
-            if TF2:
                 res = self._predict_fn(*params.args, **params.kwargs)
             else:
+                self._session.run(tf.compat.v1.global_variables_initializer())
                 res = self._session.run(self._predict_fn(*params.args, **params.kwargs))
             return res.numpy() if TF2 else res["prediction"]
 

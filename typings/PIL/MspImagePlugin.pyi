@@ -1,5 +1,3 @@
-
-
 from .ImageFile import ImageFile, PyDecoder
 
 class MspImageFile(ImageFile):

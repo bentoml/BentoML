@@ -18,7 +18,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 
 ERR=0
 
-PYTESTARGS=()
+declare -a PYTESTARGS
 CONFIG_FILE="$dname/config.yml"
 REQ_FILE="/tmp/additional-requirements.txt"
 
@@ -91,7 +91,7 @@ parse_args() {
         ;;
     esac
   done
-  PYTESTARGS=( "${@:2}" )
+  PYTESTARGS=( "${*:2}" )
   shift $(( OPTIND - 1 ))
 }
 
@@ -117,6 +117,7 @@ parse_config() {
     fname="test_""$target""_impl.py"
   elif [[ "$is_dir" == "true" ]]; then
     fname=""
+    shift
   else
     fname="$target"
   fi
@@ -155,22 +156,23 @@ main() {
   need_cmd yq
 
   for args in "$@"; do
-    if [[ "$args" == "-"* ]]; then
-      shift
-    else
+    if [[ "$args" != "-"* ]]; then
       argv="$args"
+      break;
+    else
+      shift;
     fi
   done
 
   #  validate_yaml
   parse_config "$argv"
 
-  OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/setup.cfg --cov-report=xml:"$target.xml")
+  OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/setup.cfg --cov-report=xml:"$target.xml" --cov-report=term-missing)
 
-  if [ -n "$PYTESTARGS" ]; then
-    OPTS=( "${OPTS[@]}" "${PYTESTARGS[@]}" )
+  if [ -n "${PYTESTARGS[*]}" ];then
+    OPTS=( ${OPTS[@]} ${PYTESTARGS[@]} )
   fi
-  # setup tests environment
+  setup tests environment
   if [ -f "$REQ_FILE" ]; then
     run_python pip install -r "$REQ_FILE" || exit 1
   fi

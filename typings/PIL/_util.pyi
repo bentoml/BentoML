@@ -1,5 +1,3 @@
-
-
 from typing import NoReturn
 
 def isPath(f: object) -> bool: ...

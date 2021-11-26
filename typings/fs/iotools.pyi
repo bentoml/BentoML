@@ -1,5 +1,3 @@
-
-
 import array
 import io
 import mmap
@@ -7,13 +5,9 @@ import typing
 from io import RawIOBase
 from typing import IO, Any, Iterable, Iterator, List, Optional, Text, Union
 
-"""Compatibility tools between Python 2 and Python 3 I/O interfaces.
-"""
 if typing.TYPE_CHECKING: ...
 
 class RawWrapper(io.RawIOBase):
-    """Convert a Python 2 style file-like object in to a IO object."""
-
     def __init__(
         self, f: IO[bytes], mode: Optional[Text] = ..., name: Optional[Text] = ...
     ) -> None: ...
@@ -57,20 +51,7 @@ def make_stream(
     newline: Optional[Text] = ...,
     line_buffering: bool = ...,
     **kwargs: Any
-) -> IO:
-    """Take a Python 2.x binary file and return an IO Stream."""
-    ...
-
+) -> IO: ...
 def line_iterator(
     readable_file: IO[bytes], size: Optional[int] = ...
-) -> Iterator[bytes]:
-    """Iterate over the lines of a file.
-
-    Implementation reads each char individually, which is not very
-    efficient.
-
-    Yields:
-        str: a single line in the file.
-
-    """
-    ...
+) -> Iterator[bytes]: ...

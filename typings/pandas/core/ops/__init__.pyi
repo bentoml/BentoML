@@ -1,9 +1,7 @@
 from __future__ import annotations
-
 import operator
 import warnings
 from typing import TYPE_CHECKING
-
 import numpy as np
 from pandas import DataFrame, Series
 from pandas._libs.ops_dispatch import maybe_dispatch_ufunc_to_dunder_op
@@ -45,92 +43,21 @@ from pandas.core.roperator import (
 )
 from pandas.util._decorators import Appender
 
-"""
-Arithmetic operations for PandasObjects
-
-This is not a public API.
-"""
 if TYPE_CHECKING: ...
 ARITHMETIC_BINOPS: set[str] = ...
 COMPARISON_BINOPS: set[str] = ...
 
-def fill_binop(left, right, fill_value):  # -> tuple[Unknown, Unknown]:
-    """
-    If a non-None fill_value is given, replace null entries in left and right
-    with this value, but only in positions where _one_ of left/right is null,
-    not both.
-
-    Parameters
-    ----------
-    left : array-like
-    right : array-like
-    fill_value : object
-
-    Returns
-    -------
-    left : array-like
-    right : array-like
-
-    Notes
-    -----
-    Makes copies if fill_value is not None and NAs are present.
-    """
-    ...
-
-def align_method_SERIES(
-    left: Series, right, align_asobject: bool = ...
-):  # -> tuple[Series, DataFrame | Series | Unknown]:
-    """align lhs and rhs Series"""
-    ...
-
+def fill_binop(left, right, fill_value): ...
+def align_method_SERIES(left: Series, right, align_asobject: bool = ...): ...
 def flex_method_SERIES(op): ...
 def align_method_FRAME(
     left, right, axis, flex: bool | None = ..., level: Level = ...
-):  # -> tuple[Unknown, Unknown | ABCDataFrame | Series | ndarray]:
-    """
-    Convert rhs to meet lhs dims if input is list, tuple or np.ndarray.
-
-    Parameters
-    ----------
-    left : DataFrame
-    right : Any
-    axis : int, str, or None
-    flex : bool or None, default False
-        Whether this is a flex op, in which case we reindex.
-        None indicates not to check for alignment.
-    level : int or level name, default None
-
-    Returns
-    -------
-    left : DataFrame
-    right : Any
-    """
-    ...
-
+): ...
 def should_reindex_frame_op(
     left: DataFrame, right, op, axis, default_axis, fill_value, level
-) -> bool:
-    """
-    Check if this is an operation between DataFrames that will need to reindex.
-    """
-    ...
-
-def frame_arith_method_with_reindex(left: DataFrame, right: DataFrame, op) -> DataFrame:
-    """
-    For DataFrame-with-DataFrame operations that require reindexing,
-    operate only on shared columns, then reindex.
-
-    Parameters
-    ----------
-    left : DataFrame
-    right : DataFrame
-    op : binary operator
-
-    Returns
-    -------
-    DataFrame
-    """
-    ...
-
+) -> bool: ...
+def frame_arith_method_with_reindex(
+    left: DataFrame, right: DataFrame, op
+) -> DataFrame: ...
 def flex_arith_method_FRAME(op): ...
 def flex_comp_method_FRAME(op): ...

@@ -1,9 +1,6 @@
-
-
 from collections.abc import MutableMapping
 from numbers import Rational
 from typing import Any
-
 from .ImageFile import ImageFile
 
 logger: Any

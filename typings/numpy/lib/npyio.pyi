@@ -5,7 +5,6 @@ import zipfile
 from typing import IO, Any, Callable, Generic, Iterable, Iterator, List
 from typing import Literal as L
 from typing import Mapping, Pattern, Protocol, Sequence, Type, TypeVar, Union, overload
-
 from numpy import DataSource as DataSource
 from numpy import dtype, float64, generic, ndarray, recarray, record, void
 from numpy.core.multiarray import packbits as packbits
@@ -19,12 +18,7 @@ _T_co = TypeVar("_T_co", covariant=True)
 _SCT = TypeVar("_SCT", bound=generic)
 _CharType_co = TypeVar("_CharType_co", str, bytes, covariant=True)
 _CharType_contra = TypeVar("_CharType_contra", str, bytes, contravariant=True)
-
-_DTypeLike = Union[
-    Type[_SCT],
-    dtype[_SCT],
-    _SupportsDType[dtype[_SCT]],
-]
+_DTypeLike = Union[Type[_SCT], dtype[_SCT], _SupportsDType[dtype[_SCT]]]
 
 class _SupportsGetItem(Protocol[_T_contra, _T_co]):
     def __getitem__(self, key: _T_contra, /) -> _T_co: ...
@@ -52,7 +46,6 @@ class NpzFile(Mapping[str, NDArray[Any]]):
     files: List[str]
     allow_pickle: bool
     pickle_kwargs: None | Mapping[str, Any]
-    # Represent `f` as a mutable property so we can access the type of `self`
     @property
     def f(self: _T) -> BagObj[_T]: ...
     @f.setter
@@ -78,8 +71,6 @@ class NpzFile(Mapping[str, NDArray[Any]]):
     def __len__(self) -> int: ...
     def __getitem__(self, key: str) -> NDArray[Any]: ...
 
-# NOTE: Returns a `NpzFile` if file is a zip file;
-# returns an `ndarray`/`memmap` otherwise
 def load(
     file: str | bytes | os.PathLike[Any] | _SupportsReadSeek[bytes],
     mmap_mode: L[None, "r+", "r", "w+", "c"] = ...,
@@ -87,28 +78,22 @@ def load(
     fix_imports: bool = ...,
     encoding: L["ASCII", "latin1", "bytes"] = ...,
 ) -> Any: ...
-
 def save(
     file: str | os.PathLike[str] | _SupportsWrite[bytes],
     arr: ArrayLike,
     allow_pickle: bool = ...,
     fix_imports: bool = ...,
 ) -> None: ...
-
 def savez(
     file: str | os.PathLike[str] | _SupportsWrite[bytes],
     *args: ArrayLike,
     **kwds: ArrayLike,
 ) -> None: ...
-
 def savez_compressed(
     file: str | os.PathLike[str] | _SupportsWrite[bytes],
     *args: ArrayLike,
     **kwds: ArrayLike,
 ) -> None: ...
-
-# File-like objects only have to implement `__iter__` and,
-# optionally, `encoding`
 @overload
 def loadtxt(
     fname: str | os.PathLike[str] | Iterable[str] | Iterable[bytes],
@@ -123,7 +108,7 @@ def loadtxt(
     encoding: None | str = ...,
     max_rows: None | int = ...,
     *,
-    like: None | ArrayLike = ...
+    like: None | ArrayLike = ...,
 ) -> NDArray[float64]: ...
 @overload
 def loadtxt(
@@ -139,7 +124,7 @@ def loadtxt(
     encoding: None | str = ...,
     max_rows: None | int = ...,
     *,
-    like: None | ArrayLike = ...
+    like: None | ArrayLike = ...,
 ) -> NDArray[_SCT]: ...
 @overload
 def loadtxt(
@@ -155,9 +140,8 @@ def loadtxt(
     encoding: None | str = ...,
     max_rows: None | int = ...,
     *,
-    like: None | ArrayLike = ...
+    like: None | ArrayLike = ...,
 ) -> NDArray[Any]: ...
-
 def savetxt(
     fname: str | os.PathLike[str] | _SupportsWrite[str] | _SupportsWrite[bytes],
     X: ArrayLike,
@@ -169,23 +153,20 @@ def savetxt(
     comments: str = ...,
     encoding: None | str = ...,
 ) -> None: ...
-
 @overload
 def fromregex(
     file: str | os.PathLike[str] | _SupportsRead[str] | _SupportsRead[bytes],
     regexp: str | bytes | Pattern[Any],
     dtype: _DTypeLike[_SCT],
-    encoding: None | str = ...
+    encoding: None | str = ...,
 ) -> NDArray[_SCT]: ...
 @overload
 def fromregex(
     file: str | os.PathLike[str] | _SupportsRead[str] | _SupportsRead[bytes],
     regexp: str | bytes | Pattern[Any],
     dtype: DTypeLike,
-    encoding: None | str = ...
+    encoding: None | str = ...,
 ) -> NDArray[Any]: ...
-
-# TODO: Sort out arguments
 @overload
 def genfromtxt(
     fname: str | os.PathLike[str] | Iterable[str] | Iterable[bytes],
@@ -207,7 +188,6 @@ def genfromtxt(
     *args: Any,
     **kwargs: Any,
 ) -> NDArray[Any]: ...
-
 @overload
 def recfromtxt(
     fname: str | os.PathLike[str] | Iterable[str] | Iterable[bytes],
@@ -222,7 +202,6 @@ def recfromtxt(
     usemask: L[True],
     **kwargs: Any,
 ) -> MaskedRecords[Any, dtype[void]]: ...
-
 @overload
 def recfromcsv(
     fname: str | os.PathLike[str] | Iterable[str] | Iterable[bytes],

@@ -1,5 +1,4 @@
 from typing import Any, List
-
 from numpy._pytesttester import PytestTester
 from numpy.ma import extras as extras
 from numpy.ma.core import MAError as MAError

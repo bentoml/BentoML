@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .Image import Image
 
 class ImagePalette:

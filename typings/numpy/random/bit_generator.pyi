@@ -17,7 +17,6 @@ from typing import (
     Union,
     overload,
 )
-
 from numpy import dtype, ndarray, uint32, uint64
 from numpy.typing import (
     _ArrayLikeInt_co,
@@ -28,18 +27,11 @@ from numpy.typing import (
 )
 
 _T = TypeVar("_T")
-
 _DTypeLikeUint32 = Union[
-    dtype[uint32],
-    _SupportsDType[dtype[uint32]],
-    Type[uint32],
-    _UInt32Codes,
+    dtype[uint32], _SupportsDType[dtype[uint32]], Type[uint32], _UInt32Codes
 ]
 _DTypeLikeUint64 = Union[
-    dtype[uint64],
-    _SupportsDType[dtype[uint64]],
-    Type[uint64],
-    _UInt64Codes,
+    dtype[uint64], _SupportsDType[dtype[uint64]], Type[uint64], _UInt64Codes
 ]
 
 class _SeedSeqState(TypedDict):
@@ -84,13 +76,11 @@ class SeedSequence(ISpawnableSeedSequence):
         *,
         spawn_key: Sequence[int] = ...,
         pool_size: int = ...,
-        n_children_spawned: int = ...,
+        n_children_spawned: int = ...
     ) -> None: ...
     def __repr__(self) -> str: ...
     @property
-    def state(
-        self,
-    ) -> _SeedSeqState: ...
+    def state(self) -> _SeedSeqState: ...
     def generate_state(
         self, n_words: int, dtype: Union[_DTypeLikeUint32, _DTypeLikeUint64] = ...
     ) -> ndarray[Any, dtype[Union[uint32, uint64]]]: ...
@@ -98,7 +88,9 @@ class SeedSequence(ISpawnableSeedSequence):
 
 class BitGenerator(abc.ABC):
     lock: Lock
-    def __init__(self, seed: Union[None, _ArrayLikeInt_co, SeedSequence] = ...) -> None: ...
+    def __init__(
+        self, seed: Union[None, _ArrayLikeInt_co, SeedSequence] = ...
+    ) -> None: ...
     def __getstate__(self) -> Dict[str, Any]: ...
     def __setstate__(self, state: Dict[str, Any]) -> None: ...
     def __reduce__(
@@ -110,11 +102,15 @@ class BitGenerator(abc.ABC):
     @state.setter
     def state(self, value: Mapping[str, Any]) -> None: ...
     @overload
-    def random_raw(self, size: None = ..., output: Literal[True] = ...) -> int: ...  # type: ignore[misc]
+    def random_raw(self, size: None = ..., output: Literal[True] = ...) -> int: ...
     @overload
-    def random_raw(self, size: _ShapeLike = ..., output: Literal[True] = ...) -> ndarray[Any, dtype[uint64]]: ...  # type: ignore[misc]
+    def random_raw(
+        self, size: _ShapeLike = ..., output: Literal[True] = ...
+    ) -> ndarray[Any, dtype[uint64]]: ...
     @overload
-    def random_raw(self, size: Optional[_ShapeLike] = ..., output: Literal[False] = ...) -> None: ...  # type: ignore[misc]
+    def random_raw(
+        self, size: Optional[_ShapeLike] = ..., output: Literal[False] = ...
+    ) -> None: ...
     def _benchmark(self, cnt: int, method: str = ...) -> None: ...
     @property
     def ctypes(self) -> _Interface: ...

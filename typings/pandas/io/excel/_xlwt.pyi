@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, Any
-
 from pandas._typing import StorageOptions
 from pandas.io.excel._base import ExcelWriter
 
@@ -21,11 +20,7 @@ class XlwtWriter(ExcelWriter):
         engine_kwargs: dict[str, Any] | None = ...,
         **kwargs
     ) -> None: ...
-    def save(self):  # -> None:
-        """
-        Save workbook to disk.
-        """
-        ...
+    def save(self): ...
     def write_cells(
         self, cells, sheet_name=..., startrow=..., startcol=..., freeze_panes=...
     ): ...

@@ -1,5 +1,3 @@
-
-
 from .Image import Image
 
 class _Enhance:

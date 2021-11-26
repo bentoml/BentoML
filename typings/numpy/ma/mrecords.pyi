@@ -1,12 +1,8 @@
 from typing import Any, List, TypeVar
-
 from numpy import dtype
 from numpy.ma import MaskedArray
 
 __all__: List[str]
-
-# TODO: Set the `bound` to something more suitable once we
-# have proper shape support
 _ShapeType = TypeVar("_ShapeType", bound=Any)
 _DType_co = TypeVar("_DType_co", bound=dtype[Any], covariant=True)
 
@@ -28,7 +24,7 @@ class MaskedRecords(MaskedArray[_ShapeType, _DType_co]):
         fill_value=...,
         keep_mask=...,
         copy=...,
-        **options,
+        **options
     ): ...
     _mask: Any
     _fill_value: Any
@@ -62,7 +58,6 @@ def fromarrays(
     byteorder=...,
     fill_value=...,
 ): ...
-
 def fromrecords(
     reclist,
     dtype=...,
@@ -75,16 +70,3 @@ def fromrecords(
     fill_value=...,
     mask=...,
 ): ...
-
-def fromtextfile(
-    fname,
-    delimiter=...,
-    commentchar=...,
-    missingchar=...,
-    varnames=...,
-    vartypes=...,
-    # NOTE: deprecated: NumPy 1.22.0, 2021-09-23
-    # delimitor=..., 
-): ...
-
-def addfield(mrecord, newfield, newfieldname=...): ...

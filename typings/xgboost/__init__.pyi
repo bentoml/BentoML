@@ -1,14 +1,9 @@
 import os
-
 from . import dask, rabit, tracker
 from .core import Booster, DataIter, DeviceQuantileDMatrix, DMatrix
 from .tracker import RabitTracker
 from .training import cv, train
 
-"""XGBoost: eXtreme Gradient Boosting library.
-
-Contributors: https://github.com/dmlc/xgboost/blob/master/CONTRIBUTORS.md
-"""
 VERSION_FILE = ...
 __all__ = [
     "DMatrix",

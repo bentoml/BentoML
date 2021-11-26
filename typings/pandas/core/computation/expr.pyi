@@ -1,13 +1,9 @@
 import ast
 from typing import Callable
-
 from pandas.compat import PY39
 from pandas.core.computation.ops import Term
 from pandas.core.computation.scope import Scope
 
-"""
-:func:`~pandas.eval` parsers.
-"""
 _is_list = ...
 _is_str = ...
 _all_nodes = ...
@@ -35,40 +31,14 @@ intersection = ...
 _msg = ...
 _T = ...
 
-def disallow(nodes: set[str]) -> Callable[[type[_T]], type[_T]]:
-    """
-    Decorator to disallow certain nodes from parsing. Raises a
-    NotImplementedError instead.
-
-    Returns
-    -------
-    callable
-    """
-    ...
+def disallow(nodes: set[str]) -> Callable[[type[_T]], type[_T]]: ...
 
 _op_classes = ...
 
-def add_ops(op_classes):  # -> (cls: Unknown) -> Unknown:
-    """
-    Decorator to add default implementation of ops.
-    """
-    ...
-
+def add_ops(op_classes): ...
 @disallow(_unsupported_nodes)
 @add_ops(_op_classes)
 class BaseExprVisitor(ast.NodeVisitor):
-    """
-    Custom ast walker. Parsers of other engines should subclass this class
-    if necessary.
-
-    Parameters
-    ----------
-    env : Scope
-    engine : str
-    parser : str
-    preparser : callable
-    """
-
     const_type: type[Term] = ...
     term_type = Term
     binary_ops = ...
@@ -93,24 +63,10 @@ class BaseExprVisitor(ast.NodeVisitor):
     def visit_Str(self, node, **kwargs): ...
     def visit_List(self, node, **kwargs): ...
     visit_Tuple = ...
-    def visit_Index(self, node, **kwargs):  # -> Any:
-        """df.index[4]"""
-        ...
+    def visit_Index(self, node, **kwargs): ...
     def visit_Subscript(self, node, **kwargs): ...
-    def visit_Slice(self, node, **kwargs):  # -> slice:
-        """df.index[slice(4,6)]"""
-        ...
-    def visit_Assign(self, node, **kwargs):  # -> Any:
-        """
-        support a single assignment node, like
-
-        c = a + b
-
-        set the assigner at the top level, must be a Name node which
-        might or might not exist in the resolvers
-
-        """
-        ...
+    def visit_Slice(self, node, **kwargs): ...
+    def visit_Assign(self, node, **kwargs): ...
     def visit_Attribute(self, node, **kwargs): ...
     def visit_Call(self, node, side=..., **kwargs): ...
     def translate_In(self, op): ...
@@ -132,18 +88,6 @@ class PythonExprVisitor(BaseExprVisitor):
     def __init__(self, env, engine, parser, preparser=...) -> None: ...
 
 class Expr:
-    """
-    Object encapsulating an expression.
-
-    Parameters
-    ----------
-    expr : str
-    engine : str, optional, default 'numexpr'
-    parser : str, optional, default 'pandas'
-    env : Scope, optional, default None
-    level : int, optional, default 2
-    """
-
     env: Scope
     engine: str
     parser: str
@@ -160,16 +104,8 @@ class Expr:
     def __call__(self): ...
     def __repr__(self) -> str: ...
     def __len__(self) -> int: ...
-    def parse(self):  # -> Any:
-        """
-        Parse an expression.
-        """
-        ...
+    def parse(self): ...
     @property
-    def names(self):  # -> frozenset[Any] | frozenset[Unknown]:
-        """
-        Get the names in an expression.
-        """
-        ...
+    def names(self): ...
 
 PARSERS = ...

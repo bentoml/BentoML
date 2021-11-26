@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, Hashable, Sequence
-
 import numpy as np
 from pandas._typing import (
     CompressionOptions,
@@ -11,9 +10,6 @@ from pandas._typing import (
 from pandas.core.indexes.api import Index
 from pandas.io.formats.format import DataFrameFormatter
 
-"""
-Module for formatting output data into CSV files.
-"""
 if TYPE_CHECKING: ...
 
 class CSVFormatter:
@@ -58,8 +54,4 @@ class CSVFormatter:
     def write_cols(self) -> Sequence[Hashable]: ...
     @property
     def encoded_labels(self) -> list[Hashable]: ...
-    def save(self) -> None:
-        """
-        Create the writer & save.
-        """
-        ...
+    def save(self) -> None: ...

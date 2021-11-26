@@ -1,24 +1,6 @@
 import pyarrow
 
-def pyarrow_array_to_numpy_and_mask(arr, dtype):  # -> tuple[Unknown, ndarray]:
-    """
-    Convert a primitive pyarrow.Array to a numpy array and boolean mask based
-    on the buffers of the Array.
-
-    At the moment pyarrow.BooleanArray is not supported.
-
-    Parameters
-    ----------
-    arr : pyarrow.Array
-    dtype : numpy.dtype
-
-    Returns
-    -------
-    (data, mask)
-        Tuple of two numpy arrays with the raw data (with specified dtype) and
-        a boolean mask (validity mask, so False means missing)
-    """
-    ...
+def pyarrow_array_to_numpy_and_mask(arr, dtype): ...
 
 class ArrowPeriodType(pyarrow.ExtensionType):
     def __init__(self, freq) -> None: ...

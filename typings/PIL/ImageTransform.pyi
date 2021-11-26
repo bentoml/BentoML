@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .Image import ImageTransformHandler
 
 class Transform(ImageTransformHandler):
@@ -12,16 +9,20 @@ class Transform(ImageTransformHandler):
 
 class AffineTransform(Transform):
     method: Any
-    ...
+
+...
 
 class ExtentTransform(Transform):
     method: Any
-    ...
+
+...
 
 class QuadTransform(Transform):
     method: Any
-    ...
+
+...
 
 class MeshTransform(Transform):
     method: Any
-    ...
+
+...

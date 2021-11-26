@@ -1,5 +1,4 @@
 from enum import Enum
-
 from pandas._libs.tslibs.offsets import BaseOffset
 
 _attrname_to_abbrevs: dict[str, str]

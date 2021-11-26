@@ -1,5 +1,3 @@
-
-
 from logging import Logger
 from typing import Any
 
@@ -60,5 +58,3 @@ class _PyAccessF(PyAccess):
     def set_pixel(self, x, y, color) -> None: ...
 
 mode_map: Any
-
-def new(img, readonly: bool = ...): ...

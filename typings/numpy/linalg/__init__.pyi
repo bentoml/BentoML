@@ -1,5 +1,4 @@
 from typing import Any, List
-
 from numpy._pytesttester import PytestTester
 from numpy.linalg.linalg import cholesky as cholesky
 from numpy.linalg.linalg import cond as cond

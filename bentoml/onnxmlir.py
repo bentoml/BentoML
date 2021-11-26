@@ -3,7 +3,6 @@ import shutil
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -13,6 +12,7 @@ from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
+    import numpy as np
     from _internal.models import ModelStore
 
 try:
@@ -129,13 +129,14 @@ class _ONNXMLirRunner(Runner):
     def num_replica(self) -> int:
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         self._session = load(self.name, self._model_store)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: np.ndarray) -> np.ndarray:  # type: ignore[override] # noqa: LN001
-        return self._session.run(input_data)
+    def _run_batch(
+        self, *args: "np.ndarray[t.Any, np.dtype[t.Any]]", **kwargs: t.Any
+    ) -> t.List["np.ndarray[t.Any, np.dtype[t.Any]]"]:
+        return self._session.run(*args)
 
 
 @inject

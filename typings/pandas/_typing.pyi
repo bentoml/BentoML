@@ -19,7 +19,6 @@ from typing import (
 )
 from typing import Type as type_t
 from typing import TypeVar, Union
-
 import numpy as np
 import numpy.typing as npt
 from pandas._libs import Period, Timedelta, Timestamp
@@ -33,15 +32,12 @@ from pandas.core.series import Series
 from pandas.core.window.rolling import BaseWindow
 from pandas.io.formats.format import EngFormatter
 
-# imports from pandas.core.indexes.interval cannot be inferred as type.
-# TODO: wait til further supports from pandas team
 Interval = Any
 DateOffset = Any
 ArrayManager = Any
 BlockManager = Any
 SingleArrayManager = Any
 SingleBlockManager = Any
-
 ArrayLike = Union["ExtensionArray", np.ndarray[Any, np.dtype[Any]]]
 AnyArrayLike = Union[ArrayLike, "Index", "Series"]
 PythonScalar = Union[str, int, float, bool]
@@ -62,7 +58,9 @@ Level = Union[Hashable, int]
 Shape = Tuple[int, ...]
 Suffixes = Tuple[str, str]
 Ordered = Optional[bool]
-JSONSerializable = Optional[Union[PythonScalar, List[str], Dict[str, Union[str, bytes]]]]
+JSONSerializable = Optional[
+    Union[PythonScalar, List[str], Dict[str, Union[str, bytes]]]
+]
 Frequency = Union[str, "DateOffset"]
 Axes = Collection[Any]
 NpDtype = Union[str, np.dtype[Any]]
@@ -79,18 +77,16 @@ ValueKeyFunc = Optional[Callable[["Series"], Union["Series", AnyArrayLike]]]
 IndexKeyFunc = Optional[Callable[["Index"], Union["Index", AnyArrayLike]]]
 AggFuncTypeBase = Union[Callable[..., Any], str]
 AggFuncTypeDict = Dict[Hashable, Union[AggFuncTypeBase, List[AggFuncTypeBase]]]
-AggFuncType = (Union[AggFuncTypeBase, List[AggFuncTypeBase], AggFuncTypeDict],)
-AggObjType = (
-    Union[
-        "Series",
-        "DataFrame",
-        "GroupBy",
-        "SeriesGroupBy",
-        "DataFrameGroupBy",
-        "BaseWindow",
-        "Resampler",
-    ],
-)
+AggFuncType = Union[AggFuncTypeBase, List[AggFuncTypeBase], AggFuncTypeDict]
+AggObjType = Union[
+    "Series",
+    "DataFrame",
+    "GroupBy",
+    "SeriesGroupBy",
+    "DataFrameGroupBy",
+    "BaseWindow",
+    "Resampler",
+]
 PythonFuncType = Callable[[Any], Any]
 Buffer = Union[IO[AnyStr], RawIOBase, BufferedIOBase, TextIOBase, TextIOWrapper, mmap]
 FileOrBuffer = Union[str, Buffer[AnyStr]]
@@ -114,13 +110,10 @@ Manager = Union[
 ]
 SingleManager = Union["SingleArrayManager", "SingleBlockManager"]
 Manager2D = Union["ArrayManager", "BlockManager"]
-# TODO: fix this when pandas requires numpy > 1.20
 PositionalIndexer = Union[
     int, np.integer[Any], slice, Sequence[int], np.ndarray[Any, np.dtype[Any]]
 ]
 PositionalIndexer2D = Union[
     PositionalIndexer, Tuple[PositionalIndexer, PositionalIndexer]
 ]
-
-# Windowing rank methods
 WindowingRankType = Literal["average", "min", "max"]

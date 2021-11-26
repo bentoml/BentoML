@@ -1,1 +1,1 @@
-""" support pyarrow compatibility across versions """
+# Created by pyminifier (https://github.com/liftoff/pyminifier)

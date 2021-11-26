@@ -3,7 +3,6 @@ import types
 from typing import Any, Dict, Iterable, List
 from typing import Literal as L
 from typing import Protocol, Tuple, Type, TypedDict, TypeVar, Union, overload
-
 from numpy import (
     bool_,
     byte,
@@ -39,13 +38,7 @@ from numpy.typing import ArrayLike, DTypeLike, _SupportsDType
 
 _T = TypeVar("_T")
 _SCT = TypeVar("_SCT", bound=generic)
-
-# A paramtrizable subset of `npt.DTypeLike`
-_DTypeLike = Union[
-    Type[_SCT],
-    dtype[_SCT],
-    _SupportsDType[dtype[_SCT]],
-]
+_DTypeLike = Union[Type[_SCT], dtype[_SCT], _SupportsDType[dtype[_SCT]]]
 
 class _CastFunc(Protocol):
     def __call__(
@@ -53,15 +46,15 @@ class _CastFunc(Protocol):
     ) -> ndarray[Any, dtype[Any]]: ...
 
 class _TypeCodes(TypedDict):
-    Character: L['c']
-    Integer: L['bhilqp']
-    UnsignedInteger: L['BHILQP']
-    Float: L['efdg']
-    Complex: L['FDG']
-    AllInteger: L['bBhHiIlLqQpP']
-    AllFloat: L['efdgFDG']
-    Datetime: L['Mm']
-    All: L['?bhilqpBHILQPefdgFDGSUVOMm']
+    Character: L["c"]
+    Integer: L["bhilqp"]
+    UnsignedInteger: L["BHILQP"]
+    Float: L["efdg"]
+    Complex: L["FDG"]
+    AllInteger: L["bBhHiIlLqQpP"]
+    AllFloat: L["efdgFDG"]
+    Datetime: L["Mm"]
+    All: L["?bhilqpBHILQPefdgFDGSUVOMm"]
 
 class _typedict(Dict[Type[generic], _T]):
     def __getitem__(self, key: DTypeLike) -> _T: ...
@@ -73,23 +66,17 @@ if sys.version_info >= (3, 10):
         Tuple[Union[Type[Any], types.UnionType, Tuple[Any, ...]], ...],
     ]
 else:
-    _TypeTuple = Union[
-        Type[Any],
-        Tuple[Union[Type[Any], Tuple[Any, ...]], ...],
-    ]
-
+    _TypeTuple = Union[Type[Any], Tuple[Union[Type[Any], Tuple[Any, ...]], ...]]
 __all__: List[str]
 
 @overload
 def maximum_sctype(t: _DTypeLike[_SCT]) -> Type[_SCT]: ...
 @overload
 def maximum_sctype(t: DTypeLike) -> Type[Any]: ...
-
 @overload
 def issctype(rep: dtype[Any] | Type[Any]) -> bool: ...
 @overload
 def issctype(rep: object) -> L[False]: ...
-
 @overload
 def obj2sctype(rep: _DTypeLike[_SCT], default: None = ...) -> None | Type[_SCT]: ...
 @overload
@@ -102,21 +89,15 @@ def obj2sctype(rep: DTypeLike, default: _T) -> _T | Type[Any]: ...
 def obj2sctype(rep: object, default: None = ...) -> None: ...
 @overload
 def obj2sctype(rep: object, default: _T) -> _T: ...
-
 @overload
 def issubclass_(arg1: Type[Any], arg2: _TypeTuple) -> bool: ...
 @overload
 def issubclass_(arg1: object, arg2: object) -> L[False]: ...
-
 def issubsctype(arg1: DTypeLike, arg2: DTypeLike) -> bool: ...
-
 def issubdtype(arg1: DTypeLike, arg2: DTypeLike) -> bool: ...
-
 def sctype2char(sctype: DTypeLike) -> str: ...
-
 def find_common_type(
-    array_types: Iterable[DTypeLike],
-    scalar_types: Iterable[DTypeLike],
+    array_types: Iterable[DTypeLike], scalar_types: Iterable[DTypeLike]
 ) -> dtype[Any]: ...
 
 cast: _typedict[_CastFunc]

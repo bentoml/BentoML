@@ -1,5 +1,4 @@
 from typing import List
-
 from numpy.core.fromnumeric import (
     amax,
     amin,
@@ -16,9 +15,6 @@ from numpy.core.fromnumeric import (
 from numpy.lib.function_base import median, percentile, quantile
 
 __all__: List[str]
-
-# NOTE: In reaility these functions are not aliases but distinct functions
-# with identical signatures.
 nanmin = amin
 nanmax = amax
 nanargmin = argmin

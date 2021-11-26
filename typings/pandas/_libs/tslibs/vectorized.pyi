@@ -1,13 +1,7 @@
 from datetime import tzinfo
-
 import numpy as np
 from pandas._libs.tslibs.dtypes import Resolution
 from pandas._libs.tslibs.offsets import BaseOffset
-
-"""
-For cython types that cannot be represented precisely, closest-available
-python equivalents are used, and the precise types kept as adjacent comments.
-"""
 
 def dt64arr_to_periodarr(
     stamps: np.ndarray, freq: int, tz: tzinfo | None

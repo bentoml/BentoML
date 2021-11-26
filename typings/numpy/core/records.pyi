@@ -1,6 +1,5 @@
 import os
 from typing import Any, Iterable, List, Protocol, Sequence, Tuple, TypeVar, overload
-
 from numpy import _ByteOrder, _SupportsBuffer, dtype
 from numpy import format_parser as format_parser
 from numpy import generic
@@ -17,7 +16,6 @@ from numpy.typing import (
 )
 
 _SCT = TypeVar("_SCT", bound=generic)
-
 _RecArray = recarray[Any, dtype[_SCT]]
 
 class _SupportsReadInto(Protocol):
@@ -50,7 +48,6 @@ def fromarrays(
     aligned: bool = ...,
     byteorder: None | _ByteOrder = ...,
 ) -> _RecArray[record]: ...
-
 @overload
 def fromrecords(
     recList: _ArrayLikeVoid_co | Tuple[Any, ...] | _NestedSequence[Tuple[Any, ...]],
@@ -74,7 +71,6 @@ def fromrecords(
     aligned: bool = ...,
     byteorder: None | _ByteOrder = ...,
 ) -> _RecArray[record]: ...
-
 @overload
 def fromstring(
     datastring: _SupportsBuffer,
@@ -100,7 +96,6 @@ def fromstring(
     aligned: bool = ...,
     byteorder: None | _ByteOrder = ...,
 ) -> _RecArray[record]: ...
-
 @overload
 def fromfile(
     fd: str | bytes | os.PathLike[str] | os.PathLike[bytes] | _SupportsReadInto,
@@ -126,7 +121,6 @@ def fromfile(
     aligned: bool = ...,
     byteorder: None | _ByteOrder = ...,
 ) -> _RecArray[record]: ...
-
 @overload
 def array(
     obj: _SCT | NDArray[_SCT],

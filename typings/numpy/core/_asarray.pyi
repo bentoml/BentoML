@@ -1,16 +1,21 @@
 from typing import Iterable, Literal, TypeVar, Union, overload
-
 from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike
 
 _ArrayType = TypeVar("_ArrayType", bound=ndarray)
-
 _Requirements = Literal[
-    "C", "C_CONTIGUOUS", "CONTIGUOUS",
-    "F", "F_CONTIGUOUS", "FORTRAN",
-    "A", "ALIGNED",
-    "W", "WRITEABLE",
-    "O", "OWNDATA"
+    "C",
+    "C_CONTIGUOUS",
+    "CONTIGUOUS",
+    "F",
+    "F_CONTIGUOUS",
+    "FORTRAN",
+    "A",
+    "ALIGNED",
+    "W",
+    "WRITEABLE",
+    "O",
+    "OWNDATA",
 ]
 _E = Literal["E", "ENSUREARRAY"]
 _RequirementsWithE = Union[_Requirements, _E]

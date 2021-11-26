@@ -1,5 +1,4 @@
 from typing import Iterator, Sequence, overload
-
 import numpy as np
 from pandas import Index
 from pandas._typing import ArrayLike, T

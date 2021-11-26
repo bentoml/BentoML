@@ -1,10 +1,6 @@
-
-
 from typing import Any, Callable, Iterable, Sequence, Tuple, Type
-
 from _typeshed import Self
 from typing_extensions import Literal
-
 from .Image import Image
 
 _FilterArgs = Tuple[Sequence[int], int, int, Sequence[int]]
@@ -82,52 +78,62 @@ class UnsharpMask(MultibandFilter):
 class BLUR(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class CONTOUR(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class DETAIL(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class EDGE_ENHANCE(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class EDGE_ENHANCE_MORE(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class EMBOSS(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class FIND_EDGES(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class SHARPEN(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class SMOOTH(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class SMOOTH_MORE(BuiltinFilter):
     name: str
     filterargs: _FilterArgs
-    ...
+
+...
 
 class Color3DLUT(MultibandFilter):
     name: str

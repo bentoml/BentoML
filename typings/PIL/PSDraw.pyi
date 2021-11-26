@@ -1,7 +1,4 @@
-
-
 from _typeshed import SupportsWrite
-
 from .Image import Image
 
 class PSDraw:

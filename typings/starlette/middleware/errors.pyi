@@ -1,8 +1,5 @@
-
-
 import inspect
 import typing
-
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -15,17 +12,6 @@ LINE = ...
 CENTER_LINE = ...
 
 class ServerErrorMiddleware:
-    """
-    Handles returning 500 responses when a server error occurs.
-
-    If 'debug' is set, then traceback responses will be returned,
-    otherwise the designated 'handler' will be called.
-
-    This middleware class should generally be used to wrap *everything*
-    else up, so that unhandled exceptions anywhere in the stack
-    always result in an appropriate 500 response.
-    """
-
     def __init__(
         self, app: ASGIApp, handler: typing.Callable = ..., debug: bool = ...
     ) -> None: ...

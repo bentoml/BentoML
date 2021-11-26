@@ -5,9 +5,6 @@ from pandas.core.window.indexers import (
     VariableOffsetWindowIndexer,
 )
 
-"""
-Public API for Rolling Window Indexers.
-"""
 __all__ = [
     "check_array_indexer",
     "BaseIndexer",

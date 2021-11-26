@@ -1,4 +1,3 @@
-# type: ignore[reportUnusedImports]
 import pandas.api
 import pandas.arrays
 import pandas.core.config_init
@@ -115,5 +114,4 @@ from pandas.util._tester import test
 
 __version__: str = ...
 __git_version__: str = ...
-
 __doc__: str = ...

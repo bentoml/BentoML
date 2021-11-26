@@ -1,8 +1,5 @@
-
-
 import enum
 import typing
-
 from starlette.requests import HTTPConnection
 from starlette.types import Message, Receive, Scope, Send
 
@@ -16,16 +13,8 @@ class WebSocketDisconnect(Exception):
 
 class WebSocket(HTTPConnection):
     def __init__(self, scope: Scope, receive: Receive, send: Send) -> None: ...
-    async def receive(self) -> Message:
-        """
-        Receive ASGI websocket messages, ensuring valid state transitions.
-        """
-        ...
-    async def send(self, message: Message) -> None:
-        """
-        Send ASGI websocket messages, ensuring valid state transitions.
-        """
-        ...
+    async def receive(self) -> Message: ...
+    async def send(self, message: Message) -> None: ...
     async def accept(self, subprotocol: str = ...) -> None: ...
     async def receive_text(self) -> str: ...
     async def receive_bytes(self) -> bytes: ...

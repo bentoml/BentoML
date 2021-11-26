@@ -1,5 +1,3 @@
-
-
 from .Image import Image
 
 def constant(image: Image, value: int) -> Image: ...

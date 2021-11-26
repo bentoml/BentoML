@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, Any, Dict
-
 from . import dependency_versions_check
 from .configuration_utils import PretrainedConfig
 from .feature_extraction_utils import BatchFeature, SequenceFeatureExtractor

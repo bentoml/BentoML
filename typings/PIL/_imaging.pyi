@@ -1,8 +1,5 @@
-
-
 from collections.abc import Sequence
 from typing import Any
-
 from typing_extensions import Literal
 
 DEFAULT_STRATEGY: Literal[0]

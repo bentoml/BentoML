@@ -1,5 +1,3 @@
-
-
 import enum
 import sys
 import typing as t
@@ -8,7 +6,6 @@ if sys.version_info >= (3, 8):
     Literal = t.Literal
 else:
     from typing_extensions import Literal
-
 from starlette.datastructures import FormData, Headers
 
 class FormMessage(enum.Enum):

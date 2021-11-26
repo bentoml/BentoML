@@ -1,7 +1,4 @@
-
-
 import typing
-
 from starlette.requests import HTTPConnection
 
 def has_required_scope(conn: HTTPConnection, scopes: typing.Sequence[str]) -> bool: ...

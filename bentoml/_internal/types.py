@@ -88,8 +88,6 @@ class Tag:
             return taglike
         return cls.from_str(taglike)
 
-        raise TypeError(f"can't make a Tag from {type(taglike)}")
-
     @classmethod
     def from_str(cls, tag_str: str) -> "Tag":
         if ":" not in tag_str:

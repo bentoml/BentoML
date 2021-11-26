@@ -1,15 +1,11 @@
 import ctypes as ct
 from typing import Any, Generic, Optional, Type, TypeVar, overload
-
 from numpy import ndarray
 from numpy.ctypeslib import c_intp
 
-_CastT = TypeVar("_CastT", bound=ct._CanCastTo)  # Copied from `ctypes.cast`
+_CastT = TypeVar("_CastT", bound=ct._CanCastTo)
 _CT = TypeVar("_CT", bound=ct._CData)
 _PT = TypeVar("_PT", bound=Optional[int])
-
-# TODO: Let the likes of `shape_as` and `strides_as` return `None`
-# for 0D arrays once we've got shape-support
 
 class _ctypes(Generic[_PT]):
     @overload
@@ -24,7 +20,6 @@ class _ctypes(Generic[_PT]):
     def strides(self) -> ct.Array[c_intp]: ...
     @property
     def _as_parameter_(self) -> ct.c_void_p: ...
-
     def data_as(self, obj: Type[_CastT]) -> _CastT: ...
     def shape_as(self, obj: Type[_CT]) -> ct.Array[_CT]: ...
     def strides_as(self, obj: Type[_CT]) -> ct.Array[_CT]: ...

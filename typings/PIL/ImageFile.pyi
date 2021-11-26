@@ -1,7 +1,4 @@
-
-
 from typing import Any, NoReturn
-
 from .Image import Image
 
 _T = ...

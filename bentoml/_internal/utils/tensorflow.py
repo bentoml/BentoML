@@ -9,22 +9,6 @@ if TYPE_CHECKING:  # pragma: no cover
     import tensorflow as tf
     from tensorflow.python.eager.function import ConcreteFunction
     from tensorflow.python.framework.type_spec import TypeSpec
-<<<<<<< HEAD
-=======
-    from tensorflow.python.saved_model.function_deserialization import RestoredFunction
-    from tensorflow.python.saved_model.signature_serialization import (
-        _SignatureMap,  # type: ignore[reportPrivateUsage]
-    )
-    from tensorflow.python.training.tracking.base import Trackable
-    from tensorflow.python.training.tracking.tracking import AutoTrackable
-else:
-    tf = LazyLoader(
-        "tf",
-        globals(),
-        "tensorflow",
-        exc_msg=f"tensorflow is required to use {__module__}",
-    )
->>>>>>> fa2dea26 (fix: all other types that is not related to missing stubs)
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +134,6 @@ def get_restored_functions(m: "Trackable") -> t.Dict[str, t.Any]:
     }
 
 
-<<<<<<< HEAD
 def get_serving_default_function(m):
     try:
         import tensorflow as tf
@@ -160,22 +143,12 @@ def get_serving_default_function(m):
         )
 
     return m.signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
-=======
-def get_serving_default_function(
-    m: "Trackable",
-) -> t.Callable[..., t.Any]:
-    if not hasattr(m, "signatures"):
-        raise EnvironmentError(f"{type(m)} is not a valid SavedModel format.")
-    signatures: "_SignatureMap" = m.signatures
-    return signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
->>>>>>> fa2dea26 (fix: all other types that is not related to missing stubs)
 
 
 def cast_tensor_by_spec(_input: "tf.Tensor", spec: "tf.TensorSpec") -> "tf.Tensor":
     """
     transform dtype & shape following spec
     """
-<<<<<<< HEAD
     try:
         import tensorflow as tf
     except ImportError:
@@ -183,8 +156,6 @@ def cast_tensor_by_spec(_input: "tf.Tensor", spec: "tf.TensorSpec") -> "tf.Tenso
             "Tensorflow package is required to use TfSavedModelArtifact"
         )
 
-=======
->>>>>>> fa2dea26 (fix: all other types that is not related to missing stubs)
     if not _isinstance_wrapper(spec, "TensorSpec"):
         return _input
 

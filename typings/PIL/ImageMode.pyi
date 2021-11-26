@@ -1,5 +1,3 @@
-
-
 from typing import Any
 
 class ModeDescriptor:
@@ -8,5 +6,3 @@ class ModeDescriptor:
     basemode: Any
     basetype: Any
     def __init__(self, mode, bands, basemode, basetype) -> None: ...
-
-def getmode(mode): ...

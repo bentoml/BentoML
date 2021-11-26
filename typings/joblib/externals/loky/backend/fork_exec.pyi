@@ -1,9 +1,3 @@
 import sys
 
 if sys.platform == "darwin" and sys.version_info < (3, 3): ...
-
-def close_fds(keep_fds):  # -> None:
-    """Close all the file descriptors except those in keep_fds."""
-    ...
-
-def fork_exec(cmd, keep_fds, env=...): ...

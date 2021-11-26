@@ -1,6 +1,5 @@
 import textwrap
 from typing import Sequence
-
 import numpy as np
 from pandas._libs.interval import Interval, IntervalMixin
 from pandas._typing import Dtype, NpDtype
@@ -23,17 +22,14 @@ _shared_docs_kwargs = ...
         "extra_attributes": "",
         "extra_methods": "",
         "examples": textwrap.dedent(
-            """\
-    Examples
+            """    Examples
     --------
     A new ``IntervalArray`` can be constructed directly from an array-like of
     ``Interval`` objects:
-
     >>> pd.arrays.IntervalArray([pd.Interval(0, 1), pd.Interval(1, 5)])
     <IntervalArray>
     [(0, 1], (1, 5]]
     Length: 2, dtype: interval[int64, right]
-
     It may also be constructed using one of the constructor
     methods: :meth:`IntervalArray.from_arrays`,
     :meth:`IntervalArray.from_breaks`, and :meth:`IntervalArray.from_tuples`.
@@ -59,8 +55,7 @@ class IntervalArray(IntervalMixin, ExtensionArray):
         % {
             "klass": "IntervalArray",
             "examples": textwrap.dedent(
-                """\
-        Examples
+                """        Examples
         --------
         >>> pd.arrays.IntervalArray.from_breaks([0, 1, 2, 3])
         <IntervalArray>
@@ -83,8 +78,7 @@ class IntervalArray(IntervalMixin, ExtensionArray):
         % {
             "klass": "IntervalArray",
             "examples": textwrap.dedent(
-                """\
-        >>> pd.arrays.IntervalArray.from_arrays([0, 1, 2], [1, 2, 3])
+                """        >>> pd.arrays.IntervalArray.from_arrays([0, 1, 2], [1, 2, 3])
         <IntervalArray>
         [(0, 1], (1, 2], (2, 3]]
         Length: 3, dtype: interval[int64, right]
@@ -106,8 +100,7 @@ class IntervalArray(IntervalMixin, ExtensionArray):
         % {
             "klass": "IntervalArray",
             "examples": textwrap.dedent(
-                """\
-        Examples
+                """        Examples
         --------
         >>> pd.arrays.IntervalArray.from_tuples([(0, 1), (1, 2)])
         <IntervalArray>
@@ -154,66 +147,12 @@ class IntervalArray(IntervalMixin, ExtensionArray):
         *args,
         **kwargs
     ) -> np.ndarray: ...
-    def fillna(self: IntervalArrayT, value=..., method=..., limit=...) -> IntervalArrayT:
-        """
-        Fill NA/NaN values using the specified method.
-
-        Parameters
-        ----------
-        value : scalar, dict, Series
-            If a scalar value is passed it is used to fill all missing values.
-            Alternatively, a Series or dict can be used to fill in different
-            values for each index. The value should not be a list. The
-            value(s) passed should be either Interval objects or NA/NaN.
-        method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
-            (Not implemented yet for IntervalArray)
-            Method to use for filling holes in reindexed Series
-        limit : int, default None
-            (Not implemented yet for IntervalArray)
-            If method is specified, this is the maximum number of consecutive
-            NaN values to forward/backward fill. In other words, if there is
-            a gap with more than this number of consecutive NaNs, it will only
-            be partially filled. If method is not specified, this is the
-            maximum number of entries along the entire axis where NaNs will be
-            filled.
-
-        Returns
-        -------
-        filled : IntervalArray with NA/NaN filled
-        """
-        ...
-    def astype(
-        self, dtype, copy: bool = ...
-    ):  # -> Self@IntervalArray | Categorical | NDArray:
-        """
-        Cast to an ExtensionArray or NumPy array with dtype 'dtype'.
-
-        Parameters
-        ----------
-        dtype : str or dtype
-            Typecode or data-type to which the array is cast.
-
-        copy : bool, default True
-            Whether to copy the data, even if not necessary. If False,
-            a copy is made only if the old dtype does not match the
-            new dtype.
-
-        Returns
-        -------
-        array : ExtensionArray or ndarray
-            ExtensionArray or NumPy ndarray with 'dtype' for its dtype.
-        """
-        ...
+    def fillna(
+        self: IntervalArrayT, value=..., method=..., limit=...
+    ) -> IntervalArrayT: ...
+    def astype(self, dtype, copy: bool = ...): ...
     def equals(self, other) -> bool: ...
-    def copy(self: IntervalArrayT) -> IntervalArrayT:
-        """
-        Return a copy of the array.
-
-        Returns
-        -------
-        IntervalArray
-        """
-        ...
+    def copy(self: IntervalArrayT) -> IntervalArrayT: ...
     def isna(self) -> np.ndarray: ...
     def shift(
         self: IntervalArrayT, periods: int = ..., fill_value: object = ...
@@ -226,106 +165,23 @@ class IntervalArray(IntervalMixin, ExtensionArray):
         fill_value=...,
         axis=...,
         **kwargs
-    ) -> IntervalArrayT:
-        """
-        Take elements from the IntervalArray.
-
-        Parameters
-        ----------
-        indices : sequence of integers
-            Indices to be taken.
-
-        allow_fill : bool, default False
-            How to handle negative values in `indices`.
-
-            * False: negative values in `indices` indicate positional indices
-              from the right (the default). This is similar to
-              :func:`numpy.take`.
-
-            * True: negative values in `indices` indicate
-              missing values. These values are set to `fill_value`. Any other
-              other negative values raise a ``ValueError``.
-
-        fill_value : Interval or NA, optional
-            Fill value to use for NA-indices when `allow_fill` is True.
-            This may be ``None``, in which case the default NA value for
-            the type, ``self.dtype.na_value``, is used.
-
-            For many ExtensionArrays, there will be two representations of
-            `fill_value`: a user-facing "boxed" scalar, and a low-level
-            physical NA value. `fill_value` should be the user-facing version,
-            and the implementation should handle translating that to the
-            physical version for processing the take if necessary.
-
-        axis : any, default None
-            Present for compat with IntervalIndex; does nothing.
-
-        Returns
-        -------
-        IntervalArray
-
-        Raises
-        ------
-        IndexError
-            When the indices are out of bounds for the array.
-        ValueError
-            When `indices` contains negative values other than ``-1``
-            and `allow_fill` is True.
-        """
-        ...
-    def value_counts(self, dropna: bool = ...):  # -> Series:
-        """
-        Returns a Series containing counts of each interval.
-
-        Parameters
-        ----------
-        dropna : bool, default True
-            Don't include counts of NaN.
-
-        Returns
-        -------
-        counts : Series
-
-        See Also
-        --------
-        Series.value_counts
-        """
-        ...
+    ) -> IntervalArrayT: ...
+    def value_counts(self, dropna: bool = ...): ...
     def __repr__(self) -> str: ...
     @property
-    def left(self):  # -> Index:
-        """
-        Return the left endpoints of each Interval in the IntervalArray as
-        an Index.
-        """
-        ...
+    def left(self): ...
     @property
-    def right(self):  # -> Index:
-        """
-        Return the right endpoints of each Interval in the IntervalArray as
-        an Index.
-        """
-        ...
+    def right(self): ...
     @property
-    def length(self):  # -> _NotImplementedType:
-        """
-        Return an Index with entries denoting the length of each Interval in
-        the IntervalArray.
-        """
-        ...
+    def length(self): ...
     @property
-    def mid(self):  # -> float | _NotImplementedType:
-        """
-        Return the midpoint of each Interval in the IntervalArray as an Index.
-        """
-        ...
+    def mid(self): ...
     @Appender(
         _interval_shared_docs["overlaps"]
         % {
             "klass": "IntervalArray",
             "examples": textwrap.dedent(
-                """\
-        >>> data = [(0, 1), (1, 3), (2, 4)]
+                """        >>> data = [(0, 1), (1, 3), (2, 4)]
         >>> intervals = pd.arrays.IntervalArray.from_tuples(data)
         >>> intervals
         <IntervalArray>
@@ -337,19 +193,13 @@ class IntervalArray(IntervalMixin, ExtensionArray):
     )
     def overlaps(self, other): ...
     @property
-    def closed(self):
-        """
-        Whether the intervals are closed on the left-side, right-side, both or
-        neither.
-        """
-        ...
+    def closed(self): ...
     @Appender(
         _interval_shared_docs["set_closed"]
         % {
             "klass": "IntervalArray",
             "examples": textwrap.dedent(
-                """\
-        Examples
+                """        Examples
         --------
         >>> index = pd.arrays.IntervalArray.from_breaks(range(4))
         >>> index
@@ -366,40 +216,18 @@ class IntervalArray(IntervalMixin, ExtensionArray):
     )
     def set_closed(self: IntervalArrayT, closed) -> IntervalArrayT: ...
     @property
-    @Appender(_interval_shared_docs["is_non_overlapping_monotonic"] % _shared_docs_kwargs)
+    @Appender(
+        _interval_shared_docs["is_non_overlapping_monotonic"] % _shared_docs_kwargs
+    )
     def is_non_overlapping_monotonic(self) -> bool: ...
-    def __array__(self, dtype: NpDtype | None = ...) -> np.ndarray:
-        """
-        Return the IntervalArray's data as a numpy array of Interval
-        objects (with dtype='object')
-        """
-        ...
-    def __arrow_array__(self, type=...):
-        """
-        Convert myself into a pyarrow Array.
-        """
-        ...
+    def __array__(self, dtype: NpDtype | None = ...) -> np.ndarray: ...
+    def __arrow_array__(self, type=...): ...
     @Appender(
         _interval_shared_docs["to_tuples"] % {"return_type": "ndarray", "examples": ""}
     )
     def to_tuples(self, na_tuple=...) -> np.ndarray: ...
     def putmask(self, mask: np.ndarray, value) -> None: ...
-    def insert(self: IntervalArrayT, loc: int, item: Interval) -> IntervalArrayT:
-        """
-        Return a new IntervalArray inserting new item at location. Follows
-        Python list.append semantics for negative values.  Only Interval
-        objects and NA can be inserted into an IntervalIndex
-
-        Parameters
-        ----------
-        loc : int
-        item : Interval
-
-        Returns
-        -------
-        IntervalArray
-        """
-        ...
+    def insert(self: IntervalArrayT, loc: int, item: Interval) -> IntervalArrayT: ...
     def delete(self: IntervalArrayT, loc) -> IntervalArrayT: ...
     @Appender(_extension_array_shared_docs["repeat"] % _shared_docs_kwargs)
     def repeat(
@@ -410,8 +238,7 @@ class IntervalArray(IntervalMixin, ExtensionArray):
         % {
             "klass": "IntervalArray",
             "examples": textwrap.dedent(
-                """\
-        >>> intervals = pd.arrays.IntervalArray.from_tuples([(0, 1), (1, 3), (2, 4)])
+                """        >>> intervals = pd.arrays.IntervalArray.from_tuples([(0, 1), (1, 3), (2, 4)])
         >>> intervals
         <IntervalArray>
         [(0, 1], (1, 3], (2, 4]]

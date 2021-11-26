@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .TiffImagePlugin import TiffImageFile
 
 class MicImageFile(TiffImageFile):
@@ -10,4 +7,3 @@ class MicImageFile(TiffImageFile):
     fp: Any
     frame: Any
     def seek(self, frame) -> None: ...
-    def tell(self): ...

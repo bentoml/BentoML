@@ -1,7 +1,4 @@
-
-
 import typing
-
 from starlette.background import BackgroundTask
 from starlette.responses import Response
 from starlette.types import Receive, Scope, Send
@@ -20,12 +17,6 @@ class _TemplateResponse(Response):
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None: ...
 
 class Jinja2Templates:
-    """
-    templates = Jinja2Templates("templates")
-
-    return templates.TemplateResponse("index.html", {"request": request})
-    """
-
     def __init__(self, directory: str) -> None: ...
     def get_template(self, name: str) -> jinja2.Template: ...
     def TemplateResponse(

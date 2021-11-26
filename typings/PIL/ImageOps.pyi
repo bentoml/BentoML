@@ -1,7 +1,4 @@
-
-
 from typing import Any, Iterable, Protocol
-
 from .Image import Image, _Resample, _Size
 
 class _Deformer(Protocol):

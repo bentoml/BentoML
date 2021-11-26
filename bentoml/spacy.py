@@ -1,3 +1,5 @@
+# TODO: fix this when Vocab and Doc are better typed.
+# type: ignore[reportUnknownParameterType]
 import importlib
 import logging
 import os

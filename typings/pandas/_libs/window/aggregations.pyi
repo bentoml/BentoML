@@ -1,5 +1,4 @@
 from typing import Any, Callable, Literal
-
 import numpy as np
 
 def roll_sum(

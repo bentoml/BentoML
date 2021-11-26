@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .FontFile import FontFile
 
 bdf_slant: Any

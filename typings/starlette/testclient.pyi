@@ -1,10 +1,7 @@
-
-
 import sys
 import typing
 from concurrent.futures import Future
 from typing import TypedDict
-
 import requests
 from starlette.types import Message, Receive, Scope, Send
 
@@ -20,13 +17,11 @@ Params = typing.Union[bytes, typing.MutableMapping[str, str]]
 DataType = typing.Union[bytes, typing.MutableMapping[str, str], typing.IO]
 TimeOut = typing.Union[float, typing.Tuple[float, float]]
 FileType = typing.MutableMapping[str, typing.IO]
-AuthType = (
-    typing.Union[
-        typing.Tuple[str, str],
-        requests.auth.AuthBase,
-        typing.Callable[[requests.PreparedRequest], requests.PreparedRequest],
-    ],
-)
+AuthType = typing.Union[
+    typing.Tuple[str, str],
+    requests.auth.AuthBase,
+    typing.Callable[[requests.PreparedRequest], requests.PreparedRequest],
+]
 ASGIInstance = typing.Callable[[Receive, Send], typing.Awaitable[None]]
 ASGI2App = typing.Callable[[Scope], ASGIInstance]
 ASGI3App = typing.Callable[[Scope, Receive, Send], typing.Awaitable[None]]
@@ -35,11 +30,6 @@ class _HeaderDict(requests.packages.urllib3._collections.HTTPHeaderDict):
     def get_all(self, key: str, default: str) -> str: ...
 
 class _MockOriginalResponse:
-    """
-    We have to jump through some hoops to present the response as if
-    it was made using urllib3.
-    """
-
     def __init__(self, headers: typing.List[typing.Tuple[bytes, bytes]]) -> None: ...
     def isclosed(self) -> bool: ...
 
@@ -47,17 +37,14 @@ class _Upgrade(Exception):
     def __init__(self, session: WebSocketTestSession) -> None: ...
 
 class _WrapASGI2:
-    """
-    Provide an ASGI3 interface onto an ASGI2 app.
-    """
-
     def __init__(self, app: ASGI2App) -> None: ...
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None: ...
 
 class _AsyncBackend(TypedDict):
     backend: str
     backend_options: typing.Dict[str, typing.Any]
-    ...
+
+...
 
 class _ASGIAdapter(requests.adapters.HTTPAdapter):
     def __init__(

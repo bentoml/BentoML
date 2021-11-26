@@ -6,9 +6,4 @@ if version_info[:2] >= (3, 7):
 
 else: ...
 
-class WorkerInterrupt(Exception):
-    """An exception that is not KeyboardInterrupt to allow subprocesses
-    to be interrupted.
-    """
-
-    ...
+class WorkerInterrupt(Exception): ...

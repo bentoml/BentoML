@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .ContainerIO import ContainerIO
 
 class TarIO(ContainerIO):

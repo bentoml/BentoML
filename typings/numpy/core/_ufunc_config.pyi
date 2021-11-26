@@ -1,5 +1,4 @@
 from typing import Any, Callable, Literal, Optional, TypedDict, Union
-
 from numpy import _SupportsWrite
 
 _ErrKind = Literal["ignore", "warn", "raise", "call", "print", "log"]
@@ -32,5 +31,3 @@ def seterrcall(
     func: Union[None, _ErrFunc, _SupportsWrite[str]]
 ) -> Union[None, _ErrFunc, _SupportsWrite[str]]: ...
 def geterrcall() -> Union[None, _ErrFunc, _SupportsWrite[str]]: ...
-
-# See `numpy/__init__.pyi` for the `errstate` class

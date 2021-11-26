@@ -169,6 +169,7 @@ class Runner(_BaseRunner, ABC):
     Note: for pandas.DataFrame and List, the batch_axis must be 0
     """
 
+    # pylint: disable=unused-argument
     def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         ...
 

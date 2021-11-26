@@ -1,10 +1,6 @@
 from typing import Iterable
-
 import numpy as np
 
-"""
-Operator classes for eval.
-"""
 REDUCTIONS = ...
 _unary_math_ops = ...
 _binary_math_ops = ...
@@ -12,10 +8,6 @@ MATHOPS = ...
 LOCAL_TAG = ...
 
 class UndefinedVariableError(NameError):
-    """
-    NameError subclass for local variables.
-    """
-
     def __init__(self, name: str, is_local: bool | None = ...) -> None: ...
 
 class Term:
@@ -27,17 +19,7 @@ class Term:
     def __repr__(self) -> str: ...
     def __call__(self, *args, **kwargs): ...
     def evaluate(self, *args, **kwargs): ...
-    def update(self, value):  # -> None:
-        """
-        search order for local (i.e., @variable) variables:
-
-        scope, key_variable
-        [('locals', 'local_name'),
-         ('globals', 'local_name'),
-         ('locals', 'key'),
-         ('globals', 'key')]
-        """
-        ...
+    def update(self, value): ...
     @property
     def is_scalar(self) -> bool: ...
     @property
@@ -65,18 +47,12 @@ class Constant(Term):
 _bool_op_map = ...
 
 class Op:
-    """
-    Hold an operator of arbitrary arity.
-    """
-
     op: str
-    def __init__(self, op: str, operands: Iterable[Term | Op], encoding=...) -> None: ...
+    def __init__(
+        self, op: str, operands: Iterable[Term | Op], encoding=...
+    ) -> None: ...
     def __iter__(self): ...
-    def __repr__(self) -> str:
-        """
-        Print a generic n-ary operator and its operands using infix notation.
-        """
-        ...
+    def __repr__(self) -> str: ...
     @property
     def return_type(self): ...
     @property
@@ -105,67 +81,14 @@ _binary_ops_dict = ...
 def is_term(obj) -> bool: ...
 
 class BinOp(Op):
-    """
-    Hold a binary operator and its operands.
-
-    Parameters
-    ----------
-    op : str
-    lhs : Term or Op
-    rhs : Term or Op
-    """
-
     def __init__(self, op: str, lhs, rhs) -> None: ...
-    def __call__(self, env):
-        """
-        Recursively evaluate an expression in Python space.
-
-        Parameters
-        ----------
-        env : Scope
-
-        Returns
-        -------
-        object
-            The result of an evaluated expression.
-        """
-        ...
-    def evaluate(self, env, engine: str, parser, term_type, eval_in_python):
-        """
-        Evaluate a binary operation *before* being passed to the engine.
-
-        Parameters
-        ----------
-        env : Scope
-        engine : str
-        parser : str
-        term_type : type
-        eval_in_python : list
-
-        Returns
-        -------
-        term_type
-            The "pre-evaluated" expression as an instance of ``term_type``
-        """
-        ...
-    def convert_values(self):  # -> None:
-        """
-        Convert datetimes to a comparable value in an expression.
-        """
-        ...
+    def __call__(self, env): ...
+    def evaluate(self, env, engine: str, parser, term_type, eval_in_python): ...
+    def convert_values(self): ...
 
 def isnumeric(dtype) -> bool: ...
 
 class Div(BinOp):
-    """
-    Div operator to special case casting.
-
-    Parameters
-    ----------
-    lhs, rhs : Term or Op
-        The Terms or Ops in the ``/`` expression.
-    """
-
     def __init__(self, lhs, rhs) -> None: ...
 
 UNARY_OPS_SYMS = ...
@@ -173,22 +96,6 @@ _unary_ops_funcs = ...
 _unary_ops_dict = ...
 
 class UnaryOp(Op):
-    """
-    Hold a unary operator and its operands.
-
-    Parameters
-    ----------
-    op : str
-        The token used to represent the operator.
-    operand : Term or Op
-        The Term or Op operand to the operator.
-
-    Raises
-    ------
-    ValueError
-        * If no function associated with the passed operator token is found.
-    """
-
     def __init__(self, op: str, operand) -> None: ...
     def __call__(self, env): ...
     def __repr__(self) -> str: ...
@@ -202,4 +109,3 @@ class MathCall(Op):
 
 class FuncNode:
     def __init__(self, name: str) -> None: ...
-    def __call__(self, *args): ...

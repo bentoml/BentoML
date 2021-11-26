@@ -1,6 +1,8 @@
 #!/bin/sh
 # A git hook to block an unsigned-off commit
 
+make format && git add . || exit
+
 COMMIT_MSG_FILE=$1
 
 signoff_pattern="Signed-off-by: .+ <.+@.+>"

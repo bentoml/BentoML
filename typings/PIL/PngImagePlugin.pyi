@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .ImageFile import ImageFile
 
 logger: Any
@@ -109,5 +106,3 @@ class _fdat:
     seq_num: Any
     def __init__(self, fp, chunk, seq_num) -> None: ...
     def write(self, data) -> None: ...
-
-def getchunks(im, **params): ...

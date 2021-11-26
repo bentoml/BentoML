@@ -1,6 +1,5 @@
 from datetime import timedelta, tzinfo
 from typing import Iterable
-
 import numpy as np
 
 def tz_convert_from_utc(vals: np.ndarray, tz: tzinfo) -> np.ndarray: ...

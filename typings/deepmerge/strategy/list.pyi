@@ -1,26 +1,8 @@
-
-
 from .core import StrategyList
 
 class ListStrategies(StrategyList):
-    """
-    Contains the strategies provided for lists.
-    """
     NAME = ...
     @staticmethod
-    def strategy_override(config, path, base, nxt):
-        """ use the list nxt. """
-        ...
-    
+    def strategy_override(config, path, base, nxt): ...
     @staticmethod
-    def strategy_prepend(config, path, base, nxt):
-        """ prepend nxt to base. """
-        ...
-    
-    @staticmethod
-    def strategy_append(config, path, base, nxt):
-        """ append nxt to base. """
-        ...
-    
-
-
+    def strategy_prepend(config, path, base, nxt): ...

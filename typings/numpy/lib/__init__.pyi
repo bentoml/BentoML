@@ -1,6 +1,5 @@
 import math as math
 from typing import Any, List
-
 from numpy import ndenumerate as ndenumerate
 from numpy import ndindex as ndindex
 from numpy._pytesttester import PytestTester
@@ -182,6 +181,5 @@ from numpy.version import version
 __all__: List[str]
 __path__: List[str]
 test: PytestTester
-
 __version__ = version
 emath = scimath

@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 USE_VERBOSE ?=false
-AS_ROOT ?= false
+USE_GPU ?= false
 
 help: ## Show all Makefile targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[33m%-30s\033[0m %s\n", $$1, $$2}'
@@ -14,6 +14,9 @@ lint: ## Running lint checker: flake8 and pylint
 	./scripts/tools/linter.sh
 type: ## Running type checker: pyright
 	./scripts/tools/type_checker.sh
+
+clean: ## Remove unwanted files
+	@/usr/bin/rm -rf *.xml
 
 
 __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
@@ -33,12 +36,14 @@ ci-format: ci-black ci-isort ## Running format check in CI: black, isort
 ci-lint: ci-flake8 ci-pylint ## Running lint check in CI: flake8, pylint
 
 
-tests-%:
+tests-%: check-defined-USE_GPU check-defined-USE_VERBOSE
 	$(eval type :=$(subst tests-, , $@))
 	$(eval RUN_ARGS:=$(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS)))
-	$(eval __positional:=$(foreach t, $(RUN_ARGS), --$(t)))
+	$(eval __positional:=$(foreach t, $(RUN_ARGS), -$(t)))
 ifeq ($(USE_VERBOSE),true)
 	./scripts/ci/run_tests.sh -v $(type) $(__positional)
+else ifeq ($(USE_GPU),true)
+	./scripts/ci/run_tests.sh -v $(type) --gpus $(__positional)
 else
 	./scripts/ci/run_tests.sh $(type) $(__positional)
 endif

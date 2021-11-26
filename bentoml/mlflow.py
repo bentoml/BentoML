@@ -22,7 +22,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 try:
     import mlflow
-    from mlflow.models import Model
+    from mlflow.models import Model as MLflowModel
     from mlflow.models.model import MLMODEL_FILE_NAME
     from mlflow.tracking.artifact_utils import _download_artifact_from_uri
 except ImportError:
@@ -32,6 +32,13 @@ except ImportError:
         Instruction: `pip install -U mlflow`
         """
     )
+
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_mlflow_version = importlib_metadata.version("mlflow")
 
 
 def _strike(text: str) -> str:
@@ -71,7 +78,7 @@ def load(
     mlmodel_fpath = Path(mlflow_folder, MLMODEL_FILE_NAME)
     if not mlmodel_fpath.exists():
         raise BentoMLException(f"{MLMODEL_FILE_NAME} cannot be found.")
-    flavors = Model.load(mlmodel_fpath).flavors  # pragma: no cover
+    flavors = MLflowModel.load(mlmodel_fpath).flavors  # pragma: no cover
     module = list(flavors.values())[0]["loader_module"]
     loader_module = importlib.import_module(module)
     return loader_module.load_model(mlflow_folder)  # noqa
@@ -157,7 +164,7 @@ def import_from_uri(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
-    context: t.Dict[str, t.Any] = {"mlflow": mlflow.__version__}
+    context: t.Dict[str, t.Any] = {"mlflow": _mlflow_version}
 
     _model = BentoModel.create(
         name,
@@ -211,15 +218,14 @@ class _PyFuncRunner(Runner):
     def num_replica(self) -> int:
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init,used-before-assignment
+    def _setup(self) -> None:
         path = self._model_info.info.options["mlflow_folder"]
         artifact_path = self._model_info.path_of(path)
         self._model = mlflow.pyfunc.load_model(artifact_path, suppress_warnings=False)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(self, input_data: t.Any) -> t.Any:  # type: ignore[override]
-        return self._model.predict(input_data)
+    def _run_batch(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        return self._model.predict(*args, **kwargs)
 
 
 @inject

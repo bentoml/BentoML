@@ -4,6 +4,7 @@ import socket
 import typing as t
 import uuid
 from pathlib import Path
+from typing import overload
 
 from ..types import PathType
 from .lazy_loader import LazyLoader
@@ -52,11 +53,11 @@ class catch_exceptions(t.Generic[_T_co], object):
         self._fallback = fallback
         self._raises = raises
 
-    @t.overload  # noqa: F811
-    def __call__(self, func: t.Any) -> t.Callable[..., _T_co]:  # noqa: F811
+    @overload
+    def __call__(self, func: t.Any) -> t.Callable[..., _T_co]:
         ...
 
-    @t.overload  # noqa: F811
+    @overload
     def __call__(self, func: t.Any) -> t.Any:  # noqa: F811
         ...
 
@@ -116,6 +117,7 @@ class cached_property(t.Generic[C, T]):
             pass
         self.func = func
 
+    # pylint: disable=attribute-defined-outside-init
     def __set_name__(self, owner, name):
         self.name = name
 

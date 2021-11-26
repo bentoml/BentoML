@@ -6,7 +6,6 @@ from datetime import timedelta
 from datetime import tzinfo as _tzinfo
 from time import struct_time
 from typing import ClassVar, Type, overload
-
 import numpy as np
 from pandas._libs.tslibs import NaTType, Period, Timedelta
 
@@ -21,7 +20,13 @@ class Timestamp(datetime):
     value: int
     def __new__(
         cls: Type[_S],
-        ts_input: int | np.integer | float | str | _date | datetime | np.datetime64 = ...,
+        ts_input: int
+        | np.integer
+        | float
+        | str
+        | _date
+        | datetime
+        | np.datetime64 = ...,
         freq=...,
         tz: str | _tzinfo | None | int = ...,
         unit=...,
@@ -146,7 +151,9 @@ class Timestamp(datetime):
     @property
     def asm8(self) -> np.datetime64: ...
     def tz_convert(self: _S, tz) -> _S: ...
-    def tz_localize(self: _S, tz, ambiguous: str = ..., nonexistent: str = ...) -> _S: ...
+    def tz_localize(
+        self: _S, tz, ambiguous: str = ..., nonexistent: str = ...
+    ) -> _S: ...
     def normalize(self: _S) -> _S: ...
     def round(
         self: _S, freq, ambiguous: bool | str = ..., nonexistent: str = ...

@@ -1,5 +1,4 @@
 from typing import Dict, List, Type, TypedDict, Union
-
 from numpy import complexfloating, floating, generic, signedinteger, unsignedinteger
 
 class _SCTypes(TypedDict):

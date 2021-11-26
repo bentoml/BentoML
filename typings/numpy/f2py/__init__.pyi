@@ -3,7 +3,6 @@ import subprocess
 from typing import Any, Dict, Iterable, List
 from typing import Literal as L
 from typing import TypedDict, overload
-
 from numpy._pytesttester import PytestTester
 
 class _F2PyDictBase(TypedDict):
@@ -19,9 +18,8 @@ __path__: List[str]
 test: PytestTester
 
 def run_main(comline_list: Iterable[str]) -> Dict[str, _F2PyDict]: ...
-
 @overload
-def compile(  # type: ignore[misc]
+def compile(
     source: str | bytes,
     modulename: str = ...,
     extra_args: str | List[str] = ...,
@@ -40,5 +38,4 @@ def compile(
     extension: L[".f", ".f90"] = ...,
     full_output: L[True] = ...,
 ) -> subprocess.CompletedProcess[bytes]: ...
-
 def get_include() -> str: ...

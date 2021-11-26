@@ -30,7 +30,7 @@ def test_paddlepaddle_runner_from_paddlehub(modelstore):
     runner = bentoml.paddle.load_runner(
         tag, infer_api_callback="sentiment_classify", model_store=modelstore
     )
-    results = runner.run_batch(None, texts=test_text, use_gpu=False, batch_size=1)
+    results = runner.run_batch(texts=test_text, use_gpu=False, batch_size=1)
     assert results[0]["positive_probs"] == 0.9407
     assert results[1]["positive_probs"] == 0.02
 

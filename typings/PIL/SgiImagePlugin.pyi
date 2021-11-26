@@ -1,5 +1,3 @@
-
-
 from typing import Any
 
 from .ImageFile import ImageFile, PyDecoder

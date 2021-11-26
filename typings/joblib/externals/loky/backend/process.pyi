@@ -1,5 +1,4 @@
 import sys
-
 from .compat import BaseProcess
 
 class LokyProcess(BaseProcess):

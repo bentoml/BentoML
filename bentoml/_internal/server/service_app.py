@@ -133,9 +133,8 @@ class ServiceAppFactory(BaseAppFactory):
         self.enable_access_control = enable_access_control
         self.access_control_options = access_control_options
 
-    async def index_view_func(
-        self, request
-    ) -> "Response":  # pylint: disable=unused-argument
+    # pylint: disable=unused-argument
+    async def index_view_func(self, request) -> "Response":
         """
         The default index view for BentoML API server. This includes the readme
         generated from docstring and swagger UI
@@ -148,10 +147,9 @@ class ServiceAppFactory(BaseAppFactory):
             media_type="text/html",
         )
 
+    # pylint: disable=unused-argument
     @inject
-    async def metrics_view_func(
-        self, request
-    ) -> "Response":  # pylint: disable=unused-argument
+    async def metrics_view_func(self, request) -> "Response":
         from starlette.responses import Response
 
         return Response(
@@ -310,16 +308,14 @@ class ServiceAppFactory(BaseAppFactory):
 
             return response
 
-        """
-        TODO: instrument tracing
-        def api_func_with_tracing():
-            with self.tracer.span(
-                service_name=f"BentoService.{self.bento_service.name}",
-                span_name=f"InferenceAPI {api.name} HTTP route",
-                request_headers=request.headers,
-            ):
-                return api_func()
-
-        return api_func_with_tracing
-        """
+        # TODO: instrument tracing
+        # def api_func_with_tracing():
+        #     with self.tracer.span(
+        #         service_name=f"BentoService.{self.bento_service.name}",
+        #         span_name=f"InferenceAPI {api.name} HTTP route",
+        #         request_headers=request.headers,
+        #     ):
+        #         return api_func()
+        #
+        # return api_func_with_tracing
         return api_func

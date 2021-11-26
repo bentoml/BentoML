@@ -1,7 +1,4 @@
-
-
 from _typeshed import StrOrBytesPath
-
 from .Image import Image
 
 LUT_SIZE: int

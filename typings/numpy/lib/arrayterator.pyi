@@ -1,35 +1,23 @@
 from typing import Any, Generator, List, Tuple, TypeVar, Union, overload
-
 from numpy import dtype, generic, ndarray
 from numpy.typing import DTypeLike
 
-# TODO: Set a shape bound once we've got proper shape support
 _Shape = TypeVar("_Shape", bound=Any)
 _DType = TypeVar("_DType", bound=dtype[Any])
 _ScalarType = TypeVar("_ScalarType", bound=generic)
-
-_Index = Union[
-    Union[ellipsis, int, slice],
-    Tuple[Union[ellipsis, int, slice], ...],
-]
-
+_Index = Union[Union[ellipsis, int, slice], Tuple[Union[ellipsis, int, slice], ...]]
 __all__: List[str]
 
-# NOTE: In reality `Arrayterator` does not actually inherit from `ndarray`,
-# but its ``__getattr__` method does wrap around the former and thus has
-# access to all its methods
-
 class Arrayterator(ndarray[_Shape, _DType]):
-    var: ndarray[_Shape, _DType]  # type: ignore[assignment]
+    var: ndarray[_Shape, _DType]
     buf_size: None | int
     start: List[int]
     stop: List[int]
     step: List[int]
-
-    @property  # type: ignore[misc]
+    @property
     def shape(self) -> Tuple[int, ...]: ...
     @property
-    def flat(  # type: ignore[override]
+    def flat(
         self: ndarray[Any, dtype[_ScalarType]]
     ) -> Generator[_ScalarType, None, None]: ...
     def __init__(

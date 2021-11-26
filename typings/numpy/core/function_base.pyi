@@ -1,14 +1,11 @@
 from typing import Any, List, Literal, Sequence, SupportsIndex, Tuple, Union, overload
-
 from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike, _NumberLike_co, _SupportsArray
 
-# TODO: wait for support for recursive types
 _ArrayLikeNested = Sequence[Sequence[Any]]
 _ArrayLikeNumber = Union[
     _NumberLike_co, Sequence[_NumberLike_co], ndarray, _SupportsArray, _ArrayLikeNested
 ]
-
 __all__: List[str]
 
 @overload
@@ -31,7 +28,6 @@ def linspace(
     dtype: DTypeLike = ...,
     axis: SupportsIndex = ...,
 ) -> Tuple[ndarray, Any]: ...
-
 def logspace(
     start: _ArrayLikeNumber,
     stop: _ArrayLikeNumber,
@@ -41,7 +37,6 @@ def logspace(
     dtype: DTypeLike = ...,
     axis: SupportsIndex = ...,
 ) -> ndarray: ...
-
 def geomspace(
     start: _ArrayLikeNumber,
     stop: _ArrayLikeNumber,
@@ -50,8 +45,6 @@ def geomspace(
     dtype: DTypeLike = ...,
     axis: SupportsIndex = ...,
 ) -> ndarray: ...
-
-# Re-exported to `np.lib.function_base`
 def add_newdoc(
     place: str,
     obj: str,

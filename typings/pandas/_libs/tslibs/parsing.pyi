@@ -1,5 +1,4 @@
 from datetime import datetime
-
 import numpy as np
 from pandas._libs.tslibs.offsets import BaseOffset
 

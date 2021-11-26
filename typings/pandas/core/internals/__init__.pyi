@@ -34,5 +34,3 @@ __all__ = [
     "create_block_manager_from_arrays",
     "create_block_manager_from_blocks",
 ]
-
-def __getattr__(name: str): ...

@@ -1,6 +1,5 @@
 from datetime import timedelta
 from typing import ClassVar, Type, overload
-
 import numpy as np
 from pandas._libs.tslibs import NaTType, Tick
 

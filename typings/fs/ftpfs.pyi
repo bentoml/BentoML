@@ -1,5 +1,3 @@
-
-
 import array
 import io
 import mmap
@@ -22,16 +20,12 @@ from typing import (
     Tuple,
     Union,
 )
-
 from six import PY2
-
 from .base import FS, _OpendirFactory
 from .info import Info, RawInfo
 from .permissions import Permissions
 from .subfs import SubFS
 
-"""Manage filesystems on remote FTP servers.
-"""
 if typing.TYPE_CHECKING: ...
 _F = ...
 __all__ = ["FTPFS"]
@@ -72,68 +66,18 @@ class FTPFile(io.RawIOBase):
     def seek(self, pos: int, whence: SupportsInt = ...) -> int: ...
 
 class FTPFS(FS):
-    """A FTP (File Transport Protocol) Filesystem.
-
-    Optionally, the connection can be made securely via TLS. This is known as
-    FTPS, or FTP Secure. TLS will be enabled when using the ftps:// protocol,
-    or when setting the `tls` argument to True in the constructor.
-
-    Examples:
-        Create with the constructor::
-
-            >>> from fs.ftpfs import FTPFS
-            >>> ftp_fs = FTPFS("demo.wftpserver.com")
-
-        Or via an FS URL::
-
-            >>> ftp_fs = fs.open_fs('ftp://test.rebex.net')
-
-        Or via an FS URL, using TLS::
-
-            >>> ftp_fs = fs.open_fs('ftps://demo.wftpserver.com')
-
-        You can also use a non-anonymous username, and optionally a
-        password, even within a FS URL::
-
-            >>> ftp_fs = FTPFS("test.rebex.net", user="demo", passwd="password")
-            >>> ftp_fs = fs.open_fs('ftp://demo:password@test.rebex.net')
-
-        Connecting via a proxy is supported. If using a FS URL, the proxy
-        URL will need to be added as a URL parameter::
-
-            >>> ftp_fs = FTPFS("ftp.ebi.ac.uk", proxy="test.rebex.net")
-            >>> ftp_fs = fs.open_fs('ftp://ftp.ebi.ac.uk/?proxy=test.rebex.net')
-
-    """
-
     _meta = ...
     def __init__(
         self,
         host: Text,
         user: Text = ...,
-        passwd: Text = ...,
+        wd: Text = ...,
         acct: Text = ...,
         timeout: int = ...,
         port: int = ...,
         proxy: Optional[Text] = ...,
         tls: bool = ...,
-    ) -> None:
-        """Create a new `FTPFS` instance.
-
-        Arguments:
-            host (str): A FTP host, e.g. ``'ftp.mirror.nl'``.
-            user (str): A username (default is ``'anonymous'``).
-            passwd (str): Password for the server, or `None` for anon.
-            acct (str): FTP account.
-            timeout (int): Timeout for contacting server (in seconds,
-                defaults to 10).
-            port (int): FTP port number (default 21).
-            proxy (str, optional): An FTP proxy, or ``None`` (default)
-                for no proxy.
-            tls (bool): Attempt to use FTP over TLS (FTPS) (default: False)
-
-        """
-        ...
+    ) -> None: ...
     def __repr__(self) -> Text: ...
     def __str__(self) -> Text: ...
     @property
@@ -141,24 +85,14 @@ class FTPFS(FS):
     @property
     def host(self) -> Text: ...
     @property
-    def ftp_url(self) -> Text:
-        """Get the FTP url this filesystem will open."""
-        ...
+    def ftp_url(self) -> Text: ...
     @property
-    def ftp(self) -> FTP:
-        """~ftplib.FTP: the underlying FTP client."""
-        ...
-    def geturl(self, path: str, purpose: str = ...) -> Text:
-        """Get FTP url for resource."""
-        ...
+    def ftp(self) -> FTP: ...
+    def geturl(self, path: str, purpose: str = ...) -> Text: ...
     @property
-    def features(self) -> Dict[Text, Text]:
-        """`dict`: Features of the remote FTP server."""
-        ...
+    def features(self) -> Dict[Text, Text]: ...
     @property
-    def supports_mlst(self) -> bool:
-        """bool: whether the server supports MLST feature."""
-        ...
+    def supports_mlst(self) -> bool: ...
     def create(self, path: Text, wipe: bool = ...) -> bool: ...
     if typing.TYPE_CHECKING:
         def opendir(

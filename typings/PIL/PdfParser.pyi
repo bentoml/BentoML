@@ -1,5 +1,3 @@
-
-
 import collections
 from typing import Any, List
 
@@ -164,4 +162,3 @@ class PdfParser:
     re_xref_entry: Any
     def read_xref_table(self, xref_section_offset): ...
     def read_indirect(self, ref, max_nesting: int = ...): ...
-    def linearize_page_tree(self, node: Any | None = ...): ...

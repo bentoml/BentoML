@@ -1,5 +1,7 @@
+import sys
 import typing as t
 from contextlib import contextmanager
+from types import TracebackType
 from typing import TYPE_CHECKING
 
 import fs
@@ -13,9 +15,16 @@ if TYPE_CHECKING:  # pragma: no cover
     from ._internal.models import ModelStore, SysPathModel
     from ._internal.runner import Runner
 
+if sys.version_info >= (3, 8):
+    from typing import Protocol
+else:
+    from typing_extensions import Protocol
+
+_T = t.TypeVar("_T")
+
 
 @inject
-def list(
+def list(  # pylint: disable=redefined-builtin
     tag: t.Optional[t.Union[Tag, str]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> t.List["SysPathModel"]:
@@ -56,6 +65,35 @@ def pull() -> Model:
     raise NotImplementedError
 
 
+# fmt: off
+class _CreateModelProtocol(t.ContextManager[Model], Protocol):
+    def __call__(  # noqa: E704
+        self,
+        name: str,
+        *,
+        module: str = ...,
+        labels: t.Optional[t.Dict[str, t.Any]] = ...,
+        options: t.Optional[t.Dict[str, t.Any]] = ...,
+        metadata: t.Optional[t.Dict[str, t.Any]] = ...,
+        framework_context: t.Optional[t.Dict[str, t.Any]] = ...,
+        _model_store: "ModelStore" = ...,
+    ) -> Model: ...
+    def __next__(self) -> t.Iterator[Model]: ...  # noqa: E704
+    def __enter__(self) -> Model: ...  # noqa: E704
+    def __exit__(  # noqa: E704
+        self,
+        exc_type: t.Optional[t.Type[BaseException]],
+        exc_val: t.Optional[BaseException],
+        exc_tb: t.Optional[TracebackType],
+    ) -> None: ...
+# fmt: on
+
+
+class GeneratorContextManager(t.ContextManager[_T], t.Generic[_T]):
+    def __call__(self, func: t.Callable[..., _T]) -> t.Callable[..., _T]:
+        ...
+
+
 @inject
 @contextmanager
 def create(
@@ -67,7 +105,7 @@ def create(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     framework_context: t.Optional[t.Dict[str, t.Any]] = None,
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> Model:
+) -> _CreateModelProtocol:
     res = Model.create(
         name,
         module=module,

@@ -1,9 +1,5 @@
-
-
 from typing import Any
-
 from typing_extensions import Literal
-
 from .Image import Image
 
 QImage = Any

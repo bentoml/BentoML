@@ -1,5 +1,4 @@
 from typing import Literal
-
 import numpy as np
 
 def group_median_float64(

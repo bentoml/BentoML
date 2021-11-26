@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-""" define generic base classes for pandas objects """
 if TYPE_CHECKING: ...
 
 def create_pandas_abc_type(name, attr, comp): ...

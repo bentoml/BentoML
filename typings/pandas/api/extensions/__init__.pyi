@@ -8,9 +8,6 @@ from pandas.core.algorithms import take
 from pandas.core.arrays import ExtensionArray, ExtensionScalarOpsMixin
 from pandas.core.dtypes.base import ExtensionDtype, register_extension_dtype
 
-"""
-Public API for extending pandas objects.
-"""
 __all__ = [
     "no_default",
     "ExtensionDtype",

@@ -1,5 +1,3 @@
-
-
 from typing import Any
 
 VERBOSE: int
@@ -49,5 +47,3 @@ def imagemath_max(self, other): ...
 def imagemath_convert(self, mode): ...
 
 ops: Any
-
-def eval(expression, _dict=..., **kw): ...

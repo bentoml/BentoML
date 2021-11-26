@@ -10,7 +10,6 @@ from typing import (
     Union,
     overload,
 )
-
 from numpy import (
     _ModeKind,
     _OrderCF,
@@ -23,16 +22,14 @@ from numpy import (
     integer,
     intp,
 )
-from numpy import (
-    matrix as _Matrix,  # Circumvent a naming conflict with `AxisConcatenator.matrix`
-)
+from numpy import matrix as _Matrix
 from numpy import ndarray
 from numpy import ndenumerate as ndenumerate
 from numpy import ndindex as ndindex
 from numpy import str_
 from numpy.core.multiarray import ravel_multi_index as ravel_multi_index
 from numpy.core.multiarray import unravel_index as unravel_index
-from numpy.typing import (  # Arrays; DTypes; Shapes
+from numpy.typing import (
     ArrayLike,
     DTypeLike,
     NDArray,
@@ -48,11 +45,12 @@ _DType = TypeVar("_DType", bound=dtype[Any])
 _BoolType = TypeVar("_BoolType", Literal[True], Literal[False])
 _TupType = TypeVar("_TupType", bound=Tuple[Any, ...])
 _ArrayType = TypeVar("_ArrayType", bound=ndarray[Any, Any])
-
 __all__: List[str]
 
 @overload
-def ix_(*args: _FiniteNestedSequence[_SupportsDType[_DType]]) -> Tuple[ndarray[Any, _DType], ...]: ...
+def ix_(
+    *args: _FiniteNestedSequence[_SupportsDType[_DType]],
+) -> Tuple[ndarray[Any, _DType], ...]: ...
 @overload
 def ix_(*args: str | _NestedSequence[str]) -> Tuple[NDArray[str_], ...]: ...
 @overload
@@ -71,13 +69,11 @@ class nd_grid(Generic[_BoolType]):
     def __init__(self, sparse: _BoolType = ...) -> None: ...
     @overload
     def __getitem__(
-        self: nd_grid[Literal[False]],
-        key: Union[slice, Sequence[slice]],
+        self: nd_grid[Literal[False]], key: Union[slice, Sequence[slice]]
     ) -> NDArray[Any]: ...
     @overload
     def __getitem__(
-        self: nd_grid[Literal[True]],
-        key: Union[slice, Sequence[slice]],
+        self: nd_grid[Literal[True]], key: Union[slice, Sequence[slice]]
     ) -> List[NDArray[Any]]: ...
 
 class MGridClass(nd_grid[Literal[False]]):
@@ -96,15 +92,11 @@ class AxisConcatenator:
     ndmin: int
     trans1d: int
     def __init__(
-        self,
-        axis: int = ...,
-        matrix: bool = ...,
-        ndmin: int = ...,
-        trans1d: int = ...,
+        self, axis: int = ..., matrix: bool = ..., ndmin: int = ..., trans1d: int = ...
     ) -> None: ...
     @staticmethod
     @overload
-    def concatenate(  # type: ignore[misc]
+    def concatenate(
         *a: ArrayLike, axis: SupportsIndex = ..., out: None = ...
     ) -> NDArray[Any]: ...
     @staticmethod
@@ -116,8 +108,6 @@ class AxisConcatenator:
     def makemat(
         data: ArrayLike, dtype: DTypeLike = ..., copy: bool = ...
     ) -> _Matrix: ...
-
-    # TODO: Sort out this `__getitem__` method
     def __getitem__(self, key: Any) -> Any: ...
 
 class RClass(AxisConcatenator):
@@ -142,7 +132,7 @@ class IndexExpression(Generic[_BoolType]):
     maketuple: _BoolType
     def __init__(self, maketuple: _BoolType) -> None: ...
     @overload
-    def __getitem__(self, item: _TupType) -> _TupType: ...  # type: ignore[misc]
+    def __getitem__(self, item: _TupType) -> _TupType: ...
     @overload
     def __getitem__(self: IndexExpression[Literal[True]], item: _T) -> Tuple[_T]: ...
     @overload
@@ -154,5 +144,3 @@ s_: IndexExpression[Literal[False]]
 def fill_diagonal(a: ndarray[Any, Any], val: Any, wrap: bool = ...) -> None: ...
 def diag_indices(n: int, ndim: int = ...) -> Tuple[NDArray[int_], ...]: ...
 def diag_indices_from(arr: ArrayLike) -> Tuple[NDArray[int_], ...]: ...
-
-# NOTE: see `numpy/__init__.pyi` for `ndenumerate` and `ndindex`

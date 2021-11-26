@@ -1,9 +1,7 @@
 import re
-
 import numpy as np
 from pandas.util.version import Version
 
-""" support numpy compatibility across versions """
 _np_version = ...
 _nlv = ...
 np_version_under1p18 = ...
@@ -14,21 +12,7 @@ _min_numpy_ver = ...
 if _nlv < Version(_min_numpy_ver): ...
 _tz_regex = ...
 
-def np_datetime64_compat(tstring: str, unit: str = ...):  # -> datetime64:
-    """
-    provide compat for construction of strings to numpy datetime64's with
-    tz-changes in 1.11 that make '2015-01-01 09:00:00Z' show a deprecation
-    warning, when need to pass '2015-01-01 09:00:00'
-    """
-    ...
-
-def np_array_datetime64_compat(arr, dtype=...):  # -> ndarray:
-    """
-    provide compat for construction of an array of strings to a
-    np.array(..., dtype=np.datetime64(..))
-    tz-changes in 1.11 that make '2015-01-01 09:00:00Z' show a deprecation
-    warning, when need to pass '2015-01-01 09:00:00'
-    """
-    ...
+def np_datetime64_compat(tstring: str, unit: str = ...): ...
+def np_array_datetime64_compat(arr, dtype=...): ...
 
 __all__ = ["np", "_np_version", "is_numpy_dev"]

@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from yaml.error import YAMLError
 
 class ReaderError(YAMLError):
@@ -10,10 +7,7 @@ class ReaderError(YAMLError):
     position: Any
     encoding: Any
     reason: Any
-    def __init__(self, name, position, character, encoding, reason) -> None:
-        ...
-    
-
+    def __init__(self, name, position, character, encoding, reason) -> None: ...
 
 class Reader:
     name: Any
@@ -28,33 +22,10 @@ class Reader:
     index: Any
     line: Any
     column: Any
-    def __init__(self, stream) -> None:
-        ...
-    
-    def peek(self, index=...):
-        ...
-    
-    def prefix(self, length=...):
-        ...
-    
-    def forward(self, length=...):
-        ...
-    
-    def get_mark(self):
-        ...
-    
-    def determine_encoding(self):
-        ...
-    
+    def __init__(self, stream) -> None: ...
+    def peek(self, index=...): ...
+    def prefix(self, length=...): ...
+    def forward(self, length=...): ...
+    def get_mark(self): ...
+    def determine_encoding(self): ...
     NON_PRINTABLE: Any
-    def check_printable(self, data):
-        ...
-    
-    def update(self, length):
-        ...
-    
-    def update_raw(self, size=...):
-        ...
-    
-
-

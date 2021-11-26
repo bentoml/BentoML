@@ -1,5 +1,3 @@
-
-
 import typing
 from collections.abc import MutableMapping
 from pathlib import Path

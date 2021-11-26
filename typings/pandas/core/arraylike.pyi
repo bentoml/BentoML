@@ -1,14 +1,6 @@
 from typing import Any
-
 import numpy as np
 from pandas.core.ops.common import unpack_zerodim_and_defer
-
-"""
-Methods that can be shared by many array-like classes or subclasses:
-    Series
-    Index
-    ExtensionArray
-"""
 
 class OpsMixin:
     @unpack_zerodim_and_defer("__eq__")
@@ -68,14 +60,4 @@ class OpsMixin:
     @unpack_zerodim_and_defer("__rpow__")
     def __rpow__(self, other): ...
 
-def array_ufunc(
-    self, ufunc: np.ufunc, method: str, *inputs: Any, **kwargs: Any
-):  # -> Any | _NotImplementedType | tuple[Any | Unknown, ...]:
-    """
-    Compatibility with numpy ufuncs.
-
-    See also
-    --------
-    numpy.org/doc/stable/reference/arrays.classes.html#numpy.class.__array_ufunc__
-    """
-    ...
+def array_ufunc(self, ufunc: np.ufunc, method: str, *inputs: Any, **kwargs: Any): ...

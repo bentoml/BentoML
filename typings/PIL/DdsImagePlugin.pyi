@@ -1,7 +1,4 @@
-
-
 from typing_extensions import Literal
-
 from .ImageFile import ImageFile
 
 DDS_MAGIC: int

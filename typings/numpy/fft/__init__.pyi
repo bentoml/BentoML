@@ -1,5 +1,4 @@
 from typing import Any, List
-
 from numpy._pytesttester import PytestTester
 from numpy.fft._pocketfft import fft as fft
 from numpy.fft._pocketfft import fft2 as fft2

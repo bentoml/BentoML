@@ -1,5 +1,3 @@
-
-
 from typing import Tuple, Union
 
 _RGB = Union[Tuple[int, int, int], Tuple[int, int, int, int]]

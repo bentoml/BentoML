@@ -1,17 +1,5 @@
-"""
-A module with various ``typing.Protocol`` subclasses that implement
-the ``__call__`` magic method.
-
-See the `Mypy documentation`_ on protocols for more details.
-
-.. _`Mypy documentation`: https://mypy.readthedocs.io/en/stable/protocols.html#callback-protocols
-
-"""
-
 from __future__ import annotations
-
 from typing import Any, NoReturn, Protocol, Tuple, TypeVar, Union, overload
-
 from numpy import (
     bool_,
     complex128,
@@ -29,7 +17,6 @@ from numpy import (
     timedelta64,
     unsignedinteger,
 )
-
 from . import NBitBase
 from ._generic_alias import NDArray
 from ._nbit import _NBitDouble, _NBitInt
@@ -40,10 +27,8 @@ _T2 = TypeVar("_T2")
 _T1_contra = TypeVar("_T1_contra", contravariant=True)
 _T2_contra = TypeVar("_T2_contra", contravariant=True)
 _2Tuple = Tuple[_T1, _T1]
-
 _NBit1 = TypeVar("_NBit1", bound=NBitBase)
 _NBit2 = TypeVar("_NBit2", bound=NBitBase)
-
 _IntType = TypeVar("_IntType", bound=integer)
 _FloatType = TypeVar("_FloatType", bound=floating)
 _NumberType = TypeVar("_NumberType", bound=number)
@@ -53,7 +38,7 @@ _GenericType_co = TypeVar("_GenericType_co", covariant=True, bound=generic)
 class _BoolOp(Protocol[_GenericType_co]):
     @overload
     def __call__(self, other: _BoolLike_co, /) -> _GenericType_co: ...
-    @overload  # platform dependent
+    @overload
     def __call__(self, other: int, /) -> int_: ...
     @overload
     def __call__(self, other: float, /) -> float64: ...
@@ -65,16 +50,15 @@ class _BoolOp(Protocol[_GenericType_co]):
 class _BoolBitOp(Protocol[_GenericType_co]):
     @overload
     def __call__(self, other: _BoolLike_co, /) -> _GenericType_co: ...
-    @overload  # platform dependent
+    @overload
     def __call__(self, other: int, /) -> int_: ...
     @overload
     def __call__(self, other: _IntType, /) -> _IntType: ...
 
 class _BoolSub(Protocol):
-    # Note that `other: bool_` is absent here
     @overload
     def __call__(self, other: bool, /) -> NoReturn: ...
-    @overload  # platform dependent
+    @overload
     def __call__(self, other: int, /) -> int_: ...
     @overload
     def __call__(self, other: float, /) -> float64: ...
@@ -94,7 +78,7 @@ class _BoolTrueDiv(Protocol):
 class _BoolMod(Protocol):
     @overload
     def __call__(self, other: _BoolLike_co, /) -> int8: ...
-    @overload  # platform dependent
+    @overload
     def __call__(self, other: int, /) -> int_: ...
     @overload
     def __call__(self, other: float, /) -> float64: ...
@@ -106,7 +90,7 @@ class _BoolMod(Protocol):
 class _BoolDivMod(Protocol):
     @overload
     def __call__(self, other: _BoolLike_co, /) -> _2Tuple[int8]: ...
-    @overload  # platform dependent
+    @overload
     def __call__(self, other: int, /) -> _2Tuple[int_]: ...
     @overload
     def __call__(self, other: float, /) -> _2Tuple[floating[_NBit1 | _NBitDouble]]: ...
@@ -132,24 +116,21 @@ class _IntTrueDiv(Protocol[_NBit1]):
     def __call__(self, other: float, /) -> floating[_NBit1 | _NBitDouble]: ...
     @overload
     def __call__(
-        self, other: complex, /,
+        self, other: complex, /
     ) -> complexfloating[_NBit1 | _NBitDouble, _NBit1 | _NBitDouble]: ...
     @overload
     def __call__(self, other: integer[_NBit2], /) -> floating[_NBit1 | _NBit2]: ...
 
 class _UnsignedIntOp(Protocol[_NBit1]):
-    # NOTE: `uint64 + signedinteger -> float64`
     @overload
     def __call__(self, other: bool, /) -> unsignedinteger[_NBit1]: ...
     @overload
-    def __call__(
-        self, other: int | signedinteger[Any], /
-    ) -> Any: ...
+    def __call__(self, other: int | signedinteger[Any], /) -> Any: ...
     @overload
     def __call__(self, other: float, /) -> floating[_NBit1 | _NBitDouble]: ...
     @overload
     def __call__(
-        self, other: complex, /,
+        self, other: complex, /
     ) -> complexfloating[_NBit1 | _NBitDouble, _NBit1 | _NBitDouble]: ...
     @overload
     def __call__(
@@ -172,9 +153,7 @@ class _UnsignedIntMod(Protocol[_NBit1]):
     @overload
     def __call__(self, other: bool, /) -> unsignedinteger[_NBit1]: ...
     @overload
-    def __call__(
-        self, other: int | signedinteger[Any], /
-    ) -> Any: ...
+    def __call__(self, other: int | signedinteger[Any], /) -> Any: ...
     @overload
     def __call__(self, other: float, /) -> floating[_NBit1 | _NBitDouble]: ...
     @overload
@@ -186,9 +165,7 @@ class _UnsignedIntDivMod(Protocol[_NBit1]):
     @overload
     def __call__(self, other: bool, /) -> _2Tuple[signedinteger[_NBit1]]: ...
     @overload
-    def __call__(
-        self, other: int | signedinteger[Any], /
-    ) -> _2Tuple[Any]: ...
+    def __call__(self, other: int | signedinteger[Any], /) -> _2Tuple[Any]: ...
     @overload
     def __call__(self, other: float, /) -> _2Tuple[floating[_NBit1 | _NBitDouble]]: ...
     @overload
@@ -205,11 +182,11 @@ class _SignedIntOp(Protocol[_NBit1]):
     def __call__(self, other: float, /) -> floating[_NBit1 | _NBitDouble]: ...
     @overload
     def __call__(
-        self, other: complex, /,
+        self, other: complex, /
     ) -> complexfloating[_NBit1 | _NBitDouble, _NBit1 | _NBitDouble]: ...
     @overload
     def __call__(
-        self, other: signedinteger[_NBit2], /,
+        self, other: signedinteger[_NBit2], /
     ) -> signedinteger[_NBit1 | _NBit2]: ...
 
 class _SignedIntBitOp(Protocol[_NBit1]):
@@ -219,7 +196,7 @@ class _SignedIntBitOp(Protocol[_NBit1]):
     def __call__(self, other: int, /) -> signedinteger[_NBit1 | _NBitInt]: ...
     @overload
     def __call__(
-        self, other: signedinteger[_NBit2], /,
+        self, other: signedinteger[_NBit2], /
     ) -> signedinteger[_NBit1 | _NBit2]: ...
 
 class _SignedIntMod(Protocol[_NBit1]):
@@ -231,7 +208,7 @@ class _SignedIntMod(Protocol[_NBit1]):
     def __call__(self, other: float, /) -> floating[_NBit1 | _NBitDouble]: ...
     @overload
     def __call__(
-        self, other: signedinteger[_NBit2], /,
+        self, other: signedinteger[_NBit2], /
     ) -> signedinteger[_NBit1 | _NBit2]: ...
 
 class _SignedIntDivMod(Protocol[_NBit1]):
@@ -243,7 +220,7 @@ class _SignedIntDivMod(Protocol[_NBit1]):
     def __call__(self, other: float, /) -> _2Tuple[floating[_NBit1 | _NBitDouble]]: ...
     @overload
     def __call__(
-        self, other: signedinteger[_NBit2], /,
+        self, other: signedinteger[_NBit2], /
     ) -> _2Tuple[signedinteger[_NBit1 | _NBit2]]: ...
 
 class _FloatOp(Protocol[_NBit1]):
@@ -255,7 +232,7 @@ class _FloatOp(Protocol[_NBit1]):
     def __call__(self, other: float, /) -> floating[_NBit1 | _NBitDouble]: ...
     @overload
     def __call__(
-        self, other: complex, /,
+        self, other: complex, /
     ) -> complexfloating[_NBit1 | _NBitDouble, _NBit1 | _NBitDouble]: ...
     @overload
     def __call__(
@@ -290,19 +267,20 @@ class _ComplexOp(Protocol[_NBit1]):
     @overload
     def __call__(self, other: bool, /) -> complexfloating[_NBit1, _NBit1]: ...
     @overload
-    def __call__(self, other: int, /) -> complexfloating[_NBit1 | _NBitInt, _NBit1 | _NBitInt]: ...
+    def __call__(
+        self, other: int, /
+    ) -> complexfloating[_NBit1 | _NBitInt, _NBit1 | _NBitInt]: ...
     @overload
     def __call__(
-        self, other: complex, /,
+        self, other: complex, /
     ) -> complexfloating[_NBit1 | _NBitDouble, _NBit1 | _NBitDouble]: ...
     @overload
     def __call__(
         self,
         other: Union[
-            integer[_NBit2],
-            floating[_NBit2],
-            complexfloating[_NBit2, _NBit2],
-        ], /,
+            integer[_NBit2], floating[_NBit2], complexfloating[_NBit2, _NBit2]
+        ],
+        /,
     ) -> complexfloating[_NBit1 | _NBit2, _NBit1 | _NBit2]: ...
 
 class _NumberOp(Protocol):

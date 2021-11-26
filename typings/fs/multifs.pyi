@@ -1,88 +1,28 @@
-
-
 import typing
 from typing import IO, Any, BinaryIO, Collection, Iterator, List, Optional, Text, Tuple
-
 from .base import FS
 from .enums import ResourceType
 from .info import Info, RawInfo
 from .permissions import Permissions
 from .subfs import SubFS
 
-"""Manage several filesystems through a single view.
-"""
 if typing.TYPE_CHECKING:
     M = ...
 _PrioritizedFS = ...
 
 class MultiFS(FS):
-    """A filesystem that delegates to a sequence of other filesystems.
-
-    Operations on the MultiFS will try each 'child' filesystem in order,
-    until it succeeds. In effect, creating a filesystem that combines
-    the files and dirs of its children.
-
-    """
-
     _meta = ...
-    def __init__(self, auto_close: bool = ...) -> None:
-        """Create a new MultiFS.
-
-        Arguments:
-            auto_close (bool): If `True` (the default), the child
-                filesystems will be closed when `MultiFS` is closed.
-
-        """
-        ...
+    def __init__(self, auto_close: bool = ...) -> None: ...
     def __repr__(self) -> Text: ...
     def __str__(self) -> Text: ...
     def add_fs(
         self, name: Text, fs: FS, write: bool = ..., priority: int = ...
-    ) -> None:
-        """Add a filesystem to the MultiFS.
-
-        Arguments:
-            name (str): A unique name to refer to the filesystem being
-                added.
-            fs (FS or str): The filesystem (instance or URL) to add.
-            write (bool): If this value is True, then the ``fs`` will
-                be used as the writeable FS (defaults to False).
-            priority (int): An integer that denotes the priority of the
-                filesystem being added. Filesystems will be searched in
-                descending priority order and then by the reverse order
-                they were added. So by default, the most recently added
-                filesystem will be looked at first.
-
-        """
-        ...
-    def get_fs(self, name: Text) -> FS:
-        """Get a filesystem from its name.
-
-        Arguments:
-            name (str): The name of a filesystem previously added.
-
-        Returns:
-            FS: the filesystem added as ``name`` previously.
-
-        Raises:
-            KeyError: If no filesystem with given ``name`` could be found.
-
-        """
-        ...
-    def iterate_fs(self) -> Iterator[Tuple[Text, FS]]:
-        """Get iterator that returns (name, fs) in priority order."""
-        ...
+    ) -> None: ...
+    def get_fs(self, name: Text) -> FS: ...
+    def iterate_fs(self) -> Iterator[Tuple[Text, FS]]: ...
     def which(
         self, path: Text, mode: Text = ...
-    ) -> Tuple[Optional[Text], Optional[FS]]:
-        """Get a tuple of (name, fs) that the given path would map to.
-
-        Arguments:
-            path (str): A path on the filesystem.
-            mode (str): An `io.open` mode.
-
-        """
-        ...
+    ) -> Tuple[Optional[Text], Optional[FS]]: ...
     def close(self) -> None: ...
     def getinfo(
         self, path: Text, namespaces: Optional[Collection[Text]] = ...

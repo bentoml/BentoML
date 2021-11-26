@@ -1,13 +1,10 @@
 from typing import Any, List
-
 from numpy import dtype, int_, ndarray
 from numpy.polynomial._polybase import ABCPolyBase
 from numpy.polynomial.polyutils import trimcoef
 
 __all__: list[str]
-
 polytrim = trimcoef
-
 polydomain: ndarray[Any, dtype[int_]]
 polyzero: ndarray[Any, dtype[int_]]
 polyone: ndarray[Any, dtype[int_]]

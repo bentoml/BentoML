@@ -8,9 +8,6 @@ from pandas.core.dtypes.dtypes import (
     PeriodDtype,
 )
 
-"""
-Public toolkit API.
-"""
 __all__ = [
     "infer_dtype",
     "union_categoricals",

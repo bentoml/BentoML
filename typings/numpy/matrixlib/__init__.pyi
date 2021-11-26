@@ -1,5 +1,4 @@
 from typing import List
-
 from numpy import matrix as matrix
 from numpy._pytesttester import PytestTester
 from numpy.matrixlib.defmatrix import asmatrix as asmatrix

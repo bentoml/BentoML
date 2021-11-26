@@ -1,12 +1,3 @@
-
-
-"""
-HTTP codes
-See HTTP Status Code Registry:
-https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
-
-And RFC 2324 - https://tools.ietf.org/html/rfc2324
-"""
 HTTP_100_CONTINUE = ...
 HTTP_101_SWITCHING_PROTOCOLS = ...
 HTTP_102_PROCESSING = ...

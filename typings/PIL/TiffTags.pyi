@@ -1,7 +1,4 @@
-
-
 from typing import Any, Dict, NamedTuple, Tuple, Union
-
 from typing_extensions import Literal
 
 class _TagInfo(NamedTuple):
@@ -10,7 +7,8 @@ class _TagInfo(NamedTuple):
     type: _TagType
     length: int
     enum: dict[str, int]
-    ...
+
+...
 
 class TagInfo(_TagInfo):
     def __new__(

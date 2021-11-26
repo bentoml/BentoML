@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, Any
-
 from pandas._typing import FilePathOrBuffer, Scalar, StorageOptions
 from pandas.io.excel._base import BaseExcelReader, ExcelWriter
 
@@ -20,30 +19,17 @@ class OpenpyxlWriter(ExcelWriter):
         engine_kwargs: dict[str, Any] | None = ...,
         **kwargs
     ) -> None: ...
-    def save(self):  # -> None:
-        """
-        Save workbook to disk.
-        """
-        ...
+    def save(self): ...
     def write_cells(
         self, cells, sheet_name=..., startrow=..., startcol=..., freeze_panes=...
     ): ...
 
 class OpenpyxlReader(BaseExcelReader):
     def __init__(
-        self, filepath_or_buffer: FilePathOrBuffer, storage_options: StorageOptions = ...
-    ) -> None:
-        """
-        Reader using openpyxl engine.
-
-        Parameters
-        ----------
-        filepath_or_buffer : str, path object or Workbook
-            Object to be parsed.
-        storage_options : dict, optional
-            passed to fsspec for appropriate URLs (see ``_get_filepath_or_buffer``)
-        """
-        ...
+        self,
+        filepath_or_buffer: FilePathOrBuffer,
+        storage_options: StorageOptions = ...,
+    ) -> None: ...
     def load_workbook(self, filepath_or_buffer: FilePathOrBuffer): ...
     @property
     def sheet_names(self) -> list[str]: ...

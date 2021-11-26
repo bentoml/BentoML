@@ -9,7 +9,6 @@ import uuid
 from distutils.dir_util import copy_tree
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -27,6 +26,7 @@ from ._internal.utils.tensorflow import (
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
+    import numpy as np
     import tensorflow.keras as keras
     from _internal.models import ModelStore
 
@@ -141,7 +141,8 @@ class _tf_function_wrapper:  # pragma: no cover
         )
 
         transformed_kwargs = {
-            k: cast_tensor_by_spec(arg, self.kwarg_specs[k]) for k, arg in kwargs.items()
+            k: cast_tensor_by_spec(arg, self.kwarg_specs[k])
+            for k, arg in kwargs.items()
         }
         return self.origin_func(*transformed_args, **transformed_kwargs)
 
@@ -174,7 +175,9 @@ def _load_tf_saved_model(path: str) -> t.Union["tracking.AutoTrackable", t.Any]:
         return tf.saved_model.load(path)
     else:
         loaded = tf.compat.v2.saved_model.load(path)
-        if isinstance(loaded, tracking.AutoTrackable) and not hasattr(loaded, "__call__"):
+        if isinstance(loaded, tracking.AutoTrackable) and not hasattr(
+            loaded, "__call__"
+        ):
             logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)
         return loaded
 

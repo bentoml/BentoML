@@ -1,7 +1,6 @@
 from typing import Any, Dict, List
 from typing import Literal as L
 from typing import Protocol, Tuple, TypeVar, overload
-
 from numpy import dtype, generic, ndarray
 from numpy.typing import (
     ArrayLike,
@@ -36,15 +35,9 @@ _ModeKind = L[
     "wrap",
     "empty",
 ]
-
 _ArrayLike = _FiniteNestedSequence[_SupportsArray[dtype[_SCT]]]
-
 __all__: List[str]
 
-# TODO: In practice each keyword argument is exclusive to one or more
-# specific modes. Consider adding more overloads to express this in the future.
-
-# Expand `**kwargs` into explicit keyword-only arguments
 @overload
 def pad(
     array: _ArrayLike[_SCT],
@@ -69,15 +62,9 @@ def pad(
 ) -> NDArray[Any]: ...
 @overload
 def pad(
-    array: _ArrayLike[_SCT],
-    pad_width: _ArrayLikeInt,
-    mode: _ModeFunc,
-    **kwargs: Any,
+    array: _ArrayLike[_SCT], pad_width: _ArrayLikeInt, mode: _ModeFunc, **kwargs: Any
 ) -> NDArray[_SCT]: ...
 @overload
 def pad(
-    array: ArrayLike,
-    pad_width: _ArrayLikeInt,
-    mode: _ModeFunc,
-    **kwargs: Any,
+    array: ArrayLike, pad_width: _ArrayLikeInt, mode: _ModeFunc, **kwargs: Any
 ) -> NDArray[Any]: ...

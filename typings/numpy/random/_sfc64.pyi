@@ -1,5 +1,4 @@
 from typing import Any, TypedDict, Union
-
 from numpy import dtype as dtype
 from numpy import ndarray as ndarray
 from numpy import uint64
@@ -16,13 +15,10 @@ class _SFC64State(TypedDict):
     uinteger: int
 
 class SFC64(BitGenerator):
-    def __init__(self, seed: Union[None, _ArrayLikeInt_co, SeedSequence] = ...) -> None: ...
-    @property
-    def state(
-        self,
-    ) -> _SFC64State: ...
-    @state.setter
-    def state(
-        self,
-        value: _SFC64State,
+    def __init__(
+        self, seed: Union[None, _ArrayLikeInt_co, SeedSequence] = ...
     ) -> None: ...
+    @property
+    def state(self) -> _SFC64State: ...
+    @state.setter
+    def state(self, value: _SFC64State) -> None: ...

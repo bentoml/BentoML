@@ -15,11 +15,6 @@ from .cloudpickle_wrapper import wrap_non_picklable_objects
 from .process_executor import BrokenProcessPool, ProcessPoolExecutor
 from .reusable_executor import get_reusable_executor
 
-r"""The :mod:`loky` module manages a pool of worker that can be re-used across time.
-It provides a robust and dynamic implementation os the
-:class:`ProcessPoolExecutor` and a function :func:`get_reusable_executor` which
-hide the pool management under the hood.
-"""
 __all__ = [
     "get_reusable_executor",
     "cpu_count",

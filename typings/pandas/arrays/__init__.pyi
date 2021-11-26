@@ -13,11 +13,6 @@ from pandas.core.arrays import (
     TimedeltaArray,
 )
 
-"""
-All of pandas' ExtensionArrays.
-
-See :ref:`extending.extension-types` for more.
-"""
 __all__ = [
     "ArrowStringArray",
     "BooleanArray",

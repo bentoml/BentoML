@@ -1,5 +1,4 @@
 from datetime import tzinfo
-
 import numpy as np
 
 def format_array_from_datetime(

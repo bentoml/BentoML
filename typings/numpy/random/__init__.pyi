@@ -1,5 +1,4 @@
 from typing import List
-
 from numpy._pytesttester import PytestTester
 from numpy.random._generator import Generator as Generator
 from numpy.random._generator import default_rng as default_rng

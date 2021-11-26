@@ -19,10 +19,3 @@ else:
 
 if hasattr(select, "poll"): ...
 else: ...
-
-def wait(object_list, timeout=...):
-    """
-    Wait till an object in object_list is ready/readable.
-    Returns list of those objects which are ready/readable.
-    """
-    ...

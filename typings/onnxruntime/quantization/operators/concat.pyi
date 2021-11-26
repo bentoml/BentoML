@@ -1,0 +1,9 @@
+from .base_operator import QuantOperatorBase
+from .qdq_base_operator import QDQOperatorBase
+
+class QLinearConcat(QuantOperatorBase):
+    def __init__(self, onnx_quantizer, onnx_node) -> None: ...
+    def quantize(self): ...
+
+class QDQConcat(QDQOperatorBase):
+    def __init__(self, onnx_quantizer, onnx_node) -> None: ...

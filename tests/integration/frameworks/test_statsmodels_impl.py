@@ -122,7 +122,7 @@ def test_statsmodels_runner_setup_run_batch(modelstore, save_proc, holt_model):
     assert runner.num_concurrency_per_replica == psutil.cpu_count()
     assert runner.num_replica == 1
 
-    res_pd = runner.run_batch(test_df.iat[0, 0])
+    res_pd = runner.run_batch(int(test_df.iat[0, 0]))
 
     expected_res = predict_df(holt_model, test_df)
     assert all(res_pd == expected_res)

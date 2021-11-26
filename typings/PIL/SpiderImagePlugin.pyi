@@ -1,9 +1,5 @@
-
-
 from typing import Any
-
 from typing_extensions import Literal
-
 from .ImageFile import ImageFile
 
 def isInt(f: object) -> Literal[0, 1]: ...

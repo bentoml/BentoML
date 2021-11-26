@@ -1,5 +1,3 @@
-
-
 import array
 import io
 import mmap
@@ -18,9 +16,7 @@ from typing import (
     Tuple,
     Union,
 )
-
 import six
-
 from ._typing import overload
 from .base import FS, _OpendirFactory
 from .enums import ResourceType
@@ -28,8 +24,6 @@ from .info import Info, RawInfo
 from .permissions import Permissions
 from .subfs import SubFS
 
-"""Manage a volatile in-memory filesystem.
-"""
 if typing.TYPE_CHECKING:
     _M = ...
 
@@ -41,12 +35,8 @@ class _MemoryFile(io.RawIOBase):
     def __str__(self) -> str: ...
     @property
     def mode(self) -> Text: ...
-    def on_modify(self) -> None:
-        """Called when file data is modified."""
-        ...
-    def on_access(self) -> None:
-        """Called when file is accessed."""
-        ...
+    def on_modify(self) -> None: ...
+    def on_access(self) -> None: ...
     def flush(self) -> None: ...
     def __iter__(self) -> typing.Iterator[bytes]: ...
     def next(self) -> bytes: ...
@@ -98,30 +88,8 @@ class _DirEntry:
 
 @six.python_2_unicode_compatible
 class MemoryFS(FS):
-    """A filesystem that stored in memory.
-
-    Memory filesystems are useful for caches, temporary data stores,
-    unit testing, etc. Since all the data is in memory, they are very
-    fast, but non-permanent. The `MemoryFS` constructor takes no
-    arguments.
-
-    Examples:
-        Create with the constructor::
-
-            >>> from fs.memoryfs import MemoryFS
-            >>> mem_fs = MemoryFS()
-
-        Or via an FS URL::
-
-            >>> import fs
-            >>> mem_fs = fs.open_fs('mem://')
-
-    """
-
     _meta: Dict[Text, Union[Text, int, bool, None]] = ...
-    def __init__(self) -> None:
-        """Create an in-memory filesystem."""
-        ...
+    def __init__(self) -> None: ...
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
     def close(self) -> None: ...

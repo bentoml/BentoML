@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .ImageFile import ImageFile
 
 class GifImageFile(ImageFile):
@@ -21,4 +18,3 @@ RAWMODE: Any
 
 def get_interlace(im): ...
 def getheader(im, palette: Any | None = ..., info: Any | None = ...): ...
-def getdata(im, offset=..., **params): ...

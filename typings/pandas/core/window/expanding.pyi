@@ -1,6 +1,5 @@
 from textwrap import dedent
 from typing import Any, Callable
-
 from pandas._typing import Axis, FrameOrSeries, FrameOrSeriesUnion
 from pandas.core.window.doc import (
     _shared_docs,
@@ -18,60 +17,6 @@ from pandas.core.window.rolling import BaseWindowGroupby, RollingAndExpandingMix
 from pandas.util._decorators import doc
 
 class Expanding(RollingAndExpandingMixin):
-    """
-    Provide expanding transformations.
-
-    Parameters
-    ----------
-    min_periods : int, default 1
-        Minimum number of observations in window required to have a value
-        (otherwise result is NA).
-    center : bool, default False
-        Set the labels at the center of the window.
-    axis : int or str, default 0
-    method : str {'single', 'table'}, default 'single'
-        Execute the rolling operation per single column or row (``'single'``)
-        or over the entire object (``'table'``).
-
-        This argument is only implemented when specifying ``engine='numba'``
-        in the method call.
-
-        .. versionadded:: 1.3.0
-
-    Returns
-    -------
-    a Window sub-classed for the particular operation
-
-    See Also
-    --------
-    rolling : Provides rolling window calculations.
-    ewm : Provides exponential weighted functions.
-
-    Notes
-    -----
-    By default, the result is set to the right edge of the window. This can be
-    changed to the center of the window by setting ``center=True``.
-
-    Examples
-    --------
-    >>> df = pd.DataFrame({"B": [0, 1, 2, np.nan, 4]})
-    >>> df
-         B
-    0  0.0
-    1  1.0
-    2  2.0
-    3  NaN
-    4  4.0
-
-    >>> df.expanding(2).sum()
-         B
-    0  NaN
-    1  1.0
-    2  3.0
-    3  3.0
-    4  7.0
-    """
-
     _attributes = ...
     def __init__(
         self,
@@ -102,7 +47,6 @@ class Expanding(RollingAndExpandingMixin):
         0  1  4  7
         1  2  5  8
         2  3  6  9
-
         >>> df.ewm(alpha=0.5).mean()
                   A         B         C
         0  1.000000  4.000000  7.000000
@@ -282,7 +226,6 @@ class Expanding(RollingAndExpandingMixin):
             """
         The default ``ddof`` of 1 used in :meth:`Series.std` is different
         than the default ``ddof`` of 0 in :func:`numpy.std`.
-
         A minimum of one period is required for the rolling calculation.\n
         """
         ).replace("\n", "", 1),
@@ -290,7 +233,6 @@ class Expanding(RollingAndExpandingMixin):
         dedent(
             """
         >>> s = pd.Series([5, 5, 6, 7, 5, 5, 5])
-
         >>> s.expanding(3).std()
         0         NaN
         1         NaN
@@ -329,7 +271,6 @@ class Expanding(RollingAndExpandingMixin):
             """
         The default ``ddof`` of 1 used in :meth:`Series.var` is different
         than the default ``ddof`` of 0 in :func:`numpy.var`.
-
         A minimum of one period is required for the rolling calculation.\n
         """
         ).replace("\n", "", 1),
@@ -337,7 +278,6 @@ class Expanding(RollingAndExpandingMixin):
         dedent(
             """
         >>> s = pd.Series([5, 5, 6, 7, 5, 5, 5])
-
         >>> s.expanding(3).var()
         0         NaN
         1         NaN
@@ -376,7 +316,6 @@ class Expanding(RollingAndExpandingMixin):
         dedent(
             """
         >>> s = pd.Series([0, 1, 2, 3])
-
         >>> s.expanding().sem()
         0         NaN
         1    0.707107
@@ -422,7 +361,6 @@ class Expanding(RollingAndExpandingMixin):
             """
         The example below will show a rolling calculation with a window size of
         four matching the equivalent function call using `scipy.stats`.
-
         >>> arr = [1, 2, 3, 4, 999]
         >>> import scipy.stats
         >>> print(f"{{scipy.stats.kurtosis(arr[:-1], bias=False):.6f}}")
@@ -454,7 +392,6 @@ class Expanding(RollingAndExpandingMixin):
         interpolation : {{'linear', 'lower', 'higher', 'midpoint', 'nearest'}}
             This optional parameter specifies the interpolation method to use,
             when the desired quantile lies between two data points `i` and `j`:
-
                 * linear: `i + (j - i) * fraction`, where `fraction` is the
                   fractional part of the index surrounded by `i` and `j`.
                 * lower: `i`.
@@ -542,21 +479,16 @@ class Expanding(RollingAndExpandingMixin):
             """
         This function uses Pearson's definition of correlation
         (https://en.wikipedia.org/wiki/Pearson_correlation_coefficient).
-
         When `other` is not specified, the output will be self correlation (e.g.
         all 1's), except for :class:`~pandas.DataFrame` inputs with `pairwise`
         set to `True`.
-
         Function will return ``NaN`` for correlations of equal valued sequences;
         this is the result of a 0/0 division error.
-
         When `pairwise` is set to `False`, only matching columns between `self` and
         `other` will be used.
-
         When `pairwise` is set to `True`, the output will be a MultiIndex DataFrame
         with the original index on the first level, and the `other` DataFrame
         columns on the second level.
-
         In the case of missing elements, only complete pairwise observations
         will be used.
         """
@@ -574,8 +506,4 @@ class Expanding(RollingAndExpandingMixin):
     ): ...
 
 class ExpandingGroupby(BaseWindowGroupby, Expanding):
-    """
-    Provide a expanding groupby implementation.
-    """
-
     _attributes = ...

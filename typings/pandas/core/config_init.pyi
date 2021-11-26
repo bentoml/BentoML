@@ -1,14 +1,3 @@
-"""
-This module is imported from the pandas package __init__.py file
-in order to ensure that the core.config options registered here will
-be available as soon as the user loads the package. if register_option
-is invoked inside specific modules, they will not be registered until that
-module is imported, which may or may not be a problem.
-
-If you need to make sure options are available even before a certain
-module is imported, register them here rather than in the module.
-
-"""
 use_bottleneck_doc = ...
 
 def use_bottleneck_cb(key): ...
@@ -55,13 +44,7 @@ pc_latex_multicolumn_format = ...
 pc_latex_multirow = ...
 
 def table_schema_cb(key): ...
-def is_terminal() -> bool:
-    """
-    Detect if Python is running in a terminal.
-
-    Returns True if Python is running in a terminal or False if not.
-    """
-    ...
+def is_terminal() -> bool: ...
 
 tc_sim_interactive_doc = ...
 use_inf_as_null_doc = ...

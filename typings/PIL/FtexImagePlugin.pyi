@@ -1,5 +1,3 @@
-
-
 from .ImageFile import ImageFile
 
 MAGIC: bytes

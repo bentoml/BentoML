@@ -1,5 +1,4 @@
 from typing import Callable
-
 import numpy as np
 from pandas._libs import index as libindex
 from pandas._typing import Dtype
@@ -9,12 +8,6 @@ from pandas.util._decorators import cache_readonly, doc
 _num_index_shared_docs = ...
 
 class NumericIndex(Index):
-    """
-    Provide numeric type operations.
-
-    This is an abstract class.
-    """
-
     _index_descr_args = ...
     _values: np.ndarray
     _default_dtype: np.dtype
@@ -25,19 +18,11 @@ class NumericIndex(Index):
     @cache_readonly
     def inferred_type(self) -> str: ...
     def __new__(cls, data=..., dtype: Dtype | None = ..., copy=..., name=...): ...
-    def __contains__(self, key) -> bool:
-        """
-        Check if key is a float and has a decimal. If it has, return False.
-        """
-        ...
+    def __contains__(self, key) -> bool: ...
     @doc(Index.astype)
     def astype(self, dtype, copy=...): ...
 
 class IntegerIndex(NumericIndex):
-    """
-    This is an abstract class for Int64Index, UInt64Index.
-    """
-
     @property
     def asi8(self) -> np.ndarray: ...
 

@@ -1,5 +1,3 @@
-
-
 import collections
 
 class FreezableDefaultDict(collections.defaultdict):
@@ -16,18 +14,10 @@ class FreezableDefaultDict(collections.defaultdict):
     >>> len(dd)
     1
     """
-    def __missing__(self, key): # -> Any:
-        ...
-    
-    def freeze(self): # -> None:
-        ...
-    
 
+    def __missing__(self, key): ...
+    def freeze(self): ...
 
-class Pair(collections.namedtuple('Pair', 'name value')):
+class Pair(collections.namedtuple("Pair", "name value")):
     @classmethod
-    def parse(cls, text): # -> Self@Pair:
-        ...
-    
-
-
+    def parse(cls, text): ...

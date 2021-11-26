@@ -1,5 +1,3 @@
-# Using a private class is by no means ideal, but it is simply a consequence
-# of a `contextlib.context` returning an instance of aforementioned class
 from contextlib import _GeneratorContextManager
 from types import TracebackType
 from typing import (
@@ -12,7 +10,6 @@ from typing import (
     TypedDict,
     Union,
 )
-
 from numpy import (
     bool_,
     bytes_,
@@ -85,9 +82,6 @@ def array2string(
     suppress_small: Optional[bool] = ...,
     separator: str = ...,
     prefix: str = ...,
-    # NOTE: With the `style` argument being deprecated,
-    # all arguments between `formatter` and `suffix` are de facto
-    # keyworld-only arguments
     *,
     formatter: Optional[_FormatDict] = ...,
     threshold: Optional[int] = ...,
@@ -95,7 +89,7 @@ def array2string(
     sign: Optional[Literal["-", "+", " "]] = ...,
     floatmode: Optional[_FloatMode] = ...,
     suffix: str = ...,
-    legacy: Optional[Literal[False, "1.13", "1.21"]] = ...,
+    legacy: Optional[Literal[False, "1.13", "1.21"]] = ...
 ) -> str: ...
 def format_float_scientific(
     x: _FloatLike_co,

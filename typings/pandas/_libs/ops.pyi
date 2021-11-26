@@ -1,5 +1,4 @@
 from typing import Any, Callable, Literal, overload
-
 import numpy as np
 
 _BinOp = Callable[[Any, Any], Any]

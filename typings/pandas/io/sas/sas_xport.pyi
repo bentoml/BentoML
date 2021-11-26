@@ -1,17 +1,7 @@
 from collections import abc
-
 from pandas.io.sas.sasreader import ReaderBase
 from pandas.util._decorators import Appender
 
-"""
-Read a SAS XPort format file into a Pandas DataFrame.
-
-Based on code from Jack Cushman (github.com/jcushman/xport).
-
-The file format is defined here:
-
-https://support.sas.com/techsup/technote/ts140.pdf
-"""
 _correct_line1 = ...
 _correct_header1 = ...
 _correct_header2 = ...
@@ -32,19 +22,4 @@ class XportReader(ReaderBase, abc.Iterator):
     ) -> None: ...
     def close(self): ...
     def __next__(self): ...
-    def get_chunk(self, size=...):
-        """
-        Reads lines from Xport file and returns as dataframe
-
-        Parameters
-        ----------
-        size : int, defaults to None
-            Number of lines to read.  If None, reads whole file.
-
-        Returns
-        -------
-        DataFrame
-        """
-        ...
-    @Appender(_read_method_doc)
-    def read(self, nrows=...): ...
+    def get_chunk(self, size=...): ...

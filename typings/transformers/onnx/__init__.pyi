@@ -1,5 +1,3 @@
-
-
 from .config import (
     EXTERNAL_DATA_FORMAT_SIZE_LIMIT,
     OnnxConfig,

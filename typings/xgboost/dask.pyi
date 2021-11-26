@@ -10,9 +10,7 @@ from typing import (
     Tuple,
     Union,
 )
-
 import distributed
-
 from .callback import TrainingCallback
 from .core import Booster, DataIter, Metric, Objective, _deprecate_positional_args
 from .sklearn import (
@@ -23,18 +21,6 @@ from .sklearn import (
     xgboost_model_doc,
 )
 
-"""Dask extensions for distributed training. See
-https://xgboost.readthedocs.io/en/latest/tutorials/dask.html for simple
-tutorial.  Also xgboost/demo/dask for some examples.
-
-There are two sets of APIs in this module, one is the functional API including
-``train`` and ``predict`` methods.  Another is stateful Scikit-Learner wrapper
-inherited from single-node Scikit-Learn interface.
-
-The implementation is heavily influenced by dask_xgboost:
-https://github.com/dask/dask-xgboost
-
-"""
 if TYPE_CHECKING: ...
 else: ...
 _DaskCollection = ...
@@ -54,39 +40,13 @@ __all__ = [
 LOGGER = ...
 
 class RabitContext:
-    """A context controling rabit initialization and finalization."""
-
     def __init__(self, args: List[bytes]) -> None: ...
     def __enter__(self) -> None: ...
     def __exit__(self, *args: List) -> None: ...
 
-def concat(value: Any) -> Any:
-    """To be replaced with dask builtin."""
-    ...
+def concat(value: Any) -> Any: ...
 
 class DaskDMatrix:
-    """DMatrix holding on references to Dask DataFrame or Dask Array.  Constructing a
-    `DaskDMatrix` forces all lazy computation to be carried out.  Wait for the input data
-    explicitly if you want to see actual computation of constructing `DaskDMatrix`.
-
-    See doc for :py:obj:`xgboost.DMatrix` constructor for other parameters.  DaskDMatrix
-    accepts only dask collection.
-
-    .. note::
-
-        DaskDMatrix does not repartition or move data between workers.  It's
-        the caller's responsibility to balance the data.
-
-    .. versionadded:: 1.0.0
-
-    Parameters
-    ----------
-    client :
-        Specify the dask client used for training.  Use default client returned from dask
-        if it's set to None.
-
-    """
-
     @_deprecate_positional_args
     def __init__(
         self,
@@ -123,8 +83,6 @@ _DataParts = List[
 ]
 
 class DaskPartitionIter(DataIter):
-    """A data iterator for `DaskDeviceQuantileDMatrix`."""
-
     def __init__(
         self,
         data: Tuple[Any, ...],
@@ -137,50 +95,17 @@ class DaskPartitionIter(DataIter):
         feature_names: Optional[Union[str, List[str]]] = ...,
         feature_types: Optional[Union[Any, List[Any]]] = ...,
     ) -> None: ...
-    def data(self) -> Any:
-        """Utility function for obtaining current batch of data."""
-        ...
-    def labels(self) -> Any:
-        """Utility function for obtaining current batch of label."""
-        ...
-    def weights(self) -> Any:
-        """Utility function for obtaining current batch of label."""
-        ...
-    def qids(self) -> Any:
-        """Utility function for obtaining current batch of query id."""
-        ...
-    def base_margins(self) -> Any:
-        """Utility function for obtaining current batch of base_margin."""
-        ...
-    def label_lower_bounds(self) -> Any:
-        """Utility function for obtaining current batch of label_lower_bound."""
-        ...
-    def label_upper_bounds(self) -> Any:
-        """Utility function for obtaining current batch of label_upper_bound."""
-        ...
-    def reset(self) -> None:
-        """Reset the iterator"""
-        ...
-    def next(self, input_data: Callable) -> int:
-        """Yield next batch of data"""
-        ...
+    def data(self) -> Any: ...
+    def labels(self) -> Any: ...
+    def weights(self) -> Any: ...
+    def qids(self) -> Any: ...
+    def base_margins(self) -> Any: ...
+    def label_lower_bounds(self) -> Any: ...
+    def label_upper_bounds(self) -> Any: ...
+    def reset(self) -> None: ...
+    def next(self, input_data: Callable) -> int: ...
 
 class DaskDeviceQuantileDMatrix(DaskDMatrix):
-    """Specialized data type for `gpu_hist` tree method.  This class is used to reduce the
-    memory usage by eliminating data copies.  Internally the all partitions/chunks of data
-    are merged by weighted GK sketching.  So the number of partitions from dask may affect
-    training accuracy as GK generates bounded error for each merge.  See doc string for
-    :py:obj:`xgboost.DeviceQuantileDMatrix` and :py:obj:`xgboost.DMatrix` for other
-    parameters.
-
-    .. versionadded:: 1.2.0
-
-    Parameters
-    ----------
-    max_bin : Number of bins for histogram construction.
-
-    """
-
     @_deprecate_positional_args
     def __init__(
         self,
@@ -215,38 +140,7 @@ def train(
     xgb_model: Optional[Booster] = ...,
     verbose_eval: Union[int, bool] = ...,
     callbacks: Optional[List[TrainingCallback]] = ...,
-) -> Any:
-    """Train XGBoost model.
-
-    .. versionadded:: 1.0.0
-
-    .. note::
-
-        Other parameters are the same as :py:func:`xgboost.train` except for
-        `evals_result`, which is returned as part of function return value instead of
-        argument.
-
-    Parameters
-    ----------
-    client :
-        Specify the dask client used for training.  Use default client returned from dask
-        if it's set to None.
-
-    Returns
-    -------
-    results: dict
-        A dictionary containing trained booster and evaluation history.  `history` field
-        is the same as `eval_result` from `xgboost.train`.
-
-        .. code-block:: python
-
-            {'booster': xgboost.Booster,
-             'history': {'train': {'logloss': ['0.48253', '0.35953']},
-                         'eval': {'logloss': ['0.480385', '0.357756']}}}
-
-    """
-    ...
-
+) -> Any: ...
 def predict(
     client: distributed.Client,
     model: Union[TrainReturnT, Booster, distributed.Future],
@@ -260,44 +154,7 @@ def predict(
     validate_features: bool = ...,
     iteration_range: Tuple[int, int] = ...,
     strict_shape: bool = ...,
-) -> Any:
-    """Run prediction with a trained booster.
-
-    .. note::
-
-        Using ``inplace_predict`` might be faster when some features are not needed.  See
-        :py:meth:`xgboost.Booster.predict` for details on various parameters.  When output
-        has more than 2 dimensions (shap value, leaf with strict_shape), input should be
-        ``da.Array`` or ``DaskDMatrix``.
-
-    .. versionadded:: 1.0.0
-
-    Parameters
-    ----------
-    client:
-        Specify the dask client used for training.  Use default client
-        returned from dask if it's set to None.
-    model:
-        The trained model.  It can be a distributed.Future so user can
-        pre-scatter it onto all workers.
-    data:
-        Input data used for prediction.  When input is a dataframe object,
-        prediction output is a series.
-    missing:
-        Used when input data is not DaskDMatrix.  Specify the value
-        considered as missing.
-
-    Returns
-    -------
-    prediction: dask.array.Array/dask.dataframe.Series
-        When input data is ``dask.array.Array`` or ``DaskDMatrix``, the return value is an
-        array, when input data is ``dask.dataframe.DataFrame``, return value can be
-        ``dask.dataframe.Series``, ``dask.dataframe.DataFrame``, depending on the output
-        shape.
-
-    """
-    ...
-
+) -> Any: ...
 def inplace_predict(
     client: distributed.Client,
     model: Union[TrainReturnT, Booster, distributed.Future],
@@ -308,53 +165,9 @@ def inplace_predict(
     validate_features: bool = ...,
     base_margin: Optional[_DaskCollection] = ...,
     strict_shape: bool = ...,
-) -> Any:
-    """Inplace prediction. See doc in :py:meth:`xgboost.Booster.inplace_predict` for details.
-
-    .. versionadded:: 1.1.0
-
-    Parameters
-    ----------
-    client:
-        Specify the dask client used for training.  Use default client
-        returned from dask if it's set to None.
-    model:
-        See :py:func:`xgboost.dask.predict` for details.
-    data :
-        dask collection.
-    iteration_range:
-        See :py:meth:`xgboost.Booster.predict` for details.
-    predict_type:
-        See :py:meth:`xgboost.Booster.inplace_predict` for details.
-    missing:
-        Value in the input data which needs to be present as a missing
-        value. If None, defaults to np.nan.
-    base_margin:
-        See :py:obj:`xgboost.DMatrix` for details. Right now classifier is not well
-        supported with base_margin as it requires the size of base margin to be `n_classes
-        * n_samples`.
-
-        .. versionadded:: 1.4.0
-
-    strict_shape:
-        See :py:meth:`xgboost.Booster.predict` for details.
-
-        .. versionadded:: 1.4.0
-
-    Returns
-    -------
-    prediction :
-        When input data is ``dask.array.Array``, the return value is an array, when input
-        data is ``dask.dataframe.DataFrame``, return value can be
-        ``dask.dataframe.Series``, ``dask.dataframe.DataFrame``, depending on the output
-        shape.
-
-    """
-    ...
+) -> Any: ...
 
 class DaskScikitLearnBase(XGBModel):
-    """Base class for implementing scikit-learn interface with Dask"""
-
     _client = ...
     def predict(
         self,
@@ -374,13 +187,7 @@ class DaskScikitLearnBase(XGBModel):
     def __await__(self) -> Awaitable[Any]: ...
     def __getstate__(self) -> Dict: ...
     @property
-    def client(self) -> distributed.Client:
-        """The dask client used in this model.  The `Client` object can not be serialized for
-        transmission, so if task is launched from a worker instead of directly from the
-        client process, this attribute needs to be set at that worker.
-
-        """
-        ...
+    def client(self) -> distributed.Client: ...
     @client.setter
     def client(self, clt: distributed.Client) -> None: ...
 
@@ -440,9 +247,7 @@ class DaskXGBClassifier(DaskScikitLearnBase, XGBClassifierBase):
 
 @xgboost_model_doc(
     """Implementation of the Scikit-Learn API for XGBoost Ranking.
-
     .. versionadded:: 1.4.0
-
 """,
     ["estimators", "model"],
     end_note="""
@@ -479,9 +284,7 @@ class DaskXGBRanker(DaskScikitLearnBase, XGBRankerMixIn):
 
 @xgboost_model_doc(
     """Implementation of the Scikit-Learn API for XGBoost Random Forest Regressor.
-
     .. versionadded:: 1.4.0
-
 """,
     ["model", "objective"],
     extra_parameters="""
@@ -522,9 +325,7 @@ class DaskXGBRFRegressor(DaskXGBRegressor):
 
 @xgboost_model_doc(
     """Implementation of the Scikit-Learn API for XGBoost Random Forest Classifier.
-
     .. versionadded:: 1.4.0
-
 """,
     ["model", "objective"],
     extra_parameters="""

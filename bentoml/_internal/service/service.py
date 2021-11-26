@@ -121,7 +121,7 @@ class Service:
 
     def api(
         self,
-        input: IODescriptor[t.Any],  # noqa
+        input: IODescriptor[t.Any],  # noqa # pylint: disable=redefined-builtin
         output: IODescriptor[t.Any],
         name: t.Optional[str] = None,
         doc: t.Optional[str] = None,
@@ -149,7 +149,7 @@ class Service:
     def _add_inference_api(
         self,
         func: t.Callable[..., t.Any],
-        input: IODescriptor[t.Any],  # noqa
+        input: IODescriptor[t.Any],  # noqa # pylint: disable=redefined-builtin
         output: IODescriptor[t.Any],
         name: t.Optional[str],
         doc: t.Optional[str],
@@ -199,6 +199,7 @@ class Service:
 
         return get_service_openapi_doc(self)
 
+    # pylint: disable=unused-argument
     def set_build_options(self, **build_options):  # type: ignore
         ...
 

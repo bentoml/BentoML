@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .Image import Image, _Box
 
 def grab(

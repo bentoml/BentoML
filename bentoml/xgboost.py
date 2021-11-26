@@ -4,16 +4,15 @@ from typing import TYPE_CHECKING
 import numpy as np
 from simple_di import Provide, inject
 
-from bentoml._internal.runner.utils import Params
-
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import JSON_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
+from ._internal.runner.utils import Params
 from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    import pandas as pd
+    from pandas.core.frame import DataFrame
 
     from ._internal.models import ModelStore
 
@@ -33,7 +32,7 @@ except ImportError:
 
 _xgboost_version = importlib_metadata.version("xgboost")
 
-AnyNdarray = np.ndarray
+AnyNdarray = t.Type["np.ndarray[t.Any, np.dtype[t.Any]]"]
 
 
 # TODO: support xgb.DMatrix runner io container
@@ -245,13 +244,10 @@ class _XgBoostRunner(Runner):
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ
     def _run_batch(
-        self, *args: t.Union[AnyNdarray, "pd.DataFrame", xgb.DMatrix], **kwargs: str
+        self, *args: t.Union[AnyNdarray, "DataFrame", xgb.DMatrix], **kwargs: str
     ) -> AnyNdarray:
-        params = Params[t.Union[AnyNdarray, "pd.DataFrame", xgb.DMatrix]](
-            *args, **kwargs
-        )
+        params = Params[t.Union[AnyNdarray, "DataFrame", xgb.DMatrix]](*args, **kwargs)
         params = params.map(
             lambda x: xgb.DMatrix(x) if not isinstance(x, xgb.DMatrix) else x
         )

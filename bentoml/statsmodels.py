@@ -24,15 +24,11 @@ else:
      https://pandas.pydata.org/docs/getting_started/install.html
     """
     pd = LazyLoader("pd", globals(), "pandas", exc_msg=_exc_msg)
-    DataFrame = LazyLoader(
-        "DataFrame", globals(), "pandas.core.frame", exc_msg=_exc_msg
-    )
     np = LazyLoader("np", globals(), "numpy")
 
 
 try:
     import joblib.parallel as jp
-    import statsmodels
     import statsmodels.api as sm
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -177,7 +173,7 @@ class _StatsModelsRunner(Runner):
         def convert_type(
             inp: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"]
         ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-            if isinstance(inp, DataFrame):
+            if isinstance(inp, pd.DataFrame):
                 return inp.to_numpy()
             else:
                 return inp

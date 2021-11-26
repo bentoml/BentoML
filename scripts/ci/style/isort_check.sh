@@ -6,7 +6,7 @@ echo "Running isort format check..."
 
 set_on_failed_callback "FAIL isort errors"
 
-if ! (isort --check bentoml tests docker typings); then
+if ! (isort --check bentoml tests docker); then
   FAIL "isort format check failed"
   echo "Make sure to run \`make format\`"
   exit 1

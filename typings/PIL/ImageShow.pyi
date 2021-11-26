@@ -1,5 +1,3 @@
-
-
 from typing import Any
 
 def register(viewer, order: int = ...) -> None: ...

@@ -2,7 +2,7 @@ import io
 import itertools
 import json
 import typing as t
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 from ...exceptions import BadInput, BentoMLException
 from . import catch_exceptions
@@ -55,13 +55,13 @@ def guess_orient(
 
 
 class _DataFrameState(object):
-    # fmt: off
-    @t.overload
-    def __init__(self, columns: t.Optional[t.Dict[str, int]]): ...  # noqa: F811,E704
+    @overload
+    def __init__(self, columns: t.Optional[t.Dict[str, int]]):
+        ...
 
-    @t.overload  # noqa: F811
-    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]): ...  # noqa: F811,E704
-    # fmt: on
+    @overload
+    def __init__(self, columns: t.Optional[t.Tuple[str, ...]]):  # noqa: F811
+        ...
 
     def __init__(  # noqa: F811
         self,

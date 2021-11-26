@@ -1,9 +1,7 @@
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, overload
-
 import tensorflow as tf
 from transformers.utils.dummy_flax_objects import FlaxPreTrainedModel
-
 from ..configuration_utils import PretrainedConfig
 from ..feature_extraction_utils import PreTrainedFeatureExtractor
 from ..modeling_tf_utils import TFPreTrainedModel
@@ -92,36 +90,7 @@ from .zero_shot_classification import (
 TASK_ALIASES: Dict[str, str] = ...
 SUPPORTED_TASKS: Mapping[str, Any] = ...
 
-def check_task(task: str) -> Tuple[Dict[str, Any], Any]:
-    """
-    Checks an incoming task string, to validate it's correct and return the default Pipeline and Model classes, and
-    default models if they exist.
-
-    Args:
-        task (:obj:`str`):
-            The task defining which pipeline will be returned. Currently accepted tasks are:
-
-            - :obj:`"feature-extraction"`
-            - :obj:`"text-classification"`
-            - :obj:`"sentiment-analysis"` (alias of :obj:`"text-classification")
-            - :obj:`"token-classification"`
-            - :obj:`"ner"` (alias of :obj:`"token-classification")
-            - :obj:`"question-answering"`
-            - :obj:`"fill-mask"`
-            - :obj:`"summarization"`
-            - :obj:`"translation_xx_to_yy"`
-            - :obj:`"translation"`
-            - :obj:`"text-generation"`
-            - :obj:`"conversational"`
-
-    Returns:
-        (task_defaults:obj:`dict`, task_options: (:obj:`tuple`, None)) The actual dictionary required to initialize the
-        pipeline and some extra task options for parametrized tasks like "translation_XX_to_YY"
-
-
-    """
-    ...
-
+def check_task(task: str) -> Tuple[Dict[str, Any], Any]: ...
 def pipeline(
     task: str,
     model: Optional[
@@ -136,109 +105,4 @@ def pipeline(
     use_auth_token: Optional[Union[str, bool]] = ...,
     model_kwargs: Dict[str, Any] = ...,
     **kwargs: Any
-) -> Pipeline:
-    """
-    Utility factory method to build a :class:`~transformers.Pipeline`.
-
-    Pipelines are made of:
-
-        - A :doc:`tokenizer <tokenizer>` in charge of mapping raw textual input to token.
-        - A :doc:`model <model>` to make predictions from the inputs.
-        - Some (optional) post processing for enhancing model's output.
-
-    Args:
-        task (:obj:`str`):
-            The task defining which pipeline will be returned. Currently accepted tasks are:
-
-            - :obj:`"feature-extraction"`: will return a :class:`~transformers.FeatureExtractionPipeline`.
-            - :obj:`"text-classification"`: will return a :class:`~transformers.TextClassificationPipeline`.
-            - :obj:`"sentiment-analysis"`: (alias of :obj:`"text-classification") will return a
-              :class:`~transformers.TextClassificationPipeline`.
-            - :obj:`"token-classification"`: will return a :class:`~transformers.TokenClassificationPipeline`.
-            - :obj:`"ner"` (alias of :obj:`"token-classification"): will return a
-              :class:`~transformers.TokenClassificationPipeline`.
-            - :obj:`"question-answering"`: will return a :class:`~transformers.QuestionAnsweringPipeline`.
-            - :obj:`"fill-mask"`: will return a :class:`~transformers.FillMaskPipeline`.
-            - :obj:`"summarization"`: will return a :class:`~transformers.SummarizationPipeline`.
-            - :obj:`"translation_xx_to_yy"`: will return a :class:`~transformers.TranslationPipeline`.
-            - :obj:`"text2text-generation"`: will return a :class:`~transformers.Text2TextGenerationPipeline`.
-            - :obj:`"text-generation"`: will return a :class:`~transformers.TextGenerationPipeline`.
-            - :obj:`"zero-shot-classification:`: will return a :class:`~transformers.ZeroShotClassificationPipeline`.
-            - :obj:`"conversational"`: will return a :class:`~transformers.ConversationalPipeline`.
-        model (:obj:`str` or :obj:`~transformers.PreTrainedModel` or :obj:`~transformers.TFPreTrainedModel`, `optional`):
-            The model that will be used by the pipeline to make predictions. This can be a model identifier or an
-            actual instance of a pretrained model inheriting from :class:`~transformers.PreTrainedModel` (for PyTorch)
-            or :class:`~transformers.TFPreTrainedModel` (for TensorFlow).
-
-            If not provided, the default for the :obj:`task` will be loaded.
-        config (:obj:`str` or :obj:`~transformers.PretrainedConfig`, `optional`):
-            The configuration that will be used by the pipeline to instantiate the model. This can be a model
-            identifier or an actual pretrained model configuration inheriting from
-            :class:`~transformers.PretrainedConfig`.
-
-            If not provided, the default configuration file for the requested model will be used. That means that if
-            :obj:`model` is given, its default configuration will be used. However, if :obj:`model` is not supplied,
-            this :obj:`task`'s default model's config is used instead.
-        tokenizer (:obj:`str` or :obj:`~transformers.PreTrainedTokenizer`, `optional`):
-            The tokenizer that will be used by the pipeline to encode data for the model. This can be a model
-            identifier or an actual pretrained tokenizer inheriting from :class:`~transformers.PreTrainedTokenizer`.
-
-            If not provided, the default tokenizer for the given :obj:`model` will be loaded (if it is a string). If
-            :obj:`model` is not specified or not a string, then the default tokenizer for :obj:`config` is loaded (if
-            it is a string). However, if :obj:`config` is also not given or not a string, then the default tokenizer
-            for the given :obj:`task` will be loaded.
-        feature_extractor (:obj:`str` or :obj:`~transformers.PreTrainedFeatureExtractor`, `optional`):
-            The feature extractor that will be used by the pipeline to encode data for the model. This can be a model
-            identifier or an actual pretrained feature extractor inheriting from
-            :class:`~transformers.PreTrainedFeatureExtractor`.
-
-            Feature extractors are used for non-NLP models, such as Speech or Vision models as well as multi-modal
-            models. Multi-modal models will also require a tokenizer to be passed.
-
-            If not provided, the default feature extractor for the given :obj:`model` will be loaded (if it is a
-            string). If :obj:`model` is not specified or not a string, then the default feature extractor for
-            :obj:`config` is loaded (if it is a string). However, if :obj:`config` is also not given or not a string,
-            then the default feature extractor for the given :obj:`task` will be loaded.
-        framework (:obj:`str`, `optional`):
-            The framework to use, either :obj:`"pt"` for PyTorch or :obj:`"tf"` for TensorFlow. The specified framework
-            must be installed.
-
-            If no framework is specified, will default to the one currently installed. If no framework is specified and
-            both frameworks are installed, will default to the framework of the :obj:`model`, or to PyTorch if no model
-            is provided.
-        revision(:obj:`str`, `optional`, defaults to :obj:`"main"`):
-            When passing a task name or a string model identifier: The specific model version to use. It can be a
-            branch name, a tag name, or a commit id, since we use a git-based system for storing models and other
-            artifacts on huggingface.co, so ``revision`` can be any identifier allowed by git.
-        use_fast (:obj:`bool`, `optional`, defaults to :obj:`True`):
-            Whether or not to use a Fast tokenizer if possible (a :class:`~transformers.PreTrainedTokenizerFast`).
-        use_auth_token (:obj:`str` or `bool`, `optional`):
-            The token to use as HTTP bearer authorization for remote files. If :obj:`True`, will use the token
-            generated when running :obj:`transformers-cli login` (stored in :obj:`~/.huggingface`).
-            revision(:obj:`str`, `optional`, defaults to :obj:`"main"`):
-        model_kwargs:
-            Additional dictionary of keyword arguments passed along to the model's :obj:`from_pretrained(...,
-            **model_kwargs)` function.
-        kwargs:
-            Additional keyword arguments passed along to the specific pipeline init (see the documentation for the
-            corresponding pipeline class for possible values).
-
-    Returns:
-        :class:`~transformers.Pipeline`: A suitable pipeline for the task.
-
-    Examples::
-
-        >>> from transformers import pipeline, AutoModelForTokenClassification, AutoTokenizer
-
-        >>> # Sentiment analysis pipeline
-        >>> pipeline('sentiment-analysis')
-
-        >>> # Question answering pipeline, specifying the checkpoint identifier
-        >>> pipeline('question-answering', model='distilbert-base-cased-distilled-squad', tokenizer='bert-base-cased')
-
-        >>> # Named entity recognition pipeline, passing in a specific model and tokenizer
-        >>> model = AutoModelForTokenClassification.from_pretrained("dbmdz/bert-large-cased-finetuned-conll03-english")
-        >>> tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
-        >>> pipeline('ner', model=model, tokenizer=tokenizer)
-    """
-    ...
+) -> Pipeline: ...

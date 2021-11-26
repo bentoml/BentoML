@@ -1,6 +1,5 @@
 from datetime import datetime, tzinfo
 from typing import Callable
-
 import numpy as np
 
 dateutil_gettz: Callable[[str], tzinfo]

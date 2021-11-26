@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .ImageFile import ImageFile, PyDecoder
 
 BLP_FORMAT_JPEG: int
@@ -22,7 +19,8 @@ class BLPFormatError(NotImplementedError): ...
 class BlpImageFile(ImageFile):
     format: str
     format_description: str
-    ...
+
+...
 
 class _BLPBaseDecoder(PyDecoder):
     magic: Any

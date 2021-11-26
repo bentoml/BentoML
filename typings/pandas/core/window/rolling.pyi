@@ -1,6 +1,5 @@
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Callable, Hashable
-
 from pandas._typing import Axis, FrameOrSeries, FrameOrSeriesUnion
 from pandas.core.base import SelectionMixin
 from pandas.core.groupby.ops import BaseGrouper
@@ -20,15 +19,9 @@ from pandas.core.window.doc import (
 )
 from pandas.util._decorators import doc
 
-"""
-Provide a generic structure to support window functions,
-similar to how we have a Groupby object.
-"""
 if TYPE_CHECKING: ...
 
 class BaseWindow(SelectionMixin):
-    """Provides utilities for performing windowing operations."""
-
     _attributes: list[str] = ...
     exclusions: frozenset[Hashable] = ...
     _on: Index
@@ -52,20 +45,12 @@ class BaseWindow(SelectionMixin):
     def is_datetimelike(self) -> bool: ...
     def validate(self) -> None: ...
     def __getattr__(self, attr: str): ...
-    def __repr__(self) -> str:
-        """
-        Provide a nice str repr of our rolling object.
-        """
-        ...
+    def __repr__(self) -> str: ...
     def __iter__(self): ...
     def aggregate(self, func, *args, **kwargs): ...
     agg = ...
 
 class BaseWindowGroupby(BaseWindow):
-    """
-    Provide the groupby windowing facilities.
-    """
-
     _grouper: BaseGrouper
     _as_index: bool
     _attributes = ...
@@ -79,176 +64,6 @@ class BaseWindowGroupby(BaseWindow):
     ) -> None: ...
 
 class Window(BaseWindow):
-    """
-    Provide rolling window calculations.
-
-    Parameters
-    ----------
-    window : int, offset, or BaseIndexer subclass
-        Size of the moving window. This is the number of observations used for
-        calculating the statistic. Each window will be a fixed size.
-
-        If its an offset then this will be the time period of each window. Each
-        window will be a variable sized based on the observations included in
-        the time-period. This is only valid for datetimelike indexes.
-
-        If a BaseIndexer subclass is passed, calculates the window boundaries
-        based on the defined ``get_window_bounds`` method. Additional rolling
-        keyword arguments, namely `min_periods`, `center`, and
-        `closed` will be passed to `get_window_bounds`.
-    min_periods : int, default None
-        Minimum number of observations in window required to have a value
-        (otherwise result is NA). For a window that is specified by an offset,
-        `min_periods` will default to 1. Otherwise, `min_periods` will default
-        to the size of the window.
-    center : bool, default False
-        Set the labels at the center of the window.
-    win_type : str, default None
-        Provide a window type. If ``None``, all points are evenly weighted.
-        See the notes below for further information.
-    on : str, optional
-        For a DataFrame, a datetime-like column or Index level on which
-        to calculate the rolling window, rather than the DataFrame's index.
-        Provided integer column is ignored and excluded from result since
-        an integer index is not used to calculate the rolling window.
-    axis : int or str, default 0
-    closed : str, default None
-        Make the interval closed on the 'right', 'left', 'both' or
-        'neither' endpoints. Defaults to 'right'.
-
-        .. versionchanged:: 1.2.0
-
-            The closed parameter with fixed windows is now supported.
-    method : str {'single', 'table'}, default 'single'
-        Execute the rolling operation per single column or row (``'single'``)
-        or over the entire object (``'table'``).
-
-        This argument is only implemented when specifying ``engine='numba'``
-        in the method call.
-
-        .. versionadded:: 1.3.0
-
-    Returns
-    -------
-    a Window or Rolling sub-classed for the particular operation
-
-    See Also
-    --------
-    expanding : Provides expanding transformations.
-    ewm : Provides exponential weighted functions.
-
-    Notes
-    -----
-    By default, the result is set to the right edge of the window. This can be
-    changed to the center of the window by setting ``center=True``.
-
-    To learn more about the offsets & frequency strings, please see `this link
-    <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`__.
-
-    If ``win_type=None``, all points are evenly weighted; otherwise, ``win_type``
-    can accept a string of any `scipy.signal window function
-    <https://docs.scipy.org/doc/scipy/reference/signal.windows.html#module-scipy.signal.windows>`__.
-
-    Certain Scipy window types require additional parameters to be passed
-    in the aggregation function. The additional parameters must match
-    the keywords specified in the Scipy window type method signature.
-    Please see the third example below on how to add the additional parameters.
-
-    Examples
-    --------
-    >>> df = pd.DataFrame({'B': [0, 1, 2, np.nan, 4]})
-    >>> df
-         B
-    0  0.0
-    1  1.0
-    2  2.0
-    3  NaN
-    4  4.0
-
-    Rolling sum with a window length of 2, using the 'triang'
-    window type.
-
-    >>> df.rolling(2, win_type='triang').sum()
-         B
-    0  NaN
-    1  0.5
-    2  1.5
-    3  NaN
-    4  NaN
-
-    Rolling sum with a window length of 2, using the 'gaussian'
-    window type (note how we need to specify std).
-
-    >>> df.rolling(2, win_type='gaussian').sum(std=3)
-              B
-    0       NaN
-    1  0.986207
-    2  2.958621
-    3       NaN
-    4       NaN
-
-    Rolling sum with a window length of 2, min_periods defaults
-    to the window length.
-
-    >>> df.rolling(2).sum()
-         B
-    0  NaN
-    1  1.0
-    2  3.0
-    3  NaN
-    4  NaN
-
-    Same as above, but explicitly set the min_periods
-
-    >>> df.rolling(2, min_periods=1).sum()
-         B
-    0  0.0
-    1  1.0
-    2  3.0
-    3  2.0
-    4  4.0
-
-    Same as above, but with forward-looking windows
-
-    >>> indexer = pd.api.indexers.FixedForwardWindowIndexer(window_size=2)
-    >>> df.rolling(window=indexer, min_periods=1).sum()
-         B
-    0  1.0
-    1  3.0
-    2  2.0
-    3  4.0
-    4  4.0
-
-    A ragged (meaning not-a-regular frequency), time-indexed DataFrame
-
-    >>> df = pd.DataFrame({'B': [0, 1, 2, np.nan, 4]},
-    ...                   index = [pd.Timestamp('20130101 09:00:00'),
-    ...                            pd.Timestamp('20130101 09:00:02'),
-    ...                            pd.Timestamp('20130101 09:00:03'),
-    ...                            pd.Timestamp('20130101 09:00:05'),
-    ...                            pd.Timestamp('20130101 09:00:06')])
-
-    >>> df
-                           B
-    2013-01-01 09:00:00  0.0
-    2013-01-01 09:00:02  1.0
-    2013-01-01 09:00:03  2.0
-    2013-01-01 09:00:05  NaN
-    2013-01-01 09:00:06  4.0
-
-    Contrasting to an integer rolling window, this will roll a variable
-    length window corresponding to the time period.
-    The default for min_periods is 1.
-
-    >>> df.rolling('2s').sum()
-                           B
-    2013-01-01 09:00:00  0.0
-    2013-01-01 09:00:02  1.0
-    2013-01-01 09:00:03  3.0
-    2013-01-01 09:00:05  NaN
-    2013-01-01 09:00:06  4.0
-    """
-
     _attributes = ...
     def validate(self): ...
     @doc(
@@ -271,7 +86,6 @@ class Window(BaseWindow):
         0  1  4  7
         1  2  5  8
         2  3  6  9
-
         >>> df.rolling(2, win_type="boxcar").agg("mean")
              A    B    C
         0  NaN  NaN  NaN
@@ -428,13 +242,11 @@ class Rolling(RollingAndExpandingMixin):
         0  1  4  7
         1  2  5  8
         2  3  6  9
-
         >>> df.rolling(2).sum()
              A     B     C
         0  NaN   NaN   NaN
         1  3.0   9.0  15.0
         2  5.0  11.0  17.0
-
         >>> df.rolling(2).agg({"A": "sum", "B": "min"})
              A    B
         0  NaN  NaN
@@ -526,7 +338,6 @@ class Rolling(RollingAndExpandingMixin):
         3    4
         4    5
         dtype: int64
-
         >>> s.rolling(3).sum()
         0     NaN
         1     NaN
@@ -534,7 +345,6 @@ class Rolling(RollingAndExpandingMixin):
         3     9.0
         4    12.0
         dtype: float64
-
         >>> s.rolling(3, center=True).sum()
         0     NaN
         1     6.0
@@ -542,9 +352,7 @@ class Rolling(RollingAndExpandingMixin):
         3    12.0
         4     NaN
         dtype: float64
-
         For DataFrame, each sum is computed column-wise.
-
         >>> df = pd.DataFrame({{"A": s, "B": s ** 2}})
         >>> df
            A   B
@@ -553,7 +361,6 @@ class Rolling(RollingAndExpandingMixin):
         2  3   9
         3  4  16
         4  5  25
-
         >>> df.rolling(3).sum()
               A     B
         0   NaN   NaN
@@ -613,7 +420,6 @@ class Rolling(RollingAndExpandingMixin):
         dedent(
             """
         Performing a rolling minimum with a window size of 3.
-
         >>> s = pd.Series([4, 3, 5, 2, 6])
         >>> s.rolling(3).min()
         0    NaN
@@ -652,7 +458,6 @@ class Rolling(RollingAndExpandingMixin):
             """
         The below examples will show rolling mean calculations with window sizes of
         two and three, respectively.
-
         >>> s = pd.Series([1, 2, 3, 4])
         >>> s.rolling(2).mean()
         0    NaN
@@ -660,7 +465,6 @@ class Rolling(RollingAndExpandingMixin):
         2    2.5
         3    3.5
         dtype: float64
-
         >>> s.rolling(3).mean()
         0    NaN
         1    NaN
@@ -695,7 +499,6 @@ class Rolling(RollingAndExpandingMixin):
         dedent(
             """
         Compute the rolling median of a series with a window size of 3.
-
         >>> s = pd.Series([0, 1, 2, 3, 4])
         >>> s.rolling(3).median()
         0    NaN
@@ -738,9 +541,7 @@ class Rolling(RollingAndExpandingMixin):
             """
         The default ``ddof`` of 1 used in :meth:`Series.std` is different
         than the default ``ddof`` of 0 in :func:`numpy.std`.
-
         A minimum of one period is required for the rolling calculation.
-
         The implementation is susceptible to floating point imprecision as
         shown in the example below.\n
         """
@@ -787,9 +588,7 @@ class Rolling(RollingAndExpandingMixin):
             """
         The default ``ddof`` of 1 used in :meth:`Series.var` is different
         than the default ``ddof`` of 0 in :func:`numpy.var`.
-
         A minimum of one period is required for the rolling calculation.
-
         The implementation is susceptible to floating point imprecision as
         shown in the example below.\n
         """
@@ -881,7 +680,6 @@ class Rolling(RollingAndExpandingMixin):
             """
         The example below will show a rolling calculation with a window size of
         four matching the equivalent function call using `scipy.stats`.
-
         >>> arr = [1, 2, 3, 4, 999]
         >>> import scipy.stats
         >>> print(f"{{scipy.stats.kurtosis(arr[:-1], bias=False):.6f}}")
@@ -913,7 +711,6 @@ class Rolling(RollingAndExpandingMixin):
         interpolation : {{'linear', 'lower', 'higher', 'midpoint', 'nearest'}}
             This optional parameter specifies the interpolation method to use,
             when the desired quantile lies between two data points `i` and `j`:
-
                 * linear: `i + (j - i) * fraction`, where `fraction` is the
                   fractional part of the index surrounded by `i` and `j`.
                 * lower: `i`.
@@ -937,7 +734,6 @@ class Rolling(RollingAndExpandingMixin):
         2    2.0
         3    3.0
         dtype: float64
-
         >>> s.rolling(2).quantile(.4, interpolation='midpoint')
         0    NaN
         1    1.5
@@ -1023,21 +819,16 @@ class Rolling(RollingAndExpandingMixin):
             """
         This function uses Pearson's definition of correlation
         (https://en.wikipedia.org/wiki/Pearson_correlation_coefficient).
-
         When `other` is not specified, the output will be self correlation (e.g.
         all 1's), except for :class:`~pandas.DataFrame` inputs with `pairwise`
         set to `True`.
-
         Function will return ``NaN`` for correlations of equal valued sequences;
         this is the result of a 0/0 division error.
-
         When `pairwise` is set to `False`, only matching columns between `self` and
         `other` will be used.
-
         When `pairwise` is set to `True`, the output will be a MultiIndex DataFrame
         with the original index on the first level, and the `other` DataFrame
         columns on the second level.
-
         In the case of missing elements, only complete pairwise observations
         will be used.\n
         """
@@ -1047,7 +838,6 @@ class Rolling(RollingAndExpandingMixin):
             """
         The below example shows a rolling calculation with a window size of
         four matching the equivalent function call using :meth:`numpy.corrcoef`.
-
         >>> v1 = [3, 3, 3, 5, 8]
         >>> v2 = [3, 4, 4, 4, 8]
         >>> # numpy returns a 2X2 array, the correlation coefficient
@@ -1065,12 +855,9 @@ class Rolling(RollingAndExpandingMixin):
         3    0.333333
         4    0.916949
         dtype: float64
-
         The below example shows a similar rolling calculation on a
         DataFrame using the pairwise option.
-
-        >>> matrix = np.array([[51., 35.], [49., 30.], [47., 32.],\
-        [46., 31.], [50., 36.]])
+        >>> matrix = np.array([[51., 35.], [49., 30.], [47., 32.],        [46., 31.], [50., 36.]])
         >>> print(np.corrcoef(matrix[:-1,0], matrix[:-1,1]).round(7))
         [[1.         0.6263001]
          [0.6263001  1.       ]]
@@ -1112,8 +899,4 @@ class Rolling(RollingAndExpandingMixin):
     ): ...
 
 class RollingGroupby(BaseWindowGroupby, Rolling):
-    """
-    Provide a rolling groupby implementation.
-    """
-
     _attributes = ...

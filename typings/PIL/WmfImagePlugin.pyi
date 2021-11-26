@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .ImageFile import StubImageFile
 
 def register_handler(handler) -> None: ...

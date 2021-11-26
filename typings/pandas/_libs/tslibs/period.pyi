@@ -1,5 +1,4 @@
 from typing import Literal
-
 import numpy as np
 from pandas._libs.tslibs.nattype import NaTType
 from pandas._libs.tslibs.offsets import BaseOffset

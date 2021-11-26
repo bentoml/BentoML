@@ -1,7 +1,4 @@
-
-
 from typing import Any, Protocol
-
 from _typeshed import StrOrBytesPath, SupportsRead
 from typing_extensions import Literal
 

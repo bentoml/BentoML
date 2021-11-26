@@ -1,7 +1,4 @@
-
-
 from typing import Any, Dict, List, Tuple, Union
-
 from .strategy.core import StrategyList
 from .strategy.dict import DictStrategies
 from .strategy.list import ListStrategies
@@ -10,22 +7,17 @@ from .strategy.set import SetStrategies
 ConfigDictType = Dict[str, Any]
 
 class Merger:
-    """
-    :param type_strategies, List[Tuple]: a list of (Type, Strategy) pairs
-           that should be used against incoming types. For example: (dict, "override").
-    """
-    PROVIDED_TYPE_STRATEGIES: Dict[type, Union[ListStrategies, DictStrategies, SetStrategies]] = ...
-    def __init__(self, type_strategies: List[Tuple[type, str]], fallback_strategies: List[str], type_conflict_strategies: List[str]) -> None:
-        ...
-
-    def merge(self, base: ConfigDictType, nxt: ConfigDictType) -> None:
-        ...
-
-    def type_conflict_strategy(self, *args: Any) -> Any:
-        ...
-
-    def value_strategy(self, path: str, base: StrategyList, nxt: StrategyList) -> None:
-        ...
-
-
-
+    PROVIDED_TYPE_STRATEGIES: Dict[
+        type, Union[ListStrategies, DictStrategies, SetStrategies]
+    ] = ...
+    def __init__(
+        self,
+        type_strategies: List[Tuple[type, str]],
+        fallback_strategies: List[str],
+        type_conflict_strategies: List[str],
+    ) -> None: ...
+    def merge(self, base: ConfigDictType, nxt: ConfigDictType) -> None: ...
+    def type_conflict_strategy(self, *args: Any) -> Any: ...
+    def value_strategy(
+        self, path: str, base: StrategyList, nxt: StrategyList
+    ) -> None: ...

@@ -1,7 +1,4 @@
-
-
 from typing import Any
-
 from .ImageFile import ImageFile
 
 class BitStream:
@@ -17,4 +14,5 @@ class BitStream:
 class MpegImageFile(ImageFile):
     format: str
     format_description: str
-    ...
+
+...

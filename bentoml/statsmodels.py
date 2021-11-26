@@ -1,7 +1,5 @@
 import typing as t
 from typing import TYPE_CHECKING
-from h11 import Data
-from pandas import DataFrame
 
 from simple_di import Provide, inject
 
@@ -163,7 +161,6 @@ class _StatsModelsRunner(Runner):
         self._model = load(self._model_info.tag, model_store=self._model_store)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    # pylint: disable=arguments-differ
     def _run_batch(
         self,
         *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "pd.DataFrame"],
@@ -173,7 +170,14 @@ class _StatsModelsRunner(Runner):
             *args, **kwargs
         )
 
-        params = params.map(lambda x: x.to_numpy() if isinstance(x, pd.DataFrame) else x)
+        def convert_type(
+            inp: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "pd.DataFrame"]
+        ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+            if isinstance(inp, pd.DataFrame):
+                return inp.to_numpy()
+            return inp
+
+        params = params.map(convert_type)
         parallel = jp.Parallel(self.num_concurrency_per_replica, verbose=0)
         pred_fn = jp.delayed(self._predict_fn)
         return parallel(pred_fn(args, **params.kwargs) for args in params.args)[0]

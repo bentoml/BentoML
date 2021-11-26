@@ -592,8 +592,8 @@ class DataFrame(NDFrame, OpsMixin):
         """
         ...
     def to_numpy(
-        self, dtype: NpDtype | None = ..., copy: bool = ..., na_value=...
-    ) -> np.ndarray:
+        self, dtype: NpDtype | None = ..., copy: bool = ..., na_value: Any=...
+    ) -> np.ndarray[Any, np.dtype[Any]]:
         """
         Convert the DataFrame to a NumPy array.
 

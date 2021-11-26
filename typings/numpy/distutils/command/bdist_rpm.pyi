@@ -1,9 +1,0 @@
-import sys
-from distutils.command.bdist_rpm import bdist_rpm as old_bdist_rpm
-
-from setuptools.command.bdist_rpm import bdist_rpm as old_bdist_rpm
-
-if "setuptools" in sys.modules: ...
-else: ...
-
-class bdist_rpm(old_bdist_rpm): ...

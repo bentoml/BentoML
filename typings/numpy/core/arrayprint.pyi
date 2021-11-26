@@ -1,24 +1,35 @@
-import sys
+# Using a private class is by no means ideal, but it is simply a consequence
+# of a `contextlib.context` returning an instance of aforementioned class
 from contextlib import _GeneratorContextManager
-from typing import Any, Callable, Optional
+from types import TracebackType
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    SupportsIndex,
+    Type,
+    TypedDict,
+    Union,
+)
 
 from numpy import (
     bool_,
+    bytes_,
     clongdouble,
     complexfloating,
     datetime64,
     floating,
+    generic,
     integer,
     longdouble,
     ndarray,
+    str_,
     timedelta64,
     void,
 )
-from numpy.typing import _CharLike_co, _FloatLike_co
-from typing_extensions import Literal, SupportsIndex, TypedDict
+from numpy.typing import ArrayLike, _CharLike_co, _FloatLike_co
 
-if sys.version_info > (3, 8): ...
-else: ...
 _FloatMode = Literal["fixed", "unique", "maxprec", "maxprec_equal"]
 
 class _FormatDict(TypedDict, total=False):
@@ -38,7 +49,6 @@ class _FormatDict(TypedDict, total=False):
     float_kind: Callable[[floating[Any]], str]
     complex_kind: Callable[[complexfloating[Any, Any]], str]
     str_kind: Callable[[_CharLike_co], str]
-    ...
 
 class _FormatOptions(TypedDict):
     precision: int
@@ -51,8 +61,7 @@ class _FormatOptions(TypedDict):
     formatter: Optional[_FormatDict]
     sign: Literal["-", "+", " "]
     floatmode: _FloatMode
-    legacy: Literal[False, "1.13"]
-    ...
+    legacy: Literal[False, "1.13", "1.21"]
 
 def set_printoptions(
     precision: Optional[SupportsIndex] = ...,
@@ -66,7 +75,7 @@ def set_printoptions(
     sign: Optional[Literal["-", "+", " "]] = ...,
     floatmode: Optional[_FloatMode] = ...,
     *,
-    legacy: Optional[Literal[False, "1.13"]] = ...
+    legacy: Optional[Literal[False, "1.13", "1.21"]] = ...
 ) -> None: ...
 def get_printoptions() -> _FormatOptions: ...
 def array2string(
@@ -76,6 +85,9 @@ def array2string(
     suppress_small: Optional[bool] = ...,
     separator: str = ...,
     prefix: str = ...,
+    # NOTE: With the `style` argument being deprecated,
+    # all arguments between `formatter` and `suffix` are de facto
+    # keyworld-only arguments
     *,
     formatter: Optional[_FormatDict] = ...,
     threshold: Optional[int] = ...,
@@ -83,7 +95,7 @@ def array2string(
     sign: Optional[Literal["-", "+", " "]] = ...,
     floatmode: Optional[_FloatMode] = ...,
     suffix: str = ...,
-    legacy: Optional[Literal[False, "1.13"]] = ...
+    legacy: Optional[Literal[False, "1.13", "1.21"]] = ...,
 ) -> str: ...
 def format_float_scientific(
     x: _FloatLike_co,
@@ -133,5 +145,5 @@ def printoptions(
     sign: Optional[Literal["-", "+", " "]] = ...,
     floatmode: Optional[_FloatMode] = ...,
     *,
-    legacy: Optional[Literal[False, "1.13"]] = ...
+    legacy: Optional[Literal[False, "1.13", "1.21"]] = ...
 ) -> _GeneratorContextManager[_FormatOptions]: ...

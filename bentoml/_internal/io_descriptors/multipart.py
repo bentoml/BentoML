@@ -84,16 +84,22 @@ class Multipart(IODescriptor[MultipartIO]):
              PandasSeries, Text, File.
 
     .. notes::
-        Make sure to match your inputs to your API function to the keys defined under `Multipart`::
-            ┌───────────────────────────────────────────────────┐
-            │ Multipart(arr=NumpyNdarray(), annotations=JSON()) │
-            └─────────────────────┬─────────────┬───────────────┘
-                                    │             │
-                                    │       ┌─────┘
-                                    │       │
-                    ┌───────────────▼───────▼─────────┐
-                    │  def predict(arr, annotations): │
-                    └─────────────────────────────────┘
+        Make sure to match your input params in your API function to the keys defined under `Multipart`::
+
+            ┌───────────────────────────────────────────────────────┐
+            │                                                       │
+            │ ┌───────────────────────────────────────────────────┐ │
+            │ │ Multipart(arr=NumpyNdarray(), annotations=JSON()) │ │
+            │ └─────────────────────┬─────────────┬───────────────┘ │
+            │                       │             │                 │
+            │                       │       ┌─────┘                 │
+            │                       │       │                       │
+            │       ┌───────────────▼───────▼─────────┐             │
+            │       │  def predict(arr, annotations): │             │
+            │       └─────────────────────────────────┘             │
+            │                                                       │
+            └───────────────────────────────────────────────────────┘
+
 
     Returns:
         IO Descriptor that represents Multipart request/response.
@@ -111,9 +117,7 @@ class Multipart(IODescriptor[MultipartIO]):
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {
             "type": "object",
-            "properties": {
-                k: io.openapi_schema_type() for k, io in self._inputs.items()
-            },
+            "properties": {k: io.openapi_schema_type() for k, io in self._inputs.items()},
         }
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:

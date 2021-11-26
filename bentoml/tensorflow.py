@@ -1,4 +1,4 @@
-# type: ignore[reportMissingStubs]
+import functools
 import logging
 import os
 import pathlib
@@ -128,8 +128,7 @@ class _tf_function_wrapper:  # pragma: no cover
         )
 
         transformed_kwargs = {
-            k: cast_tensor_by_spec(arg, self.kwarg_specs[k])
-            for k, arg in kwargs.items()
+            k: cast_tensor_by_spec(arg, self.kwarg_specs[k]) for k, arg in kwargs.items()
         }
         return self.origin_func(*transformed_args, **transformed_kwargs)
 
@@ -162,9 +161,7 @@ def _load_tf_saved_model(path: str) -> t.Union["tracking.AutoTrackable", t.Any]:
         return tf.saved_model.load(path)
     else:
         loaded = tf.compat.v2.saved_model.load(path)
-        if isinstance(loaded, tracking.AutoTrackable) and not hasattr(
-            loaded, "__call__"
-        ):
+        if isinstance(loaded, tracking.AutoTrackable) and not hasattr(loaded, "__call__"):
             logger.warning(AUTOTRACKABLE_CALLABLE_WARNING)
         return loaded
 
@@ -389,19 +386,20 @@ class _TensorflowRunner(Runner):
         tag: t.Union[str, Tag],
         predict_fn_name: str,
         device_id: str,
+        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(str(tag), resource_quota, batch_options)
+        self._device_id = device_id
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
+        self._partial_kwargs = partial_kwargs if partial_kwargs is not None else dict()
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
-        # self.devices is a TensorflowEagerContext
-        self._device = tf.device(device_id)
         if TF2 and "GPU" in device_id:
             tf.config.set_visible_devices(device_id, "GPU")
         self._config_proto = dict(
@@ -435,9 +433,10 @@ class _TensorflowRunner(Runner):
         )
         self._model = load(self.name, model_store=self._model_store)
         if not TF2:
-            self._predict_fn = self._model.signatures["serving_default"]
+            raw_predict_fn = self._model.signatures["serving_default"]
         else:
-            self._predict_fn = getattr(self._model, self._predict_fn_name)
+            raw_predict_fn = getattr(self._model, self._predict_fn_name)
+        self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
     def _run_batch(
         self,
@@ -453,14 +452,29 @@ class _TensorflowRunner(Runner):
                 tf.Tensor,
             ]
         ](*args, **kwargs)
-        with self._device:
-            if not isinstance(input_data, tf.Tensor):
-                input_data = tf.convert_to_tensor(input_data, dtype=tf.float32)
+
+        with tf.device(self._device_id):
+
+            def _mapping(
+                item: t.Union[
+                    t.List[t.Union[int, float]],
+                    "np.ndarray[t.Any, np.dtype[t.Any]]",
+                    tf.Tensor,
+                ]
+            ) -> tf.Tensor:
+                if not isinstance(item, tf.Tensor):
+                    return tf.convert_to_tensor(item, dtype=tf.float32)
+                else:
+                    return item
+
+            params = params.map(_mapping)
+
             if TF2:
                 tf.compat.v1.global_variables_initializer()
+                res = self._predict_fn(*params.args, **params.kwargs)
             else:
                 self._session.run(tf.compat.v1.global_variables_initializer())
-            res = self._predict_fn(input_data)
+                res = self._session.run(self._predict_fn(*params.args, **params.kwargs))
             return res.numpy() if TF2 else res["prediction"]
 
 
@@ -470,6 +484,7 @@ def load_runner(
     *,
     predict_fn_name: str = "__call__",
     device_id: str = "CPU:0",
+    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -484,6 +499,8 @@ def load_runner(
             Model tag to retrieve model from modelstore
         predict_fn_name (`str`, default to `__call__`):
             inference function to be used.
+        partial_kwargs (`t.Dict[str, t.Any]`, `optional`, default to `None`):
+            Dictionary of partial kwargs that can be shared across different model.
         device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `CPU:0`):
             Optional devices to put the given model on. Refers to https://www.tensorflow.org/api_docs/python/tf/config
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
@@ -502,6 +519,7 @@ def load_runner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
+        partial_kwargs=partial_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

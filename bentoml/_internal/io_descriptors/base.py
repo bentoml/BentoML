@@ -1,9 +1,7 @@
 import inspect
 import typing as t
 from abc import ABC, abstractmethod
-from email.policy import default
 from itertools import zip_longest
-from random import setstate
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -11,14 +9,13 @@ from starlette.responses import Response
 
 from ..types import FileLike
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import numpy as np
     import pandas as pd
     import PIL.Image
-    from pydantic import BaseModel
 
 
-JSONType = t.Union[str, t.Dict[str, t.Any], "BaseModel"]
+JSONType = t.Union[str, t.Dict[str, t.Any]]
 
 ImageType = t.Union["PIL.Image.Image", "np.ndarray[t.Any, np.dtype[t.Any]]"]
 
@@ -36,7 +33,7 @@ IOType = t.Union[
 IOPyObj = t.TypeVar("IOPyObj")
 
 
-def readable_str(obj: t.Any) -> t.Union[t.Dict[str, t.Any], str]:
+def readable_str(obj: t.Any) -> t.Union[t.Dict[str, str], str]:
     # make str more human readable
     if callable(obj):
         return obj.__name__
@@ -81,7 +78,7 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
             key = k.strip("_")
             value = default_params.get(key, "")
             if isinstance(v, dict):
-                val = readable_str(v)
+                val = readable_str(v)  # t.Dict[str, str]
                 filtered = [f"{_k}={_v}" for _k, _v in val.items()]
                 break
             if v != value:

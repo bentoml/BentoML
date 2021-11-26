@@ -13,19 +13,14 @@ from ..utils.formparser import (
 from .base import IODescriptor, IOType
 
 if TYPE_CHECKING:  # pragma: no cover
-    import numpy as np
-    import pandas as pd
-
-    from .file import File, FileLike
-    from .image import Image, ImageType
-    from .json import JSON, JSONType
+    # noqa: F811
+    from .file import File
+    from .image import Image
+    from .json import JSON
     from .numpy import NumpyNdarray
     from .pandas import PandasDataFrame, PandasSeries
     from .text import Text
 
-_DescriptorType = t.Union[
-    "Image", "JSON", "Text", "NumpyNdarray", "PandasDataFrame", "PandasSeries", "File"
-]
 
 MultipartIO = t.Dict[str, IOType]
 
@@ -103,14 +98,35 @@ class Multipart(IODescriptor[MultipartIO]):
         IO Descriptor that represents Multipart request/response.
     """
 
-    def __init__(self, **inputs: _DescriptorType):
+    def __init__(
+        self,
+        **inputs: t.Union[
+            "Image",
+            "JSON",
+            "Text",
+            "NumpyNdarray",
+            "PandasDataFrame",
+            "PandasSeries",
+            "File",
+        ],
+    ):
         for descriptor in inputs.values():
             if isinstance(descriptor, Multipart):  # pragma: no cover
                 raise InvalidArgument(
                     "Multipart IO can not contain nested Multipart item"
                 )
-
-        self._inputs = inputs  # type: t.Dict[str, _DescriptorType]
+        self._inputs: t.Dict[
+            str,
+            t.Union[
+                "Image",
+                "JSON",
+                "Text",
+                "NumpyNdarray",
+                "PandasDataFrame",
+                "PandasSeries",
+                "File",
+            ],
+        ] = inputs
         super().__init__()
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
@@ -145,37 +161,10 @@ class Multipart(IODescriptor[MultipartIO]):
             res[k] = v
         return res
 
-    @t.overload
-    async def to_http_response(self, obj: t.Dict[str, str]) -> Response:
-        ...
-
-    @t.overload
-    async def to_http_response(self, obj: t.Dict[str, "JSONType"]) -> Response:
-        ...
-
-    @t.overload
-    async def to_http_response(self, obj: t.Dict[str, "ImageType"]) -> Response:
-        ...
-
-    @t.overload
-    async def to_http_response(
-        self, obj: t.Dict[str, "np.ndarray[t.Any, np.dtype[t.Any]]"]
-    ) -> Response:
-        ...
-
-    @t.overload
-    async def to_http_response(self, obj: t.Dict[str, "FileLike"]) -> Response:
-        ...
-
-    @t.overload
-    async def to_http_response(
-        self, obj: t.Dict[str, t.Union["pd.DataFrame", "pd.Series[t.Any]"]]
-    ) -> Response:
-        ...
-
-    async def to_http_response(self, obj: t.Any) -> Response:
+    async def to_http_response(self, obj: MultipartIO) -> Response:
         res_mapping: t.Dict[str, Response] = {}
         for k, io_ in self._inputs.items():
             data = obj[k]
-            res_mapping[k] = await io_.to_http_response(data)
+            # TODO(aarnphm): fix with stubs
+            res_mapping[k] = await io_.to_http_response(data)  # type: ignore[reportGeneralTypeIssue]
         return await concat_to_multipart_responses(res_mapping)

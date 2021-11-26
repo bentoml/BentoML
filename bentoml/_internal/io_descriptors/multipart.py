@@ -96,7 +96,7 @@ class Multipart(IODescriptor[MultipartIO]):
 
     Returns:
         IO Descriptor that represents Multipart request/response.
-    """
+    """  # noqa: LN001
 
     def __init__(
         self,
@@ -132,9 +132,7 @@ class Multipart(IODescriptor[MultipartIO]):
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {
             "type": "object",
-            "properties": {
-                k: io.openapi_schema_type() for k, io in self._inputs.items()
-            },
+            "properties": {k: io.openapi_schema_type() for k, io in self._inputs.items()},
         }
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:

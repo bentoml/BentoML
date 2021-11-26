@@ -454,7 +454,7 @@ class _TensorflowRunner(Runner):
 
         with tf.device(self._device_id):
 
-            def _mapping(item) -> tf.Tensor:
+            def _mapping(item: t.Union[t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor) -> tf.Tensor:
                 if not isinstance(item, tf.Tensor):
                     return tf.convert_to_tensor(item, dtype=tf.float32)
                 else:

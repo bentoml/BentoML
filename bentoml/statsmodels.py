@@ -1,6 +1,7 @@
-# type: ignore[reportMissingStubs]
 import typing as t
 from typing import TYPE_CHECKING
+from h11 import Data
+from pandas import DataFrame
 
 from simple_di import Provide, inject
 
@@ -38,6 +39,13 @@ except ImportError:  # pragma: no cover
          https://www.statsmodels.org/stable/install.html
          """
     )
+
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_statsmodel_version = importlib_metadata.version("statsmodels")
 
 
 def _get_model_info(
@@ -105,7 +113,7 @@ def save(
 
     Examples::
     """  # noqa
-    context: t.Dict[str, t.Any] = {"statsmodels": statsmodels.__version__}
+    context: t.Dict[str, t.Any] = {"statsmodels": _statsmodel_version}
     _model = Model.create(
         name,
         module=__name__,
@@ -165,14 +173,7 @@ class _StatsModelsRunner(Runner):
             *args, **kwargs
         )
 
-        def _mapping(
-            item: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "pd.DataFrame"]
-        ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-            if isinstance(item, pd.DataFrame):
-                item = item.to_numpy()
-            return item
-
-        params = params.map(_mapping)
+        params = params.map(lambda x: x.to_numpy() if isinstance(x, pd.DataFrame) else x)
         parallel = jp.Parallel(self.num_concurrency_per_replica, verbose=0)
         pred_fn = jp.delayed(self._predict_fn)
         return parallel(pred_fn(args, **params.kwargs) for args in params.args)[0]

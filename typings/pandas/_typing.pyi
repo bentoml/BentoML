@@ -22,8 +22,6 @@ from typing import Union
 
 import numpy as np
 
-if TYPE_CHECKING: ...
-else: ...
 ArrayLike = Union["ExtensionArray", np.ndarray]
 AnyArrayLike = Union[ArrayLike, "Index", "Series"]
 PythonScalar = Union[str, int, float, bool]

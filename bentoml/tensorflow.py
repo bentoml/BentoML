@@ -1,3 +1,4 @@
+import functools
 import logging
 import os
 import pathlib
@@ -13,6 +14,7 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import Model
 from ._internal.runner import Runner
+from ._internal.runner.utils import Params
 from ._internal.types import PathType, Tag
 from ._internal.utils.tensorflow import (
     cast_tensor_by_spec,
@@ -387,19 +389,20 @@ class _TensorflowRunner(Runner):
         tag: t.Union[str, Tag],
         predict_fn_name: str,
         device_id: str,
+        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ):
         super().__init__(str(tag), resource_quota, batch_options)
+        self._device_id = device_id
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
+        self._partial_kwargs = partial_kwargs if partial_kwargs is not None else dict()
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
-        # self.devices is a TensorflowEagerContext
-        self._device = tf.device(device_id)
         if TF2 and "GPU" in device_id:
             tf.config.set_visible_devices(device_id, "GPU")
         self._config_proto = dict(
@@ -433,22 +436,44 @@ class _TensorflowRunner(Runner):
         )
         self._model = load(self.name, model_store=self._model_store)
         if not TF2:
-            self._predict_fn = self._model.signatures["serving_default"]
+            raw_predict_fn = self._model.signatures["serving_default"]
         else:
-            self._predict_fn = getattr(self._model, self._predict_fn_name)
+            raw_predict_fn = getattr(self._model, self._predict_fn_name)
+        self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]
+        self,
+        *args: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor],
+        **kwargs: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor],
     ) -> np.ndarray:
-        with self._device:
-            if not isinstance(input_data, tf.Tensor):
-                input_data = tf.convert_to_tensor(input_data, dtype=tf.float32)
+
+        params = Params[t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]](
+            *args, **kwargs
+        )
+
+        with tf.device(self._device_id):
+
+            def _mapping(
+                item: t.Union[
+                    t.List[t.Union[int, float]],
+                    "np.ndarray[t.Any, np.dtype[t.Any]]",
+                    tf.Tensor,
+                ]
+            ) -> tf.Tensor:
+                if not isinstance(item, tf.Tensor):
+                    return tf.convert_to_tensor(item, dtype=tf.float32)
+                else:
+                    return item
+
+            params = params.map(_mapping)
+
             if TF2:
                 tf.compat.v1.global_variables_initializer()
+                res = self._predict_fn(*params.args, **params.kwargs)
             else:
                 self._session.run(tf.compat.v1.global_variables_initializer())
-            res = self._predict_fn(input_data)
+                res = self._session.run(self._predict_fn(*params.args, **params.kwargs))
             return res.numpy() if TF2 else res["prediction"]
 
 
@@ -458,6 +483,7 @@ def load_runner(
     *,
     predict_fn_name: str = "__call__",
     device_id: str = "CPU:0",
+    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -490,6 +516,7 @@ def load_runner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
+        partial_kwargs=partial_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

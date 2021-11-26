@@ -9,6 +9,7 @@ import tensorflow_hub as hub
 import bentoml.tensorflow
 from tests.utils.frameworks.tensorflow_utils import (
     KerasSequentialModel,
+    MultiInputModel,
     NativeModel,
     NativeRaggedModel,
 )
@@ -53,7 +54,6 @@ def tf1_model_path():
 
         return {"p": p, "loss": loss, "train_op": train_op, "X": X, "y": y}
 
-    tf.compat.v1.reset_default_graph()
     cnn_model = cnn_model_fn()
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -67,6 +67,40 @@ def tf1_model_path():
             tf.compat.v1.saved_model.simple_save(
                 sess, temp_dir, inputs=inputs, outputs=outputs
             )
+        yield temp_dir
+
+
+@pytest.fixture(scope="session")
+def tf1_multi_args_model_path():
+    def simple_model_fn():
+        x1 = tf.compat.v1.placeholder(shape=[None, 5], dtype=tf.float32, name="x1")
+        x2 = tf.compat.v1.placeholder(shape=[None, 5], dtype=tf.float32, name="x2")
+        factor = tf.compat.v1.placeholder(shape=(), dtype=tf.float32, name="factor")
+
+        init = tf.constant_initializer([1.0, 1.0, 1.0, 1.0, 1.0])
+        w = tf.Variable(init(shape=[5, 1], dtype=tf.float32))
+
+        x = x1 + x2 * factor
+        p = tf.matmul(x, w)
+        return {"p": p, "x1": x1, "x2": x2, "factor": factor}
+
+    simple_model = simple_model_fn()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with tf.compat.v1.Session() as sess:
+            tf.compat.v1.enable_resource_variables()
+            sess.run(tf.compat.v1.global_variables_initializer())
+            inputs = {
+                "x1": simple_model["x1"],
+                "x2": simple_model["x2"],
+                "factor": simple_model["factor"],
+            }
+            outputs = {"prediction": simple_model["p"]}
+
+            tf.compat.v1.saved_model.simple_save(
+                sess, temp_dir, inputs=inputs, outputs=outputs
+            )
+
         yield temp_dir
 
 
@@ -93,6 +127,33 @@ def test_tensorflow_v1_setup_run_batch(tf1_model_path, modelstore):
 
     res = runner.run_batch(test_tensor)
     assert res.shape == (1,)
+
+
+@pytest.mark.skipif(TF2, reason="Tests for Tensorflow 1.x")
+def test_tensorflow_v1_multi_args(tf1_multi_args_model_path, modelstore):
+    tag = bentoml.tensorflow.save(
+        "tensorflow_test", tf1_multi_args_model_path, model_store=modelstore
+    )
+    x = tf.convert_to_tensor([[1.0, 2.0, 3.0, 4.0, 5.0]], dtype=tf.float32)
+    f1 = tf.convert_to_tensor(3.0, dtype=tf.float32)
+    f2 = tf.convert_to_tensor(2.0, dtype=tf.float32)
+
+    runner1 = bentoml.tensorflow.load_runner(
+        tag,
+        model_store=modelstore,
+        partial_kwargs=dict(factor=f1),
+    )
+
+    runner2 = bentoml.tensorflow.load_runner(
+        tag,
+        model_store=modelstore,
+        partial_kwargs=dict(factor=f2),
+    )
+
+    res = runner1.run_batch(x1=x, x2=x)
+    assert np.isclose(res[0][0], 60.0)
+    res = runner2.run_batch(x1=x, x2=x)
+    assert np.isclose(res[0][0], 45.0)
 
 
 @pytest.mark.parametrize(
@@ -142,6 +203,25 @@ def test_tensorflow_v2_setup_on_gpu(modelstore):
     assert runner.num_concurrency_per_replica == 1
     assert runner.num_replica == len(tf.config.list_physical_devices("GPU"))
     assert runner.run_batch(native_tensor) == np.array([[15.0]])
+
+
+@pytest.mark.skipif(not TF2, reason="Tests for Tensorflow 2.x")
+def test_tensorflow_v2_multi_args(modelstore):
+    model_class = MultiInputModel()
+    tag = bentoml.tensorflow.save(MODEL_NAME, model_class, model_store=modelstore)
+    runner1 = bentoml.tensorflow.load_runner(
+        tag,
+        model_store=modelstore,
+        partial_kwargs=dict(factor=tf.constant(3.0, dtype=tf.float64)),
+    )
+    runner2 = bentoml.tensorflow.load_runner(
+        tag,
+        model_store=modelstore,
+        partial_kwargs=dict(factor=tf.constant(2.0, dtype=tf.float64)),
+    )
+
+    assert runner1.run_batch(native_data, native_data) == np.array([[60.0]])
+    assert runner2.run_batch(native_data, native_data) == np.array([[45.0]])
 
 
 def _plus_one_model_tf2():

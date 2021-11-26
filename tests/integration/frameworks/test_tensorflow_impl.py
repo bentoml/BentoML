@@ -115,7 +115,6 @@ def test_tensorflow_v1_save_load(tf1_model_path, modelstore):
     with tf.compat.v1.Session() as sess:
         sess.run(tf.compat.v1.global_variables_initializer())
         prediction = _model_dunder_call(tf1_loaded, test_tensor)
-        prediction
         assert prediction.shape == (1,)
 
 

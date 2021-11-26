@@ -70,7 +70,6 @@ class MultiInputModel(tf.Module):
         self.weights = np.asfarray([[1.0], [1.0], [1.0], [1.0], [1.0]])
         self.dense = lambda tensor: tf.matmul(tensor, self.weights)
 
-
     @tf.function(
         input_signature=[
             tf.TensorSpec(shape=[1, 5], dtype=tf.float64, name="x1"),
@@ -78,8 +77,5 @@ class MultiInputModel(tf.Module):
             tf.TensorSpec(shape=(), dtype=tf.float64, name="factor"),
         ]
     )
-    def __call__(self,
-                 x1: tf.Tensor,
-                 x2: tf.Tensor,
-                 factor: tf.Tensor):
-        return self.dense(x1 + x2*factor)
+    def __call__(self, x1: tf.Tensor, x2: tf.Tensor, factor: tf.Tensor):
+        return self.dense(x1 + x2 * factor)

@@ -9,9 +9,9 @@ import tensorflow_hub as hub
 import bentoml.tensorflow
 from tests.utils.frameworks.tensorflow_utils import (
     KerasSequentialModel,
+    MultiInputModel,
     NativeModel,
     NativeRaggedModel,
-    MultiInputModel,
 )
 from tests.utils.helpers import assert_have_file_extension
 
@@ -72,7 +72,6 @@ def tf1_model_path():
 
 @pytest.fixture(scope="session")
 def tf1_multi_args_model_path():
-
     def simple_model_fn():
         x1 = tf.compat.v1.placeholder(shape=[None, 5], dtype=tf.float32, name="x1")
         x2 = tf.compat.v1.placeholder(shape=[None, 5], dtype=tf.float32, name="x2")
@@ -83,7 +82,7 @@ def tf1_multi_args_model_path():
 
         x = x1 + x2 * factor
         p = tf.matmul(x, w)
-        return {"p":p, "x1": x1, "x2": x2, "factor": factor}
+        return {"p": p, "x1": x1, "x2": x2, "factor": factor}
 
     simple_model = simple_model_fn()
 
@@ -214,12 +213,12 @@ def test_tensorflow_v2_multi_args(modelstore):
     runner1 = bentoml.tensorflow.load_runner(
         tag,
         model_store=modelstore,
-        partial_kwargs=dict(factor=tf.constant(3.0, dtype=tf.float64))
+        partial_kwargs=dict(factor=tf.constant(3.0, dtype=tf.float64)),
     )
     runner2 = bentoml.tensorflow.load_runner(
         tag,
         model_store=modelstore,
-        partial_kwargs=dict(factor=tf.constant(2.0, dtype=tf.float64))
+        partial_kwargs=dict(factor=tf.constant(2.0, dtype=tf.float64)),
     )
 
     assert runner1.run_batch(native_data, native_data) == np.array([[60.0]])

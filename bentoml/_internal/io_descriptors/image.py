@@ -10,7 +10,7 @@ from starlette.responses import Response
 
 from ...exceptions import BadInput, InternalServerError, InvalidArgument
 from ..utils import LazyLoader
-from .base import IODescriptor
+from .base import ImageType, IODescriptor
 
 if TYPE_CHECKING:  # pragma: no cover
     import numpy as np
@@ -29,7 +29,7 @@ else:
     PIL.Image = LazyLoader("PIL.Image", globals(), "PIL.Image", exc_msg=_exc)
 
 if sys.version_info >= (3, 8):
-    Literal = t.Literal
+    from typing import Literal
 else:
     from typing_extensions import Literal
 
@@ -39,8 +39,6 @@ DEFAULT_PIL_MODE = "RGB"
 _Mode = Literal[
     "1", "CMYK", "F", "HSV", "I", "L", "LAB", "P", "RGB", "RGBA", "RGBX", "YCbCr"
 ]
-
-ImageType = t.Union["PIL.Image.Image", "np.ndarray[t.Any, np.dtype[t.Any]]"]
 
 
 class Image(IODescriptor[ImageType]):
@@ -123,7 +121,7 @@ class Image(IODescriptor[ImageType]):
         self._format = self.MIME_EXT_MAPPING[mime_type]
 
     def openapi_schema_type(self) -> t.Dict[str, str]:
-        return dict(type="string", format="binary")
+        return {"type": "string", "format": "binary"}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""

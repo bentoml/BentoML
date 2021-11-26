@@ -34,7 +34,7 @@ TEST_MODEL_NAME = __name__.split(".")[-1]
 def save_proc(
     modelstore: "ModelStore",
 ) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "Model"]:
-    def _(metadata) -> "Model":
+    def _(metadata: t.Optional[t.Dict[str, t.Any]]) -> "Model":
         model, _ = sklearn_model_data(clf=RandomForestClassifier)
         tag = bentoml.sklearn.save(
             TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore
@@ -65,7 +65,7 @@ def wrong_module(modelstore: "ModelStore"):
         ({"acc": 0.876}),
     ],
 )
-def test_sklearn_save_load(metadata, modelstore):  # noqa # pylint: disable
+def test_sklearn_save_load(metadata, modelstore):
     model, data = sklearn_model_data(clf=RandomForestClassifier)
     tag = bentoml.sklearn.save(
         TEST_MODEL_NAME, model, metadata=metadata, model_store=modelstore

@@ -1,4 +1,5 @@
 import typing as t
+from operator import length_hint
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -10,7 +11,6 @@ MIME_TYPE = "text/plain"
 
 class Text(IODescriptor[str]):
     """
-
     `Text` defines API specification for the inputs/outputs of a Service. `Text`
       represents strings for all incoming requests/outcoming responses as specified in
       your API function signature.
@@ -55,6 +55,13 @@ class Text(IODescriptor[str]):
     Returns:
         IO Descriptor that represents strings type.
     """
+
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        if len(args) > 0 or len(kwargs) > 0:
+            raise EnvironmentError(
+                f"{self.__class__.__name__} is not designed to take any arguments."
+                " You should only call `Text()` instead."
+            )
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {"type": "string"}

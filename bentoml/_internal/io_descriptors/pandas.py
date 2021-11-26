@@ -314,7 +314,7 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
             @svc.api(input=inp, output=PandasDataFrame())
             def predict(inputs: pd.DataFrame) -> pd.DataFrame:...
         """
-        columns = [str(x) for x in list(sample_input.columns)]
+        columns = [str(x) for x in list(sample_input.columns)]  # type: ignore[reportUnknownVariableType]
         return cls(
             orient=orient,
             enforce_shape=enforce_shape,
@@ -326,7 +326,7 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
         )
 
 
-class PandasSeries(IODescriptor["pd.Series"]):
+class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
     """
     `PandasSeries` defines API specification for the inputs/outputs of a Service, where
      either inputs will be converted to or outputs will be converted from type
@@ -447,7 +447,7 @@ class PandasSeries(IODescriptor["pd.Series"]):
         """Returns OpenAPI schema for outcoming responses"""
         return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
-    async def from_http_request(self, request: Request) -> "pd.Series":
+    async def from_http_request(self, request: Request) -> "pd.Series[t.Any]":
         """
         Process incoming requests and convert incoming
          objects to `pd.Series`
@@ -483,7 +483,7 @@ class PandasSeries(IODescriptor["pd.Series"]):
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
-    async def to_http_response(self, obj: "pd.Series") -> Response:
+    async def to_http_response(self, obj: t.Union[t.Any, "pd.Series"]) -> Response:
         """
         Process given objects and convert it to HTTP response.
 

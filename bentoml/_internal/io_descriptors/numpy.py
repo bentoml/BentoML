@@ -133,12 +133,12 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
     def _items_schema(self) -> t.Dict[str, t.Any]:
         if self._shape is not None:
             if len(self._shape) > 1:
-                return dict(type="array", items={"type": self._infer_types()})
+                return {"type": "array", "items": {"type": self._infer_types()}}
             return {"type": self._infer_types()}
-        return dict()
+        return {}
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
-        return dict(type="array", items=self._items_schema())
+        return {"type": "array", "items": self._items_schema()}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -191,9 +191,9 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
         obj = await request.json()
         res: "np.ndarray[t.Any, np.dtype[t.Any]]"
         try:
-            res = np.array(obj, dtype=self._dtype)  # type: ignore
+            res = np.array(obj, dtype=self._dtype)
         except ValueError:
-            res = np.array(obj)  # type: ignore
+            res = np.array(obj)
         res = self._verify_ndarray(res, BadInput)
         return res
 

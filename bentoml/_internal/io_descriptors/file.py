@@ -55,10 +55,12 @@ class File(IODescriptor[FileLike]):
     """  # noqa: LN001
 
     def __init__(self, mime_type: t.Optional[str] = None):
-        self._mime_type = mime_type or "application/octet-stream"
+        self._mime_type = (
+            mime_type if mime_type is not None else "application/octet-stream"
+        )
 
     def openapi_schema_type(self) -> t.Dict[str, str]:
-        return dict(type="string", format="binary")
+        return {"type": "string", "format": "binary"}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""

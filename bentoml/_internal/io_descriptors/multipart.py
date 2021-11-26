@@ -10,53 +10,93 @@ from ..utils.formparser import (
     concat_to_multipart_responses,
     populate_multipart_requests,
 )
-from .base import IODescriptor
+from .base import IODescriptor, IOType
 
 if TYPE_CHECKING:  # pragma: no cover
-    import numpy as np  # noqa
-    import pandas as pd  # noqa
+    import numpy as np
+    import pandas as pd
 
-    from ..types import FileLike
-    from .file import File  # noqa
-    from .image import Image, ImageType  # noqa
-    from .json import JSON, JSONType  # noqa
-    from .numpy import NumpyNdarray  # noqa
-    from .pandas import PandasDataFrame, PandasSeries  # noqa
-    from .text import Text  # noqa
+    from .file import File, FileLike
+    from .image import Image, ImageType
+    from .json import JSON, JSONType
+    from .numpy import NumpyNdarray
+    from .pandas import PandasDataFrame, PandasSeries
+    from .text import Text
 
 _DescriptorType = t.Union[
     "Image", "JSON", "Text", "NumpyNdarray", "PandasDataFrame", "PandasSeries", "File"
 ]
 
-MultipartIO = t.Dict[
-    str,
-    t.Union[
-        str,
-        "JSONType",
-        "FileLike",
-        "ImageType",
-        "np.ndarray[t.Any, np.dtype[t.Any]]",
-        "pd.DataFrame",
-        "pd.Series",
-    ],
-]
+MultipartIO = t.Dict[str, IOType]
 
 
 class Multipart(IODescriptor[MultipartIO]):
     """
-    Examples::
+    `Multipart` defines API specification for the inputs/outputs of a Service, where inputs/outputs
+     of a Service can receive/send a `multipart` request/responses as specified in your API function signature.
 
-    from bentoml.io import Image, JSON, Multipart
+    .. Toy implementation of a sklearn service::
+        # sklearn_svc.py
+        import bentoml
+        from bentoml.io import NumpyNdarray, Multipart, JSON
+        import bentoml.sklearn
 
-    spec = Multipart(img=Image(), annotations=JSON())
-    output = Multipart(img_output=Image(), annotations_output=JSON())
+        runner = bentoml.sklearn.load_runner("sklearn_model_clf")
 
-    @svc.api(input=spec, output=output)
-    def predict(img, annotations):
-        ...
-        return dict(img_output=img, annotations_output=annotations)
+        svc = bentoml.Service("iris-classifier", runners=[runner])
+        input_spec = Multipart(arr=NumpyNdarray(), annotations=JSON())
+        output_spec = Multipart(output=NumpyNdarray(), result=JSON())
 
-    curl -i -F img=@test.jpg -F annotations=@test.json localhost:5000/predict
+        @svc.api(input=input_spec, output=output_spec)
+        def predict(arr, annotations):
+            res = runner.run(arr)
+            return {"output":res, "result":annotations}
+
+    Users then can then serve this service with `bentoml serve`::
+        % bentoml serve ./sklearn_svc.py:svc --auto-reload
+
+        (Press CTRL+C to quit)
+        [INFO] Starting BentoML API server in development mode with auto-reload enabled
+        [INFO] Serving BentoML Service "iris-classifier" defined in "sklearn_svc.py"
+        [INFO] API Server running on http://0.0.0.0:5000
+
+    Users can then send a cURL requests like shown in different terminal session::
+        % curl -X POST -H "Content-Type: multipart/form-data" -F annotations=@test.json -F arr='[5,4,3,2]' http://0.0.0.0:5000/predict
+
+        --b1d72c201a064ecd92a17a412eb9208e
+        Content-Disposition: form-data; name="output"
+        content-length: 1
+        content-type: application/json
+
+        1
+        --b1d72c201a064ecd92a17a412eb9208e
+        Content-Disposition: form-data; name="result"
+        content-length: 13
+        content-type: application/json
+
+        {"foo":"bar"}
+        --b1d72c201a064ecd92a17a412eb9208e--
+
+    Args:
+        inputs (`Dict[str, IODescriptor]`):
+            Dictionary consisting keys as inputs definition for a Multipart request/response, values
+             as IODescriptor supported by BentoML. Currently we support Image, NumpyNdarray, PandasDataFrame,
+             PandasSeries, Text, File.
+
+    .. notes::
+        Make sure to match your inputs to your API function to the keys defined under `Multipart`::
+            ┌───────────────────────────────────────────────────┐
+            │ Multipart(arr=NumpyNdarray(), annotations=JSON()) │
+            └─────────────────────┬─────────────┬───────────────┘
+                                    │             │
+                                    │       ┌─────┘
+                                    │       │
+                    ┌───────────────▼───────▼─────────┐
+                    │  def predict(arr, annotations): │
+                    └─────────────────────────────────┘
+
+    Returns:
+        IO Descriptor that represents Multipart request/response.
     """
 
     def __init__(self, **inputs: _DescriptorType):
@@ -101,40 +141,34 @@ class Multipart(IODescriptor[MultipartIO]):
         return res
 
     @t.overload
-    async def to_http_response(self, obj: t.Dict[str, str]) -> Response:  # noqa: F811
+    async def to_http_response(self, obj: t.Dict[str, str]) -> Response:
         ...
 
-    @t.overload  # noqa: F811
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Dict[str, "JSONType"]
-    ) -> Response:
+    @t.overload
+    async def to_http_response(self, obj: t.Dict[str, "JSONType"]) -> Response:
         ...
 
-    @t.overload  # noqa: F811
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Dict[str, "ImageType"]
-    ) -> Response:
+    @t.overload
+    async def to_http_response(self, obj: t.Dict[str, "ImageType"]) -> Response:
         ...
 
-    @t.overload  # noqa: F811
-    async def to_http_response(  # noqa: F811
+    @t.overload
+    async def to_http_response(
         self, obj: t.Dict[str, "np.ndarray[t.Any, np.dtype[t.Any]]"]
     ) -> Response:
         ...
 
-    @t.overload  # noqa: F811
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Dict[str, "FileLike"]
+    @t.overload
+    async def to_http_response(self, obj: t.Dict[str, "FileLike"]) -> Response:
+        ...
+
+    @t.overload
+    async def to_http_response(
+        self, obj: t.Dict[str, t.Union["pd.DataFrame", "pd.Series[t.Any]"]]
     ) -> Response:
         ...
 
-    @t.overload  # noqa: F811
-    async def to_http_response(  # noqa: F811
-        self, obj: t.Dict[str, t.Union["pd.DataFrame", "pd.Series"]]
-    ) -> Response:
-        ...
-
-    async def to_http_response(self, obj: t.Any) -> Response:  # noqa: F811
+    async def to_http_response(self, obj: t.Any) -> Response:
         res_mapping: t.Dict[str, Response] = {}
         for k, io_ in self._inputs.items():
             data = obj[k]

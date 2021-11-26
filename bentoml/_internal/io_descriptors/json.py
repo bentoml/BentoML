@@ -8,7 +8,7 @@ from starlette.responses import Response
 
 from ...exceptions import BadInput, BentoMLException, MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
-from .base import IODescriptor
+from .base import IODescriptor, JSONType
 
 if TYPE_CHECKING:  # pragma: no cover
     import numpy as np
@@ -28,8 +28,6 @@ _SerializableObj = t.Union[
     "np.ndarray[t.Any, np.dtype[t.Any]]", "BaseModel", "pd.DataFrame", t.Any
 ]
 
-JSONType = t.Union[str, t.Dict[str, t.Any], "BaseModel"]
-
 
 class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
     def default(self, o: _SerializableObj) -> t.Any:
@@ -42,7 +40,7 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         if isinstance(o, np.ndarray):
             return o.tolist()
 
-        if any(isinstance(o, i) for i in [pd.DataFrame, pd.Series]):
+        if isinstance(o, (pd.DataFrame, pd.Series)):
             raise BentoMLException(
                 f"Detected type to be {type(o)}. You should use `PandasDataFrame` instead of `JSON` for IO."
                 " If you still wish to use JSON, convert your DataFrame outputs to json with `df.to_json(orient=...)`"

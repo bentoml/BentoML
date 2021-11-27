@@ -96,14 +96,6 @@ jobs:
               - *runner
               - bentoml/h2o.py
               - tests/integration/frameworks/test_h2o_impl.py
-            keras_tf1:
-              - *runner
-              - bentoml/keras.py
-              - tests/integration/frameworks/test_keras_impl.py
-            keras_tf2:
-              - *runner
-              - bentoml/keras.py
-              - tests/integration/frameworks/test_keras_impl.py
             lightgbm:
               - *runner
               - bentoml/lightgbm.py
@@ -153,14 +145,19 @@ jobs:
               - *runner
               - bentoml/statsmodels.py
               - tests/integration/frameworks/test_statsmodels_impl.py
-            tf1:
+            tf1: &tf
               - *runner
               - bentoml/tensorflow.py
               - tests/integration/frameworks/test_tensorflow_impl.py
             tf2:
+              - *tf
+            keras_tf1: &keras
               - *runner
-              - bentoml/tensorflow.py
-              - tests/integration/frameworks/test_tensorflow_impl.py
+              - *tf1
+              - bentoml/keras.py
+              - tests/integration/frameworks/test_keras_impl.py
+            keras_tf2:
+              - *keras
             transformers:
               - *runner
               - bentoml/transformers.py

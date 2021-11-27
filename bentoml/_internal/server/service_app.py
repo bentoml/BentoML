@@ -73,6 +73,7 @@ DEFAULT_INDEX_HTML = """\
   <div id="markdown_readme" class="tabContent"></div>
   <script src="static_content/marked.min.js"></script>
   <script>
+    // TODO: Fix readme escape and index page redesign
     var markdownContent = marked(`{readme}`);
     var element = document.getElementById('markdown_readme');
     element.innerHTML = markdownContent;

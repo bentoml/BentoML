@@ -4,6 +4,7 @@ import typing as t
 from typing import TYPE_CHECKING
 
 from ...exceptions import BentoMLException
+from ..bento.bento import _get_default_bento_readme
 from ..io_descriptors import IODescriptor
 from ..runner import Runner
 from ..types import Tag
@@ -15,7 +16,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from starlette.middleware import Middleware
     from starlette.types import ASGIApp
 
-    from ..bento.bento import Bento
+    from ..bento.bento import SysPathBento
 
 WSGI_APP = t.Callable[
     [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
@@ -42,7 +43,7 @@ class Service:
     name: str
     # Tag/Bento/Version are only applicable if the service was load from a bento
     tag: t.Optional[Tag] = None
-    bento: "t.Optional[Bento]" = None
+    bento: t.Optional["SysPathBento"] = None
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None
@@ -181,3 +182,10 @@ class Service:
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def doc(self) -> str:
+        if self.bento is not None:
+            return self.bento.doc
+
+        return _get_default_bento_readme(self)

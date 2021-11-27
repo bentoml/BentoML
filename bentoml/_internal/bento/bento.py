@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 BENTO_YAML_FILENAME = "bento.yaml"
 BENTO_PROJECT_DIR_NAME = "src"
+BENTO_READEME_FILENAME = "README.md"
 
 
 def _get_default_bento_readme(svc: "Service"):
@@ -85,6 +86,7 @@ class Bento(StoreItem):
     _model_store: ModelStore
 
     _info: t.Optional["BentoInfo"] = None
+    _doc: t.Optional[str] = None
 
     def __init__(self, tag: Tag, bento_fs: "FS"):
         self._tag = tag
@@ -205,7 +207,7 @@ class Bento(StoreItem):
             build_config.conda.write_to_bento(bento_fs, build_ctx)
 
         # Create `readme.md` file
-        with bento_fs.open("README.md", "w") as f:
+        with bento_fs.open(BENTO_READEME_FILENAME, "w") as f:
             if build_config.description is None:
                 f.write(_get_default_bento_readme(svc))
             else:
@@ -247,6 +249,15 @@ class Bento(StoreItem):
         with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             self._info = BentoInfo.from_yaml_file(bento_yaml)
             return self._info
+
+    @property
+    def doc(self) -> str:
+        if self._doc is not None:
+            return self._doc
+
+        with self._fs.open(BENTO_READEME_FILENAME, "r") as readme_md:
+            self._doc = str(readme_md.read())
+            return self._doc
 
     @property
     def creation_time(self) -> datetime:

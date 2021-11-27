@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import fs
 from simple_di import Provide, inject
 
-from ._internal.bento import Bento, SysPathBento
+from ._internal.bento import Bento
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.bento.utils import resolve_user_filepath
 from ._internal.configuration.containers import BentoMLContainer
@@ -80,7 +80,7 @@ def build(
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> SysPathBento:
+) -> "SysPathBento":
     """
     User-facing API for building a Bento, the available build options are symmetrical to
     the content of a valid bentofile.yaml file, for building Bento from CLI.
@@ -144,7 +144,7 @@ def build_from_bentofile_yaml(
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> SysPathBento:
+) -> "SysPathBento":
     """
     Build a Bento base on options specified in a bentofile.yaml file.
 

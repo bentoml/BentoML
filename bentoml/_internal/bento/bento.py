@@ -23,7 +23,6 @@ from ..store import Store, StoreItem
 from ..types import PathType, Tag
 from .build_config import BentoBuildConfig
 
-
 if TYPE_CHECKING:  # pragma: no cover
     from fs.base import FS
 
@@ -71,6 +70,7 @@ python:
 """
     # TODO: add links to documentation that may help with API client development
     return doc
+
 
 def _Bento_set_fs(bento: "Bento", _: t.Any, new_fs: "FS") -> "FS":
     new_fs.makedir("models", recreate=True)
@@ -128,7 +128,6 @@ class Bento(StoreItem):
 
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
         ctx_fs = fs.open_fs(build_ctx)
-
 
         model_tags = build_config.additional_models
         # Add Runner required models to models list
@@ -220,7 +219,8 @@ class Bento(StoreItem):
         # Create bento.yaml
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             # pyright doesn't know about attrs converters
-            BentoInfo(tag, svc, build_config.labels, models).dump(bento_yaml)  # type: ignore
+            info = BentoInfo(tag, svc, build_config.labels, models)  # type: ignore
+            info.dump(bento_yaml)
 
         return SysPathBento(tag, bento_fs)
 

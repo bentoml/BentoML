@@ -18,9 +18,10 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 
 ERR=0
 
-PYTESTARGS=()
+declare -a PYTESTARGS
 CONFIG_FILE="$dname/config.yml"
 REQ_FILE="/tmp/additional-requirements.txt"
+SKIP_DEPS=0
 
 cd "$GIT_ROOT" || exit
 
@@ -58,11 +59,12 @@ usage() {
 Running unit/integration tests with pytest and generate coverage reports. Make sure that given testcases is defined under $CONFIG_FILE.
 
 Usage:
-  $dname/$fname [-h|--help] [-v|--verbose] <target> <pytest_additional_arguments>
+  $dname/$fname [-h|--help] [-v|--verbose] [-s|--skip_deps] <target> <pytest_additional_arguments>
 
 Flags:
   -h, --help            show this message
   -v, --verbose         set verbose scripts
+  -s, --skip_deps       skip install dependencies
 
 
 If pytest_additional_arguments is given, this will be appended to given tests run.
@@ -87,11 +89,14 @@ parse_args() {
       -v | --verbose)
         set -x;
         shift;;
+      -s | --skip_deps)
+        SKIP_DEPS=1;
+        shift;;
       *)
         ;;
     esac
   done
-  PYTESTARGS=( "${@:2}" )
+  PYTESTARGS=( "${*:2}" )
   shift $(( OPTIND - 1 ))
 }
 
@@ -125,6 +130,22 @@ parse_config() {
   run_yq eval '.'"$target"'.dependencies[]' "$CONFIG_FILE" >"$REQ_FILE" || exit
 }
 
+install_yq() {
+  target_dir="$HOME/.local/bin"
+
+  mkdir -p "$target_dir"
+  export PATH=$target_dir:$PATH
+
+  YQ_VERSION=4.14.2
+  echo "Trying to install yq..."
+  __shell=$(uname | tr '[:upper:]' '[:lower:]')
+  YQ_BINARY=yq_"$__shell"_amd64
+  curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
+  echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."
+  tar -zvxf "$YQ_BINARY.tar.gz" "./$YQ_BINARY" && mv "./$YQ_BINARY" "$target_dir"/yq
+  rm -f ./"$YQ_BINARY".tar.gz
+}
+
 
 main() {
   parse_args "$@"
@@ -132,33 +153,17 @@ main() {
   need_cmd make
   need_cmd curl
   need_cmd tr
+  (need_cmd yq && echo "Using yq via $(which yq)...";) || install_yq
 
   run_python pip install -U pip setuptools
 
-  if ! check_cmd yq; then
-    target_dir="$HOME/.local/bin"
-
-    mkdir -p "$target_dir"
-    export PATH=$target_dir:$PATH
-
-    YQ_VERSION=4.14.2
-    echo "Trying to install yq..."
-    __shell=$(uname | tr '[:upper:]' '[:lower:]')
-    YQ_BINARY=yq_"$__shell"_amd64
-    curl -fsSLO https://github.com/mikefarah/yq/releases/download/v"$YQ_VERSION"/"$YQ_BINARY".tar.gz
-    echo "tar $YQ_BINARY.tar.gz and move to /usr/bin/yq..."
-    tar -zvxf "$YQ_BINARY.tar.gz" "./$YQ_BINARY" && mv "./$YQ_BINARY" "$target_dir"/yq
-    rm -f ./"$YQ_BINARY".tar.gz
-  else
-    echo "Using yq via $(which yq)..."
-  fi
-  need_cmd yq
 
   for args in "$@"; do
-    if [[ "$args" == "-"* ]]; then
-      shift
-    else
+    if [[ "$args" != "-"* ]]; then
       argv="$args"
+      break;
+    else
+      shift;
     fi
   done
 
@@ -167,12 +172,16 @@ main() {
 
   OPTS=(--cov=bentoml --cov-config="$GIT_ROOT"/setup.cfg --cov-report=xml:"$target.xml")
 
-  if [ -n "$PYTESTARGS" ]; then
-    OPTS=( "${OPTS[@]}" "${PYTESTARGS[@]}" )
+  if [ -n "${PYTESTARGS[*]}" ]; then
+    # shellcheck disable=SC2206
+    OPTS=( ${OPTS[@]} ${PYTESTARGS[@]} )
   fi
-  # setup tests environment
-  if [ -f "$REQ_FILE" ]; then
-    run_python pip install -r "$REQ_FILE" || exit 1
+
+  if [ "$SKIP_DEPS" -eq 0 ]; then
+    # setup tests environment
+    if [ -f "$REQ_FILE" ]; then
+      run_python pip install -r "$REQ_FILE" || exit 1
+    fi
   fi
 
   if [ -n "$external_scripts" ]; then
@@ -192,11 +201,11 @@ main() {
 
   # Return non-zero if pytest failed
   if ! test $ERR = 0; then
-    FAIL "$type_tests tests failed!"
+    FAIL "$args $type_tests tests failed!"
     exit 1
   fi
 
-  PASS "$type_tests tests passed!"
+  PASS "$args $type_tests tests passed!"
 }
 
 main "$@" || exit 1

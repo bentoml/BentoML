@@ -8,6 +8,8 @@ from pathlib import Path
 from ..types import PathType
 from .lazy_loader import LazyLoader
 
+C = t.TypeVar("C")
+T = t.TypeVar("T")
 _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
 
@@ -91,10 +93,6 @@ def get_free_port(host: str = "localhost") -> int:
     return port
 
 
-C = t.TypeVar("C")
-T = t.TypeVar("T")
-
-
 class cached_property(t.Generic[C, T]):
     """A property that is only computed once per instance and then replaces
     itself with an ordinary attribute. Deleting the attribute resets the
@@ -108,6 +106,7 @@ class cached_property(t.Generic[C, T]):
             pass
         self.func = func
 
+    # pylint: disable=attribute-defined-outside-init
     def __set_name__(self, owner, name):
         self.name = name
 

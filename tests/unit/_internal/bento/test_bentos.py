@@ -15,19 +15,17 @@ def test_create_simplebento(tmpdir):
         version="1.0",
         build_ctx="./simplebento",
         additional_models=[],
-        include=["*.py", "config.json", "somefile", "*dir*", ".bentomlignore"],
+        include=["*.py", "config.json", "somefile", "*dir*", ".bentoignore"],
         exclude=[
             "*.storage",
             "/somefile",
-        ],  # + anything specified in .bentomlignore file
-        env=dict(
-            # pip_install=bentoml.utils.find_required_pypi_packages(svc),
-            conda="./environment.yaml",
-            docker={
-                # "base_image": bentoml.utils.builtin_docker_image("slim", gpu=True),
-                "setup_script": "./setup_docker_container.sh",
-            },
-        ),
+        ],
+        conda={
+            "environment_yml": "./environment.yaml",
+        },
+        docker={
+            "setup_script": "./setup_docker_container.sh",
+        },
         labels={
             "team": "foo",
             "dataset_version": "abc",
@@ -50,5 +48,5 @@ def test_create_simplebento(tmpdir):
         "env",
     }
     test_path = os.path.join(test_path, "src")
-    assert set(os.listdir(test_path)) == {"simplebento.py", "subdir", ".bentomlignore"}
+    assert set(os.listdir(test_path)) == {"simplebento.py", "subdir", ".bentoignore"}
     assert set(os.listdir(os.path.join(test_path, "subdir"))) == {"somefile"}

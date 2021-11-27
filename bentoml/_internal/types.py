@@ -8,9 +8,10 @@ import urllib.parse
 import urllib.request
 import uuid
 from dataclasses import dataclass
-from functools import total_ordering
 from typing import TYPE_CHECKING
 
+import attr
+import cattr
 import fs
 
 from ..exceptions import BentoMLException
@@ -35,7 +36,7 @@ else:
 JSONSerializable = t.NewType("JSONSerializable", object)
 
 
-@total_ordering
+@attr.define
 class Tag:
     name: str
     version: t.Optional[str]
@@ -125,6 +126,9 @@ class Tag:
 
     def latest_path(self) -> str:
         return fs.path.combine(self.name, "latest")
+
+
+cattr.register_structure_hook(Tag, lambda d, t: Tag.from_str(d))
 
 
 @json_serializer(fields=["uri", "name"], compat=True)

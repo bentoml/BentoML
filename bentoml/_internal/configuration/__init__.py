@@ -38,17 +38,17 @@ def expand_env_var(env_var: str) -> str:
             env_var = interpolated
 
 
-# This is used as default for config('core', 'bentoml_deploy_version') - which is used
-# for getting the BentoML PyPI version string or the URL to a BentoML sdist, indicating
-# the BentoML module to be used when loading and using a saved BentoService bundle.
-# This is useful when using customized BentoML fork/branch or when working with
-# development branches of BentoML
+# Find BentoML version managed by setuptools_scm
 BENTOML_VERSION: str = importlib_metadata.version("bentoml")
 
 
-def is_pip_installed_bentoml() -> bool:
-    """is_pip_installed_bentoml."""
+def is_pypi_installed_bentoml() -> bool:
+    """Returns true if BentoML is installed via PyPI
+
+    Notes: this assumes developer did not tag their branch with semver branch names
+    """
     is_installed_package = len(version_mod.version_tuple) == 3
+    # In a git repo with no tag, setuptools_scm generated version starts with "0.1."
     is_tagged = not BENTOML_VERSION.startswith("0.1.")
     is_clean = not version_mod.version_tuple[-1].split(".")[-1].startswith("d")
     is_modified = BENTOML_VERSION != BENTOML_VERSION.split("+")[0]

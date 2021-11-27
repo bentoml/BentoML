@@ -4,6 +4,7 @@ import typing as t
 from typing import TYPE_CHECKING
 
 from ...exceptions import BentoMLException
+from ..bento.bento import _get_default_bento_readme
 from ..io_descriptors import IODescriptor
 from ..runner import Runner
 from ..types import Tag
@@ -15,48 +16,13 @@ if TYPE_CHECKING:  # pragma: no cover
     from starlette.middleware import Middleware
     from starlette.types import ASGIApp
 
-    from ..bento.bento import Bento
+    from ..bento.bento import SysPathBento
 
 WSGI_APP = t.Callable[
     [t.Callable[..., t.Any], t.Mapping[str, t.Any]], t.Iterable[bytes]
 ]
 
 logger = logging.getLogger(__name__)
-
-
-def _get_default_svc_doc(svc: "Service"):
-    doc = f'# BentoML Service "{svc.name}"\n\n'
-    doc += "This is a Machine Learning Service created with BentoML. \n\n"
-
-    if svc._apis:
-        doc += "## Inference APIs:\n\nIt contains the following inference APIs:\n\n"
-
-        for api in svc._apis.values():
-            doc += f"### /{api.name}\n\n"
-            doc += f"* Input: {api.input.__class__.__name__}\n"
-            doc += f"* Output: {api.output.__class__.__name__}\n\n"
-
-    doc += f"""
-## Customize This Message
-
-This is the default generated `bentoml.Service` doc. You may customize it by setting
-the `doc` attribute in the Service instance to any string in Markdown format before
-building the Service Bento. e.g.:
-
-```python
-import bentoml
-
-svc = bentoml.Service('{svc.name}')
-svc.doc = \"\"\"
-ADD YOUR DOCS ABOUT THE SERVICE HERE
-\"\"\"
-
-# Or read description from a file:
-svc.doc = open("./my_readme.md").read()
-```
-"""
-    # TODO: add links to documentation that may help with API client development
-    return doc
 
 
 class Service:
@@ -77,7 +43,7 @@ class Service:
     name: str
     # Tag/Bento/Version are only applicable if the service was load from a bento
     tag: t.Optional[Tag] = None
-    bento: "t.Optional[Bento]" = None
+    bento: t.Optional["SysPathBento"] = None
     version: t.Optional[str] = None
     # Working dir of the service, set when the service was load from a bento
     _working_dir: t.Optional[str] = None
@@ -199,9 +165,6 @@ class Service:
 
         return get_service_openapi_doc(self)
 
-    def set_build_options(self, **build_options):  # type: ignore
-        ...
-
     def __str__(self):
         if self.bento:
             return f'bentoml.Service(tag="{self.tag}", ' f'path="{self.bento.path}")'
@@ -222,11 +185,7 @@ class Service:
 
     @property
     def doc(self) -> str:
-        if not self._doc:
-            self._doc = _get_default_svc_doc(self)
+        if self.bento is not None:
+            return self.bento.doc
 
-        return self._doc
-
-    @doc.setter
-    def doc(self, value):
-        self._doc = value
+        return _get_default_bento_readme(self)

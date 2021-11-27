@@ -56,7 +56,7 @@ def import_service(
 
     try:
         if working_dir is not None:
-            working_dir = os.path.realpath(working_dir)
+            working_dir = os.path.realpath(os.path.expanduser(working_dir))
             # Set cwd(current working directory) to the Bento's project directory, which
             # allows user code to read files using relative path
             prev_cwd = os.getcwd()

@@ -21,7 +21,7 @@ from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
-from .env import BentoEnv
+from .build_config import BentoBuildConfig
 
 if TYPE_CHECKING:  # pragma: no cover
     from fs.base import FS
@@ -33,6 +33,44 @@ logger = logging.getLogger(__name__)
 
 BENTO_YAML_FILENAME = "bento.yaml"
 BENTO_PROJECT_DIR_NAME = "src"
+BENTO_READEME_FILENAME = "README.md"
+
+
+def _get_default_bento_readme(svc: "Service"):
+    doc = f'# BentoML Service "{svc.name}"\n\n'
+    doc += "This is a Machine Learning Service created with BentoML. \n\n"
+
+    if svc._apis:  # type: ignore[reportPrivateUsage]
+        doc += "## Inference APIs:\n\nIt contains the following inference APIs:\n\n"
+
+        for api in svc._apis.values():  # type: ignore[reportPrivateUsage]
+            doc += f"### /{api.name}\n\n"
+            doc += f"* Input: {api.input.__class__.__name__}\n"
+            doc += f"* Output: {api.output.__class__.__name__}\n\n"
+
+    doc += """
+## Customize This Message
+
+This is the default generated `bentoml.Service` doc. You may customize it in your Bento
+build file:
+
+```yaml
+service: "image_classifier.py:svc"
+description: "./readme.md"
+labels:
+  foo: bar
+  team: abc
+docker:
+  distro: slim
+  gpu: True
+python:
+  packages:
+    - tensorflow
+    - numpy
+```
+"""
+    # TODO: add links to documentation that may help with API client development
+    return doc
 
 
 def _Bento_set_fs(bento: "Bento", _: t.Any, new_fs: "FS") -> "FS":
@@ -48,6 +86,7 @@ class Bento(StoreItem):
     _model_store: ModelStore
 
     _info: t.Optional["BentoInfo"] = None
+    _doc: t.Optional[str] = None
 
     def __init__(self, tag: Tag, bento_fs: "FS"):
         self._tag = tag
@@ -61,28 +100,38 @@ class Bento(StoreItem):
     @staticmethod
     @inject
     def create(
-        svc: "Service",
-        build_ctx: PathType,
-        additional_models: t.List[str],
-        version: t.Optional[str],
-        include: t.List[str],
-        exclude: t.List[str],
-        env: t.Dict[str, t.Any],
-        labels: t.Dict[str, str],
+        build_config: BentoBuildConfig,
+        version: t.Optional[str] = None,
+        build_ctx: t.Optional[str] = None,
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
     ) -> "SysPathBento":
+        from ..service.loader import import_service
+
+        build_ctx = (
+            os.getcwd()
+            if build_ctx is None
+            else os.path.realpath(os.path.expanduser(build_ctx))
+        )
+        assert os.path.isdir(build_ctx), f"build ctx {build_ctx} does not exist"
+
+        # This also verifies that svc can be imported correctly
+        svc = import_service(build_config.service, working_dir=build_ctx)
+
+        # Apply default build options
+        build_config = build_config.with_defaults()
+
         tag = Tag(svc.name, version)
         if version is None:
             tag = tag.make_new_version()
 
-        logger.debug(f"Building BentoML service {tag} from build context {build_ctx}")
+        logger.info(
+            f'Building BentoML service "{tag}" from build context "{build_ctx}"'
+        )
 
         bento_fs = fs.open_fs(f"temp://bentoml_bento_{svc.name}")
-        if isinstance(build_ctx, os.PathLike):
-            build_ctx = build_ctx.__fspath__()
         ctx_fs = fs.open_fs(build_ctx)
 
-        model_tags = additional_models
+        model_tags = build_config.additional_models
         # Add Runner required models to models list
         for runner in svc._runners.values():  # type: ignore[reportPrivateUsage]
             model_tags += runner.required_models
@@ -100,20 +149,26 @@ class Bento(StoreItem):
                     f"Model {model_tag} not found in local model store"
                 )
 
+        logger.info(
+            "Packing required models: %s",
+            ", ".join(map(lambda m: f'"{m.tag}"', models)),
+        )
         bento_fs.makedir("models", recreate=True)
         bento_model_store = ModelStore(bento_fs.opendir("models"))
         for model in models:
             model.save(bento_model_store)
 
         # Copy all files base on include and exclude, into `{svc.name}` directory
-        relpaths = [s for s in include if s.startswith("../")]
+        relpaths = [s for s in build_config.include if s.startswith("../")]
         if len(relpaths) != 0:
             raise InvalidArgument(
                 "Paths outside of the build context directory cannot be included; use a symlink or copy those files into the working directory manually."
             )
 
-        spec = pathspec.PathSpec.from_lines("gitwildmatch", include)
-        exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", exclude)
+        spec = pathspec.PathSpec.from_lines("gitwildmatch", build_config.include)
+        exclude_spec = pathspec.PathSpec.from_lines(
+            "gitwildmatch", build_config.exclude
+        )
         exclude_specs: t.List[t.Tuple[str, pathspec.PathSpec]] = []
         bento_fs.makedir(BENTO_PROJECT_DIR_NAME)
         target_fs = bento_fs.opendir(BENTO_PROJECT_DIR_NAME)
@@ -144,13 +199,19 @@ class Bento(StoreItem):
                         target_fs.makedirs(dir_path, recreate=True)
                         copy_file(ctx_fs, _path, target_fs, _path)
 
-        # Create env, docker, bentoml dev whl files
-        bento_env = BentoEnv(build_ctx=build_ctx, **env)
-        bento_env.save(bento_fs)
+        if build_config.docker:
+            build_config.docker.write_to_bento(bento_fs, build_ctx)
+        if build_config.python:
+            build_config.python.write_to_bento(bento_fs, build_ctx)
+        if build_config.conda:
+            build_config.conda.write_to_bento(bento_fs, build_ctx)
 
         # Create `readme.md` file
-        with bento_fs.open("README.md", "w") as f:
-            f.write(svc.doc)
+        with bento_fs.open(BENTO_READEME_FILENAME, "w") as f:
+            if build_config.description is None:
+                f.write(_get_default_bento_readme(svc))
+            else:
+                f.write(build_config.description)
 
         # Create 'apis/openapi.yaml' file
         bento_fs.makedir("apis")
@@ -160,7 +221,8 @@ class Bento(StoreItem):
         # Create bento.yaml
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             # pyright doesn't know about attrs converters
-            BentoInfo(tag, svc, labels, models).dump(bento_yaml)  # type: ignore
+            info = BentoInfo(tag, svc, build_config.labels, models)  # type: ignore
+            info.dump(bento_yaml)
 
         return SysPathBento(tag, bento_fs)
 
@@ -187,6 +249,15 @@ class Bento(StoreItem):
         with self._fs.open(BENTO_YAML_FILENAME, "r") as bento_yaml:
             self._info = BentoInfo.from_yaml_file(bento_yaml)
             return self._info
+
+    @property
+    def doc(self) -> str:
+        if self._doc is not None:
+            return self._doc
+
+        with self._fs.open(BENTO_READEME_FILENAME, "r") as readme_md:
+            self._doc = str(readme_md.read())
+            return self._doc
 
     @property
     def creation_time(self) -> datetime:

@@ -2,7 +2,6 @@
 User facing python APIs for managing local bentos and build new bentos
 """
 import logging
-import os
 import typing as t
 from typing import TYPE_CHECKING
 
@@ -10,9 +9,11 @@ import fs
 from simple_di import Provide, inject
 
 from ._internal.bento import Bento
+from ._internal.bento.build_config import BentoBuildConfig
+from ._internal.bento.utils import resolve_user_filepath
 from ._internal.configuration.containers import BentoMLContainer
-from ._internal.service import load
 from ._internal.types import Tag
+from .exceptions import InvalidArgument
 
 if TYPE_CHECKING:  # pragma: no cover
     from ._internal.bento import BentoStore, SysPathBento
@@ -65,151 +66,113 @@ def pull(tag: t.Union[Tag, str]):
 
 @inject
 def build(
-    svc_import_str: str,
-    version: t.Optional[str] = None,
+    service: str,
+    *,
+    labels: t.Optional[t.Dict[str, str]] = None,
+    description: t.Optional[str] = None,
     include: t.Optional[t.List[str]] = None,
     exclude: t.Optional[t.List[str]] = None,
-    env: t.Optional[t.Dict[str, t.Any]] = None,
-    labels: t.Optional[t.Dict[str, str]] = None,
-    additional_models: t.Optional[t.List[str]] = None,
+    additional_models: t.Optional[t.List[t.Union[str, Tag]]] = None,
+    docker: t.Optional[t.Dict[str, t.Any]] = None,
+    python: t.Optional[t.Dict[str, t.Any]] = None,
+    conda: t.Optional[t.Dict[str, t.Any]] = None,
+    version: t.Optional[str] = None,
     build_ctx: t.Optional[str] = None,
     _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
     _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> Bento:
+) -> "SysPathBento":
     """
-    Build a Bento for this Service. A Bento is a file archive containing all the
-    specifications, source code, and model files required to run and operate this
-    service in production.
+    User-facing API for building a Bento, the available build options are symmetrical to
+    the content of a valid bentofile.yaml file, for building Bento from CLI.
 
-    Example Usages:
+    This API will not respect bentofile.yaml file in current environment, build options
+    can only be provided via function call parameters.
 
-    # bento.py
-    import numpy as np
-    import bentoml
-    import bentoml.sklearn
-    from bentoml.io import NumpyNdarray
+    Args:
+        service: import str for finding the bentoml.Service instance build target
+        labels: optional immutable labels for carrying contextual info
+        description: optional description string in markdown format
+        include: list of file paths and patterns specifying files to include in Bento,
+            default is all files under build_ctx, beside the ones excluded from the
+            exclude parameter or a .bentoignore file for a given directory
+        exclude: list of file paths and patterns to exclude from the final Bento archive
+        additional_models: list of model tags to pack in Bento, in addition to the
+            models that are required by service's runners. These models must be
+            found in the given _model_store
+        docker: dictionary for configuring Bento's containerization process, see details
+            in `._internal.bento.build_config.DockerOptions`
+        python: dictionary for configuring Bento's python dependencies, see details in
+            `._internal.bento.build_config.PythonOptions`
+        conda: dictionary for configuring Bento's conda dependencies, see details in
+            `._internal.bento.build_config.CondaOptions`
+        version: Override the default auto generated version str
+        build_ctx: Build context directory, when used as
+        _bento_store: save Bento created to this BentoStore
+        _model_store: pull Models required from this ModelStore
 
-    iris_model_runner = bentoml.sklearn.load_runner('iris_classifier:latest')
-    svc = bentoml.Service(
-        "IrisClassifier",
-        runners=[iris_model_runner]
-    )
+    Returns:
+        Bento: a Bento instance representing the materialized Bento saved in BentoStore
 
-    @svc.api(input=NumpyNdarray(), output=NumpyNdarray())
-    def predict(request_data: np.ndarray):
-        return iris_model_runner.predict(request_data)
-
-    # For simple use cases, only models list is required:
-    svc.set_build_options(
-        include=["*.py"],
-        env=dict(
-            pip_install = "./requirements.txt"
-        )
-    )
-
-    # For advanced build use cases, here's all the common build options:
-    svc.set_build_options(
-        version="any_version_label",
-        models=["iris_model:latest"],
-        include=['*'],
-        exclude=[], # files to exclude can also be specified with a .bentoignore file
-        labels={
-            "foo": "bar",
-        },
-        env={
-            "python": {
-                "version": '3.7.11',
-                "wheels": ["./wheels/*"],
-                "pip_install": "auto",
-                # "pip_install": "./requirements.txt",
-                # "pip_install": ["tensorflow", "numpy"],
-                # "pip_install": bentoml.build_utils.lock_pypi_version(["tensorflow", "numpy"]),
-                # "pip_install": None, # do not install any python packages automatically
-            },
-            "docker": {
-                # "base_image": "mycompany.com/registry/name/tag",
-                "distro": "amazonlinux2",
-                "gpu": True,
-                "setup_script": "sh setup_docker_container.sh",
-            },
-            # "conda": "./environment.yml",
-            "conda": {
-                "channels": [],
-                "dependencies": []
-            }
-        },
-    )
-
-    From CLI:
-
-        bentoml build bento.py:svc
-
-    Alternatively, write a python script to build new Bento with `bentoml.build` API:
-
-        import bentoml
-
-        if __name__ == "__main__":
-            bentoml.build(
-                'fraud_detector.py:svc',
-                version="custom_version_str",
-                additional_models=['iris_classifier:v123'],
-                include=["*"],
-                exclude=["*.storage", "credentials.yaml"], # + anything specified in .bentoml_ignore file
-                env=dict(
-                    pip_install=bentoml.utils.find_required_pypi_packages(svc),
-                    conda="./environment.yaml",
-                    docker={
-                        "base_image": "mycompany.com/registry/name/tag",
-                        "setup_script": "./setup_docker_container.sh",
-                    },
-                ),
-                labels={
-                    "team": "foo",
-                    "dataset_version": "abc",
-                    "framework": "pytorch",
-                }
-            )
-
-    Additional build utility functions:
-
-        from bentoml.build_utils import lock_pypi_versions
-        lock_pypi_versions(["pytorch", "numpy"]) => ["pytorch==1.0", "numpy==1.23"]
-
-        from bentoml.build_utils import with_pip_install_options
-        with_pip_install_options(
-              ["pytorch", "numpy"],
-              index_url="https://mirror.baidu.com/pypi/simple",
-              extra_index_url="https://mirror.baidu.com/pypi/simple",
-              find_links="https://download.pytorch.org/whl/torch_stable.html"
-         )
-        > [
-            "pytorch --index-url=https://mirror.baidu.com/pypi/simple --extra-index-url=https://mirror.baidu.com/pypi/simple --find-links=https://download.pytorch.org/whl/torch_stable.html",
-            "numpy --index-url=https://mirror.baidu.com/pypi/simple --extra-index-url=https://mirror.baidu.com/pypi/simple --find-links=https://download.pytorch.org/whl/torch_stable.html"
-        ]
     """  # noqa: LN001
-    build_ctx = os.getcwd() if build_ctx is None else os.path.realpath(build_ctx)
-    svc = load(svc_import_str, working_dir=build_ctx)
-
-    additional_models = [] if additional_models is None else additional_models
-    include = ["*"] if include is None else include
-    exclude = [] if exclude is None else exclude
-    env = {} if env is None else env
-    labels = {} if labels is None else labels
+    build_config = BentoBuildConfig(
+        service=service,
+        description=description,
+        labels=labels,
+        include=include,
+        exclude=exclude,
+        additional_models=additional_models,
+        docker=docker,
+        python=python,
+        conda=conda,
+    )
 
     bento = Bento.create(
-        svc,
-        build_ctx,
-        additional_models,
-        version,
-        include,
-        exclude,
-        env,
-        labels,
-        _model_store,
+        build_config=build_config,
+        version=version,
+        build_ctx=build_ctx,
+        model_store=_model_store,
     ).save(_bento_store)
-
     logger.info("Bento build success, %s created", bento)
+    return bento
 
+
+@inject
+def build_from_bentofile_yaml(
+    bentofile: str = "bentofile.yaml",
+    *,
+    version: t.Optional[str] = None,
+    build_ctx: t.Optional[str] = None,
+    _bento_store: "BentoStore" = Provide[BentoMLContainer.bento_store],
+    _model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
+) -> "SysPathBento":
+    """
+    Build a Bento base on options specified in a bentofile.yaml file.
+
+    By default, this function will look for a `bentofile.yaml` file in current working
+    directory.
+
+    Args:
+        bentofile: The file path to build config yaml file
+        version: Override the default auto generated version str
+        build_ctx: Build context directory, when used as
+        _bento_store: save Bento created to this BentoStore
+        _model_store: pull Models required from this ModelStore
+    """
+    try:
+        bentofile = resolve_user_filepath(bentofile, build_ctx)
+    except FileNotFoundError:
+        raise InvalidArgument(f'bentofile "{bentofile}" not found')
+
+    with open(bentofile, "r") as f:
+        build_config = BentoBuildConfig.from_yaml(f)
+
+    bento = Bento.create(
+        build_config=build_config,
+        version=version,
+        build_ctx=build_ctx,
+        model_store=_model_store,
+    ).save(_bento_store)
+    logger.info("Bento build success, %s created", bento)
     return bento
 
 

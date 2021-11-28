@@ -66,7 +66,7 @@ def pull() -> Model:
 
 
 # fmt: off
-class _CreateModelProtocol(t.ContextManager[Model], Protocol):
+class _CreateModelProtocol(Protocol):
     def __call__(  # noqa: E704
         self,
         name: str,
@@ -80,18 +80,13 @@ class _CreateModelProtocol(t.ContextManager[Model], Protocol):
     ) -> Model: ...
     def __next__(self) -> t.Iterator[Model]: ...  # noqa: E704
     def __enter__(self) -> Model: ...  # noqa: E704
-    def __exit__(  # noqa: E704
+    def __exit__(  # noqa: E704,E301
         self,
         exc_type: t.Optional[t.Type[BaseException]],
         exc_val: t.Optional[BaseException],
         exc_tb: t.Optional[TracebackType],
     ) -> None: ...
 # fmt: on
-
-
-class GeneratorContextManager(t.ContextManager[_T], t.Generic[_T]):
-    def __call__(self, func: t.Callable[..., _T]) -> t.Callable[..., _T]:
-        ...
 
 
 @inject

@@ -258,9 +258,7 @@ class _LightGBMRunner(Runner):
                 return item  # type: ignore[reportUnknownVariableType]
             else:
                 raise TypeError(
-                    "Only accept type np.ndarray or"
-                    f" pd.DataFrame, got {type(item)}"
-                    " instead."
+                    f"Only accept type np.ndarray or pd.DataFrame, got {type(item)} instead."
                 )
 
         params = params.map(_mapping)

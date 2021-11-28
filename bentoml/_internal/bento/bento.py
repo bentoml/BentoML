@@ -221,8 +221,9 @@ class Bento(StoreItem):
         # Create bento.yaml
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             # pyright doesn't know about attrs converters
-            info = BentoInfo(tag, svc, build_config.labels, models)  # type: ignore
-            info.dump(bento_yaml)
+            BentoInfo(  # type: ignore
+                tag, svc, build_config.labels, [str(tag) for tag in seen_model_tags]
+            ).dump(bento_yaml)
 
         return SysPathBento(tag, bento_fs)
 

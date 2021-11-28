@@ -212,7 +212,7 @@ jobs:
         with:
           directory: ./
           files: ./catboost.xml
-          flags: frameworks
+          flags: catboost
           verbose: true
 
   detectron2_integration_tests:
@@ -256,7 +256,7 @@ jobs:
         with:
           directory: ./
           files: ./detectron2.xml
-          flags: frameworks
+          flags: detectron
           verbose: true
 
   easyocr_integration_tests:
@@ -300,7 +300,7 @@ jobs:
         with:
           directory: ./
           files: ./easyocr.xml
-          flags: frameworks
+          flags: easyocr
           verbose: true
 
   # TODO: evalml_integration_tests:
@@ -350,7 +350,7 @@ jobs:
         with:
           directory: ./
           files: ./gluon.xml
-          flags: frameworks
+          flags: gluon
           verbose: true
 
   h2o_integration_tests:
@@ -394,7 +394,7 @@ jobs:
         with:
           directory: ./
           files: ./h2o.xml
-          flags: frameworks
+          flags: h2o
           verbose: true
 
   keras_with_tf1_integration_tests:
@@ -438,7 +438,7 @@ jobs:
         with:
           directory: ./
           files: ./keras_tf1.xml
-          flags: frameworks
+          flags: keras
           verbose: true
 
   keras_with_tf2_integration_tests:
@@ -482,7 +482,7 @@ jobs:
         with:
           directory: ./
           files: ./keras_tf2.xml
-          flags: frameworks
+          flags: keras
           verbose: true
 
   lightgbm_integration_tests:
@@ -526,7 +526,7 @@ jobs:
         with:
           directory: ./
           files: ./lightgbm.xml
-          flags: frameworks
+          flags: lightgbm
           verbose: true
 
   mlflow_integration_tests:
@@ -570,7 +570,7 @@ jobs:
         with:
           directory: ./
           files: ./mlflow.xml
-          flags: frameworks
+          flags: mlflow
           verbose: true
 
   onnx_integration_tests:
@@ -614,7 +614,7 @@ jobs:
         with:
           directory: ./
           files: ./onnx.xml
-          flags: frameworks
+          flags: onnx
           verbose: true
 
   onnxmlir_integration_tests:
@@ -651,7 +651,7 @@ jobs:
         with:
           directory: ./
           files: ./onnxmlir.xml
-          flags: frameworks
+          flags: onnxmlir
           verbose: true
 
   paddle_integration_tests:
@@ -695,7 +695,7 @@ jobs:
         with:
           directory: ./
           files: ./paddle.xml
-          flags: frameworks
+          flags: paddle
           verbose: true
 
   pycaret_integration_tests:
@@ -739,7 +739,7 @@ jobs:
         with:
           directory: ./
           files: ./pycaret.xml
-          flags: frameworks
+          flags: pycaret
           verbose: true
 
   # TODO: pyspark_mllib_integration_tests
@@ -785,7 +785,7 @@ jobs:
         with:
           directory: ./
           files: ./pytorch.xml
-          flags: frameworks
+          flags: pytorch
           verbose: true
 
   pytorch_lightning_integration_tests:
@@ -833,7 +833,7 @@ jobs:
         with:
           directory: ./
           files: ./pytorch_lightning.xml
-          flags: frameworks
+          flags: pytorch_lightning
           verbose: true
 
   sklearn_integration_tests:
@@ -877,7 +877,7 @@ jobs:
         with:
           directory: ./
           files: ./sklearn.xml
-          flags: frameworks
+          flags: sklearn
           verbose: true
 
   spacy_integration_tests:
@@ -921,7 +921,7 @@ jobs:
         with:
           directory: ./
           files: ./spacy.xml
-          flags: frameworks
+          flags: spacy
           verbose: true
 
   statsmodels_integration_tests:
@@ -965,7 +965,7 @@ jobs:
         with:
           directory: ./
           files: ./statsmodels.xml
-          flags: frameworks
+          flags: statsmodels
           verbose: true
 
   tensorflow_v1_integration_tests:
@@ -1009,7 +1009,7 @@ jobs:
         with:
           directory: ./
           files: ./tf1.xml
-          flags: frameworks
+          flags: tensorflow
           verbose: true
 
   tensorflow_v2_integration_tests:
@@ -1053,7 +1053,7 @@ jobs:
         with:
           directory: ./
           files: ./tf2.xml
-          flags: frameworks
+          flags: tensorflow
           verbose: true
 
   transformers_integration_tests:
@@ -1097,7 +1097,7 @@ jobs:
         with:
           directory: ./
           files: ./transformers.xml
-          flags: frameworks
+          flags: transformers
           verbose: true
 
   xgboost_integration_tests:
@@ -1141,7 +1141,7 @@ jobs:
         with:
           directory: ./
           files: ./xgboost.xml
-          flags: frameworks
+          flags: xgboost
           verbose: true
 
 concurrency:

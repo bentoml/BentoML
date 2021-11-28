@@ -79,12 +79,12 @@ def _Bento_set_fs(bento: "Bento", _: t.Any, new_fs: "FS") -> "FS":
     return new_fs
 
 
-@attr.define(repr=False)
+@attr.define(repr=False, auto_attribs=False)
 class Bento(StoreItem):
-    _tag: Tag
+    _tag: Tag = attr.field()
     _fs: "FS" = attr.field(on_setattr=_Bento_set_fs)
-    _model_store: ModelStore
 
+    _model_store: ModelStore
     _info: t.Optional["BentoInfo"] = None
     _doc: t.Optional[str] = None
 

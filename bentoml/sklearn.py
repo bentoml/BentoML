@@ -38,7 +38,7 @@ except ImportError:
 
 _sklearn_version = importlib_metadata.version("scikit-learn")
 
-np = LazyLoader("np", globals(), "numpy")
+np = LazyLoader("np", globals(), "numpy")  # noqa: F811
 pd = LazyLoader("pd", globals(), "pandas")
 
 

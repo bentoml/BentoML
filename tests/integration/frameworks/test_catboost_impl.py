@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import catboost as cbt
 import numpy as np
+import psutil
 import pytest
 from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
 
@@ -51,7 +52,7 @@ def test_catboost_save_load(
     metadata: t.Dict[str, t.Any],
     modelstore: "ModelStore",
     pipeline: Pipeline,
-):
+) -> None:
     _model = pipeline(
         create_catboost_model,
         bentoml.catboost,
@@ -89,7 +90,7 @@ def test_catboost_model_type(
     expected_model: t.Union[CatBoost, CatBoostClassifier, CatBoostRegressor],
     modelstore: "ModelStore",
     pipeline: Pipeline,
-):
+) -> None:
     model_params = dict(model_type=model_type)
     info = pipeline(create_catboost_model, bentoml.catboost, model_params=model_params)
     cbt_loaded = bentoml.catboost.load(
@@ -97,3 +98,15 @@ def test_catboost_model_type(
     )
 
     assert isinstance(cbt_loaded, expected_model)
+
+
+def test_catboost_runner_setup_run_batch(
+    modelstore: "ModelStore", pipeline: Pipeline
+) -> None:
+    _model = pipeline(create_catboost_model, bentoml.catboost)
+    runner = bentoml.catboost.load_runner(_model.tag, model_store=modelstore)
+
+    assert _model.tag in runner.required_models
+    assert runner.num_concurrency_per_replica == 1
+    assert runner.num_replica == psutil.cpu_count()
+    assert runner.run_batch(test_df) == np.array([1])

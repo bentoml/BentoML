@@ -222,7 +222,7 @@ class _CatBoostRunner(Runner):
     @inject
     def __init__(
         self,
-        tag: str,
+        tag: t.Union[str, Tag],
         predict_fn_name: str,
         model_params: t.Optional[t.Dict[str, t.Union[str, int]]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
@@ -271,7 +271,7 @@ class _CatBoostRunner(Runner):
 
 @inject
 def load_runner(
-    tag: str,
+    tag: t.Union[str, Tag],
     predict_fn_name: str = "predict",
     *,
     model_params: t.Union[None, t.Dict[str, t.Union[str, int]]] = None,

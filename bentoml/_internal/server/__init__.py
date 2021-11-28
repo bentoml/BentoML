@@ -8,8 +8,9 @@ import typing as t
 from simple_di import Provide, inject
 
 from bentoml import load
-from bentoml._internal.configuration import get_debug_mode
-from bentoml._internal.configuration.containers import BentoServerContainer
+
+from ..configuration import get_debug_mode
+from ..configuration.containers import BentoServerContainer
 
 logger = logging.getLogger(__name__)
 

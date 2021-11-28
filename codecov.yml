@@ -23,12 +23,45 @@ ignore:
 coverage:
   precision: 2
   round: down
-  range: "70...100" 
+  range: "80...100" 
   status:
+    default_rules:
+      flag_coverage_not_uploaded_behavior: exclude
     project:
       default:
         target: auto
         threshold: 10%
+        paths:
+          - "bentoml/*.py"
+          - "bentoml/_internal/**/*"
+        flags:
+          - catboost
+          - detectron
+          - easyocr
+          - evalml
+          - fastai
+          - fasttext
+          - flax
+          - gluon
+          - h2o
+          - keras
+          - lightgbm
+          - mlflow
+          - onnx
+          - onnxmlir
+          - paddle
+          - pycaret
+          - pyspark
+          - pytorch
+          - pytorch_lightning
+          - sklearn
+          - spacy
+          - statsmodels
+          - tensorflow
+          - transformers
+          - xgboost
+          - unit-tests
+          - e2e-tests
       catboost:
         target: auto
         threshold: 10%
@@ -269,12 +302,12 @@ flags:
     carryforward: true
     paths:
       - bentoml/xgboost.py
-  e2e:
+  e2e-tests:
     carryforward: true
     paths:
       - "bentoml/**/*"
       - bentoml/models.py
-  unit:
+  unit-tests:
     carryforward: true
     paths:
       - "bentoml/**/*"

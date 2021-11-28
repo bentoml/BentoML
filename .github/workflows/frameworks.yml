@@ -58,6 +58,7 @@ jobs:
               - requirements/tests-requirements.txt
             related: &related
               - *dependencies
+              - codecov.yml
               - .github/workflows/frameworks.yml
               - scripts/ci/run_tests.sh
             runner: &runner

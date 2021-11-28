@@ -79,12 +79,12 @@ def _Bento_set_fs(bento: "Bento", _: t.Any, new_fs: "FS") -> "FS":
     return new_fs
 
 
-@attr.define(repr=False)
+@attr.define(repr=False, auto_attribs=False)
 class Bento(StoreItem):
-    _tag: Tag
+    _tag: Tag = attr.field()
     _fs: "FS" = attr.field(on_setattr=_Bento_set_fs)
-    _model_store: ModelStore
 
+    _model_store: ModelStore
     _info: t.Optional["BentoInfo"] = None
     _doc: t.Optional[str] = None
 
@@ -221,8 +221,9 @@ class Bento(StoreItem):
         # Create bento.yaml
         with bento_fs.open(BENTO_YAML_FILENAME, "w") as bento_yaml:
             # pyright doesn't know about attrs converters
-            info = BentoInfo(tag, svc, build_config.labels, models)  # type: ignore
-            info.dump(bento_yaml)
+            BentoInfo(  # type: ignore
+                tag, svc, build_config.labels, [str(tag) for tag in seen_model_tags]
+            ).dump(bento_yaml)
 
         return SysPathBento(tag, bento_fs)
 

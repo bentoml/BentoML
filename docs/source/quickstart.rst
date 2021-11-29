@@ -1,7 +1,7 @@
 .. _getting-started-page:
 
 Getting Started
-***************
+===============
 
 There are three parts to the BentoML workflow.
 

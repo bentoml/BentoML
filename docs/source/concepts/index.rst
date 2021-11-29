@@ -8,4 +8,8 @@ TODO
 .. toctree::
    :hidden:
 
-   management
+   service_definition
+   api-io-descriptors
+   building_bentos
+   bento_management
+   containerize_bentos

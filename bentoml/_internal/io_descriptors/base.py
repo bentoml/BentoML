@@ -70,7 +70,7 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
             setattr(self, "__io_default_params__", default_params)
 
     def __str__(self) -> str:
-        default_params = getattr(self, "__io_default_params__")
+        default_params = getattr(self, "__io_default_params__", None)
         filtered: t.List[str] = []
         for k, v in self.__dict__.items():
             if k.startswith("__"):

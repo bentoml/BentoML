@@ -33,7 +33,6 @@ Getting Started
 
 Community
 ---------
-- To get help from fellow developers, use `bentoml` tag on `StackOverflow <https://stackoverflow.com/questions/tagged/bentoml>`_.
 - To report a bug or suggest a feature request, use `GitHub Issues <https://github.com/bentoml/BentoML/issues/new/choose>`_.
 - For other discussions, use `Github Discussions <https://github.com/bentoml/BentoML/discussions>`_.
 - To receive release announcements, please subscribe to our mailing list or join us on `Slack <https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg>`_.

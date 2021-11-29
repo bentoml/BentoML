@@ -27,7 +27,6 @@ BentoML let you create machine learning powered prediction service in minutes an
 
 ### Community ###
 
-- To get help from fellow developers, use `bentoml` tag on [StackOverflow](https://stackoverflow.com/questions/tagged/bentoml).
 - To report a bug or suggest a feature request, use [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
 - For other discussions, use [Github Discussions](https://github.com/bentoml/BentoML/discussions).
 - To receive release announcements, please subscribe to our mailing list or join us on [Slack](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
@@ -42,7 +41,7 @@ There are many ways to contribute to the project:
 - Contributing code or documentation to the project by submitting a Github pull request. See the [development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
 - See more in the [contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md>).
 
-### Contributing ###
+### Usage Reporting ###
 
 BentoML by default collects anonymous usage data using [Amplitude](https://amplitude.com/). 
 It only collects BentoML library's own actions and parameters, no user or model data will be collected. 

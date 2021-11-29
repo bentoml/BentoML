@@ -48,7 +48,7 @@ class Multipart(IODescriptor[MultipartIO]):
             return {"output":res, "result":annotations}
 
     Users then can then serve this service with `bentoml serve`::
-        % bentoml serve ./sklearn_svc.py:svc --auto-reload
+        % bentoml serve ./sklearn_svc.py:svc --reload
 
         (Press CTRL+C to quit)
         [INFO] Starting BentoML API server in development mode with auto-reload enabled

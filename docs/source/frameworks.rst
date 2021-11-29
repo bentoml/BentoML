@@ -14,9 +14,8 @@ does not work in the Colab environment due to its limitations, including running
 BentoML API model server, building docker image or creating cloud deployment.
 
 
-============
 Scikit-Learn
-============
+------------
 
 Example Projects:
 
@@ -26,9 +25,8 @@ Example Projects:
     :show-inheritance:
     :inherited-members:
 
-=======
 PyTorch
-=======
+-------
 
 Example Projects:
 
@@ -40,9 +38,8 @@ Example Projects:
     :inherited-members:
 
 
-===========================
 Tensorflow 2.0 (Native API)
-===========================
+---------------------------
 
 Example Projects:
 
@@ -55,9 +52,8 @@ Example Projects:
     :inherited-members:
 
 
-=====================================
 Keras (Tensorflow 2.0 as the backend)
-=====================================
+-------------------------------------
 
 Example Projects:
 
@@ -70,9 +66,8 @@ Example Projects:
     :inherited-members:
 
 
-==============
 Tensorflow 1.0
-==============
+--------------
 
 Example Projects:
 
@@ -83,9 +78,8 @@ Example Projects:
     :show-inheritance:
     :inherited-members:
 
-=========
 FastAI v2
-=========
+---------
 
 Example Projects:
 
@@ -95,9 +89,8 @@ Example Projects:
     :show-inheritance:
     :inherited-members:
 
-=======
 XGBoost
-=======
+-------
 
 Example Projects:
 
@@ -106,9 +99,8 @@ Example Projects:
 
 .. autoclass:: bentoml.xgboost.XgboostModel
 
-========
 LightGBM
-========
+--------
 
 Example Projects:
 
@@ -117,9 +109,8 @@ Example Projects:
 .. autoclass:: bentoml.lightgbm.LightGBMModel
 
 
-========
 FastText
-========
+--------
 
 Example Projects:
 
@@ -127,9 +118,8 @@ Example Projects:
 
 .. autoclass:: bentoml.fasttext.FastTextModel
 
-===
 H2O
-===
+---
 
 Example Projects:
 
@@ -139,17 +129,15 @@ Example Projects:
 .. autoclass:: bentoml.h2o.H2OModel
 
 
-======
 CoreML
-======
+------
 
 .. autoclass:: bentoml.coreml.CoreMLModel
     :members:
 
 
-====
 ONNX
-====
+----
 
 Example Projects:
 
@@ -158,30 +146,26 @@ Example Projects:
 .. autoclass:: bentoml.onnx.ONNXModel
 
 
-=========
 ONNX-MLIR
-=========
+---------
 
 .. autoclass:: bentoml.onnxmlir.ONNXMlirModel
 
 
-=====
 Spacy
-=====
+-----
 
 .. autoclass:: bentoml.spacy.SpacyModel
 
 
-============
 Transformers
-============
+------------
 
 .. autoclass:: bentoml.transformers.TransformersModel
 
 
-===========
 Statsmodels
-===========
+-----------
 
 For statsmodels, we recommend using PickleModel:
 
@@ -193,30 +177,26 @@ Example Projects:
 * Shampoo Sales Prediction -  `Google Colab <https://colab.research.google.com/github/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__ / `Notebook Source <https://github.com/bentoml/gallery/blob/master/statsmodels_holt/bentoml_statsmodels.ipynb>`__
 
 
-=====
 Gluon
-=====
+-----
 
 .. autoclass:: bentoml.gluon.GluonModel
 
 
-=================
 Pytorch Lightning
-=================
+-----------------
 
 .. autoclass:: bentoml.pytorch.PyTorchLightningModel
 
 
-=========
 Detectron
-=========
+---------
 
 .. autoclass:: bentoml.detectron.DetectronModel
 
 
-======
 Paddle
-======
+------
 
 Example Projects:
 
@@ -224,15 +204,13 @@ Example Projects:
 
 .. autoclass:: bentoml.paddle.PaddlePaddleModel
 
-========
 EasyOCR
-========
+-------
 
 .. autoclass:: bentoml.easyocr.EasyOCRModel
 
-======
 EvalML
-======
+------
 
 .. autoclass:: bentoml.evalml.EvalMLModel
 

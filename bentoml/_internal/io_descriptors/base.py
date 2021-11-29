@@ -1,7 +1,5 @@
-import inspect
 import typing as t
 from abc import ABC, abstractmethod
-from itertools import zip_longest
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -33,18 +31,7 @@ IOType = t.Union[
 IOPyObj = t.TypeVar("IOPyObj")
 
 
-def readable_str(obj: t.Any) -> t.Union[t.Dict[str, str], str]:
-    # make str more human readable
-    if callable(obj):
-        return obj.__name__
-    elif inspect.isclass(obj):
-        return obj.__class__.__name__
-    elif isinstance(obj, dict):
-        fac = dict()  # type: t.Dict[str, t.Any]
-        fac.update(zip(obj.keys(), map(readable_str, obj.values())))  # type: ignore
-        return fac
-    else:
-        return str(obj)
+_T = t.TypeVar("_T")
 
 
 class IODescriptor(ABC, t.Generic[IOPyObj]):
@@ -54,36 +41,19 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
     """
 
     HTTP_METHODS = ["POST"]
-    __io_default_params__ = {}
+    _init_str: str = ""
 
-    def __init__(self) -> None:
-        if len(getattr(self, "__io_default_params__")) == 0:
-            default_params: t.Dict[str, t.Any] = dict()
-            init_fn = getattr(self, "__init__")
-            spec = inspect.getfullargspec(init_fn)
-            args = spec.args[1:]
-            defaults = list(spec.defaults) if spec.defaults is not None else [None]
-            if len(args) != 0:
-                default_params.update(zip_longest(args, defaults))
-            if spec.varkw is not None:
-                default_params[spec.varkw] = spec.kwonlydefaults
-            setattr(self, "__io_default_params__", default_params)
+    def __new__(cls: t.Type[_T], *args: t.Any, **kwargs: t.Any) -> _T:
+        self = super().__new__(cls)
+        arg_strs = tuple(repr(i) for i in args) + tuple(
+            f'{k}={repr(v)}' for k, v in kwargs.items()
+        )
+        setattr(self, "_init_str", f"{cls.__name__}({', '.join(arg_strs)})")
 
-    def __str__(self) -> str:
-        default_params = getattr(self, "__io_default_params__", None)
-        filtered: t.List[str] = []
-        for k, v in self.__dict__.items():
-            if k.startswith("__"):
-                continue
-            key = k.strip("_")
-            value = default_params.get(key, "")
-            if isinstance(v, dict):
-                val = readable_str(v)  # t.Dict[str, str]
-                filtered = [f"{_k}={_v}" for _k, _v in val.items()]
-                break
-            if v != value:
-                filtered.append(f"{key}={readable_str(v)}")
-        return f"{self.__class__.__name__}({', '.join(filtered)})"
+        return self
+
+    def __repr__(self) -> str:
+        return self._init_str
 
     @abstractmethod
     def openapi_schema_type(self) -> t.Dict[str, str]:

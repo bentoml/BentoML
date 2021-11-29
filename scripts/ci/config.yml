@@ -24,7 +24,6 @@ catboost:
   <<: *tmpl
   dependencies:
     - "catboost"
-    - "psutil"
 
 detectron2:
   <<: *tmpl

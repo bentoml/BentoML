@@ -120,7 +120,6 @@ class JSON(IODescriptor[JSONType]):
 
         self._validate_json = validate_json
         self._json_encoder = json_encoder
-        super().__init__()
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         if hasattr(self, "_pydantic_model"):

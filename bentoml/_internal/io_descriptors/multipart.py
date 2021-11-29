@@ -127,7 +127,6 @@ class Multipart(IODescriptor[MultipartIO]):
                 "File",
             ],
         ] = inputs
-        super().__init__()
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {

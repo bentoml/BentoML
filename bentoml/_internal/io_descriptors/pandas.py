@@ -172,7 +172,6 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
         self._shape = shape
         self._enforce_shape = enforce_shape
         self._mime_type = mime_type
-        super().__init__()
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._mime_type, self._dtype)
@@ -436,7 +435,6 @@ class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
         self._shape = shape
         self._enforce_shape = enforce_shape
         self._mime_type = mime_type
-        super().__init__()
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._mime_type, self._dtype)

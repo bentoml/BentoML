@@ -1,7 +1,7 @@
 github_checks:
     annotations: false
 comment:
-  layout: "reach, diff, flags, files"
+  layout: "reach, diff, files"
   behavior: default
   require_base: no
   require_head: no
@@ -15,6 +15,7 @@ ignore:
   - "bentoml/_internal/types.py"
   - "bentoml/__main__.py"
   - "bentoml/build_utils.py"
+  - "bentoml/io.py"
   - "tests/**/*"
   - "docker/**/*"
   - "typings/**/*"
@@ -22,17 +23,170 @@ ignore:
 coverage:
   precision: 2
   round: down
-  range: "70...100" 
+  range: "80...100" 
   status:
+    default_rules:
+      flag_coverage_not_uploaded_behavior: exclude
     project:
       default:
         target: auto
         threshold: 10%
-      frameworks:
+        paths:
+          - "bentoml/*.py"
+          - "bentoml/_internal/**/*"
+        flags:
+          - catboost
+          - detectron
+          - easyocr
+          - evalml
+          - fastai
+          - fasttext
+          - flax
+          - gluon
+          - h2o
+          - keras
+          - lightgbm
+          - mlflow
+          - onnx
+          - onnxmlir
+          - paddle
+          - pycaret
+          - pyspark
+          - pytorch
+          - pytorch_lightning
+          - sklearn
+          - spacy
+          - statsmodels
+          - tensorflow
+          - transformers
+          - xgboost
+          - unit-tests
+          - e2e-tests
+      catboost:
         target: auto
         threshold: 10%
         flags:
-          - frameworks
+          - catboost
+      detectron:
+        target: auto
+        threshold: 10%
+        flags:
+          - detectron
+      easyocr:
+        target: auto
+        threshold: 10%
+        flags:
+          - easyocr 
+      evalml:
+        target: auto
+        threshold: 10%
+        flags:
+          - evalml 
+      fastai:
+        target: auto
+        threshold: 10%
+        flags:
+          - fastai
+      fasttext:
+        target: auto
+        threshold: 10%
+        flags:
+          - fasttext
+      flax:
+        target: auto
+        threshold: 10%
+        flags:
+          - flax
+      gluon:
+        target: auto
+        threshold: 10%
+        flags:
+          - gluon
+      h2o:
+        target: auto
+        threshold: 10%
+        flags:
+          - h2o
+      keras:
+        target: auto
+        threshold: 10%
+        flags:
+          - keras
+      lightgbm:
+        target: auto
+        threshold: 10%
+        flags:
+          - lightgbm
+      mlflow:
+        target: auto
+        threshold: 10%
+        flags:
+          - mlflow
+      onnx:
+        target: auto
+        threshold: 10%
+        flags:
+          - onnx
+      onnxmlir:
+        target: auto
+        threshold: 10%
+        flags:
+          - onnxmlir
+      paddle:
+        target: auto
+        threshold: 10%
+        flags:
+          - paddle
+      pycaret:
+        target: auto
+        threshold: 10%
+        flags:
+          - pycaret
+      pyspark:
+        target: auto
+        threshold: 10%
+        flags:
+          - pyspark
+      pytorch:
+        target: auto
+        threshold: 10%
+        flags:
+          - pytorch
+      pytorch_lightning:
+        target: auto
+        threshold: 10%
+        flags:
+          - pytorch_lightning
+      sklearn:
+        target: auto
+        threshold: 10%
+        flags:
+          - sklearn
+      spacy:
+        target: auto
+        threshold: 10%
+        flags:
+          - spacy
+      statsmodels:
+        target: auto
+        threshold: 10%
+        flags:
+          - statsmodels
+      tensorflow:
+        target: auto
+        threshold: 10%
+        flags:
+          - tensorflow
+      transformers:
+        target: auto
+        threshold: 10%
+        flags:
+          - transformers
+      xgboost:
+        target: auto
+        threshold: 10%
+        flags:
+          - xgboost
       e2e:
         target: auto
         threshold: 10%
@@ -48,39 +202,113 @@ coverage:
         threshold: 10%
 
 flags:
-  frameworks:
+  catboost:
     carryforward: true
     paths:
       - bentoml/catboost.py
+  detectron:
+    carryforward: true
+    paths:
       - bentoml/detectron.py
+  easyocr:
+    carryforward: true
+    paths:
       - bentoml/easyocr.py
+  evalml:
+    carryforward: true
+    paths:
       - bentoml/evalml.py
+  fastai:
+    carryforward: true
+    paths:
       - bentoml/fastai.py
+  fasttext:
+    carryforward: true
+    paths:
       - bentoml/fasttext.py
+  flax:
+    carryforward: true
+    paths:
       - bentoml/flax.py
+  gluon:
+    carryforward: true
+    paths:
       - bentoml/gluon.py
+  h2o:
+    carryforward: true
+    paths:
       - bentoml/h2o.py
+  keras:
+    carryforward: true
+    paths:
       - bentoml/keras.py
+  lightgbm:
+    carryforward: true
+    paths:
       - bentoml/lightgbm.py
+  mlflow:
+    carryforward: true
+    paths:
       - bentoml/mlflow.py
+  onnx:
+    carryforward: true
+    paths:
       - bentoml/onnx.py
+  onnxmlir:
+    carryforward: true
+    paths:
       - bentoml/onnxmlir.py
+  paddle:
+    carryforward: true
+    paths:
       - bentoml/paddle.py
+  pycaret:
+    carryforward: true
+    paths:
       - bentoml/pycaret.py
+  pyspark:
+    carryforward: true
+    paths:
       - bentoml/pyspark.py
+  pytorch:
+    carryforward: true
+    paths:
       - bentoml/pytorch.py
+  pytorch_lightning:
+    carryforward: true
+    paths:
       - bentoml/pytorch_lightning.py
+  sklearn:
+    carryforward: true
+    paths:
       - bentoml/sklearn.py
+  spacy:
+    carryforward: true
+    paths:
       - bentoml/spacy.py
+  statsmodels:
+    carryforward: true
+    paths:
       - bentoml/statsmodels.py
+  tensorflow:
+    carryforward: true
+    paths:
       - bentoml/tensorflow.py
+  transformers:
+    carryforward: true
+    paths:
       - bentoml/transformers.py
+  xgboost:
+    carryforward: true
+    paths:
       - bentoml/xgboost.py
-  e2e:
+  e2e-tests:
     carryforward: true
     paths:
       - "bentoml/**/*"
-  unit:
+      - bentoml/models.py
+  unit-tests:
     carryforward: true
     paths:
       - "bentoml/**/*"
+      - bentoml/models.py

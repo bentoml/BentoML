@@ -30,6 +30,7 @@ jobs:
           base: 'bentoml-1.0'
           filters: |
             related: &related
+              - codecov.yml
               - .github/workflows/ci.yml
               - setup.cfg
               - pyproject.toml

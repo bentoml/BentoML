@@ -1,3 +1,4 @@
+# type: ignore[reportMissingTypeStubs]
 import functools
 import typing as t
 from pathlib import Path
@@ -9,6 +10,7 @@ from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE, Model
+from ._internal.runner.utils import Params
 from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
@@ -20,9 +22,9 @@ if TYPE_CHECKING:  # pragma: no cover
 try:
     import tensorflow as tf
 
-    # TODO(aarnphm): separation of Keras and Tensorflow
+    # TODO: separation of Keras and Tensorflow
     # https://twitter.com/fchollet/status/1404967230048149506?lang=en
-    import tensorflow.keras as tfk
+    import tensorflow.keras as keras
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -33,29 +35,15 @@ except ImportError:  # pragma: no cover
         """
     )
 
-from bentoml.tensorflow import _TensorflowRunner
-
-_F = t.TypeVar("_F", bound=t.Callable[..., t.Any])
-_T_co = t.TypeVar("_T_co", covariant=True)
-
-
-class _GeneratorContextManager(t.ContextManager[_T_co]):
-    def __call__(self, func: _F) -> _F:
-        ...
-
+from bentoml.tensorflow import _TensorflowRunner  # type: ignore[reportPrivateUsage]
 
 TF2 = tf.__version__.startswith("2")
+
 
 # Global instance of tf.Session()
 _graph: "Graph" = tf.compat.v1.get_default_graph()
 _sess: "BaseSession" = tf.compat.v1.Session(graph=_graph)
 
-# make sess.as_default() type safe
-_default_sess: t.Callable[
-    [], "_GeneratorContextManager[BaseSession]"
-] = functools.partial(_sess.as_default)
-
-_load: t.Callable[[t.BinaryIO], "tfk.Model"] = functools.partial(cloudpickle.load)
 
 _CUSTOM_OBJ_FNAME = f"{SAVE_NAMESPACE}_custom_objects{PKL_EXT}"
 _SAVED_MODEL_FNAME = f"{SAVE_NAMESPACE}{H5_EXT}"
@@ -65,9 +53,9 @@ _MODEL_JSON_FNAME = f"{SAVE_NAMESPACE}_json{JSON_EXT}"
 
 @inject
 def load(
-    tag: str,
+    tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "tfk.Model":
+) -> "keras.Model":
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -88,18 +76,18 @@ def load(
     if model.info.options["custom_objects"]:
         assert Path(model.path_of(_CUSTOM_OBJ_FNAME)).is_file()
         with Path(model.path_of(_CUSTOM_OBJ_FNAME)).open("rb") as dcof:
-            default_custom_objects = _load(dcof)
+            default_custom_objects = cloudpickle.load(dcof)
 
-    with _default_sess():
+    with _sess.as_default():
         if model.info.options["store_as_json"]:
             assert Path(model.path_of(_MODEL_JSON_FNAME)).is_file()
             with Path(model.path_of(_MODEL_JSON_FNAME)).open("r") as jsonf:
                 model_json = jsonf.read()
-            model = tfk.models.model_from_json(
+            model = keras.models.model_from_json(
                 model_json, custom_objects=default_custom_objects
             )
         else:
-            model = tfk.models.load_model(
+            model = keras.models.load_model(
                 model.path_of(_SAVED_MODEL_FNAME),
                 custom_objects=default_custom_objects,
             )
@@ -113,7 +101,7 @@ def load(
 @inject
 def save(
     name: str,
-    model: "tfk.Model",
+    model: "keras.Model",
     *,
     store_as_json: t.Optional[bool] = False,
     custom_objects: t.Optional[t.Dict[str, t.Any]] = None,
@@ -179,6 +167,7 @@ class _KerasRunner(_TensorflowRunner):
         tag: t.Union[str, Tag],
         predict_fn_name: str,
         device_id: str,
+        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -187,32 +176,51 @@ class _KerasRunner(_TensorflowRunner):
             tag=tag,
             predict_fn_name=predict_fn_name,
             device_id=device_id,
+            partial_kwargs=partial_kwargs,
             resource_quota=resource_quota,
             batch_options=batch_options,
             model_store=model_store,
         )
         self._session = _sess
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override] # noqa
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         self._session.config = self._config_proto
         self._model = load(self.name, model_store=self._model_store)
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
+        raw_predict_fn = getattr(self._model, self._predict_fn_name)
+        self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
-        self, input_data: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]
-    ) -> t.Union[np.ndarray, tf.Tensor]:
-        if not isinstance(input_data, (np.ndarray, tf.Tensor)):
-            input_data = np.array(input_data)
-        with self._device:
+    def _run_batch(
+        self,
+        *args: t.Union[
+            t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
+        ],
+        **kwargs: t.Any,
+    ) -> t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor]:
+        params = Params[t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]](
+            *args, **kwargs
+        )
+        with tf.device(self._device_id):
+
+            def _mapping(
+                item: t.Union[
+                    t.List[t.Union[int, float]],
+                    "np.ndarray[t.Any, np.dtype[t.Any]]",
+                    tf.Tensor,
+                ]
+            ) -> t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor]:
+                if not isinstance(item, (np.ndarray, tf.Tensor)):
+                    item = np.array(item)
+                return item
+
+            params = params.map(_mapping)
             if TF2:
                 tf.compat.v1.global_variables_initializer()
             else:
                 self._session.run(tf.compat.v1.global_variables_initializer())
-                with _default_sess():
-                    self._predict_fn(input_data)
-            return self._predict_fn(input_data)
+                with _sess.as_default():
+                    self._predict_fn(*params.args, **params.kwargs)
+            return self._predict_fn(*params.args, **params.kwargs)
 
 
 @inject
@@ -220,6 +228,7 @@ def load_runner(
     tag: t.Union[str, Tag],
     *,
     predict_fn_name: str = "predict",
+    partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     device_id: str = "CPU:0",
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
@@ -235,6 +244,8 @@ def load_runner(
             Model tag to retrieve model from modelstore
         predict_fn_name (`str`, default to `predict`):
             inference function to be used.
+        partial_kwargs (`t.Dict[str, t.Any]`, `optional`, default to `None`):
+            Dictionary of partial kwargs that can be shared across different model.
         device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `CPU:0`):
             Optional devices to put the given model on. Refers to https://www.tensorflow.org/api_docs/python/tf/config
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):
@@ -248,11 +259,12 @@ def load_runner(
         Runner instances for `bentoml.keras` model
 
     Examples::
-    """  # noqa
+    """  # noqa: LN001
     return _KerasRunner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
+        partial_kwargs=partial_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

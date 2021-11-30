@@ -62,9 +62,11 @@ def get_service_openapi_doc(svc: "Service"):
                 "description": "Inference endpoints",
             },
         ],
+        "components": {},
     }
 
     paths = {}
+    example_schema = {}
     default_response = {"200": {"description": "success"}}
 
     paths["/healthz"] = {
@@ -111,6 +113,15 @@ def get_service_openapi_doc(svc: "Service"):
                 # headers=None,
             )
         }
+        if getattr(api.input, "_from_sample") is True:
+            example_schema[
+                getattr(api.input, "_sample_name")
+            ] = api.input.components_schema()
+        if getattr(api.output, "_from_sample") is True:
+            example_schema[
+                getattr(api.output, "_sample_name")
+            ] = api.output.components_schema()
 
     docs["paths"] = paths
+    docs["components"] = {"schemas": example_schema}
     return docs

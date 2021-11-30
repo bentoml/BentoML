@@ -42,9 +42,8 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         if isinstance(o, np.ndarray):
             return o.tolist()
 
-        if pd is not None:
-            if isinstance(o, (pd.DataFrame, pd.Series)):
-                return o.to_dict()
+        if pd is not None and isinstance(o, (pd.DataFrame, pd.Series)):
+            return o.to_dict()
 
         if pydantic is not None and isinstance(o, pydantic.BaseModel):
             obj_dict = o.dict()

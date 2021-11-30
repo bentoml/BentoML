@@ -8,13 +8,14 @@ from starlette.responses import Response
 from ..types import FileLike
 
 if TYPE_CHECKING:  # pragma: no cover
-    import numpy as np  # noqa: F401
-    import pandas as pd  # noqa: F401
-    import PIL.Image  # noqa: F401
+    # noqa: F401
+    import numpy as np
+    import pandas as pd
+    import PIL.Image
     import pydantic
 
 
-JSONType = t.Union[str, t.Dict[str, t.Any], t.Type["pydantic.BaseModel"]]
+JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
 
 
 # NOTES: we will keep type in quotation to avoid backward compatibility
@@ -48,6 +49,9 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
     HTTP_METHODS = ["POST"]
     _init_str: str = ""
 
+    _from_sample: bool = False
+    _sample_name: str = ""
+
     def __new__(cls: t.Type[_T], *args: t.Any, **kwargs: t.Any) -> _T:
         self = super().__new__(cls)
         arg_strs = tuple(repr(i) for i in args) + tuple(
@@ -59,6 +63,9 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
 
     def __repr__(self) -> str:
         return self._init_str
+
+    def components_schema(self) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
 
     @abstractmethod
     def openapi_schema_type(self) -> t.Dict[str, str]:

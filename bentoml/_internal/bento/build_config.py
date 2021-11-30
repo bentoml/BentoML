@@ -430,7 +430,7 @@ class BentoBuildConfig:
         except KeyError as e:
             if str(e) == "'service'":
                 raise InvalidArgument(
-                    'Missing required build config field "service", indicating import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
+                    'Missing required build config field "service", which indicates import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
                 )
             else:
                 raise

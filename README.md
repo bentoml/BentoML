@@ -1,6 +1,6 @@
 [<img src="https://raw.githubusercontent.com/bentoml/BentoML/master/docs/source/_static/img/bentoml-readme-header.jpeg" width="600px" margin-left="-5px">](https://github.com/bentoml/BentoML)
 
-## Model Serving Made Easy  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20Machine%20Learning%20Model%20Serving%20Made%20Easy%20&url=https://github.com/bentoml/BentoML&via=bentomlai&hashtags=mlops,modelserving,ML,AI,machinelearning,bentoml)
+# Model Serving Made Easy  [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=BentoML:%20Machine%20Learning%20Model%20Serving%20Made%20Easy%20&url=https://github.com/bentoml/BentoML&via=bentomlai&hashtags=mlops,modelserving,ML,AI,machinelearning,bentoml)
 
 [![pypi_status](https://img.shields.io/pypi/v/bentoml.svg)](https://pypi.org/project/BentoML)
 [![downloads](https://pepy.tech/badge/bentoml)](https://pepy.tech/project/bentoml)
@@ -10,7 +10,7 @@
 
 BentoML let you create machine learning powered prediction service in minutes and bridges the gap between data science and DevOps.
 
-### Why BentoML ###
+## Why BentoML ##
 
 - The easiest way to get your ML models into production.
 - High performance model serving, all in Python.
@@ -24,22 +24,6 @@ BentoML let you create machine learning powered prediction service in minutes an
 - Playground notebook gets your hands dirty in a notebook environment, for you to try out all the core features in BentoML.
 - [ML Frameworks](https://docs.bentoml.org/en/latest/frameworks.html) lays out best practices and example usages by the ML framework used for training models.
 - [Advanced Guides](https://docs.bentoml.org/en/latest/guides/index.html) show cases advanced features in BentoML, including GPU support, inference graph, monitoring, and customizing docker environment etc.
-
-### Community ###
-
-- To report a bug or suggest a feature request, use [GitHub Issues](https://github.com/bentoml/BentoML/issues/new/choose).
-- For other discussions, use [Github Discussions](https://github.com/bentoml/BentoML/discussions).
-- To receive release announcements, please subscribe to our mailing list or join us on [Slack](https://join.slack.com/t/bentoml/shared_invite/enQtNjcyMTY3MjE4NTgzLTU3ZDc1MWM5MzQxMWQxMzJiNTc1MTJmMzYzMTYwMjQ0OGEwNDFmZDkzYWQxNzgxYWNhNjAxZjk4MzI4OGY1Yjg).
-
-### Contributing ###
-
-There are many ways to contribute to the project:
-
-- If you have any feedback on the project, share it with the community in [Github Discussions](https://github.com/bentoml/BentoML/discussions) of this project.
-- Report issues you're facing and "Thumbs up" on issues and feature requests that are relevant to you.
-- Investigate bugs and reviewing other developer's pull requests.
-- Contributing code or documentation to the project by submitting a Github pull request. See the [development guide](https://github.com/bentoml/BentoML/blob/master/DEVELOPMENT.md).
-- See more in the [contributing guide](https://github.com/bentoml/BentoML/blob/master/CONTRIBUTING.md>).
 
 ### Usage Reporting ###
 

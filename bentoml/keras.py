@@ -179,6 +179,7 @@ class _KerasRunner(_TensorflowRunner):
         tag: t.Union[str, Tag],
         predict_fn_name: str,
         device_id: str,
+        predict_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -187,6 +188,7 @@ class _KerasRunner(_TensorflowRunner):
             tag=tag,
             predict_fn_name=predict_fn_name,
             device_id=device_id,
+            partial_kwargs=predict_kwargs,
             resource_quota=resource_quota,
             batch_options=batch_options,
             model_store=model_store,
@@ -197,7 +199,8 @@ class _KerasRunner(_TensorflowRunner):
     def _setup(self) -> None:  # type: ignore[override] # noqa
         self._session.config = self._config_proto
         self._model = load(self.name, model_store=self._model_store)
-        self._predict_fn = getattr(self._model, self._predict_fn_name)
+        raw_predict_fn = getattr(self._model, self._predict_fn_name)
+        self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[override]
@@ -205,7 +208,7 @@ class _KerasRunner(_TensorflowRunner):
     ) -> t.Union[np.ndarray, tf.Tensor]:
         if not isinstance(input_data, (np.ndarray, tf.Tensor)):
             input_data = np.array(input_data)
-        with self._device:
+        with tf.device(self._device_id):
             if TF2:
                 tf.compat.v1.global_variables_initializer()
             else:
@@ -221,6 +224,7 @@ def load_runner(
     *,
     predict_fn_name: str = "predict",
     device_id: str = "CPU:0",
+    predict_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -253,6 +257,7 @@ def load_runner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
+        predict_kwargs=predict_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

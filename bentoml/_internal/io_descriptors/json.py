@@ -27,7 +27,7 @@ except ImportError:
 MIME_TYPE_JSON = "application/json"
 
 _SerializableObj = t.Union[
-    "np.ndarray[t.Any, np.dtype[t.Any]]", "BaseModel", "pd.DataFrame", t.Any
+    "np.ndarray[t.Any, np.dtype[t.Any]]", t.Type["BaseModel"], "pd.DataFrame", t.Any
 ]
 
 
@@ -46,10 +46,10 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
             if isinstance(o, (pd.DataFrame, pd.Series)):
                 return o.to_dict()
 
-        if pydantic and isinstance(o, pydantic.BaseModel):
+        if pydantic is not None and isinstance(o, pydantic.BaseModel):
             obj_dict = o.dict()
             if "__root__" in obj_dict:
-                obj_dict = obj_dict["__root__"]
+                obj_dict = obj_dict.get("__root__")
             return obj_dict
 
         return super().default(o)

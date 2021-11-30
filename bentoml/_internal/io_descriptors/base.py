@@ -14,7 +14,7 @@ if TYPE_CHECKING:  # pragma: no cover
     import pydantic
 
 
-JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
+JSONType = t.Union[str, t.Dict[str, t.Any], t.Type["pydantic.BaseModel"]]
 
 
 # NOTES: we will keep type in quotation to avoid backward compatibility

@@ -2,6 +2,7 @@ import logging
 import typing as t
 from collections import UserDict
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 import attr
 import fs
@@ -17,7 +18,7 @@ from ..configuration.containers import BentoMLContainer
 from ..store import Store, StoreItem
 from ..types import PathType, Tag
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from ..runner import Runner
 
 logger = logging.getLogger(__name__)

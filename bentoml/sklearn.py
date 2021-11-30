@@ -39,8 +39,7 @@ def _get_model_info(
     model = model_store.get(tag)
     if model.info.module != __name__:
         raise BentoMLException(  # pragma: no cover
-            f"Model {tag} was saved with module"
-            f" {model.info.module}, failed loading"
+            f"Model {tag} was saved with module {model.info.module}, failed loading"
             f" with {__name__}."
         )
     model_file = model.path_of(f"{SAVE_NAMESPACE}{PKL_EXT}")

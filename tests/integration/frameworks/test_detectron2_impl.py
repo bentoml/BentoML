@@ -1,6 +1,4 @@
-import sys
 import typing as t
-from typing import TYPE_CHECKING
 
 import imageio
 import numpy as np
@@ -12,24 +10,19 @@ from detectron2.data import transforms as T
 from detectron2.modeling import build_model
 
 import bentoml.detectron
-from tests.utils.types import Pipeline
 
-if TYPE_CHECKING:
-    from detectron2.config import CfgNode
+if t.TYPE_CHECKING:
+    from bentoml._internal.models import ModelInfo, ModelStore
 
-    from bentoml._internal.models import ModelStore
+if t.TYPE_CHECKING:
+    from detectron2.config import CfgNode  # pylint: disable=unused-import
 
-
-if sys.version_info > (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
-
+TEST_MODEL_NAME = __name__.split(".")[-1]
 
 IMAGE_URL = "http://images.cocodataset.org/val2017/000000439715.jpg"
 
 
-def extract_result(raw_result: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+def extract_result(raw_result: t.Dict) -> t.Dict:
     pred_instances = raw_result["instances"]
     boxes = pred_instances.pred_boxes.to("cpu").tensor.detach().numpy()
     scores = pred_instances.scores.to("cpu").detach().numpy()
@@ -43,9 +36,7 @@ def extract_result(raw_result: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
     return result
 
 
-def prepare_image(
-    original_image: "np.ndarray[t.Any, np.dtype[t.Any]]",
-) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+def prepare_image(original_image: np.ndarray) -> np.ndarray:
     """Mainly to test on COCO dataset"""
     _aug = T.ResizeShortestEdge([800, 800], 1333)
 
@@ -70,26 +61,36 @@ def detectron_model_and_config() -> t.Tuple[torch.nn.Module, "CfgNode"]:
     return model, cfg
 
 
-class ImageArray(Protocol):
-    def __call__(self) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        ...
-
-
-@pytest.fixture(scope="module", name="image_array")
-def fixture_image_array() -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+@pytest.fixture(scope="module")
+def image_array():
     return np.asarray(imageio.imread(IMAGE_URL))
 
 
-@pytest.mark.parametrize("metadata", [{"acc": 0.876}])
-def test_detectron2_save_load(
-    metadata: t.Dict[str, t.Any],
-    image_array: ImageArray,
+@pytest.fixture(scope="module")
+def save_proc(
     modelstore: "ModelStore",
-    pipeline: Pipeline,
-):
-    model, config = detectron_model_and_config()
-    _model = pipeline(model, bentoml.detectron, model_config=config, metadata=metadata)
+) -> t.Callable[[t.Dict[str, t.Any], t.Dict[str, t.Any]], "ModelInfo"]:
+    def _(metadata) -> "ModelInfo":
+        model, cfg = detectron_model_and_config()
+        tag = bentoml.detectron.save(
+            TEST_MODEL_NAME,
+            model,
+            model_config=cfg,
+            metadata=metadata,
+            model_store=modelstore,
+        )
+        info = modelstore.get(tag)
+        return info
 
+    return _
+
+
+@pytest.mark.parametrize("metadata", [{"acc": 0.876}])
+def test_detectron2_save_load(metadata, image_array, modelstore, save_proc):
+
+    model, _ = detectron_model_and_config()
+
+    _model = save_proc(metadata)
     assert _model.info.metadata is not None
 
     detectron_loaded = bentoml.detectron.load(
@@ -106,5 +107,4 @@ def test_detectron2_save_load(
 
     raw_result = detectron_loaded(input_data)
     result = extract_result(raw_result[0])
-    print(result)
-    assert result["scores"][0] > 0.9
+    assert all(i > 0.9 for i in result["scores"])

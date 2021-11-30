@@ -1,45 +1,34 @@
 import typing as t
 from typing import TYPE_CHECKING
 
+import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PKL_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
-from ._internal.runner.utils import Params
 from ._internal.types import PathType, Tag
-from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
+_MT = t.TypeVar("_MT")
+
 if TYPE_CHECKING:  # pragma: no cover
-    import numpy as np
-    from pandas.core.frame import DataFrame
+    import pandas as pd
 
     from ._internal.models import ModelStore
 
 try:
     import joblib
+    import sklearn
     from joblib import parallel_backend
+
 except ImportError:  # pragma: no cover
-    try:
-        from sklearn.utils._joblib import joblib, parallel_backend
-    except ImportError:
-        raise MissingDependencyException(
-            """sklearn is required in order to use the module `bentoml.sklearn`, install
-             sklearn with `pip install sklearn`. For more information, refer to
-             https://scikit-learn.org/stable/install.html
-            """
-        )
-
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_sklearn_version = importlib_metadata.version("scikit-learn")
-
-np = LazyLoader("np", globals(), "numpy")  # noqa: F811
-pd = LazyLoader("pd", globals(), "pandas")
+    raise MissingDependencyException(
+        """sklearn is required in order to use the module `bentoml.sklearn`, install
+         sklearn with `pip install sklearn`. For more information, refer to
+         https://scikit-learn.org/stable/install.html
+        """
+    )
 
 
 def _get_model_info(
@@ -60,7 +49,7 @@ def _get_model_info(
 def load(
     tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Any:
+) -> _MT:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -79,13 +68,14 @@ def load(
 
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
-    return joblib.load(model_file)
+    _load: t.Callable[[PathType], _MT] = joblib.load
+    return _load(model_file)
 
 
 @inject
 def save(
     name: str,
-    model: t.Any,
+    model: _MT,
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -110,7 +100,7 @@ def save(
     Examples:
 
     """  # noqa
-    context = {"sklearn": _sklearn_version}
+    context = {"sklearn": sklearn.__version__}
 
     _model = Model.create(
         name,
@@ -147,32 +137,31 @@ class _SklearnRunner(Runner):
 
     @property
     def num_concurrency_per_replica(self) -> int:
-        return 1
+        # NOTE: sklearn doesn't use GPU, so return max. no. of CPU's.
+        return int(round(self.resource_quota.cpu))
 
     @property
     def num_replica(self) -> int:
-        return int(round(self.resource_quota.cpu))
+        # NOTE: sklearn doesn't use GPU, so just return 1.
+        return 1
 
     @property
     def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
-    # pylint: disable=attribute-defined-outside-init
-    def _setup(self) -> None:
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    def _setup(self) -> None:  # type: ignore[override]
         self._model = joblib.load(filename=self._model_file)
-        self._infer_func = getattr(self._model, self._function_name)
 
     # pylint: disable=arguments-differ
-    def _run_batch(
+    def _run_batch(  # type: ignore[override]
         self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
-        **kwargs: t.Any,
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"]](
-            *args, **kwargs
-        )
+        *args: t.Union[np.ndarray, "pd.DataFrame"],
+        **kwargs: t.Union[np.ndarray, "pd.DataFrame"],
+    ) -> "np.ndarray":
+        func = getattr(self._model, self._function_name)
         with self._parallel_ctx:
-            return self._infer_func(*params.args, **params.kwargs)
+            return func(*args, **kwargs)
 
 
 @inject

@@ -140,9 +140,7 @@ class _SklearnRunner(Runner):
         self._model_store = model_store
         self._model_info = model_info
         self._model_file = model_file
-        self._parallel_ctx = parallel_backend(
-            "threading", n_jobs=self.num_concurrency_per_replica
-        )
+        self._backend = "loky"
         self._function_name = function_name
 
     @property
@@ -171,7 +169,7 @@ class _SklearnRunner(Runner):
         params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"]](
             *args, **kwargs
         )
-        with self._parallel_ctx:
+        with parallel_backend(self._backend, n_jobs=self.num_concurrency_per_replica):
             return self._infer_func(*params.args, **params.kwargs)
 
 

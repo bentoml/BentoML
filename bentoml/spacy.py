@@ -1,4 +1,5 @@
 import os
+import sys
 import typing as t
 import logging
 import importlib
@@ -9,7 +10,13 @@ from distutils.dir_util import copy_tree
 import yaml
 from simple_di import inject
 from simple_di import Provide
-from typing_extensions import Literal
+from distutils.dir_util import copy_tree
+from functools import partial
+from pathlib import Path
+from typing import TYPE_CHECKING, overload
+
+import yaml
+from simple_di import Provide, inject
 
 from .exceptions import BentoMLException
 from .exceptions import MissingDependencyException
@@ -22,25 +29,22 @@ from ._internal.bento.pip_pkg import split_requirement
 from ._internal.bento.pip_pkg import packages_distributions
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:
-    from spacy import Vocab
+if TYPE_CHECKING:  # pragma: no cover
+    from spacy.vocab import Vocab
     from thinc.config import Config
     from spacy.tokens.doc import Doc
 
     from ._internal.models import ModelStore
 
+if sys.version_info >= (3, 8):
+    import importlib.metadata as importlib_metadata
+    from typing import Literal
+else:  # pragma: no cover
+    import importlib_metadata
+    from typing_extensions import Literal
+
 try:
     import spacy
-    import spacy.cli
-    from thinc.api import prefer_gpu
-    from thinc.api import require_cpu
-    from thinc.api import require_gpu
-    from thinc.api import set_active_gpu
-    from thinc.api import set_gpu_allocator
-    from thinc.api import use_pytorch_for_gpu_memory
-    from thinc.api import use_tensorflow_for_gpu_memory
-    from spacy.util import SimpleFrozenDict
-    from spacy.util import SimpleFrozenList
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -49,14 +53,19 @@ except ImportError:  # pragma: no cover
         """
     )
 
-_check_compat: bool = spacy.__version__.startswith("3")
+_spacy_version = importlib_metadata.version("spacy")
+
+_check_compat = _spacy_version.startswith("3")
 if not _check_compat:  # pragma: no cover
-    # TODO: supports spacy 2.x?
     raise EnvironmentError(
         "BentoML will only provide supports for spacy 3.x and above"
         " as we can provide more supports for Spacy new design. Currently"
-        f" detected spacy to have version {spacy.__version__}"
+        f" detected spacy to have version {_spacy_version}"
     )
+
+util = LazyLoader("util", globals(), "spacy.util")
+thinc_util = LazyLoader("thinc_util", globals(), "thinc.util")
+thinc_backends = LazyLoader("thinc_backends", globals(), "thinc.backends")
 
 torch = LazyLoader("torch", globals(), "torch")
 tensorflow = LazyLoader("tensorflow", globals(), "tensorflow")
@@ -78,9 +87,6 @@ PROJECTS_CMD_NOT_SUPPORTED = [
     "push",
     "run",
 ]
-
-DEFAULT_SPACY_PROJECTS_REPO: str = spacy.about.__projects__
-DEFAULT_SPACY_PROJECTS_BRANCH = "v3"
 
 logger = logging.getLogger(__name__)
 
@@ -108,10 +114,10 @@ def load_project(
 def load(
     tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-    vocab: t.Union["Vocab", bool] = True,
-    disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
-    exclude: t.Iterable[str] = SimpleFrozenList(),  # noqa
-    config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),  # noqa
+    vocab: t.Union["Vocab", bool] = True,  # type: ignore[reportUnknownParameterType]
+    disable: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
+    exclude: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
+    config: t.Union[t.Dict[str, t.Any], "Config"] = util.SimpleFrozenDict(),  # noqa
 ) -> "spacy.language.Language":
     model = model_store.get(tag)
     if "projects_uri" in model.info.options:
@@ -120,12 +126,15 @@ def load(
             " `bentoml.spacy.load_project()` instead."
         )
     required = model.info.options["pip_package"]
+    print(required)
     try:
         _ = importlib.import_module(required)
     except ModuleNotFoundError:
         try:
-            spacy.cli.download(required)
-        except BaseException:
+            from spacy.cli.download import download
+
+            download(required)
+        except (SystemExit, Exception):  # pylint: disable=broad-except
             logger.warning(
                 f"{required} cannot be downloaded as pip package. If this"
                 f" is a custom pipeline there is nothing to worry about."
@@ -133,12 +142,11 @@ def load(
                 f" sure that you save the correct package and model to BentoML"
                 f" via `bentoml.spacy.save()`"
             )
-
     try:
         # check if pipeline has additional requirements then all related
         # pip package has been installed correctly.
         additional = model.info.options["additional_requirements"]
-        not_existed = list()
+        not_existed = list()  # type: t.List[str]
         dists = packages_distributions()
         for module_name in additional:
             mod, _ = split_requirement(module_name)
@@ -150,7 +158,7 @@ def load(
                 )
     except KeyError:
         pass
-    return spacy.util.load_model(
+    return util.load_model(
         model.path, vocab=vocab, disable=disable, exclude=exclude, config=config
     )
 
@@ -189,7 +197,7 @@ def save(
 
         bentoml.spacy.save("spacy_roberta", nlp)
     """  # noqa
-    context: t.Dict[str, t.Any] = {"spacy": spacy.__version__}
+    context: t.Dict[str, t.Any] = {"spacy": _spacy_version}
     _model = Model.create(
         name,
         module=__name__,
@@ -199,9 +207,8 @@ def save(
     )
 
     meta = model.meta
-    _model.info.options = {
-        "pip_package": f"{meta['lang']}_{meta['name']}",
-    }
+    pip_package = f"{meta['lang']}_{meta['name']}"
+    _model.info.options = {"pip_package": pip_package}
     if "requirements" in meta:
         _model.info.options["additional_requirements"] = meta["requirements"]
     model.to_disk(_model.path)
@@ -210,22 +217,28 @@ def save(
     return _model.tag
 
 
-# TODO: save local projects
-# bentoml.spacy.projects('save', /path/to/local/spacy/project)
 @inject
 def projects(
     save_name: str,
     tasks: str,
     name: t.Optional[str] = None,
-    repo_or_store: str = DEFAULT_SPACY_PROJECTS_REPO,
+    repo_or_store: t.Optional[str] = None,
     remotes_config: t.Optional[t.Dict[str, t.Dict[str, str]]] = None,
     *,
-    branch: str = DEFAULT_SPACY_PROJECTS_BRANCH,
+    branch: t.Optional[str] = None,
     sparse_checkout: bool = False,
     verbose: bool = True,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
+    from spacy.cli.project.clone import project_clone
+    from spacy.cli.project.pull import project_pull
+
+    if repo_or_store is None:
+        repo_or_store = getattr(spacy.about, "__projects__")
+    if branch is None:
+        branch = getattr(spacy.about, "__projects_branch__")
+
     if tasks in PROJECTS_CMD_NOT_SUPPORTED:
         raise BentoMLException(
             """\
@@ -237,7 +250,7 @@ def projects(
         """
         )
     context: t.Dict[str, t.Any] = {
-        "spacy": spacy.__version__,
+        "spacy": _spacy_version,
         "tasks": tasks,
     }
     _model = Model.create(
@@ -255,7 +268,8 @@ def projects(
             name is not None
         ), "`name` of the template is required to clone a project."
         _model.info.options["name"] = name
-        spacy.cli.project_clone(
+        assert isinstance(repo_or_store, str) and isinstance(branch, str)
+        project_clone(
             name,
             Path(output_path),
             repo=repo_or_store,
@@ -282,11 +296,12 @@ def projects(
              """
         os.makedirs(output_path, exist_ok=True)
         with Path(output_path, "project.yml").open("w") as inf:
-            yaml.safe_dump(remotes_config, inf)
+            yaml.dump(remotes_config, inf)
         for remote in remotes_config.get("remotes", {}):
-            for url, res_path in spacy.cli.project_pull(
-                Path(output_path), remote=remote, verbose=verbose
-            ):
+            pull: "partial[t.Generator[t.Tuple[str, str], None, None]]" = partial(
+                project_pull, remote=remote, verbose=verbose
+            )
+            for url, res_path in pull(Path(output_path)):
                 if url is not None:  # pragma: no cover
                     logger.info(f"Pulled {res_path} from {repo_or_store}")
     _model.save(model_store)
@@ -301,7 +316,7 @@ class _SpacyRunner(Runner):
         gpu_device_id: t.Optional[int],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
-        vocab: t.Union["Vocab", bool],
+        vocab: t.Union["Vocab", bool],  # type: ignore[reportUnknownParameterType]
         disable: t.Iterable[str],
         exclude: t.Iterable[str],
         config: t.Union[t.Dict[str, t.Any], "Config"],
@@ -312,7 +327,7 @@ class _SpacyRunner(Runner):
         super().__init__(str(in_store_tag), resource_quota, batch_options)
         self._tag = in_store_tag
 
-        self._vocab = vocab
+        self._vocab: t.Union["Vocab", bool] = vocab
         self._disable = disable
         self._exclude = exclude
         self._config = config
@@ -329,17 +344,19 @@ class _SpacyRunner(Runner):
         self._configure(backend_options)
 
     def _configure(self, backend_options: t.Optional[str]) -> None:
-        if self._gpu_device_id is not None and prefer_gpu(self._gpu_device_id):
+        if self._gpu_device_id is not None and thinc_util.prefer_gpu(
+            self._gpu_device_id
+        ):  # pragma: no cover
             assert backend_options is not None
             if backend_options == "pytorch":
-                use_pytorch_for_gpu_memory()
+                thinc_backends.use_pytorch_for_gpu_memory()
             else:
-                use_tensorflow_for_gpu_memory()
-            require_gpu(self._gpu_device_id)
-            set_gpu_allocator(backend_options)
-            set_active_gpu(self._gpu_device_id)
+                thinc_backends.use_tensorflow_for_gpu_memory()
+            thinc_util.require_gpu(self._gpu_device_id)
+            thinc_backends.set_gpu_allocator(backend_options)
+            thinc_util.set_active_gpu(self._gpu_device_id)
         else:
-            require_cpu()
+            thinc_util.require_cpu()
 
     @property
     def required_models(self) -> t.List[Tag]:
@@ -351,43 +368,55 @@ class _SpacyRunner(Runner):
             return 1
         return int(round(self.resource_quota.cpu))
 
+    def _get_pytorch_gpu_count(self) -> t.Optional[int]:
+        assert self._backend_options == "pytorch"
+        devs = getattr(torch, "cuda").device_count()
+        if devs == 0:
+            logger.warning("Installation of Torch is not CUDA-enabled.")
+            logger.warning(
+                _TORCH_TF_WARNING.format(
+                    framework="PyTorch",
+                    package="torch",
+                    link="https://pytorch.org/get-started/locally/",
+                )
+            )
+            return None
+        return devs
+
+    def _get_tensorflow_gpu_count(self) -> t.Optional[int]:
+        assert self._backend_options == "tensorflow"
+        from tensorflow.python.client import device_lib  # type: ignore
+
+        try:
+            return len(
+                [
+                    x
+                    for x in getattr(device_lib, "list_local_devices")()
+                    if getattr(x, "device_type") == "GPU"
+                ]
+            )
+        except (AttributeError, Exception):  # pylint: disable=broad-except
+            logger.warning(
+                _TORCH_TF_WARNING.format(
+                    framework="Tensorflow 2.x",
+                    package="tensorflow",
+                    link="https://www.tensorflow.org/install/gpu",
+                )
+            )
+            return None
+
     @property
     def num_replica(self) -> int:
         if self.resource_quota.on_gpu:
             if self._backend_options == "pytorch":
-                if hasattr(torch, "cuda"):
-                    return torch.cuda.device_count()
-                else:
-                    logger.warning(
-                        _TORCH_TF_WARNING.format(
-                            framework="PyTorch",
-                            package="torch",
-                            link="https://pytorch.org/get-started/locally/",
-                        )
-                    )
+                num_devices = self._get_pytorch_gpu_count()
             else:
-                if tensorflow is not None:
-                    from tensorflow.python.client import device_lib
-
-                    return len(
-                        [
-                            x
-                            for x in device_lib.list_local_devices()
-                            if x.device_type == "GPU"
-                        ]
-                    )
-                else:
-                    logger.warning(
-                        _TORCH_TF_WARNING.format(
-                            framework="Tensorflow 2.x",
-                            package="tensorflow",
-                            link="https://www.tensorflow.org/install/gpu",
-                        )
-                    )
+                num_devices = self._get_tensorflow_gpu_count()
+            return num_devices if num_devices is not None else 1
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         self._model = load(
             self._tag,
             model_store=self._model_store,
@@ -397,24 +426,57 @@ class _SpacyRunner(Runner):
             config=self._config,
         )
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
+    @overload  # pragma: no cover
+    def _run_batch(  # pylint: disable=arguments-differ
         self,
-        inputs: t.Iterable[t.Tuple[str, t.Any]],
-        as_tuples: bool = False,
-        batch_size: t.Optional[int] = None,
-        disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
-        component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = None,
-    ) -> t.Iterator[t.Tuple[t.Union["Doc", "Doc"], t.Any]]:
-        if not isinstance(inputs, list):
-            inputs = list(inputs)
-        return self._model.pipe(
-            inputs,
-            as_tuples=as_tuples,
-            batch_size=batch_size,
-            disable=disable,
-            component_cfg=component_cfg,
-            n_process=self.num_replica,
+        args: t.Iterable[t.Union[str, "Doc"]],  # type: ignore[reportUnknownParameterType]
+        *,
+        as_tuples: Literal[False] = ...,
+        batch_size: t.Optional[int] = ...,
+        disable: t.Iterable[str] = ...,
+        component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = ...,
+        n_process: int = ...,
+    ) -> t.Iterator["Doc"]:  # type: ignore[reportUnknownParameterType]
+        ...
+
+    @overload  # pragma: no cover
+    def _run_batch(  # noqa: F811 # pylint: disable=arguments-differ
+        self,
+        args: t.Iterable[t.Tuple[t.Union[str, "Doc"], t.Any]],  # type: ignore[reportUnknownParameterType] # noqa: LN001
+        *,
+        as_tuples: Literal[True] = ...,
+        batch_size: t.Optional[int] = ...,
+        disable: t.Iterable[str] = ...,
+        component_cfg: t.Optional[t.Dict[str, t.Dict[str, t.Any]]] = ...,
+        n_process: int = ...,
+    ) -> t.Iterator[t.Tuple["Doc", t.Any]]:  # type: ignore[reportUnknownVariableType] # noqa: LN001
+        ...
+
+    def _run_batch(  # noqa: F811
+        self,
+        *args: t.Any,
+        **kwargs: t.Any,
+    ) -> t.Union[t.Iterator["Doc"], t.Iterator[t.Tuple["Doc", t.Any]]]:  # type: ignore[reportUnknownVariableType] # noqa: LN001
+        as_tuples = kwargs.pop("as_tuples", False)
+        batch_size = t.cast(t.Optional[int], kwargs.pop("batch_size", None))
+        disable = t.cast(
+            t.Iterable[str], kwargs.pop("disable", util.SimpleFrozenList())
+        )
+        component_cfg = t.cast(
+            t.Optional[t.Dict[str, t.Dict[str, t.Any]]],
+            kwargs.pop("component_cfg", None),
+        )
+        n_process = kwargs.pop("n_process", self.num_replica)
+        return t.cast(
+            t.Union[t.Iterator["Doc"], t.Iterator[t.Tuple["Doc", t.Any]]],
+            self._model.pipe(  # type: ignore[reportGeneralTypeIssues]
+                args,
+                as_tuples=as_tuples,
+                batch_size=batch_size,
+                disable=disable,
+                component_cfg=component_cfg,
+                n_process=n_process,
+            ),
         )
 
 
@@ -426,10 +488,10 @@ def load_runner(
     backend_options: t.Optional[Literal["pytorch", "tensorflow"]] = None,
     resource_quota: t.Optional[t.Dict[str, t.Any]] = None,
     batch_options: t.Optional[t.Dict[str, t.Any]] = None,
-    vocab: t.Union["Vocab", bool] = True,
-    disable: t.Iterable[str] = SimpleFrozenList(),  # noqa
-    exclude: t.Iterable[str] = SimpleFrozenList(),  # noqa
-    config: t.Union[t.Dict[str, t.Any], "Config"] = SimpleFrozenDict(),  # noqa
+    vocab: t.Union["Vocab", bool] = True,  # type: ignore[reportUnknownParameterType]
+    disable: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
+    exclude: t.Iterable[str] = util.SimpleFrozenList(),  # noqa
+    config: t.Union[t.Dict[str, t.Any], "Config"] = util.SimpleFrozenDict(),  # noqa
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "_SpacyRunner":
     return _SpacyRunner(

@@ -1,6 +1,4 @@
 import logging
-import os
-import shutil
 import typing as t
 from collections import UserDict
 from datetime import datetime, timezone
@@ -78,11 +76,6 @@ class Model(StoreItem):
     def save(
         self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
     ) -> "SysPathModel":
-        try:
-            SysPathModel.from_Model(self).save(model_store)
-        except TypeError:
-            pass
-
         if self._info is not None:
             with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
                 self._info.dump(model_yaml)
@@ -162,25 +155,6 @@ class SysPathModel(Model):
 
     def path_of(self, item: str) -> str:
         return self._fs.getsyspath(item)
-
-    def save(
-        self, model_store: "ModelStore" = Provide[BentoMLContainer.model_store]
-    ) -> "SysPathModel":
-        if self._info is not None:
-            with self._fs.open(MODEL_YAML_FILENAME, "w") as model_yaml:
-                self._info.dump(model_yaml)
-
-        if not self.validate():
-            logger.warning(f"Failed to create Model for {self.tag}, not saving.")
-            raise BentoMLException("Failed to save Model because it was invalid")
-
-        with model_store.register(self.tag) as model_path:
-            os.rmdir(model_path)
-            shutil.move(self._fs.getsyspath("/"), model_path)
-            self._fs.close()
-            self._fs = fs.open_fs(model_path)
-
-        return self
 
 
 class ModelStore(Store[SysPathModel]):

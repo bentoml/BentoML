@@ -438,20 +438,16 @@ class _TensorflowRunner(Runner):
             raw_predict_fn = getattr(self._model, self._predict_fn_name)
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
-    def _run_batch(
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[override]
         self,
-        *args: t.Union[
-            t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
-        ],
-        **kwargs: Any,
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        params = Params[
-            t.Union[
-                t.List[t.Union[int, float]],
-                "np.ndarray[t.Any, np.dtype[t.Any]]",
-                tf.Tensor,
-            ]
-        ](*args, **kwargs)
+        *args: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor],
+        **kwargs: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor],
+    ) -> np.ndarray:
+
+        params = Params[t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]](
+            *args, **kwargs
+        )
 
         with tf.device(self._device_id):
 

@@ -12,7 +12,7 @@ _is_sourced() {
 _main() {
   # if first arg looks like a flag, assume we want to start bentoml YataiService
   if [ "${1:0:1}" = '-' ]; then
-    set -- bentoml serve --production "$@" $BUNDLE_PATH
+    set -- bentoml serve --production "$@" $BENTO_PATH
   fi
 
   # Overide the BENTOML_PORT if PORT env var is present. Used for Heroku

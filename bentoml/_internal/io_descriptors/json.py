@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BadInput, BentoMLException, MissingDependencyException
+from ...exceptions import BadInput, MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor, JSONType
 
@@ -16,11 +16,13 @@ if TYPE_CHECKING:  # pragma: no cover
     from pydantic import BaseModel
 else:  # pragma: no cover
     np = LazyLoader("np", globals(), "numpy")
-    pd = LazyLoader("pd", globals(), "pandas")
-    try:
-        import pydantic
-    except ImportError:
-        pydantic = None
+
+try:
+    import pandas as pd
+    import pydantic
+except ImportError:
+    pydantic, pd = None, None
+
 
 MIME_TYPE_JSON = "application/json"
 
@@ -40,11 +42,9 @@ class DefaultJsonEncoder(json.JSONEncoder):  # pragma: no cover
         if isinstance(o, np.ndarray):
             return o.tolist()
 
-        if isinstance(o, (pd.DataFrame, pd.Series)):
-            raise BentoMLException(
-                f"Detected type to be {type(o)}. You should use `PandasDataFrame` instead of `JSON` for IO."
-                " If you still wish to use JSON, convert your DataFrame outputs to json with `df.to_json(orient=...)`"
-            )
+        if pd is not None:
+            if isinstance(o, (pd.DataFrame, pd.Series)):
+                return o.to_dict()
 
         if pydantic and isinstance(o, pydantic.BaseModel):
             obj_dict = o.dict()
@@ -137,8 +137,12 @@ class JSON(IODescriptor[JSONType]):
     async def from_http_request(self, request: Request) -> JSONType:
         json_obj = await request.json()
         if hasattr(self, "_pydantic_model") and self._validate_json:
+            if pydantic is None:
+                raise MissingDependencyException(
+                    "`pydantic` must be installed to use `pydantic_model`"
+                )
             try:
-                self._pydantic_model.parse_obj(json_obj)
+                return self._pydantic_model.parse_obj(json_obj)
             except pydantic.ValidationError:
                 raise BadInput("Invalid JSON Request received")
         return json_obj

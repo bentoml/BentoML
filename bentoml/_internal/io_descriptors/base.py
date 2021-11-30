@@ -11,10 +11,15 @@ if TYPE_CHECKING:  # pragma: no cover
     import numpy as np  # noqa: F401
     import pandas as pd  # noqa: F401
     import PIL.Image  # noqa: F401
+    import pydantic
 
 
-JSONType = t.Union[str, t.Dict[str, t.Any]]
+JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]
 
+
+# NOTES: we will keep type in quotation to avoid backward compatibility
+#  with numpy < 1.20, since we will use the latest stubs from the main branch of numpy.
+#  that enable a new way to type hint an ndarray.
 ImageType = t.Union["PIL.Image.Image", "np.ndarray[t.Any, np.dtype[t.Any]]"]
 
 IOType = t.Union[
@@ -46,7 +51,7 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
     def __new__(cls: t.Type[_T], *args: t.Any, **kwargs: t.Any) -> _T:
         self = super().__new__(cls)
         arg_strs = tuple(repr(i) for i in args) + tuple(
-            f'{k}={repr(v)}' for k, v in kwargs.items()
+            f"{k}={repr(v)}" for k, v in kwargs.items()
         )
         setattr(self, "_init_str", f"{cls.__name__}({', '.join(arg_strs)})")
 

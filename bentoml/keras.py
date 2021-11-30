@@ -10,7 +10,6 @@ from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPACE, Model
-from ._internal.runner.utils import Params
 from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 

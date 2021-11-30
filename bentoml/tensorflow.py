@@ -1,3 +1,4 @@
+# type: ignore[reportMissingTypeStubs]
 import functools
 import logging
 import os
@@ -8,7 +9,6 @@ import uuid
 from distutils.dir_util import copy_tree
 from typing import TYPE_CHECKING
 
-import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -26,6 +26,8 @@ from ._internal.utils.tensorflow import (
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
+    import numpy as np
+    import tensorflow.keras as keras
     from _internal.models import ModelStore
 
 try:
@@ -44,8 +46,14 @@ try:
 except ImportError:  # pragma: no cover
     import tensorflow_core.python.training.tracking.tracking as tracking
 
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
+_tf_version = importlib_metadata.version("tensorflow")
 logger = logging.getLogger(__name__)
-TF2 = tf.__version__.startswith("2")
+TF2 = _tf_version.startswith("2")
 
 try:
     import tensorflow_hub as hub
@@ -59,6 +67,11 @@ except ImportError:  # pragma: no cover
     )
     hub = None
     resolve, native_module = None, None
+
+try:
+    _tfhub_version = importlib_metadata.version("tensorflow_hub")
+except importlib_metadata.PackageNotFoundError:
+    _tfhub_version = None
 
 
 def _clean_name(name: str) -> str:  # pragma: no cover
@@ -97,9 +110,9 @@ class _tf_function_wrapper:  # pragma: no cover
     def __init__(
         self,
         origin_func: t.Callable[..., t.Any],
-        arg_names: t.Optional[list] = None,
-        arg_specs: t.Optional[list] = None,
-        kwarg_specs: t.Optional[dict] = None,
+        arg_names: t.Optional[t.List[str]] = None,
+        arg_specs: t.Optional[t.List[t.Any]] = None,
+        kwarg_specs: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> None:
         self.origin_func = origin_func
         self.arg_names = arg_names
@@ -116,14 +129,14 @@ class _tf_function_wrapper:  # pragma: no cover
                 raise TypeError(f"Function got an unexpected keyword argument {k}")
 
         arg_keys = {k for k, _ in zip(self.arg_names, args)}  # type: ignore[arg-type]
-        _ambiguous_keys = arg_keys & set(kwargs)
+        _ambiguous_keys = arg_keys & set(kwargs)  # type: t.Set[str]
         if _ambiguous_keys:
             raise TypeError(f"got two values for arguments '{_ambiguous_keys}'")
 
         # INFO:
         # how signature with kwargs works?
         # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/eager/function.py#L1519
-        transformed_args = tuple(
+        transformed_args: t.Tuple[t.Any, ...] = tuple(
             cast_tensor_by_spec(arg, spec) for arg, spec in zip(args, self.arg_specs)  # type: ignore[arg-type] # noqa
         )
 
@@ -137,7 +150,7 @@ class _tf_function_wrapper:  # pragma: no cover
         return getattr(self.origin_func, k)
 
     @classmethod
-    def hook_loaded_model(cls, loaded_model: t.Any) -> None:  # noqa
+    def hook_loaded_model(cls, loaded_model: t.Any) -> None:
         funcs = get_restored_functions(loaded_model)
         for k, func in funcs.items():
             arg_names = get_arg_names(func)
@@ -235,7 +248,7 @@ def load(
             if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
                 raise NotImplementedError(
                     "options are not supported for TF < 2.3.x,"
-                    f" Current version: {tf.__version__}"
+                    f" Current version: {_tf_version}"
                 )
             # tf.compat.v1.saved_model.load_v2() is TF2 tf.saved_model.load() before TF2
             obj = tf.compat.v1.saved_model.load_v2(
@@ -243,7 +256,9 @@ def load(
             )
         else:
             obj = tf.compat.v1.saved_model.load_v2(module_path, tags=tfhub_tags)
-        obj._is_hub_module_v1 = is_hub_module_v1  # pylint: disable=protected-access
+        obj._is_hub_module_v1 = (
+            is_hub_module_v1  # pylint: disable=protected-access # noqa
+        )
         return obj
     else:
         tf_model = _load_tf_saved_model(model.path)
@@ -263,16 +278,9 @@ def import_from_tfhub(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
-    if not all(i is not None for i in [hub, resolve, native_module]):
-        raise MissingDependencyException(
-            """\
-            `tensorflow_hub` is required in order to use `bentoml.tensorflow.import_from_tensorflow_hub`.
-            Instruction: `pip install --upgrade tensorflow_hub`
-            """  # noqa
-        )
     context: t.Dict[str, t.Any] = {
-        "tensorflow": tf.__version__,
-        "tensorflow_hub": hub.__version__,
+        "tensorflow": _tf_version,
+        "tensorflow_hub": _tfhub_version,
     }
     if name is None:
         if isinstance(identifier, str):
@@ -314,7 +322,7 @@ def import_from_tfhub(
 @inject
 def save(
     name: str,
-    model: t.Union["tf.keras.Model", "tf.Module", PathType],
+    model: t.Union["keras.Model", "tf.Module", PathType],
     *,
     signatures: t.Optional[t.Union[t.Callable[..., t.Any], t.Dict[str, t.Any]]] = None,
     options: t.Optional["tf.saved_model.SaveOptions"] = None,
@@ -353,7 +361,7 @@ def save(
         tag = bentoml.transformers.save("my_tensorflow_model", model)
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"tensorflow": tf.__version__}
+    context: t.Dict[str, t.Any] = {"tensorflow": _tf_version}
     _model = Model.create(
         name,
         module=__name__,
@@ -362,7 +370,7 @@ def save(
         metadata=metadata,
     )
 
-    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):
+    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType] # noqa
         assert os.path.isdir(model)
         copy_tree(str(model), _model.path)
     else:
@@ -399,7 +407,9 @@ class _TensorflowRunner(Runner):
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
-        self._partial_kwargs = partial_kwargs if partial_kwargs is not None else dict()
+        self._partial_kwargs: t.Dict[str, t.Any] = (
+            partial_kwargs if partial_kwargs is not None else dict()
+        )
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
@@ -428,8 +438,8 @@ class _TensorflowRunner(Runner):
             return len(tf.config.list_physical_devices("GPU"))
         return 1
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
-    def _setup(self) -> None:  # type: ignore[override]
+    # pylint: disable=attribute-defined-outside-init
+    def _setup(self) -> None:
         # setup a global session for model runner
         self._session = tf.compat.v1.Session(
             config=tf.compat.v1.ConfigProto(**self._config_proto)
@@ -441,16 +451,20 @@ class _TensorflowRunner(Runner):
             raw_predict_fn = getattr(self._model, self._predict_fn_name)
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
-    # pylint: disable=arguments-differ
-    def _run_batch(  # type: ignore[override]
+    def _run_batch(
         self,
-        *args: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor],
-        **kwargs: t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor],
-    ) -> np.ndarray:
-
-        params = Params[t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]](
-            *args, **kwargs
-        )
+        *args: t.Union[
+            t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
+        ],
+        **kwargs: t.Any,
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+        params = Params[
+            t.Union[
+                t.List[t.Union[int, float]],
+                "np.ndarray[t.Any, np.dtype[t.Any]]",
+                tf.Tensor,
+            ]
+        ](*args, **kwargs)
 
         with tf.device(self._device_id):
 
@@ -474,7 +488,10 @@ class _TensorflowRunner(Runner):
             else:
                 self._session.run(tf.compat.v1.global_variables_initializer())
                 res = self._session.run(self._predict_fn(*params.args, **params.kwargs))
-            return res.numpy() if TF2 else res["prediction"]
+            return t.cast(
+                "np.ndarray[t.Any, np.dtype[t.Any]]",
+                res.numpy() if TF2 else res["prediction"],
+            )
 
 
 @inject
@@ -498,6 +515,8 @@ def load_runner(
             Model tag to retrieve model from modelstore
         predict_fn_name (`str`, default to `__call__`):
             inference function to be used.
+        partial_kwargs (`t.Dict[str, t.Any]`, `optional`, default to `None`):
+            Dictionary of partial kwargs that can be shared across different model.
         device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `CPU:0`):
             Optional devices to put the given model on. Refers to https://www.tensorflow.org/api_docs/python/tf/config
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):

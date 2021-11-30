@@ -8,12 +8,20 @@ repos:
   rev: v4.0.1
   hooks:
   - id: check-yaml
+    name: (chore) Check YAML file
   - id: check-toml
-  - id: check-executables-have-shebangs
+    name: (chore) Check TOML file
   - id: check-merge-conflict
-  - id: debug-statements
+    name: (chore) Check merge conflict
   - id: end-of-file-fixer
+    name: (chore) EOF fixer
   - id: requirements-txt-fixer
+    name: (chore) requirements.txt fixer
+- repo: https://github.com/asottile/setup-cfg-fmt
+  rev: v1.20.0
+  hooks:
+  - id: setup-cfg-fmt
+    name: (chore) Format setup.cfg
 - repo: https://github.com/myint/autoflake
   rev: v1.4
   hooks:
@@ -26,11 +34,6 @@ repos:
         - --expand-star-imports
         - --remove-duplicate-keys
         - --remove-unused-variables
-- repo: https://github.com/asottile/setup-cfg-fmt
-  rev: v1.20.0
-  hooks:
-  - id: setup-cfg-fmt
-    name: Format setup.cfg
 - repo: https://github.com/pycqa/isort
   rev: 5.10.1
   hooks:

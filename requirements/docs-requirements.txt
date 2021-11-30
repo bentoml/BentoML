@@ -6,5 +6,6 @@ sphinx==3.5.4
 sphinx-click
 sphinx_copybutton
 sphinx_rtd_theme
+sphinx_tabs
 sphinxcontrib-fulltoc
 sphinxcontrib-spelling

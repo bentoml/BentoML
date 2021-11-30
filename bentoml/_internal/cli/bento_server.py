@@ -9,11 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 def add_serve_command(cli) -> None:
-    @cli.command(
-        help="Start a BentoServer serving a Service either imported from source code "
-        "or loaded from Bento",
-    )
-    @click.argument("svc_import_path_or_bento_tag", type=click.STRING)
+    @cli.command()
+    @click.argument("bento", type=click.STRING)
     @click.option(
         "--working-dir",
         type=click.Path(),
@@ -60,7 +57,7 @@ def add_serve_command(cli) -> None:
         show_default=True,
     )
     def serve(
-        svc_import_path_or_bento_tag,
+        bento,
         working_dir,
         port,
         reload,
@@ -68,6 +65,25 @@ def add_serve_command(cli) -> None:
         run_with_ngrok,
         production,
     ) -> None:
+        """Start BentoServer from BENTO
+
+        BENTO is the serving target: it can be the import path of a bentoml.Service
+        instance; a tag to a Bento in local Bento store; or a file path to a Bento
+        directory, e.g.:
+
+        \b
+        Serve from a bentoml.Service instance source code(for development use only):
+            bentoml serve fraud_detector.py:svc
+
+        \b
+        Serve from a Bento built in local store:
+            bentoml serve fraud_detector:4tht2icroji6zput3suqi5nl2
+            bentoml serve fraud_detector:latest
+
+        \b
+        Serve from a Bento directory:
+            bentoml serve ./fraud_detector_bento
+        """
         if sys.path[0] != working_dir:
             sys.path.insert(0, working_dir)
 
@@ -75,7 +91,7 @@ def add_serve_command(cli) -> None:
             from ..server import serve_production
 
             serve_production(
-                svc_import_path_or_bento_tag,
+                bento,
                 working_dir=working_dir,
                 port=port,
             )
@@ -83,7 +99,7 @@ def add_serve_command(cli) -> None:
             from ..server import serve_development
 
             serve_development(
-                svc_import_path_or_bento_tag,
+                bento,
                 working_dir=working_dir,
                 with_ngrok=run_with_ngrok,
                 port=port,

@@ -7,6 +7,7 @@ import pytest
 import tensorflow as tf
 import tensorflow.keras as keras
 
+import bentoml
 from tests.utils.frameworks.tensorflow_utils import (
     CustomLayer,
     KerasSequentialModel,

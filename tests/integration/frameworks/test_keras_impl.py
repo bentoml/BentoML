@@ -54,7 +54,7 @@ def test_keras_save_load(model, kwargs, modelstore):
     if not TF2:
         # Initialize variables in the graph/model
         bentoml.keras._sess.run(tf.global_variables_initializer())
-        with bentoml.keras._sess.as_default():
+        with bentoml.keras._default_sess():
             loaded = bentoml.keras.load(tag, model_store=modelstore)
             predict_assert_equal(loaded)
     else:

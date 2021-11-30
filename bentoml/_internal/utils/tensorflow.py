@@ -1,13 +1,10 @@
-# type: ignore[reportMissingTypeStubs]
 import logging
 import typing as t
 from typing import TYPE_CHECKING
 
-from .lazy_loader import LazyLoader
+from ...exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    import tensorflow as tf
-    from tensorflow.python.eager.function import ConcreteFunction
     from tensorflow.python.framework.type_spec import TypeSpec
 
 logger = logging.getLogger(__name__)
@@ -25,10 +22,10 @@ TENSOR_CLASS_NAMES = (
     "Tensor",
 )
 
+ST = t.TypeVar("ST")
 
-def _isinstance_wrapper(
-    obj: t.Any, sobj: t.Union[str, type, t.Sequence[t.Any]]
-) -> bool:
+
+def _isinstance_wrapper(obj: ST, sobj: t.Union[str, type, t.Sequence]) -> bool:
     """
     `isinstance` wrapper to check tensor spec
 
@@ -50,10 +47,12 @@ def _isinstance_wrapper(
     return isinstance(obj, sobj)
 
 
-def normalize_spec(value: t.Any) -> "TypeSpec":
+def normalize_spec(value: ST) -> "TypeSpec":
     """normalize tensor spec"""
     if not _isinstance_wrapper(value, TENSOR_CLASS_NAMES):
         return value
+
+    import tensorflow as tf
 
     if _isinstance_wrapper(value, "RaggedTensor"):
         return tf.RaggedTensorSpec.from_value(value)
@@ -66,9 +65,7 @@ def normalize_spec(value: t.Any) -> "TypeSpec":
     return value
 
 
-def get_input_signatures(
-    func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
-) -> t.Tuple[t.Any, ...]:
+def get_input_signatures(func):
     if hasattr(func, "function_spec"):  # for RestoredFunction
         if func.function_spec.input_signature:
             return ((func.function_spec.input_signature, {}),)
@@ -95,9 +92,7 @@ def get_input_signatures(
     return tuple()
 
 
-def get_arg_names(
-    func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
-) -> t.Tuple[t.Any, ...]:
+def get_arg_names(func):
     if hasattr(func, "function_spec"):  # for RestoredFunction
         return func.function_spec.arg_names
     if hasattr(func, "structured_input_signature"):  # for ConcreteFunction
@@ -105,9 +100,7 @@ def get_arg_names(
     return tuple()
 
 
-def get_output_signature(
-    func: t.Union[t.Any, "RestoredFunction", "ConcreteFunction"]
-) -> t.Tuple[t.Any, ...]:
+def get_output_signature(func):
     if hasattr(func, "function_spec"):  # for RestoredFunction
         # assume all concrete functions have same signature
         return get_output_signature(func.concrete_functions[0])
@@ -125,7 +118,7 @@ def get_output_signature(
     return tuple()
 
 
-def get_restored_functions(m: "Trackable") -> t.Dict[str, t.Any]:
+def get_restored_functions(m):
     function_map = {k: getattr(m, k, None) for k in dir(m)}
     return {
         k: v
@@ -145,7 +138,7 @@ def get_serving_default_function(m):
     return m.signatures.get(tf.compat.v2.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY)
 
 
-def cast_tensor_by_spec(_input: "tf.Tensor", spec: "tf.TensorSpec") -> "tf.Tensor":
+def cast_tensor_by_spec(_input, spec):
     """
     transform dtype & shape following spec
     """
@@ -167,7 +160,7 @@ def cast_tensor_by_spec(_input: "tf.Tensor", spec: "tf.TensorSpec") -> "tf.Tenso
         return tf.constant(_input, dtype=spec.dtype, name=spec.name)
 
 
-def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]):
+def _pretty_format_function_call(base, name, arg_names):
     if arg_names:
         part_sigs = ", ".join(f"{k}" for k in arg_names)
     else:
@@ -178,27 +171,25 @@ def _pretty_format_function_call(base: str, name: str, arg_names: t.Tuple[t.Any]
     return f"{base}.{name}({part_sigs})"
 
 
-def _pretty_format_positional(positional: t.List[t.Any]) -> str:
+def _pretty_format_positional(positional):
     return f'Positional arguments ({len(positional)} total):\n    * \n{"    * ".join(str(a) for a in positional)}'  # noqa
 
 
-def pretty_format_function(
-    function: t.Callable[..., t.Any], obj: str = "<object>", name: str = "<function>"
-) -> str:
+def pretty_format_function(function, obj="<object>", name="<function>"):
     ret = ""
     outs = get_output_signature(function)
     sigs = get_input_signatures(function)
     arg_names = get_arg_names(function)
 
     if hasattr(function, "function_spec"):
-        arg_names = getattr(function, "function_spec").arg_names
+        arg_names = function.function_spec.arg_names
     else:
-        arg_names = function._arg_keywords  # type: ignore[reportFunctionMemberAccess]
+        arg_names = function._arg_keywords
 
     ret += _pretty_format_function_call(obj, name, arg_names)
     ret += "\n------------\n"
 
-    signature_descriptions = []  # type: t.List[str]
+    signature_descriptions = []
 
     for index, sig in enumerate(sigs):
         positional, keyword = sig
@@ -213,7 +204,7 @@ def pretty_format_function(
     return ret
 
 
-def pretty_format_restored_model(model: "AutoTrackable") -> str:
+def pretty_format_restored_model(model):
     part_functions = ""
 
     restored_functions = get_restored_functions(model)

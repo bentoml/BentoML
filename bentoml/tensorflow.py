@@ -1,4 +1,3 @@
-# type: ignore[reportMissingTypeStubs]
 import functools
 import logging
 import os
@@ -9,6 +8,7 @@ import uuid
 from distutils.dir_util import copy_tree
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -26,8 +26,6 @@ from ._internal.utils.tensorflow import (
 from .exceptions import MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
-    import numpy as np
-    import tensorflow.keras as keras
     from _internal.models import ModelStore
 
 try:
@@ -46,14 +44,8 @@ try:
 except ImportError:  # pragma: no cover
     import tensorflow_core.python.training.tracking.tracking as tracking
 
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_tf_version = importlib_metadata.version("tensorflow")
 logger = logging.getLogger(__name__)
-TF2 = _tf_version.startswith("2")
+TF2 = tf.__version__.startswith("2")
 
 try:
     import tensorflow_hub as hub
@@ -67,11 +59,6 @@ except ImportError:  # pragma: no cover
     )
     hub = None
     resolve, native_module = None, None
-
-try:
-    _tfhub_version = importlib_metadata.version("tensorflow_hub")
-except importlib_metadata.PackageNotFoundError:
-    _tfhub_version = None
 
 
 def _clean_name(name: str) -> str:  # pragma: no cover
@@ -150,7 +137,7 @@ class _tf_function_wrapper:  # pragma: no cover
         return getattr(self.origin_func, k)
 
     @classmethod
-    def hook_loaded_model(cls, loaded_model: t.Any) -> None:
+    def hook_loaded_model(cls, loaded_model: t.Any) -> None:  # noqa
         funcs = get_restored_functions(loaded_model)
         for k, func in funcs.items():
             arg_names = get_arg_names(func)
@@ -248,7 +235,7 @@ def load(
             if not hasattr(getattr(tf, "saved_model", None), "LoadOptions"):
                 raise NotImplementedError(
                     "options are not supported for TF < 2.3.x,"
-                    f" Current version: {_tf_version}"
+                    f" Current version: {tf.__version__}"
                 )
             # tf.compat.v1.saved_model.load_v2() is TF2 tf.saved_model.load() before TF2
             obj = tf.compat.v1.saved_model.load_v2(
@@ -256,9 +243,7 @@ def load(
             )
         else:
             obj = tf.compat.v1.saved_model.load_v2(module_path, tags=tfhub_tags)
-        obj._is_hub_module_v1 = (
-            is_hub_module_v1  # pylint: disable=protected-access # noqa
-        )
+        obj._is_hub_module_v1 = is_hub_module_v1  # pylint: disable=protected-access
         return obj
     else:
         tf_model = _load_tf_saved_model(model.path)
@@ -278,9 +263,16 @@ def import_from_tfhub(
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> Tag:
+    if not all(i is not None for i in [hub, resolve, native_module]):
+        raise MissingDependencyException(
+            """\
+            `tensorflow_hub` is required in order to use `bentoml.tensorflow.import_from_tensorflow_hub`.
+            Instruction: `pip install --upgrade tensorflow_hub`
+            """  # noqa
+        )
     context: t.Dict[str, t.Any] = {
-        "tensorflow": _tf_version,
-        "tensorflow_hub": _tfhub_version,
+        "tensorflow": tf.__version__,
+        "tensorflow_hub": hub.__version__,
     }
     if name is None:
         if isinstance(identifier, str):
@@ -322,7 +314,7 @@ def import_from_tfhub(
 @inject
 def save(
     name: str,
-    model: t.Union["keras.Model", "tf.Module", PathType],
+    model: t.Union["tf.keras.Model", "tf.Module", PathType],
     *,
     signatures: t.Optional[t.Union[t.Callable[..., t.Any], t.Dict[str, t.Any]]] = None,
     options: t.Optional["tf.saved_model.SaveOptions"] = None,
@@ -361,7 +353,7 @@ def save(
         tag = bentoml.transformers.save("my_tensorflow_model", model)
     """  # noqa
 
-    context: t.Dict[str, t.Any] = {"tensorflow": _tf_version}
+    context: t.Dict[str, t.Any] = {"tensorflow": tf.__version__}
     _model = Model.create(
         name,
         module=__name__,
@@ -370,7 +362,7 @@ def save(
         metadata=metadata,
     )
 
-    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):  # type: ignore[reportUnknownMemberType] # noqa
+    if isinstance(model, (str, bytes, os.PathLike, pathlib.Path)):
         assert os.path.isdir(model)
         copy_tree(str(model), _model.path)
     else:
@@ -407,9 +399,7 @@ class _TensorflowRunner(Runner):
         self._configure(device_id)
         self._predict_fn_name = predict_fn_name
         assert any(device_id in d.name for d in device_lib.list_local_devices())
-        self._partial_kwargs: t.Dict[str, t.Any] = (
-            partial_kwargs if partial_kwargs is not None else dict()
-        )
+        self._partial_kwargs = partial_kwargs if partial_kwargs is not None else dict()
         self._model_store = model_store
 
     def _configure(self, device_id: str) -> None:
@@ -438,8 +428,8 @@ class _TensorflowRunner(Runner):
             return len(tf.config.list_physical_devices("GPU"))
         return 1
 
-    # pylint: disable=attribute-defined-outside-init
-    def _setup(self) -> None:
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    def _setup(self) -> None:  # type: ignore[override]
         # setup a global session for model runner
         self._session = tf.compat.v1.Session(
             config=tf.compat.v1.ConfigProto(**self._config_proto)
@@ -484,10 +474,7 @@ class _TensorflowRunner(Runner):
             else:
                 self._session.run(tf.compat.v1.global_variables_initializer())
                 res = self._session.run(self._predict_fn(*params.args, **params.kwargs))
-            return t.cast(
-                "np.ndarray[t.Any, np.dtype[t.Any]]",
-                res.numpy() if TF2 else res["prediction"],
-            )
+            return res.numpy() if TF2 else res["prediction"]
 
 
 @inject
@@ -511,8 +498,6 @@ def load_runner(
             Model tag to retrieve model from modelstore
         predict_fn_name (`str`, default to `__call__`):
             inference function to be used.
-        partial_kwargs (`t.Dict[str, t.Any]`, `optional`, default to `None`):
-            Dictionary of partial kwargs that can be shared across different model.
         device_id (`t.Union[str, int, t.List[t.Union[str, int]]]`, `optional`, default to `CPU:0`):
             Optional devices to put the given model on. Refers to https://www.tensorflow.org/api_docs/python/tf/config
         resource_quota (`t.Dict[str, t.Any]`, default to `None`):

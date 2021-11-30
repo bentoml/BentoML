@@ -1,11 +1,10 @@
+import functools
 import typing as t
 from typing import TYPE_CHECKING
 
 from simple_di import Provide, inject
 
-from bentoml.pytorch import (
-    _PyTorchRunner as _PyTorchLightningRunner,  # type: ignore[reportPrivateUsage]
-)
+from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner
 
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PT_EXT, SAVE_NAMESPACE, Model
@@ -19,27 +18,18 @@ Then run `pip install pytorch_lightning`
 """
 
 if TYPE_CHECKING:  # pragma: no cover
-    import pytorch_lightning as pl
-
     from ._internal.models import ModelStore
 
 try:
+    import pytorch_lightning as pl
     import torch
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
 
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_torch_version = importlib_metadata.version("torch")
-_pl_version = importlib_metadata.version("pytorch_lightning")
-
 
 @inject
 def load(
-    tag: t.Union[str, Tag],
+    tag: str,
     device_id: t.Optional[str] = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
 ) -> "pl.LightningModule":
@@ -61,11 +51,13 @@ def load(
         import bentoml.pytorch_lightning
         booster = bentoml.pytorch_lightning.load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
-    """  # noqa: LN001
-    model_info = model_store.get(tag)
-    weight_file = model_info.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    model: "pl.LightningModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
-    return model
+    """  # noqa
+    model = model_store.get(tag)
+    weight_file = model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+    _load: t.Callable[[str], "pl.LightningModule"] = functools.partial(
+        torch.jit.load, map_location=device_id
+    )
+    return _load(weight_file)
 
 
 @inject
@@ -138,8 +130,8 @@ def save(
         # example tag: lit_classifier:20201012_DE43A2
     """  # noqa
     context: t.Dict[str, t.Any] = {
-        "torch": _torch_version,
-        "pytorch_lightning": _pl_version,
+        "torch": torch.__version__,
+        "pytorch_lightning": pl.__version__,
     }
     _model = Model.create(
         name,
@@ -150,7 +142,7 @@ def save(
     )
 
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    torch.jit.save(model.to_torchscript(), weight_file)  # type: ignore[reportUnknownMemberType]
+    torch.jit.save(model.to_torchscript(), weight_file)
 
     _model.save(model_store)
     return _model.tag

@@ -1,6 +1,7 @@
 import typing as t
 from typing import TYPE_CHECKING
 
+import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -9,15 +10,18 @@ from ._internal.runner import Runner
 from ._internal.types import PathType, Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
+_MT = t.TypeVar("_MT")
+
 if TYPE_CHECKING:  # pragma: no cover
-    import numpy as np
-    from pandas.core.frame import DataFrame
+    import pandas as pd
 
     from ._internal.models import ModelStore
 
 try:
     import joblib
+    import sklearn
     from joblib import parallel_backend
+
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """sklearn is required in order to use the module `bentoml.sklearn`, install
@@ -25,12 +29,6 @@ except ImportError:  # pragma: no cover
          https://scikit-learn.org/stable/install.html
         """
     )
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_sklearn_version = importlib_metadata.version("scikit-learn")
 
 
 def _get_model_info(
@@ -51,7 +49,7 @@ def _get_model_info(
 def load(
     tag: t.Union[str, Tag],
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> t.Any:
+) -> _MT:
     """
     Load a model from BentoML local modelstore with given name.
 
@@ -70,13 +68,14 @@ def load(
 
     """  # noqa
     _, model_file = _get_model_info(tag, model_store)
-    return joblib.load(model_file)
+    _load: t.Callable[[PathType], _MT] = joblib.load
+    return _load(model_file)
 
 
 @inject
 def save(
     name: str,
-    model: t.Any,
+    model: _MT,
     *,
     metadata: t.Optional[t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -101,7 +100,7 @@ def save(
     Examples:
 
     """  # noqa
-    context = {"sklearn": _sklearn_version}
+    context = {"sklearn": sklearn.__version__}
 
     _model = Model.create(
         name,
@@ -150,15 +149,16 @@ class _SklearnRunner(Runner):
     def required_models(self) -> t.List[Tag]:
         return [self._model_info.tag]
 
-    # pylint: disable=attribute-defined-outside-init
-    def _setup(self) -> None:
+    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    def _setup(self) -> None:  # type: ignore[override]
         self._model = joblib.load(filename=self._model_file)
 
-    def _run_batch(
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[override]
         self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
-        **kwargs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
-    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
+        *args: t.Union[np.ndarray, "pd.DataFrame"],
+        **kwargs: t.Union[np.ndarray, "pd.DataFrame"],
+    ) -> "np.ndarray":
         func = getattr(self._model, self._function_name)
         with self._parallel_ctx:
             return func(*args, **kwargs)

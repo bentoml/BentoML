@@ -21,8 +21,8 @@ from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:  # pragma: no cover
+    from spacy import Vocab
     from spacy.tokens.doc import Doc
-    from spacy.vocab import Vocab
     from thinc.config import Config
 
     from ._internal.models import ModelStore
@@ -31,12 +31,15 @@ try:
     import spacy
     import spacy.cli
     from spacy.util import SimpleFrozenDict, SimpleFrozenList
-    from thinc.backends import (
+    from thinc.api import (
+        prefer_gpu,
+        require_cpu,
+        require_gpu,
+        set_active_gpu,
         set_gpu_allocator,
         use_pytorch_for_gpu_memory,
         use_tensorflow_for_gpu_memory,
     )
-    from thinc.util import prefer_gpu, require_cpu, require_gpu, set_active_gpu
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\
@@ -49,17 +52,13 @@ try:
 except ImportError:
     import importlib_metadata
 
-try:
-    _spacy_version = importlib_metadata.version("spacy")
-except importlib_metadata.PackageNotFoundError:
-    raise MissingDependencyException("`spacy` is required to use `bentoml.spacy`")
-
-_check_compat = _spacy_version.startswith("3")
+_check_compat: bool = spacy.__version__.startswith("3")
 if not _check_compat:  # pragma: no cover
+    # TODO: supports spacy 2.x?
     raise EnvironmentError(
         "BentoML will only provide supports for spacy 3.x and above"
         " as we can provide more supports for Spacy new design. Currently"
-        f" detected spacy to have version {_spacy_version}"
+        f" detected spacy to have version {spacy.__version__}"
     )
 
 torch = LazyLoader("torch", globals(), "torch")
@@ -368,9 +367,7 @@ class _SpacyRunner(Runner):
                     )
             else:
                 if tensorflow is not None:
-                    from tensorflow.python.client import (
-                        device_lib,  # type: ignore[reportMissingTypeStubs]
-                    )
+                    from tensorflow.python.client import device_lib
 
                     return len(
                         [

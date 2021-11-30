@@ -15,9 +15,6 @@ lint: ## Running lint checker: flake8 and pylint
 type: ## Running type checker: pyright
 	./scripts/tools/type_checker.sh
 
-clean: ## Remove unwanted files
-	@/usr/bin/rm -rf *.xml
-
 
 __style_src := $(wildcard $(GIT_ROOT)/scripts/ci/style/*.sh)
 __style_name := ${__style_src:_check.sh=}

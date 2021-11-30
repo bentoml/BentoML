@@ -14,6 +14,11 @@ from ._internal.runner.utils import Params
 from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
+_RV = t.TypeVar("_RV")
+_ModelType = t.TypeVar(
+    "_ModelType", bound=t.Union["torch.nn.Module", "torch.jit.ScriptModule"]
+)
+
 if TYPE_CHECKING:  # pragma: no cover
     from ._internal.models import ModelStore
 
@@ -30,16 +35,7 @@ except ImportError:  # pragma: no cover
         """  # noqa
     )
 
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
-
-_ModelType = t.Union["torch.nn.Module", "torch.jit.ScriptModule"]  # type: ignore[reportPrivateUsage]
-
-_torch_version = importlib_metadata.version("torch")
-
-infer_mode_compat = _torch_version.startswith("1.9")
+infer_mode_compat = torch.__version__.startswith("1.9")
 
 
 def _is_gpu_available() -> bool:  # pragma: no cover
@@ -71,15 +67,20 @@ def load(
         booster = bentoml.pytorch.load(
             'lit_classifier:20201012_DE43A2', device_id="cuda:0")
     """  # noqa
-    model_info = model_store.get(tag)
-    weight_file = model_info.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
+    model = model_store.get(tag)
+    weight_file = model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
     # TorchScript Models are saved as zip files
     if zipfile.is_zipfile(weight_file):
-        model: "torch.jit.ScriptModule" = torch.jit.load(weight_file, map_location=device_id)  # type: ignore[reportPrivateImportUsage] # noqa: LN001
-        return model
+        _load: t.Callable[[str], _ModelType] = functools.partial(
+            torch.jit.load, map_location=device_id
+        )
+        return _load(weight_file)
     else:
         with Path(weight_file).open("rb") as file:
-            return cloudpickle.load(file)
+            __load: t.Callable[[t.BinaryIO], _ModelType] = functools.partial(
+                cloudpickle.load
+            )
+            return __load(file)
 
 
 @inject
@@ -139,7 +140,7 @@ def save(
 
         tag = bentoml.pytorch.save("resnet50", resnet50)
     """  # noqa
-    context: t.Dict[str, t.Any] = dict(torch=_torch_version)
+    context: t.Dict[str, t.Any] = dict(torch=torch.__version__)
     _model = Model.create(
         name,
         module=__name__,
@@ -148,8 +149,8 @@ def save(
         metadata=metadata,
     )
     weight_file = _model.path_of(f"{SAVE_NAMESPACE}{PT_EXT}")
-    if isinstance(model, torch.jit.ScriptModule):  # type: ignore[reportPrivateUsage]
-        torch.jit.save(model, weight_file)  # type: ignore[reportUnknownMemberType]
+    if isinstance(model, torch.jit.ScriptModule):
+        torch.jit.save(model, weight_file)
     else:
         with open(weight_file, "wb") as file:
             cloudpickle.dump(model, file)
@@ -227,32 +228,33 @@ class _PyTorchRunner(Runner):
                 device_id=self._device_id,
             )
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
-        self._predict_fn: t.Callable[..., torch.Tensor] = functools.partial(
+        self._predict_fn: t.Callable[..., _RV] = functools.partial(
             raw_predict_fn, **self._partial_kwargs
         )
 
+    # pylint: disable=arguments-differ
     @torch.no_grad()
-    def _run_batch(
+    def _run_batch(  # type: ignore[override]
         self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor],
+        *args: t.Union[np.ndarray, torch.Tensor],
         **kwargs: str,
     ) -> torch.Tensor:
 
-        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]](
-            *args, **kwargs
-        )
+        params = Params[t.Any](*args, **kwargs)
 
-        def _mapping(
-            item: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", torch.Tensor]
-        ) -> torch.Tensor:
+        def _mapping(item) -> t.Any:
             if isinstance(item, np.ndarray):
                 item = torch.from_numpy(item)
+
             if self.resource_quota.on_gpu:
-                item = item.cuda()
+                if isinstance(item, torch.Tensor):
+                    item = item.cuda()
+
             return item
 
         params = params.map(_mapping)
 
+        res: torch.Tensor
         if infer_mode_compat:
             with torch.inference_mode():
                 res = self._predict_fn(*params.args, **kwargs)

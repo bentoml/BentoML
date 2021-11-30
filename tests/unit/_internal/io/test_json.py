@@ -18,7 +18,7 @@ class _Schema(pydantic.BaseModel):
     endpoints: t.List[str]
 
 
-test_arr = t.cast("np.ndarray[t.Any, np.dtype[np.int32]]", np.array([[1]]))  # type: ignore[reportUnknownMemberType] # noqa: LN001
+test_arr = t.cast("np.ndarray[t.Any, np.dtype[np.int32]]", np.array([[1]]))
 
 
 @pytest.mark.parametrize(

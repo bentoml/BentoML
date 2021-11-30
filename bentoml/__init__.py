@@ -13,10 +13,14 @@ from . import models
 from ._internal.service import Service
 from ._internal.service.loader import load
 from ._internal.types import Tag
+from ._internal.utils import LazyLoader as _LazyLoader
 
 # bento APIs are top-level
 from .bentos import list  # pylint: disable=W0622
 from .bentos import build, delete, export_bento, get, import_bento
+
+keras = _LazyLoader("bentoml.keras", globals(), "bentoml.keras")
+tensorflow = _LazyLoader("bentoml.tensorflow", globals(), "bentoml.tensorflow")
 
 __all__ = [
     "__version__",
@@ -31,4 +35,6 @@ __all__ = [
     "export_bento",
     "build",
     "load",
+    "keras",
+    "tensorflow",
 ]

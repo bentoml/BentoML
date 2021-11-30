@@ -6,7 +6,6 @@ import pytest
 import tensorflow as tf
 import tensorflow_hub as hub
 
-import bentoml.tensorflow
 from tests.utils.frameworks.tensorflow_utils import (
     KerasSequentialModel,
     MultiInputModel,

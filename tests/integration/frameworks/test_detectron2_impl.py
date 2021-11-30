@@ -12,15 +12,15 @@ from detectron2.data import transforms as T
 from detectron2.modeling import build_model
 
 import bentoml.detectron
-from tests.utils.types import Pipeline
 
 if TYPE_CHECKING:
     from detectron2.config import CfgNode
 
     from bentoml._internal.models import ModelStore
+    from bentoml._internal.types import Tag
 
 
-if sys.version_info > (3, 8):
+if sys.version_info >= (3, 8):
     from typing import Protocol
 else:
     from typing_extensions import Protocol
@@ -80,15 +80,26 @@ def fixture_image_array() -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     return np.asarray(imageio.imread(IMAGE_URL))
 
 
+def save_procedure(metadata: t.Dict[str, t.Any], _modelstore: "ModelStore") -> "Tag":
+    model, config = detectron_model_and_config()
+    tag_info = bentoml.detectron.save(
+        "test_detectron2_model",
+        model,
+        model_config=config,
+        metadata=metadata,
+        model_store=_modelstore,
+    )
+    return tag_info
+
+
 @pytest.mark.parametrize("metadata", [{"acc": 0.876}])
 def test_detectron2_save_load(
     metadata: t.Dict[str, t.Any],
     image_array: ImageArray,
     modelstore: "ModelStore",
-    pipeline: Pipeline,
-):
-    model, config = detectron_model_and_config()
-    _model = pipeline(model, bentoml.detectron, model_config=config, metadata=metadata)
+) -> None:
+    tag = save_procedure(metadata, _modelstore=modelstore)
+    _model = bentoml.models.get(tag, _model_store=modelstore)
 
     assert _model.info.metadata is not None
 
@@ -98,7 +109,6 @@ def test_detectron2_save_load(
         model_store=modelstore,
     )
     assert next(detectron_loaded.parameters()).device.type == "cpu"
-    assert repr(detectron_loaded) == repr(model)
 
     image = prepare_image(image_array)
     image = torch.as_tensor(image)
@@ -106,5 +116,18 @@ def test_detectron2_save_load(
 
     raw_result = detectron_loaded(input_data)
     result = extract_result(raw_result[0])
-    print(result)
+    assert result["scores"][0] > 0.9
+
+
+def test_detectron2_setup_run_batch(
+    image_array: ImageArray, modelstore: "ModelStore"
+) -> None:
+    tag = save_procedure({}, _modelstore=modelstore)
+    runner = bentoml.detectron.load_runner(tag, model_store=modelstore)
+    assert tag in runner.required_models
+    assert runner.num_concurrency_per_replica == 1
+    assert runner.num_replica == 1
+    image = torch.as_tensor(prepare_image(image_array))
+    res = runner.run_batch(image)
+    result = extract_result(res[0])
     assert result["scores"][0] > 0.9

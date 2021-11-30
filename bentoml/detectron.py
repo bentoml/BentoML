@@ -19,6 +19,7 @@ try:
     import detectron2.config as config
     import detectron2.modeling as modeling
     import torch
+    from detectron2.checkpoint import DetectionCheckpointer
 
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
@@ -44,7 +45,7 @@ def load(
     tag: t.Union[str, Tag],
     device: str = "cpu",
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
-) -> "nn.Module":
+) -> "torch.nn.Module":
     """
     Load a model from BentoML local modelstore with given tag.
 
@@ -65,11 +66,11 @@ def load(
         import bentoml.detectron
         model = bentoml.detectron.load(
             "my_detectron_model:20201012_DE43A2")
-    """  # noqa
+    """  # noqa: LN001
 
     model_info = model_store.get(tag)
-    if model_info.info.module != __name__:
-        raise BentoMLException(  # pragma: no cover
+    if model_info.info.module != __name__:  # pragma: no cover
+        raise BentoMLException(
             f"Model {tag} was saved with"
             f" module {model_info.info.module},"
             f" failed loading with {__name__}."
@@ -86,15 +87,13 @@ def load(
     if device:
         cfg.MODEL.DEVICE = device
 
-    model: "nn.Module" = modeling.build_model(cfg)
+    model: "torch.nn.Module" = modeling.build_model(cfg)
     if device:
         model.to(device)
 
     model.eval()
 
-    checkpointer: checkpoint.DetectionCheckpointer = checkpoint.DetectionCheckpointer(
-        model
-    )
+    checkpointer: "DetectionCheckpointer" = checkpoint.DetectionCheckpointer(model)
 
     checkpointer.load(weight_path)
     return model
@@ -245,10 +244,8 @@ class _DetectronRunner(Runner):
             return item
 
         params = params.map(_mapping)
-        images = np.split(*params.args, params.args.shape[0], 0)
-        images = [image.squeeze(axis=0) for image in images]
 
-        inputs = [dict(image=image) for image in images]
+        inputs = [{"image": image} for image in params.args]
 
         res = self._predict_fn(inputs, **params.kwargs)
         return np.asarray(res, dtype=object)

@@ -3,8 +3,8 @@ import os
 import typing as t
 from typing import TYPE_CHECKING
 
-import numpy as np
 import joblib
+import numpy as np
 from simple_di import Provide, inject
 
 from ._internal.configuration.containers import BentoMLContainer
@@ -215,7 +215,7 @@ class _LightGBMRunner(Runner):
         device = self._booster_params.get("device")
         if device is None or isinstance(device, int):
             return False
-        return 'gpu'==device
+        return "gpu" == device
 
     @property
     def required_models(self) -> t.List[Tag]:
@@ -257,9 +257,11 @@ class _LightGBMRunner(Runner):
             elif isinstance(item, np.ndarray):
                 return item  # type: ignore[reportUnknownVariableType]
             else:
-                raise TypeError("Only accept type np.ndarray or"
-                               f" pd.DataFrame, got {type(item)}"
-                                " instead.")
+                raise TypeError(
+                    "Only accept type np.ndarray or"
+                    f" pd.DataFrame, got {type(item)}"
+                    " instead."
+                )
 
         params = params.map(_mapping)
         return self._predict_fn(*params.args, **params.kwargs)

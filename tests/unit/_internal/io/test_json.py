@@ -1,10 +1,10 @@
-import dataclasses
 import json
 import typing as t
+import dataclasses
 
 import numpy as np
-import pydantic
 import pytest
+import pydantic
 
 
 @dataclasses.dataclass

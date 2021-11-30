@@ -1,22 +1,22 @@
-import enum
 import os
+import enum
 import typing as t
 from abc import ABC, abstractmethod
 
 import attr
 import psutil
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
-from ..configuration.containers import BentoServerContainer
-from ..runner.container import AutoContainer
-from ..runner.utils import Params
-from ..types import Tag
 from .utils import (
     _cpu_converter,
     _gpu_converter,
     _mem_converter,
     _query_cgroup_cpu_count,
 )
+from ..types import Tag
+from ..runner.utils import Params
+from ..runner.container import AutoContainer
+from ..configuration.containers import BentoServerContainer
 
 
 @attr.s

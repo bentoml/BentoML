@@ -1,10 +1,10 @@
 # Docs dependencies
 -r tests-requirements.txt
-sphinx==3.5.4
+pyenchant
 recommonmark
+sphinx==3.5.4
 sphinx-click
+sphinx_copybutton
 sphinx_rtd_theme
 sphinxcontrib-fulltoc
 sphinxcontrib-spelling
-sphinx_copybutton
-pyenchant

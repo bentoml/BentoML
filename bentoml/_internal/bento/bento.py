@@ -1,27 +1,27 @@
-import logging
 import os
 import shutil
 import typing as t
-from datetime import datetime, timezone
+import logging
 from typing import TYPE_CHECKING
+from datetime import datetime, timezone
 
-import attr
 import fs
-import fs.errors
-import fs.mirror
+import attr
+import yaml
 import fs.osfs
 import pathspec
-import yaml
+import fs.errors
+import fs.mirror
 from fs.copy import copy_file
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
-from ...exceptions import BentoMLException, InvalidArgument
+from ..store import Store, StoreItem
+from ..types import Tag, PathType
+from ..models import ModelStore
+from ...exceptions import InvalidArgument, BentoMLException
+from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
-from ..models import ModelStore
-from ..store import Store, StoreItem
-from ..types import PathType, Tag
-from .build_config import BentoBuildConfig
 
 if TYPE_CHECKING:  # pragma: no cover
     from fs.base import FS

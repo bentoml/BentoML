@@ -1,14 +1,14 @@
 import typing as t
 from datetime import datetime
 
-import attr
 import fs
+import attr
 import pytest
 from fs.base import FS
 
+from bentoml.exceptions import NotFound, BentoMLException
 from bentoml._internal.store import Store, StoreItem
 from bentoml._internal.types import Tag
-from bentoml.exceptions import BentoMLException, NotFound
 
 
 @attr.define(repr=False)

@@ -1,7 +1,7 @@
-import logging
 import os
 import shutil
 import typing as t
+import logging
 from functools import partial
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class PrometheusClient:
     @property
     def registry(self):
         if self._registry is None:
-            from prometheus_client import CollectorRegistry, multiprocess
+            from prometheus_client import multiprocess, CollectorRegistry
 
             registry = CollectorRegistry()
             if self.multiproc:

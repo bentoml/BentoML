@@ -3,9 +3,9 @@
 
 import io
 
-import aiohttp
 import numpy as np
 import pytest
+import aiohttp
 
 from bentoml.testing.utils import async_request, parse_multipart_form
 

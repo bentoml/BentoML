@@ -1,36 +1,36 @@
 #!/usr/bin/env python3
-import itertools
-import json
-import operator
 import os
 import re
+import json
 import shutil
 import typing as t
-from collections import defaultdict
+import operator
+import itertools
 from copy import deepcopy
-from functools import lru_cache
 from pathlib import Path
+from functools import lru_cache
+from collections import defaultdict
 
 from absl import app, logging
-from dotenv import load_dotenv
-from jinja2 import Environment
-from requests import Session
 from utils import (
+    walk,
     FLAGS,
-    ColoredFormatter,
-    cached_property,
+    pprint,
+    sprint,
     flatten,
-    get_data,
-    get_nested,
-    load_manifest_yaml,
     mapfunc,
     maxkeys,
     mkdir_p,
-    pprint,
+    get_data,
     set_data,
-    sprint,
-    walk,
+    get_nested,
+    cached_property,
+    ColoredFormatter,
+    load_manifest_yaml,
 )
+from dotenv import load_dotenv
+from jinja2 import Environment
+from requests import Session
 
 from docker import DockerClient
 from docker.errors import APIError, BuildError, ImageNotFound

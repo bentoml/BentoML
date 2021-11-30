@@ -1,16 +1,16 @@
-import importlib
-import logging
 import os
 import sys
 import typing as t
+import logging
+import importlib
 from typing import TYPE_CHECKING
 
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
-from ...exceptions import BentoMLException, NotFound
+from ..models import ModelStore
+from ...exceptions import NotFound, BentoMLException
 from ..bento.bento import BENTO_PROJECT_DIR_NAME
 from ..configuration.containers import BentoMLContainer
-from ..models import ModelStore
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..bento import BentoStore

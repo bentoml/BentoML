@@ -1,12 +1,12 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.runner import Runner
-from ._internal.types import Tag
 from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.runner import Runner
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:  # pragma: no cover
     from _internal.models import ModelStore

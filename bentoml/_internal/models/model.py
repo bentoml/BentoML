@@ -1,23 +1,23 @@
-import logging
 import os
 import shutil
 import typing as t
-from collections import UserDict
+import logging
 from datetime import datetime, timezone
+from collections import UserDict
 
-import attr
 import fs
+import attr
+import yaml
 import fs.errors
 import fs.mirror
-import yaml
 from fs.base import FS
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
+from ..store import Store, StoreItem
+from ..types import Tag, PathType
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
-from ..store import Store, StoreItem
-from ..types import PathType, Tag
 
 if t.TYPE_CHECKING:
     from ..runner import Runner

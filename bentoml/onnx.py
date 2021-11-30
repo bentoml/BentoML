@@ -1,17 +1,17 @@
-import logging
 import shutil
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import SAVE_NAMESPACE, Model
+from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.types import Tag, PathType
+from ._internal.utils import LazyLoader
+from ._internal.models import Model, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params, _get_gpu_memory
-from ._internal.types import PathType, Tag
-from ._internal.utils import LazyLoader
-from .exceptions import BentoMLException, MissingDependencyException
+from ._internal.configuration.containers import BentoMLContainer
 
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
@@ -21,8 +21,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from _internal.models import ModelStore
 
 try:
-    import numpy as np
     import onnx
+    import numpy as np
     import onnxruntime as ort
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(

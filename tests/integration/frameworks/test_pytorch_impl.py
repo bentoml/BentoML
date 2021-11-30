@@ -1,15 +1,15 @@
 import math
 
 import numpy as np
+import torch
 import pandas as pd
 import psutil
 import pytest
-import torch
 import torch.nn as nn
 
 import bentoml.pytorch
-from tests.utils.frameworks.pytorch_utils import LinearModel, test_df
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.pytorch_utils import test_df, LinearModel
 
 
 def predict_df(model: nn.Module, df: pd.DataFrame):

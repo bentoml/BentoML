@@ -1,7 +1,7 @@
-import logging
 import re
 import sys
 import typing as t
+import logging
 
 from typing_extensions import Literal
 

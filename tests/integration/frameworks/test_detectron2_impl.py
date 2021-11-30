@@ -1,12 +1,12 @@
 import typing as t
 
-import imageio
 import numpy as np
-import pytest
 import torch
+import pytest
+import imageio
 from detectron2 import model_zoo
-from detectron2.config import get_cfg
 from detectron2.data import transforms as T
+from detectron2.config import get_cfg
 from detectron2.modeling import build_model
 
 import bentoml.detectron

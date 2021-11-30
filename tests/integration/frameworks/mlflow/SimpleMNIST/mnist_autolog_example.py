@@ -11,15 +11,15 @@
 import os
 from argparse import ArgumentParser
 
+import torch
 import mlflow.pytorch
 import pytorch_lightning as pl
-import torch
-from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from pytorch_lightning.metrics.functional import accuracy
 from torch.nn import functional as F
-from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, random_split
+from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
+from pytorch_lightning.metrics.functional import accuracy
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 
 class MNISTDataModule(pl.LightningDataModule):

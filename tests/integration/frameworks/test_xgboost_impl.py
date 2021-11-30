@@ -1,5 +1,5 @@
-import json
 import os
+import json
 import typing as t
 
 import numpy as np
@@ -11,8 +11,8 @@ import xgboost as xgb
 import bentoml.models
 import bentoml.xgboost
 from bentoml.exceptions import BentoMLException
-from tests.utils.frameworks.sklearn_utils import test_df
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.sklearn_utils import test_df
 
 if t.TYPE_CHECKING:
     from bentoml._internal.models import Model, ModelStore

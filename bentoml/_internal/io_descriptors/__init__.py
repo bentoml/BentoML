@@ -1,11 +1,11 @@
 from .base import IODescriptor
 from .file import File
-from .image import Image
 from .json import JSON
-from .multipart import Multipart
-from .numpy import NumpyNdarray
-from .pandas import PandasDataFrame, PandasSeries
 from .text import Text
+from .image import Image
+from .numpy import NumpyNdarray
+from .pandas import PandasSeries, PandasDataFrame
+from .multipart import Multipart
 
 # TODO: add IO descriptors for audio and video files
 

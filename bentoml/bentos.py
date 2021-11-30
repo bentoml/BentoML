@@ -1,19 +1,19 @@
 """
 User facing python APIs for managing local bentos and build new bentos
 """
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 import fs
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
-from ._internal.bento import Bento
-from ._internal.bento.build_config import BentoBuildConfig
-from ._internal.bento.utils import resolve_user_filepath
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.types import Tag
 from .exceptions import InvalidArgument
+from ._internal.bento import Bento
+from ._internal.types import Tag
+from ._internal.bento.utils import resolve_user_filepath
+from ._internal.bento.build_config import BentoBuildConfig
+from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:  # pragma: no cover
     from ._internal.bento import BentoStore, SysPathBento

@@ -2,7 +2,7 @@ import sys
 
 import click
 
-from .click_utils import _is_valid_bento_name, _is_valid_bento_tag
+from .click_utils import _is_valid_bento_tag, _is_valid_bento_name
 
 
 def parse_delete_targets_argument_callback(
@@ -40,7 +40,6 @@ def add_bento_management_commands(cli):
         bentoml get FraudDetector:latest
         bentoml get FraudDetector:20210709_DE14C9
         """
-        pass
 
     @cli.command(name="list", help="List Bentos in local bento store")
     @click.argument("bento_name", type=click.STRING, required=False)
@@ -64,7 +63,6 @@ def add_bento_management_commands(cli):
         # show all verions of bento with the name FraudDetector
         > bentoml list FraudDetector
         """
-        pass
 
     @cli.command()
     @click.argument(
@@ -92,7 +90,6 @@ def add_bento_management_commands(cli):
         * Bulk delete all bento bundles with a specific name, e.g.: `bentoml delete IrisClassifier`
         * Bulk delete multiple bento bundles by name and version, separated by ",", e.g.: `benotml delete Irisclassifier:v1,MyPredictService:v2`
         """  # noqa
-        pass
 
     @cli.command(help="Export Bento to a tar file")
     @click.argument("bento_tag", type=click.STRING)
@@ -105,7 +102,6 @@ def add_bento_management_commands(cli):
         bentoml export FraudDetector:latest > my_bento.tar
         bentoml export FraudDetector:20210709_DE14C9 ./my_bento.tar
         """
-        pass
 
     @cli.command(name="import", help="Import a previously exported Bento tar file")
     @click.argument(
@@ -117,7 +113,6 @@ def add_bento_management_commands(cli):
         bentoml import < ./my_bento.tar
         bentoml import ./my_bento.tar
         """
-        pass
 
     @cli.command(
         help="Pull Bento from a yatai server",

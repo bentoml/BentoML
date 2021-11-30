@@ -1,5 +1,5 @@
-import logging
 import typing as t
+import logging
 from typing import TYPE_CHECKING
 
 logger = logging.getLogger("bentoml.tests")
@@ -7,7 +7,7 @@ logger = logging.getLogger("bentoml.tests")
 
 if TYPE_CHECKING:  # pragma: no cover
     from aiohttp.typedefs import LooseHeaders
-    from starlette.datastructures import FormData, Headers
+    from starlette.datastructures import Headers, FormData
 
 
 async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":

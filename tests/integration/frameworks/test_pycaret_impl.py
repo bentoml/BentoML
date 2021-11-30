@@ -2,15 +2,15 @@ import typing as t
 
 import pytest
 import sklearn
-from pycaret.classification import (
-    create_model,
-    finalize_model,
-    predict_model,
-    save_model,
-)
-from pycaret.classification import setup as pycaret_setup
-from pycaret.classification import tune_model
 from pycaret.datasets import get_data
+from pycaret.classification import setup as pycaret_setup
+from pycaret.classification import (
+    save_model,
+    tune_model,
+    create_model,
+    predict_model,
+    finalize_model,
+)
 
 import bentoml.models
 import bentoml.pycaret

@@ -1,8 +1,8 @@
-import contextlib
-import functools
+import uuid
 import socket
 import typing as t
-import uuid
+import functools
+import contextlib
 from pathlib import Path
 
 from ..types import PathType

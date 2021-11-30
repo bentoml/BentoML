@@ -1,13 +1,13 @@
 import io
-import itertools
 import json
 import typing as t
+import itertools
 from typing import TYPE_CHECKING
 
-from ...exceptions import BadInput, BentoMLException
 from . import catch_exceptions
-from .csv import csv_quote, csv_row, csv_split, csv_splitlines, csv_unquote
+from .csv import csv_row, csv_quote, csv_split, csv_unquote, csv_splitlines
 from .lazy_loader import LazyLoader
+from ...exceptions import BadInput, BentoMLException
 
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd

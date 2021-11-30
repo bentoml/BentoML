@@ -1,25 +1,25 @@
 # pylint: disable=redefined-outer-name # pragma: no cover
-import contextlib
-import logging
 import os
-import subprocess
 import sys
-import threading
 import time
 import typing as t
 import urllib
+import logging
+import threading
+import contextlib
+import subprocess
 import urllib.request
-from contextlib import contextmanager
 from typing import TYPE_CHECKING
+from contextlib import contextmanager
 
-from bentoml._internal.utils import cached_contextmanager, reserve_free_port
+from bentoml._internal.utils import reserve_free_port, cached_contextmanager
 
 logger = logging.getLogger("bentoml.tests")
 
 
 if TYPE_CHECKING:  # pragma: no cover
     from aiohttp.typedefs import LooseHeaders
-    from starlette.datastructures import FormData, Headers
+    from starlette.datastructures import Headers, FormData
 
     import docker
 

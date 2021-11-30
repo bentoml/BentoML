@@ -1,21 +1,21 @@
-import math
 import os
+import math
 
-import numpy as np
 import onnx
-import onnxruntime as ort
+import numpy as np
+import torch
 import psutil
 import pytest
-import torch
 import torch.nn as nn
+import onnxruntime as ort
 from sklearn.ensemble import RandomForestClassifier
 
-import bentoml.models
 import bentoml.onnx
+import bentoml.models
 from bentoml.exceptions import BentoMLException
-from tests.integration.frameworks.test_sklearn_impl import res_arr
-from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.sklearn_utils import sklearn_model_data
+from tests.integration.frameworks.test_sklearn_impl import res_arr
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 

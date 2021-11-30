@@ -4,17 +4,17 @@ import typing as t
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
-from multipart.multipart import parse_options_header
 from starlette.requests import Request
+from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
-from ...exceptions import BadInput, InternalServerError, InvalidArgument
-from ..utils import LazyLoader
 from .base import IODescriptor
+from ..utils import LazyLoader
+from ...exceptions import BadInput, InvalidArgument, InternalServerError
 
 if TYPE_CHECKING:  # pragma: no cover
-    import numpy as np
     import PIL
+    import numpy as np
     import PIL.Image
 else:
     np = LazyLoader("np", globals(), "numpy")

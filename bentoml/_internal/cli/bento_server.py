@@ -1,5 +1,5 @@
-import logging
 import sys
+import logging
 
 import click
 

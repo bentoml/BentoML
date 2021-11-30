@@ -1,23 +1,23 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-from multipart.multipart import parse_options_header
 from starlette.requests import Request
+from multipart.multipart import parse_options_header
 from starlette.responses import Response
 
-from ...exceptions import BentoMLException, InvalidArgument
-from ..utils.formparser import (
-    concat_to_multipart_responses,
-    populate_multipart_requests,
-)
 from .base import IODescriptor
+from ...exceptions import InvalidArgument, BentoMLException
+from ..utils.formparser import (
+    populate_multipart_requests,
+    concat_to_multipart_responses,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     import numpy as np  # noqa
 
-    from ..types import FileLike  # noqa
-    from .image import ImageType  # noqa
     from .json import JSONType  # noqa
+    from .image import ImageType  # noqa
+    from ..types import FileLike  # noqa
 
 
 _DescriptorType = t.Union[

@@ -1,13 +1,14 @@
 # Dev dependencies
 -r tests-requirements.txt
+attrs>=21.1
 GitPython>=2.0
+pre-commit
+pydantic
 setuptools
 twine
-wheel
-pydantic
-types-click
 types-chardet
-types-setuptools
-types-PyYAML
+types-click
 types-filelock
-attrs>=21.1
+types-PyYAML
+types-setuptools
+wheel

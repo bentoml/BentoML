@@ -1,7 +1,7 @@
 import typing as t
 
-import joblib
 import numpy as np
+import joblib
 import psutil
 import pytest
 from sklearn.ensemble import RandomForestClassifier
@@ -9,8 +9,8 @@ from sklearn.ensemble import RandomForestClassifier
 import bentoml.models
 import bentoml.sklearn
 from bentoml.exceptions import BentoMLException
-from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 from tests.utils.helpers import assert_have_file_extension
+from tests.utils.frameworks.sklearn_utils import sklearn_model_data
 
 # fmt: off
 res_arr = np.array(

@@ -1,6 +1,6 @@
 import pickle
-from functools import lru_cache
 from typing import Sequence
+from functools import lru_cache
 
 from ..types import HTTPRequest, HTTPResponse
 

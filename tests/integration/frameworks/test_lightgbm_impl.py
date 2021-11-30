@@ -1,12 +1,12 @@
 import typing as t
 
-import lightgbm as lgb
 import numpy as np
 import psutil
 import pytest
+import lightgbm as lgb
 
-import bentoml.lightgbm
 import bentoml.models
+import bentoml.lightgbm
 from bentoml.exceptions import BentoMLException
 from tests.utils.helpers import assert_have_file_extension
 

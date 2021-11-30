@@ -5,7 +5,7 @@ import pandas as pd
 import psutil
 import pytest
 import statsmodels
-from statsmodels.tsa.holtwinters import ExponentialSmoothing, HoltWintersResults
+from statsmodels.tsa.holtwinters import HoltWintersResults, ExponentialSmoothing
 
 import bentoml.models
 import bentoml.statsmodels

@@ -1,9 +1,9 @@
 import typing as t
 
-import easyocr
-import imageio
 import numpy as np
 import pytest
+import easyocr
+import imageio
 
 import bentoml.easyocr
 

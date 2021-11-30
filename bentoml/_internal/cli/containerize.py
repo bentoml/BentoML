@@ -42,4 +42,3 @@ def add_containerize_command(cli):
         By default, the `containerize` command will use the current credentials
         provided by Docker daemon.
         """
-        pass

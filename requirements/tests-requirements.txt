@@ -5,12 +5,12 @@ codecov
 coverage>=4.4
 flake8>=3.8.2
 flake8-length>=0.2.0
+imageio>=2.5.0
 isort>=5.0.0
+pandas
 pydantic
 pylint>=2.9.3
-pytest-cov>=2.7.1
 pytest>=5.4.0
 pytest-asyncio
-pandas
+pytest-cov>=2.7.1
 scikit-learn
-imageio>=2.5.0

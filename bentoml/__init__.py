@@ -10,13 +10,13 @@ from ._internal.log import configure_logging  # noqa: E402
 configure_logging()
 
 from . import models
-from ._internal.service import Service
-from ._internal.service.loader import load
-from ._internal.types import Tag
 
 # bento APIs are top-level
 from .bentos import list  # pylint: disable=W0622
-from .bentos import build, delete, export_bento, get, import_bento
+from .bentos import get, build, delete, export_bento, import_bento
+from ._internal.types import Tag
+from ._internal.service import Service
+from ._internal.service.loader import load
 
 __all__ = [
     "__version__",

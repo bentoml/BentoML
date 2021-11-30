@@ -1,15 +1,15 @@
-import functools
 import typing as t
+import functools
 from typing import TYPE_CHECKING
 
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
 from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import PT_EXT, SAVE_NAMESPACE, Model
-from ._internal.types import Tag
 from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.models import Model, PT_EXT, SAVE_NAMESPACE
+from ._internal.configuration.containers import BentoMLContainer
 
 _PL_IMPORT_ERROR = f"""\
 `pytorch_lightning` and `torch` is required in order to use module `{__name__}`\n
@@ -21,8 +21,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from ._internal.models import ModelStore
 
 try:
-    import pytorch_lightning as pl
     import torch
+    import pytorch_lightning as pl
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(_PL_IMPORT_ERROR)
 

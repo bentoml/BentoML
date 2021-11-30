@@ -1,11 +1,11 @@
 import pandas as pd
-import pyspark.ml
 import pytest
-from pyspark.ml.classification import LogisticRegression
-from pyspark.ml.feature import VectorAssembler
+import pyspark.ml
 from pyspark.sql import SparkSession
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.classification import LogisticRegression
 
-from bentoml.pyspark import SPARK_SESSION_NAMESPACE, PySparkMLlibModel
+from bentoml.pyspark import PySparkMLlibModel, SPARK_SESSION_NAMESPACE
 
 spark_session = SparkSession.builder.appName(SPARK_SESSION_NAMESPACE).getOrCreate()
 

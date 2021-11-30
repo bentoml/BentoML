@@ -1,37 +1,37 @@
-import functools
-import importlib.util
-import json
-import logging
 import os
 import re
-import tempfile
+import json
 import typing as t
-from contextlib import contextmanager
-from importlib import import_module
-from pathlib import Path
+import logging
+import tempfile
+import functools
+import importlib.util
 from typing import TYPE_CHECKING
+from pathlib import Path
+from importlib import import_module
+from contextlib import contextmanager
 
-import importlib_metadata
 import requests
+import importlib_metadata
 from filelock import FileLock
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
-from ._internal.configuration.containers import BentoMLContainer
-from ._internal.models import JSON_EXT, Model
-from ._internal.runner import Runner
+from .exceptions import NotFound, BentoMLException, MissingDependencyException
 from ._internal.types import Tag
-from .exceptions import BentoMLException, MissingDependencyException, NotFound
+from ._internal.models import Model, JSON_EXT
+from ._internal.runner import Runner
+from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover
     from transformers import (
-        FlaxPreTrainedModel,
-        PretrainedConfig,
         PreTrainedModel,
+        PretrainedConfig,
+        TFPreTrainedModel,
+        FlaxPreTrainedModel,
         PreTrainedTokenizer,
         PreTrainedTokenizerFast,
-        TFPreTrainedModel,
     )
     from transformers.feature_extraction_utils import PreTrainedFeatureExtractor
     from transformers.models.auto.auto_factory import _BaseAutoModelClass
@@ -40,15 +40,15 @@ if TYPE_CHECKING:  # pragma: no cover
 
 try:
     import transformers
-    from transformers import AutoConfig, AutoTokenizer, Pipeline
+    from transformers import Pipeline, AutoConfig, AutoTokenizer
     from transformers.file_utils import (
+        http_get,
         CONFIG_NAME,
-        FLAX_WEIGHTS_NAME,
-        TF2_WEIGHTS_NAME,
         WEIGHTS_NAME,
         hf_bucket_url,
-        http_get,
         http_user_agent,
+        TF2_WEIGHTS_NAME,
+        FLAX_WEIGHTS_NAME,
     )
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(

@@ -8,21 +8,17 @@ class ListStrategies(StrategyList):
     """
     Contains the strategies provided for lists.
     """
+
     NAME = ...
     @staticmethod
     def strategy_override(config, path, base, nxt):
-        """ use the list nxt. """
+        """use the list nxt."""
         ...
-    
     @staticmethod
     def strategy_prepend(config, path, base, nxt):
-        """ prepend nxt to base. """
+        """prepend nxt to base."""
         ...
-    
     @staticmethod
     def strategy_append(config, path, base, nxt):
-        """ append nxt to base. """
+        """append nxt to base."""
         ...
-    
-
-

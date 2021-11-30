@@ -167,7 +167,7 @@ class _KerasRunner(_TensorflowRunner):
         tag: t.Union[str, Tag],
         predict_fn_name: str,
         device_id: str,
-        partial_kwargs: t.Optional[t.Dict[str, t.Any]],
+        predict_kwargs: t.Optional[t.Dict[str, t.Any]],
         resource_quota: t.Optional[t.Dict[str, t.Any]],
         batch_options: t.Optional[t.Dict[str, t.Any]],
         model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -176,7 +176,7 @@ class _KerasRunner(_TensorflowRunner):
             tag=tag,
             predict_fn_name=predict_fn_name,
             device_id=device_id,
-            partial_kwargs=partial_kwargs,
+            partial_kwargs=predict_kwargs,
             resource_quota=resource_quota,
             batch_options=batch_options,
             model_store=model_store,
@@ -190,37 +190,23 @@ class _KerasRunner(_TensorflowRunner):
         raw_predict_fn = getattr(self._model, self._predict_fn_name)
         self._predict_fn = functools.partial(raw_predict_fn, **self._partial_kwargs)
 
-    def _run_batch(
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[override]
         self,
-        *args: t.Union[
+        input_data: t.Union[
             t.List[t.Union[int, float]], "np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor
         ],
-        **kwargs: t.Any,
     ) -> t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor]:
-        params = Params[t.Union[t.List[t.Union[int, float]], np.ndarray, tf.Tensor]](
-            *args, **kwargs
-        )
+        if not isinstance(input_data, (np.ndarray, tf.Tensor)):
+            input_data = np.array(input_data)
         with tf.device(self._device_id):
-
-            def _mapping(
-                item: t.Union[
-                    t.List[t.Union[int, float]],
-                    "np.ndarray[t.Any, np.dtype[t.Any]]",
-                    tf.Tensor,
-                ]
-            ) -> t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", tf.Tensor]:
-                if not isinstance(item, (np.ndarray, tf.Tensor)):
-                    item = np.array(item)
-                return item
-
-            params = params.map(_mapping)
             if TF2:
                 tf.compat.v1.global_variables_initializer()
             else:
                 self._session.run(tf.compat.v1.global_variables_initializer())
                 with _sess.as_default():
-                    self._predict_fn(*params.args, **params.kwargs)
-            return self._predict_fn(*params.args, **params.kwargs)
+                    self._predict_fn(input_data)
+            return self._predict_fn(input_data)
 
 
 @inject
@@ -230,6 +216,7 @@ def load_runner(
     predict_fn_name: str = "predict",
     partial_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     device_id: str = "CPU:0",
+    predict_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
     resource_quota: t.Union[None, t.Dict[str, t.Any]] = None,
     batch_options: t.Union[None, t.Dict[str, t.Any]] = None,
     model_store: "ModelStore" = Provide[BentoMLContainer.model_store],
@@ -264,7 +251,7 @@ def load_runner(
         tag=tag,
         predict_fn_name=predict_fn_name,
         device_id=device_id,
-        partial_kwargs=partial_kwargs,
+        predict_kwargs=predict_kwargs,
         resource_quota=resource_quota,
         batch_options=batch_options,
         model_store=model_store,

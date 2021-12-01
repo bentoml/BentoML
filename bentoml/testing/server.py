@@ -12,7 +12,7 @@ import urllib.request
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
-from bentoml._internal.utils import reserve_free_port, cached_contextmanager
+from .._internal.utils import cached_contextmanager, reserve_free_port
 
 logger = logging.getLogger("bentoml.tests")
 

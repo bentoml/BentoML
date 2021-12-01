@@ -161,9 +161,7 @@ def _get_disp_filename(headers: MutableHeaders) -> t.Optional[bytes]:
     return None
 
 
-async def concat_to_multipart_responses(
-    responses: t.Mapping[str, Response]
-) -> Response:
+async def concat_to_multipart_responses(responses: t.Mapping[str, Response]) -> Response:
     boundary = uuid.uuid4().hex
     headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
 

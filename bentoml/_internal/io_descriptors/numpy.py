@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def _is_matched_shape(
     left: t.Optional[t.Tuple[int, ...]],
     right: t.Optional[t.Tuple[int, ...]],
-) -> bool:
+) -> bool:  # pragma: no cover
     if (left is None) or (right is None):
         return False
 
@@ -117,28 +117,36 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
         self._enforce_dtype = enforce_dtype
         self._enforce_shape = enforce_shape
 
-    def _get_dtypes(self) -> t.Dict[str, t.Any]:
-        if self._shape is not None:
-            return dict(type="array", items=dict(type="number"))
-        return dict()
+    def _infer_types(self) -> str:  # pragma: no cover
+        if self._dtype is not None:
+            name = self._dtype.name
+            if name.startswith("int") or name.startswith("uint"):
+                var_type = "integer"
+            elif name.startswith("float") or name.startswith("complex"):
+                var_type = "number"
+            else:
+                var_type = "object"
+        else:
+            var_type = "object"
+        return var_type
 
-    def openapi_schema(self) -> t.Dict[str, t.Dict[str, t.Dict[str, t.Any]]]:
-        return {
-            MIME_TYPE_JSON: {
-                "schema": dict(
-                    type="array",
-                    items=self._get_dtypes(),
-                )
-            }
-        }
+    def _items_schema(self) -> t.Dict[str, t.Any]:
+        if self._shape is not None:
+            if len(self._shape) > 1:
+                return {"type": "array", "items": {"type": self._infer_types()}}
+            return {"type": self._infer_types()}
+        return {}
+
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+        return {"type": "array", "items": self._items_schema()}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
-        return self.openapi_schema()
+        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
-        return self.openapi_schema()
+        return {MIME_TYPE_JSON: {"schema": self.openapi_schema_type()}}
 
     def _verify_ndarray(
         self,
@@ -183,9 +191,9 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
         obj = await request.json()
         res: "np.ndarray[t.Any, np.dtype[t.Any]]"
         try:
-            res = np.array(obj, dtype=self._dtype)  # type: ignore
+            res = np.array(obj, dtype=self._dtype)
         except ValueError:
-            res = np.array(obj)  # type: ignore
+            res = np.array(obj)
         res = self._verify_ndarray(res, BadInput)
         return res
 
@@ -239,7 +247,7 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
             ...
             @svc.api(input=inp, output=NumpyNdarray())
             def predict() -> np.ndarray:...
-        """
+        """  # noqa: LN001
         return cls(
             dtype=sample_input.dtype,
             shape=sample_input.shape,

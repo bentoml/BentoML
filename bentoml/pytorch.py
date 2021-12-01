@@ -39,7 +39,6 @@ _ModelType = t.Union["torch.nn.Module", "torch.jit.ScriptModule"]  # type: ignor
 
 _torch_version = importlib_metadata.version("torch")
 
-infer_mode_compat = _torch_version.startswith("1.9")
 
 
 def _is_gpu_available() -> bool:  # pragma: no cover

@@ -7,9 +7,9 @@ flake8>=3.8.2
 flake8-length>=0.2.0
 isort>=5.0.0
 pydantic
-pylint>=2.9.3
-pytest-cov>=2.7.1
-pytest>=5.4.0
+pylint>=2.11.0
+pytest-cov>=3.0.0
+pytest>=6.2.0
 pytest-asyncio
 pandas
 scikit-learn

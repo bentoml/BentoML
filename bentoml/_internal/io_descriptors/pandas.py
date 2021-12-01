@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from starlette.requests import Request
 from starlette.responses import Response
-from typing_extensions import Literal
 
 from ...exceptions import BadInput, InvalidArgument
 from ..utils.lazy_loader import LazyLoader
@@ -16,10 +15,43 @@ if TYPE_CHECKING:
 else:
     pd = LazyLoader("pd", globals(), "pandas")
 
+try:
+    from typing import Literal
+except ImportError:  # pragma: no cover
+    from typing_extensions import Literal
+
 logger = logging.getLogger(__name__)
 
 
-class PandasDataFrame(IODescriptor):
+def _infer_type(item: str) -> str:  # pragma: no cover
+    if item.startswith("int"):
+        return "integer"
+    elif item.startswith("float") or item.startswith("double"):
+        return "number"
+    elif item.startswith("str") or item.startswith("date"):
+        return "string"
+    elif item.startswith("bool"):
+        return "boolean"
+    else:
+        return "object"
+
+
+def _schema_type(
+    dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]]
+) -> t.Dict[str, t.Any]:  # pragma: no cover
+    if isinstance(dtype, dict):
+        return {
+            "type": "object",
+            "properties": {
+                k: {"type": "array", "items": {"type": _infer_type(v)}}
+                for k, v in dtype.items()
+            },
+        }
+    else:
+        return {"type": "object"}
+
+
+class PandasDataFrame(IODescriptor["pd.DataFrame"]):
     """
     `PandasDataFrame` defines API specification for the inputs/outputs of a Service,
       where either inputs will be converted to or outputs will be converted from type
@@ -132,12 +164,18 @@ class PandasDataFrame(IODescriptor):
         self._enforce_dtype = enforce_dtype
         self._shape = shape
         self._enforce_shape = enforce_shape
+        self._mime_type = "application/json"
+
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+        return _schema_type(self._dtype)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
     def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for outcoming responses"""
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
 
     async def from_http_request(self, request: Request) -> "pd.DataFrame":
         """
@@ -257,7 +295,7 @@ class PandasDataFrame(IODescriptor):
             @svc.api(input=inp, output=PandasDataFrame())
             def predict(inputs: pd.DataFrame) -> pd.DataFrame:...
         """
-        columns = [str(x) for x in list(sample_input.columns)]
+        columns = [str(x) for x in list(sample_input.columns)]  # type: ignore[reportUnknownVariableType]
         return cls(
             orient=orient,
             enforce_shape=enforce_shape,
@@ -269,7 +307,7 @@ class PandasDataFrame(IODescriptor):
         )
 
 
-class PandasSeries(PandasDataFrame):
+class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
     """
     `PandasSeries` defines API specification for the inputs/outputs of a Service, where
      either inputs will be converted to or outputs will be converted from type
@@ -369,17 +407,25 @@ class PandasSeries(PandasDataFrame):
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
     ):
-        super().__init__(
-            orient=orient,
-            dtype=dtype,
-            enforce_dtype=enforce_dtype,
-            shape=shape,
-            enforce_shape=enforce_shape,
-            apply_column_names=False,
-            columns=None,
-        )
+        self._orient = orient
+        self._dtype = dtype
+        self._enforce_dtype = enforce_dtype
+        self._shape = shape
+        self._enforce_shape = enforce_shape
+        self._mime_type = "application/json"
 
-    async def from_http_request(self, request: Request) -> "pd.Series":
+    def openapi_schema_type(self) -> t.Dict[str, t.Any]:
+        return _schema_type(self._dtype)
+
+    def openapi_request_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for incoming requests"""
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+
+    def openapi_responses_schema(self) -> t.Dict[str, t.Any]:
+        """Returns OpenAPI schema for outcoming responses"""
+        return {self._mime_type: {"schema": self.openapi_schema_type()}}
+
+    async def from_http_request(self, request: Request) -> "pd.Series[t.Any]":
         """
         Process incoming requests and convert incoming
          objects to `pd.Series`
@@ -415,7 +461,9 @@ class PandasSeries(PandasDataFrame):
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
-    async def to_http_response(self, obj: "pd.Series") -> Response:
+    async def to_http_response(
+        self, obj: t.Union[t.Any, "pd.Series[t.Any]"]
+    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 

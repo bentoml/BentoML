@@ -4,11 +4,12 @@ import socket
 import typing as t
 import uuid
 from pathlib import Path
-from typing import overload
 
 from ..types import PathType
 from .lazy_loader import LazyLoader
 
+C = t.TypeVar("C")
+T = t.TypeVar("T")
 _T_co = t.TypeVar("_T_co", covariant=True, bound=t.Any)
 
 
@@ -53,14 +54,6 @@ class catch_exceptions(t.Generic[_T_co], object):
         self._fallback = fallback
         self._raises = raises
 
-    @overload
-    def __call__(self, func: t.Any) -> t.Callable[..., _T_co]:
-        ...
-
-    @overload
-    def __call__(self, func: t.Any) -> t.Any:  # noqa: F811
-        ...
-
     # TODO: use ParamSpec (3.10+): https://github.com/python/mypy/issues/8645
     def __call__(  # noqa: F811
         self, func: t.Callable[..., _T_co]
@@ -98,10 +91,6 @@ def get_free_port(host: str = "localhost") -> int:
     port: int = sock.getsockname()[1]
     sock.close()
     return port
-
-
-C = t.TypeVar("C")
-T = t.TypeVar("T")
 
 
 class cached_property(t.Generic[C, T]):

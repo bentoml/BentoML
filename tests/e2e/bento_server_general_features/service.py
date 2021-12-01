@@ -35,15 +35,22 @@ class PickleModel:
         return input_datas
 
     @staticmethod
-    def echo_multi_ndarray(*input_arr: np.ndarray) -> t.Tuple[np.ndarray, ...]:
+    def echo_multi_ndarray(
+        *input_arr: "np.ndarray[t.Any, np.dtype[t.Any]]",
+    ) -> t.Tuple["np.ndarray[t.Any, np.dtype[t.Any]]", ...]:
         return input_arr
 
     @staticmethod
-    def predict_ndarray(input_arr: np.ndarray) -> np.ndarray:
+    def predict_ndarray(
+        input_arr: "np.ndarray[t.Any, np.dtype[t.Any]]",
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         return input_arr * 2
 
     @staticmethod
-    def predict_multi_ndarray(arr1: np.ndarray, arr2: np.ndarray) -> np.ndarray:
+    def predict_multi_ndarray(
+        arr1: "np.ndarray[t.Any, np.dtype[t.Any]]",
+        arr2: "np.ndarray[t.Any, np.dtype[t.Any]]",
+    ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         return (arr1 + arr2) // 2
 
     @staticmethod
@@ -104,7 +111,9 @@ def pydantic_json(json_obj: JSONSerializable) -> JSONSerializable:
     input=NumpyNdarray(shape=(2, 2), enforce_shape=True),
     output=NumpyNdarray(shape=(1, 4)),
 )
-def predict_ndarray_enforce_shape(inp: "np.ndarray") -> "np.ndarray":
+def predict_ndarray_enforce_shape(
+    inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
+) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     assert inp.shape == (2, 2)
     return ndarray_pred_runner.run(inp)
 
@@ -113,7 +122,9 @@ def predict_ndarray_enforce_shape(inp: "np.ndarray") -> "np.ndarray":
     input=NumpyNdarray(dtype="uint8", enforce_dtype=True),
     output=NumpyNdarray(dtype="str"),
 )
-def predict_ndarray_enforce_dtype(inp: "np.ndarray") -> "np.ndarray":
+def predict_ndarray_enforce_dtype(
+    inp: "np.ndarray[t.Any, np.dtype[t.Any]]",
+) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     assert inp.dtype == np.dtype("uint8")
     return ndarray_pred_runner.run(inp)
 
@@ -122,7 +133,7 @@ def predict_ndarray_enforce_dtype(inp: "np.ndarray") -> "np.ndarray":
     input=PandasDataFrame(dtype={"col1": "int64"}, orient="records"),
     output=PandasSeries(),
 )
-def predict_dataframe(df):
+def predict_dataframe(df: "pd.DataFrame") -> "pd.Series[t.Any]":
     assert df["col1"].dtype == "int64"
     output = dataframe_pred_runner.run(df)
     assert isinstance(output, pd.Series)
@@ -135,7 +146,7 @@ def predict_file(f):
 
 
 @svc.api(input=Image(), output=Image(mime_type="image/bmp"))
-def echo_image(f: PILImage) -> np.ndarray:
+def echo_image(f: PILImage) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
     assert isinstance(f, PILImage)
     return np.array(f)
 
@@ -144,7 +155,7 @@ def echo_image(f: PILImage) -> np.ndarray:
     input=Multipart(original=Image(), compared=Image()),
     output=Multipart(img1=Image(), img2=Image()),
 )
-def predict_multi_images(original, compared):
+def predict_multi_images(original: t.Dict[str, Image], compared: t.Dict[str, Image]):
     output_array = multi_ndarray_pred_runner.run_batch(
         np.array(original), np.array(compared)
     )

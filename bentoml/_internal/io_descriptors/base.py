@@ -8,11 +8,10 @@ from starlette.responses import Response
 from ..types import FileLike
 
 if TYPE_CHECKING:  # pragma: no cover
-    # noqa: F401
-    import numpy as np
-    import pandas as pd
-    import PIL.Image
-    import pydantic
+    import numpy as np  # noqa: F401
+    import pandas as pd  # noqa: F401
+    import PIL.Image  # noqa: F401
+    import pydantic  # noqa: F401
 
 
 JSONType = t.Union[str, t.Dict[str, t.Any], "pydantic.BaseModel"]

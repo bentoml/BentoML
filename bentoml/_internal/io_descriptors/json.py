@@ -12,7 +12,7 @@ from .base import IODescriptor, JSONType
 
 if TYPE_CHECKING:
     import numpy as np
-    import pandas as pd
+    from pandas.core.frame import DataFrame
     from pydantic import BaseModel
 else:  # pragma: no cover
     np = LazyLoader("np", globals(), "numpy")
@@ -27,7 +27,7 @@ except ImportError:
 MIME_TYPE_JSON = "application/json"
 
 _SerializableObj = t.Union[
-    "np.ndarray[t.Any, np.dtype[t.Any]]", t.Type["BaseModel"], "pd.DataFrame", t.Any
+    "np.ndarray[t.Any, np.dtype[t.Any]]", t.Type["BaseModel"], "DataFrame", t.Any
 ]
 
 

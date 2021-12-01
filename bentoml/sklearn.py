@@ -10,7 +10,7 @@ from ._internal.types import PathType, Tag
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
     from pandas.core.frame import DataFrame
 

@@ -17,7 +17,6 @@ from ...exceptions import InvalidArgument
 from ..types import Tag
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 from .docker import ImageProvider
-from .templates import BENTO_SERVER_DOCKERFILE
 from .utils import resolve_user_filepath
 
 logger = logging.getLogger(__name__)
@@ -129,22 +128,32 @@ class DockerOptions:
         docker_folder = fs.path.join("env", "docker")
         bento_fs.makedirs(docker_folder, recreate=True)
         dockerfile = fs.path.join(docker_folder, "Dockerfile")
+        tempalte_file = os.path.join(
+            os.path.dirname(__file__), "docker", "Dockerfile.template"
+        )
+        with open(tempalte_file, "r") as f:
+            dockerfile_template = f.read()
+
         with bento_fs.open(dockerfile, "w") as dockerfile:
             dockerfile.write(
-                BENTO_SERVER_DOCKERFILE.format(base_image=self.get_base_image_tag())
+                dockerfile_template.format(base_image=self.get_base_image_tag())
             )
 
-        current_dir = fs.open_fs(os.path.dirname(__file__))
-        for filename in ["bentoml-init.sh", "docker-entrypoint.sh"]:
-            file_path = fs.path.join(docker_folder, filename)
-            fs.copy.copy_file(current_dir, filename, bento_fs, file_path)
+        for filename in ["init.sh", "entrypoint.sh"]:
+            _copy_file_to_fs_folder(
+                os.path.join(os.path.dirname(__file__), "docker", filename),
+                bento_fs,
+                docker_folder,
+            )
 
         if self.setup_script:
             try:
                 setup_script = resolve_user_filepath(self.setup_script, build_ctx)
             except FileNotFoundError as e:
                 raise InvalidArgument(f"Invalid setup_script file: {e}")
-            _copy_file_to_fs_folder(setup_script, bento_fs, docker_folder, "setup.sh")
+            _copy_file_to_fs_folder(
+                setup_script, bento_fs, docker_folder, "setup_script"
+            )
 
 
 @attr.frozen
@@ -277,9 +286,10 @@ class PythonOptions:
             # Additional user provided pip_args
             pip_args.append(self.pip_args)
 
-        # write pip install args to a text file
-        with bento_fs.open(fs.path.join(py_folder, "pip_args.txt"), "w") as f:
-            f.write(" ".join(pip_args))
+        # write pip install args to a text file if applicable
+        if pip_args:
+            with bento_fs.open(fs.path.join(py_folder, "pip_args.txt"), "w") as f:
+                f.write(" ".join(pip_args))
 
         if self.lock_packages:
             # Note: "--allow-unsafe" is required for including setuptools in the
@@ -430,7 +440,7 @@ class BentoBuildConfig:
         except KeyError as e:
             if str(e) == "'service'":
                 raise InvalidArgument(
-                    'Missing required build config field "service", indicating import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
+                    'Missing required build config field "service", which indicates import path of target bentoml.Service instance. e.g.: "service: fraud_detector.py:svc"'
                 )
             else:
                 raise

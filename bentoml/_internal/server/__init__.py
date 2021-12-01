@@ -16,15 +16,15 @@ logger = logging.getLogger(__name__)
 
 @inject
 def serve_development(
-    bento_path_or_tag: str,
+    bento_identifier: str,
     working_dir: str,
     port: int = Provide[BentoServerContainer.config.port],
     with_ngrok: bool = False,
     reload: bool = False,
     reload_delay: float = 0.25,
 ) -> None:
-    working_dir = os.path.realpath(working_dir)
-    svc = load(bento_path_or_tag, working_dir=working_dir)
+    working_dir = os.path.realpath(os.path.expanduser(working_dir))
+    svc = load(bento_identifier, working_dir=working_dir)
 
     from circus.arbiter import Arbiter
     from circus.util import DEFAULT_ENDPOINT_DEALER, DEFAULT_ENDPOINT_SUB
@@ -44,10 +44,11 @@ def serve_development(
                 env=env,
                 numprocesses=1,
                 stop_children=True,
+                working_dir=working_dir,
             )
         )
 
-    dev_server_cmd = f'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_path_or_tag}", {port}, working_dir="{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))'
+    dev_server_cmd = f'import bentoml._internal.server; bentoml._internal.server._start_dev_api_server("{bento_identifier}", {port}, working_dir="{working_dir}", reload={reload}, reload_delay={reload_delay}, instance_id=$(CIRCUS.WID))'
     watchers.append(
         Watcher(
             name="ngrok",
@@ -55,6 +56,7 @@ def serve_development(
             env=env,
             numprocesses=1,
             stop_children=True,
+            working_dir=working_dir,
         )
     )
 

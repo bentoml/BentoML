@@ -10,7 +10,7 @@ from ._internal.runner import Runner
 from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from pandas.core.frame import DataFrame
 
     from ._internal.models import ModelStore

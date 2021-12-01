@@ -15,7 +15,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.types import Tag
 from .exceptions import InvalidArgument
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._internal.bento import BentoStore, SysPathBento
     from ._internal.models import ModelStore
 

@@ -12,7 +12,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 PYCARET_CONFIG = "pycaret_config"
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import lightgbm
     import pandas as pd
     import sklearn

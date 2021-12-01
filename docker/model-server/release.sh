@@ -65,7 +65,7 @@ do
     # for PYTHON_VERSION we are using bentoml/model-server:slim images to reduce boilerplate and decrease buildtime
     docker build --pull \
     --build-arg BENTOML_VERSION="$BENTOML_VERSION" \
-    --build-arg PYTHON_VERSION="${version//.}" \
+    --build-arg PYTHON_VERSION="$version" \
     -t bentoml/model-server:"$BENTOML_VERSION"-py"${version//.}"-gpu \
     -t bentoml/model-server:latest-py"${version//.}"-gpu \
     -f Dockerfile-gpu \

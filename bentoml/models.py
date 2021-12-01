@@ -11,7 +11,7 @@ from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import Model
 from ._internal.types import Tag
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._internal.models import ModelStore, SysPathModel
     from ._internal.runner import Runner
 

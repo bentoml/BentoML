@@ -36,7 +36,7 @@ have `paddlepaddle` installed beforehand. Install `paddlehub` with
     + _paddle_exc
 )
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
     import paddle
     import paddle.inference

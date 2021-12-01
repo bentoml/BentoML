@@ -12,7 +12,7 @@ from ..utils.formparser import (
 )
 from .base import IODescriptor
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np  # noqa
 
     from ..types import FileLike  # noqa

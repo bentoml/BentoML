@@ -15,7 +15,7 @@ from ._internal.types import Tag
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import lightgbm.basic
     from _internal.models import ModelStore
     from pandas.core.frame import DataFrame

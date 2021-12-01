@@ -159,7 +159,6 @@ Inside a Bento archive, you will find the following file structure:
  - bento.yaml
  - /apis
      - openapi.yaml # openapi spec
-     - proto.pb # Note: gRPC proto is not currently available
  - /env
      - /python
          - version.txt
@@ -169,10 +168,9 @@ Inside a Bento archive, you will find the following file structure:
          - pip_args.txt
      - /docker
          - Dockerfile
-         - Dockerfile-gpu  # optional
-         - docker-entrypoint.sh
-         - bentoml-init.sh
-         - setup.sh  # optional
+         - entrypoint.sh
+         - init.sh
+         - setup_script
      - /conda
          - environment.yml
 
@@ -186,6 +184,7 @@ Inside a Bento archive, you will find the following file structure:
     - /my_nlp_model
        - bentoml_model.yml
        - model.pkl
+    - latest
 ```
 
 An example `bento.yaml` file in a Bento directory:
@@ -201,7 +200,6 @@ labels:
     abc: def
     author: parano
     team: bentoml
-
 models:
 - my_nlp_model:20210709_C154BA
 ```

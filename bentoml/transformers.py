@@ -28,7 +28,7 @@ try:
 except ImportError:
     import importlib_metadata
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from transformers.configuration_utils import PretrainedConfig
     from transformers.modeling_tf_utils import TFPreTrainedModel
     from transformers.modeling_utils import PreTrainedModel

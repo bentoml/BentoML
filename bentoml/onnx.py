@@ -19,7 +19,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import tensorflow as tf  # type: ignore[reportMissingTypeStubs]
     import torch  # type: ignore[reportMissingTypeStubs]
     from _internal.models import ModelStore

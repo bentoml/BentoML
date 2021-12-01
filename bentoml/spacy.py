@@ -20,7 +20,7 @@ from ._internal.types import Tag
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from spacy import Vocab
     from spacy.tokens.doc import Doc
     from thinc.config import Config

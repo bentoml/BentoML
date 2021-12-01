@@ -12,8 +12,6 @@ from ..io_descriptors import IODescriptor
 from ..utils.validation import validate_tag_str
 
 if TYPE_CHECKING:
-    from starlette.applications import Starlette
-    from starlette.middleware import Middleware
     from starlette.types import ASGIApp
     from starlette.middleware import Middleware
     from starlette.applications import Starlette

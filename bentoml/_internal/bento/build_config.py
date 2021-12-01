@@ -16,7 +16,6 @@ from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 from .utils import resolve_user_filepath
 from ..types import Tag
 from .docker import ImageProvider
-from .templates import BENTO_SERVER_DOCKERFILE
 from ...exceptions import InvalidArgument
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
 

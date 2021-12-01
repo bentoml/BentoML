@@ -6,14 +6,15 @@ import importlib
 from typing import TYPE_CHECKING
 
 import fs
-from simple_di import Provide, inject
+from simple_di import inject, Provide
 
-from ...exceptions import BentoMLException, NotFound
-from ..bento.bento import BENTO_PROJECT_DIR_NAME, BENTO_YAML_FILENAME, SysPathBento
+from ...exceptions import NotFound, BentoMLException
+from ..bento.bento import SysPathBento, BENTO_YAML_FILENAME, BENTO_PROJECT_DIR_NAME
 from ..configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
     from ..bento import BentoStore
+    from ..models import ModelStore
     from .service import Service
 
 logger = logging.getLogger(__name__)

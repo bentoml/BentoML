@@ -14,7 +14,7 @@ from ._internal.runner.utils import Params
 from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._internal.models import ModelStore
 
 try:

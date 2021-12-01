@@ -18,7 +18,7 @@ Refers to https://pytorch.org/get-started/locally/ to setup PyTorch correctly.
 Then run `pip install pytorch_lightning`
 """
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import pytorch_lightning as pl
 
     from ._internal.models import ModelStore

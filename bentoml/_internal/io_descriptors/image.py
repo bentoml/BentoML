@@ -12,7 +12,7 @@ from ...exceptions import BadInput, InternalServerError, InvalidArgument
 from ..utils import LazyLoader
 from .base import IODescriptor
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
     import PIL
     import PIL.Image

@@ -1,5 +1,7 @@
+.. _guides-page:
+
 Advanced Guides
-===============
+***************
 
 This part of the BentoML documentation is a work in progress. If you have any questions
 related to this, please join

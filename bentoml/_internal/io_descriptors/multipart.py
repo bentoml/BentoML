@@ -12,7 +12,7 @@ from ..utils.formparser import (
 )
 from .base import IODescriptor, IOType
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     # noqa: F811
     from .file import File
     from .image import Image

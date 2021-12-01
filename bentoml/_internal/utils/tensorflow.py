@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from ...exceptions import MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from tensorflow.python.framework.type_spec import TypeSpec
 
 logger = logging.getLogger(__name__)

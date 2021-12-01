@@ -26,6 +26,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx_click.ext",
     "sphinx_copybutton",
+    "sphinx_tabs.tabs",
     "recommonmark",
     "sphinxcontrib.spelling",
 ]

@@ -10,7 +10,7 @@ from ...exceptions import BadInput, MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor, JSONType
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     from pydantic import BaseModel

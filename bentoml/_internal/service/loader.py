@@ -5,14 +5,15 @@ import sys
 import typing as t
 from typing import TYPE_CHECKING
 
+import fs
 from simple_di import Provide, inject
 
 from ...exceptions import BentoMLException, NotFound
-from ..bento.bento import BENTO_PROJECT_DIR_NAME
+from ..bento.bento import BENTO_PROJECT_DIR_NAME, BENTO_YAML_FILENAME, SysPathBento
 from ..configuration.containers import BentoMLContainer
 from ..models import ModelStore
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ..bento import BentoStore
     from .service import Service
 
@@ -183,38 +184,72 @@ def load_bento(
         bento.tag,
         bento._fs.getsyspath("/"),
     )
+    return _load_bento(bento)
 
+
+def load_bento_dir(path: str) -> "Service":
+    """Load a Service instance from a bento directory
+
+    Example usage:
+        load_bento_dir("~/bentoml/bentos/iris_classifier/4tht2icroji6zput3suqi5nl2")
+    """
+    bento_fs = fs.open_fs(path)
+    bento = SysPathBento.from_fs(bento_fs)
+    logger.debug(
+        'Loading bento "%s" from directory: %s',
+        bento.tag,
+        path,
+    )
+    return _load_bento(bento)
+
+
+def _load_bento(bento: SysPathBento) -> "Service":
     # Use Bento's user project path as working directory when importing the service
     working_dir = bento._fs.getsyspath(BENTO_PROJECT_DIR_NAME)
 
     # Use Bento's local "{base_dir}/models/" directory as its model store
     model_store = ModelStore(bento._fs.getsyspath("models"))
 
-    svc = import_service(bento.metadata["service"], working_dir, model_store)
-
-    svc.version = bento.metadata["version"]
-    svc.tag = bento.metadata.tag
+    svc = import_service(bento.info.service, working_dir, model_store)
+    svc.version = bento.info.tag.version
+    svc.tag = bento.info.tag
     svc.bento = bento
     return svc
 
 
-def load(
-    svc_import_path_or_bento_tag: str, working_dir: t.Optional[str] = None
-) -> "Service":
-    """Load a Service instance from source code or a bento in local bento store."""
+def load(bento_identifier: str, working_dir: t.Optional[str] = None) -> "Service":
+    """Load a Service instance by the bento_identifier
 
-    try:
-        svc = import_service(svc_import_path_or_bento_tag, working_dir)
-        logger.info("Imported from source: %s", svc)
-    except ImportServiceError as e1:
+    A bento_identifier:str can be provided in three different forms:
+
+    * Tag pointing to a Bento in local Bento store under BENTOML_HOME/bentos
+    * File path to a Bento directory
+    * "import_str" for loading a service instance from the `working_dir`
+
+    """
+    if os.path.isdir(os.path.expanduser(bento_identifier)) and os.path.isfile(
+        os.path.expanduser(os.path.join(bento_identifier, BENTO_YAML_FILENAME))
+    ):
         try:
-            svc = load_bento(svc_import_path_or_bento_tag)
-            logger.info("Loaded from Bento: %s", svc)
-        except (NotFound, ImportServiceError) as e2:
+            svc = load_bento_dir(bento_identifier)
+        except ImportServiceError as e:
             raise BentoMLException(
-                f"Failed to load bento or import service "
-                f"'{svc_import_path_or_bento_tag}'. If you are attempting to "
-                f"import bento in local store: `{e1}`, or if you are importing by "
-                f"python module path: `{e2}`"
+                f"Failed loading Bento from directory {bento_identifier}: {e}"
             )
+        logger.info("Loaded from Bento directory: %s", svc)
+    else:
+        try:
+            svc = import_service(bento_identifier, working_dir)
+            logger.info("Imported from source: %s", svc)
+        except ImportServiceError as e1:
+            try:
+                svc = load_bento(bento_identifier)
+                logger.info("Loaded from Bento: %s", svc)
+            except (NotFound, ImportServiceError) as e2:
+                raise BentoMLException(
+                    f"Failed to load bento or import service "
+                    f"'{bento_identifier}'. If you are attempting to "
+                    f"import bento in local store: `{e1}`, or if you are importing by "
+                    f"python module path: `{e2}`"
+                )
     return svc

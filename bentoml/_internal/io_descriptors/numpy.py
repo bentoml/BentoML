@@ -11,7 +11,7 @@ from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
 else:
     np = LazyLoader("np", globals(), "numpy")

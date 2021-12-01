@@ -253,7 +253,8 @@ class _PyTorchRunner(Runner):
 
         params = params.map(_mapping)
 
-        if infer_mode_compat:
+        # inference mode is required for PyTorch version 1.9.*
+        if _torch_version.startswith("1.9"):
             with torch.inference_mode():
                 res = self._predict_fn(*params.args, **kwargs)
         else:

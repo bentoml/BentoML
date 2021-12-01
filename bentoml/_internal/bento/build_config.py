@@ -286,9 +286,10 @@ class PythonOptions:
             # Additional user provided pip_args
             pip_args.append(self.pip_args)
 
-        # write pip install args to a text file
-        with bento_fs.open(fs.path.join(py_folder, "pip_args.txt"), "w") as f:
-            f.write(" ".join(pip_args))
+        # write pip install args to a text file if applicable
+        if pip_args:
+            with bento_fs.open(fs.path.join(py_folder, "pip_args.txt"), "w") as f:
+                f.write(" ".join(pip_args))
 
         if self.lock_packages:
             # Note: "--allow-unsafe" is required for including setuptools in the

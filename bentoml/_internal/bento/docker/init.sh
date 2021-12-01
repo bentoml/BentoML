@@ -17,7 +17,7 @@ fi
 
 # Check and install the right python version
 if [ $# -eq 0 ] || [ $1 == "ensure_python" ] ; then
-  if [ -f ./python_version ]; then
+  if [ -f ./env/python/version.txt ]; then
     PY_VERSION_SAVED=$(cat ./env/python/version.txt)
     # remove PATCH version - since most patch version only contains backwards compatible
     # bug fixes and the BentoML defautl docker base image will include the latest
@@ -58,20 +58,27 @@ fi
 
 # Install PyPI packages specified in requirements.lock.txt
 if [ $# -eq 0 ] || [ $1 == "install_pip_packages" ] ; then
-  echo "Installing pip packages.."
-
-  EXTRA_PIP_INSTALL_ARGS=$(cat ./env/python/pip_args.txt)
-  pip install -r ./env/python/requirements.lock.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+  if [ -f ./env/python/requirements.lock.txt ]; then
+    echo "Installing pip packages.."
+    if [ -f ./env/python/pip_args.txt ]; then
+      EXTRA_PIP_INSTALL_ARGS=$(cat ./env/python/pip_args.txt)
+    fi
+    pip install -r ./env/python/requirements.lock.txt --no-cache-dir $EXTRA_PIP_INSTALL_ARGS
+  fi
 fi
 
 # Install wheels included in Bento
 if [ $# -eq 0 ] || [ $1 == "install_wheels" ] ; then
-  echo "Installing wheels.."
-  pip install --no-cache-dir ./env/python/wheels/*.whl
+  if [ -d ./env/docker/wheels ]; then
+    echo "Installing wheels.."
+    pip install --no-cache-dir ./env/python/wheels/*.whl
+  fi
 fi
-
 
 # Run the user defined setup_script if it is presented
 if [ $# -eq 0 ] || [ $1 == "user_setup_script" ] ; then
-  if [ -f ./env/docker/setup_script ]; then chmod +x ./env/docker/setup_script && ./env/docker/setup_script; fi
+  if [ -f ./env/docker/setup_script ]; then
+    chmod +x ./env/docker/setup_script
+    ./env/docker/setup_script;
+  fi
 fi

@@ -4,7 +4,7 @@ import uuid
 
 import multipart.multipart as multipart
 from starlette.datastructures import Headers, MutableHeaders
-from starlette.formparsers import _user_safe_decode  # type: ignore
+from starlette.formparsers import _user_safe_decode  # type: ignore[reportPrivateUsage]
 from starlette.formparsers import MultiPartMessage
 from starlette.requests import Request
 from starlette.responses import Response

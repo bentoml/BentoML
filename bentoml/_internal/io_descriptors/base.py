@@ -49,9 +49,6 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
     HTTP_METHODS = ["POST"]
     _init_str: str = ""
 
-    _from_sample: bool = False
-    _sample_name: str = ""
-
     def __new__(cls: t.Type[_T], *args: t.Any, **kwargs: t.Any) -> _T:
         self = super().__new__(cls)
         arg_strs = tuple(repr(i) for i in args) + tuple(
@@ -63,9 +60,6 @@ class IODescriptor(ABC, t.Generic[IOPyObj]):
 
     def __repr__(self) -> str:
         return self._init_str
-
-    def components_schema(self) -> t.Dict[str, t.Any]:
-        raise NotImplementedError
 
     @abstractmethod
     def openapi_schema_type(self) -> t.Dict[str, str]:

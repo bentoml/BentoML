@@ -1,7 +1,6 @@
 import json
 import logging
 import typing as t
-import uuid
 from typing import TYPE_CHECKING
 
 from starlette.requests import Request
@@ -138,12 +137,7 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
             return {"type": self._infer_types()}
         return {}
 
-    def components_schema(self) -> t.Dict[str, t.Any]:
-        return {"type": "object", "properties": self._items_schema()}
-
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
-        if getattr(self, "_from_sample") is True:
-            return {"$ref": f"#/components/schemas/{getattr(self, '_sample_name')}"}
         return {"type": "array", "items": self._items_schema()}
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
@@ -223,7 +217,6 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
     def from_sample(
         cls,
         sample_input: "np.ndarray[t.Any, np.dtype[t.Any]]",
-        name: t.Optional[str] = None,
         enforce_dtype: bool = True,
         enforce_shape: bool = True,
     ) -> "NumpyNdarray":
@@ -233,8 +226,6 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
         Args:
             sample_input (`np.ndarray[Any, np.dtype[Any]]`):
                 Sample inputs for IO descriptors.
-            name (`str`, `optional`, default to `None`):
-                Name for your sample inputs. If not set then default to a random string.
             enforce_dtype (`bool`, `optional`, default to `True`):
                 Enforce a certain data type. `dtype` must be specified at function
                  signature. If you don't want to enforce a specific dtype then change
@@ -257,10 +248,6 @@ class NumpyNdarray(IODescriptor["np.ndarray[t.Any, np.dtype[t.Any]]"]):
             @svc.api(input=inp, output=NumpyNdarray())
             def predict() -> np.ndarray:...
         """  # noqa: LN001
-        if name is None:
-            name = f"ExampleNdarray_{uuid.uuid4().hex[:7].upper()}"
-        setattr(cls, "_sample_name", name)
-        setattr(cls, "_from_sample", True)
         return cls(
             dtype=sample_input.dtype,
             shape=sample_input.shape,

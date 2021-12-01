@@ -11,11 +11,17 @@ logger = logging.getLogger(__name__)
 
 
 def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
-    """
-    if bentoml is installed in editor mode(pip install -e), this will build a wheel
+    """This is for BentoML developers to create Bentos that contains their local bentoml
+    build base on their development branch. To enable this behavior, the developer must
+    set env var BENTOML_BUNDLE_LOCAL_BUILD=True before building a Bento.
+
+    If bentoml is installed in editor mode(pip install -e), this will build a wheel
     distribution with the local bentoml source and add it to saved bento directory
     under {bento_path}/env/python/wheels/
     """
+    if not os.environ.get("BENTOML_BUNDLE_LOCAL_BUILD", None):
+        return
+
     if is_pypi_installed_bentoml():
         # skip this entirely if BentoML is installed from PyPI
         return

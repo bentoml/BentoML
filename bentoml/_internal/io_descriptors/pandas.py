@@ -2,7 +2,6 @@ import logging
 import typing as t
 from typing import TYPE_CHECKING
 
-from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -38,21 +37,18 @@ def _infer_type(item: str) -> str:  # pragma: no cover
 
 
 def _schema_type(
-    mime_type: str, dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]]
+    dtype: t.Optional[t.Union[bool, t.Dict[str, t.Any]]]
 ) -> t.Dict[str, t.Any]:  # pragma: no cover
-    if mime_type == "text/csv":
-        return {"type": "string", "format": "binary"}
+    if isinstance(dtype, dict):
+        return {
+            "type": "object",
+            "properties": {
+                k: {"type": "array", "items": {"type": _infer_type(v)}}
+                for k, v in dtype.items()
+            },
+        }
     else:
-        if isinstance(dtype, dict):
-            return {
-                "type": "object",
-                "properties": {
-                    k: {"type": "array", "items": {"type": _infer_type(v)}}
-                    for k, v in dtype.items()
-                },
-            }
-        else:
-            return {"type": "object"}
+        return {"type": "object"}
 
 
 class PandasDataFrame(IODescriptor["pd.DataFrame"]):
@@ -171,7 +167,7 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
         self._mime_type = "application/json"
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
-        return _schema_type(self._mime_type, self._dtype)
+        return _schema_type(self._dtype)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""
@@ -419,7 +415,7 @@ class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
         self._mime_type = "application/json"
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
-        return _schema_type(self._mime_type, self._dtype)
+        return _schema_type(self._dtype)
 
     def openapi_request_schema(self) -> t.Dict[str, t.Any]:
         """Returns OpenAPI schema for incoming requests"""

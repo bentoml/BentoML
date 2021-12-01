@@ -95,12 +95,12 @@ def test_text_openapi_schema():
     "exp, kwargs",
     [
         (
-            {"text/csv": {"schema": {"type": "string", "format": "binary"}}},
-            {"mime_type": "text/csv"},
+            {"application/json": {"schema": {"type": "object"}}},
+            {},
         ),
         (
             {"application/json": {"schema": {"type": "object"}}},
-            {"mime_type": "application/json", "dtype": "int"},
+            {"dtype": "int"},
         ),
         (
             {
@@ -115,7 +115,6 @@ def test_text_openapi_schema():
                 }
             },
             {
-                "mime_type": "application/json",
                 "dtype": {"index": "int64", "name": "str"},
                 "columns": ["int64", "str"],
             },

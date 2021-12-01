@@ -93,7 +93,7 @@ def test_keras_v1_setup_run_batch(modelstore: "ModelStore") -> None:
     model_class = KerasSequentialModel()
     tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
     runner = bentoml.keras.load_runner(tag, model_store=modelstore)
-    with runner.session.as_default():
+    with runner.session().as_default():
         assert runner.run_batch([test_data]) == res
 
 

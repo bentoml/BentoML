@@ -7,7 +7,7 @@ from simple_di import Provide, inject
 
 from ..configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     Lock = multiprocessing.synchronize.Lock
 
 logger = logging.getLogger(__name__)

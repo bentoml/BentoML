@@ -9,7 +9,7 @@ try:
 except ImportError:
     import importlib_metadata
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from tensorflow.python.framework.type_spec import TypeSpec
 
 TF_KERAS_DEFAULT_FUNCTIONS = {

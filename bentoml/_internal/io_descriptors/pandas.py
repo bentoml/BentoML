@@ -6,7 +6,7 @@ from multipart.multipart import parse_options_header
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...exceptions import BadInput, BentoMLException, InvalidArgument
+from ...exceptions import BadInput, InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
@@ -160,9 +160,6 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
-        mime_type: t.Union[
-            Literal["text/csv"], Literal["application/json"]
-        ] = "application/json",
     ):
         self._orient = orient
         self._columns = columns
@@ -171,7 +168,7 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
         self._enforce_dtype = enforce_dtype
         self._shape = shape
         self._enforce_shape = enforce_shape
-        self._mime_type = mime_type
+        self._mime_type = "application/json"
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._mime_type, self._dtype)
@@ -196,18 +193,6 @@ class PandasDataFrame(IODescriptor["pd.DataFrame"]):
             a `pd.DataFrame` object. This can then be used
              inside users defined logics.
         """
-        content_type, _ = parse_options_header(request.headers["content-type"])
-        mime_type = content_type.decode().lower()
-        if mime_type not in ["application/json", "text/csv"]:
-            raise BentoMLException(
-                f"mimetype {mime_type} is not supported, BentoML will only"
-                " supports `application/json` or `text/csv`"
-            )
-        if mime_type != self._mime_type:
-            logger.warning(
-                f"Current mimetype is {self._mime_type}, while receiving mimetype"
-                f" to be {mime_type}. This will lead to mismatch OpenAPI specification."
-            )
         obj = await request.body()
         if self._enforce_dtype:
             if self._dtype is None:
@@ -425,16 +410,13 @@ class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
         enforce_dtype: bool = False,
         shape: t.Optional[t.Tuple[int, ...]] = None,
         enforce_shape: bool = False,
-        mime_type: t.Union[
-            Literal["text/csv"], Literal["application/json"]
-        ] = "application/json",
     ):
         self._orient = orient
         self._dtype = dtype
         self._enforce_dtype = enforce_dtype
         self._shape = shape
         self._enforce_shape = enforce_shape
-        self._mime_type = mime_type
+        self._mime_type = "application/json"
 
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return _schema_type(self._mime_type, self._dtype)
@@ -483,7 +465,9 @@ class PandasSeries(IODescriptor["pd.Series[t.Any]"]):
                 ), f"incoming has shape {res.shape} where enforced shape to be {self._shape}"
         return res
 
-    async def to_http_response(self, obj: t.Union[t.Any, "pd.Series"]) -> Response:
+    async def to_http_response(
+        self, obj: t.Union[t.Any, "pd.Series[t.Any]"]
+    ) -> Response:
         """
         Process given objects and convert it to HTTP response.
 

@@ -1,4 +1,6 @@
 # flake8: noqa: E402
+from typing import TYPE_CHECKING
+
 from ._internal.configuration import BENTOML_VERSION as __version__
 from ._internal.configuration import load_global_config
 
@@ -19,8 +21,11 @@ from ._internal.utils import LazyLoader as _LazyLoader
 from .bentos import list  # pylint: disable=W0622
 from .bentos import build, delete, export_bento, get, import_bento
 
-keras = _LazyLoader("bentoml.keras", globals(), "bentoml.keras")
-tensorflow = _LazyLoader("bentoml.tensorflow", globals(), "bentoml.tensorflow")
+if TYPE_CHECKING:
+    from bentoml import keras, tensorflow
+else:
+    keras = _LazyLoader("keras", globals(), "bentoml.keras")
+    tensorflow = _LazyLoader("tensorflow", globals(), "bentoml.tensorflow")
 
 __all__ = [
     "__version__",
@@ -35,6 +40,7 @@ __all__ = [
     "export_bento",
     "build",
     "load",
+    # frameworks
     "keras",
     "tensorflow",
 ]

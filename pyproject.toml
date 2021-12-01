@@ -111,7 +111,7 @@ profile = "black"
 skip_glob = ["typings"]
 
 [tool.pyright]
-include = ['bentoml/**/*']
+include = ["bentoml", "typings"]
 exclude = ['bentoml/_version.py','bentoml/__main__.py']
 strictListInference = true
 strictDictionaryInference = true

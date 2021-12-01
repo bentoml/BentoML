@@ -69,7 +69,7 @@ fi
 
 # Install wheels included in Bento
 if [ $# -eq 0 ] || [ $1 == "install_wheels" ] ; then
-  if [ -d ./env/docker/wheels ]; then
+  if [ -d ./env/python/wheels ]; then
     echo "Installing wheels.."
     pip install --no-cache-dir ./env/python/wheels/*.whl
   fi

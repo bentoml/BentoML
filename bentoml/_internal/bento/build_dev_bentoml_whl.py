@@ -3,6 +3,7 @@ import importlib.util
 import logging
 import os
 import shutil
+import uuid
 
 from ..configuration import is_pypi_installed_bentoml
 from ..utils.tempdir import TempDirectory
@@ -43,6 +44,8 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
             # Assuming developer has setuptools installed from dev-requirements.txt
             from setuptools import sandbox
 
+            bdist_dir = os.path.join("build", str(uuid.uuid4())[0:8])
+
             sandbox.run_setup(
                 bentoml_setup_py,
                 [
@@ -51,7 +54,7 @@ def build_bentoml_whl_to_target_if_in_editable_mode(target_path):
                     "--dist-dir",
                     dist_dir,
                     "--bdist-dir",
-                    ".",
+                    bdist_dir,
                 ],
             )
             # copy the built wheel file to target directory

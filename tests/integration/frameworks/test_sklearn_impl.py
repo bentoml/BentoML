@@ -26,7 +26,7 @@ res_arr = np.array(
 
 # fmt: on
 if TYPE_CHECKING:
-    from bentoml._internal.models import Model, ModelStore
+    from bentoml._internal.models import ModelStore
     from bentoml._internal.types import Tag
 
 

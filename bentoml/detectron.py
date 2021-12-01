@@ -15,6 +15,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 if TYPE_CHECKING:  # pragma: no cover
     from ._internal.models import ModelStore
 try:
+    # pylint: disable=unused-import
     import detectron2.checkpoint as checkpoint
     import detectron2.config as config
     import detectron2.modeling as modeling

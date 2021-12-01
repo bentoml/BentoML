@@ -6,7 +6,6 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import PKL_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
-from ._internal.runner.utils import Params
 from ._internal.types import PathType, Tag
 from ._internal.utils import LazyLoader
 from .exceptions import BentoMLException, MissingDependencyException
@@ -161,16 +160,12 @@ class _SklearnRunner(Runner):
         self._infer_func = getattr(self._model, self._function_name)
 
     # pylint: disable=arguments-differ
-    def _run_batch(
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
-        **kwargs: t.Any,
+        inputs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"],
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
-        params = Params[t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame"]](
-            *args, **kwargs
-        )
         with parallel_backend(self._backend, n_jobs=self.num_concurrency_per_replica):
-            return self._infer_func(*params.args, **params.kwargs)
+            return self._infer_func(inputs)
 
 
 @inject

@@ -7,7 +7,6 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
-from ._internal.runner.utils import Params
 from ._internal.types import Tag
 from .exceptions import BentoMLException, MissingDependencyException
 
@@ -256,16 +255,13 @@ class _CatBoostRunner(Runner):
         self._model = _load_helper(self._model_file, self._model_params)
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    def _run_batch(
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        *args: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame", cbt.Pool],
-        **kwargs,
+        inputs: t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame", cbt.Pool],
     ) -> "np.ndarray[t.Any, np.dtype[t.Any]]":
         # TODO: Take a batch type and containers
-        params = Params[
-            t.Union["np.ndarray[t.Any, np.dtype[t.Any]]", "DataFrame", cbt.Pool]
-        ](*args, **kwargs)
-        res = self._predict_fn(*params.args, **params.kwargs)
+        res = self._predict_fn(inputs)
         return np.asarray(res)
 
 

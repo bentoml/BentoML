@@ -13,7 +13,7 @@ from .exceptions import BentoMLException, MissingDependencyException
 
 _MT = t.TypeVar("_MT")
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import pandas as pd
     from joblib.parallel import Parallel
 

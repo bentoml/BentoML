@@ -12,7 +12,7 @@ from ._internal.models import H5_EXT, HDF5_EXT, JSON_EXT, PKL_EXT, SAVE_NAMESPAC
 from ._internal.types import Tag
 from .exceptions import MissingDependencyException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from _internal.models import ModelStore
     from tensorflow.python.client.session import BaseSession
     from tensorflow.python.framework.ops import Graph

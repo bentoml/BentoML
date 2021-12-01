@@ -55,13 +55,6 @@ class Text(IODescriptor[str]):
         IO Descriptor that represents strings type.
     """
 
-    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
-        if len(args) > 0 or len(kwargs) > 0:
-            raise EnvironmentError(
-                f"{self.__class__.__name__} is not designed to take any arguments."
-                " You should only call `Text()` instead."
-            )
-
     def openapi_schema_type(self) -> t.Dict[str, t.Any]:
         return {"type": "string"}
 

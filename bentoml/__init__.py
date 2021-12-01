@@ -24,8 +24,8 @@ from .bentos import build, delete, export_bento, get, import_bento
 if TYPE_CHECKING:
     from bentoml import keras, tensorflow
 else:
-    keras = _LazyLoader("keras", globals(), "bentoml.keras")
-    tensorflow = _LazyLoader("tensorflow", globals(), "bentoml.tensorflow")
+    keras = _LazyLoader("bentoml.keras", globals(), "bentoml.keras")
+    tensorflow = _LazyLoader("bentoml.tensorflow", globals(), "bentoml.tensorflow")
 
 __all__ = [
     "__version__",

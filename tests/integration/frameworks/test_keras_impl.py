@@ -65,9 +65,10 @@ def test_keras_save_load(
     else:
         assert_have_file_extension(model_info.path, ".h5")
     if not TF2:
+        session = bentoml.keras.get_session()
         # Initialize variables in the graph/model
-        bentoml.keras._sess.run(tf.global_variables_initializer())
-        with bentoml.keras._sess.as_default():
+        session.run(tf.global_variables_initializer())
+        with session.as_default():
             loaded = bentoml.keras.load(tag, model_store=modelstore)
             predict_assert_equal(loaded)
     else:
@@ -92,7 +93,7 @@ def test_keras_v1_setup_run_batch(modelstore: "ModelStore") -> None:
     model_class = KerasSequentialModel()
     tag = bentoml.keras.save(MODEL_NAME, model_class, model_store=modelstore)
     runner = bentoml.keras.load_runner(tag, model_store=modelstore)
-    with runner._session.as_default():
+    with runner.session.as_default():
         assert runner.run_batch([test_data]) == res
 
 

@@ -54,6 +54,15 @@ _MODEL_JSON_FNAME = f"{SAVE_NAMESPACE}_json{JSON_EXT}"
 
 
 def get_session() -> "BaseSession":
+    """
+    Return TF1 sessions for bentoml.keras. Users should use this for TF1 in order to run prediction.
+    Example::
+        session = bentoml.keras.get_session()
+        # Initialize variables in the graph/model
+        session.run(tf.global_variables_initializer())
+        with session.as_default():
+            loaded = bentoml.keras.load(tag, model_store=modelstore)
+    """
     return _sess
 
 
@@ -188,6 +197,10 @@ class _KerasRunner(_TensorflowRunner):
             model_store=model_store,
         )
         self._session = get_session()
+
+    @property
+    def session() -> "BaseSession":
+        return self._session
 
     # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:

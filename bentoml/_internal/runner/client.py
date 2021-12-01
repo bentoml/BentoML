@@ -5,7 +5,7 @@ from simple_di import Provide, inject
 from ..configuration.containers import BentoServerContainer
 from ..runner.utils import Params
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from aiohttp import BaseConnector
 
 

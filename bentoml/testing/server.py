@@ -17,7 +17,7 @@ from bentoml._internal.utils import cached_contextmanager, reserve_free_port
 logger = logging.getLogger("bentoml.tests")
 
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from aiohttp.typedefs import LooseHeaders
     from starlette.datastructures import FormData, Headers
 

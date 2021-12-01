@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 import importlib_metadata
 from packaging.requirements import Requirement
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ..service import Service
 
 EPP_NO_ERROR = 0

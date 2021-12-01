@@ -23,7 +23,7 @@ from ..store import Store, StoreItem
 from ..types import PathType, Tag
 from .build_config import BentoBuildConfig
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from fs.base import FS
 
     from ..models import Model

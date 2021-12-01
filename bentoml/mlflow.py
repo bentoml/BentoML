@@ -14,7 +14,7 @@ from ._internal.models import Model as BentoModel
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
 
     import mlflow.pyfunc
     from mlflow.pyfunc import PyFuncModel

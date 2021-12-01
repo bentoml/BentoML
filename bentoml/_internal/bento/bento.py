@@ -23,7 +23,7 @@ from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from fs.base import FS
 
     from ..models import Model

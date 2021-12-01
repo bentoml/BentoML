@@ -11,7 +11,7 @@ from .json import MIME_TYPE_JSON
 from ...exceptions import BadInput, InternalServerError
 from ..utils.lazy_loader import LazyLoader
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
 else:
     np = LazyLoader("np", globals(), "numpy")

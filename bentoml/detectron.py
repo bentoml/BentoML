@@ -11,7 +11,7 @@ from ._internal.models import Model, PTH_EXT, YAML_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._internal.models import ModelStore
 try:
     import torch

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 logger = logging.getLogger("bentoml.tests")
 
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from aiohttp.typedefs import LooseHeaders
     from starlette.datastructures import Headers, FormData
 

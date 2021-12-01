@@ -10,7 +10,7 @@ from ._internal.models import Model, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import pandas as pd
 
     from ._internal.models import ModelStore  # noqa

@@ -26,7 +26,7 @@ Instruction for installing `paddlepaddle`:
     For other version of CUDA or different platforms refer to https://www.paddlepaddle.org.cn/ for more information
 """  # noqa: LN001
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
     import paddle
     import paddle.nn

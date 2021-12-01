@@ -14,7 +14,7 @@ from . import expand_env_var
 from ..utils import get_free_port, validate_or_create_dir
 from ...exceptions import BentoMLConfigException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401
 
     from pyarrow._plasma import (  # pylint: disable=E0611 # noqa: F401,LN001 # type: ignore[reportMissingImports]

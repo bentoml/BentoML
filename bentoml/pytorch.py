@@ -19,7 +19,7 @@ _ModelType = t.TypeVar(
     "_ModelType", bound=t.Union["torch.nn.Module", "torch.jit.ScriptModule"]
 )
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._internal.models import ModelStore
 
 try:

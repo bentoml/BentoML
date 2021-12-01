@@ -9,7 +9,7 @@ from .csv import csv_row, csv_quote, csv_split, csv_unquote, csv_splitlines
 from .lazy_loader import LazyLoader
 from ...exceptions import BadInput, BentoMLException
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import pandas as pd
 else:
     pd = LazyLoader("pd", globals(), "pandas")

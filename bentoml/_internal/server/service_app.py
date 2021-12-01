@@ -13,7 +13,7 @@ from ..service.service import Service
 from ..configuration.containers import BentoMLContainer, BentoServerContainer
 from ..io_descriptors.multipart import Multipart
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from starlette.routing import BaseRoute
     from starlette.requests import Request
     from starlette.responses import Response

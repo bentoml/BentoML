@@ -11,13 +11,12 @@ from ._internal.models import Model, PKL_EXT, TXT_EXT, SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
-    import lightgbm as lgb
     from _internal.models import ModelStore
 
 try:
-    import lightgbm as lgb  # noqa: F811
+    import lightgbm as lgb
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """lightgbm is required in order to use module `bentoml.lightgbm`, install

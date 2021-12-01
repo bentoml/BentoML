@@ -15,7 +15,7 @@ from ._internal.bento.utils import resolve_user_filepath
 from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._internal.bento import BentoStore, SysPathBento
     from ._internal.models import ModelStore
 

@@ -9,7 +9,7 @@ from ..configuration.containers import BentoMLContainer
 feedback_logger = logging.getLogger("bentoml.feedback")
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from starlette.requests import Request
     from starlette.responses import Response
     from starlette.applications import Starlette

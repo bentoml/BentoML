@@ -12,7 +12,7 @@ from ..utils.formparser import (
     concat_to_multipart_responses,
 )
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np  # noqa
 
     from .json import JSONType  # noqa

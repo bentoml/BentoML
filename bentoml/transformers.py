@@ -24,7 +24,7 @@ from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from transformers import (
         PreTrainedModel,
         PretrainedConfig,

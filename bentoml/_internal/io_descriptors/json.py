@@ -10,7 +10,7 @@ from .base import IODescriptor
 from ...exceptions import BadInput, BentoMLException, MissingDependencyException
 from ..utils.lazy_loader import LazyLoader
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
     import pydantic

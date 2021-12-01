@@ -25,7 +25,7 @@ from ._internal.utils.tensorflow import (
 )
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from _internal.models import ModelStore
 
 try:

@@ -19,7 +19,7 @@ from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from aiohttp import BaseConnector, ClientSession
     from aiohttp.web import Request, Application
 

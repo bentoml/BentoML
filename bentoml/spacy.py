@@ -18,7 +18,7 @@ from ._internal.runner import Runner
 from ._internal.bento.pip_pkg import split_requirement, packages_distributions
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from spacy import Vocab
     from thinc.config import Config
     from spacy.tokens.doc import Doc

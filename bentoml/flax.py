@@ -7,7 +7,7 @@ from .exceptions import MissingDependencyException
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from _internal.models.store import ModelStore
 
 try:

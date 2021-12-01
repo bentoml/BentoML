@@ -16,7 +16,7 @@ from ._internal.configuration.containers import BentoMLContainer
 SUPPORTED_ONNX_BACKEND: t.List[str] = ["onnxruntime", "onnxruntime-gpu"]
 ONNX_EXT: str = ".onnx"
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import pandas as pd
     from _internal.models import ModelStore
 

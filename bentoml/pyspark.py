@@ -8,7 +8,7 @@ from ._internal.types import Tag
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from _internal.models import ModelStore
 
 try:

@@ -241,7 +241,7 @@ flags:
   keras:
     carryforward: true
     paths:
-      - bentoml/keras.py
+      - bentoml/_internal/frameworks/keras.py
   lightgbm:
     carryforward: true
     paths:
@@ -293,7 +293,7 @@ flags:
   tensorflow:
     carryforward: true
     paths:
-      - bentoml/tensorflow.py
+      - bentoml/_internal/frameworks/tensorflow.py
   transformers:
     carryforward: true
     paths:

@@ -1,13 +1,16 @@
 import typing as t
-import logging
+import importlib.util
 from typing import TYPE_CHECKING
 
 from ...exceptions import MissingDependencyException
 
+try:
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
+
 if TYPE_CHECKING:
     from tensorflow.python.framework.type_spec import TypeSpec
-
-logger = logging.getLogger(__name__)
 
 TF_KERAS_DEFAULT_FUNCTIONS = {
     "_default_save_signature",
@@ -23,6 +26,33 @@ TENSOR_CLASS_NAMES = (
 )
 
 ST = t.TypeVar("ST")
+
+
+def get_tf_version() -> str:
+    # courtesy of huggingface/transformers
+    _tf_version = ""
+    _tf_available = importlib.util.find_spec("tensorflow") is not None
+    if _tf_available:
+        candidates = (
+            "tensorflow",
+            "tensorflow-cpu",
+            "tensorflow-gpu",
+            "tf-nightly",
+            "tf-nightly-cpu",
+            "tf-nightly-gpu",
+            "intel-tensorflow",
+            "intel-tensorflow-avx512",
+            "tensorflow-rocm",
+            "tensorflow-macos",
+        )
+        # For the metadata, we have to look for both tensorflow and tensorflow-cpu
+        for pkg in candidates:
+            try:
+                _tf_version = importlib_metadata.version(pkg)
+                break
+            except importlib_metadata.PackageNotFoundError:
+                pass
+    return _tf_version
 
 
 def _isinstance_wrapper(obj: ST, sobj: t.Union[str, type, t.Sequence]) -> bool:

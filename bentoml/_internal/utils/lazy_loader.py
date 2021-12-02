@@ -24,7 +24,7 @@ class LazyLoader(types.ModuleType):
     def __init__(
         self,
         local_name: str,
-        parent_module_globals: dict,
+        parent_module_globals: t.Dict[str, t.Any],
         name: str,
         warning: t.Optional[str] = None,
         exc_msg: t.Optional[str] = None,
@@ -58,10 +58,9 @@ class LazyLoader(types.ModuleType):
         #   LazyLoader, lookups are efficient (__getattr__ is only called on lookups
         #   that fail).
         self.__dict__.update(module.__dict__)
-
         return module
 
-    def __getattr__(self, item):  # type: ignore[no-untyped-def]
+    def __getattr__(self, item: t.Any) -> t.Any:
         if self._module is None:
             self._module = self._load()
         return getattr(self._module, item)

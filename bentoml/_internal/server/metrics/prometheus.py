@@ -44,7 +44,8 @@ class PrometheusClient:
     @property
     def registry(self):
         if self._registry is None:
-            from prometheus_client import multiprocess, CollectorRegistry
+            from prometheus_client import multiprocess
+            from prometheus_client import CollectorRegistry
 
             registry = CollectorRegistry()
             if self.multiproc:

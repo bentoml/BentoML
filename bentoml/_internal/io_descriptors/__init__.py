@@ -4,7 +4,8 @@ from .json import JSON
 from .text import Text
 from .image import Image
 from .numpy import NumpyNdarray
-from .pandas import PandasSeries, PandasDataFrame
+from .pandas import PandasSeries
+from .pandas import PandasDataFrame
 from .multipart import Multipart
 
 # TODO: add IO descriptors for audio and video files

@@ -5,12 +5,14 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from ...exceptions import BentoMLException
 from ..server.base_app import BaseAppFactory
 from ..service.service import Service
-from ..configuration.containers import BentoMLContainer, BentoServerContainer
+from ..configuration.containers import BentoMLContainer
+from ..configuration.containers import BentoServerContainer
 from ..io_descriptors.multipart import Multipart
 
 if TYPE_CHECKING:
@@ -182,7 +184,8 @@ class ServiceAppFactory(BaseAppFactory):
         /classify
         /predict
         """
-        from starlette.routing import Mount, Route
+        from starlette.routing import Mount
+        from starlette.routing import Route
         from starlette.staticfiles import StaticFiles
 
         routes = super().routes()

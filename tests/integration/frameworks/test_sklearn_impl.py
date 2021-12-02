@@ -25,7 +25,8 @@ res_arr = np.array(
 
 # fmt: on
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import Model, ModelStore
+    from bentoml._internal.models import Model
+    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 

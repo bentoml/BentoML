@@ -2,7 +2,9 @@ import typing as t
 
 import pytest
 import catboost as cbt
-from catboost.core import CatBoost, CatBoostRegressor, CatBoostClassifier
+from catboost.core import CatBoost
+from catboost.core import CatBoostRegressor
+from catboost.core import CatBoostClassifier
 
 import bentoml.models
 import bentoml.catboost

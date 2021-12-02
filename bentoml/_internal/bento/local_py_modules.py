@@ -5,7 +5,8 @@ import inspect
 import logging
 import importlib
 import modulefinder
-from typing import List, Tuple
+from typing import List
+from typing import Tuple
 from unittest.mock import patch
 
 from ..types import PathType

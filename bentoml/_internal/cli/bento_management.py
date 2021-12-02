@@ -2,7 +2,8 @@ import sys
 
 import click
 
-from .click_utils import _is_valid_bento_tag, _is_valid_bento_name
+from .click_utils import _is_valid_bento_tag
+from .click_utils import _is_valid_bento_name
 
 
 def parse_delete_targets_argument_callback(

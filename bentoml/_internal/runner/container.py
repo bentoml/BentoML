@@ -3,7 +3,8 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import cloudpickle
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from .utils import TypeRef
 from ..configuration.containers import BentoServerContainer

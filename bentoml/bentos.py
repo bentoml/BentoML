@@ -6,7 +6,8 @@ import logging
 from typing import TYPE_CHECKING
 
 import fs
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from .exceptions import InvalidArgument
 from ._internal.bento import Bento
@@ -16,7 +17,8 @@ from ._internal.bento.build_config import BentoBuildConfig
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
-    from ._internal.bento import BentoStore, SysPathBento
+    from ._internal.bento import BentoStore
+    from ._internal.bento import SysPathBento
     from ._internal.models import ModelStore
 
 

@@ -12,7 +12,8 @@ from detectron2.modeling import build_model
 import bentoml.detectron
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import ModelInfo, ModelStore
+    from bentoml._internal.models import ModelInfo
+    from bentoml._internal.models import ModelStore
 
 if t.TYPE_CHECKING:
     from detectron2.config import CfgNode  # pylint: disable=unused-import

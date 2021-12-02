@@ -7,7 +7,8 @@ logger = logging.getLogger("bentoml.tests")
 
 if TYPE_CHECKING:
     from aiohttp.typedefs import LooseHeaders
-    from starlette.datastructures import Headers, FormData
+    from starlette.datastructures import Headers
+    from starlette.datastructures import FormData
 
 
 async def parse_multipart_form(headers: "Headers", body: bytes) -> "FormData":

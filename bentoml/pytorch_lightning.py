@@ -2,13 +2,16 @@ import typing as t
 import functools
 from typing import TYPE_CHECKING
 
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from bentoml.pytorch import _PyTorchRunner as _PyTorchLightningRunner
 
 from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from ._internal.models import Model, PT_EXT, SAVE_NAMESPACE
+from ._internal.models import Model
+from ._internal.models import PT_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.configuration.containers import BentoMLContainer
 
 _PL_IMPORT_ERROR = f"""\

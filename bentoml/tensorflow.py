@@ -9,20 +9,20 @@ from typing import TYPE_CHECKING
 from distutils.dir_util import copy_tree
 
 import numpy as np
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from .exceptions import MissingDependencyException
-from ._internal.types import Tag, PathType
+from ._internal.types import Tag
+from ._internal.types import PathType
 from ._internal.models import Model
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params
-from ._internal.utils.tensorflow import (
-    get_arg_names,
-    cast_tensor_by_spec,
-    get_input_signatures,
-    get_restored_functions,
-    pretty_format_restored_model,
-)
+from ._internal.utils.tensorflow import get_arg_names
+from ._internal.utils.tensorflow import cast_tensor_by_spec
+from ._internal.utils.tensorflow import get_input_signatures
+from ._internal.utils.tensorflow import get_restored_functions
+from ._internal.utils.tensorflow import pretty_format_restored_model
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:
@@ -49,7 +49,8 @@ TF2 = tf.__version__.startswith("2")
 
 try:
     import tensorflow_hub as hub
-    from tensorflow_hub import resolve, native_module
+    from tensorflow_hub import resolve
+    from tensorflow_hub import native_module
 except ImportError:  # pragma: no cover
     logger.warning(
         """\

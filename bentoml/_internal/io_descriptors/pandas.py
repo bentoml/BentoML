@@ -2,13 +2,13 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-from typing_extensions import Literal
 from starlette.requests import Request
 from starlette.responses import Response
 
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
-from ...exceptions import BadInput, InvalidArgument
+from ...exceptions import BadInput
+from ...exceptions import InvalidArgument
 from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:

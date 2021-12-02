@@ -15,9 +15,12 @@ import torch
 import mlflow.pytorch
 import pytorch_lightning as pl
 from torch.nn import functional as F
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
+from torchvision import datasets
+from torchvision import transforms
+from torch.utils.data import DataLoader
+from torch.utils.data import random_split
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.metrics.functional import accuracy
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 

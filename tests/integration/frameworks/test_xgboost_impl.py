@@ -15,7 +15,8 @@ from tests.utils.helpers import assert_have_file_extension
 from tests.utils.frameworks.sklearn_utils import test_df
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import Model, ModelStore
+    from bentoml._internal.models import Model
+    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 

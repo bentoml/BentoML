@@ -1,6 +1,8 @@
-from typing import Dict, TYPE_CHECKING
+from typing import Dict
+from typing import TYPE_CHECKING
 
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from ..runner.utils import Params
 from ..configuration.containers import BentoServerContainer

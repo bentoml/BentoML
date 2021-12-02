@@ -11,7 +11,11 @@ from types import FunctionType
 from functools import reduce
 
 from absl import flags
-from glom import glom, Path, Assign, PathAccessError, PathAssignError
+from glom import glom
+from glom import Path
+from glom import Assign
+from glom import PathAccessError
+from glom import PathAssignError
 from ruamel import yaml
 from cerberus import Validator
 

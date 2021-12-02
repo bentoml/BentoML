@@ -12,14 +12,16 @@ import urllib.request
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
-from .._internal.utils import cached_contextmanager, reserve_free_port
+from .._internal.utils import reserve_free_port
+from .._internal.utils import cached_contextmanager
 
 logger = logging.getLogger("bentoml.tests")
 
 
 if TYPE_CHECKING:
     from aiohttp.typedefs import LooseHeaders
-    from starlette.datastructures import Headers, FormData
+    from starlette.datastructures import Headers
+    from starlette.datastructures import FormData
 
     import docker
 

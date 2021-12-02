@@ -2,13 +2,17 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from bentoml._internal.runner.utils import Params
 
-from .exceptions import BentoMLException, MissingDependencyException
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from ._internal.models import Model, JSON_EXT, SAVE_NAMESPACE
+from ._internal.models import Model
+from ._internal.models import JSON_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 

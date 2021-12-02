@@ -2,11 +2,16 @@ import typing as t
 import logging
 from typing import TYPE_CHECKING
 
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
-from .exceptions import BentoMLException, MissingDependencyException
-from ._internal.types import Tag, PathType
-from ._internal.models import Model, PKL_EXT, SAVE_NAMESPACE
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
+from ._internal.types import Tag
+from ._internal.types import PathType
+from ._internal.models import Model
+from ._internal.models import PKL_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
@@ -21,13 +26,11 @@ if TYPE_CHECKING:
 
 try:
     from pycaret.utils import version
-    from pycaret.internal.tabular import (
-        load_model,
-        save_model,
-        load_config,
-        save_config,
-        predict_model,
-    )
+    from pycaret.internal.tabular import load_model
+    from pycaret.internal.tabular import save_model
+    from pycaret.internal.tabular import load_config
+    from pycaret.internal.tabular import save_config
+    from pycaret.internal.tabular import predict_model
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

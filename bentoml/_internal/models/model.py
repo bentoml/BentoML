@@ -1,7 +1,8 @@
 import typing as t
 import logging
 from typing import TYPE_CHECKING
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 from collections import UserDict
 
 import fs
@@ -10,10 +11,13 @@ import yaml
 import fs.errors
 import fs.mirror
 from fs.base import FS
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
-from ..store import Store, StoreItem
-from ..types import Tag, PathType
+from ..store import Store
+from ..store import StoreItem
+from ..types import Tag
+from ..types import PathType
 from ...exceptions import BentoMLException
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer

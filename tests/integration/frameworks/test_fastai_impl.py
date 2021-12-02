@@ -6,7 +6,8 @@ from fastai.torch_core import Module
 
 from bentoml.fastai import FastAIModel
 from tests.utils.helpers import assert_have_file_extension
-from tests.utils.frameworks.pytorch_utils import test_df, LinearModel
+from tests.utils.frameworks.pytorch_utils import test_df
+from tests.utils.frameworks.pytorch_utils import LinearModel
 
 
 def get_items(_x):

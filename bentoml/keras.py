@@ -5,11 +5,17 @@ from pathlib import Path
 
 import numpy as np
 import cloudpickle
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from ._internal.models import Model, H5_EXT, PKL_EXT, HDF5_EXT, JSON_EXT, SAVE_NAMESPACE
+from ._internal.models import Model
+from ._internal.models import H5_EXT
+from ._internal.models import PKL_EXT
+from ._internal.models import HDF5_EXT
+from ._internal.models import JSON_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.configuration.containers import BentoMLContainer
 
 if TYPE_CHECKING:

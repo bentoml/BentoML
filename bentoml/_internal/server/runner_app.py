@@ -1,7 +1,8 @@
 import logging
 from typing import TYPE_CHECKING
 
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from ..server.base_app import BaseAppFactory
 from ..configuration.containers import BentoMLContainer

@@ -5,12 +5,16 @@ import logging
 from typing import TYPE_CHECKING
 from distutils.dir_util import copy_tree
 
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
-from .exceptions import NotFound, BentoMLException, MissingDependencyException
+from .exceptions import NotFound
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
 from ._internal.utils import LazyLoader
-from ._internal.models import Model, SAVE_NAMESPACE
+from ._internal.models import Model
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 

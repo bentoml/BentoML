@@ -2,7 +2,8 @@ import pickle
 from typing import Sequence
 from functools import lru_cache
 
-from ..types import HTTPRequest, HTTPResponse
+from ..types import HTTPRequest
+from ..types import HTTPResponse
 
 MARSHAL_REQUEST_HEADER = "BentoML-Is-Merged-Request"
 

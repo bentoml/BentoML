@@ -1,7 +1,8 @@
 import typing as t
 from typing import TYPE_CHECKING
 
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from .exceptions import MissingDependencyException
 from ._internal.runner import Runner

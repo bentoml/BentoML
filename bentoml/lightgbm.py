@@ -3,11 +3,16 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import joblib
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
-from .exceptions import BentoMLException, MissingDependencyException
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from ._internal.models import Model, PKL_EXT, TXT_EXT, SAVE_NAMESPACE
+from ._internal.models import Model
+from ._internal.models import PKL_EXT
+from ._internal.models import TXT_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 

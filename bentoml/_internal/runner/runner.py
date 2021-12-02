@@ -1,18 +1,18 @@
 import os
 import enum
 import typing as t
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 
 import attr
 import psutil
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
-from .utils import (
-    _cpu_converter,
-    _gpu_converter,
-    _mem_converter,
-    _query_cgroup_cpu_count,
-)
+from .utils import _cpu_converter
+from .utils import _gpu_converter
+from .utils import _mem_converter
+from .utils import _query_cgroup_cpu_count
 from ..types import Tag
 from ..runner.utils import Params
 from ..runner.container import AutoContainer

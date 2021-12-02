@@ -10,8 +10,8 @@ isort>=5.0.0
 pandas
 pydantic
 pylint>=2.11.0
-pytest-cov>=3.0.0
 pytest>=6.2.0
 pytest-asyncio
+pytest-cov>=3.0.0
 pytest-cov>=2.7.1
 scikit-learn

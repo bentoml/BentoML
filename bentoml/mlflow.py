@@ -6,9 +6,11 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 
 import yaml
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
-from .exceptions import BentoMLException, MissingDependencyException
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
 from ._internal.models import Model as BentoModel
 from ._internal.runner import Runner

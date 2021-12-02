@@ -8,7 +8,8 @@ import imageio
 import bentoml.easyocr
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import Model, ModelStore
+    from bentoml._internal.models import Model
+    from bentoml._internal.models import ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 TEST_RESULT: t.List[str] = ["西", "愚园路", "东", "315", "309", "W", "Yuyuan Rd。", "E"]

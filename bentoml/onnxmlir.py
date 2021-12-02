@@ -4,11 +4,13 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import numpy as np
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from ._internal.models import Model, SAVE_NAMESPACE
+from ._internal.models import Model
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 

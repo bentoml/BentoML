@@ -84,7 +84,8 @@ def get_debug_mode() -> bool:
 def load_global_config(bentoml_config_file: t.Optional[str] = None):
     """Load global configuration of BentoML"""
 
-    from ..configuration.containers import BentoMLContainer, BentoMLConfiguration
+    from ..configuration.containers import BentoMLContainer
+    from ..configuration.containers import BentoMLConfiguration
 
     if not bentoml_config_file:
         bentoml_config_file = get_bentoml_config_file_from_env()

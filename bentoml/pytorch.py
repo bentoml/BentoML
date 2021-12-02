@@ -5,11 +5,14 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 
 import cloudpickle
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
 from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from ._internal.models import Model, PT_EXT, SAVE_NAMESPACE
+from ._internal.models import Model
+from ._internal.models import PT_EXT
+from ._internal.models import SAVE_NAMESPACE
 from ._internal.runner import Runner
 from ._internal.runner.utils import Params
 from ._internal.configuration.containers import BentoMLContainer

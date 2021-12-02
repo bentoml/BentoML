@@ -3,7 +3,8 @@ import shutil
 import typing as t
 import logging
 from typing import TYPE_CHECKING
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 
 import fs
 import attr
@@ -13,12 +14,16 @@ import pathspec
 import fs.errors
 import fs.mirror
 from fs.copy import copy_file
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
-from ..store import Store, StoreItem
-from ..types import Tag, PathType
+from ..store import Store
+from ..store import StoreItem
+from ..types import Tag
+from ..types import PathType
 from ..models import ModelStore
-from ...exceptions import InvalidArgument, BentoMLException
+from ...exceptions import InvalidArgument
+from ...exceptions import BentoMLException
 from .build_config import BentoBuildConfig
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer

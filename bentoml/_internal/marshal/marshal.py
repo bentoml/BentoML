@@ -3,25 +3,33 @@ import asyncio
 import logging
 import functools
 import traceback
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
+from typing import TYPE_CHECKING
 
 import psutil
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
-from .utils import DataLoader, MARSHAL_REQUEST_HEADER
-from ..types import HTTPRequest, HTTPResponse
-from .dispatcher import NonBlockSema, CorkDispatcher
+from .utils import DataLoader
+from .utils import MARSHAL_REQUEST_HEADER
+from ..types import HTTPRequest
+from ..types import HTTPResponse
+from .dispatcher import NonBlockSema
+from .dispatcher import CorkDispatcher
 from ...exceptions import RemoteException
 
 # from ..bundle import load_bento_service_metadata
-from ..bundle.config import DEFAULT_MAX_LATENCY, DEFAULT_MAX_BATCH_SIZE
+from ..bundle.config import DEFAULT_MAX_LATENCY
+from ..bundle.config import DEFAULT_MAX_BATCH_SIZE
 from ..configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from aiohttp import BaseConnector, ClientSession
-    from aiohttp.web import Request, Application
+    from aiohttp import BaseConnector
+    from aiohttp import ClientSession
+    from aiohttp.web import Request
+    from aiohttp.web import Application
 
 
 def metrics_patch(cls):
@@ -271,7 +279,8 @@ class MarshalApp:
                 )
 
     async def request_dispatcher(self, request: "Request"):
-        from aiohttp.web import Response, HTTPInternalServerError
+        from aiohttp.web import Response
+        from aiohttp.web import HTTPInternalServerError
 
         with self.tracer.async_span(
             service_name=self.__class__.__name__,

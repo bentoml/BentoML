@@ -14,25 +14,27 @@ from contextlib import contextmanager
 import requests
 import importlib_metadata
 from filelock import FileLock
-from simple_di import inject, Provide
+from simple_di import inject
+from simple_di import Provide
 
-from .exceptions import NotFound, BentoMLException, MissingDependencyException
+from .exceptions import NotFound
+from .exceptions import BentoMLException
+from .exceptions import MissingDependencyException
 from ._internal.types import Tag
-from ._internal.models import Model, JSON_EXT
+from ._internal.models import Model
+from ._internal.models import JSON_EXT
 from ._internal.runner import Runner
 from ._internal.configuration.containers import BentoMLContainer
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from transformers import (
-        PreTrainedModel,
-        PretrainedConfig,
-        TFPreTrainedModel,
-        FlaxPreTrainedModel,
-        PreTrainedTokenizer,
-        PreTrainedTokenizerFast,
-    )
+    from transformers import PreTrainedModel
+    from transformers import PretrainedConfig
+    from transformers import TFPreTrainedModel
+    from transformers import FlaxPreTrainedModel
+    from transformers import PreTrainedTokenizer
+    from transformers import PreTrainedTokenizerFast
     from transformers.feature_extraction_utils import PreTrainedFeatureExtractor
     from transformers.models.auto.auto_factory import _BaseAutoModelClass
 
@@ -40,16 +42,16 @@ if TYPE_CHECKING:
 
 try:
     import transformers
-    from transformers import Pipeline, AutoConfig, AutoTokenizer
-    from transformers.file_utils import (
-        http_get,
-        CONFIG_NAME,
-        WEIGHTS_NAME,
-        hf_bucket_url,
-        http_user_agent,
-        TF2_WEIGHTS_NAME,
-        FLAX_WEIGHTS_NAME,
-    )
+    from transformers import Pipeline
+    from transformers import AutoConfig
+    from transformers import AutoTokenizer
+    from transformers.file_utils import http_get
+    from transformers.file_utils import CONFIG_NAME
+    from transformers.file_utils import WEIGHTS_NAME
+    from transformers.file_utils import hf_bucket_url
+    from transformers.file_utils import http_user_agent
+    from transformers.file_utils import TF2_WEIGHTS_NAME
+    from transformers.file_utils import FLAX_WEIGHTS_NAME
 except ImportError:  # pragma: no cover
     raise MissingDependencyException(
         """\

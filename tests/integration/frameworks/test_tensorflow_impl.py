@@ -8,12 +8,10 @@ import tensorflow_hub as hub
 
 import bentoml.tensorflow
 from tests.utils.helpers import assert_have_file_extension
-from tests.utils.frameworks.tensorflow_utils import (
-    NativeModel,
-    MultiInputModel,
-    NativeRaggedModel,
-    KerasSequentialModel,
-)
+from tests.utils.frameworks.tensorflow_utils import NativeModel
+from tests.utils.frameworks.tensorflow_utils import MultiInputModel
+from tests.utils.frameworks.tensorflow_utils import NativeRaggedModel
+from tests.utils.frameworks.tensorflow_utils import KerasSequentialModel
 
 MODEL_NAME = __name__.split(".")[-1]
 TF2 = tf.__version__.startswith("2")

@@ -8,7 +8,8 @@ from starlette.responses import Response
 
 from .base import IODescriptor
 from .json import MIME_TYPE_JSON
-from ...exceptions import BadInput, InternalServerError
+from ...exceptions import BadInput
+from ...exceptions import InternalServerError
 from ..utils.lazy_loader import LazyLoader
 
 if TYPE_CHECKING:

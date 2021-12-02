@@ -5,9 +5,14 @@ import itertools
 from typing import TYPE_CHECKING
 
 from . import catch_exceptions
-from .csv import csv_row, csv_quote, csv_split, csv_unquote, csv_splitlines
+from .csv import csv_row
+from .csv import csv_quote
+from .csv import csv_split
+from .csv import csv_unquote
+from .csv import csv_splitlines
 from .lazy_loader import LazyLoader
-from ...exceptions import BadInput, BentoMLException
+from ...exceptions import BadInput
+from ...exceptions import BentoMLException
 
 if TYPE_CHECKING:
     import pandas as pd

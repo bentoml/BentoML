@@ -5,9 +5,10 @@ import typing as t
 import multipart.multipart as multipart
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.formparsers import _user_safe_decode  # type: ignore
 from starlette.formparsers import MultiPartMessage
-from starlette.datastructures import Headers, MutableHeaders
+from starlette.formparsers import _user_safe_decode  # type: ignore
+from starlette.datastructures import Headers
+from starlette.datastructures import MutableHeaders
 
 from ...exceptions import BentoMLException
 
@@ -161,7 +162,9 @@ def _get_disp_filename(headers: MutableHeaders) -> t.Optional[bytes]:
     return None
 
 
-async def concat_to_multipart_responses(responses: t.Mapping[str, Response]) -> Response:
+async def concat_to_multipart_responses(
+    responses: t.Mapping[str, Response]
+) -> Response:
     boundary = uuid.uuid4().hex
     headers = {"content-type": f"multipart/form-data; boundary={boundary}"}
 

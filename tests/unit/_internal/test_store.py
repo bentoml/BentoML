@@ -6,8 +6,10 @@ import attr
 import pytest
 from fs.base import FS
 
-from bentoml.exceptions import NotFound, BentoMLException
-from bentoml._internal.store import Store, StoreItem
+from bentoml.exceptions import NotFound
+from bentoml.exceptions import BentoMLException
+from bentoml._internal.store import Store
+from bentoml._internal.store import StoreItem
 from bentoml._internal.types import Tag
 
 

@@ -6,7 +6,7 @@ import paddle.inference
 import bentoml.paddle
 
 from .test_paddle_impl import test_df  # noqa: F401
-from .test_paddle_impl import train_paddle_model
+from .test_paddle_impl import train_paddle_model  # noqa: F401
 
 
 def test_paddlepaddle_load_runner(modelstore, train_paddle_model):  # noqa: F811

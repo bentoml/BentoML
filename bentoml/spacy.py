@@ -47,10 +47,6 @@ except ImportError:  # pragma: no cover
         Instruction: Refers to https://spacy.io/usage for more information.
         """
     )
-try:
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    import importlib_metadata
 
 _check_compat: bool = spacy.__version__.startswith("3")
 if not _check_compat:  # pragma: no cover

@@ -6,7 +6,7 @@ import re
 import typing as t
 import uuid
 from distutils.dir_util import copy_tree
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 from simple_di import Provide, inject

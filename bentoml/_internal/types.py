@@ -29,12 +29,15 @@ HEADER_CHARSET = "latin1"
 JSON_CHARSET = "utf-8"
 
 if TYPE_CHECKING:
+    import numpy as np
     PathType = t.Union[str, os.PathLike[str]]
 else:
     PathType = t.Union[str, os.PathLike]
 
 JSONSerializable = t.NewType("JSONSerializable", object)
 
+
+AnyNDArray = t.Type["np.ndarray[t.Any, np.dtype[t.Any]]"]
 
 @attr.define
 class Tag:

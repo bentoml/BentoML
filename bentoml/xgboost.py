@@ -7,8 +7,7 @@ from simple_di import Provide, inject
 from ._internal.configuration.containers import BentoMLContainer
 from ._internal.models import JSON_EXT, SAVE_NAMESPACE, Model
 from ._internal.runner import Runner
-from ._internal.runner.utils import Params
-from ._internal.types import Tag
+from ._internal.types import Tag, AnyNDArray
 from .exceptions import BentoMLException, MissingDependencyException
 
 if TYPE_CHECKING:
@@ -31,8 +30,6 @@ except ImportError:
     import importlib_metadata
 
 _xgboost_version = importlib_metadata.version("xgboost")
-
-AnyNdarray = t.Type["np.ndarray[t.Any, np.dtype[t.Any]]"]
 
 
 # TODO: support xgb.DMatrix runner io container
@@ -218,7 +215,7 @@ class _XgBoostRunner(Runner):
     @property
     def num_replica(self) -> int:
         if self.resource_quota.on_gpu:
-            return len(self.resource_quota.gpus)
+            return len(self.resource_quota.gpus)  # type: int
         return 1
 
     def _setup_booster_params(
@@ -236,7 +233,7 @@ class _XgBoostRunner(Runner):
 
         return booster_params
 
-    # pylint: disable=arguments-differ,attribute-defined-outside-init
+    # pylint: disable=attribute-defined-outside-init
     def _setup(self) -> None:
         self._model = xgb.core.Booster(
             params=self._booster_params,
@@ -244,15 +241,14 @@ class _XgBoostRunner(Runner):
         )
         self._predict_fn = getattr(self._model, self._predict_fn_name)
 
-    def _run_batch(
-        self, *args: t.Union[AnyNdarray, "DataFrame", xgb.DMatrix], **kwargs: str
-    ) -> AnyNdarray:
-        params = Params[t.Union[AnyNdarray, "DataFrame", xgb.DMatrix]](*args, **kwargs)
-        params = params.map(
-            lambda x: xgb.DMatrix(x) if not isinstance(x, xgb.DMatrix) else x
-        )
-        res = self._predict_fn(*params.args, **params.kwargs)
-        return t.cast(AnyNdarray, np.asarray(res))  # type: ignore[reportUnknownMemberType]
+    # pylint: disable=arguments-differ
+    def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
+        self, input_data: t.Union[AnyNDArray, "DataFrame", xgb.DMatrix],
+    ) -> AnyNDArray:
+        if not isinstance(input_data, xgb.DMatrix):
+            input_data = xgb.DMatrix(input_data)
+        res = self._predict_fn(input_data)
+        return np.asarray(res)  # type: ignore[reportUnknownMemberType]
 
 
 @inject

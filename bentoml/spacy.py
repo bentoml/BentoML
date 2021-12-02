@@ -436,10 +436,10 @@ class _SpacyRunner(Runner):
     # pylint: disable=arguments-differ
     def _run_batch(  # type: ignore[reportIncompatibleMethodOverride]
         self,
-        *args: t.Union[t.Iterable[t.Tuple[t.Union[str, "Doc"], t.Any]], t.Union[str, "Doc"]],  # type: ignore[reportUnknownParameterType] # noqa: LN001
+        input_data: t.Union[t.Iterable[t.Tuple[t.Union[str, "Doc"], t.Any]], t.Union[str, "Doc"]],  # type: ignore[reportUnknownParameterType] # noqa: LN001
     ) -> t.Union[t.Iterator["Doc"], t.Iterator[t.Tuple["Doc", t.Any]]]:  # type: ignore[reportUnknownParameterType] # noqa: LN001
         return self._model.pipe(  # type: ignore[reportGeneralTypeIssues]
-            args,  # type: ignore[reportGeneralTypeIssues]
+            input_data,  # type: ignore[reportGeneralTypeIssues]
             as_tuples=self._as_tuples,
             batch_size=self._batch_size,
             disable=self._disable,

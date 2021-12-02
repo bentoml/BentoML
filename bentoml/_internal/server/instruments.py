@@ -3,8 +3,7 @@ import multiprocessing
 from timeit import default_timer
 from typing import TYPE_CHECKING
 
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
 from ..configuration.containers import BentoMLContainer
 

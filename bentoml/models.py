@@ -1,18 +1,16 @@
 import typing as t
-from typing import TYPE_CHECKING
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 import fs
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
-from ._internal.types import Tag
-from ._internal.models import Model
 from ._internal.configuration.containers import BentoMLContainer
+from ._internal.models import Model
+from ._internal.types import Tag
 
 if TYPE_CHECKING:
-    from ._internal.models import ModelStore
-    from ._internal.models import SysPathModel
+    from ._internal.models import ModelStore, SysPathModel
     from ._internal.runner import Runner
 
 

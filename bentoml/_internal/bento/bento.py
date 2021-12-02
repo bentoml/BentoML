@@ -1,32 +1,27 @@
+import logging
 import os
 import shutil
 import typing as t
-import logging
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
-from datetime import datetime
-from datetime import timezone
 
-import fs
 import attr
-import yaml
-import fs.osfs
-import pathspec
+import fs
 import fs.errors
 import fs.mirror
+import fs.osfs
+import pathspec
+import yaml
 from fs.copy import copy_file
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
-from ..store import Store
-from ..store import StoreItem
-from ..types import Tag
-from ..types import PathType
-from ..models import ModelStore
-from ...exceptions import InvalidArgument
-from ...exceptions import BentoMLException
-from .build_config import BentoBuildConfig
+from ...exceptions import BentoMLException, InvalidArgument
 from ..configuration import BENTOML_VERSION
 from ..configuration.containers import BentoMLContainer
+from ..models import ModelStore
+from ..store import Store, StoreItem
+from ..types import PathType, Tag
+from .build_config import BentoBuildConfig
 
 if TYPE_CHECKING:
     from fs.base import FS

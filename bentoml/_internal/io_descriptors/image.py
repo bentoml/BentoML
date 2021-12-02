@@ -4,20 +4,17 @@ import typing as t
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
-from starlette.requests import Request
 from multipart.multipart import parse_options_header
+from starlette.requests import Request
 from starlette.responses import Response
 
-from .base import ImageType
-from .base import IODescriptor
+from ...exceptions import BadInput, InternalServerError, InvalidArgument
 from ..utils import LazyLoader
-from ...exceptions import BadInput
-from ...exceptions import InvalidArgument
-from ...exceptions import InternalServerError
+from .base import ImageType, IODescriptor
 
 if TYPE_CHECKING:
-    import PIL
     import numpy as np
+    import PIL
     import PIL.Image
 else:
     np = LazyLoader("np", globals(), "numpy")

@@ -1,10 +1,9 @@
-import os
 import logging
 import logging.config
+import os
 from pathlib import Path
 
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
 from .configuration import get_debug_mode
 from .configuration.containers import BentoMLContainer

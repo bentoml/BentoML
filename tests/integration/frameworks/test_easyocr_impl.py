@@ -1,15 +1,14 @@
 import typing as t
 
-import numpy as np
-import pytest
 import easyocr
 import imageio
+import numpy as np
+import pytest
 
 import bentoml.easyocr
 
 if t.TYPE_CHECKING:
-    from bentoml._internal.models import Model
-    from bentoml._internal.models import ModelStore
+    from bentoml._internal.models import Model, ModelStore
 
 TEST_MODEL_NAME = __name__.split(".")[-1]
 TEST_RESULT: t.List[str] = ["西", "愚园路", "东", "315", "309", "W", "Yuyuan Rd。", "E"]

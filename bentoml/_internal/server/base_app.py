@@ -1,16 +1,16 @@
 import abc
-import typing as t
 import logging
+import typing as t
 from typing import TYPE_CHECKING
 
-from starlette.responses import PlainTextResponse
 from starlette.exceptions import HTTPException
+from starlette.responses import PlainTextResponse
 
 if TYPE_CHECKING:
-    from starlette.routing import BaseRoute
-    from starlette.responses import Response
-    from starlette.middleware import Middleware
     from starlette.applications import Starlette
+    from starlette.middleware import Middleware
+    from starlette.responses import Response
+    from starlette.routing import BaseRoute
 
 logger = logging.getLogger(__name__)
 

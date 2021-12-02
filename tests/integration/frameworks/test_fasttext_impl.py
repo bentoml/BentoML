@@ -1,7 +1,7 @@
-import os
-import typing as t
-import tempfile
 import contextlib
+import os
+import tempfile
+import typing as t
 
 import fasttext
 

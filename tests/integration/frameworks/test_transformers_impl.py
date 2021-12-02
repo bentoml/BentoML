@@ -2,8 +2,7 @@ import pytest
 import requests
 import transformers.pipelines
 from transformers import set_seed
-from transformers.file_utils import CONFIG_NAME
-from transformers.file_utils import hf_bucket_url
+from transformers.file_utils import CONFIG_NAME, hf_bucket_url
 from transformers.testing_utils import DUMMY_UNKWOWN_IDENTIFIER as MODEL_ID
 
 import bentoml.transformers

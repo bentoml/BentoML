@@ -1,16 +1,10 @@
 import typing as t
 
 import numpy as np
-import pytest
 import pydantic
+import pytest
 
-from bentoml.io import File
-from bentoml.io import JSON
-from bentoml.io import Text
-from bentoml.io import Image
-from bentoml.io import Multipart
-from bentoml.io import NumpyNdarray
-from bentoml.io import PandasDataFrame
+from bentoml.io import JSON, File, Image, Multipart, NumpyNdarray, PandasDataFrame, Text
 
 
 class _Schema(pydantic.BaseModel):

@@ -1,13 +1,13 @@
-import os
-import json
-import time
 import atexit
-import shutil
+import json
 import logging
-import zipfile
+import os
 import platform
-import tempfile
+import shutil
 import subprocess
+import tempfile
+import time
+import zipfile
 from pathlib import Path
 
 import requests

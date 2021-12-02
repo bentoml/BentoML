@@ -1,18 +1,15 @@
+import datetime
 import os
 import typing as t
-import datetime
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 
 import fs
 import fs.errors
 from fs.base import FS
 
-from .types import Tag
-from .types import PathType
-from ..exceptions import NotFound
-from ..exceptions import BentoMLException
+from ..exceptions import BentoMLException, NotFound
+from .types import PathType, Tag
 
 T = t.TypeVar("T")
 

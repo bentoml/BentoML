@@ -1,23 +1,23 @@
+import logging
 import os
 import re
 import typing as t
-import logging
 from sys import version_info as pyver
 
-import fs
 import attr
-import yaml
 import cattr
+import fs
 import fs.copy
+import yaml
 from fs.base import FS
 from fs.copy import copy_file
 from piptools.scripts.compile import cli as pip_compile_cli  # type: ignore
 
-from .utils import resolve_user_filepath
-from ..types import Tag
-from .docker import ImageProvider
 from ...exceptions import InvalidArgument
+from ..types import Tag
 from .build_dev_bentoml_whl import build_bentoml_whl_to_target_if_in_editable_mode
+from .docker import ImageProvider
+from .utils import resolve_user_filepath
 
 logger = logging.getLogger(__name__)
 

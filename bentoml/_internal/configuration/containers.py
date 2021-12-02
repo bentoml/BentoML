@@ -1,25 +1,18 @@
-import os
-import typing as t
 import logging
 import multiprocessing
-from typing import TYPE_CHECKING
+import os
+import typing as t
 from dataclasses import dataclass  # TODO: simple-di required this. remove it
+from typing import TYPE_CHECKING
 
 import yaml
-from schema import Or
-from schema import And
-from schema import Use
-from schema import Schema
-from schema import Optional
-from schema import SchemaError
 from deepmerge import always_merger
-from simple_di import Provide
-from simple_di import providers
+from schema import And, Optional, Or, Schema, SchemaError, Use
+from simple_di import Provide, providers
 
-from . import expand_env_var
-from ..utils import get_free_port
-from ..utils import validate_or_create_dir
 from ...exceptions import BentoMLConfigException
+from ..utils import get_free_port, validate_or_create_dir
+from . import expand_env_var
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Lock as SyncLock  # noqa: F401

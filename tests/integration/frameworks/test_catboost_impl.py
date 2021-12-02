@@ -1,17 +1,15 @@
 import typing as t
 
-import pytest
 import catboost as cbt
-from catboost.core import CatBoost
-from catboost.core import CatBoostRegressor
-from catboost.core import CatBoostClassifier
+import pytest
+from catboost.core import CatBoost, CatBoostClassifier, CatBoostRegressor
 
-import bentoml.models
 import bentoml.catboost
-from bentoml.exceptions import BentoMLException
-from tests.utils.helpers import assert_have_file_extension
+import bentoml.models
 from bentoml._internal.models import Model
+from bentoml.exceptions import BentoMLException
 from tests.utils.frameworks.sklearn_utils import test_df
+from tests.utils.helpers import assert_have_file_extension
 
 if t.TYPE_CHECKING:
     from bentoml._internal.models import ModelStore

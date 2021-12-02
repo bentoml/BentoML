@@ -3,11 +3,10 @@ import typing as t
 from typing import TYPE_CHECKING
 
 import cloudpickle
-from simple_di import inject
-from simple_di import Provide
+from simple_di import Provide, inject
 
-from .utils import TypeRef
 from ..configuration.containers import BentoServerContainer
+from .utils import TypeRef
 
 SingleType = t.TypeVar("SingleType")
 BatchType = t.TypeVar("BatchType")
